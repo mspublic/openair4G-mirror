@@ -1,10 +1,10 @@
-CC = $(shell if [ $(OSTYPE) = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi)
+#CC = $(shell if [ $(OSTYPE) = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi)
 #CC = gcc-4.3
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
-CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
+CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4
+#CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
 #CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = $(OPENAIR1_DIR)
@@ -17,11 +17,15 @@ CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing
 LFLAGS = -lm -lblas
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
-ifeq "$(GCCVERSION)" "4.4.3"
+ifeq "$(GCCVERSION)"  "4.4.3"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE
+ifeq "$(GCCVERSION)" "4.5.2"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+
+CFLAGS += -DOPENAIR_LTE #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE
 #CFLAGS += -DTBS_FIX
 CFLAGS += -DCELLULAR
 
@@ -97,37 +101,34 @@ test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
 
 $(OBJ) : %.o : %.c
-	$(CC) -c $(CFLAGS) -o $@ $<
+	@echo 
+	@echo Compiling $< ...
+	@$(CC) -c $(CFLAGS) -o $@ $<
 
 dlsim : $(OBJ) dlsim.c
-	$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
+	@echo "Compiling dlsim.c ..."
+	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
+
 
 framegen: $(OBJ) framegen.c
-	$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) -lm -lblas
+	@echo "Compiling framegen.c"
+	@$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
 
 pbchsim : $(OBJ) pbchsim.c
-	$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) -lm -lblas
+	@echo "Compiling pbchsim.c"
+	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
 
 pdcchsim : $(OBJ) pdcchsim.c
-	$(CC) pdcchsim.c  -o pdcchsim $(CFLAGS) $(OBJ) -lm -lblas
+	@echo "Compiling pdcchsim.c"
+	@$(CC) pdcchsim.c  -o pdcchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
 
 pucchsim : $(OBJ) pucchsim.c
-	$(CC) pucchsim.c  -o pucchsim $(CFLAGS) $(OBJ) -lm -lblas
-
-dlsim_secsys : $(OBJ) dlsim_secsys.c
-	$(CC) dlsim_secsys.c  -o dlsim_secsys $(CFLAGS) $(OBJ) -lm -lblas
+	@echo "Compiling pucchsim.c"
+	@$(CC) pucchsim.c  -o pucchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
 
 ulsim : $(OBJ) ulsim.c #ulsim_form.c
-	$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) -lm  -lblas
-
-ulsim2 : $(OBJ) ulsim2.c
-	$(CC) ulsim2.c  -o ulsim2 $(CFLAGS) $(OBJ) -lm
-
-physim : $(OBJ) phy_procedures_sim.c 
-	$(CC)  phy_procedures_sim.c -o physim $(CFLAGS) $(OBJ) -lm
-
-physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
-	$(CC)  phy_procedures_sim_secsys.c -o physim_secsys $(CFLAGS) $(OBJ) -lm
+	@echo "Compiling [ulsim.c]"
+	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm  -lblas
 
 clean :
 	rm -f $(OBJ)

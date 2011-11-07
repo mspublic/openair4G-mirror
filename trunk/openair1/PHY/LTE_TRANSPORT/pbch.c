@@ -650,16 +650,9 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   u8 log2_maxh;//,aatx,aarx;
   int max_h=0;
 
-  int symbol,i,ret;
-  //int nb_rb = 6;
-  //int mod_order = 2;
+  int symbol,i;
   u32 nsymb = (frame_parms->Ncp==0) ? 14:12;
-  u32 pilots, first_pilot;
-  u32 second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
-  //  u32  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes,coded_bits;
-  //  u8 max_iterations = 6;
-
-  u32  pbch_D,pbch_D_bytes,pbch_E;//,pbch_coded_bytes;
+  u32  pbch_D,pbch_D_bytes,pbch_E;
   u8 pbch_a[8];
   u8 RCC;
 

@@ -5,37 +5,49 @@
 //#define DEBUG_CH
 
 // For Channel Estimation in Distributed Alamouti Scheme
-static short temp_out_ifft[2048*4] __attribute__((aligned(16)));
-static short temp_out_fft_0[2048*4] __attribute__((aligned(16)));
-static short temp_out_fft_1[2048*4] __attribute__((aligned(16)));
+static s16 temp_out_ifft[2048*4] __attribute__((aligned(16)));
+static s16 temp_out_fft_0[2048*4] __attribute__((aligned(16)));
+static s16 temp_out_fft_1[2048*4] __attribute__((aligned(16)));
 
-static int temp_in_ifft[2048*2] __attribute__((aligned(16)));
-static int temp_in_fft_0[2048*2] __attribute__((aligned(16)));
-static int temp_in_fft_1[2048*2] __attribute__((aligned(16)));
+static s32 temp_in_ifft[2048*2] __attribute__((aligned(16)));
+static s32 temp_in_fft_0[2048*2] __attribute__((aligned(16)));
+static s32 temp_in_fft_1[2048*2] __attribute__((aligned(16)));
 
 
-int lte_ul_channel_estimation(int **ul_ch_estimates,
-			      int **ul_ch_estimates_time,
-			      int **ul_ch_estimates_0,
-			      int **ul_ch_estimates_1,
-			      int **rxdataF_ext,
-			      LTE_DL_FRAME_PARMS *frame_parms,
+s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
+			      u8 eNB_id,
+			      u8 UE_id,
+			      u8 subframe,
 			      unsigned char l,
 			      unsigned char Ns,
-			      unsigned int N_rb_alloc,
-			      u8 cyclicShift,
 			      u8 cooperation_flag) {
 
-  unsigned short aa,b,k,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
-  unsigned short * Msc_idx_ptr;
-  unsigned short pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
-  short alpha, beta;
-  int *ul_ch1, *ul_ch2;
-  int *ul_ch1_0,*ul_ch2_0,*ul_ch1_1,*ul_ch2_1;
-  //s8 phase_shift;
-  //phase_shift = -(2*M_PI*cyclicShift)/12;
-  short ul_ch_estimates_re,ul_ch_estimates_im;
-  int rx_power_correction;
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  LTE_eNB_ULSCH *eNB_ulsch_vars = phy_vars_eNB->lte_eNB_ulsch_vars[0];
+  s32 **ul_ch_estimates=eNB_ulsch_vars->drs_ch_estimates[eNB_id];
+  s32 **ul_ch_estimates_time=  eNB_ulsch_vars->drs_ch_estimates_time[eNB_id];
+  s32 **ul_ch_estimates_0=  eNB_ulsch_vars->drs_ch_estimates_0[eNB_id];
+  s32 **ul_ch_estimates_1=  eNB_ulsch_vars->drs_ch_estimates_1[eNB_id];
+  s32 **rxdataF_ext=  eNB_ulsch_vars->rxdataF_ext[eNB_id];
+  u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
+
+  u16 N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
+  u16 aa,k,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
+  u16 * Msc_idx_ptr;
+  u16 pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
+  s16 alpha, beta;
+  s32 *ul_ch1=NULL, *ul_ch2=NULL;
+  s32 *ul_ch1_0=NULL,*ul_ch2_0=NULL,*ul_ch1_1=NULL,*ul_ch2_1=NULL;
+  s16 ul_ch_estimates_re,ul_ch_estimates_im;
+  s32 rx_power_correction;
+
+
+  u8 cyclic_shift; 
+
+  u32 alpha_ind;
+  u32 u=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[Ns+(subframe<<1)];
+  u32 v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[Ns+(subframe<<1)];
+
 
   //debug_msg("lte_ul_channel_estimation: cyclic shift %d\n",cyclicShift);
 
@@ -43,14 +55,19 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
   s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
-  int *temp_out_ifft_ptr = (int*)0,*in_fft_ptr_0 = (int*)0,*in_fft_ptr_1 = (int*)0,
-    *temp_out_fft_0_ptr = (int*)0,*out_fft_ptr_0 = (int*)0,*temp_out_fft_1_ptr = (int*)0,
-    *out_fft_ptr_1 = (int*)0,*in_ifft_ptr = (int*)0,*temp_in_ifft_ptr = (int*)0;
+  s32 *temp_out_ifft_ptr = (s32*)0,*in_fft_ptr_0 = (s32*)0,*in_fft_ptr_1 = (s32*)0,
+    *temp_out_fft_0_ptr = (s32*)0,*out_fft_ptr_0 = (s32*)0,*temp_out_fft_1_ptr = (s32*)0,
+    *out_fft_ptr_1 = (s32*)0,*temp_in_ifft_ptr = (s32*)0;
   
   Msc_RS = N_rb_alloc*12;
 
+  cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+		  phy_vars_eNB->ulsch_eNB[UE_id]->n_DMRS2 +
+		  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
+
+  //      cyclic_shift = 0;
 #ifdef USER_MODE
-  Msc_idx_ptr = (unsigned short*) bsearch(&Msc_RS, dftsizes, 33, sizeof(unsigned short), compareints);
+  Msc_idx_ptr = (u16*) bsearch(&Msc_RS, dftsizes, 33, sizeof(u16), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
@@ -64,9 +81,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 #endif
 
 #ifdef DEBUG_CH
-  msg("lte_ul_channel_estimation: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
+  msg("lte_ul_channel_estimation: subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
 #ifdef USER_MODE
-  write_output("drs_seq.m","drs",ul_ref_sigs_rx[0][0][Msc_RS_idx],2*Msc_RS,2,1);
+  write_output("drs_seq.m","drs",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
 #endif
 #endif
 
@@ -82,20 +99,20 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
       //msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
-      mult_cpx_vector_norep2((short*) &rxdataF_ext[aa][symbol_offset<<1],
-			     (short*) ul_ref_sigs_rx[0][0][Msc_RS_idx],
-			     (short*) &ul_ch_estimates[aa][symbol_offset],
+      mult_cpx_vector_norep2((s16*) &rxdataF_ext[aa][symbol_offset<<1],
+			     (s16*) ul_ref_sigs_rx[u][v][Msc_RS_idx],
+			     (s16*) &ul_ch_estimates[aa][symbol_offset],
 			     Msc_RS,
 			     15);
 
-      memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);   
+      memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(s32*)*2);   
       // Convert to time domain for visualization
       for(i=0;i<frame_parms->N_RB_UL*12;i++)
 	temp_in_ifft[i] = ul_ch_estimates[aa][symbol_offset+i];
 	    
 	  
-      fft( (short*) temp_in_ifft,                          
-	   (short*) ul_ch_estimates_time[aa],
+      fft( (s16*) temp_in_ifft,                          
+	   (s16*) ul_ch_estimates_time[aa],
 	   frame_parms->twiddle_ifft,
 	   frame_parms->rev,
 	   (frame_parms->log2_symbol_size),
@@ -108,22 +125,25 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	write_output("drs_est1.m","drs1",ul_ch_estimates_time[aa],512*2,2,1);
 #endif
 #endif
+      alpha_ind = 0;
+      if((cyclic_shift != 0) &&(cooperation_flag != 2)){
+	// Compensating for the phase shift introduced at the transmitter
+	for(i=symbol_offset;i<symbol_offset+Msc_RS;i++){
+	  ul_ch_estimates_re = ((s16*) ul_ch_estimates[aa])[i<<1];
+	  ul_ch_estimates_im = ((s16*) ul_ch_estimates[aa])[(i<<1)+1];
+	  //	  ((s16*) ul_ch_estimates[aa])[i<<1] =  (i%2 == 1? 1:-1) * ul_ch_estimates_re;
+	  ((s16*) ul_ch_estimates[aa])[i<<1] =  
+	    (s16) (((s32) (alpha_re[alpha_ind]) * (s32) (ul_ch_estimates_re) + 
+		    (s32) (alpha_im[alpha_ind]) * (s32) (ul_ch_estimates_im))>>15);
+	  
+	  //((s16*) ul_ch_estimates[aa])[(i<<1)+1] =  (i%2 == 1? 1:-1) * ul_ch_estimates_im;
+	  ((s16*) ul_ch_estimates[aa])[(i<<1)+1] = 
+	    (s16) (((s32) (alpha_re[alpha_ind]) * (s32) (ul_ch_estimates_im) -  
+		    (s32) (alpha_im[alpha_ind]) * (s32) (ul_ch_estimates_re))>>15);
 
-      if((cyclicShift != 0) &&(cooperation_flag != 2)){
-	// Compemsating for the phase shift introduced at the transmitter
-	for(i=symbol_offset;i<symbol_offset+frame_parms->N_RB_UL*12;i++){
-	  ul_ch_estimates_re = ((short*) ul_ch_estimates[aa])[i<<1];
-	  ul_ch_estimates_im = ((short*) ul_ch_estimates[aa])[(i<<1)+1];
-	  ((short*) ul_ch_estimates[aa])[i<<1] =  (i%2 == 1? 1:-1) * ul_ch_estimates_re;
-	  /*
-	    (short) (((int) (i%2 == 1? 1:-1) * (int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_re) + 
-		      (int) (i%2 == 1? 1:-1) * (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_im))>>15);
-	  */
-	  ((short*) ul_ch_estimates[aa])[(i<<1)+1] =  (i%2 == 1? 1:-1) * ul_ch_estimates_im;
-	  /*
-	    (short) (((int) (i%2 == 1? 1:-1) * (int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_im) -  
-		      (int) (i%2 == 1? 1:-1) * (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_re))>>15);
-	  */
+	  alpha_ind+=cyclic_shift;
+	  if (alpha_ind>11)
+	    alpha_ind-=12;
 	}
       }
 
@@ -133,8 +153,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
       for(i=0;i<frame_parms->N_RB_UL*12;i++)
 	temp_in_ifft[i] = ul_ch_estimates[aa][symbol_offset+i];
 	    
-      fft( (short*) temp_in_ifft,                          
-	   (short*) ul_ch_estimates_time[aa],
+      fft( (s16*) temp_in_ifft,                          
+	   (s16*) ul_ch_estimates_time[aa],
 	   frame_parms->twiddle_ifft,
 	   frame_parms->rev,
 	   (frame_parms->log2_symbol_size),
@@ -150,9 +170,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
       if(cooperation_flag == 2)// Memory Allocation for temporary pointers to Channel Estimates
 	{
-	  memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
-	  memset(temp_in_fft_0,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
-	  memset(temp_in_fft_1,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
+	  memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(s32*)*2);
+	  memset(temp_in_fft_0,0,frame_parms->ofdm_symbol_size*sizeof(s32*)*2);
+	  memset(temp_in_fft_1,0,frame_parms->ofdm_symbol_size*sizeof(s32*)*2);
 
 	  //Extracting Channel Estimates for Distributed Alamouti Receiver Combining
 	  
@@ -166,7 +186,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  }
 
 
-	  fft((short*) &temp_in_ifft[0],                          // Performing IFFT on Combined Channel Estimates
+	  fft((s16*) &temp_in_ifft[0],                          // Performing IFFT on Combined Channel Estimates
 	      temp_out_ifft, 
 	      //ul_ch_estimates_time[aa],
 	      frame_parms->twiddle_ifft,
@@ -180,18 +200,18 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 	  // because the ifft is not power preserving, we should apply the factor sqrt(power_correction) here, but we rather apply power_correction here and nothing after the next fft
 	  in_fft_ptr_0 = &temp_in_fft_0[0];
-	  temp_out_ifft_ptr = (int*)temp_out_ifft;
-	  //temp_out_ifft_ptr = (int*)ul_ch_estimates_time[aa];
+	  temp_out_ifft_ptr = (s32*)temp_out_ifft;
+	  //temp_out_ifft_ptr = (s32*)ul_ch_estimates_time[aa];
 	 
 	  for(j= 0;j<(1<<(frame_parms->log2_symbol_size))/2;j++)
 	    {
-	      ((short*)in_fft_ptr_0)[2*j] = ((short*)temp_out_ifft_ptr)[4*j]*rx_power_correction;
-	      ((short*)in_fft_ptr_0)[2*j+1] = ((short*)temp_out_ifft_ptr)[4*j+1]*rx_power_correction;
+	      ((s16*)in_fft_ptr_0)[2*j] = ((s16*)temp_out_ifft_ptr)[4*j]*rx_power_correction;
+	      ((s16*)in_fft_ptr_0)[2*j+1] = ((s16*)temp_out_ifft_ptr)[4*j+1]*rx_power_correction;
 	    }
 	  
 	 
 
-	  fft((short*) &temp_in_fft_0[0],                        // Performing FFT to obtain the Channel Estimates for UE0 to eNB1
+	  fft((s16*) &temp_in_fft_0[0],                        // Performing FFT to obtain the Channel Estimates for UE0 to eNB1
 	      temp_out_fft_0,
 	      frame_parms->twiddle_fft,
 	      frame_parms->rev,
@@ -200,7 +220,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	      0);
 
 	  out_fft_ptr_0 = &ul_ch_estimates_0[aa][symbol_offset]; // CHANNEL ESTIMATES FOR UE0 TO eNB1
-	  temp_out_fft_0_ptr = (int*) temp_out_fft_0;
+	  temp_out_fft_0_ptr = (s32*) temp_out_fft_0;
 
 	  i=0;
 
@@ -212,18 +232,18 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  
 	  	     
 	  in_fft_ptr_1 = &temp_in_fft_1[0];
-	  temp_out_ifft_ptr = (int*)temp_out_ifft;
-	  //temp_out_ifft_ptr = (int*)ul_ch_estimates_time[aa];
+	  temp_out_ifft_ptr = (s32*)temp_out_ifft;
+	  //temp_out_ifft_ptr = (s32*)ul_ch_estimates_time[aa];
 
 	  for(j=(1<<frame_parms->log2_symbol_size)/2;j<(1<<(frame_parms->log2_symbol_size));j++)
 	    {
-	      ((short*)in_fft_ptr_1)[2*j] = ((short*)temp_out_ifft_ptr)[4*j]*rx_power_correction;
-	      ((short*)in_fft_ptr_1)[2*j+1] = ((short*)temp_out_ifft_ptr)[4*j+1]*rx_power_correction;
+	      ((s16*)in_fft_ptr_1)[2*j] = ((s16*)temp_out_ifft_ptr)[4*j]*rx_power_correction;
+	      ((s16*)in_fft_ptr_1)[2*j+1] = ((s16*)temp_out_ifft_ptr)[4*j+1]*rx_power_correction;
 	    }
 	  
 	 
 
-	  fft((short*) &temp_in_fft_1[0],                          // Performing FFT to obtain the Channel Estimates for UE1 to eNB1
+	  fft((s16*) &temp_in_fft_1[0],                          // Performing FFT to obtain the Channel Estimates for UE1 to eNB1
 	      temp_out_fft_1,
 	      frame_parms->twiddle_fft,
 	      frame_parms->rev,
@@ -232,7 +252,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	      0);
 
 	  out_fft_ptr_1 = &ul_ch_estimates_1[aa][symbol_offset];   // CHANNEL ESTIMATES FOR UE1 TO eNB1
-	  temp_out_fft_1_ptr = (int*) temp_out_fft_1;
+	  temp_out_fft_1_ptr = (s32*) temp_out_fft_1;
 
 	  i=0;
 	  
@@ -279,8 +299,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	for (k=0;k<frame_parms->symbols_per_tti;k++) {
 
 	  // we scale alpha and beta by 0x3FFF (instead of 0x7FFF) to avoid overflows 
-	  alpha = (short) (((int) 0x3FFF * (int) (pilot_pos2-k))/(pilot_pos2-pilot_pos1));
-	  beta  = (short) (((int) 0x3FFF * (int) (k-pilot_pos1))/(pilot_pos2-pilot_pos1));
+	  alpha = (s16) (((s32) 0x3FFF * (s32) (pilot_pos2-k))/(pilot_pos2-pilot_pos1));
+	  beta  = (s16) (((s32) 0x3FFF * (s32) (k-pilot_pos1))/(pilot_pos2-pilot_pos1));
 	  
 #ifdef DEBUG_CH
 	  msg("lte_ul_channel_estimation: k=%d, alpha = %d, beta = %d\n",k,alpha,beta); 
@@ -289,32 +309,32 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 	  // interpolate between estimates
 	  if ((k != pilot_pos1) && (k != pilot_pos2))  {
-	    multadd_complex_vector_real_scalar((short*) ul_ch1,alpha,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((short*) ul_ch2,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch1,alpha,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch2,beta ,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 	 
 	    if(cooperation_flag == 2)// For Distributed Alamouti
 	      {
-		multadd_complex_vector_real_scalar((short*) ul_ch1_0,beta ,(short*) &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
-		multadd_complex_vector_real_scalar((short*) ul_ch2_0,alpha,(short*) &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+		multadd_complex_vector_real_scalar((s16*) ul_ch1_0,beta ,(s16*) &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+		multadd_complex_vector_real_scalar((s16*) ul_ch2_0,alpha,(s16*) &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 
-		multadd_complex_vector_real_scalar((short*) ul_ch1_1,beta ,(short*) &ul_ch_estimates_1[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
-		multadd_complex_vector_real_scalar((short*) ul_ch2_1,alpha,(short*) &ul_ch_estimates_1[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+		multadd_complex_vector_real_scalar((s16*) ul_ch1_1,beta ,(s16*) &ul_ch_estimates_1[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+		multadd_complex_vector_real_scalar((s16*) ul_ch2_1,alpha,(s16*) &ul_ch_estimates_1[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 	      }
 
 	  }
 	} //for(k=...
 
 	// because of the scaling of alpha and beta we also need to scale the final channel estimate at the pilot positions 
-	multadd_complex_vector_real_scalar((short*) ul_ch1,0x3FFF,(short*) ul_ch1,1,N_rb_alloc*12);
-	multadd_complex_vector_real_scalar((short*) ul_ch2,0x3FFF,(short*) ul_ch2,1,N_rb_alloc*12);
+	multadd_complex_vector_real_scalar((s16*) ul_ch1,0x3FFF,(s16*) ul_ch1,1,N_rb_alloc*12);
+	multadd_complex_vector_real_scalar((s16*) ul_ch2,0x3FFF,(s16*) ul_ch2,1,N_rb_alloc*12);
 
 	if(cooperation_flag == 2)// For Distributed Alamouti
 	  {
-	    multadd_complex_vector_real_scalar((short*) ul_ch1_0,0x3FFF,(short*) ul_ch1_0,1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((short*) ul_ch2_0,0x3FFF,(short*) ul_ch2_0,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch1_0,0x3FFF,(s16*) ul_ch1_0,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch2_0,0x3FFF,(s16*) ul_ch2_0,1,N_rb_alloc*12);
 
-	    multadd_complex_vector_real_scalar((short*) ul_ch1_1,0x3FFF,(short*) ul_ch1_1,1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((short*) ul_ch2_1,0x3FFF,(short*) ul_ch2_1,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch1_1,0x3FFF,(s16*) ul_ch1_1,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch2_1,0x3FFF,(s16*) ul_ch2_1,1,N_rb_alloc*12);
 	  }
 
 	//write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
@@ -335,10 +355,10 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   return(0);
 }       
 
-extern unsigned short transmission_offset_tdd[16];
+extern u16 transmission_offset_tdd[16];
 #define DEBUG_SRS
 
-int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
+s32 lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,
 			       LTE_eNB_SRS *eNb_srs_vars,
 			       SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
@@ -386,9 +406,9 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
       //write_output("eNb_rxF.m","rxF",&eNb_common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
       //write_output("eNb_srs.m","srs_eNb",eNb_common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
-      mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-			    (short*) eNb_srs_vars->srs,
-			    (short*) eNb_srs_vars->srs_ch_estimates[eNb_id][aa],
+      mult_cpx_vector_norep((s16*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+			    (s16*) eNb_srs_vars->srs,
+			    (s16*) eNb_srs_vars->srs_ch_estimates[eNb_id][aa],
 			    frame_parms->ofdm_symbol_size,
 			    15);
 

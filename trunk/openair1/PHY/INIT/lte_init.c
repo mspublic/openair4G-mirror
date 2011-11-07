@@ -230,6 +230,93 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 
 }
 
+void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
+
+  u8 UE_id;
+  struct PhysicalConfigDedicated *physicalConfigDedicated;
+
+  for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+    physicalConfigDedicated = phy_vars_eNB->physicalConfigDedicated[UE_id];
+    if (physicalConfigDedicated != NULL) {
+      msg("[PHY][eNB %d] Frame %d: Sent physicalConfigDedicated for UE %d\n",phy_vars_eNB->Mod_id, mac_xface->frame,UE_id);
+      msg("------------------------------------------------------------------------\n");
+      
+      if (physicalConfigDedicated->pdsch_ConfigDedicated) {
+	phy_vars_eNB->pdsch_config_dedicated[UE_id].p_a=physicalConfigDedicated->pdsch_ConfigDedicated->p_a;
+	msg("pdsch_config_dedicated.p_a %d\n",phy_vars_eNB->pdsch_config_dedicated[UE_id].p_a);
+	msg("\n");
+      }
+      
+      if (physicalConfigDedicated->pucch_ConfigDedicated) {
+	if (physicalConfigDedicated->pucch_ConfigDedicated->ackNackRepetition.present==PUCCH_ConfigDedicated__ackNackRepetition_PR_release)
+	  phy_vars_eNB->pucch_config_dedicated[UE_id].ackNackRepetition=0;
+	else {
+	  phy_vars_eNB->pucch_config_dedicated[UE_id].ackNackRepetition=1;
+	}
+	
+	if (physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode)
+	  phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode = *physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode;
+	else
+	  phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode = bundling;
+	
+	if ( phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode == multiplexing)
+	  msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = multiplexing\n");
+	else
+	  msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = bundling\n");
+	
+      }
+      
+      if (physicalConfigDedicated->pusch_ConfigDedicated) {
+	phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_ACK_Index;
+	phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
+	phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
+	
+	msg("pusch_config_dedicated.betaOffset_ACK_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index);
+	msg("pusch_config_dedicated.betaOffset_RI_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index);
+	msg("pusch_config_dedicated.betaOffset_CQI_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index);
+	msg("\n");
+	
+	
+      }
+      if (physicalConfigDedicated->uplinkPowerControlDedicated) {
+	
+	phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUSCH = physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUSCH;
+	phy_vars_eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled= physicalConfigDedicated->uplinkPowerControlDedicated->deltaMCS_Enabled;
+	phy_vars_eNB->ul_power_control_dedicated[UE_id].accumulationEnabled= physicalConfigDedicated->uplinkPowerControlDedicated->accumulationEnabled;
+	phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUCCH= physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUCCH;
+	phy_vars_eNB->ul_power_control_dedicated[UE_id].pSRS_Offset= physicalConfigDedicated->uplinkPowerControlDedicated->pSRS_Offset;
+	phy_vars_eNB->ul_power_control_dedicated[UE_id].filterCoefficient= *physicalConfigDedicated->uplinkPowerControlDedicated->filterCoefficient;
+	msg("ul_power_control_dedicated.p0_UE_PUSCH %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUSCH);
+	msg("ul_power_control_dedicated.deltaMCS_Enabled %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled);
+	msg("ul_power_control_dedicated.accumulationEnabled %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].accumulationEnabled);
+	msg("ul_power_control_dedicated.p0_UE_PUCCH %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUCCH);
+	msg("ul_power_control_dedicated.pSRS_Offset %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].pSRS_Offset);
+	msg("ul_power_control_dedicated.filterCoefficient %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].filterCoefficient);
+	msg("\n");
+      }
+      if (physicalConfigDedicated->antennaInfo) {
+	phy_vars_eNB->transmission_mode[UE_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
+	msg("Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
+	msg("\n");
+      }
+      
+      if (physicalConfigDedicated->schedulingRequestConfig) {
+	if (physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_setup) {
+	  phy_vars_eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex = physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
+	  phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex=physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_ConfigIndex;  
+	  phy_vars_eNB->scheduling_request_config[UE_id].dsr_TransMax=physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax;
+	  
+	  msg("scheduling_request_config.sr_PUCCH_ResourceIndex %d\n",phy_vars_eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex);
+	  msg("scheduling_request_config.sr_ConfigIndex %d\n",phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex);  
+	  msg("scheduling_request_config.dsr_TransMax %d\n",phy_vars_eNB->scheduling_request_config[UE_id].dsr_TransMax);
+	}
+	msg("------------------------------------------------------------\n");
+	
+      }
+      phy_vars_eNB->physicalConfigDedicated[UE_id] = NULL;    
+    }
+  }
+}
 
 void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
 			      struct PhysicalConfigDedicated *physicalConfigDedicated) {
@@ -240,89 +327,13 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
 
   
   if (physicalConfigDedicated) {
-    msg("[PHY][eNB %d] Frame %d: Sent physicalConfigDedicated for UE %d (%x)\n",Mod_id, mac_xface->frame,UE_id,rnti);
-    msg("------------------------------------------------------------------------\n");
-    
-    if (physicalConfigDedicated->pdsch_ConfigDedicated) {
-      phy_vars_eNB->pdsch_config_dedicated[UE_id].p_a=physicalConfigDedicated->pdsch_ConfigDedicated->p_a;
-      msg("pdsch_config_dedicated.p_a %d\n",phy_vars_eNB->pdsch_config_dedicated[UE_id].p_a);
-      msg("\n");
-    }
-    
-    if (physicalConfigDedicated->pucch_ConfigDedicated) {
-      if (physicalConfigDedicated->pucch_ConfigDedicated->ackNackRepetition.present==PUCCH_ConfigDedicated__ackNackRepetition_PR_release)
-	phy_vars_eNB->pucch_config_dedicated[UE_id].ackNackRepetition=0;
-      else {
-	phy_vars_eNB->pucch_config_dedicated[UE_id].ackNackRepetition=1;
-      }
-
-      if (physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode)
-	phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode = *physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode;
-      else
-	phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode = bundling;
-
-      if ( phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode == multiplexing)
-	msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = multiplexing\n");
-      else
-	msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = bundling\n");
- 
-    }
-    
-    if (physicalConfigDedicated->pusch_ConfigDedicated) {
-      phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_ACK_Index;
-      phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
-      phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
-      
-      msg("pusch_config_dedicated.betaOffset_ACK_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index);
-      msg("pusch_config_dedicated.betaOffset_RI_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index);
-      msg("pusch_config_dedicated.betaOffset_CQI_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index);
-      msg("\n");
-      
-      
-    }
-    if (physicalConfigDedicated->uplinkPowerControlDedicated) {
-      
-      phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUSCH = physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUSCH;
-      phy_vars_eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled= physicalConfigDedicated->uplinkPowerControlDedicated->deltaMCS_Enabled;
-      phy_vars_eNB->ul_power_control_dedicated[UE_id].accumulationEnabled= physicalConfigDedicated->uplinkPowerControlDedicated->accumulationEnabled;
-      phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUCCH= physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUCCH;
-      phy_vars_eNB->ul_power_control_dedicated[UE_id].pSRS_Offset= physicalConfigDedicated->uplinkPowerControlDedicated->pSRS_Offset;
-      phy_vars_eNB->ul_power_control_dedicated[UE_id].filterCoefficient= *physicalConfigDedicated->uplinkPowerControlDedicated->filterCoefficient;
-      msg("ul_power_control_dedicated.p0_UE_PUSCH %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUSCH);
-      msg("ul_power_control_dedicated.deltaMCS_Enabled %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled);
-      msg("ul_power_control_dedicated.accumulationEnabled %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].accumulationEnabled);
-      msg("ul_power_control_dedicated.p0_UE_PUCCH %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUCCH);
-      msg("ul_power_control_dedicated.pSRS_Offset %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].pSRS_Offset);
-      msg("ul_power_control_dedicated.filterCoefficient %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].filterCoefficient);
-      msg("\n");
-    }
-    if (physicalConfigDedicated->antennaInfo) {
-      phy_vars_eNB->transmission_mode[UE_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-      msg("Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
-      msg("\n");
-    }
-    
-    if (physicalConfigDedicated->schedulingRequestConfig) {
-      if (physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_setup) {
-	phy_vars_eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex = physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
-	phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex=physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_ConfigIndex;  
-	phy_vars_eNB->scheduling_request_config[UE_id].dsr_TransMax=physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax;
-	
-	msg("scheduling_request_config.sr_PUCCH_ResourceIndex %d\n",phy_vars_eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex);
-	msg("scheduling_request_config.sr_ConfigIndex %d\n",phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex);  
-	msg("scheduling_request_config.dsr_TransMax %d\n",phy_vars_eNB->scheduling_request_config[UE_id].dsr_TransMax);
-      }
-      msg("------------------------------------------------------------\n");
-      
-    }
-    
-  }
+    phy_vars_eNB->physicalConfigDedicated[UE_id] = physicalConfigDedicated;
+  }  
   else {
     msg("[PHY][eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,UE_id);
     return;
   }
-  
-  
+
 }
 
 void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
@@ -990,6 +1001,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     phy_vars_eNB->first_run_timing_advance[UE_id] = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 
     memset(&phy_vars_eNB->eNB_UE_stats[UE_id],0,sizeof(LTE_eNB_UE_stats));
+    phy_vars_eNB->physicalConfigDedicated[UE_id] = NULL;
   }
   phy_vars_eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 

@@ -3,13 +3,13 @@
 
 void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
 		     mod_sym_t **txdataF,
-		     short amp,
-		     unsigned short Ntti) {
+		     s16 amp,
+		     u16 Ntti) {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
 
-  unsigned int tti,tti_offset,slot_offset,Nsymb,samples_per_symbol;
-  unsigned char second_pilot;
+  u32 tti,tti_offset,slot_offset,Nsymb,samples_per_symbol;
+  u8 second_pilot;
 
 
 
@@ -135,12 +135,12 @@ void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
 	    
 int generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
-			 short amp,
-			 unsigned short slot) {
+			 s16 amp,
+			 u16 slot) {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;  
-  unsigned int tti,tti_offset,slot_offset,Nsymb,samples_per_symbol;
-  unsigned char second_pilot;
+  u32 slot_offset,Nsymb,samples_per_symbol;
+  u8 second_pilot;
 
   if (slot<0 || slot>= 20) {
     msg("generate_pilots_slot: slot not in range (%d)\n",slot);

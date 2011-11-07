@@ -158,10 +158,10 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 int initial_sync(PHY_VARS_UE *phy_vars_ue) {
  
   u32 sync_pos,sync_pos_slot;
-  u32 metric_fdd_ncp=0,metric_fdd_ecp=0,metric_tdd_ncp=0,metric_tdd_ecp=0,max_metric;
+  s32 metric_fdd_ncp=0,metric_fdd_ecp=0,metric_tdd_ncp=0,metric_tdd_ecp=0,max_metric;
   u8 phase_fdd_ncp,phase_fdd_ecp,phase_tdd_ncp,phase_tdd_ecp;
   u8 flip_fdd_ncp,flip_fdd_ecp,flip_tdd_ncp,flip_tdd_ecp;
-  u16 Nid_cell_fdd_ncp,Nid_cell_fdd_ecp,Nid_cell_tdd_ncp,Nid_cell_tdd_ecp;
+  u16 Nid_cell_fdd_ncp=0,Nid_cell_fdd_ecp=0,Nid_cell_tdd_ncp=0,Nid_cell_tdd_ecp=0;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
   u8 i;
   int ret;

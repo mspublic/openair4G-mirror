@@ -286,13 +286,13 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
 
   int n_enb;//index
   int enb_id;
-  int harq_id;
-  int payload_offset = 0;
+  //  int harq_id;
+  //  int payload_offset = 0;
   unsigned short rnti;
   unsigned int harq_pid;
   LTE_UE_ULSCH_t *ulsch;
   PUCCH_FMT_t pucch_format;
-  u8 ue_transport_info_index[NUMBER_OF_eNB_MAX];
+  //  u8 ue_transport_info_index[NUMBER_OF_eNB_MAX];
   u8 subframe = last_slot>>1;
  
   memcpy (&ue_cntl_delay[(subframe+1)%2],

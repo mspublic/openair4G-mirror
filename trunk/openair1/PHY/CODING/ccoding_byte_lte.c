@@ -37,7 +37,7 @@ ccodelte_encode (unsigned int numbits,
   unsigned char              c, out, first_bit;
   char shiftbit=0;
   unsigned short c16;
-  unsigned short next_last_byte;
+  unsigned short next_last_byte=0;
   unsigned int crc=0;
 
 #ifdef DEBUG_CCODE

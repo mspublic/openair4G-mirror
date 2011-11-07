@@ -48,11 +48,11 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 \param sync_corr_eNb pointer to correlation buffer
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
-int lte_sync_time_eNB(int **rxdata, 
+int lte_sync_time_eNB(s32 **rxdata, 
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      int length,
-		      int* peak_val,
-		      unsigned int* sync_corr_eNb);
+		      u32 length,
+		      u32 *peak_val,
+		      u32 *sync_corr_eNb);
 
 int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
 			   u8 sect_id,
@@ -127,17 +127,12 @@ void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id);
 void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
 		      unsigned char eNB_id);
 
-
-int lte_ul_channel_estimation(int **ul_ch_estimates,
-			      int **ul_ch_estimates_time,
-			      int **ul_ch_estimates_0,
-			      int **ul_ch_estimates_1,
-			      int **rxdataF_ext,
-			      LTE_DL_FRAME_PARMS *frame_parms,
-			      unsigned char l,
-			      unsigned char Ns,
-			      unsigned int N_rb_alloc,
-			      u8 cyclicShift,
+int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
+			      u8 eNB_id,
+			      u8 UE_id,
+			      u8 subframe,
+			      u8 l,
+			      u8 Ns,
 			      u8 cooperation_flag);
 
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,

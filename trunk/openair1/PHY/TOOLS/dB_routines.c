@@ -1,8 +1,8 @@
-
+#include "PHY/defs.h"
 
 // Approximate 10*log10(x) in fixed point : x = 0...(2^32)-1
 
-char dB_table[256] = {
+s8 dB_table[256] = {
    0,
    3,
    5,
@@ -263,10 +263,10 @@ char dB_table[256] = {
 
 
 /*
-char dB_fixed(int x) {
+s8 dB_fixed(int x) {
 
   int i=0,adj=0;
-  char log10=0;
+  s8 log10=0;
     
   // find MSB
   for (i=31;i>=0;i--) {
@@ -294,9 +294,9 @@ char dB_fixed(int x) {
 */
 
 
-char dB_fixed(unsigned int x) {
+s8 dB_fixed(u32 x) {
 
-  char dB_power=0;
+  s8 dB_power=0;
 
 
   if (x==0) {
@@ -318,7 +318,7 @@ char dB_fixed(unsigned int x) {
   return dB_power;
 }
 
-char dB_fixed2(unsigned int x, unsigned int y) {
+s8 dB_fixed2(u32 x, u32 y) {
 
   if ((x>0) && (y>0) )
     if (x>y)
@@ -329,5 +329,6 @@ char dB_fixed2(unsigned int x, unsigned int y) {
     return(127);
   else if (x==0)
     return(-128);
-  
+
+  return(0);
 }

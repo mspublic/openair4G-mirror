@@ -469,7 +469,7 @@ __m128i *tmp_dft12_ptr = &tmp_dft12[0];
 
 
 
-static __m128i tmp[12];
+
 
 #define dft12(x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,y0,y1,y2,y3,y4,y5,y6,y7,y8,y9,y10,y11) \
   bfly4_tw1((x0),(x3),(x6),(x9),tmp,tmp+3,tmp+6,tmp+9);\

@@ -285,6 +285,11 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id) {
     msg("dci_tools.c: print_CQI ue_selected CQI not supported yet!!!\n");
 #endif //DEBUG_UCI
     break;
+  default:
+#ifdef DEBUG_UCI
+    msg("dci_tools.c: print_CQI, unsupported CQI mode (%d)!!!\n",uci_format);
+#endif //DEBUG_UCI
+    break;
   }
 
   /*

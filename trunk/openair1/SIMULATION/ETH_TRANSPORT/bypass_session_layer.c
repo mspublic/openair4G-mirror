@@ -1,6 +1,6 @@
 /*! \file bypass_session_layer.h
 * \brief implementation of emultor tx and rx 
-* \author Navid Nikaein and Raymomd Knopp
+* \author Navid Nikaein and Raymond Knopp
 * \date 2011
 * \version 1.0 
 * \company Eurecom
@@ -57,11 +57,11 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
   eNB_transport_info_t *eNB_info;
   UE_transport_info_t  *UE_info;
   int ue_info_ix, enb_info_ix;
-  int             tmp_byte_count;
+  //  int             tmp_byte_count;
   int             bytes_read = 0;
   int             bytes_data_to_read;
-  int             num_flows;
-  int             current_flow; 
+  //  int             num_flows;
+  //  int             current_flow; 
   int             m_id, n_enb, n_ue, n_dci, total_tbs=0, total_header=0;
   
   pthread_mutex_lock(&emul_low_mutex);
@@ -240,7 +240,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 	}
 	break;
       case RELEASE_TRANSPORT_INFO :
-	Master_list_rx == oai_emulation.info.master_list;
+	Master_list_rx = oai_emulation.info.master_list;
 	LOG_E(EMU, "RX RELEASE_TRANSPORT_INFO\n");
 	  break;
       default:
@@ -311,7 +311,7 @@ void bypass_rx_handler(unsigned int Num_bytes,char *Rx_buffer){
 /******************************************************************************************************/ 
 void  bypass_signal_mac_phy(unsigned int frame, unsigned int last_slot, unsigned int next_slot){
 /******************************************************************************************************/ 
-  char tt=1;   
+//  char tt=1;   
 
   if(Master_list_rx != oai_emulation.info.master_list){
 #ifndef USER_MODE
@@ -355,7 +355,7 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
   unsigned int         num_flows;
   bypass_msg_header_t *messg;
   unsigned int         byte_tx_count;
-  eNB_transport_info_t *eNB_info;
+  //  eNB_transport_info_t *eNB_info;
   int n_enb,n_ue, n_dci,total_tbs=0,total_size=0;
   messg = (bypass_msg_header_t *) (&bypass_tx_buffer[sizeof (bypass_proto2multicast_header_t)]);
   num_flows = 0;

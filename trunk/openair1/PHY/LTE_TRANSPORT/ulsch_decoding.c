@@ -82,7 +82,7 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(u8 Mdlharq,u8 abstraction_flag) {
 void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
 
   unsigned char Mdlharq;
-  unsigned char exit_flag = 0,i,r;
+  unsigned char i;
 
   ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
@@ -122,37 +122,49 @@ u8 extract_cqi_crc(u8 *cqi,u8 CQI_LENGTH) {
 
 }
 
-short dummy_w[8][3*(6144+64)];
+s16 dummy_w[8][3*(6144+64)];
 u8 dummy_w_cc[3*(MAX_CQI_BITS+8+32)];
-short y[6*14*1200];
-char ytag[14*1200];
+s16 y[6*14*1200];
+u8 ytag[14*1200];
+u8 ytag2[6*14*1200];
 
-unsigned int  ulsch_decoding(s16 *ulsch_llr,
-			     LTE_DL_FRAME_PARMS *frame_parms,
-			     LTE_eNB_ULSCH_t *ulsch,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
+			     u8 UE_id,
 			     u8 subframe,
-			     u8 control_only_flag) {
+			     u8 control_only_flag,
+			     u8 Nbundled) {
 
 
+  s16 *ulsch_llr = phy_vars_eNB->lte_eNB_ulsch_vars[UE_id]->llr;
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  LTE_eNB_ULSCH_t *ulsch = phy_vars_eNB->ulsch_eNB[UE_id];
   u8 harq_pid;
   unsigned short nb_rb;
   unsigned int A,E;
   u8 Q_m;
   unsigned int i,q,j;
   int iprime;
-  unsigned int ret,offset;
+  unsigned int ret=0,offset;
   unsigned short iind;
   //  u8 dummy_channel_output[(3*8*block_length)+12];
-  short coded_bits=0;
+
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   u8 crc_type;
   u8 *columnset;
   unsigned int sumKr=0;
   unsigned int Qprime,L,G,Q_CQI,Q_RI,Q_ACK,H,Hprime,Hpp,Cmux,Rmux,Rmux_prime,O_RCC;
-  unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK,len_RI;
+  unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK=0,len_RI=0;
+  u8 q_ACK[MAX_ACK_PAYLOAD],q_RI[MAX_RI_PAYLOAD];
   int metric,metric_new;
   u8 o_flip[8];
+  u32 x1, x2, s=0,g;
+  u8 reset = 1,c,c_prev=0;
+  s16 ys;
+  u32 wACK_idx;
 
+  // x1 is set in lte_gold_generic
+  x2 = ((u32)ulsch->rnti<<14) + ((u32)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
+  
   //  harq_pid = (ulsch->RRCConnRequest_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
   harq_pid = subframe2harq_pid(frame_parms,subframe);
 
@@ -177,12 +189,17 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
   Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   G = nb_rb * (12 * Q_m) * ulsch->Nsymb_pusch;
 
+
 #ifdef DEBUG_ULSCH_DECODING
-  msg("ulsch_decoding: Ndi %d, RV %d, mcs %d, O_RI %d\n",
+  msg("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): Ndi %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+      frame_parms->Nid_cell,ulsch->rnti,x2,
       ulsch->harq_processes[harq_pid]->Ndi,
       ulsch->harq_processes[harq_pid]->rvidx,
       ulsch->harq_processes[harq_pid]->mcs,
-      ulsch->O_RI);
+      ulsch->O_RI,
+      ulsch->O_ACK,
+      G,
+      subframe);
 #endif  
 
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
@@ -210,15 +227,17 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
     sumKr += Kr;
   }
   // Compute Q_ri
-  Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_ri_times8;
 
-  if ((Qprime % (8*sumKr)) > 0)
-    Qprime = 1+(Qprime/(8*sumKr));
-  else
-    Qprime = Qprime/(8*sumKr);
-
-  if (Qprime > 4*nb_rb * 12)
-    Qprime = 4*nb_rb * 12;
+  if (Qprime > 0 ) {
+    if ((Qprime % (8*sumKr)) > 0)
+      Qprime = 1+(Qprime/(8*sumKr));
+    else
+      Qprime = Qprime/(8*sumKr);
+    
+    if (Qprime > 4*nb_rb * 12)
+      Qprime = 4*nb_rb * 12;
+  }
 
   Q_RI = Q_m*Qprime;
   Qprime_RI = Qprime;
@@ -226,33 +245,46 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
 
   // Compute Q_ack
 
-  Qprime = ulsch->O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
-  if ((Qprime % (8*sumKr)) > 0)
-    Qprime = 1+(Qprime/(8*sumKr));
-  else
-    Qprime = Qprime/(8*sumKr);
+  Qprime = ulsch->O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_harqack_times8;
+  if (Qprime > 0) {
+    if ((Qprime % (8*sumKr)) > 0)
+      Qprime = 1+(Qprime/(8*sumKr));
+    else
+      Qprime = Qprime/(8*sumKr);
 
-  if (Qprime > (4*nb_rb * 12))
-    Qprime = 4*nb_rb * 12;
+    if (Qprime > (4*nb_rb * 12))
+      Qprime = 4*nb_rb * 12;
+  }
 
   Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
-
+#ifdef DEBUG_ULSCH_DECODING
+  msg("ulsch_decoding.c: Qprime_ACK %d, Msc_initial %d, Nsymb_initial %d, sumKr %d\n",
+      Qprime_ACK,ulsch->harq_processes[harq_pid]->Msc_initial,ulsch->harq_processes[harq_pid]->Nsymb_initial,sumKr);
+#endif
   // Compute Q_cqi
-  L=8;
+  if (ulsch->Or1 < 12)
+    L=0;
+  else 
+    L=8;
+
   Qprime = (ulsch->Or1 + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
-  if ((Qprime % (8*sumKr)) > 0)
-    Qprime = 1+(Qprime/(8*sumKr));
-  else
-    Qprime = Qprime/(8*sumKr);
+  if (Qprime > 0) { 
+    if ((Qprime % (8*sumKr)) > 0)
+      Qprime = 1+(Qprime/(8*sumKr));
+    else
+      Qprime = Qprime/(8*sumKr);
+  }
 
   G = nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
+ 
 
   if (Qprime > (G - ulsch->O_RI))
     Qprime = G - ulsch->O_RI;
 
   Q_CQI = Q_m * Qprime;
+  //  printf("ulsch_decoding.c: G %d, Q_RI %d, Q_CQI %d (L %d, Or1 %d)\n",G,Q_RI,Q_CQI,L,ulsch->Or1); 
   Qprime_CQI = Qprime;
 
   G = G - Q_RI - Q_CQI;
@@ -270,26 +302,207 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
   
   Cmux       = ulsch->Nsymb_pusch;
   Rmux       = Hpp*Q_m/Cmux;
-  Rmux_prime = Rmux/Q_m;
+  Rmux_prime = Hpp/Cmux;
   
-
+#ifdef DEBUG_ULSCH_DECODING
+  msg("ulsch_decoding.c: G raw %d, Hpp %d, Cmux %d, Rmux %d, Rmux_prime %d\n",G,Hpp,Cmux,Rmux,Rmux_prime);
+#endif
   // Clear "tag" interleaving matrix to allow for CQI/DATA identification
   memset(ytag,0,Cmux*Rmux_prime);
 
 
-  // read in buffer
+  i=0;
+  //  Do RI coding
+  if (ulsch->O_RI == 1) {
+    switch (Q_m) {
+    case 2:
+      q_RI[0] = 0;
+      q_RI[1] = PUSCH_y;
+      len_RI=2;
+      break;
+    case 4:
+      q_RI[0] = 0;
+      q_RI[1] = PUSCH_y;//1;
+      q_RI[2] = PUSCH_x;//o_RI[0];
+      q_RI[3] = PUSCH_x;//1;
+      len_RI=4;
+      break;
+    case 6:
+      q_RI[0] = 0;
+      q_RI[1] = PUSCH_y;//1;
+      q_RI[2] = PUSCH_x;//1;
+      q_RI[3] = PUSCH_x;//ulsch->o_RI[0];
+      q_RI[4] = PUSCH_x;//1;
+      q_RI[5] = PUSCH_x;//1;
+      len_RI=6;
+      break;
+    }
+  }
+  else if (ulsch->O_RI > 1){
+    msg("ulsch_decoding: FATAL, RI cannot be more than 1 bit yet\n");
+    return(-1);
+  }
+
+  // 1-bit ACK/NAK
+  if (ulsch->O_ACK == 1) {
+    switch (Q_m) {
+    case 2:
+      q_ACK[0] = 0;
+      q_ACK[1] = (ulsch->bundling==0)? PUSCH_y : 0;
+      len_ACK = 2;
+      break;
+    case 4:
+      q_ACK[0] = 0;
+      q_ACK[1] = (ulsch->bundling==0)? PUSCH_y : 0;
+      q_ACK[2] = PUSCH_x;
+      q_ACK[3] = PUSCH_x;
+      len_ACK = 4;
+      break;
+    case 6:
+      q_ACK[0] = 0;
+      q_ACK[1] = (ulsch->bundling==0)? PUSCH_y : 0;
+      q_ACK[2] = PUSCH_x;
+      q_ACK[3] = PUSCH_x;
+      q_ACK[4] = PUSCH_x;
+      q_ACK[6] = PUSCH_x;
+      len_ACK = 6;
+      break;
+    }
+  }
+  // two-bit ACK/NAK
+  if (ulsch->O_ACK == 2) {
+    switch (Q_m) {
+    case 2:
+      q_ACK[0] = 0;
+      q_ACK[1] = 0;
+      q_ACK[2] = 0;
+      q_ACK[3] = 0;
+      q_ACK[4] = 0;
+      q_ACK[5] = 0;
+      len_ACK = 6;
+      break;
+    case 4:
+      q_ACK[0]  = 0;
+      q_ACK[1]  = 0;
+      q_ACK[2]  = PUSCH_x;
+      q_ACK[3]  = PUSCH_x;//1;
+      q_ACK[4]  = 0;
+      q_ACK[5]  = 0;
+      q_ACK[6]  = PUSCH_x;
+      q_ACK[7]  = PUSCH_x;//1;
+      q_ACK[8]  = 0;
+      q_ACK[9]  = 0;
+      q_ACK[10] = PUSCH_x;
+      q_ACK[11] = PUSCH_x;//1;
+      len_ACK = 12;
+      break;
+    case 6:
+      q_ACK[0] = 0;
+      q_ACK[1] = 0;
+      q_ACK[2] = PUSCH_x;
+      q_ACK[3] = PUSCH_x;
+      q_ACK[4] = PUSCH_x;
+      q_ACK[5] = PUSCH_x;
+
+      q_ACK[6] = 0;
+      q_ACK[7] = 0;
+      q_ACK[8] = PUSCH_x;
+      q_ACK[9] = PUSCH_x; 
+      q_ACK[10] = PUSCH_x;
+      q_ACK[11] = PUSCH_x;
+
+      q_ACK[12] = 0;
+      q_ACK[13] = 0;
+      q_ACK[14] = PUSCH_x;
+      q_ACK[15] = PUSCH_x;
+      q_ACK[16] = PUSCH_x;
+      q_ACK[17] = PUSCH_x;
+      len_ACK = 18;
+
+      break;
+    }
+  }
+  if (ulsch->O_ACK > 2) {
+    msg("ulsch_coding: FATAL, ACK cannot be more than 2 bits yet\n");
+    return(-1);
+  }
+  // RI BITS 
+  memset(y,LTE_NULL,Q_m*Hpp);
+  memset(ytag2,0,Q_m*Hpp);
+
+
+  if (frame_parms->Ncp == 0)
+    columnset = cs_ri_normal;
+  else
+    columnset = cs_ri_extended;
+  j=0;   
+  for (i=0;i<Qprime_RI;i++) {
+    r = Rmux_prime - 1 - (i>>2);
+    for (q=0;q<Q_m;q++) 
+      ytag2[q+(Q_m*((r*Cmux) + columnset[j]))]  = q_RI[(q+(Q_m*i))%len_RI];
+
+
+    j=(j+3)&3;
+
+  }
+  // HARQ-ACK Bits (Note these overwrite some bits)
+  if (frame_parms->Ncp == 0)
+    columnset = cs_ack_normal;
+  else
+    columnset = cs_ack_extended;
+
   j=0;
-  for (i=0;i<Cmux;i++)
-   for (r=0;r<Rmux_prime;r++)
+  for (i=0;i<Qprime_ACK;i++) {
+    r = Rmux_prime - 1 - (i>>2);
+    for (q=0;q<Q_m;q++) {
+      ytag2[q+(Q_m*((r*Cmux) + columnset[j]))]  = q_ACK[(q+(Q_m*i))%len_ACK];
+    }
+
+#ifdef DEBUG_ULSCH_DECODING
+    msg("ulsch_decoding.c: ACK i %d, r %d, j %d, ColumnSet[j] %d\n",i,r,j,columnset[j]); 
+#endif
+    j=(j+3)&3;
+  }
+
+  // read in buffer and unscramble llrs for everything but placeholder bits
+  // llrs stored per symbol correspond to columns of interleaving matrix
+  i=0;
+  for (j=0;j<Cmux;j++)
+    for (r=0;r<Rmux_prime;r++)
       for (q=0;q<Q_m;q++) {
-	y[q+(Q_m*((r*Cmux)+i))] = ulsch_llr[j++];
-	//		msg("y[%d] = %d\n",q+(Q_m*((r*Cmux)+i)),y[q+(Q_m*((r*Cmux)+i))]);
+
+	if ((i&0x1f)==0) {
+	  s = lte_gold_generic(&x1, &x2, reset);
+	  //	  msg("lte_gold[%d]=%x\n",i,s);
+	  reset = 0;
+	}
+	c = (u8)((s>>(i&0x1f))&1);
+	// if bits are tagged as placeholders (RI,ACK)
+	if (ytag2[q+(Q_m*((r*Cmux)+j))] == PUSCH_y) {
+	  c=c_prev;
+	}
+	else if (ytag2[q+(Q_m*((r*Cmux)+j))] == PUSCH_x) {
+	  c = 0;
+#ifdef DEBUG_ULSCH_DECODING
+	  msg("ulsch_decoding.c: PUSCH_x in row %d, col %d: llr %d\n",r,j,ulsch_llr[i]);
+#endif
+	}
+	c_prev = c;
+#ifdef DEBUG_ULSCH_DECODING
+	msg("llr[%d] = %d (c %d, ytag2 %d) ==> ",i,ulsch_llr[i],c,ytag2[q+(Q_m*((r*Cmux)+j))]);
+#endif
+	// note flipped here for reverse polarity in 3GPP bit mapping
+	y[q+(Q_m*((r*Cmux)+j))] = (c==0) ? -ulsch_llr[i] : ulsch_llr[i];
+	i++;
+#ifdef DEBUG_ULSCH_DECODING
+	msg("%d\n",y[q+(Q_m*((r*Cmux)+j))]);
+#endif
       }
-  if (j!=(H+Q_RI))
-    msg("ulsch_coding.c: Error in input buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
+
+  if (i!=(H+Q_RI))
+    msg("ulsch_decoding.c: Error in input buffer length (j %d, H+Q_RI %d)\n",i,H+Q_RI); 
 
   // HARQ-ACK Bits (LLRs are nulled in overwritten bits after copying HARQ-ACK LLR)
-  r = Rmux_prime-1;
 
   if (frame_parms->Ncp == 0)
     columnset = cs_ack_normal;
@@ -324,8 +537,8 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
       break;
     }
   }
-  else{
-    msg("ulsch_coding: FATAL, ACK cannot be more than 2 bits yet\n");
+  if (ulsch->O_ACK > 2) {
+    msg("ulsch_decoding: FATAL, ACK cannot be more than 2 bits yet\n");
     return(-1);
   }
 
@@ -334,19 +547,20 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
 
 
   for (i=0;i<Qprime_ACK;i++) {
+    r = Rmux_prime -1 - (i>>2);
     for (q=0;q<Q_m;q++) {
       if (y[q+(Q_m*((r*Cmux) + columnset[j]))]!=0)
 	ulsch->q_ACK[(q+(Q_m*i))%len_ACK] += y[q+(Q_m*((r*Cmux) + columnset[j]))];
-      //            msg("ACK %d => %d (%d,%d,%d)\n",(q+(Q_m*i))%len_ACK,ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
+#ifdef DEBUG_ULSCH_DECODING
+      msg("ACK %d => %d (%d,%d,%d)\n",(q+(Q_m*i))%len_ACK,ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
+#endif
       y[q+(Q_m*((r*Cmux) + columnset[j]))]=0;  // NULL LLRs in ACK positions
     }
     j=(j+3)&3;
-    r = Rmux_prime -1 - (i>>2);
   }
 
 
   // RI BITS 
-  r = Rmux_prime-1;
 
   if (ulsch->O_RI == 1) {
     switch (Q_m) {
@@ -361,7 +575,8 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
       break;
     }
   }
-  else {
+
+  if (ulsch->O_RI > 1) {
     msg("ulsch_decoding: FATAL, RI cannot be more than 1 bit yet\n");
     return(-1);
   }
@@ -375,48 +590,80 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
     columnset = cs_ri_extended;
   j=0;   
   for (i=0;i<Qprime_RI;i++) {
+    r = Rmux_prime -1 - (i>>2);
     for (q=0;q<Q_m;q++) 
       ulsch->q_RI[(q+(Q_m*i))%len_RI] += y[q+(Q_m*((r*Cmux) + columnset[j]))];
     ytag[(r*Cmux) + columnset[j]] = LTE_NULL;
     j=(j+3)&3;
-    r = Rmux_prime -1 - (i>>2);
   }
 
   // CQI and Data bits
   j=0;
+  r=0;
   for (i=0,iprime=-Qprime_CQI;i<Hprime;i++,iprime++) {
-    while (ytag[j]==LTE_NULL)
+
+    while (ytag[(r*Cmux)+j]==LTE_NULL) {
+#ifdef DEBUG_ULSCH_DECODING	
+      msg("ulsch_decoding.c: r %d, j %d: LTE_NULL\n",r,j);
+#endif
       j++;
+      if (j==Cmux) {
+	j=0;
+	r++;
+      }
+    }
+    
     if (i<Qprime_CQI) {
       
       for (q=0;q<Q_m;q++) {
-	
-	if (y[q+(Q_m*j)]>127)
+	ys = y[q+(Q_m*((r*Cmux)+j))];
+	if (ys>127)
 	  ulsch->q[q+(Q_m*i)] = 127;
-	else if (y[q+(Q_m*j)]<-128)
+	else if (ys<-128)
 	  ulsch->q[q+(Q_m*i)] = -128;
 	else 
-	  ulsch->q[q+(Q_m*i)] = y[q+(Q_m*j)];
-	
-	//		msg("CQI %d, y[%d] %d\n",q+(Q_m*i),q+(Q_m*j),y[q+(Q_m*j)]);
+	  ulsch->q[q+(Q_m*i)] = ys;
+#ifdef DEBUG_ULSCH_DECODING	
+	msg("ulsch_decoding.c: CQI %d, r %d, j %d, y[%d] %d\n",q+(Q_m*i),r,j, q+(Q_m*((r*Cmux) + j)),ys);
+#endif
       }
     } 
     else {
       for (q=0;q<Q_m;q++) {
-	ulsch->e[q+(Q_m*iprime)] = y[q+(Q_m*j)];
-	//		msg("e %d, y[%d] %d\n",q+(Q_m*iprime),q+(Q_m*j),ulsch->e[q+(Q_m*iprime)]);
+	g = q+(Q_m*iprime);
+	ulsch->e[g] = y[q+(Q_m*((r*Cmux)+j))];
+#ifdef DEBUG_ULSCH_DECODING	
+	msg("ulsch_decoding.c: e %d, r %d, j %d, y[%d] %d\n",g,r,j,q+(Q_m*((r*Cmux) + j)),y[q+(Q_m*((r*Cmux)+j))]);
+#endif
       }
     }
-    
     j++;
+    if (j==Cmux) {
+      j=0;
+      r++;
+    }
   }
 
 
   // Do CQI/RI/HARQ-ACK Decoding first and pass to MAC
 
   // HARQ-ACK 
+  wACK_idx = (ulsch->bundling==0) ? 4 : ((Nbundled-1)&3);
+#ifdef DEBUG_ULSCH_DECODING
+  msg("ulsch_decoding.c: Bundling %d, Nbundled %d, wACK_idx %d\n",
+      ulsch->bundling,Nbundled,wACK_idx);
+#endif
   if (ulsch->O_ACK == 1) {
-      ulsch->o_ACK[0] = ((ulsch->q_ACK[0] + ulsch->q_ACK[Q_m/2]) > 0) ? 1 : 0; 
+      ulsch->q_ACK[0] *= wACK_RX[wACK_idx][0]; 
+      ulsch->q_ACK[0] += (ulsch->bundling==0) ? ulsch->q_ACK[1]*wACK_RX[wACK_idx][0] : ulsch->q_ACK[1]*wACK_RX[wACK_idx][1];
+  
+      if (ulsch->q_ACK[0] < 0)
+	ulsch->o_ACK[0] = 0;
+      else
+	ulsch->o_ACK[0] = 1;
+#ifdef DEBUG_ULSCH_DECODING
+      msg("ulsch_decoding.c: ulsch_q_ACK[0] %d (%d,%d)\n",ulsch->q_ACK[0],wACK_RX[wACK_idx][0],wACK_RX[wACK_idx][1]);
+#endif
   }
   if (ulsch->O_ACK == 2) {
     switch (Q_m) {
@@ -464,10 +711,6 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
       metric = metric_new;
     }
   }
-  else{
-    msg("ulsch_decoding: FATAL, ACK cannot be more than 2 bits yet\n");
-    return(-1);
-  }
 
 #ifdef DEBUG_ULSCH_DECODING
   for (i=0;i<ulsch->O_ACK;i++)
@@ -476,78 +719,78 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
 
   // RI
 
-  if (ulsch->O_RI == 1) {
-      ulsch->o_RI[0] = ((ulsch->q_RI[0] + ulsch->q_RI[Q_m/2]) > 0) ? 1 : 0; 
-  }
-  else {
-    msg("ulsch_decoding: FATAL, RI cannot be more than 1 bit yet\n");
-    return(-1);
+  if ((ulsch->O_RI == 1) && (Qprime_RI > 0)) {
+    ulsch->o_RI[0] = ((ulsch->q_RI[0] + ulsch->q_RI[Q_m/2]) > 0) ? 1 : 0; 
   }
 #ifdef DEBUG_ULSCH_DECODING
 
-  for (i=0;i<2*ulsch->O_RI;i++)
-    msg("ulsch_decoding: q_RI[%d] %d\n",i,ulsch->q_RI[i]);
-
-  for (i=0;i<ulsch->O_RI;i++)
-    msg("ulsch_decoding: O_RI[%d] %d\n",i,ulsch->o_RI[i]);
+  if (Qprime_RI > 0) {
+    for (i=0;i<2*ulsch->O_RI;i++)
+      msg("ulsch_decoding: q_RI[%d] %d\n",i,ulsch->q_RI[i]);
+  }
+  
+  if (Qprime_CQI > 0) {
+    for (i=0;i<ulsch->O_RI;i++)
+      msg("ulsch_decoding: O_RI[%d] %d\n",i,ulsch->o_RI[i]);
+  }
 #endif
 
 
   // CQI
 
-  memset((void *)&dummy_w_cc[0],0,3*(ulsch->Or1+8+32));
+  if (Qprime_CQI>0) {
+    memset((void *)&dummy_w_cc[0],0,3*(ulsch->Or1+8+32));
+    
+    O_RCC = generate_dummy_w_cc(ulsch->Or1+8,
+				&dummy_w_cc[0]);
+    
+    
+    lte_rate_matching_cc_rx(O_RCC,
+			    Q_CQI,
+			    ulsch->o_w,
+			    dummy_w_cc,
+			    ulsch->q);
+    
+    sub_block_deinterleaving_cc((unsigned int)(ulsch->Or1+8),
+				&ulsch->o_d[96], 
+				&ulsch->o_w[0]); 
+    
+    memset(o_flip,0,1+(ulsch->Or1/8));
+    phy_viterbi_lte_sse2(ulsch->o_d+96,o_flip,8+ulsch->Or1);
+    
+    if (extract_cqi_crc(o_flip,ulsch->Or1) == (crc8(o_flip,ulsch->Or1)>>24))
+      ulsch->cqi_crc_status = 1;
+    else
+      ulsch->cqi_crc_status = 0;
 
-  O_RCC = generate_dummy_w_cc(ulsch->Or1+8,
-			      (char*) &dummy_w_cc[0]);
-  
-
-
-  lte_rate_matching_cc_rx(O_RCC,
-			  Q_CQI,
-			  ulsch->o_w,
-			  dummy_w_cc,
-			  ulsch->q);
-
-  sub_block_deinterleaving_cc((unsigned int)(ulsch->Or1+8), 
-			      &ulsch->o_d[96], 
-			      &ulsch->o_w[0]); 
- 
-  memset(o_flip,0,1+(ulsch->Or1/8));
-  phy_viterbi_lte_sse2(ulsch->o_d+96,o_flip,8+ulsch->Or1);
-
-  if (extract_cqi_crc(o_flip,ulsch->Or1) == (crc8(o_flip,ulsch->Or1)>>24))
-    ulsch->cqi_crc_status = 1;
-  else
-    ulsch->cqi_crc_status = 0;
-
-  if (ulsch->Or1<=32) {
-    ulsch->o[3] = o_flip[0] ;
-    ulsch->o[2] = o_flip[1] ;
-    ulsch->o[1] = o_flip[2] ;
-    ulsch->o[0] = o_flip[3] ;   
-  }
-  else {
-    ulsch->o[7] = o_flip[0] ;
-    ulsch->o[6] = o_flip[1] ;
-    ulsch->o[5] = o_flip[2] ;
-    ulsch->o[4] = o_flip[3] ;   
-    ulsch->o[3] = o_flip[4] ;
-    ulsch->o[2] = o_flip[5] ;
-    ulsch->o[1] = o_flip[6] ;
-    ulsch->o[0] = o_flip[7] ;   
-
-  }
-
+    if (ulsch->Or1<=32) {
+      ulsch->o[3] = o_flip[0] ;
+      ulsch->o[2] = o_flip[1] ;
+      ulsch->o[1] = o_flip[2] ;
+      ulsch->o[0] = o_flip[3] ;   
+    }
+    else {
+      ulsch->o[7] = o_flip[0] ;
+      ulsch->o[6] = o_flip[1] ;
+      ulsch->o[5] = o_flip[2] ;
+      ulsch->o[4] = o_flip[3] ;   
+      ulsch->o[3] = o_flip[4] ;
+      ulsch->o[2] = o_flip[5] ;
+      ulsch->o[1] = o_flip[6] ;
+      ulsch->o[0] = o_flip[7] ;   
+      
+    }
+    
 #ifdef DEBUG_ULSCH_DECODING
-  msg("ulsch_decoding: Or1=%d\n",ulsch->Or1);
-  for (i=0;i<1+((8+ulsch->Or1)/8);i++)
-    msg("ulsch_decoding: O[%d] %d\n",i,ulsch->o[i]);
-  if (ulsch->cqi_crc_status == 1)
-    msg("RX CQI CRC OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
-  else
-    msg("RX CQI CRC NOT OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
+    msg("ulsch_decoding: Or1=%d\n",ulsch->Or1);
+    for (i=0;i<1+((8+ulsch->Or1)/8);i++)
+      msg("ulsch_decoding: O[%d] %d\n",i,ulsch->o[i]);
+    if (ulsch->cqi_crc_status == 1)
+      msg("RX CQI CRC OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
+    else
+      msg("RX CQI CRC NOT OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
 #endif
-  
+  }
 
   //  return(0);
   // Do PUSCH Decoding
@@ -582,7 +825,7 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
     
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
-							       (char*)&dummy_w[r][0],
+							       (u8*)&dummy_w[r][0],
 							       (r==0) ? ulsch->harq_processes[harq_pid]->F : 0);
 
 #ifdef DEBUG_ULSCH_DECODING    
@@ -708,7 +951,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 UE_index) {
 
   u8 UE_id;
-  u16 rnti,i;
+  u16 rnti;
   u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,subframe);
   
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;

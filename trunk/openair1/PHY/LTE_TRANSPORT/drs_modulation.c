@@ -4,17 +4,16 @@
 #include <xmmintrin.h>
 //#define DEBUG_DRS
 
-int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
-		       mod_sym_t *txdataF,
+int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
+		       u8 eNB_id,
 		       short amp,
-		       unsigned int sub_frame_number,
+		       unsigned int subframe,
 		       unsigned int first_rb,
-		       unsigned int nb_rb,
-		       u8 cyclic_shift) {
+		       unsigned int nb_rb) {
 
-  unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
-  unsigned short * Msc_idx_ptr;
-  int sub_frame_offset;
+  u16 k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
+  u16 * Msc_idx_ptr;
+  int subframe_offset;
 
   //u32 phase_shift; // phase shift for cyclic delay in DM RS
   //u8 alpha_ind;
@@ -22,16 +21,34 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
   s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
   s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
- 
-  //phase_shift = (2*M_PI*cyclic_shift)/12;
+  u8 cyclic_shift,cyclic_shift0,cyclic_shift1; 
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0];
+  u32 u,v,alpha_ind;
+  u32 u0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
+  u32 u1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+  u32 v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+  u32 v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+  s32 ref_re,ref_im;
+
+  cyclic_shift0 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+		   phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2 +
+		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]) % 12;
+
+  cyclic_shift1 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+		   phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2 +
+		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]) % 12;
+
+  //     cyclic_shift0 = 0;
+  //      cyclic_shift1 = 0;
   Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE
-  Msc_idx_ptr = (unsigned short*) bsearch(&Msc_RS, dftsizes, 33, sizeof(unsigned short), compareints);
+  Msc_idx_ptr = (u16*) bsearch(&Msc_RS, dftsizes, 33, sizeof(u16), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
-    msg("generate_drs_puch: index for Msc_RS=%d not found\n",Msc_RS);
+    msg("generate_drs_pusch: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
 #else
@@ -39,119 +56,121 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
     if (Msc_RS==dftsizes[b])
       Msc_RS_idx = b;
 #endif
-  //msg("Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
+#ifdef DEBUG_DRS
+  msg("[PHY] drs_modulation: Msc_RS = %d, Msc_RS_idx = %d,cyclic_shift %d, u0 %d, v0 %d, u1 %d, v1 %d,cshift0 %d,cshift1 %d\n",Msc_RS, Msc_RS_idx,cyclic_shift,u0,v0,u1,v1,cyclic_shift0,cyclic_shift1);
 
-  for (l = (3 - frame_parms->Ncp); l<frame_parms->symbols_per_tti; l += (7 - frame_parms->Ncp)) {
+#endif
 
-    drs_offset = 0;
+
+  for (l = (3 - frame_parms->Ncp),u=u0,v=v0,cyclic_shift=cyclic_shift0; 
+       l<frame_parms->symbols_per_tti; 
+       l += (7 - frame_parms->Ncp),u=u1,v=v1,cyclic_shift=cyclic_shift1) {
+
+    drs_offset = 0;  //  msg("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
+
 
 #ifdef IFFT_FPGA_UE
     re_offset = frame_parms->N_RB_DL*12/2;
-    sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
-    symbol_offset = sub_frame_offset + frame_parms->N_RB_UL*12*l;
+    sub_frame_offset = subframe*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
+    symbol_offset = subframe_offset + frame_parms->N_RB_UL*12*l;
 #else
     re_offset = frame_parms->first_carrier_offset;
-    sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
-    symbol_offset = sub_frame_offset + frame_parms->ofdm_symbol_size*l;
+    subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
+    symbol_offset = subframe_offset + frame_parms->ofdm_symbol_size*l;
 #endif
     
 #ifdef DEBUG_DRS
-    debug_msg("generate_drs_puch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,sub_frame_offset,cyclic_shift);
+    msg("generate_drs_pusch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,subframe_offset,cyclic_shift);
 #endif
-
+    alpha_ind = 0;
     for (rb=0;rb<frame_parms->N_RB_UL;rb++) {
 
       if ((rb >= first_rb) && (rb<(first_rb+nb_rb))) {
 
 #ifdef DEBUG_DRS	
-	msg("generate_drs_puch: doing RB %d, re_offset=%d, drs_offset=%d\n",rb,re_offset,drs_offset);
+	msg("generate_drs_pusch: doing RB %d, re_offset=%d, drs_offset=%d,cyclic shift %d\n",rb,re_offset,drs_offset,cyclic_shift);
 #endif
 
 #ifdef IFFT_FPGA_UE
-	if(cyclic_shift == 0)
-	  {
-	    for (k=0;k<12;k++) {
-	      if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
-	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-		txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
-	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
-	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+	if (cyclic_shift == 0) {
+	  for (k=0;k<12;k++) {
+	    if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+	      txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+	    else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+	      txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+	    else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+	      txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+	    else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+	      txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+	    re_offset++;
+	    drs_offset++;
+	    if (re_offset >= frame_parms->N_RB_UL*12)
+	      re_offset=0;
+	  }
+	}
+	else if(cyclic_shift == 6 ) {
+	  for (k=0;k<12;k++) {
+	    if(k%2 == 0) {
+	      if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
 		txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
-	      re_offset++;
-	      drs_offset++;
-	      if (re_offset >= frame_parms->N_RB_UL*12)
-		re_offset=0;
+	      else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+	      else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+	      else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
 	    }
-	  }
-	else if(cyclic_shift == 6 )
-	  {
-	    for (k=0;k<12;k++) {
-	      if(k%2 == 0)
-		{
-		  if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
-		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
-		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
-		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
-		}
-	      else
-		{
-		  if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
-		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
-		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
-		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
-		}
-
-	      re_offset++;
-	      drs_offset++;
-	      if (re_offset >= frame_parms->N_RB_UL*12)
-		re_offset=0;
+	    else {
+	      if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+	      else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+	      else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+	      else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
 	    }
-	  }
-#else
-	for (k=0;k<12;k++) {
-	  if(cyclic_shift == 0){
-	    ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
-	    ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
 	    
+	    re_offset++;
+	    drs_offset++;
+	    if (re_offset >= frame_parms->N_RB_UL*12)
+	      re_offset=0;
 	  }
-	  /*
-	  else if(cyclic_shift == 6)
-	    {
-	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = pow(-1,k+1) * (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
-	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = pow(-1,k+1) * (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
+	}
+#else  //IFFT_FPGA_UE
 
-	      }
-	  */
+	for (k=0;k<12;k++) {
+	  ref_re = (s32) ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1];
+	  ref_im = (s32) ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1];
+
+	  ((s16*) txdataF)[2*(symbol_offset + re_offset)]   = (s16) (((ref_re*alpha_re[alpha_ind]) - 
+								      (ref_im*alpha_im[alpha_ind]))>>15);
+	  ((s16*) txdataF)[2*(symbol_offset + re_offset)+1] = (s16) (((ref_re*alpha_im[alpha_ind]) + 
+								      (ref_im*alpha_re[alpha_ind]))>>15);
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)]*(s32)amp)>>15);
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)+1]*(s32)amp)>>15);
+
 	  
-	  else if(cyclic_shift == 6) // Cyclic Shift to DMRS
-	    {
-	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = 
-		(short)	(((((int) (k%2 == 1? 1:-1) * (int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] - 
-			    (int) (k%2 == 1? 1:-1) * (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15) *
-			  ((int) amp))>>15);
-	      
-	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1]   = 
-		(short) (((((int) (k%2 == 1? 1:-1) * (int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] + 
-			    (int) (k%2 == 1? 1:-1) * (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15) *
-			  ((int) amp))>>15);
-	    }
+	  alpha_ind = (alpha_ind + cyclic_shift);
+	  if (alpha_ind > 11)
+	    alpha_ind-=12;
+      
+#ifdef DEBUG_DRS
+	  msg("symbol_offset %d, alpha_ind %d , re_offset %d : (%d,%d)\n",
+	      symbol_offset,
+	      alpha_ind,
+	      re_offset,
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)],
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1]);
+	  
+#endif  // DEBUG_DRS
 	  re_offset++;
 	  drs_offset++;
 	  if (re_offset >= frame_parms->ofdm_symbol_size)
 	    re_offset = 0;
 	}
-	
-#endif
+    
+#endif // IFFT_FPGA_UE
       }
       else {
 	re_offset+=12; // go to next RB
@@ -175,7 +194,6 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
   }
-  
   return(0);
 }
 

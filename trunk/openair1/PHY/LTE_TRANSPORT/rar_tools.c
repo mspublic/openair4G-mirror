@@ -50,7 +50,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 
   
   ulsch->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1);
-  
+  ulsch->rnti = rar->t_crnti;  
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     ulsch->harq_processes[harq_pid]->status = ACTIVE;
     ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -128,7 +128,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
       ulsch->o_RI[0]                             = 0;
     }
 
-
+    ulsch->uci_format = HLC_subband_cqi_nopmi;
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
     if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
@@ -140,6 +140,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->beta_offset_harqack_times8              = 16;
     
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1);
+    ulsch->rnti = rar->t_crnti;  
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;

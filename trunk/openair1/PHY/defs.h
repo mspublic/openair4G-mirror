@@ -179,6 +179,9 @@ typedef struct
   u8 transmission_mode[NUMBER_OF_UE_MAX];
 
 
+  // Pointers for active physicalConfigDedicated to be applied in current subframe
+  struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
+  
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
 

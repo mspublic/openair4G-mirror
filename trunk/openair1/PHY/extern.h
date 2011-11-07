@@ -63,5 +63,9 @@ extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 #endif
 
+extern double sinr_bler_map[MCS_COUNT][2][9];
+
+extern double beta_dlsch[MCS_COUNT];
+
 #endif /*__PHY_EXTERN_H__ */
  

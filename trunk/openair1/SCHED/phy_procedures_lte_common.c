@@ -93,7 +93,7 @@ void get_RRCConnReq_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 u8 get_RRCConnReq_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
 			   unsigned char current_subframe) {
 
-  u8 ul_subframe;
+  u8 ul_subframe=0;
 
   if (frame_parms->frame_type ==0) {
     ul_subframe = (current_subframe-4)%10;
@@ -409,7 +409,7 @@ LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
     msg("get_eNB_UE_stats: UE with rnti %d not found\n",rnti);
     return NULL;
   }
-  return(&PHY_vars_eNB_g[Mod_id]->eNB_UE_stats[UE_id]);
+  return(&PHY_vars_eNB_g[Mod_id]->eNB_UE_stats[(u32)UE_id]);
 }
 
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {

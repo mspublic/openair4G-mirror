@@ -5,11 +5,11 @@ static  __m128i alpha_128 __attribute__ ((aligned(16)));
 static  __m128i shift     __attribute__ ((aligned(16)));
 
 
-void multadd_complex_vector_real_scalar(short *x,
-					short alpha,
-					short *y,
-					unsigned char zero_flag,
-					unsigned int N) {
+void multadd_complex_vector_real_scalar(s16 *x,
+					s16 alpha,
+					s16 *y,
+					u8 zero_flag,
+					u32 N) {
 
   __m128i alpha_128,*x_128=(__m128i*)x,*y_128=(__m128i*)y;
   int n;
@@ -30,12 +30,12 @@ void multadd_complex_vector_real_scalar(short *x,
   _m_empty();
 
 }
-void multadd_real_vector_complex_scalar(short *x,
-					short *alpha,
-					short *y,
-					unsigned int N) {
+void multadd_real_vector_complex_scalar(s16 *x,
+					s16 *alpha,
+					s16 *y,
+					u32 N) {
 
-  unsigned int i;
+  u32 i;
 
   // do 8 multiplications at a time
   __m128i alpha_r_128,alpha_i_128,yr,yi,*x_128=(__m128i*)x,*y_128=(__m128i*)y;
@@ -70,12 +70,12 @@ void multadd_real_vector_complex_scalar(short *x,
 
 }
 
-int rotate_cpx_vector(short *x, 
-		      short *alpha, 
-		      short *y, 
-		      unsigned int N, 
-		      unsigned short output_shift,
-		      unsigned char format)
+int rotate_cpx_vector(s16 *x, 
+		      s16 *alpha, 
+		      s16 *y, 
+		      u32 N, 
+		      u16 output_shift,
+		      u8 format)
 {
   // Multiply elementwise two complex vectors of N elements
   // x        - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -91,9 +91,9 @@ int rotate_cpx_vector(short *x,
   // output_shift - shift at output to return in Q1.15
   // format - 0 means alpha is in shuffled format, 1 means x is in shuffled format            
 
-  unsigned int i;                 // loop counter
+  u32 i;                 // loop counter
 
-  register __m128i m0,m1,m2;
+  register __m128i m0,m1;
 
   //    short *temps;
   //    int *tempd;
@@ -118,24 +118,24 @@ int rotate_cpx_vector(short *x,
   x_128 = (__m128i *)&x[0];
 
   if (format==0) {  // alpha is in shuffled format for complex multiply
-    ((short *)&alpha_128)[0] = alpha[0];
-    ((short *)&alpha_128)[1] = -alpha[1];
-    ((short *)&alpha_128)[2] = alpha[1];
-    ((short *)&alpha_128)[3] = alpha[0];
-    ((short *)&alpha_128)[4] = alpha[0];
-    ((short *)&alpha_128)[5] = -alpha[1];
-    ((short *)&alpha_128)[6] = alpha[1];
-    ((short *)&alpha_128)[7] = alpha[0];
+    ((s16 *)&alpha_128)[0] = alpha[0];
+    ((s16 *)&alpha_128)[1] = -alpha[1];
+    ((s16 *)&alpha_128)[2] = alpha[1];
+    ((s16 *)&alpha_128)[3] = alpha[0];
+    ((s16 *)&alpha_128)[4] = alpha[0];
+    ((s16 *)&alpha_128)[5] = -alpha[1];
+    ((s16 *)&alpha_128)[6] = alpha[1];
+    ((s16 *)&alpha_128)[7] = alpha[0];
   }
   else { // input is in shuffled format for complex multiply
-    ((short *)&alpha_128)[0] = alpha[0];
-    ((short *)&alpha_128)[1] = alpha[1];
-    ((short *)&alpha_128)[2] = alpha[0];
-    ((short *)&alpha_128)[3] = alpha[1];
-    ((short *)&alpha_128)[4] = alpha[0];
-    ((short *)&alpha_128)[5] = alpha[1];
-    ((short *)&alpha_128)[6] = alpha[0];
-    ((short *)&alpha_128)[7] = alpha[1];
+    ((s16 *)&alpha_128)[0] = alpha[0];
+    ((s16 *)&alpha_128)[1] = alpha[1];
+    ((s16 *)&alpha_128)[2] = alpha[0];
+    ((s16 *)&alpha_128)[3] = alpha[1];
+    ((s16 *)&alpha_128)[4] = alpha[0];
+    ((s16 *)&alpha_128)[5] = alpha[1];
+    ((s16 *)&alpha_128)[6] = alpha[0];
+    ((s16 *)&alpha_128)[7] = alpha[1];
   }
   y_128 = (__m128i *)&y[0];
 
@@ -150,7 +150,7 @@ int rotate_cpx_vector(short *x,
     /*
         temps = (short *)x_128;
         printf("x1 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
-        temps = (short *)&alpha_128;
+        temps = (s16 *)&alpha_128;
         printf("alpha : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
     */
 
@@ -175,7 +175,7 @@ int rotate_cpx_vector(short *x,
     m0 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
     y_128[0] = _mm_unpacklo_epi32(m0,m0);        // 1- pack in a 128 bit register [re im re im]
 
-    //    temps = (short *)&y_128[0];
+    //    temps = (s16 *)&y_128[0];
     //    printf("y0 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
 
 
@@ -226,29 +226,29 @@ int rotate_cpx_vector(short *x,
       //      print_shorts(y_128[0],"y_128[0]=");
       y_128[0] = _mm_shufflelo_epi16(y_128[0],0x1e);
       y_128[0] = _mm_shufflehi_epi16(y_128[0],0x1e);
-      ((short*)&y_128[0])[1] = -((short*)&y_128[0])[1];
-      ((short*)&y_128[0])[5] = -((short*)&y_128[0])[5];
+      ((s16*)&y_128[0])[1] = -((s16*)&y_128[0])[1];
+      ((s16*)&y_128[0])[5] = -((s16*)&y_128[0])[5];
       //      print_shorts(y_128[0],"y_128[0]="); 
 
       //      print_shorts(y_128[1],"y_128[1]="); 
       y_128[1] = _mm_shufflelo_epi16(y_128[1],0x1e);
       y_128[1] = _mm_shufflehi_epi16(y_128[1],0x1e);
-      ((short*)&y_128[1])[1] = -((short*)&y_128[1])[1];
-      ((short*)&y_128[1])[5] = -((short*)&y_128[1])[5];
+      ((s16*)&y_128[1])[1] = -((s16*)&y_128[1])[1];
+      ((s16*)&y_128[1])[5] = -((s16*)&y_128[1])[5];
       //      print_shorts(y_128[1],"y_128[1]="); 
 
       //      print_shorts(y_128[2],"y_128[2]="); 
       y_128[2] = _mm_shufflelo_epi16(y_128[2],0x1e);
       y_128[2] = _mm_shufflehi_epi16(y_128[2],0x1e);
-      ((short*)&y_128[2])[1] = -((short*)&y_128[2])[1];
-      ((short*)&y_128[2])[5] = -((short*)&y_128[2])[5];
+      ((s16*)&y_128[2])[1] = -((s16*)&y_128[2])[1];
+      ((s16*)&y_128[2])[5] = -((s16*)&y_128[2])[5];
       //      print_shorts(y_128[2],"y_128[2]="); 
 
       //      print_shorts(y_128[3],"y_128[3]="); 
       y_128[3] = _mm_shufflelo_epi16(y_128[3],0x1e);
       y_128[3] = _mm_shufflehi_epi16(y_128[3],0x1e);
-      ((short*)&y_128[3])[1] = -((short*)&y_128[3])[1];
-      ((short*)&y_128[3])[5] = -((short*)&y_128[3])[5];
+      ((s16*)&y_128[3])[1] = -((s16*)&y_128[3])[1];
+      ((s16*)&y_128[3])[5] = -((s16*)&y_128[3])[5];
       //      print_shorts(y_128[3],"y_128[3]="); 
 
     }
@@ -265,12 +265,12 @@ int rotate_cpx_vector(short *x,
   return(0);
 }
 
-int rotate_cpx_vector2(short *x, 
-                       short *alpha, 
-                       short *y, 
-                       unsigned int N, 
-                       unsigned short output_shift,
-		       unsigned char format)
+int rotate_cpx_vector2(s16 *x, 
+                       s16 *alpha, 
+                       s16 *y, 
+                       u32 N, 
+                       u16 output_shift,
+		       u8 format)
 {
   // Multiply elementwise two complex vectors of N elements
   // x        - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -286,18 +286,14 @@ int rotate_cpx_vector2(short *x,
   // log2_amp - increase the output amplitude by a factor 2^log2_amp (default is 0)
   //            WARNING: log2_amp>0 can cause overflow!!
 
-  unsigned int i;                 // loop counter
+  u32 i;                 // loop counter
 
-  register __m128i m0,m1,m2;
-
-    short *temps;
-    int *tempd;
-
+  register __m128i m0,m1;
 
 
   __m128i *x_128; 
   __m128i *y_128; 
-    __m128i temp;
+
   
     /*      
   printf("rotate_cpx_vector2: %x,%x,%x,%d,%d\n",
@@ -313,24 +309,24 @@ int rotate_cpx_vector2(short *x,
   x_128 = (__m128i *)&x[0];
 
   if (format==0) {  // alpha is in shuffled format for complex multiply
-    ((short *)&alpha_128)[0] = alpha[0];
-    ((short *)&alpha_128)[1] = -alpha[1];
-    ((short *)&alpha_128)[2] = alpha[1];
-    ((short *)&alpha_128)[3] = alpha[0];
-    ((short *)&alpha_128)[4] = alpha[0];
-    ((short *)&alpha_128)[5] = -alpha[1];
-    ((short *)&alpha_128)[6] = alpha[1];
-    ((short *)&alpha_128)[7] = alpha[0];
+    ((s16 *)&alpha_128)[0] = alpha[0];
+    ((s16 *)&alpha_128)[1] = -alpha[1];
+    ((s16 *)&alpha_128)[2] = alpha[1];
+    ((s16 *)&alpha_128)[3] = alpha[0];
+    ((s16 *)&alpha_128)[4] = alpha[0];
+    ((s16 *)&alpha_128)[5] = -alpha[1];
+    ((s16 *)&alpha_128)[6] = alpha[1];
+    ((s16 *)&alpha_128)[7] = alpha[0];
   }
   else { // input is in shuffled format for complex multiply
-    ((short *)&alpha_128)[0] = alpha[0];
-    ((short *)&alpha_128)[1] = alpha[1];
-    ((short *)&alpha_128)[2] = alpha[0];
-    ((short *)&alpha_128)[3] = alpha[1];
-    ((short *)&alpha_128)[4] = alpha[0];
-    ((short *)&alpha_128)[5] = alpha[1];
-    ((short *)&alpha_128)[6] = alpha[0];
-    ((short *)&alpha_128)[7] = alpha[1];
+    ((s16 *)&alpha_128)[0] = alpha[0];
+    ((s16 *)&alpha_128)[1] = alpha[1];
+    ((s16 *)&alpha_128)[2] = alpha[0];
+    ((s16 *)&alpha_128)[3] = alpha[1];
+    ((s16 *)&alpha_128)[4] = alpha[0];
+    ((s16 *)&alpha_128)[5] = alpha[1];
+    ((s16 *)&alpha_128)[6] = alpha[0];
+    ((s16 *)&alpha_128)[7] = alpha[1];
   }
 
   y_128 = (__m128i *)&y[0];
@@ -375,8 +371,8 @@ int rotate_cpx_vector2(short *x,
       //      print_shorts(y_128[0],"y_128[0]=");
       y_128[i] = _mm_shufflelo_epi16(y_128[i],0x1e);
       y_128[i] = _mm_shufflehi_epi16(y_128[i],0x1e);
-      ((short*)&y_128[i])[1] = -((short*)&y_128[i])[1];
-      ((short*)&y_128[i])[5] = -((short*)&y_128[i])[5];
+      ((s16*)&y_128[i])[1] = -((s16*)&y_128[i])[1];
+      ((s16*)&y_128[i])[5] = -((s16*)&y_128[i])[5];
       //      print_shorts(y_128[0],"y_128[0]="); 
 
     }
@@ -391,11 +387,11 @@ int rotate_cpx_vector2(short *x,
   return(0);
 }
 
-int rotate_cpx_vector_norep(short *x, 
-			    short *alpha, 
-			    short *y, 
-			    unsigned int N, 
-			    unsigned short output_shift)
+int rotate_cpx_vector_norep(s16 *x, 
+			    s16 *alpha, 
+			    s16 *y, 
+			    u32 N, 
+			    u16 output_shift)
 {
   // Multiply elementwise two complex vectors of N elements
   // x        - input 1    in the format  |Re0  Im0 |,......,|Re(N-1) Im(N-1)|
@@ -411,11 +407,11 @@ int rotate_cpx_vector_norep(short *x,
   // log2_amp - increase the output amplitude by a factor 2^log2_amp (default is 0)
   //            WARNING: log2_amp>0 can cause overflow!!
 
-  unsigned int i;                 // loop counter
+  u32 i;                 // loop counter
 
   register __m128i m0,m1,m2,m3;
 
-  //  short *temps;
+  //  s16 *temps;
   //  int *tempd;
 
   int *xd;
@@ -428,14 +424,14 @@ int rotate_cpx_vector_norep(short *x,
   xd = (int *) x;
   y_128 = (__m128i *) y;
 
-  ((short *)&alpha_128)[0] = alpha[0];
-  ((short *)&alpha_128)[1] = -alpha[1];
-  ((short *)&alpha_128)[2] = alpha[1];
-  ((short *)&alpha_128)[3] = alpha[0];
-  ((short *)&alpha_128)[4] = alpha[0];
-  ((short *)&alpha_128)[5] = -alpha[1];
-  ((short *)&alpha_128)[6] = alpha[1];
-  ((short *)&alpha_128)[7] = alpha[0];
+  ((s16 *)&alpha_128)[0] = alpha[0];
+  ((s16 *)&alpha_128)[1] = -alpha[1];
+  ((s16 *)&alpha_128)[2] = alpha[1];
+  ((s16 *)&alpha_128)[3] = alpha[0];
+  ((s16 *)&alpha_128)[4] = alpha[0];
+  ((s16 *)&alpha_128)[5] = -alpha[1];
+  ((s16 *)&alpha_128)[6] = alpha[1];
+  ((s16 *)&alpha_128)[7] = alpha[0];
 
   //  _mm_empty();
   //  return(0);
@@ -487,10 +483,10 @@ int rotate_cpx_vector_norep(short *x,
 }
 
 
-int mult_vector32_scalar(short *x1, 
+int mult_vector32_scalar(s16 *x1, 
 			 int x2, 
-			 short *y, 
-			 unsigned int N)
+			 s16 *y, 
+			 u32 N)
 
 {
   // Multiply elementwise two real vectors of N elements
@@ -504,7 +500,7 @@ int mult_vector32_scalar(short *x1,
   // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   //
 
-  unsigned int i;                 // loop counter
+  u32 i;                 // loop counter
 
   /*
 #ifdef USER_MODE
@@ -561,12 +557,12 @@ int mult_vector32_scalar(short *x1,
 }
 
 
-int complex_conjugate(short *x1, 
-		      short *y, 
-		      unsigned int N)
+int complex_conjugate(s16 *x1, 
+		      s16 *y, 
+		      u32 N)
 
 {
-  unsigned int i;                 // loop counter
+  u32 i;                 // loop counter
 
   /*
 #ifdef USER_MODE
@@ -628,10 +624,10 @@ int complex_conjugate(short *x1,
 
 main () {
 
-  short input[256] __attribute__((aligned(16)));
-  short input2[256] __attribute__((aligned(16)));
-  short output[256] __attribute__((aligned(16)));
-  short alpha[2];
+  s16 input[256] __attribute__((aligned(16)));
+  s16 input2[256] __attribute__((aligned(16)));
+  s16 output[256] __attribute__((aligned(16)));
+  s16 alpha[2];
 
   int i;
  
@@ -685,12 +681,12 @@ main () {
 
 #else //EXPRESSMIMO_TARGET
 
-int rotate_cpx_vector(short *x, 
-		      short *alpha, 
-		      short *y, 
-		      unsigned int N, 
-		      unsigned short output_shift,
-		      unsigned char format)
+int rotate_cpx_vector(s16 *x, 
+		      s16 *alpha, 
+		      s16 *y, 
+		      u32 N, 
+		      u16 output_shift,
+		      u8 format)
 {
 
 }

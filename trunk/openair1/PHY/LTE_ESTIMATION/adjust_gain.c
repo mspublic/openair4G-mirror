@@ -11,11 +11,9 @@
 #endif
 
 void
-phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, unsigned char eNB_id)
-{
-  int i;
-  int rx_power;
-  unsigned short rx_power_fil_dB;
+phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
+
+  u16 rx_power_fil_dB;
 
   rx_power_fil_dB = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id];
 
