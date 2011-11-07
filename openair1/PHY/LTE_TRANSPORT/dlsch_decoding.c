@@ -30,10 +30,10 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
   }
 }
 
-LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstraction_flag) {
+LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag) {
 
   LTE_UE_DLSCH_t *dlsch;
-  unsigned char exit_flag = 0,i,r;
+  u8 exit_flag = 0,i,r;
 
   dlsch = (LTE_UE_DLSCH_t *)malloc16(sizeof(LTE_UE_DLSCH_t));
   if (dlsch) {
@@ -44,12 +44,12 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstra
       //      msg("new_ue_dlsch: Harq process %d\n",i);
       dlsch->harq_processes[i] = (LTE_DL_UE_HARQ_t *)malloc16(sizeof(LTE_DL_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
-	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
+	dlsch->harq_processes[i]->b = (u8*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (abstraction_flag == 0) {
 	  if (!dlsch->harq_processes[i]->b)
 	    exit_flag=3;
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
-	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
+	    dlsch->harq_processes[i]->c[r] = (u8*)malloc16(((r==0)?8:0) + 768);	
 	    if (!dlsch->harq_processes[i]->c[r])
 	      exit_flag=2;
 	    dlsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
@@ -69,26 +69,25 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstra
   return(NULL);
 }
 
-unsigned int  dlsch_decoding(short *dlsch_llr,
+u32  dlsch_decoding(short *dlsch_llr,
 			     LTE_DL_FRAME_PARMS *frame_parms,
 			     LTE_UE_DLSCH_t *dlsch,
-			     unsigned char subframe,
+			     u8 subframe,
 			     u8 num_pdcch_symbols){
   
   
 
-  unsigned short nb_rb;
-  unsigned char harq_pid;
-  unsigned int A,E;
-  unsigned char mod_order;
-  unsigned int G,i;
-  unsigned int ret,offset;
-  unsigned short iind;
-  //  unsigned char dummy_channel_output[(3*8*block_length)+12];
-  short coded_bits=0;
+  u16 nb_rb;
+  u8 harq_pid;
+  u32 A,E;
+  u8 mod_order;
+  u32 G;
+  u32 ret,offset;
+  u16 iind;
+  //  u8 dummy_channel_output[(3*8*block_length)+12];
   short dummy_w[8][3*(6144+64)];
-  unsigned int r,r_offset=0,Kr,Kr_bytes,err_flag=0;
-  unsigned char crc_type;
+  u32 r,r_offset=0,Kr,Kr_bytes,err_flag=0;
+  u8 crc_type;
 
   if (!dlsch_llr) {
     msg("dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -194,7 +193,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
-							       (char*) &dummy_w[r][0],
+							       (u8*) &dummy_w[r][0],
 							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
 #ifdef DEBUG_DLSCH_DECODING    
@@ -209,7 +208,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
 				   G,
 				   dlsch->harq_processes[harq_pid]->w[r],
-				   (unsigned char*)&dummy_w[r][0],
+				   (u8*)&dummy_w[r][0],
 				   dlsch_llr,
 				   dlsch->harq_processes[harq_pid]->C,
 				   NSOFT,
@@ -269,7 +268,12 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     */
 
     if (err_flag == 0) {
-      ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
+#ifdef TURBO_S
+      ret = phy_threegpplte_turbo_decoder_scalar(
+#else
+      ret = phy_threegpplte_turbo_decoder(
+#endif
+					  &dlsch->harq_processes[harq_pid]->d[r][96],
 					  dlsch->harq_processes[harq_pid]->c[r],
 					  Kr,
 					  f1f2mat[iind*2],   
@@ -278,7 +282,9 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 					  crc_type,
 					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
 					  harq_pid+1);
-    }
+
+
+   }
 
     if (ret>=(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
       //      msg("CRC failed\n");
@@ -351,16 +357,8 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #endif
-#define MCS_COUNT 23
 
-//extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
-//extern  double ABS_SINR_eff_BLER_table[MCS_COUNT][9][9];
-//extern  double ABS_beta[MCS_COUNT];
-double sinr_bler_map[MCS_COUNT][2][9];
-double beta[MCS_COUNT] = {1, 1, 1, 1, 1, 0.9459960937499999, 1.2912109374999994, 1.0133789062499998, 1.000390625,
-                          1.02392578125, 1.8595703124999998, 2.424389648437498, 2.3946533203124982, 2.5790039062499988,
-                          2.4084960937499984, 2.782617187499999, 2.7868652343749996, 3.92099609375, 4.0392578125,
-                          4.56109619140625, 5.03338623046875, 5.810888671875, 6.449108886718749};
+
 
 
 int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
@@ -373,15 +371,15 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
   for (offset = 0; offset <= 24; offset++) {
     if (rb_alloc[0] & (1<<offset)) {
       rb_count++;
-      sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[offset*2])))/beta[mcs]);
+      sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[offset*2])))/beta_dlsch[mcs]);
       //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
 
-      sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta[mcs]);
+      sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta_dlsch[mcs]);
       //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
     }
   }       
   //printf("sinr_eff1 = %f\n",sinr_eff);
-  sinr_eff =  -beta[mcs] *log((sinr_eff)/(2*rb_count));
+  sinr_eff =  -beta_dlsch[mcs] *log((sinr_eff)/(2*rb_count));
   sinr_eff = 10 * log10(sinr_eff);
   msg("sinr_eff2 = %f\n",sinr_eff);
 
@@ -424,7 +422,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_DLSCH_t *dlsch_ue;
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
-  u8 eNB_id2,i;
+  u32 eNB_id2,i;
 
   for (eNB_id2=0;eNB_id2<NB_eNB_INST;eNB_id2++) {
     if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
@@ -458,7 +456,8 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2])][0];
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,
+								PHY_vars_eNB_g[eNB_id2])][0];
 
 #ifdef DEBUG_DLSCH_DECODING
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
@@ -493,7 +492,8 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2])][1];
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,
+								PHY_vars_eNB_g[eNB_id2])][1];
      // reset HARQ 
     dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
     dlsch_ue->harq_processes[harq_pid]->round  = 0;
@@ -508,5 +508,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     return(1+MAX_TURBO_ITERATIONS);
   }
 
+  msg("[PHY][FATAL] dlsch_decoding.c: Should never exit here ...\n");
+  return(0);
 }
 #endif

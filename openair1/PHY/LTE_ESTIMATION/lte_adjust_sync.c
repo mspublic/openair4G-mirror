@@ -118,7 +118,9 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
   int temp, i, aa, max_pos = 0,ind;
   short Re,Im,ncoef;
 #ifdef USER_MODE
+#ifdef DEBUG_PHY
   char fname[100],vname[100];
+#endif
 #endif
 
   ncoef = 32768 - coef;

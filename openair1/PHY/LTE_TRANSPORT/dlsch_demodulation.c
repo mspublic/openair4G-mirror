@@ -743,7 +743,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 
   unsigned short rb,nb_rb=0;
   unsigned char rb_alloc_ind;
-  unsigned char i,aarx,l,nsymb,skip_half=0,sss_symb,pss_symb;
+  unsigned char i,aarx,l,nsymb,skip_half=0,sss_symb,pss_symb=0;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
 
@@ -853,18 +853,17 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	//SSS 
 	if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==sss_symb))
 	  skip_half=1;
-	else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
+	else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb))
 	  skip_half=2;
 
 	//PSS
-	if (frame_parms->frame_type == 0) {
+	if (frame_parms->frame_type == 0) {  //FDD
 	  if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
 	    rb_alloc_ind = 0;
 	  }
-	  //PSS 
-	  if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==sss_symb))
+	  if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==pss_symb))
 	    skip_half=1;
-	  else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
+	  else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
 	    skip_half=2;
 	}
 

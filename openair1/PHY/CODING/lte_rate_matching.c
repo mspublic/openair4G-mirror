@@ -11,20 +11,20 @@
 
 //#define cmin(a,b) ((a)<(b) ? (a) : (b))
 
-static unsigned int bitrev[32] = {0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31};
-static unsigned int bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
+static u32 bitrev[32] = {0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31};
+static u32 bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
 
 //#define RM_DEBUG 1
 //#define RM_DEBUG2 1
 // #define RM_DEBUG_CC 1
  
-unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w) {
+u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
 
-  unsigned int RTC = (D>>5), ND, ND3;
-  unsigned int row,col,Kpi,Kpi3,index;
-  int index3,k;
+  u32 RTC = (D>>5), ND, ND3;
+  u32 row,col,Kpi,Kpi3,index;
+  u32 index3,k;
 #ifdef RM_DEBUG
-  int nulled=0;
+  u32 nulled=0;
 #endif
 
   if ((D&0x1f) > 0)
@@ -75,13 +75,13 @@ unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsig
 }
 
 
-unsigned int sub_block_interleaving_cc(unsigned int D, unsigned char *d,unsigned char *w) {
+u32 sub_block_interleaving_cc(u32 D, u8 *d,u8 *w) {
 
-  unsigned int RCC = (D>>5), ND, ND3;
-  unsigned int row,col,Kpi,Kpi3,index;
-  int index3,k;
+  u32 RCC = (D>>5), ND, ND3;
+  u32 row,col,Kpi,Kpi3,index;
+  u32 index3,k;
 #ifdef RM_DEBUG_CC
-  int nulled=0;
+  u32 nulled=0;
 #endif
 
   if ((D&0x1f) > 0)
@@ -128,11 +128,11 @@ unsigned int sub_block_interleaving_cc(unsigned int D, unsigned char *d,unsigned
   return(RCC);
 }
 
-void sub_block_deinterleaving_turbo(unsigned int D,short *d,short *w) {
+void sub_block_deinterleaving_turbo(u32 D,s16 *d,s16 *w) {
 
-  unsigned int RTC = (D>>5), ND, ND3;
-  unsigned int row,col,Kpi,Kpi3,index;
-  int index3,k;
+  u32 RTC = (D>>5), ND, ND3;
+  u32 row,col,Kpi,Kpi3,index;
+  u32 index3,k;
 
   if ((D&0x1f) > 0)
     RTC++;
@@ -167,11 +167,11 @@ void sub_block_deinterleaving_turbo(unsigned int D,short *d,short *w) {
 
 }
 
-void sub_block_deinterleaving_cc(unsigned int D,char *d,char *w) {
+void sub_block_deinterleaving_cc(u32 D,s8 *d,s8 *w) {
 
-  unsigned int RCC = (D>>5), ND, ND3;
-  unsigned int row,col,Kpi,Kpi3,index;
-  int index3,k;
+  u32 RCC = (D>>5), ND, ND3;
+  u32 row,col,Kpi,Kpi3,index;
+  u32 index3,k;
 
   if ((D&0x1f) > 0)
     RCC++;
@@ -207,13 +207,13 @@ void sub_block_deinterleaving_cc(unsigned int D,char *d,char *w) {
 
 }
 
-unsigned int generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F) {
+u32 generate_dummy_w(u32 D, u8 *w,u8 F) {
 
-  unsigned int RTC = (D>>5), ND, ND3;
-  unsigned int row,col,Kpi,Kpi3,index;
-  int index3,k;
+  u32 RTC = (D>>5), ND, ND3;
+  u32 col,Kpi,Kpi3,index;
+  s32 k;
 #ifdef RM_DEBUG
-  unsigned int nulled=0;
+  u32 nulled=0;
 #endif
 
   if ((D&0x1f) > 0)
@@ -278,13 +278,13 @@ unsigned int generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F) 
   return(RTC);
 }
  
-unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w){
+u32 generate_dummy_w_cc(u32 D, u8 *w){
 
-  unsigned int RCC = (D>>5), ND, ND3;
-  unsigned int row,col,Kpi,Kpi3,index;
-  int index3,k;
+  u32 RCC = (D>>5), ND, ND3;
+  u32 col,Kpi,Kpi3,index;
+  s32 k;
 #ifdef RM_DEBUG_CC
-  unsigned int nulled=0;
+  u32 nulled=0;
 #endif
 
   if ((D&0x1f) > 0)
@@ -355,25 +355,25 @@ unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w){
 }
 
 
-unsigned int lte_rate_matching_turbo(unsigned int RTC,
-				     unsigned int G, 
-				     unsigned char *w,
-				     unsigned char *e, 
-				     unsigned char C, 
-				     unsigned int Nsoft, 
-				     unsigned char Mdlharq,
-				     unsigned char Kmimo,
-				     unsigned char rvidx,
-				     unsigned char Qm, 
-				     unsigned char Nl, 
-				     unsigned char r) {
+u32 lte_rate_matching_turbo(u32 RTC,
+				     u32 G, 
+				     u8 *w,
+				     u8 *e, 
+				     u8 C, 
+				     u32 Nsoft, 
+				     u8 Mdlharq,
+				     u8 Kmimo,
+				     u8 rvidx,
+				     u8 Qm, 
+				     u8 Nl, 
+				     u8 r) {
   
   
-  unsigned int Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
+  u32 Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
 
-  unsigned char *e2;
+  u8 *e2;
 #ifdef RM_DEBUG
-  unsigned int nulled=0;
+  u32 nulled=0;
 #endif
 
   Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
@@ -435,18 +435,18 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
 }
 
 
-unsigned int lte_rate_matching_cc(unsigned int RCC,
-				  unsigned short E,
-				  unsigned char *w,
-				  unsigned char *e) {
+u32 lte_rate_matching_cc(u32 RCC,
+				  u16 E,
+				  u8 *w,
+				  u8 *e) {
 
   
-  unsigned int ind=0,k;
+  u32 ind=0,k;
 
-  unsigned short Kw = 3*(RCC<<5);
+  u16 Kw = 3*(RCC<<5);
 
 #ifdef RM_DEBUG_CC
-  unsigned int nulled=0;
+  u32 nulled=0;
 
   printf("lte_rate_matching_cc: Kw %d, E %d\n",Kw, E);
 #endif
@@ -482,26 +482,26 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 }
 
 
-int lte_rate_matching_turbo_rx(unsigned int RTC,
-			       unsigned int G, 
-			       short *w,
-			       unsigned char *dummy_w,
-			       short *soft_input, 
-			       unsigned char C, 
-			       unsigned int Nsoft, 
-			       unsigned char Mdlharq,
-			       unsigned char Kmimo,
-			       unsigned char rvidx,
-			       unsigned char clear,
-			       unsigned char Qm, 
-			       unsigned char Nl, 
-			       unsigned char r,
-			       unsigned int *E_out) {
+int lte_rate_matching_turbo_rx(u32 RTC,
+			       u32 G, 
+			       s16 *w,
+			       u8 *dummy_w,
+			       s16 *soft_input, 
+			       u8 C, 
+			       u32 Nsoft, 
+			       u8 Mdlharq,
+			       u8 Kmimo,
+			       u8 rvidx,
+			       u8 clear,
+			       u8 Qm, 
+			       u8 Nl, 
+			       u8 r,
+			       u32 *E_out) {
   
   
-  unsigned int Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
-  short *soft_input2;
-  int w_tmp;
+  u32 Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
+  s16 *soft_input2;
+  s32 w_tmp;
 
   if (Kmimo==0 || Mdlharq==0 || C==0 || Qm==0 || Nl==0) {
     msg("lte_rate_matching.c: invalid paramters\n");
@@ -531,7 +531,7 @@ int lte_rate_matching_turbo_rx(unsigned int RTC,
 #endif
 
   if (clear==1)
-    memset(w,0,Ncb*sizeof(short));
+    memset(w,0,Ncb*sizeof(s16));
  
   soft_input2 = soft_input + (r*E);
  
@@ -580,27 +580,27 @@ int lte_rate_matching_turbo_rx(unsigned int RTC,
 }
 
 
-void lte_rate_matching_cc_rx(unsigned int RCC,
-			     unsigned short E, 
-			     char *w,
-			     unsigned char *dummy_w,
-			     char *soft_input) {
+void lte_rate_matching_cc_rx(u32 RCC,
+			     u16 E, 
+			     s8 *w,
+			     u8 *dummy_w,
+			     s8 *soft_input) {
 
   
   
-  unsigned int ind=0,k;
-  unsigned short Kw = 3*(RCC<<5);
-  unsigned int acc=1;
-  short w16[Kw];
+  u32 ind=0,k;
+  u16 Kw = 3*(RCC<<5);
+  u32 acc=1;
+  s16 w16[Kw];
 #ifdef RM_DEBUG_CC
-  unsigned int nulled=0;
+  u32 nulled=0;
 
   printf("lte_rate_matching_cc_rx: Kw %d, E %d, w %p, soft_input %p\n",3*(RCC<<5),E,w,soft_input);
 #endif
 
 
   memset(w,0,Kw);
-  memset(w16,0,Kw*sizeof(short));
+  memset(w16,0,Kw*sizeof(s16));
 
   for (k=0;k<E;k++) {
 
@@ -622,12 +622,15 @@ void lte_rate_matching_cc_rx(unsigned int RCC,
 #ifdef RM_DEBUG_CC
       printf("RM_RX_CC k %d (%d) ind: %d (%d)\n",k,soft_input[k],ind,w16[ind]);
 #endif
-    w16[ind] += soft_input[k];
-    ind++;
-    if (ind==Kw) {
-      ind=0;
-      acc++;
-    }
+
+
+      w16[ind] += soft_input[k];
+
+      ind++;
+      if (ind==Kw) {
+	ind=0;
+	acc++;
+      }
   }
   // rescale
   for (ind=0;ind<Kw;ind++) {
@@ -637,7 +640,7 @@ void lte_rate_matching_cc_rx(unsigned int RCC,
     else if (w16[ind]<-8)
       w[ind]=-8;
     else
-      w[ind]=(char)w16[ind];
+      w[ind]=(s8)w16[ind];
   }
 #ifdef RM_DEBUG_CC
 
@@ -649,13 +652,13 @@ void lte_rate_matching_cc_rx(unsigned int RCC,
 #ifdef MAIN
 
 void main() {
-  unsigned char d[96+3+(3*6144)];
-  unsigned char w[3*6144],e[12*6144];
-  unsigned int RTC,G,rvidx;
-  unsigned int nb_rb=6;
-  unsigned int mod_order = 4;
-  unsigned int first_dlsch_symbol = 2;
-  unsigned int i;
+  u8 d[96+3+(3*6144)];
+  u8 w[3*6144],e[12*6144];
+  u32 RTC,G,rvidx;
+  u32 nb_rb=6;
+  u32 mod_order = 4;
+  u32 first_dlsch_symbol = 2;
+  u32 i;
 
   G = ( nb_rb * (12 * mod_order) * (12-first_dlsch_symbol-3)) ;//( nb_rb * (12 * mod_order) * (14-first_dlsch_symbol-3)) :
     

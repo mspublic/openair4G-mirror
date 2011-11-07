@@ -12,19 +12,19 @@
 __m128i dft_in128[4][1200],dft_in128[4][1200],dft_out128[4][1200],dft_out128[4][1200];
 
 #ifndef OFDMA_ULSCH
-void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
+void dft_lte(mod_sym_t *z,mod_sym_t *d, u16 Msc_PUSCH, u8 Nsymb) {
 
-  int *dft_in0=(int*)dft_in128[0],*dft_out0=(int*)dft_out128[0];
-  int *dft_in1=(int*)dft_in128[1],*dft_out1=(int*)dft_out128[1];
-  int *dft_in2=(int*)dft_in128[2],*dft_out2=(int*)dft_out128[2];
-  int *dft_in3=(int*)dft_in128[3],*dft_out3=(int*)dft_out128[3];
+  s32 *dft_in0=(s32*)dft_in128[0],*dft_out0=(s32*)dft_out128[0];
+  s32 *dft_in1=(s32*)dft_in128[1],*dft_out1=(s32*)dft_out128[1];
+  s32 *dft_in2=(s32*)dft_in128[2],*dft_out2=(s32*)dft_out128[2];
+  //  s32 *dft_in3=(s32*)dft_in128[3],*dft_out3=(s32*)dft_out128[3];
 
-  int *d0,*d1,*d2,*d3,*d4,*d5,*d6,*d7,*d8,*d9,*d10,*d11;
+  s32 *d0,*d1,*d2,*d3,*d4,*d5,*d6,*d7,*d8,*d9,*d10,*d11;
 
-  int *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10,*z11;
-  int i,ip;
+  s32 *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10,*z11;
+  s32 i,ip;
 
-  //  printf("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
+  //  msg("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
 
   d0 = d;
   d1 = d0+Msc_PUSCH;
@@ -39,7 +39,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
   d10 = d9+Msc_PUSCH;
   d11 = d10+Msc_PUSCH;
 
-  //  printf("symbol 0 (d0 %p, d %p)\n",d0,d);
+  //  msg("symbol 0 (d0 %p, d %p)\n",d0,d);
   for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=4) {
     dft_in0[ip]   =  d0[i];
     dft_in0[ip+1] =  d1[i];
@@ -53,13 +53,13 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
     dft_in2[ip+1] =  d9[i];
     dft_in2[ip+2] =  d10[i];
     dft_in2[ip+3] =  d11[i];
-    //    printf("dft%d %d: %d,%d,%d,%d\n",Msc_PUSCH,ip,d0[i],d1[i],d2[i],d3[i]);
+    //    msg("dft%d %d: %d,%d,%d,%d\n",Msc_PUSCH,ip,d0[i],d1[i],d2[i],d3[i]);
 
     //    dft_in_re2[ip+1] =  d9[i];
     //    dft_in_re2[ip+2] =  d10[i];
   }
 
-  //  printf("\n");
+  //  msg("\n");
 
   switch (Msc_PUSCH) {
   case 12:
@@ -156,10 +156,10 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
   z9 = z8+Msc_PUSCH;
   z10 = z9+Msc_PUSCH;
   z11 = z10+Msc_PUSCH;
-  //  printf("symbol0 (dft)\n");
+  //  msg("symbol0 (dft)\n");
   for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=4) {
     z0[i]     = dft_out0[ip]; 
-    //    printf("%d,%d,",((short*)&z0[i])[0],((short*)&z0[i])[1]);
+    //    msg("%d,%d,",((short*)&z0[i])[0],((short*)&z0[i])[1]);
     z1[i]     = dft_out0[ip+1]; 
     z2[i]     = dft_out0[ip+2]; 
     z3[i]     = dft_out0[ip+3]; 
@@ -171,40 +171,46 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
     z9[i]     = dft_out2[ip+1]; 
     z10[i]    = dft_out2[ip+2]; 
     z11[i]    = dft_out2[ip+3]; 
-    //    printf("out dft%d %d: %d,%d,%d,%d,%d,%d,%d,%d\n",Msc_PUSCH,ip,z0[i],z1[i],z2[i],z3[i],z4[i],z5[i],z6[i],z7[i]);
+    //    msg("out dft%d %d: %d,%d,%d,%d,%d,%d,%d,%d\n",Msc_PUSCH,ip,z0[i],z1[i],z2[i],z3[i],z4[i],z5[i],z6[i],z7[i]);
 
   }
-  //  printf("\n");
+  //  msg("\n");
 }
 
 #endif
 void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
-		      unsigned int subframe,
+		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
 		      u8 cooperation_flag) {
 
 #ifdef IFFT_FPGA_UE
-  unsigned char qam64_table_offset = 0;
-  unsigned char qam16_table_offset = 0;
-  unsigned char qpsk_table_offset = 0;
+  u8 qam64_table_offset = 0;
+  u8 qam16_table_offset = 0;
+  u8 qpsk_table_offset = 0;
 #else
-  unsigned char qam64_table_offset_re = 0;
-  unsigned char qam64_table_offset_im = 0;
-  unsigned char qam16_table_offset_re = 0;
-  unsigned char qam16_table_offset_im = 0;
+  u8 qam64_table_offset_re = 0;
+  u8 qam64_table_offset_im = 0;
+  u8 qam16_table_offset_re = 0;
+  u8 qam16_table_offset_im = 0;
   short gain_lin_QPSK;
 #endif
 
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
-  //  unsigned char harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  unsigned char harq_pid = subframe2harq_pid(frame_parms,subframe);
-  unsigned char Q_m;
+  //  u8 harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
+  u8 Q_m;
   mod_sym_t *txptr;
-  unsigned int symbol_offset;
-  unsigned short first_rb;
-  unsigned short nb_rb,G;
+  u32 symbol_offset;
+  u16 first_rb;
+  u16 nb_rb,G;
+  
+  u32 x1, x2, s=0;
+  u8 reset = 1,c;
+
+  // x1 is set in lte_gold_generic
+  x2 = (ulsch->rnti<<14) + (subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
 
   if (!ulsch) {
     msg("ulsch_modulation.c: Null ulsch\n");
@@ -238,15 +244,32 @@ void ulsch_modulation(mod_sym_t **txdataF,
   Msc_PUSCH = ulsch->harq_processes[harq_pid]->nb_rb*12;
 
 #ifdef DEBUG_ULSCH_MODULATION
-  msg("ulsch_modulation.c: Doing modulation for G=%d bits, harq_pid %d , nb_rb %d, Q_m %d, Nsymb_pusch %d (nsymb %d)\n",
-      G,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch,nsymb);
+  msg("ulsch_modulation.c: Doing modulation (rnti %x,x2 %x) for G=%d bits, harq_pid %d , nb_rb %d, Q_m %d, Nsymb_pusch %d (nsymb %d), subframe %d\n",
+      ulsch->rnti,x2,G,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch,nsymb,subframe);
 #endif
 
   // scrambling (Note the placeholding bits are handled in ulsch_coding.c directly!)
   //msg("ulsch bits: ");
   for (i=0;i<G;i++) {
-    ulsch->b_tilde[i] = ulsch->h[i];  // put Gold scrambling here later
-    //msg("%d,", ulsch->b_tilde[i]);
+    if ((i&0x1f)==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      //     msg("lte_gold[%d]=%x\n",i,s);
+      reset = 0;
+    }
+    c = (u8)((s>>(i&0x1f))&1);
+
+    if (ulsch->h[i] == PUSCH_x) {
+      //      msg("i %d: PUSCH_x\n",i);
+      ulsch->b_tilde[i] = 1;
+    }
+    else if (ulsch->h[i] == PUSCH_y) {
+      //      msg("i %d: PUSCH_y\n",i);
+      ulsch->b_tilde[i] = ulsch->b_tilde[i-1];
+    }
+    else {
+      ulsch->b_tilde[i] = (ulsch->h[i]+c)&1;  
+      //      msg("i %d : %d (h %d c %d)\n", i,ulsch->b_tilde[i],ulsch->h[i],c);
+    }
   }
   //msg("\n");
 
@@ -268,14 +291,14 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 #ifndef IFFT_FPGA_UE
 	  //UE1, -x1*
-	  ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
-	  ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  //      if (i<Msc_PUSCH)
-	  //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((s16*)&ulsch->d[i])[0],((s16*)&ulsch->d[i])[1]);
 
 	  // UE1, x0*
-	  ((short*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  ((short*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 0)? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 0)? (gain_lin_QPSK) : -gain_lin_QPSK;
 #else
 	  qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;// UE1, -x1*
 	  if (ulsch->b_tilde[j] == 0)
@@ -323,8 +346,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 
       
-	  ((short*)&ulsch->d[i])[0]=-(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((s16*)&ulsch->d[i])[0]=-(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
 
 	  //UE1,x0*
 	  qam16_table_offset_re = 0;
@@ -343,8 +366,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 
       
-	  ((short*)&ulsch->d[i+1])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((short*)&ulsch->d[i+1])[1]=-(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((s16*)&ulsch->d[i+1])[0]=(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((s16*)&ulsch->d[i+1])[1]=-(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
 
 #else
 	  qam16_table_offset = 5;//UE1,-x1*
@@ -412,8 +435,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
       
       
-	  ((short*)&ulsch->d[i])[0]=-(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((s16*)&ulsch->d[i])[0]=-(s16)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
 
 	  //UE1,x0*
 	  qam64_table_offset_re = 0;
@@ -437,8 +460,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
       
       
-	  ((short*)&ulsch->d[i+1])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((short*)&ulsch->d[i+1])[1]=-(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((s16*)&ulsch->d[i+1])[0]=(s16)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((s16*)&ulsch->d[i+1])[1]=-(s16)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
 
 #else
 	  qam64_table_offset = 21; //UE1,-x1*
@@ -506,10 +529,10 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	case 2:
 	  // TODO: this has to be updated!!!
 #ifndef IFFT_FPGA_UE
-	  ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  //      if (i<Msc_PUSCH)
-	  //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((s16*)&ulsch->d[i])[0],((s16*)&ulsch->d[i])[1]);
 #else
 	  qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;
 	  if (ulsch->b_tilde[j] == 0) //real
@@ -540,9 +563,9 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 
       
-	  ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
-	  //      printf("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+	  ((s16*)&ulsch->d[i])[0]=(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
+	  //      msg("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((s16*)&ulsch->d[i])[0],((s16*)&ulsch->d[i])[1]);
 #else
 	  qam16_table_offset = MOD_TABLE_16QAM_OFFSET;
 	  if (ulsch->b_tilde[j] == 1)
@@ -588,8 +611,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
       
       
-	  ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((s16*)&ulsch->d[i])[0]=(s16)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
 
 #else
 	  qam64_table_offset = MOD_TABLE_64QAM_OFFSET;
@@ -636,19 +659,19 @@ void ulsch_modulation(mod_sym_t **txdataF,
 #ifdef OFDMA_ULSCH
 #ifdef IFFT_FPGA_UE
 
-  for (j=0,l=0;l<(nsymb-1);l++) {
+  for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = ulsch->harq_processes[harq_pid]->first_rb*12 + frame_parms->N_RB_DL*12/2;
     if (re_offset > (frame_parms->N_RB_DL*12))
       re_offset -= (frame_parms->N_RB_DL*12);
 
-    symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(subframe*nsymb));
+    symbol_offset = (u32)frame_parms->N_RB_DL*12*(l+(subframe*nsymb));
     txptr = &txdataF[0][symbol_offset];
-    //printf("symbol %d: symbol_offset %d\n",l,symbol_offset);
+    //msg("symbol %d: symbol_offset %d\n",l,symbol_offset);
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
     }
     else {
-      //printf("copying %d REs\n",Msc_PUSCH);
+      //msg("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
 	txptr[re_offset++] = ulsch->z[j];
 
@@ -663,12 +686,12 @@ void ulsch_modulation(mod_sym_t **txdataF,
     re_offset0 -= frame_parms->ofdm_symbol_size;
     re_offset0++;
   }
-  //  printf("re_offset0 %d\n",re_offset0);
-  for (j=0,l=0;l<(nsymb-1);l++) {
+  //  msg("re_offset0 %d\n",re_offset0);
+  for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = re_offset0;
-    symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
+    symbol_offset = (u32)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
-        printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+        msg("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
@@ -677,10 +700,10 @@ void ulsch_modulation(mod_sym_t **txdataF,
     // Skip reference symbols
     else {
 
-      //      printf("copying %d REs\n",Msc_PUSCH);
+      //      msg("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
 #ifdef DEBUG_ULSCH_MODULATION
-	printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((short*)&ulsch->z[j])[0],((short*)&ulsch->z[j])[1]);
+	msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1]);
 #endif
 	txptr[re_offset++] = ulsch->z[j];
 	if (re_offset==frame_parms->ofdm_symbol_size)
@@ -695,22 +718,24 @@ void ulsch_modulation(mod_sym_t **txdataF,
     re_offset0 -= frame_parms->ofdm_symbol_size;
     re_offset0++;
   }
-  //    printf("re_offset0 %d\n",re_offset0);
-  for (j=0,l=0;l<(nsymb-1);l++) {
+  //    msg("re_offset0 %d\n",re_offset0);
+  for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = re_offset0;
-    symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
-    //printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    symbol_offset = (u32)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
+#ifdef DEBUG_ULSCH_MODULATION
+    msg("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+#endif
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
     }
     // Skip reference symbols
     else {
-      //      printf("copying %d REs\n",Msc_PUSCH);
+      //      msg("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
 
 #ifdef DEBUG_ULSCH_MODULATION
-	printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((short*)&ulsch->z[j])[0],((short*)&ulsch->z[j])[1]);
+	msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1]);
 #endif //DEBUG_ULSCH_MODULATION
 	txptr[re_offset++] = ulsch->z[j];
 

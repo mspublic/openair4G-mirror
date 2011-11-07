@@ -16,6 +16,59 @@ u16 RIV_max=0;
 
 extern u32 current_dlsch_cqi;
 
+// Table 8.6.3-3 36.213
+u16 beta_cqi[16] = {0,   //reserved
+		    0,   //reserved
+		    9,   //1.125
+		    10,  //1.250
+		    11,  //1.375
+		    13,  //1.625
+		    14,  //1.750
+		    16,  //2.000
+		    18,  //2.250
+		    20,  //2.500
+		    23,  //2.875
+		    25,  //3.125
+		    28,  //3.500
+		    32,  //4.000
+		    40,  //5.000
+		    50}; //6.250
+
+// Table 8.6.3-2 36.213
+u16 beta_ri[16] = {10,   //1.250
+		   13,   //1.625
+		   16,   //2.000
+		   20,   //2.500
+		   25,   //3.125
+		   32,   //4.000
+		   40,   //5.000
+		   50,   //6.250
+		   64,   //8.000
+		   80,   //10.000
+		   101,  //12.625
+		   127,  //15.875
+		   160,  //20.000
+		   0,    //reserved 
+		   0,    //reserved
+		   0};   //reserved
+
+// Table 8.6.3-2 36.213
+u16 beta_ack[16] = {16,  //2.000
+		    20,  //2.500
+		    25,  //3.125
+		    32,  //4.000
+		    40,  //5.000
+		    50,  //6.250
+		    64,  //8.000
+		    80,  //10.000
+		    101, //12.625
+		    127, //15.875
+		    160, //20.000
+		    248, //31.000
+		    400, //50.000
+		    640, //80.000
+                    808};//126.00
+		    
 u32 conv_rballoc(u8 ra_header,u32 rb_alloc) {
 
   u32 rb_alloc2=0,i,shift,subset;
@@ -149,7 +202,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       u16 DL_pmi_single) {
 
   u8 harq_pid;
-  u8 dl_power_off;
+  //  u8 dl_power_off;
   u16 rballoc;
   u8 NPRB,tbswap,tpmi=0;
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1;
@@ -660,7 +713,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 				      u16 p_rnti) {
 
   u8 harq_pid=0;
-  u8 dl_power_off;
+  //  u8 dl_power_off;
   u16 rballoc;
   u8 NPRB,tbswap,tpmi;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
@@ -1425,7 +1478,13 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id) 
     break;
   case ue_selected:
     msg("dci_tools.c: fill_CQI ue_selected CQI not supported yet!!!\n");
+    exit(-1);
     break;
+  default:
+    msg("dci_tools.c: unsupported CQI mode (%d)!!!\n",uci_format);
+    exit(-1);
+    break;
+
   }
 }
 
@@ -1445,20 +1504,22 @@ u32 pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,u8 wideband_pmi) {
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u16 rnti,
 				      u8 subframe,
-				      u8 transmission_mode,
 				      DCI_format_t dci_format,
-				      LTE_UE_ULSCH_t *ulsch,
-				      LTE_UE_DLSCH_t **dlsch,
-				      PHY_MEASUREMENTS *meas,
-				      LTE_DL_FRAME_PARMS *frame_parms,
+				      PHY_VARS_UE *phy_vars_ue,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti,
 				      u8 eNB_id,
-				      u32 current_dlsch_cqi,
-				      u8 generate_srs) {
+				      u8 use_srs) {
 
   u8 harq_pid;
+  u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
+  ANFBmode_t bundling = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
+  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[0];
+  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
+  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  //  u32 current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];
 
 #ifdef DEBUG_DCI
   msg("dci_tools.c: Filling ue ulsch params for rnti %x, dci_format %d, dci %x, subframe %d\n",
@@ -1505,6 +1566,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
+
+    ulsch->harq_processes[harq_pid]->n_DMRS                                = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;     
+
+    ulsch->rnti = rnti;
 
     msg("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
 	   ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
@@ -1634,18 +1699,9 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       }
     }
     else {
-      ulsch->O_RI = 1;
-      if(meas->rank[eNB_id] == 0){
-	ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-	ulsch->uci_format                          = HLC_subband_cqi_nopmi;
-	ulsch->o_RI[0]                             = 0;
-      }
-      else{
-	ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-	ulsch->uci_format                          = HLC_subband_cqi_nopmi;
-	ulsch->o_RI[0]                             = 1;
-      }
-      //ulsch->O = sizeof_HLC_subband_cqi_nopmi_5MHz;
+      ulsch->O_RI = 0;
+      ulsch->O                                   = 0;
+      ulsch->uci_format                          = HLC_subband_cqi_nopmi;
     }
 
 
@@ -1662,14 +1718,18 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 #endif
 
-    ulsch->O_ACK                                  = 2;
+    if (bundling == multiplexing)
+      ulsch->O_ACK                               =2;
+    else
+      ulsch->O_ACK                               =1;
 
-    ulsch->beta_offset_cqi_times8                  = 18;
-    ulsch->beta_offset_ri_times8                   = 10;
-    ulsch->beta_offset_harqack_times8              = 16;
+    ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
+    ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;
+    ulsch->beta_offset_harqack_times8            = beta_ack[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index];//16;
 
-
-    ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(generate_srs==0?0:1);
+    ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
+    ulsch->srs_active                              = use_srs;
+    ulsch->bundling = 1-bundling;
 
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
@@ -1715,10 +1775,9 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
 				       u8 subframe,
-				       u8 transmission_mode,
 				       DCI_format_t dci_format,
-				       LTE_eNB_ULSCH_t *ulsch,
-				       LTE_DL_FRAME_PARMS *frame_parms,
+				       u8 UE_id,
+				       PHY_VARS_eNB *phy_vars_eNB,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -1726,6 +1785,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
   u8 harq_pid;
   u32 rb_alloc;
+  u8 transmission_mode=phy_vars_eNB->transmission_mode[UE_id];
+  ANFBmode_t bundling = phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode;
+  LTE_eNB_ULSCH_t *ulsch=phy_vars_eNB->ulsch_eNB[UE_id];
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
 
 #ifdef DEBUG_DCI
   msg("dci_tools.c: filling eNB ulsch params for rnti %x, dci format %d, dci %x, subframe %d\n",
@@ -1749,9 +1812,9 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
-    ulsch->harq_processes[harq_pid]->Ndi         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
+    ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 
-
+    ulsch->harq_processes[harq_pid]->n_DMRS                                = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;                               
 
 
     if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cqi_req == 1) {
@@ -1799,22 +1862,25 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       }
     }
     else {
-      ulsch->O_RI = 1;
+      ulsch->O_RI = 0;//1;
       ulsch->Or2                                   = 0;
-      ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+      ulsch->Or1                                   = 0;//sizeof_HLC_subband_cqi_nopmi_5MHz;
       ulsch->uci_format                            = HLC_subband_cqi_nopmi;
     }
 
 
+    if (bundling == multiplexing)
+      ulsch->O_ACK                               =2;
+    else
+      ulsch->O_ACK                               =1;
 
-    ulsch->O_ACK                                  = 2;
-    ulsch->beta_offset_cqi_times8                = 18;
-    ulsch->beta_offset_ri_times8                 = 10;
-    ulsch->beta_offset_harqack_times8            = 16;
+    ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index];//18;
+    ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index];//10;
+    ulsch->beta_offset_harqack_times8            = beta_ack[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index];//16;
 
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
-
-
+    ulsch->srs_active                            = use_srs;
+    ulsch->bundling = 1-bundling;
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)
       ulsch->n_DMRS2 = 0;

@@ -149,13 +149,21 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 /*!
 \fn void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
                                   struct PhysicalConfigDedicated *physicalConfigDedicated)
-\brief Configure PHY with dedicated parameters. Invoked upon reception of RRCConnectionSetupComplete or RRCReconfigurationComplete from UE.
+\brief Prepare for configuration of PHY with dedicated parameters. Invoked just prior to transmission of RRCConnectionSetup or RRCConnectionReconfiguration at eNB.
 @param Mod_id Instance ID for eNB
 @param rnti rnti for UE context
 @param physicalConfigDedicated PHY Configuration information
 */
 void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
 			      struct PhysicalConfigDedicated *physicalConfigDedicated);
+
+/*!
+\fn void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB)
+\brief Configure PHY with dedicated parameters between configuration of DLSCH (n) and ULSCH (n+4) in current subframe (n).
+@param phy_vars_eNB Pointer to PHY_VARS_eNB structure
+*/
+void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB);
+
 /*
   \fn int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb)
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation. 

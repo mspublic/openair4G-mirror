@@ -6,7 +6,7 @@ extern u8 number_of_cards;
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 
-  u8 eNB=0,i=0;
+  u8 eNB=0;
 
   if (phy_vars_ue==NULL)
     return 0;

@@ -165,9 +165,10 @@ UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index) {
 
 }
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
-  
-  u8 card_id;
 
+#ifdef CBMIMO1  
+  u8 card_id;
+#endif
   if ((timing_advance>>10) & 1) //it is negative
     timing_advance = timing_advance - (1<<11);
   
@@ -189,7 +190,9 @@ void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
 
 void process_timing_advance(u8 timing_advance) {
 
+#ifdef CBMIMO1
   u8 card_id;
+#endif
 
   if ((timing_advance>>5) & 1) //it is negative
     timing_advance = timing_advance - (1<<6);
@@ -219,7 +222,7 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
   u8 nCCE0,nCCE1,harq_ack1,harq_ack0;
   ANFBmode_t bundling_flag;
-  u16 n1_pucch0,n1_pucch1;
+  u16 n1_pucch0=0,n1_pucch1=0;
 
   if (frame_parms->frame_type ==0 ) { // FDD
     if (SR == 0) 
@@ -450,14 +453,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   unsigned int i, aa;
   u8 RRCConnReq_flag=0;
   u8 pucch_ack_payload[2];
-  u8 n1_pucch,harq_status;
+  u8 n1_pucch;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
   u8 SR_payload;
-  u8 n_DMRS2;
-  u8 n_DMRS1;
-  u8 nPRS;
-  u8 cyclic_shift; // cyclic shift for DM RS
 
 #ifdef EMOS
   phy_procedures_emos_UE_TX(next_slot);
@@ -481,9 +480,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	debug_msg("[PHY][UE %d] Frame %d, slot %d: Generating SRS\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot);
 #endif
 #ifdef OFDMA_ULSCH
-	generate_srs_tx(&phy_vars_ue->lte_frame_parms,&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id],phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
+	generate_srs_tx(phy_vars_ue,eNB_id,AMP,next_slot>>1);
 #else
-	generate_srs_tx(&phy_vars_ue->lte_frame_parms,&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id],phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[12],next_slot>>1);
+	generate_srs_tx(phy_vars_ue,eNB_id,scfdma_amps[12],next_slot>>1);
 #endif
       }
     }
@@ -544,27 +543,22 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       //phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[20] = 0;
 
 
-      n_DMRS1 = phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift;// n_DMRS1
-
-      n_DMRS2 = phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2; // n_DMRS2 
-
-      nPRS = 0;//phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS;// n_PRS
-
-      cyclic_shift = (n_DMRS2 + n_DMRS1 + nPRS)%12;// ( n_DMRS1 and n_PRS are currently 0, so cyclic shift is dependent on just n_DMRS2 from the DCI)
 
 #ifdef DEBUG_PHY_PROC
-      msg("[PHY][UE %d] Subframe %d Generating PUSCH (harq_pid %d): first_rb %d, nb_rb %d, cyclic_shift %d (%d,%d,%d) ACK (%d,%d)\n",
+      msg("[PHY][UE %d] Subframe %d Generating PUSCH (harq_pid %d): first_rb %d, nb_rb %d, n_DMRS1 %d,n_DMRS2 %d,n_PRS %d, ACK (%d,%d)\n",
 	  phy_vars_ue->Mod_id,next_slot>>1,harq_pid,
-	  first_rb,nb_rb,cyclic_shift,
-	  n_DMRS2,n_DMRS1,nPRS,
+	  first_rb,nb_rb,
+	  phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
+	  phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2,
+	  phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[next_slot],
 	  phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1]);
 #endif
 
       if (abstraction_flag==0) {
 #ifdef OFDMA_ULSCH      
-	generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1,first_rb,nb_rb,cyclic_shift);
+	generate_drs_pusch(phy_vars_ue,eNB_id,AMP,next_slot>>1,first_rb,nb_rb);
 #else
-	generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],next_slot>>1,first_rb,nb_rb,cyclic_shift);
+	generate_drs_pusch(phy_vars_ue,eNB_id,scfdma_amps[nb_rb],next_slot>>1,first_rb,nb_rb);
 #endif
       }      
 
@@ -589,7 +583,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
 	if (abstraction_flag==0) {
-	  if (ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0)!=0) {
+	  if (ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
 	    msg("ulsch_coding.c: FATAL ERROR: returning\n");
 	    return;
 	  }
@@ -625,7 +619,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       
 #endif //OPENAIR2
 	if (abstraction_flag==0) {
-	  if (ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0)!=0) {
+	  if (ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
 	    msg("ulsch_coding.c: FATAL ERROR: returning\n");
 	    return;
 	  }
@@ -708,8 +702,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
-  int aa, card_id;
-  
+  int aa;
+#ifdef CBMIMO1
+  int card_id;
+#endif  
   //  printf("S_TX: txdataF[0] %p\n",phy_vars_ue->lte_ue_common_vars.txdataF[0]);
 
 
@@ -1296,20 +1292,15 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
 
 	if (generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
-					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
-					    last_slot>>1,
-					    phy_vars_ue->transmission_mode[eNB_id],
-					    format0,
-					    phy_vars_ue->ulsch_ue[eNB_id],
-					    phy_vars_ue->dlsch_ue[eNB_id],
-					    &phy_vars_ue->PHY_measurements,
-					    &phy_vars_ue->lte_frame_parms,
-					    SI_RNTI,
-					    RA_RNTI,
-					    P_RNTI,
-					    eNB_id,
-					    phy_vars_ue->current_dlsch_cqi[eNB_id],
-					    0)==0) {
+					      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
+					      last_slot>>1,
+					      format0,
+					      phy_vars_ue,
+					      SI_RNTI,
+					      RA_RNTI,
+					      P_RNTI,
+					      eNB_id,
+					      0)==0) {
 #ifdef DEBUG_PHY_PROC
 	debug_msg("[PHY][UE %d] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",phy_vars_ue->Mod_id,last_slot>>1);
 #endif
@@ -1331,10 +1322,10 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   return(0);
 }
 
-
+ 
 int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
-  u16 l,m,n_symb,i,j;
+  u16 l,m,n_symb;
   //  int eNB_id = 0, 
   int eNB_id_i = 1;
   u8 dual_stream_UE = 0;
@@ -1343,8 +1334,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   int timing_advance;
   unsigned int dlsch_buffer_length;
   u8 pilot1,pilot2,pilot3;
+#ifdef DLSCH_THREAD
   u8 dlsch_thread_index = 0;
+#endif
+
   u8 i_mod = 0;
+
 
   if (phy_vars_ue->lte_frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
@@ -1553,8 +1548,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		  phy_vars_ue->dlsch_received[eNB_id],
 		  phy_vars_ue->dlsch_fer[eNB_id],
 		  phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id]);
+#endif 
 #endif //DLSCH_THREAD
-#endif
       }
       else {
 	phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))].send_harq_status = 0;

@@ -58,57 +58,57 @@ int main() {
                             4.56109619140625, 5.03338623046875, 5.810888671875, 6.449108886718749};
   
   double enb_position[][2] = {{1100,1100},{1100,2100},{1100,3100},{1100,4100},
-                         {2100,1100},{2100,2100},{2100,3100},{2100,4100},
-                         {3100,1100},{3100,2100},{3100,3100},{3100,4100},
-                         {4100,1100},{4100,2100},{4100,3100},{4100,4100}};
+			      {2100,1100},{2100,2100},{2100,3100},{2100,4100},
+			      {3100,1100},{3100,2100},{3100,3100},{3100,4100},
+			      {4100,1100},{4100,2100},{4100,3100},{4100,4100}};
 
   double ue_position[][2] = {{3340,4740},{1500,620},{1780,4220},{1300,3540},{780,3100},
-                        {1140,540},{1340,3660},{860,1220},{2700,2140},{3860,3060},
-                        {3740,1060},{1700,3060},{2180,1620},{4420,1060},{1300,3340}, 
-                        {3700,3180},{3780,540},{1700,4380},{4140,4740},{820,4380},
-                        {3300,1540},{2100,1780},{1780,2260},{1940,2620},{1580,1700},
-                        {1460,1940},{940,1340},{2100,3540},{1260,4340},{2940,4060}, 
-                        {3980,940},{540,2220},{3060,2140},{4620,3940},{4260,2820},
-                        {3860,3500},{4140,4140},{3900,3500},{1500,2140},{2620,3820}, 
-                        {3420,2820},{1580,3940},{660,2100},{2740,1180},{2500,2500},
-                        {3580,3580},{3740,3140},{3020,3020},{4340,4140},{980,4300}};
+			     {1140,540},{1340,3660},{860,1220},{2700,2140},{3860,3060},
+			     {3740,1060},{1700,3060},{2180,1620},{4420,1060},{1300,3340}, 
+			     {3700,3180},{3780,540},{1700,4380},{4140,4740},{820,4380},
+			     {3300,1540},{2100,1780},{1780,2260},{1940,2620},{1580,1700},
+			     {1460,1940},{940,1340},{2100,3540},{1260,4340},{2940,4060}, 
+			     {3980,940},{540,2220},{3060,2140},{4620,3940},{4260,2820},
+			     {3860,3500},{4140,4140},{3900,3500},{1500,2140},{2620,3820}, 
+			     {3420,2820},{1580,3940},{660,2100},{2740,1180},{2500,2500},
+			     {3580,3580},{3740,3140},{3020,3020},{4340,4140},{980,4300}};
          
   randominit(0);
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-int tabl_len=0;
-double local_table[MCS_COUNT][9][9];
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  int tabl_len=0;
+  double local_table[MCS_COUNT][9][9];
 
-for (mcs = 5; mcs <= MCS_COUNT; mcs++) {
+  for (mcs = 5; mcs <= MCS_COUNT; mcs++) {
 
-fp = fopen(file_name[mcs - 1],"r");
-      if (fp == NULL) {
-        printf("ERROR: Unable to open the file\n");
-      }
-      else {
-        fgets(buffer, 100, fp);
-	tabl_len=0;
-        while (!feof(fp)) {
+    fp = fopen(file_name[mcs - 1],"r");
+    if (fp == NULL) {
+      printf("ERROR: Unable to open the file\n");
+    }
+    else {
+      fgets(buffer, 100, fp);
+      tabl_len=0;
+      while (!feof(fp)) {
           
-          sinr_bler = strtok(buffer, ";");
-          local_table[mcs-1][0][tabl_len] = atof(sinr_bler);
-          sinr_bler = strtok(NULL,";");
-          local_table[mcs-1][1][tabl_len] = atof(sinr_bler);
+	sinr_bler = strtok(buffer, ";");
+	local_table[mcs-1][0][tabl_len] = atof(sinr_bler);
+	sinr_bler = strtok(NULL,";");
+	local_table[mcs-1][1][tabl_len] = atof(sinr_bler);
 	tabl_len++;
 	fgets(buffer, 100, fp);
-	  }
-fclose(fp);
-	}
-printf("\n table for mcs %d\n",mcs);
-for (tabl_len=0;tabl_len<9;tabl_len++)
-printf("%lf  %lf \n ",local_table[mcs-1][0][tabl_len],local_table[mcs-1][1][tabl_len]);
+      }
+      fclose(fp);
+    }
+    printf("\n table for mcs %d\n",mcs);
+    for (tabl_len=0;tabl_len<9;tabl_len++)
+      printf("%lf  %lf \n ",local_table[mcs-1][0][tabl_len],local_table[mcs-1][1][tabl_len]);
 
 
-}
+  }
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   for (enb_index = 0; enb_index < enb_count; enb_index++)  
     enb_data[enb_index] = (node_desc_t *)(malloc(sizeof(node_desc_t)));
@@ -151,13 +151,13 @@ printf("%lf  %lf \n ",local_table[mcs-1][0][tabl_len],local_table[mcs-1][1][tabl
       }
       
       for(count = 0; count < enb_data[enb_index]->n_sectors; count++) {
-         theta = sect_angle[count] - ue_data[ue_index]->alpha_rad[enb_index];
-         gain_sec[count] = -(Am < (12 * pow((theta/theta_3dB),2)) ? Am : (12 * pow((theta/theta_3dB),2)));
+	theta = sect_angle[count] - ue_data[ue_index]->alpha_rad[enb_index];
+	gain_sec[count] = -(Am < (12 * pow((theta/theta_3dB),2)) ? Am : (12 * pow((theta/theta_3dB),2)));
       }
       
       /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
       gain_max = (gain_sec[SEC1] > gain_sec[SEC2]) ? ((gain_sec[SEC1] > gain_sec[SEC3]) ? gain_sec[SEC1]:gain_sec[SEC3]) : 
-                                                     ((gain_sec[SEC2] > gain_sec[SEC3]) ? gain_sec[SEC2]:gain_sec[SEC3]); 
+	((gain_sec[SEC2] > gain_sec[SEC3]) ? gain_sec[SEC2]:gain_sec[SEC3]); 
 
       get_chan_desc(enb_data[enb_index], ue_data[ue_index], ul_channel[ue_index][enb_index], &scenario);
       get_chan_desc(enb_data[enb_index], ue_data[ue_index], dl_channel[ue_index][enb_index], &scenario);
@@ -179,14 +179,14 @@ printf("%lf  %lf \n ",local_table[mcs-1][0][tabl_len],local_table[mcs-1][1][tabl
         //freq_channel(ul_channel[ue_index][enb_index], nb_rb);
         freq_channel(dl_channel[ue_index][enb_index], nb_rb);
         coupling = MCL > (dl_channel[ue_index][enb_index]->path_loss_dB-(enb_data[enb_index]->ant_gain_dBi + gain_max)) ?
-                   MCL : (dl_channel[ue_index][enb_index]->path_loss_dB-(enb_data[enb_index]->ant_gain_dBi + gain_max));   
+	  MCL : (dl_channel[ue_index][enb_index]->path_loss_dB-(enb_data[enb_index]->ant_gain_dBi + gain_max));   
         //printf ("coupling factor is %lf\n", coupling); 
         for (count = 0; count < (2 * nb_rb); count++) {
           sinr[enb_index][count] = enb_data[enb_index]->tx_power_dBm 
-		                   - coupling  
-                                   - (thermal_noise + ue_data[ue_index]->rx_noise_level)  
-                                   + 10 * log10 (pow(dl_channel[ue_index][enb_index]->chF[0][count].r, 2) 
-                                               + pow(dl_channel[ue_index][enb_index]->chF[0][count].i, 2));
+	    - coupling  
+	    - (thermal_noise + ue_data[ue_index]->rx_noise_level)  
+	    + 10 * log10 (pow(dl_channel[ue_index][enb_index]->chF[0][count].r, 2) 
+			  + pow(dl_channel[ue_index][enb_index]->chF[0][count].i, 2));
           
           //printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[enb_index][count]);
         }
@@ -210,12 +210,12 @@ printf("%lf  %lf \n ",local_table[mcs-1][0][tabl_len],local_table[mcs-1][1][tabl
       }      
     }
     for (mcs = 5; mcs <= MCS_COUNT; mcs++) {
-//printf("mcs value  %d \n",mcs);
-//printf("beta value  %lf \n",-beta[mcs-1]);
-//printf("snr_eff value  %lf \n",log(sinr_eff[ue_index][mcs-1]));
+      //printf("mcs value  %d \n",mcs);
+      //printf("beta value  %lf \n",-beta[mcs-1]);
+      //printf("snr_eff value  %lf \n",log(sinr_eff[ue_index][mcs-1]));
 
       sinr_eff[ue_index][mcs-1] =  -beta[mcs-1] *log((sinr_eff[ue_index][mcs-1])/(2*nb_rb));//
-//printf("snr_eff value  %lf \n",sinr_eff[ue_index][mcs-1]);
+      //printf("snr_eff value  %lf \n",sinr_eff[ue_index][mcs-1]);
       sinr_eff[ue_index][mcs-1] = 10 * log10(sinr_eff[ue_index][mcs-1]);
       sinr_eff[ue_index][mcs-1] *= 10;
       sinr_eff[ue_index][mcs-1] = floor(sinr_eff[ue_index][mcs-1]);
@@ -224,51 +224,51 @@ printf("%lf  %lf \n ",local_table[mcs-1][0][tabl_len],local_table[mcs-1][1][tabl
       }
       sinr_eff[ue_index][mcs-1] /= 10;
 
-//printf("Effective snr   %lf  \n",sinr_eff[ue_index][mcs-1]);
+      //printf("Effective snr   %lf  \n",sinr_eff[ue_index][mcs-1]);
 
       bler[ue_index][mcs-1] = 0;
       /*line_num = 0;
-      fp = fopen(file_name[mcs - 1],"r");
-      if (fp == NULL) {
+	fp = fopen(file_name[mcs - 1],"r");
+	if (fp == NULL) {
         printf("ERROR: Unable to open the file\n");
-      }
-      else {
+	}
+	else {
         fgets(buffer, 100, fp);
         while (!feof(fp)) {
-          line_num++;
-          sinr_bler = strtok(buffer, ";");
-          tlu_sinr = atof(sinr_bler);
-          sinr_bler = strtok(NULL,";");
-          tlu_bler = atof(sinr_bler);
-          if (1 == line_num) {
-            if (sinr_eff[ue_index][mcs-1] < tlu_sinr) {
-              bler[ue_index][mcs-1] = 1;
-              break;
-            }
-          }
-          if (sinr_eff[ue_index][mcs-1] == tlu_sinr) {
-            bler[ue_index][mcs-1] = tlu_bler;
-          }
-          fgets(buffer, 100, fp);
+	line_num++;
+	sinr_bler = strtok(buffer, ";");
+	tlu_sinr = atof(sinr_bler);
+	sinr_bler = strtok(NULL,";");
+	tlu_bler = atof(sinr_bler);
+	if (1 == line_num) {
+	if (sinr_eff[ue_index][mcs-1] < tlu_sinr) {
+	bler[ue_index][mcs-1] = 1;
+	break;
+	}
+	}
+	if (sinr_eff[ue_index][mcs-1] == tlu_sinr) {
+	bler[ue_index][mcs-1] = tlu_bler;
+	}
+	fgets(buffer, 100, fp);
         }
         fclose(fp);*/
-for (tabl_len=0;tabl_len<9;tabl_len++) {
+      for (tabl_len=0;tabl_len<9;tabl_len++) {
 
 	if(tabl_len==0)
-	if (sinr_eff[ue_index][mcs-1] < local_table[mcs-1][0][tabl_len]) {
-              bler[ue_index][mcs-1] = 1;
-              break;
-            }
+	  if (sinr_eff[ue_index][mcs-1] < local_table[mcs-1][0][tabl_len]) {
+	    bler[ue_index][mcs-1] = 1;
+	    break;
+	  }
 
 
  	if (sinr_eff[ue_index][mcs-1] == local_table[mcs-1][0][tabl_len]) {
-            bler[ue_index][mcs-1] = local_table[mcs-1][1][tabl_len];
-          }
+	  bler[ue_index][mcs-1] = local_table[mcs-1][1][tabl_len];
+	}
 
       }
 
-    //printf("\n###Dl_link UE %d attached to eNB %d \n MCS %d effective SNR %lf BLER %lf", ue_index, att_enb_index, mcs,sinr_eff[ue_index][mcs-1],bler[ue_index][mcs-1]);
-   }   
+      //printf("\n###Dl_link UE %d attached to eNB %d \n MCS %d effective SNR %lf BLER %lf", ue_index, att_enb_index, mcs,sinr_eff[ue_index][mcs-1],bler[ue_index][mcs-1]);
+    }   
     //printf("\n\n");
 
     printf("\n     Ue_ix enb_ix  mcs5    mcs6    mcs7    mcs8    mcs9   mcs10   mcs11   mcs12   mcs13\
@@ -276,17 +276,17 @@ for (tabl_len=0;tabl_len<9;tabl_len++) {
 
     printf("SINR %4d   %4d  %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\
    %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\n",
-            ue_index, att_enb_index, sinr_eff[ue_index][4], sinr_eff[ue_index][5], sinr_eff[ue_index][6], sinr_eff[ue_index][7],
-            sinr_eff[ue_index][8], sinr_eff[ue_index][9], sinr_eff[ue_index][10], sinr_eff[ue_index][11], sinr_eff[ue_index][12],
-            sinr_eff[ue_index][13], sinr_eff[ue_index][14], sinr_eff[ue_index][15], sinr_eff[ue_index][16], sinr_eff[ue_index][17],
-            sinr_eff[ue_index][18], sinr_eff[ue_index][19], sinr_eff[ue_index][20], sinr_eff[ue_index][21], sinr_eff[ue_index][22]);
+	   ue_index, att_enb_index, sinr_eff[ue_index][4], sinr_eff[ue_index][5], sinr_eff[ue_index][6], sinr_eff[ue_index][7],
+	   sinr_eff[ue_index][8], sinr_eff[ue_index][9], sinr_eff[ue_index][10], sinr_eff[ue_index][11], sinr_eff[ue_index][12],
+	   sinr_eff[ue_index][13], sinr_eff[ue_index][14], sinr_eff[ue_index][15], sinr_eff[ue_index][16], sinr_eff[ue_index][17],
+	   sinr_eff[ue_index][18], sinr_eff[ue_index][19], sinr_eff[ue_index][20], sinr_eff[ue_index][21], sinr_eff[ue_index][22]);
 
     printf("BLER %4d   %4d  %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\
    %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\n",
-            ue_index, att_enb_index, bler[ue_index][4], bler[ue_index][5], bler[ue_index][6], bler[ue_index][7],
-            bler[ue_index][8], bler[ue_index][9], bler[ue_index][10], bler[ue_index][11], bler[ue_index][12],
-            bler[ue_index][13], bler[ue_index][14], bler[ue_index][15], bler[ue_index][16], bler[ue_index][17],
-            bler[ue_index][18], bler[ue_index][19], bler[ue_index][20], bler[ue_index][21], bler[ue_index][22]);
+	   ue_index, att_enb_index, bler[ue_index][4], bler[ue_index][5], bler[ue_index][6], bler[ue_index][7],
+	   bler[ue_index][8], bler[ue_index][9], bler[ue_index][10], bler[ue_index][11], bler[ue_index][12],
+	   bler[ue_index][13], bler[ue_index][14], bler[ue_index][15], bler[ue_index][16], bler[ue_index][17],
+	   bler[ue_index][18], bler[ue_index][19], bler[ue_index][20], bler[ue_index][21], bler[ue_index][22]);
   }
 }
 

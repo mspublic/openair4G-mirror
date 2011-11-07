@@ -392,7 +392,7 @@ void pdcch_deinterleaving(LTE_DL_FRAME_PARMS *frame_parms,u16 *z, u16 *wbar,u8 n
     wptr[1] = wptr2[1];
     wptr[2] = wptr2[2];
     wptr[3] = wptr2[3];
-    /*                
+    /*
     msg("pdcch_deinterleaving (%p,%p): quad %d -> (%d,%d %d,%d %d,%d %d,%d)\n",wptr,wptr2,i,
 	((char*)wptr2)[0],
 	((char*)wptr2)[1],
@@ -532,12 +532,12 @@ s32 pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
   }
   //    msg("pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llr8-pdcch_llr);
 
-  for (i=0;i<(frame_parms->N_RB_DL*((symbol==0) ? 24 : 16));i++) {
+  for (i=0;i<(frame_parms->N_RB_DL*((symbol==0) ? 16 : 24));i++) {
 
-    if (*rxF>7)
-      *pdcch_llr8=7;
-    else if (*rxF<-8)
-      *pdcch_llr8=-8;
+    if (*rxF>31)
+      *pdcch_llr8=31;
+    else if (*rxF<-32)
+      *pdcch_llr8=-32;
     else
       *pdcch_llr8 = (char)(*rxF);
 
@@ -1503,7 +1503,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
   
-  log2_maxh = 3+(log2_approx(avgs)/2);
+  log2_maxh = 5+(log2_approx(avgs)/2);
 #ifdef DEBUG_PHY
   msg("[PDCCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgP[0],avgs);
 #endif
@@ -2226,8 +2226,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
 			     u32 *CCEmap2) {
   
   u16 crc,CCEind,nCCE;
-  u32 *CCEmap;
-  int i;
+  u32 *CCEmap=NULL;
+
 
   nCCE = get_nCCE(lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,frame_parms,mi);
   for (CCEind=0;

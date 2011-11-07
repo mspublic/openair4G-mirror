@@ -81,21 +81,24 @@ int compareints (const void * a, const void * b)
 }
 
 
-int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
-		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-		    mod_sym_t *txdataF,
-		    short amp,
-		    unsigned int sub_frame_number) {
+s32 generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
+		    u8 eNB_id,
+		    s16 amp,
+		    u32 subframe) {
 
-  unsigned short msrsb,Nb,nb,b,msrs0,k,l,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
-  unsigned short *Msc_idx_ptr;
-  int k0,T_SFC;
-  int sub_frame_offset;
+  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated=&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id];
+  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0];
+  u16 msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
+  u16 *Msc_idx_ptr;
+  u32 k0,T_SFC;
+  u32 subframe_offset;
   u8 Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
   u8 Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
   u8 Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
   u8 n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
   u8 kTC   = soundingrs_ul_config_dedicated->transmissionComb;
+
 
   if (frame_parms->N_RB_UL < 41) {
     msrs0 = msrsb_6_40[Csrs][0];
@@ -132,7 +135,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef USER_MODE
-  Msc_idx_ptr = (unsigned short*) bsearch((unsigned short*) &Msc_RS, (unsigned short*) dftsizes, 33, sizeof(unsigned short), compareints);
+  Msc_idx_ptr = (u16*) bsearch((u16*) &Msc_RS, (u16*) dftsizes, 33, sizeof(u16), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
@@ -155,18 +158,18 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
   T_SFC = (Ssrs<=7 ? 5 : 10); 
-  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[Ssrs]) {
+  if ((1<<(subframe%T_SFC))&transmission_offset_tdd[Ssrs]) {
 
 #ifndef IFFT_FPGA_UE
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
   //msg("carrier_pos = %d\n",carrier_pos);
   
-  sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
-  symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
+  subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
+  symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
 
   for (k=0;k<Msc_RS;k++) {
-    ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
-    ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
+    ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((s32) amp * (s32) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
+    ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((s32) amp * (s32) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
     carrier_pos+=2;
     if (carrier_pos >= frame_parms->ofdm_symbol_size)
       carrier_pos=1;
@@ -175,8 +178,8 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   carrier_pos = (frame_parms->N_RB_UL*12/2 + k0) % (frame_parms->N_RB_UL*12);
   //msg("carrier_pos = %d\n",carrier_pos);
 
-  sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
-  symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->N_RB_UL*12;
+  subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
+  symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->N_RB_UL*12;
 
   for (k=0;k<Msc_RS;k++) {
     if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0)) 
@@ -208,12 +211,11 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,		    
 		    int *txdataF) {
 
-  unsigned short msrsb,Nb,nb,b,msrs0,k,Msc_RS,Msc_RS_idx,carrier_pos;
-  unsigned short *Msc_idx_ptr;
+  u16 msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos;
+  u16 *Msc_idx_ptr;
   int k0;
   u8 Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
   u8 Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
-  u8 Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
   u8 n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
   u8 kTC   = soundingrs_ul_config_dedicated->transmissionComb;
 
@@ -252,7 +254,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef USER_MODE
-  Msc_idx_ptr = (unsigned short*) bsearch((unsigned short*) &Msc_RS, (unsigned short*) dftsizes, 33, sizeof(unsigned short), compareints);
+  Msc_idx_ptr = (u16*) bsearch((u16*) &Msc_RS, (u16*) dftsizes, 33, sizeof(u16), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {

@@ -129,7 +129,7 @@ int rate_matching_lte(unsigned int N_coded,
 		      unsigned int off){
 
 
-  unsigned int i,j,U,Umod,rep_flag=0;
+  unsigned int i,U,Umod,rep_flag=0;
   unsigned int Mod_input;
   int N_punctured;
 

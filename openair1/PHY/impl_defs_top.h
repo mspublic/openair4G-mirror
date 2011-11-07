@@ -509,6 +509,8 @@ typedef struct{
 } RF_CNTL_PACKET;
 #endif //NOCARD_TEST
 
+#define MCS_COUNT 23
+
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
 /**@}
   *@}

@@ -12,6 +12,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
+#include "OCG_vars.h"
 
 //#include "PHY/CODING/lte_interleaver.h"
 //#include "PHY/CODING/lte_interleaver_inline.h"

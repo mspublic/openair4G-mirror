@@ -1,15 +1,15 @@
 #include "PHY/defs.h"
 #include "MAC_INTERFACE/extern.h"
 
-unsigned short pcfich_reg[4];
-unsigned char pcfich_first_reg_idx = 0;
+u16 pcfich_reg[4];
+u8 pcfich_first_reg_idx = 0;
 
 //#define DEBUG_PCFICH
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 
-  unsigned short kbar = 6 * (frame_parms->Nid_cell %(2*frame_parms->N_RB_DL));
-  unsigned short first_reg;
+  u16 kbar = 6 * (frame_parms->Nid_cell %(2*frame_parms->N_RB_DL));
+  u16 first_reg;
 
   pcfich_reg[0] = kbar/6;
   first_reg = pcfich_reg[0];
@@ -39,7 +39,7 @@ void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		       u8 subframe,
 		       u8 *b,
 		       u8 *bt) {
-  int i;
+  u32 i;
   u8 reset;
   u32 x1, x2, s=0;
 
@@ -62,7 +62,7 @@ void pcfich_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			 u8 subframe,
 			 s16 *d) {
 
-  int i;
+  u32 i;
   u8 reset;
   u32 x1, x2, s=0;
 
@@ -247,9 +247,9 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	     LTE_UE_PDCCH *lte_ue_pdcch_vars,
 	     MIMO_mode_t mimo_mode) {
 
-  u8 nsymb,pcfich_quad;
+  u8 pcfich_quad;
   u8 i,j;
-  u16 symbol_offset,m,re_offset,reg_offset;
+  u16 m,reg_offset;
 
   s32 **rxdataF_comp = lte_ue_pdcch_vars->rxdataF_comp;
   s16 pcfich_d[32],*pcfich_d_ptr;

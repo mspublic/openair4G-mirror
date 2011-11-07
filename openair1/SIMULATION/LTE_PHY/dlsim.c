@@ -14,6 +14,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
+#include "OCG_vars.h"
 
 #ifdef XFORMS
 #include "forms.h"
@@ -304,7 +305,7 @@ int main(int argc, char **argv) {
 
   int s,Kr,Kr_bytes;
 
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate;
+  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate=0.0;
   double snr_step=1, snr_int=20;
   //int **txdataF, **txdata;
   int **txdata;
@@ -336,16 +337,16 @@ int main(int argc, char **argv) {
   unsigned char *input_buffer[2];
   unsigned short input_buffer_length;
   unsigned int ret;
-  unsigned int coded_bits_per_codeword,nsymb,dci_cnt,tbs;
+  unsigned int coded_bits_per_codeword=0,nsymb,dci_cnt,tbs=0;
  
-  unsigned int tx_lev,tx_lev_dB,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
+  unsigned int tx_lev,tx_lev_dB=0,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
   int re_allocated;
   FILE *bler_fd;
   char bler_fname[256];
   FILE *tikz_fd;
   char tikz_fname[256];
 
-  FILE *input_trch_fd;
+  FILE *input_trch_fd=NULL;
   unsigned char input_trch_file=0;
   FILE *input_fd=NULL;
   unsigned char input_file=0;
@@ -375,7 +376,7 @@ int main(int argc, char **argv) {
   int u;
   int abstx=0;
   int iii;
-  FILE *csv_fd;
+  FILE *csv_fd=NULL;
   char csv_fname[20];
   int ch_realization;
   int pmi_feedback=0;
@@ -383,7 +384,7 @@ int main(int argc, char **argv) {
   // int ii;
   // int bler;
   double blerr,uncoded_ber,avg_ber;
-  short *uncoded_ber_bit;
+  short *uncoded_ber_bit=NULL;
   u8 N_RB_DL=25,osf=1;
 
 #ifdef XFORMS
@@ -826,7 +827,7 @@ int main(int argc, char **argv) {
       else {
 	i=0;
 	while ((!feof(input_trch_fd)) && (i<input_buffer_length<<3)) {
-	  fscanf(input_trch_fd,"%s",input_trch_val);
+	  ret=fscanf(input_trch_fd,"%s",input_trch_val);
 	  if (input_trch_val[0] == '1')
 	    input_buffer[k][i>>3]+=(1<<(7-(i&7)));
 	  if (i<16)
@@ -1108,7 +1109,7 @@ int main(int argc, char **argv) {
 	  else {  // Read signal from file
 	    i=0;
 	    while (!feof(input_fd)) {
-	      fscanf(input_fd,"%s %s",input_val_str,input_val_str2);
+	      ret=fscanf(input_fd,"%s %s",input_val_str,input_val_str2);
 	    
 	      if ((i%4)==0) {
 		((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));

@@ -25,14 +25,10 @@
 #include "emmintrin.h"
 #endif //EXPRESSMIMO_TARGET
 
-extern unsigned char ccodelte_table[128],ccodelte_table_rev[128];
+extern u8 ccodelte_table[128],ccodelte_table_rev[128];
 
 
 
-
-static unsigned char inputs[64][2048];
-static unsigned short survivors[64][2048];
-static short partial_metrics[64],partial_metrics_new[64];
 
 #ifdef __KERNEL__
 #define printf rt_printk
@@ -40,15 +36,15 @@ static short partial_metrics[64],partial_metrics_new[64];
 
 #ifndef EXPRESSMIMO_TARGET
 
-static char m0_table[64*16*16*16] __attribute__ ((aligned(16)));
-static char m1_table[64*16*16*16] __attribute__ ((aligned(16)));
+static s8 m0_table[64*16*16*16] __attribute__ ((aligned(16)));
+static s8 m1_table[64*16*16*16] __attribute__ ((aligned(16)));
 
 
 // Set up Viterbi tables for SSE2 implementation
 void phy_generate_viterbi_tables_lte() {
 
-  char w[8],in0,in1,in2;
-  unsigned char state,index0,index1;
+  s8 w[8],in0,in1,in2;
+  u8 state,index0,index1;
 
   for (in0 = -8; in0 <8 ; in0++) {   // use 4-bit quantization
     for (in1 = -8; in1 <8 ;in1++) {
@@ -95,7 +91,7 @@ void phy_generate_viterbi_tables_lte() {
 #ifdef DEBUG_VITERBI
 void print_bytes(char *s,__m128i *x) {
 
-  unsigned char *tempb = (unsigned char *)x;
+  u8 *tempb = (u8 *)x;
 
   printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,
 	 tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7],
@@ -106,7 +102,7 @@ void print_bytes(char *s,__m128i *x) {
 /*
 void print_shorts(__m128i x,char *s) {
 
-  short *tempb = (short *)&x;
+  s16 *tempb = (s16 *)&x;
 
   printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d\n",s,
 	 tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7]
@@ -121,20 +117,20 @@ static __m128i  TB[4*8192];
 
 static __m128i metrics0_15,metrics16_31,metrics32_47,metrics48_63,even0_30a,even0_30b,even32_62a,even32_62b,odd1_31a,odd1_31b,odd33_63a,odd33_63b,TBeven0_30,TBeven32_62,TBodd1_31,TBodd33_63;// __attribute__((aligned(16)));
 
-static __m128i rescale,min_state,min_state2;// __attribute__((aligned(16)));
+static __m128i min_state,min_state2;// __attribute__((aligned(16)));
 
-void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n) {
+void phy_viterbi_lte_sse2(s8 *y,u8 *decoded_bytes,u16 n) {
   
 
   static __m128i *m0_ptr,*m1_ptr,*TB_ptr = &TB[0];
 
 
-  char *in = y;
-  unsigned char prev_state0,maxm,s;
-  static unsigned char *TB_ptr2;
-  unsigned int table_offset;
-  unsigned char iter;
-  short position;
+  s8 *in = y;
+  u8 prev_state0,maxm,s;
+  static u8 *TB_ptr2;
+  u32 table_offset;
+  u8 iter;
+  s16 position;
 
   // set initial metrics
   //debug_msg("Doing viterbi\n");
@@ -338,31 +334,31 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
   maxm = 0;
 
   for (s=0;s<16;s++)
-    if (((unsigned char *)&metrics0_15)[s] > maxm) {
-      maxm = ((unsigned char *)&metrics0_15)[s];
+    if (((u8 *)&metrics0_15)[s] > maxm) {
+      maxm = ((u8 *)&metrics0_15)[s];
       prev_state0 = s;
     }
 
   for (s=0;s<16;s++)
-    if (((unsigned char *)&metrics16_31)[s] > maxm) {
-      maxm = ((unsigned char *)&metrics16_31)[s];
+    if (((u8 *)&metrics16_31)[s] > maxm) {
+      maxm = ((u8 *)&metrics16_31)[s];
       prev_state0 = s+16;
     }
 
   for (s=0;s<16;s++)
-    if (((unsigned char *)&metrics32_47)[s] > maxm) {
-      maxm = ((unsigned char *)&metrics32_47)[s];
+    if (((u8 *)&metrics32_47)[s] > maxm) {
+      maxm = ((u8 *)&metrics32_47)[s];
       prev_state0 = s+32;
     }
 
   for (s=0;s<16;s++)
-    if (((unsigned char *)&metrics48_63)[s] > maxm) {
-      maxm = ((unsigned char *)&metrics48_63)[s];
+    if (((u8 *)&metrics48_63)[s] > maxm) {
+      maxm = ((u8 *)&metrics48_63)[s];
       prev_state0 = s+48;
     }
 
   //  printf("Max state %d\n",prev_state0);
-  TB_ptr2 = (unsigned char *)&TB[(n-1)*4];
+  TB_ptr2 = (u8 *)&TB[(n-1)*4];
   for (position = n-1 ; position>-1; position--) {
 
 //    if ((position%8) == 0)
@@ -387,15 +383,15 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
 
 #else //EXPRESSMIMO_TARGET
 
-void phy_viterbi_lte(char *y,unsigned char *decoded_bytes,unsigned short n) {
+void phy_viterbi_lte(s8 *y,u8 *decoded_bytes,u16 n) {
 }
 
 #endif //EXPRESSMIMO_TARGET
 
 /*
-void print_bytes(__m128i x,char *s) {
+void print_bytes(__m128i x,s8 *s) {
 
-  unsigned char *tempb = (unsigned char *)&x;
+  u8 *tempb = (u8 *)&x;
 
   printf("%s  : %u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",s,
 	 tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7],
@@ -405,15 +401,15 @@ void print_bytes(__m128i x,char *s) {
 */
 
 #ifdef TEST_DEBUG
-int test_viterbi(unsigned char dabflag)
+int test_viterbi(u8 dabflag)
 {
-  unsigned char test[8];
-  //_declspec(align(16))  char channel_output[512];
-  //_declspec(align(16))  unsigned char output[512],decoded_output[16], *inPtr, *outPtr;
+  u8 test[8];
+  //_declspec(align(16))  s8 channel_output[512];
+  //_declspec(align(16))  u8 output[512],decoded_output[16], *inPtr, *outPtr;
 
-  char channel_output[512];
-  unsigned char output[512],decoded_output[16], *inPtr, *outPtr;
-  unsigned int i;
+  s8 channel_output[512];
+  u8 output[512],decoded_output[16], *inPtr, *outPtr;
+  u32 i;
 
   
   test[0] = 7;
@@ -460,7 +456,7 @@ int test_viterbi(unsigned char dabflag)
 int main(int argc, char **argv) {
 
   char c;
-  unsigned char dabflag=0;
+  u8 dabflag=0;
 
   while ((c = getopt (argc, argv, "d")) != -1) {
     if (c=='d')

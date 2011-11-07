@@ -145,6 +145,8 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
+  /// DRMS field for this ULSCH
+  u8 n_DMRS;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -194,9 +196,14 @@ typedef struct {
   u8 dl_power_off;
 } LTE_eNB_DLSCH_t;
 
+#define PUSCH_x 2
+#define PUSCH_y 3
+
 typedef struct {
   /// Current Number of Symbols
   u8 Nsymb_pusch;
+  /// SRS active flag
+  u8 srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_UE_HARQ_t *harq_processes[8];     
   /// Pointer to CQI data
@@ -215,6 +222,8 @@ typedef struct {
   u8 O_ACK;
   /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)
   u8 O_CQI_MIN;
+  /// ACK/NAK Bundling flag
+  u8 bundling;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   u8 e[MAX_NUM_CHANNEL_BITS];
   /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
@@ -238,17 +247,19 @@ typedef struct {
   /// coded RI bits
   u8 q_RI[MAX_RI_PAYLOAD];
   /// beta_offset_cqi times 8
-  u8 beta_offset_cqi_times8;
+  u16 beta_offset_cqi_times8;
   /// beta_offset_ri times 8
-  u8 beta_offset_ri_times8;
+  u16 beta_offset_ri_times8;
   /// beta_offset_harqack times 8
-  u8 beta_offset_harqack_times8;
+  u16 beta_offset_harqack_times8;
   /// power_offset
   u8 power_offset;
   /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
   u8 n_DMRS2;
   // for cooperative communication
   u8 cooperation_flag;
+  /// RNTI attributed to this ULSCH
+  u16 rnti;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -306,15 +317,21 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
+  /// DRMS field for this ULSCH
+  u8 n_DMRS;
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {
   /// Current Number of Symbols
   u8 Nsymb_pusch;
+  /// SRS active flag
+  u8 srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_eNB_HARQ_t *harq_processes[8];     
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   s16 e[MAX_NUM_CHANNEL_BITS];
+  /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
+  u8 h[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   u8 Mdlharq; 
   /// CQI CRC status
@@ -335,6 +352,8 @@ typedef struct {
   u8 o_ACK[4];
   /// Length of ACK information (bits)
   u8 O_ACK;
+  /// ACK/NAK Bundling flag
+  u8 bundling;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   s8 q[MAX_CQI_PAYLOAD];
   /// number of coded CQI bits after interleaving
@@ -348,11 +367,11 @@ typedef struct {
   /// coded RI bits
   s16 q_RI[MAX_RI_PAYLOAD];
   /// beta_offset_cqi times 8
-  u8 beta_offset_cqi_times8;
+  u16 beta_offset_cqi_times8;
   /// beta_offset_ri times 8
-  u8 beta_offset_ri_times8;
+  u16 beta_offset_ri_times8;
   /// beta_offset_harqack times 8
-  u8 beta_offset_harqack_times8;
+  u16 beta_offset_harqack_times8;
   /// Flag to indicate that eNB awaits UE RRCConnRequest 
   u8 RRCConnRequest_active;
   /// Flag to indicate that eNB should decode UE RRCConnRequest 

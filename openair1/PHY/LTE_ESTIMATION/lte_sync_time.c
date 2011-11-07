@@ -202,8 +202,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
   // perform a time domain correlation using the oversampled sync sequence
 
-  unsigned int n, m, ar, s, peak_pos, peak_val, sync_source;
-  int temp_re, temp_im, result,result2;
+  unsigned int n, ar, s, peak_pos, peak_val, sync_source;
+  int result,result2;
   int sync_out[3] = {0,0,0},sync_out2[3] = {0,0,0};
   int tmp[3] = {0,0,0};
   int length =   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti>>1;
@@ -334,11 +334,11 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 //#define DEBUG_PHY
 
-int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
+int lte_sync_time_eNB(s32 **rxdata, ///rx data in time domain
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      int length,
-		      int *peak_val_out,
-		      unsigned int *sync_corr_eNB) {
+		      u32 length,
+		      u32 *peak_val_out,
+		      u32 *sync_corr_eNB) {
 
   // perform a time domain correlation using the oversampled sync sequence
 

@@ -775,28 +775,33 @@ s32 generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,
 
 /*!
   \brief This function is similar to generate_srs_tx but generates a conjugate sequence for channel estimation. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
-  @param frame_parms Pointer to LTE DL Frame Parameters
-  @param soundingrs_ul_config_dedicated Dynamic configuration from RRC during Connection Establishment
-  @param txdataF pointer to the frequency domain TX signal
+  @param phy_vars_ue Pointer to PHY_VARS structure
+  @param eNB_id Index of destination eNB for this SRS
+  @param amp Linear amplitude of SRS
+  @param subframe Index of subframe on which to act
+  @returns 0 on success, -1 on error with message
 */
 
-s32 generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
-		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-		    mod_sym_t *txdataF,
-		    short amp,
-		    unsigned int sub_frame_number);
+s32 generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
+		    u8 eNB_id,
+		    s16 amp,
+		    u32 subframe);
 
 /*!
   \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
 */
 
-s32 generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
-		       mod_sym_t *txdataF,
+s32 generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
+		       u8 eNB_id,
 		       s16 amp,
-		       u32 sub_frame_number,
+		       u32 subframe,
 		       u32 first_rb,
-		       u32 nb_rb,
-		       u8 cyclic_shift);
+		       u32 nb_rb);
+
+/*!
+  \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).
+  @params frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
+void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
 
 s32 compareints (const void * a, const void * b);
 
@@ -849,18 +854,13 @@ s32 generate_eNB_ulsch_params_from_rar(u8 *rar_pdu,
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u16 rnti,
 				      u8 subframe,
-				      u8 transmisison_mode,
 				      DCI_format_t dci_format,
-				      LTE_UE_ULSCH_t *ulsch,
-				      LTE_UE_DLSCH_t **dlsch,
-				      PHY_MEASUREMENTS *meas,
-				      LTE_DL_FRAME_PARMS *frame_parms,
+				      PHY_VARS_UE *phy_vars_ue,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti,
 				      u8 eNB_id,
-				      u32 current_dlsch_cqi,
-				      u8 generate_srs); 
+				      u8 use_srs);
 
 s32 generate_ue_ulsch_params_from_rar(u8 *rar_pdu,
 				      u8 subframe,
@@ -870,13 +870,12 @@ s32 generate_ue_ulsch_params_from_rar(u8 *rar_pdu,
 				      u8 eNB_id,
 				      s32 current_dlsch_cqi);
 
-s32 generate_eNB_ulsch_params_from_dci(void *dci_pdu,
+int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
 				       u8 subframe,
-				       u8 transmission_mode,
 				       DCI_format_t dci_format,
-				       LTE_eNB_ULSCH_t *ulsch,
-				       LTE_DL_FRAME_PARMS *frame_parms,
+				       u8 UE_id,
+				       PHY_VARS_eNB *PHY_vars_eNB,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -936,12 +935,11 @@ parameters are know, the routine calls some basic initialization routines (cell-
 */
 int initial_sync(PHY_VARS_UE *phy_vars_ue);
 
-void rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
-	      LTE_eNB_ULSCH *eNB_ulsch_vars,
-	      LTE_DL_FRAME_PARMS *frame_parms,
+void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      u32 subframe,
 	      u8 eNB_id,  // this is the effective sector id
-	      LTE_eNB_ULSCH_t *ulsch,
+	      u8 UE_id,
+	      LTE_eNB_ULSCH_t **ulsch,
 	      u8 cooperation_flag);
 
 void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
@@ -957,13 +955,15 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
   @param harq_pid HARQ process ID
   @param tmode Transmission mode (1-7)
   @param control_only_flag Generate PUSCH with control information only
+  @param Nbundled Parameter for ACK/NAK bundling (36.213 Section 7.3)
 */
 u32 ulsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
 		   u8 harq_pid,
 		   u8 tmode,
-		   u8 control_only_flag);
+		   u8 control_only_flag,
+		   u8 Nbundled);
 
 /*!
   \brief Encoding of PUSCH/ACK/RI/ACK from 36-212 for emulation
@@ -979,11 +979,20 @@ s32 ulsch_encoding_emul(u8 *ulsch_buffer,
 			u8 harq_pid,
 			u8 control_only_flag);
 
-u32  ulsch_decoding(s16 *ulsch_llr,
-		    LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_eNB_ULSCH_t *ulsch,
-		    u8 subframe,
-		    u8 control_only_flag);
+/*!
+  \brief Decoding of PUSCH/ACK/RI/ACK from 36-212.
+  @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param UE_id ID of UE transmitting this PUSCH
+  @param subframe Index of subframe for PUSCH
+  @param control_only_flag Receive PUSCH with control information only
+  @param Nbundled Nbundled parameter for ACK/NAK scrambling from 36-212/36-213
+  @returns 0 on success
+*/
+unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
+			     u8 UE_id,
+			     u8 subframe,
+			     u8 control_only_flag,
+			     u8 Nbundled);
 
 u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
@@ -991,6 +1000,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 subframe,
+			s16 amp,
 			LTE_eNB_ULSCH_t *ulsch_eNB,
 			mod_sym_t **txdataF);
 
@@ -1086,7 +1096,8 @@ s32 rx_pucch(LTE_eNB_COMMON *eNB_common_vars,
 	     u16 n2_pucch,
 	     u8 shortened_format,
 	     u8 *payload,
-	     u8 subframe);
+	     u8 subframe,
+	     s8 sigma2_dB);
 
 s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 UE_index,

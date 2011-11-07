@@ -100,7 +100,7 @@ typedef struct {
   u16 n1PUCCH_AN;
 } PUCCH_CONFIG_COMMON;
 
-/// UL-ReferenceSignalsPUSCH from 36.311 RRC spec
+/// UL-ReferenceSignalsPUSCH from 36.331 RRC spec
 typedef struct {
   /// See 36.211 (5.5.1.3) (0,1)
   u8 groupHoppingEnabled;
@@ -112,6 +112,10 @@ typedef struct {
   u8 cyclicShift;
   /// nPRS for cyclic shift of DRS
   u8 nPRS[20];
+  /// group hopping sequence for DRS
+  u8 grouphop[20];
+  /// sequence hopping sequence for DRS
+  u8 seqhop[20];
 } UL_REFERENCE_SIGNALS_PUSCH_t;
  
 typedef enum {
@@ -135,11 +139,11 @@ typedef struct {
 
 typedef struct {
   /// 
-  u8 betaOffset_ACK_Index;
+  u16 betaOffset_ACK_Index;
   ///
-  u8 betaOffset_RI_Index;
+  u16 betaOffset_RI_Index;
   /// 
-  u8 betaOffset_CQI_Index;
+  u16 betaOffset_CQI_Index;
 } PUSCH_CONFIG_DEDICATED;
 
 /// PDSCH-ConfigCommon from 36.331 RRC spec

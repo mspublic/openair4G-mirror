@@ -4,14 +4,14 @@
 
 void dac(double **s_re,
 	 double **s_im,
-	 unsigned int **input,
-	 unsigned int input_offset,
-	 unsigned int nb_tx_antennas,
-	 unsigned int length,
+	 u32 **input,
+	 u32 input_offset,
+	 u32 nb_tx_antennas,
+	 u32 length,
 	 double amp_dBm,
-	 unsigned char B,
-	 unsigned int meas_length,
-	 unsigned int meas_offset) {
+	 u8 B,
+	 u32 meas_length,
+	 u32 meas_offset) {
 
   int i;
   int aa;
@@ -52,16 +52,16 @@ void dac(double **s_re,
 
 double dac_fixed_gain(double **s_re,
 		      double **s_im,
-		      unsigned int **input,
-		      unsigned int input_offset,
-		      unsigned int nb_tx_antennas,
-		      unsigned int length,
-		      unsigned char B,
+		      u32 **input,
+		      u32 input_offset,
+		      u32 nb_tx_antennas,
+		      u32 length,
+		      u8 B,
 		      double gain_dB) {
 
   int i;
   int aa;
-  double V=0.0,amp;
+  double amp;
 
   for (i=0;i<length;i++) {
     for (aa=0;aa<nb_tx_antennas;aa++) {

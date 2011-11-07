@@ -28,9 +28,7 @@ struct msghdr nas_msg;
 int netlink_init() {
 
 
-  int i;
   int ret;
-  int len;
 
   
   nas_sock_fd = socket(PF_NETLINK, SOCK_RAW,GRAAL_NETLINK_ID);

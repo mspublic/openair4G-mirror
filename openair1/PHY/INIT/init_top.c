@@ -226,9 +226,6 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
 
 
- unsigned char card_id;
-
-  int i,j,n,tb;
 
   // bzero((void *)PHY_vars,sizeof(PHY_VARS));
 
@@ -326,11 +323,10 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
 
 void phy_cleanup(void) {
 
-  int i,n,tb;
 #ifndef USER_MODE
   unsigned int dummy_ptr;
 #endif //USER_MODE
-  unsigned char card_id;
+
   // stop PHY_thread
 
 

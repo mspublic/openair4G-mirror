@@ -32,7 +32,6 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 N_RB_DL,u8 osf) {
 
-  unsigned int ind;
   LTE_DL_FRAME_PARMS *lte_frame_parms;
 
   printf("Start lte_param_init\n");
@@ -106,34 +105,24 @@ int main(int argc, char **argv) {
 
   char c;
 
-  int i,l,aa,aarx,sector;
-  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
+  int i,l,aa,aarx;
+  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   u8 snr1set=0;
   //mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
   int **txdataF2;
 #endif
-  int **txdata,**txdata1,**txdata2;
+  int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.0000005,Td=.8,iqim=0.0;
-  u8 channel_length,nb_taps=8;
-  int sync_pos, sync_pos_slot;
-  FILE *rx_frame_file,*output_fd;
-  int result;
-  int freq_offset;
-  int subframe_offset;
-  char fname[40], vname[40];
+  double ricean_factor=0.0000005,Td=.8,iqim=0.0;
+  u8 channel_length;
   int trial, n_trials, ntrials=1, n_errors,n_errors2,n_alamouti;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
   unsigned char eNB_id = 0;
   u16 Nid_cell=0;
 
   u8 awgn_flag=0;
-  double nf[2] = {3.0,3.0}; //currently unused
-  double ip =0.0;
-  double N0W, path_loss, path_loss_dB;
-  int n_frames=1;
+   int n_frames=1;
   channel_desc_t *UE2eNB;
   u32 nsymb,tx_lev,tx_lev_dB;
   u8 extended_prefix_flag=0;
@@ -143,22 +132,18 @@ int main(int argc, char **argv) {
   fifo_dump_emos emos_dump;
 #endif
 
-  char input_val_str[50],input_val_str2[50];
-  double input_val1,input_val2;
-  u16 amask=0;
-  u8 frame_mod4,num_pdcch_symbols;
-  u16 NB_RB=25;
+  u16 NB_RB=1;
 
-  SCM_t channel_model=custom;
+  SCM_t channel_model=Rayleigh1_corr;
 
-  DCI_ALLOC_t dci_alloc[8];
   u8 abstraction_flag=0,calibration_flag=0;
   double pucch_sinr;
   u8 osf=1,N_RB_DL=25;
-  u32 pucch_payload_tx,pucch_payload_rx,pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
+  u32 pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
   PUCCH_FMT_t pucch_format = pucch_format1;
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
   u8 subframe=3;
+  u8 pucch_payload,pucch_payload_rx;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -218,6 +203,19 @@ int main(int argc, char **argv) {
 	  case 'G': 
 	    channel_model=ETU;
 	    break;
+	  case 'H':
+	    channel_model=Rayleigh8;
+	  case 'I':
+	    channel_model=Rayleigh1;
+	  case 'J':
+	    channel_model=Rayleigh1_corr;
+	  case 'K':
+	    channel_model=Rayleigh1_anticorr;
+	  case 'L':
+	    channel_model=Rice8;
+	  case 'M':
+	    channel_model=Rice1;
+	  break;
 	  default:
 	    msg("Unsupported channel model!\n");
 	    exit(-1);
@@ -372,35 +370,16 @@ int main(int argc, char **argv) {
 	 frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
 
 
-  if (channel_model==custom) {
-    msg("[SIM] Using custom channel model\n");
-
-    UE2eNB = new_channel_desc(n_tx,
-			      n_rx,
-			      nb_taps,
-			      channel_length,
-			      amps,
-			      NULL,
-			      NULL,
-			      Td,
-			      BW,
-			      ricean_factor,
-			      aoa,
-			      .999,
-			      0,
-			      0,
-			      0);
-  }
-  else {
-    msg("[SIM] Using SCM/101\n");
-    UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
-				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				  channel_model,
-				  BW,
-				  .999,
-				  0,
-				  0);
-  }
+  
+  msg("[SIM] Using SCM/101\n");
+  UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
+				PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+				channel_model,
+				BW,
+				0.0,
+				0,
+				0);
+  
 
   if (UE2eNB==NULL) {
     msg("Problem generating channel model. Exiting.\n");
@@ -427,10 +406,11 @@ int main(int argc, char **argv) {
   PHY_vars_eNB->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
   PHY_vars_eNB->lte_frame_parms.pucch_config_common.nRB_CQI          = 1;
   PHY_vars_eNB->lte_frame_parms.pucch_config_common.nCS_AN           = 0;
-
   PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
   PHY_vars_UE->lte_frame_parms.pucch_config_common.nRB_CQI          = 1;
   PHY_vars_UE->lte_frame_parms.pucch_config_common.nCS_AN           = 0;
+
+  pucch_payload = 1;
 
   generate_pucch(PHY_vars_UE->lte_ue_common_vars.txdataF,
 		 frame_parms,
@@ -440,7 +420,7 @@ int main(int argc, char **argv) {
 		 37, //n1_pucch,
 		 0, //n2_pucch,
 		 0, //shortened_format,
-		 1, //payload,
+		 &pucch_payload, 
 		 scfdma_amps[1], //amp,
 		 subframe); //subframe
 #ifdef IFFT_FPGA_UE  
@@ -532,8 +512,8 @@ int main(int argc, char **argv) {
     n_errors2 = 0;
     n_alamouti = 0;
     pucch_tx = 0;
-      pucch1_missed=0;
-      pucch1_false=0;
+    pucch1_missed=0;
+    pucch1_false=0;
 
     for (trial=0; trial<n_frames; trial++) {
       
@@ -566,7 +546,7 @@ int main(int argc, char **argv) {
 	}
       }
       
-      sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)) - SNR;
+      sigma2_dB = 10*log10((double)tx_lev) - SNR;
       if (n_frames==1)
 	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
       //AWGN
@@ -585,7 +565,7 @@ int main(int argc, char **argv) {
 	sig=1;
 	pucch_tx++;
       }
-      
+      //      sig = 1;
       for (n_trials=0;n_trials<ntrials;n_trials++) {
 	//printf("n_trial %d\n",n_trials);
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
@@ -628,6 +608,9 @@ int main(int argc, char **argv) {
 
 	  }
 	}
+
+      //      if (sig == 1)
+      //	  printf("*");
       
       rx_pucch(&PHY_vars_eNB->lte_eNB_common_vars,
 	       frame_parms,
@@ -638,10 +621,16 @@ int main(int argc, char **argv) {
 	       0, //n2_pucch,
 	       0, //shortened_format,
 	       &pucch_payload_rx, //payload,
-	       subframe); //subframe	       
+	       subframe,
+	       (s8)(sigma2_dB-10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)))); //subframe	       
       if (pucch_format==pucch_format1) {
-	pucch1_missed = (pucch_payload_rx == 0) && (sig==1) ? (pucch1_missed+1) : pucch1_missed;
-	pucch1_false  = (pucch_payload_rx == 1) && (sig==0) ? (pucch1_false+1) : pucch1_false;
+	pucch1_missed = ((pucch_payload_rx == 0) && (sig==1)) ? (pucch1_missed+1) : pucch1_missed;
+	pucch1_false  = ((pucch_payload_rx == 1) && (sig==0)) ? (pucch1_false+1) : pucch1_false;
+	/*	
+	if ((pucch_payload_rx == 0) && (sig==1)) {
+	  printf("EXIT\n");
+	  exit(-1);
+	  }*/
       }
       else {
 	pucch1_false = (pucch_payload_rx != 1) ? (pucch1_false+1) : pucch1_false;
@@ -653,7 +642,7 @@ int main(int argc, char **argv) {
     else if (pucch_format==pucch_format1a)
       printf("pucch_trials %d : pucch1a_errors %d\n",pucch_tx,pucch1_false);
     else if (pucch_format==pucch_format1b)
-      printf("pucch_trials %d : pucch1a_errors %d\n",pucch_tx,pucch1_false);
+      printf("pucch_trials %d : pucch1b_errors %d\n",pucch_tx,pucch1_false);
 
   }
   if (n_frames==1) {
