@@ -25,7 +25,8 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 				 double forgetting_factor, 
 				 double max_Doppler, 
 				 s32 channel_offset, 
-				 double path_loss_dB) {
+				 double path_loss_dB,
+				 u8 random_aoa) {
 
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
   u16 i,j;
@@ -53,6 +54,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->BW             = BW;
   chan_desc->ricean_factor  = ricean_factor;
   chan_desc->aoa            = aoa;
+  chan_desc->random_aoa  = random_aoa;
   chan_desc->forgetting_factor = forgetting_factor;
   chan_desc->channel_offset = channel_offset;
   chan_desc->path_loss_dB   = path_loss_dB;
@@ -191,6 +193,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     chan_desc->delays         = scm_c_delays;
     chan_desc->ricean_factor  = 1;
     chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
     chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
@@ -236,6 +239,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     chan_desc->delays         = epa_delays;
     chan_desc->ricean_factor  = 1;
     chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
     chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
@@ -277,6 +281,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     chan_desc->delays         = eva_delays;
     chan_desc->ricean_factor  = 1;
     chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
     chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
@@ -318,6 +323,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     chan_desc->delays         = etu_delays;
     chan_desc->ricean_factor  = 1;
     chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
     chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
@@ -367,7 +373,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   forgetting_factor,
 				   maxDoppler,
 				   channel_offset, 
-				   path_loss_dB);
+				   path_loss_dB,
+				   0);
       break;
 
   case Rice8:
@@ -392,7 +399,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   forgetting_factor,
 				   maxDoppler,
 				   channel_offset, 
-				   path_loss_dB);
+				   path_loss_dB,
+				   1);
       break;
 
   case Rayleigh1:
@@ -417,7 +425,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   forgetting_factor,
 				   maxDoppler,
 				   channel_offset, 
-				   path_loss_dB);
+				   path_loss_dB,
+				   0);
       break;
 
   case Rayleigh1_corr:
@@ -451,7 +460,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   forgetting_factor,
 				   maxDoppler,
 				   channel_offset, 
-				   path_loss_dB);
+				   path_loss_dB,
+				   0);
       break;
 
   case Rayleigh1_anticorr:
@@ -485,14 +495,15 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   forgetting_factor,
 				   maxDoppler,
 				   channel_offset, 
-				   path_loss_dB);
+				   path_loss_dB,
+				   0);
       break;
 
   case Rice1:
       nb_taps = 1;
       Td = 0;
       channel_length = 10;
-      ricean_factor = 0;
+      ricean_factor = 0.1;
       aoa = .03;
       maxDoppler = 0;
 
@@ -510,7 +521,78 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   forgetting_factor,
 				   maxDoppler,
 				   channel_offset, 
-				   path_loss_dB);
+				   path_loss_dB,
+				   1);
+      break;
+
+  case Rice1_corr:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 10;
+      ricean_factor = 0.1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      if ((nb_tx==2) && (nb_rx==1)) {
+	R_sqrt_ptr2 = R_sqrt_21_corr;
+      }
+      else if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr2 = R_sqrt_22_corr;
+      }
+      else
+	R_sqrt_ptr2 = NULL;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   R_sqrt_ptr2,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   1);
+      break;
+
+  case Rice1_anticorr:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 10;
+      ricean_factor = 0.1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      if ((nb_tx==2) && (nb_rx==1)) {
+	R_sqrt_ptr2 = R_sqrt_21_anticorr;
+      }
+      else if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr2 = R_sqrt_22_anticorr;
+      }
+      else 
+	R_sqrt_ptr2 = NULL;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   R_sqrt_ptr2,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   1);
       break;
 
   default:
@@ -546,15 +628,19 @@ int random_channel(channel_desc_t *desc) {
 	anew[aarx+(aatx*desc->nb_rx)].x = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
 	anew[aarx+(aatx*desc->nb_rx)].y = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
 
-	if (i==0) {
+	if ((i==0) && (desc->ricean_factor != 1.0)) {
+	  if (desc->random_aoa==1) {
+	    desc->aoa = uniformrandom()*2*M_PI;
+	  }
+
 	  // this assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. 
 	  // Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so 
 	  // that we can safely assume plane wave propagation.
 	  phase.x = cos(M_PI*((aarx-aatx)*sin(desc->aoa)));
 	  phase.y = sin(M_PI*((aarx-aatx)*sin(desc->aoa)));
 	  
-	  anew[aarx+(aatx*desc->nb_rx)].x += phase.x * sqrt(1-desc->ricean_factor);
-	  anew[aarx+(aatx*desc->nb_rx)].y += phase.y * sqrt(1-desc->ricean_factor);
+	  anew[aarx+(aatx*desc->nb_rx)].x += phase.x * sqrt(1.0-desc->ricean_factor);
+	  anew[aarx+(aatx*desc->nb_rx)].y += phase.y * sqrt(1.0-desc->ricean_factor);
 	}
 #ifdef DEBUG_CH
 	printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew[aarx+(aatx*desc->nb_rx)].x,anew[aarx+(aatx*desc->nb_rx)].y,desc->aoa,desc->ricean_factor,phase.x,phase.y);

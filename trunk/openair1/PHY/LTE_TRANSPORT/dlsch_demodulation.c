@@ -19,6 +19,7 @@ __m128i zero;
 
 #define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; res=_mm_xor_si64(x,sign);   //negate negatives
 
+//#define DEBUG_PHY
 
 //#define cmax(a,b) ((a)>(b) ? (a) : (b))
 
@@ -1277,7 +1278,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	
 	if (rb_alloc_ind==1) {
 	  *pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	  //	  printf("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
+	  //printf("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
 
 	  pmi_loc++;
 	  if (pilots==0) {
@@ -2260,7 +2261,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				       dlsch_ue[0]->rb_alloc,
 				       symbol,
 				       frame_parms);
-      else
+      else 
 	nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				       lte_ue_common_vars->dl_ch_estimates[eNB_id],
 				       lte_ue_dlsch_vars[eNB_id_i]->rxdataF_ext,
@@ -2309,7 +2310,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 					 subframe,
 					 frame_parms);
     }
-  } //else
+  } //else n_tx>1
 
   //  printf("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
   if (nb_rb==0) {
@@ -2337,13 +2338,29 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
     lte_ue_dlsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)
-      + log2_approx(frame_parms->nb_antennas_tx-1)
+      + log2_approx(frame_parms->nb_antennas_tx-1) //-1 because log2_approx counts the number of bits
       + log2_approx(frame_parms->nb_antennas_rx-1);
-    if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11)
+    if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11) &&
+	(dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
+	(dlsch_ue[0]->dl_power_off==1)) // we are in TM 6
       lte_ue_dlsch_vars[eNB_id]->log2_maxh++;
 
+    // this version here applies the factor .5 also to the extra terms. however, it does not work so well as the one above
+    /* K = Nb_rx         in TM1 
+           Nb_tx*Nb_rx   in TM2,4,5
+	   Nb_tx^2*Nb_rx in TM6 */
+    /*
+    K = frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx; //that also covers TM1 since Nb_tx=1
+    if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11) &&
+	(dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
+	(dlsch_ue[0]->dl_power_off==1)) // we are in TM 6
+      K *= frame_parms->nb_antennas_tx;
+
+    lte_ue_dlsch_vars[eNB_id]->log2_maxh = (log2_approx(K*avgs)/2);
+    */
+
 #ifdef DEBUG_PHY
-    msg("[DLSCH] log2_maxh = %d (%d,%d,%d)\n",lte_ue_dlsch_vars[eNB_id]->log2_maxh,avg[0],avgs,log2_approx(avgs)/2);
+    msg("[DLSCH] log2_maxh = %d (%d,%d,%d)\n",lte_ue_dlsch_vars[eNB_id]->log2_maxh,avg[0],avgs,K);
     msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);
 #endif
   }
@@ -2366,11 +2383,11 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			       lte_ue_dlsch_vars[eNB_id]->log2_maxh,
 			       phy_measurements); // log2_maxh+I0_shift
 #ifdef DEBUG_PHY
-    write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+    if (symbol==5)
+      write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
     
     if ((dual_stream_flag==1) && (eNB_id_i!=NUMBER_OF_eNB_MAX)) {
-      
       // get MF output for interfering stream
       dlsch_channel_compensation(lte_ue_dlsch_vars[eNB_id_i]->rxdataF_ext,
 				 lte_ue_dlsch_vars[eNB_id_i]->dl_ch_estimates_ext,
@@ -2400,7 +2417,6 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				    lte_ue_dlsch_vars[eNB_id_i]->dl_ch_estimates_ext,
 				    lte_ue_dlsch_vars[eNB_id]->dl_ch_rho_ext,
 				    lte_ue_dlsch_vars[eNB_id]->log2_maxh);
-    
     }
   }
   else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding
@@ -2461,6 +2477,12 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				      nb_rb,
 				      lte_ue_dlsch_vars[eNB_id]->log2_maxh);
   
+#ifdef DEBUG_PHY
+      if (symbol==5) {
+	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+	write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);    
+      }
+#endif  
 
       // compute correlation between precoded channel and channel precoded with opposite PMI
       dlsch_dual_stream_correlation(frame_parms,
@@ -2486,10 +2508,6 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			symbol,
 			nb_rb,
 			dual_stream_flag); 
-#ifdef DEBUG_PHY
-  write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-  write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);    
-#endif  
 
   //  printf("Combining");
   // Single-layer transmission formats

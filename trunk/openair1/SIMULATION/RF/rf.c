@@ -165,6 +165,35 @@ void rf_rx(double **r_re,
     //    pn[i] = p_noise;
   }
 }
+
+void rf_rx_simple(double **r_re,
+		  double **r_im,
+		  unsigned int nb_rx_antennas,
+		  unsigned int length,
+		  double s_time,
+		  double rx_gain_dB) {
+  
+  int i,a;
+  double rx_gain_lin = pow(10.0,.05*rx_gain_dB);
+  double N0W         = pow(10.0,.1*(-174.0 - 10*log10(s_time*1e-9)));
+
+  //  printf("s_time=%f, N0W=%g\n",s_time,10*log10(N0W));
+
+  //Loop over input
+#ifdef DEBUG_RF
+  printf("N0W = %f dBm\n",10*log10(N0W));
+  printf("rx_gain = %f dB(%f)\n",rx_gain_dB,rx_gain_lin);
+#endif
+
+  for (i=0;i<length;i++) {
+    for (a=0;a<nb_rx_antennas;a++) {
+      // Amplify by receiver gain and apply 3rd order non-linearity
+      r_re[a][i] = rx_gain_lin*(r_re[a][i] + sqrt(.5*N0W)*gaussdouble(0.0,1.0));
+      r_im[a][i] = rx_gain_lin*(r_im[a][i] + sqrt(.5*N0W)*gaussdouble(0.0,1.0));
+    }
+  }
+}
+
  
 #ifdef RF_MAIN
 #define INPUT_dBm -70.0

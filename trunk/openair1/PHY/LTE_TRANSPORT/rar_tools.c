@@ -120,10 +120,12 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 
     ulsch->O_RI                                  = 1;
     if (meas->rank[eNB_id] == 1) {
+      ulsch->uci_format                          = wideband_cqi_rank2_2A;
       ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
       ulsch->o_RI[0]                             = 1;
     }
     else {
+      ulsch->uci_format                          = wideband_cqi_rank1_2A;
       ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
       ulsch->o_RI[0]                             = 0;
     }

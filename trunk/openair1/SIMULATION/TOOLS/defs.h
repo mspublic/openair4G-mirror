@@ -44,8 +44,10 @@ typedef struct {
   double BW; 
   ///Ricean factor of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
   double ricean_factor; 
-  /// angle of arrival of wavefront. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.  
+  ///Angle of arrival of wavefront (in radians). For Ricean channel only. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.  
   double aoa; 
+  ///If set to 1, aoa is randomized according to a uniform random distribution 
+  s8 random_aoa;
   ///in Hz. if >0 generate a channel with a Clarke's Doppler profile with a maximum Doppler bandwidth max_Doppler. CURRENTLY NOT IMPLEMENTED!
   double max_Doppler; 
   ///Square root of the full correlation matrix size(R_tx) = nb_taps * (n_tx * n_rx) * (n_tx * n_rx).
@@ -133,6 +135,8 @@ typedef enum {
   Rayleigh1_anticorr,
   Rice8,
   Rice1,
+  Rice1_corr,
+  Rice1_anticorr,
 } SCM_t;
 
 /** 
@@ -152,9 +156,10 @@ typedef enum {
 \param max_Doppler This is the maximum Doppler frequency for Jakes' Model
 \param channel_offset This is a time delay to apply to channel
 \param path_loss_dB This is the path loss in dB
+\param random_aoa If set to 1, AoA of ricean component is randomized
 */
 
-channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB);
+channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB,u8 random_aoa);
 
 channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				     u8 nb_rx, 

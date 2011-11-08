@@ -140,9 +140,11 @@ int main(int argc, char **argv) {
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03;
-  double ricean_factor=0.0000005;
+  //double ricean_factor=1;
+  double ricean_factor=0.1;
   double Td=0.8;
   double iqim=0.0;
+  double forgetting_factor=0.0;
   u8 channel_length,nb_taps=8;
   u8 extended_prefix_flag=0;
 
@@ -392,7 +394,7 @@ int main(int argc, char **argv) {
 			    BW,
 			    ricean_factor,
 			    aoa,
-			    .999,
+			    forgetting_factor,
 			    0,
 			    0,
 			    0);
