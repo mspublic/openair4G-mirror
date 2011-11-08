@@ -3,7 +3,7 @@
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4
+CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 #-msse4
 #CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
 #CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
@@ -12,7 +12,7 @@ OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
-CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) # -Wno-packed-bitfield-compat
+CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
 
 LFLAGS = -lm -lblas
 
@@ -20,7 +20,6 @@ GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)"  "4.4.3"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
-
 ifeq "$(GCCVERSION)" "4.5.2"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
@@ -108,7 +107,6 @@ $(OBJ) : %.o : %.c
 dlsim : $(OBJ) dlsim.c
 	@echo "Compiling dlsim.c ..."
 	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
-
 
 framegen: $(OBJ) framegen.c
 	@echo "Compiling framegen.c"

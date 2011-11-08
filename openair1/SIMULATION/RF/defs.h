@@ -36,6 +36,14 @@ void rf_rx(double **r_re,
 	   double IQ_imb_dB,
 	   double IQ_phase); 
 
+void rf_rx_simple(double **r_re,
+		  double **r_im,
+		  unsigned int nb_rx_antennas,
+		  unsigned int length,
+		  double s_time,
+		  double rx_gain_dB);
+
+
 void adc(double **r_re,
 	 double **r_im,
 	 unsigned int input_offset,

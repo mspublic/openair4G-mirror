@@ -144,7 +144,7 @@ void load_pbch_desc(FILE *pbch_file_fd) {
 
   fscanf(pbch_file_fd,"%d",&pbch_polynomial_degree);
   if (pbch_polynomial_degree>6) {
-    printf("Illegal degree for pbch interpolation polynomial\n",pbch_polynomial_degree);
+    printf("Illegal degree for pbch interpolation polynomial %d\n",pbch_polynomial_degree);
     exit(-1);
   }
 

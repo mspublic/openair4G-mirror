@@ -202,7 +202,6 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       u16 DL_pmi_single) {
 
   u8 harq_pid;
-  //  u8 dl_power_off;
   u16 rballoc;
   u8 NPRB,tbswap,tpmi=0;
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1;
@@ -260,6 +259,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch[0]->layer_index = 0;
     dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
+    dlsch[0]->dl_power_off = 1;
 
     if (dlsch[0]->harq_processes[harq_pid]->Ndi == 1) {
       dlsch[0]->harq_processes[harq_pid]->status = ACTIVE;
@@ -310,6 +310,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
     dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    dlsch[0]->dl_power_off = 1;
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1_5MHz_TDD_t *)dci_pdu)->ndi;
 
     dlsch[0]->active = 1;
@@ -454,6 +455,9 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     dlsch0->rnti = rnti;
     dlsch1->rnti = rnti;
+
+    dlsch0->dl_power_off = 1;
+    dlsch1->dl_power_off = 1;
 
     break;
     /*  case format2_2D_L10PRB:
@@ -713,7 +717,6 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 				      u16 p_rnti) {
 
   u8 harq_pid=0;
-  //  u8 dl_power_off;
   u16 rballoc;
   u8 NPRB,tbswap,tpmi;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
@@ -780,6 +783,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
     dlsch[0]->harq_processes[harq_pid]->mimo_mode   = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
+    dlsch[0]->dl_power_off = 1; //no power offset
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
@@ -819,6 +823,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
     dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    dlsch[0]->dl_power_off = 1; //no power offset
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1_5MHz_TDD_t *)dci_pdu)->ndi;
 
     if (dlsch[0]->harq_processes[harq_pid]->Ndi == 1) {
@@ -992,6 +997,9 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 
     dlsch0->rnti = rnti;
     dlsch1->rnti = rnti;
+
+    dlsch0->dl_power_off = 1; //no power offset
+    dlsch1->dl_power_off = 1; //no power offset
 
     dlsch0->active = 1;
     dlsch1->active = 1;
