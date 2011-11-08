@@ -741,9 +741,8 @@ int main(int argc, char **argv) {
 		 cooperation_flag);
 	
 	
-	ret= ulsch_decoding(PHY_vars_eNB->lte_eNB_ulsch_vars[0]->llr,
-			    &PHY_vars_eNB->lte_frame_parms,
-			    PHY_vars_eNB->ulsch_eNB[0],
+	ret= ulsch_decoding(PHY_vars_eNB,
+			    0,
 			    subframe,
 			    control_only_flag,
 			    1  // Nbundled 
