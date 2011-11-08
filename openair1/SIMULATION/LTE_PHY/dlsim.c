@@ -460,6 +460,7 @@ int main(int argc, char **argv) {
 	num_pdcch_symbols=atoi(optarg);
 	break;
       case 'g':
+	printf("SCM-A=%d, SCM-B=%d, SCM-C=%d, SCM-D=%d, EPA=%d, EVA=%d, ETU=%d, Rayleigh8=%d, Rayleigh1=%d, Rayleigh1_corr=%d, Rayleigh1_anticorr=%d, Rice1=%d, Rice8=%d\n",SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice8, Rice1);
 	switch((char)*optarg) {
 	case 'A': 
 	  channel_model=SCM_A;
@@ -481,16 +482,23 @@ int main(int argc, char **argv) {
 	  break;
 	case 'G': 
 	  channel_model=ETU;
+	  break;
 	case 'H':
 	  channel_model=Rayleigh8;
+	  printf("\nChannel Model (in the case within dlsim)=%d\n\n", channel_model);
+	  break;
 	case 'I':
 	  channel_model=Rayleigh1;
+	  break;
 	case 'J':
 	  channel_model=Rayleigh1_corr;
+	  break;
 	case 'K':
 	  channel_model=Rayleigh1_anticorr;
+	  break;
 	case 'L':
 	  channel_model=Rice8;
+	  break;
 	case 'M':
 	  channel_model=Rice1;
 	  break;
@@ -634,6 +642,8 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
+  printf("SCM-A=%d, SCM-B=%d, SCM-C=%d, SCM-D=%d, EPA=%d, EVA=%d, ETU=%d, Rayleigh8=%d, Rayleigh1=%d, Rayleigh1_corr=%d, Rayleigh1_anticorr=%d, Rice1=%d, Rice8=%d\n",SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice8, Rice1);
+  printf("\nChannel Model=%d\n\n", channel_model);
   sprintf(bler_fname,"second_bler_tx%d_mcs%d_chan%d.csv",transmission_mode,mcs,channel_model);
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
