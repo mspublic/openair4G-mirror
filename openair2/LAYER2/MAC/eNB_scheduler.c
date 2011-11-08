@@ -3629,7 +3629,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 	  
-    eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
+    //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
+    eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0];
 	  
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
@@ -3676,6 +3677,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	  // if(nb_rb>10){
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 0;
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = dl_pow_off[UE_id];
 	  // }
