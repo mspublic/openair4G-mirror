@@ -2,9 +2,9 @@ set(0, 'DefaultLineMarkerSize', 10);
 set(0, 'Defaultaxesfontsize', 14);
 set(0, 'DefaultLineLineWidth', 2);
 
-root_path = '..';
+root_path = 'Rayleigh8_perfectCE_new';
 tx_mode = 6;
-channel = 10;
+channel = 8;
 
 %%
 addpath('../../../EMOS/LTE/POST_PROCESSING')
@@ -45,7 +45,11 @@ for mcs=0:28
     bler = data(:,5)./data(:,6); % round 1
     bler4 = data(:,11)./data(:,6); % round 4
     harq_adjust = data(:,6)./sum(data(:,6:2:12),2);
-    uncoded_ber = data(:,14);
+    if size(data,2)>13
+        uncoded_ber = data(:,14);
+    else
+        uncoded_ber = ones(size(data,1),1);
+    end
     if (length(snr)==1)
     throughput_all(:,mcs+1) = (1-bler4).*harq_adjust.*get_tbs(mcs,25)*6*100;
     else
@@ -64,23 +68,26 @@ end
 
 %%
 h_fig = figure(1);
-legend(legend_str,'location','westoutside');
+h_leg = legend(legend_str,'location','eastoutside');
+set(h_leg,'FontSize',10);
 title(sprintf('Tx mode %d: BLER vs SNR',tx_mode));
 ylabel 'BLER'
 xlabel 'SNR'
 ylim([0.001 1])
 grid on
 saveas(h_fig,fullfile(root_path,sprintf('tx_mode%d_channel%d_bler.fig',tx_mode,channel)));
+saveas(h_fig,fullfile(root_path,sprintf('tx_mode%d_channel%d_bler.emf',tx_mode,channel)));
 
 h_fig = figure(2);
-legend(legend_str,'location','westoutside');
+h_leg = legend(legend_str,'location','eastoutside');
+set(h_leg,'FontSize',10);
 title(sprintf('Tx mode %d: uncoded BER vs SNR',tx_mode));
 ylabel 'uncoded BER'
 xlabel 'SNR'
 ylim([0.0001 1])
 grid on
 saveas(h_fig,fullfile(root_path,sprintf('tx_mode%d_channel%d_ber.fig',tx_mode,channel)));
-
+saveas(h_fig,fullfile(root_path,sprintf('tx_mode%d_channel%d_ber.emf',tx_mode,channel)));
 
 %%
 h_fig = figure(4);
