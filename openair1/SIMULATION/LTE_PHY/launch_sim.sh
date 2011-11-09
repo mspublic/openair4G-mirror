@@ -3,8 +3,13 @@
 #PBS -m abe 
 #PBS -d /homes/kaltenbe/Devel/openair_lte/openair1/SIMULATION/LTE_PHY
 
+# Simulation parameters
+MCS="0 9"
 #MCS="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28"
-MCS="0 1 2 3 4 5 6 7 8 9"
+#MCS="10 11 12 13 14 15 16"
+CHANNEL="C M"
+USER2="0 1"
+NSIMUS=1
 
 #QPSK
 #MCS="0 1 2 3 4 5 6 7 8 9"
@@ -14,20 +19,36 @@ MCS="0 1 2 3 4 5 6 7 8 9"
 #MCS="17 18 19 20 21 22"
 #MCS="23 24 25 26 27 28"
 
-for M in $MCS
+for U in $USER2
 do
-    ./dlsim   -m$M -s$(($M-10)) -x5 -y2 -z2 -a -n1000
+    for C in $CHANNEL
+    do
+	case "$C" in
+	    "A") ch=1;;
+	    "B") ch=2;;
+	    "C") ch=3;;
+	    "D") ch=4;;
+	    "E") ch=5;;
+	    "F") ch=6;;
+	    "G") ch=7;;
+	    "H") ch=8;;
+	    "I") ch=9;;
+	    "J") ch=10;;
+	    "K") ch=11;;
+	    "L") ch=12;;
+	    "M") ch=13;;
+	esac
+	touch TB_u2\=${U}_chan${ch}.tex # Create file for all mcs
+	echo %User2=${U},Channel=${C},MCS=[${MCS}],NFRAMES=${NSIMUS} > TB_u2\=${U}_chan${ch}.tex
+	for M in $MCS
+	do
+	    ./dlsim -m$M -s$(($M-10)) -x5 -y2 -z2 -g$C -u$U -n$NSIMUS
+	    cat second_bler_tx5_u2\=${U}_mcs${M}_chan${ch}_nsimus${NSIMUS} >> TB_u2\=${U}_chan${ch}.tex
+	    rm second_bler_tx5_u2\=${U}_mcs${M}_chan${ch}_nsimus${NSIMUS}
+	done
+    done
 done
-for M in $MCS
-do
-    ./dlsim   -m$M -s$(($M-10)) -x5 -y2 -z2 -gE -n1000
-done
-for M in $MCS
-do
-    ./dlsim   -m$M -s$(($M-10)) -x5 -y2 -z2 -gF -n1000
-done
-for M in $MCS
-do
-    ./dlsim   -m$M -s$(($M-10)) -x5 -y2 -z2 -gG -n1000
-done
-
+mkdir blerSimus
+mv TB*.tex blerSimus
+zip -r blerSimus.zip blerSimus
+rm -r blerSimus
