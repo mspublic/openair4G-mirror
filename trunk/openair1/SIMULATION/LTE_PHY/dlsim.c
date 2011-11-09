@@ -17,7 +17,6 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
-#include "OCG_vars.h"
 
 #ifdef XFORMS
 #include "forms.h"
@@ -323,7 +322,7 @@ int main(int argc, char **argv) {
 
   int s,Kr,Kr_bytes;
 
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate=0.0;
+  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate;
   double snr_step=1, snr_int=20;
   //int **txdataF, **txdata;
   int **txdata;
@@ -355,16 +354,16 @@ int main(int argc, char **argv) {
   unsigned char *input_buffer[2];
   unsigned short input_buffer_length;
   unsigned int ret;
-  unsigned int coded_bits_per_codeword=0,nsymb,dci_cnt,tbs=0;
+  unsigned int coded_bits_per_codeword,nsymb,dci_cnt,tbs;
  
-  unsigned int tx_lev,tx_lev_dB=0,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
+  unsigned int tx_lev,tx_lev_dB,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
   int re_allocated;
   FILE *bler_fd;
   char bler_fname[256];
   FILE *tikz_fd;
   char tikz_fname[256];
 
-  FILE *input_trch_fd=NULL;
+  FILE *input_trch_fd;
   unsigned char input_trch_file=0;
   FILE *input_fd=NULL;
   unsigned char input_file=0;
@@ -394,7 +393,7 @@ int main(int argc, char **argv) {
   int u;
   int abstx=0;
   int iii;
-  FILE *csv_fd=NULL;
+  FILE *csv_fd;
   char csv_fname[20];
   int ch_realization;
   int pmi_feedback=0;
@@ -402,7 +401,7 @@ int main(int argc, char **argv) {
   // int ii;
   // int bler;
   double blerr,uncoded_ber,avg_ber;
-  short *uncoded_ber_bit=NULL;
+  short *uncoded_ber_bit;
   u8 N_RB_DL=25,osf=1;
 
 #ifdef XFORMS
@@ -418,7 +417,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -480,7 +479,6 @@ int main(int argc, char **argv) {
 	num_pdcch_symbols=atoi(optarg);
 	break;
       case 'g':
-	printf("SCM-A=%d, SCM-B=%d, SCM-C=%d, SCM-D=%d, EPA=%d, EVA=%d, ETU=%d, Rayleigh8=%d, Rayleigh1=%d, Rayleigh1_corr=%d, Rayleigh1_anticorr=%d, Rice1=%d, Rice8=%d\n",SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice8, Rice1);
 	switch((char)*optarg) {
 	case 'A': 
 	  channel_model=SCM_A;
@@ -569,10 +567,17 @@ int main(int argc, char **argv) {
 	break;
       case 'T':
 	n_rnti=atoi(optarg);
+	break;	
+      case 'u':
+	dual_stream_UE=atoi(optarg);
+	if ((n_tx!=2) || (transmission_mode!=5)) {
+	  msg("Unsupported nb of decoded users: %d user(s), %d user(s) to decode\n", n_tx, dual_stream_UE);
+	  exit(-1);
+	}
 	break;
       case 'h':
       default:
-	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant -I trch_file\n",argv[0]);
+	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
       printf("-h This message\n");
       printf("-a Use AWGN channel and not multipath\n");
       printf("-c Number of PDCCH symbols\n");
@@ -585,7 +590,7 @@ int main(int argc, char **argv) {
       printf("-f step size of SNR, default value is 1.\n");
       printf("-t Delay spread for multipath channel\n");
       printf("-r Ricean factor (dB, 0 dB = Rayleigh, 100 dB = almost AWGN)\n");
-      printf("-g [A,B,C,D,E,F,G,H,I,J,K,L,M] Use 3GPP 25.814 SCM or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
+      printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
@@ -594,6 +599,7 @@ int main(int argc, char **argv) {
       printf("-M Determines whether the Absraction flag is on or Off. 1-->On and 0-->Off. Default status is Off. \n");
       printf("-N Determines the number of Channel Realizations in Absraction mode. Default value is 1. \n");
       printf("-I Input filename for TrCH data (binary)\n");
+      printf("-u Determines if the 2 streams at the UE are decoded or not. 0-->U2 is interference only and 1-->U2 is detected\n");
       exit(1);
       break;
       }
@@ -608,7 +614,7 @@ int main(int argc, char **argv) {
 
   if (transmission_mode==5) {
     n_users = 2;
-    dual_stream_UE=1;
+    printf("dual_stream_UE=%d\n", dual_stream_UE);
   }
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell,tdd_config,N_RB_DL,osf);  
@@ -662,8 +668,6 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
-  printf("SCM-A=%d, SCM-B=%d, SCM-C=%d, SCM-D=%d, EPA=%d, EVA=%d, ETU=%d, Rayleigh8=%d, Rayleigh1=%d, Rayleigh1_corr=%d, Rayleigh1_anticorr=%d, Rice1=%d, Rice8=%d\n",SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice8, Rice1);
-  printf("\nChannel Model=%d\n\n", channel_model);
   sprintf(bler_fname,"second_bler_tx%d_mcs%d_chan%d.csv",transmission_mode,mcs,channel_model);
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
@@ -675,10 +679,43 @@ int main(int argc, char **argv) {
     fprintf(csv_fd,"data_all%d=[",mcs);
   }
 
-  sprintf(tikz_fname, "second_bler_tx%d_mcs%d_chan%d_nsimus%d.tex",transmission_mode,mcs,channel_model,n_frames);
+  //sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d.tex",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
+  sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
   tikz_fd = fopen(tikz_fname,"w");
-  fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
-
+  //fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
+  switch (mcs)
+    {
+    case 0:
+      fprintf(tikz_fd,"\\addplot[color=blue, mark=star] plot coordinates {");
+      break;
+    case 1:
+      fprintf(tikz_fd,"\\addplot[color=red, mark=star] plot coordinates {");
+      break;
+    case 2:
+      fprintf(tikz_fd,"\\addplot[color=green, mark=star] plot coordinates {");
+      break;
+    case 3:
+      fprintf(tikz_fd,"\\addplot[color=yellow, mark=star] plot coordinates {");
+      break;
+    case 4:
+      fprintf(tikz_fd,"\\addplot[color=black, mark=star] plot coordinates {");
+      break;
+    case 5:
+      fprintf(tikz_fd,"\\addplot[color=blue, mark=o] plot coordinates {");
+      break;
+    case 6:
+      fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
+      break;
+    case 7:
+      fprintf(tikz_fd,"\\addplot[color=green, mark=o] plot coordinates {");
+      break;
+    case 8:
+      fprintf(tikz_fd,"\\addplot[color=yellow, mark=o] plot coordinates {");
+      break;
+    case 9:
+      fprintf(tikz_fd,"\\addplot[color=black, mark=o] plot coordinates {");
+      break;
+    }
   for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -859,7 +896,7 @@ int main(int argc, char **argv) {
       else {
 	i=0;
 	while ((!feof(input_trch_fd)) && (i<input_buffer_length<<3)) {
-	  ret=fscanf(input_trch_fd,"%s",input_trch_val);
+	  fscanf(input_trch_fd,"%s",input_trch_val);
 	  if (input_trch_val[0] == '1')
 	    input_buffer[k][i>>3]+=(1<<(7-(i&7)));
 	  if (i<16)
@@ -1145,7 +1182,7 @@ int main(int argc, char **argv) {
 	  else {  // Read signal from file
 	    i=0;
 	    while (!feof(input_fd)) {
-	      ret=fscanf(input_fd,"%s %s",input_val_str,input_val_str2);
+	      fscanf(input_fd,"%s %s",input_val_str,input_val_str2);
 	    
 	      if ((i%4)==0) {
 		((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));
@@ -1855,7 +1892,7 @@ int main(int argc, char **argv) {
   
   
   fclose(bler_fd);
-  fprintf(tikz_fd,"};");
+  fprintf(tikz_fd,"};\n");
   fclose(tikz_fd);
 
   if (input_trch_file==1)
