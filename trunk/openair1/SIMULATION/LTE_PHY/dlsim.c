@@ -57,7 +57,7 @@ void handler(int sig) {
 
 
 #ifdef XFORMS
-void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **channel, short **channel_f, short **rx_sig, short **rx_sig_f, short *dlsch_comp, short *dlsch_llr, int coded_bits_per_codeword)
+void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **channel, short **channel_f, short **rx_sig, short **rx_sig_f, short *dlsch_comp, short* dlsch_comp_i, short* dlsch_rho, short *dlsch_llr, int coded_bits_per_codeword)
 {
 
   int i,j,ind,k,s;
@@ -202,7 +202,7 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
-  //fl_set_xyplot_ybounds(form->demod_out,-100,100);
+  fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
 
   // DLSCH I/Q
   j=0;
@@ -220,9 +220,50 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
     //  s=9;
   }
 
+  fl_set_xyplot_data(form->scatter_plot,I,Q,j,"","","");
+  fl_set_xyplot_xbounds(form->scatter_plot,-1000,1000);
+  fl_set_xyplot_ybounds(form->scatter_plot,-1000,1000);
+
+  // DLSCH I/Q
+  j=0;
+  for (s=0;s<frame_parms->symbols_per_tti;s++) {
+    for(i=0;i<12*25;i++) {
+      I[j] = dlsch_comp_i[(2*25*12*s)+2*i];
+      Q[j] = dlsch_comp_i[(2*25*12*s)+2*i+1];
+      j++;
+    }
+    //if (s==2)
+    //  s=3;
+    //else if (s==5)
+    //  s=6;
+    //else if (s==8)
+    //  s=9;
+  }
+
+  fl_set_xyplot_data(form->scatter_plot1,I,Q,j,"","","");
+  fl_set_xyplot_xbounds(form->scatter_plot1,-1000,1000);
+  fl_set_xyplot_ybounds(form->scatter_plot1,-1000,1000);
+
+  // DLSCH I/Q
+  j=0;
+  for (s=0;s<frame_parms->symbols_per_tti;s++) {
+    for(i=0;i<12*25;i++) {
+      I[j] = dlsch_rho[(2*25*12*s)+2*i];
+      Q[j] = dlsch_rho[(2*25*12*s)+2*i+1];
+      j++;
+    }
+    //if (s==2)
+    //  s=3;
+    //else if (s==5)
+    //  s=6;
+    //else if (s==8)
+    //  s=9;
+  }
+
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-  //fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
-  //fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
+  fl_set_xyplot_xbounds(form->scatter_plot2,-1000,1000);
+  fl_set_xyplot_ybounds(form->scatter_plot2,-1000,1000);
+
 
   free(llr);
   free(llr_time);
@@ -503,7 +544,6 @@ int main(int argc, char **argv) {
 	  break;
 	case 'H':
 	  channel_model=Rayleigh8;
-	  printf("\nChannel Model (in the case within dlsim)=%d\n\n", channel_model);
 	  break;
 	case 'I':
 	  channel_model=Rayleigh1;
@@ -668,6 +708,9 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
+  printf("Channel Model=%d\n",channel_model);
+  printf("SCM-A=%d, SCM-B=%d, SCM-C=%d, SCM-D=%d, EPA=%d, EVA=%d, ETU=%d, Rayleigh8=%d, Rayleigh1=%d, Rayleigh1_corr=%d, Rayleigh1_anticorr=%d, Rice1=%d, Rice8=%d\n",
+	 SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice1, Rice8);
   sprintf(bler_fname,"second_bler_tx%d_mcs%d_chan%d.csv",transmission_mode,mcs,channel_model);
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
@@ -1035,11 +1078,12 @@ int main(int argc, char **argv) {
 		*/
 	      }
 	      
-	      dlsch_encoding(input_buffer[k],
-			     &PHY_vars_eNB->lte_frame_parms,
-			     num_pdcch_symbols,
-			     PHY_vars_eNB->dlsch_eNB[k][0],
-			     subframe);
+	      if (dlsch_encoding(input_buffer[k],
+				 &PHY_vars_eNB->lte_frame_parms,
+				 num_pdcch_symbols,
+				 PHY_vars_eNB->dlsch_eNB[k][0],
+				 subframe)<0)
+		exit(-1);
 	      
 	      // printf("Did not Crash here 1\n");
 	      PHY_vars_eNB->dlsch_eNB[k][0]->rnti = n_rnti+k;	  
@@ -1731,6 +1775,8 @@ int main(int argc, char **argv) {
 		   PHY_vars_UE->lte_ue_common_vars.rxdata,
 		   PHY_vars_UE->lte_ue_common_vars.rxdataF,
 		   PHY_vars_UE->lte_ue_dlsch_vars[0]->rxdataF_comp[0],
+		   PHY_vars_UE->lte_ue_dlsch_vars[3]->rxdataF_comp[0],
+		   PHY_vars_UE->lte_ue_dlsch_vars[0]->dl_ch_rho_ext[0],
 		   PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0],coded_bits_per_codeword);
 	  //PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->w[0],3*(tbs+64)); 
 	  //uncoded_ber_bit,coded_bits_per_codeword);
