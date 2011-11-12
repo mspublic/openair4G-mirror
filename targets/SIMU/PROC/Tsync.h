@@ -38,4 +38,5 @@ pthread_t cthr_d[MAX_eNB][MAX_UE];
 int fd_NB[MAX_eNB+MAX_UE];
 int fd_channel;
 
+
 #endif /* TSYNC_H_ */

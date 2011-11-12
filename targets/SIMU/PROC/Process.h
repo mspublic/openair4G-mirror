@@ -1,6 +1,11 @@
 #ifndef __PROCESS_H__
 #    define __PROCESS_H__
 
+#include "interface.h"
+
+s32 **tx[MAX_eNB+MAX_UE][3],**rx[MAX_eNB+MAX_UE][3];
+int nslot;
+
 void Process_Func(int node_id,int port,double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,
 		node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms);
 
