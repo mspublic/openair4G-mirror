@@ -1238,9 +1238,6 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     case 2:
       if ((subframe!=2) && (subframe!=7)) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-#ifdef USER_MODE
-	exit(-1);
-#endif
 	return(255);
       }
       return(subframe/7);
@@ -1248,9 +1245,6 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     case 3:
       if ((subframe<2) || (subframe>4)) {
 	msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-#ifdef USER_MODE
-	exit(-1);
-#endif
 	return(255);
       }
       return(subframe-2);
@@ -1258,9 +1252,6 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     case 4:
       if ((subframe<2) || (subframe>3)) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-#ifdef USER_MODE
-	exit(-1);
-#endif
 	return(255);
       }
       return(subframe-2);
@@ -1268,9 +1259,6 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     case 5:
       if (subframe!=2) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-#ifdef USER_MODE
-	exit(-1);
-#endif
 	return(255);
       }
       return(subframe-2);
