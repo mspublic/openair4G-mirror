@@ -187,13 +187,13 @@ typedef struct
 
 
   ///check for Total Transmissions
-  u8 check_for_total_transmissions;
+  u16 check_for_total_transmissions;
 
   ///check for MU-MIMO Transmissions
-  u8 check_for_MUMIMO_transmissions;
+  u16 check_for_MUMIMO_transmissions;
 
   ///check for SU-MIMO Transmissions
-  u8 check_for_SUMIMO_transmissions;
+  u16 check_for_SUMIMO_transmissions;
 
 } PHY_VARS_eNB;
 
@@ -237,6 +237,10 @@ typedef struct
   unsigned char RRCConnReq_timer[NUMBER_OF_eNB_MAX];
   unsigned char *RRCConnectionRequest_ptr[NUMBER_OF_eNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
+  unsigned int total_TBS[NUMBER_OF_eNB_MAX];
+  unsigned int total_TBS_last[NUMBER_OF_eNB_MAX];
+  unsigned int bitrate[NUMBER_OF_eNB_MAX];
+  unsigned int total_received_bits[NUMBER_OF_eNB_MAX];
   int dlsch_errors[NUMBER_OF_eNB_MAX];
   int dlsch_errors_last[NUMBER_OF_eNB_MAX];
   int dlsch_received[NUMBER_OF_eNB_MAX];

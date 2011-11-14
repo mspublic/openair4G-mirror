@@ -1059,7 +1059,10 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     phy_vars_ue->dlsch_ra_received[eNB_id] = 0;
     phy_vars_ue->dlsch_SI_errors[eNB_id] = 0;
     phy_vars_ue->dlsch_ra_errors[eNB_id] = 0;
-    
+    phy_vars_ue->total_TBS[eNB_id] = 0;
+    phy_vars_ue->total_TBS_last[eNB_id] = 0;
+    phy_vars_ue->bitrate[eNB_id] = 0;
+    phy_vars_ue->total_received_bits[eNB_id] = 0;
   }
 }
 
@@ -1525,16 +1528,27 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 	    //	    if (phy_vars_ue->current_dlsch_cqi[eNB_id] <28)
 	    //	      phy_vars_ue->current_dlsch_cqi[eNB_id]++;
+	    phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS + phy_vars_ue->total_TBS[eNB_id];
+	    phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_received_bits[eNB_id] + phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS;
 	  }
 	}
 
 	if (mac_xface->frame % 100 == 0) {
 	  if ((phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]) != 0) 
 	    phy_vars_ue->dlsch_fer[eNB_id] = (100*(phy_vars_ue->dlsch_errors[eNB_id] - phy_vars_ue->dlsch_errors_last[eNB_id]))/(phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]);
+
+	  //phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id]);
+	  
 	  phy_vars_ue->dlsch_errors_last[eNB_id] = phy_vars_ue->dlsch_errors[eNB_id];
 	  phy_vars_ue->dlsch_received_last[eNB_id] = phy_vars_ue->dlsch_received[eNB_id];
+	  //phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
 	  
 	  // CQI adaptation when current MCS is odd, even is handled by eNB
+	}
+
+	if(mac_xface->frame % 10 == 0){
+	  phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id])*10;
+	  phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
 	}
 
 #ifdef DEBUG_PHY_PROC

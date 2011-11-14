@@ -480,6 +480,13 @@ typedef struct {
   /// Target mcs2 after rate-adaptation (used by MAC layer scheduler)
   u8 dlsch_mcs2;
   //  SRS_param_t SRS_parameters;
+  unsigned int total_TBS;
+  //
+  unsigned int total_TBS_last;
+  //
+  unsigned int dlsch_bitrate;
+  //
+  unsigned int total_transmitted_bits;
 } LTE_eNB_UE_stats;
 
 typedef struct {
