@@ -4,10 +4,12 @@
 #PBS -d /homes/kaltenbe/Devel/openair_lte/openair1/SIMULATION/LTE_PHY
 
 # Simulation parameters
-MCS="0 9"
+#MCS="0 1 2 3 4 5 6 7 8 9"
+MCS="0"
 #MCS="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28"
 #MCS="10 11 12 13 14 15 16"
-CHANNEL="C M"
+#CHANNEL="C E F G H I J K L M"
+CHANNEL="C"
 USER2="0 1"
 NSIMUS=1
 
@@ -39,10 +41,11 @@ do
 	    "M") ch=13;;
 	esac
 	touch TB_u2\=${U}_chan${ch}.tex # Create file for all mcs
-	echo %User2=${U},Channel=${C},MCS=[${MCS}],NFRAMES=${NSIMUS} > TB_u2\=${U}_chan${ch}.tex
+	echo %$(svn info | grep Revision:) > TB_u2\=${U}_chan${ch}.tex
+	echo %User2=${U},Channel=${C},MCS=[${MCS}],NFRAMES=${NSIMUS} >> TB_u2\=${U}_chan${ch}.tex
 	for M in $MCS
 	do
-	    ./dlsim -m$M -s$(($M-10)) -x5 -y2 -z2 -g$C -u$U -n$NSIMUS
+	    ./dlsim -m$M -s$(($M-10)) -x5 -y2 -z1 -g$C -f2 -u$U -n$NSIMUS -R1
 	    cat second_bler_tx5_u2\=${U}_mcs${M}_chan${ch}_nsimus${NSIMUS} >> TB_u2\=${U}_chan${ch}.tex
 	    rm second_bler_tx5_u2\=${U}_mcs${M}_chan${ch}_nsimus${NSIMUS}
 	done
@@ -52,3 +55,6 @@ mkdir blerSimus
 mv TB*.tex blerSimus
 zip -r blerSimus.zip blerSimus
 rm -r blerSimus
+
+mkdir allCsv
+mv *.csv allCsv
