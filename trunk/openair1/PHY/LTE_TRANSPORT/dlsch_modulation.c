@@ -437,7 +437,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 	switch (mod_order) {
 	case 2:  //QPSK
-	  
+
 	  ((s16*)&tmp_sample1)[0] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 	  ((s16*)&tmp_sample1)[1] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;

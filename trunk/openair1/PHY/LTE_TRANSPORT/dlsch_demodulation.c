@@ -153,8 +153,8 @@ void qpsk_qpsk(short *stream0_in,
     xmm1 = rho01_64[i+1];
 
     
-    //    print_shorts2("rho01_0:",&xmm0);
-    //    print_shorts2("rho01_1:",&xmm1);    
+    //print_shorts2("rho01_0:",&xmm0);
+    //print_shorts2("rho01_1:",&xmm1);    
     
       // put (rho_r + rho_i)/2sqrt2 in rho_rpi
       // put (rho_r - rho_i)/2sqrt2 in rho_rmi
@@ -176,12 +176,13 @@ void qpsk_qpsk(short *stream0_in,
     rho_rmi = _mm_mulhi_pi16(rho_rmi,ONE_OVER_SQRT_8);
 
     //    print_shorts2("rho_rpi:",&rho_rpi);
-    //    print_shorts2("rho_rmi:",&rho_rmi);    
+    // print_shorts2("rho_rmi:",&rho_rmi);    
 
     xmm0 = stream0_64_in[i];
     xmm1 = stream0_64_in[i+1];
-    //    print_shorts2("y0_0:",&xmm0);
-    //    print_shorts2("y0_1:",&xmm1);        
+
+    //        print_shorts2("y0_0:",&xmm0);
+    //        print_shorts2("y0_1:",&xmm1);        
 
     xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
     xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
@@ -192,8 +193,9 @@ void qpsk_qpsk(short *stream0_in,
     
     xmm0 = stream1_64_in[i];
     xmm1 = stream1_64_in[i+1];
-    //    print_shorts2("y1_0:",&xmm0);
-    //    print_shorts2("y1_1:",&xmm1);        
+
+    //        print_shorts2("y1_0:",&xmm0);
+    //        print_shorts2("y1_1:",&xmm1);        
     
     xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
     xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
@@ -208,11 +210,12 @@ void qpsk_qpsk(short *stream0_in,
     
     xmm3 = _mm_subs_pi16(y1r_over2,rho_rpi); 
     abs_pi16(xmm3,xmm0,A,xmm1);       
-    xmm2 = _mm_adds_pi16(A,y0i_over2); 
+    xmm2 = _mm_adds_pi16(A,y0i_over2);
     xmm3 = _mm_subs_pi16(y1i_over2,rho_rmi); 
     abs_pi16(xmm3,xmm0,B,xmm1);       
     logmax_num_re0 = _mm_adds_pi16(B,xmm2); 
-    //    print_shorts2("logmax_num_re:",&logmax_num_re0);
+
+    //        print_shorts2("logmax_num_re:",&logmax_num_re0);
 
     xmm3 = _mm_subs_pi16(y1r_over2,rho_rmi); 
     abs_pi16(xmm3,xmm0,C,xmm1);       
@@ -221,7 +224,8 @@ void qpsk_qpsk(short *stream0_in,
     abs_pi16(xmm3,xmm0,D,xmm1);       
     xmm2 = _mm_adds_pi16(xmm2,D); 
     logmax_num_re0 = _mm_max_pi16(logmax_num_re0,xmm2);  
-    //    print_shorts2("logmax_num_re:",&logmax_num_re0);
+ 
+    //       print_shorts2("logmax_num_re:",&logmax_num_re0);
 
     xmm3 = _mm_adds_pi16(y1r_over2,rho_rmi); 
     abs_pi16(xmm3,xmm0,E,xmm1);       
@@ -229,7 +233,8 @@ void qpsk_qpsk(short *stream0_in,
     xmm3 = _mm_subs_pi16(y1i_over2,rho_rpi); 
     abs_pi16(xmm3,xmm0,F,xmm1);       
     logmax_den_re0 = _mm_adds_pi16(F,xmm2); 
-    //    print_shorts2("logmax_den_re:",&logmax_den_re0);
+
+    //        print_shorts2("logmax_den_re:",&logmax_den_re0);
     
     xmm3 = _mm_adds_pi16(y1r_over2,rho_rpi); 
     abs_pi16(xmm3,xmm0,G,xmm1);       
@@ -239,7 +244,8 @@ void qpsk_qpsk(short *stream0_in,
     xmm2 = _mm_adds_pi16(xmm2,H); 
     
     logmax_den_re0 = _mm_max_pi16(logmax_den_re0,xmm2);  
-    //    print_shorts2("logmax_den_re:",&logmax_num_re0);
+
+    //        print_shorts2("logmax_den_re:",&logmax_num_re0);
 
     // Detection for y0i
     
@@ -277,6 +283,162 @@ void qpsk_qpsk(short *stream0_in,
 
 }
 
+void qpsk_qpsk_prec(short *stream0_in,
+		    short *stream1_in,
+		    short *stream0_out,
+		    short *rho01,
+		    int length
+		    ) {
+
+  __m64 *rho01_64 = (__m64 *)rho01;
+  __m64 *stream0_64_in = (__m64 *)stream0_in;
+  __m64 *stream1_64_in = (__m64 *)stream1_in;
+  __m64 *stream0_64_out = (__m64 *)stream0_out;
+
+
+  int i;
+
+  for (i=0;i<length>>1;i+=2) {
+
+
+
+    // STREAM 0
+
+
+    xmm0 = rho01_64[i];
+    xmm1 = rho01_64[i+1];
+
+    
+    //        print_shorts2("rho01_0:",&xmm0);
+    //        print_shorts2("rho01_1:",&xmm1);    
+    
+      // put (rho_r + rho_i)/4 in rho_rpi
+      // put (rho_r - rho_i)/4 in rho_rmi
+    
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
+    
+    
+    xmm2 = _mm_unpacklo_pi32(xmm0,xmm1);
+    xmm3 = _mm_unpackhi_pi32(xmm0,xmm1);
+    
+    
+    
+    rho_rpi = _mm_adds_pi16(xmm2,xmm3);
+    rho_rmi = _mm_subs_pi16(xmm2,xmm3);
+    
+    
+    rho_rpi = _mm_srai_pi16(rho_rpi,2);
+    rho_rmi = _mm_srai_pi16(rho_rmi,2);
+
+    //        print_shorts2("rho_rpi/4:",&rho_rpi);
+    //        print_shorts2("rho_rmi/4:",&rho_rmi);    
+
+    xmm0 = stream0_64_in[i];
+    xmm1 = stream0_64_in[i+1];
+
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
+    y0r  = _mm_unpacklo_pi32(xmm0,xmm1);
+    y0r_over2  = _mm_srai_pi16(y0r,1);
+    y0i  = _mm_unpackhi_pi32(xmm0,xmm1);
+    y0i_over2  = _mm_srai_pi16(y0i,1);
+    
+    xmm0 = stream1_64_in[i];
+    xmm1 = stream1_64_in[i+1];
+    
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
+    y1r  = _mm_unpacklo_pi32(xmm0,xmm1);
+    y1r_over2  = _mm_srai_pi16(y1r,1);
+    y1i  = _mm_unpackhi_pi32(xmm0,xmm1);
+    y1i_over2  = _mm_srai_pi16(y1i,1);
+
+    //    print_shorts2("y0r:",&y0r);
+    //   print_shorts2("y01:",&y0i);        
+    //    print_shorts2("y1r:",&y1r);
+    //   print_shorts2("y11:",&y1i);        
+    
+    // Detection for y0r
+    
+    xmm0 = _mm_xor_si64(xmm0,xmm0);   // ZERO
+    
+    xmm3 = _mm_subs_pi16(y1r_over2,rho_rpi); 
+    abs_pi16(xmm3,xmm0,A,xmm1);       
+    xmm2 = _mm_adds_pi16(A,y0i_over2);
+    xmm3 = _mm_subs_pi16(y1i_over2,rho_rmi); 
+    abs_pi16(xmm3,xmm0,B,xmm1);       
+    logmax_num_re0 = _mm_adds_pi16(B,xmm2); 
+
+    //        print_shorts2("logmax_num_re:",&logmax_num_re0);
+
+    xmm3 = _mm_subs_pi16(y1r_over2,rho_rmi); 
+    abs_pi16(xmm3,xmm0,C,xmm1);       
+    xmm2 = _mm_subs_pi16(C,y0i_over2); 
+    xmm3 = _mm_adds_pi16(y1i_over2,rho_rpi); 
+    abs_pi16(xmm3,xmm0,D,xmm1);       
+    xmm2 = _mm_adds_pi16(xmm2,D); 
+    logmax_num_re0 = _mm_max_pi16(logmax_num_re0,xmm2);  
+
+    //        print_shorts2("logmax_num_re:",&logmax_num_re0);
+
+    xmm3 = _mm_adds_pi16(y1r_over2,rho_rmi); 
+    abs_pi16(xmm3,xmm0,E,xmm1);       
+    xmm2 = _mm_adds_pi16(E,y0i_over2); 
+    xmm3 = _mm_subs_pi16(y1i_over2,rho_rpi); 
+    abs_pi16(xmm3,xmm0,F,xmm1);       
+    logmax_den_re0 = _mm_adds_pi16(F,xmm2); 
+
+    //        print_shorts2("logmax_den_re:",&logmax_den_re0);
+    
+    xmm3 = _mm_adds_pi16(y1r_over2,rho_rpi); 
+    abs_pi16(xmm3,xmm0,G,xmm1);       
+    xmm2 = _mm_subs_pi16(G,y0i_over2); 
+    xmm3 = _mm_adds_pi16(y1i_over2,rho_rmi); 
+    abs_pi16(xmm3,xmm0,H,xmm1);       
+    xmm2 = _mm_adds_pi16(xmm2,H); 
+    
+    logmax_den_re0 = _mm_max_pi16(logmax_den_re0,xmm2);  
+
+    //        print_shorts2("logmax_den_re:",&logmax_den_re0);
+
+    // Detection for y0i
+    
+    xmm2 = _mm_adds_pi16(A,y0r_over2); 
+    logmax_num_im0 = _mm_adds_pi16(B,xmm2); 
+    
+    xmm2 = _mm_subs_pi16(E,y0r_over2); 
+    xmm2 = _mm_adds_pi16(xmm2,F); 
+    
+    logmax_num_im0 = _mm_max_pi16(logmax_num_im0,xmm2);
+    
+    xmm2 = _mm_adds_pi16(C,y0r_over2); 
+    logmax_den_im0 = _mm_adds_pi16(D,xmm2); 
+    
+    xmm2 = _mm_subs_pi16(G,y0r_over2); 
+    xmm2 = _mm_adds_pi16(xmm2,H); 
+    
+    logmax_den_im0 = _mm_max_pi16(logmax_den_im0,xmm2);  
+    
+    y0r = _mm_adds_pi16(y0r,logmax_num_re0);
+    y0r = _mm_subs_pi16(y0r,logmax_den_re0);
+    
+    y0i = _mm_adds_pi16(y0i,logmax_num_im0);
+    y0i = _mm_subs_pi16(y0i,logmax_den_im0);
+
+    //    print_shorts2("y0r:",&y0r);    
+    //    print_shorts2("y0i:",&y0i);    
+    stream0_64_out[i] = _mm_unpacklo_pi16(y0r,y0i);
+    if (i<((length>>1) - 1))
+      stream0_64_out[i+1] = _mm_unpackhi_pi16(y0r,y0i);
+    
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
 
 int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			int **rxdataF_comp,
@@ -295,7 +457,7 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i *llr128;
   int len;
   u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-  //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
+  //    printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
   
   if (first_symbol_flag == 1) {
     llr128 = (__m128i*)dlsch_llr;
@@ -324,11 +486,11 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-  qpsk_qpsk((short *)rxF,
-	    (short *)rxF_i,
-	    (short *)llr128,
-	    (short *)rho,
-	    len);
+  qpsk_qpsk_prec((short *)rxF,
+		 (short *)rxF_i,
+		 (short *)llr128,
+		 (short *)rho,
+		 len);
 
   llr128 += (len>>2);
   *llr128p = (short *)llr128;
@@ -1487,7 +1649,7 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i *dl_ch128,*dl_ch128i,*dl_ch_rho128;
   unsigned char aarx,symbol_mod,pilots=0;
 
-  //  printf("dlsch_dual_stream_correlation: symbol %d\n",symbol);
+  //    printf("dlsch_dual_stream_correlation: symbol %d\n",symbol);
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -1851,9 +2013,11 @@ void dlsch_channel_compensation(int **rxdataF_ext,
   _m_empty();
 
 }     
-
-//static __m128i  one_over_sqrt2;
- 	 
+/*
+static s16 one_over_sqrt2[8] __attribute__((aligned(16))) = 
+{ONE_OVER_SQRT2_Q15,ONE_OVER_SQRT2_Q15,ONE_OVER_SQRT2_Q15,ONE_OVER_SQRT2_Q15,
+ ONE_OVER_SQRT2_Q15,ONE_OVER_SQRT2_Q15,ONE_OVER_SQRT2_Q15,ONE_OVER_SQRT2_Q15};
+*/	 
 void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
   
   switch (pmi) {
@@ -1862,35 +2026,28 @@ void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
     //    print_shorts("phase 0 :ch0",ch0);
     //    print_shorts("phase 0 :ch1",ch1);
     ch0[0] = _mm_adds_epi16(ch0[0],ch1[0]);   
-
-    //    ch0[0] = _mm_mulhi_epi16(ch0[0],one_over_sqrt2);
-    //    ch0[0] = _mm_slli_epi16(ch0[0],1);
     break;
   case 1 :   // +1 -1
     //    print_shorts("phase 1 :ch0",ch0);
     //    print_shorts("phase 1 :ch1",ch1);
     ch0[0] = _mm_subs_epi16(ch0[0],ch1[0]);
     //    print_shorts("phase 1 :ch0-ch1",ch0);
-    //    ch0[0] = _mm_mulhi_epi16(ch0[0],one_over_sqrt2);
-    //    ch0[0] = _mm_slli_epi16(ch0[0],1);   
     break;
   case 2 :   // +1 +j
     ch1[0] = _mm_sign_epi16(ch1[0],*(__m128i*)&conjugate[0]);
     ch1[0] = _mm_shufflelo_epi16(ch1[0],_MM_SHUFFLE(2,3,0,1));
     ch1[0] = _mm_shufflehi_epi16(ch1[0],_MM_SHUFFLE(2,3,0,1));
     ch0[0] = _mm_subs_epi16(ch0[0],ch1[0]);
-    //    ch0[0] = _mm_mulhi_epi16(ch0[0],one_over_sqrt2);
-    //    ch0[0] = _mm_slli_epi16(ch0[0],1);
+
     break;   // +1 -j
   case 3 :
     ch1[0] = _mm_sign_epi16(ch1[0],*(__m128i*)&conjugate[0]);
     ch1[0] = _mm_shufflelo_epi16(ch1[0],_MM_SHUFFLE(2,3,0,1));
     ch1[0] = _mm_shufflehi_epi16(ch1[0],_MM_SHUFFLE(2,3,0,1));
     ch0[0] = _mm_adds_epi16(ch0[0],ch1[0]);
-    //    ch0[0] = _mm_mulhi_epi16(ch0[0],one_over_sqrt2);
-    //    ch0[0] = _mm_slli_epi16(ch0[0],1);
     break;
   }
+
   _mm_empty();
   _m_empty();
 }
@@ -2227,7 +2384,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     msg("dlsch_demodulation.c: Null lte_frame_parms\n");
     return(-1);
   }
-
+  //  printf("rx_dlsch : eNB_id %d, eNB_id_i %d, dual_stream_flag %d\n",eNB_id,eNB_id_i,dual_stream_flag); 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
     pilots=1;
@@ -2340,10 +2497,12 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     lte_ue_dlsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)
       + log2_approx(frame_parms->nb_antennas_tx-1) //-1 because log2_approx counts the number of bits
       + log2_approx(frame_parms->nb_antennas_rx-1);
+    
     if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11) &&
 	(dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
 	(dlsch_ue[0]->dl_power_off==1)) // we are in TM 6
       lte_ue_dlsch_vars[eNB_id]->log2_maxh++;
+    
 
     // this version here applies the factor .5 also to the extra terms. however, it does not work so well as the one above
     /* K = Nb_rx         in TM1 
@@ -2458,7 +2617,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	  lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[rb]=2;
 	  break;
 	}
-	
+	//	if (rb==0)
+	//	  printf("pmi %d, pmi_i %d\n",lte_ue_dlsch_vars[eNB_id]->pmi_ext[rb],lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[rb]);
       }
 
       // apply opposite precoder to calculate interfering stream
@@ -2485,6 +2645,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 #endif  
 
       // compute correlation between precoded channel and channel precoded with opposite PMI
+
       dlsch_dual_stream_correlation(frame_parms,
 				    symbol,
 				    nb_rb,

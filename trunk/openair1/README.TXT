@@ -39,11 +39,11 @@ This folder contains the software for the device driver of CBMIMO1 and the physi
 
 General remarks: every directory contains at least defs.h (for declaration of structure and functions), vars.h (for definitions of variables), and extern.h (variables are defined only once in cbmimo1_device.c (for real-time HW operation) or a top-level simulation (in SIMULATION/xxx), if variables are needed in another file, use extern.h)
 
-|   |-- CODING		   // turbo and convolutional (de-)coder
+|   |-- CODING		   // turbo and convolutional (de-)coders, rate-matching, crc generation (implementation of 36-212)
 |   |   `-- TESTBENCH      // This contains unitary testbenches for the different channel coders/decoders
 |   |-- INIT		   // variables defined in vars.h are initialzed here (memory allocation)
 |   |-- LTE_ESTIMATION     // estimation for LTE
-|   |-- LTE_REFSIG 	   // reference signals for LTE (sync and pilot sequences) reference signals from 36-211 (DL)
+|   |-- LTE_REFSIG 	   // reference signals for LTE (sync and pilot sequences) reference signals from 36-211 
 |   |-- LTE_TRANSPORT      // these are the top level routines for different transport and physical channels (for example DL-SCH, PSS) implements a subset of 36-211,36-212
 |   |-- MODULATION	   // modulation and demodulation includes FFT/SC-FDMA front-end processing from 36-211
 |   |-- TOOLS		   // tools like (I)FFT, vector operations, matrix multiplication, etc.
@@ -72,7 +72,7 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |-- SIMULATION		 // contains simulation routines to test PHY
 |   |-- LTE_PHY          // LTE simulation testbenches for unitary simulation of transport/physical channels
 |   |   |-- pbchsim.c       // PBCH simulation testbench
-|   |   |-- pdcchsim.c      // PDCCH (DCI) simulation testbench
+|   |   |-- pdcchsim.c      // PCFICH/PHICH/PDCCH (DCI) simulation testbench
 |   |   |-- dlsim.c         // PDSCH simulation testbench
 |   |   |-- ulsim.c         // PUSCH simulation testbench
 |   |   |-- pucchsim.c      // PUCCH simulation testbench

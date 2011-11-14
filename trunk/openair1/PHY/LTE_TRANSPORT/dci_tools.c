@@ -586,7 +586,6 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     dlsch0->dl_power_off = ((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
     dlsch1->dl_power_off = ((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
-
     break;
   default:
     msg("dci_tools.c: Unknown DCI format\n");
@@ -1176,6 +1175,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     msg("dlsch0 UE: rvidx    %d\n",dlsch[0]->harq_processes[harq_pid]->rvidx);
     msg("dlsch0 UE: TBS      %d\n",dlsch[0]->harq_processes[harq_pid]->TBS);
     msg("dlsch0 UE: mcs      %d\n",dlsch[0]->harq_processes[harq_pid]->mcs);
+    msg("dlsch0 UE: pwr_off  %d\n",dlsch[0]->dl_power_off);
   }
 #endif
   dlsch[0]->active=1;
@@ -1284,7 +1284,7 @@ u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
     if (rank == 0) {
       pmi_re = meas->subband_pmi_re[eNB_id][i][meas->selected_rx_antennas[eNB_id][i]];
       pmi_im = meas->subband_pmi_im[eNB_id][i][meas->selected_rx_antennas[eNB_id][i]];
-
+      //      printf("pmi => (%d,%d)\n",pmi_re,pmi_im);
       if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
 	pmiq = PMI_2A_11;
       else if ((pmi_re < pmi_im) && (pmi_re > -pmi_im))
@@ -1510,7 +1510,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   u8 harq_pid;
   u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
-  ANFBmode_t bundling = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
+  ANFBmode_t AckNackFBMode = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[0];
   LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
@@ -1714,10 +1714,11 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 #endif
 
-    if (bundling == multiplexing)
-      ulsch->O_ACK                               =2;
-    else
-      ulsch->O_ACK                               =1;
+    if (AckNackFBMode == multiplexing)
+      ulsch->O_ACK                               = ((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai;
+    else  // bundling
+      ulsch->O_ACK                               =((transmission_mode == 3)||(transmission_mode == 4)) ? 2 : 1;
+
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;
@@ -1725,7 +1726,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
     ulsch->srs_active                              = use_srs;
-    ulsch->bundling = 1-bundling;
+    ulsch->bundling = 1-AckNackFBMode;
 
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
@@ -1782,7 +1783,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   u8 harq_pid;
   u32 rb_alloc;
   u8 transmission_mode=phy_vars_eNB->transmission_mode[UE_id];
-  ANFBmode_t bundling = phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode;
+  ANFBmode_t AckNackFBMode = phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode;
   LTE_eNB_ULSCH_t *ulsch=phy_vars_eNB->ulsch_eNB[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
 
@@ -1865,10 +1866,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     }
 
 
-    if (bundling == multiplexing)
-      ulsch->O_ACK                               =2;
-    else
-      ulsch->O_ACK                               =1;
+    if (AckNackFBMode == multiplexing)
+      ulsch->O_ACK                               = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->dai;
+    else  // bundling
+      ulsch->O_ACK                               =((transmission_mode == 3)||(transmission_mode == 4)) ? 2 : 1;
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index];//10;
@@ -1876,7 +1877,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
     ulsch->srs_active                            = use_srs;
-    ulsch->bundling = 1-bundling;
+    ulsch->bundling = 1-AckNackFBMode;
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)
       ulsch->n_DMRS2 = 0;

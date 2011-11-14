@@ -67,13 +67,13 @@ ifdef PERFECT_CE
 CFLAGS += -DPERFECT_CE
 endif
 
-CFLAGS += -DNO_RRM #-DOPENAIR2 -DPHY_ABSTRACTION
+CFLAGS += -DNO_RRM -DOPENAIR2 -DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
 
 include $(TOP_DIR)/PHY/Makefile.inc
-SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o
+SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
 #include $(TOP_DIR)/SCHED/Makefile.inc
 include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc

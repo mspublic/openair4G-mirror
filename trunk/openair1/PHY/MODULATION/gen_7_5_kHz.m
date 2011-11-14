@@ -15,10 +15,15 @@ s15_2(2:2:end) = imag(s15);
 
 s25_n0 = floor(32767*exp(-sqrt(-1)*2*pi*(-40:511)*7.5e3/7.68e6));
 s25_n1 = floor(32767*exp(-sqrt(-1)*2*pi*(-36:511)*7.5e3/7.68e6));
-s25 = [s25_n0 s25_n1 s25_n1 s25_n1 s25_n1 s25_n1 s25_n1];
-s25_2 = zeros(1,2*3840);
-s25_2(1:2:end) = real(s25);
-s25_2(2:2:end) = imag(s25);
+s25_n = [s25_n0 s25_n1 s25_n1 s25_n1 s25_n1 s25_n1 s25_n1];
+s25_n2 = zeros(1,2*3840);
+s25_n2(1:2:end) = real(s25_n);
+s25_n2(2:2:end) = imag(s25_n);
+s25_e = floor(32767*exp(-sqrt(-1)*2*pi*(-128:511)*7.5e3/7.68e6));
+s25_e = [s25_e s25_e s25_e s25_e s25_e s25_e];
+s25_e2 = zeros(1,2*3840);
+s25_e2(1:2:end) = real(s25_e);
+s25_e2(2:2:end) = imag(s25_e);
 
 s50 = floor(32767*exp(-sqrt(-1)*2*pi*(0:2047)*7.5e3/15.36e6));
 s50_2 = zeros(1,4096);
@@ -44,9 +49,13 @@ fprintf(fd,"s16 s15_kHz_7_5[%d]__attribute__((aligned(16))) = {",length(s15_2));
 fprintf(fd,"%d,",s15_2(1:(end-1)));
 fprintf(fd,"%d};\n\n",s15_2(end));
 
-fprintf(fd,"s16 s25_kHz_7_5[%d]__attribute__((aligned(16))) = {",length(s25_2));
-fprintf(fd,"%d,",s25_2(1:(end-1)));
-fprintf(fd,"%d};\n\n",s25_2(end));
+fprintf(fd,"s16 s25n_kHz_7_5[%d]__attribute__((aligned(16))) = {",length(s25_n2));
+fprintf(fd,"%d,",s25_n2(1:(end-1)));
+fprintf(fd,"%d};\n\n",s25_n2(end));
+
+fprintf(fd,"s16 s25e_kHz_7_5[%d]__attribute__((aligned(16))) = {",length(s25_e2));
+fprintf(fd,"%d,",s25_e2(1:(end-1)));
+fprintf(fd,"%d};\n\n",s25_e2(end));
 
 fprintf(fd,"s16 s50_kHz_7_5[%d]__attribute__((aligned(16))) = {",length(s50_2));
 fprintf(fd,"%d,",s50_2(1:(end-1)));
