@@ -31,8 +31,9 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
   u32 slot_offset;
   u8 aa;
   u32 i;
+  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
 
-  switch (phy_vars_ue->lte_frame_parms.N_RB_UL) {
+  switch (frame_parms->N_RB_UL) {
     
   case 6:
     kHz7_5ptr = (u32*)s6_kHz_7_5;
@@ -41,7 +42,7 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
     kHz7_5ptr = (u32*)s15_kHz_7_5;
     break;
   case 25:
-    kHz7_5ptr = (u32*)s25_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
     break;
   case 50:
     kHz7_5ptr = (u32*)s50_kHz_7_5;
@@ -53,7 +54,7 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
     kHz7_5ptr = (u32*)s100_kHz_7_5;
     break;
   default:
-    kHz7_5ptr = (u32*)s25_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
     break;
   }
 
@@ -127,6 +128,7 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
   u32 slot_offset;
   u8 aa;
   u32 i;
+  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
 
   switch (phy_vars_eNB->lte_frame_parms.N_RB_UL) {
     
@@ -137,7 +139,7 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
     kHz7_5ptr = (u32*)s15_kHz_7_5;
     break;
   case 25:
-    kHz7_5ptr = (u32*)&s25_kHz_7_5[0];
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
     break;
   case 50:
     kHz7_5ptr = (u32*)s50_kHz_7_5;
@@ -149,7 +151,7 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
     kHz7_5ptr = (u32*)s100_kHz_7_5;
     break;
   default:
-    kHz7_5ptr = (u32*)s25_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
     break;
   }
  

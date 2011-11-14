@@ -199,8 +199,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	    phy_vars_ue->PHY_measurements.subband_cqi_tot[eNB_id][subband]=0;
 	  
 	  if (subband<6) {
-	    //	    for (i=0;i<48;i++)
-	    //	      printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
+	    //	    	    for (i=0;i<48;i++)
+	    //	    	      printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
 	    phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband] = 
 	      (signal_energy_nodc(dl_ch0,48) + signal_energy_nodc(dl_ch1,48))*rx_power_correction;
 	    if ( phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband] < phy_vars_ue->PHY_measurements.n0_power[aarx])
@@ -234,6 +234,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 	dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aarx][8];
 	dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][2+aarx][8];
+	/*
 #ifdef DEBUG_PHY	
 	if(eNB_id==0){
 	  print_shorts("Ch0",dl_ch0_128);
@@ -241,6 +242,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	  printf("eNB_ID = %d\n",eNB_id);
 	}
 #endif
+	*/
 	for (subband=0;subband<7;subband++) {
 	  
 	  
@@ -256,8 +258,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	    // For each RE in subband perform ch0 * conj(ch1)
 	    // multiply by conjugated channel
 	    // if(eNB_id==0){
-	    // print_shorts("ch0",dl_ch0_128);
-	    // print_shorts("ch1",dl_ch1_128);
+	    //print_shorts("ch0",dl_ch0_128);
+	    //print_shorts("ch1",dl_ch1_128);
 	    // }
 	    // if(i==0){
 	      mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
@@ -291,14 +293,13 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	    dl_ch1_128++;
 	  }
 	  phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx] = (((int *)&pmi128_re)[0] + ((int *)&pmi128_re)[1] + ((int *)&pmi128_re)[2] + ((int *)&pmi128_re)[3])>>2;
-	  if(eNB_id==0)
+	  //	  if(eNB_id==0)
 	    // printf("in lte_ue_measurements.c: pmi_re %d\n",phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx]);
 	  phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx] = (((int *)&pmi128_im)[0] + ((int *)&pmi128_im)[1] + ((int *)&pmi128_im)[2] + ((int *)&pmi128_im)[3])>>2;
-	  if(eNB_id==0)
+	  //	  if(eNB_id==0)
 	    // printf("in lte_ue_measurements.c: pmi_im %d\n",phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx]);
-	  phy_vars_ue->PHY_measurements.wideband_pmi_re[eNB_id][aarx] += phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx];
-	  phy_vars_ue->PHY_measurements.wideband_pmi_im[eNB_id][aarx] += phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx];
-	  //  msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,subband,aarx,phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx],phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx]);
+	  phy_vars_ue->PHY_measurements.wideband_pmi_re[eNB_id][aarx] += phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx];	  phy_vars_ue->PHY_measurements.wideband_pmi_im[eNB_id][aarx] += phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx];
+	  //	    msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,subband,aarx,phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx],phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx]);
 	  
 	} // subband loop
       } // rx antenna loop  
@@ -350,6 +351,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	else
 	  phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB_id][i] = 1;
       }
+      else
+	phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB_id][i] = 0;
     }
     // if(eNB_id==0)
       // printf("in lte_ue_measurements: selected rx_antenna[eNB_id==0]:%u\n", phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB_id][i]);

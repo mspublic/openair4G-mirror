@@ -127,7 +127,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 int main(int argc, char **argv) {
 
   char c;
-  int i,aa,b,u,Msc_RS_idx;
+  int i,j,aa,b,u,Msc_RS_idx;
 
  
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,SNRmeas,rate;
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 
   int eNB_id = 0;
   int UE_id = 0;
-  unsigned char nb_rb=2,first_rb=0,mcs=4,awgn_flag=0,round=0;
+  unsigned char nb_rb=2,first_rb=0,mcs=4,awgn_flag=0,round=0,bundling_flag=1;
   unsigned char l;
 
   unsigned char *input_buffer,harq_pid;
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
 
   char fname[20],vname[20];
 
-  FILE *input_fd=NULL;
+  FILE *input_fd=NULL,*trch_out_fd=NULL;
   unsigned char input_file=0;
   char input_val_str[50],input_val_str2[50];
 
@@ -188,10 +188,13 @@ int main(int argc, char **argv) {
 
   channel_length = (int) 11+2*BW*Td;
 
-  while ((c = getopt (argc, argv, "hapm:n:s:t:c:r:i:f:c:oA:C:R:")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:s:t:c:r:i:f:c:oA:C:R:")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
+      break;
+    case 'b':
+      bundling_flag = 0;
       break;
     case 'm':
       mcs = atoi(optarg);
@@ -430,14 +433,15 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 0;
   UL_alloc_pdu.cshift  = 0;
+  UL_alloc_pdu.dai     = 1;
 
   PHY_vars_UE->PHY_measurements.rank[0] = 0;
   PHY_vars_UE->transmission_mode[0] = 2;
-  PHY_vars_UE->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;//multiplexing;
+  PHY_vars_UE->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling_flag == 1 ? bundling : multiplexing;
   PHY_vars_eNB->transmission_mode[0] = 2;
-  PHY_vars_eNB->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;//multiplexing;
-  PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 0;
-  PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 0;
+  PHY_vars_eNB->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling_flag == 1 ? bundling : multiplexing;
+  PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+  PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
   PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
   PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
   PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
@@ -485,7 +489,8 @@ int main(int argc, char **argv) {
 				     P_RNTI,
 				     srs_flag);
 
-    
+  PHY_vars_UE->ulsch_ue[0]->o_ACK[0] = 1;
+
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
     errs[0]=0;
     errs[1]=0;
@@ -504,11 +509,18 @@ int main(int argc, char **argv) {
     harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,subframe);
 
     if (input_fd == NULL) {
-    input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
-    input_buffer = (unsigned char *)malloc(input_buffer_length+4);
-    mac_xface->frame=1;
-    for (i=0;i<input_buffer_length;i++)
-      input_buffer[i] = taus()&0xff;
+      input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
+      input_buffer = (unsigned char *)malloc(input_buffer_length+4);
+      mac_xface->frame=1;
+      if (n_frames == 1) {
+	trch_out_fd = fopen("ulsch_trch.txt","w");
+	for (i=0;i<input_buffer_length;i++) {
+	  input_buffer[i] = taus()&0xff;
+	  for (j=0;j<8;j++)
+	    fprintf(trch_out_fd,"%d\n",(input_buffer[i]>>(7-j))&1);
+	}
+	fclose(trch_out_fd);
+      }
     }
     else {
       n_frames=1;
@@ -744,7 +756,7 @@ int main(int argc, char **argv) {
 	
 	
 	ret= ulsch_decoding(PHY_vars_eNB,
-			    0,
+			    0, // UE_id
 			    subframe,
 			    control_only_flag,
 			    1  // Nbundled 
@@ -752,7 +764,7 @@ int main(int argc, char **argv) {
       
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
-	    printf("No ULSCH errors found\n");
+	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
 	    dump_ulsch(PHY_vars_eNB);
 	    exit(-1);
 	  }
@@ -761,7 +773,7 @@ int main(int argc, char **argv) {
 	else {
 	  errs[round]++;
 	  if (n_frames==1) {
-	    printf("ULSCH errors found\n");
+	    printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
 	    dump_ulsch(PHY_vars_eNB);
 	    exit(-1);
 	  }
