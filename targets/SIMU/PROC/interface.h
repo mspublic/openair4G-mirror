@@ -47,13 +47,13 @@ typedef struct{
 	double **r_im;
 	double **r_re0;
 	double **r_im0;
-	channel_desc_t *eNB2UE;
-	channel_desc_t *UE2eNB;
-	node_desc_t *enb_data;
-	node_desc_t *ue_data;
+	struct channel_desc_t *eNB2UE;
+	struct channel_desc_t *UE2eNB;
+	struct node_desc_t *enb_data;
+	struct node_desc_t *ue_data;
 	int *next_slot;
 	int *abstraction_flag;
-	LTE_DL_FRAME_PARMS *frame_parms;
+	struct LTE_DL_FRAME_PARMS *frame_parms;
 	int **tx_data[3];
 	int **rx_data[3];
 }ch_thread;
