@@ -51,8 +51,8 @@
 #endif
 
 
-//#define NAS_DEBUG_CLASS 1
-//#define NAS_DEBUG_SEND 1
+#define NAS_DEBUG_CLASS 1
+#define NAS_DEBUG_SEND 1
 
 //---------------------------------------------------------------------------
 // Add a new classifier rule (send direction)
@@ -360,14 +360,17 @@ struct cx_entity *nas_CLASS_cx6(struct sk_buff *skb,
 				unsigned char *cx_searcher){
   //---------------------------------------------------------------------------
   unsigned char cxi;
-  unsigned int *addr,*dst;
+  unsigned int *addr,*dst=NULL;
   struct cx_entity *default_ip=NULL;
   struct classifier_entity *p=NULL;
+  
 #ifdef KERNEL_VERSION_GREATER_THAN_2630
-  if (skb->_skb_dst!=0) { 
+  struct dst_entry *skbdst = skb_dst(skb);
 #else
-  if (skb->dst!=NULL) {
-#endif
+  struct dst_entry *skbdst = skb->dst;
+#endif  
+
+  if (skbdst!=NULL) {
 
     for (cxi=*cx_searcher; cxi<NAS_CX_MAX; cxi++) {
 	
@@ -388,12 +391,8 @@ struct cx_entity *nas_CLASS_cx6(struct sk_buff *skb,
 #ifdef NAS_DEBUG_CLASS
 	  printk("cx %d : %X,%X.%X,%X\n",cxi,addr[0],addr[1],addr[2],addr[3]);
 #endif //NAS_DEBUG_CLASS
-#ifdef KERNEL_VERSION_GREATER_THAN_2630	  
-	  if ((dst = (unsigned int*)&(((struct rt6_info *)(skb->_skb_dst))->rt6i_gateway)) == 0){
-#else
-	  if ((dst = (unsigned int*)&(((struct rt6_info *)(skb->dst))->rt6i_gateway)) == NULL){
-	      
-#endif 
+	  if ((dst = (unsigned int*)&(((struct rt6_info *)skbdst)->rt6i_gateway)) == 0){
+
 	    printk("nas_CLASS_cx6: dst addr is null \n");
 	    p = p->next;
 	    continue;
@@ -443,67 +442,60 @@ struct cx_entity *nas_CLASS_cx4(struct sk_buff *skb,
   //---------------------------------------------------------------------------
   unsigned char cxi;
   unsigned char *addr;
+  u32 daddr;
   struct cx_entity *default_ip=NULL;
   struct classifier_entity *p=NULL;
-  
+
+#ifdef KERNEL_VERSION_GREATER_THAN_2630
+  struct dst_entry *skbdst = skb_dst(skb);
+#else
+  struct dst_entry *skbdst = skb->dst;
+#endif    
   //  if (inst >0)
   //    return(gpriv->cx);  //dump to clusterhead
   
   
-#ifdef NAS_DEBUG_CLASS
 
-#ifdef KERNEL_VERSION_GREATER_THAN_2630
-  addr = (char *)&((((struct rtable *)(skb->_skb_dst))->rt_gateway));
-#else
- addr = (char *)&((((struct rtable *)(skb->dst))->rt_gateway));
-#endif
-
-  if (addr)
-    printk("[NAS][CLASS][IPv4] Searching for %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
-#endif
   
-#ifdef KERNEL_VERSION_GREATER_THAN_2630
-  if (skb->_skb_dst!=0) {
-#else
-  if (skb->dst!=NULL) {
-#endif    
+#ifdef NAS_DEBUG_CLASS
+
     
-      for (cxi=*cx_searcher; cxi<NAS_CX_MAX; ++cxi) {
-      
-      (*cx_searcher)++;
-      p = gpriv->cx[cxi].sclassifier[dscp];
-
-      while (p!=NULL) {
-	if (p->version == 4) {   // verify that this is an IPv4 rule
-
+  //   addr = (char *)&((((struct rtable *)skbdst)->rt_gateway));
+  daddr = ((struct iphdr*)(skb_network_header(skb)))->daddr;
+  
+  
+  printk("[NAS][CLASS][IPv4] Searching for %d.%d.%d.%d\n",
+	 ((unsigned char *)&daddr)[0],
+	 ((unsigned char *)&daddr)[1],
+	 ((unsigned char *)&daddr)[2],
+	 ((unsigned char *)&daddr)[3]);
+#endif
+  for (cxi=*cx_searcher; cxi<NAS_CX_MAX; ++cxi) {
+    
+    (*cx_searcher)++;
+    p = gpriv->cx[cxi].sclassifier[dscp];
+    
+    while (p!=NULL) {
+      if (p->version == 4) {   // verify that this is an IPv4 rule
+	
 #ifdef NAS_DEBUG_CLASS
+	addr = (char *)(&(p->daddr.ipv4));
+	printk("cx %d : %d.%d.%d.%d\n",cxi,addr[0],addr[1],addr[2],addr[3]);
+	
+#endif //NAS_DEBUG_CLASS
+	if ((p->daddr.ipv4)== daddr){
+	  
 	  addr = (char *)(&(p->daddr.ipv4));
-	  printk("cx %d : %d.%d.%d.%d\n",cxi,addr[0],addr[1],addr[2],addr[3]);
-
-#ifdef KERNEL_VERSION_GREATER_THAN_2630  
-	  addr = (char *)&(((struct rtable *)(skb->_skb_dst))->rt_gateway);
-#else
-	  addr = (char *)&(((struct rtable *)(skb->dst))->rt_gateway);
-#endif
-	  printk("rt_gateway : %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
-#endif //NAS_DEBUG_CLASS
-#ifdef KERNEL_VERSION_GREATER_THAN_2630  
-	  if ((p->daddr.ipv4)== (((((struct rtable *)(skb->_skb_dst))->rt_gateway)))){
-#else
-	  if ((p->daddr.ipv4)== (((((struct rtable *)(skb->dst))->rt_gateway)))){
-#endif
-
-	    addr = (char *)(&(p->daddr.ipv4));
 #ifdef NAS_DEBUG_CLASS
-	    printk("found cx %d: %d.%d.%d.%d\n",cxi,
-		   addr[0],
-		   addr[1],
-		   addr[2],
-		   addr[3]);
+	  printk("found cx %d: %d.%d.%d.%d\n",cxi,
+		 addr[0],
+		 addr[1],
+		 addr[2],
+		 addr[3]);
 #endif //NAS_DEBUG_CLASS
-	    return gpriv->cx+cxi;
-	  }
-	  /*
+	  return gpriv->cx+cxi;
+	}
+	/*
 	  else if (gpriv->cx[cxi].sclassifier[dscp]->daddr.ipv4==NAS_DEFAULT_IPV4_ADDR) {
 	  #ifdef NAS_DEBUG_CLASS
 	  printk("found default_ip rule\n");
@@ -511,15 +503,12 @@ struct cx_entity *nas_CLASS_cx4(struct sk_buff *skb,
 	  default_ip = gpriv->cx+cxi;
 	  }
 	*/
-	}
-	// goto to next classification rule for the connection
-	p = p->next;
       }
-      
-    }
+      // goto to next classification rule for the connection
+      p = p->next;
+      }
+  } 
     
-  }
-  
   return default_ip;
 }
 
