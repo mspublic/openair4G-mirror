@@ -195,6 +195,10 @@ typedef struct
   ///check for SU-MIMO Transmissions
   u16 check_for_SUMIMO_transmissions;
 
+  /// Counter for total bitrate, bits and throughput in downlink
+  unsigned int total_dlsch_bitrate;
+  unsigned int total_transmitted_bits;
+  unsigned int total_system_throughput;
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg

@@ -992,6 +992,16 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   int i, j, eNB_id, UE_id;
 
+  phy_vars_eNB->total_dlsch_bitrate = 0;
+  phy_vars_eNB->total_transmitted_bits = 0;
+  phy_vars_eNB->total_system_throughput = 0;
+
+  for(UE_id = 0; UE_id<NUMBER_OF_UE_MAX;UE_id++){
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate = 0;
+  }
 
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
   generate_pcfich_reg_mapping(frame_parms);

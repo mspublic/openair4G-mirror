@@ -141,7 +141,9 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
   u8 eNB,UE_id,i,j;
   u32 ulsch_errors=0;
   u32 ulsch_round_attempts[4]={0,0,0,0},ulsch_round_errors[4]={0,0,0,0};
-
+  phy_vars_eNB->total_dlsch_bitrate = 0;//phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
+  phy_vars_eNB->total_transmitted_bits = 0;// phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits +  phy_vars_eNB->total_transmitted_bits;
+  phy_vars_eNB->total_system_throughput = 0;//phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
   if (phy_vars_eNB==NULL)
     return 0;
 
@@ -160,10 +162,29 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 		     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
     len += sprintf(&buffer[len],"\n");
     len += sprintf(&buffer[len],"\n[eNB PROC] PERFORMANCE PARAMETERS\n");
+    /*
     len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH Bitrate for the System %dkbps\n",((phy_vars_eNB->eNB_UE_stats[0].dlsch_bitrate + phy_vars_eNB->eNB_UE_stats[1].dlsch_bitrate)/1000));
     len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",((phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/1000),mac_xface->frame+1);
     len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/((mac_xface->frame+1)*10));
+    */
 
+    for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+#ifdef OPENAIR2
+      if (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti>0) {
+	phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
+	phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits +  phy_vars_eNB->total_transmitted_bits;
+	phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
+      }
+#else
+      phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
+      phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits +  phy_vars_eNB->total_transmitted_bits;
+      phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
+#endif
+    }
+
+    len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH Bitrate for the System %dkbps\n",(phy_vars_eNB->total_dlsch_bitrate/1000));
+    len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",(phy_vars_eNB->total_transmitted_bits/1000),mac_xface->frame+1);
+    len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->total_system_throughput)/((mac_xface->frame+1)*10));
 
     if(phy_vars_eNB->transmission_mode[0] == 5){
     len += sprintf(&buffer[len],"[eNB PROC] For TM5:MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
@@ -272,6 +293,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[2],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[3],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[3]);
+
+
 	len += sprintf(&buffer[len],"[eNB PROC] DLSCH Bitrate %dkbps\n",(phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate/1000));
 	len += sprintf(&buffer[len],"[eNB PROC] Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
  
@@ -292,7 +315,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 	    
     
 	    len += sprintf(&buffer[len],"[eNB PROC] Total Number of Allocated PRBs = %d\n\n",phy_vars_eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs);
-	  }
+	}
 
     
 #ifdef OPENAIR2

@@ -3887,6 +3887,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	case 2:
 	default:
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->DL_cqi[0];
+	  //if(((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs > 9)
+	  //((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = 9;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi = 1;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv = 0;
