@@ -4,14 +4,12 @@
 #PBS -d /homes/kaltenbe/Devel/openair_lte/openair1/SIMULATION/LTE_PHY
 
 # Simulation parameters
-#MCS="0 1 2 3 4 5 6 7 8 9"
-MCS="0"
+MCS="0 1 2 3 4 5 6 7 8 9"
 #MCS="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28"
 #MCS="10 11 12 13 14 15 16"
-#CHANNEL="C E F G H I J K L M"
-CHANNEL="C"
-USER2="0 1"
-NSIMUS=1
+CHANNEL="C E F G H I J K L M"
+USER2="1"
+NSIMUS=1000
 
 #QPSK
 #MCS="0 1 2 3 4 5 6 7 8 9"
