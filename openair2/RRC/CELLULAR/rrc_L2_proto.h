@@ -11,8 +11,8 @@
 #define __RRC_L2_PROTO_H__
 
 // rrc_L2_interfaces.c
-unsigned char rrc_L2_data_req_rx (unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8 CH_index);
-void rrc_L2_mac_data_ind_rx (void);
+s8 rrc_L2_data_req_rx (unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8 CH_index);
+s8 rrc_L2_mac_data_ind_rx (void);
 void rrc_L2_rlc_data_ind_rx (void);
 void rrc_L2_mac_meas_ind_rx (void);
 void rrc_L2_def_meas_ind_rx (unsigned char Mod_id, unsigned char Idx2);
