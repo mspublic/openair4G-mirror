@@ -35,6 +35,7 @@ ifeq ($(linux),1)
 CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -I/usr/include/atlas -lforms -lX11 -L/usr/X11R6/lib -lXpm -lrt -lpthread
 OCG_FLAG = 1
 cygwin=0
+CFLAGS += -DLINUX
 else
 cygwin=1
 OCG_FLAG = 0
@@ -143,7 +144,7 @@ $(OBJ): %.o : %.c
 
 $(L2_OBJS): %.o : %.c
 	@echo Compiling $<
-	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
 	@echo "Compiling oaisim.c ..."
