@@ -102,6 +102,12 @@ int test=0;
 int init_value=0;
 static int g_sockfd;/* UDP socket used for sending frames */
 static struct sockaddr_in g_serv_addr;
+
+/* Kind of a `forward declaration` for the usage placed before definition */ 
+static void g_pdu_construct(guint8 Ext, guint8 T, guint8 RaPid, guint16 TA, guint8 hopping_flag, \
+                            guint16 fsrba, guint8 tmcs, guint8 tcsp, guint8 ul_delay,            \
+                            guint8 cqi_request, guint16 crnti_temporary);
+
 /* Remote serveraddress (where Wireshark is running) */
 void trace_pdu(int type,unsigned char *pdu_buffer, int pdu_length, int ue_id,int rnti,int subframe)
 {	int i,Type_value;
