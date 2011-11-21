@@ -3,9 +3,15 @@
 NAS_UPDIR	:= $(shell /bin/pwd)
 
 
+
 KERNEL_MAIN_TYPE=$(shell echo `uname -r | cut -d. -f-2  | tr "." "_"`)
 export KERNEL_MAIN_TYPE
+IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
+ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
 SUBVERSION=$(shell echo `grep '^SUBLEVEL =' /usr/src/linux/Makefile | sed -e 's, ,,g' | sed -e 's/SUBLEVEL=//'`)
+else
+SUBVERSION=$(shell echo `grep '^SUBLEVEL =' /usr/src/linux-headers-$(shell echo `uname -r`)/Makefile | sed -e 's, ,,g' | sed -e 's/SUBLEVEL=//'`)
+endif
 IS_KERNEL_SUBVERSION_GREATER_THAN_20=$(shell if [ $(SUBVERSION) -ge 20 ] ; then echo true ; fi)
 KERNEL_ARCH=$(shell echo `uname -m`)
 #SET_REGPARM=$(shell if [ $(KERNEL_ARCH) = 'i686' -a $(SUBVERSION) -ge 20 ]; then echo true ; fi)

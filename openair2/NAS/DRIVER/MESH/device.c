@@ -61,7 +61,7 @@
 #include <asm/unistd.h>
 
 
-#define DEBUG_DEVICE 1
+//#define DEBUG_DEVICE 1
 //#define DEBUG_INTERRUPT 1
 
 struct net_device *nasdev[NB_INSTANCES_MAX];

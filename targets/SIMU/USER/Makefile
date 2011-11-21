@@ -27,7 +27,7 @@ OPENAIR2=1
 endif
 
 ifndef OPENAIR_EMU
-OPENAIR_EMU=1
+export OPENAIR_EMU=1
 endif
 
 # activate OCG and libxml only under linux
