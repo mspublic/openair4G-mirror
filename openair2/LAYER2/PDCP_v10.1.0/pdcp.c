@@ -225,7 +225,9 @@ pdcp_run ()
   
   pdcp_fifo_read_input_sdus();
   // PDCP -> NAS traffic
+#ifndef TEST_PDCP
   pdcp_fifo_flush_sdus();
+#endif
   
 
 }
@@ -244,6 +246,11 @@ pdcp_config_req (module_id_t module_idP, rb_id_t rab_idP)
   pdcp_array[module_idP][rab_idP].rx_hfn = 0;
   /* SN of the last PDCP SDU delivered to upper layers */
   pdcp_array[module_idP][rab_idP].last_submitted_pdcp_rx_sn = 4095;
+
+  /*
+   * XXX Sequence number size shouldn't be hardcoded! This is temporary!
+   */
+  pdcp_array[module_idP][rab_idP].seq_num_size = 12;
 
   msg("[PDCP] PDCP entity of module %d, radio bearer %d configured\n", module_idP, rab_idP);
 }
