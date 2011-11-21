@@ -54,7 +54,7 @@ void UE_Inst(int node_id,int port,double **r_re0,double **r_im0,double **r_re,do
 	 init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
 	 mmap_ue(node_id,&PHY_vars_UE_g[0]->lte_ue_common_vars.txdata,&PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata,frame_parms);
 
-	 Interface_init(port,node_id);
+	// Interface_init(port,node_id);
 	 char p_input[FILENAMEMAX];
 	 int fd_pipe;
 	 int fd_channel;
@@ -63,7 +63,7 @@ void UE_Inst(int node_id,int port,double **r_re0,double **r_im0,double **r_re,do
 	 sprintf(p_input,"/tmp/pipe_%d",node_id);
 	 mkfifo(p_input, 0666);
 	 fd_pipe=open(p_input,O_RDWR,0);
-	 IntInitAll();
+	// IntInitAll();
 	 mac_xface->frame=0;
 	 while(1){
 		 // wait_4slot(&slot,&mac_xface->frame);
@@ -114,8 +114,8 @@ void eNB_Inst(int node_id,int port,double **r_re0,double **r_im0,double **r_re,d
 	  init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
 	  mmap_enb(node_id,PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata,PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata,frame_parms);
 
-	 Interface_init(port,node_id);
-	 IntInitAll();
+	// Interface_init(port,node_id);
+	// IntInitAll();
 	 char p_input[FILENAMEMAX];
 	 int fd_pipe;
 	 int fd_channel;
@@ -162,8 +162,8 @@ void Channel_Inst(int node_id,int port,double **s_re[MAX_eNB+MAX_UE],double **s_
 double **r_re0_d[MAX_UE][MAX_eNB],double **r_im0_d[MAX_UE][MAX_eNB],double **r_re0_u[MAX_eNB][MAX_UE],double **r_im0_u[MAX_eNB][MAX_UE],channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms){
 
-	 Interface_init(port,node_id);
-	 IntInitAll();
+	// Interface_init(port,node_id);
+	// IntInitAll();
 	 mkfifo("/tmp/channel", 0666);
 	 fd_channel=open("/tmp/channel", O_RDWR ,0);
 
