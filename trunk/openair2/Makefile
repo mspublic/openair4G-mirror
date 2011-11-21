@@ -12,6 +12,13 @@
 
 KERNEL_NAME=$(shell uname -r)
 
+IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
+ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
+LINUX_KERNEL = linux
+else
+LINUX_KERNEL = linux-headers-`uname -r`
+endif 
+
 #SUBDIRS_openair_USERRF  =   $(MAIN_RT_DIR) $(CONFIG_DIR)
 
 #openair_USERRFDIR  = openair_RFOBJS
@@ -106,26 +113,23 @@ modules_install_platon:
 	cp arch/platon/device_driver/openair_rf.ko /lib/modules/$(KERNEL_NAME)/openair/
 	depmod -aq
 
-
+#need to generate symbolic link to linux kernel
 nasmesh_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)
-
+	(cd NAS/DRIVER/MESH && $(MAKE) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)	
 
 nasmesh.ko:
-
 	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd`)
 
-#(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd`)
-
-
+# automatically detect the linux header files for driver compilation
 nasmesh_netlink.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 V=1 -C /usr/src/linux M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 nasmesh_netlink_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/linux M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+
 
 nasmesh_netlink_loopback.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 rt_emul:
 	(cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER && $(MAKE))
@@ -243,3 +247,6 @@ tgz:
 	cp /tmp/openair2.tgz . ;\
 	rm -rf /tmp/openair2_tmp
 
+print:
+	@echo $(IS_KERNEL_OPENAIRINTERFACE)
+	@echo $(LINUX_KERNEL)

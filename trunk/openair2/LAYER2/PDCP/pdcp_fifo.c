@@ -95,7 +95,7 @@ pdcp_fifo_flush_sdus ()
   int             bytes_wrote = 0;
   int             pdcp_nb_sdu_sent = 0;
   u8              cont = 1;
-  //  int ret;
+  int ret;
 
 
   while ((sdu) && (cont)) {
