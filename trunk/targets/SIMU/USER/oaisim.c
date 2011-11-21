@@ -43,7 +43,6 @@
 //ALU
 #include "../PROC/interface.h"
 #include "../PROC/channel_sim_proc.h"
-#include "../PROC/interface/definitions.h"
 #include "../PROC/Tsync.h"
 #include "../PROC/Process.h"
 
