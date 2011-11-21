@@ -22,15 +22,65 @@ int pdcp_fifo_flush_sdus () {}
 int pdcp_fifo_read_input_sdus_remaining_bytes () {}
 int pdcp_fifo_read_input_sdus () {}
 
+BOOL init_pdcp_entity(pdcp_t *pdcp_entity);
+
 // Declare PDCP entities
 pdcp_t pdcp_array[2];
 
 int main(int argc, char **argv) {
-  char c;
-  char * g_log_level="trace"; // by default global log level is set to trace
+  unsigned long index = 0;
+  char * g_log_level = "trace"; // by default global log level is set to trace
 
   mac_xface = malloc(sizeof(MAC_xface));
 
+  if (init_pdcp_entity(&pdcp_array[0]) == TRUE && init_pdcp_entity(&pdcp_array[1]) == TRUE)
+    msg("PDCP entity initialization OK\n");
+  else {
+    msg("Cannot initialize PDCP entities!\n");
+    return 1;
+  }
+
+  /* Initialize PDCP state variables */
+  for (index = 0; index < 2; ++index) {
+    if (pdcp_init_seq_numbers(&pdcp_array[index]) == FALSE) {
+      msg("Cannot initialize %s PDCP entity!\n", ((index == 0) ? "first" : "second"));
+      exit(1);
+    }
+  }
+
+  /* Test TX window */
+  for (index = 0; index < 10000; ++index) {
+    msg("TX Packet # %07lu Seq # %04d HFN # %04d\n", index, pdcp_get_next_tx_seq_number(&pdcp_array[0]), pdcp_array[0].tx_hfn);
+  }
+
+  /* Test RX window */
+  for (index = 0; index < 10000; ++index) {
+    u16 pseudo_rx_sn = (index == 0) ? 0 : index % 4096;
+    if (pdcp_is_rx_seq_number_valid(pseudo_rx_sn, &pdcp_array[1]) == TRUE) {
+      msg("RX Packet # %07lu Seq # %04d LastSubmitted # %04d HFN # %04d\n", \
+          index, pdcp_array[1].next_pdcp_rx_sn, pdcp_array[1].last_submitted_pdcp_rx_sn, pdcp_array[1].rx_hfn);
+    }
+  }
+
   return 0;
+}
+
+BOOL init_pdcp_entity(pdcp_t *pdcp_entity)
+{
+  if (pdcp_entity == NULL)
+    return FALSE;
+
+  /*
+   * Initialize sequence number state variables of relevant PDCP entity
+   */
+  pdcp_entity->next_pdcp_tx_sn = 0;
+  pdcp_entity->next_pdcp_rx_sn = 0;
+  pdcp_entity->tx_hfn = 0;
+  pdcp_entity->rx_hfn = 0;
+  /* SN of the last PDCP SDU delivered to upper layers */
+  pdcp_entity->last_submitted_pdcp_rx_sn = 4095;
+  pdcp_entity->seq_num_size = 12;
+
+  return TRUE;
 }
 
