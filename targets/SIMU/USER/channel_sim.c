@@ -26,7 +26,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 
 #ifdef IFFT_FPGA
-//#include "PHY/LTE_REFSIG/mod_table.h"
+#include "PHY/LTE_REFSIG/mod_table.h"
 #endif
 
 #include "SCHED/defs.h"
@@ -136,6 +136,13 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
   u32 slot_offset;
 
   double min_path_loss=-200;
+
+  u8 hold_channel;
+
+  if (next_slot==0)
+    hold_channel = 0;
+  else
+    hold_channel = 1;
     
   if (abstraction_flag != 0) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
@@ -265,8 +272,9 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 	printf("[SIM][DL] eNB %d: tx_pwr %f dB for slot %d (subframe %d)\n",eNB_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
 
+	//eNB2UE[eNB_id][UE_id]->path_loss_dB = 0;
 	multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r_re0,r_im0,
-			  frame_parms->samples_per_tti>>1,0);
+			  frame_parms->samples_per_tti>>1,hold_channel);
 	
 	rx_pwr = signal_energy_fp2(eNB2UE[eNB_id][UE_id]->ch[0],eNB2UE[eNB_id][UE_id]->channel_length)*eNB2UE[eNB_id][UE_id]->channel_length;
 #ifdef DEBUG_SIM
@@ -293,6 +301,7 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 #ifdef DEBUG_SIM
 	printf("[SIM][DL] UE %d : rx_gain %d dB for slot %d (subframe %d)\n",UE_id,PHY_vars_UE_g[UE_id]->rx_total_gain_dB,next_slot,next_slot>>1);      
 #endif
+	/*
 	rf_rx(r_re0,
 	      r_im0,
 	      NULL,
@@ -305,13 +314,21 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 	      0.0,               // drift (Hz) NOT YET IMPLEMENTED
 	      ue_data[UE_id]->rx_noise_level,                // noise_figure NOT YET IMPLEMENTED
 	      (double)PHY_vars_UE_g[UE_id]->rx_total_gain_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
-	      200,               // IP3_dBm (dBm)
+	      200.0,               // IP3_dBm (dBm)
 	      &eNB2UE[eNB_id][UE_id]->ip,               // initial phase
 	      30.0e3,            // pn_cutoff (kHz)
 	      -500.0,            // pn_amp (dBc) default: 50
 	      0.0,               // IQ imbalance (dB),
 	      0.0);              // IQ phase imbalance (rad)
+	*/
 
+	rf_rx_simple(r_re0,
+		     r_im0,
+		     frame_parms->nb_antennas_rx,
+		     frame_parms->samples_per_tti>>1,
+		     1e3/eNB2UE[eNB_id][UE_id]->BW,  // sampling time (ns)
+		     (double)PHY_vars_UE_g[UE_id]->rx_total_gain_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
+		     
 	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
 	printf("[SIM][DL] UE %d : ADC in (eNB %d) %f dB for slot %d (subframe %d)\n",UE_id,eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
@@ -352,7 +369,7 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 }
 
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   s32 **txdata,**rxdata;
 
@@ -361,8 +378,13 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   s32 rx_pwr2;
   u32 i;
   u32 slot_offset;
-  double nf = 0; //currently unused
 
+  u8 hold_channel;
+
+  if (next_slot==4)
+    hold_channel = 0;
+  else
+    hold_channel = 1;
 
   if (abstraction_flag!=0) {
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
@@ -400,7 +422,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 				frame_parms->nb_antennas_tx,
 				frame_parms->samples_per_tti>>1,
 				14,
-				18); 
+				ue_data[UE_id]->tx_power_dBm); 
 #ifdef DEBUG_SIM
 	printf("[SIM][UL] UE %d tx_pwr %f dB for slot %d (subframe %d)\n",UE_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
@@ -417,9 +439,10 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/ 
-    
+
+	//UE2eNB[UE_id][eNB_id]->path_loss_dB = 0;
 	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
-			  frame_parms->samples_per_tti>>1,0);
+			  frame_parms->samples_per_tti>>1,hold_channel);
 	/*
 	for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -438,8 +461,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	if (UE2eNB[UE_id][eNB_id]->first_run == 1)
 	  UE2eNB[UE_id][eNB_id]->first_run = 0;
       
-      
 	// RF model
+	/*
 	rf_rx(r_re0,
 	      r_im0,
 	      NULL,
@@ -447,18 +470,27 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	      0,
 	      frame_parms->nb_antennas_rx,
 	      frame_parms->samples_per_tti>>1,
-	      (UE_id==0) ? (1.0/7.68e6 * 1e9) : 1e9,  // sampling time (ns) + set noise bandwidth to 0 for UE>0 (i.e. no noise except for first UE)
+	      1e3/UE2eNB[UE_id][eNB_id]->BW,  // sampling time (ns) 
 	      0.0,               // freq offset (Hz) (-20kHz..20kHz)
 	      0.0,               // drift (Hz) NOT YET IMPLEMENTED
-	      nf,                // noise_figure NOT YET IMPLEMENTED
+	      enb_data[eNB_id]->rx_noise_level,                // noise_figure NOT YET IMPLEMENTED
 	      (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
-	      200,               // IP3_dBm (dBm)
+	      200.0,               // IP3_dBm (dBm)
 	      &UE2eNB[UE_id][eNB_id]->ip,               // initial phase
 	      30.0e3,            // pn_cutoff (kHz)
 	      -500.0,            // pn_amp (dBc) default: 50
 	      0.0,               // IQ imbalance (dB),
 	      0.0);              // IQ phase imbalance (rad)
-	
+	*/
+
+	rf_rx_simple(r_re0,
+		     r_im0,
+		     frame_parms->nb_antennas_rx,
+		     frame_parms->samples_per_tti>>1,
+		     1e3/UE2eNB[UE_id][eNB_id]->BW,  // sampling time (ns) 
+		     (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
+
+
 	for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
 	  for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 	    r_re[aa][i]+=r_re0[aa][i]; 

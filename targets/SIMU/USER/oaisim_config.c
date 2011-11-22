@@ -28,7 +28,7 @@ void init_oai_emulation() {
 	oai_emulation.environment_system_config.fading.large_scale.selected_option = "free_space";
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_exponent = 2.0;
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_0_dB = -50;
-	oai_emulation.environment_system_config.fading.small_scale.selected_option = "Rice1";
+	oai_emulation.environment_system_config.fading.small_scale.selected_option = "Rayleigh8";
 	oai_emulation.environment_system_config.fading.ricean_8tap.rice_factor_dB = 0;
 	oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m = 0;
 	oai_emulation.environment_system_config.fading.shadowing.variance_dB = 0;

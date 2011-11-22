@@ -4184,55 +4184,45 @@ void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_fl
 
     //add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,unsigned char dci_size_bytes,unsigned char aggregation,unsigned char dci_size_bits,unsigned char dci_fmt)
 
-
     schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
     break;
+
   case 1:
     break;
+
   case 2:
-
     break;
+
   case 3:
-
     break;
+
   case 4:
-
     break;
-  case 5:
 
+  case 5:
     schedule_SI(Mod_id,&nprb,&nCCE);
     fill_DLSCH_dci(Mod_id,subframe,RBalloc);
-
     break;
 
   case 6:
-
     break;
 
   case 7:
-
     schedule_ue_spec(Mod_id,subframe,0,0);
     fill_DLSCH_dci(Mod_id,subframe,RBalloc);
     break;
 
-
-
   case 8:
-
     schedule_RA(Mod_id,subframe,&nprb,&nCCE);
     //    schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
     fill_DLSCH_dci(Mod_id,subframe,RBalloc);
     // Schedule UL subframe
     //schedule_ulsch(Mod_id,subframe,&nCCE);
-
     break;
 
   case 9:
-
     // Schedule UL subframe
-    //    schedule_ulsch(Mod_id,subframe,&nCCE);
-
-
+    //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
     break;
 
   }

@@ -10,10 +10,10 @@
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "LAYER2/MAC/extern.h"
-
-#include "rlc_um_very_simple_test.h"
-//#define RLC_UM_TEST_TRAFFIC
-
+#define RLC_UM_TEST_TRAFFIC
+#ifdef RLC_UM_TEST_TRAFFIC
+#        include "rlc_um_very_simple_test.h"
+#endif
 //#define DEBUG_RLC_UM_DATA_REQUEST
 //#define DEBUG_RLC_UM_MAC_DATA_REQUEST
 //#define DEBUG_RLC_UM_MAC_DATA_INDICATION
@@ -189,8 +189,10 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
   struct mac_status_resp status_resp;
 
   if (rlcP) {
-
 #ifdef RLC_UM_TEST_TRAFFIC
+    if (((rlc_um_entity_t *) rlcP)->nb_sdu < 32)
+	rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
+/*
     if ((mac_xface->frame % 200) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
     }
@@ -200,6 +202,7 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
     if ((mac_xface->frame % 4) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_SMALL);
     }
+*/
 #endif
 
   ((rlc_um_entity_t *) rlcP)->nb_bytes_requested_by_mac = tbs_sizeP;

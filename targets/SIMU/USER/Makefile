@@ -11,23 +11,26 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3_TOP = $(OPENAIR3_DIR)
 OPENAIR3     = $(OPENAIR3_DIR)
 
-GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)"  "4.4.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 ifeq "$(GCCVERSION)" "4.5.2"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -DOPENAIR_LTE -DPUCCH  #-DIFFT_FPGA -DIFFT_FPGA_UE #-DOFDMA_ULSCH
+CFLAGS += -DOPENAIR_LTE -DPUCCH -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE  
 
 ifndef OPENAIR2
 OPENAIR2=1
 endif
 
 ifndef OPENAIR_EMU
-export OPENAIR_EMU=1
+OPENAIR_EMU=1
 endif
 
 # activate OCG and libxml only under linux
@@ -72,9 +75,9 @@ endif
 # after the execution, a profiling output "gmon.out" will be created, 
 #then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
 # you could also use the script "grpof2dot.py gmon.txt" for visual diagrams 
-#ifdef GPROF
+ifdef GPROF
 CFLAGS += -pg
-#endif
+endif
 
 #require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)
 ifdef ADDCONF
@@ -111,8 +114,18 @@ OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o 
 OAISIM_OBJS += cor_SF_sim.o
 OAISIM_OBJS += phy_procedures_sim_form.o
+OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
 
+INT_OBJS =  $(OPENAIR_TARGETS)/SIMU/PROC/interface/Iface_Process.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/gm_init_if.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/gm_update.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/gm_pc_if.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/message_modules.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/message_transport.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/openair_inet_sockets.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/openair_io_sync.o
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
+INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/buffer_mmap.o
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS)
@@ -169,7 +182,7 @@ clean:
 
 cleanl1:
 	rm -f oaisim
-	rm -f $(OBJ)
+	rm -f $(PHY_OBJS) $(SCHED_OBJS)
 	rm -f *.o
 	rm -f *.exe
 
@@ -184,3 +197,4 @@ print:
 	@echo $(cygwin)
 	@echo $(OCG_FLAG)
 	@echo $(SSE3PROC)
+
