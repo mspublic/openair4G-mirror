@@ -522,7 +522,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   maxDoppler,
 				   channel_offset, 
 				   path_loss_dB,
-				   1);
+				   0);
       break;
 
   case Rice1_corr:

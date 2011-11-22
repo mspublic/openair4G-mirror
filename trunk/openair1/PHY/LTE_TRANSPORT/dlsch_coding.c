@@ -193,15 +193,16 @@ int dlsch_encoding(unsigned char *a,
 
     dlsch->harq_processes[harq_pid]->B = A+24;
     dlsch->harq_processes[harq_pid]->b = a;
-    lte_segmentation(dlsch->harq_processes[harq_pid]->b,
-		     dlsch->harq_processes[harq_pid]->c,
-		     dlsch->harq_processes[harq_pid]->B,
-		     &dlsch->harq_processes[harq_pid]->C,
-		     &dlsch->harq_processes[harq_pid]->Cplus,
-		     &dlsch->harq_processes[harq_pid]->Cminus,
-		     &dlsch->harq_processes[harq_pid]->Kplus,
-		     &dlsch->harq_processes[harq_pid]->Kminus,		     
-		     &dlsch->harq_processes[harq_pid]->F);
+    if (lte_segmentation(dlsch->harq_processes[harq_pid]->b,
+			 dlsch->harq_processes[harq_pid]->c,
+			 dlsch->harq_processes[harq_pid]->B,
+			 &dlsch->harq_processes[harq_pid]->C,
+			 &dlsch->harq_processes[harq_pid]->Cplus,
+			 &dlsch->harq_processes[harq_pid]->Cminus,
+			 &dlsch->harq_processes[harq_pid]->Kplus,
+			 &dlsch->harq_processes[harq_pid]->Kminus,		     
+			 &dlsch->harq_processes[harq_pid]->F)<0)
+      return(-1);
     
     for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
       if (r<dlsch->harq_processes[harq_pid]->Cminus)

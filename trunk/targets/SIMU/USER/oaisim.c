@@ -31,8 +31,9 @@
 #include "SCHED/vars.h"
 
 #ifdef XFORMS
-#include "forms.h"
-#include "SIMULATION/LTE_PHY_L2/phy_procedures_sim_form.h"
+#include <forms.h>
+#include "phy_procedures_sim_form.h"
+#include "../../../openair1/USERSPACE_TOOLS/SCOPE/lte_scope.h"
 #endif //XFORMS
 
 #include "oaisim.h"
@@ -172,8 +173,8 @@ do_forms (FD_phy_procedures_sim * form,
   if (lte_ue_dlsch_vars[0]->rxdataF_comp) {
   j = 0;
   //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
-  for (s = 4; s < 12; s++) {
-    for (i = 0; i < 12 * 12; i++) {
+  for (s = 0; s < 12; s++) {
+    for (i = 0; i < 12 * 25; i++) {
       I[j] = (float) ((short *)
 		      lte_ue_dlsch_vars[0]->rxdataF_comp[0])[(2 * 25 * 12 * s) + 2 * i];
       Q[j] = (float) ((short *)
@@ -181,10 +182,12 @@ do_forms (FD_phy_procedures_sim * form,
       //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
       j++;
     }
+    /*
     if (s == 5)
       s = 6;
     else if (s == 8)
       s = 9;
+    */
   }
   if (j > 0)
     fl_set_xyplot_data (form->pdsch_constellation, I, Q, j, "", "", "");
@@ -198,7 +201,7 @@ do_forms (FD_phy_procedures_sim * form,
   j = 0;
   //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
   for (s = 0; s < 12; s++) {
-    for (i = 0; i < 6 * 12; i++) {
+    for (i = 0; i < 25 * 12; i++) {
       I2[j] = (float) ((short *)
 		       lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0])[(2 * 25 * 12 * s) + 2 * i];
       Q2[j] = (float) ((short *)
@@ -206,16 +209,18 @@ do_forms (FD_phy_procedures_sim * form,
       //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
       j++;
     }
+    /*
     if (s == 1)
       s = 2;
     else if (s == 7)
       s = 8;
+    */
   }
   if (j > 0)
     fl_set_xyplot_data (form->pusch_constellation, I2, Q2, j, "", "", "");
 
-  fl_set_xyplot_xbounds(form->pusch_constellation,-800,800);
-  fl_set_xyplot_ybounds(form->pusch_constellation,-800,800);
+  //fl_set_xyplot_xbounds(form->pusch_constellation,-800,800);
+  //fl_set_xyplot_ybounds(form->pusch_constellation,-800,800);
   }
 
   for (j = 0; j < ch_len; j++) {
@@ -228,6 +233,234 @@ do_forms (FD_phy_procedures_sim * form,
   fl_set_xyplot_data (form->ch00, I3, Q3, ch_len, "", "", "");
   //fl_set_xyplot_ybounds(form->ch00,-20,20);
 }
+
+void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **channel, short **channel_f, short **rx_sig, short **rx_sig_f, short *dlsch_comp, short* dlsch_comp_i, short* dlsch_llr, short* pbch_comp, char *pbch_llr, int coded_bits_per_codeword)
+{
+
+  int i,j,ind,k,s;
+
+  float Re,Im;
+  float mag_sig[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
+    sig_time[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
+    sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
+    time2[FRAME_LENGTH_COMPLEX_SAMPLES],
+    I[25*12*11*4], Q[25*12*11*4],
+    *llr,*llr_time;
+
+  float avg, cum_avg;
+  
+  llr = malloc(coded_bits_per_codeword*sizeof(float));
+  llr_time = malloc(coded_bits_per_codeword*sizeof(float));
+
+  // Channel frequency response
+  if (channel_f != NULL) {
+    cum_avg = 0;
+    ind = 0;
+    for (j=0; j<4; j++) { 
+      for (i=0;i<frame_parms->nb_antennas_rx;i++) {
+	for (k=0;k<NUMBER_OF_OFDM_CARRIERS*7;k++){
+	  sig_time[ind] = (float)ind;
+	  Re = (float)(channel_f[(j<<1)+i][2*k]);
+	  Im = (float)(channel_f[(j<<1)+i][2*k+1]);
+	  //mag_sig[ind] = (short) rand(); 
+	  mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+	  cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
+	  ind++;
+	}
+	//      ind+=NUMBER_OF_OFDM_CARRIERS/4; // spacing for visualization
+      }
+    }
+
+    avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
+
+    //fl_set_xyplot_ybounds(form->channel_f,30,70);
+    fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
+  }
+  /*
+  // channel time resonse
+  cum_avg = 0;
+  ind = 0;
+  for (k=0;k<1;k++){
+  for (j=0;j<1;j++) {
+      
+  for (i=0;i<frame_parms->ofdm_symbol_size;i++){
+  sig_time[ind] = (float)ind;
+  Re = (float)(channel[k+2*j][2*i]);
+  Im = (float)(channel[k+2*j][2*i+1]);
+  //mag_sig[ind] = (short) rand(); 
+  mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+  cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
+  ind++;
+  }
+  }
+  }
+  
+  //fl_set_xyplot_ybounds(form->channel_t_im,10,90);
+  fl_set_xyplot_data(form->channel_t_im,sig_time,mag_sig,ind,"","","");
+  */
+
+  // channel_t_re = rx_sig_f[0]
+  //for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
+  for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+    sig2[i] = 10*log10(1.0+(double) ((rx_sig_f[0][4*i])*(rx_sig_f[0][4*i])+(rx_sig_f[0][4*i+1])*(rx_sig_f[0][4*i+1])));
+    time2[i] = (float) i;
+  } 
+
+  //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti,"","","");
+  //fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
+  
+
+  // channel_t_im = rx_sig[0]
+  //if (frame_parms->nb_antennas_rx>1) {
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+    //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+    sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
+    time2[i] = (float) i;
+  }
+
+  //fl_set_xyplot_ybounds(form->channel_t_im,0,100);
+  //fl_set_xyplot_data(form->channel_t_im,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
+  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  //}
+
+  // PBCH LLR
+  if (pbch_llr!=NULL) {
+    j=0;
+    for(i=0;i<1920;i++) {
+      llr[j] = (float) pbch_llr[i];
+      llr_time[j] = (float) j;
+      //if (i==63)
+      //  i=127;
+      //else if (i==191)
+      //  i=319;
+      j++;
+    }
+    
+    fl_set_xyplot_data(form->decoder_input,llr_time,llr,1920,"","","");
+    //fl_set_xyplot_ybounds(form->decoder_input,-100,100);
+  }
+
+  // PBCH I/Q
+  if (pbch_comp!=NULL) {
+    j=0;
+    for(i=0;i<12*12;i++) {
+      I[j] = pbch_comp[2*i];
+      Q[j] = pbch_comp[2*i+1];
+      j++;
+      //if (i==47)
+      //  i=96;
+      //else if (i==191)
+      //  i=239;
+    }
+
+    fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
+    //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+    //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
+  }
+
+  /*
+  // PDCCH I/Q
+  j=0;
+  for(i=0;i<12*25*3;i++) {
+  I[j] = pdcch_comp[2*i];
+  Q[j] = pdcch_comp[2*i+1];
+  j++;
+  //if (i==47)
+  //  i=96;
+  //else if (i==191)
+  //  i=239;
+  }
+
+  fl_set_xyplot_data(form->scatter_plot1,I,Q,12*25*3,"","","");
+  //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+  //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
+  */
+
+  // DLSCH LLR
+  if (dlsch_llr != NULL) {
+    for(i=0;i<coded_bits_per_codeword;i++) {
+      llr[i] = (float) dlsch_llr[i];
+      llr_time[i] = (float) i;
+    }
+
+    fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
+    fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
+  }
+
+  // DLSCH I/Q
+  if (dlsch_comp!=NULL) {
+    j=0;
+    for (s=0;s<frame_parms->symbols_per_tti;s++) {
+      for(i=0;i<12*25;i++) {
+	I[j] = dlsch_comp[(2*25*12*s)+2*i];
+	Q[j] = dlsch_comp[(2*25*12*s)+2*i+1];
+	j++;
+      }
+      //if (s==2)
+      //  s=3;
+      //else if (s==5)
+      //  s=6;
+      //else if (s==8)
+      //  s=9;
+    }
+    
+    fl_set_xyplot_data(form->scatter_plot1,I,Q,j,"","","");
+    //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
+    //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
+  }
+
+  // DLSCH I/Q
+  if (dlsch_comp_i!=NULL) {
+    j=0;
+    for (s=0;s<frame_parms->symbols_per_tti;s++) {
+      for(i=0;i<12*25;i++) {
+	I[j] = dlsch_comp_i[(2*25*12*s)+2*i];
+	Q[j] = dlsch_comp_i[(2*25*12*s)+2*i+1];
+	j++;
+      }
+      //if (s==2)
+      //  s=3;
+      //else if (s==5)
+      //  s=6;
+      //else if (s==8)
+      //  s=9;
+    }
+    
+
+    fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
+    //fl_set_xyplot_xbounds(form->scatter_plot1,-2000,2000);
+    //fl_set_xyplot_ybounds(form->scatter_plot1,-2000,2000);
+  }
+  /*
+  // DLSCH rho
+  if (dlsch_rho!=NULL) {
+  j=0;
+  for (s=0;s<frame_parms->symbols_per_tti;s++) {
+  for(i=0;i<12*25;i++) {
+  I[j] = dlsch_rho[(2*25*12*s)+2*i];
+  Q[j] = dlsch_rho[(2*25*12*s)+2*i+1];
+  j++;
+  }
+  //if (s==2)
+  //  s=3;
+  //else if (s==5)
+  //  s=6;
+  //else if (s==8)
+  //  s=9;
+  }
+
+  fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
+  //fl_set_xyplot_xbounds(form->scatter_plot2,-1000,1000);
+  //fl_set_xyplot_ybounds(form->scatter_plot2,-1000,1000);
+  }
+  */
+
+  free(llr);
+  free(llr_time);
+
+}
+
 #endif //XFORMS
 
 
@@ -267,7 +500,9 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
- #ifdef XFORMS
+#ifdef XFORMS
+  FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
+  FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
   FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   char title[255];
 #endif
@@ -611,7 +846,7 @@ main (int argc, char **argv)
   openair_daq_vars.ue_ul_nb_rb = 2;
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=110;
+    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=100;
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
@@ -626,12 +861,27 @@ main (int argc, char **argv)
   
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
-  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
+  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
       form[eNB_id][UE_id] = create_form_phy_procedures_sim ();
       sprintf (title, "LTE SIM UE %d eNB %d", UE_id, eNB_id);
       fl_show_form (form[eNB_id][UE_id]->phy_procedures_sim, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
     }
+  }
+
+  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+    fl_initialize (&argc, argv, NULL, 0, 0);
+    form_dl[UE_id] = create_form_lte_scope();
+    sprintf (title, "LTE DL SCOPE UE %d", UE_id);
+    fl_show_form (form_dl[UE_id]->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+  }
+
+  for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+    fl_initialize (&argc, argv, NULL, 0, 0);
+    form_ul[eNB_id] = create_form_lte_scope();
+    sprintf (title, "LTE UL SCOPE UE %d", eNB_id);
+    fl_show_form (form_ul[eNB_id]->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+  }
 #endif
 
 
@@ -729,7 +979,7 @@ main (int argc, char **argv)
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  printf("[CHANNEL_SIM] Pathloss bw enB %d at (%f,%f) and UE%d at (%f,%f) is %f (ShaF %f)\n",
+	  printf("[CHANNEL_SIM] Path loss bw enB %d at (%f,%f) and UE%d at (%f,%f) is %f (ShaF %f)\n",
 		 eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
 		 eNB2UE[eNB_id][UE_id]->path_loss_dB,
 		 ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
@@ -740,12 +990,12 @@ main (int argc, char **argv)
     else {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
+	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -145 + snr_dB;
 	  //UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
 	  if (eNB_id == (UE_id % NB_eNB_INST))
-	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - 10;
+	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -145 + snr_dB + 20; //+20 to offset the difference in tx power of the UE wrt eNB
 	  else
-	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - 10;
+	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -145 + sinr_dB + 20;
 #ifdef DEBUG_SIM
 	  printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
 	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
@@ -797,7 +1047,7 @@ main (int argc, char **argv)
       for (UE_id = oai_emulation.info.first_ue_local; 
 	   (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1); 
 	   UE_id++)
-	if (mac_xface->frame >= (UE_id * 20)) {	// activate UE only after 10*UE_id frames so that different UEs turn on separately
+	if (mac_xface->frame >= (UE_id * 20)) {	// activate UE only after 20*UE_id frames so that different UEs turn on separately
 
 #ifdef DEBUG_SIM
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
@@ -805,18 +1055,8 @@ main (int argc, char **argv)
 #endif
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
-	    /* if(UE_id == 1){
-	      msg("success \n");
-	      exit(-1);}*/
 	    if (mac_xface->frame>0) {
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
-#ifndef NAS_NETLINK
-	      //if ((mac_xface->frame % 10) == 0) {
-		len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
-		rewind (UE_stats[UE_id]);
-		fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-		//}
-#endif
 	    }
 	  }
 	  else {
@@ -839,6 +1079,11 @@ main (int argc, char **argv)
 	      write_output("pbch_rxF_llr.m","pbch_llr",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
 	    }
  	  }
+#ifndef NAS_NETLINK
+	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
+	  rewind (UE_stats[UE_id]);
+	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
+#endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
  
@@ -853,11 +1098,11 @@ main (int argc, char **argv)
 	*/
       }
       else if (direction  == SF_UL) {
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,abstraction_flag,frame_parms);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
       else {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data, ue_data,next_slot,abstraction_flag,frame_parms);
+	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -866,7 +1111,7 @@ main (int argc, char **argv)
 	  */
 	}
 	else {// UL part
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
 	}
       }
 
@@ -917,19 +1162,53 @@ main (int argc, char **argv)
     if ((mac_xface->frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
+
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     }
-
+  
 #ifdef XFORMS
-    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
+    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+      do_forms2(form_dl[UE_id],
+		&PHY_vars_UE_g[UE_id]->lte_frame_parms,  
+		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
+		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNB_id],
+		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
+		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
+		PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[0]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[3]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[0]->llr[0],
+		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
+		1920);
+    }
+
+    for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+      do_forms2(form_ul[eNB_id],
+		&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,  
+		NULL,
+		NULL,
+		PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],
+		PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdataF[0],
+		PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0],
+		NULL,
+		PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars[0]->llr,
+		NULL,
+		NULL,
+		1024);
+    }
+    
+    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	do_forms (form[eNB_id][UE_id],
 		  PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,
 		  PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
 		  eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
       }
+    }
 #endif	
+
     // calibrate at the end of each frame if there is some time  left
     if((sleep_time_us > 0)&& (ethernet_flag ==0)){
       LOG_I(EMU,"Go to sleep for %dus\n",sleep_time_us);

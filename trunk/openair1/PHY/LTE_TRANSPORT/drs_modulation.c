@@ -71,7 +71,7 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 
 #ifdef IFFT_FPGA_UE
     re_offset = frame_parms->N_RB_DL*12/2;
-    sub_frame_offset = subframe*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
+    subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
     symbol_offset = subframe_offset + frame_parms->N_RB_UL*12*l;
 #else
     re_offset = frame_parms->first_carrier_offset;

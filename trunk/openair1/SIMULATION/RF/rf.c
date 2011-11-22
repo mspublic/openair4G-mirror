@@ -175,7 +175,9 @@ void rf_rx_simple(double **r_re,
   
   int i,a;
   double rx_gain_lin = pow(10.0,.05*rx_gain_dB);
+  //double rx_gain_lin = 1.0;
   double N0W         = pow(10.0,.1*(-174.0 - 10*log10(s_time*1e-9)));
+  //double N0W = 0.0;
 
   //  printf("s_time=%f, N0W=%g\n",s_time,10*log10(N0W));
 

@@ -23,7 +23,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 			      u8 cooperation_flag) {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
-  LTE_eNB_ULSCH *eNB_ulsch_vars = phy_vars_eNB->lte_eNB_ulsch_vars[0];
+  LTE_eNB_ULSCH *eNB_ulsch_vars = phy_vars_eNB->lte_eNB_ulsch_vars[UE_id];
   s32 **ul_ch_estimates=eNB_ulsch_vars->drs_ch_estimates[eNB_id];
   s32 **ul_ch_estimates_time=  eNB_ulsch_vars->drs_ch_estimates_time[eNB_id];
   s32 **ul_ch_estimates_0=  eNB_ulsch_vars->drs_ch_estimates_0[eNB_id];

@@ -791,7 +791,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 #ifndef USER_MODE
 			  (last_slot>>1)*phy_vars_ue->lte_frame_parms.symbols_per_tti*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,
 #else
-			  (last_slot>>1)*phy_vars_ue->lte_frame_parms.symbols_per_tti*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size+phy_vars_ue->lte_frame_parms.nb_prefix_samples),
+			  (last_slot>>1)*phy_vars_ue->lte_frame_parms.samples_per_tti,
 #endif
 			  (last_slot == 2) ? 1 : 0,
 			  0);
@@ -1154,10 +1154,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 		phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1,
 		dci_alloc_rx[i].rnti,
 		dci_alloc_rx[i].format);
-      /*
       if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20))
 	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
-      */
 #endif      
 #ifdef DIAG_PHY
       if (!((((last_slot>>1) == 6) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) ||
@@ -1404,6 +1402,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 	if (phy_vars_ue->RRCConnReq_timer[eNB_id] == 0) {
 	  msg("[PHY][UE %d] Frame %d: RRCConnReq_timer = 0 : setting mode to PRACH\n",phy_vars_ue->Mod_id,mac_xface->frame);
+	  // I guess here we also need to tell the RRC
 	  phy_vars_ue->UE_mode[eNB_id] = PRACH;
 	  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1234;
 	}

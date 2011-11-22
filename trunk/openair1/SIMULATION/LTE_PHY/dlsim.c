@@ -357,6 +357,86 @@ DCI2_5MHz_2D_M10PRB_TDD_t DLSCH_alloc_pdu2_2D[2];
 //#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 #define DLSCH_RB_ALLOC 0x1fff // all 25 RBs
 //#define DLSCH_RB_ALLOC 0x0001
+void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
+
+  int aa, slot_offset, slot_offset_F;
+
+#ifdef IFFT_FPGA
+  s32 **txdataF2;
+  int i, l;
+
+  txdataF2    = (s32 **)malloc(2*sizeof(s32*));
+  txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+  txdataF2[1] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+  
+  bzero(txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+  bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+  
+  slot_offset_F = (next_slot)*(frame_parms->N_RB_DL*12)*((frame_parms->Ncp==1) ? 6 : 7);
+  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
+  
+  //write_output("eNB_txsigF0.m","eNB_txsF0", lte_eNB_common_vars->txdataF[eNB_id][0],300*120,1,4);
+  //write_output("eNB_txsigF1.m","eNB_txsF1", lte_eNB_common_vars->txdataF[eNB_id][1],300*120,1,4);
+  
+  
+  // do talbe lookup and write results to txdataF2
+  for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
+    
+    l = slot_offset_F;	
+    for (i=0;i<NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7);i++) 
+      if ((i%512>=1) && (i%512<=150))
+	txdataF2[aa][i] = ((s32*)mod_table)[txdataF[aa][l++]];
+      else if (i%512>=362)
+	txdataF2[aa][i] = ((s32*)mod_table)[txdataF[aa][l++]];
+      else 
+	txdataF2[aa][i] = 0;
+    
+  }
+  
+  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+    if (frame_parms->Ncp == 1)
+      PHY_ofdm_mod(txdataF2[aa],        // input
+		   &txdata[aa][slot_offset],         // output
+		   frame_parms->log2_symbol_size,                // log2_fft_size
+		   6,                 // number of symbols
+		   frame_parms->nb_prefix_samples,               // number of prefix samples
+		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		   frame_parms->rev,           // bit-reversal permutation
+		   CYCLIC_PREFIX);
+    else {
+      normal_prefix_mod(txdataF2[aa],&txdata[aa][slot_offset],7,frame_parms);
+    }
+  }
+  
+  free(txdataF2[0]);
+  free(txdataF2[1]);
+  free(txdataF2);
+  
+#else //IFFT_FPGA
+  
+  slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
+  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
+  
+  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+    if (frame_parms->Ncp == 1)
+      PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
+		   &txdata[aa][slot_offset],         // output
+		   frame_parms->log2_symbol_size,                // log2_fft_size
+		   6,                 // number of symbols
+		   frame_parms->nb_prefix_samples,               // number of prefix samples
+		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		   frame_parms->rev,           // bit-reversal permutation
+		   CYCLIC_PREFIX);
+    else {
+      normal_prefix_mod(&txdataF[aa][slot_offset_F],
+			&txdata[aa][slot_offset],
+			7,
+			frame_parms);
+    }
+  }  
+#endif //IFFT_FPGA
+  
+}
 
 int main(int argc, char **argv) {
 
@@ -367,16 +447,10 @@ int main(int argc, char **argv) {
 
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate;
   double snr_step=1, snr_int=20;
-  //int **txdataF, **txdata;
-  int **txdata;
-#ifdef IFFT_FPGA
-  int **txdataF2;
-  int ind;
-#endif
+
   LTE_DL_FRAME_PARMS *frame_parms;
   double **s_re,**s_im,**r_re,**r_im;
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
-  double hold_channel=0; //use hold_channel=1 instead of forgetting_factor=1 (more efficient)
   double iqim=0.0;
 
   u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
@@ -391,7 +465,7 @@ int main(int argc, char **argv) {
   u16 n_rnti=0x1234;
   int n_users = 1;
 
-  SCM_t channel_model=Rayleigh1_corr;
+  SCM_t channel_model=Rayleigh1;
   //  unsigned char *input_data,*decoded_output;
 
   unsigned char *input_buffer[2];
@@ -440,6 +514,7 @@ int main(int argc, char **argv) {
   char csv_fname[20];
   int ch_realization;
   int pmi_feedback=0;
+  int hold_channel=0; 
   // void *data;
   // int ii;
   // int bler;
@@ -683,25 +758,6 @@ int main(int argc, char **argv) {
 
   frame_parms = &PHY_vars_eNB->lte_frame_parms;
 
-#ifdef IFFT_FPGA
-  txdata    = (int **)malloc16(2*sizeof(int*));
-  txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-
-  bzero(txdata[0],FRAME_LENGTH_BYTES);
-  bzero(txdata[1],FRAME_LENGTH_BYTES);
-
-  txdataF2    = (int **)malloc16(2*sizeof(int*));
-  txdataF2[0] = (int *)malloc16(FRAME_LENGTH_BYTES_NO_PREFIX);
-  txdataF2[1] = (int *)malloc16(FRAME_LENGTH_BYTES_NO_PREFIX);
-
-  bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
-  bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
-#else
-  txdata = PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id];
-#endif
-
-  
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
   r_re = malloc(2*sizeof(double*));
@@ -837,9 +893,6 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  //  if (hold_channel==1)
-  random_channel(eNB2UE);
-  
   for (k=0;k<n_users;k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0;i<2;i++) {
@@ -991,6 +1044,15 @@ int main(int argc, char **argv) {
 	    pmi_feedback=1;
 	  else 
 	    pmi_feedback=0;
+	  
+	  if (abstx) {
+	    if (trials==0 && round==0 && SNR==snr0)  //generate a new channel
+	      hold_channel = 0;
+	    else
+	      hold_channel = 1;
+	  }
+	  else
+	    hold_channel = 0;
 
 	PMI_FEEDBACK:
 	
@@ -1148,94 +1210,49 @@ int main(int argc, char **argv) {
 			    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 	  
 
+	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
+			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
+			subframe*2,
+			&PHY_vars_eNB->lte_frame_parms);
+	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
+			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
+			subframe*2+1,
+			&PHY_vars_eNB->lte_frame_parms);
+	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
+			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
+			subframe*2+2,
+			&PHY_vars_eNB->lte_frame_parms);
+
 #ifdef IFFT_FPGA
-	    
 	    if (n_frames==1) {
 	      write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],300*nsymb*10,1,4);
 	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
 		write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][1],300*nsymb*10,1,4);
-	    }
-	  
-	    // do table lookup and write results to txdataF2
-	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
-	      ind = 0;
-	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
-		if (((i%512)>=1) && ((i%512)<=150))
-		  txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][ind++]];
-		else if ((i%512)>=362)
-		  txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][ind++]];
-		else 
-		  txdataF2[aa][i] = 0;
-	      //    printf("ind=%d\n",ind);
-	    }
-	  
-	    if (n_frames==1) {
 	      write_output("txsigF20.m","txsF20", txdataF2[0], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
 		write_output("txsigF21.m","txsF21", txdataF2[1], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	    }
-
-	    tx_lev = 0;
-	    for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
-	      if (frame_parms->Ncp == 1)
-		PHY_ofdm_mod(&txdataF2[aa][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],        // input
-			     &txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],         // output
-			     PHY_vars_eNB->lte_frame_parms.log2_symbol_size,                // log2_fft_size
-			     2*nsymb,//NUMBER_OF_SYMBOLS_PER_FRAME,                 // number of symbols
-			     PHY_vars_eNB->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
-			     PHY_vars_eNB->lte_frame_parms.twiddle_ifft,  // IFFT twiddle factors
-			     PHY_vars_eNB->lte_frame_parms.rev,           // bit-reversal permutation
-			     CYCLIC_PREFIX);
-	      else {
-		normal_prefix_mod(&txdataF2[aa][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
-				  &txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
-				  2*nsymb,
-				  frame_parms);
-	      }
-	    
-	    
-	      tx_lev += signal_energy(&txdata[aa][(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size+PHY_vars_eNB->lte_frame_parms.nb_prefix_samples0)],
-				      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-	    }
-	
-	    
 #else //IFFT_FPGA
-
 	    if (n_frames==1) {
 	      write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
 		write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	    }
-	  
+#endif
+
 	    tx_lev = 0;
 	    for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
-	      if (frame_parms->Ncp == 1) 
-		PHY_ofdm_mod(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],        // input
-			     &txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],         // output
-			     PHY_vars_eNB->lte_frame_parms.log2_symbol_size,                // log2_fft_size
-			     2*nsymb,//NUMBER_OF_SYMBOLS_PER_FRAME,                 // number of symbols
-			     PHY_vars_eNB->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
-			     PHY_vars_eNB->lte_frame_parms.twiddle_ifft,  // IFFT twiddle factors
-			     PHY_vars_eNB->lte_frame_parms.rev,           // bit-reversal permutation
-			     CYCLIC_PREFIX);
-	      else {
-		normal_prefix_mod(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
-				  &txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
-				  2*nsymb,
-				  frame_parms);
-	      }
-	    
-	      tx_lev += signal_energy(&txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
+	      tx_lev += signal_energy(&PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]
+				      [subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
 				      PHY_vars_eNB->lte_frame_parms.samples_per_tti);
 	    }
-#endif //IFFT_FPGA
-	
 	    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	    //printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
 	  
 	    if (n_frames==1)
-	      write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	      write_output("txsig0.m","txs0", PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	  }
+	  /*
 	  else {  // Read signal from file
 	    i=0;
 	    while (!feof(input_fd)) {
@@ -1258,114 +1275,72 @@ int main(int argc, char **argv) {
 				   OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	  }
-	    
+	  */
+ 
 	  //	  printf("Copying tx ..., nsymb %d (n_tx %d), awgn %d\n",nsymb,PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,awgn_flag);
 	  for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
 	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
 	      if (awgn_flag == 0) {
-		s_re[aa][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + (i<<1)]);
-		s_im[aa][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		s_re[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + (i<<1)]);
+		s_im[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 	      }
 	      else {
 		for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
 		  if (aa==0) {
-		    r_re[aarx][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		    r_im[aarx][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		    r_re[aarx][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+		    r_im[aarx][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 		  }
 		  else {
-		    r_re[aarx][i] += ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		    r_im[aarx][i] += ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		    r_re[aarx][i] += ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+		    r_im[aarx][i] += ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 		  }
  
 		}
 	      }
 	    }
 	  }
-	  //	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
-	  // generate new channel if pmi_feedback==0, otherwise hold channel
+
 	  if(abstx){
-	    if (trials==0 && round==0){
-	      if (awgn_flag == 0) {	
-		if(SNR==snr0){
-		  if(pmi_feedback==0)
-		    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
-		  else 
-		    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-		}else{
-		  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
+	    if (trials==0 && round==0 && SNR==snr0) {
+	      // calculate freq domain representation to compute SINR
+	      freq_channel(eNB2UE, 25,51);
+	      snr=pow(10.0,.1*SNR);
+	      fprintf(csv_fd,"%f,",SNR);
+	      
+	      for (u=0;u<50;u++){
+		abs_channel = (eNB2UE->chF[0][u].x*eNB2UE->chF[0][u].x + eNB2UE->chF[0][u].y*eNB2UE->chF[0][u].y);
+		if(transmission_mode==5){
+		  fprintf(csv_fd,"%e,",abs_channel);
 		}
-		
-		freq_channel(eNB2UE, 25,51);
-		snr=pow(10.0,.1*SNR);
-		fprintf(csv_fd,"%f,",SNR);
-		
-		for (u=0;u<50;u++){
-		  abs_channel = (eNB2UE->chF[0][u].x*eNB2UE->chF[0][u].x + eNB2UE->chF[0][u].y*eNB2UE->chF[0][u].y);
-		  if(transmission_mode==5){
-		    fprintf(csv_fd,"%e,",abs_channel);
-		  }
-		  else{
-		    pilot_sinr = 10*log10(snr*abs_channel);
-		    fprintf(csv_fd,"%e,",pilot_sinr);
-		  } 
-		}
-	      }
-	    }
-	    
-	    else{
-	      if (awgn_flag == 0) {	
-		multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
+		else{
+		  pilot_sinr = 10*log10(snr*abs_channel);
+		  fprintf(csv_fd,"%e,",pilot_sinr);
+		} 
 	      }
 	    }
 	  }
-	  
-	  else{ //ABStraction
-	    if (awgn_flag == 0) {	
 
-	      if (pmi_feedback==0)
-		multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
-	      else 
-		multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-	    }
-	  }//ABStraction
-	  
-	  //(double)tx_lev_dB - (SNR+sigma2_dB));
-	  //printf("tx_lev_dB %d\n",tx_lev_dB);
-	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
+	  //Multipath channel
+	  if (awgn_flag == 0) {	
+	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel);
+	  }
 	  
 	  //AWGN
+	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
 	  sigma2 = pow(10,sigma2_dB/10);
-	  	
-	  //	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
-	  //	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
-	  if (pmi_feedback==0) {  
-	    for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
-	      for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
-		//		printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
-		((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = 
-		  (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-		((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = 
-		  (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-	      }
-	    }   
-	  }
-	  else {
-	    for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
-	      for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
-		//  printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
-		((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) (r_re[aa][i]);
-		((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) (r_im[aa][i]);
-	      }
+	  //printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
+
+	  for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
+	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+	      //printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
+	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = 
+		(short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = 
+		(short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	    }
-	  }
-	
-	  
+	  }   
+
 	  //    lte_sync_time_init(PHY_vars_eNB->lte_frame_parms,lte_ue_common_vars);
 	  //    lte_sync_time(lte_ue_common_vars->rxdata, PHY_vars_eNB->lte_frame_parms);
 	  //    lte_sync_time_free();
@@ -1494,9 +1469,9 @@ int main(int argc, char **argv) {
 		*/
 		    
 		if (transmission_mode==5 || transmission_mode==6) {
-		  if (pmi_feedback==1) {
-		    pmi_feedback= 0;
-		    //		    printf("measured PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
+		  if (pmi_feedback == 1) {
+		    pmi_feedback = 0;
+		    hold_channel = 1;
 		    goto PMI_FEEDBACK;
 		  }
 		}
@@ -1742,19 +1717,6 @@ int main(int argc, char **argv) {
 	  uncoded_ber/=coded_bits_per_codeword;
 	  avg_ber += uncoded_ber;
 	 
-	  //imran
-	  if(abstx){
-	    if (trials<10 && round==0 && transmission_mode==5){
-	      for (iii=0; iii<NB_RB; iii++){
-		//fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[iii]));
-		msg(" %x",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]));
-		// msg("Opposite Extracted pmi %x\n",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[iii]));
-				    
-	      }
-	    }
-	  }
-
-
 	  /*
 	    printf("precoded CQI %d dB, opposite precoded CQI %d dB\n",
 	    PHY_vars_UE->PHY_measurements.precoded_cqi_dB[eNB_id][0],
@@ -1802,20 +1764,6 @@ int main(int argc, char **argv) {
 	  */
  
 #endif
-
-	  /*	      
-	  //imran
-	  if(abstx){
-	  if (trials<10 && round==0 && transmission_mode==5){
-	  for (iii=0; iii<NB_RB; iii++){
-	  //fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[iii]));
-	  msg(" %x",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]));
-	  // msg("Opposite Extracted pmi %x\n",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[iii]));
-				    
-	  }
-	  }
-	  }
-	  */
 
 	  if (ret <= MAX_TURBO_ITERATIONS) {
 		
@@ -1980,16 +1928,6 @@ int main(int argc, char **argv) {
     free_ue_dlsch(PHY_vars_UE->dlsch_ue[0][i]);
   }
   
-  
-#ifdef IFFT_FPGA
-  printf("Freeing transmit signals\n");
-  free(txdataF2[0]);
-  free(txdataF2[1]);
-  free(txdataF2);
-  free(txdata[0]);
-  free(txdata[1]);
-  free(txdata);
-#endif
   
   printf("Freeing channel I/O\n");
   for (i=0;i<2;i++) {

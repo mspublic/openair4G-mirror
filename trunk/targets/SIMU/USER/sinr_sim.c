@@ -109,6 +109,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
     alpha += 2*PI; 
   //printf("angle in radians is %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
   ch_desc->aoa = alpha;
+  ch_desc->random_aoa = 0;
       
   gain_max = -1000;
   for(count = 0; count < enb_data->n_sectors; count++) {

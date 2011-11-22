@@ -1084,7 +1084,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      u8 cooperation_flag) {
 
   LTE_eNB_COMMON *eNB_common_vars = &phy_vars_eNB->lte_eNB_common_vars; 
-  LTE_eNB_ULSCH *eNB_ulsch_vars = phy_vars_eNB->lte_eNB_ulsch_vars[0];
+  LTE_eNB_ULSCH *eNB_ulsch_vars = phy_vars_eNB->lte_eNB_ulsch_vars[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
 
   u32 l,i;
@@ -1359,8 +1359,11 @@ void dump_ulsch(PHY_VARS_eNB *PHY_vars_eNB) {
 
   u32 nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
+  write_output("rxsig0.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][0],PHY_vars_eNB->lte_frame_parms.samples_per_tti*10,1,1);
+  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
+    write_output("rxsig1.m","rxs1", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][1][0],PHY_vars_eNB->lte_frame_parms.samples_per_tti*10,1,1);
   write_output("rxsigF0.m","rxsF0", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
-  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
+  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
     write_output("rxsigF1.m","rxsF1", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][1][0],512*nsymb*2,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNB->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0][0],300*nsymb*2,2,1);
   if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
