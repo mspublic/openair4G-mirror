@@ -50,15 +50,24 @@ int main(int argc, char **argv) {
 
   /* Test TX window */
   for (index = 0; index < 10000; ++index) {
-    msg("TX Packet # %07lu Seq # %04d HFN # %04d\n", index, pdcp_get_next_tx_seq_number(&pdcp_array[0]), pdcp_array[0].tx_hfn);
+    u16 pseudo_tx_sn = pdcp_get_next_tx_seq_number(&pdcp_array[0]);
+    if (pseudo_tx_sn == index % 4096)
+      msg("TX packet # %07lu seq # %04d hfn # %04d\n", index, pseudo_tx_sn, pdcp_array[0].tx_hfn);
+    else {
+      msg("TX packet is out-of-window!\n");
+      exit(1);
+    }
   }
 
   /* Test RX window */
   for (index = 0; index < 10000; ++index) {
     u16 pseudo_rx_sn = (index == 0) ? 0 : index % 4096;
     if (pdcp_is_rx_seq_number_valid(pseudo_rx_sn, &pdcp_array[1]) == TRUE) {
-      msg("RX Packet # %07lu Seq # %04d LastSubmitted # %04d HFN # %04d\n", \
+      msg("RX packet # %07lu seq # %04d last-submitted # %04d hfn # %04d\n", \
           index, pdcp_array[1].next_pdcp_rx_sn, pdcp_array[1].last_submitted_pdcp_rx_sn, pdcp_array[1].rx_hfn);
+    } else {
+      msg("RX packet seq # %04lu is not valid!\n", index);
+      exit(1);
     }
   }
 
