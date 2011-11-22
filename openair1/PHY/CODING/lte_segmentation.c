@@ -34,6 +34,10 @@ int lte_segmentation(unsigned char *input_buffer,
     printf("Bprime %d\n",Bprime);
 #endif
   }
+  if ((*C)>MAX_NUM_DLSCH_SEGMENTS) {
+    msg("lte_segmentation.c: too many segments %d\n",*C);
+    return(-1);
+  }
 
   // Find K+
   Bprime_by_C  = Bprime/(*C);

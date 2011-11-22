@@ -10,6 +10,7 @@ void adc(double **r_re,
   int i;
   int aa;
   double gain = (double)(1<<(B-1));
+  //double gain = 1.0;
 
   for (i=0;i<length;i++) {
     for (aa=0;aa<nb_rx_antennas;aa++) {

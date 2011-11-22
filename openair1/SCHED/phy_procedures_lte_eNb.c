@@ -1897,6 +1897,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 	if (phy_vars_eNB->ulsch_eNB[i]->RRCConnRequest_flag == 1) {
 	  msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (RRCConnectionRequest).\n",mac_xface->frame,last_slot,last_slot>>1, i);
+#ifdef USER_MODE
+	  dump_ulsch(phy_vars_eNB);
+	  //exit(-1);
+#endif
 	  //	eNB_generate_RRCConnReq_ack = 0;
 	  phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
 	  remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);

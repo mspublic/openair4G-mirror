@@ -11,16 +11,19 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3_TOP = $(OPENAIR3_DIR)
 OPENAIR3     = $(OPENAIR3_DIR)
 
-GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)"  "4.4.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 ifeq "$(GCCVERSION)" "4.5.2"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -DOPENAIR_LTE -DPUCCH  #-DIFFT_FPGA -DIFFT_FPGA_UE #-DOFDMA_ULSCH
+CFLAGS += -DOPENAIR_LTE -DPUCCH -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE  
 
 ifndef OPENAIR2
 OPENAIR2=1
@@ -111,6 +114,7 @@ OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o 
 OAISIM_OBJS += cor_SF_sim.o
 OAISIM_OBJS += phy_procedures_sim_form.o
+OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
 
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
@@ -169,7 +173,7 @@ clean:
 
 cleanl1:
 	rm -f oaisim
-	rm -f $(OBJ)
+	rm -f $(PHY_OBJS) $(SCHED_OBJS)
 	rm -f *.o
 	rm -f *.exe
 
@@ -184,3 +188,4 @@ print:
 	@echo $(cygwin)
 	@echo $(OCG_FLAG)
 	@echo $(SSE3PROC)
+
