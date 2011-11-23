@@ -31,7 +31,7 @@ oarf_config(freqband,tdd,dual_tx)
 
 oarf_set_rx_rfmode(0);
     
-oarf_set_rx_gain(100,100,0,0);
+oarf_set_rx_gain(70,70,0,0);
 
 sleep(2)
 
@@ -52,21 +52,22 @@ do
   % find the DC component
   m = mean(s);
 
-  s_phase = unwrap(angle(s(5000:4:length(s),1).'));
-  s_phase2 = unwrap(angle(s(5000:4:length(s),2).'));
+  s_phase = unwrap(angle(s(10000:4:length(s),1).'));
+  s_phase2 = unwrap(angle(s(10000:4:length(s),2).'));
   s_phase = s_phase - s_phase(1,1);
   s_phase2 = s_phase2 - s_phase2(1,1);
 
   f_off = mean(s_phase(2:length(s_phase))*fs/4./(1:(length(s_phase)-1))/2/pi)
   f_off2 = mean(s_phase2(2:length(s_phase2))*fs/4./(1:(length(s_phase2)-1))/2/pi)
   plot(1:length(s_phase),s_phase,'r',1:length(s_phase2),s_phase2,'g');
+
   
-  if (abs((f_off+f_off2)/2) < f_off_min)
+  if (abs(f_off) < f_off_min)
     tcxo_freq_min = tcxo_freq; 
-    f_off_min = abs((f_off+f_off2)/2);
+      f_off_min = abs((f_off));
   end
 
-  if ((f_off+f_off2)/2 > 0)
+  if ((f_off) > 0)
     tcxo_freq = tcxo_freq + size;
   else
     tcxo_freq = tcxo_freq - size;

@@ -11,7 +11,13 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+extern "C" {
+#include "PHY/types.h"
+#include "PHY/defs.h"
+#include "PHY/impl_defs_lte.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+}
+#include "PHY/vars.h"
 
 #define FCNNAME "oarf_stop"
 

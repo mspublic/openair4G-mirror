@@ -52,19 +52,13 @@ static bool any_bad_argument(const octave_value_list &args)
 }
 
 
-
-
-
-
-
-
 DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 {
 
   if (any_bad_argument(args))
        return octave_value_list();
        
-  const int freq = args(0).int_value();  
+  //const int freq = args(0).int_value();  
   ComplexMatrix dx = args(1).complex_matrix_value();
   
   octave_value returnvalue;
@@ -84,16 +78,18 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
     return octave_value_list();
   }
 
-  printf("Getting PHY_config ...\n");
+  printf("Getting PHY_config 1 ...\n");  
 
   ioctl(openair_fd,openair_GET_CONFIG,frame_parms);
 
-  dump_frame_parms(frame_parms);
+  dump_frame_parms(frame_parms); 
 
-  if ((args(1).columns()!=NB_ANTENNAS_TX) || (args(1).rows()!=FRAME_LENGTH_COMPLEX_SAMPLES))
+  printf("colums = %d, rows = %d\n\n\n", args(1).columns(), args(1).rows());
+
+  if ((args(1).columns()!=NB_ANTENNAS_TX) || (args(1).rows()!=76800))
   {
     error(FCNNAME);
-    error("input array must be of size (%d,%d)",FRAME_LENGTH_COMPLEX_SAMPLES,NB_ANTENNAS_TX);
+    error("input array must be of size (%d,%d)",76800,NB_ANTENNAS_TX);
     return octave_value_list();
   }
 
@@ -101,12 +97,13 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
   ioctl(openair_fd,openair_STOP,(void*)&dummy);
 
   for (aa=0;aa<NB_ANTENNAS_TX;aa++) {
-    TX_vars->TX_DMA_BUFFER[aa] = (int*) malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+    TX_vars->TX_DMA_BUFFER[aa] = (char*) malloc(2*76800);
 
-    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-      ((short*) TX_vars->TX_DMA_BUFFER[aa])[2*i]     = short(real(dx(i,aa))); 
-      ((short*) TX_vars->TX_DMA_BUFFER[aa])[1+(2*i)] = short(imag(dx(i,aa))); 
-
+    for (i=0;i<76800;i++) {
+      if (i<64)
+	printf("%d: %d,%d\n",i,char(real(dx(i,aa))),char(imag(dx(i,aa))));
+      ((char*) TX_vars->TX_DMA_BUFFER[aa])[2*i]     = char(real(dx(i,aa))); 
+      ((char*) TX_vars->TX_DMA_BUFFER[aa])[1+(2*i)] = char(imag(dx(i,aa)));
     }
   }
 
