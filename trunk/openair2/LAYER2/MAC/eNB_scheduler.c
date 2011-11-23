@@ -861,7 +861,7 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
   //  DCI0_5MHz_TDD_1_6_t *ULSCH_dci1;
   LTE_eNB_UE_stats* eNB_UE_stats;
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
-  u8 status=0;
+  u8 status=0,status0 = 0,status1 = 0;
   //  u8 k=0;
 
   granted_UEs = find_ulgranted_UEs(Mod_id);
@@ -912,13 +912,21 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 
       //msg("FAIL\n");
       status = Rrc_xface->get_rrc_status(Mod_id,1,next_ue);
+      //status0 = Rrc_xface->get_rrc_status(Mod_id,1,0);
+      //status1 = Rrc_xface->get_rrc_status(Mod_id,1,1);
 
-
+      /*     
+	     if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
+	     ULSCH_dci->cqi_req = 0;
+	     else
+	     ULSCH_dci->cqi_req = 1;
+      */
+      
       if (status < RRC_CONNECTED)
 	ULSCH_dci->cqi_req = 0;
       else
 	ULSCH_dci->cqi_req = 1;
-        
+      
 
       ULSCH_dci->type=0;
       if (round > 0) {
@@ -3552,7 +3560,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
       nb_available_rb = pre_nb_available_rbs[UE_id];
 
-    
+
+
 
       
     if ((nb_available_rb == 0) || (nCCE < aggregation))
@@ -3608,7 +3617,13 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 	  
     //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
+ 
     eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0];
+
+    if ((eNB_UE_stats->DL_cqi[0] > 9)){
+      eNB_UE_stats->dlsch_mcs1 = 9;
+      eNB_UE_stats->DL_cqi[0] = 9;
+    }
 	  
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
@@ -3738,7 +3753,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
       }
       else {
 	if (eNB_UE_stats->UE_timing_offset/4 != 0) {
-	  header_len_dcch = 1+1;  // Timing advance subheader+cmd
+	  header_len_dcch = 0;//1+1;  // Timing advance subheader+cmd
 	  sdu_length_total = 0;
 	}
 	else {
@@ -3795,7 +3810,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
       }
 
 #ifdef FULL_BUFFER
-      header_len_dcch = 2;
+      //header_len_dcch = 2;
 #endif
       
 	    

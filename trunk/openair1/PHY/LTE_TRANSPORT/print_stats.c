@@ -129,6 +129,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
     len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",phy_vars_ue->dlsch_SI_received[0],phy_vars_ue->dlsch_SI_errors[0]);
     len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",phy_vars_ue->dlsch_ra_received[0],phy_vars_ue->dlsch_ra_errors[0]);
     len += sprintf(&buffer[len], "[UE PROC] DLSCH Bitrate %dkbps\n",(phy_vars_ue->bitrate[0]/1000));
+    len += sprintf(&buffer[len], "[UE PROC] Total Received Bits %dkbits\n",(phy_vars_ue->total_received_bits[0]/1000));
 
   }
   buffer[len]='\0';

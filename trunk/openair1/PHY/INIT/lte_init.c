@@ -478,6 +478,14 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char eNB_id;
 
   msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
+
+  for(eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++){
+    phy_vars_ue->total_TBS[eNB_id] = 0;
+    phy_vars_ue->total_TBS_last[eNB_id] = 0;
+    phy_vars_ue->bitrate[eNB_id] = 0;
+    phy_vars_ue->total_received_bits[eNB_id] = 0;
+  }
+
   if (abstraction_flag == 0) {
 
     ue_common_vars->txdata = (int **)malloc16(frame_parms->nb_antennas_tx*sizeof(int*));
