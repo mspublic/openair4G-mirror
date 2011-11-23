@@ -1059,10 +1059,10 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     phy_vars_ue->dlsch_ra_received[eNB_id] = 0;
     phy_vars_ue->dlsch_SI_errors[eNB_id] = 0;
     phy_vars_ue->dlsch_ra_errors[eNB_id] = 0;
-    phy_vars_ue->total_TBS[eNB_id] = 0;
-    phy_vars_ue->total_TBS_last[eNB_id] = 0;
-    phy_vars_ue->bitrate[eNB_id] = 0;
-    phy_vars_ue->total_received_bits[eNB_id] = 0;
+    //phy_vars_ue->total_TBS[eNB_id] = 0;
+    //phy_vars_ue->total_TBS_last[eNB_id] = 0;
+    //phy_vars_ue->bitrate[eNB_id] = 0;
+    //phy_vars_ue->total_received_bits[eNB_id] = 0;
   }
 }
 
@@ -1510,7 +1510,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    msg("DLSCH (rv %d,mcs %d) in error\n",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
 		phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
 #endif
-	  } 
+	  }
 	  else {
 #ifdef USER_MODE
 #ifdef DEBUG_PHY_PROC	    	    
