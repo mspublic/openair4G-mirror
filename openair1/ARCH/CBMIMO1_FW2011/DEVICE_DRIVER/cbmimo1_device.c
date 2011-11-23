@@ -542,7 +542,7 @@ static void  openair_cleanup(void) {
   printk("[openair][MODULE][INFO] RTAI Timer stopped\n");
 #endif //RTAI_ENABLED
 
-  printk("[openair] intr_in = %d\n",intr_in);
+  //printk("[openair] intr_in = %d\n",intr_in);
 
 }
 
