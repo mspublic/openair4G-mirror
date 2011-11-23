@@ -72,6 +72,7 @@ typedef struct {
   u8 first_sync_call;
   s32  instance_cnt;
   u8 one_shot_get_frame;
+  u8 do_synch;
   u8 node_configured;  // &1..basic config, &3..ue config &5..eNb config
   u8 node_running;
   u8 tx_test;
