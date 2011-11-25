@@ -400,7 +400,8 @@ int main(int argc, char **argv) {
 			    forgetting_factor,
 			    0,
 			    0,
-			    0);
+			    0,
+			    1);
   
   PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(3,0);
   PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(3,0);
