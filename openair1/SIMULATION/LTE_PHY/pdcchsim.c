@@ -568,7 +568,8 @@ int main(int argc, char **argv) {
 			      0,
 			      0,
 			      0,
-			      0);
+			      0,
+			      1);
   }
   else {
     msg("[SIM] Using SCM/101\n");

@@ -11,7 +11,7 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3_TOP = $(OPENAIR3_DIR)
 OPENAIR3     = $(OPENAIR3_DIR)
 
-CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
+CFLAGS = -O2 -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat 
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)"  "4.4.3"
@@ -23,7 +23,8 @@ endif
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -DOPENAIR_LTE -DPUCCH -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE  
+CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH #-DPUCCH -DIFFT_FPGA -DIFFT_FPGA_UE  
+CFLGAS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1
 
 ifndef OPENAIR2
 OPENAIR2=1
@@ -93,6 +94,7 @@ include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
+include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
@@ -119,8 +121,10 @@ OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS)
-#oaisim_config.o 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
+ifeq ($(OPENAIR2),1)
+OBJ += $(L2_OBJS)
+endif
 
 all: oaisim
 
@@ -137,13 +141,9 @@ $(OBJ): %.o : %.c
 	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
-$(L2_OBJS): %.o : %.c
-	@echo Compiling $<
-	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
-
-oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
+oaisim : $(OBJ) oaisim.c  
 	@echo "Compiling oaisim.c ..."
-	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lblas -lpthread -llapack_atlas
+	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lblas -lpthread -llapack_atlas
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -167,7 +167,6 @@ nasmesh_install:
 clean:
 	rm -f oaisim
 	rm -f $(OBJ)
-	rm -f $(L2_OBJS)
 	rm -f *.o
 	rm -f *.exe*
 
@@ -187,5 +186,6 @@ cleanasn1:
 print:
 	@echo $(cygwin)
 	@echo $(OCG_FLAG)
-	@echo $(SSE3PROC)
-
+	@echo $(CFLAGS)
+	@echo $(EXTRA_CFLAGS)
+	@echo $(OBJ)

@@ -76,10 +76,10 @@
 #define K 2                  // averaging coefficient 
 #define TARGET_SF_TIME_NS 1000000	// 1ms = 1000000 ns
 
-#ifdef OPENAIR2
+//#ifdef OPENAIR2
 u16 NODE_ID[1];
 u8 NB_INST = 2;
-#endif //OPENAIR2
+//#endif //OPENAIR2
 char stats_buffer[16384];
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -1171,7 +1171,7 @@ main (int argc, char **argv)
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       do_forms2(form_dl[UE_id],
-		&PHY_vars_UE_g[UE_id]->lte_frame_parms,  
+		frame_parms,  
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNB_id],
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
@@ -1186,7 +1186,7 @@ main (int argc, char **argv)
 
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
       do_forms2(form_ul[eNB_id],
-		&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,  
+		frame_parms,  
 		NULL,
 		NULL,
 		PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],
