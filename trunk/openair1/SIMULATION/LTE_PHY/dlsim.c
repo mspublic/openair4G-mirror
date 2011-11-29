@@ -441,7 +441,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
 int main(int argc, char **argv) {
 
   char c;
-  int k,i,aa,aarx;
+  int k,i,aa,aarx,aatx;
 
   int s,Kr,Kr_bytes;
 
@@ -487,7 +487,7 @@ int main(int argc, char **argv) {
   char input_val_str[50],input_val_str2[50];
 
   char input_trch_val[16];
-  double pilot_sinr, abs_channel;
+  double pilot_sinr, abs_channel,channelx,channely;
 
   //  unsigned char pbch_pdu[6];
 
@@ -770,23 +770,29 @@ int main(int argc, char **argv) {
   printf("Channel Model=%d\n",channel_model);
   printf("SCM-A=%d, SCM-B=%d, SCM-C=%d, SCM-D=%d, EPA=%d, EVA=%d, ETU=%d, Rayleigh8=%d, Rayleigh1=%d, Rayleigh1_corr=%d, Rayleigh1_anticorr=%d, Rice1=%d, Rice8=%d\n",
 	 SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice1, Rice8);
-  sprintf(bler_fname,"second_bler_tx%d_mcs%d_chan%d.csv",transmission_mode,mcs,channel_model);
+  
+  if(awgn_flag==0)
+    sprintf(bler_fname,"second_bler_tx%d_mcs%d_chan%d.csv",transmission_mode,mcs,channel_model);
+  else 
+     sprintf(bler_fname,"awgn_bler_tx%d_mcs%d.csv",transmission_mode,mcs);
+  
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
-
-  if(abstx){
-    // CSV file 
-    sprintf(csv_fname,"data_out%d.m",mcs);
-    csv_fd = fopen(csv_fname,"w");
-    fprintf(csv_fd,"data_all%d=[",mcs);
-  }
-
-  //sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d.tex",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
-  sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
-  tikz_fd = fopen(tikz_fname,"w");
-  //fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
-  switch (mcs)
-    {
+  
+  
+ if(abstx){
+   // CSV file 
+   sprintf(csv_fname,"dataout_tx%d_u2=%d_mcs%d_chan%d_nsimus%d.m",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
+   csv_fd = fopen(csv_fname,"w");
+   fprintf(csv_fd,"data_all%d=[",mcs);
+ }
+ 
+ //sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d.tex",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
+ sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
+ tikz_fd = fopen(tikz_fname,"w");
+ //fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
+ switch (mcs)
+   {
     case 0:
       fprintf(tikz_fd,"\\addplot[color=blue, mark=star] plot coordinates {");
       break;
@@ -1301,21 +1307,27 @@ int main(int argc, char **argv) {
 	  }
 
 	  if(abstx){
-	    if (trials==0 && round==0 && SNR==snr0) {
+	    if (trials==0 && round==0) {
 	      // calculate freq domain representation to compute SINR
 	      freq_channel(eNB2UE, 25,51);
-	      snr=pow(10.0,.1*SNR);
+	      // snr=pow(10.0,.1*SNR);
 	      fprintf(csv_fd,"%f,",SNR);
 	      
 	      for (u=0;u<50;u++){
-		abs_channel = (eNB2UE->chF[0][u].x*eNB2UE->chF[0][u].x + eNB2UE->chF[0][u].y*eNB2UE->chF[0][u].y);
-		if(transmission_mode==5){
-		  fprintf(csv_fd,"%e,",abs_channel);
+		for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+		  for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+		    // abs_channel = (eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x + eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y);
+		    channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x;
+		    channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y;
+		    // if(transmission_mode==5){
+		    fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
+		    // }
+		    // else{
+		    //	pilot_sinr = 10*log10(snr*abs_channel);
+		    //	fprintf(csv_fd,"%e,",pilot_sinr);
+		    // }
+		  }
 		}
-		else{
-		  pilot_sinr = 10*log10(snr*abs_channel);
-		  fprintf(csv_fd,"%e,",pilot_sinr);
-		} 
 	      }
 	    }
 	  }
@@ -1704,7 +1716,19 @@ int main(int argc, char **argv) {
 	    }
 	  }
 
-	  // calculate uncoded BLER
+	  //saving PMI incase of Transmission Mode > 5
+
+	  if(abstx){
+	    if (trials==0 && round==0 && transmission_mode>=5){
+	      for (iii=0; iii<NB_RB; iii++){
+		//fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[iii]));
+		fprintf(csv_fd,"%x,%x,",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]));
+		msg(" %x",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]));
+	      }
+	    }
+	  }
+	
+		// calculate uncoded BLER
 	  uncoded_ber=0;
 	  for (i=0;i<coded_bits_per_codeword;i++) 
 	    if (PHY_vars_eNB->dlsch_eNB[0][0]->e[i] != (PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0][i]<0)) {
