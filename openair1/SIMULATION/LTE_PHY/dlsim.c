@@ -1306,6 +1306,12 @@ int main(int argc, char **argv) {
 	    }
 	  }
 
+	  //Multipath channel
+	  if (awgn_flag == 0) {	
+	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel);
+	  }
+	  
 	  if(abstx){
 	    if (trials==0 && round==0) {
 	      // calculate freq domain representation to compute SINR
@@ -1332,11 +1338,7 @@ int main(int argc, char **argv) {
 	    }
 	  }
 
-	  //Multipath channel
-	  if (awgn_flag == 0) {	
-	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel);
-	  }
+	 
 	  
 	  //AWGN
 	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
