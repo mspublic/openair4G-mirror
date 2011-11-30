@@ -20,7 +20,8 @@ pdcp_t pdcp_array[2];
 #define NUMBER_OF_TEST_PACKETS 1000
 
 /*
- * Test configuration
+ * Test configuration is STATEFUL. If you want to run DATA_REQUEST after TX_WINDOW 
+ * then you have to reset/reinitialize PDCP entity state!
  * 
  *         TEST_TX_WINDOW Tests TX window code by repetitively asking for new TX 
  *                        sequence numbers without generating any packets
@@ -86,9 +87,9 @@ int main(int argc, char **argv) {
 #endif
 
   if (test_result) {
-    msg("One or more tests failed!\n");
+    msg("\n\nOne or more tests failed!\n");
   } else {
-    msg("All tests are successfull!\n");
+    msg("\n\nAll tests are successfull!\n");
   }
 
   return test_result;
@@ -204,18 +205,25 @@ BOOL test_pdcp_data_req()
       /*
        * Verify that all three reserved bits are 0
        */
-      if ((pdcp_test_pdu_buffer[0] & 0x70) != 0x70) {
-        msg("[TEST] Reserved bits are not 0x00!\n");
+      if ((pdcp_test_pdu_buffer[0] & 0x70) != 0) {
+        msg("[TEST] Reserved bits are not 0!\n");
         return FALSE;
       } else {
-        msg("[TEST] Reserved bits are 0x00, OK\n");
+        msg("[TEST] Reserved bits are all 0, OK\n");
       }
 
       /*
-       * Parse sequence number
+       * Parse verify sequence number
        */
       u16 sequence_number = pdcp_get_sequence_number_of_pdu_with_long_sn(pdcp_test_pdu_buffer);
       msg("[TEST] Parsed sequence number is %04d\n", sequence_number);
+
+      if (sequence_number != index) {
+        msg("[TEST] Sequence numbers are out-of-order!\n");
+        return FALSE;
+      } else {
+        msg("[TEST] Sequence number is correct\n");
+      }
 
     } else {
       msg("[TEST] pdcp_data_req() returned FALSE!\n");
