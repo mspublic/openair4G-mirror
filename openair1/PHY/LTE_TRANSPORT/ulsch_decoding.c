@@ -135,7 +135,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 			     u8 Nbundled) {
 
 
-  s16 *ulsch_llr = phy_vars_eNB->lte_eNB_ulsch_vars[UE_id]->llr;
+  s16 *ulsch_llr = phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->llr;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
   LTE_eNB_ULSCH_t *ulsch = phy_vars_eNB->ulsch_eNB[UE_id];
   u8 harq_pid;
@@ -484,18 +484,18 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 	else if (ytag2[q+(Q_m*((r*Cmux)+j))] == PUSCH_x) {
 	  c = 0;
 #ifdef DEBUG_ULSCH_DECODING
-	  msg("ulsch_decoding.c: PUSCH_x in row %d, col %d: llr %d\n",r,j,ulsch_llr[i]);
+	  //	  msg("ulsch_decoding.c: PUSCH_x in row %d, col %d: llr %d\n",r,j,ulsch_llr[i]);
 #endif
 	}
 	c_prev = c;
 #ifdef DEBUG_ULSCH_DECODING
-	msg("llr[%d] = %d (c %d, ytag2 %d) ==> ",i,ulsch_llr[i],c,ytag2[q+(Q_m*((r*Cmux)+j))]);
+	//	msg("llr[%d] = %d (c %d, ytag2 %d) ==> ",i,ulsch_llr[i],c,ytag2[q+(Q_m*((r*Cmux)+j))]);
 #endif
 	// note flipped here for reverse polarity in 3GPP bit mapping
 	y[q+(Q_m*((r*Cmux)+j))] = (c==0) ? -ulsch_llr[i] : ulsch_llr[i];
 	i++;
 #ifdef DEBUG_ULSCH_DECODING
-	msg("%d\n",y[q+(Q_m*((r*Cmux)+j))]);
+	//	msg("%d\n",y[q+(Q_m*((r*Cmux)+j))]);
 #endif
       }
 
@@ -633,7 +633,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 	g = q+(Q_m*iprime);
 	ulsch->e[g] = y[q+(Q_m*((r*Cmux)+j))];
 #ifdef DEBUG_ULSCH_DECODING	
-	msg("ulsch_decoding.c: e %d, r %d, j %d, y[%d] %d\n",g,r,j,q+(Q_m*((r*Cmux) + j)),y[q+(Q_m*((r*Cmux)+j))]);
+	//	msg("ulsch_decoding.c: e %d, r %d, j %d, y[%d] %d\n",g,r,j,q+(Q_m*((r*Cmux) + j)),y[q+(Q_m*((r*Cmux)+j))]);
 #endif
       }
     }

@@ -185,22 +185,9 @@ void lte_param_init(unsigned char N_tx,
   PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB=150;
 
 
-  phy_init_lte_ue(&PHY_vars_UE_g[0]->lte_frame_parms,
-		  &PHY_vars_UE_g[0]->lte_ue_common_vars,
-		  PHY_vars_UE_g[0]->lte_ue_dlsch_vars,
-		  PHY_vars_UE_g[0]->lte_ue_dlsch_vars_SI,
-		  PHY_vars_UE_g[0]->lte_ue_dlsch_vars_ra,
-		  PHY_vars_UE_g[0]->lte_ue_pbch_vars,
-		  PHY_vars_UE_g[0]->lte_ue_pdcch_vars,
-		  PHY_vars_UE_g[0],0);
+  phy_init_lte_ue(PHY_vars_UE_g[0],0);
 
-  phy_init_lte_eNB(&PHY_vars_eNB_g[0]->lte_frame_parms,
-		   &PHY_vars_eNB_g[0]->lte_eNB_common_vars,
-		   PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars,
-		   0,
-		   PHY_vars_eNB_g[0],
-		   0,
-		   0);
+  phy_init_lte_eNB(PHY_vars_eNB_g[0],0,0,0);
 
   phy_init_lte_top(lte_frame_parms);
 
@@ -260,7 +247,7 @@ int main(int argc, char **argv) {
   u8 frame_mod4,num_pdcch_symbols;
   u16 NB_RB=25;
 
-  SCM_t channel_model=custom;
+  SCM_t channel_model=Rayleigh1_corr;
 
   DCI_ALLOC_t dci_alloc[8];
   u8 abstraction_flag=0,calibration_flag=0;
@@ -519,87 +506,32 @@ int main(int argc, char **argv) {
   // Forget second codeword
   DLSCH_alloc_pdu2.tpmi             = (transmission_mode==6 ? 5 : 0) ;  // precoding
 
-  if (channel_model==custom) {
-    msg("[SIM] Using custom channel model\n");
-
-    eNB2UE = new_channel_desc(n_tx,
-			      n_rx,
-			      nb_taps,
-			      channel_length,
-			      amps,
-			      NULL,
-			      NULL,
-			      Td,
-			      BW,
-			      ricean_factor,
-			      aoa,
-			      .999,
-			      0,
-			      0,
-			      0);
-    
-    if (interf1>-20)
-      eNB2UE1 = new_channel_desc(n_tx,
-				 n_rx,
-				 nb_taps,
-				 channel_length,
-				 amps,
-				 NULL,
-				 NULL,
-				 Td,
-				 BW,
-				 ricean_factor,
-				 aoa,
-				 .999,
-				 0,
-				 0,
-				 0);
-    if (interf2>-20)
-      eNB2UE2 = new_channel_desc(n_tx,
-				 n_rx,
-				 nb_taps,
-				 channel_length,
-				 amps,
-				 NULL,
-				 NULL,
-				 Td,
-				 BW,
-				 ricean_factor,
-				 aoa,
-				 .999,
-				 0,
-				 0,
-				 0);
-  }
-  else {
-    msg("[SIM] Using SCM/101\n");
-    eNB2UE = new_channel_desc_scm(PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx,
-				  PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx,
-				  channel_model,
-				  BW,
-				  .999,
-				  0,
-				  0);
-
-    if (interf1>-20)
-      eNB2UE1 = new_channel_desc_scm(PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx,
-				  PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx,
-				  channel_model,
-				  BW,
-				  .999,
-				  0,
-				  0);
-
-    if (interf2>-20)
-      eNB2UE2 = new_channel_desc_scm(PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx,
-				    PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx,
-				    channel_model,
-				    BW,
-				    .999,
-				    0,
-				    0);
-
-  }
+  msg("[SIM] Using SCM/101\n");
+  eNB2UE = new_channel_desc_scm(PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx,
+				PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx,
+				channel_model,
+				BW,
+				.999,
+				0,
+				0);
+  
+  if (interf1>-20)
+    eNB2UE1 = new_channel_desc_scm(PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx,
+				   PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx,
+				   channel_model,
+				   BW,
+				   .999,
+				   0,
+				   0);
+  
+  if (interf2>-20)
+    eNB2UE2 = new_channel_desc_scm(PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx,
+				   PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx,
+				   channel_model,
+				   BW,
+				   .999,
+				   0,
+				   0);
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");

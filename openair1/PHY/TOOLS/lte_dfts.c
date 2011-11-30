@@ -60,6 +60,16 @@ inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
 
 }
 
+inline void cmultc(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
+
+  *re32     = _mm_madd_epi16(a,b);
+  mmtmpb    = _mm_sign_epi16(b,*(__m128i*)reflip);
+  mmtmpb    = _mm_shufflelo_epi16(b,_MM_SHUFFLE(2,3,0,1));
+  mmtmpb    = _mm_shufflehi_epi16(mmtmpb,_MM_SHUFFLE(2,3,0,1));
+  *im32  = _mm_madd_epi16(a,mmtmpb);
+
+}
+
 static __m128i cpack_tmp1,cpack_tmp2;
 inline __m128i cpack(__m128i xre,__m128i xim) {
 
@@ -79,11 +89,18 @@ inline void packed_cmult(__m128i a,__m128i b, __m128i *c) {
 
 }
 
+
+inline void packed_cmultc(__m128i a,__m128i b, __m128i *c) {
+
+  cmultc(a,b,&cre,&cim);
+  *c = cpack(cre,cim);
+
+}
+
 static short W0s[8]__attribute__((aligned(16))) = {32767,0,32767,0,32767,0,32767,0};
 
 static short W13s[8]__attribute__((aligned(16))) = {-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378};
 static short W23s[8]__attribute__((aligned(16))) = {-16384,28378,-16384,28378,-16384,28378,-16384,28378};
-
 
 static short W15s[8]__attribute__((aligned(16))) = {10126,-31163,10126,-31163,10126,-31163,10126,-31163};
 static short W25s[8]__attribute__((aligned(16))) = {-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260};
@@ -153,6 +170,7 @@ static inline void bfly2_tw1(__m128i *x0, __m128i *x1, __m128i *y0, __m128i *y1)
 
 static __m128i tmpre,tmpim;
 
+// This is the inverse radix-3 butterfly (fft)
 #define bfly3(x0,x1,x2,y0,y1,y2,tw1,tw2) packed_cmult(*(x1),*(tw1),&x1_2); \
   packed_cmult(*(x2),*(tw2),&x2_2); \
   *(y0)  = _mm_adds_epi16(*(x0),_mm_adds_epi16(x1_2,x2_2)); \
@@ -165,6 +183,18 @@ static __m128i tmpre,tmpim;
   *(y2) = cpack(tmpre,tmpim); \
   *(y2) = _mm_adds_epi16(*(x0),*(y2));
 
+// This is the radix-3 butterfly (ifft)
+#define bfly3i(x0,x1,x2,y0,y1,y2,tw1,tw2) packed_cmultc(*(x1),*(tw1),&x1_2); \
+  packed_cmultc(*(x2),*(tw2),&x2_2); \
+  *(y0)  = _mm_adds_epi16(*(x0),_mm_adds_epi16(x1_2,x2_2)); \
+  cmult(x1_2,*(W23),&tmpre,&tmpim); \
+  cmac(x2_2,*(W13),&tmpre,&tmpim);  \
+  *(y1) = cpack(tmpre,tmpim); \
+  *(y1) = _mm_adds_epi16(*(x0),*(y1));\
+  cmult(x1_2,*(W13),&tmpre,&tmpim); \
+  cmac(x2_2,*(W23),&tmpre,&tmpim);  \
+  *(y2) = cpack(tmpre,tmpim); \
+  *(y2) = _mm_adds_epi16(*(x0),*(y2));
 
 #define bfly3_tw1(x0,x1,x2,y0,y1,y2) *(y0) = _mm_adds_epi16(*(x0),_mm_adds_epi16(*(x1),*(x2)));\
   cmult(*(x1),*(W13),&tmpre,&tmpim); \
@@ -3000,6 +3030,120 @@ void dft300(int *x,int *y,unsigned char scale_flag){
 
   _mm_empty();
   _m_empty();
+
+}
+
+u32 tmp[3][16384] __attribute__((aligned(16)));
+u32 tmpo[3][16384] __attribute__((aligned(16)));
+
+// 512 x 3
+void fft1536(s16 *input, s16 *output) {
+
+}
+
+void ifft1536(s16 *input, s16 *output) {
+
+}
+
+// 1024 x 3
+void fft3072(s16 *input, s16 *output) {
+
+}
+
+void ifft3072(s16 *input, s16 *output) {
+
+}
+
+#include "twiddle6144.h"
+
+void ifft6144(s16 *input, s16 *output) {
+  int i,i2,j;
+
+  for (i=0,j=0;i<4096;i+=2) {
+    ((s16*)tmp[0])[i]   = input[j++];
+    ((s16*)tmp[0])[i+1]   = -input[j++];
+    ((s16*)tmp[1])[i]   = input[j++];
+    ((s16*)tmp[1])[i+1]   = -input[j++];
+    ((s16*)tmp[2])[i]   = input[j++];
+    ((s16*)tmp[2])[i+1]   = -input[j++];
+  }
+  fft((s16*)(tmp[0]),(s16*)(tmpo[0]),twiddle_fft2048,rev2048,11,5,0);
+  fft((s16*)(tmp[1]),(s16*)(tmpo[1]),twiddle_fft2048,rev2048,11,5,0);
+  fft((s16*)(tmp[2]),(s16*)(tmpo[2]),twiddle_fft2048,rev2048,11,5,0);
+  for (i=1;i<2048;i++) {
+    tmpo[0][i] = tmpo[0][i<<1];
+    tmpo[1][i] = tmpo[1][i<<1];
+    tmpo[2][i] = tmpo[2][i<<1];
+  }
+
+  //  write_output("in.m","in",input,6144,1,1);
+  //  write_output("out0.m","o0",tmpo[0],2048,1,1);
+  //  write_output("out1.m","o1",tmpo[1],2048,1,1);
+  //  write_output("out2.m","o2",tmpo[2],2048,1,1);
+  
+  for (i=0,i2=0;i<4096;i+=8,i2+=4)  {
+    bfly3((__m128i*)(&tmpo[0][i2]),(__m128i*)(&tmpo[1][i2]),((__m128i*)&tmpo[2][i2]),
+	  (__m128i*)(output+i),(__m128i*)(output+4096+i),(__m128i*)(output+8192+i),
+	  (__m128i*)(twa6144+i),(__m128i*)(twb6144+i));
+  }
+  for (i=1;i<12288;i+=2)
+    output[i] = -output[i];
+
+  //  write_output("out.m","out",output,6144,1,1);    
+}
+
+
+void fft6144(s16 *input, s16 *output) {
+  int i,i2,j;
+
+  for (i=0,j=0;i<2048;i++) {
+    tmp[0][i] = ((u32 *)input)[j++];
+    tmp[1][i] = ((u32 *)input)[j++];
+    tmp[2][i] = ((u32 *)input)[j++];
+  }
+  fft((s16*)(tmp[0]),(s16*)(tmpo[0]),twiddle_fft2048,rev2048,11,5,0);
+  fft((s16*)(tmp[1]),(s16*)(tmpo[1]),twiddle_fft2048,rev2048,11,5,0);
+  fft((s16*)(tmp[2]),(s16*)(tmpo[2]),twiddle_fft2048,rev2048,11,5,0);
+
+  for (i=1;i<2048;i++) {
+    tmpo[0][i] = tmpo[0][i<<1];
+    tmpo[1][i] = tmpo[1][i<<1];
+    tmpo[2][i] = tmpo[2][i<<1];
+  }
+  //  write_output("out0.m","o0",tmpo[0],2048,1,1);
+  //  write_output("out1.m","o1",tmpo[1],2048,1,1);
+  //  write_output("out2.m","o2",tmpo[2],2048,1,1);
+  for (i=0,i2=0;i<4096;i+=8,i2+=4)  {
+    bfly3((__m128i*)(&tmpo[0][i2]),(__m128i*)(&tmpo[1][i2]),(__m128i*)(&tmpo[2][i2]),
+	  (__m128i*)(output+i),(__m128i*)(output+4096+i),(__m128i*)(output+8192+i),
+	  (__m128i*)(twa6144+i),(__m128i*)(twb6144+i));
+  }
+}
+
+// 4096 x 3
+void fft12288(s16 *input, s16 *output) {
+
+}
+
+void ifft12288(s16 *input, s16 *output) {
+
+}
+
+// 6144 x 3
+void fft18432(s16 *input, s16 *output) {
+
+}
+
+void ifft18432(s16 *input, s16 *output) {
+
+}
+
+// 8192 x 3
+void fft24576(s16 *input, s16 *output) {
+
+}
+
+void ifft24576(s16 *input, s16 *output) {
 
 }
 
