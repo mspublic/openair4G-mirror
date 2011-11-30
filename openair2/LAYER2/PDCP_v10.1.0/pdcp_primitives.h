@@ -1,80 +1,19 @@
 /*
                              pdcp_primitives.h
                              -------------------
-  AUTHOR  : Lionel GAUTHIER
+  AUTHOR  : Baris Demiray
   COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-
-
+  EMAIL   : Baris.Demiray@eurecom.fr
  ***************************************************************************/
-#ifndef __PDCP_PRIMITIVES_H__
-#    define __PDCP_PRIMITIVES_H__
 
-#    include "platform_types.h"
-//----------------------------------------------------------
-// primitives
-//----------------------------------------------------------
-#    define PDCP_DATA_REQ     0x01
-#    define PDCP_DATA_IND     0x02
-//----------------------------------------------------------
-// control primitives
-//----------------------------------------------------------
-#    define CPDCP_CONFIG_REQ  0x04
-#    define CPDCP_RELEASE_REQ 0x08
-#    define CPDCP_SN_REQ      0x10
-#    define CPDCP_RELOC_REQ   0x20
-#    define CPDCP_RELOC_CNF   0x40
+#ifndef PDCP_PRIMITIVES_H
+#define PDCP_PRIMITIVES_H
 
-#if 0 // Deprecated code, might be removed
-  //----------------------------------------------------------
-  // primitives definition
-  //----------------------------------------------------------
-  struct pdcp_data_req {
-    u16             rb_id;
-    u16             data_size;
-  };
-  struct pdcp_data_ind {
-    u16             rb_id;
-    u16             data_size;
-  };
-
-  //----------------------------------------------------------
-  // control primitives definition
-  //----------------------------------------------------------
-  // TO DO
-  struct cpdcp_config_req {
-    void           *rlc_sap;
-    u8              rlc_type_sap; // am, um, tr
-    u8              header_compression_type;
-  };
-  struct cpdcp_release_req {
-    void           *rlc_sap;
-  };
-
-  struct cpdcp_sn_req {
-    u32             sn;
-  };
-
-  struct cpdcp_relloc_req {
-    u32             receive_sn;
-  };
-
-  struct cpdcp_relloc_conf {
-    u32             receive_sn;
-    u32             send_sn;
-  };
-
-  struct cpdcp_primitive {
-    u8              type;
-    union {
-      struct cpdcp_config_req config_req;
-      struct cpdcp_release_req release_req;
-      struct cpdcp_sn_req sn_req;
-      struct cpdcp_relloc_req relloc_req;
-      struct cpdcp_relloc_conf relloc_conf;
-    } primitive;
-  };
-#endif // DEPRECATED
+#ifndef TRUE
+  #define TRUE 0x01
+  #define FALSE 0x00
+  typedef unsigned char BOOL;
+#endif
 
 /*
  * 3GPP TS 36.323 V10.1.0 (2011-03)
@@ -145,5 +84,15 @@ u16 pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer);
  * @return 7-bit sequence number
  */
 u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer);
+
+/*
+ * Fills the incoming buffer with the fields of the header (since the structs
+ * defined herein is not aligned in accordance with the standart)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return TRUE on success, FALSE otherwise
+ */
+BOOL pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer(unsigned char* pdu_buffer, \
+     pdcp_user_plane_data_pdu_header_with_long_sn* pdu);
 
 #endif
