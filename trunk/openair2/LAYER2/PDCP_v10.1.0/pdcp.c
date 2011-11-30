@@ -47,67 +47,114 @@
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
 
-extern rlc_op_status_t rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
+extern rlc_op_status_t rlc_data_req(module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 
 //-----------------------------------------------------------------------------
-void
-pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, char* sduP)
+/*
+ * If PDCP_UNIT_TEST is set here then data flow between PDCP and RLC is broken
+ * and PDCP has no longer anything to do with RLC. In this case, after it's handed
+ * an SDU it appends PDCP header and returns (by filling in incoming pointer parameters)
+ * this mem_block_t to be dissected for testing purposes. For further details see test
+ * code at targets/TEST/PDCP/test_pdcp.c:test_pdcp_data_req()
+ */
+#ifdef PDCP_UNIT_TEST
+BOOL pdcp_data_req(unsigned char* sdu_buffer, sdu_size_t sdu_buffer_size, pdcp_t* pdcp_entity, unsigned char* pdcp_test_pdu_buffer, unsigned int* pdcp_test_pdu_buffer_size)
+#else
+void pdcp_data_req(module_id_t module_idP, rb_id_t rab_idP, sdu_size_t sdu_buffer_size, char* sdu_buffer)
+#endif
 {
 //-----------------------------------------------------------------------------
   mem_block_t* pdcp_pdu = NULL;
-  u16 pdu_size = data_sizeP + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+  u16 pdcp_pdu_size = sdu_buffer_size + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 
-  if (data_sizeP > 0) {
-    if (data_sizeP > MAX_IP_PACKET_SIZE) { // XXX MAX_IP_PACKET_SIZE is 4096, shouldn't this be MAX SDU size, which is 8188 bytes?
-      msg("[PDCP] REQ FOR  SIZE %d !!!Abort\n",data_sizeP);
-      mac_xface->macphy_exit("");
-    }
+  if (sdu_buffer_size == 0) {
+    msg("[PDCP] Handed SDU is of size 0!\n");
+#ifdef PDCP_UNIT_TEST
+    return FALSE;
+#else
+    return;
+#endif
+  }
 
-    // Allocate a new block for the header and the payload
-    pdcp_pdu = get_free_mem_block (pdu_size);
+  /*
+   * XXX MAX_IP_PACKET_SIZE is 4096, shouldn't this be MAX SDU size, which is 8188 bytes?
+   */
+  if (sdu_buffer_size > MAX_IP_PACKET_SIZE) {
+    msg("[PDCP] Requested data size (%d) is bigger than that can be handled by PDCP!\n", sdu_buffer_size);
+    mac_xface->macphy_exit("");
+  }
 
-    if (pdcp_pdu) {
+  msg("[DEBUG] Asking for a new mem_block of size %d\n", pdcp_pdu_size);
+  // Allocate a new block for the header and the payload
+  pdcp_pdu = get_free_mem_block(pdcp_pdu_size);
+
+  if (pdcp_pdu != NULL) {
 #ifdef PDCP_DATA_REQ_DEBUG
-      msg("[PDCP] TTI %d, INST %d: PDCP_DATA_REQ size %d RAB %d:\n",Mac_rlc_xface->frame,module_idP,data_sizeP,rab_idP);
+  #ifndef PDCP_UNIT_TEST
+    msg("[PDCP] TTI %d, INST %d: PDCP_DATA_REQ size %d RAB %d:\n", Mac_rlc_xface->frame, module_idP, sdu_buffer_size, rab_idP);
+  #endif
 #endif
 
-      /*
-       * Create a Data PDU with header and appended data
-       *
-       * Place User Plane PDCP Data PDU header first
-       */
-      pdcp_user_plane_data_pdu_header_with_long_sn pdu_header;
-      pdu_header.dc = PDCP_DATA_PDU;
-      pdu_header.sn = pdcp_get_next_tx_seq_number(&pdcp_array[module_idP][rab_idP]);
-      memcpy(&pdcp_pdu->data[0], &pdu_header, PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
-      /* Then append data... */
-      memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sduP, data_sizeP);
+    /*
+     * Create a Data PDU with header and appended data
+     *
+     * Place User Plane PDCP Data PDU header first
+     */
+    pdcp_user_plane_data_pdu_header_with_long_sn pdu_header;
+    pdu_header.dc = PDCP_DATA_PDU;
+#ifdef PDCP_UNIT_TEST
+    pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp_entity);
+#else
+    pdu_header.sn = pdcp_get_next_tx_seq_number(&pdcp_array[module_idP][rab_idP]);
+#endif
 
-      /*
-       * Ask sublayer to transmit data and check return value 
-       * to see if RLC succeeded
-       */
-      rlc_op_status_t rlc_status = rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdu_size, pdcp_pdu);
-      switch (rlc_status) {
-        case RLC_OP_STATUS_OK: msg("[PDCP] Data sending request over RLC succeeded!\n");
-        case RLC_OP_STATUS_BAD_PARAMETER: msg("[PDCP] Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-        case RLC_OP_STATUS_INTERNAL_ERROR: msg("[PDCP] Data sending request over RLC failed with 'Internal Error' reason!\n");
-        case RLC_OP_STATUS_OUT_OF_RESSOURCES: msg("[PDCP] Data sending request over RLC failed with 'Out of Resources' reason!\n");
-        default: msg("[PDCP] RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-      }
-
-      if (Mac_rlc_xface->Is_cluster_head[module_idP] == 1) {
-        Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-        Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += data_sizeP;
-      } else {
-        Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-        Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += data_sizeP; 
-      }
-    } else {
-      msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ OUT OF MEMORY\n", rab_idP);
+    /*
+     * Fill PDU buffer with the struct's fields
+     */
+    if (pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
+      msg("[PDCP] Cannot fill PDU buffer with relevant header fields!\n");
+      return FALSE;
     }
+
+    /* Then append data... */
+    memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sdu_buffer, sdu_buffer_size);
+
+#ifdef PDCP_UNIT_TEST
+    /* 
+     * Here the block which is compiled when PDCP_UNIT_TEST is
+     * defined returns to the test code without handing the PDU
+     * off to RLC
+     */
+    memcpy(pdcp_test_pdu_buffer, pdcp_pdu->data, pdcp_pdu_size);
+    *pdcp_test_pdu_buffer_size = pdcp_pdu_size;
+
+    return TRUE;
+#else
+    /*
+     * Ask sublayer to transmit data and check return value 
+     * to see if RLC succeeded
+     */
+    rlc_op_status_t rlc_status = rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdcp_pdu_size, pdcp_pdu);
+    switch (rlc_status) {
+      case RLC_OP_STATUS_OK: msg("[PDCP] Data sending request over RLC succeeded!\n");
+      case RLC_OP_STATUS_BAD_PARAMETER: msg("[PDCP] Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+      case RLC_OP_STATUS_INTERNAL_ERROR: msg("[PDCP] Data sending request over RLC failed with 'Internal Error' reason!\n");
+      case RLC_OP_STATUS_OUT_OF_RESSOURCES: msg("[PDCP] Data sending request over RLC failed with 'Out of Resources' reason!\n");
+      default: msg("[PDCP] RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+    }
+
+    if (Mac_rlc_xface->Is_cluster_head[module_idP] == 1) {
+      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
+      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += sdu_buffer_size;
+    } else {
+      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
+      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += sdu_buffer_size; 
+    }
+#endif
   } else {
-    msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ SDU SIZE %d\n", rab_idP, data_sizeP);
+    msg("[PDCP] Error! Cannot create a mem_block for a PDU!\n");
+
+    return FALSE;
   }
 }
 
@@ -144,7 +191,7 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
      * Parse the PDU placed at the beginning of SDU to check
      * if incoming SN is in line with RX window
      */
-    u16 sequence_number = pdcp_get_sequence_number_of_pdu_with_long_sn(sduP->data);
+    u16 sequence_number = pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sduP->data);
  
     if (pdcp_is_rx_seq_number_valid(sequence_number, &pdcp_array[module_idP][rab_idP]) == TRUE) {
       msg("[PDCP] Incoming SDU carries a PDU with a SN (%d) in accordance with RX window, yay!\n", sequence_number);

@@ -33,6 +33,7 @@
 * \date 2011
 * \version 0.1
 */
+
 #include "platform_types.h"
 #include "platform_constants.h"
 #include "pdcp_primitives.h"
@@ -80,5 +81,40 @@ u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer)
    * First octet carries all 7 bits of SN (see 6.2.4)
    */
   return (u8)pdu_buffer[0] & 0x7F; // Reset D/C field
+}
+
+/*
+ * Fills the incoming buffer with the fields of the header (since the structs
+ * defined herein is not aligned in accordance with the standart)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return TRUE on success, FALSE otherwise
+ */
+BOOL pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer(unsigned char* pdu_buffer, \
+     pdcp_user_plane_data_pdu_header_with_long_sn* pdu)
+{
+  if (pdu_buffer == NULL || pdu == NULL)
+    return FALSE;
+
+  /*
+   * Fill the Sequence Number field
+   */
+  u16 sequence_number = pdu->sn;
+  pdu_buffer[1] = sequence_number & 0xFF;
+  sequence_number >>= 8;
+  pdu_buffer[0] = sequence_number & 0xFF;
+
+  printf("buffer[0] = %x\n", pdu_buffer[0]);
+  printf("buffer[1] = %x\n", pdu_buffer[1]);
+
+  /*
+   * Fill Data or Control field
+   */
+  if (pdu->dc == PDCP_CONTROL_PDU) {
+    printf("[DEBUG] Setting PDU as a Control PDU\n");
+    pdu_buffer[0] |= 0x80; // set the first bit as 1
+  }
+
+  return TRUE;
 }
 
