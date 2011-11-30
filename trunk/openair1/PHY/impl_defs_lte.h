@@ -504,7 +504,7 @@ typedef struct{
   int ulsch_power_1[2];
   /// llr values
   s16 *llr;
-} LTE_eNB_ULSCH;
+} LTE_eNB_PUSCH;
 
 typedef struct {
   ///holds the transmit data in time domain (for IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER)
@@ -556,7 +556,7 @@ typedef struct {
   //u32 *rb_alloc;
   //u8 Qm[2];
   //MIMO_mode_t mimo_mode;
-} LTE_UE_DLSCH;
+} LTE_UE_PDSCH;
 
 typedef struct {
   /// pointers to extracted PDCCH symbols in frequency-domain
@@ -620,6 +620,17 @@ typedef struct {
   /// FER (in percent) 
   u32 pdu_fer;             
 } LTE_UE_PBCH;
+
+typedef struct {
+  s16 amp;
+  s16 *prachF;
+  s16 *prach;
+} LTE_UE_PRACH;
+
+typedef struct {
+  s16 *prachF;
+  s16 *rxsigF[4];
+} LTE_eNB_PRACH;
 
 typedef struct {
   /// Downlink Power offset field

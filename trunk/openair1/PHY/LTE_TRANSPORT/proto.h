@@ -547,7 +547,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     @param i_mod Modulation order of the interfering stream
 */
 s32 rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-	     LTE_UE_DLSCH **lte_ue_dlsch_vars,
+	     LTE_UE_PDSCH **lte_ue_pdsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     u8 eNB_id,
 	     u8 eNB_id_i,

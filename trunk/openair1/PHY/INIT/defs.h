@@ -32,43 +32,23 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation
-@param frame_parms pointer to LTE parameter structure
-@param lte_ue_common_vars pointer to structure to be initialized
-@param lte_ue_dlsch_vars pointer to DLSCH structure to be initialized
-@param lte_ue_dlsch_vars_SI pointer to DLSCH (SI) structure to be initialized
-@param lte_ue_dlsch_vars_ra pointer to DLSCH (RA) structure to be initialized
-@param lte_ue_pbch_vars pointer to PBCH structure to be initialized
-@param lte_ue_pdcch_vars pointer to PDCCH structure to be initialized
 @param phy_vars_ue Pointer to UE Variables
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 */
-int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_UE_COMMON *lte_ue_common_vars,
-		    LTE_UE_DLSCH **lte_ue_dlsch_vars,
-		    LTE_UE_DLSCH **lte_ue_dlsch_vars_SI,
-		    LTE_UE_DLSCH **lte_ue_dlsch_vars_ra,
-		    LTE_UE_PBCH **lte_ue_pbch_vars,
-		    LTE_UE_PDCCH **lte_ue_pdcch_vars,
-		    PHY_VARS_UE *phy_vars_ue,
+int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 		    u8 abstraction_flag);
 
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation (eNB)
-@param frame_parms pointer to LTE parameter structure
-@param eNB_common
-@param eNB_ulsch Pointer to ULSCH RX data structures
-@param is_secondary_eNb Flag to indicate this eNB gets synch from another
 @param phy_vars_eNb Pointer to eNB Variables
+@param is_secondary_eNb Flag to indicate this eNB gets synch from another
 @param cooperation_flag
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 */
-int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
-		     LTE_eNB_COMMON *eNB_common,
-		     LTE_eNB_ULSCH **eNB_ulsch,
+int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
 		     unsigned char is_secondary_eNb,
-		     PHY_VARS_eNB *phy_vars_eNb,
 		     unsigned char cooperation_flag,
 		     unsigned char abstraction_flag);
 
