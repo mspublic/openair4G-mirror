@@ -1,8 +1,41 @@
-/* file: dci.c
-   purpose: DCI/PDCCH processing (encoding,decoding,crc extraction) from 36-211/36-212, V8.6 2009-03.  
-   author: raymond.knopp@eurecom.fr
-   date: 21.10.2009 
-   updates: 10.2010, support for all aggregation levels and normal/extended prefix, bit scrambling.
+/*******************************************************************************
+
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file PHY/LTE_TRANSPORT/dci.c
+* \brief Implements PDCCH physical channel TX/RX procedures (36.211) and DCI encoding/decoding (36.212/36.213). Current LTE compliance V8.6 2009-03.
+* \author R. Knopp
+* \date 2011
+* \version 0.1
+* \company Eurecom
+* \email: knopp@eurecom.fr
+* \note
+* \warning
 */
 #ifdef USER_MODE
 #include <stdio.h>
