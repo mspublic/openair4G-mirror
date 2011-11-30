@@ -1742,6 +1742,7 @@ int main(int argc, char **argv) {
 
 	  uncoded_ber/=coded_bits_per_codeword;
 	  avg_ber += uncoded_ber;
+	  //write_output("uncoded_ber_bit.m","uncoded_ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
 	 
 	  /*
 	    printf("precoded CQI %d dB, opposite precoded CQI %d dB\n",

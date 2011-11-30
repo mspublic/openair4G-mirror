@@ -169,6 +169,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   chan_desc->first_run      = 1;
   chan_desc->ip             = 0.0;
 
+  printf("\nChannel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
+
   switch (channel_model) {
   case SCM_A:
     msg("channel model not yet supported\n");
