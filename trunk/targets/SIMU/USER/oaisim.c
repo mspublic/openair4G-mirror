@@ -164,22 +164,22 @@ help (void) {
 #ifdef XFORMS
 void
 do_forms (FD_phy_procedures_sim * form,
-	  LTE_UE_DLSCH ** lte_ue_dlsch_vars, LTE_eNB_ULSCH ** lte_eNB_ulsch_vars, struct complex **ch, u32 ch_len)
+	  LTE_UE_PDSCH ** lte_ue_pdsch_vars, LTE_eNB_PUSCH ** lte_eNB_pusch_vars, struct complex **ch, u32 ch_len)
 {
 
   s32 j, s, i;
   float I[3600], Q[3600], I2[3600], Q2[3600], I3[300], Q3[300];
 
-  if (lte_ue_dlsch_vars[0]->rxdataF_comp) {
+  if (lte_ue_pdsch_vars[0]->rxdataF_comp) {
   j = 0;
-  //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
+  //  printf("rxdataF_comp %p, lte_ue_pdsch_vars[0] %p\n",lte_ue_pdsch_vars[0]->rxdataF_comp[0],lte_ue_pdsch_vars[0]);
   for (s = 0; s < 12; s++) {
     for (i = 0; i < 12 * 25; i++) {
       I[j] = (float) ((short *)
-		      lte_ue_dlsch_vars[0]->rxdataF_comp[0])[(2 * 25 * 12 * s) + 2 * i];
+		      lte_ue_pdsch_vars[0]->rxdataF_comp[0])[(2 * 25 * 12 * s) + 2 * i];
       Q[j] = (float) ((short *)
-		      lte_ue_dlsch_vars[0]->rxdataF_comp[0])[(2 * 25 * 12 * s) + 2 * i + 1];
-      //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
+		      lte_ue_pdsch_vars[0]->rxdataF_comp[0])[(2 * 25 * 12 * s) + 2 * i + 1];
+      //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_pdsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_pdsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
       j++;
     }
     /*
@@ -197,16 +197,16 @@ do_forms (FD_phy_procedures_sim * form,
   //fl_set_xyplot_ybounds(form->pdsch_constellation,-800,800);
   }
 
-  if (lte_eNB_ulsch_vars[0]->rxdataF_comp[0]) {
+  if (lte_eNB_pusch_vars[0]->rxdataF_comp[0]) {
   j = 0;
-  //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
+  //  printf("rxdataF_comp %p, lte_ue_pdsch_vars[0] %p\n",lte_ue_pdsch_vars[0]->rxdataF_comp[0],lte_ue_pdsch_vars[0]);
   for (s = 0; s < 12; s++) {
     for (i = 0; i < 25 * 12; i++) {
       I2[j] = (float) ((short *)
-		       lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0])[(2 * 25 * 12 * s) + 2 * i];
+		       lte_eNB_pusch_vars[0]->rxdataF_comp[0][0])[(2 * 25 * 12 * s) + 2 * i];
       Q2[j] = (float) ((short *)
-		       lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0])[(2 * 25 * 12 * s) + 2 * i + 1];
-      //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
+		       lte_eNB_pusch_vars[0]->rxdataF_comp[0][0])[(2 * 25 * 12 * s) + 2 * i + 1];
+      //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_pdsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_pdsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
       j++;
     }
     /*
@@ -1026,7 +1026,7 @@ main (int argc, char **argv)
 	//#ifdef DEBUG_SIM
 	printf ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",
 	   eNB_id, mac_xface->frame, slot, next_slot >> 1,
-	   PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext, PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+	   PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->rxdataF_ext, PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	//#endif
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 
@@ -1134,7 +1134,7 @@ main (int argc, char **argv)
       }
       /*
          if ((last_slot==1) && (mac_xface->frame==1)) {
-         write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
+         write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
          write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
          }
        */
@@ -1202,8 +1202,8 @@ main (int argc, char **argv)
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	do_forms (form[eNB_id][UE_id],
-		  PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,
-		  PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
+		  PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars,
+		  PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars,
 		  eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
       }
     }
