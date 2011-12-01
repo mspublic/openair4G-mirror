@@ -399,6 +399,8 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 
   RRCConnectionRequest_t *rrcConnectionRequest;
 
+  memset((void *)&ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
+
   ul_ccch_msg.message.present           = UL_CCCH_MessageType_PR_c1;
   ul_ccch_msg.message.choice.c1.present = UL_CCCH_MessageType__c1_PR_rrcConnectionRequest;
   rrcConnectionRequest          = &ul_ccch_msg.message.choice.c1.choice.rrcConnectionRequest;
@@ -443,6 +445,8 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer) {
   UL_DCCH_Message_t ul_dcch_msg;
 
   RRCConnectionSetupComplete_t *rrcConnectionSetupComplete;
+
+  memset((void *)&ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
 
   ul_dcch_msg.message.present           = UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1.present = UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete;
@@ -862,6 +866,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   long *lcid;
 
   //  int i;
+
+  memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
 
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
