@@ -1,10 +1,42 @@
-/*________________________phy_procedures_lte_eNB.c________________
+/*******************************************************************************
 
-  Authors : Raymond Knopp, Florian Kaltenberger
-  Company : EURECOM
-  Emails  : knopp@eurecom.fr, kaltenbe@eurecom.fr
-  ________________________________________________________________*/
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
 
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file phy_procedures_lte_eNB.c
+* \brief Implementation of eNB procedures from 36.213 LTE specifications
+* \author R. Knopp, F. Kaltenberger
+* \date 2011
+* \version 0.1
+* \company Eurecom
+* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+* \note
+* \warning
+*/
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
@@ -27,6 +59,8 @@
 //#define DIAG_PHY
 
 #define NS_PER_SLOT 500000
+
+#define PUCCH 1
 
 extern inline unsigned int taus(void);
 extern int exit_openair;
@@ -141,7 +175,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 	((DLSCH_ptr->harq_processes[*harq_pid]->round > 0)))
       *round = DLSCH_ptr->harq_processes[*harq_pid]->round;
     else if ((subframe_m4==5) || (subframe_m4==6)) {
-      *harq_pid = 0;//DLSCH_ptr->harq_ids[subframe_m4];//Ankit
+      *harq_pid = DLSCH_ptr->harq_ids[subframe_m4];
       *round    = DLSCH_ptr->harq_processes[*harq_pid]->round;
     }
     else {
@@ -149,7 +183,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
       for (i=0;i<DLSCH_ptr->Mdlharq;i++) {
 	if (DLSCH_ptr->harq_processes[i]!=NULL) {
 	  if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
-	    *harq_pid = 0;//i; //(Ankit)
+	    *harq_pid = i;
 	    *round = 0;
 	    return(0);
 	  }
@@ -1783,7 +1817,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       msg("[PHY][eNB%d] frame %d, slot %d, subframe %d: Scheduling ULSCH %d Reception for rnti %x harq_pid %d, rxdataF_ext %p\n",
 	  phy_vars_eNB->Mod_id,
 	  mac_xface->frame,last_slot,last_slot>>1,i,phy_vars_eNB->ulsch_eNB[i]->rnti,harq_pid,
-	  phy_vars_eNB->lte_eNB_ulsch_vars[0]->rxdataF_ext);
+	  phy_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_ext);
 #endif
   
 #ifdef DEBUG_PHY_PROC
@@ -1829,12 +1863,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
       for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++)
-	phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[j]) - phy_vars_eNB->rx_total_gain_eNB_dB;
+	phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[j]) - phy_vars_eNB->rx_total_gain_eNB_dB;
 
 #ifdef DEBUG_PHY_PROC
       msg("[PHY][eNB%d] frame %d, slot %d, subframe %d: ULSCH RX power (%d,%d) dB\n",
 	  phy_vars_eNB->Mod_id,
-	  mac_xface->frame,last_slot,last_slot>>1,dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]));
+	  mac_xface->frame,last_slot,last_slot>>1,dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[0]),dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[1]));
 #endif
 
       if (abstraction_flag == 0) {
@@ -1856,33 +1890,33 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef DEBUG_PHY_PROC
       msg("[PHY][eNB%d] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d), decoding ret %d\n",
 	  phy_vars_eNB->Mod_id,
-	  mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1],ret);
+	  mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[0]),dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1],ret);
 #endif //DEBUG_PHY_PROC
       if ((two_ues_connected==1) && (phy_vars_eNB->cooperation_flag==2)) {
 	for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++) {
-	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_0[j]) 
+	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power_0[j]) 
 	    - phy_vars_eNB->rx_total_gain_eNB_dB;
-	  phy_vars_eNB->eNB_UE_stats[i+1].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_1[j]) 
+	  phy_vars_eNB->eNB_UE_stats[i+1].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power_1[j]) 
 	    - phy_vars_eNB->rx_total_gain_eNB_dB;
 	}
 #ifdef DEBUG_PHY_PROC
 	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power UE0 (%d,%d) dB RX power UE1 (%d,%d)\n",
 		  mac_xface->frame,last_slot,last_slot>>1,i,
-		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_0[0]),
-		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_0[1]),
-		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_1[0]),
-		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_1[1]));
+		  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power_0[0]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power_0[1]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power_1[0]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power_1[1]));
 #endif
       }
       else {
 	for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++)
-	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[j]) 
+	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[j]) 
 	    - phy_vars_eNB->rx_total_gain_eNB_dB;
 #ifdef DEBUG_PHY_PROC
 	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB\n",
 		  mac_xface->frame,last_slot,last_slot>>1,i,
-		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),
-		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]));
+		  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[0]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[1]));
 #endif
       }
       

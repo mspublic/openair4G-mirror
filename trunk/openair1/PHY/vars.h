@@ -41,6 +41,7 @@ CHBCH_RX_t rx_mode = ML;
 #endif //OPENAIR_LTE
 
 unsigned short rev[1024],rev_times4[4096],rev_half[512];
+u16 rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048];
 
 #ifdef OPENAIR_LTE
 char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
