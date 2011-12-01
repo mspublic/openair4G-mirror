@@ -1,42 +1,10 @@
-/*******************************************************************************
+/*________________________phy/impl_defs_lte.h________________________
 
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2011 Eurecom
+ Authors : Raymond Knopp, Florian Kaltenberger
+ Company : EURECOM
+ Emails  : kaltenbe@eurecom.fr,  knopp@eurecom.fr
+________________________________________________________________*/
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
-/*! \file PHY/impl_defs_lte.h
-* \brief LTE Physical channel configuration and variable structure definitions
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
-* \note
-* \warning
-*/
 
 #ifndef __PHY_IMPLEMENTATION_DEFS_LTE_H__
 #define __PHY_IMPLEMENTATION_DEFS_LTE_H__
@@ -536,7 +504,7 @@ typedef struct{
   int ulsch_power_1[2];
   /// llr values
   s16 *llr;
-} LTE_eNB_PUSCH;
+} LTE_eNB_ULSCH;
 
 typedef struct {
   ///holds the transmit data in time domain (for IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER)
@@ -588,7 +556,7 @@ typedef struct {
   //u32 *rb_alloc;
   //u8 Qm[2];
   //MIMO_mode_t mimo_mode;
-} LTE_UE_PDSCH;
+} LTE_UE_DLSCH;
 
 typedef struct {
   /// pointers to extracted PDCCH symbols in frequency-domain
@@ -652,17 +620,6 @@ typedef struct {
   /// FER (in percent) 
   u32 pdu_fer;             
 } LTE_UE_PBCH;
-
-typedef struct {
-  s16 amp;
-  s16 *prachF;
-  s16 *prach;
-} LTE_UE_PRACH;
-
-typedef struct {
-  s16 *prachF;
-  s16 *rxsigF[4];
-} LTE_eNB_PRACH;
 
 typedef struct {
   /// Downlink Power offset field

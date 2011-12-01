@@ -77,7 +77,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-  (*frame_parms)->nb_antennas_rx     = 2;
+  (*frame_parms)->nb_antennas_rx     = 1;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
   (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
@@ -99,7 +99,22 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
-    phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id],0,0,0);
+    phy_init_lte_eNB(&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,
+		     &PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars,
+		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
+		     0,
+		     PHY_vars_eNB_g[eNB_id],
+		     cooperation_flag,
+		     abstraction_flag);
+    
+    /*
+      PHY_vars_eNB_g[eNB_id]->dlsch_eNB[0] = (LTE_eNB_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNB_DLSCH_t*));
+      PHY_vars_eNB_g[eNB_id]->dlsch_eNB[1] = (LTE_eNB_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNB_DLSCH_t*));
+      PHY_vars_eNB_g[eNB_id]->ulsch_eNB = (LTE_eNB_ULSCH_t**) malloc16((1+NUMBER_OF_UE_MAX)*sizeof(LTE_eNB_ULSCH_t*));
+    */
+
+
+
 
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {
@@ -159,7 +174,27 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.nushift;
     }
 
-    phy_init_lte_ue(PHY_vars_UE_g[UE_id],0);
+    phy_init_lte_ue(&PHY_vars_UE_g[UE_id]->lte_frame_parms,
+		    &PHY_vars_UE_g[UE_id]->lte_ue_common_vars,
+		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,
+		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars_SI,
+		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars_ra,
+		    PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars,
+		    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars,
+		    PHY_vars_UE_g[UE_id],
+		    abstraction_flag);
+
+    /*
+      PHY_vars_UE_g[UE_id]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+      PHY_vars_UE_g[UE_id]->dlsch_ue[1] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+    
+      PHY_vars_UE_g[UE_id]->ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_ULSCH_t*));
+    
+      PHY_vars_UE_g[UE_id]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+      PHY_vars_UE_g[UE_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+    */
+
+
 
     for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
       for (j=0;j<2;j++) {

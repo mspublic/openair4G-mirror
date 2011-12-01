@@ -84,10 +84,25 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
+		  &PHY_vars_UE->lte_ue_common_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars_SI,
+		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
+		  PHY_vars_UE->lte_ue_pbch_vars,
+		  PHY_vars_UE->lte_ue_pdcch_vars,
+		  PHY_vars_UE,
+		  0);
 
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNB->lte_frame_parms,
+		   &PHY_vars_eNB->lte_eNB_common_vars,
+		   PHY_vars_eNB->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNB,
+		   0,
+		   0);
 
+  
   printf("Done lte_param_init\n");
 
 
@@ -123,15 +138,20 @@ int main(int argc, char **argv) {
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
   double **s_re,**s_im,**r_re,**r_im;
-  double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
+  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+  double aoa=.03;
+  //double ricean_factor=1;
+  double ricean_factor=0.1;
+  double Td=0.8;
   double iqim=0.0;
+  double forgetting_factor=0.0;
+  u8 channel_length,nb_taps=8;
   u8 extended_prefix_flag=0;
 
   int eNB_id = 0;
   int UE_id = 0;
   unsigned char nb_rb=2,first_rb=0,mcs=4,awgn_flag=0,round=0,bundling_flag=1;
   unsigned char l;
-  SCM_t channel_model=Rayleigh1_corr;
 
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
@@ -166,7 +186,9 @@ int main(int argc, char **argv) {
   u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
-  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:")) != -1) {
+  channel_length = (int) 11+2*BW*Td;
+
+  while ((c = getopt (argc, argv, "hapbm:n:s:t:c:r:i:f:c:oA:C:R:")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -180,55 +202,11 @@ int main(int argc, char **argv) {
     case 'n':
       n_frames = atoi(optarg);
       break;
-    case 'g':
-      switch((char)*optarg) {
-      case 'A': 
-	channel_model=SCM_A;
-	break;
-      case 'B': 
-	channel_model=SCM_B;
-	break;
-      case 'C': 
-	channel_model=SCM_C;
-	break;
-      case 'D': 
-	channel_model=SCM_D;
-	break;
-      case 'E': 
-	channel_model=EPA;
-	break;
-      case 'F': 
-	channel_model=EVA;
-	break;
-      case 'G': 
-	channel_model=ETU;
-	break;
-      case 'H':
-	channel_model=Rayleigh8;
-	break;
-      case 'I':
-	channel_model=Rayleigh1;
-	break;
-      case 'J':
-	channel_model=Rayleigh1_corr;
-	break;
-      case 'K':
-	channel_model=Rayleigh1_anticorr;
-	break;
-      case 'L':
-	channel_model=Rice8;
-	break;
-      case 'M':
-	channel_model=Rice1;
-	break;
-      default:
-	msg("Unsupported channel model!\n");
-	exit(-1);
-	break;
-      }
-      break;
     case 's':
       snr0 = atoi(optarg);
+      break;
+    case 't':
+      Td= atof(optarg);
       break;
     case 'p':
       extended_prefix_flag=1;
@@ -278,7 +256,7 @@ int main(int argc, char **argv) {
       break;
     case 'h':
     default:
-      printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -c cyclic_shift -o (srs on) -g channel_model [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M') \n",argv[0]);
+      printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -c cyclic_shift -o (srs on)\n",argv[0]);
       exit(1);
       break;
     }
@@ -408,13 +386,23 @@ int main(int argc, char **argv) {
   
   printf("PUSCH Beta : ACK %f, RI %f, CQI %f\n",(double)beta_ack[beta_ACK]/8,(double)beta_ri[beta_RI]/8,(double)beta_cqi[beta_CQI]/8);
 
-  UE2eNB = new_channel_desc_scm(1,//PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
-				1,//PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				channel_model,
-				BW,
-				forgetting_factor,
-				0,
-				0);
+  UE2eNB = new_channel_desc(1,
+			    1,
+			    nb_taps,
+			    channel_length,
+			    amps,
+			    NULL,
+			    NULL,
+			    Td,
+			    BW,
+			    ricean_factor,
+			    aoa,
+			    forgetting_factor,
+			    0,
+			    0,
+			    0,
+			    1);
+  
   PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(3,0);
   PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(3,0);
 
@@ -463,7 +451,7 @@ int main(int argc, char **argv) {
   init_ul_hopping(&PHY_vars_UE->lte_frame_parms);
   msg("Init UL hopping eNB\n");
   init_ul_hopping(&PHY_vars_eNB->lte_frame_parms);
-  /*
+
   if (n_frames==1) {
     for (b=0;b<33;b++) {
       printf("dftsizes[%d] %d\n",b,dftsizes[b]);
@@ -478,8 +466,6 @@ int main(int argc, char **argv) {
       write_output(fname,vname,(void*)&ul_ref_sigs[u][0][Msc_RS_idx][0],2*nb_rb*12,1,1);
     }
   }
-  */
-
   generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
 				    14,
 				    (subframe<4)?(subframe+6):(subframe-4),
@@ -535,10 +521,6 @@ int main(int argc, char **argv) {
 	    fprintf(trch_out_fd,"%d\n",(input_buffer[i]>>(7-j))&1);
 	}
 	fclose(trch_out_fd);
-      }
-      else {
-	for (i=0;i<input_buffer_length;i++)
-	  input_buffer[i] = taus()&0xff;
       }
     }
     else {
@@ -616,7 +598,7 @@ int main(int argc, char **argv) {
 #ifdef OFDMA_ULSCH
 	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],cooperation_flag);
 #else  
-	  //	  printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
+	  //	printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
 	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],
 			   subframe,&PHY_vars_UE->lte_frame_parms,
 			   PHY_vars_UE->ulsch_ue[0],cooperation_flag);
@@ -723,11 +705,11 @@ int main(int argc, char **argv) {
 	
 	}
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
-	sigma2_dB = 10*log10((double)tx_lev)  +10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(PHY_vars_UE->lte_frame_parms.N_RB_DL*12)) - SNR;
+	sigma2_dB = tx_lev_dB +10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(PHY_vars_UE->lte_frame_parms.N_RB_DL*12)) - SNR;
       
 	//AWGN
 	sigma2 = pow(10,sigma2_dB/10);
-	//printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
+	//	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 	for (i=0; i<PHY_vars_eNB->lte_frame_parms.samples_per_tti; i++) {
 	  for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 	    ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
@@ -810,10 +792,9 @@ int main(int argc, char **argv) {
 	break;
       
     }   //trials
-    printf("\n**********************SNR = %f dB (tx_lev/RE %f dB (%f dB), sigma2_dB %f)**************************\n",
+    printf("\n**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
 	   SNR,
 	   (double)tx_lev_dB+10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(nb_rb*12)),
-	   (double)tx_lev_dB,
 	   sigma2_dB);
     
     printf("Errors (%d/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e) => effective rate %f (%f), normalized delay %f (%f)\n",
