@@ -325,22 +325,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
 
-  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
-		  &PHY_vars_UE->lte_ue_common_vars,
-		  PHY_vars_UE->lte_ue_dlsch_vars,
-		  PHY_vars_UE->lte_ue_dlsch_vars_SI,
-		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
-		  PHY_vars_UE->lte_ue_pbch_vars,
-		  PHY_vars_UE->lte_ue_pdcch_vars,
-		  PHY_vars_UE,0);
-
-  phy_init_lte_eNB(&PHY_vars_eNB->lte_frame_parms,
-		   &PHY_vars_eNB->lte_eNB_common_vars,
-		   PHY_vars_eNB->lte_eNB_ulsch_vars,
-		   0,
-		   PHY_vars_eNB,
-		   1,
-		   0);
+  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
   
   printf("Done lte_param_init\n");
@@ -1120,8 +1106,8 @@ int main(int argc, char **argv) {
 	      uncoded_ber_bit = (short*) malloc(2*coded_bits_per_codeword);
 	      
 	      if (trials==0 && round==0) 
-		printf("Rate = %f (G %d, TBS %d, mod %d, pdcch_sym %d)\n",
-		       rate,
+		printf("Rate = %f (%f bits/dim) (G %d, TBS %d, mod %d, pdcch_sym %d)\n",
+		       rate,rate*get_Qm(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs),
 		       coded_bits_per_codeword,
 		       tbs,
 		       get_Qm(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs),
@@ -1599,7 +1585,7 @@ int main(int argc, char **argv) {
 		       m<pilot2;
 		       m++) {
 		    if (rx_dlsch(&PHY_vars_UE->lte_ue_common_vars,
-				 PHY_vars_UE->lte_ue_dlsch_vars,
+				 PHY_vars_UE->lte_ue_pdsch_vars,
 				 &PHY_vars_UE->lte_frame_parms,
 				 eNB_id,
 				 eNB_id_i,
@@ -1635,7 +1621,7 @@ int main(int argc, char **argv) {
 		       m<pilot3;
 		       m++)
 		    if (rx_dlsch(&PHY_vars_UE->lte_ue_common_vars,
-				 PHY_vars_UE->lte_ue_dlsch_vars,
+				 PHY_vars_UE->lte_ue_pdsch_vars,
 				 &PHY_vars_UE->lte_frame_parms,
 				 eNB_id,
 				 eNB_id_i,
@@ -1656,7 +1642,7 @@ int main(int argc, char **argv) {
 		       m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
 		       m++)
 		    if (rx_dlsch(&PHY_vars_UE->lte_ue_common_vars,
-				 PHY_vars_UE->lte_ue_dlsch_vars,
+				 PHY_vars_UE->lte_ue_pdsch_vars,
 				 &PHY_vars_UE->lte_frame_parms,
 				 eNB_id,
 				 eNB_id_i,
@@ -1700,7 +1686,7 @@ int main(int argc, char **argv) {
 				 &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][3][0]),
 				 PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 		    
-		  //dlsch_vars
+		  //pdsch_vars
 		  dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
 		  dump_dlsch2(PHY_vars_UE,eNB_id_i,coded_bits_per_codeword);
 		  write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
@@ -1723,9 +1709,9 @@ int main(int argc, char **argv) {
 	  if(abstx){
 	    if (trials==0 && round==0 && transmission_mode>=5){
 	      for (iii=0; iii<NB_RB; iii++){
-		//fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id_i]->pmi_ext[iii]));
-		fprintf(csv_fd,"%x,%x,",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]));
-		msg(" %x",(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->pmi_ext[iii]));
+		//fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[iii]));
+		fprintf(csv_fd,"%x,%x,",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
+		msg(" %x",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
 	      }
 	    }
 	  }
@@ -1733,7 +1719,7 @@ int main(int argc, char **argv) {
 		// calculate uncoded BLER
 	  uncoded_ber=0;
 	  for (i=0;i<coded_bits_per_codeword;i++) 
-	    if (PHY_vars_eNB->dlsch_eNB[0][0]->e[i] != (PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0][i]<0)) {
+	    if (PHY_vars_eNB->dlsch_eNB[0][0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i]<0)) {
 	      uncoded_ber_bit[i] = 1;
 	      uncoded_ber++;
 	    }
@@ -1755,16 +1741,16 @@ int main(int argc, char **argv) {
 			     PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
 			     PHY_vars_UE->dlsch_ue[0][0],
 			     coded_bits_per_codeword,
-			     PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->llr[0],
+			     PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			     0,
 			     subframe<<1);
 
 	  /*
 	  for (i=0;i<coded_bits_per_codeword;i++) 
-	    PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0][i] = (short)quantize(100,PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0][i],4);
+	    PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i] = (short)quantize(100,PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i],4);
 	  */
 
-	  ret = dlsch_decoding(PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->llr[0],		 
+	  ret = dlsch_decoding(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],		 
 			       &PHY_vars_UE->lte_frame_parms,
 			       PHY_vars_UE->dlsch_ue[0][0],
 			       subframe,
@@ -1777,10 +1763,10 @@ int main(int argc, char **argv) {
 		   PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id],
 		   PHY_vars_UE->lte_ue_common_vars.rxdata,
 		   PHY_vars_UE->lte_ue_common_vars.rxdataF,
-		   PHY_vars_UE->lte_ue_dlsch_vars[0]->rxdataF_comp[0],
-		   PHY_vars_UE->lte_ue_dlsch_vars[3]->rxdataF_comp[0],
-		   PHY_vars_UE->lte_ue_dlsch_vars[0]->dl_ch_rho_ext[0],
-		   PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0],coded_bits_per_codeword);
+		   PHY_vars_UE->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+		   PHY_vars_UE->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+		   PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_ch_rho_ext[0],
+		   PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0],coded_bits_per_codeword);
 	  //PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->w[0],3*(tbs+64)); 
 	  //uncoded_ber_bit,coded_bits_per_codeword);
 
@@ -1843,7 +1829,7 @@ int main(int argc, char **argv) {
 			     &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][3][0]),
 			     PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 	      
-	      //dlsch_vars
+	      //pdsch_vars
 	      dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
 	      write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
 	      write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
