@@ -915,13 +915,12 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
       //status0 = Rrc_xface->get_rrc_status(Mod_id,1,0);
       //status1 = Rrc_xface->get_rrc_status(Mod_id,1,1);
 
-      
-
-      // if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
-      //     ULSCH_dci->cqi_req = 0;
-      //     else
-      //     ULSCH_dci->cqi_req = 1;
-	     
+      /*     
+	     if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
+	     ULSCH_dci->cqi_req = 0;
+	     else
+	     ULSCH_dci->cqi_req = 1;
+      */
       
       if (status < RRC_CONNECTED)
 	ULSCH_dci->cqi_req = 0;
@@ -1312,8 +1311,8 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
   u16 rnti;
   unsigned char vrb_map[100];
 
-  unsigned int x,y,z=0;
-  u8 rballoc_sub[13];
+  unsigned char x,y,z;
+  u8 rballoc_sub[14];
 
   u32 rballoc=RBalloc;
 
@@ -1515,8 +1514,8 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 	/// Synchronizing rballoc with rballoc_sub
 	for(x=0;x<7;x++){
 	  for(y=0;y<2;y++){
-	    z = 2*x + y;
 	    if(z < (2*6 + 1)){
+	      z = 2*x + y;
 	      rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
 	    }
 	  }
@@ -1525,7 +1524,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 	  if(rballoc_sub[i] == 1)
 	    rballoc |= (0x0001<<i); 
 	}
-	
+
       switch(mac_xface->get_transmission_mode(Mod_id,rnti)) {
       default:
 
@@ -3810,7 +3809,9 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	header_len_dtch = 0;
       }
 
-
+#ifdef FULL_BUFFER
+      //header_len_dcch = 2;
+#endif
       
 	    
       if ((sdu_length_total + header_len_dcch + header_len_dtch )> 0) {
@@ -3829,7 +3830,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    eNB_UE_stats->UE_timing_offset/4,
 	    next_ue);
 #endif
- 	      
+	      
 	// cycle through SDUs and place in dlsch_buffer
 	memcpy(&eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0][offset],dlsch_buffer,sdu_length_total);
 	// memcpy(&eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
