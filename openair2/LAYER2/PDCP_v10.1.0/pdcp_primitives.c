@@ -104,9 +104,6 @@ BOOL pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer(unsigned char
   sequence_number >>= 8;
   pdu_buffer[0] = sequence_number & 0xFF;
 
-  printf("buffer[0] = %x\n", pdu_buffer[0]);
-  printf("buffer[1] = %x\n", pdu_buffer[1]);
-
   /*
    * Fill Data or Control field
    */

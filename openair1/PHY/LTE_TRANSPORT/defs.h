@@ -1,9 +1,42 @@
-/* file: defs.h
-   purpose: data structures and function prototypes for LTE_TRANSPORT procedures (TX/RX)
-   author: raymond.knopp@eurecom.fr, florian.kaltenberger@eurecom.fr, oscar.tonelli@yahoo.it
-   date: 21.10.2009 
-*/
+/*******************************************************************************
 
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file PHY/LTE_TRANSPORT/defs.h
+* \brief data structures for PDSCH/DLSCH/PUSCH/ULSCH physical and transport channel descriptors (TX/RX)
+* \author R. Knopp
+* \date 2011
+* \version 0.1
+* \company Eurecom
+* \email: raymond.knopp@eurecom.fr, florian.kaltenberger@eurecom.fr, oscar.tonelli@yahoo.it
+* \note
+* \warning
+*/
 #ifndef __LTE_TRANSPORT_DEFS__H__
 #define __LTE_TRANSPORT_DEFS__H__
 #include "PHY/defs.h"
@@ -545,9 +578,10 @@ typedef enum {format0,
 	      format1B,
 	      format1C,
 	      format1D,
-	      format1E_2A_M10PRB,
 	      format2_2A_L10PRB,
 	      format2_2A_M10PRB,
+	      format2_2D_L10PRB,
+	      format2_2D_M10PRB,
 	      format2_4A_L10PRB,
 	      format2_4A_M10PRB,
 	      format2A_2A_L10PRB,

@@ -1,3 +1,43 @@
+/*******************************************************************************
+
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file PHY/LTE_TRANSPORT/ulsch_decoding.c
+* \brief Top-level routines for decoding  the ULSCH transport channel from 36.212 V8.6 2009-03
+* \author R. Knopp
+* \date 2011
+* \version 0.1
+* \company Eurecom
+* \email: knopp@eurecom.fr
+* \note
+* \warning
+*/
+
 //#include "defs.h"
 
 #include "PHY/defs.h"
@@ -135,7 +175,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 			     u8 Nbundled) {
 
 
-  s16 *ulsch_llr = phy_vars_eNB->lte_eNB_ulsch_vars[UE_id]->llr;
+  s16 *ulsch_llr = phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->llr;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
   LTE_eNB_ULSCH_t *ulsch = phy_vars_eNB->ulsch_eNB[UE_id];
   u8 harq_pid;
@@ -484,18 +524,18 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 	else if (ytag2[q+(Q_m*((r*Cmux)+j))] == PUSCH_x) {
 	  c = 0;
 #ifdef DEBUG_ULSCH_DECODING
-	  msg("ulsch_decoding.c: PUSCH_x in row %d, col %d: llr %d\n",r,j,ulsch_llr[i]);
+	  //	  msg("ulsch_decoding.c: PUSCH_x in row %d, col %d: llr %d\n",r,j,ulsch_llr[i]);
 #endif
 	}
 	c_prev = c;
 #ifdef DEBUG_ULSCH_DECODING
-	msg("llr[%d] = %d (c %d, ytag2 %d) ==> ",i,ulsch_llr[i],c,ytag2[q+(Q_m*((r*Cmux)+j))]);
+	//	msg("llr[%d] = %d (c %d, ytag2 %d) ==> ",i,ulsch_llr[i],c,ytag2[q+(Q_m*((r*Cmux)+j))]);
 #endif
 	// note flipped here for reverse polarity in 3GPP bit mapping
 	y[q+(Q_m*((r*Cmux)+j))] = (c==0) ? -ulsch_llr[i] : ulsch_llr[i];
 	i++;
 #ifdef DEBUG_ULSCH_DECODING
-	msg("%d\n",y[q+(Q_m*((r*Cmux)+j))]);
+	//	msg("%d\n",y[q+(Q_m*((r*Cmux)+j))]);
 #endif
       }
 
@@ -633,7 +673,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 	g = q+(Q_m*iprime);
 	ulsch->e[g] = y[q+(Q_m*((r*Cmux)+j))];
 #ifdef DEBUG_ULSCH_DECODING	
-	msg("ulsch_decoding.c: e %d, r %d, j %d, y[%d] %d\n",g,r,j,q+(Q_m*((r*Cmux) + j)),y[q+(Q_m*((r*Cmux)+j))]);
+	//	msg("ulsch_decoding.c: e %d, r %d, j %d, y[%d] %d\n",g,r,j,q+(Q_m*((r*Cmux) + j)),y[q+(Q_m*((r*Cmux)+j))]);
 #endif
       }
     }
