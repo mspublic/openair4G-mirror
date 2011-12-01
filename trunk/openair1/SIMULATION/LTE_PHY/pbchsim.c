@@ -18,8 +18,6 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "LAYER2/MAC/vars.h"
 
-#include "OCG_vars.h"
-
 #define BW 5.0
 
 
@@ -79,9 +77,22 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
+		  &PHY_vars_UE->lte_ue_common_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars_SI,
+		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
+		  PHY_vars_UE->lte_ue_pbch_vars,
+		  PHY_vars_UE->lte_ue_pdcch_vars,
+		  PHY_vars_UE,0);
 
-  phy_init_lte_eNB(PHY_vars_eNb,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNb->lte_frame_parms,
+		   &PHY_vars_eNb->lte_eNB_common_vars,
+		   PHY_vars_eNb->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNb,
+		   0,
+		   0);
 
   memcpy((void*)&PHY_vars_eNb1->lte_frame_parms,(void*)&PHY_vars_eNb->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
   PHY_vars_eNb1->lte_frame_parms.nushift=1;
@@ -91,9 +102,23 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_eNb2->lte_frame_parms.nushift=2;
   PHY_vars_eNb2->lte_frame_parms.Nid_cell=3;
 
-  phy_init_lte_eNB(PHY_vars_eNb1,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNb1->lte_frame_parms,
+		   &PHY_vars_eNb1->lte_eNB_common_vars,
+		   PHY_vars_eNb1->lte_eNB_ulsch_vars,
+                   0,
+		   PHY_vars_eNb1,
+		   0,
+		   0);
  
-  phy_init_lte_eNB(PHY_vars_eNb2,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNb2->lte_frame_parms,
+		   &PHY_vars_eNb2->lte_eNB_common_vars,
+		   PHY_vars_eNb2->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNb2,
+		   0,
+		   0);
+ 
+
 
   phy_init_lte_top(lte_frame_parms);
 
@@ -899,7 +924,7 @@ int main(int argc, char **argv) {
 	
 	//sync_pos = sync_pos_slot;
 	
-	//	msg("eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
+	msg("eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
 	  
 	if (((sync_pos - sync_pos_slot) >=0 ) && 
 	    ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - PHY_vars_eNb->lte_frame_parms.samples_per_tti)) ) {

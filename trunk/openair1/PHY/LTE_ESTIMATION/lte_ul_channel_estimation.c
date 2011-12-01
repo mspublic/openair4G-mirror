@@ -23,12 +23,12 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 			      u8 cooperation_flag) {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
-  LTE_eNB_PUSCH *eNB_pusch_vars = phy_vars_eNB->lte_eNB_pusch_vars[UE_id];
-  s32 **ul_ch_estimates=eNB_pusch_vars->drs_ch_estimates[eNB_id];
-  s32 **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time[eNB_id];
-  s32 **ul_ch_estimates_0=  eNB_pusch_vars->drs_ch_estimates_0[eNB_id];
-  s32 **ul_ch_estimates_1=  eNB_pusch_vars->drs_ch_estimates_1[eNB_id];
-  s32 **rxdataF_ext=  eNB_pusch_vars->rxdataF_ext[eNB_id];
+  LTE_eNB_ULSCH *eNB_ulsch_vars = phy_vars_eNB->lte_eNB_ulsch_vars[UE_id];
+  s32 **ul_ch_estimates=eNB_ulsch_vars->drs_ch_estimates[eNB_id];
+  s32 **ul_ch_estimates_time=  eNB_ulsch_vars->drs_ch_estimates_time[eNB_id];
+  s32 **ul_ch_estimates_0=  eNB_ulsch_vars->drs_ch_estimates_0[eNB_id];
+  s32 **ul_ch_estimates_1=  eNB_ulsch_vars->drs_ch_estimates_1[eNB_id];
+  s32 **rxdataF_ext=  eNB_ulsch_vars->rxdataF_ext[eNB_id];
   u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
 
   u16 N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;

@@ -83,9 +83,23 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
+		  &PHY_vars_UE->lte_ue_common_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars_SI,
+		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
+		  PHY_vars_UE->lte_ue_pbch_vars,
+		  PHY_vars_UE->lte_ue_pdcch_vars,
+		  PHY_vars_UE,0);
 
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNB->lte_frame_parms,
+		   &PHY_vars_eNB->lte_eNB_common_vars,
+		   PHY_vars_eNB->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNB,
+		   0,
+		   0);
+
 
   memcpy((void*)&PHY_vars_eNB1->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
   PHY_vars_eNB1->lte_frame_parms.nushift=1;
@@ -95,9 +109,21 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_eNB2->lte_frame_parms.nushift=2;
   PHY_vars_eNB2->lte_frame_parms.Nid_cell=3;
 
-  phy_init_lte_eNB(PHY_vars_eNB1,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNB1->lte_frame_parms,
+		   &PHY_vars_eNB1->lte_eNB_common_vars,
+		   PHY_vars_eNB1->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNB1,
+		   0,
+		   0);
 
-  phy_init_lte_eNB(PHY_vars_eNB2,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNB2->lte_frame_parms,
+		   &PHY_vars_eNB2->lte_eNB_common_vars,
+		   PHY_vars_eNB2->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNB2,
+		   0,
+		   0);
 
   phy_init_lte_top(lte_frame_parms);
 
@@ -127,7 +153,10 @@ int main(int argc, char **argv) {
 #endif
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double iqim=0.0;
+  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+  double aoa=.03,ricean_factor=0.0000005,Td=.8,iqim=0.0;
+  u8 channel_length,nb_taps=8;
+  struct complex **ch;
   int subframe_offset;
   u8 subframe=0;
 
@@ -159,7 +188,7 @@ int main(int argc, char **argv) {
   u16 n_rnti=0x1234;
   u8 osf=1,N_RB_DL=25;
 
-  SCM_t channel_model=Rayleigh1_anticorr;
+  SCM_t channel_model=custom;
 
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
@@ -169,6 +198,7 @@ int main(int argc, char **argv) {
   u8 harq_pid;
 
   u8 num_phich_interf = 0;
+  channel_length = (int) 11+2*BW*Td;
 
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
@@ -182,7 +212,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hapg:d:c:i:j:n:s:x:y:z:L:M:N:I:F:R:S:P:")) != -1) {
+  while ((c = getopt (argc, argv, "har:pg:d:c:i:j:n:s:t:x:y:z:L:M:N:I:F:R:S:P:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -239,8 +269,18 @@ int main(int argc, char **argv) {
       case 's':
 	snr0 = atoi(optarg);
 	break;
+      case 't':
+	Td= atof(optarg);
+	break;
       case 'p':
 	extended_prefix_flag=1;
+	break;
+      case 'r':
+	ricean_factor = pow(10,-.1*atof(optarg));
+	if (ricean_factor>1) {
+	  printf("Ricean factor must be between 0 and 1\n");
+	  exit(-1);
+	}
 	break;
       case 'x':
 	transmission_mode=atoi(optarg);
@@ -511,14 +551,37 @@ int main(int argc, char **argv) {
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
 	 frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
 
-  msg("[SIM] Using SCM/101\n");
-  eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
-				PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				channel_model,
-				BW,
-				0,
-				0,
-				0);
+  if (channel_model==custom) {
+    msg("[SIM] Using custom channel model\n");
+
+    eNB2UE = new_channel_desc(n_tx,
+			      n_rx,
+			      nb_taps,
+			      channel_length,
+			      amps,
+			      NULL,
+			      NULL,
+			      Td,
+			      BW,
+			      ricean_factor,
+			      aoa,
+			      0,
+			      0,
+			      0,
+			      0,
+			      1);
+  }
+  else {
+    msg("[SIM] Using SCM/101\n");
+    eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
+				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+				  channel_model,
+				  BW,
+				  0,
+				  0,
+				  0);
+
+  }
   for (i=0;i<2;i++) {
 
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -532,7 +595,9 @@ int main(int argc, char **argv) {
   }
 
   
-
+  ch = (struct complex**) malloc(4 * sizeof(struct complex*));
+  for (i = 0; i<4; i++)
+    ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
   PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(3,0);
   PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(3,0);

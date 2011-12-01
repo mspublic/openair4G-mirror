@@ -35,7 +35,7 @@ extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 //extern PHY_LINKS *PHY_links;
 
 extern short *twiddle_fft,*twiddle_ifft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
-extern unsigned short rev[1024],rev_times4[4096],rev_half[512],rev1024[1024],rev256[256],rev512[512],rev2048[2048],rev4096[4096];
+extern unsigned short rev[1024],rev_times4[4096],rev_half[512];
 
 #ifdef OPENAIR_LTE
 extern short primary_synch0[144];

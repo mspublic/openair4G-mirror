@@ -1,43 +1,13 @@
-/*******************************************************************************
-
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2011 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
-/*! \file sched_lte_fw2011.c
-* \brief RTAI scheduler for LTE UE/eNB procedures (CBMIMO1 2011 FPGA firmware)
-* \author R. Knopp, M. Guillaud, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
-* \note
-* \warning
-*/ 
+ 
 /*
+ // \author R. Knopp, M. Guillaud, F. Kaltenberger
+ // \date 02.06.2004   (initial WIDENS version)
+ // updated 04.04.2006 (migration to 2.6.x kernels)
+ // updated 01.06.2006 (updates by M. Guillaud for MIMO sounder, new HW tracking mechanism)
+ // updated 15.01.2007 (RX/TX FIFO debug support, RK)
+ // updated 21.05.2007 (structural changes,GET Frame fifo support, RK)
+ // Created LTE version 02.10.2009
+ // updated to new firmware autum 2011
  *  @{ 
  */
 

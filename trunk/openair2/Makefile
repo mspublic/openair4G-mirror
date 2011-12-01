@@ -109,6 +109,11 @@ remove_emul:
 
 
 
+modules_install_platon:
+	cp arch/platon/device_driver/openair_rf.ko /lib/modules/$(KERNEL_NAME)/openair/
+	depmod -aq
+
+#need to generate symbolic link to linux kernel
 nasmesh_address_fix.ko:
 	(cd NAS/DRIVER/MESH && $(MAKE) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)	
 
@@ -135,6 +140,50 @@ bypass_phy:
 rb_tool:
 	(cd NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
 
+
+# By default, we set 'updatefirmware' option of make to be void
+# (if the user specify option updatefirmware=1, this will take precedence
+# over the default value)
+updatefirmware=0
+install_cbmimo1_softmodem:
+	make fifos
+	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem.ko updatefirmware=1 ; \
+    else \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem.ko ; \
+    fi
+	insmod mac/openair_wireless3g4free/openair_w3g4free.ko	
+install_cbmimo1_softmodem_emos:
+	make fifos
+	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem_emos.ko updatefirmware=1 ; \
+    else \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem_emos.ko ; \
+    fi
+
+install_cbmimo1_dlc_nodeb:
+	make devs
+	make fifos
+	(cd mac/openair_widens ; ./launch_script_clusterhead)
+	make install_cbmimo1_softmodem
+
+install_cbmimo1_dlc_ue:
+	make devs
+	make fifos
+	(cd mac/openair_widens ; ./launch_script_node 5)
+	make install_cbmimo1_softmodem
+
+remove_cbmimo1_dlc:
+	(cd mac/openair_widens ; rmmod test_dlc_mod ; rmmod dlc_mod ; rmmod ipcs_mod)
+
+remove_cbmimo1:
+	rmmod openair_w3g4free
+	rmmod openair_rf	
+remove_cbmimo1_emos:
+	rmmod openair_rf
+
+install_platon:
+	insmod arch/platon/device_driver/openair_rf.ko
 
 fifos:
 	@for i in `seq 0 64`;\

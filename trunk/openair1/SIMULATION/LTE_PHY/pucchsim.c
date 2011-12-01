@@ -18,8 +18,6 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "LAYER2/MAC/vars.h"
 
-#include "OCG_vars.h"
-
 #define BW 5.0
 
 int current_dlsch_cqi; //FIXME! 
@@ -74,10 +72,24 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
 
+  phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
+		  &PHY_vars_UE->lte_ue_common_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars_SI,
+		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
+		  PHY_vars_UE->lte_ue_pbch_vars,
+		  PHY_vars_UE->lte_ue_pdcch_vars,
+		  PHY_vars_UE,0);
 
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
+  phy_init_lte_eNB(&PHY_vars_eNB->lte_frame_parms,
+		   &PHY_vars_eNB->lte_eNB_common_vars,
+		   PHY_vars_eNB->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNB,
+		   0,
+		   0);
 
   phy_init_lte_top(lte_frame_parms);
 
