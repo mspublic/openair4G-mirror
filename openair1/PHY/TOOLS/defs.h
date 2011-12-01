@@ -303,6 +303,18 @@ void ifft3072(s16 *sigF,s16 *sig);
 
 void ifft24576(s16 *sigF,s16 *sig);
 
+void fft1536(s16 *sigF,s16 *sig);
+
+void fft6144(s16 *sigF,s16 *sig);
+
+void fft12288(s16 *sigF,s16 *sig);
+
+void fft18432(s16 *sigF,s16 *sig);
+
+void fft3072(s16 *sigF,s16 *sig);
+
+void fft24576(s16 *sigF,s16 *sig);
+
 
 /*!\fn int rotate_cpx_vector(short *x,short *alpha,short *y,unsigned int N,unsigned short output_shift, unsigned char format)
 This function performs componentwise multiplication of a vector with a complex scalar.
