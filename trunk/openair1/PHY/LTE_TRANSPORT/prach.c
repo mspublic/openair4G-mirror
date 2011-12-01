@@ -27,7 +27,7 @@
 
 *******************************************************************************/
 
-/*! \file PHY/LTE_TRANSPORT/phich.c
+/*! \file PHY/LTE_TRANSPORT/prach.c
 * \brief Top-level routines for generating and decoding the PRACH physical channel V8.6 2009-03
 * \author R. Knopp
 * \date 2011

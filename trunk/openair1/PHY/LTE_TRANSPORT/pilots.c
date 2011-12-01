@@ -27,7 +27,7 @@
 
 *******************************************************************************/
 
-/*! \file PHY/LTE_TRANSPORT/pcfich.c
+/*! \file PHY/LTE_TRANSPORT/pilots.c
 * \brief Top-level routines for generating DL cell-specific reference signals V8.6 2009-03
 * \author R. Knopp, F. Kaltenberger
 * \date 2011
