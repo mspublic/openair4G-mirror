@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_C
 //-----------------------------------------------------------------------------
@@ -12,7 +40,7 @@
 #include "LAYER2/MAC/extern.h"
 
 #include "rlc_um_very_simple_test.h"
-#define RLC_UM_TEST_TRAFFIC
+//#define RLC_UM_TEST_TRAFFIC
 
 //#define DEBUG_RLC_UM_DATA_REQUEST
 //#define DEBUG_RLC_UM_MAC_DATA_REQUEST
@@ -188,6 +216,10 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
 //-----------------------------------------------------------------------------
   struct mac_status_resp status_resp;
 
+  status_resp.buffer_occupancy_in_pdus    = 0;
+  status_resp.buffer_occupancy_in_bytes   = 0;
+  status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
+
   if (rlcP) {
 
 #ifdef RLC_UM_TEST_TRAFFIC
@@ -301,7 +333,7 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_size = ((struct rlc_um_data_req *) (sduP->data))->data_size;
     rlc->buffer_occupancy += ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_size;
     rlc->nb_sdu += 1;
-    ((struct rlc_um_tx_sdu_management *) (sduP->data))->first_byte = &sduP->data[sizeof (struct rlc_um_data_req_alloc)];
+    ((struct rlc_um_tx_sdu_management *) (sduP->data))->first_byte = (u8_t*)&sduP->data[sizeof (struct rlc_um_data_req_alloc)];
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_remaining_size = ((struct rlc_um_tx_sdu_management *)
                                                                               (sduP->data))->sdu_size;
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_segmented_size = 0;

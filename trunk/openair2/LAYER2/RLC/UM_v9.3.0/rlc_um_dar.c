@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_DAR_C
 #include "rtos_header.h"
@@ -12,6 +40,65 @@
 
 #define DEBUG_RLC_UM_RX_DECODE
 //#define DEBUG_RLC_UM_RX
+#define DEBUG_DISPLAY_NVIDIA
+//-----------------------------------------------------------------------------
+signed int rlc_um_get_pdu_infos(rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP)
+//-----------------------------------------------------------------------------
+{
+    memset(pdu_infoP, 0, sizeof (rlc_um_pdu_info_t));
+
+    s16_t          sum_li = 0;
+    pdu_infoP->num_li = 0;
+
+
+    pdu_infoP->fi  = (headerP->b1 >> 3) & 0x03;
+    pdu_infoP->e   = (headerP->b1 >> 2) & 0x01;
+    pdu_infoP->sn  = headerP->b2 +  (((u16_t)(headerP->b1 & 0x03)) << 8);
+
+    pdu_infoP->header_size  = 2;
+
+    pdu_infoP->payload = &headerP->data[0];
+
+    if (pdu_infoP->e) {
+        rlc_am_e_li_t      *e_li;
+        unsigned int li_length_in_bytes  = 1;
+        unsigned int li_to_read          = 1;
+
+        e_li = (rlc_am_e_li_t*)(headerP->data);
+
+        while (li_to_read)  {
+            li_length_in_bytes = li_length_in_bytes ^ 3;
+            if (li_length_in_bytes  == 2) {
+                pdu_infoP->li_list[pdu_infoP->num_li] = ((u16_t)(e_li->b1 << 4)) & 0x07F0;
+                pdu_infoP->li_list[pdu_infoP->num_li] |= (((u8_t)(e_li->b2 >> 4)) & 0x000F);
+                li_to_read = e_li->b1 & 0x80;
+                pdu_infoP->header_size  += 2;
+            } else {
+                pdu_infoP->li_list[pdu_infoP->num_li] = ((u16_t)(e_li->b2 << 8)) & 0x0700;
+                pdu_infoP->li_list[pdu_infoP->num_li] |=  e_li->b3;
+                li_to_read = e_li->b2 & 0x08;
+                e_li++;
+                pdu_infoP->header_size  += 1;
+            }
+            sum_li += pdu_infoP->li_list[pdu_infoP->num_li];
+            pdu_infoP->num_li = pdu_infoP->num_li + 1;
+            if (pdu_infoP->num_li > RLC_AM_MAX_SDU_IN_PDU) {
+                msg("[FRAME %05d][RLC_UM][MOD XX][RB XX][GET PDU INFO]  SN %04d TOO MANY LIs ", mac_xface->frame, pdu_infoP->sn);
+                return -2;
+            }
+        }
+        if (li_length_in_bytes  == 2) {
+            pdu_infoP->payload = &e_li->b3;
+        } else {
+            pdu_infoP->payload = &e_li->b1;
+        }
+    }
+    pdu_infoP->payload_size = total_sizeP - pdu_infoP->header_size;
+    if (pdu_infoP->payload_size > sum_li) {
+        pdu_infoP->hidden_size = pdu_infoP->payload_size - sum_li;
+    }
+    return 0;
+}
 //-----------------------------------------------------------------------------
 int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP) {
 //-----------------------------------------------------------------------------
@@ -463,9 +550,57 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
     // -else:
     //      -place the received UMD PDU in the reception buffer.
 
+#ifdef DEBUG_DISPLAY_NVIDIA
+    rlc_um_pdu_info_t pdu_info;
+    char direction;
+    int i;
+    int g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds; // to be set in logging facilities
+    u8* first_byte = &pduP->b1;
+#endif
     unsigned int sn_tmp;
     signed int sn = ((pduP->b1 & 0x00000003) << 8) + pduP->b2;
     signed int in_window = rlc_um_in_window(rlcP, rlcP->vr_uh - rlcP->um_window_size, sn, rlcP->vr_ur);
+
+    #ifdef DEBUG_DISPLAY_NVIDIA
+    i =  rlc_um_get_pdu_infos(pduP, tb_sizeP, &pdu_info);    msg("\n==================================================================================================================\n");
+    //if (rlcP->module_id )
+    direction = 'U';
+    if (rlcP->is_data_plane) {
+        msg("   %d %02d:%02d:%02d.%d <----D-----  %cL DRB%d  LC%d  U1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
+    } else {
+        msg("%d %02d:%02d:%02d.%d <----D-----  %cL SRB%d  LC%d  U1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
+    }
+    if (pdu_info.e) {
+        msg("L");
+    }
+    if (pdu_info.fi < 3) {
+        msg("F");
+    }
+    msg("      SN%d\n",pdu_info.sn);
+    msg("==================================================================================================================\n");
+    msg("Number of PDU: 1, total size: %d bytes\n\n", pdu_info.payload_size + pdu_info.header_size);
+    msg("#%d %02d:%02d:%02d.%d: PDU  1 of   1,  %cL  LC%d, AM\n\n", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id);
+    msg("    Data UM (%d bytes):\n", pdu_info.payload_size + pdu_info.header_size);
+    msg("      ");
+    for (i = 0; i < pdu_info.header_size; i++) {
+        msg("%02X ", first_byte[i]);
+    }
+    msg("\n\n");
+    msg("      %02X %02X: SN = %04d\t\t, FI=%c%c, E=%s\n", first_byte[0], first_byte[1], pdu_info.sn, (pdu_info.fi & 0x02) ? ']' : '[', (pdu_info.fi & 0x01) ? '[' : ']', (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
+    if (pdu_info.e) {
+        unsigned int offset = 2;
+
+        for (i = offset; i < pdu_info.header_size; i++) {
+            if ((i % 2) == 0) {
+                msg("      %02X %1X : LI = %04d bytes\t\t\t, E=%s\n", first_byte[i], first_byte[i] >> 4,  pdu_info.li_list[i-offset],  (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
+            } else {
+                msg("       %1X %02X: LI = %04d bytes\t\t\t, E=%s\n", first_byte[i] >> 4, first_byte[i],  pdu_info.li_list[i-offset],  (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
+            }
+        }
+    }
+    msg("      Data filtered (%d bytes)\n", pdu_info.hidden_size);
+    #endif
+
 
     if ((in_window == 1) || (in_window == 0)){
 #ifdef DEBUG_RLC_UM_RX
