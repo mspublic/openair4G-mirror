@@ -77,7 +77,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-  (*frame_parms)->nb_antennas_rx     = 2;
+  (*frame_parms)->nb_antennas_rx     = 1;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
   (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 

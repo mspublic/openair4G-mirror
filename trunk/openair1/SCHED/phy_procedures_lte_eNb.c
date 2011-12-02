@@ -175,7 +175,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 	((DLSCH_ptr->harq_processes[*harq_pid]->round > 0)))
       *round = DLSCH_ptr->harq_processes[*harq_pid]->round;
     else if ((subframe_m4==5) || (subframe_m4==6)) {
-      *harq_pid = DLSCH_ptr->harq_ids[subframe_m4];
+      *harq_pid = 0;//DLSCH_ptr->harq_ids[subframe_m4];//Ankit
       *round    = DLSCH_ptr->harq_processes[*harq_pid]->round;
     }
     else {
@@ -183,7 +183,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
       for (i=0;i<DLSCH_ptr->Mdlharq;i++) {
 	if (DLSCH_ptr->harq_processes[i]!=NULL) {
 	  if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
-	    *harq_pid = i;
+	    *harq_pid = 0;//i; //(Ankit)
 	    *round = 0;
 	    return(0);
 	  }

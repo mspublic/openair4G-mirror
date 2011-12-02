@@ -88,6 +88,10 @@ endif
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
+ifdef TRAFFIC_TM5
+CFLAGS += -DRLC_UM_TEST_TRAFFIC=1 -DFULL_BUFFER=1
+endif
+
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc

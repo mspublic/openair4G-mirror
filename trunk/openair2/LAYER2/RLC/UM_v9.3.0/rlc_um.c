@@ -223,7 +223,12 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
   if (rlcP) {
 
 #ifdef RLC_UM_TEST_TRAFFIC
-    //if(mac_xface->frame >50){
+    
+    // if(((rlc_um_entity_t *) rlcP)->nb_sdu <32)
+    // rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
+    
+     
+    //if(mac_xface->frame > 50){
       if ((mac_xface->frame % 200) == 0) {
 	rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
       }
