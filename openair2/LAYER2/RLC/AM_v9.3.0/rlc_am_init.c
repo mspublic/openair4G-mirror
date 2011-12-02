@@ -1,6 +1,34 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 #define RLC_AM_MODULE
 #define RLC_AM_INIT_C
-#ifdef USER_MODE 
+#ifdef USER_MODE
 #include <string.h>
 #endif
 //-----------------------------------------------------------------------------
@@ -22,7 +50,7 @@ void rlc_am_init(rlc_am_entity_t *rlcP)
 
     rlcP->input_sdus_alloc         = get_free_mem_block(RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
     rlcP->input_sdus               = (rlc_am_tx_sdu_management_t*)((rlcP->input_sdus_alloc)->data);
-    rlcP->pdu_retrans_buffer_alloc = get_free_mem_block(RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*sizeof(rlc_am_tx_data_pdu_management_t));
+    rlcP->pdu_retrans_buffer_alloc = get_free_mem_block((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t));
     rlcP->pdu_retrans_buffer       = (rlc_am_tx_data_pdu_management_t*)((rlcP->pdu_retrans_buffer_alloc)->data);
 	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] input_sdus[] = %p  element size=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
 	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] pdu_retrans_buffer[] = %p element size=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));

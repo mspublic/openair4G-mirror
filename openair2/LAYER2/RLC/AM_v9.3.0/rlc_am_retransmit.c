@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 #define RLC_AM_MODULE
 #define RLC_AM_RETRANSMIT_C
 //-----------------------------------------------------------------------------
@@ -213,7 +241,7 @@ mem_block_t* rlc_am_retransmit_get_copy (rlc_am_entity_t *rlcP, u16_t snP)
         memcpy(mb_copy->data, mb_original->data, size);
 
         rlc_am_pdu_sn_10_t *pdu                         = (rlc_am_pdu_sn_10_t*) (&mb_copy->data[sizeof(struct mac_tb_req)]);
-        ((struct mac_tb_req*)(mb_copy->data))->data_ptr = pdu;
+        ((struct mac_tb_req*)(mb_copy->data))->data_ptr = (u8_t*)pdu;
 
         pdu_mngt->flags.retransmit = 0;
 
@@ -279,10 +307,10 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
         rlc_am_pdu_sn_10_t*    pdu_sub_segment = (rlc_am_pdu_sn_10_t*) (&mb_sub_segment->data[sizeof(struct mac_tb_req)]);
         rlc_am_pdu_info_t      pdu_info;
         int                    max_copy_payload_size;
-        int                    test_max_copy_payload_size;
+        //LG avoid WARNING int                    test_max_copy_payload_size;
         int                    test_pdu_copy_size          = 0;
 
-        ((struct mac_tb_req*)(mb_sub_segment->data))->data_ptr         = &(mb_sub_segment->data[sizeof(struct mac_tb_req)]);
+        ((struct mac_tb_req*)(mb_sub_segment->data))->data_ptr         = (u8_t*)&(mb_sub_segment->data[sizeof(struct mac_tb_req)]);
 
         if (rlc_am_get_data_pdu_infos(pdu_original, rlcP->pdu_retrans_buffer[snP].header_and_payload_size, &pdu_info) >= 0) {
             int li_index = 0;
@@ -661,7 +689,7 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
     u16_t                sn     = (rlcP->vt_s - 1) & RLC_AM_SN_MASK;
     u16_t                sn_end = (rlcP->vt_a - 1) & RLC_AM_SN_MASK;
     int                  found_pdu = 0;
-    u16_t                found_pdu_sn;
+    u16_t                found_pdu_sn = 0; // avoid warning
     mem_block_t*         pdu;
     rlc_am_pdu_sn_10_t*  pdu_sn_10;
 
