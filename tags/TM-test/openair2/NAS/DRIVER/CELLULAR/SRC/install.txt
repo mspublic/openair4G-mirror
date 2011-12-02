@@ -1,0 +1,8 @@
+
+
+For Linux with 2.6.xx kernel version:
+
+- move addrconf.c.26.xx to /usr/src/linux/net/ipv6/addrconf.c
+- move if_arp.h.26.xx to /usr/src/linux/include/linux/if_arp.h
+
+Contact : michelle.wetterwald@eurecom.fr
