@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 #define RLC_AM_MODULE
 #define RLC_AM_RECEIVER_C
 #include "rtos_header.h"
@@ -11,6 +39,7 @@
 #define TRACE_RLC_AM_RX
 //#define DEBUG_RLC_AM_DISPLAY_TB_DATA
 //#define RLC_AM_GENERATE_ERRORS
+#define DEBUG_DISPLAY_NVIDIA
 //-----------------------------------------------------------------------------
 signed int rlc_am_get_data_pdu_infos(rlc_am_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_am_pdu_info_t* pdu_infoP)
 //-----------------------------------------------------------------------------
@@ -177,6 +206,7 @@ rlc_am_receive_routing (rlc_am_entity_t *rlcP, struct mac_data_ind data_indP)
     u8_t               *first_byte;
     u16_t               tb_size_in_bytes;
 
+
     while ((tb = list_remove_head (&data_indP.data))) {
 #ifdef DEBUG_RLC_STATS
         rlcP->rx_pdus += 1;
@@ -251,10 +281,64 @@ void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, mem_block_t* tbP, u
   //         - place the received RLC data PDU in the reception buffer;
   //         - if some byte segments of the AMD PDU contained in the RLC data PDU have been received before:
   //             - discard the duplicate byte segments.
+  #ifdef DEBUG_DISPLAY_NVIDIA
+  char direction;
+  int i;
+  int g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds; // to be set in logging facilities
+  #endif
   rlc_am_pdu_info_t* pdu_info = &((rlc_am_rx_pdu_management_t*)(tbP->data))->pdu_info;
   rlc_am_pdu_sn_10_t* rlc_am_pdu_sn_10 = (rlc_am_pdu_sn_10_t*)first_byteP;
 
   if (rlc_am_get_data_pdu_infos(rlc_am_pdu_sn_10, tb_size_in_bytesP, pdu_info) >= 0) {
+
+#ifdef DEBUG_DISPLAY_NVIDIA
+      msg("\n==================================================================================================================\n");
+      //if (rlcP->module_id )
+      direction = 'U';
+      if (rlcP->is_data_plane) {
+          msg("   %d %02d:%02d:%02d.%d <----D-----  %cL DRB%d  LC%d  A1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
+      } else {
+          msg("   %d %02d:%02d:%02d.%d <----D-----  %cL SRB%d  LC%d  A1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
+      }
+      if (pdu_info->e) {
+          msg("L");
+      }
+      if (pdu_info->p) {
+          msg("P");
+      }
+      if (pdu_info->fi < 3) {
+          msg("F");
+      }
+      msg("      SN%d\n",pdu_info->sn);
+      msg("==================================================================================================================\n");
+      msg("Number of PDU: 1, total size: %d bytes\n\n", pdu_info->payload_size + pdu_info->header_size);
+      msg("#%d %02d:%02d:%02d.%d: PDU  1 of   1,  %cL  LC%d, AM\n\n", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, 999);
+      msg("    Data AM (%d bytes):\n", pdu_info->payload_size + pdu_info->header_size);
+      msg("      ");
+      for (i = 0; i < pdu_info->header_size; i++) {
+          msg("%02X ", first_byteP[i]);
+      }
+      msg("\n\n");
+      msg("      %02X %02X: SN = %04d\t\t, Poll=%d, FI=%c%c, E=%s\n", first_byteP[0], first_byteP[1], pdu_info->sn, pdu_info->p, (pdu_info->fi & 0x02) ? ']' : '[', (pdu_info->fi & 0x01) ? '[' : ']', (pdu_info->e == 1) ? "LI(1)" : "DATA(0)");
+      if (pdu_info->e) {
+          unsigned int offset;
+          if (pdu_info->rf) {
+              offset = 4;
+          } else {
+              offset = 2;
+          }
+          for (i = offset; i < pdu_info->header_size; i++) {
+              if ((i % 2) == 0) {
+                  msg("      %02X %1X : LI = %04d bytes\t\t\t, E=%s\n", first_byteP[i], first_byteP[i] >> 4,  pdu_info->li_list[i-offset], (pdu_info->e == 1) ? "LI(1)" : "DATA(0)");
+              } else {
+                  msg("       %1X %02X: LI = %04d bytes\t\t\t, E=%s\n", first_byteP[i] >> 4, first_byteP[i],  pdu_info->li_list[i-offset],  (pdu_info->e == 1) ? "LI(1)" : "DATA(0)");
+              }
+          }
+      }
+      msg("      Data filtered (%d bytes)\n", pdu_info->hidden_size);
+#endif
+
+
 #ifdef TRACE_RLC_AM_RX
       rlc_am_display_data_pdu_infos(rlcP, pdu_info);
 #endif

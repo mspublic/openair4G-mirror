@@ -1,14 +1,34 @@
-/***************************************************************************
-                          rlc_am.c  -
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
- ***************************************************************************/
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 #define RLC_AM_MODULE
 #define RLC_AM_C
 //-----------------------------------------------------------------------------
-#include "rtos_header.h"
 #include "platform_types.h"
 #include "platform_constants.h"
 //-----------------------------------------------------------------------------
@@ -314,6 +334,10 @@ rlc_am_mac_status_indication (void *rlcP, u16 tb_sizeP, struct mac_status_ind tx
   struct mac_status_resp  status_resp;
   rlc_am_entity_t *rlc = (rlc_am_entity_t *) rlcP;
 
+  status_resp.buffer_occupancy_in_bytes = 0;
+  status_resp.buffer_occupancy_in_pdus  = 0;
+  status_resp.rlc_info.rlc_protocol_state = rlc->protocol_state;
+
   if (rlc->last_frame_status_indication != mac_xface->frame) {
       rlc_am_check_timer_poll_retransmit(rlc);
       rlc_am_check_timer_reordering(rlc);
@@ -407,7 +431,7 @@ rlc_am_data_req (void *rlcP, mem_block_t * sduP)
     rlc->nb_sdu += 1;
     rlc->nb_sdu_no_segmented += 1;
 
-    rlc->input_sdus[rlc->next_sdu_index].first_byte = &sduP->data[data_offset];
+    rlc->input_sdus[rlc->next_sdu_index].first_byte = (u8_t*)(&sduP->data[data_offset]);
     rlc->input_sdus[rlc->next_sdu_index].sdu_remaining_size = rlc->input_sdus[rlc->next_sdu_index].sdu_size;
     rlc->input_sdus[rlc->next_sdu_index].sdu_segmented_size = 0;
     rlc->input_sdus[rlc->next_sdu_index].sdu_creation_time = mac_xface->frame;

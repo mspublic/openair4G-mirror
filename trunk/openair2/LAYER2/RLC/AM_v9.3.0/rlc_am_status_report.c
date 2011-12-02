@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 #define RLC_AM_MODULE
 #define RLC_AM_STATUS_REPORT_C
 //-----------------------------------------------------------------------------
@@ -408,8 +436,8 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
               } else {
                   control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
 #ifdef TRACE_STATUS_CREATION
-                  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d NO MORE BITS FOR SENDING NACK %04d -> ABORT AND SET FINAL ACK %\n",
-                       mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, control_pdu_info.ack_sn);
+                  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d NO MORE BITS FOR SENDING NACK %04d -> ABORT AND SET FINAL ACK %04d\n",
+                       mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, previous_sn_cursor, control_pdu_info.ack_sn);
 #endif
                   goto end_push_nack;
               }
@@ -534,7 +562,7 @@ end_push_nack:
        tb = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size);
   memset(tb->data, 0, sizeof(struct mac_tb_req) + pdu_size);
   //estimation only ((struct mac_tb_req*)(tb->data))->tb_size_in_bits  = pdu_size << 3;
-  ((struct mac_tb_req*)(tb->data))->data_ptr         = &(tb->data[sizeof(struct mac_tb_req)]);
+  ((struct mac_tb_req*)(tb->data))->data_ptr         = (u8_t*)&(tb->data[sizeof(struct mac_tb_req)]);
 
   // warning reuse of pdu_size
   pdu_size = rlc_am_write_status_pdu((rlc_am_pdu_sn_10_t*)(((struct mac_tb_req*)(tb->data))->data_ptr), &control_pdu_info);
