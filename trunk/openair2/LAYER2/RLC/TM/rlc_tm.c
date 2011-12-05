@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 /***************************************************************************
                           rlc_tm.c  -
                              -------------------
@@ -6,7 +34,6 @@
   EMAIL   : Lionel.Gauthier@eurecom.fr
 
  ***************************************************************************/
-#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc_tm_entity.h"
@@ -18,17 +45,7 @@
 #include "list.h"
 #include "mem_block.h"
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RLC_TM_DATA_REQUEST
-#    define   PRINT_RLC_TM_DATA_REQUEST msg
-#else
-#    define   PRINT_RLC_TM_DATA_REQUEST //
-#endif
 
-#ifdef DEBUG_RLC_TM_DISCARD_SDU
-#    define   PRINT_RLC_TM_DISCARD_SDU msg
-#else
-#    define   PRINT_RLC_TM_DISCARD_SDU  //
-#endif
 //-----------------------------------------------------------------------------
 void           *rlc_tm_tx (void *argP);
 void            rlc_tm_rx_no_segment (void *argP, struct mac_data_ind data_indP);
@@ -181,7 +198,7 @@ rlc_tm_rx_segment (void *argP, struct mac_data_ind data_indP)
                 rlc->output_sdu_size_to_write = 0;
                 rlc->last_bit_position_reassemblied = 0;
               }
-              debug = &rlc->output_sdu_in_construction->data[0];
+              debug = (u8_t*)&rlc->output_sdu_in_construction->data[0];
 
               while ((tb = list_remove_head (&data_indP.data))) {
 
@@ -322,8 +339,9 @@ rlc_tm_data_req (void *rlcP, mem_block_t *sduP)
   u8_t              discard_go_on;
 
 
-  PRINT_RLC_TM_DATA_REQUEST ("[RLC_TM %p] RLC_TM_DATA_REQ size %d Bytes, BO %ld , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n", rlc, ((struct rlc_um_data_req *) (sduP->data))->data_size,
-                             rlc->buffer_occupancy, rlc->nb_sdu, rlc->current_sdu_index, rlc->next_sdu_index);
+  #ifdef DEBUG_RLC_TM_DATA_REQUEST
+  msg ("[RLC_TM %p] RLC_TM_DATA_REQ size %d Bytes, BO %ld , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n", rlc, ((struct rlc_um_data_req *) (sduP->data))->data_size, rlc->buffer_occupancy, rlc->nb_sdu, rlc->current_sdu_index, rlc->next_sdu_index);
+  #endif
 
   // From 3GPP TS 25.322 V4.2.0
   // If SDU discard has not been configured for a transparent mode RLC entity, the Sender shall upon reception
@@ -334,10 +352,11 @@ rlc_tm_data_req (void *rlcP, mem_block_t *sduP)
     discard_go_on = 1;
     while ((rlc->input_sdus[rlc->current_sdu_index]) && discard_go_on) {
       if (rlc->last_tti >= ((struct rlc_tm_tx_sdu_management *) (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_creation_time) {
-        PRINT_RLC_TM_DISCARD_SDU ("[RLC_TM %p] SDU DISCARDED NOT SUBMITTED IN THIS TTI %ld ms > ", rlc, rlc->last_tti);
-        PRINT_RLC_TM_DISCARD_SDU ("%ld ms ", ((struct rlc_tm_tx_sdu_management *) (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_creation_time);
-        PRINT_RLC_TM_DISCARD_SDU ("BO %d, NB SDU %d\n", rlc->buffer_occupancy, rlc->nb_sdu);
-
+        #ifdef DEBUG_RLC_TM_DISCARD_SDU
+        msg ("[RLC_TM %p] SDU DISCARDED NOT SUBMITTED IN THIS TTI %ld ms > ", rlc, rlc->last_tti);
+        msg ("%ld ms ", ((struct rlc_tm_tx_sdu_management *) (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_creation_time);
+        msg ("BO %d, NB SDU %d\n", rlc->buffer_occupancy, rlc->nb_sdu);
+        #endif
 
         rlc->nb_sdu -= 1;
         if (!(rlc->segmentation_indication & RLC_TM_SEGMENTATION_ALLOWED)) {
@@ -360,7 +379,7 @@ rlc_tm_data_req (void *rlcP, mem_block_t *sduP)
       rlc->buffer_occupancy += (((struct rlc_tm_tx_sdu_management *) (sduP->data))->sdu_size >> 3);
     }
     rlc->nb_sdu += 1;
-    ((struct rlc_tm_tx_sdu_management *) (sduP->data))->first_byte = &sduP->data[sizeof (struct rlc_tm_data_req_alloc)];
+    ((struct rlc_tm_tx_sdu_management *) (sduP->data))->first_byte = (u8*)&sduP->data[sizeof (struct rlc_tm_data_req_alloc)];
     ((struct rlc_tm_tx_sdu_management *) (sduP->data))->sdu_segmented_size = 0;
     ((struct rlc_tm_tx_sdu_management *) (sduP->data))->sdu_creation_time = *rlc->frame_tick_milliseconds;
     rlc->input_sdus[rlc->next_sdu_index] = sduP;
