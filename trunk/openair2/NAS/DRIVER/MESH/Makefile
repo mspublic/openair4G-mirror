@@ -6,12 +6,17 @@ NAS_UPDIR	:= $(shell /bin/pwd)
 
 KERNEL_MAIN_TYPE=$(shell echo `uname -r | cut -d. -f-2  | tr "." "_"`)
 export KERNEL_MAIN_TYPE
-IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
-ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
+
+ifeq ($(IS_LINUX), 1)
 SUBVERSION=$(shell echo `grep '^SUBLEVEL =' /usr/src/linux/Makefile | sed -e 's, ,,g' | sed -e 's/SUBLEVEL=//'`)
 else
-SUBVERSION=$(shell echo `grep '^SUBLEVEL =' /usr/src/linux-headers-$(shell echo `uname -r`)/Makefile | sed -e 's, ,,g' | sed -e 's/SUBLEVEL=//'`)
+ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
+SUBVERSION=$(shell echo `grep '^SUBLEVEL =' /usr/src/linux-`uname -r`/Makefile | sed -e 's, ,,g' | sed -e 's/SUBLEVEL=//'`)
+else
+SUBVERSION=$(shell echo `grep '^SUBLEVEL =' /usr/src/linux-headers`uname -r`/Makefile | sed -e 's, ,,g' | sed -e 's/SUBLEVEL=//'`)
 endif
+endif
+
 IS_KERNEL_SUBVERSION_GREATER_THAN_20=$(shell if [ $(SUBVERSION) -ge 20 ] ; then echo true ; fi)
 KERNEL_ARCH=$(shell echo `uname -m`)
 #SET_REGPARM=$(shell if [ $(KERNEL_ARCH) = 'i686' -a $(SUBVERSION) -ge 20 ]; then echo true ; fi)
@@ -78,11 +83,12 @@ endif
 #nasmesh.ko: 
 #	make  V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
 print:
-	@echo $(IS_KERNEL_SUBVERSION_GREATER_THAN_22)
-	@echo $(GT2622)
-	@echo $(IS_KERNEL_SUBVERSION_GREATER_THAN_29)
-	@echo $(GT2629)
-	@echo $(IS_KERNEL_SUBVERSION_GREATER_THAN_30)
-	@echo $(GT2630)
+	@echo subversion : $(SUBVERSION)
+	@echo linux kernel ge 22: $(IS_KERNEL_SUBVERSION_GREATER_THAN_22)
+	@echo flag gt2622: $(GT2622)
+	@echo  linux kernel ge 29: $(IS_KERNEL_SUBVERSION_GREATER_THAN_29)
+	@echo flag gt2629: $(GT2629)
+	@echo  linux kernel ge 30: $(IS_KERNEL_SUBVERSION_GREATER_THAN_30)
+	@echo flag gt2630: $(GT2630)
 #clean:
 #	make -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules

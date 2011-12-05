@@ -104,6 +104,11 @@ void logInit (void) {
     g_log->log_component[RLC].flag = LOG_MED;
     g_log->log_component[RLC].interval =  1;
 
+    g_log->log_component[PDCP].name = "PDCP";
+    g_log->log_component[PDCP].level = LOG_INFO;
+    g_log->log_component[PDCP].flag = LOG_MED;
+    g_log->log_component[PDCP].interval =  1;
+
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
     g_log->log_component[EMU].flag =  LOG_MED; 

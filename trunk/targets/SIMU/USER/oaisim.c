@@ -666,7 +666,7 @@ main (int argc, char **argv)
       break;
     case 'X':
       temp=atoi(optarg);
-      if(temp==0){
+      if(temp==0){ 
       port=CHANNEL_PORT; Channel_Flag=1; Process_Flag=0; wgt=0; }
       else if(temp==1){
       port=eNB_PORT; wgt=0;}
@@ -700,7 +700,7 @@ main (int argc, char **argv)
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
   abstraction_flag = 1;
-  ethernet_flag = 0;
+  ethernet_flag = 1;
 #endif
 
   if (set_sinr == 0)
