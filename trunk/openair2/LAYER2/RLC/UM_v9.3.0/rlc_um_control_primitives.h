@@ -64,11 +64,50 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #            endif
 #        endif
 
+/*! \fn void config_req_rlc_um (rlc_um_entity_t *rlcP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
+* \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission. After this configuration the RLC UM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state.
+* \param[in]  rlcP                      RLC UM protocol instance pointer.
+* \param[in]  module_idP                Virtualized module identifier.
+* \param[in]  config_umP                Configuration parameters for RLC UM instance.
+* \param[in]  rb_idP                    Radio bearer identifier.
+* \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
+*/
 public_rlc_um_control_primitives(   void config_req_rlc_um (rlc_um_entity_t *rlcP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP);)
+
+/*! \fn void rlc_um_init (rlc_um_entity_t *rlcP)
+* \brief    Initialize a RLC UM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC UM protocol instance will be in RLC_NULL_STATE state.
+* \param[in]  rlcP                      RLC UM protocol instance pointer.
+*/
 protected_rlc_um_control_primitives(void rlc_um_init (rlc_um_entity_t *rlcP);)
+
+/*! \fn void rlc_um_reset_state_variables (rlc_um_entity_t *rlcP)
+* \brief    Reset protocol variables and state variables to initial values.
+* \param[in]  rlcP                      RLC UM protocol instance pointer.
+*/
 protected_rlc_um_control_primitives(void rlc_um_reset_state_variables (rlc_um_entity_t *rlcP);)
+
+/*! \fn void rlc_um_cleanup(rlc_um_entity_t *rlcP)
+* \brief    Free all allocated memory (lists and buffers) previously allocated by this RLC UM instance.
+* \param[in]  rlcP                      RLC UM protocol instance pointer.
+*/
 public_rlc_um_control_primitives(   void rlc_um_cleanup(rlc_um_entity_t *rlcP);)
+
+/*! \fn void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t timer_reorderingP, u32_t sn_field_lengthP, u32_t is_mXchP)
+* \brief    Configure RLC UM protocol parameters.
+* \param[in]  rlcP                      RLC UM protocol instance pointer.
+* \param[in]  timer_reorderingP         t-Reordering timer initialization value, units in frame.
+* \param[in]  sn_field_lengthP          Length of the sequence number, 5 or 10 bits.
+* \param[in]  is_mXchP                  Is the radio bearer for MCCH, MTCH.
+*/
 protected_rlc_um_control_primitives(void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t timer_reorderingP, u32_t sn_field_lengthP, u32_t is_mXchP);)
+
+/*! \fn void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
+* \brief    Set debug informations for a RLC UM protocol instance, these informations are only for trace purpose.
+* \param[in]  rlcP                      RLC UM protocol instance pointer.
+* \param[in]  module_idP                Virtualized module identifier.
+* \param[in]  rb_idP                    Radio bearer identifier.
+* \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
+*/
 protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP);)
 
 #    endif
