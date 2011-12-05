@@ -1,11 +1,46 @@
-/*
-                                 rlc.h
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
+/*******************************************************************************
 
- ***************************************************************************/
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+/*! \file rlc.h
+* \brief This file, and only this file must be included by external code that interact with RLC layer.
+* \author GAUTHIER Lionel
+* \date 2010-2011
+* \version
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
+* \note
+* \bug
+* \warning
+*/
+/** @defgroup _rlc_impl_ RLC Layer Reference Implementation
+* @ingroup _ref_implementation_
+* @{
+*/
 #ifndef __RLC_H__
 #    define __RLC_H__
 
@@ -117,8 +152,8 @@ typedef struct {
 //   PRIVATE INTERNALS OF RLC
 //-----------------------------------------------------------------------------
 #define  RLC_MAX_NUM_INSTANCES_RLC_AM  MAX_RB/2
-#define  RLC_MAX_NUM_INSTANCES_RLC_UM  MAX_RB
-#define  RLC_MAX_NUM_INSTANCES_RLC_TM  MAX_RB
+#define  RLC_MAX_NUM_INSTANCES_RLC_UM  (2*MAX_RB)/3
+#define  RLC_MAX_NUM_INSTANCES_RLC_TM  MAX_RB/3
 
 
 
@@ -155,15 +190,36 @@ public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_
                 void (*rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t) );)
 
 //-----------------------------------------------------------------------------
-//   PUBLIC INTERFACE WITH MPLS
-//-----------------------------------------------------------------------------
-//public_rlc_mpls(void mpls_rlc_data_req    (module_id_t, rb_id_t, sdu_size_t, mem_block_t*);)
-
-//-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH MAC
 //-----------------------------------------------------------------------------
+/*! \fn tbs_size_t mac_rlc_data_req     (module_id_t module_idP, chan_id_t rb_idP, char* bufferP)
+* \brief    Interface with MAC layer, map data request to the RLC corresponding to the radio bearer.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in-out] bufferP       Memory area to fill with the bytes requested by MAC.
+* \return     A status about the processing, OK or error code.
+*/
 public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, chan_id_t, char*);)
+
+/*! \fn void mac_rlc_data_ind     (module_id_t module_idP, chan_id_t rb_idP, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
+* \brief    Interface with MAC layer, deserialize the transport blocks sent by MAC, then map data indication to the RLC instance corresponding to the radio bearer identifier.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  bufferP          Memory area containing the transport blocks sent by MAC.
+* \param[in]  tb_sizeP         Size of a transport block in bits.
+* \param[in]  num_tbP          Number of transport blocks.
+* \param[in]  crcs             Array of CRC decoding.
+* \return     A status about the processing, OK or error code.
+*/
 public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
+
+/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, chan_id_t rb_idP, tb_size_t tb_sizeP)
+* \brief    Interface with MAC layer, request and set the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  tb_sizeP         Size of a transport block set in bytes.
+* \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
+*/
 public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, chan_id_t, tb_size_t );)
 
 //-----------------------------------------------------------------------------
@@ -177,10 +233,71 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, chan_id_
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------
+/*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
+* \brief    Interface with higher layers, map request to the RLC corresponding to the radio bearer.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  muiP             Message Unit identifier.
+* \param[in]  confirmP         Boolean, is confirmation requested.
+* \param[in]  sdu_sizeP        Size of SDU in bytes.
+* \param[in]  sduP             SDU.
+* \return     A status about the processing, OK or error code.
+*/
 public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
+
+/*! \fn void rlc_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP)
+* \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  sdu_sizeP        Size of SDU in bytes.
+* \param[in]  sduP             SDU.
+* \param[in]  is_data_planeP   Boolean, is data radio bearer or not.
+*/
 public_rlc(void            rlc_data_ind     (module_id_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
+
+
+/*! \fn void rlc_data_conf     (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP)
+* \brief    Interface with higher layers, confirm to upper layer the transmission status for a SDU stamped with a MUI, scheduled for transmission.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  muiP             Message Unit identifier.
+* \param[in]  statusP          Status of the transmission (RLC_SDU_CONFIRM_YES, RLC_SDU_CONFIRM_NO).
+* \param[in]  is_data_planeP   Boolean, is data radio bearer or not.
+*/
 public_rlc(void            rlc_data_conf    (module_id_t, rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
 
+
+/*! \fn rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
+                              rb_id_t        rb_idP,
+                              unsigned int* tx_pdcp_sdu,
+                              unsigned int* tx_pdcp_sdu_discarded,
+                              unsigned int* tx_retransmit_pdu_unblock,
+                              unsigned int* tx_retransmit_pdu_by_status,
+                              unsigned int* tx_retransmit_pdu,
+                              unsigned int* tx_data_pdu,
+                              unsigned int* tx_control_pdu,
+                              unsigned int* rx_sdu,
+                              unsigned int* rx_error_pdu,
+                              unsigned int* rx_data_pdu,
+                              unsigned int* rx_data_pdu_out_of_window,
+                              unsigned int* rx_control_pdu)
+
+* \brief    Request RLC statistics of a particular radio bearer.
+* \param[in]  module_idP                   .
+* \param[in]  rb_idP                       .
+* \param[out] tx_pdcp_sdu                  Number of transmitted SDUs coming from upper layers.
+* \param[out] tx_pdcp_sdu_discarded        Number of discarded SDUs coming from upper layers.
+* \param[out] tx_retransmit_pdu_unblock
+* \param[out] tx_retransmit_pdu_by_status  Number of re-transmitted data PDUs due to status reception.
+* \param[out] tx_retransmit_pdu            Number of re-transmitted data PDUs to lower layers.
+* \param[out] tx_data_pdu                  Number of transmitted data PDUs to lower layers.
+* \param[out] tx_control_pdu               Number of transmitted control PDUs to lower layers.
+* \param[out] rx_sdu                       Number of reassemblied SDUs, sent to upper layers.
+* \param[out] rx_error_pdu                 Number of received PDUs from lower layers, marked as containing an error.
+* \param[out] rx_data_pdu                  Number of received PDUs from lower layers.
+* \param[out] rx_data_pdu_out_of_window    Number of data PDUs received out of the receive window.
+* \param[out] rx_control_pdu               Number of control PDUs received.
+*/
 
 public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
                                               rb_id_t        rb_idP,
@@ -197,6 +314,9 @@ public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 							  unsigned int* rx_data_pdu_out_of_window,
 							  unsigned int* rx_control_pdu) ;)
 
+/*! \fn int rlc_module_init(void)
+* \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (mem_block_t structures mainly used in RLC module).
+*/
 public_rlc(int rlc_module_init(void);)
 
 

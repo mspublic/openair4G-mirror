@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 /***************************************************************************
                           rlc_tm_segment.c  -
                              -------------------
@@ -15,17 +43,7 @@
 #include "rlc_primitives.h"
 #include "mem_block.h"
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RLC_TM_DISCARD_SDU
-#    define   PRINT_RLC_TM_DISCARD_SDU msg
-#else
-#    define   PRINT_RLC_TM_DISCARD_SDU  //
-#endif
-#ifdef DEBUG_RLC_TM_SEGMENT
-#    define   PRINT_RLC_TM_SEGMENT msg
-#else
-#    define   PRINT_RLC_TM_SEGMENT
-                                //
-#endif
+
 //-----------------------------------------------------------------------------
 void
 rlc_tm_no_segment (struct rlc_tm_entity *rlcP)
@@ -44,9 +62,10 @@ rlc_tm_no_segment (struct rlc_tm_entity *rlcP)
     discard_go_on = 1;
     while ((rlcP->input_sdus[rlcP->current_sdu_index]) && discard_go_on) {
       if ((*rlcP->frame_tick_milliseconds - ((struct rlc_tm_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data))->sdu_creation_time) >= rlcP->timer_discard_init) {
-        PRINT_RLC_TM_DISCARD_SDU ("[RLC_TM %p] SDU DISCARDED  TIMED OUT %ld ms ", rlcP,
-                                  (*rlcP->frame_tick_milliseconds - ((struct rlc_tm_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data))->sdu_creation_time));
-        PRINT_RLC_TM_DISCARD_SDU ("BO %d, NB SDU %d\n", rlcP->buffer_occupancy, rlcP->nb_sdu);
+        #ifdef DEBUG_RLC_TM_DISCARD_SDU
+        msg("[RLC_TM %p] SDU DISCARDED  TIMED OUT %ld ms ", rlcP, (*rlcP->frame_tick_milliseconds - ((struct rlc_tm_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data))->sdu_creation_time));
+        msg("BO %d, NB SDU %d\n", rlcP->buffer_occupancy, rlcP->nb_sdu);
+        #endif
         rlcP->buffer_occupancy -= (((struct rlc_tm_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data))->sdu_size >> 3);
         rlcP->nb_sdu -= 1;
         free_mem_block (rlcP->input_sdus[rlcP->current_sdu_index]);
@@ -70,7 +89,7 @@ rlc_tm_no_segment (struct rlc_tm_entity *rlcP)
     // SHOULD BE OPTIMIZED...SOON
     pdu_mngt = (struct rlc_tm_tx_pdu_management *) (pdu->data);
     memset (pdu->data, 0, sizeof (struct rlc_tm_tx_pdu_management));
-    pdu_mngt->first_byte = &pdu->data[sizeof (struct rlc_tm_tx_data_pdu_struct)];
+    pdu_mngt->first_byte = (u8_t*)&pdu->data[sizeof (struct rlc_tm_tx_data_pdu_struct)];
 
     memcpy (pdu_mngt->first_byte, sdu_mngt->first_byte, ((rlcP->rlc_pdu_size + 7) >> 3));
     ((struct mac_tb_req *) (pdu->data))->rlc = NULL;
@@ -106,9 +125,10 @@ rlc_tm_segment (struct rlc_tm_entity *rlcP)
     discard_go_on = 1;
     while ((rlcP->input_sdus[rlcP->current_sdu_index]) && discard_go_on) {
       if ((*rlcP->frame_tick_milliseconds - ((struct rlc_tm_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data))->sdu_creation_time) >= rlcP->timer_discard_init) {
-        PRINT_RLC_TM_DISCARD_SDU ("[RLC_TM %p] SDU DISCARDED  TIMED OUT %ld ms ", rlcP,
-                                  (*rlcP->frame_tick_milliseconds - ((struct rlc_tm_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data))->sdu_creation_time));
-        PRINT_RLC_TM_DISCARD_SDU ("BO %d, NB SDU %d\n", rlcP->buffer_occupancy, rlcP->nb_sdu);
+        #ifdef DEBUG_RLC_TM_DISCARD_SDU
+        msg("[RLC_TM %p] SDU DISCARDED  TIMED OUT %ld ms ", rlcP,(*rlcP->frame_tick_milliseconds - ((struct rlc_tm_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data))->sdu_creation_time));
+        msg ("BO %d, NB SDU %d\n", rlcP->buffer_occupancy, rlcP->nb_sdu);
+        #endif
         rlcP->nb_sdu -= 1;
         free_mem_block (rlcP->input_sdus[rlcP->current_sdu_index]);
         rlcP->input_sdus[rlcP->current_sdu_index] = NULL;
@@ -131,7 +151,7 @@ rlc_tm_segment (struct rlc_tm_entity *rlcP)
       // SHOULD BE OPTIMIZED...SOON
       pdu_mngt = (struct rlc_tm_tx_pdu_management *) (pdu->data);
       memset (pdu->data, 0, sizeof (struct rlc_tm_tx_pdu_management));
-      pdu_mngt->first_byte = &pdu->data[sizeof (struct rlc_tm_tx_data_pdu_struct)];
+      pdu_mngt->first_byte = (u8_t*)&pdu->data[sizeof (struct rlc_tm_tx_data_pdu_struct)];
 
       memcpy (pdu_mngt->first_byte, &sdu_mngt->first_byte[sdu_mngt->sdu_segmented_size >> 3], ((rlcP->rlc_pdu_size + 7) >> 3));
 

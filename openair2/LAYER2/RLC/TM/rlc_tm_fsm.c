@@ -1,3 +1,31 @@
+/*******************************************************************************
+
+Eurecom OpenAirInterface 2
+Copyright(c) 1999 - 2010 Eurecom
+
+This program is free software; you can redistribute it and/or modify it
+under the terms and conditions of the GNU General Public License,
+version 2, as published by the Free Software Foundation.
+
+This program is distributed in the hope it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full GNU General Public License is included in this distribution in
+the file called "COPYING".
+
+Contact Information
+Openair Admin: openair_admin@eurecom.fr
+Openair Tech : openair_tech@eurecom.fr
+Forums       : http://forums.eurecom.fsr/openairinterface
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
 /***************************************************************************
                           rlc_tm_fsm.c  -
                              -------------------
@@ -5,18 +33,13 @@
   COMPANY : EURECOM
   EMAIL   : Lionel.Gauthier@eurecom.fr
  ***************************************************************************/
-#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc_tm_entity.h"
 #include "rlc_tm_constants.h"
 #include "rlc_def.h"
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RLC_TM_FSM
-#    define   PRINT_RLC_TM_FSM msg
-#else
-#    define   PRINT_RLC_TM_FSM  //
-#endif
+
 //-----------------------------------------------------------------------------
 int
 rlc_tm_fsm_notify_event (struct rlc_tm_entity *rlcP, u8_t eventP)
@@ -30,7 +53,9 @@ rlc_tm_fsm_notify_event (struct rlc_tm_entity *rlcP, u8_t eventP)
       case RLC_NULL_STATE:
         switch (eventP) {
             case RLC_TM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT:
-              PRINT_RLC_TM_FSM ("[RLC_TM %p][FSM] RLC_NULL_STATE -> RLC_DATA_TRANSFER_READY_STATE\n", rlcP);
+              #ifdef DEBUG_RLC_TM_FSM
+              msg ("[RLC_TM %p][FSM] RLC_NULL_STATE -> RLC_DATA_TRANSFER_READY_STATE\n", rlcP);
+              #endif
               rlcP->protocol_state = RLC_DATA_TRANSFER_READY_STATE;
               return 1;
               break;
@@ -46,7 +71,9 @@ rlc_tm_fsm_notify_event (struct rlc_tm_entity *rlcP, u8_t eventP)
       case RLC_DATA_TRANSFER_READY_STATE:
         switch (eventP) {
             case RLC_TM_RECEIVE_CRLC_CONFIG_REQ_ENTER_NULL_STATE_EVENT:
-              PRINT_RLC_TM_FSM ("[RLC_TM %p][FSM] RLC_DATA_TRANSFER_READY_STATE -> RLC_NULL_STATE\n", rlcP);
+              #ifdef DEBUG_RLC_TM_FSM
+              msg ("[RLC_TM %p][FSM] RLC_DATA_TRANSFER_READY_STATE -> RLC_NULL_STATE\n", rlcP);
+              #endif
               rlcP->protocol_state = RLC_NULL_STATE;
               return 1;
               break;
