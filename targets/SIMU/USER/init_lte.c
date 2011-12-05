@@ -159,7 +159,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.nushift;
     }
 
-    phy_init_lte_ue(PHY_vars_UE_g[UE_id],0);
+    phy_init_lte_ue(PHY_vars_UE_g[UE_id],abstraction_flag);
 
     for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
       for (j=0;j<2;j++) {
