@@ -12,12 +12,20 @@
 
 KERNEL_NAME=$(shell uname -r)
 
-IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
-ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
+export IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
+
+export IS_LINUX=$(shell [ -f `/use/src/linux` ] && echo "1"  || echo "0";)
+
+ifeq ($(IS_LINUX), 1)
 LINUX_KERNEL = linux
+else
+ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
+LINUX_KERNEL = linux-`uname -r`
 else
 LINUX_KERNEL = linux-headers-`uname -r`
 endif 
+endif
+
 
 #SUBDIRS_openair_USERRF  =   $(MAIN_RT_DIR) $(CONFIG_DIR)
 
@@ -201,3 +209,4 @@ tgz:
 print:
 	@echo $(IS_KERNEL_OPENAIRINTERFACE)
 	@echo $(LINUX_KERNEL)
+	@echo $(IS_LINUX)
