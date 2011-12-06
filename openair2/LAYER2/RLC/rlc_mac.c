@@ -31,7 +31,7 @@ struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, n
         tb = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_sizeP);
         if (tb != NULL) {
             ((struct mac_tb_ind *) (tb->data))->first_bit = 0;
-            ((struct mac_tb_ind *) (tb->data))->data_ptr = &tb->data[sizeof (mac_rlc_max_rx_header_size_t)];
+            ((struct mac_tb_ind *) (tb->data))->data_ptr = (u8_t*)&tb->data[sizeof (mac_rlc_max_rx_header_size_t)];
             ((struct mac_tb_ind *) (tb->data))->size = tb_sizeP;
             if (crcsP)
 	      ((struct mac_tb_ind *) (tb->data))->error_indication = crcsP[nb_tb_read];
@@ -191,6 +191,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, chan_id_t 
 //-----------------------------------------------------------------------------
   mac_rlc_status_resp_t mac_rlc_status_resp;
   mac_rlc_status_resp.bytes_in_buffer = 0;
+  mac_rlc_status_resp.pdus_in_buffer  = 0;
   if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
       if ((channel_idP >= 0) && (channel_idP < MAX_RAB)) {
           struct mac_status_resp status_resp;
