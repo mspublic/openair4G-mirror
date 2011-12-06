@@ -109,6 +109,11 @@ void logInit (void) {
     g_log->log_component[PDCP].flag = LOG_MED;
     g_log->log_component[PDCP].interval =  1;
 
+    g_log->log_component[RRC].name = "RRC";
+    g_log->log_component[RRC].level = LOG_TRACE;
+    g_log->log_component[RRC].flag = LOG_MED;
+    g_log->log_component[RRC].interval =  1;
+
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
     g_log->log_component[EMU].flag =  LOG_MED; 
@@ -196,58 +201,61 @@ void logRecord( const char *file, const char *func,
   c = &g_log->log_component[comp];
   
   // only log messages which are enabled and are below the global log level and component's level threshold
-  if ((c->level > g_log->level) || (level > c->level)|| (c->flag == LOG_NONE) || 
+   if ((c->level > g_log->level) || (level > c->level)|| (c->flag == LOG_NONE) || 
       (((oai_emulation.info.frame % c->interval) != 0) && (oai_emulation.info.frame > oai_emulation.info.nb_ue_local * 10))) { 
     return;
-  }
-  // adjust syslog level for TRACE messages
-  if (g_log->syslog) {
-    if (g_log->level > LOG_DEBUG) {
-      g_log->level = LOG_DEBUG;
-    }  
-  }
-  
+    }
+   // adjust syslog level for TRACE messages
+   if (g_log->syslog) {
+     if (g_log->level > LOG_DEBUG) { 
+       g_log->level = LOG_DEBUG;
+     }
+   }
+
   va_start(args, format);
   len=vsnprintf(g_buff_info, MAX_LOG_TOTAL, format, args);
   va_end(args);
 
 
-  if ( g_log->flag & FLAG_COLOR )  {
-    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
-	     log_level_highlight_start[g_log->level]);
-    strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
-  }
-  
-  if ( g_log->flag & FLAG_COMP ){
-    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
-	     g_log->log_component[comp].name);
-    strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
-  }
-  
-  if ( g_log->flag & FLAG_LEVEL ){
-    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
-	     g_log->level2string[level]);
-    strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
-  }
+ // Generate log info below the trace level  
+  if (level < LOG_TRACE) {
     
-  if (  g_log->flag & FLAG_FUNCT )  {
-    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s] ",
-	     func);
-    strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
-  }
+    if ( g_log->flag & FLAG_COLOR )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
+		    log_level_highlight_start[g_log->level]);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
+    }
+    
+    if ( g_log->flag & FLAG_COMP ){
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+		    g_log->log_component[comp].name);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
+    }
   
-  if (  g_log->flag & FLAG_FILE_LINE )  {
-    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s:%d]",
-		  file,line);
-    strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
+    if ( g_log->flag & FLAG_LEVEL ){
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+		    g_log->level2string[level]);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
+    }
+    
+    if (  g_log->flag & FLAG_FUNCT )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s] ",
+		    func);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
+    }
+    
+    if (  g_log->flag & FLAG_FILE_LINE )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s:%d]",
+		    file,line);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
+    }
+    
+    if (  g_log->flag & FLAG_COLOR )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s", 
+		    log_level_highlight_end[g_log->level]);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
+    }
   }
-  
-  if (  g_log->flag & FLAG_COLOR )  {
-    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s", 
-	     log_level_highlight_end[g_log->level]);
-    strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
-  }
- 
   strncat(g_buff_infos, g_buff_info, MAX_LOG_TOTAL);
   //  strncat(g_buff_infos, "\n", MAX_LOG_TOTAL);
 
