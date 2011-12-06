@@ -160,32 +160,97 @@ typedef struct {
 protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , rb_id_t , sdu_size_t , char* );)
 protected_rlc(void            (*rlc_rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t );)
 
+/*! \struct  rlc_pointer_t
+* \brief Structure helping finding the right RLC protocol instance in a rlc_t structure.
+*/
 typedef struct rlc_pointer_t {
-    rlc_mode_t rlc_type;
-    int        rlc_index;
+    rlc_mode_t rlc_type;    /*!< \brief Is RLC protocol instance is AM, UM or TM. */
+    int        rlc_index;   /*!< \brief Index of RLC protocol instance in rlc_t/m_rlc_Xm_array[]. */
 } rlc_pointer_t;
 
+/*! \struct  rlc_t
+* \brief Structure to be instanciated to allocate memory for RLC protocol instances.
+*/
 typedef struct rlc_t {
-    rlc_pointer_t        m_rlc_pointer[MAX_RB];
-    rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];
-    rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];
-    struct rlc_tm_entity m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];
+    rlc_pointer_t        m_rlc_pointer[MAX_RB];                            /*!< \brief Link between radio bearer ID and RLC protocol instance. */
+    rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];     /*!< \brief RLC AM protocol instances. */
+    rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];     /*!< \brief RLC UM protocol instances. */
+    struct rlc_tm_entity m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
 }rlc_t;
 
 // RK-LG was protected, public for debug
+/*! \var rlc_t rlc[MAX_MODULES]
+\brief Global var for RLC layer, allocate memory for RLC protocol instances.
+*/
 public_rlc(rlc_t rlc[MAX_MODULES];)
 
+/*! \fn tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP)
+* \brief  Serialize a list of transport blocks coming from RLC in order to be processed by MAC.
+* \param[in]  bufferP                 Memory area where the transport blocks have to be serialized.
+* \param[in]  transport_blocksP       List of transport blocks.
+* \return     The amount of bytes that have been written due to serialization.
+*/
 private_rlc_mac(tbs_size_t            mac_rlc_serialize_tb   (char*, list_t);)
+
+/*! \fn struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcsP)
+* \brief  Serialize a list of transport blocks coming from RLC in order to be processed by MAC.
+* \param[in]  bufferP       Memory area where the transport blocks are serialized.
+* \param[in]  tb_sizeP      Size of transport blocks.
+* \param[in]  num_tbP       Number of transport blocks.
+* \param[in]  crcsP         Array of CRC for each transport block.
+* \return     A mac_data_ind structure containing a list of transport blocks.
+*/
 private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, num_tb_t, crc_t *);)
 
 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
+/*! \fn rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, rb_id_t rb_idP)
+* \brief  Remove a RLC protocol instance from a radio bearer.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \return     A status about the processing, OK or error code.
+*/
 private_rlc_rrc(rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t, rb_id_t );)
+
+/*! \fn rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_mode_t rlc_modeP)
+* \brief  Add a RLC protocol instance to a radio bearer.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  rlc_modeP        Mode of RLC (AM, UM, TM).
+* \return     A status about the processing, OK or error code.
+*/
 private_rlc_rrc(rlc_op_status_t rrc_rlc_add_rlc      (module_id_t, rb_id_t, rlc_mode_t);)
+
+/*! \fn rlc_op_status_t rrc_rlc_config_req (module_id_t module_idP, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP)
+* \brief  Function for RRC to configure a Radio Bearer.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  actionP          Action for this radio bearer (add, modify, remove).
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  rb_typeP         Type of radio bearer (signalling, data).
+* \param[in]  rlc_infoP        RLC configuration parameters issued from Radio Resource Manager.
+* \return     A status about the processing, OK or error code.
+*/
 public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, config_action_t, rb_id_t, rb_type_t, rlc_info_t );)
+
+/*! \fn rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP)
+* \brief  Function for RRC to send a SDU through a Signalling Radio Bearer.
+* \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  rb_idP           Radio bearer identifier.
+* \param[in]  muiP             Message Unit identifier.
+* \param[in]  confirmP         Boolean, is confirmation requested.
+* \param[in]  sdu_sizeP        Size of SDU in bytes.
+* \param[in]  sduP             SDU.
+* \return     A status about the processing, OK or error code.
+*/
 public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
+
+/*! \fn void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP),void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
+* \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
+* \param[in]  rrc_data_indP       Pointer on RRC data indicate function.
+* \param[in]  rrc_data_confP      Pointer on RRC data confirm callback function.
+*/
 public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*),
                 void (*rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t) );)
 
@@ -209,7 +274,6 @@ public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, chan_id_
 * \param[in]  tb_sizeP         Size of a transport block in bits.
 * \param[in]  num_tbP          Number of transport blocks.
 * \param[in]  crcs             Array of CRC decoding.
-* \return     A status about the processing, OK or error code.
 */
 public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
 
