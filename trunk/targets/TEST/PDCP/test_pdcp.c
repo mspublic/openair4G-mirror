@@ -33,7 +33,7 @@ list_t test_pdu_rx_list;
  * This is used by a number of methods to determine how 
  * many times a packet should be generated/a test run
  */
-#define NUMBER_OF_TEST_PACKETS 10
+#define NUMBER_OF_TEST_PACKETS 100
 /*
  * This is determined by the size of Sequence Number 
  * field and used to check sequence number synchronisation
@@ -49,14 +49,15 @@ list_t test_pdu_rx_list;
  *                        And tests RX window code by supplying sequenced RX sequence
  *                        numbers and asking RX window code to validate, without
  *                        generating any packets
- *
+ */
+#define TEST_RX_AND_TX_WINDOW 0
+/*
  * TEST_PDCP_DATA_REQUEST_AND_INDICATION Tests pdcp_data_req() method by repetitively asking it 
  *                                       to create a PDCP PDU out of supplied SDU and parsing 
  *                                       particular fields of relevant PDU lateron
  *                                       Afterwards, those PDUs created by pdcp_data_req() are 
  *                                       passed to pdcp_data_ind()
  */
-#define TEST_RX_AND_TX_WINDOW 0
 #define TEST_PDCP_DATA_REQUEST_AND_INDICATION 1
 
 int main(int argc, char **argv) {
@@ -311,29 +312,81 @@ BOOL test_pdcp_data_ind()
 
     test_sdu = list_remove_head(&test_pdu_rx_list);
 
-    msg("SEQ SIZE = %d\n", pdcp_array[0].seq_num_size);
     if (pdcp_data_ind(0, 0, DUMMY_BUFFER_SIZE, test_sdu, &pdcp_array[0], &test_pdu_indication_list) == FALSE) {
       msg("[TEST] pdcp_data_ind() failed to handle data indication!\n");
     } else {
       msg("[TEST] pdcp_data_ind() succcessfuly handled data indication\n");
     }
+
+    /*
+     * Parse/validate fields of SDU
+     */
+    msg("[TEST] Starting to dissect SDU created by PDCP...\n");
+    /*
+     * Get pdcp_data_ind_header_t added by pdcp_data_ind()
+     */
+    mem_block_t* test_data_ind_header = list_remove_head(&test_pdu_indication_list);
+
+    if (test_data_ind_header == NULL) {
+      msg("[TEST] Data indication header is not valid!\n");
+      return FALSE;
+    } else {
+      pdcp_data_ind_header_t* indication_header = (pdcp_data_ind_header_t*)test_data_ind_header->data;
+
+      /*
+       * Verify that radio bearer ID is correct (0)
+       */
+      if (indication_header->rb_id == 0) {
+        msg("[TEST] Radio bearer ID is correct\n");
+      } else {
+        msg("[TEST] Radio bearer ID is not correct! (expected: 0, parsed: %d)\n", indication_header->rb_id);
+	return FALSE;
+      }
+
+      /*
+       * Verify that SDU size is correct (DUMMY_BUFFER_SIZE)
+       */
+      if (indication_header->data_size == DUMMY_BUFFER_SIZE) {
+        msg("[TEST] SDU size is correct\n");
+      } else {
+        msg("[TEST] SDU size is not correct! (expected: %d, parsed: %d)\n", DUMMY_BUFFER_SIZE, indication_header->data_size);
+	return FALSE;
+      }
+
+      /*
+       * XXX Verify `indication_header->inst` when you know what it is
+       */
+    }
+
+    /*
+     * Verify that serialised data is the stream we've supplied
+     */
+    msg("sizeof() = %d\n", sizeof(pdcp_data_ind_header_t));
+    if (memcmp(dummy_buffer, (unsigned char*)(test_data_ind_header->data + sizeof(pdcp_data_ind_header_t)), DUMMY_BUFFER_SIZE) == 0) {
+      msg("[TEST] Data payload of pdcp_data_ind_header_t matches with the stream we sent\n");
+    } else {
+      msg("[TEST] Data payload of pdcp_data_ind_header_t does not match with the stream we sent!\n");
+
+      /*
+       * Print octets of both streams
+       * XXX This could be a method in test_util.h
+       */
+      unsigned char index = 0;
+      msg("[TEST] We sent: ");
+      for (index = 0; index < DUMMY_BUFFER_SIZE; ++index) {
+        msg("%x ", dummy_buffer[index]);
+      }
+      msg("\nWe received: ");
+      for (index = 0; index < DUMMY_BUFFER_SIZE; ++index) {
+        msg("%x ", ((unsigned char*)(test_data_ind_header->data + sizeof(pdcp_data_ind_header_t)))[index]);
+      }
+      msg("\n");
+
+      return FALSE;
+    }
   }
 
   return TRUE;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
