@@ -81,14 +81,17 @@ typedef struct pdcp_t {
   // here ROHC variables for header compression/decompression
 } pdcp_t;
 
-#define PDCP_UNIT_TEST
+#undef PDCP_UNIT_TEST
 
 #ifdef PDCP_UNIT_TEST
-public_pdcp(BOOL pdcp_data_req       (unsigned char* sdu_buffer, sdu_size_t sdu_buffer_size, pdcp_t* pdcp_entity, unsigned char* pdcp_test_pdu_buffer, unsigned int* pdcp_test_pdu_buffer_size);)
+public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+                                unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+                                mem_block_t* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
 #else
-public_pdcp(void pdcp_data_req       (module_id_t, rb_id_t, sdu_size_t, char*);)
+public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer);)
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, mem_block_t* sdu_buffer);)
 #endif
-public_pdcp(void pdcp_data_ind       (module_id_t, rb_id_t, sdu_size_t, mem_block_t*);)
 public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
 public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
 
@@ -139,4 +142,5 @@ protected_pdcp(char                   pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];
 protected_pdcp(sdu_size_t             pdcp_input_index_header;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_size_read;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_remaining_size_to_read;)
+
 #endif
