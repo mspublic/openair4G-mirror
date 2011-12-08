@@ -352,7 +352,7 @@ BOOL test_pdcp_data_ind()
         msg("[TEST] SDU size is not correct! (expected: %d, parsed: %d)\n", DUMMY_BUFFER_SIZE, indication_header->data_size);
 	return FALSE;
       }
-
+ 
       /*
        * XXX Verify `indication_header->inst` when you know what it is
        */
@@ -361,8 +361,7 @@ BOOL test_pdcp_data_ind()
     /*
      * Verify that serialised data is the stream we've supplied
      */
-    msg("sizeof() = %d\n", sizeof(pdcp_data_ind_header_t));
-    if (memcmp(dummy_buffer, (unsigned char*)(test_data_ind_header->data + sizeof(pdcp_data_ind_header_t)), DUMMY_BUFFER_SIZE) == 0) {
+    if (memcmp(dummy_buffer, (unsigned char*)&(test_data_ind_header->data[sizeof(pdcp_data_ind_header_t)]), DUMMY_BUFFER_SIZE) == 0) {
       msg("[TEST] Data payload of pdcp_data_ind_header_t matches with the stream we sent\n");
     } else {
       msg("[TEST] Data payload of pdcp_data_ind_header_t does not match with the stream we sent!\n");
@@ -371,16 +370,8 @@ BOOL test_pdcp_data_ind()
        * Print octets of both streams
        * XXX This could be a method in test_util.h
        */
-      unsigned char index = 0;
-      msg("[TEST] We sent: ");
-      for (index = 0; index < DUMMY_BUFFER_SIZE; ++index) {
-        msg("%x ", dummy_buffer[index]);
-      }
-      msg("\nWe received: ");
-      for (index = 0; index < DUMMY_BUFFER_SIZE; ++index) {
-        msg("%x ", ((unsigned char*)(test_data_ind_header->data + sizeof(pdcp_data_ind_header_t)))[index]);
-      }
-      msg("\n");
+      print_byte_stream("[TEST] TXed data: ", dummy_buffer, DUMMY_BUFFER_SIZE);
+      print_byte_stream("[TEST] RXed data: ", (unsigned char*)(test_data_ind_header->data + sizeof(pdcp_data_ind_header_t)), DUMMY_BUFFER_SIZE);
 
       return FALSE;
     }
