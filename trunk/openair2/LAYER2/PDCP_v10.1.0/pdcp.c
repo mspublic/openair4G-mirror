@@ -167,7 +167,7 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
   mem_block_t *new_sdu = NULL;
   
   if (sdu_buffer_size == 0) {
-    LOG_W(PDCP, "SDU buffer size is zero!");
+    LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
     return FALSE;
   }
 
