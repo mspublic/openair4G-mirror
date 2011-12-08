@@ -65,18 +65,15 @@ BOOL pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
 
 BOOL pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
 {
-  assert(pdcp_entity->seq_num_size == 12);
   if (pdcp_entity == NULL)
     return FALSE;
 
-  assert(pdcp_entity->seq_num_size == 12);
   // Check if the size of SN is valid (see 3GPP TS 36.323 v10.1.0 item 6.3.2)
   if (pdcp_entity->seq_num_size != 5 && pdcp_entity->seq_num_size != 7 && pdcp_entity->seq_num_size != 12) {
     LOG_W(PDCP, "Incoming SN size is invalid! (Expected: {5 | 7 | 12}, Received: %d\n", pdcp_entity->seq_num_size); 
     return FALSE;
   }
 
-  assert(pdcp_entity->seq_num_size == 12);
   return TRUE;
 }
 
@@ -95,7 +92,7 @@ u16 pdcp_calculate_max_seq_num_for_given_size(u8 seq_num_size)
 {
   u16 max_seq_num = 1;
 
-  max_seq_num >>= seq_num_size;
+  max_seq_num <<= seq_num_size;
 
   return max_seq_num - 1;
 }
@@ -124,11 +121,9 @@ u16 pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
 
 BOOL pdcp_advance_rx_window(pdcp_t* pdcp_entity)
 {
-  assert(pdcp_entity->seq_num_size == 12);
   if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE)
     return FALSE;
 
-  assert(pdcp_entity->seq_num_size == 12);
   /*
    * Update sequence numbering state and Hyper Frame Number if SN has already reached
    * its max value (see 5.1 PDCP Data Transfer Procedures)
@@ -137,10 +132,8 @@ BOOL pdcp_advance_rx_window(pdcp_t* pdcp_entity)
   if (pdcp_entity->next_pdcp_rx_sn == pdcp_calculate_max_seq_num_for_given_size(pdcp_entity->seq_num_size)) {
     pdcp_entity->next_pdcp_rx_sn = 0;
     pdcp_entity->rx_hfn++;
-  assert(pdcp_entity->seq_num_size == 12);
   } else {
     pdcp_entity->next_pdcp_rx_sn++;
-  assert(pdcp_entity->seq_num_size == 12);
   }
 
   return TRUE;
@@ -155,11 +148,9 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
 {
   LOG_D(PDCP, "Incoming RX Seq # is %04d\n", seq_num);
 
-  assert(pdcp_entity->seq_num_size == 12);
   if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE || pdcp_is_seq_num_valid(seq_num, pdcp_entity->seq_num_size) == FALSE)
     return FALSE;
 
-  assert(pdcp_entity->seq_num_size == 12);
   /*
    * XXX Since we do not implement reordering window yet we expect to receive 
    * exactly the next SN from lower layer. When reordering window is implemented 
