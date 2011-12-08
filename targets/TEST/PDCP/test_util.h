@@ -22,7 +22,9 @@ void print_binary_representation(unsigned char* message, unsigned char byte)
   unsigned char index = 0;
   unsigned char mask = 0x80;
 
-  printf("%s", message);
+  if (message != NULL)
+    printf("%s", message);
+
   for (index = 0; index < 8; ++index) {
     if (byte & mask) printf("1");
     else printf("0");
@@ -30,6 +32,23 @@ void print_binary_representation(unsigned char* message, unsigned char byte)
     mask /= 2;
   }
   printf("\n");
+}
+
+/*
+ * Prints octets of a byte array in hexadecimal representation
+ */
+void print_byte_stream(char* message, unsigned char* buffer, unsigned long size)
+{
+  if (buffer == NULL)
+    return;
+
+  unsigned long index = 0lu;
+
+  printf("%s", message);
+  for (index = 0; index < size; ++index) {
+    msg("%x ", buffer[index]);
+  }
+  msg("\n");
 }
 
 /*
