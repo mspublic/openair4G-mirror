@@ -93,7 +93,11 @@ BOOL pdcp_is_seq_num_valid(u16 seq_num, u8 seq_num_size)
 
 u16 pdcp_calculate_max_seq_num_for_given_size(u8 seq_num_size)
 {
-  return (u16) pow(2.0, seq_num_size) - 1;
+  u16 max_seq_num = 1;
+
+  max_seq_num >>= seq_num_size;
+
+  return max_seq_num - 1;
 }
 
 u16 pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
