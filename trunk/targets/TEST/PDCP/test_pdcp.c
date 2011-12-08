@@ -33,7 +33,7 @@ list_t test_pdu_rx_list;
  * This is used by a number of methods to determine how 
  * many times a packet should be generated/a test run
  */
-#define NUMBER_OF_TEST_PACKETS 100
+#define NUMBER_OF_TEST_PACKETS 10000
 /*
  * This is determined by the size of Sequence Number 
  * field and used to check sequence number synchronisation
@@ -315,6 +315,7 @@ BOOL test_pdcp_data_ind()
 
     if (pdcp_data_ind(0, 0, test_sdu_size, test_sdu, &pdcp_array[0], &test_pdu_indication_list) == FALSE) {
       msg("[TEST] pdcp_data_ind() failed to handle data indication!\n");
+      return FALSE;
     } else {
       msg("[TEST] pdcp_data_ind() succcessfuly handled data indication\n");
     }
