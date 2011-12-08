@@ -60,6 +60,12 @@ list_t test_pdu_rx_list;
  */
 #define TEST_PDCP_DATA_REQUEST_AND_INDICATION 1
 
+/*
+ * Buffer content used for testing purposes
+ */
+#define DUMMY_BUFFER ((unsigned char*)"123456789")
+#define DUMMY_BUFFER_SIZE 10
+
 int main(int argc, char **argv) {
   unsigned char index = 0;
   unsigned char test_result = 0;
@@ -177,10 +183,8 @@ BOOL test_rx_window()
   return TRUE;
 }
 
-#define DUMMY_BUFFER_SIZE 10
 BOOL test_pdcp_data_req()
 {
-  unsigned char dummy_buffer[DUMMY_BUFFER_SIZE] = "123456789";
   unsigned char* pdcp_test_pdu_buffer = NULL;
   unsigned char pdcp_test_pdu_buffer_size = DUMMY_BUFFER_SIZE + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
   unsigned int index = 0;
@@ -208,7 +212,7 @@ BOOL test_pdcp_data_req()
     /*
      * Ask PDCP to create a PDU with given buffer and enqueue it to `test_pdu_tx_list`
      */
-    if (pdcp_data_req(0, 0, 10, dummy_buffer, &pdcp_array[0], &test_pdu_tx_list) == TRUE) {
+    if (pdcp_data_req(0, 0, 10, DUMMY_BUFFER, &pdcp_array[0], &test_pdu_tx_list) == TRUE) {
       msg("[TEST] Starting to dissect PDU created by PDCP...\n");
 
       /*
@@ -276,8 +280,6 @@ BOOL test_pdcp_data_req()
 
 BOOL test_pdcp_data_ind()
 {
-  unsigned char dummy_buffer[DUMMY_BUFFER_SIZE] = "123456789";
-  unsigned int index = 0;
   /*
    * This is the list that pdcp_data_ind() takes to put pdcp_data_ind_header_t 
    * packets after it receives/validates PDUs and preprends them with pdcp_data_ind_header_t
@@ -286,6 +288,12 @@ BOOL test_pdcp_data_ind()
    */
   list_t test_pdu_indication_list;
   mem_block_t* test_sdu = NULL;
+  /*
+   * pdcp_data_req() method prepended PDU header in front of DUMMY_BUFFER so 
+   * the size should be 12 bytes
+   */
+  unsigned char test_sdu_size = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + DUMMY_BUFFER_SIZE;
+  unsigned int index = 0;
 
   /*
    * Initialize linked list
@@ -293,26 +301,19 @@ BOOL test_pdcp_data_ind()
   list_init(&test_pdu_indication_list, NULL);
 
   /*
-   * Allocate and initialize test data buffer
-   */
-  test_sdu = get_free_mem_block(DUMMY_BUFFER_SIZE);
-  if (test_sdu == NULL) {
-    return FALSE;
-  } else {
-    memcpy(test_sdu->data, dummy_buffer, DUMMY_BUFFER_SIZE);
-  }
-
-  /*
    * Ask PDCP to handle a number of data indications
    */
   msg("There are %d PDUs in the list\n", test_pdu_rx_list.nb_elements);
 
+  /*
+   * Traverse PDU list and pass each one of them to pdcp_data_ind()
+   */
   while (list_get_head(&test_pdu_rx_list) != NULL) {
     msg("\n\nAsking PDCP to receive %d. SDU...\n", 1 + index++);
 
     test_sdu = list_remove_head(&test_pdu_rx_list);
 
-    if (pdcp_data_ind(0, 0, DUMMY_BUFFER_SIZE, test_sdu, &pdcp_array[0], &test_pdu_indication_list) == FALSE) {
+    if (pdcp_data_ind(0, 0, test_sdu_size, test_sdu, &pdcp_array[0], &test_pdu_indication_list) == FALSE) {
       msg("[TEST] pdcp_data_ind() failed to handle data indication!\n");
     } else {
       msg("[TEST] pdcp_data_ind() succcessfuly handled data indication\n");
@@ -346,7 +347,7 @@ BOOL test_pdcp_data_ind()
       /*
        * Verify that SDU size is correct (DUMMY_BUFFER_SIZE)
        */
-      if (indication_header->data_size == DUMMY_BUFFER_SIZE) {
+      if (indication_header->data_size == DUMMY_BUFFER_SIZE + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) {
         msg("[TEST] SDU size is correct\n");
       } else {
         msg("[TEST] SDU size is not correct! (expected: %d, parsed: %d)\n", DUMMY_BUFFER_SIZE, indication_header->data_size);
@@ -359,10 +360,19 @@ BOOL test_pdcp_data_ind()
     }
 
     /*
-     * Verify that serialised data is the stream we've supplied
+     * XXX PDCP PDU header should also be checked here
      */
-    if (memcmp(dummy_buffer, (unsigned char*)&(test_data_ind_header->data[sizeof(pdcp_data_ind_header_t)]), DUMMY_BUFFER_SIZE) == 0) {
+
+    /*
+     * Verify that serialised data is the stream we've supplied
+     *
+     * Data comes after `pdcp_data_ind_header_t` and `pdcp_user_plane_data_pdu_header_with_long_sn`
+     */
+    unsigned char data_index = sizeof(pdcp_data_ind_header_t) + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+
+    if (memcmp(DUMMY_BUFFER, (unsigned char*)&(test_data_ind_header->data[data_index]), DUMMY_BUFFER_SIZE) == 0) {
       msg("[TEST] Data payload of pdcp_data_ind_header_t matches with the stream we sent\n");
+
     } else {
       msg("[TEST] Data payload of pdcp_data_ind_header_t does not match with the stream we sent!\n");
 
@@ -370,8 +380,8 @@ BOOL test_pdcp_data_ind()
        * Print octets of both streams
        * XXX This could be a method in test_util.h
        */
-      print_byte_stream("[TEST] TXed data: ", dummy_buffer, DUMMY_BUFFER_SIZE);
-      print_byte_stream("[TEST] RXed data: ", (unsigned char*)(test_data_ind_header->data + sizeof(pdcp_data_ind_header_t)), DUMMY_BUFFER_SIZE);
+      print_byte_stream("[TEST] TXed data: ", DUMMY_BUFFER, DUMMY_BUFFER_SIZE);
+      print_byte_stream("[TEST] RXed data: ", (unsigned char*)&(test_data_ind_header->data[data_index]), DUMMY_BUFFER_SIZE);
 
       return FALSE;
     }
