@@ -4409,7 +4409,8 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 				     u8 first_symbol_flag,
 				     unsigned char mod_order,
 				     unsigned short nb_rb,
-				     unsigned char output_shift) {
+				     unsigned char output_shift,
+				     unsigned char dl_power_off) {
   
   unsigned short rb,Nre;
   __m128i *dl_ch128_0,*dl_ch128_1,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
@@ -4433,11 +4434,21 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 
   //printf("comp prec: symbol %d, pilots %d\n",symbol, pilots);
 
-  if (mod_order == 4)
-    QAM_amp128 = _mm_set1_epi16(QAM16_n1);
-  else if (mod_order == 6) {
-    QAM_amp128  = _mm_set1_epi16(QAM64_n1);
-    QAM_amp128b = _mm_set1_epi16(QAM64_n2);
+  if (dl_power_off==1) {
+    if (mod_order == 4)
+      QAM_amp128 = _mm_set1_epi16(QAM16_n1);
+    else if (mod_order == 6) {
+      QAM_amp128  = _mm_set1_epi16(QAM64_n1);
+      QAM_amp128b = _mm_set1_epi16(QAM64_n2);
+    }
+  }
+  else {
+    if (mod_order == 4)
+      QAM_amp128 = _mm_set1_epi16(QAM16_TM5_n1);
+    else if (mod_order == 6) {
+      QAM_amp128  = _mm_set1_epi16(QAM64_TM5_n1);
+      QAM_amp128b = _mm_set1_epi16(QAM64_TM5_n2);
+    }
   }
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
@@ -4846,7 +4857,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	(dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
 	(dlsch_ue[0]->dl_power_off==1)) // we are in TM 6
       lte_ue_pdsch_vars[eNB_id]->log2_maxh++;
-    
+
 
     // this version here applies the factor .5 also to the extra terms. however, it does not work so well as the one above
     /* K = Nb_rx         in TM1 
@@ -4937,7 +4948,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				    first_symbol_flag,
 				    get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
 				    nb_rb,
-				    lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+				    lte_ue_pdsch_vars[eNB_id]->log2_maxh,
+				    dlsch_ue[0]->dl_power_off);
     //    printf("Channel compensation for precoding done\n");
 
     
@@ -4980,7 +4992,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				      first_symbol_flag,
 				      i_mod, 
 				      nb_rb,
-				      lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+				      lte_ue_pdsch_vars[eNB_id]->log2_maxh,
+				      dlsch_ue[0]->dl_power_off);
   
 #ifdef DEBUG_PHY
       if (symbol==5) {
@@ -5135,10 +5148,12 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
   sprintf(fname,"dlsch%d_rxF_llr.m",eNB_id);
   sprintf(vname,"dl%d_llr",eNB_id);
   write_output(fname,vname, phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],coded_bits_per_codeword,1,0);
-  /*
-  write_output("dlsch%d_mag1.m","dl%d_mag1",phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,300*nsymb,1,1);
-  write_output("dlsch%d_mag2.m","dl%d_mag2",phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,300*nsymb,1,1);
-  */
+  sprintf(fname,"dlsch%d_mag1.m",eNB_id);
+  sprintf(vname,"dl%d_mag1",eNB_id);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,300*nsymb,1,1);
+  sprintf(fname,"dlsch%d_mag2.m",eNB_id);
+  sprintf(vname,"dl%d_mag2",eNB_id);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,300*nsymb,1,1);
 }
 
 #endif
