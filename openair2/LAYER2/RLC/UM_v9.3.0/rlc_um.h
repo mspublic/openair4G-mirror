@@ -108,7 +108,7 @@ public_rlc_um( void     rlc_um_stat_req     (struct rlc_um_entity *rlcP,
 */
 private_rlc_um(   void     rlc_um_get_pdus (void *rlcP);)
 
-/*! \fn void rlc_um_rx (void *rlc, struct mac_data_ind)
+/*! \fn void rlc_um_rx (void *rlcP, struct mac_data_ind data_indication)
 * \brief    Process the received PDUs from lower layer.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[in]  data_indication           PDUs from MAC.
@@ -146,4 +146,5 @@ public_rlc_um(   void     rlc_um_mac_data_indication (void *rlcP, struct mac_dat
 * \param[in]  sduP             SDU. (A struct rlc_um_data_req is mapped on sduP->data.)
 */
 public_rlc_um(    void     rlc_um_data_req (void *rlcP, mem_block_t *sduP);)
+/** @} */
 #    endif

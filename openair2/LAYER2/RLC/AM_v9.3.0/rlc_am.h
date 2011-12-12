@@ -85,16 +85,23 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //#        include "rlc_am_very_simple_test.h"
 #endif
 
+/*! \struct  rlc_am_info_t
+* \brief Structure containing RLC AM configuration parameters.
+*/
 typedef volatile struct {
-	u16_t max_retx_threshold;
-	u16_t poll_pdu;
-	u16_t poll_byte;
-	u32_t t_poll_retransmit;
-	u32_t t_reordering;
-	u32_t t_status_prohibit;
+    u16_t max_retx_threshold;  /*!< \brief Maximum number of retransmissions for one RLC AM PDU. */
+    u16_t poll_pdu;            /*!< \brief Generate a status each poll_pdu pdu sent. */
+    u16_t poll_byte;           /*!< \brief Generate a status each time poll_byte bytes have been sent. */
+    u32_t t_poll_retransmit;   /*!< \brief t-PollRetransmit timer initial value. */
+    u32_t t_reordering;        /*!< \brief t-Reordering timer initial value. */
+    u32_t t_status_prohibit;   /*!< \brief t-StatusProhibit timer initial value. */
 } rlc_am_info_t;
 
 
+/*! \fn void     rlc_am_release (rlc_am_entity_t *rlcP)
+* \brief    Empty function, TO DO.
+* \param[in]  rlcP                      RLC AM protocol instance pointer.
+*/
 public_rlc_am(void     rlc_am_release (rlc_am_entity_t *rlcP);)
 
 
@@ -108,7 +115,7 @@ public_rlc_am(void     rlc_am_release (rlc_am_entity_t *rlcP);)
 */
 public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP);)
 
-/*! \fn void     rlc_am_stat_req     (struct rlc_am_entity_t *rlcP, unsigned int* tx_pdcp_sdu, unsigned int* tx_pdcp_sdu_discarded, unsigned int* tx_data_pdu, unsigned int* rx_sdu, unsigned int* rx_error_pdu, unsigned int* rx_data_pdu, unsigned int* rx_data_pdu_out_of_window)
+/*! \fn void     rlc_am_stat_req     (rlc_am_entity_t *rlcP, unsigned int* tx_pdcp_sdu,unsigned int* tx_pdcp_sdu_discarded,unsigned int* tx_retransmit_pdu_unblock,unsigned int* tx_retransmit_pdu_by_status,unsigned int* tx_retransmit_pdu,unsigned int* tx_data_pdu,unsigned int* tx_control_pdu,unsigned int* rx_sdu,unsigned int* rx_error_pdu,unsigned int* rx_data_pdu,unsigned int* rx_data_pdu_out_of_window,unsigned int* rx_control_pdu)
 * \brief    Request TX and RX statistics of a RLC UM protocol instance.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[out] tx_pdcp_sdu               Number of transmitted SDUs coming from upper layers.
@@ -144,7 +151,7 @@ public_rlc_am(void     rlc_am_stat_req     (rlc_am_entity_t *rlcP,
 */
 private_rlc_am(   void     rlc_am_get_pdus (void *argP);)
 
-/*! \fn void rlc_am_rx (void *rlc, struct mac_data_ind)
+/*! \fn void rlc_am_rx (void *rlcP, struct mac_data_ind data_indication)
 * \brief    Process the received PDUs from lower layer.
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
 * \param[in]  data_indication           PDUs from MAC.
@@ -180,4 +187,5 @@ public_rlc_am(    void     rlc_am_mac_data_indication (void *rlcP, struct mac_da
 * \param[in]  sduP             SDU. (A struct rlc_am_data_req is mapped on sduP->data.)
 */
 public_rlc_am(    void     rlc_am_data_req (void *rlcP, mem_block_t *sduP);)
+/** @} */
 #    endif
