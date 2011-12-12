@@ -120,4 +120,5 @@ typedef struct rlc_um_entity {
   unsigned int rx_data_pdu;                         /*!< \brief For statistic report, number of received PDUs from lower layers. */
   unsigned int rx_data_pdu_out_of_window;           /*!< \brief Number of data PDUs received out of the receive window. */
 }rlc_um_entity_t;
+/** @} */
 #    endif

@@ -170,4 +170,5 @@ typedef struct rlc_am_entity {
   u8_t              location;                                /*!< \brief EnodeB / UE. */
 
 } rlc_am_entity_t;
+/** @} */
 #    endif

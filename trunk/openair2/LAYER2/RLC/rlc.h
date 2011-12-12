@@ -94,13 +94,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #        define public_rlc(x) extern x
 #    endif
 
-
 //-----------------------------------------------------------------------------
-// ERROR
-// WARNING
-// INFO
-
-
 #define  RLC_OP_STATUS_OK                1
 #define  RLC_OP_STATUS_BAD_PARAMETER     22
 #define  RLC_OP_STATUS_INTERNAL_ERROR    2
@@ -114,6 +108,9 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 
 
+/*! \struct  rlc_tm_info_t
+* \brief Structure containing RLC TM protocol configuration parameters.
+*/
 typedef volatile struct {
   u32_t             e_r;
   u32_t             timer_discard;
@@ -123,21 +120,30 @@ typedef volatile struct {
 } rlc_tm_info_t;
 
 
+/*! \struct  rlc_info_t
+* \brief Structure containing RLC protocol configuration parameters.
+*/
 typedef volatile struct {
   rlc_mode_t             rlc_mode;
   union {
-      rlc_am_info_t              rlc_am_info;
+      rlc_am_info_t              rlc_am_info; /*!< \sa rlc_am.h. */
       rlc_tm_info_t              rlc_tm_info;
-      rlc_um_info_t              rlc_um_info;
+      rlc_um_info_t              rlc_um_info; /*!< \sa rlc_um.h. */
   }rlc;
 } rlc_info_t;
 
+/*! \struct  mac_rlc_status_resp_t
+* \brief Primitive exchanged between RLC and MAC informing about the buffer occupancy of the RLC protocol instance.
+*/
 typedef  struct {
-  u32_t                        bytes_in_buffer;
-  u32_t                        pdus_in_buffer;
+    u32_t                        bytes_in_buffer; /*!< \brief Bytes buffered in RLC protocol instance. */
+    u32_t                        pdus_in_buffer;  /*!< \brief Number of PDUs buffered in RLC protocol instance (OBSOLETE). */
 } mac_rlc_status_resp_t;
 
 
+/*! \struct  mac_rlc_max_rx_header_size_t
+* \brief Usefull only for debug scenario where we connect 2 RLC protocol instances without the help of the MAC .
+*/
 typedef struct {
   union {
     struct rlc_am_rx_pdu_management dummy1;
@@ -246,7 +252,7 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, config_action
 */
 public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 
-/*! \fn void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP),void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
+/*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
 * \param[in]  rrc_data_indP       Pointer on RRC data indicate function.
 * \param[in]  rrc_data_confP      Pointer on RRC data confirm callback function.
@@ -259,9 +265,9 @@ public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_
 //-----------------------------------------------------------------------------
 /*! \fn tbs_size_t mac_rlc_data_req     (module_id_t module_idP, chan_id_t rb_idP, char* bufferP)
 * \brief    Interface with MAC layer, map data request to the RLC corresponding to the radio bearer.
-* \param[in]  module_idP       Virtualized module identifier.
-* \param[in]  rb_idP           Radio bearer identifier.
-* \param[in-out] bufferP       Memory area to fill with the bytes requested by MAC.
+* \param [in]     module_idP       Virtualized module identifier.
+* \param [in]     rb_idP           Radio bearer identifier.
+* \param [in,out] bufferP       Memory area to fill with the bytes requested by MAC.
 * \return     A status about the processing, OK or error code.
 */
 public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, chan_id_t, char*);)
@@ -383,5 +389,5 @@ public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 */
 public_rlc(int rlc_module_init(void);)
 
-
+/** @} */
 #endif

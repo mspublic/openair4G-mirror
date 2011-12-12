@@ -27,7 +27,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 *******************************************************************************/
 /*! \file rlc_tm_entity.h
-* \brief This file defines the RLC TM variables stored in a struct called rlc_am_entity_t.
+* \brief This file defines the RLC TM variables stored in a struct called rlc_tm_entity_t.
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
