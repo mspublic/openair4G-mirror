@@ -84,6 +84,11 @@ INPUT                  = $(OPENAIR1_DIR)/PHY/defs.h \
                          $(OPENAIR2_DIR)/LAYER2/RLC/rlc.h \
                          $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am.h \
                          $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_entity.h \
+                         $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_in_sdu.h \
+                         $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_reassembly.h \
+                         $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_receiver.h \
+                         $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_retransmit.h \
+                         $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_rx_list.h \
                          $(OPENAIR2_DIR)/PHY_INTERFACE/defs.h \
                          $(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0/rlc_um.h \
                          $(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0/rlc_um_entity.h \
@@ -208,8 +213,9 @@ EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
-PREDEFINED             = OPENAIR_LTE=1 RLC_MODULE=1 RLC_C=1 RLC_MAC_C=1 RLC_RRC_C=1 RLC_AM_C=1 RLC_AM_MODULE=1 RLC_UM_MODULE=1 RLC_UM_C=1 RLC_TM_MODULE=1 RLC_UM_C=1 public_rlc(x)=x protected_rlc private_rlc(x)=x public_rlc_mac(x)=x protected_rlc_mac(x)=x private_rlc_mac(x)=x public_rlc_rrc(x)=x protected_rlc_rrc(x)=x private_rlc_rrc(x)=x public_rlc_am(x)=x protected_rlc_am(x)=x private_rlc_am(x)=x  public_rlc_um(x)=x protected_rlc_um(x)=x private_rlc_um(x)=x
-EXPAND_AS_DEFINED      = public_rlc(x)=x protected_rlc(x)=x private_rlc(x)=x public_rlc_mac(x)=x protected_rlc_mac(x)=x private_rlc_mac(x)=x public_rlc_rrc(x)=x protected_rlc_rrc(x)=x private_rlc_rrc(x)=x public_rlc_am(x)=x protected_rlc_am(x)=x private_rlc_am(x)=x  public_rlc_um(x)=x protected_rlc_um(x)=x private_rlc_um(x)=x
+PREDEFINED             = OPENAIR_LTE=1 RLC_MODULE=1 RLC_C=1 RLC_MAC_C=1 RLC_RRC_C=1 RLC_AM_C=1 RLC_AM_MODULE=1 RLC_AM_REASSEMBLY_C=1 RLC_AM_IN_SDU_C=1 RLC_AM_RETRANSMIT_C=1 RLC_AM_RX_LIST_C=1 RLC_UM_MODULE=1 RLC_UM_C=1 RLC_TM_MODULE=1 RLC_UM_C=1 public_rlc(x)=x protected_rlc private_rlc(x)=x public_rlc_mac(x)=x protected_rlc_mac(x)=x private_rlc_mac(x)=x public_rlc_rrc(x)=x protected_rlc_rrc(x)=x private_rlc_rrc(x)=x public_rlc_am(x)=x protected_rlc_am(x)=x private_rlc_am(x)=x public_rlc_am_reassembly(x)=x protected_rlc_am_reassembly(x)=x private_rlc_am_reassembly(x)=x public_rlc_am_in_sdu(x)=x protected_rlc_am_in_sdu(x)=x private_rlc_am_in_sdu(x)=x private_rlc_am_receiver(x)=x protected_rlc_am_receiver(x)=x public_rlc_am_receiver(x)=x private_rlc_am_retransmit(x)=x protected_rlc_am_retransmit(x)=x public_rlc_am_retransmit(x)=x private_rlc_am_rx_list(x)=x protected_rlc_am_rx_list(x)=x public_rlc_am_rx_list(x)=x public_rlc_um(x)=x protected_rlc_um(x)=x private_rlc_um(x)=x
+
+EXPAND_AS_DEFINED      = public_rlc(x)=x protected_rlc(x)=x private_rlc(x)=x public_rlc_mac(x)=x protected_rlc_mac(x)=x private_rlc_mac(x)=x public_rlc_rrc(x)=x protected_rlc_rrc(x)=x private_rlc_rrc(x)=x public_rlc_am(x)=x protected_rlc_am(x)=x private_rlc_am(x)=x  public_rlc_am_reassembly(x)=x protected_rlc_am_reassembly(x)=x private_rlc_am_reassembly(x)=x public_rlc_am_in_sdu(x)=x protected_rlc_am_in_sdu(x)=x private_rlc_am_in_sdu(x)=x private_rlc_am_receiver(x)=x protected_rlc_am_receiver(x)=x public_rlc_am_receiver(x)=x private_rlc_am_retransmit(x)=x protected_rlc_am_retransmit(x)=x public_rlc_am_retransmit(x)=x private_rlc_am_rx_list(x)=x protected_rlc_am_rx_list(x)=x public_rlc_am_rx_list(x)=x public_rlc_um(x)=x protected_rlc_um(x)=x private_rlc_um(x)=x
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
 # Configuration::additions related to external references
