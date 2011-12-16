@@ -1085,7 +1085,11 @@ int main(int argc, char **argv) {
 	    //printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
 	  
 	    if (n_frames==1)
+#ifdef BIT8_TX
+	      write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES*2,1,5);
+#else
 	      write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+#endif
 	  }
 	  else {  // Read signal from file
 	    i=0;

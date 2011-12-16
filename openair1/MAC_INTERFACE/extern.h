@@ -20,8 +20,9 @@ ________________________________________________________________*/
 
 #include "defs.h"
 
-
+//#ifdef OPENAIR2
 extern MAC_xface *mac_xface;
+//#endif
 
 
 #endif /*__MAC_INTERFACE_EXTERN_H__ */

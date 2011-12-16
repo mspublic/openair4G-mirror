@@ -106,7 +106,7 @@ void generate_pcfich(u8 num_pdcch_symbols,
 #endif
 
 #ifdef DEBUG_PCFICH
-  msg("[PHY] Generating PCFICH for %d PDCCH symbols, AMP %d\n",num_pdcch_symbols,amp);
+  debug_msg("[PHY] Generating PCFICH for %d PDCCH symbols, AMP %d\n",num_pdcch_symbols,amp);
 #endif
 
   // scrambling
@@ -304,12 +304,14 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 	}
-	/*	
-	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
+	
+#ifdef DEBUG_PCFICH
+	debug_msg("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1],
 	       pcfich_d_ptr[0]);
-	*/
+#endif
+
 	pcfich_d_ptr+=4;
 
       }
@@ -325,11 +327,13 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
   for (i=0;i<3;i++) {
     metric = 0;
     for (j=0;j<32;j++) {
-      //printf("pcfich_b[%d][%d] %d => pcfich_d[%d] %d\n",i,j,pcfich_b[i][j],j,pcfich_d[j]);
+#ifdef DEBUG_PCFICH
+      debug_msg("pcfich_b[%d][%d] %d => pcfich_d[%d] %d\n",i,j,pcfich_b[i][j],j,pcfich_d[j]);
+#endif
       metric += (s32)(((pcfich_b[i][j]==0) ? (pcfich_d[j]) : (-pcfich_d[j])));
     }
 #ifdef DEBUG_PCFICH
-    msg("metric %d : %d\n",i,metric);
+    debug_msg("metric %d : %d\n",i,metric);
 #endif
     if (metric > old_metric) {
       num_pdcch_symbols = 1+i;
@@ -338,7 +342,7 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_PCFICH
-  msg("[PHY] PCFICH detected for %d PDCCH symbols\n",num_pdcch_symbols);
+  debug_msg("[PHY] PCFICH detected for %d PDCCH symbols\n",num_pdcch_symbols);
 #endif
   return(num_pdcch_symbols);
 }

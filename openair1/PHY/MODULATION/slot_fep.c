@@ -16,7 +16,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
-  unsigned int subframe_offset;
+  unsigned int subframe_offset,subframe_offset_F;
   unsigned int slot_offset;
 
   if (no_prefix) {
@@ -27,6 +27,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
     subframe_offset = frame_parms->samples_per_tti * (Ns>>1);
     slot_offset = (frame_parms->samples_per_tti>>1) * (Ns%2);
   }
+  subframe_offset_F = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
+
 
   if (l<0 || l>=7-frame_parms->Ncp) {
     msg("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
@@ -72,7 +74,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	  0);
     }
 
-    memcpy(&ue_common_vars->rxdataF2[aa][2*subframe_offset+2*frame_parms->ofdm_symbol_size*symbol],
+    memcpy(&ue_common_vars->rxdataF2[aa][2*subframe_offset_F+2*frame_parms->ofdm_symbol_size*symbol],
 	   &ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 	   2*frame_parms->ofdm_symbol_size*sizeof(int));
 

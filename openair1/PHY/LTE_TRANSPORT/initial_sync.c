@@ -195,8 +195,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     // FDD normal prefix
     rx_sss(phy_vars_ue,&metric_fdd_ncp,&flip_fdd_ncp,&phase_fdd_ncp);
     Nid_cell_fdd_ncp = phy_vars_ue->lte_frame_parms.Nid_cell; 
-    //    printf("FDD Normal prefix CellId %d metric %d, phase %d, flip %d\n",
-    //   	   Nid_cell_fdd_ncp,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp);
+    msg("FDD Normal prefix CellId %d metric %d, phase %d, flip %d\n",
+	Nid_cell_fdd_ncp,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp);
   }
   
   // Now FDD extended prefix
@@ -217,8 +217,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
    
     rx_sss(phy_vars_ue,&metric_fdd_ecp,&flip_fdd_ecp,&phase_fdd_ecp);
     Nid_cell_fdd_ecp = phy_vars_ue->lte_frame_parms.Nid_cell; 
-    //    printf("FDD Extended prefix CellId %d metric %d, phase %d, flip %d\n",
-    //       	   Nid_cell_fdd_ecp,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp);
+    msg("FDD Extended prefix CellId %d metric %d, phase %d, flip %d\n",
+	Nid_cell_fdd_ecp,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp);
   }
 
 
@@ -240,8 +240,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
    
     rx_sss(phy_vars_ue,&metric_tdd_ncp,&flip_tdd_ncp,&phase_tdd_ncp);
     Nid_cell_tdd_ncp = phy_vars_ue->lte_frame_parms.Nid_cell; 
-    //    printf("TDD Normal prefix CellId %d metric %d, phase %d, flip %d\n",
-    //	   Nid_cell_tdd_ncp,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp);
+    msg("TDD Normal prefix CellId %d metric %d, phase %d, flip %d\n",
+	Nid_cell_tdd_ncp,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp);
   }
 
     // Nod TDD extended prefix
@@ -262,8 +262,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
    
     rx_sss(phy_vars_ue,&metric_tdd_ecp,&flip_tdd_ecp,&phase_tdd_ecp);
     Nid_cell_tdd_ecp = phy_vars_ue->lte_frame_parms.Nid_cell; 
-    //    printf("TDD Extended prefix CellId %d metric %d, phase %d, flip %d\n",
-    //    	   Nid_cell_tdd_ecp,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp);
+    msg("TDD Extended prefix CellId %d metric %d, phase %d, flip %d\n",
+	Nid_cell_tdd_ecp,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp);
   }
   
 
@@ -271,11 +271,14 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   max_metric = (metric_tdd_ncp>max_metric) ? metric_tdd_ncp : max_metric;
   max_metric = (metric_tdd_ecp>max_metric) ? metric_tdd_ecp : max_metric;
 
-  // frameware does not support sss, therefore, the frame params are hard coded to NCP=1 and TDD=1
-#ifdef IFFT_FPGA
+  // firmeware does not support sss, therefore, the frame params are hard coded to NCP=1 and TDD=1
+  /*
+#ifndef USER_MODE
+  metric_tdd_ecp = 0x7FFFFFFF;
   max_metric = metric_tdd_ecp;
   Nid_cell_tdd_ecp = 0;
 #endif
+  */
 
   if (max_metric == metric_fdd_ncp) {
     phy_vars_ue->lte_frame_parms.Ncp=0;
@@ -286,8 +289,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     for (i=0;i<3;i++)
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
 
-    sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
-    
+    if (flip_fdd_ncp==0)
+      sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
+    else
+      sync_pos_slot = (5*frame_parms->samples_per_tti) + (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
+
     if (sync_pos >= sync_pos_slot)
       phy_vars_ue->rx_offset = sync_pos - sync_pos_slot;  
     else
@@ -303,9 +309,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     for (i=0;i<3;i++)
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
 
+    if (flip_fdd_ecp==0)
+      sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
+    else
+      sync_pos_slot = (5*frame_parms->samples_per_tti) + (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
 
-    sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
-  
     if (sync_pos >= sync_pos_slot)
       phy_vars_ue->rx_offset = sync_pos - sync_pos_slot;  
     else
@@ -322,9 +330,12 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
 
 
+    if (flip_tdd_ncp==0)
+      sync_pos_slot = frame_parms->samples_per_tti + (frame_parms->ofdm_symbol_size<<1) + frame_parms->nb_prefix_samples0 + frame_parms->nb_prefix_samples;
+    else
+      sync_pos_slot = (6*frame_parms->samples_per_tti) + (frame_parms->ofdm_symbol_size<<1) + frame_parms->nb_prefix_samples0 + frame_parms->nb_prefix_samples;
 
-    sync_pos_slot = frame_parms->samples_per_tti + (frame_parms->ofdm_symbol_size<<1) + frame_parms->nb_prefix_samples0 + frame_parms->nb_prefix_samples;
-  
+
     if (sync_pos >= sync_pos_slot)
       phy_vars_ue->rx_offset = sync_pos - sync_pos_slot;  
     else
@@ -341,7 +352,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     for (i=0;i<3;i++)
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
 
-    sync_pos_slot = frame_parms->samples_per_tti + (frame_parms->ofdm_symbol_size<<1) + frame_parms->nb_prefix_samples0 + frame_parms->nb_prefix_samples;
+    if (flip_tdd_ecp==0)
+      sync_pos_slot = frame_parms->samples_per_tti + (frame_parms->ofdm_symbol_size<<1) + frame_parms->nb_prefix_samples0 + frame_parms->nb_prefix_samples;
+    else
+      sync_pos_slot = (6*frame_parms->samples_per_tti) + (frame_parms->ofdm_symbol_size<<1) + frame_parms->nb_prefix_samples0 + frame_parms->nb_prefix_samples;
+
   
     if (sync_pos >= sync_pos_slot)
       phy_vars_ue->rx_offset = sync_pos - sync_pos_slot;  

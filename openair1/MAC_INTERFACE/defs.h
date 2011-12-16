@@ -8,7 +8,8 @@
 #ifndef __MAC_INTERFACE_DEFS_H__
 #define __MAC_INTERFACE_DEFS_H__
 
-
+//#ifdef OPENAIR2
 #include "PHY_INTERFACE/defs.h"
+//#endif
 
 #endif

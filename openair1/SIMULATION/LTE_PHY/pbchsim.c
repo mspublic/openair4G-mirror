@@ -914,6 +914,7 @@ int main(int argc, char **argv) {
 	fclose(rx_frame_file);
 	*/
 
+	/*
 	sync_pos = lte_sync_time(PHY_vars_UE->lte_ue_common_vars.rxdata, 
 				 &PHY_vars_UE->lte_frame_parms, 
 				 &PHY_vars_UE->lte_ue_common_vars.eNb_id);
@@ -921,10 +922,12 @@ int main(int argc, char **argv) {
 	// the sync is in the 3rd (last_ symbol of the special subframe
 	// so the position wrt to the start of the frame is 
 	sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + 10;
+	*/
+
+	sync_pos = sync_pos_slot;
 	
-	//sync_pos = sync_pos_slot;
-	
-	msg("eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
+	if (trial%100 == 0)
+	  msg("eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
 	  
 	if (((sync_pos - sync_pos_slot) >=0 ) && 
 	    ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - PHY_vars_eNb->lte_frame_parms.samples_per_tti)) ) {
@@ -969,12 +972,13 @@ int main(int argc, char **argv) {
 		  
 		}
 		   
-		
+		/*
 		lte_adjust_synch(&PHY_vars_UE->lte_frame_parms,
 				 PHY_vars_UE,
 				 0,
 				 1,
 				 16384);
+		*/
 	      }
 	      
 	      if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?4:3)) {

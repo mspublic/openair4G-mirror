@@ -18,7 +18,8 @@
 #include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
 #endif
-#define DEBUG_PHY
+
+//#define DEBUG_PHY
 
 int* sync_corr_ue = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
@@ -220,6 +221,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
   for (n=0; n<length; n+=4) {
 
+    /*
 #ifdef RTAI_ENABLED
     // This is necessary since the sync takes a long time and it seems to block all other threads thus screwing up RTAI. If we pause it for a little while during its execution we give RTAI a chance to catch up with its other tasks.
     if ((n%frame_parms->samples_per_tti == 0) && (n>0) && (openair_daq_vars.sync_state==0)) {
@@ -229,6 +231,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
       rt_sleep(nano2count(1000));
     }
 #endif
+    */
 
     sync_corr_ue[n] = 0;
     sync_corr_ue[n+length] = 0;

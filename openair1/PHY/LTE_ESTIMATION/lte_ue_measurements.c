@@ -113,7 +113,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     phy_vars_ue->PHY_measurements.n0_power_tot = 0;
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 #ifdef USER_MODE
-      phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+      phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
       phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size);
 #endif
@@ -184,6 +184,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   }
   phy_vars_ue->PHY_measurements.n0_power_avg_dB = dB_fixed( phy_vars_ue->PHY_measurements.n0_power_avg);
 
+  /*
   for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++) {
     if (frame_parms->mode1_flag==0) {
       // cqi/pmi information
@@ -354,6 +355,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     // if(eNB_id==0)
       // printf("in lte_ue_measurements: selected rx_antenna[eNB_id==0]:%u\n", phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB_id][i]);
   }  // eNB_id loop
+  */
 
   _mm_empty();
   _m_empty();

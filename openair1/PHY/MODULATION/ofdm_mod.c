@@ -60,7 +60,12 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   unsigned short i,j;
   short k;
-  int *output_ptr=(int*)0,*temp_ptr=(int*)0;
+#ifdef BIT8_TX
+  volatile short *output_ptr=(short*)0;
+#else
+  volatile int *output_ptr=(int*)0;
+#endif
+  int *temp_ptr=(int*)0;
 
 
 #ifdef DEBUG_OFDM_MOD
@@ -87,14 +92,23 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     
     switch (etype) {
     case CYCLIC_PREFIX:
+#ifdef BIT8_TX
+      output_ptr = &(((short*)output)[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)]);
+#else
       output_ptr = &output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)];
+#endif
       temp_ptr = (int *)temp;
       
 
       //      msg("Doing cyclic prefix method\n");
 
       for (j=0;j<((1<<log2fftsize)) ; j++) {
+#ifdef BIT8_TX
+	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
+	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
+#else
 	output_ptr[j] = temp_ptr[2*j];
+#endif
       }
 
       for (k=-1;k>=-nb_prefix_samples;k--) {
@@ -105,14 +119,23 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case CYCLIC_SUFFIX:
 
 
+#ifdef BIT8_TX
+      output_ptr = &(((short*)output)[(i<<log2fftsize)+ (i*nb_prefix_samples)]);
+#else
       output_ptr = &output[(i<<log2fftsize)+ (i*nb_prefix_samples)];
+#endif
 
       temp_ptr = (int *)temp;
       
       //      msg("Doing cyclic suffix method\n");
 
       for (j=0;j<(1<<log2fftsize) ; j++) {
+#ifdef BIT8_TX
+	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
+	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
+#else
 	output_ptr[j] = temp_ptr[2*j];
+#endif
       }
       
       
@@ -128,12 +151,21 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case NONE:
 
       //      msg("NO EXTENSION!\n");
+#ifdef BIT8_TX
+      output_ptr = &(((short*)output)[(i<<log2fftsize)]);
+#else
       output_ptr = &output[(i<<log2fftsize)];
-
+#endif
       temp_ptr = (int *)temp;
       
       for (j=0;j<(1<<log2fftsize) ; j++) {
+#ifdef BIT8_TX
+	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
+	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
+#else
 	output_ptr[j] = temp_ptr[2*j];
+#endif
+
       }
 
       break;

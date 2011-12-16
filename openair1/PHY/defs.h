@@ -297,6 +297,8 @@ typedef struct
   /// Transmission mode per eNB
   u8 transmission_mode[NUMBER_OF_eNB_MAX];
 
+  /// indicates if UE received SI
+  u8 have_SI;
 
 } PHY_VARS_UE;
 

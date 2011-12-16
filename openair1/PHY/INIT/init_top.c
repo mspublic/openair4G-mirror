@@ -36,6 +36,8 @@ Blah Blah
 
 #ifndef USER_MODE
 
+dma_addr_t dma_handle[4];
+
 // Get from HW addresses
 int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -51,13 +53,13 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
       // Allocate memory for TX DMA Buffer
       
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
       tx_dma_buffer_size_bytes = NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t);
 #else
-      tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES_NO_PREFIX;
-#endif
+#ifdef BIT8_TX
+      tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES>>1;
 #else
       tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES;
+#endif
 #endif
       
       tmp_ptr_tx = (mod_sym_t *)bigmalloc16(tx_dma_buffer_size_bytes+2*PAGE_SIZE);
@@ -136,13 +138,35 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
   for (card_id=0;card_id<number_of_cards;card_id++) {
     // Allocate memory for PCI interface and store pointers to dma buffers
     msg("[PHY][INIT] Setting up Leon PCI interface structure\n");
-    pci_interface[card_id] = (PCI_interface_t *)bigmalloc16(sizeof(PCI_interface_t));
-    msg("[PHY][INIT] PCI interface %d at %p\n",card_id,pci_interface[card_id]);
-    openair_writel(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface[card_id]));  
-    
-    for (i=0;i<NB_ANTENNAS_RX;i++) {
-      pci_interface[card_id]->adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
-      pci_interface[card_id]->dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
+
+    if (vid != XILINX_VENDOR) {
+      pci_interface[card_id] = (PCI_interface_t *)bigmalloc16(sizeof(PCI_interface_t));
+      msg("[PHY][INIT] PCI interface %d at %p\n",card_id,pci_interface[card_id]);
+      openair_writel(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface[card_id]));  
+
+      
+      for (i=0;i<NB_ANTENNAS_RX;i++) {
+	  pci_interface[card_id]->adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
+	  pci_interface[card_id]->dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
+      }
+    }
+    else {
+      exmimo_pci_interface[card_id] = (exmimo_pci_interface_t *)pci_alloc_consistent(pdev[card_id],sizeof(exmimo_pci_interface_t),&dma_handle[card_id]);
+      iowrite32((unsigned int)dma_handle[card_id],(bar[0]+0x1c));
+      msg("[PHY][INIT] EXMIMO PCI interface %d at %p (%x)\n",card_id,exmimo_pci_interface[card_id],dma_handle[card_id]);
+
+      for (i=0;i<NB_ANTENNAS_RX;i++) {
+	exmimo_pci_interface[card_id]->rf.adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
+	exmimo_pci_interface[card_id]->rf.dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
+	msg("[PHY][INIT] adchead%d = %p\n",i,exmimo_pci_interface[card_id]->rf.adc_head[i]);
+	msg("[PHY][INIT] dachead%d = %p\n",i,exmimo_pci_interface[card_id]->rf.dac_head[i]);
+      }
+
+      msg("exmimo_pci : ");
+      for (i=0;i<16;i++)
+	msg("%x.",((u8*)exmimo_pci_interface[card_id])[i]);
+
+
     }
 #endif //NOCARD_TEST
 #endif // USER_MODE
@@ -150,11 +174,14 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
 
 #ifdef CBMIMO1
 #ifndef USER_MODE
+  if (vid != XILINX_VENDOR)
     mbox = (unsigned int)(&pci_interface[0]->adac_cnt);
 
 #endif // USER_MODE 
 #endif // CBMIMO1
-    return(0);
+
+  
+  return(0);
 
 }
 #endif // USER_MODE
@@ -336,10 +363,16 @@ void phy_cleanup(void) {
 
   msg("[openair][PHY][INIT] cleanup\n");
 
-      
+  
 #ifndef USER_MODE
 
   for (card_id=0;card_id<number_of_cards;card_id++) {
+
+    if (vid == XILINX_VENDOR) {
+      pci_free_consistent(pdev[card_id],sizeof(exmimo_pci_interface),exmimo_pci_interface[card_id],dma_handle[card_id]);
+      msg("[PHY][INIT] Freeing exmimo_pci_interface %d\n",card_id);
+    }
+    
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       
       if (pci_buffer[card_id][2*i]) {

@@ -192,14 +192,17 @@ int main (int argc, char **argv) {
   frame_parms->Ncp_UL             = 1;
   frame_parms->nushift            = 0;
   frame_parms->frame_type         = 1; //TDD
-  frame_parms->tdd_config         = 3;
+  frame_parms->tdd_config         = 255;
   frame_parms->tdd_config_S       = 0;
-  frame_parms->mode1_flag         = 0; 
+  frame_parms->mode1_flag         = 1; 
   frame_parms->nb_antennas_tx     = 2; //NB_ANTENNAS_TX;
-  frame_parms->nb_antennas_rx     = 2; //NB_ANTENNAS_RX;
+  frame_parms->nb_antennas_rx     = 1; //NB_ANTENNAS_RX;
+  frame_parms->dual_tx            = 0;
 
   frame_parms->phich_config_common.phich_resource = oneSixth;
   frame_parms->phich_config_common.phich_duration = normal;
+
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
   
   init_frame_parms(frame_parms,1);
 
@@ -229,16 +232,21 @@ int main (int argc, char **argv) {
 
   case 0 :
 
-    if (argc<5) {
-      printf("Please provide fdd parameter (0/1)\n");
-      exit(-1);
-    }
-    if (argc<4) {
-      printf("Please provide dual_tx parameter (0/1)\n");
-      exit(-1);
-    }
-    frame_parms->dual_tx    = (unsigned char) atoi(argv[3]);
-    frame_parms->frame_type = (unsigned char) atoi(argv[4]);
+    if (argc>5) 
+      frame_parms->tdd_config = atoi(argv[5]);
+    else 
+      printf("Using TDD config %d\n",frame_parms->tdd_config);
+
+    if (argc>4) 
+      frame_parms->frame_type = (unsigned char) atoi(argv[4]);
+    else
+      printf("Using frame type %d\n",frame_parms->frame_type);
+
+    if (argc>3) 
+      frame_parms->dual_tx    = (unsigned char) atoi(argv[3]);
+    else
+      printf("Using dual_tx %d\n",frame_parms->dual_tx);
+
     frame_parms->freq_idx   = (unsigned char) frequency;
 
     dump_frame_parms(frame_parms);
