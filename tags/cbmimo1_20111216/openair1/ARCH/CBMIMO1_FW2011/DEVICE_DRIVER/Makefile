@@ -41,7 +41,7 @@ CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi
 
 EXTRA_CFLAGS += $(CPUFLAGS)
 
-EXTRA_CFLAGS += -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP #-DDLSCH_THREAD 
+EXTRA_CFLAGS += -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -DDLSCH_THREAD 
 
 ifdef DEBUG_PHY
 EXTRA_CFLAGS += -DDEBUG_PHY
@@ -73,16 +73,14 @@ ifdef CBMIMO1
 EXTRA_CFLAGS += -DCBMIMO1
 endif
 
-ifdef FIRMWARE2010
+ifeq ($(FIRMWARE2010),1)
 EXTRA_CFLAGS += -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH -DHW_PREFIX_REMOVAL
-endif 
-
-ifdef FIRMWARE2011
-EXTRA_CFLAGS += -DBIT8_TX 
+else
+EXTRA_CFLAGS += -DBIT8_TX -DFW2011 -DPUCCH
 endif
 
 ifeq ($(OPENAIR_LTE),1)
-EXTRA_CFLAGS += -DOPENAIR_LTE -DBIT8_TX #-DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+EXTRA_CFLAGS += -DOPENAIR_LTE 
 endif
 
 ifeq ($(OPENAIR2),1)
@@ -119,7 +117,11 @@ openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/init.o
 
 # Sched 
+ifeq ($(FIRMWARE2010),1)
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
+else
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_fw2011.o
+endif
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
 
 # Init

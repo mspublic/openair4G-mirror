@@ -129,7 +129,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     break;
   }
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d, nu %d\n",mod_order,symbol_offset,re_offset,skip_dc,skip_half,*jj, output[*jj], output[1+*jj],nu);
+  debug_msg("allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d, nu %d\n",mod_order,symbol_offset,re_offset,skip_dc,skip_half,*jj, output[*jj], output[1+*jj],nu);
 #endif
 
   first_re=0;
@@ -1060,7 +1060,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
   for (l=num_pdcch_symbols;l<nsymb;l++) {
     
 #ifdef DEBUG_DLSCH_MODULATION
-    msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,pmi2hex_2Ar1(dlsch->pmi_alloc),mod_order, dlsch->layer_index, rb_alloc[0], l);
+    debug_msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,pmi2hex_2Ar1(dlsch->pmi_alloc),mod_order, dlsch->layer_index, rb_alloc[0], l);
 #endif    
 
     if (frame_parms->Ncp==0) { // normal prefix
@@ -1247,7 +1247,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
 
 #ifdef DEBUG_DLSCH_MODULATION
-  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe_offset));
+  debug_msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe_offset));
 #endif
   
   return (re_allocated);

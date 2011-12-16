@@ -622,6 +622,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  msg("[openair][IOCTL] phy_init_lte_ue successful\n");
 
 	PHY_vars_UE_g[0]->Mod_id = 0;
+	// this is only for visualization in the scope
+	PHY_vars_UE_g[0]->lte_ue_common_vars.sync_corr = sync_corr_ue;
+
   
 	// allocate dlsch structures
 	for (i=0; i<NUMBER_OF_eNB_MAX;i++){ 

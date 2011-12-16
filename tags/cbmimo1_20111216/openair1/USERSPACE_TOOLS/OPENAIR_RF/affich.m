@@ -22,10 +22,12 @@ f_off2 = mean(s_phase2(2:length(s_phase2))*fs/4./(1:(length(s_phase2)-1))/2/pi)
 
 figure(1)
 plot(real(rxs))
+  legend('rx0','rx1');
 print('rx_frame_time.esp','-depsc2')
 
 figure(2)
 plot(20*log10(abs(fftshift(fft(rxs)))))
+  legend('rx0','rx1');
 print('rx_frame_freq.esp','-depsc2')
 
 %%

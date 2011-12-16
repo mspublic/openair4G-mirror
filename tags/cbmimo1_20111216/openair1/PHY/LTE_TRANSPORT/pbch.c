@@ -289,7 +289,7 @@ u16 pbch_extract(int **rxdataF,
     for (rb=0; rb<nb_rb; rb++) {
       // skip DC carrier
       if (rb==3) {
-	rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))*2];
+	  rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))*2];
       }
       if ((symbol_mod==0) || (symbol_mod==1)) {
 	j=0;
@@ -298,7 +298,7 @@ u16 pbch_extract(int **rxdataF,
 	      (i!=(frame_parms->nushift+3)) && 
 	      (i!=(frame_parms->nushift+6)) && 
 	      (i!=(frame_parms->nushift+9))) {
-
+	    
 	    rxF_ext[j++]=rxF[i<<1];
 	  }
 	}
@@ -313,11 +313,12 @@ u16 pbch_extract(int **rxdataF,
 	rxF_ext+=12;
       }
     }
-
+    
+    
     for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx;aatx++) {
       dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size))];
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*(6*12)];
-
+      
       for (rb=0; rb<nb_rb; rb++) {
 	// skip DC carrier
 	// if (rb==3) dl_ch0++;
@@ -340,11 +341,11 @@ u16 pbch_extract(int **rxdataF,
 	  dl_ch0+=12;
 	  dl_ch0_ext+=8;
 	}
-     }
+      }
     }  //tx antenna loop
-
+    
   }
-
+  
   return(0);
 }
 
@@ -695,16 +696,18 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
     msg("[PHY] PBCH Symbol %d\n",symbol);
     msg("[PHY] PBCH starting channel_level\n");
 #endif
-    
-    max_h = pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
-			       frame_parms,
-			       symbol);
-    log2_maxh = 5+(log2_approx(max_h)/2);
-    
+
+    if (symbol==0) {    
+      max_h = pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
+				 frame_parms,
+				 symbol);
+      log2_maxh = 4+(log2_approx(max_h)/2);
+      
 #ifdef DEBUG_PBCH
-    msg("[PHY] PBCH log2_maxh = %d (%d)\n",log2_maxh,max_h);
+      msg("[PHY] PBCH log2_maxh = %d (%d)\n",log2_maxh,max_h);
 #endif
-    
+    }
+
     pbch_channel_compensation(lte_ue_pbch_vars->rxdataF_ext,
 			      lte_ue_pbch_vars->dl_ch_estimates_ext,
 			      lte_ue_pbch_vars->rxdataF_comp,

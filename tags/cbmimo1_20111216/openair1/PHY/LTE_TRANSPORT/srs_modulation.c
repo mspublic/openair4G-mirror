@@ -1,5 +1,5 @@
 #include "PHY/defs.h"
-#include "extern.h"
+#include "PHY/extern.h"
 
 unsigned short msrsb_6_40[8][4] = {{36,12,4,4},
 				   {32,16,8,4},
@@ -127,7 +127,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   if (k0<0) {
-    msg("generate_srs: invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
+    debug_msg("generate_srs: invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
     return(-1);
   }
 

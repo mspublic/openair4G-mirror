@@ -492,7 +492,8 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef IFFT_FPGA
       ue_common_vars->txdataF[i] = (mod_sym_t*) TX_DMA_BUFFER[0][i];
 #else //IFFT_FPGA
-#error "IFFT_FPGA and USER_MODE cannot be undefined at the same time"
+      ue_common_vars->txdataF[i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+      bzero(ue_common_vars->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 #endif //IFFT_FPGA
 #endif //USER_MODE
     }
@@ -1045,7 +1046,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef IFFT_FPGA
 	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)TX_DMA_BUFFER[eNB_id][i];
 #else
-#error "IFFT_FPGA and USER_MODE cannot be undefined at the same time"
+	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+	bzero(eNB_common_vars->txdataF[eNB_id][i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 #endif //IFFT_FPGA
 #endif //USER_MODE
 #ifdef DEBUG_PHY

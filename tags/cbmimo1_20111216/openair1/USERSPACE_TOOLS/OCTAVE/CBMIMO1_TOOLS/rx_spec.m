@@ -1,5 +1,5 @@
 dual_tx=0;
-oarf_config(0,'config.cfg','scenario.scn',dual_tx)
+oarf_config(0,1,dual_tx)
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System
@@ -21,6 +21,6 @@ spec1 = 20*log10(abs(fftshift(fft(s(:,2)))));
 clf
 plot(f',spec0,'r',f',spec1,'b')
 axis([-3.84,3.84,40,160]);
-gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF'); %  activate output 
+%gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF'); %  activate output 
 legend('Antenna Port 0','Antenna Port 1');
 grid

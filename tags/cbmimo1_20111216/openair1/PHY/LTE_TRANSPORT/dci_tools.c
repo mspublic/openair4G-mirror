@@ -1629,7 +1629,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       default:
-	msg("Incorrect Transmission Mode \n");
+	msg("Incorrect Transmission Mode %d\n", transmission_mode);
 	break;
       }
     }
@@ -1794,7 +1794,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
 	break;
       default:
-	msg("Incorrect Transmission Mode \n");
+	msg("Incorrect Transmission Mode %d\n", transmission_mode);
 	break;
       }
     }
