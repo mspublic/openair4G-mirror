@@ -37,6 +37,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \bug
 * \warning
 */
+/** @defgroup _rlc_am_internal_segment_impl_ RLC AM Segmentation Internal Reference Implementation
+* @ingroup _rlc_am_internal_impl_
+* @{
+*/
 #    ifndef __RLC_AM_SEGMENT_H__
 #        define __RLC_AM_SEGMENT_H__
 //-----------------------------------------------------------------------------
@@ -56,6 +60,18 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #            endif
 #        endif
 
+/*! \fn void rlc_am_pdu_polling (rlc_am_entity_t *rlcP, rlc_am_pdu_sn_10_t *pduP, s16_t payload_sizeP)
+* \brief      Set or not the poll bit in the PDU header depending on RLC AM protocol variables.
+* \param[in]  rlcP           RLC AM protocol instance pointer.
+* \param[in]  pduP           Pointer on the header of the PDU in order to be able to set the poll bit if necessary.
+* \param[in]  payload_sizeP  Size of the payload of the PDU.
+*/
 protected_rlc_am_segment(void rlc_am_pdu_polling (rlc_am_entity_t *rlcP, rlc_am_pdu_sn_10_t *pduP, s16_t payload_sizeP);)
+
+/*! \fn void rlc_am_segment_10 (rlc_am_entity_t *rlcP)
+* \brief      Segment a PDU with 10 bits sequence number, based on segmentation information given by MAC (size to transmit).
+* \param[in]  rlcP         RLC AM protocol instance pointer.
+*/
 protected_rlc_am_segment(void rlc_am_segment_10 (rlc_am_entity_t *rlcP);)
+/** @} */
 #    endif
