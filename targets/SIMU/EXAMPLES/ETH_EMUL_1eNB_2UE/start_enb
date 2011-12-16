@@ -1,0 +1,23 @@
+#!/bin/sh
+echo "Bringup eNB interface"
+
+sudo rmmod nasmesh
+make all
+sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko 
+
+#avoid conflict with reserved multicast addresses (224.0.0.11,224.0.0.13, 224.0.0.16)
+#sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
+sudo ip route add 224.0.0.160/28 dev eth0
+
+
+sudo ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
+
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.2 -r 3
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i0 -z0 -s 10.0.1.1 -t 10.0.1.3 -r 11
+
+#xterm -T ENB -hold -e ping 10.0.1.2& 
+#xterm -T ENB -hold -e ping 10.0.1.3& 
+
+echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p3  > /dev/null"
+$OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p3   > /dev/null
+echo "End"
