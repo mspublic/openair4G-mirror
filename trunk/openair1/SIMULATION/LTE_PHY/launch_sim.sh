@@ -4,12 +4,14 @@
 #PBS -d /homes/kaltenbe/Devel/openair_lte/openair1/SIMULATION/LTE_PHY
 
 # Simulation parameters
-#MCS="0 1 2 3 4 5 6 7 8 9"
-#MCS="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28"
-MCS="10"
-CHANNEL="C"
-USER2="1"
-NSIMUS=10
+# MCS="0 1 2 3 4 5 6 7 8 9"
+# MCS="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28"
+MCS="10 11 12 13 14 15 16"
+# MCS="17 18 19 20 21 22 23 24 25 26 27 28"
+CHANNEL="C E F G H I J K L M"
+# CHANNEL="C J"
+USER2="0"
+NSIMUS=100
 
 #QPSK
 #MCS="0 1 2 3 4 5 6 7 8 9"
@@ -43,7 +45,8 @@ do
 	echo %User2=${U},Channel=${C},MCS=[${MCS}],NFRAMES=${NSIMUS} >> TB_u2\=${U}_chan${ch}.tex
 	for M in $MCS
 	do
-	    ./dlsim -m$M -s$(($M-10)) -x5 -y2 -z1 -g$C -f2 -u$U -n$NSIMUS -R1
+	    #./dlsim -m$M -s$(($M-10)) -x5 -y2 -z1 -g$C -f2 -u$U -n$NSIMUS -R1
+	    ./dlsim -m$M -s$(($M)) -x5 -y2 -z1 -g$C -f2 -u$U -n$NSIMUS -R1
 	    cat second_bler_tx5_u2\=${U}_mcs${M}_chan${ch}_nsimus${NSIMUS} >> TB_u2\=${U}_chan${ch}.tex
 	    rm second_bler_tx5_u2\=${U}_mcs${M}_chan${ch}_nsimus${NSIMUS}
 	done
