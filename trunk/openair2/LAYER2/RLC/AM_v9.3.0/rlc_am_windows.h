@@ -27,7 +27,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 *******************************************************************************/
 /*! \file rlc_am_windows.h
-* \brief This file defines the prototypes of the functions testing window, based on SN modulo and rx ant tx protocol state variables.
+* \brief This file defines the prototypes of the functions testing window, based on SN modulo and rx and tx protocol state variables.
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
