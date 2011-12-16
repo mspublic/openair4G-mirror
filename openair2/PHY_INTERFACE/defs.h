@@ -89,7 +89,7 @@ typedef struct
     void (*out_of_sync_ind)(u8 Mod_id,u16);
 
     ///  Send a received SI sdu
-    void (*ue_decode_si)(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
+    u8 (*ue_decode_si)(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
 
     /// Send a received DLSCH sdu to MAC
     void (*ue_send_sdu)(u8 Mod_id,u8 *sdu,u8 CH_index);

@@ -10,10 +10,8 @@
 #include "list.h"
 #ifdef USER_MODE
 #include <assert.h>
-#else
-#define NULL 0
 #endif
-
+#define NULL 0
 
 //-----------------------------------------------------------------------------
 /*

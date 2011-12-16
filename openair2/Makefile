@@ -12,21 +12,6 @@
 
 KERNEL_NAME=$(shell uname -r)
 
-export IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
-
-export IS_LINUX=$(shell [ -f `/use/src/linux` ] && echo "1"  || echo "0";)
-
-ifeq ($(IS_LINUX), 1)
-LINUX_KERNEL = linux
-else
-ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
-LINUX_KERNEL = linux-`uname -r`
-else
-LINUX_KERNEL = linux-headers-`uname -r`
-endif 
-endif
-
-
 #SUBDIRS_openair_USERRF  =   $(MAIN_RT_DIR) $(CONFIG_DIR)
 
 #openair_USERRFDIR  = openair_RFOBJS
@@ -117,22 +102,30 @@ remove_emul:
 
 
 
+modules_install_platon:
+	cp arch/platon/device_driver/openair_rf.ko /lib/modules/$(KERNEL_NAME)/openair/
+	depmod -aq
+
+
 nasmesh_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)	
+	(cd NAS/DRIVER/MESH && $(MAKE) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)
+
 
 nasmesh.ko:
+
 	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd`)
 
-# automatically detect the linux header files for driver compilation
+#(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd`)
+
+
 nasmesh_netlink.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 V=1 -C /usr/src/linux M=`pwd` modules)
 
 nasmesh_netlink_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
-
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/linux M=`pwd` modules)
 
 nasmesh_netlink_loopback.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules)
 
 rt_emul:
 	(cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER && $(MAKE))
@@ -143,6 +136,50 @@ bypass_phy:
 rb_tool:
 	(cd NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
 
+
+# By default, we set 'updatefirmware' option of make to be void
+# (if the user specify option updatefirmware=1, this will take precedence
+# over the default value)
+updatefirmware=0
+install_cbmimo1_softmodem:
+	make fifos
+	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem.ko updatefirmware=1 ; \
+    else \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem.ko ; \
+    fi
+	insmod mac/openair_wireless3g4free/openair_w3g4free.ko	
+install_cbmimo1_softmodem_emos:
+	make fifos
+	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem_emos.ko updatefirmware=1 ; \
+    else \
+      insmod arch/openair_CardBus_MIMO1/device_driver/openair_rf_softmodem_emos.ko ; \
+    fi
+
+install_cbmimo1_dlc_nodeb:
+	make devs
+	make fifos
+	(cd mac/openair_widens ; ./launch_script_clusterhead)
+	make install_cbmimo1_softmodem
+
+install_cbmimo1_dlc_ue:
+	make devs
+	make fifos
+	(cd mac/openair_widens ; ./launch_script_node 5)
+	make install_cbmimo1_softmodem
+
+remove_cbmimo1_dlc:
+	(cd mac/openair_widens ; rmmod test_dlc_mod ; rmmod dlc_mod ; rmmod ipcs_mod)
+
+remove_cbmimo1:
+	rmmod openair_w3g4free
+	rmmod openair_rf	
+remove_cbmimo1_emos:
+	rmmod openair_rf
+
+install_platon:
+	insmod arch/platon/device_driver/openair_rf.ko
 
 fifos:
 	@for i in `seq 0 64`;\
@@ -191,6 +228,7 @@ cleanall:
 	find -name *.ko -delete -print
 	find -name *~ -delete -print
 	find -name *.bak -delete -print
+	find -name '*.cmd' -delete -print; 
 	rm -rf NAS/DRIVER/MESH/RB_TOOL/rb_tool
 
 
@@ -206,7 +244,3 @@ tgz:
 	cp /tmp/openair2.tgz . ;\
 	rm -rf /tmp/openair2_tmp
 
-print:
-	@echo $(IS_KERNEL_OPENAIRINTERFACE)
-	@echo $(LINUX_KERNEL)
-	@echo $(IS_LINUX)

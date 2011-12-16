@@ -18,11 +18,8 @@
 #include "DL-DCCH-Message.h"
 #include "MeasGapConfig.h"
 #include "TDD-Config.h"
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
-#include "RRC/NAS/nas_config.h"
-#include "RRC/NAS/rb_config.h"
 #ifdef PHY_EMUL
+#include "RRC/NAS/nas_config.h"
 extern EMULATION_VARS *Emul_vars;
 #endif
 extern eNB_MAC_INST *eNB_mac_inst;
@@ -483,22 +480,22 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 eNB_index) {
 
-  if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
-    if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
-      
-      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
-	rrc_ue_process_measConfig(Mod_id,eNB_index,
-				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
-      }
-      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-	rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
-						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
-	
-      }
-    } // c1 present
-  } // critical extensions present
-}
+  if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
+    if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
+      rrc_ue_process_measConfig(Mod_id,eNB_index,
+				rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
+    }
+    if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
+      rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
+						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
+      
+    }
+
+    // check other fields for
+  }
+}
+  
 /*------------------------------------------------------------------------------------------*/
 void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/

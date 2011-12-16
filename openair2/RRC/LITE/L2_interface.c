@@ -25,23 +25,24 @@ extern UE_MAC_INST *UE_mac_inst;
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
-#define DEBUG_RRC
+//#define DEBUG_RRC
 
 u32 mui=0;
 //---------------------------------------------------------------------------------------------//
 
-s8 mac_rrc_lite_data_req( unsigned char Mod_id, 
-			  unsigned short Srb_id, 
-			  unsigned char Nb_tb,
-			  char *Buffer,
-			  u8 eNB_flag,
-			  u8 eNB_index){
-  //------------------------------------------------------------------------------------------------------------------//
+unsigned char mac_rrc_lite_data_req( unsigned char Mod_id, 
+				unsigned short Srb_id, 
+				unsigned char Nb_tb,
+				char *Buffer,
+				u8 eNB_flag,
+				u8 eNB_index){
+    //------------------------------------------------------------------------------------------------------------------//
 
 
   SRB_INFO *Srb_info;
   u8 Sdu_size=0;
-  u8 i;  
+  u8 H_size,i;  
+  u16 tmp;
 
 #ifdef DEBUG_RRC
   msg("[RRC] Mod_id=%d: mac_rrc_data_req to SRB ID=%d\n",Mod_id,Srb_id);
@@ -121,18 +122,19 @@ s8 mac_rrc_lite_data_req( unsigned char Mod_id,
       return 0;
     }
   }
-  return(0);
+  
 }
 
 //--------------------------------------------------------------------------------------------//
-s8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 eNB_index ){ 
+u8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 eNB_index ){ 
   //------------------------------------------------------------------------------------------//
-  if (Srb_id == BCCH)
+  if (Srb_id == 3)
     msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index); 
   else
     msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
 
   SRB_INFO *Srb_info;
+  unsigned short i;
   int si_window;
   if(eNB_flag == 0){
 
@@ -176,6 +178,8 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
 	}
 	rrc_ue_generate_RRCConnectionRequest(Mod_id,eNB_index);
       }
+      
+      return(UE_rrc_inst[Mod_id].Info[eNB_index].Status);
     }   
 
 
@@ -187,7 +191,9 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
 	Srb_info->Rx_buffer.payload_size = Sdu_len;
 	rrc_ue_decode_ccch(Mod_id,Srb_info,eNB_index);
+
       }
+
     }
   }
 
@@ -197,8 +203,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
     memcpy(Srb_info->Rx_buffer.Payload,Sdu,6);
     rrc_eNB_decode_ccch(Mod_id,Srb_info);
  }
-
-  return(0);
+  //  return Nb_tb;
   
 }
 
@@ -229,6 +234,7 @@ void rrc_lite_out_of_sync_ind(unsigned char Mod_id, unsigned short eNB_index){
 /*-------------------------------------------------------------------------------------------*/
 
 
+  unsigned char i;
   rlc_info_t rlc_infoP;
   rlc_infoP.rlc_mode=RLC_UM;
 

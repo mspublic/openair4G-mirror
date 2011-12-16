@@ -14,13 +14,13 @@
 
 int start_trace_generator(omg_global_param omg_param_list) {
 
-  //int n_id=0;
+  int n_id=0;
   //omg_omg_param_list.seed= time(NULL);
   //srand(omg_param_list.seed + RWP); //<-------------------------------
 
   
   NodePtr node = NULL;
-  // MobilityPtr mobility = NULL;
+  MobilityPtr mobility = NULL;
 
   //read the mobility file here
 
@@ -96,8 +96,8 @@ void place_trace_node(NodePtr node) {
 	node->mob->speed = next_loc->speed;
 	node->mob->journey_time = 0.0;
 
-	LOG_D(OMG,"--------INITIALIZE TRACE NODE-------- \n ");
-  	LOG_I(OMG,"Initial position of node ID: %d type: %d (X = %.2f, Y = %.2f) speed = 0.0\n ", node->ID, node->type, node->X_pos, node->Y_pos);
+	LOG_D(OMG, "--------INITIALIZE TRACE NODE-------- \n ");
+  	LOG_I(OMG, "Initial position of node ID: %d type: %d (X = %.2f, Y = %.2f) speed = 0.0\n ", node->ID, node->type, node->X_pos, node->Y_pos);
 	Node_Vector[TRACE] = (Node_list) add_entry(node, Node_Vector[TRACE]);
     	Node_Vector_len[TRACE]++;
 	//Initial_Node_Vector_len[RWP]++;

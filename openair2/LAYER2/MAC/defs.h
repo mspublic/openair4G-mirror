@@ -353,13 +353,13 @@ typedef struct {
   /// sr ProhibitTime running
   u8 sr_ProhibitTimer_Running;
   ///  default value to n5
-  u16 maxHARQ_Tx; 
+  u16 maxHARQ_tx; 
   /// default value is false
   u16 ttiBundling;
   /// default value is release 
-  struct DRX_Config *drx_config;
+  u8 *drx_config;
   /// default value is release
-  struct MAC_MainConfig__phr_Config *phr_config;
+  u8 *phr_config;
   //Bj bucket usage per  lcid
   s16 Bj[MAX_NUM_LCID];
   // Bucket size per lcid
@@ -507,7 +507,7 @@ u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
 void out_of_sync_ind(u8 Mod_id,u16);
-void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
+u8 ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
 void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
 
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);

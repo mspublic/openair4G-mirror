@@ -27,7 +27,7 @@
 #endif
 
 //-----------------------------------------------------------------------------
-s8 rrc_L2_data_req_rx (unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8 CH_index){
+unsigned char rrc_L2_data_req_rx (unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8 CH_index){
 //-----------------------------------------------------------------------------
   char *rrc_sim_data = "TESTING\0";
   int br_size=0;
@@ -54,12 +54,11 @@ s8 rrc_L2_data_req_rx (unsigned char Mod_id, unsigned short Srb_id, unsigned cha
 }
 
 //-----------------------------------------------------------------------------
-s8 rrc_L2_mac_data_ind_rx (void){
+void rrc_L2_mac_data_ind_rx (void){
 //-----------------------------------------------------------------------------
 #ifdef DEBUG_RRC_DETAILS
     msg ("\n[RRC][L2_INTF] rrc_L2_data_req_rx - begin\n");
 #endif
-return 0;
 }
 
 //-----------------------------------------------------------------------------

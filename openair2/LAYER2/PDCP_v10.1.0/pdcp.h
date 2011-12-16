@@ -44,9 +44,7 @@
 #endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
 
-#define TRUE 0x01
-#define FALSE 0x00
-typedef unsigned char BOOL;
+#include "pdcp_sequence_manager.h"
 
 public_pdcp(unsigned int Pdcp_stats_tx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
 public_pdcp(unsigned int Pdcp_stats_tx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
@@ -57,43 +55,14 @@ public_pdcp(unsigned int Pdcp_stats_rx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_M
 public_pdcp(unsigned int Pdcp_stats_rx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
 public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
 
-typedef struct pdcp_t {
-  BOOL header_compression_active;
-  u8 seq_num_size;
-
-  /*
-   * Sequence number state variables
-   * 
-   * TX and RX window
-   */
-  u16  next_pdcp_tx_sn;
-  u16  next_pdcp_rx_sn;
-  /*
-   * TX and RX Hyper Frame Numbers
-   */
-  u16  tx_hfn;
-  u16  rx_hfn;
-  /*
-   * SN of the last PDCP SDU delivered to upper layers
-   */
-  u16  last_submitted_pdcp_rx_sn;
-
-  // here ROHC variables for header compression/decompression
-} pdcp_t;
-
-#undef PDCP_UNIT_TEST
-
-#ifdef PDCP_UNIT_TEST
-public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
-                                unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
-                                mem_block_t* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
-#else
-public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer);)
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, mem_block_t* sdu_buffer);)
-#endif
+public_pdcp(void pdcp_data_req       (module_id_t, rb_id_t, sdu_size_t, char*);)
+public_pdcp(void pdcp_data_ind       (module_id_t, rb_id_t, sdu_size_t, mem_block_t*);)
 public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
 public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
+
+#define TRUE 0x01
+#define FALSE 0x00
+typedef unsigned char BOOL;
 
 public_pdcp(void pdcp_run ();)
 public_pdcp(int pdcp_module_init ();)
@@ -123,6 +92,30 @@ typedef struct pdcp_data_ind_header_t {
   int       inst;
 } pdcp_data_ind_header_t;
 
+typedef struct pdcp_t {
+  BOOL header_compression_active;
+  u8 seq_num_size;
+
+  /*
+   * Sequence number state variables
+   * 
+   * TX and RX window
+   */
+  u16  next_pdcp_tx_sn;
+  u16  next_pdcp_rx_sn;
+  /*
+   * TX and RX Hyper Frame Numbers
+   */
+  u16  tx_hfn;
+  u16  rx_hfn;
+  /*
+   * SN of the last PDCP SDU delivered to upper layers
+   */
+  u16  last_submitted_pdcp_rx_sn;
+
+  // here ROHC variables for header compression/decompression
+} pdcp_t;
+
 /*
  * PDCP limit values
  */
@@ -142,5 +135,4 @@ protected_pdcp(char                   pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];
 protected_pdcp(sdu_size_t             pdcp_input_index_header;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_size_read;)
 protected_pdcp(sdu_size_t             pdcp_input_sdu_remaining_size_to_read;)
-
 #endif

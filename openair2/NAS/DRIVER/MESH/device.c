@@ -139,7 +139,6 @@ int nas_open(struct net_device *dev){
   }
 #endif //NAS_NETLINK
 
-  /*
   netif_start_queue(dev);
   //
   init_timer(&priv->timer);
@@ -148,7 +147,6 @@ int nas_open(struct net_device *dev){
   (priv->timer).function=nas_mesh_timer;
   //  add_timer(&priv->timer);
   //
-  */
   printk("OPEN: name = %s, end\n", dev->name);
   return 0;
 }
@@ -306,9 +304,9 @@ static const struct net_device_ops nasmesh_netdev_ops = {
 	.ndo_open		= nas_open,
 	.ndo_stop		= nas_stop,
 	.ndo_start_xmit		= nas_hard_start_xmit,
-	.ndo_validate_addr	= NULL,
-	.ndo_set_multicast_list	= NULL,
-	.ndo_set_mac_address	= NULL,
+//	.ndo_validate_addr	= NULL,
+//	.ndo_set_multicast_list	= NULL,
+//	.ndo_set_mac_address	= NULL,
 	.ndo_set_config     = nas_set_config,
 	.ndo_do_ioctl       = nas_CTL_ioctl,
 	.ndo_change_mtu		= nas_change_mtu,

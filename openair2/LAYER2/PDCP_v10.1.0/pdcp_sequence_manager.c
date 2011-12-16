@@ -34,7 +34,6 @@
 */
 
 #include "pdcp_sequence_manager.h"
-#include "UTIL/LOG/log_if.h"
 #include <math.h>
 
 /*
@@ -58,7 +57,7 @@ BOOL pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
 
   // SN of the last PDCP SDU delivered to upper layers
   // Shall UE and eNB behave differently on initialization? (see 7.1.e)
-  pdcp_entity->last_submitted_pdcp_rx_sn = 4095;
+  pdcp_entity->last_submitted_pdcp_rx_sn = 0;
 
   return TRUE;
 }
@@ -70,7 +69,7 @@ BOOL pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
 
   // Check if the size of SN is valid (see 3GPP TS 36.323 v10.1.0 item 6.3.2)
   if (pdcp_entity->seq_num_size != 5 && pdcp_entity->seq_num_size != 7 && pdcp_entity->seq_num_size != 12) {
-    LOG_W(PDCP, "Incoming SN size is invalid! (Expected: {5 | 7 | 12}, Received: %d\n", pdcp_entity->seq_num_size); 
+    msg("[PDCP] Incoming SN size is invalid!"); 
     return FALSE;
   }
 
@@ -82,7 +81,7 @@ BOOL pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
  */
 BOOL pdcp_is_seq_num_valid(u16 seq_num, u8 seq_num_size)
 {
-  if (seq_num >= 0 && seq_num <= pdcp_calculate_max_seq_num_for_given_size(seq_num_size))
+  if (seq_num > 0 && seq_num <= pdcp_calculate_max_seq_num_for_given_size(seq_num_size))
     return TRUE;
 
   return FALSE;
@@ -90,11 +89,7 @@ BOOL pdcp_is_seq_num_valid(u16 seq_num, u8 seq_num_size)
 
 u16 pdcp_calculate_max_seq_num_for_given_size(u8 seq_num_size)
 {
-  u16 max_seq_num = 1;
-
-  max_seq_num <<= seq_num_size;
-
-  return max_seq_num - 1;
+  return (u16) pow(2.0, seq_num_size) - 1;
 }
 
 u16 pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
@@ -128,7 +123,6 @@ BOOL pdcp_advance_rx_window(pdcp_t* pdcp_entity)
    * Update sequence numbering state and Hyper Frame Number if SN has already reached
    * its max value (see 5.1 PDCP Data Transfer Procedures)
    */
-  LOG_I(PDCP, "Advancing RX window...\n");
   if (pdcp_entity->next_pdcp_rx_sn == pdcp_calculate_max_seq_num_for_given_size(pdcp_entity->seq_num_size)) {
     pdcp_entity->next_pdcp_rx_sn = 0;
     pdcp_entity->rx_hfn++;
@@ -146,8 +140,6 @@ BOOL pdcp_advance_rx_window(pdcp_t* pdcp_entity)
  */
 BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
 {
-  LOG_D(PDCP, "Incoming RX Seq # is %04d\n", seq_num);
-
   if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE || pdcp_is_seq_num_valid(seq_num, pdcp_entity->seq_num_size) == FALSE)
     return FALSE;
 
@@ -159,12 +151,12 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
   if (seq_num == pdcp_entity->next_pdcp_rx_sn) {
     // Incoming sequence number is in accordance with the RX window so 
     // update PDCP status for next expected RX sequence number
-    LOG_I(PDCP, "Next expected SN (%d) arrived, advancing RX window\n", seq_num);
+    msg("[PDCP] Next expected SN arrived, advancing RX window\n");
 
     return pdcp_advance_rx_window(pdcp_entity);
   } else {
     // XXX This is an error just because we don't have a reordering window!
-    LOG_E(PDCP, "D'oh! Incoming SN is not the one we expected to receive! (Incoming:%d, Expected:%d)\n", \
+    msg("[PDCP] D'oh! Incoming SN is not the one we expected to receive! (Incoming:%d, Expected:%d)\n", \
         seq_num, pdcp_entity->next_pdcp_rx_sn);
 
     return FALSE;
