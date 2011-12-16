@@ -442,7 +442,7 @@ static int __init openair_init_module( void )
   fifo_printf_init();
 
 #ifdef OPENAIR2
-  logInit(LOG_DEBUG);
+  logInit();
 #endif
 
   printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);
@@ -475,7 +475,7 @@ static void __exit openair_cleanup_module(void)
   fifo_printf_clean_up();
 
 #ifdef OPENAIR2
-  //logClean();
+  logClean();
 #endif
 
   
