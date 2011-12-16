@@ -781,38 +781,95 @@ int main(int argc, char **argv) {
  //fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
  switch (mcs)
    {
-    case 0:
-      fprintf(tikz_fd,"\\addplot[color=blue, mark=star] plot coordinates {");
-      break;
-    case 1:
-      fprintf(tikz_fd,"\\addplot[color=red, mark=star] plot coordinates {");
-      break;
-    case 2:
-      fprintf(tikz_fd,"\\addplot[color=green, mark=star] plot coordinates {");
-      break;
-    case 3:
-      fprintf(tikz_fd,"\\addplot[color=yellow, mark=star] plot coordinates {");
-      break;
-    case 4:
-      fprintf(tikz_fd,"\\addplot[color=black, mark=star] plot coordinates {");
-      break;
-    case 5:
-      fprintf(tikz_fd,"\\addplot[color=blue, mark=o] plot coordinates {");
-      break;
-    case 6:
-      fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
-      break;
-    case 7:
-      fprintf(tikz_fd,"\\addplot[color=green, mark=o] plot coordinates {");
-      break;
-    case 8:
-      fprintf(tikz_fd,"\\addplot[color=yellow, mark=o] plot coordinates {");
-      break;
-    case 9:
-      fprintf(tikz_fd,"\\addplot[color=black, mark=o] plot coordinates {");
-      break;
-    }
-  for (i=0;i<2;i++) {
+   case 0:
+     fprintf(tikz_fd,"\\addplot[color=blue, mark=star] plot coordinates {");
+     break;
+   case 1:
+     fprintf(tikz_fd,"\\addplot[color=red, mark=star] plot coordinates {");
+     break;
+   case 2:
+     fprintf(tikz_fd,"\\addplot[color=green, mark=star] plot coordinates {");
+     break;
+   case 3:
+     fprintf(tikz_fd,"\\addplot[color=yellow, mark=star] plot coordinates {");
+     break;
+   case 4:
+     fprintf(tikz_fd,"\\addplot[color=black, mark=star] plot coordinates {");
+     break;
+   case 5:
+     fprintf(tikz_fd,"\\addplot[color=blue, mark=o] plot coordinates {");
+     break;
+   case 6:
+     fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
+     break;
+   case 7:
+     fprintf(tikz_fd,"\\addplot[color=green, mark=o] plot coordinates {");
+     break;
+   case 8:
+     fprintf(tikz_fd,"\\addplot[color=yellow, mark=o] plot coordinates {");
+     break;
+   case 9:
+     fprintf(tikz_fd,"\\addplot[color=black, mark=o] plot coordinates {");
+     break;
+   case 10:
+     fprintf(tikz_fd,"\\addplot[color=blue, mark=square] plot coordinates {");
+     break;
+   case 11:
+     fprintf(tikz_fd,"\\addplot[color=red, mark=square] plot coordinates {");
+     break;
+   case 12:
+     fprintf(tikz_fd,"\\addplot[color=green, mark=square] plot coordinates {");
+     break;
+   case 13:
+     fprintf(tikz_fd,"\\addplot[color=yellow, mark=square] plot coordinates {");
+     break;
+   case 14:
+     fprintf(tikz_fd,"\\addplot[color=black, mark=square] plot coordinates {");
+     break;
+   case 15:
+     fprintf(tikz_fd,"\\addplot[color=blue, mark=diamond] plot coordinates {");
+     break;
+   case 16:
+     fprintf(tikz_fd,"\\addplot[color=red, mark=diamond] plot coordinates {");
+     break;
+   case 17:
+     fprintf(tikz_fd,"\\addplot[color=green, mark=diamond] plot coordinates {");
+     break;
+   case 18:
+     fprintf(tikz_fd,"\\addplot[color=yellow, mark=diamond] plot coordinates {");
+     break;
+   case 19:
+     fprintf(tikz_fd,"\\addplot[color=black, mark=diamond] plot coordinates {");
+     break;
+   case 20:
+     fprintf(tikz_fd,"\\addplot[color=blue, mark=x] plot coordinates {");
+     break;
+   case 21:
+     fprintf(tikz_fd,"\\addplot[color=red, mark=x] plot coordinates {");
+     break;
+   case 22:
+     fprintf(tikz_fd,"\\addplot[color=green, mark=x] plot coordinates {");
+     break;
+   case 23:
+     fprintf(tikz_fd,"\\addplot[color=yellow, mark=x] plot coordinates {");
+     break;
+   case 24:
+     fprintf(tikz_fd,"\\addplot[color=black, mark=x] plot coordinates {");
+     break;
+   case 25:
+     fprintf(tikz_fd,"\\addplot[color=blue, mark=x] plot coordinates {");
+     break;
+   case 26:
+     fprintf(tikz_fd,"\\addplot[color=red, mark=+] plot coordinates {");
+     break;
+   case 27:
+     fprintf(tikz_fd,"\\addplot[color=green, mark=+] plot coordinates {");
+     break;
+   case 28:
+     fprintf(tikz_fd,"\\addplot[color=yellow, mark=+] plot coordinates {");
+     break;
+   }
+ for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));

@@ -107,7 +107,7 @@ $(OBJ) : %.o : %.c
 
 dlsim : $(OBJ) dlsim.c
 	@echo "Compiling dlsim.c ..."
-	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
+	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) -static -L/usr/lib/libblas
 
 framegen: $(OBJ) framegen.c
 	@echo "Compiling framegen.c"
