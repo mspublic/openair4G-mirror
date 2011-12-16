@@ -37,6 +37,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \bug
 * \warning
 */
+/** @defgroup _rlc_am_internal_impl_ RLC AM Layer Internal Reference Implementation
+* @ingroup _rlc_am_impl_
+* @{
+*/
+
 #    ifndef __RLC_AM_ENTITY_H__
 #        define __RLC_AM_ENTITY_H__
 //-----------------------------------------------------------------------------

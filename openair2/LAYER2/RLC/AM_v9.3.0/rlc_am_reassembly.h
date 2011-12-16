@@ -37,6 +37,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \bug
 * \warning
 */
+/** @defgroup _rlc_am_internal_reassembly_impl_ RLC AM Reassembly Internal Reference Implementation
+* @ingroup _rlc_am_internal_impl_
+* @{
+*/
 #ifndef __RLC_AM_REASSEMBLY_H__
 #    define __RLC_AM_REASSEMBLY_H__
 #    ifdef RLC_AM_REASSEMBLY_C
@@ -54,9 +58,32 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #            define public_rlc_am_reassembly(x)     extern x
 #        endif
 #    endif
+/*! \fn void rlc_am_clear_rx_sdu (rlc_am_entity_t *rlcP)
+* \brief    Reset the data cursor index in the output SDU buffer to zero.
+* \param[in]  rlcP                      RLC AM protocol instance pointer.
+*/
 private_rlc_am_reassembly(   void rlc_am_clear_rx_sdu (rlc_am_entity_t *rlcP);)
+
+/*! \fn void rlc_am_reassembly   (u8_t * srcP, s32_t lengthP, rlc_am_entity_t *rlcP)
+* \brief    Concatenate datas at the tail of the output SDU in construction. This SDU in construction will be sent to higher layer.
+* \param[in]  srcP                      Pointer on data to be reassemblied.
+* \param[in]  lengthP                   Length of data to be reassemblied.
+* \param[in]  rlcP                      RLC AM protocol instance pointer.
+*/
 private_rlc_am_reassembly(   void rlc_am_reassembly   (u8_t * srcP, s32_t lengthP, rlc_am_entity_t *rlcP);)
+
+/*! \fn void rlc_am_send_sdu     (rlc_am_entity_t *rlcP)
+* \brief    Send the output SDU in construction to higher layer.
+* \param[in]  rlcP                      RLC AM protocol instance pointer.
+*/
 private_rlc_am_reassembly(   void rlc_am_send_sdu     (rlc_am_entity_t *rlcP);)
+
+/*! \fn void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
+* \brief    Reassembly a RLC AM PDU, depending of the content of this PDU, data will be reassemblied to the current output SDU, the current will be sent to higher layers or not, after or before the reassembly, or no send of SDU will be triggered, depending on FI field in PDU header.
+* \param[in]  rlcP                      RLC AM protocol instance pointer.
+* \param[in]  tbP                       RLC AM PDU embedded in a mem_block_t.
+*/
 protected_rlc_am_reassembly( void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP);)
+/** @} */
 #endif
 
