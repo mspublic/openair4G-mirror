@@ -990,15 +990,16 @@ main (int argc, char **argv)
     else {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -145 + snr_dB;
+	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	  //UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
 	  if (eNB_id == (UE_id % NB_eNB_INST))
-	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -145 + snr_dB + 20; //+20 to offset the difference in tx power of the UE wrt eNB
+	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower; //+20 to offset the difference in tx power of the UE wrt eNB
 	  else
-	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -145 + sinr_dB + 20;
+	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 #ifdef DEBUG_SIM
-	  printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
-	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
+	  printf("[SIM] Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
+		 PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
+	  //	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
 #endif
 	}
       }
