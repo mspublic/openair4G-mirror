@@ -388,7 +388,6 @@ int test_log(){
   set_comp_log(LOG, LOG_INFO, FLAG_ONLINE);
   set_comp_log(MAC, LOG_WARNING, 0);
   
-  LOG_ENTER(MAC);
   LOG_I(LOG, "2 Starting OAI logs version %s Build date: %s on %s\n", 
 	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
   LOG_E(MAC, "2 emerge MAC\n");
