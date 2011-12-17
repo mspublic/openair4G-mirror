@@ -99,7 +99,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
-    phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id],0,0,0);
+    phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id],0,0,abstraction_flag);
 
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {

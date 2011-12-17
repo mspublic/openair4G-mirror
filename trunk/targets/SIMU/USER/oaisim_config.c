@@ -206,6 +206,7 @@ int olg_config() {
   
   // for those not in XML file
   set_comp_log(OCG,  LOG_INFO, LOG_LOW, 10);  
+  set_comp_log(MAC,  LOG_DEBUG, LOG_LOW, 10);  
   
   LOG_T(LOG,"global log level is set to %d \n", oai_emulation.info.g_log_level );
   return 1; 
