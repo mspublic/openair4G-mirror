@@ -47,7 +47,7 @@ typedef struct
     void (*terminate_ra_proc)(u8 Mod_id,u16 UE_id, u8 *l3msg);
 
     /// Initiate the RA procedure upon reception (hypothetical) of a valid preamble
-    void (*initiate_ra_proc)(u8 Mod_id,u16 preamble,s16 timing_offset,u8 sect_id);
+    void (*initiate_ra_proc)(u8 Mod_id,u16 preamble,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
 
     /// cancel an ongoing RA procedure 
     void (*cancel_ra_proc)(u8 Mod_id,u16 preamble);
@@ -98,10 +98,10 @@ typedef struct
     void (*ue_get_sdu)(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
     /// Retrieve RRCConnectionReq from MAC
-    u8* (*ue_get_rach)(u8 Mod_id,u8 CH_index);
+    PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u8 Msg3_flag,u8 subframe);
 
     /// Process Random-Access Response
-    u16 (*ue_process_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
+    u16 (*ue_process_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
 
     /// Get SR payload (0,1) from UE MAC
     u32 (*ue_get_SR)(u8 Mod_id,u8 eNB_id,u16 rnti,u8 subframe);
@@ -155,6 +155,22 @@ typedef struct
 
     /// Function for UE MAC to retrieve current PHY connectivity mode (PRACH,RA_RESPONSE,PUSCH)
     UE_MODE_t (*get_ue_mode)(u8 Mod_id,u8 eNB_index);
+
+    /// Function for UE MAC to retrieve measured Path Loss
+    u16 (*get_PL)(u8 Mod_id,u8 eNB_index);
+
+    /// Function for UE/eNB MAC to retrieve number of PRACH in TDD
+    u8 (*get_num_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms);
+
+    /// Function for UE/eNB MAC to retrieve f_id of particular PRACH resource in TDD
+    u8 (*get_fid_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
+
+    // MAC Helper functions
+    /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (Po_NOMINAL_PUSCH parameter)
+    s8 (*get_Po_NOMINAL_PUSCH)(u8 Mod_id);
+
+    /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (deltaP_rampup parameter)
+    s8 (*get_deltaP_rampup)(u8 Mod_id);
 
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
 
