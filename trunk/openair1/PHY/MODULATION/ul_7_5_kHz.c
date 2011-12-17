@@ -122,10 +122,11 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
 
 
   s32 **rxdata=phy_vars_eNB->lte_eNB_common_vars.rxdata[0];
+  s32 **rxdata_7_5kHz=phy_vars_eNB->lte_eNB_common_vars.rxdata_7_5kHz[0];
   u16 len;
   u32 *kHz7_5ptr;
-  __m128i *rxptr128,*kHz7_5ptr128,kHz7_5_2,mmtmp_re,mmtmp_im,mmtmp_re2,mmtmp_im2;
-  u32 slot_offset;
+  __m128i *rxptr128,*rxptr128_7_5kHz,*kHz7_5ptr128,kHz7_5_2,mmtmp_re,mmtmp_im,mmtmp_re2,mmtmp_im2;
+  u32 slot_offset,slot_offset2;
   u8 aa;
   u32 i;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
@@ -154,18 +155,21 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
     kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
     break;
   }
+
  
   slot_offset = (u32)slot * phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
+  slot_offset2 = (u32)(slot&1) * phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
 
   len = phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
 
   for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 
-    rxptr128 = (__m128i *)&rxdata[aa][slot_offset];
-    kHz7_5ptr128 = (__m128i *)kHz7_5ptr;
+    rxptr128        = (__m128i *)&rxdata[aa][slot_offset];
+    rxptr128_7_5kHz = (__m128i *)&rxdata_7_5kHz[aa][slot_offset2];    
+    kHz7_5ptr128    = (__m128i *)kHz7_5ptr;
     
-    // apply 7.5 kHz
-    
+    // apply 7.5 kHz 
+
     //      if (((slot>>1)&1) == 0) { // apply the sinusoid from the table directly
     for (i=0;i<(len>>2);i++) {
       kHz7_5_2 = _mm_sign_epi16(*kHz7_5ptr128,*(__m128i*)&conjugate75_2[0]);
@@ -180,8 +184,9 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
       mmtmp_re2 = _mm_unpacklo_epi32(mmtmp_re,mmtmp_im);
       mmtmp_im2 = _mm_unpackhi_epi32(mmtmp_re,mmtmp_im);
       
-      rxptr128[0] = _mm_packs_epi32(mmtmp_re2,mmtmp_im2);
+      rxptr128_7_5kHz[0] = _mm_packs_epi32(mmtmp_re2,mmtmp_im2);
       rxptr128++;
+      rxptr128_7_5kHz++;
       kHz7_5ptr128++;
     }
   }

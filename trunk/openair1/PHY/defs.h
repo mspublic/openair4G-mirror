@@ -252,6 +252,7 @@ typedef struct
   u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
+  s8 tx_power_dBm;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
@@ -263,6 +264,8 @@ typedef struct
   LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
   LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_eNB_MAX][2];
+  LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_eNB_MAX];
   u8               sr;
   u8               pucch_payload[22];
@@ -275,11 +278,12 @@ typedef struct
 
   char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
 
-  unsigned char ulsch_ue_RRCConnReq_active[NUMBER_OF_eNB_MAX];
-  unsigned int  ulsch_ue_RRCConnReq_frame[NUMBER_OF_eNB_MAX];
-  unsigned char ulsch_ue_RRCConnReq_subframe[NUMBER_OF_eNB_MAX];
-  unsigned char RRCConnReq_timer[NUMBER_OF_eNB_MAX];
-  unsigned char *RRCConnectionRequest_ptr[NUMBER_OF_eNB_MAX];
+  unsigned char ulsch_ue_Msg3_active[NUMBER_OF_eNB_MAX];
+  unsigned int  ulsch_ue_Msg3_frame[NUMBER_OF_eNB_MAX];
+  unsigned char ulsch_ue_Msg3_subframe[NUMBER_OF_eNB_MAX];
+  //  unsigned char Msg3_timer[NUMBER_OF_eNB_MAX];
+  //unsigned char *Msg3_ptr[NUMBER_OF_eNB_MAX];
+  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_eNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
   unsigned int total_TBS[NUMBER_OF_eNB_MAX];
   unsigned int total_TBS_last[NUMBER_OF_eNB_MAX];
@@ -297,7 +301,8 @@ typedef struct
   int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
   u8               generate_prach;
-  u8               prach_timer;
+  u8               prach_PreambleIndex;
+  //  u8               prach_timer;
   int              rx_offset; // Timing offset
 
   /// Flag to tell if UE is secondary user (cognitive mode)

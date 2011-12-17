@@ -53,7 +53,7 @@ extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
 extern unsigned short RIV_max;
 
-//#define DEBUG_RAR
+#define DEBUG_RAR
 
 #ifdef OPENAIR2
 int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
@@ -65,7 +65,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
-  u8 harq_pid = get_RRCConnReq_harq_pid(frame_parms,subframe);
+  u8 harq_pid = get_Msg3_harq_pid(frame_parms,subframe);
   
   msg("[PHY][eNB]generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
   
@@ -116,18 +116,25 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   return(0);
 }
 
-int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
-				      unsigned char subframe,
-				      LTE_UE_ULSCH_t *ulsch,
-				      PHY_MEASUREMENTS *meas,
-				      LTE_DL_FRAME_PARMS *frame_parms,
-				      unsigned char eNB_id,
-				      int current_dlsch_cqi) {
+s8 delta_PUSCH_msg2[8] = {-6,-4,-2,0,2,4,6,8};
+
+int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
+				      unsigned char eNB_id ){
   
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
+
+  unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
+  unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
+  LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
+  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
+  LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
+  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
+
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
   u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
 
+    
+   
 #ifdef DEBUG_RAR
   msg("rar_tools.c: Filling ue ulsch params -> ulsch %p : subframe %d\n",ulsch,subframe);
 #endif
@@ -186,6 +193,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = rar->mcs;
+      ulsch->harq_processes[harq_pid]->TPC         = rar->TPC;
       ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
@@ -195,6 +203,12 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->round++;
     }
+
+
+    ulsch->f_pusch = delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC] +
+      mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id);
+    
+
 #ifdef DEBUG_RAR
     debug_msg("ulsch (ue,ra): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     debug_msg("ulsch (ue,ra): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);

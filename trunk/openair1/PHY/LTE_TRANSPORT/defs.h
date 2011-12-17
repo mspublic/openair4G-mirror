@@ -70,7 +70,6 @@
 #define MAX_NUM_RE (14*1200)
 
 #define SI_RNTI 0xffff 
-#define RA_RNTI 0xfffe
 #define P_RNTI  0xfffd
 #define C_RNTI  0x1234
 
@@ -293,6 +292,10 @@ typedef struct {
   u8 cooperation_flag;
   /// RNTI attributed to this ULSCH
   u16 rnti;
+  /// f_PUSCH parameter for PUSCH power control
+  s16 f_pusch;
+  /// Po_PUSCH - target output power for PUSCH
+  s16 Po_PUSCH;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -405,14 +408,14 @@ typedef struct {
   u16 beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   u16 beta_offset_harqack_times8;
-  /// Flag to indicate that eNB awaits UE RRCConnRequest 
-  u8 RRCConnRequest_active;
-  /// Flag to indicate that eNB should decode UE RRCConnRequest 
-  u8 RRCConnRequest_flag;
-  /// Subframe for RRCConnRequest
-  u8 RRCConnRequest_subframe;
-  /// Frame for RRCConnRequest
-  u32 RRCConnRequest_frame;
+  /// Flag to indicate that eNB awaits UE Msg3 
+  u8 Msg3_active;
+  /// Flag to indicate that eNB should decode UE Msg3 
+  u8 Msg3_flag;
+  /// Subframe for Msg3
+  u8 Msg3_subframe;
+  /// Frame for Msg3
+  u32 Msg3_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
   /// n_DMRS2 for cyclic shift of DM RS ( 3GPP 36.211 Table 5.5.2.1.1-1)
@@ -575,6 +578,7 @@ typedef struct {
 typedef enum {format0,
 	      format1,
 	      format1A,
+	      format1A_RA,
 	      format1B,
 	      format1C,
 	      format1D,
@@ -605,6 +609,8 @@ typedef struct {
   u8 dci_length;
   /// Aggregation level 
   u8 L;
+  /// flag to indicate that this is a RA response
+  u8 ra_flag;
   /// rnti
   u16 rnti;
   /// Format

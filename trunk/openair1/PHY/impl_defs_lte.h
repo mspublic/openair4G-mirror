@@ -483,7 +483,9 @@ typedef struct{
   ///holds the transmit data in the frequency domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   mod_sym_t **txdataF[3];    
   ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
-  s32 **rxdata[3];           
+  s32 **rxdata[3];
+  ///holds the last subframe of received data in time domain after removal of 7.5kHz frequency offset
+  s32 **rxdata_7_5kHz[3];
   ///holds the received data in the frequency domain
   s32 **rxdataF[3];          
   /// holds output of the sync correlator
@@ -663,6 +665,21 @@ typedef struct {
   s16 *prachF;
   s16 *rxsigF[4];
 } LTE_eNB_PRACH;
+
+typedef struct {
+  /// Preamble index for PRACH (0-63)
+  u8 ra_PreambleIndex;
+  /// RACH MaskIndex
+  u8 ra_RACH_MaskIndex;
+  /// Target received power at eNB (-120 ... -82 dBm)
+  s8 ra_PREAMBLE_RECEIVED_TARGET_POWER;
+  /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
+  u8 ra_TDD_map_index;
+  /// Corresponding RA-RNTI for UL-grant
+  u16 ra_RNTI;
+  /// Pointer to Msg3 payload for UL-grant
+  u8 *Msg3;
+} PRACH_RESOURCES_t;
 
 typedef struct {
   /// Downlink Power offset field

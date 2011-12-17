@@ -44,6 +44,18 @@ void print_ints(char *s,__m128i *x) {
 __m128i pmi128_re,pmi128_im;
 __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 
+s16 get_PL(u8 Mod_id,u8 eNB_index) {
+
+  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
+
+  printf("get_PL : rssi %d, eNB power %d\n",
+	 phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index],
+	 phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower);
+
+  return((s16)(-phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index] + 
+	       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower));
+}
+
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
