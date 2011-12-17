@@ -16,8 +16,7 @@ extern inline unsigned int taus(void);
 
 unsigned short fill_rar(u8 Mod_id,
 			u8 *dlsch_buffer,
-			u16 N_RB_UL,
-			u8  input_buffer_length) {
+			u16 N_RB_UL) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   
@@ -25,13 +24,13 @@ unsigned short fill_rar(u8 Mod_id,
 
   rarh->E                     = 0; // First and last RAR
   rarh->T                     = 0; // Preamble ID RAR
-  rarh->RAPID                 = 0; // Respond to Preamble 0 only for the moment
+  rarh->RAPID                 = eNB_mac_inst[Mod_id].RA_template[0].preamble_index; // Respond to Preamble 0 only for the moment
   rar->R                      = 0;
   rar->Timing_Advance_Command = eNB_mac_inst[Mod_id].RA_template[0].timing_offset;
   rar->hopping_flag           = 0;
   rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,0,2);  // 2 RB
   rar->mcs                    = 2;                                   // mcs 2
-  rar->TPC                    = 0;
+  rar->TPC                    = 7;
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
   rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;
@@ -42,10 +41,12 @@ unsigned short fill_rar(u8 Mod_id,
   return(rar->t_crnti);
 }
 
-u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti) {
+u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
+
+  printf("In process_rar : preamble_index %d, received %d\n",preamble_index,rarh->RAPID);
 #ifdef DEBUG_RAR
   LOG_T(MAC,"[UE %d] rarh->E %d\n",Mod_id,rarh->E);
   LOG_D(MAC,"[UE %d] rarh->T %d\n",Mod_id,rarh->T);
@@ -61,6 +62,10 @@ u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti) {
   LOG_D(MAC,"[UE %d] rar->cqi_req %d\n",Mod_id,rar->cqi_req);
   LOG_D(MAC,"[UE %d] rar->t_crnti %x\n",Mod_id,rar->t_crnti);
 #endif
-  *t_crnti = rar->t_crnti;
-  return(rar->Timing_Advance_Command);
+  if (preamble_index == rarh->RAPID) {
+    *t_crnti = rar->t_crnti;
+    return(rar->Timing_Advance_Command);
+  }
+  else
+    return(0xffff);
 }

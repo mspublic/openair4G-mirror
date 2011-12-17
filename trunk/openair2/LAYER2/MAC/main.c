@@ -294,7 +294,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
   mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
   mac_xface->get_SB_size	      	   = Get_SB_size;
-
+ 
 
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
@@ -311,6 +311,11 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->lte_frame_parms = frame_parms;
   
   mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
+  mac_xface->get_PL                 = get_PL;
+  mac_xface->get_Po_NOMINAL_PUSCH   = get_Po_NOMINAL_PUSCH;
+  mac_xface->get_num_prach_tdd      = get_num_prach_tdd;
+  mac_xface->get_fid_prach_tdd      = get_fid_prach_tdd;
+  mac_xface->get_deltaP_rampup      = get_deltaP_rampup;
   mac_xface->computeRIV             = computeRIV;
   mac_xface->get_TBS                = get_TBS;
   mac_xface->get_nCCE_max           = get_nCCE_max;

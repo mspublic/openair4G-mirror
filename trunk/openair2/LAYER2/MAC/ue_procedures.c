@@ -37,6 +37,7 @@
 #define msg debug_msg
 #endif
 */
+extern inline unsigned int taus(void);
 
 #define BSR_TABLE_SIZE 64
 const u32 BSR_TABLE[BSR_TABLE_SIZE]={0,10,12,14,17,19,22,26,31,36,42,49,57,67,78,91,
@@ -135,13 +136,13 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
   int T=0; 
   //  int sfn=0;
   // determin the measurement gap
-  if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig !=NULL){
-    if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0){
+  if (UE_mac_inst[Mod_id].measGapConfig !=NULL){
+    if (UE_mac_inst[Mod_id].measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0){
       MGRP= 40;
-      gapOffset= UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.choice.gp0;
-    }else if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp1){
+      gapOffset= UE_mac_inst[Mod_id].measGapConfig->choice.setup.gapOffset.choice.gp0;
+    }else if (UE_mac_inst[Mod_id].measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp1){
       MGRP= 80;
-      gapOffset= UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.choice.gp1;
+      gapOffset= UE_mac_inst[Mod_id].measGapConfig->choice.setup.gapOffset.choice.gp1;
     }else{
       LOG_W(MAC, "Measurement GAP offset is unknown\n");
     }
@@ -154,7 +155,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
     }
   }
   if (UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER < 
-      UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax){
+      UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax){
     UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER++;
     // start the sr-prohibittimer : rel 9 and above
     if (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer > 0) { // timer configured 
@@ -271,44 +272,6 @@ void ue_decode_si(u8 Mod_id, u8 eNB_index, void *pdu,u16 len) {
 
 }
 
-unsigned char *ue_get_rach(u8 Mod_id,u8 eNB_index){
-
-
-  u8 Size=0;
-  UE_MODE_t UE_mode = mac_xface->get_ue_mode(Mod_id,eNB_index);
-  u8 lcid = CCCH,payload_offset;
-  u16 Size16;
-
-  if (UE_mode == PRACH) {
-    if (Is_rrc_registered == 1) {
-      Size = Rrc_xface->mac_rrc_data_req(Mod_id,
-					 CCCH,1,
-					 (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)],0,
-					 eNB_index);
-      Size16 = (u16)Size;
-
-      LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
-      if (Size>0) {
-	payload_offset = generate_ulsch_header((u8*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],  // mac header
-					       1,      // num sdus
-					       0,            // short pading
-					       &Size16,  // sdu length
-					       &lcid,    // sdu lcid
-					       NULL,  // power headroom
-					       NULL,  // crnti
-					       NULL,  // truncated bsr
-					       NULL, // short bsr
-					       NULL); // long_bsr
-	return((u8*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
-      }
-    }
-  }
-  else if (UE_mode == PUSCH) {
-    LOG_D(MAC,"[UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...",Mod_id);
-    mac_xface->macphy_exit("");
-  } 
-  return(NULL);
-}
 
 unsigned char generate_ulsch_header(u8 *mac_header,
 				    u8 num_sdus,
@@ -697,8 +660,8 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
   for (lcid=0; lcid < MAX_NUM_LCID; lcid++ ) { // ccch, dcch, dtch, bcch
     // meausre the Bj 
     if ((direction == SF_UL)&& (UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] >= 0)){
-      bucketsizeduration = UE_mac_inst[Mod_id].scheduling_info.logicalChannelConfig[lcid]->ul_SpecificParameters->prioritisedBitRate * TTI;
-      bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[Mod_id].scheduling_info.logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
+      bucketsizeduration = UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->prioritisedBitRate * TTI;
+      bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
       if ( UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] > bucketsizeduration_max )
 	UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration_max;
       else
@@ -723,9 +686,9 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
   }
  
   // UE has no valid phy config dedicated ||  no valid/released  SR 
-  if ((UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated == NULL) || 
-      (UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig == NULL) ||
-      (UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_release)){
+  if ((UE_mac_inst[Mod_id].physicalConfigDedicated == NULL) || 
+      (UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig == NULL) ||
+      (UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_release)){
 
     // initiate RA with CRNTI included in msg3 (no contention) as descibed in 36.321 sec 5.1.5
     
