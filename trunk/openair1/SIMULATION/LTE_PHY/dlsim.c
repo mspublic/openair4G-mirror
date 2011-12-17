@@ -925,12 +925,6 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2_1E[1].tpmi             = (transmission_mode>=5 ? 5 : 0) ;  // precoding
   DLSCH_alloc_pdu2_1E[1].dl_power_off     = (transmission_mode==5 ? 0 : 1);
 
-  // Create transport channel structures for SI pdus
-  PHY_vars_eNB->dlsch_eNB_SI   = new_eNB_dlsch(1,1,0);
-  PHY_vars_UE->dlsch_ue_SI[0]  = new_ue_dlsch(1,1,0);
-  PHY_vars_eNB->dlsch_eNB_SI->rnti  = SI_RNTI;
-  PHY_vars_UE->dlsch_ue_SI[0]->rnti = SI_RNTI;
-
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
 				PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
 				channel_model,
@@ -991,7 +985,7 @@ int main(int argc, char **argv) {
 					 PHY_vars_eNB->dlsch_eNB[k],
 					 &PHY_vars_eNB->lte_frame_parms,
 					 SI_RNTI,
-					 RA_RNTI,
+					 0,
 					 P_RNTI,
 					 PHY_vars_eNB->eNB_UE_stats[k].DL_pmi_single);
     }
@@ -1117,14 +1111,16 @@ int main(int argc, char **argv) {
 	  }
 	
 	  if (input_fd==NULL) {
-	    if (round == 0) {
+
+	    // Simulate HARQ procedures!!!
+	    if (round == 0) {   // First round, set Ndi to 1 and rv to floor(round/2)
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 1;
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round>>1;
 	      DLSCH_alloc_pdu2_1E[0].ndi             = 1;
 	      DLSCH_alloc_pdu2_1E[0].rv              = 0;
 	      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2_1E[0],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
 	    }
-	    else {
+	    else { // set Ndi to 0
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 0;
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round>>1;
 	      DLSCH_alloc_pdu2_1E[0].ndi             = 0;
@@ -1154,7 +1150,7 @@ int main(int argc, char **argv) {
 					      num_pdcch_symbols,
 					      subframe);
 	      
-#ifdef TBS_FIX
+#ifdef TBS_FIX   // This is for MESH operation!!!
 	      tbs = (double)3*dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb-1]/4;
 #else
 	      tbs = (double)dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb-1];
@@ -1555,9 +1551,7 @@ int main(int argc, char **argv) {
 		  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
 						   dci_alloc_rx,
 						   eNB_id,
-						   subframe,
-						   SI_RNTI,
-						   RA_RNTI);
+						   subframe);
 		  //printf("dci_cnt %d\n",dci_cnt);
 		
 		  if (dci_cnt==0) {
@@ -1584,7 +1578,7 @@ int main(int argc, char **argv) {
 							   PHY_vars_UE->dlsch_ue[0],
 							   &PHY_vars_UE->lte_frame_parms,
 							   SI_RNTI,
-							   RA_RNTI,
+							   0,
 							   P_RNTI)==0)) {
 		      //dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
 		      coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
@@ -1631,14 +1625,14 @@ int main(int argc, char **argv) {
 						    PHY_vars_UE->dlsch_ue[0],
 						    &PHY_vars_UE->lte_frame_parms,
 						    SI_RNTI,
-						    RA_RNTI,
+						    0,
 						    P_RNTI);
 		  dlsch_active = 1;
 		} // if dci_flag == 1
 	      }
 
 	      if (dlsch_active == 1) {
-		if ((Ns==(1+(2*subframe))) && (l==0)) {// process symbols 3,4,5
+		if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
 
 		  for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols;
 		       m<pilot2;
@@ -1663,19 +1657,7 @@ int main(int argc, char **argv) {
 	       
 		}
 		  
-		if ((Ns==(1+(2*subframe))) && (l==pilot1)) {// process symbols 6,7,8
-		  /*
-		    if (rx_pbch(lte_ue_common_vars,
-		    lte_ue_pbch_vars[0],
-		    lte_frame_parms,
-		    0,
-		    SISO)) {
-		    msg("pbch decoded sucessfully!\n");
-		    }
-		    else {
-		    msg("pbch not decoded!\n");
-		    }
-		  */
+		if ((Ns==(1+(2*subframe))) && (l==pilot1)) {// process symbols (6 Extended Prefix),7,8,9 
 		  for (m=pilot2;
 		       m<pilot3;
 		       m++)
@@ -1696,7 +1678,7 @@ int main(int argc, char **argv) {
 		    }
 		}
 	      
-		if ((Ns==(2+(2*subframe))) && (l==0))  // process symbols 10,11, do deinterleaving for TTI
+		if ((Ns==(2+(2*subframe))) && (l==0))  // process symbols 10,11,(12,13 Normal Prefix) do deinterleaving for TTI
 		  for (m=pilot3;
 		       m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
 		       m++)

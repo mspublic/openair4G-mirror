@@ -486,7 +486,7 @@ int main(int argc, char **argv) {
 				    format0,
 				    PHY_vars_UE,
 				    SI_RNTI,
-				    RA_RNTI,
+				    0,
 				    P_RNTI,
 				    0,
 				    srs_flag);
@@ -500,7 +500,7 @@ int main(int argc, char **argv) {
 				     0,
 				     PHY_vars_eNB,
 				     SI_RNTI,
-				     RA_RNTI,
+				     0,
 				     P_RNTI,
 				     srs_flag);
 

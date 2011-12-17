@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 
   char c;
 
-  int i,l,aa,aarx;
+  int i,aa,aarx;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   u8 snr1set=0;
   //mod_sym_t **txdataF;
@@ -106,11 +106,10 @@ int main(int argc, char **argv) {
   u8 channel_length;
   int trial, ntrials=1;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
-  unsigned char eNB_id = 0;
   u16 Nid_cell=0;
 
   u8 awgn_flag=0;
-   int n_frames=1;
+  int n_frames=1;
   channel_desc_t *UE2eNB;
   u32 nsymb,tx_lev,tx_lev_dB;
   u8 extended_prefix_flag=0;
@@ -120,17 +119,17 @@ int main(int argc, char **argv) {
   fifo_dump_emos emos_dump;
 #endif
 
-  u16 NB_RB=1;
 
   SCM_t channel_model=Rayleigh1_corr;
 
   u8 abstraction_flag=0,calibration_flag=0;
-  double prach_sinr;
+  //  double prach_sinr;
   u8 osf=1,N_RB_DL=25;
-  u32 prach_preamble=0,prach_errors=0;
+  u32 prach_errors=0;
   u8 subframe=3;
   u16 preamble_energy_list[64],preamble_tx,preamble_delay_list[64];
   u16 preamble_max,preamble_energy_max;
+  PRACH_RESOURCES_t prach_resources;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -372,14 +371,16 @@ int main(int argc, char **argv) {
 
   PHY_vars_UE->lte_ue_prach_vars[0]->amp = (s32)scfdma_amps[6];
 
+  PHY_vars_UE->prach_resources[0] = &prach_resources;
+
   preamble_tx = (u16)(taus()&0x3f);
+  PHY_vars_UE->prach_resources[0]->ra_PreambleIndex = preamble_tx;
+  PHY_vars_UE->prach_resources[0]->ra_TDD_map_index = 0;
 
   tx_lev = generate_prach(PHY_vars_UE,
 			  0, //eNB_id,
 			  subframe, 
-			  preamble_tx, // preamble index
-			  0, //Nf
-			  0); //tdd_mapindex
+			  0); //Nf
 
   tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
     

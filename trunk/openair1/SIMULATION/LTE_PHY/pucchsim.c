@@ -454,6 +454,9 @@ int main(int argc, char **argv) {
 			  &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
 			  nsymb,
 			  frame_parms);
+	apply_7_5_kHz(PHY_vars_UE,subframe<<1);
+	apply_7_5_kHz(PHY_vars_UE,1+(subframe<<1));
+
       }
       
       tx_lev += signal_energy(&txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
@@ -575,6 +578,9 @@ int main(int argc, char **argv) {
 	    }
 	  }
 	}
+
+	remove_7_5_kHz(PHY_vars_eNB,subframe<<1);
+	remove_7_5_kHz(PHY_vars_eNB,1+(subframe<<1));
 
 	for (l=0;l<PHY_vars_eNB->lte_frame_parms.symbols_per_tti/2;l++) {
 	  
