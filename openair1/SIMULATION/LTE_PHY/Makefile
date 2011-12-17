@@ -23,6 +23,9 @@ endif
 ifeq "$(GCCVERSION)" "4.5.2"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
+ifeq "$(GCCVERSION)" "4.6.1"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 
 CFLAGS += -DOPENAIR_LTE #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE
 #CFLAGS += -DTBS_FIX
