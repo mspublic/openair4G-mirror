@@ -722,16 +722,12 @@ not employ the complexity reducing procedure based on RNTI.
 @param dci_alloc Pointer to DCI_ALLOC_t array to store results for DLSCH/ULSCH programming
 @param eNB_id eNB Index on which to act
 @param subframe Index of subframe
-@param si_rnti Value for SI-RNTI
-@param ra_rnti Value for RA-RNTI
 @returns bitmap of occupied CCE positions (i.e. those detected)
 */
 u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			   DCI_ALLOC_t *dci_alloc,
 			   s16 eNB_id,
-			   u8 subframe,
-			   u16 si_rnti,
-			   u16 ra_rnti);
+			   u8 subframe);
 
 
 u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
@@ -901,13 +897,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u8 eNB_id,
 				      u8 use_srs);
 
-s32 generate_ue_ulsch_params_from_rar(u8 *rar_pdu,
-				      u8 subframe,
-				      LTE_UE_ULSCH_t *ulsch,
-				      PHY_MEASUREMENTS *meas,
-				      LTE_DL_FRAME_PARMS *frame_parms,
-				      u8 eNB_id,
-				      s32 current_dlsch_cqi);
+s32 generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
+				      u8 eNB_id);
 
 int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
@@ -1037,15 +1028,21 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
 			u8 UE_index);
 
-void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
+void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
 			s16 amp,
-			LTE_eNB_ULSCH_t *ulsch_eNB,
-			mod_sym_t **txdataF);
+			u8 sect_id,
+			u8 abstraction_flag);
 
-void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNB,
-			 u8 subframe,
-			 LTE_eNB_ULSCH_t *ulsch_eNB);
+/* \brief  This routine demodulates the PHICH and updates PUSCH/ULSCH parameters.
+   @param phy_vars_ue Pointer to UE variables
+   @param subframe Subframe of received PDCCH/PHICH
+   @param eNB_id Index of eNB
+*/
+
+void rx_phich(PHY_VARS_UE *phy_vars_ue,
+	      u8 subframe,
+	      u8 eNB_id);
 
 void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
@@ -1143,6 +1140,54 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   PUCCH_FMT_t fmt,
 		   u8 *payload,
 		   u8 subframe);
+
+
+/*!
+  \brief Check for PRACH TXop in subframe
+  @param phy_vars_ue Pointer to ue top-level descriptor
+  @param subframe subframe index to check
+  @returns 0 on success
+*/
+int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
+
+/*!
+  \brief Generate PRACH waveform
+  @param phy_vars_ue Pointer to ue top-level descriptor
+  @param eNB_id Index of destination eNB
+  @param subframe subframe index to operate on
+  @param index of preamble (0-63)
+  @param Nf System frame number
+  @returns 0 on success
+  
+*/
+s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u16 Nf);
+
+/*!
+  \brief Process PRACH waveform
+  @param phy_vars_eNB Pointer to eNB top-level descriptor
+  @param subframe subframe index to operate on
+  @param preamble_energy_list List of energies for each candidate preamble
+  @param preamble_delay_list List of delays for each candidate preamble
+  @param Nf System frame number
+  @param tdd_mapindex Index of PRACH resource in Table 5.7.1-4 (TDD)
+  @returns 0 on success
+  
+*/
+void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, u16 *preamble_delay_list, u16 Nf, u8 tdd_mapindex);
+
+/*!
+  \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
+  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
+  @returns 0-5 depending on number of available prach
+*/
+u8 get_num_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms);
+
+/*!
+  \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
+  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
+  @returns 0-5 depending on number of available prach
+*/
+u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);

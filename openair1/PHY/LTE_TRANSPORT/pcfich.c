@@ -303,17 +303,11 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
   for (pcfich_quad=0;pcfich_quad<4;pcfich_quad++) {
     reg_offset = (pcfich_reg[pcfich_quad]*4);
 
-    if (frame_parms->mode1_flag==1) {  // SISO
+    //    if (frame_parms->mode1_flag==1) {  // SISO
       for (i=0;i<4;i++) {
-	//	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
-	//	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
-	//	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1]);
-	pcfich_d_ptr[0] = 0;
-	pcfich_d_ptr[1] = 0;
-	for (j=0;j<frame_parms->nb_antennas_rx;j++) {
-	  pcfich_d_ptr[0] += ((s16*)&rxdataF_comp[j][reg_offset+i])[0]; // RE component
-	  pcfich_d_ptr[1] += ((s16*)&rxdataF_comp[j][reg_offset+i])[1]; // IM component
-	} 
+
+	  pcfich_d_ptr[0] = ((s16*)&rxdataF_comp[0][reg_offset+i])[0]; // RE component
+	  pcfich_d_ptr[1] = ((s16*)&rxdataF_comp[0][reg_offset+i])[1]; // IM component
 	/*
 			printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
@@ -322,6 +316,7 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	*/
 	pcfich_d_ptr+=2;
       }
+      /*
     }
     else { // ALAMOUTI
       for (i=0;i<4;i+=2) {
@@ -343,16 +338,11 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 	}
-	/*	
-	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
-	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
-	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1],
-	       pcfich_d_ptr[0]);
-	*/
+
 	pcfich_d_ptr+=4;
 
       }
-    }
+*/
   }
 
   // pcfhich unscrambling

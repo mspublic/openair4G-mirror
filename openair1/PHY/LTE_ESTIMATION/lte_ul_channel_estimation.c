@@ -98,7 +98,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
     symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
-      //msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
+      //     msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
       mult_cpx_vector_norep2((s16*) &rxdataF_ext[aa][symbol_offset<<1],
 			     (s16*) ul_ref_sigs_rx[u][v][Msc_RS_idx],
 			     (s16*) &ul_ch_estimates[aa][symbol_offset],
