@@ -2287,7 +2287,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
             	printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
       */
       crc = (crc16(dci_decoded_output,sizeof_bits)>>16) ^ extract_crc(dci_decoded_output,sizeof_bits); 
-      //     printf("extracted_crc : %x (crc %x)\n",crc,(crc16(dci_decoded_output,sizeof_bits)>>16));
+      
 	     
 
       if (((L>1) && ((crc == si_rnti)||
@@ -2325,6 +2325,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
 	  lte_ue_pdcch_vars[eNB_id]->nCCE[subframe]=CCEind;
 	}
 	else if (crc==lte_ue_pdcch_vars[eNB_id]->crnti) {
+
 	  if ((format_c == format0)&&((dci_decoded_output[0]&0x80)==0)) // check if pdu is format 0 or 1A
 	    dci_alloc[*dci_cnt].format     = format0;
 	  else if (format_c == format0)
@@ -2822,7 +2823,8 @@ u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   msg("DCI Emul : num_common_dci %d\n",num_common_dci);
 
   for (i=num_common_dci;i<(num_ue_spec_dci+num_common_dci);i++) {
-    //printf("Checking dci %d => %x format %d\n",i,lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_tx[i].format);
+    printf("Checking dci %d => %x format %d (bit 0 %d)\n",i,lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_tx[i].format,
+	   dci_alloc_tx[i].dci_pdu[0]&0x80);
     if (dci_alloc_tx[i].rnti == lte_ue_pdcch_vars[eNB_id]->crnti) {
       memcpy(dci_alloc_rx+dci_cnt,dci_alloc_tx+i,sizeof(DCI_ALLOC_t));
       dci_cnt++;

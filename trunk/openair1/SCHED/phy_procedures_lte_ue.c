@@ -52,7 +52,7 @@
 //#endif
 
 
-#define DEBUG_PHY_PROC 1
+//#define DEBUG_PHY_PROC 1
 
 #define PUCCH 1
 
@@ -1288,16 +1288,16 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   ra_RNTI = (phy_vars_ue->prach_resources[eNB_id]) ? phy_vars_ue->prach_resources[eNB_id]->ra_RNTI : 0;
   for (i=0;i<dci_cnt;i++){
 
-    //dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
+    dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
     //if ((phy_vars_ue->UE_mode[eNB_id] != PRACH) && 
     //    (dci_alloc_rx[i].rnti != 0x1234) &&
     if((dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) &&
        (dci_alloc_rx[i].format != format0)) {
 #ifdef DEBUG_PHY_PROC
-      debug_msg("[PHY][UE %d] frame %d, subframe %d: Found rnti %x, format %d\n",
-		phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1,
-		dci_alloc_rx[i].rnti,
-		dci_alloc_rx[i].format);
+      msg("[PHY][UE %d] frame %d, subframe %d: Found rnti %x, format %d\n",
+	  phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1,
+	  dci_alloc_rx[i].rnti,
+	  dci_alloc_rx[i].format);
       if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20))
 	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 #endif      
@@ -1311,7 +1311,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       }
 #endif
       
-      
+
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (void *)&dci_alloc_rx[i].dci_pdu,
 					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
@@ -1347,7 +1347,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       
 #ifdef DEBUG_PHY_PROC
       //LOG_I(PHY,"[PHY][UE %d] subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
-      debug_msg("[PHY][UE %d] subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
+      msg("[PHY][UE %d] subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
       /*
 	if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20))
 	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -1361,6 +1361,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	return(-1);
       }
 #endif
+
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (void *)&dci_alloc_rx[i].dci_pdu,
 					    SI_RNTI,
@@ -1374,7 +1375,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	phy_vars_ue->dlsch_SI_received[eNB_id]++;
 
 #ifdef DEBUG_PHY_PROC
-	debug_msg("[PHY][UE %d] Generate UE DLSCH SI_RNTI format 1A\n",phy_vars_ue->Mod_id);
+	msg("[PHY][UE %d] Generate UE DLSCH SI_RNTI format 1A\n",phy_vars_ue->Mod_id);
 #endif
       }
     }
@@ -1397,30 +1398,29 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  return(-1);
 	}
 #endif
-      }
-      if (generate_ue_dlsch_params_from_dci(last_slot>>1,
-					    (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
-					    phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
-					    format1A,
-					    &phy_vars_ue->dlsch_ue_ra[eNB_id], 
-					    &phy_vars_ue->lte_frame_parms,
-					    SI_RNTI,
-					    phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
-					    P_RNTI)==0) {
-
-	phy_vars_ue->dlsch_ra_received[eNB_id]++;
-
+      
+	if (generate_ue_dlsch_params_from_dci(last_slot>>1,
+					      (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+					      phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
+					      format1A,
+					      &phy_vars_ue->dlsch_ue_ra[eNB_id], 
+					      &phy_vars_ue->lte_frame_parms,
+					      SI_RNTI,
+					      phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
+					      P_RNTI)==0) {
+	  
+	  phy_vars_ue->dlsch_ra_received[eNB_id]++;
+	  
 #ifdef DEBUG_PHY_PROC
-	debug_msg("[PHY][UE %d] Generate UE DLSCH RA_RNTI format 1A, rb_alloc %x, dlsch_ue_ra[eNB_id] %p\n",
-		  phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc[0],phy_vars_ue->dlsch_ue_ra[eNB_id]);
+	  msg("[PHY][UE %d] Generate UE DLSCH RA_RNTI format 1A, rb_alloc %x, dlsch_ue_ra[eNB_id] %p\n",
+	      phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc[0],phy_vars_ue->dlsch_ue_ra[eNB_id]);
 #endif
+	}
       }
-    }
-
-    else if( (dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) && 
-	     (dci_alloc_rx[i].format == format0)) {
+      else if( (dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) && 
+	       (dci_alloc_rx[i].format == format0)) {
 #ifdef DEBUG_PHY_PROC
-	debug_msg("[PHY][UE %d] subframe %d: Found rnti %x, format 0, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
+	msg("[PHY][UE %d] subframe %d: Found rnti %x, format 0, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
 	/*
 	  if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20))
 	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -1434,9 +1434,9 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  return(-1);
 	}
 #endif
-
+	
 	phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
-
+	
 	if (generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 					      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					      last_slot>>1,
@@ -1452,18 +1452,19 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
 	}
       }
-      else {
+    }
+    else {
 #ifdef DEBUG_PHY_PROC
-	msg("[PHY][UE %d] frame %d, subframe %d: received DCI %d with RNTI=%x (%x) and format %d!\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1,i,dci_alloc_rx[i].rnti,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_rx[i].format);
+      msg("[PHY][UE %d] frame %d, subframe %d: received DCI %d with RNTI=%x (%x) and format %d!\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1,i,dci_alloc_rx[i].rnti,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_rx[i].format);
 #endif
-	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
+      dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 #ifdef DIAG_PHY
-	phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors++;
-	phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false++;
-	return(-1);
+      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors++;
+      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false++;
+      return(-1);
 #endif
-      }
-
+    }
+    
   }
   return(0);
 }
