@@ -8,7 +8,7 @@
 
  ***************************************************************************/
 #define MEM_BLOCK_C
-#include "rtos_header.h"
+//#include "rtos_header.h"
 #include "mem_block.h"
 #include "mem_pool.h"
 #include "list.h"

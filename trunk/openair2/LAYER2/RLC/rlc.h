@@ -390,4 +390,7 @@ public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 public_rlc(int rlc_module_init(void);)
 
 /** @} */
+#ifndef USER_MODE
+#define assert(x) ((x)?msg("rlc assertion fails\n"):0)
+#endif
 #endif

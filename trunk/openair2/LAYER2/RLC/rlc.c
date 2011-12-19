@@ -28,7 +28,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 *******************************************************************************/
 
 #define RLC_C
-#include "rtos_header.h"
+//#include "rtos_header.h"
 #include "rlc.h"
 //#include "mpls.h"
 #include "mem_block.h"

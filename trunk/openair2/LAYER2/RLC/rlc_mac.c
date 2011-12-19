@@ -8,7 +8,7 @@
 
 //-----------------------------------------------------------------------------
 #define RLC_MAC_C
-#include "rtos_header.h"
+//#include "rtos_header.h"
 #include "rlc.h"
 
 #define DEBUG_MAC_INTERFACE

@@ -47,11 +47,12 @@
 
 #include "log.h"
 #include "log_vars.h"
+#ifdef USER_MODE
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#ifndef USER_MODE
+#else
 #include "PHY/defs.h"
-
+#include "PHY/extern.h"
 #    define FIFO_PRINTF_MAX_STRING_SIZE   1000
 #    define FIFO_PRINTF_NO              62
 #    define FIFO_PRINTF_SIZE            65536
@@ -201,8 +202,13 @@ void logRecord( const char *file, const char *func,
   c = &g_log->log_component[comp];
   
   // only log messages which are enabled and are below the global log level and component's level threshold
-   if ((c->level > g_log->level) || (level > c->level)|| (c->flag == LOG_NONE) || 
-      (((oai_emulation.info.frame % c->interval) != 0) && (oai_emulation.info.frame > oai_emulation.info.nb_ue_local * 10))) { 
+  if ((c->level > g_log->level) || (level > c->level)|| (c->flag == LOG_NONE) ||
+#ifdef USER_MODE
+      (((oai_emulation.info.frame % c->interval) != 0) && (oai_emulation.info.frame > oai_emulation.info.nb_ue_local * 10))
+#else
+      ((mac_xface->frame % c->interval) != 0)
+#endif
+      ) { 
     return;
     }
    // adjust syslog level for TRACE messages
