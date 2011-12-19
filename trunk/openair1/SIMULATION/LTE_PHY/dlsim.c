@@ -1294,10 +1294,11 @@ int main(int argc, char **argv) {
 				      PHY_vars_eNB->lte_frame_parms.samples_per_tti);
 	    }
 	    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
-	    //printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
 	  
-	    if (n_frames==1)
+	    if (n_frames==1) {
+	      printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
 	      write_output("txsig0.m","txs0", PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	    }
 	  }
 	  /*
 	  else {  // Read signal from file
@@ -1384,7 +1385,8 @@ int main(int argc, char **argv) {
 	  //AWGN
 	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
 	  sigma2 = pow(10,sigma2_dB/10);
-	  //printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
+	  if (n_frames==1)
+	    printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 
 	  for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
