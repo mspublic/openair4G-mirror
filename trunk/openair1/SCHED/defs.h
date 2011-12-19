@@ -220,21 +220,41 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 u32 is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
 /*!
-  \brief Function to compute timing of RRCConnRequest transmission on UL-SCH (first UE transmission in RA procedure). This implements the timing in paragraph a) from Section 6.1.1 in 36.213 (p. 17 in version 8.6).  Used by eNB upon transmission of random-access response (RA_RNTI) to program corresponding ULSCH reception procedure.  Used by UE upon reception of random-access response (RA_RNTI) to program corresponding ULSCH transmission procedure.  This does not support the UL_delay field in RAR (always assumed to be 0).
+  \brief Function to compute timing of Msg3 transmission on UL-SCH (first UE transmission in RA procedure). This implements the timing in paragraph a) from Section 6.1.1 in 36.213 (p. 17 in version 8.6).  Used by eNB upon transmission of random-access response (RA_RNTI) to program corresponding ULSCH reception procedure.  Used by UE upon reception of random-access response (RA_RNTI) to program corresponding ULSCH transmission procedure.  This does not support the UL_delay field in RAR (always assumed to be 0).
   @param frame_parms Pointer to DL frame parameter descriptor
   @param current_subframe Index of subframe where RA_RNTI was received 
   @param current_frame Index of frame where RA_RNTI was received
-  @param frame Frame index where RRCConnectionRequest is to be transmitted (n+6 mod 10 for FDD, different for TDD)
-  @param subframe subframe index where RRCConnectionRequest is to be transmitted (n, n+1 or n+2)
+  @param frame Frame index where Msg3 is to be transmitted (n+6 mod 10 for FDD, different for TDD)
+  @param subframe subframe index where Msg3 is to be transmitted (n, n+1 or n+2)
 */
-void get_RRCConnReq_alloc(LTE_DL_FRAME_PARMS *frame_parms,
-			  u8 current_subframe, 
-			  u32 current_frame,
-			  u32 *frame,
-			  u8 *subframe);
-u8 get_RRCConnReq_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 current_subframe);
+void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
+		    u8 current_subframe, 
+		    u32 current_frame,
+		    u32 *frame,
+		    u8 *subframe);
 
+/*!
+  \brief Function to compute timing of Msg3 retransmission on UL-SCH (first UE transmission in RA procedure). 
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @param current_subframe Index of subframe where RA_RNTI was received 
+  @param current_frame Index of frame where RA_RNTI was received
+  @param frame Frame index where Msg3 is to be transmitted (n+6 mod 10 for FDD, different for TDD)
+  @param subframe subframe index where Msg3 is to be transmitted (n, n+1 or n+2)
+*/
+void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
+			u8 current_subframe, 
+			u32 current_frame,
+			u32 *frame,
+			u8 *subframe);
 
+u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 current_subframe);
+
+/* \brief Get ULSCH harq_pid from PHICH subframe
+   @param frame_parms Pointer to DL Frame Parameters
+   @param subframe subframe of PHICH
+   @returns hard_pid (0 ... 7)
+ */
+u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
 
 //
