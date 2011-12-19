@@ -697,7 +697,9 @@ int main(int argc, char **argv) {
 	}  // input_fd == NULL 
 
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
+
 	if (n_frames==1) {
+	  printf("tx_lev_dB = %d dB\n",tx_lev_dB);
 	  write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	  //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	}
@@ -724,10 +726,11 @@ int main(int argc, char **argv) {
 	}
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
 	sigma2_dB = 10*log10((double)tx_lev)  +10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(PHY_vars_UE->lte_frame_parms.N_RB_DL*12)) - SNR;
-      
 	//AWGN
+
 	sigma2 = pow(10,sigma2_dB/10);
-	//printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
+	if (n_frames==1)
+	  printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 	for (i=0; i<PHY_vars_eNB->lte_frame_parms.samples_per_tti; i++) {
 	  for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 	    ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
