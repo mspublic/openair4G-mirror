@@ -174,11 +174,11 @@ static void * dlsch_thread(void *param) {
 			       get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
 			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
 			       dlsch_subframe[dlsch_thread_index]),
-			 phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
+			 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			 0,
 			 dlsch_subframe[dlsch_thread_index]<<1);
       debug_msg("[PHY][UE %d] Calling dlsch_decoding for subframe %d\n",phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index]);
-      ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
+      ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			   &phy_vars_ue->lte_frame_parms,
 				 phy_vars_ue->dlsch_ue[eNB_id][0],
 			   dlsch_subframe[dlsch_thread_index],

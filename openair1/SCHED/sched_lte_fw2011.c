@@ -645,7 +645,7 @@ static void * openair_thread(void *param) {
 
 
 
-static int slot_irq_handler(int irq, void *cookie) {
+int slot_irq_handler(int irq, void *cookie) {
 
   unsigned int adac_cnt,val;
   unsigned short irqval;
@@ -653,122 +653,154 @@ static int slot_irq_handler(int irq, void *cookie) {
   int rc;
   RTIME             tv;
   struct timespec   ts;
+  u32 irqcmd;
 
   intr_in = 1;
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
-    // check interrupt status register
-    pci_read_config_word(pdev[0],6 , &irqval);
-
-    if ((irqval&8) != 0)  {
-      adac_cnt = (*(unsigned int *)mbox);
-      intr_cnt++;
-
-      openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
-      //openair_daq_vars.slot_count=adac_cnt>>3;
-      if (openair_daq_vars.slot_count==0)
-      	mac_xface->frame++;
-
-      //if ((adac_cnt>>3) == 0)
-      if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
-	hw_frame++;
-	
-      if ((intr_cnt%2000) < 20) {
-	tv = rt_get_time_ns();
-      	msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d, MAC Frame %d\n",
-	    tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,hw_frame,mac_xface->frame);
-      }
-
-      openair_daq_vars.last_adac_cnt=adac_cnt;
-
-      /*
-      if ((hw_frame %100) == 0)
-	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, MAC Frame %d (interrupt cnt %d)\n",hw_frame,mac_xface->frame,intr_cnt);
-      */
-    
-      // RESET PCI IRQ
-      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK|FROM_GRLIB_PCI_IRQ_ACK);
-      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
-     
+    if (openair_daq_vars.node_configured > 0) {
+      // check interrupt status register
+      pci_read_config_word(pdev[0],6 , &irqval);
       
-      tv = rt_get_time();
-      count2timespec(tv, &ts);
-      ts.tv_nsec += 100000;
-
-      if (exit_openair==0) { 
-	// Schedule openair_thread
-
-	//first lock the mutex that protects the counter that indicates if PHY is still busy 
-	//rc = pthread_mutex_lock (&openair_mutex); // lock before accessing shared resource
-	rc = pthread_mutex_timedlock (&openair_mutex,&ts); // lock before accessing shared resource
-	if (rc==ETIMEDOUT) {
-	  msg("[SCHED][slot_irq_handler] pthread_mutex_timedlock timed out, exiting\n");
-	  //exit_openair = 1;
+      if ((irqval&8) != 0)  {
+	adac_cnt = (*(unsigned int *)mbox);
+	intr_cnt++;
+	
+	openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
+	//openair_daq_vars.slot_count=adac_cnt>>3;
+	if (openair_daq_vars.slot_count==0)
+	  mac_xface->frame++;
+	
+	//if ((adac_cnt>>3) == 0)
+	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
+	  hw_frame++;
+	
+	if ((intr_cnt%2000) < 20) {
+	  tv = rt_get_time_ns();
+	  msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d, MAC Frame %d\n",
+	      tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,hw_frame,mac_xface->frame);
 	}
-	else if (rc != 0) {
-	  msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_lock, exiting\n");
-	  //exit_openair = 1;
-	}
-	else {
-	  // we locked the mutex successfully, so now we can check its value
-	  //msg("[SCHED][slot_irq_handler] Locked openair_mutex, instance_cnt=%d\n",openair_daq_vars.instance_cnt);
+	
+	openair_daq_vars.last_adac_cnt=adac_cnt;
+	
+	/*
+	  if ((hw_frame %100) == 0)
+	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, MAC Frame %d (interrupt cnt %d)\n",hw_frame,mac_xface->frame,intr_cnt);
+	*/
+	
+	// RESET PCI IRQ
+	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK|FROM_GRLIB_PCI_IRQ_ACK);
+	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+	
+	
+	tv = rt_get_time();
+	count2timespec(tv, &ts);
+	ts.tv_nsec += 100000;
+	
+	if (exit_openair==0) { 
+	  // Schedule openair_thread
 	  
-	  if (openair_daq_vars.instance_cnt == 0)   {// PHY is still busy
-	    msg("[SCHED][slot_irq_handler] ERROR slot interrupt while processing, instance_cnt=%d, frame=%d\n",
-		openair_daq_vars.instance_cnt,mac_xface->frame);
-
-	    // unlock the mutex
-	    if (pthread_mutex_unlock (&openair_mutex) != 0) {
-	      msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
-	      //exit_openair=1;
-	    }
+	  //first lock the mutex that protects the counter that indicates if PHY is still busy 
+	  //rc = pthread_mutex_lock (&openair_mutex); // lock before accessing shared resource
+	  rc = pthread_mutex_timedlock (&openair_mutex,&ts); // lock before accessing shared resource
+	  if (rc==ETIMEDOUT) {
+	    msg("[SCHED][slot_irq_handler] pthread_mutex_timedlock timed out, exiting\n");
+	    //exit_openair = 1;
 	  }
-	  else { // schedule L2/L1H TX thread
-	    openair_daq_vars.instance_cnt++; //now it should be 0
+	  else if (rc != 0) {
+	    msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_lock, exiting\n");
+	    //exit_openair = 1;
+	  }
+	  else {
+	    // we locked the mutex successfully, so now we can check its value
+	    //msg("[SCHED][slot_irq_handler] Locked openair_mutex, instance_cnt=%d\n",openair_daq_vars.instance_cnt);
 	    
-	    // Signal MAC_PHY Scheduler
-	    // msg("[SCHED][slot_irq_handler] Signaling MACPHY scheduler\n");
-	    
-	    // unlock the mutex
-	    if (pthread_mutex_unlock (&openair_mutex) != 0) {
-	      msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
-	      //exit_openair=1;
+	    if (openair_daq_vars.instance_cnt == 0)   {// PHY is still busy
+	      msg("[SCHED][slot_irq_handler] ERROR slot interrupt while processing, instance_cnt=%d, frame=%d\n",
+		  openair_daq_vars.instance_cnt,mac_xface->frame);
+	      
+	      // unlock the mutex
+	      if (pthread_mutex_unlock (&openair_mutex) != 0) {
+		msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
+		//exit_openair=1;
+	      }
 	    }
-
-	    if (pthread_cond_signal(&openair_cond) != 0) {
-	      msg("[SCHED][slot_irq_handler] ERROR pthread_cond_signal\n");// schedule L2/L1H TX thread
-	      //exit_openair = 1;
+	    else { // schedule L2/L1H TX thread
+	      openair_daq_vars.instance_cnt++; //now it should be 0
+	      
+	      // Signal MAC_PHY Scheduler
+	      // msg("[SCHED][slot_irq_handler] Signaling MACPHY scheduler\n");
+	      
+	      // unlock the mutex
+	      if (pthread_mutex_unlock (&openair_mutex) != 0) {
+		msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
+		//exit_openair=1;
+	      }
+	      
+	      if (pthread_cond_signal(&openair_cond) != 0) {
+		msg("[SCHED][slot_irq_handler] ERROR pthread_cond_signal\n");// schedule L2/L1H TX thread
+		//exit_openair = 1;
+	      }
+	      
 	    }
-
 	  }
 	}
+	
+	rt_ack_irq(irq);
+	intr_in = 0;
+	return IRQ_HANDLED;
+	
+      } 
+      else {  // CBMIMO is not source of interrupt
+	
+	rt_pend_linux_irq(irq);
+	intr_in = 0;
+	return IRQ_NONE;
       }
 
+    } // node_configured > 0
+    // CBMIMO1 is not activated yet (no interrupts!)
+    rt_pend_linux_irq(irq);
+    intr_in = 0;
+    return IRQ_NONE;
+  }
+  else { //EXPRESS MIMO
+
+
+    irqval = ioread32(bar[0]);
+
+     
+    if ((irqval&0x80) != 0) {
+      // clear PCIE interrupt bit (bit 7 of register 0x0)
+      iowrite32(irqval&0xffffff7f,bar[0]);
+      irqcmd = ioread32(bar[0]+0x4);
+
+   
+      if (irqcmd == SLOT_INTERRUPT) {
+	//	process_slot_interrupt();
+      }
+      else if (irqcmd == PCI_PRINTK) {
+	msg("Got PCIe interrupt for printk ...\n");
+	pci_fifo_printk();
+	
+      }
       rt_ack_irq(irq);
       intr_in = 0;
       return IRQ_HANDLED;
-      
     }
     else {
-
+      // RESET PCI IRQ
       rt_pend_linux_irq(irq);
       intr_in = 0;
       return IRQ_NONE;
     }
   }
 
-  else { //EXPRESS MIMO
-    // RESET PCI IRQ
-    rt_pend_linux_irq(irq);
-    intr_in = 0;
-    return IRQ_NONE;
-  }
-
 }
 
 
-u32 openair_irq_enabled=0;
+
 
 s32 openair_sched_init(void) {
   
@@ -834,20 +866,7 @@ s32 openair_sched_init(void) {
 
   // Create interrupt service routine for PCI 
    
-  printk("[OPENAIR][SCHED][INIT] Trying to get IRQ %d\n",pdev[0]->irq);
-  if (rt_request_irq(pdev[0]->irq,
-		     slot_irq_handler,
-		     NULL,0) == 0) {
-    rt_enable_irq(pdev[0]->irq);
-    openair_irq_enabled=1;
-    printk("[OPENAIR][SCHED][INIT] Got IRQ %d\n",pdev[0]->irq);
 
-  }
-  else {
-    printk("[OPENAIR][SCHED][INIT] Cannot get IRQ %d for HW\n",pdev[0]->irq);
-    return(-1);
-    openair_irq_enabled=0;
-  }
   
   
 

@@ -22,6 +22,15 @@ IS_RTAI_SUBVERSION_LESS_THAN_FIVE=$(shell if [ $(RTAI_SUBVERSION) -lt 5 ] ; then
 EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -ggdb -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
 endif
 
+
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)"  "4.4.3"
+    EXTRA_CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.5.2"
+    EXTRA_CFLAGS += -Wno-packed-bitfield-compat
+endif
+
 EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 #-DOLD_REMAP
 
@@ -31,7 +40,7 @@ EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 #EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -fno-unit-at-a-time -march=i686 -fno-strength-reduce  -fno-exceptions -pipe -mmmx -msse -msse2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fno-common -ffreestanding -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
 #EXTRA_CFLAGS += -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
-EXTRA_CFLAGS += -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2 
+EXTRA_CFLAGS += -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -nostdinc -O2 
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 #SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
@@ -99,8 +108,13 @@ include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 #else
 include $(OPENAIR1_DIR)/MAC_INTERFACE/Makefile.inc
 #endif
-
 EXTRA_CFLAGS += $(subst $(OPENAIR2_TOP), $(OPENAIR2_DIR), $(L2_incl))
+
+include $(OPENAIR2_DIR)/UTIL/Makefile.inc
+EXTRA_CFLAGS += $(subst $(OPENAIR2_TOP), $(OPENAIR2_DIR), $(UTIL_incl))
+
+include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
+
 
 obj-m += openair_rf.o
 
@@ -109,7 +123,7 @@ openair_rf-objs += $(OPENAIR1_TOP)/ARCH/COMMON/bigphys.o
 openair_rf-objs += $(OPENAIR1_TOP)/ARCH/COMMON/reserve_mem.o
 #openair_rf-objs += $(OPENAIR1_TOP)/ARCH/COMMON/amp.o
 
-openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_fileops.o fifo_printf.o cbmimo1_proc.o 
+openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_fileops.o fifo_printf.o cbmimo1_proc.o exmimo_fw.o
 #openair_rf-objs += cbmimo1_generate_ofdm.o cbmimo1_generate_fs4.o  
 
 # MAC Interface
@@ -141,6 +155,10 @@ endif
 #include files for OPENAIR2
 ifeq ($(OPENAIR2),1)
 openair_rf-objs += $(L2_OBJS)
+openair_rf-objs += $(LIST_OBJ)
+openair_rf-objs += $(TIMER_OBJ)
+openair_rf-objs += $(MEM_OBJ)
+openair_rf-objs += $(LOG_OBJS)
 else
 openair_rf-objs += $(MAC_XFACE_OBJS)
 endif

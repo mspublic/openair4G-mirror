@@ -388,10 +388,7 @@ void phy_procedures(u8 last_slot,u8 abstraction_flag);
 /**@}*/
 #endif //OPENAIR_LTE
 
-#ifndef OPENAIR_LTE
-u32 find_chbch(void);
-u32 find_mrbch(void);
-#endif
+extern int slot_irq_handler(int irq, void *cookie);
 
 #endif
 

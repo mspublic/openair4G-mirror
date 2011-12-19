@@ -162,19 +162,18 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
 
   }
   else {
-
+    
     exmimo_pci_interface[card_id]->framing.tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
-    //printk("[openair][INIT] Card %d TX_RX_SWITCH_POINT = %d\n",card_id,openair_daq_vars.tx_rx_switch_point);
+    printk("[openair][INIT] Card %d TX_RX_SWITCH_POINT = %d\n",card_id,openair_daq_vars.tx_rx_switch_point);
     
     exmimo_pci_interface[card_id]->framing.timing_advance = openair_daq_vars.timing_advance;
-    //printk("[openair][INIT] Card %d TIMING_ADVANCE = %d\n",card_id,openair_daq_vars.timing_advance);
+    printk("[openair][INIT] Card %d TIMING_ADVANCE = %d\n",card_id,openair_daq_vars.timing_advance);
     
     exmimo_pci_interface[card_id]->framing.cyclic_prefix_mode  = frame_parms->Ncp;
-    //printk("[openair][INIT] CYCLIC_PREFIX_LENGTH = %d\n",card_id,exmimo_pci_interface[card_id]->framing.cyclic_prefix_length);
-    
     exmimo_pci_interface[card_id]->framing.log2_ofdm_symbol_size = LOG2_NUMBER_OF_OFDM_CARRIERS; 
     exmimo_pci_interface[card_id]->framing.samples_per_frame = FRAME_LENGTH_COMPLEX_SAMPLES;
     exmimo_pci_interface[card_id]->framing.frame_offset = 19;//FRAME_LENGTH_COMPLEX_SAMPLES-1;
+    
     
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       exmimo_pci_interface[card_id]->rf.adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);

@@ -47,6 +47,7 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
   }
 
 #ifndef USER_MODE
+  int i;
   for (i=0;i<number_of_cards;i++) {
     //openair_set_rx_rf_mode(i,openair_daq_vars.rx_rf_mode);
     openair_set_rx_gain_cal_openair(i,phy_vars_ue->rx_total_gain_dB);

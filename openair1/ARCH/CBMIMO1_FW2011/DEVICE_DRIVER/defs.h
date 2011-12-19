@@ -82,6 +82,8 @@ int openair_dma(unsigned char card_id, unsigned int cmd);
 
 int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms);
 
+void exmimo_firmware_init();
+
 void dump_config(void);
 
 int add_chbch_stats(void);
@@ -91,4 +93,7 @@ int add_openair1_stats(void);
 int fifo_printf(const char *fmt,...);
 void fifo_printf_clean_up(void);
 void fifo_printf_init(void); 
+
+void pci_printk_fifo_init();
+void pci_printk_fifo_clean_up (void);
 #endif

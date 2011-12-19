@@ -75,6 +75,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
     return(-1);
   }
 #else
+  u8 b;
   for (b=0;b<33;b++) 
     if (Msc_RS==dftsizes[b])
       Msc_RS_idx = b;

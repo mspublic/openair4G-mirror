@@ -52,7 +52,7 @@
 //#endif
 
 
-//#define DEBUG_PHY_PROC 1
+#define DEBUG_PHY_PROC 1
 
 #define PUCCH 1
 
@@ -566,9 +566,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       }
   
 #ifdef PHY_ABSTRACTION
-      else {
-	generate_srs_tx_emul(phy_vars_ue,next_slot>>1);
-      }
+    else {
+#ifdef PHY_ABSTRACTION
+      generate_srs_tx_emul(phy_vars_ue,next_slot>>1);
+#endif
+    }
 #endif
     
   // get harq_pid from subframe relationship
@@ -658,7 +660,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 	
 	if (Msg3_flag == 1) {
-#ifdef OPENAIR2
 	  msg("[PHY][UE %d][RARPROC] Frame %d, Subframe %d next slot %d Generating Msg3 (nb_rb %d, first_rb %d, Ndi %d, rvidx %d) : %x.%x.%x.%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1, next_slot, 
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb,
@@ -681,12 +682,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      return;
 	    }
 	  }
-#ifdef PHY_ABSTRACTION
 	  else {
+#ifdef PHY_ABSTRACTION
 	    ulsch_encoding_emul(phy_vars_ue->prach_resources[eNB_id]->Msg3,phy_vars_ue,eNB_id,harq_pid,0);
+#endif
 	  }
-#endif
-#endif
+	  
 	}      
 	else {
 	  input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
@@ -719,13 +720,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      return;
 	    }
 	  }
-#ifdef PHY_ABSTRACTION
 	  else {
+#ifdef PHY_ABSTRACTION
 	    ulsch_encoding_emul(ulsch_input_buffer,phy_vars_ue,eNB_id,harq_pid,0);
-	  }
 #endif
+	  }
 	}
-	
 	if (abstraction_flag == 0) {
 	  pusch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,1);
 	  phy_vars_ue->tx_power_dBm = phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;
@@ -735,7 +735,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
 #endif
 	}
-	
       } // ULSCH is active
 #ifdef PUCCH
       else if (phy_vars_ue->UE_mode[eNB_id] == PUSCH){  // check if we need to use PUCCH 1a/1b
@@ -790,20 +789,21 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			   pucch_ack_payload,
 			   scfdma_amps[1],
 			   next_slot>>1);
+	  else {
 #ifdef PHY_ABSTRACTION
-	  else 
 	    generate_pucch_emul(phy_vars_ue,
 				format,
-				frame_parms->pucch_config_common.nCS_AN,
+				phy_vars_ue->lte_frame_parms.pucch_config_common.nCS_AN,
 				pucch_ack_payload,
 				SR_payload,
 				next_slot>>1);
 #endif
+	  }
 	}
-      } // Mode is PUSCH
-      
-      
-#endif //PUCCH
+      }
+#endif  // PUCCH
+
+
 
       if (abstraction_flag == 0) {
 	if (generate_ul_signal == 1 ) {
@@ -1022,9 +1022,11 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     }
 #ifdef PHY_ABSTRACTION
     else {
+#ifdef PHY_ABSTRACTION
       pbch_tx_ant = rx_pbch_emul(phy_vars_ue,
 				 eNB_id,
 				 pbch_phase);
+#endif
     }
 #endif
 
@@ -1192,10 +1194,9 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	       last_slot>>1,eNB_id);
     }
   }
-
-#ifdef PHY_ABSTRACTION
+  
   else {
-
+#ifdef PHY_ABSTRACTION
     for (i=0;i<NB_eNB_INST;i++) {
       if (PHY_vars_eNB_g[i]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
 	break;
@@ -1204,14 +1205,14 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       msg("[PHY][UE %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms.Nid_cell);
       mac_xface->macphy_exit("");
     }
-
+    
     dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
 					  PHY_vars_eNB_g[i]->num_ue_spec_dci[(last_slot>>1)&1],
 					  PHY_vars_eNB_g[i]->num_common_dci[(last_slot>>1)&1],
 					  PHY_vars_eNB_g[i]->dci_alloc[(last_slot>>1)&1],
 					  dci_alloc_rx,
 					  eNB_id);
-
+    printf("DCI: dci_cnt %d\n",dci_cnt);
     UE_id = (u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[i]);
     if (UE_id>=0) {
       printf("Checking PHICH for UE %d (eNB %d)\n",UE_id,i);
@@ -1248,8 +1249,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	} // harq_pid is ACTIVE
       } // This is a PHICH subframe
     } // UE_id exists
-  }
 #endif
+  }
 
 #ifdef DEBUG_PHY_PROC
   debug_msg("[PHY][UE %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
@@ -1379,7 +1380,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
       }
     }
-
+  
     else if (phy_vars_ue->prach_resources[eNB_id]) {
       if ((dci_alloc_rx[i].rnti == phy_vars_ue->prach_resources[eNB_id]->ra_RNTI) && 
 	  (dci_alloc_rx[i].format == format1A)) {
@@ -1468,6 +1469,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   }
   return(0);
 }
+
 
  
 int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
@@ -1641,10 +1643,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 #ifdef PHY_ABSTRACTION
 	  else {
+#ifdef PHY_ABSTRACTION
 	    ret = dlsch_decoding_emul(phy_vars_ue,
 				      (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				      2,
 				      eNB_id);
+#endif
 	  }
 #endif
 
@@ -1793,10 +1797,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 #ifdef PHY_ABSTRACTION
 	  else {
+#ifdef PHY_ABSTRACTION
 	    ret = dlsch_decoding_emul(phy_vars_ue,
 				      (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				      0,
 				      eNB_id);
+#endif
 	  }
 #endif
 
@@ -1898,10 +1904,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 #ifdef PHY_ABSTRACTION
 	else {
+#ifdef PHY_ABSTRACTION
 	  ret = dlsch_decoding_emul(phy_vars_ue,
 				    (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				    1,
 				    eNB_id);
+#endif
 	}
 #endif
 

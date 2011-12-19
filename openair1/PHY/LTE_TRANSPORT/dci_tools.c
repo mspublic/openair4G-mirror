@@ -1562,11 +1562,11 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id) 
     break;
   case ue_selected:
     msg("dci_tools.c: fill_CQI ue_selected CQI not supported yet!!!\n");
-    exit(-1);
+    mac_xface->macphy_exit("");
     break;
   default:
     msg("dci_tools.c: unsupported CQI mode (%d)!!!\n",uci_format);
-    exit(-1);
+    mac_xface->macphy_exit("");
     break;
 
   }
