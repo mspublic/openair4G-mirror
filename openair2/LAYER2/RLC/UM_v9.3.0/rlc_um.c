@@ -29,7 +29,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #define RLC_UM_MODULE
 #define RLC_UM_C
 //-----------------------------------------------------------------------------
-#include "rtos_header.h"
+//#include "rtos_header.h"
 #include "platform_types.h"
 #include "platform_constants.h"
 //-----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "mac_primitives.h"
 #include "LAYER2/MAC/extern.h"
 
-#include "rlc_um_very_simple_test.h"
+//#include "rlc_um_very_simple_test.h"
 //#define RLC_UM_TEST_TRAFFIC
 
 //#define DEBUG_RLC_UM_DATA_REQUEST

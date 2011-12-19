@@ -59,8 +59,10 @@
 
 //#define IDROMEL_NEMO 1
 
+#ifdef USER_MODE
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
+#endif
 
 #ifdef NAS_NETLINK
 
@@ -100,10 +102,14 @@ pdcp_fifo_flush_sdus ()
 
   while ((sdu) && (cont)) {
 
+#ifdef USER_MODE
     // asjust the instance id when passing sdu to IP 
     ((pdcp_data_ind_header_t *)(sdu->data))->inst = (((pdcp_data_ind_header_t *)(sdu->data))->inst >= NB_eNB_INST) ? 
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - NB_eNB_INST +oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local :// UE
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - oai_emulation.info.first_ue_local; // ENB
+#else
+    ((pdcp_data_ind_header_t *)(sdu->data))->inst = 0;
+#endif
 
 #ifdef PDCP_DEBUG
 	  msg("[PDCP][INFO] PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",

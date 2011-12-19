@@ -1052,4 +1052,5 @@ EXPORT_SYMBOL(asn_DEF_SystemInformationBlockType1);
 EXPORT_SYMBOL(asn_DEF_DL_CCCH_Message);
 EXPORT_SYMBOL(uper_decode_complete);
 EXPORT_SYMBOL(uper_decode);
+EXPORT_SYMBOL(transmission_mode_rrc);
 #endif

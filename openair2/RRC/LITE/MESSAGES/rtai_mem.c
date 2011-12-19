@@ -10,6 +10,30 @@
 * \warning  
 */ 
 
+#include <asm/io.h>
+#include <asm/bitops.h>
+#include <asm/uaccess.h>
+#include <asm/segment.h>
+#include <asm/page.h>
+#include <asm/delay.h>
+
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/pci.h>
+#include <linux/mm.h>
+#include <linux/mman.h>
+
+#include <linux/slab.h>
+//#include <linux/config.h>
+#include <linux/version.h>
+#include <linux/kernel.h>
+#include <linux/fs.h>
+
+#include <linux/errno.h>
+
+#include <linux/slab.h>
+
+#include <asm/rtai.h>
 #include <rtai.h>
 #include <rtai_shm.h>
 #include <rtai_malloc.h>

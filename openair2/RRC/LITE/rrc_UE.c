@@ -18,10 +18,14 @@
 #include "DL-DCCH-Message.h"
 #include "MeasGapConfig.h"
 #include "TDD-Config.h"
+#ifdef PHY_ABSTRACTION
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
+#endif
+#ifdef USER_MODE
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
+#endif
 #ifdef PHY_EMUL
 extern EMULATION_VARS *Emul_vars;
 #endif

@@ -244,11 +244,10 @@ pdcp_config_release (module_id_t module_idP, rb_id_t rab_idP)
 int
 pdcp_module_init ()
 {
-  //  int ret;
 
 //-----------------------------------------------------------------------------
 #ifndef USER_MODE
-
+  int ret;
 
   ret=rtf_create(PDCP2NAS_FIFO,32768);
 

@@ -63,6 +63,7 @@ int NAS_config(char *interfaceName, char *ipAddress, char *networkMask, char *br
 */
 int nas_config(int interface_id, int thirdOctet, int fourthOctet);
 
+
 /*! \fn int  blocking_NAS_config(char*, char*, char*, char*)
 * \brief This function initializes the nasmesh interface, in a blocking way, 
 * the system calls are interrupted
