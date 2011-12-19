@@ -37,6 +37,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \bug
 * \warning
 */
+/** @defgroup _rlc_am_timers_impl_ RLC AM Timers Reference Implementation
+* @ingroup _rlc_am_internal_impl_
+* @{
+*/
 #ifndef __RLC_AM_TIMER_REORDERING_H__
 #    define __RLC_AM_TIMER_REORDERING_H__
 #    ifdef RLC_AM_TIMER_POLL_REORDERING_C
@@ -55,9 +59,29 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #        endif
 #    endif
 
-protected_rlc_am_timer_reordering(void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP));
-protected_rlc_am_timer_reordering(void rlc_am_stop_and_reset_timer_reordering(rlc_am_entity_t *rlcP);)
-protected_rlc_am_timer_reordering(void rlc_am_start_timer_reordering(rlc_am_entity_t *rlcP);)
-protected_rlc_am_timer_reordering(void rlc_am_init_timer_reordering(rlc_am_entity_t *rlcP, u32_t time_outP);)
+/*! \fn void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP)
+* \brief      Check if timer reordering has timed-out, if so it is stopped and has the status "timed-out".
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+*/
+protected_rlc_am_timer_reordering(void rlc_am_check_timer_reordering(rlc_am_entity_t  *rlcP));
 
+/*! \fn void rlc_am_stop_and_reset_timer_reordering(rlc_am_entity_t *rlcP)
+* \brief      Stop and reset the timer reordering.
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+*/
+protected_rlc_am_timer_reordering(void rlc_am_stop_and_reset_timer_reordering(rlc_am_entity_t *rlcP);)
+
+/*! \fn void rlc_am_start_timer_reordering(rlc_am_entity_t *rlcP)
+* \brief      Re-arm (based on RLC AM config parameter) and start timer reordering.
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+*/
+protected_rlc_am_timer_reordering(void rlc_am_start_timer_reordering(rlc_am_entity_t *rlcP);)
+
+/*! \fn void rlc_am_init_timer_reordering(rlc_am_entity_t *rlcP, u32_t time_outP)
+* \brief      Initialize the timer reordering with RLC AM time-out config parameter.
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  time_outP         Time-out in frame units.
+*/
+protected_rlc_am_timer_reordering(void rlc_am_init_timer_reordering(rlc_am_entity_t *rlcP, u32_t time_outP);)
+/** @} */
 #endif
