@@ -413,14 +413,13 @@ void openair_sync(void) {
     
 #ifdef DEBUG_PHY
     for (i=0;i<number_of_cards;i++) 
-      msg("[openair][SCHED][SYNC] card %d freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TX_RX_SW %d, TCXO %d, NODE_ID %d\n",
+      msg("[openair][SCHED][SYNC] card %d freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TCXO %d, NODE_ID %d\n",
 	  (pci_interface[i]->freq_info>>1)&3,
 	  (pci_interface[i]->freq_info>>3)&3,
 	  pci_interface[i]->adc_head[0],
 	  pci_interface[i]->adc_head[1],
 	  pci_interface[i]->ofdm_symbols_per_frame,
 	  pci_interface[i]->rx_gain_val,
-	  pci_interface[i]->tx_rx_switch_point,
 	  pci_interface[i]->tcxo_dac,
 	  pci_interface[i]->node_id);        
 
@@ -624,7 +623,6 @@ static void * top_level_scheduler(void *param) {
 	openair_daq_vars.rach_detection_count=0;
 	openair_daq_vars.sync_state = 1;
 	openair_daq_vars.sched_cnt = 0;
-	//openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 
 	msg("[openair][sched][top_level_scheduler] Starting RT acquisition, ofdm_symbols_per_frame %d, log2_symbol_size %d\n",
 	    NUMBER_OF_SYMBOLS_PER_FRAME, LOG2_NUMBER_OF_OFDM_CARRIERS);
@@ -632,7 +630,7 @@ static void * top_level_scheduler(void *param) {
 #ifdef CBMIMO1
 	for (i=0;i<number_of_cards;i++) {
 	  openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
-	  pci_interface[i]->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
+
 	}
 #endif //CBMIMO1
 

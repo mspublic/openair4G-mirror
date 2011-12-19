@@ -142,6 +142,7 @@ void print_ints(char *s,__m128i *x) {
 */
 #endif
 
+/*
 void print_shorts2(char *s,__m64 *x) {
 
   short *tempb = (short *)x;
@@ -150,6 +151,7 @@ void print_shorts2(char *s,__m64 *x) {
          tempb[0],tempb[1],tempb[2],tempb[3]);
 
 }
+*/
 
 void interference_abs_pi16(__m64 *psi ,__m64 *int_ch_mag, __m64 *int_mag, __m64 *ONE_OVER_SQRT_10, __m64 *THREE_OVER_SQRT_10) {
 

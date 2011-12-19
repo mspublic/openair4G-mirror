@@ -106,6 +106,8 @@ typedef struct  {
 } PCI_interface_t;
 #endif
 
+#include "exmimo_fw.h"
+
 typedef struct {
   unsigned int global_top_dma_ahb_addr;
   unsigned int one_dma_nbwords;

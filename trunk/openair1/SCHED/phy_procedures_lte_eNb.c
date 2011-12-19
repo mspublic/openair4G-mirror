@@ -281,7 +281,9 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,
       }
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	generate_pss_emul(phy_vars_eNB,sect_id);
+#endif
       }
 #endif
     }
@@ -314,8 +316,10 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
       }
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	lte_eNB_I0_measurements_emul(phy_vars_eNB,
 				     sect_id);
+#endif
       }
 #endif
     }
@@ -672,7 +676,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	generate_pbch_emul(phy_vars_eNB,pbch_pdu); 
+#endif
       }
 #endif
     }
@@ -925,7 +931,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	num_pdcch_symbols = generate_dci_top_emul(phy_vars_eNB,DCI_pdu->Num_ue_spec_dci,DCI_pdu->Num_common_dci,DCI_pdu->dci_alloc,next_slot>>1);
+#endif
       }
 #endif
 
@@ -1027,9 +1035,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	}
 #ifdef PHY_ABSTRACTION
 	else {
+#ifdef PHY_ABSTRACTION
 	  dlsch_encoding_emul(phy_vars_eNB,
 			      DLSCH_pdu,
 			      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]);
+#endif
 	}
 #endif
 	phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->active = 0;
@@ -1107,9 +1117,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       } 
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	dlsch_encoding_emul(phy_vars_eNB,
 			    DLSCH_pdu,
 			    phy_vars_eNB->dlsch_eNB_SI);
+#endif
       }
 #endif
       phy_vars_eNB->dlsch_eNB_SI->active = 0;
@@ -1200,9 +1212,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	dlsch_encoding_emul(phy_vars_eNB,
 			    dlsch_input_buffer,
 			    phy_vars_eNB->dlsch_eNB_ra);
+#endif
       }
 #endif
       msg("[PHY][eNB %d][RARPROC] Frame %d subframe %d Deactivating DLSCH RA\n",phy_vars_eNB->Mod_id,
@@ -1766,10 +1780,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	rx_ulsch_emul(phy_vars_eNB,
 		      last_slot>>1,
 		      phy_vars_eNB->eNB_UE_stats[i].sector,  // this is the effective sector id
 		      i);
+#endif
       }
 #endif
 
@@ -1792,9 +1808,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
 #ifdef PHY_ABSTRACTION
       else {
+#ifdef PHY_ABSTRACTION
 	ret = ulsch_decoding_emul(phy_vars_eNB,
 				  last_slot>>1,
 				  i);
+#endif
       }
 #endif
 
@@ -2036,15 +2054,15 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			       &SR_payload,
 			       last_slot>>1,
 			       40);   // THIS has to be changed to use eNB_stats!!!!
+	  else {
 #ifdef PHY_ABSTRACTION
-	  else
 	    metric0 = rx_pucch_emul(phy_vars_eNB,
 				    i,
 				    pucch_format1,
 				    &SR_payload,
 				    last_slot>>1);
 #endif
-
+	  }
 	  if (SR_payload == 1) {
 	    //	  msg("[PHY][UE %d] Frame %d: Got SR, transmitting to MAC\n",phy_vars_eNB->Mod_id,mac_xface->frame);
 	    mac_xface->SR_indication(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[i][0]->rnti);
@@ -2069,13 +2087,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			       pucch_payload0,
 			       last_slot>>1,
 			       40);   //This has to be changed to use eNB_stats
+	  else {
 #ifdef PHY_ABSTRACTION
-	  else
 	    metric0 = rx_pucch_emul(phy_vars_eNB,i,
 				    pucch_format1a,
 				    pucch_payload0,
 				    last_slot>>1);
-#endif	
+#endif
+	  }	
 	}
 	else {  //TDD
 	
@@ -2105,15 +2124,15 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				 pucch_payload0,
 				 last_slot>>1,
 				 40); //This has to be changed to use eNB_stats
+	    else {
 #ifdef PHY_ABSTRACTION
-	    else
 	      metric0 = rx_pucch_emul(phy_vars_eNB,i,
 				      format,
 				      pucch_payload0,
 				      last_slot>>1);
 #endif
-
-	  } 
+	    } 
+	  }
 	  else {  //using n1_pucch0/n1_pucch1 resources
 #ifdef DEBUG_PHY_PROC	  
 	    msg("[PHY][eNB %d] Frame %d: Checking ACK/NAK (%d,%d,%d,%d)\n",phy_vars_eNB->Mod_id,mac_xface->frame,
@@ -2121,7 +2140,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	    metric0=0;
 	    metric1=0;
-
+	    
 	    // Check n1_pucch0 metric
 	    if (n1_pucch0 != -1) {
 	      if (abstraction_flag == 0) 
@@ -2136,13 +2155,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				   pucch_payload0,
 				   last_slot>>1,
 				   40); //This has to be changed to use eNB_stats
+	      else {
 #ifdef PHY_ABSTRACTION
-	      else
 		metric0 = rx_pucch_emul(phy_vars_eNB,i,
 					format,
 					pucch_payload0,
 					last_slot>>1);
 #endif
+	      }
 	    }
 
 	    // Check n1_pucch1 metric
@@ -2159,13 +2179,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				   pucch_payload1,
 				   last_slot>>1,
 				   40); //This has to be changed to use eNB_stats
+	      else {
 #ifdef PHY_ABSTRACTION
-	      else
 		metric1 = rx_pucch_emul(phy_vars_eNB,i,
 					format,
 					pucch_payload1,
 					last_slot>>1);
 #endif
+	      }
 	    }
 	  	  
 	    if (bundling_flag == multiplexing) {
