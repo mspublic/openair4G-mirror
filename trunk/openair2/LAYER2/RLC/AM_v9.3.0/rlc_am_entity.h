@@ -31,8 +31,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
 * \note The rlc_am_entity_t structure store protocol variables, statistic variables, allocation variables, buffers and other miscellaneous variables.
 * \bug
 * \warning
