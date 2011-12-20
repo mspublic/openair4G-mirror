@@ -437,13 +437,13 @@ rlc_am_data_req (void *rlcP, mem_block_t * sduP)
     rlc->input_sdus[rlc->next_sdu_index].sdu_creation_time = mac_xface->frame;
     rlc->input_sdus[rlc->next_sdu_index].nb_pdus = 0;
     rlc->input_sdus[rlc->next_sdu_index].nb_pdus_ack = 0;
-    rlc->input_sdus[rlc->next_sdu_index].nb_pdus_time = 0;
-    rlc->input_sdus[rlc->next_sdu_index].nb_pdus_internal_use = 0;
+    //rlc->input_sdus[rlc->next_sdu_index].nb_pdus_time = 0;
+    //rlc->input_sdus[rlc->next_sdu_index].nb_pdus_internal_use = 0;
     rlc->input_sdus[rlc->next_sdu_index].flags.discarded = 0;
     rlc->input_sdus[rlc->next_sdu_index].flags.segmented = 0;
     rlc->input_sdus[rlc->next_sdu_index].flags.segmentation_in_progress = 0;
     rlc->input_sdus[rlc->next_sdu_index].flags.no_new_sdu_segmented_in_last_pdu = 0;
-    rlc->input_sdus[rlc->next_sdu_index].li_index_for_discard = -1;
+    //rlc->input_sdus[rlc->next_sdu_index].li_index_for_discard = -1;
     rlc->next_sdu_index = (rlc->next_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
 #ifdef TRACE_RLC_AM_DATA_REQUEST
     msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] RLC_AM_DATA_REQ size %d Bytes,  NB SDU %d current_sdu_index=%d next_sdu_index=%d conf %d mui %d\n", mac_xface->frame, rlc->module_id, rlc->rb_id, data_size, rlc->nb_sdu, rlc->current_sdu_index, rlc->next_sdu_index, conf, mui);
