@@ -83,6 +83,8 @@ INPUT                  = $(OPENAIR1_DIR)/PHY/defs.h \
             $(OPENAIR2_DIR)/LAYER2/MAC/defs.h \
             $(OPENAIR2_DIR)/LAYER2/RLC/rlc.h \
             $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am.h \
+            $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_constants.h \
+            $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_structs.h \
             $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_entity.h \
             $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_in_sdu.h \
             $(OPENAIR2_DIR)/LAYER2/RLC/AM_v9.3.0/rlc_am_reassembly.h \
