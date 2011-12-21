@@ -299,6 +299,10 @@ typedef struct {
 } LTE_UE_ULSCH_t;
 
 typedef struct {
+  /// Flag indicating that this ULSCH has been allocated by a DCI (otherwise it is a retransmission based on PHICH NAK)
+  u8 dci_alloc;
+  /// Flag indicating that this ULSCH has been allocated by a RAR (otherwise it is a retransmission based on PHICH NAK or DCI)
+  u8 rar_alloc;
   /// Flag indicating that this ULSCH has new data
   u8 Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)

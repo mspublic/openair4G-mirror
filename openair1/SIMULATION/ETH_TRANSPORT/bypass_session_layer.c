@@ -64,11 +64,13 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
   //  int             current_flow; 
   int             m_id, n_enb, n_ue, n_dci, total_tbs=0, total_header=0;
   
+ 
   pthread_mutex_lock(&emul_low_mutex);
   if(emul_low_mutex_var){
     //LOG_T(EMU, " WAIT BYPASS_PHY...\n");
     pthread_cond_wait(&emul_low_cond, &emul_low_mutex); 
   }
+
   if(num_bytesP==0){
     //msg("[BYPASS] IDLE_WAIT\n");
     //exit(0);

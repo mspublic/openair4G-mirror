@@ -1287,7 +1287,20 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 	else {
 
 	}
-	
+	if ((ulsch_eNB[UE_id]->harq_processes[harq_pid]->dci_alloc == 0) && 
+	    (ulsch_eNB[UE_id]->harq_processes[harq_pid]->rar_alloc == 0) ){
+	  if (ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_ACK==0 ){
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->Ndi = 0;
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->round++;
+	  }
+	  else {
+	    msg("[PHY][eNB %d][PUSCH %d] frame %d, subframe %d : PHICH ACK Clearing subframe_scheduling_flag, harq_pid %d\n",
+		phy_vars_eNB->Mod_id,UE_id,mac_xface->frame,subframe,harq_pid);
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->round=0;
+	  }
+	}
       } // phich_active==1
     } //ulsch_ue[UE_id] is non-null
   }// UE loop

@@ -1212,37 +1212,40 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					  PHY_vars_eNB_g[i]->dci_alloc[(last_slot>>1)&1],
 					  dci_alloc_rx,
 					  eNB_id);
-    printf("DCI: dci_cnt %d\n",dci_cnt);
+    //    printf("DCI: dci_cnt %d\n",dci_cnt);
     UE_id = (u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[i]);
     if (UE_id>=0) {
-      printf("Checking PHICH for UE %d (eNB %d)\n",UE_id,i);
+      //      msg("Checking PHICH for UE %d (eNB %d)\n",UE_id,i);
       if (is_phich_subframe(&phy_vars_ue->lte_frame_parms,last_slot>>1)) {
 	if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->status == ACTIVE) {
 	  if (PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_ACK==0) { // NAK
 	    if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
+#ifdef DEBUG_PHY_PROC
 	      msg("[PHY][UE %d][RARPROC] Frame %d, subframe %d: Msg3 PHICH, received NAK\n",
 		  phy_vars_ue->Mod_id,
 		  mac_xface->frame,
-		  last_slot>>1);	  
+		  last_slot>>1);
+#endif	  
 	      get_Msg3_alloc_ret(&phy_vars_ue->lte_frame_parms,
 				 last_slot>>1,
 				 mac_xface->frame,
 				 &phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id],
 				 &phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id]);
 	    }
-	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
-	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->Ndi = 0;
-	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->round++;	  
+	    //	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+	    //	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->Ndi = 0;
+	    //	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->round++;	  
 	  }
 	  else {
+#ifdef DEBUG_PHY_PROC
 	    if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) 
 	      msg("[PHY][UE %d][RARPROC] Frame %d, subframe %d: Msg3 PHICH, received ACK\n",
 		  phy_vars_ue->Mod_id,
 		  mac_xface->frame,
 		  last_slot>>1);
-	    
-	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag =0;
-	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->status = IDLE;
+#endif
+	    //	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag =0;
+	    //	    PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->status = IDLE;
 	    // inform MAC?
 	    phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] = 0;	  
 	  }
