@@ -707,9 +707,9 @@ main (int argc, char **argv)
     sinr_dB = snr_dB - 20;
 
   // setup ntedevice interface (netlink socket)
-#ifndef CYGWIN
+  printf("[INIT] Starting NAS netlink interface\n");
   ret = netlink_init ();
-#endif
+
 
   if (ethernet_flag == 1) {
     oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
@@ -731,6 +731,7 @@ main (int argc, char **argv)
 
     while (emu_tx_status != SYNCED_TRANSPORT) {
       LOG_I (EMU, " Waiting for EMU Transport to be synced\n");
+      printf("****\n");
       emu_transport_sync ();	//emulation_tx_rx();
     }
   }				// ethernet flag
