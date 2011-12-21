@@ -219,7 +219,8 @@ pdcp_run (void)
 	  Pdcp_stats_rx_rate[i][j][k] =(diff*8)>>7;//(Pdcp_stats_rx_rate[i][k]*1 + (7*diff*8)>>7)/8;
 	}
   }
-  
+
+  // printf("[PDCP]Read sdus from NAS\n");
   pdcp_fifo_read_input_sdus();
     // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus();
