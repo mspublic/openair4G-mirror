@@ -269,6 +269,21 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       Kr = ulsch->harq_processes[harq_pid]->Kplus;
     sumKr += Kr;
   }
+  if (sumKr==0) {
+    msg("[PHY][eNB %d] ulsch_decoding.c: FATAL sumKr is 0!\n",phy_vars_eNB->Mod_id);
+    msg("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): Ndi %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+	frame_parms->Nid_cell,ulsch->rnti,x2,
+	ulsch->harq_processes[harq_pid]->Ndi,
+	ulsch->harq_processes[harq_pid]->rvidx,
+	ulsch->harq_processes[harq_pid]->mcs,
+	ulsch->O_RI,
+	ulsch->O_ACK,
+	G,
+	subframe);
+    mac_xface->macphy_exit("");
+    return(-1);
+  }
+    
   // Compute Q_ri
   Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_ri_times8;
 

@@ -49,7 +49,7 @@
 #include "PHY/extern.h"
 #include "prach.h"
 
-#define PRACH_DEBUG 1
+//#define PRACH_DEBUG 1
 
 u16 NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 u16 NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237};
@@ -232,7 +232,7 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
   u8 t1_ra;
   u8 t2_ra;
 
-  printf("In is_prach_subframe ...\n");
+  //  printf("In is_prach_subframe ...\n");
   if (frame_parms->frame_type == 0) { //FDD
     //implement Table 5.7.1-2 from 36.211 (Rel-10, p.41)
     if ((((mac_xface->frame&1) == 1) && (subframe < 9)) ||

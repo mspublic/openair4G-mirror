@@ -75,7 +75,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
     msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
     return(-1);
   }
-
+  ulsch->harq_processes[harq_pid]->rar_alloc          = 1;
   ulsch->harq_processes[harq_pid]->first_rb           = RIV2first_rb_LUT25[rar->rb_alloc];
   ulsch->harq_processes[harq_pid]->nb_rb              = RIV2nb_rb_LUT25[rar->rb_alloc];
   ulsch->harq_processes[harq_pid]->Ndi                = 1;

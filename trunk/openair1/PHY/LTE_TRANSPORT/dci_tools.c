@@ -1317,7 +1317,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 #endif
 
   if (frame_parms->frame_type == 0) {
-    return(0);
+    return(((mac_xface->frame<<1)+subframe)&7);
   }
   else {
 
@@ -1881,10 +1881,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   LTE_eNB_ULSCH_t *ulsch=phy_vars_eNB->ulsch_eNB[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
 
-#ifdef DEBUG_DCI
+  //#ifdef DEBUG_DCI
   msg("dci_tools.c: filling eNB ulsch params for rnti %x, dci format %d, dci %x, subframe %d\n",
       rnti,dci_format,*(u32*)dci_pdu,subframe);
-#endif
+  //#endif
 
   if (dci_format == format0) {
 
@@ -1900,6 +1900,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     msg("generate_eNB_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d\n",subframe,rnti,harq_pid);
 #endif
 
+    ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;
+    ulsch->harq_processes[harq_pid]->rar_alloc                             = 0;
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];

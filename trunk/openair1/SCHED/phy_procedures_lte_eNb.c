@@ -548,6 +548,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   s16 crnti;
   u16 frame_tx;
   s16 amp;
+  u8 ul_subframe;
 
   for (sect_id = 0 ; sect_id < number_of_cards; sect_id++) {
 
@@ -754,7 +755,18 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     fill_dci(DCI_pdu,next_slot>>1,phy_vars_eNB->cooperation_flag);
 #endif
 
-
+    // clear existing ulsch dci allocations before applying info from MAC
+    ul_subframe = ((next_slot>>1)+4)%10;
+    if ((subframe_select(&phy_vars_eNB->lte_frame_parms,ul_subframe)==SF_UL) ||
+	(phy_vars_eNB->lte_frame_parms.frame_type == 0)) {
+      harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,ul_subframe);
+      for (i=0;i<NUMBER_OF_UE_MAX;i++)
+	if (phy_vars_eNB->ulsch_eNB[i]) {
+	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc=0;
+	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc=0;
+	}
+    }
+  
 #ifdef EMOS
     emos_dump_eNB.dci_cnt[next_slot>>1] = DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci; //nb_dci_common+nb_dci_ue_spec;
 #endif
@@ -888,9 +900,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					   0);  // do_srs
 	
 #ifdef DEBUG_PHY_PROC
-	msg("[PHY][eNB%d] frame %d, subframe %d Setting scheduling flag for ULSCH %d harq_pid %d\n",
-	    phy_vars_eNB->Mod_id,
-	    mac_xface->frame,next_slot>>1,UE_id,harq_pid);
+	msg("[PHY][eNB%d][PUSCH %d] frame %d, subframe %d Setting subframe_scheduling_flag for harq_pid %d\n",
+	    phy_vars_eNB->Mod_id,UE_id,
+	    mac_xface->frame,next_slot>>1,harq_pid);
 #endif
 	phy_vars_eNB->ulsch_eNB[(u32)UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 	
@@ -900,15 +912,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     
 
 
-    // if we have PHICH to generate
-    if (is_phich_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1)) {
-      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_phich_top\n",mac_xface->frame, next_slot);
-      generate_phich_top(phy_vars_eNB,
-			 next_slot>>1,
-			 1024,
-			 sect_id,
-			 abstraction_flag);
-    }
+
 
     // if we have DCI to generate do it now
     if ((DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci)>0) {
@@ -1228,6 +1232,16 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  mac_xface->frame, next_slot, re_allocated);
 #endif
     }
+
+    // if we have PHICH to generate
+    if (is_phich_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1)) {
+      //      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_phich_top\n",mac_xface->frame, next_slot);
+      generate_phich_top(phy_vars_eNB,
+			 next_slot>>1,
+			 1024,
+			 sect_id,
+			 abstraction_flag);
+    }
   }
 
 
@@ -1258,7 +1272,7 @@ void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,u8 last_slot,u8 UE_id, u8 harq_pid)
     phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_active = 0;
     phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_flag = 1;
     phy_vars_eNB->ulsch_eNB[(u32)UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag=1;
-    msg("[PHY][eNB%d][RARPROC] frame %d, slot %d, subframe %d: Doing Msg3 for UE %d\n",
+    msg("[PHY][eNB%d][RARPROC] frame %d, slot %d, subframe %d: Setting subframe_scheduling_flag (Msg3) for UE %d\n",
 	phy_vars_eNB->Mod_id,
 	mac_xface->frame,last_slot,last_slot>>1,UE_id);
   }
@@ -1731,6 +1745,16 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag);
     */
 
+#ifdef DEBUG_PHY_PROC
+    if (phy_vars_eNB->ulsch_eNB[i]) {
+      printf("[PHY][eNB %d][PUSCH %d] frame %d, subframe %d harq_pid %d rnti %x, alloc %d\n",phy_vars_eNB->Mod_id,
+	     i,mac_xface->frame,last_slot>>1,harq_pid,
+	     (phy_vars_eNB->ulsch_eNB[i]->rnti),
+	     (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag) 
+	     );
+    }
+#endif
+
     if ((phy_vars_eNB->ulsch_eNB[i]) &&
 	(phy_vars_eNB->ulsch_eNB[i]->rnti>0) &&
 	(phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && 
@@ -1739,9 +1763,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       round = phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round;
 
 #ifdef DEBUG_PHY_PROC
-      msg("[PHY][eNB%d] frame %d, slot %d, subframe %d: Scheduling ULSCH %d Reception for rnti %x harq_pid %d, rxdataF_ext %p\n",
-	  phy_vars_eNB->Mod_id,
-	  mac_xface->frame,last_slot,last_slot>>1,i,phy_vars_eNB->ulsch_eNB[i]->rnti,harq_pid,
+      msg("[PHY][eNB%d][PUSCH %d] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for rnti %x harq_pid %d, rxdataF_ext %p\n",
+	  phy_vars_eNB->Mod_id,i,
+	  mac_xface->frame,last_slot,last_slot>>1,phy_vars_eNB->ulsch_eNB[i]->rnti,harq_pid,
 	  phy_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_ext);
 #endif
   
@@ -1761,8 +1785,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
 
 #ifdef DEBUG_PHY_PROC
-      msg("[PHY][eNB %d] Subframe %d demodulating PUSCH (harq_pid %d): first_rb %d, nb_rb %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift %d, nprs %d) \n",
+      msg("[PHY][eNB %d] Subframe %d demodulating PUSCH (harq_pid %d): dci_alloc %d, rar_alloc %d, Ndi %d, first_rb %d, nb_rb %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift %d, nprs %d) \n",
 	  phy_vars_eNB->Mod_id,last_slot>>1,harq_pid,
+	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc,
+	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc,
+	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->Ndi,
 	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->first_rb,
 	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb,
 	  phy_vars_eNB->ulsch_eNB[i]->cyclicShift,
@@ -1851,7 +1878,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
     
       phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round]++;
- 
+#ifdef DEBUG_PHY_PROC
+      msg("[PHY][eNB %d][PUSCH %d] frame %d, subframe %d : Clearing subframe_scheduling_flag, harq_pid %d\n",
+	  phy_vars_eNB->Mod_id,i,mac_xface->frame,last_slot>>1,harq_pid);
+#endif
       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
 
       
