@@ -7,6 +7,8 @@ KERNEL_NAME=$(shell echo `uname -r`)
 KERNEL_MAIN_TYPE=$(shell echo `uname -r | cut -d. -f-2  | tr "." "_"`)
 export KERNEL_MAIN_TYPE
 
+KERNEL_MAIN_VERSION=$(shell echo `uname -r | cut -d. -f-1`)
+
 ifeq ($(IS_LINUX), 1)
 SUBVERSION=$(shell echo `grep '^SUBLEVEL =' /usr/src/linux/Makefile | sed -e 's, ,,g' | sed -e 's/SUBLEVEL=//'`)
 else
@@ -25,10 +27,16 @@ SET_X64=$(shell if [ $(KERNEL_ARCH) = 'x86_64' -a $(SUBVERSION) -ge 20 ]; then e
 IS_KERNEL_SUBVERSION_GREATER_THAN_22=$(shell if [ $(SUBVERSION) -ge 22 ] ; then echo true ; fi)
 IS_KERNEL_SUBVERSION_GREATER_THAN_29=$(shell if [ $(SUBVERSION) -ge 29 ] ; then echo true ; fi)
 IS_KERNEL_SUBVERSION_GREATER_THAN_30=$(shell if [ $(SUBVERSION) -ge 30 ] ; then echo true ; fi)
+
+# Add global rule for V3 kernels
+ifeq ($(KERNEL_MAIN_VERSION),3)
+   IS_KERNEL_SUBVERSION_GREATER_THAN_22 = "true"
+   IS_KERNEL_SUBVERSION_GREATER_THAN_29 = "true"
+   IS_KERNEL_SUBVERSION_GREATER_THAN_30 = "true"
+endif
+
 GT2622= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_22),-DKERNEL_VERSION_GREATER_THAN_2622=1)
 GT2629= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_29),-DKERNEL_VERSION_GREATER_THAN_2629=1)
-GT2630= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_30),-DKERNEL_VERSION_GREATER_THAN_2630=1)
-
 ####################################################
 #      NASMESH compilation flags
 ####################################################
@@ -43,7 +51,7 @@ GT2630= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_30),-DKERNEL_VERSION_GREATER_TH
 ####################################################
 #      EXTRA COMPILER FLAGS
 ####################################################
-EXTRA_CFLAGS = -fno-common $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3  -fno-stack-protector -mpreferred-stack-boundary=4)  $(if $(SET_X64),-DARCH_64,) $(if $(SET_X64),-mcmodel=kernel,) $(if $(SET_X64),-m64,) $(GT2622) $(GT2629) $(GT2630) 
+EXTRA_CFLAGS = -fno-common $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3  -fno-stack-protector -mpreferred-stack-boundary=4)  $(if $(SET_X64),-DARCH_64,) $(if $(SET_X64),-mcmodel=kernel,) $(if $(SET_X64),-m64,) $(GT2622) $(GT2629) $(V3)
 
 ifdef NAS_NETLINK
 EXTRA_CFLAGS += -DNAS_NETLINK
@@ -90,6 +98,6 @@ print:
 	@echo  linux kernel ge 29: $(IS_KERNEL_SUBVERSION_GREATER_THAN_29)
 	@echo flag gt2629: $(GT2629)
 	@echo  linux kernel ge 30: $(IS_KERNEL_SUBVERSION_GREATER_THAN_30)
-	@echo flag gt2630: $(GT2630)
+	@echo flag KERNEL_MAIN_VERSION $(KERNEL_MAIN_VERSION)
 #clean:
 #	make -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules

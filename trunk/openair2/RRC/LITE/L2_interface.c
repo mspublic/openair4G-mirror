@@ -25,7 +25,7 @@ extern UE_MAC_INST *UE_mac_inst;
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
-#define DEBUG_RRC
+//#define DEBUG_RRC
 
 u32 mui=0;
 //---------------------------------------------------------------------------------------------//
@@ -127,13 +127,17 @@ s8 mac_rrc_lite_data_req( unsigned char Mod_id,
 //--------------------------------------------------------------------------------------------//
 s8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 eNB_index ){ 
   //------------------------------------------------------------------------------------------//
+
+  SRB_INFO *Srb_info;
+  int si_window;
+
+#ifdef DEBUG_RRC
   if (Srb_id == BCCH)
     msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index); 
   else
     msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
+#endif
 
-  SRB_INFO *Srb_info;
-  int si_window;
   if(eNB_flag == 0){
 
     //msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);

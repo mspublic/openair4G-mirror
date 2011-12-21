@@ -262,29 +262,29 @@ typedef struct {
   u8 RA_alloc_pdu1[(MAX_DCI_SIZE_BITS>>3)+1];
   /// DCI format for RA-Response (should be 1A)
   u8 RA_dci_fmt1;
-  /// Size of DCI for RRCConnectionSetup/ContRes (bytes)  
+  /// Size of DCI for Msg3/ContRes (bytes)  
   u8 RA_dci_size_bytes2;
-  /// Size of DCI for RRCConnectionSetup/ContRes (bits)  
+  /// Size of DCI for Msg3/ContRes (bits)  
   u8 RA_dci_size_bits2;
-  /// Actual DCI to transmit for RRCConnectionSetup/ContRes
+  /// Actual DCI to transmit for Msg3/ContRes
   u8 RA_alloc_pdu2[(MAX_DCI_SIZE_BITS>>3)+1];
-  /// DCI format for RRCConnectionSetup/ContRes (should be 1A)
+  /// DCI format for Msg3/ContRes (should be 1A)
   u8 RA_dci_fmt2;
   /// Flag to indicate the eNB should generate RAR.  This is triggered by detection of PRACH
   u8 generate_rar;
-  /// Flag to indicate the eNB should generate RRCConnectionSetup upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
-  u8 generate_rrcconnsetup;
-  /// Flag to indicate the eNB should generate the DCI for RRCConnectionSetup, after getting the SDU from RRC.
-  u8 generate_rrcconnsetup_dci;
-  /// Flag to indicate that eNB is waiting for ACK that UE has received RRCConnectionSetup.
-  u8 wait_ack_rrcconnsetup;
+  /// Flag to indicate the eNB should generate Msg3 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
+  u8 generate_Msg3;
+  /// Flag to indicate the eNB should generate the DCI for Msg3, after getting the SDU from RRC.
+  u8 generate_Msg3_dci;
+  /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
+  u8 wait_ack_Msg3;
   /// UE RNTI allocated during RAR
   u16 rnti;
   /// RA RNTI allocated from received PRACH
   u16 RA_rnti;
   /// Received preamble_index
   u8 preamble_index;
-  /// Received UE Contention Resolution Identifier (RRCConnectionRequest)
+  /// Received UE Contention Resolution Identifier 
   u8 cont_res_id[6];
   /// Timing offset indicated by PHY
   s16 timing_offset;
@@ -429,7 +429,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);
 
-/** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, RRCConnectionSetup or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For RRCConnectionSetup it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
+/** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
 for the message.
 @param Mod_id Instance ID of eNB
 @param subframe Subframe number on which to act
@@ -581,7 +581,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
 
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
-/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an RRCConnectionRequest message and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
+/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
 @param Mod_id Index of UE instance
 @param New_Msg3 Flag to indicate this call is for a new Msg3
 @param subframe Index of subframe for PRACH transmission (0 ... 9)
