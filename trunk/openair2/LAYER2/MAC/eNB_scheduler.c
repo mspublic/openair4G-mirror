@@ -371,7 +371,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
       not_done = 0;
 
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
-    if (lcid < UE_CONT_RES) {
+    if (lcid < UE_CONT_RES) { // checkme: this should be  POWER_HEADROOM ???
 
       if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
@@ -382,7 +382,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 	mac_header_ptr += sizeof(SCH_SUBHEADER_LONG);
       }
 #ifdef DEBUG_HEADER_PARSING
-      msg("sdu %d lcid %d length %d\n",num_sdus,lcid,length);
+      msg("[eNB] sdu %d lcid %d length %d\n",num_sdus,lcid,length);
 #endif
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -391,11 +391,9 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
     else {  // This is a control element subheader BSR and CRNTI
       rx_ces[num_ces] = lcid;
       num_ces++;
-#ifdef DEBUG_HEADER_PARSING
-      msg("ce %d lcid %d\n",num_ces,lcid);
-#endif
-
-
+      //#ifdef DEBUG_HEADER_PARSING
+      LOG_D(MAC,"[eNB] bsr ce %d lcid %d\n",num_ces,lcid);
+      //#endif
       mac_header_ptr += sizeof(SCH_SUBHEADER_FIXED);
     }
   }
@@ -430,8 +428,32 @@ void rx_sdu(unsigned char Mod_id,u16 rnti,unsigned char *sdu) {
   for (i=0;i<num_ce;i++) {
 
     switch (rx_ces[i]) { // implement and process BSR + CRNTI +
-
+    case POWER_HEADROOM:
+      LOG_D(MAC,"[eNB] received PHR R = %d PH = %d\n", (payload_ptr[0]>>6), payload_ptr[0]&0x3f);
+      payload_ptr+=sizeof(POWER_HEADROOM_CMD);  
+      break;
+    case CRNTI:
+      LOG_D(MAC,"[eNB] received CRNTI %d \n", payload_ptr[0]);
+      payload_ptr+=1;  
+      break;
+    case TRUNCATED_BSR: 
+    case SHORT_BSR :
+      LOG_D(MAC,"[eNB] received short BSR lcid = %d bsr = %d\n", (payload_ptr[0]>>6), payload_ptr[0]&0x3f);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[(payload_ptr[0]>>6)] = (payload_ptr[0]&0x3f);
+      payload_ptr+=1;//sizeof(SHORT_BSR); // fixme 
+      break;
+    case LONG_BSR :
+      LOG_D(MAC,"[eNB] received long BSR \n");
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[3] = (payload_ptr[0]&0x3f);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[2] = (payload_ptr[0]&0xfc0);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[1] = (payload_ptr[0]&0x3F000);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[0] = (payload_ptr[0]>>18);
+      payload_ptr+=(sizeof(LONG_BSR)-1);
+      break;
+    default:
+      break;
     }
+    
   }
 
   for (i=0;i<num_sdu;i++) {

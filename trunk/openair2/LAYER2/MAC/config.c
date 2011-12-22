@@ -112,11 +112,10 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 
     }
   }
-  
   if (physicalConfigDedicated != NULL) {
-    if (eNB_flag==1)
+    if (eNB_flag==1){
       mac_xface->phy_config_dedicated_eNB(Mod_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
-    else{
+    }else{
       mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }

@@ -205,9 +205,13 @@ int olg_config() {
     set_comp_log(EMU,  LOG_DEBUG, LOG_LOW, 10);
   
   // for those not in XML file
-  set_comp_log(OCG,  LOG_INFO, LOG_LOW, 10);  
-  set_comp_log(MAC,  LOG_DEBUG, LOG_LOW, 10);  
-  
+  set_comp_log(OCG,  LOG_INFO, LOG_LOW, 1);  
+  set_comp_log(MAC,  LOG_DEBUG, LOG_LOW, 1);  
+  set_comp_log(RLC,  LOG_DEBUG, LOG_LOW, 1);  
+  set_comp_log(PHY,  LOG_DEBUG, LOG_LOW, 1);  
+  set_comp_log(PDCP,  LOG_DEBUG, LOG_LOW, 1);  
+  set_comp_log(RRC,  LOG_DEBUG, LOG_LOW, 1);  
+   
   LOG_T(LOG,"global log level is set to %d \n", oai_emulation.info.g_log_level );
   return 1; 
 }
