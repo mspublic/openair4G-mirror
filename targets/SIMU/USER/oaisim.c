@@ -110,22 +110,6 @@ mapping small_scale_names[] =
 
 extern int transmission_mode_rrc;//FIXME!!!
 
-#ifdef LINUX
-void
-init_bypass (){
-
-  msg ("[PHYSIM] INIT BYPASS\n");
-  pthread_mutex_init (&Tx_mutex, NULL);
-  pthread_cond_init (&Tx_cond, NULL);
-  Tx_mutex_var = 1;
-  pthread_mutex_init (&emul_low_mutex, NULL);
-  pthread_cond_init (&emul_low_cond, NULL);
-  emul_low_mutex_var = 1;
-  bypass_init (emul_tx_handler, emul_rx_handler);
-}
-#endif //LINUX
-
-
 
 void 
 help (void) {

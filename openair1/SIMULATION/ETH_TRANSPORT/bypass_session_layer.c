@@ -26,8 +26,7 @@ int N_P=0,N_R=0;
 char     bypass_tx_buffer[BYPASS_TX_BUFFER_SIZE];
 unsigned int Master_list_rx, Seq_nb;
 /***************************************************************************/
-mapping transport_names[] =
-{
+mapping transport_names[] = {
     {"WAIT PM TRANSPORT INFO", WAIT_PM_TRANSPORT_INFO},
     {"WAIT SM TRANSPORT INFO", WAIT_SM_TRANSPORT_INFO},
     {"SYNC TRANSPORT INFO", SYNC_TRANSPORT_INFO},
@@ -37,8 +36,20 @@ mapping transport_names[] =
     {NULL, -1}
 };
 
+void init_bypass (void){
+
+  msg ("[PHYSIM] INIT BYPASS\n");
+  pthread_mutex_init (&Tx_mutex, NULL);
+  pthread_cond_init (&Tx_cond, NULL);
+  Tx_mutex_var = 1;
+  pthread_mutex_init (&emul_low_mutex, NULL);
+  pthread_cond_init (&emul_low_cond, NULL);
+  emul_low_mutex_var = 1;
+  bypass_init (emul_tx_handler, emul_rx_handler);
+}
+
 /***************************************************************************/
-void bypass_init ( int (*tx_handlerP) (unsigned char,char*, unsigned int*, unsigned int*),int (*rx_handlerP) (unsigned char,char*,int)){
+void bypass_init ( unsigned int (*tx_handlerP) (unsigned char,char*, unsigned int*, unsigned int*),unsigned int (*rx_handlerP) (unsigned char,char*,unsigned int)){
 /***************************************************************************/
 #ifdef USER_MODE
   multicast_link_start (bypass_rx_handler, oai_emulation.info.multicast_group);

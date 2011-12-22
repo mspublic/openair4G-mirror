@@ -1,9 +1,39 @@
-/*________________________LAYER2/MAC/defs.h________________________
+/*******************************************************************************
 
- Authors : Hicham Anouar, Raymond Knopp
- Company : EURECOM
- Emails  : anouar@eurecom.fr,  knopp@eurecom.fr
-________________________________________________________________*/
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2010 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+/*! \file def.h
+* \brief MAC data structures, constant, and function prototype
+* \author Raymond Knopp, Navid Nikaein
+* \date 2011
+* \version 0.5
+* @ingroup _mac
+
+*/
 
  
 #ifndef __LAYER2_MAC_DEFS_H__
@@ -43,10 +73,10 @@ ________________________________________________________________*/
 #define CCCH_PAYLOAD_SIZE_MAX 128    
 #define SCH_PAYLOAD_SIZE_MAX 1024
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
-#define BCCH 3
-#define CCCH 0
-#define DCCH 1
-#define DCCH1 2
+#define BCCH 3  // SI 
+#define CCCH 0  // srb0
+#define DCCH 1  // srb1
+#define DCCH1 2 // srb2
 #define DTCH  3 // DTCH + lcid < 11
 
 #ifdef USER_MODE
@@ -248,6 +278,9 @@ typedef struct{
 
 
   // Logical channel info for link with RLC
+  
+  /// UE BSR info for each logical channel
+  u8 bsr_info[MAX_NUM_LCID]; 
 
 } UE_TEMPLATE;
 
@@ -325,16 +358,19 @@ typedef struct{
   u8 bcch_active;
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
-
 }eNB_MAC_INST;
 
 typedef struct {
-  /// LCHAN buffer status
-  u8 buffer_status[MAX_NUM_LCID]; // should be more for mesh topology
-  /// number of BSR: unknown 0, short 1 or long > 1
-  u8 num_BSR;
+  /// buffer status for each lcid
+  u8  BSR[MAX_NUM_LCID]; // should be more for mesh topology
+  /// keep the number of bytes in rlc buffer for each lcid
+  u8  BSR_bytes[MAX_NUM_LCID];
+  /// short bsr lcid
+  u8  BSR_short_lcid;
   /// SR pending as defined in 36.321
-  u8 SR_pending;
+  u8  SR_pending;
+  /// new transmission flag for each DRB used for SR
+  u8  new_transmission_flag[MAX_NUM_RB];
   /// SR_COUNTER as defined in 36.321
   u16 SR_COUNTER;
   /// retxBSR-Timer, default value is sf2560
@@ -383,7 +419,7 @@ typedef struct{
   CCCH_PDU CCCH_pdu;
   /// Incoming DLSCH pdu for PHY
   DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
-  //ULSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
+  //ULSCH_PDU ULSCH_pdu[NB_CNX_UE][2];
   /// Random-access procedure flag
   u8 RA_active;
   /// Random-access window counter
@@ -562,6 +598,12 @@ u8 schedule_next_dlue(u8 Mod_id, u8 subframe);
 */
 u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
 
+/* \fn u32 req_new_ulsch(u8 Mod_id)
+\brief check for a new transmission in any drb 
+@param Mod_id Instance id of UE in machine
+@returns 1 for new transmission, 0 for none
+*/
+u32 req_new_ulsch(u8 Mod_id);
 
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
@@ -657,6 +699,38 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 \param[in] direction subframe direction
 */
 void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction);
+
+
+/*! \fn  u8 get_bsr_len (u8 Mod_id, u16 bufflen);
+\brief determine whether the bsr is short or long assuming that the MAC pdu is built 
+\param[in] Mod_id instance of the UE
+\param[in] bufflen size of phy transport block
+\param[out] bsr_len size of bsr control element 
+*/
+u8 get_bsr_len (u8 Mod_id, u16 buflen);
+
+/*! \fn  BSR_SHORT *  get_bsr_short(u8 Mod_id, u8 bsr_len)
+\brief get short bsr level
+\param[in] Mod_id instance of the UE
+\param[in] bsr_len indicator for no, short, or long bsr
+\param[out] bsr_s pointer to short bsr
+*/
+BSR_SHORT *get_bsr_short(u8 Mod_id, u8 bsr_len);
+
+/*! \fn  BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len)
+\brief get long bsr level
+\param[in] Mod_id instance of the UE
+\param[in] bsr_len indicator for no, short, or long bsr
+\param[out] bsr_l pointer to long bsr
+*/
+BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
+
+/*! \fn  void update_bsr(u8 Mod_id, u8 lcid)
+   \brief get the rlc stats and update the bsr level for each lcid 
+\param[in] Mod_id instance of the UE
+\param[in] lcid logical channel identifier
+*/
+void update_bsr(u8 Mod_id, u8 lcid);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
