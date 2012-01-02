@@ -788,15 +788,16 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	// Check for SR and do ACK/NACK accordingly
 	if (is_SR_TXOp(phy_vars_ue,eNB_id,next_slot>>1)==1) {
-	  msg("[PHY][UE %d][SR %x] Frame %d subframe %d Checking for SR from MAC\n",
-	      phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,mac_xface->frame,next_slot>>1);
+	  //	  msg("[PHY][UE %d][SR %x] Frame %d subframe %d Checking for SR for PUSCH from MAC\n",
+	  //	      phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,mac_xface->frame,next_slot>>1);
 	  SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,
 					    eNB_id,
 					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					    next_slot>>1); // subframe used for meas gap
-	  msg("[PHY][UE %d][SR %x] Frame %d subframe %d SR is %d\n",
+	  /*
+	  msg("[PHY][UE %d][SR %x] Frame %d subframe %d SR for PUSCH is %d\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,mac_xface->frame,next_slot>>1,SR_payload);
-
+	  */
 	  if (SR_payload>0) {
 	    generate_ul_signal = 1;
 	  }
@@ -864,17 +865,27 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      mac_xface->frame, next_slot>>1,
 	      phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
 
-	  generate_pucch(phy_vars_ue->lte_ue_common_vars.txdataF,
-			 &phy_vars_ue->lte_frame_parms,
-			 phy_vars_ue->ncs_cell,
-			 pucch_format1,
-			 &phy_vars_ue->pucch_config_dedicated[eNB_id],
-			 phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
-			 0,  // n2_pucch
-			 1,  // shortened format
-			 pucch_ack_payload,  // this is ignored anyway, we just need a pointer
-			 scfdma_amps[1],//scfdma_amps[phy_vars_ue->lte_frame_parms.N_RB_UL],
-			 next_slot>>1);	  
+	  if (abstraction_flag == 0) {
+	    generate_pucch(phy_vars_ue->lte_ue_common_vars.txdataF,
+			   &phy_vars_ue->lte_frame_parms,
+			   phy_vars_ue->ncs_cell,
+			   pucch_format1,
+			   &phy_vars_ue->pucch_config_dedicated[eNB_id],
+			   phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
+			   0,  // n2_pucch
+			   1,  // shortened format
+			   pucch_ack_payload,  // this is ignored anyway, we just need a pointer
+			   scfdma_amps[1],//scfdma_amps[phy_vars_ue->lte_frame_parms.N_RB_UL],
+			   next_slot>>1);	 
+	  }
+	  else {
+	    generate_pucch_emul(phy_vars_ue,
+				pucch_format1,
+				phy_vars_ue->lte_frame_parms.pucch_config_common.nCS_AN,
+				pucch_ack_payload,
+				SR_payload,
+				next_slot>>1);
+	  }
 	  Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,pucch_format1);
 	  phy_vars_ue->tx_power_dBm = Po_PUCCH;
 	}
