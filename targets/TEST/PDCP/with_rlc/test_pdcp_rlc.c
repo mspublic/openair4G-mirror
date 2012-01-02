@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 
   rlc_module_init ();
   pdcp_module_init();
-
+  logInit();
 
   if (init_pdcp_entity(&pdcp_array[0][1]) == TRUE && init_pdcp_entity(&pdcp_array[1][1]) == TRUE)
     msg("PDCP entity initialization OK\n");
