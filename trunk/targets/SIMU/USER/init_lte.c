@@ -113,7 +113,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 	  PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]->rnti=0;
 	}
       }
-      PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i] = new_eNB_ulsch(3,abstraction_flag);
+      PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i] = new_eNB_ulsch(4,abstraction_flag);
       if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i]) {
 	msg("Can't get eNB ulsch structures\n");
 	exit(-1);
@@ -173,7 +173,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       }
       
       
-      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(3,abstraction_flag);
+      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(4,abstraction_flag);
       if (!PHY_vars_UE_g[UE_id]->ulsch_ue[i]) {
 	msg("Can't get ue ulsch structures\n");
 	exit(-1);
