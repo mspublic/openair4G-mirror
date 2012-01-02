@@ -25,7 +25,6 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_decoding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/rar_tools.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/print_stats.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/initial_sync.o
-PHY_OBJS += $(TOP_DIR)/SCHED/pusch_pc.o
 #PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_transport_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o

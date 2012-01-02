@@ -7513,7 +7513,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 	avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)
+    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + 2
       + log2_approx(frame_parms->nb_antennas_tx-1) //-1 because log2_approx counts the number of bits
       + log2_approx(frame_parms->nb_antennas_rx-1);
     

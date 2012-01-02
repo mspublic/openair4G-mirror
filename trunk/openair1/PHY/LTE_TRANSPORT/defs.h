@@ -171,6 +171,8 @@ typedef struct {
   u32 Kminus;                    
   /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
   u32 Kplus;                     
+  /// Total number of bits across all segments
+  u32 sumKr;
   /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
   u32 F;                         
   /// Msc_initial, Initial number of subcarriers for ULSCH (36-212, v8.6 2009-03, p.26-27)
@@ -179,6 +181,8 @@ typedef struct {
   u8 Nsymb_initial;
   /// DRMS field for this ULSCH
   u8 n_DMRS;
+  /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
+  u8 control_only;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {

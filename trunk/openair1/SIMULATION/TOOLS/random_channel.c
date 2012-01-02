@@ -22,7 +22,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 				 double BW, 
 				 double ricean_factor, 
 				 double aoa, 
-				 double forgetting_factor, 
+				 double forgetting_factor,
 				 double max_Doppler, 
 				 s32 channel_offset, 
 				 double path_loss_dB,
@@ -150,7 +150,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				     u8 nb_rx, 
 				     SCM_t channel_model, 
 				     double BW, 
-				     double forgetting_factor, 
+				     double forgetting_factor,
+				     u8 awgn_flag,
 				     s32 channel_offset, 
 				     double path_loss_dB) {
 
@@ -164,12 +165,15 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   chan_desc->nb_rx          = nb_rx;
   chan_desc->BW             = BW;
   chan_desc->forgetting_factor = forgetting_factor;
+  chan_desc->awgn_flag      = awgn_flag;
   chan_desc->channel_offset = channel_offset;
   chan_desc->path_loss_dB   = path_loss_dB;
   chan_desc->first_run      = 1;
   chan_desc->ip             = 0.0;
 
-  printf("\nChannel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
+  printf("\nChannel Model (inside of new_channel_desc_scm)=%d, AWGN_FLAG %d\n\n", channel_model,awgn_flag);
+  if (awgn_flag == 1)
+    return(chan_desc);
 
   switch (channel_model) {
   case SCM_A:

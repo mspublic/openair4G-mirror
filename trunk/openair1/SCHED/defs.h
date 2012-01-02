@@ -294,6 +294,15 @@ u8 ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe);
 */
 u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
+/*!
+  \brief Indicates the SR TXOp in current subframe for eNB and particular UE index.  Implements Table 10.1-5 from 36.213.
+  @param phy_vars_eNB Pointer to eNB variables
+  @param UE_id ID of UE which may be issuing the SR
+  @param subframe index of last subframe
+  @returns 1 if TXOp is active.
+*/
+u8 is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,u8 UE_id,u8 subframe);
+
 u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1);
 
 

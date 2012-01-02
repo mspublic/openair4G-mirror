@@ -58,9 +58,11 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
     if (clear == 1)
       phy_measurements->n0_power[aarx]=0;
 #ifdef USER_MODE
-    phy_measurements->n0_power[aarx] = ((k1*signal_energy(&eNB_common_vars->rxdata[eNB_id][aarx][19*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)) + k2*phy_measurements->n0_power[aarx])>>10;
+    phy_measurements->n0_power[aarx] = ((k1*signal_energy(&eNB_common_vars->rxdata[eNB_id][aarx][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size],
+							  frame_parms->ofdm_symbol_size)) + k2*phy_measurements->n0_power[aarx])>>10;
 #else
-    phy_measurements->n0_power[aarx] = ((k1*signal_energy(&eNB_common_vars->rxdata[eNB_id][aarx][19*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size))+k2*phy_measurements->n0_power[aarx])>>10;    
+    phy_measurements->n0_power[aarx] = ((k1*signal_energy(&eNB_common_vars->rxdata[eNB_id][aarx][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size],
+							  frame_parms->ofdm_symbol_size))+k2*phy_measurements->n0_power[aarx])>>10;    
 #endif
     phy_measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_measurements->n0_power[aarx]);
     phy_measurements->n0_power_tot +=  phy_measurements->n0_power[aarx];
@@ -69,7 +71,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
   phy_measurements->n0_power_tot_dB = (unsigned short) dB_fixed(phy_measurements->n0_power_tot);
   
   phy_measurements->n0_power_tot_dBm = phy_measurements->n0_power_tot_dB - phy_vars_eNb->rx_total_gain_eNB_dB;
-  //    printf("n0_power %d\n",phy_measurements->n0_avg_power_dB);
+  //      printf("n0_power %d\n",phy_measurements->n0_power_tot_dB);
   
 
   for (rb=0;rb<frame_parms->N_RB_UL;rb++) {

@@ -1648,9 +1648,17 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
 
     if (phy_vars_ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
+      msg("[PHY][UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
+	  phy_vars_ue->Mod_id,harq_pid,mac_xface->frame,subframe,ulsch->f_pusch,
+	  delta_PUSCH_acc[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC],
+	  phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC);
       ulsch->f_pusch += delta_PUSCH_acc[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC];
     }
     else {
+      msg("[PHY][UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ABS) %d, adjusting to %d (TPC %d)\n",
+	  phy_vars_ue->Mod_id,harq_pid,mac_xface->frame,subframe,ulsch->f_pusch,
+	  delta_PUSCH_abs[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC],
+	  phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC);
       ulsch->f_pusch = delta_PUSCH_abs[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC];
     }
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
@@ -1838,7 +1846,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ulsch->harq_processes[harq_pid]->rvidx = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs - 28;
       else
 	ulsch->harq_processes[harq_pid]->rvidx = 0;
-      ulsch->harq_processes[harq_pid]->round++;
+      //      ulsch->harq_processes[harq_pid]->round++;
     }
 
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
@@ -2014,7 +2022,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ulsch->harq_processes[harq_pid]->rvidx = 0;
 	ulsch->harq_processes[harq_pid]->mcs = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
       }
-      ulsch->harq_processes[harq_pid]->round++;
+      //      ulsch->harq_processes[harq_pid]->round++;
     }
     ulsch->rnti = rnti;
 
