@@ -47,7 +47,7 @@ fi
 
 echo "start the emulation with 1eNB and" $1 "UE"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u" $1 ">/dev/null"
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 | grep PDCP
+$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 
 #> /dev/null 
 
 
