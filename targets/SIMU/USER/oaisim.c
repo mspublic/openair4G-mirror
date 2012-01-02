@@ -114,7 +114,7 @@ extern int transmission_mode_rrc;//FIXME!!!
 void 
 help (void) {
   printf
-    ("Usage: oaisim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag -u nb_local_ue -U omg_model_ue -b nb_local_enb -B omg_model_enb -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable \n");
+    ("Usage: oaisim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A awgn_flag -z cooperation_flag -u nb_local_ue -U omg_model_ue -b nb_local_enb -B omg_model_enb -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable \n");
   printf ("-h provides this help message!\n");
   printf ("-a Activates PHY abstraction mode\n");
   printf ("-F Activates FDD transmission (TDD is default)\n");
@@ -129,6 +129,7 @@ help (void) {
   printf ("-k Set the Ricean factor (linear)\n");
   printf ("-t Set the delay spread (microseconds)\n");
   printf ("-f Set the forgetting factor for time-variation\n");
+  printf ("-A bypass the multipath channel simulation, just use AWGN and path loss\n");
   printf ("-b Set the number of local eNB\n");
   printf ("-u Set the number of local UE\n");
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
@@ -476,6 +477,7 @@ main (int argc, char **argv)
 
   u16 Nid_cell = 0;
   s32 UE_id, eNB_id, ret;
+  u8 awgn_flag = 0;
 
   // time calibration for soft realtime mode  
   struct timespec time_spec;
@@ -523,7 +525,7 @@ main (int argc, char **argv)
     double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePToFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:"))
+  while ((c = getopt (argc, argv, "haePToFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:A"))
 	 != -1) {
 
     switch (c) {
@@ -606,6 +608,9 @@ main (int argc, char **argv)
       break;
     case 'a':
       abstraction_flag = 1;
+      break;
+    case 'A':
+      awgn_flag = 1;
       break;
     case 'p':
       oai_emulation.info.nb_master = atoi (optarg);
@@ -710,7 +715,8 @@ main (int argc, char **argv)
     }
     LOG_I (EMU, " Total number of master %d my master id %d\n", oai_emulation.info.nb_master, oai_emulation.info.master_id);
 #ifdef LINUX
-    init_bypass ();
+    // RK: Where is this now?
+    //    init_bypass ();
 #endif
 
     while (emu_tx_status != SYNCED_TRANSPORT) {
@@ -735,8 +741,8 @@ main (int argc, char **argv)
       
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
-  printf("Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d\n",
-  	 1+oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag);
+  printf("Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, awgn_flag %d\n",
+  	 1+oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,awgn_flag);
   
 
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
@@ -785,6 +791,7 @@ main (int argc, char **argv)
 						       //map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						       oai_emulation.environment_system_config.system_bandwidth_MB,
 						       forgetting_factor,
+						       awgn_flag,
 						       0,
 						       0);
 	}
@@ -794,6 +801,7 @@ main (int argc, char **argv)
 						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
+						     awgn_flag,
 						     0,
 						     0);
 	}
@@ -807,6 +815,7 @@ main (int argc, char **argv)
 						   //Rayleigh1,
 						   oai_emulation.environment_system_config.system_bandwidth_MB,
 						   forgetting_factor,
+						   awgn_flag,
 						   0,
 						   0);
       
