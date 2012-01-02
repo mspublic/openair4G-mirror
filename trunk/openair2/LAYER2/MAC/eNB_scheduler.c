@@ -208,7 +208,8 @@ void terminate_ra_proc(unsigned char Mod_id,u16 rnti,unsigned char *l3msg) {
       payload_ptr = parse_ulsch_header(l3msg,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
       if ((num_ce == 0) && (num_sdu==1) && (rx_lcids[0] == CCCH)) { // This is an RRCConnectionRequest
-	msg("[MAC][eNB][RARPROC] : Received CCCH: length %d, offset %d\n",rx_lengths[0],payload_ptr-l3msg);
+	msg("[MAC][eNB %d][RARPROC] : Received CCCH: length %d, offset %d\n",
+	    Mod_id,rx_lengths[0],payload_ptr-l3msg);
 	memcpy(&eNB_mac_inst[Mod_id].RA_template[i].cont_res_id[0],payload_ptr,6);
 
 	UE_id=add_new_ue(Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti);
@@ -217,7 +218,8 @@ void terminate_ra_proc(unsigned char Mod_id,u16 rnti,unsigned char *l3msg) {
 	}
 	else {
 #ifdef DEBUG_eNB_SCHEDULER
-	  msg("[MAC][eNB][RARPROC] Added user with rnti %x => UE %d\n",eNB_mac_inst[Mod_id].RA_template[i].rnti,UE_id);
+	  msg("[MAC][eNB %d][RARPROC] Added user with rnti %x => UE %d\n",
+	      Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,UE_id);
 #endif
 	}
 
@@ -403,6 +405,14 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
   return(mac_header_ptr);
 }
 
+void SR_indication(u8 Mod_id,u16 rnti,u8 subframe) {
+
+  u8 UE_id = find_UE_id(Mod_id,rnti);
+ 
+  LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframe %d Signaling SR\n",Mod_id,rnti,mac_xface->frame,subframe);
+  eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 1;
+  
+}
 void rx_sdu(unsigned char Mod_id,u16 rnti,unsigned char *sdu) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
@@ -763,8 +773,8 @@ void schedule_RA(unsigned char Mod_id,unsigned char subframe,unsigned char *nprb
 
     if (RA_template[i].RA_active == 1) {
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB][RARPROC] RA %d is active (generate_rar %d, generate_Msg3 %d, wait_ack_Msg3 %d)\n",
-	  i,RA_template[i].generate_rar,RA_template[i].generate_Msg3,RA_template[i].wait_ack_Msg3);
+      msg("[MAC][eNB %d][RARPROC] RA %d is active (generate_rar %d, generate_Msg3 %d, wait_ack_Msg3 %d)\n",
+	  Mod_id,i,RA_template[i].generate_rar,RA_template[i].generate_Msg3,RA_template[i].wait_ack_Msg3);
 #endif
       if (RA_template[i].generate_rar == 1) {
 	*nprb= (*nprb) + 3;
@@ -859,7 +869,8 @@ void schedule_RA(unsigned char Mod_id,unsigned char subframe,unsigned char *nprb
       else if (eNB_mac_inst[Mod_id].RA_template[i].wait_ack_Msg3==1) {
 	// check HARQ status and retransmit if necessary
 #ifdef DEBUG_eNB_SCHEDULER
-	msg("[MAC][eNB][RARPROC] Frame %d, subframe %d: Checking if Msg3 was acknowledged :",mac_xface->frame,subframe);
+	msg("[MAC][eNB %d][RARPROC] Frame %d, subframe %d: Checking if Msg3 was acknowledged :",
+	    Mod_id,mac_xface->frame,subframe);
 #endif
 	// Get candidate harq_pid from PHY
 	mac_xface->get_ue_active_harq_pid(Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
@@ -872,6 +883,11 @@ void schedule_RA(unsigned char Mod_id,unsigned char subframe,unsigned char *nprb
   }
 }
 
+// This has to be updated to include BSR information
+u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id) {
+
+  return(eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
+}
 void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned char subframe,unsigned char *nCCE) {
 
   unsigned char UE_id;
@@ -897,134 +913,147 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 
 
 #ifdef DEBUG_eNB_SCHEDULER
-  msg("[MAC][eNB] subframe %d: ************SCHEDULE ULSCH***************\n",subframe);
-  msg("[MAC][eNB] subframe %d: granted_UEs %d\n",subframe,granted_UEs);
+  msg("[MAC][eNB %d] subframe %d: ************SCHEDULE ULSCH***************\n",Mod_id,subframe);
+  msg("[MAC][eNB %d] subframe %d: granted_UEs %d\n",Mod_id,subframe,granted_UEs);
 #endif
 
   // allocated UE_ids until nCCE
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > aggregation);UE_id++) {
 
-    // find next ue to schedule
-    //    msg("[MAC][eNB] subframe %d: checking UE_id %d\n",subframe,UE_id);
-    next_ue = UE_id;//schedule_next_ulue(Mod_id,UE_id,subframe);
-    //    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
-    rnti = find_UE_RNTI(Mod_id,next_ue);
-    if (rnti==0)
-      continue;
-    //    msg("[MAC][eNB] subframe %d: rnti %x\n",subframe,rnti);
-    aggregation = process_ue_cqi(Mod_id,next_ue);
-    //    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
-
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-    if (eNB_UE_stats==NULL)
-      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-
-#ifdef DEBUG_eNB_SCHEDULER
-    msg("[MAC][eNB %d] Scheduler Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (rnti %x,mode %s), format 0\n",Mod_id,mac_xface->frame,subframe,*nCCE,next_ue,Mod_id, rnti,mode_string[eNB_UE_stats->mode]);
-#endif
+    if (UE_is_to_be_scheduled(Mod_id,UE_id)>0) {
 
 
-    if (eNB_UE_stats->mode == PUSCH) {
+      // find next ue to schedule
+      //    msg("[MAC][eNB] subframe %d: checking UE_id %d\n",subframe,UE_id);
+      next_ue = UE_id;//schedule_next_ulue(Mod_id,UE_id,subframe);
+      //    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
+      rnti = find_UE_RNTI(Mod_id,next_ue);
+
+      LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE (SR %d)\n",Mod_id,rnti,mac_xface->frame,subframe,
+	    eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);      
+
+      eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0;
 
 
-
-      // Get candidate harq_pid from PHY
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1);
-
-      // Note this code is still for a specific DCI format
-      ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
-      //ULSCH_dci0 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[0].ULSCH_DCI[harq_pid];
-      //ULSCH_dci1 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[1].ULSCH_DCI[harq_pid];
-
-      //msg("FAIL\n");
-      status = Rrc_xface->get_rrc_status(Mod_id,1,next_ue);
-      //status0 = Rrc_xface->get_rrc_status(Mod_id,1,0);
-      //status1 = Rrc_xface->get_rrc_status(Mod_id,1,1);
-
-      /*     
-	     if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
-	     ULSCH_dci->cqi_req = 0;
-	     else
-	     ULSCH_dci->cqi_req = 1;
-      */
+      if (rnti==0)
+	continue;
+      //    msg("[MAC][eNB] subframe %d: rnti %x\n",subframe,rnti);
+      aggregation = process_ue_cqi(Mod_id,next_ue);
+      //    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
       
-      if (status < RRC_CONNECTED)
-	ULSCH_dci->cqi_req = 0;
-      else
-	ULSCH_dci->cqi_req = 1;
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+      if (eNB_UE_stats==NULL)
+	mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
       
-
-      ULSCH_dci->type=0;
-      if (round > 0) {
-	ULSCH_dci->ndi = 0;
-      }
-      else {
-	ULSCH_dci->ndi = 1;
-      }
-      //if ((mac_xface->frame&1)==0) {
-      if (ULSCH_dci->ndi == 1) // set mcs for first round
-	ULSCH_dci->mcs     = openair_daq_vars.target_ue_ul_mcs;
-      else  // increment RV
-	ULSCH_dci->mcs = round + 28;
-
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB Scheduler] UE %d: got harq_pid %d, round %d, ndi %d, mcs %d, using 4 RBs starting at %d\n",UE_id,
-	  harq_pid,round,ULSCH_dci->ndi,ULSCH_dci->mcs,next_ue*4);
+      msg("[MAC][eNB %d] Scheduler Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (rnti %x,mode %s), format 0\n",Mod_id,mac_xface->frame,subframe,*nCCE,next_ue,Mod_id, rnti,mode_string[eNB_UE_stats->mode]);
 #endif
-
-      // schedule 4 RBs for UL
-      if((cooperation_flag > 0) && (next_ue == 1))// Allocation on same set of RBs
-	{
-	  ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						     ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
-						     4);//openair_daq_vars.ue_ul_nb_rb);
-	}
-      else
-	{
-	  ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						     (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
-						     4);//openair_daq_vars.ue_ul_nb_rb);
-	}
-
-      // Cyclic shift for DM RS
-      if(cooperation_flag == 2) {
-	if(next_ue == 1)// For Distriibuted Alamouti, cyclic shift applied to 2nd UE
-	  ULSCH_dci->cshift = 1;
+      
+      
+      if (eNB_UE_stats->mode == PUSCH) {
+	
+	
+	
+	// Get candidate harq_pid from PHY
+	mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1);
+	
+	// Note this code is still for a specific DCI format
+	ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
+	//ULSCH_dci0 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[0].ULSCH_DCI[harq_pid];
+	//ULSCH_dci1 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[1].ULSCH_DCI[harq_pid];
+	
+	//msg("FAIL\n");
+	status = Rrc_xface->get_rrc_status(Mod_id,1,next_ue);
+	//status0 = Rrc_xface->get_rrc_status(Mod_id,1,0);
+	//status1 = Rrc_xface->get_rrc_status(Mod_id,1,1);
+	
+	/*     
+	       if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
+	       ULSCH_dci->cqi_req = 0;
+	       else
+	       ULSCH_dci->cqi_req = 1;
+	*/
+	
+	if (status < RRC_CONNECTED)
+	  ULSCH_dci->cqi_req = 0;
 	else
-	  ULSCH_dci->cshift = 0;
-      }
-      else
-	ULSCH_dci->cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
+	  ULSCH_dci->cqi_req = 1;
+	
+	
+	ULSCH_dci->type=0;
+	if (round > 0) {
+	  ULSCH_dci->ndi = 0;
+	}
+	else {
+	  ULSCH_dci->ndi = 1;
+	}
+	//if ((mac_xface->frame&1)==0) {
 
-      add_ue_spec_dci(DCI_pdu,
-		      ULSCH_dci,
-		      rnti,
-		      sizeof(DCI0_5MHz_TDD_1_6_t),
-		      aggregation,
-		      sizeof_DCI0_5MHz_TDD_1_6_t,
-		      format0,
-		      0);
-      //#ifdef DEBUG_eNB_SCHEDULER
-      //      dump_dci(mac_xface->lte_frame_parms,
-      //	       &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
-      //#endif
-      add_ue_ulsch_info(Mod_id,
-			next_ue,
-			subframe,
-			S_UL_SCHEDULED);
-
-      *nCCE = (*nCCE) - aggregation;
-
+	// choose this later based on Power Headroom
+	if (ULSCH_dci->ndi == 1) // set mcs for first round
+	  ULSCH_dci->mcs     = openair_daq_vars.target_ue_ul_mcs;
+	else  // increment RV
+	  ULSCH_dci->mcs = round + 28;
+	
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB][ULSCH Scheduler] Frame %d, subframe %d: Generated ULSCH DCI for next UE_id %d, format 0\n",mac_xface->frame,subframe,next_ue);
+	msg("[MAC][eNB Scheduler] UE %d: got harq_pid %d, round %d, ndi %d, mcs %d, using 4 RBs starting at %d\n",UE_id,
+	    harq_pid,round,ULSCH_dci->ndi,ULSCH_dci->mcs,next_ue*4);
 #endif
+	
+	// schedule 4 RBs for UL
+	if((cooperation_flag > 0) && (next_ue == 1))// Allocation on same set of RBs
+	  {
+	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+						       ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
+						       4);//openair_daq_vars.ue_ul_nb_rb);
+	  }
+	else
+	  {
+	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+						       (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
+						       4);//openair_daq_vars.ue_ul_nb_rb);
+	  }
+	
+	// Cyclic shift for DM RS
+	if(cooperation_flag == 2) {
+	  if(next_ue == 1)// For Distriibuted Alamouti, cyclic shift applied to 2nd UE
+	    ULSCH_dci->cshift = 1;
+	  else
+	    ULSCH_dci->cshift = 0;
+	}
+	else
+	  ULSCH_dci->cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
 
-    }
+	ULSCH_dci->TPC = 1;  // Do not adjust power for now
 
-
-  }
+	add_ue_spec_dci(DCI_pdu,
+			ULSCH_dci,
+			rnti,
+			sizeof(DCI0_5MHz_TDD_1_6_t),
+			aggregation,
+			sizeof_DCI0_5MHz_TDD_1_6_t,
+			format0,
+			0);
+	//#ifdef DEBUG_eNB_SCHEDULER
+	//      dump_dci(mac_xface->lte_frame_parms,
+	//	       &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
+	//#endif
+	add_ue_ulsch_info(Mod_id,
+			  next_ue,
+			  subframe,
+			  S_UL_SCHEDULED);
+	
+	*nCCE = (*nCCE) - aggregation;
+	
+#ifdef DEBUG_eNB_SCHEDULER
+	msg("[MAC][eNB %d][ULSCH Scheduler] Frame %d, subframe %d: Generated ULSCH DCI for next UE_id %d, format 0\n",
+	    Mod_id,mac_xface->frame,subframe,next_ue);
+#endif
+	
+      } // UE is in PUSCH
+    } // UE_is_to_be_scheduled
+  } // loop over UE_id
 }
-
 u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
 
   int i;
@@ -1130,7 +1159,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 		   sizeof_DCI1A_5MHz_TDD_1_6_t,
 		   format1A,0);
 #ifdef DEBUG_eNB_SCHEDULER
-    msg("[MAC][eNB] Frame %d: Adding common dci for SI\n",mac_xface->frame);
+    msg("[MAC][eNB %d] Frame %d: Adding common dci for SI\n",Mod_id,mac_xface->frame);
 #endif
 #ifdef    DEBUG_PACKET_TRACE
     if((DCI_pdu!=NULL)&&(DCI_pdu!=0))
@@ -1204,7 +1233,8 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 		      eNB_mac_inst[Mod_id].RA_template[i].RA_dci_fmt2,
 		      0);
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB] Frame %d: Adding ue specific dci (rnti %x) for RA (ConnectionSetup)\n",mac_xface->frame,eNB_mac_inst[Mod_id].RA_template[i].rnti);
+      msg("[MAC][eNB %d] Frame %d: Adding ue specific dci (rnti %x) for RA (ConnectionSetup)\n",
+	  Mod_id,mac_xface->frame,eNB_mac_inst[Mod_id].RA_template[i].rnti);
 #endif
       eNB_mac_inst[Mod_id].RA_template[i].generate_Msg3_dci=0;
 #ifdef    DEBUG_PACKET_TRACE
@@ -1218,7 +1248,8 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
     else if (eNB_mac_inst[Mod_id].RA_template[i].wait_ack_Msg3==1) {
       // check HARQ status and retransmit if necessary
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB] Frame %d, subframe %d: Checking if Msg3 was acknowledged :",mac_xface->frame,subframe);
+      msg("[MAC][eNB %d] Frame %d, subframe %d: Checking if Msg3 was acknowledged :",
+	  Mod_id,mac_xface->frame,subframe);
 #endif
       // Get candidate harq_pid from PHY
       mac_xface->get_ue_active_harq_pid(Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
@@ -1248,12 +1279,13 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 			eNB_mac_inst[Mod_id].RA_template[i].RA_dci_fmt2,
 			0);
 #ifdef DEBUG_eNB_SCHEDULER
-	msg("[MAC][eNB] Frame %d: Adding ue specific dci (rnti %x) for RA (ConnectionSetup Retransmission)\n",mac_xface->frame,eNB_mac_inst[Mod_id].RA_template[i].rnti);
+	msg("[MAC][eNB %d] Frame %d: Adding ue specific dci (rnti %x) for RA (Msg3 Retransmission)\n",
+	    Mod_id,mac_xface->frame,eNB_mac_inst[Mod_id].RA_template[i].rnti);
 #endif
       }
       else {
 #ifdef DEBUG_eNB_SCHEDULER
-	msg("[MAC][eNB] Msg3 acknowledged\n");
+	msg("[MAC][eNB %d] Msg3 acknowledged\n",Mod_id);
 #endif
 	eNB_mac_inst[Mod_id].RA_template[i].wait_ack_Msg3=0;
 	eNB_mac_inst[Mod_id].RA_template[i].RA_active=0;
@@ -4019,15 +4051,13 @@ void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_fl
     //    schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
     fill_DLSCH_dci(Mod_id,subframe,RBalloc);
     // Schedule UL subframe
-    //schedule_ulsch(Mod_id,subframe,&nCCE);
-
+    //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
     break;
 
   case 9:
 
     // Schedule UL subframe
-    //    schedule_ulsch(Mod_id,subframe,&nCCE);
-
+    //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
 
     break;
 

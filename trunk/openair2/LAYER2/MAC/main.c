@@ -287,6 +287,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->terminate_ra_proc         = terminate_ra_proc;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;
   mac_xface->cancel_ra_proc            = cancel_ra_proc;
+  mac_xface->SR_indication             = SR_indication;
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
   mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;

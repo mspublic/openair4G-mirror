@@ -273,6 +273,9 @@ typedef struct{
   /// UL DAI
   u8 DAI_ul;
 
+  /// UL Scheduling Request Received
+  u8 ul_SR;
+
   //Resource Block indication for each sub-band in MU-MIMO 
   u8 rballoc_sub[8][7];
 
@@ -453,8 +456,22 @@ typedef struct{
 
 
 
-
-int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index, 
+/** \brief RRC Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
+@param Mod_id Instance ID of eNB
+@param CH_flag Indicates if this is a eNB or UE configuration
+@param UE_id Index of UE if this is an eNB configuration
+@param eNB_id Index of eNB if this is a UE configuration
+@param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
+@param physcialConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
+@param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep existing configuration)
+@param logicalChannelIdentity Logical channel identity index of corresponding logical channel config 
+@param logicalChannelConfig Pointer to logical channel configuration
+@param measGapConfig Measurement Gap configuration for MAC (if NULL keep existing configuration)
+@param tdd_Config TDD Configuration from SIB1 (if NULL keep existing configuration)
+@param SIwindowsize SI Windowsize from SIB1 (if NULL keep existing configuration)
+@param SIperiod SI Period from SIB1 (if NULL keep existing configuration)
+*/
+int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 eNB_id, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
 		       MAC_MainConfig_t *mac_MainConfig,
@@ -533,7 +550,31 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
 
 // eNB functions
+/* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f 
+   and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. The resultant DCI_PDU is
+   ready after returning from this call.
+@param Mod_id Instance ID of eNB
+@param cooperation_flag Flag to indicated that this cell has cooperating nodes (i.e. that there are collaborative transport channels that
+can be scheduled.
+@param subframe Index of current subframe
+*/
 void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u8 subframe); 
+
+/* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary numeber of times after eNB_dlsch_ulsch_scheduler
+in a given subframe.
+@param Mod_id Instance ID of eNB
+@param subframe Index of current subframe
+@returns Pointer to generated DCI for subframe
+*/
+DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
+
+/* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
+@param Mod_id Instance ID of eNB
+@param preamble_index index of the received RA request
+@param timing_offset Offset in samples of the received PRACH w.r.t. eNB timing. This is used to 
+*/
+void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
+
 
 /* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the t-CRNTI.
 @param Mod_id Instance ID of eNB
@@ -541,22 +582,41 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u8 subframe);
 @param N_RB_UL Number of UL resource blocks
 @returns t_CRNTI
 */
-
 u16  fill_rar(u8 Mod_id,
 	      u8 *dlsch_buffer,
 	      u16 N_RB_UL);
 
+/* \brief This function indicates the end of RA procedure and provides the l3msg received on ULSCH.
+@param Mod_id Instance ID of eNB
+@param rnti RNTI of UE transmitting l3msg
+@param l3msg Pointer to received l3msg
+*/
+void terminate_ra_proc(u8 Mod_id,u16 rnti, u8 *l3msg);
 
-void terminate_ra_proc(u8 Mod_id,u16 UE_id, u8 *l3msg);
-
-
-void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
-
+/* \brief Function to indicate a failed RA response.  It removes all temporary variables related to the initial connection of a UE
+@param Mod_id Instance ID of eNB
+@param preamble_index index of the received RA request.
+*/
 void cancel_ra_proc(u8 Mod_id, u16 preamble_index);
 
+/* \brief Function to indicate a received SDU on ULSCH.
+@param Mod_id Instance ID of eNB
+@param rnti RNTI of UE transmitting the SR
+@param sdu Pointer to received SDU
+*/
 void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
+
+/* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
+@param Mod_id Instance ID of eNB
+@param rnti RNTI of UE transmitting the SR
+@param subframe Index of subframe where SR was received
+*/
+void SR_indication(u8 Mod_id,u16 rnti, u8 subframe);
+
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
-DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
+
+
+
 u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
 //added for ALU icic purpose
 u32 Get_Cell_SBMap(u8 Mod_id);
