@@ -217,7 +217,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
       UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=1;
     } else
       UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=0;
-    LOG_D(MAC,"[UE %d] instruct phy to signal SR navid ", Mod_id);
+    //   LOG_D(MAC,"[UE %d] instruct phy to signal SR navid ", Mod_id);
     return(1); //instruct phy to signal SR
   }
   else{
