@@ -57,7 +57,9 @@ typedef struct {
   ///additional delay of channel in samples. 
   s8 channel_offset; 
   ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
-  double forgetting_factor; 
+  double forgetting_factor;
+  ///This parameter indicates bypassing of the multipath channel simulator (1 = AWGN only)
+  u8 awgn_flag;
   ///needs to be set to 1 for the first call, 0 otherwise.
   u8 first_run;
   /// initial phase for frequency offset simulation 
@@ -165,7 +167,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				     u8 nb_rx, 
 				     SCM_t channel_model, 
 				     double BW, 
-				     double forgetting_factor, 
+				     double forgetting_factor,
+				     u8 awgn_flag,
 				     s32 channel_offset, 
 				     double path_loss_dB);
 

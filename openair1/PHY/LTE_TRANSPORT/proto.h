@@ -1123,17 +1123,15 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 u8 subframe);
 
 
-s32 rx_pucch(LTE_eNB_COMMON *eNB_common_vars,
-	     LTE_DL_FRAME_PARMS *frame_parms,
-	     u8 ncs_cell[20][7],
+s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	     PUCCH_FMT_t fmt,
-	     PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+	     u8 UE_id,
 	     u16 n1_pucch,
 	     u16 n2_pucch,
 	     u8 shortened_format,
 	     u8 *payload,
 	     u8 subframe,
-	     s8 sigma2_dB);
+	     u8 pucch1_thres);
 
 s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 UE_index,

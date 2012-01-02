@@ -677,11 +677,13 @@ int main(int argc, char **argv) {
 	  harq_pid = subframe2_ul_harq(&PHY_vars_eNB->lte_frame_parms,subframe);
 	  
 	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_active = 1;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 0;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS = 0;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_ACK = 0;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb = 0;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->n_DMRS = 0;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb     = 0;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS       = 0;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_ACK    = taus()&1;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->dci_alloc    = 1;
+
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb       = 0;
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->n_DMRS         = 0;
 
 
 	  generate_phich_top(PHY_vars_eNB,

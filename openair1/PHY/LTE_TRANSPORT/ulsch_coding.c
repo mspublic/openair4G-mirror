@@ -225,6 +225,7 @@ u32 ulsch_encoding(u8 *a,
     A=ulsch->harq_processes[harq_pid]->TBS;
     Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
+    ulsch->harq_processes[harq_pid]->control_only = 0;
     
 #ifdef DEBUG_ULSCH_CODING
   msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d\n",
@@ -347,9 +348,10 @@ u32 ulsch_encoding(u8 *a,
     }
   }
   else { // This is a control-only PUSCH, set sumKr to O_CQI-MIN
-
+    ulsch->harq_processes[harq_pid]->control_only = 1;
     sumKr = ulsch->O_CQI_MIN;
   }
+  ulsch->harq_processes[harq_pid]->sumKr = sumKr;
   // Compute Q_ri (p. 23 36-212)
 
   Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_ri_times8;

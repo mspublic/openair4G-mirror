@@ -321,17 +321,17 @@ typedef struct {
   /// Power parameter for RRCConnectionRequest
   s8 deltaPreambleMsg3;
   /// deltaF-PUCCH-Format1, see 36.213 (5.1.2)
-  deltaF_PUCCH_t deltaF_PUCCH_Format1;
+  long deltaF_PUCCH_Format1;
   /// deltaF-PUCCH-Format1a, see 36.213 (5.1.2)
-  deltaF_PUCCH_t deltaF_PUCCH_Format1a;
+  long deltaF_PUCCH_Format1a;
   /// deltaF-PUCCH-Format1b, see 36.213 (5.1.2)
-  deltaF_PUCCH_t deltaF_PUCCH_Format1b;
+  long deltaF_PUCCH_Format1b;
   /// deltaF-PUCCH-Format2, see 36.213 (5.1.2)
-  deltaF_PUCCH_t deltaF_PUCCH_Format2;
+  long deltaF_PUCCH_Format2;
   /// deltaF-PUCCH-Format2a, see 36.213 (5.1.2)
-  deltaF_PUCCH_t deltaF_PUCCH_Format2a;
+  long deltaF_PUCCH_Format2a;
   /// deltaF-PUCCH-Format2b, see 36.213 (5.1.2)
-  deltaF_PUCCH_t deltaF_PUCCH_Format2b;
+  long deltaF_PUCCH_Format2b;
 } UL_POWER_CONTROL_CONFIG_COMMON;
 
 typedef union {

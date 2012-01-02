@@ -1254,8 +1254,8 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 	avgs = cmax(avgs,avgU[(aarx<<1)]);
   
-      log2_maxh = 4+(log2_approx(avgs)/2);
-      //log2_maxh = 4+(log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1);
+      //      log2_maxh = 4+(log2_approx(avgs)/2);
+      log2_maxh = 6+(log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1);
 #ifdef DEBUG_ULSCH
       msg("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
 #endif

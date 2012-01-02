@@ -271,7 +271,7 @@ typedef struct
   u8               pucch_payload[22];
 
   UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
-
+  s8               g_pucch[NUMBER_OF_eNB_MAX];
   /// cell-specific reference symbols
   unsigned int lte_gold_table[3][20][2][14];
 
