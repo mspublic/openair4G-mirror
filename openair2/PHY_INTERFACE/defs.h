@@ -65,7 +65,7 @@ typedef struct
     void (*mrbch_phy_sync_failure) (u8 Mod_id,u8 Free_ch_index);
 
     /// Indicate Scheduling Request from UE
-    void (*SR_indication)(u8 Mod_id,u16 rnti);
+    void (*SR_indication)(u8 Mod_id,u16 rnti,u8 subframe);
 
     /// Configure Common PHY parameters from SIB1
     void (*phy_config_sib1_eNB)(u8 Mod_id,

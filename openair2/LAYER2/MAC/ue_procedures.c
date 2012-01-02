@@ -174,11 +174,20 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
   int gapOffset=-1;
   int T=0; 
   //  int sfn=0;
-  
+
+  // Commented for the moment because this doesn't check the SRBs and so the connection cannot go through, 
+  /*  
+
   if (req_new_ulsch(Mod_id) == 0)
     return 0;
-  
+  */
+
   // determin the measurement gap
+  LOG_D(MAC,"[UE %d][SR %x] Frame %d subframe %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",Mod_id,rnti,mac_xface->frame,subframe,
+	UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER,
+	(1<<(2+UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax)),
+	UE_mac_inst[Mod_id].scheduling_info.SR_pending);
+
   if (UE_mac_inst[Mod_id].measGapConfig !=NULL){
     if (UE_mac_inst[Mod_id].measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0){
       MGRP= 40;
@@ -190,16 +199,17 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
       LOG_W(MAC, "Measurement GAP offset is unknown\n");
     }
     T=MGRP/10;
-    //check the measurement gap amd sr prohibit timer
+    //check the measurement gap and sr prohibit timer
     if ((subframe ==  gapOffset %10) && ((mac_xface->frame %T) == (floor(gapOffset/10))) 
 	&& (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running =0)){
       UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
       return(0);
     }
   }
-  LOG_D(MAC,"navid dsr_trans %d \n", UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax);
-  if (UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER < 
-      UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax){
+  if ((UE_mac_inst[Mod_id].scheduling_info.SR_pending==1) && 
+      (UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER < 
+       (1<<(2+UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax)))
+      ){
     UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER++;
     // start the sr-prohibittimer : rel 9 and above
     if (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer > 0) { // timer configured 
@@ -215,6 +225,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
     // clear any configured dl/ul
     // initiate RA
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+    UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER=0;
     return(0);
   }
 }
@@ -228,7 +239,8 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
 #ifdef DEBUG_HEADER_PARSING
-  LOG_D(MAC,"[UE %d] ue_send_sdu : eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,eNB_index,num_ce,num_sdu);
+  LOG_D(MAC,"[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,
+	mac_xface->frame,eNB_index,num_ce,num_sdu);
 #endif
 
   for (i=0;i<num_ce;i++) {
@@ -295,7 +307,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 				      NULL);
     }
     else if (rx_lcids[i] == DTCH) {
-      LOG_D(MAC,"[UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
+      LOG_D(MAC,"[UE %d][PDSCH] RX DTCH%d %d bytes to RLC \n",Mod_id,rx_lcids[i],rx_lengths[i]);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 				      DTCH,
 				      (char *)payload_ptr,
@@ -375,7 +387,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
   if (crnti) {
 #ifdef DEBUG_HEADER_PARSING
-    LOG_D(MAC,"[UE] CRNTI : %x (first_element %d)\n",*crnti,first_element);
+    LOG_D(MAC,"[MAC][UE] CRNTI : %x (first_element %d)\n",*crnti,first_element);
 #endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
@@ -716,6 +728,12 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
 
     }
+  
+    LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
+	  Mod_id,payload_offset, sdu_length_total);
+    UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+    UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER=0;
+    
 }
 
 // called at each slot (next_slot%2==0)
@@ -726,7 +744,8 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
   int TTI= 1;
   int bucketsizeduration;
   int bucketsizeduration_max;
-
+  mac_rlc_status_resp_t rlc_status[11];
+ 
   Mac_rlc_xface->frame=mac_xface->frame;
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
@@ -736,30 +755,51 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
   
     // Get RLC status info and update Bj for all lcids that are active 
   for (lcid=CCCH; lcid <= DTCH; lcid++ ) { 
-    // meausre the Bj 
-    if ((direction == SF_UL)&& (UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] >= 0)){
-      bucketsizeduration = UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->prioritisedBitRate * TTI;
-      bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
-      if ( UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] > bucketsizeduration_max )
-	UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration_max;
-      else
-	UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration;
+    if ((lcid == 0) ||
+	(UE_mac_inst[Mod_id].logicalChannelConfig[lcid])) {
+      // meausre the Bj 
+      if ((direction == SF_UL)&& (UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] >= 0)){
+	bucketsizeduration = UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->prioritisedBitRate * TTI;
+	bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
+	if ( UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] > bucketsizeduration_max )
+	  UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration_max;
+	else
+	  UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration;
+      }
+      // measure the buffer size 
+      rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+					    lcid,
+					    0);//tb_size does not reauire when requesting the status
+      //    LOG_D(MAC,"[UE %d] rlc buffer (lcid %d, byte %d)BSR level %d\n", 
+      //	  Mod_id, lcid, rlc_status[lcid].bytes_in_buffer, UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]);
+      if (rlc_status[lcid].bytes_in_buffer > 0 ) {
+	//set the bsr for all lcid by searching the table to find the bsr level 
+	UE_mac_inst[Mod_id].scheduling_info.BSR[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
+	//	UE_mac_inst[Mod_id].scheduling_info.num_BSR++;
+	UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
+	LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCID %d with BSR level %d (%d bytes in RLC)\n", 
+	      Mod_id, mac_xface->frame,subframe,lcid,
+	      UE_mac_inst[Mod_id].scheduling_info.BSR[lcid],
+	      rlc_status[lcid].bytes_in_buffer);
+      } else {
+	UE_mac_inst[Mod_id].scheduling_info.BSR[lcid]=0;
+      }
     }
     update_bsr(Mod_id, lcid);
   }
- 
+    
   // UE has no valid phy config dedicated ||  no valid/released  SR 
   if ((UE_mac_inst[Mod_id].physicalConfigDedicated == NULL) || 
       (UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig == NULL) ||
       (UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_release)){
-
+    
     // initiate RA with CRNTI included in msg3 (no contention) as descibed in 36.321 sec 5.1.5
     
     // cancel all pending SRs
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
-    LOG_D(MAC,"[UE %d] Release all SRs \n", Mod_id);
+    LOG_D(MAC,"[MAC][UE %d] Release all SRs \n", Mod_id);
   }
-   
+  
   // Call PHR procedure as described in Section 5.4.6 in 36.321
 }
 

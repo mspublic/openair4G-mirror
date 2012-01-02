@@ -178,7 +178,7 @@ pdcp_fifo_flush_sdus ()
 #endif // USER_MODE
 
 #ifdef PDCP_DEBUG
-	  msg("[PDCP][INFO] PDCP->IP TTI %d INST %d: Sent %d Bytes of data from rab %d to Nas_mesh\n",
+	  msg("[PDCP][INFO][PDSCH/PUSCH] PDCP->IP TTI %d INST %d: Sent %d Bytes of data from rab %d to Nas_mesh\n",
 	      Mac_rlc_xface->frame,
 	      ((pdcp_data_ind_header_t *)(sdu->data))->inst,
 	      bytes_wrote,
@@ -453,7 +453,7 @@ pdcp_fifo_read_input_sdus ()
 	  pdcp_read_header.inst +  oai_emulation.info.first_enb_local;
 
 #ifdef PDCP_DEBUG
-	printf("[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+	printf("[PDCP][NETLINK][PDSCH/PUSCH][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
 	       Mac_rlc_xface->frame, 
 	       pdcp_read_header.inst,
 	       len,
