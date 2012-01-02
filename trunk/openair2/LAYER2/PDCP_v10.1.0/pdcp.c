@@ -127,13 +127,31 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
      */
     rlc_op_status_t rlc_status = rlc_data_req(module_id, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdcp_pdu_size, pdcp_pdu);
     switch (rlc_status) {
-      case RLC_OP_STATUS_OK: LOG_I(PDCP, "Data sending request over RLC succeeded!\n");
-      case RLC_OP_STATUS_BAD_PARAMETER: LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-      case RLC_OP_STATUS_INTERNAL_ERROR: LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-      case RLC_OP_STATUS_OUT_OF_RESSOURCES: LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-      default: LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+      case RLC_OP_STATUS_OK:
+        LOG_I(PDCP, "Data sending request over RLC succeeded!\n");
+	break;
+
+      case RLC_OP_STATUS_BAD_PARAMETER:
+	LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+	return FALSE;
+
+      case RLC_OP_STATUS_INTERNAL_ERROR:
+	LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+	return FALSE;
+
+      case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+	LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+	return FALSE;
+
+      default:
+	LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+	return FALSE;
     }
 
+    /*
+     * Control arrives here only if rlc_data_req() returns RLC_OP_STATUS_OK 
+     * so we return TRUE afterwards
+     */
     if (Mac_rlc_xface->Is_cluster_head[module_id] == 1) {
       Pdcp_stats_tx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
       Pdcp_stats_tx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH] += sdu_buffer_size;
@@ -141,7 +159,9 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
       Pdcp_stats_tx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
       Pdcp_stats_tx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH] += sdu_buffer_size; 
     }
-#endif
+
+    return TRUE;
+#endif // PDCP_UNIT_TEST
   } else {
     LOG_E(PDCP, "Cannot create a mem_block for a PDU!\n");
 
@@ -162,7 +182,7 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
   list_t* sdu_list = test_list;
 #else
   pdcp_t* pdcp = &pdcp_array[module_id][rab_id];
-  list_t* sdu_list = pdcp_sdu_list;
+  list_t* sdu_list = &pdcp_sdu_list;
 #endif
   mem_block_t *new_sdu = NULL;
   
