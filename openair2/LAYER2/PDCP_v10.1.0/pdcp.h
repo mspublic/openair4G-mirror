@@ -81,7 +81,11 @@ typedef struct pdcp_t {
   // here ROHC variables for header compression/decompression
 } pdcp_t;
 
-#undef PDCP_UNIT_TEST
+/*
+ * Following symbolic constant alters the behaviour of PDCP 
+ * and makes it linked to PDCP test code under targets/TEST/PDCP/
+ */
+#define PDCP_UNIT_TEST
 
 #ifdef PDCP_UNIT_TEST
 public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
@@ -92,6 +96,7 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_
 public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer);)
 public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, mem_block_t* sdu_buffer);)
 #endif
+
 public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
 public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
 

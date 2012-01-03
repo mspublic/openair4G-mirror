@@ -39,6 +39,7 @@
   #include <rtai_fifos.h>
 #endif
 #include "pdcp.h"
+#include "pdcp_util.h"
 #include "pdcp_sequence_manager.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
@@ -59,9 +60,11 @@ extern rlc_op_status_t rlc_data_req(module_id_t, rb_id_t, mui_t, confirm_t, sdu_
  * code at targets/TEST/PDCP/test_pdcp.c:test_pdcp_data_req()
  */
 #ifdef PDCP_UNIT_TEST
-BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list)
+BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+                   unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list)
 #else
-BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer)
+BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+                   unsigned char* sdu_buffer)
 #endif
 {
 //-----------------------------------------------------------------------------
@@ -87,8 +90,10 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
     mac_xface->macphy_exit("");
   }
 
+  /*
+   * Allocate a new block for the header and the payload
+   */
   LOG_D(PDCP, "Asking for a new mem_block of size %d\n", pdcp_pdu_size);
-  // Allocate a new block for the header and the payload
   pdcp_pdu = get_free_mem_block(pdcp_pdu_size);
 
   if (pdcp_pdu != NULL) {
@@ -111,6 +116,10 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
 
     /* Then append data... */
     memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sdu_buffer, sdu_buffer_size);
+
+    /* Print octets of outgoing data in hexadecimal form */
+    LOG_D(PDCP, "Following content will be sent over RLC:\n");
+    util_print_hex_octets(PDCP, pdcp_pdu->data, pdcp_pdu_size);
 
 #ifdef PDCP_UNIT_TEST
     /* 
@@ -171,9 +180,11 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
 
 //-----------------------------------------------------------------------------
 #ifdef PDCP_UNIT_TEST
-BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, mem_block_t* sdu_buffer, pdcp_t* pdcp_test_entity, list_t* test_list)
+BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+                   mem_block_t* sdu_buffer, pdcp_t* pdcp_test_entity, list_t* test_list)
 #else
-BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, mem_block_t* sdu_buffer) // XXX Is this an SDU? From whom do we receive this? UE? RLC? Check!!!
+BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+                   mem_block_t* sdu_buffer)
 #endif
 {
 //-----------------------------------------------------------------------------
@@ -241,6 +252,10 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
     // PROCESS OF DECOMPRESSION HERE:
     memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], &sdu_buffer->data[0], sdu_buffer_size);
     list_add_tail_eurecom (new_sdu, sdu_list);
+
+    /* Print octets of incoming data in hexadecimal form */
+    LOG_D(PDCP, "Following content has been received from RLC:\n");
+    util_print_hex_octets(PDCP, new_sdu->data, sdu_buffer_size + sizeof(pdcp_data_ind_header_t));
 
     /*
      * XXX Following part causes SIGSEGV!
