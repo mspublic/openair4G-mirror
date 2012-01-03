@@ -85,7 +85,7 @@ typedef struct pdcp_t {
  * Following symbolic constant alters the behaviour of PDCP 
  * and makes it linked to PDCP test code under targets/TEST/PDCP/
  */
-#define PDCP_UNIT_TEST
+#undef PDCP_UNIT_TEST
 
 #ifdef PDCP_UNIT_TEST
 public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
