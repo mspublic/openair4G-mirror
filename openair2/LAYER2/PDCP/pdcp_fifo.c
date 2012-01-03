@@ -59,10 +59,8 @@
 
 //#define IDROMEL_NEMO 1
 
-#ifdef USER_MODE
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#endif
 
 #ifdef NAS_NETLINK
 
@@ -102,14 +100,10 @@ pdcp_fifo_flush_sdus ()
 
   while ((sdu) && (cont)) {
 
-#ifdef USER_MODE
     // asjust the instance id when passing sdu to IP 
     ((pdcp_data_ind_header_t *)(sdu->data))->inst = (((pdcp_data_ind_header_t *)(sdu->data))->inst >= NB_eNB_INST) ? 
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - NB_eNB_INST +oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local :// UE
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - oai_emulation.info.first_ue_local; // ENB
-#else
-    ((pdcp_data_ind_header_t *)(sdu->data))->inst = 0;
-#endif
 
 #ifdef PDCP_DEBUG
 	  msg("[PDCP][INFO] PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
@@ -178,7 +172,7 @@ pdcp_fifo_flush_sdus ()
 #endif // USER_MODE
 
 #ifdef PDCP_DEBUG
-	  msg("[PDCP][INFO][PDSCH/PUSCH] PDCP->IP TTI %d INST %d: Sent %d Bytes of data from rab %d to Nas_mesh\n",
+	  msg("[PDCP][INFO] PDCP->IP TTI %d INST %d: Sent %d Bytes of data from rab %d to Nas_mesh\n",
 	      Mac_rlc_xface->frame,
 	      ((pdcp_data_ind_header_t *)(sdu->data))->inst,
 	      bytes_wrote,
@@ -384,7 +378,7 @@ pdcp_fifo_read_input_sdus ()
   int             bytes_read;
   int len;
 
-  
+
 
     if (pdcp_read_state == 0) {
 
@@ -395,7 +389,7 @@ pdcp_fifo_read_input_sdus ()
 #endif
   
       if (len<0) {
-	//		printf("[PDCP][NETLINK %d] nothing in pdcp NAS socket\n", nas_sock_fd);
+	//	printf("[PDCP][NETLINK %d] nothing in pdcp NAS socket\n", nas_sock_fd);
        }
       else {
 #ifdef PDCP_DEBUG
@@ -453,7 +447,7 @@ pdcp_fifo_read_input_sdus ()
 	  pdcp_read_header.inst +  oai_emulation.info.first_enb_local;
 
 #ifdef PDCP_DEBUG
-	printf("[PDCP][NETLINK][PDSCH/PUSCH][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+	printf("[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
 	       Mac_rlc_xface->frame, 
 	       pdcp_read_header.inst,
 	       len,

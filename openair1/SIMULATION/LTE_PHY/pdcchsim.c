@@ -440,10 +440,10 @@ int main(int argc, char **argv) {
     dci_length_bytes = sizeof(DCI2_5MHz_4A_M10PRB_TDD_t);
     break;
   case 15:
-    dlsch_pdu = (void*) &DLSCH_alloc_pdu1E;
-    format     = format1E_2A_M10PRB;
-    dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-    dci_length_bytes = sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t);
+    dlsch_pdu = (void*) &DLSCH_alloc_pdu2D;
+    format     = format2_2D_M10PRB;
+    dci_length = sizeof_DCI2_5MHz_2D_M10PRB_TDD_t;
+    dci_length_bytes = sizeof(DCI2_5MHz_2D_M10PRB_TDD_t);
     break;
     /*
   case 16:
@@ -508,8 +508,7 @@ int main(int argc, char **argv) {
 
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
-  printf("Subframe %d, FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",
-	 subframe,NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
 	 frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
 
   msg("[SIM] Using SCM/101\n");
@@ -677,43 +676,47 @@ int main(int argc, char **argv) {
 	  harq_pid = subframe2_ul_harq(&PHY_vars_eNB->lte_frame_parms,subframe);
 	  
 	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_active = 1;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb     = 0;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS       = 0;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_ACK    = taus()&1;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->dci_alloc    = 1;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 0;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS = 0;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_ACK = 0;
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb = 0;
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->n_DMRS = 0;
 
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb       = 0;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->n_DMRS         = 0;
+	  generate_phich_top(frame_parms,
+			     subframe,
+			     1024,
+			     PHY_vars_eNB->ulsch_eNB[0],
+			     PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id]);
 
-
-	  generate_phich_top(PHY_vars_eNB,
-			     subframe,1024,0,0);
-	  
 	  // generate 3 interfering PHICH
 	  if (num_phich_interf>0) {
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 4;
-	    generate_phich_top(PHY_vars_eNB,
+	    generate_phich_top(frame_parms,
 			       subframe,
 			       1024,
-			       0,0);
+			       PHY_vars_eNB->ulsch_eNB[0],
+			       PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id]);
 	  }
-	  
+
 	  if (num_phich_interf>1) {
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 8;
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS = 1;
-	    generate_phich_top(PHY_vars_eNB,
+	    generate_phich_top(frame_parms,
 			       subframe,
-			       1024,0,0);
+			       1024,
+			       PHY_vars_eNB->ulsch_eNB[0],
+			       PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id]);
 	  }
 	  if (num_phich_interf>2) {
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 12;
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS = 1;
-	    generate_phich_top(PHY_vars_eNB,
+	    generate_phich_top(frame_parms,
 			       subframe,
-			       1024,0,0);
-	    
+			       1024,
+			       PHY_vars_eNB->ulsch_eNB[0],
+			       PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id]);
 	  }
-	  
+
 	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 0;
 
 	}
@@ -869,19 +872,22 @@ int main(int argc, char **argv) {
 		   0,
 		   (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 		   PHY_vars_UE->is_secondary_ue); 
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,subframe)]->status = ACTIVE;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,subframe)]->Ndi = 1;
+
 	  if (is_phich_subframe(&PHY_vars_UE->lte_frame_parms,subframe)) {
-	    rx_phich(PHY_vars_UE,
+	    rx_phich(&PHY_vars_UE->lte_frame_parms,
+		     0,
+		     0,
+		     &HI,
+		     0,
 		     subframe,
-		     0);
+		     PHY_vars_UE->lte_ue_pdcch_vars);
 	  }
 	  //	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
 	  //	    break;
 	  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
 					   dci_alloc_rx,
-					   0,subframe);
-
+					   0,subframe,
+					   SI_RNTI,RA_RNTI);
 	  common_rx=0;
 	  ul_rx=0;
 	  dl_rx=0;
@@ -912,7 +918,7 @@ int main(int argc, char **argv) {
 	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
 	    n_errors_cfi++;
 
-	  if (PHY_vars_UE->ulsch_ue[0]->harq_processes[subframe2_ul_harq(&PHY_vars_UE->lte_frame_parms,subframe)]->Ndi = 0)
+	  if (HI!=0)
 	    n_errors_hi++;
 
 	  if (n_errors_cfi > 0)

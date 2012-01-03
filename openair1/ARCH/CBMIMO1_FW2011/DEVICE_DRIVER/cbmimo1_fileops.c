@@ -185,7 +185,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   u8 buffer[100];
   u8 size;
-  unsigned int *fw_block;
 
   scale = &scale_mem;
 
@@ -292,9 +291,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[openair][IOCTL] Setting up registers\n");
       for (i=0;i<number_of_cards;i++) { 
 	ret = setup_regs(i,frame_parms);
-	if (vid != XILINX_VENDOR)
-	  pci_interface[i]->freq_offset = 0;
-	//	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	pci_interface[i]->freq_offset = 0;
+	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 	
       }
       
@@ -350,7 +348,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	dump_frame_parms(&PHY_vars_eNB_g[0]->lte_frame_parms);
  
-	if (  phy_init_lte_eNB(PHY_vars_eNB_g[0],0,0,0)) {
+	if (  phy_init_lte_eNB(&PHY_vars_eNB_g[0]->lte_frame_parms,
+			       &PHY_vars_eNB_g[0]->lte_eNB_common_vars,
+			       PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars,
+			       0,
+			       PHY_vars_eNB_g[0],
+			       2, //this will allocate memory for cooperation
+			       0)) {
 	  printk("[openair][IOCTL] phy_init_lte_eNB error\n");
 	  break;
 	}
@@ -376,7 +380,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	}
 	else {
 	  msg("dlsch_eNB_ra => %p\n",PHY_vars_eNB_g[0]->dlsch_eNB_ra);
-	  PHY_vars_eNB_g[0]->dlsch_eNB_ra->rnti  = 0;//RA_RNTI;
+	  PHY_vars_eNB_g[0]->dlsch_eNB_ra->rnti  = RA_RNTI;
 	}
 
 	for (i=0; i<NUMBER_OF_UE_MAX;i++){ 
@@ -602,7 +606,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	dump_frame_parms(&PHY_vars_UE_g[0]->lte_frame_parms);
 
-	if (phy_init_lte_ue(PHY_vars_UE_g[0],
+	if (phy_init_lte_ue(&PHY_vars_UE_g[0]->lte_frame_parms, 
+			    &PHY_vars_UE_g[0]->lte_ue_common_vars, 
+			    PHY_vars_UE_g[0]->lte_ue_dlsch_vars, 
+			    PHY_vars_UE_g[0]->lte_ue_dlsch_vars_SI, 
+			    PHY_vars_UE_g[0]->lte_ue_dlsch_vars_ra,
+			    PHY_vars_UE_g[0]->lte_ue_pbch_vars, 
+			    PHY_vars_UE_g[0]->lte_ue_pdcch_vars,
+			    PHY_vars_UE_g[0],
 			    0)) {
 	    msg("[openair][IOCTL] phy_init_lte_ue error\n");
 	    break;
@@ -1203,14 +1214,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 
   case openair_UPDATE_FIRMWARE:
-
-    printk("[openair][IOCTL]     openair_UPDATE_FIRMWARE\n");
-    /***************************************************
-     *   Updating the firmware of Cardbus-MIMO-1 or ExpressMIMO SoC   *
-     ***************************************************/
-    /* 1st argument of this ioctl indicates the action to perform among these:
-       - Transfer a block of data at a specified address (given as the 2nd argument)
-       and for a specified length (given as the 3rd argument, in number of 32-bit words).
+    if (vid != XILINX_VENDOR) {
+      printk("[openair][IOCTL]     openair_UPDATE_FIRMWARE\n");
+      /***************************************************
+       *   Updating the firmware of Cardbus-MIMO-1 SoC   *
+       ***************************************************/
+      /* 1st argument of this ioctl indicates the action to perform among these:
+         - Transfer a block of data at a specified address (given as the 2nd argument)
+	 and for a specified length (given as the 3rd argument, in number of 32-bit words).
 	 The USER-SPACE address where to find the block of data is given as the 4th
 	 argument.
          - Ask the Leon processor to clear the .bss section. In this case, the base
@@ -1225,213 +1236,154 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	 the kernel with an infinite polling loop. An exception is the case of clearing
 	 the bss: it takes time to Leon3 to perform this operation, so we poll te
 	 acknowledge with no limit */
-
 #define MAX_IOCTL_ACK_CNT    500
-    update_firmware_command = *((unsigned int*)arg);
-    
-    
-    switch (update_firmware_command) {
+      update_firmware_command = *((unsigned int*)arg);
       
-    case UPDATE_FIRMWARE_TRANSFER_BLOCK:
-      update_firmware_address   = ((unsigned int*)arg)[1];
-      update_firmware_length    = ((unsigned int*)arg)[2];
-      
-      if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
-
-	invert4(update_firmware_address); /* because Sparc is big endian */
-	invert4(update_firmware_length); /* because Sparc is big endian */
-
-	update_firmware_ubuffer   = (unsigned int*)((unsigned int*)arg)[3];
-	/* Alloc some space from kernel to copy the user data block into */
-	lendian_length = update_firmware_length;
-	invert4(lendian_length); /* because Sparc is big endian */
-	update_firmware_kbuffer = (unsigned int*)kmalloc(lendian_length * 4 /* 4 because kmalloc expects bytes */,
-							 GFP_KERNEL);
-	if (!update_firmware_kbuffer) {
-	  printk("[openair][IOCTL]  Could NOT allocate %u bytes from kernel memory (kmalloc failed).\n", lendian_length * 4);
-	  return -1; 
-	  break;
-	}
-	/* Copy the data block from user space */
-	tmp = copy_from_user(
-			     update_firmware_kbuffer, /* to   */
-			     update_firmware_ubuffer, /* from */
-			     lendian_length * 4       /* in bytes */
-			     );
-	if (tmp) {
-	  printk("[openair][IOCTL] Could NOT copy all data from user-space to kernel-space (%d bytes remained uncopied).\n", tmp);
-	  if (update_firmware_kbuffer)
-	    kfree(update_firmware_kbuffer);
-	  return -1;
-	  break;
-	}
+      switch (update_firmware_command) {
 	
-	for (fmw_off = 0 ; fmw_off < (lendian_length * 4) ; fmw_off += 4) {
-	  bendian_fmw_off = fmw_off; invert4(bendian_fmw_off);
-	  sparc_tmp_0 = update_firmware_address + bendian_fmw_off;
-	  invert4(sparc_tmp_0); /* because Sparc is big endian */
-	  sparc_tmp_1 = update_firmware_kbuffer[fmw_off/4];
-	  invert4(sparc_tmp_1); /* because Sparc is big endian */
-	  openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
-	  openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
-	  wmb();
-	  openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
-			 FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_SINGLE_WRITE | FROM_GRLIB_IRQ_FROM_PCI);
-	  wmb();
-	  /* Poll the IRQ bit */
-	  ioctl_ack_cnt = 0;
-	  do {
-	    openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-	    rmb();
-	  } while ((tmp & FROM_GRLIB_IRQ_FROM_PCI) && (ioctl_ack_cnt++ < MAX_IOCTL_ACK_CNT));
-	  if (tmp & FROM_GRLIB_IRQ_FROM_PCI) {
-	    printk("[openair][IOCTL] ERROR: Leon did not acknowledge 'SINGLE_WRITE' irq (after a %u polling loop).\n", MAX_IOCTL_ACK_CNT);
-	    kfree(update_firmware_kbuffer);
-	    return -1;
-	    break;
-	  }
-	}
-
-	kfree(update_firmware_kbuffer);
-	sparc_tmp_0 = update_firmware_address; sparc_tmp_1 = update_firmware_length;
-	invert4(sparc_tmp_0); invert4(sparc_tmp_1);
-	printk("[openair][IOCTL] ok %u words copied at address 0x%08x (Leon ack after %u polling loops)\n",
+      case UPDATE_FIRMWARE_TRANSFER_BLOCK:
+        update_firmware_address   = ((unsigned int*)arg)[1];
+        invert4(update_firmware_address); /* because Sparc is big endian */
+        update_firmware_length    = ((unsigned int*)arg)[2];
+        invert4(update_firmware_length); /* because Sparc is big endian */
+        update_firmware_ubuffer   = (unsigned int*)((unsigned int*)arg)[3];
+        /* Alloc some space from kernel to copy the user data block into */
+        lendian_length = update_firmware_length;
+        invert4(lendian_length); /* because Sparc is big endian */
+        update_firmware_kbuffer = (unsigned int*)kmalloc(lendian_length * 4 /* 4 because kmalloc expects bytes */,
+                                                         GFP_KERNEL);
+        if (!update_firmware_kbuffer) {
+          printk("[openair][IOCTL]  Could NOT allocate %u bytes from kernel memory (kmalloc failed).\n", lendian_length * 4);
+          return -1; 
+          break;
+        }
+        /* Copy the data block from user space */
+        tmp = copy_from_user(
+                             update_firmware_kbuffer, /* to   */
+                             update_firmware_ubuffer, /* from */
+                             lendian_length * 4       /* in bytes */
+			     );
+        if (tmp) {
+          printk("[openair][IOCTL] Could NOT copy all data from user-space to kernel-space (%d bytes remained uncopied).\n", tmp);
+          if (update_firmware_kbuffer)
+            kfree(update_firmware_kbuffer);
+          return -1;
+          break;
+        }
+        for (fmw_off = 0 ; fmw_off < (lendian_length * 4) ; fmw_off += 4) {
+          bendian_fmw_off = fmw_off; invert4(bendian_fmw_off);
+          sparc_tmp_0 = update_firmware_address + bendian_fmw_off;
+          invert4(sparc_tmp_0); /* because Sparc is big endian */
+          sparc_tmp_1 = update_firmware_kbuffer[fmw_off/4];
+          invert4(sparc_tmp_1); /* because Sparc is big endian */
+          openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
+          openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
+          wmb();
+          openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
+                         FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_SINGLE_WRITE | FROM_GRLIB_IRQ_FROM_PCI);
+          wmb();
+          /* Poll the IRQ bit */
+          ioctl_ack_cnt = 0;
+          do {
+            openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+            rmb();
+          } while ((tmp & FROM_GRLIB_IRQ_FROM_PCI) && (ioctl_ack_cnt++ < MAX_IOCTL_ACK_CNT));
+          if (tmp & FROM_GRLIB_IRQ_FROM_PCI) {
+            printk("[openair][IOCTL] ERROR: Leon did not acknowledge 'SINGLE_WRITE' irq (after a %u polling loop).\n", MAX_IOCTL_ACK_CNT);
+            kfree(update_firmware_kbuffer);
+            return -1;
+            break;
+          }
+        }
+        kfree(update_firmware_kbuffer);
+        sparc_tmp_0 = update_firmware_address; sparc_tmp_1 = update_firmware_length;
+        invert4(sparc_tmp_0); invert4(sparc_tmp_1);
+        printk("[openair][IOCTL] ok %u words copied at address 0x%08x (Leon ack after %u polling loops)\n",
 	       sparc_tmp_1, sparc_tmp_0, ioctl_ack_cnt);
-      }
-      else {  // This is ExpressMIMO
-	update_firmware_ubuffer   = (unsigned int*)((unsigned int*)arg)[3];
-	fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
-	/* Copy the data block from user space */
-	fw_block[0] = update_firmware_address;
-	fw_block[1] = update_firmware_length;
-	tmp = copy_from_user(&fw_block[3],
-			     update_firmware_ubuffer, /* from */
-			     lendian_length * 4       /* in bytes */
-			     );
 	
-	if (tmp) {
-	  printk("[openair][IOCTL] Could NOT copy all data from user-space to kernel-space (%d bytes remained uncopied).\n", tmp);
-	  return -1;
-	  break;
-	}
-	
-	openair_dma(0,EXMIMO_FW_INIT);
-	
-	printk("[openair][IOCTL] ok %u words copied at address 0x%08x (fw_block %p)\n",
-	       ((unsigned int*)arg)[2],((unsigned int*)arg)[1],fw_block);
-	
-	
-      }
-      break;
-
+	break;
+         
     case UPDATE_FIRMWARE_CLEAR_BSS:
 
       update_firmware_bss_address   = ((unsigned int*)arg)[1];
       update_firmware_bss_size      = ((unsigned int*)arg)[2];
       sparc_tmp_0 = update_firmware_bss_address;
       sparc_tmp_1 = update_firmware_bss_size;
-
-      if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
-	
-	
-	//printk("[openair][IOCTL]  BSS address passed to Leon3 = 0x%08x\n", sparc_tmp_0);
-	//printk("[openair][IOCTL]  BSS  size   passed to Leon3 = 0x%08x\n", sparc_tmp_1);
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
-	wmb();
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
-		       FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_CLEAR_BSS | FROM_GRLIB_IRQ_FROM_PCI);
-	wmb();
-	/* Poll the IRQ bit */
-	do {
-	  openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-	  rmb();
-	} while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-	printk("[openair][IOCTL] ok asked Leon to clear .bss (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
-      }
-      else {
-	printk("[openair][IOCTL] ok asked Leon to clear .bss (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
-	fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
-	/* Copy the data block from user space */
-	fw_block[0] = update_firmware_bss_address;
-	fw_block[1] = update_firmware_bss_size;
-
-	openair_dma(0,EXMIMO_CLEAR_BSS);
-	
-	
-      }
+      //printk("[openair][IOCTL]  BSS address passed to Leon3 = 0x%08x\n", sparc_tmp_0);
+      //printk("[openair][IOCTL]  BSS  size   passed to Leon3 = 0x%08x\n", sparc_tmp_1);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
+      wmb();
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
+		     FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_CLEAR_BSS | FROM_GRLIB_IRQ_FROM_PCI);
+      wmb();
+      /* Poll the IRQ bit */
+      do {
+	openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+	rmb();
+      } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
+      printk("[openair][IOCTL] ok asked Leon to clear .bss (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
+      
       
       break;
-        
+            
     case UPDATE_FIRMWARE_START_EXECUTION:
-
       update_firmware_start_address = ((unsigned int*)arg)[1];
       update_firmware_stack_pointer = ((unsigned int*)arg)[2];
       sparc_tmp_0 = update_firmware_start_address;
       sparc_tmp_1 = update_firmware_stack_pointer;
-
-      if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
-
-	//printk("[openair][IOCTL]  Entry point   passed to Leon3 = 0x%08x\n", sparc_tmp_0);
-	//printk("[openair][IOCTL]  Stack pointer passed to Leon3 = 0x%08x\n", sparc_tmp_1);
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
-	wmb();
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
-		       FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY | FROM_GRLIB_IRQ_FROM_PCI);
-	wmb();
-	/* Poll the IRQ bit */
-	ioctl_ack_cnt = 0;
-	do {
-	  openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-	  rmb();
-	} while ((tmp & FROM_GRLIB_IRQ_FROM_PCI) && (ioctl_ack_cnt++ < MAX_IOCTL_ACK_CNT));
-	if (tmp & FROM_GRLIB_IRQ_FROM_PCI) {
-	  printk("[openair][IOCTL] ERROR: Leon did not acknowledge 'START_EXECUTION' irq (after a %u polling loop).\n", MAX_IOCTL_ACK_CNT);
-	  return -1;
-	  break;
-	}
-	printk("[openair][IOCTL] ok asked Leon to run firmware (ep = 0x%08x, sp = 0x%08x, Leon ack after %u polling loops)\n",
-	       sparc_tmp_0, sparc_tmp_1, ioctl_ack_cnt);
+      //printk("[openair][IOCTL]  Entry point   passed to Leon3 = 0x%08x\n", sparc_tmp_0);
+      //printk("[openair][IOCTL]  Stack pointer passed to Leon3 = 0x%08x\n", sparc_tmp_1);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
+      wmb();
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
+		     FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY | FROM_GRLIB_IRQ_FROM_PCI);
+      wmb();
+      /* Poll the IRQ bit */
+      ioctl_ack_cnt = 0;
+      do {
+	openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+	rmb();
+      } while ((tmp & FROM_GRLIB_IRQ_FROM_PCI) && (ioctl_ack_cnt++ < MAX_IOCTL_ACK_CNT));
+      if (tmp & FROM_GRLIB_IRQ_FROM_PCI) {
+	printk("[openair][IOCTL] ERROR: Leon did not acknowledge 'START_EXECUTION' irq (after a %u polling loop).\n", MAX_IOCTL_ACK_CNT);
+	return -1;
+	break;
       }
-      else {
-
-      }
+      printk("[openair][IOCTL] ok asked Leon to run firmware (ep = 0x%08x, sp = 0x%08x, Leon ack after %u polling loops)\n",
+	     sparc_tmp_0, sparc_tmp_1, ioctl_ack_cnt);
+      
     break;
           
     case UPDATE_FIRMWARE_FORCE_REBOOT:
-
-      if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
-		       /*FROM_GRLIB_BOOT_HOK |*/ FROM_GRLIB_IRQ_FROM_PCI_IS_FORCE_REBOOT | FROM_GRLIB_IRQ_FROM_PCI);
-	wmb();
-	/* We don't wait for any acknowledge from Leon, because it can't acknowledge upon reboot */
-	printk("[openair][IOCTL] ok asked Leon to reboot.\n");
-      }
-      else {
-	printk("[openair][IOCTL] ok asked Leon to reboot.\n");
-      }
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
+		     /*FROM_GRLIB_BOOT_HOK |*/ FROM_GRLIB_IRQ_FROM_PCI_IS_FORCE_REBOOT | FROM_GRLIB_IRQ_FROM_PCI);
+      wmb();
+      /* We don't wait for any acknowledge from Leon, because it can't acknowledge upon reboot */
+      printk("[openair][IOCTL] ok asked Leon to reboot.\n");
+      
       break;
-	
-      case UPDATE_FIRMWARE_TEST_GOK:
-	if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
-	  /* No loop, just a single test (the polling loop should better be placed in user-space code). */
-	  openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-	  rmb();
-	  if (tmp & FROM_GRLIB_BOOT_GOK)
-	    return 0;
-	  else
-	    return -1;
-	}
-	else {
-	  printk("[openair][IOCTL] TEST_GOK command doesn't work with ExpressMIMO, check User-space call!!!!\n");
-	}
-	break;
-	
+    
+    case UPDATE_FIRMWARE_TEST_GOK:
+    /* No loop, just a single test (the polling loop should better be placed in user-space code). */
+      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+      rmb();
+      if (tmp & FROM_GRLIB_BOOT_GOK)
+	return 0;
+      else
+	return -1;
+
+      break;
+    
       default:
 	return -1;
 	break;
 	
+      }
+    }
+    else {
+      return -1;
     }
     break;
   

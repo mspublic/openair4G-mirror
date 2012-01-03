@@ -417,21 +417,18 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
   }
 }
 
-s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
+s32 rx_pucch(LTE_eNB_COMMON *eNB_common_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     u8 ncs_cell[20][7],
 	     PUCCH_FMT_t fmt,
-	     u8 UE_id,
+	     PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
 	     u16 n1_pucch,
 	     u16 n2_pucch,
 	     u8 shortened_format,
 	     u8 *payload,
 	     u8 subframe,
-	     u8 pucch1_thres) {
-
-
-  LTE_eNB_COMMON *eNB_common_vars                = &phy_vars_eNB->lte_eNB_common_vars;
-  LTE_DL_FRAME_PARMS *frame_parms                = &phy_vars_eNB->lte_frame_parms;
-  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &phy_vars_eNB->pucch_config_dedicated[UE_id];
-  s8 sigma2_dB                                   = phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dB;
+	     s8 sigma2_dB) {
+  
   u32 u,v,n,aa;
   u32 z[12*14];
   s16 *zptr;
@@ -529,7 +526,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     //loop over symbols in slot
     for (l=0;l<N_UL_symb;l++) {
       // Compute n_cs (36.211 p. 18)
-      n_cs = phy_vars_eNB->ncs_cell[ns][l];
+      n_cs = ncs_cell[ns][l];
       if (frame_parms->Ncp==0) { // normal CP
 	n_cs = ((u16)n_cs + (nprime*deltaPUCCH_Shift + (n_oc%deltaPUCCH_Shift))%Nprime)%12;
       }
@@ -712,7 +709,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	} //re 
       } // aa
 
-      stat = (stat_re*stat_re) + (stat_im*stat_im);
+      stat = (((stat_re*(stat_re>>7))) + ((stat_im*(stat_im>>7))));
       
       if (stat>stat_max) {
 	stat_max = stat;
@@ -725,7 +722,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 #ifdef DEBUG_PUCCH_RX 
     msg("[PHY][eNB] PUCCH fmt0:  stat_max : %d, sigma2_dB %d, phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phase_max);
 #endif
-    if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  //
+    if (sigma2_dB<(dB_fixed(stat_max)+5))
       *payload = 1;
     else
       *payload = 0;
@@ -882,8 +879,8 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	  off=(re<<1) + (24*l) + (nsymb>>1)*24;
 	  tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
 	  tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
-	  stat_re += ((tmp_re*chest_re)>>9) + ((tmp_im*chest_im)>>9);
-	  stat_im += ((tmp_re*chest_im)>>9) - ((tmp_im*chest_re)>>9);
+	  stat_re += ((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15);
+	  stat_im += ((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15);
 	  off+=2;
 #ifdef DEBUG_PUCCH_RX
 	  msg("[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
@@ -900,9 +897,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
       } //re 
     } // aa
     
-#ifdef DEBUG_PUCCH_RX
-	msg("stat %d,%d\n",stat_re,stat_im);
-#endif    
+    
     *payload = (stat_re<0) ? 1 : 0;
     if (fmt==pucch_format1b) 
       *(1+payload) = (stat_im<0) ? 1 : 0;

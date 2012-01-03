@@ -20,15 +20,11 @@ endif
 ifeq "$(GCCVERSION)" "4.5.2"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
-ifeq "$(GCCVERSION)" "4.6.1"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DPUCCH #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE  
-CFLAGS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -DPHY_ABSTRACTION
+CFLGAS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1
 
 ifndef OPENAIR2
 OPENAIR2=1
@@ -40,7 +36,7 @@ endif
 
 # activate OCG and libxml only under linux
 ifeq ($(linux),1) 
-CFLAGS += -I/usr/include/libxml2 -L/usr/local/lib -I/usr/include/atlas -L/usr/X11R6/lib 
+CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -I/usr/include/atlas -lforms -lX11 -L/usr/X11R6/lib -lXpm -lrt -lpthread
 OCG_FLAG = 1
 cygwin=0
 CFLAGS += -DLINUX
@@ -89,6 +85,7 @@ ifdef ADDCONF
 CFLAGS+=-DADDRCONF
 endif
 
+CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
 ifdef TRAFFIC_TM5
@@ -150,7 +147,7 @@ $(OBJ): %.o : %.c
 
 oaisim : $(OBJ) oaisim.c  
 	@echo "Compiling oaisim.c ..."
-	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lblas -lpthread -llapack_atlas
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -196,6 +193,3 @@ print:
 	@echo $(CFLAGS)
 	@echo $(EXTRA_CFLAGS)
 	@echo $(OBJ)
-
-showcflags:
-	@echo $(CFLAGS)

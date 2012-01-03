@@ -95,25 +95,24 @@ typedef struct DCI0_5MHz_TDD_1_6 DCI0_5MHz_TDD_1_6_t;
 
 ///  DCI Format Type 0 (5 MHz,FDD, 25 bits)
 struct DCI0_5MHz_FDD {
-  /// Padding
-  u32 padding:2;
-  /// CQI Request
-  u32 cqi_req:1;
-  /// DRS Cyclic Shift
-  u32 cshift:3;
-  /// Power Control
-  u32 TPC:2;
-  /// New Data Indicator
-  u32 ndi:1;
-  /// Modulation and Coding Scheme and Redundancy Version
-  u32 mcs:5;
-  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
-  u32 rballoc:9;
-  /// Hopping flag
-  u32 hopping:1;
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
-  u32 type:1;
-
+  unsigned char type:1;
+  /// Hopping flag
+  unsigned char hopping:1;
+  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
+  unsigned short rballoc:9;
+  /// Modulation and Coding Scheme and Redundancy Version
+  unsigned char mcs:5;
+  /// New Data Indicator
+  unsigned char ndi:1;
+  /// Power Control
+  unsigned char TPC:2;
+  /// DRS Cyclic Shift
+  unsigned char cshift:3;
+  /// CQI Request
+  unsigned char cqi_req:1;
+  /// Padding
+  unsigned char padding:2;
 } __attribute__ ((__packed__));
 
 typedef struct DCI0_5MHz_FDD DCI0_5MHz_FDD_t;
@@ -148,19 +147,19 @@ typedef struct DCI1_5MHz_TDD DCI1_5MHz_TDD_t;
 /// DCI Format Type 1 (5 MHz, FDD, 28 bits)
 struct DCI1_5MHz_FDD {
   /// Resource Allocation Header
-  u32 rah:1;
+  unsigned char rah:1;
   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
-  u32 rballoc:13;
+  unsigned short rballoc:13;
   /// Modulation and Coding Scheme and Redundancy Version
-  u32 mcs:5;
+  unsigned char mcs:5;
   /// HARQ Process
-  u32 harq_pid:3;
+  unsigned char harq_pid:3;
   /// New Data Indicator
-  u32 ndi:1;
+  unsigned char ndi:1;
   /// Redundancy version
-  u32 rv:2;
+  unsigned char rv:2;
   /// Power Control
-  u32 TPC:2;
+  unsigned char TPC:2;
 } __attribute__ ((__packed__));
 
 typedef struct DCI1_5MHz_FDD DCI1_5MHz_FDD_t;
@@ -195,15 +194,15 @@ typedef struct RA_PDSCH_TDD RA_PDSCH_TDD_t;
 /// Normal PDSCH (FDD), 13 bits
 struct PDSCH_FDD {
   /// Modulation and Coding Scheme and Redundancy Version
-  u32 mcs:5;
+  unsigned char mcs:5;
   /// HARQ Process
-  u32 harq_pid:3;
+  unsigned char harq_pid:3;
   /// New Data Indicator
-  u32 ndi:1;
+  unsigned char ndi:1;
   /// Redundancy version
-  u32 rv:2;
+  unsigned char rv:2;
   /// Power Control
-  u32 TPC:2;
+  unsigned char TPC:2;
 } __attribute__ ((__packed__));
 
 typedef struct PDSCH_FDD PDSCH_FDD_t;
@@ -212,17 +211,17 @@ typedef struct PDSCH_FDD PDSCH_FDD_t;
 /// Normal PDSCH (TDD), 16 bits
 struct PDSCH_TDD {
   /// Modulation and Coding Scheme and Redundancy Version
-  u32 mcs:5;
+  unsigned char mcs:5;
   /// HARQ Process
-  u32 harq_pid:4;
+  unsigned char harq_pid:4;
   /// New Data Indicator
-  u32 ndi:1;
+  unsigned char ndi:1;
   /// Redundancy version
-  u32 rv:2;
+  unsigned char rv:2;
   /// Power Control
-  u32 TPC:2;
+  unsigned char TPC:2;
   /// Downlink Assignment Index
-  u32 dai:2;
+  unsigned char dai:2;
 } __attribute__ ((__packed__));
 
 typedef struct PDSCH_TDD PDSCH_TDD_t;
@@ -276,20 +275,18 @@ typedef struct DCI1A_5MHz_TDD_1_6 DCI1A_5MHz_TDD_1_6_t;
 
 /// DCI Format Type 1A (5 MHz, TDD, frame 1-6, 27 bits)
 struct DCI1A_RA_5MHz_TDD_1_6 {
-  /// Dummy bits to align to 32-bits
-  u32 dummy:5;
-  /// Padding
-  u32 padding:6;
-  /// PRACH mask index
-  u32 prach_mask_index:4;
-  /// Preamble Index
-  u32 preamble_index:6;
-  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
-  u32 rballoc:9;
-  /// Localized/Distributed VRB
-  u32 vrb_type:1;
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
-  u32 type:1;
+  unsigned char type:1;
+  /// Localized/Distributed VRB
+  unsigned char vrb_type:1;
+  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+  unsigned short rballoc:9;
+  /// Preamble Index
+  unsigned char preamble_index:6;
+  /// PRACH mask index
+  unsigned char prach_mask_index:4;
+  /// Padding
+  unsigned char padding:6;
 } __attribute__ ((__packed__));
 
 typedef struct DCI1A_RA_5MHz_TDD_1_6 DCI1A_RA_5MHz_TDD_1_6_t;

@@ -31,15 +31,12 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
 * \note The rlc_am_entity_t structure store protocol variables, statistic variables, allocation variables, buffers and other miscellaneous variables.
 * \bug
 * \warning
 */
-/** @defgroup _rlc_am_internal_impl_ RLC AM Layer Internal Reference Implementation
-* @ingroup _rlc_am_impl_
-* @{
-*/
-
 #    ifndef __RLC_AM_ENTITY_H__
 #        define __RLC_AM_ENTITY_H__
 //-----------------------------------------------------------------------------
@@ -173,5 +170,4 @@ typedef struct rlc_am_entity {
   u8_t              location;                                /*!< \brief EnodeB / UE. */
 
 } rlc_am_entity_t;
-/** @} */
 #    endif

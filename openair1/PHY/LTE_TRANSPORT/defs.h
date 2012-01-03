@@ -70,6 +70,7 @@
 #define MAX_NUM_RE (14*1200)
 
 #define SI_RNTI 0xffff 
+#define RA_RNTI 0xfffe
 #define P_RNTI  0xfffd
 #define C_RNTI  0x1234
 
@@ -171,8 +172,6 @@ typedef struct {
   u32 Kminus;                    
   /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
   u32 Kplus;                     
-  /// Total number of bits across all segments
-  u32 sumKr;
   /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
   u32 F;                         
   /// Msc_initial, Initial number of subcarriers for ULSCH (36-212, v8.6 2009-03, p.26-27)
@@ -181,8 +180,6 @@ typedef struct {
   u8 Nsymb_initial;
   /// DRMS field for this ULSCH
   u8 n_DMRS;
-  /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
-  u8 control_only;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -296,17 +293,9 @@ typedef struct {
   u8 cooperation_flag;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-  /// f_PUSCH parameter for PUSCH power control
-  s16 f_pusch;
-  /// Po_PUSCH - target output power for PUSCH
-  s16 Po_PUSCH;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
-  /// Flag indicating that this ULSCH has been allocated by a DCI (otherwise it is a retransmission based on PHICH NAK)
-  u8 dci_alloc;
-  /// Flag indicating that this ULSCH has been allocated by a RAR (otherwise it is a retransmission based on PHICH NAK or DCI)
-  u8 rar_alloc;
   /// Flag indicating that this ULSCH has new data
   u8 Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
@@ -416,14 +405,14 @@ typedef struct {
   u16 beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   u16 beta_offset_harqack_times8;
-  /// Flag to indicate that eNB awaits UE Msg3 
-  u8 Msg3_active;
-  /// Flag to indicate that eNB should decode UE Msg3 
-  u8 Msg3_flag;
-  /// Subframe for Msg3
-  u8 Msg3_subframe;
-  /// Frame for Msg3
-  u32 Msg3_frame;
+  /// Flag to indicate that eNB awaits UE RRCConnRequest 
+  u8 RRCConnRequest_active;
+  /// Flag to indicate that eNB should decode UE RRCConnRequest 
+  u8 RRCConnRequest_flag;
+  /// Subframe for RRCConnRequest
+  u8 RRCConnRequest_subframe;
+  /// Frame for RRCConnRequest
+  u32 RRCConnRequest_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
   /// n_DMRS2 for cyclic shift of DM RS ( 3GPP 36.211 Table 5.5.2.1.1-1)
@@ -586,7 +575,6 @@ typedef struct {
 typedef enum {format0,
 	      format1,
 	      format1A,
-	      format1A_RA,
 	      format1B,
 	      format1C,
 	      format1D,
@@ -617,8 +605,6 @@ typedef struct {
   u8 dci_length;
   /// Aggregation level 
   u8 L;
-  /// flag to indicate that this is a RA response
-  u8 ra_flag;
   /// rnti
   u16 rnti;
   /// Format

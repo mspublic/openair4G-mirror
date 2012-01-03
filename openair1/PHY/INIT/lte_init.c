@@ -15,6 +15,26 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 
+//#define DEBUG_PHY
+
+/*
+void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING *phy_framing) {
+
+  //phy_framing->fc_khz;
+  //phy_framing->fs_khz;
+  msg("openair_lte: Copying to PHY Framing\n");
+  phy_framing->Nsymb = frame_parms->symbols_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  msg("openair_lte: Nsymb %d\n",phy_framing->Nsymb);
+  phy_framing->Nd = frame_parms->ofdm_symbol_size;     
+  msg("openair_lte: Nd %d\n",phy_framing->Nd);
+
+  phy_framing->Nc = frame_parms->nb_prefix_samples;    
+  phy_framing->Nz = frame_parms->ofdm_symbol_size - frame_parms->N_RB_DL*12;    
+  phy_framing->Nf = frame_parms->N_RB_DL;    
+  phy_framing->Extension_type = CYCLIC_PREFIX;
+  phy_framing->log2Nd = frame_parms->log2_symbol_size;
+} 
+*/
 
 void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
 		    u8 N_RB_DL,
@@ -53,10 +73,9 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
 			 u16 SIperiod) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
-  if (tdd_Config) {
-    lte_frame_parms->tdd_config    = tdd_Config->subframeAssignment;
-    lte_frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns;  
-  }
+
+  lte_frame_parms->tdd_config    = tdd_Config->subframeAssignment;
+  lte_frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns;  
   lte_frame_parms->SIwindowsize  = SIwindowsize;  
   lte_frame_parms->SIPeriod      = SIperiod;
 }
@@ -127,15 +146,10 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
 
   
-  lte_frame_parms->ul_power_control_config_common.p0_NominalPUSCH       = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
-  lte_frame_parms->ul_power_control_config_common.alpha                 = radioResourceConfigCommon->uplinkPowerControlCommon.alpha;
-  lte_frame_parms->ul_power_control_config_common.p0_NominalPUCCH       = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
-  lte_frame_parms->ul_power_control_config_common.deltaPreambleMsg3     = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b;
+  lte_frame_parms->ul_power_control_config_common.p0_NominalPUSCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
+  lte_frame_parms->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon.alpha;
+  lte_frame_parms->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
+  lte_frame_parms->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
   
   lte_frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
 
@@ -205,11 +219,7 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
   lte_frame_parms->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon.alpha;
   lte_frame_parms->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
   lte_frame_parms->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
-lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2a  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a;
-  lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b;  
+  
 
   lte_frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
   
@@ -457,14 +467,14 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 		    u8 abstraction_flag) {
 
-  LTE_DL_FRAME_PARMS *frame_parms     = &phy_vars_ue->lte_frame_parms;
-  LTE_UE_COMMON *ue_common_vars       = &phy_vars_ue->lte_ue_common_vars;
-  LTE_UE_PDSCH **ue_pdsch_vars        = phy_vars_ue->lte_ue_pdsch_vars;
-  LTE_UE_PDSCH **ue_pdsch_vars_SI     = phy_vars_ue->lte_ue_pdsch_vars_SI;
-  LTE_UE_PDSCH **ue_pdsch_vars_ra     = phy_vars_ue->lte_ue_pdsch_vars_ra;
-  LTE_UE_PBCH **ue_pbch_vars          = phy_vars_ue->lte_ue_pbch_vars;
-  LTE_UE_PDCCH **ue_pdcch_vars        = phy_vars_ue->lte_ue_pdcch_vars;
-  LTE_UE_PRACH **ue_prach_vars        = phy_vars_ue->lte_ue_prach_vars;
+  LTE_DL_FRAME_PARMS *frame_parms   = &phy_vars_ue->lte_frame_parms;
+  LTE_UE_COMMON *ue_common_vars     = &phy_vars_ue->lte_ue_common_vars;
+  LTE_UE_PDSCH **ue_pdsch_vars      = phy_vars_ue->lte_ue_pdsch_vars;
+  LTE_UE_PDSCH **ue_pdsch_vars_SI = phy_vars_ue->lte_ue_pdsch_vars_SI;
+  LTE_UE_PDSCH **ue_pdsch_vars_ra   = phy_vars_ue->lte_ue_pdsch_vars_ra;
+  LTE_UE_PBCH **ue_pbch_vars        = phy_vars_ue->lte_ue_pbch_vars;
+  LTE_UE_PDCCH **ue_pdcch_vars      = phy_vars_ue->lte_ue_pdcch_vars;
+  LTE_UE_PRACH **ue_prach_vars      = phy_vars_ue->lte_ue_prach_vars;
 
   int i,j;
   unsigned char eNB_id;
@@ -503,8 +513,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 #ifdef IFFT_FPGA
       ue_common_vars->txdataF[i] = (mod_sym_t*) TX_DMA_BUFFER[0][i];
 #else //IFFT_FPGA
-      ue_common_vars->txdataF[i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
-      bzero(ue_common_vars->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+#error "IFFT_FPGA and USER_MODE cannot be undefined at the same time"
 #endif //IFFT_FPGA
 #endif //USER_MODE
     }
@@ -671,7 +680,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars_ra[%d] = %p\n",eNB_id,ue_pdsch_vars_ra[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_pdcch_vars[%d] = %p\n",eNB_id,ue_pdcch_vars[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_prach_vars[%d] = %p\n",eNB_id,ue_prach_vars[eNB_id]);
-    msg("[OPENAIR][LTE PHY][INIT] prach_resources[%d] = %p\n",eNB_id,prach_resources[eNB_id]);
 #endif
 
     if (abstraction_flag == 0) {
@@ -875,7 +883,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     
       ue_prach_vars[eNB_id]->prachF = (s16 *)malloc16(sizeof(int)*(7*2*sizeof(int)*(frame_parms->ofdm_symbol_size*12)));
       ue_prach_vars[eNB_id]->prach  = (s16 *)malloc16(sizeof(int)*(7*2*sizeof(int)*(frame_parms->ofdm_symbol_size*12)));
-
       // Initialize Gold sequence table
       // lte_gold(frame_parms); --> moved to phy_init_lte_top
       
@@ -1001,12 +1008,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   phy_vars_eNB->total_transmitted_bits = 0;
   phy_vars_eNB->total_system_throughput = 0;
 
-  for(UE_id = 0; UE_id<NUMBER_OF_UE_MAX;UE_id++){
-    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS = 0;
-    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last = 0;
-    phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits = 0;
-    phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate = 0;
-  }
 
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
   generate_pcfich_reg_mapping(frame_parms);
@@ -1016,6 +1017,12 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
     phy_vars_eNB->first_run_timing_advance[UE_id] = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 
     memset(&phy_vars_eNB->eNB_UE_stats[UE_id],0,sizeof(LTE_eNB_UE_stats));
+
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate = 0;
+
     phy_vars_eNB->physicalConfigDedicated[UE_id] = NULL;
   }
   phy_vars_eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
@@ -1072,8 +1079,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 #ifdef IFFT_FPGA
 	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)TX_DMA_BUFFER[eNB_id][i];
 #else
-	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
-	bzero(eNB_common_vars->txdataF[eNB_id][i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+#error "IFFT_FPGA and USER_MODE cannot be undefined at the same time"
 #endif //IFFT_FPGA
 #endif //USER_MODE
 #ifdef DEBUG_PHY
@@ -1095,19 +1101,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d] not allocated\n",eNB_id);
 	return(-1);
       }
-
-      //RX vars
-      eNB_common_vars->rxdata_7_5kHz[eNB_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
-      if (eNB_common_vars->rxdata_7_5kHz[eNB_id]) {
-#ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d] allocated at %p\n",eNB_id,
-	    eNB_common_vars->rxdata_7_5kHz[eNB_id]);
-#endif
-      }
-      else {
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d] not allocated\n",eNB_id);
-	return(-1);
-      }
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 #ifndef USER_MODE
@@ -1116,10 +1109,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	eNB_common_vars->rxdata[eNB_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 	bzero(eNB_common_vars->rxdata[eNB_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 #endif //USER_MODE
-	eNB_common_vars->rxdata_7_5kHz[eNB_id][i] = (int *)malloc16(frame_parms->samples_per_tti*sizeof(int));
-	bzero(eNB_common_vars->rxdata_7_5kHz[eNB_id][i],frame_parms->samples_per_tti*sizeof(int));
 #ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata_7_5kHz[%d][%d] = %p\n",eNB_id,i,eNB_common_vars->rxdata_7_5kHz[eNB_id][i]);
+	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,eNB_common_vars->rxdata[eNB_id][i]);
 #endif
       }
       

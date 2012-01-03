@@ -44,12 +44,36 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
+u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
+  if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 5) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%5) == 0)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 14) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%10) == 5)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 34) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%20) == 5)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 74) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%40) == 5)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 154) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%80) == 5)
+      return(1);
+  }
 
-void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
-		    unsigned char current_subframe, 
-		    unsigned int current_frame,
-		    unsigned int *frame,
-		    unsigned char *subframe) {
+  return(0);
+}
+
+void get_RRCConnReq_alloc(LTE_DL_FRAME_PARMS *frame_parms,
+			  unsigned char current_subframe, 
+			  unsigned int current_frame,
+			  unsigned int *frame,
+			  unsigned char *subframe) {
   if (frame_parms->frame_type == 0) {
     *subframe = current_subframe+6;
     if (*subframe>9) {
@@ -105,41 +129,8 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
-void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
-			unsigned char current_subframe, 
-			unsigned int current_frame,
-			unsigned int *frame,
-			unsigned char *subframe) {
-  if (frame_parms->frame_type == 0) {
-    // always retransmit in n+8
-    *subframe = current_subframe+8;
-    if (*subframe>9) {
-      *subframe = *subframe-10;
-      *frame = current_frame+1;
-    }
-    else {
-      *frame=current_frame;
-    }
-  }
-  else {
-    if (frame_parms->tdd_config == 1) {
-      // original PUSCH in 2, PHICH in 6 (S), ret in 2
-      // original PUSCH in 3, PHICH in 9, ret in 3
-      // original PUSCH in 7, PHICH in 1 (S), ret in 7
-      // original PUSCH in 8, PHICH in 4, ret in 8
-      *frame = current_frame+1;
-    }
-    else if (frame_parms->tdd_config == 3) {
-      // original PUSCH in 2, PHICH in 8, ret in 2 next frame
-      // original PUSCH in 3, PHICH in 9, ret in 3 next frame
-      // original PUSCH in 4, PHICH in 0, ret in 4 next frame
-      *frame=current_frame+1;
-    }
-  }
-}
-
-u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
-		     unsigned char current_subframe) {
+u8 get_RRCConnReq_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
+			   unsigned char current_subframe) {
 
   u8 ul_subframe=0;
 
@@ -167,7 +158,7 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
     else {
-      msg("get_Msg3_harq_pid: Unsupported TDD configuration %d\n",frame_parms->tdd_config);
+      msg("get_RRCConnReq_harq_pid: Unsupported TDD configuration %d\n",frame_parms->tdd_config);
     }
   }
     
@@ -412,15 +403,6 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     return(255);
     
   }
-}
-
-u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
-
-  if (frame_parms->frame_type == 0)  // FDD
-    // harq_pid is (2*(frame_number mod 4) + subframe mod 8)
-    return(((mac_xface->frame<<1) + subframe)&7); 
-  else // TDD
-    return((subframe+2)%10);
 }
 
 unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {

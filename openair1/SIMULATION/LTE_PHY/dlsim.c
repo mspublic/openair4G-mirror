@@ -336,6 +336,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 
 //DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2_2A[2];
+DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2_1E[2];
 
 DCI1E_5MHz_2A_M10PRB_TDD_t  DLSCH_alloc_pdu2_1E[2];
 
@@ -781,95 +782,38 @@ int main(int argc, char **argv) {
  //fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
  switch (mcs)
    {
-   case 0:
-     fprintf(tikz_fd,"\\addplot[color=blue, mark=star] plot coordinates {");
-     break;
-   case 1:
-     fprintf(tikz_fd,"\\addplot[color=red, mark=star] plot coordinates {");
-     break;
-   case 2:
-     fprintf(tikz_fd,"\\addplot[color=green, mark=star] plot coordinates {");
-     break;
-   case 3:
-     fprintf(tikz_fd,"\\addplot[color=yellow, mark=star] plot coordinates {");
-     break;
-   case 4:
-     fprintf(tikz_fd,"\\addplot[color=black, mark=star] plot coordinates {");
-     break;
-   case 5:
-     fprintf(tikz_fd,"\\addplot[color=blue, mark=o] plot coordinates {");
-     break;
-   case 6:
-     fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
-     break;
-   case 7:
-     fprintf(tikz_fd,"\\addplot[color=green, mark=o] plot coordinates {");
-     break;
-   case 8:
-     fprintf(tikz_fd,"\\addplot[color=yellow, mark=o] plot coordinates {");
-     break;
-   case 9:
-     fprintf(tikz_fd,"\\addplot[color=black, mark=o] plot coordinates {");
-     break;
-   case 10:
-     fprintf(tikz_fd,"\\addplot[color=blue, mark=square] plot coordinates {");
-     break;
-   case 11:
-     fprintf(tikz_fd,"\\addplot[color=red, mark=square] plot coordinates {");
-     break;
-   case 12:
-     fprintf(tikz_fd,"\\addplot[color=green, mark=square] plot coordinates {");
-     break;
-   case 13:
-     fprintf(tikz_fd,"\\addplot[color=yellow, mark=square] plot coordinates {");
-     break;
-   case 14:
-     fprintf(tikz_fd,"\\addplot[color=black, mark=square] plot coordinates {");
-     break;
-   case 15:
-     fprintf(tikz_fd,"\\addplot[color=blue, mark=diamond] plot coordinates {");
-     break;
-   case 16:
-     fprintf(tikz_fd,"\\addplot[color=red, mark=diamond] plot coordinates {");
-     break;
-   case 17:
-     fprintf(tikz_fd,"\\addplot[color=green, mark=diamond] plot coordinates {");
-     break;
-   case 18:
-     fprintf(tikz_fd,"\\addplot[color=yellow, mark=diamond] plot coordinates {");
-     break;
-   case 19:
-     fprintf(tikz_fd,"\\addplot[color=black, mark=diamond] plot coordinates {");
-     break;
-   case 20:
-     fprintf(tikz_fd,"\\addplot[color=blue, mark=x] plot coordinates {");
-     break;
-   case 21:
-     fprintf(tikz_fd,"\\addplot[color=red, mark=x] plot coordinates {");
-     break;
-   case 22:
-     fprintf(tikz_fd,"\\addplot[color=green, mark=x] plot coordinates {");
-     break;
-   case 23:
-     fprintf(tikz_fd,"\\addplot[color=yellow, mark=x] plot coordinates {");
-     break;
-   case 24:
-     fprintf(tikz_fd,"\\addplot[color=black, mark=x] plot coordinates {");
-     break;
-   case 25:
-     fprintf(tikz_fd,"\\addplot[color=blue, mark=x] plot coordinates {");
-     break;
-   case 26:
-     fprintf(tikz_fd,"\\addplot[color=red, mark=+] plot coordinates {");
-     break;
-   case 27:
-     fprintf(tikz_fd,"\\addplot[color=green, mark=+] plot coordinates {");
-     break;
-   case 28:
-     fprintf(tikz_fd,"\\addplot[color=yellow, mark=+] plot coordinates {");
-     break;
-   }
- for (i=0;i<2;i++) {
+    case 0:
+      fprintf(tikz_fd,"\\addplot[color=blue, mark=star] plot coordinates {");
+      break;
+    case 1:
+      fprintf(tikz_fd,"\\addplot[color=red, mark=star] plot coordinates {");
+      break;
+    case 2:
+      fprintf(tikz_fd,"\\addplot[color=green, mark=star] plot coordinates {");
+      break;
+    case 3:
+      fprintf(tikz_fd,"\\addplot[color=yellow, mark=star] plot coordinates {");
+      break;
+    case 4:
+      fprintf(tikz_fd,"\\addplot[color=black, mark=star] plot coordinates {");
+      break;
+    case 5:
+      fprintf(tikz_fd,"\\addplot[color=blue, mark=o] plot coordinates {");
+      break;
+    case 6:
+      fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
+      break;
+    case 7:
+      fprintf(tikz_fd,"\\addplot[color=green, mark=o] plot coordinates {");
+      break;
+    case 8:
+      fprintf(tikz_fd,"\\addplot[color=yellow, mark=o] plot coordinates {");
+      break;
+    case 9:
+      fprintf(tikz_fd,"\\addplot[color=black, mark=o] plot coordinates {");
+      break;
+    }
+  for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -924,6 +868,12 @@ int main(int argc, char **argv) {
   // Forget second codeword
   DLSCH_alloc_pdu2_1E[1].tpmi             = (transmission_mode>=5 ? 5 : 0) ;  // precoding
   DLSCH_alloc_pdu2_1E[1].dl_power_off     = (transmission_mode==5 ? 0 : 1);
+
+  // Create transport channel structures for SI pdus
+  PHY_vars_eNB->dlsch_eNB_SI   = new_eNB_dlsch(1,1,0);
+  PHY_vars_UE->dlsch_ue_SI[0]  = new_ue_dlsch(1,1,0);
+  PHY_vars_eNB->dlsch_eNB_SI->rnti  = SI_RNTI;
+  PHY_vars_UE->dlsch_ue_SI[0]->rnti = SI_RNTI;
 
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
 				PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
@@ -985,7 +935,7 @@ int main(int argc, char **argv) {
 					 PHY_vars_eNB->dlsch_eNB[k],
 					 &PHY_vars_eNB->lte_frame_parms,
 					 SI_RNTI,
-					 0,
+					 RA_RNTI,
 					 P_RNTI,
 					 PHY_vars_eNB->eNB_UE_stats[k].DL_pmi_single);
     }
@@ -1111,16 +1061,14 @@ int main(int argc, char **argv) {
 	  }
 	
 	  if (input_fd==NULL) {
-
-	    // Simulate HARQ procedures!!!
-	    if (round == 0) {   // First round, set Ndi to 1 and rv to floor(round/2)
+	    if (round == 0) {
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 1;
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round>>1;
 	      DLSCH_alloc_pdu2_1E[0].ndi             = 1;
 	      DLSCH_alloc_pdu2_1E[0].rv              = 0;
 	      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2_1E[0],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
 	    }
-	    else { // set Ndi to 0
+	    else {
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 0;
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round>>1;
 	      DLSCH_alloc_pdu2_1E[0].ndi             = 0;
@@ -1150,7 +1098,7 @@ int main(int argc, char **argv) {
 					      num_pdcch_symbols,
 					      subframe);
 	      
-#ifdef TBS_FIX   // This is for MESH operation!!!
+#ifdef TBS_FIX
 	      tbs = (double)3*dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb-1]/4;
 #else
 	      tbs = (double)dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb-1];
@@ -1294,11 +1242,10 @@ int main(int argc, char **argv) {
 				      PHY_vars_eNB->lte_frame_parms.samples_per_tti);
 	    }
 	    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
+	    //printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
 	  
-	    if (n_frames==1) {
-	      printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
+	    if (n_frames==1)
 	      write_output("txsig0.m","txs0", PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	    }
 	  }
 	  /*
 	  else {  // Read signal from file
@@ -1385,8 +1332,7 @@ int main(int argc, char **argv) {
 	  //AWGN
 	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
 	  sigma2 = pow(10,sigma2_dB/10);
-	  if (n_frames==1)
-	    printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
+	  //printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 
 	  for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
@@ -1553,7 +1499,9 @@ int main(int argc, char **argv) {
 		  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
 						   dci_alloc_rx,
 						   eNB_id,
-						   subframe);
+						   subframe,
+						   SI_RNTI,
+						   RA_RNTI);
 		  //printf("dci_cnt %d\n",dci_cnt);
 		
 		  if (dci_cnt==0) {
@@ -1580,7 +1528,7 @@ int main(int argc, char **argv) {
 							   PHY_vars_UE->dlsch_ue[0],
 							   &PHY_vars_UE->lte_frame_parms,
 							   SI_RNTI,
-							   0,
+							   RA_RNTI,
 							   P_RNTI)==0)) {
 		      //dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
 		      coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
@@ -1627,14 +1575,14 @@ int main(int argc, char **argv) {
 						    PHY_vars_UE->dlsch_ue[0],
 						    &PHY_vars_UE->lte_frame_parms,
 						    SI_RNTI,
-						    0,
+						    RA_RNTI,
 						    P_RNTI);
 		  dlsch_active = 1;
 		} // if dci_flag == 1
 	      }
 
 	      if (dlsch_active == 1) {
-		if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
+		if ((Ns==(1+(2*subframe))) && (l==0)) {// process symbols 3,4,5
 
 		  for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols;
 		       m<pilot2;
@@ -1659,7 +1607,19 @@ int main(int argc, char **argv) {
 	       
 		}
 		  
-		if ((Ns==(1+(2*subframe))) && (l==pilot1)) {// process symbols (6 Extended Prefix),7,8,9 
+		if ((Ns==(1+(2*subframe))) && (l==pilot1)) {// process symbols 6,7,8
+		  /*
+		    if (rx_pbch(lte_ue_common_vars,
+		    lte_ue_pbch_vars[0],
+		    lte_frame_parms,
+		    0,
+		    SISO)) {
+		    msg("pbch decoded sucessfully!\n");
+		    }
+		    else {
+		    msg("pbch not decoded!\n");
+		    }
+		  */
 		  for (m=pilot2;
 		       m<pilot3;
 		       m++)
@@ -1680,7 +1640,7 @@ int main(int argc, char **argv) {
 		    }
 		}
 	      
-		if ((Ns==(2+(2*subframe))) && (l==0))  // process symbols 10,11,(12,13 Normal Prefix) do deinterleaving for TTI
+		if ((Ns==(2+(2*subframe))) && (l==0))  // process symbols 10,11, do deinterleaving for TTI
 		  for (m=pilot3;
 		       m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
 		       m++)

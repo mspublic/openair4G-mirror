@@ -1642,7 +1642,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 			      lte_ue_pdcch_vars[eNB_id],
 			      mimo_mode);
 
-  //  msg("[PDCCH] Frame %d subframe %d n_pdcch_symbols from PCFICH =%d\n",mac_xface->frame,subframe,n_pdcch_symbols);
+  //  msg("[PDCCH] n_pdcch_symbols from PCFICH =%d\n",n_pdcch_symbols);
 
 #ifdef DEBUG_DCI_DECODING
   msg("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
@@ -1807,10 +1807,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 
   num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
-  //printf("Frame %d subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
-  //	 mac_xface->frame,subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
+  //printf("num_pdcch_symbols = %d\n",num_pdcch_symbols);
   generate_pcfich(num_pdcch_symbols,
-		  amp*3,
+		  amp,
 		  frame_parms,
 		  txdataF,
 		  subframe);
@@ -1860,17 +1859,17 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
   // Scrambling
   
-  pdcch_scrambling(frame_parms,
-		   subframe,
-		   e,
-		   72*get_nCCE(num_pdcch_symbols,frame_parms,mi));
+    pdcch_scrambling(frame_parms,
+		     subframe,
+		     e,
+		     72*get_nCCE(num_pdcch_symbols,frame_parms,mi));
   
 
 #ifdef DEBUG_DCI_ENCODING
   msg("[PHY] PDCCH Modulation\n");
 #endif
   // Now do modulation
-  gain_lin_QPSK = (s16)((2*amp*ONE_OVER_SQRT2_Q15)>>15);  
+  gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   e_ptr = e;
   if (frame_parms->mode1_flag) { //SISO
 
@@ -1989,7 +1988,6 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 #endif
 
   // This is the REG allocation algorithm from 36-211, second part of Section 6.8.5
-  printf("DCI : txdataF %p (0 %p)\n",&txdataF[0][512*14*subframe],&txdataF[0][0]);
   for (kprime=0;kprime<frame_parms->N_RB_DL*12;kprime++) {
     for (lprime=0;lprime<num_pdcch_symbols;lprime++) {
 
@@ -2091,7 +2089,7 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
   eNB_transport_info[phy_vars_eNB->Mod_id].num_ue_spec_dci = num_ue_spec_dci;
   eNB_transport_info[phy_vars_eNB->Mod_id].num_common_dci = num_common_dci;
 
-  //  msg("[PHY][DCI] num spec dci %d num comm dci %d\n", num_ue_spec_dci,num_common_dci);
+  msg("[PHY][DCI] num spec dci %d num comm dci %d\n", num_ue_spec_dci,num_common_dci);
   n_dci_dl =0;
   for (n_dci =0 ; 
        n_dci < (eNB_transport_info[phy_vars_eNB->Mod_id].num_ue_spec_dci+ eNB_transport_info[phy_vars_eNB->Mod_id].num_common_dci);
@@ -2105,7 +2103,7 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 	eNB_transport_info[phy_vars_eNB->Mod_id].harq_pid[n_dci_dl] = 0;
 	eNB_transport_info[phy_vars_eNB->Mod_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[0]->TBS>>3;
       }
-      else if (dci_alloc[n_dci_dl].ra_flag == 1) {
+      else if (dci_alloc[n_dci_dl].rnti == RA_RNTI) {
 	dlsch_eNB = PHY_vars_eNB_g[phy_vars_eNB->Mod_id]->dlsch_eNB_ra;
 	eNB_transport_info[phy_vars_eNB->Mod_id].dlsch_type[n_dci_dl] = 1;//RA;
 	eNB_transport_info[phy_vars_eNB->Mod_id].harq_pid[n_dci_dl] = 0;
@@ -2119,7 +2117,7 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 	eNB_transport_info[phy_vars_eNB->Mod_id].harq_pid[n_dci_dl] = dlsch_eNB->current_harq_pid;
 	eNB_transport_info[phy_vars_eNB->Mod_id].ue_id[n_dci_dl] = ue_id;
 	eNB_transport_info[phy_vars_eNB->Mod_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[dlsch_eNB->current_harq_pid]->TBS>>3;
-	//	msg("[PHY][DCI] tbs is %d\n", eNB_transport_info[phy_vars_eNB->Mod_id].tbs[n_dci_dl]);
+	msg("[PHY][DCI] tbs is %d\n", eNB_transport_info[phy_vars_eNB->Mod_id].tbs[n_dci_dl]);
 	// check for TB1 later
 	
       }
@@ -2256,14 +2254,13 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
 			     u8 sizeof_bits,
 			     u8 sizeof_bytes,
 			     u8 *dci_cnt,
-			     u8 *format0_found,
-			     u8 *format_c_found,
 			     u32 *CCEmap0,
 			     u32 *CCEmap1,
 			     u32 *CCEmap2) {
   
   u16 crc,CCEind,nCCE;
   u32 *CCEmap=NULL;
+
 
   nCCE = get_nCCE(lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,frame_parms,mi);
   for (CCEind=0;
@@ -2290,7 +2287,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
             	printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
       */
       crc = (crc16(dci_decoded_output,sizeof_bits)>>16) ^ extract_crc(dci_decoded_output,sizeof_bits); 
-      
+      //     printf("extracted_crc : %x (crc %x)\n",crc,(crc16(dci_decoded_output,sizeof_bits)>>16));
 	     
 
       if (((L>1) && ((crc == si_rnti)||
@@ -2320,42 +2317,27 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
 	  dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[7];
 	}
 
-	if (crc==si_rnti) {
+	if (crc==si_rnti)
 	  dci_alloc[*dci_cnt].format     = format_si;
-	  *dci_cnt = *dci_cnt+1;
-	}
 	else if (crc==ra_rnti) {
 	  dci_alloc[*dci_cnt].format     = format_ra;
 	  // store first nCCE of group for PUCCH transmission of ACK/NAK
 	  lte_ue_pdcch_vars[eNB_id]->nCCE[subframe]=CCEind;
-	  *dci_cnt = *dci_cnt+1;
 	}
 	else if (crc==lte_ue_pdcch_vars[eNB_id]->crnti) {
-
-	  if ((format_c == format0)&&((dci_decoded_output[0]&0x80)==0)) {// check if pdu is format 0 or 1A
-	    if (*format0_found == 0) {
-	      dci_alloc[*dci_cnt].format     = format0;
-	      *format0_found = 1;
-	      *dci_cnt = *dci_cnt+1;
-	    }
-	  }
-	  else if (format_c == format0) { // this is a format 1A DCI
+	  if ((format_c == format0)&&((dci_decoded_output[0]&0x80)==0)) // check if pdu is format 0 or 1A
+	    dci_alloc[*dci_cnt].format     = format0;
+	  else if (format_c == format0)
 	    dci_alloc[*dci_cnt].format     = format1A;
-	    *dci_cnt = *dci_cnt+1;
-	  }
 	  else {
+	    dci_alloc[*dci_cnt].format     = format_c;
 	    // store first nCCE of group for PUCCH transmission of ACK/NAK
-	    if (*format_c_found == 0) {
-	      dci_alloc[*dci_cnt].format     = format_c;
-	      *dci_cnt = *dci_cnt+1;
-	      *format_c_found = 1;
-	      lte_ue_pdcch_vars[eNB_id]->nCCE[subframe]=CCEind;
-	    }
+	    lte_ue_pdcch_vars[eNB_id]->nCCE[subframe]=CCEind;
 	  }	    
 	}
 
 	//	memcpy(&dci_alloc[*dci_cnt].dci_pdu[0],dci_decoded_output,sizeof_bytes);
-
+	*dci_cnt = *dci_cnt+1;
 
 	if (CCEind<32)
 	  CCEmap = CCEmap0;
@@ -2394,30 +2376,26 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
 u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			   DCI_ALLOC_t *dci_alloc,
 			   s16 eNB_id,
-			   u8 subframe) {
+			   u8 subframe,
+			   u16 si_rnti,
+			   u16 ra_rnti) {
  
   u8  dci_cnt=0,old_dci_cnt=0;
   u32 CCEmap0=0,CCEmap1=0,CCEmap2=0;
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
   LTE_DL_FRAME_PARMS *frame_parms  = &phy_vars_ue->lte_frame_parms;
   u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,0);
-  u16 ra_rnti;
-  u8 format0_found=0,format_c_found=0;
-  u8 tmode = phy_vars_ue->transmission_mode[eNB_id];
-
-  if (phy_vars_ue->prach_resources[eNB_id])
-    ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
-  else
-    ra_rnti = 0;
 
   // First check common search spaces at aggregation 4 (SI_RNTI and RA_RNTI format 1A), 
   // and UE_SPEC format0 (PUSCH) too while we're at it
+
+
   dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
 			  dci_alloc,
 			  eNB_id,
 			  frame_parms,
 			  mi,
-			  SI_RNTI,
+			  si_rnti,
 			  ra_rnti,
 			  2,
 			  format1A,
@@ -2426,13 +2404,10 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  sizeof_DCI1A_5MHz_TDD_1_6_t,
 			  sizeof(DCI1A_5MHz_TDD_1_6_t),
 			  &dci_cnt,
-			  &format0_found,
-			  &format_c_found,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
-  if ((CCEmap0==0xffff) || 
-      ((format0_found==1)&&(format_c_found==1)))
+  if (CCEmap0==0xffff)
     return(dci_cnt);
 
 #ifdef ALL_AGGREGATION
@@ -2444,7 +2419,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  eNB_id,
 			  frame_parms,
 			  mi,
-			  SI_RNTI,
+			  si_rnti,
 			  ra_rnti,
 			  3,
 			  format1A,
@@ -2453,17 +2428,92 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  sizeof_DCI1A_5MHz_TDD_1_6_t,
 			  sizeof(DCI1A_5MHz_TDD_1_6_t),
 			  &dci_cnt,
-			  &format0_found,
-			  &format_c_found,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+#endif
+
+  // Now check UE_SPEC format 1 search spaces at aggregation 1 
+  old_dci_cnt=dci_cnt;
+  dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  0,
+			  format1A,
+			  format1A,
+			  format1,
+			  sizeof_DCI1_5MHz_TDD_t,
+			  sizeof(DCI1_5MHz_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
+
+  // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 1
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  0,
+			  format1A,
+			  format1A,
+			  format1E_2A_M10PRB,
+			  sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
 
-  if ((CCEmap0==0xffff)|| 
-      ((format0_found==1)&&(format_c_found==1)))
-    return(dci_cnt);
-#endif
 
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
+  // Now check UE_SPEC format2_2A_M10PRB search spaces at aggregation 1 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  0,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
+  
   // Now check UE_SPEC format0 search spaces at aggregation 1 
   dci_decoding_procedure0(lte_ue_pdcch_vars,
 			  subframe,
@@ -2471,7 +2521,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  eNB_id,
 			  frame_parms,
 			  mi,
-			  SI_RNTI,
+			  si_rnti,
 			  ra_rnti,
 			  0,
 			  format1A,
@@ -2480,16 +2530,95 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  sizeof_DCI0_5MHz_TDD_1_6_t,
 			  sizeof(DCI0_5MHz_TDD_1_6_t),
 			  &dci_cnt,
-			  &format0_found,
-			  &format_c_found,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
   
-  if ((CCEmap0==0xffff)|| 
-      ((format0_found==1)&&(format_c_found==1)))
+if (CCEmap0==0xffff)
     return(dci_cnt);
-  
+
+  // Now check UE_SPEC format 1 search spaces at aggregation 2 
+  old_dci_cnt=dci_cnt;
+  dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  1,
+			  format1A,
+			  format1A,
+			  format1,
+			  sizeof_DCI1_5MHz_TDD_t,
+			  sizeof(DCI1_5MHz_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+  // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 2
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  1,
+			  format1A,
+			  format1A,
+			  format1E_2A_M10PRB,
+			  sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
+
+
+
+
+
+  // Now check UE_SPEC format 2_2A_M10PRB search spaces at aggregation 2 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  1,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
+
+
   // Now check UE_SPEC format 0 search spaces at aggregation 2 
   dci_decoding_procedure0(lte_ue_pdcch_vars,
 			  subframe,
@@ -2497,7 +2626,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  eNB_id,
 			  frame_parms,
 			  mi,
-			  SI_RNTI,
+			  si_rnti,
 			  ra_rnti,
 			  1,
 			  format1A,
@@ -2506,294 +2635,38 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  sizeof_DCI0_5MHz_TDD_1_6_t,
 			  sizeof(DCI0_5MHz_TDD_1_6_t),			  
 			  &dci_cnt,
-			  &format0_found,
-			  &format_c_found,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
-  if ((CCEmap0==0xffff)|| 
-      ((format0_found==1)&&(format_c_found==1)))
+  if (CCEmap0==0xffff)
     return(dci_cnt);
 
-  // These are for CRNTI based on transmission mode
-  if (tmode < 3) {
-    // Now check UE_SPEC format 1 search spaces at aggregation 1 
-    old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    0,
-			    format1A,
-			    format1A,
-			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    if ((CCEmap0==0xffff) || 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);
-    
-    // Now check UE_SPEC format 1 search spaces at aggregation 2 
-    old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    1,
-			    format1A,
-			    format1A,
-			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);    
-
-    // Now check UE_SPEC format 1 search spaces at aggregation 4 
-    old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    2,
-			    format1A,
-			    format1A,
-			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);
-
-#ifdef ALL_AGGREGATION
-    // Now check UE_SPEC format 1 search spaces at aggregation 8 
-    old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    3,
-			    format1A,
-			    format1A,
-			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);
-    
-#endif //ALL_AGGREGATION    
-  }
-  else if (tmode == 4) {
-
-    // Now check UE_SPEC format 2_2A_M10PRB search spaces at aggregation 1 
-    dci_decoding_procedure0(lte_ue_pdcch_vars,
-			    subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    0,
-			    format1A,
-			    format1A,
-			    format2_2A_M10PRB,
-			    sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
-			    sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);
-
-    // Now check UE_SPEC format 2_2A_M10PRB search spaces at aggregation 2 
-    dci_decoding_procedure0(lte_ue_pdcch_vars,
-			    subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    1,
-			    format1A,
-			    format1A,
-			    format2_2A_M10PRB,
-			    sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
-			    sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);
-
-    // Now check UE_SPEC format 2_2A_M10PRB search spaces at aggregation 4 
-    dci_decoding_procedure0(lte_ue_pdcch_vars,
-			    subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    2,
-			    format1A,
-			    format1A,
-			    format2_2A_M10PRB,
-			    sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
-			    sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);
-
-#ifdef ALL_AGGREGATION
-    // Now check UE_SPEC format 2_2A_M10PRB search spaces at aggregation 8 
-    dci_decoding_procedure0(lte_ue_pdcch_vars,
-			    subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    3,
-			    format1A,
-			    format1A,
-			    format2_2A_M10PRB,
-			    sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
-			    sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);    
-#endif
-  }
-  else { // This is MU-MIMO
-  // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 1
-    dci_decoding_procedure0(lte_ue_pdcch_vars,
-			    subframe,
-			    dci_alloc,
-			    eNB_id,
-			    frame_parms,
-			    mi,
-			    SI_RNTI,
-			    ra_rnti,
-			    0,
-			    format1A,
-			    format1A,
-			    format1E_2A_M10PRB,
-			    sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
-			    sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
-			    &dci_cnt,
-			    &format0_found,
-			    &format_c_found,
-			    &CCEmap0,
-			    &CCEmap1,
-			    &CCEmap2);
-    
-    
-    if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
-      return(dci_cnt);
-    
-    if (dci_cnt>old_dci_cnt)
-      return(dci_cnt);
-    
-  // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 2
-  dci_decoding_procedure0(lte_ue_pdcch_vars,
-			  subframe,
+  // Now check UE_SPEC format 1 search spaces at aggregation 4 
+  old_dci_cnt=dci_cnt;
+  dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
 			  dci_alloc,
 			  eNB_id,
 			  frame_parms,
 			  mi,
-			  SI_RNTI,
+			  si_rnti,
 			  ra_rnti,
-			  1,
+			  2,
 			  format1A,
 			  format1A,
-			  format1E_2A_M10PRB,
-			  sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
-			  sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
+			  format1,
+			  sizeof_DCI1_5MHz_TDD_t,
+			  sizeof(DCI1_5MHz_TDD_t),
 			  &dci_cnt,
-			  &format0_found,
-			  &format_c_found,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
-
-  if ((CCEmap0==0xffff)|| 
-      ((format0_found==1)&&(format_c_found==1)))
+  if (CCEmap0==0xffff)
     return(dci_cnt);
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
+
+
+
 
   // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 4
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2802,7 +2675,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  eNB_id,
 			  frame_parms,
 			  mi,
-			  SI_RNTI,
+			  si_rnti,
 			  ra_rnti,
 			  2,
 			  format1A,
@@ -2811,19 +2684,71 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
 			  sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
 			  &dci_cnt,
-			  &format0_found,
-			  &format_c_found,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
 
-  if ((CCEmap0==0xffff)|| 
-      ((format0_found==1)&&(format_c_found==1)))
+  if (CCEmap0==0xffff)
     return(dci_cnt);
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
 
+
+
+  // Now check UE_SPEC format 2_2A_M10PRB search spaces at aggregation 4 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  2,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
+
+
+
 #ifdef ALL_AGGREGATION
+  // Now check UE_SPEC format 1 search spaces at aggregation 8 
+  old_dci_cnt=dci_cnt;
+  dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  3,
+			  format1A,
+			  format1A,
+			  format1,
+			  sizeof_DCI1_5MHz_TDD_t,
+			  sizeof(DCI1_5MHz_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
 
   // Now check UE_SPEC format 1E_2A_M10PRB search spaces at aggregation 8 
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2832,7 +2757,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  eNB_id,
 			  frame_parms,
 			  mi,
-			  SI_RNTI,
+			  si_rnti,
 			  ra_rnti,
 			  3,
 			  format1A,
@@ -2841,21 +2766,40 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
 			  sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
 			  &dci_cnt,
-			  &format0_found,
-			  &format_c_found,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
 
-  if ((CCEmap0==0xffff)|| 
-      ((format0_found==1)&&(format_c_found==1)))
+  if (CCEmap0==0xffff)
     return(dci_cnt);
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
 
-#endif  //ALL_AGGREGATION
 
-  }  
+
+  // Now check UE_SPEC format 2_2A_M10PRB search spaces at aggregation 8 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  3,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
+
+#endif
+
   return(dci_cnt);
 }
 
@@ -2871,11 +2815,10 @@ u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   
   memcpy(dci_alloc_rx,dci_alloc_tx,num_common_dci*sizeof(DCI_ALLOC_t));
   dci_cnt = num_common_dci;
-  //  msg("DCI Emul : num_common_dci %d\n",num_common_dci);
+  msg("DCI Emul : num_common_dci %d\n",num_common_dci);
 
   for (i=num_common_dci;i<(num_ue_spec_dci+num_common_dci);i++) {
-    //    printf("Checking dci %d => %x format %d (bit 0 %d)\n",i,lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_tx[i].format,
-    //	   dci_alloc_tx[i].dci_pdu[0]&0x80);
+    //printf("Checking dci %d => %x format %d\n",i,lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_tx[i].format);
     if (dci_alloc_tx[i].rnti == lte_ue_pdcch_vars[eNB_id]->crnti) {
       memcpy(dci_alloc_rx+dci_cnt,dci_alloc_tx+i,sizeof(DCI_ALLOC_t));
       dci_cnt++;
