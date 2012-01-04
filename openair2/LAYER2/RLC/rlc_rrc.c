@@ -10,8 +10,8 @@
 #include "rlc.h"
 #include "rlc_am.h"
 #include "rlc_um.h"
-#include "rlc_tm_control_primitives_proto_extern.h"
-#include "rlc_um_control_primitives.h"
+#include "rlc_tm.h"
+//#include "rlc_um_control_primitives.h"
 
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
@@ -19,15 +19,8 @@ rlc_op_status_t
 rb_release_rlc_tm (struct rlc_tm_entity *rlcP, module_id_t module_idP)
 {
 //-----------------------------------------------------------------------------
-  mem_block_t      *mb;
-
-  if ((mb = get_free_mem_block (sizeof (struct crlc_primitive)))) {
-    ((struct crlc_primitive *) mb->data)->type = CRLC_CONFIG_REQ;
-    ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.tm_parameters.e_r = RLC_E_R_RELEASE;
-    send_rlc_tm_control_primitive (rlcP, module_idP, mb);
-    return RLC_OP_STATUS_OK;
-  }
-  return RLC_OP_STATUS_OUT_OF_RESSOURCES;
+  rlc_tm_cleanup(rlcP);
+  return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
 rlc_op_status_t
