@@ -18,7 +18,7 @@
 #include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
 #endif
-//#define DEBUG_PHY
+#define DEBUG_PHY
 
 int* sync_corr_ue = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
@@ -247,7 +247,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 	((short*)sync_corr_ue)[2*n] += ((short*) &result)[0];
 	((short*)sync_corr_ue)[2*n+1] += ((short*) &result)[1];
 	((short*)sync_corr_ue)[2*(length+n)] += ((short*) &result2)[0];
-	((short*)sync_corr_ue)[2*(length+n+1)] += ((short*) &result2)[1];
+	((short*)sync_corr_ue)[(2*(length+n))+1] += ((short*) &result2)[1];
 	((short*)sync_out)[0] += ((short*) &result)[0];
 	((short*)sync_out)[1] += ((short*) &result)[1];
 	((short*)sync_out2)[0] += ((short*) &result2)[0];
@@ -312,9 +312,9 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 	peak_val = tmp[s];
 	peak_pos = n;
 	sync_source = s;
-	//	printf("s %d: sync_out %d, sync_out2  %d (sync_corr %d,%d)\n",s,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue[n],sync_corr_ue[n+length]);
+	printf("s %d: sync_out %d, sync_out2  %d (sync_corr %d,%d)\n",s,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue[n],sync_corr_ue[n+length]);
 
-      }
+      } 
     }
   }
 

@@ -110,6 +110,8 @@ u16 beta_ack[16] = {16,  //2.000
 
 s8 delta_PUSCH_abs[4] = {-4,-1,1,4};
 s8 delta_PUSCH_acc[4] = {-1,0,1,3};
+
+s8 *delta_PUCCH_lut = delta_PUSCH_acc;
 		    
 u32 conv_rballoc(u8 ra_header,u32 rb_alloc) {
 
@@ -763,59 +765,6 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     msg("dci_tools.c: format0 not possible\n");
     return(-1);
     break;
-    /*
-  case format1A_RA:
-    // harq_pid field is reserved
-    rballoc = ((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-    if (rballoc>RIV_max) {
-      msg("dci_tools.c: ERROR: Format 1A: rb_alloc > RIV_max\n");
-      return(-1);
-    }
-
-    harq_pid=0;
-    // see 36-212 V8.6.0 p. 45
-    NPRB      = (((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) + 2;
-    
-    if (NPRB==0) {
-      msg("dci_tools.c: ERROR: Format 1A: NPRB=0\n");
-      return(-1);
-    }
-
-    if (((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 7) {
-      msg("dci_tools.c: ERROR: Format 1A: unlikely mcs for format 1A (%d)\n",((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
-      return(-1);
-    }
-
-    dlsch[0]->current_harq_pid = harq_pid;
-    //    msg("Format 1A: harq_pid %d\n",harq_pid);
-    if (((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type == 0)
-      dlsch[0]->rb_alloc[0]                       = localRIV2alloc_LUT25[rballoc];
-    else
-      dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[rballoc];
-
-    dlsch[0]->nb_rb                               = NPRB; //RIV2nb_rb_LUT25[rballoc];
-    //printf("DCI 1A : nb_rb %d\n",dlsch[0]->nb_rb);
-    if ((dlsch[0]->nb_rb<=0) || (dlsch[0]->nb_rb > 3)) {
-      msg("dci_tools.c: ERROR:  Format 1A: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
-      return(-1);
-    }
-
-    dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->rv;
-
-    dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
-    dlsch[0]->layer_index = 0;
-    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
-    dlsch[0]->dl_power_off = 1; //no power offset
-    dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
-    dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_RA_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
-
-    dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB-1];
-
-    dlsch[0]->rnti = rnti;
-
-    dlsch0 = dlsch[0];
-    break;
-    */
   case format1A:
 
     // harq_pid field is reserved
@@ -838,6 +787,8 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       }
 
       NPRB      = RIV2nb_rb_LUT25[rballoc];
+
+      dlsch[0]->harq_processes[harq_pid]->delta_PUCCH     = delta_PUCCH_lut[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&3];      
     }
 
     if (NPRB==0) {
@@ -904,6 +855,8 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     }
 
     //    printf("NPRB %d\n",NPRB);
+    dlsch[0]->harq_processes[harq_pid]->delta_PUCCH     = delta_PUCCH_lut[((DCI1_5MHz_TDD_t *)dci_pdu)->TPC&3];      
+
     dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1_5MHz_TDD_t *)dci_pdu)->rv;
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
@@ -974,6 +927,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 
     dlsch0->harq_processes[harq_pid]->mcs       = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
 
+    dlsch0->harq_processes[harq_pid]->delta_PUCCH     = delta_PUCCH_lut[((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->TPC&3];      
     /*
       if (dlsch0->harq_processes[harq_pid]->mcs>20) {
       msg("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0->harq_processes[harq_pid]->mcs);
@@ -1122,8 +1076,8 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 							    ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rballoc);
     //dlsch1->nb_rb                               = dlsch0->nb_rb;
 
-    dlsch0->harq_processes[harq_pid]->mcs       = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs;
-
+    dlsch0->harq_processes[harq_pid]->mcs             = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs;
+    dlsch0->harq_processes[harq_pid]->delta_PUCCH     = delta_PUCCH_lut[((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->TPC&3];      
 
 
 
@@ -1323,9 +1277,31 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 
     switch (frame_parms->tdd_config) {
 
+    case 1:
+      if ((subframe==2) || 
+	  (subframe==3) || 
+	  (subframe==7) ||
+	  (subframe==8)) 
+	switch (subframe) {
+	case 2:
+	case 3:
+	  return(subframe-2);
+	  break;
+	case 7:
+	case 8:
+	  return(subframe-5);
+	  break;
+	default:
+	  msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	  mac_xface->macphy_exit("");
+	  return(255);
+	  break;
+	}
+      break;
     case 2:
       if ((subframe!=2) && (subframe!=7)) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe/7);
@@ -1333,6 +1309,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     case 3:
       if ((subframe<2) || (subframe>4)) {
 	msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe-2);
@@ -1340,6 +1317,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     case 4:
       if ((subframe<2) || (subframe>3)) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe-2);
@@ -1347,12 +1325,14 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     case 5:
       if (subframe!=2) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe-2);
       break;
     default:
-      msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode\n");
+      msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode %d\n",frame_parms->tdd_config);
+      mac_xface->macphy_exit("");
       return(255);
 
     }
