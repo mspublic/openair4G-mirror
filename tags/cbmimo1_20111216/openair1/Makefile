@@ -26,7 +26,7 @@ endif
 all: openair_rf_cbmimo1_softmodem.ko asn1_msg_kern.ko
 
 openair_rf_cbmimo1_softmodem.ko:  
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1  && mv openair_rf.ko openair_rf_softmodem.ko)
+	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1  && mv openair_rf.ko openair_rf_softmodem$(FIRMWARE2010).ko)
 
 asn1_msg_kern.ko:
 	(cd ../openair2/RRC/LITE/MESSAGES && $(MAKE) -C /usr/src/linux V=0 M=`pwd` RTAI=1 -j2)
@@ -77,9 +77,9 @@ ifeq ($(OPENAIR2),1)
 	insmod ../openair2/RRC/LITE/MESSAGES/asn1_msg_kern.ko
 endif
 	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko updatefirmware=1 ; \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem$(FIRMWARE2010).ko updatefirmware=1 ; \
 	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko ; \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem$(FIRMWARE2010).ko ; \
 	fi
 
 install_cbmimo1_softmodem1:

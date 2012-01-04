@@ -1037,6 +1037,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.tx_test=1;
 
+    /*
 #ifdef BIT8_TX
     for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES<<1;i+=8) {
       ((char*) (TX_DMA_BUFFER[0][0]))[i] = 127;
@@ -1049,16 +1050,21 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       ((char*) (TX_DMA_BUFFER[0][0]))[i+7] = -127;
     }
 #endif
+    */
 
     for (i=0;i<number_of_cards;i++) {
       ret = setup_regs(i,frame_parms);
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       udelay(1000);
+      /*
 #ifdef BIT8_TX
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 #else
+      */
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GEN_FS4);
-#endif
+      /* 
+#endif 
+      */
     }
 
     break;
