@@ -69,13 +69,6 @@
 */
 extern inline unsigned int taus(void);
 
-#define BSR_TABLE_SIZE 64
-const u32 BSR_TABLE[BSR_TABLE_SIZE]={0,10,12,14,17,19,22,26,31,36,42,49,57,67,78,91,
-			       105,125,146,171,200,234,274,321,376,440,515,603,706,826,967,1132,
-			       1326,1552,1817,2127,2490,2915,3413,3995,4677,5467,6411,7505,8787,10287,12043,14099,
-			       16507,19325,22624,26487,31009,36304,42502,49759,58255,68201,79846,93479,109439, 128125,150000, 300000};
-
-//u32 EBSR_Level[63]={0,10,13,16,19,23,29,35,43,53,65,80,98,120,147,181};
 
 void ue_init_mac(){
   int i,j;
@@ -814,11 +807,12 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen) {
   pdu=0;
   for (lcid=DCCH; lcid <= DTCH; lcid++ ) { // dcch, dcch1, dtch
     if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] > 0 )
-      pdu += UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] + sizeof(SCH_SUBHEADER_SHORT) + bsr_len;
+      pdu += (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] + sizeof(SCH_SUBHEADER_SHORT) + bsr_len);
     if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] > 128 ) // long header size: adjust the header size
       pdu += 1; 
     // current phy buff can not transport all sdu for this lcid -> transmit a bsr for this lcid 
-    if ( pdu > buflen ){ 
+    
+    if ( (pdu > buflen) &&  (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] > 0 ) ){ 
       bsr_channel+=1;
       bsr_len = ((bsr_channel > 1 ) ? sizeof(BSR_LONG) :  sizeof(BSR_SHORT)) ;
     }

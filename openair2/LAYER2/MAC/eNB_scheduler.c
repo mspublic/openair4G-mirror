@@ -886,8 +886,35 @@ void schedule_RA(unsigned char Mod_id,unsigned char subframe,unsigned char *nprb
 // This has to be updated to include BSR information
 u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id) {
 
-  return(eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
+  
+  //  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d\n",Mod_id,rnti,mac_xface->frame,subframe,
+  //	UE_id);      
+
+  if ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]>0) || 
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]>0) || 
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]>0) || 
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR>0))
+    return(1);
+  else return(0);
 }
+
+u32 bytes_to_bsr_index(s32 nbytes) {
+
+  u32 i=0;
+
+  if (nbytes<0)
+    return(0);
+
+  while ((i<BSR_TABLE_SIZE)&&
+	 (BSR_TABLE[i]<=nbytes)){
+    i++; 
+  }
+  return(i-1);
+}
+
+// This table holds the allowable PRB sizes for ULSCH transmissions
+u8 rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
+
 void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned char subframe,unsigned char *nCCE) {
 
   unsigned char UE_id;
@@ -905,6 +932,10 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   u8 status=0;//,status0 = 0,status1 = 0;
   //  u8 k=0;
+  u8 rb_table_index;
+  u16 TBS,first_rb=0,i;
+  u32 buffer_occupancy;
+  u32 tmp_bsr;
 
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
@@ -995,11 +1026,6 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 	else  // increment RV
 	  ULSCH_dci->mcs = round + 28;
 	
-#ifdef DEBUG_eNB_SCHEDULER
-	msg("[MAC][eNB Scheduler] UE %d: got harq_pid %d, round %d, ndi %d, mcs %d, using 4 RBs starting at %d\n",UE_id,
-	    harq_pid,round,ULSCH_dci->ndi,ULSCH_dci->mcs,next_ue*4);
-#endif
-	
 	// schedule 4 RBs for UL
 	if((cooperation_flag > 0) && (next_ue == 1))// Allocation on same set of RBs
 	  {
@@ -1007,12 +1033,72 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 						       ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
 						       4);//openair_daq_vars.ue_ul_nb_rb);
 	  }
-	else
-	  {
-	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						       (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
-						       4);//openair_daq_vars.ue_ul_nb_rb);
+	else if (ULSCH_dci->ndi==1) {
+	  rb_table_index = 1;
+	  TBS = mac_xface->get_TBS(ULSCH_dci->mcs,rb_table[rb_table_index]);
+	  buffer_occupancy = ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]  == 0) &&
+			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]  == 0) &&
+			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] == 0))?
+	    BSR_TABLE[1] :   // This is when we've received SR and buffers are fully served
+	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]]+
+	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]]+
+	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]];  // This is when remaining data in UE buffers (even if SR is triggered)
+
+	  LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduled UE (DCCH bsr %d, DCCH1 bsr %d, DTCH bsr %d), BO %d\n",
+		Mod_id,rnti,mac_xface->frame,subframe,
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] ,
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1],
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] ,buffer_occupancy);
+
+	  while ((TBS < buffer_occupancy) &&
+		 rb_table[rb_table_index]<(mac_xface->lte_frame_parms->N_RB_UL-1-first_rb)){
+	    // continue until we've exhauster the UEs request or the total number of available PRBs
+	    LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduled UE (rb_table_index %d => TBS %d)\n",
+		  Mod_id,rnti,mac_xface->frame,subframe,
+		  rb_table_index,TBS);
+	    
+	    rb_table_index++;
+	    TBS = mac_xface->get_TBS(ULSCH_dci->mcs,rb_table[rb_table_index]);
 	  }
+
+	  LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+		Mod_id,rnti,mac_xface->frame,subframe,ULSCH_dci->mcs,
+		first_rb,rb_table[rb_table_index],
+		rb_table_index,mac_xface->get_TBS(ULSCH_dci->mcs,rb_table[rb_table_index]));      
+
+	  ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+						     first_rb,
+						     rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
+
+	  first_rb+=rb_table[rb_table_index];  // increment for next UE allocation
+	  buffer_occupancy -= mac_xface->get_TBS(ULSCH_dci->mcs,rb_table[rb_table_index]);
+
+	  i = bytes_to_bsr_index((s32)buffer_occupancy);
+
+	  // Adjust BSR entries for DCCH, DCCH1 and DTCH, add others later
+	  if (i>0) {
+	    if (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] <= i) {
+	      tmp_bsr = BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]];
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] = 0;
+	      if (BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]] <= (buffer_occupancy-tmp_bsr)) {
+		tmp_bsr += BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]];
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = 0;
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]] - ((s32)buffer_occupancy - (s32)tmp_bsr));
+	      }
+	      else {
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]] - ((s32)buffer_occupancy -(s32)tmp_bsr));
+	      }
+	    }
+	    else {
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]] - (s32)buffer_occupancy);
+	    }
+	  }
+	  else {  // we have flushed all buffers so clear bsr
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] = 0;
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = 0;
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] = 0;
+	  }
+	}
 	
 	// Cyclic shift for DM RS
 	if(cooperation_flag == 2) {
@@ -4013,7 +4099,10 @@ void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_fl
     //add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,unsigned char dci_size_bytes,unsigned char aggregation,unsigned char dci_size_bits,unsigned char dci_fmt)
 
 
+    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
     schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+    fill_DLSCH_dci(Mod_id,subframe,RBalloc);
+
     break;
   case 1:
     break;
@@ -4029,6 +4118,7 @@ void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_fl
   case 5:
 
     schedule_SI(Mod_id,&nprb,&nCCE);
+    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
     fill_DLSCH_dci(Mod_id,subframe,RBalloc);
 
     break;
@@ -4047,9 +4137,9 @@ void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_fl
 
   case 8:
 
-    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
+
     //    schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
-    fill_DLSCH_dci(Mod_id,subframe,RBalloc);
+    //fill_DLSCH_dci(Mod_id,subframe,RBalloc);
     // Schedule UL subframe
     //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
     break;
