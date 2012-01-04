@@ -2356,7 +2356,7 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     //    msg("[PHY][eNB %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n",
     //	phy_vars_eNB->Mod_id,mac_xface->frame, last_slot);
 #endif
-    //    phy_procedures_eNB_RX(last_slot,phy_vars_eNB,abstraction_flag);
+    phy_procedures_eNB_S_RX(last_slot,phy_vars_eNB,abstraction_flag);
   }
 }
 
