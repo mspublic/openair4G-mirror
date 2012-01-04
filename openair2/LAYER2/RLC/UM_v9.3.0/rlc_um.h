@@ -31,8 +31,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
@@ -65,7 +63,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #        include "rlc_um_structs.h"
 #        include "rlc_um_entity.h"
 #        include "mem_block.h"
-//#        include "rlc_um_control_primitives.h"
+#        include "rlc_um_control_primitives.h"
 #        include "rlc_um_dar.h"
 #        include "rlc_um_fsm.h"
 #        include "rlc_um_reassembly.h"
@@ -76,11 +74,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //#        include "rlc_um_very_simple_test.h"
 #endif
 
-typedef volatile struct {
-    u32_t             timer_reordering;
-    u32_t             sn_field_length; // 5 or 10
-    u32_t             is_mXch; // boolean, true if configured for MTCH or MCCH
-} rlc_um_info_t;
 
 /*! \fn void     rlc_um_stat_req     (struct rlc_um_entity *rlcP, unsigned int* tx_pdcp_sdu, unsigned int* tx_pdcp_sdu_discarded, unsigned int* tx_data_pdu, unsigned int* rx_sdu, unsigned int* rx_error_pdu, unsigned int* rx_data_pdu, unsigned int* rx_data_pdu_out_of_window)
 * \brief    Request TX and RX statistics of a RLC UM protocol instance.

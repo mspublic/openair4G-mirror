@@ -31,21 +31,23 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
+*/
+/** @defgroup _rlc_um_init_impl_ RLC UM Init Reference Implementation
+* @ingroup _rlc_um_impl_
+* @{
 */
 #    ifndef __RLC_UM_CONTROL_PRIMITIVES_H__
 #        define __RLC_UM_CONTROL_PRIMITIVES_H__
 //-----------------------------------------------------------------------------
 #        include "rlc_um_entity.h"
 #        include "mem_block.h"
-#        include "rrm_config_structs.h"
+//#        include "rrm_config_structs.h"
 #        include "rlc_um_structs.h"
 #        include "rlc_um_constants.h"
-#        include "rlc.h"
+//#        include "rlc.h"
 #        include "platform_types.h"
 //-----------------------------------------------------------------------------
 #        ifdef RLC_UM_CONTROL_PRIMITIVES_C
@@ -64,8 +66,16 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #            endif
 #        endif
 
+typedef volatile struct {
+    u32_t             is_uplink_downlink;
+    u32_t             timer_reordering;
+    u32_t             sn_field_length; // 5 or 10
+    u32_t             is_mXch; // boolean, true if configured for MTCH or MCCH
+} rlc_um_info_t;
+
+
 /*! \fn void config_req_rlc_um (rlc_um_entity_t *rlcP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
-* \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission. After this configuration the RLC UM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state.
+* \brief    Allocate memory for RLC UM instance, reset protocol variables, and set protocol parameters. After this configuration the RLC UM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[in]  module_idP                Virtualized module identifier.
 * \param[in]  config_umP                Configuration parameters for RLC UM instance.
@@ -109,5 +119,5 @@ protected_rlc_um_control_primitives(void rlc_um_configure(rlc_um_entity_t *rlcP,
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
 protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP);)
-
+/** @} */
 #    endif

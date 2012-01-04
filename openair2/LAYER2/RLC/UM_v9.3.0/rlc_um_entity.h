@@ -31,8 +31,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
 * \note The rlc_um_entity_t structure store protocol variables, statistic variables, allocation variables, buffers and other miscellaneous variables.
 * \bug
 * \warning
@@ -51,10 +49,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 */
 
 typedef struct rlc_um_entity {
-  module_id_t    module_id;           /*!< \brief Virtualization index for this protocol instance, means handset or eNB index.*/
-  u8_t              allocation;       /*!< \brief Boolean for rlc_am_entity_t struct allocation. */
-  u8_t              protocol_state;   /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
-  u16_t             is_data_plane;    /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
+  module_id_t       module_id;          /*!< \brief Virtualization index for this protocol instance, means handset or eNB index.*/
+  u8_t              allocation;         /*!< \brief Boolean for rlc_am_entity_t struct allocation. */
+  u8_t              is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
+  u8_t              protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
+  u16_t             is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
   //-----------------------------
   // PROTOCOL VARIABLES
   //-----------------------------
