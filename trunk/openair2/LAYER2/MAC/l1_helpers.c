@@ -18,7 +18,7 @@ s8 get_Po_NOMINAL_PUSCH(u8 Mod_id) {
 
 s8 get_deltaP_rampup(u8 Mod_id) {
 
-
+  LOG_D(MAC,"[PUSCH]%d dB\n",UE_mac_inst[Mod_id].RA_PREAMBLE_TRANSMISSION_COUNTER<<1);
   return((s8)(UE_mac_inst[Mod_id].RA_PREAMBLE_TRANSMISSION_COUNTER<<1));
  
 }

@@ -89,6 +89,9 @@
 
 #define NB_RA_PROC_MAX 4
 
+#define BSR_TABLE_SIZE 64
+
+
 typedef struct {
   u8 RAPID:6;
   u8 T:1;

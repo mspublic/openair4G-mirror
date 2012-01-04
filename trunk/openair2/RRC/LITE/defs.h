@@ -318,19 +318,23 @@ void rrc_lite_out_of_sync_ind(u8 Mod_id, unsigned short eNB_index);
 //MESSAGES/asn1_msg.c
 /** 
 \brief Generate a default configuration for SIB1 (eNB).
+@param frame_parms Used to store some basic parameters from PHY configuration
 @param buffer Pointer to PER-encoded ASN.1 description of SIB1
 @param sib1 Pointer to asn1c C representation of SIB1
 @return size of encoded bit stream in bytes*/
-uint8_t do_SIB1(uint8_t *buffer,
+
+uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 		SystemInformationBlockType1_t *sib1);
 /** 
 \brief Generate a default configuration for SIB2/SIB3 in one System Information PDU (eNB).
+@param Mod_id Index of eNB (used to derive some parameters)
 @param buffer Pointer to PER-encoded ASN.1 description of SI PDU
 @param systemInformation Pointer to asn1c C representation of SI PDU
 @param sib2 Pointer (returned) to sib2 component withing SI PDU
 @param sib3 Pointer (returned) to sib3 component withing SI PDU
 @return size of encoded bit stream in bytes*/
-uint8_t do_SIB23(uint8_t *buffer,  
+uint8_t do_SIB23(uint8_t Mod_id,
+		 uint8_t *buffer,  
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
 		 SystemInformationBlockType3_t **sib3);
@@ -357,12 +361,14 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer);
 \brief Generate an RRCConnectionSetup DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and 
 PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
+@param transmission_mode Transmission mode for UE (1-9)
 @param UE_id UE index for this message
 @param Transaction_id Transaction_ID for this message
 @param SRB1_config Pointer (returned) to SRB1_config IE for this UE
 @param physicalConfigDedicated Pointer (returned) to PhysicalConfigDedicated IE for this UE
 @returns Size of encoded bit stream in bytes*/
 uint8_t do_RRCConnectionSetup(uint8_t *buffer,
+			      uint8_t transmission_mode,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB1_config,

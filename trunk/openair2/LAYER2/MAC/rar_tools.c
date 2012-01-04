@@ -30,7 +30,7 @@ unsigned short fill_rar(u8 Mod_id,
   rar->hopping_flag           = 0;
   rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,0,2);  // 2 RB
   rar->mcs                    = 2;                                   // mcs 2
-  rar->TPC                    = 7;
+  rar->TPC                    = 3;   // no power adjustment
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
   rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;

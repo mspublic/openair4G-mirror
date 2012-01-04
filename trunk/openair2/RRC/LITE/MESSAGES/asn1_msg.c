@@ -37,6 +37,8 @@
 
 #include "SIB-Type.h"
 
+#include "PHY/defs.h"
+
 //#include "PHY/defs.h"
 #ifndef USER_MODE
 #define msg printk
@@ -47,38 +49,12 @@ int errno;
 #define msg printf
 #endif
 
-/*
-void assign_enum(ENUMERATED_t *x,uint8_t val) {
-  uint8_t *buf=(uint8_t *)malloc(4);
-  x->buf = buf;
-  *buf=val;
-  x->size=1;
-}
-*/ 
-/*
-void FREEMEM(void *ptr) {
-
-	if (ptr)
-	  free(ptr);
-	else {
-	  msg("********************Trying to free a null ptr************************\n");
-	}
-}
-
-void *REALLOC(void *oldptr,size_t size) {
-
-printf("Realloc\n");
-if (oldptr)
-free(oldptr);
-return(malloc(size));
-}
-*/
 
 int transmission_mode_rrc;//
 
-uint8_t do_SIB1(uint8_t *buffer,
+uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 		SystemInformationBlockType1_t *sib1) {
-  
+
 
   PLMN_IdentityInfo_t PLMN_identity_info;
   MCC_MNC_Digit_t dummy;
@@ -150,10 +126,10 @@ uint8_t do_SIB1(uint8_t *buffer,
   sib1->tdd_Config = CALLOC(1,sizeof(struct TDD_Config));
   
   //assign_enum(&sib1->tdd_Config->subframeAssignment,TDD_Config__subframeAssignment_sa3);
-  sib1->tdd_Config->subframeAssignment=TDD_Config__subframeAssignment_sa3;
+  sib1->tdd_Config->subframeAssignment=frame_parms->tdd_config; //TDD_Config__subframeAssignment_sa3;
 
   //  assign_enum(&sib1->tdd_Config->specialSubframePatterns,TDD_Config__specialSubframePatterns_ssp0);
-  sib1->tdd_Config->specialSubframePatterns=TDD_Config__specialSubframePatterns_ssp0;
+  sib1->tdd_Config->specialSubframePatterns=frame_parms->tdd_config_S;//TDD_Config__specialSubframePatterns_ssp0;
 
   //  assign_enum(&sib1->si_WindowLength,SystemInformationBlockType1__si_WindowLength_ms10);
   sib1->si_WindowLength=SystemInformationBlockType1__si_WindowLength_ms10;
@@ -177,7 +153,8 @@ uint8_t do_SIB1(uint8_t *buffer,
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_SIB23(uint8_t *buffer,  
+uint8_t do_SIB23(uint8_t Mod_id,
+		 uint8_t *buffer,  
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
 		 SystemInformationBlockType3_t **sib3) {
@@ -245,7 +222,7 @@ uint8_t do_SIB23(uint8_t *buffer,
   (*sib2)->radioResourceConfigCommon.pcch_Config.nB=PCCH_Config__nB_oneT;
 
   // PRACH-Config
-  (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex=0;//384;
+  (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex=Mod_id;//0;//384;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex = 0;//3;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag = 0;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig = 1;//12;
@@ -280,7 +257,7 @@ uint8_t do_SIB23(uint8_t *buffer,
 
   // uplinkPowerControlCommon
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -116;
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -114;
   //assign_enum(&(*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha,UplinkPowerControlCommon__alpha_al1);
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha=UplinkPowerControlCommon__alpha_al1;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -114;
@@ -529,6 +506,7 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 
 
 uint8_t do_RRCConnectionSetup(uint8_t *buffer,
+			      u8 transmission_mode,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB1_config,
@@ -774,7 +752,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   // for the moment use transmission_mode_rrc
   //physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
   
-  switch (transmission_mode_rrc){
+  switch (transmission_mode){
   case 1:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;

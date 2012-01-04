@@ -207,7 +207,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u8 eNB_index,u8 subframe){
 	Size16 = (u16)Size;
 	
 	//	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
-	msg("[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
+	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
 
 	if (Size>0) {
 
@@ -225,7 +225,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u8 eNB_index,u8 subframe){
 	      UE_mac_inst[Mod_id].RA_window_cnt = 10;  // Note: 9 subframe window doesn't exist, after 8 is 10!
 	  }
 	  else {
-	    msg("[UE %d] FATAL Frame %d: rach_ConfigCommon is NULL !!!\n",Mod_id,mac_xface->frame);
+	    LOG_D(MAC,"[UE %d] FATAL Frame %d: rach_ConfigCommon is NULL !!!\n",Mod_id,mac_xface->frame);
 	    mac_xface->macphy_exit("");
 	  }
 	  UE_mac_inst[Mod_id].RA_tx_frame    = mac_xface->frame;
@@ -249,7 +249,9 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u8 eNB_index,u8 subframe){
 	}
       }
       else {  // RACH is active
-	msg("[MAC][UE][RARPROC] frame %d, subframe %d: RA Active, window cnt %d\n",UE_mac_inst[Mod_id].RA_window_cnt);
+	LOG_D(MAC,"[MAC][UE %d][RARPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",Mod_id,
+	      mac_xface->frame,subframe,UE_mac_inst[Mod_id].RA_window_cnt,
+	      UE_mac_inst[Mod_id].RA_tx_frame,UE_mac_inst[Mod_id].RA_tx_subframe);
 	// compute backoff parameters
 	if (UE_mac_inst[Mod_id].RA_backoff_cnt>0) {
 	  frame_diff = (s32)mac_xface->frame - UE_mac_inst[Mod_id].RA_backoff_frame;
@@ -266,6 +268,8 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u8 eNB_index,u8 subframe){
 	  if (frame_diff < 0)
 	    frame_diff = -frame_diff;
 	  UE_mac_inst[Mod_id].RA_window_cnt -= ((10*frame_diff) + (subframe-UE_mac_inst[Mod_id].RA_tx_subframe));
+	  LOG_D(MAC,"[MAC][UE %d][RARPROC] frame %d, subframe %d: RA Active, adjusted window cnt %d\n",Mod_id,
+		mac_xface->frame,subframe,UE_mac_inst[Mod_id].RA_window_cnt);
 	}
 	if ((UE_mac_inst[Mod_id].RA_window_cnt<=0) && 
 	    (UE_mac_inst[Mod_id].RA_backoff_cnt<=0)) {
