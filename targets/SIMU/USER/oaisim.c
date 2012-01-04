@@ -898,12 +898,14 @@ main (int argc, char **argv)
   sleep_time_us = SLEEP_STEP_US;
   td_avg = TARGET_SF_TIME_NS;
 
+#ifdef PROC
   if(Channel_Flag==1)
 	  Channel_Inst(node_id,port,s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms);
 
+
   if(Process_Flag==1)
       Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
-
+#endif 
 
   for (mac_xface->frame=0; mac_xface->frame<oai_emulation.info.n_frames; mac_xface->frame++) {
     /*
@@ -1004,10 +1006,10 @@ main (int argc, char **argv)
       next_slot = (slot + 1)%20;
       
       direction = subframe_select(frame_parms,next_slot>>1);
-      
+#ifdef PROC      
       if(Channel_Flag==1)
           Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms,slot);
-
+#endif 
      if(Channel_Flag==0){
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
