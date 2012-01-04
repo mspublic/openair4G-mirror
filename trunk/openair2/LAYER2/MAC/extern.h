@@ -21,7 +21,7 @@ ________________________________________________________________*/
 #endif //PHY_EMUL
 #include "PHY_INTERFACE/defs.h"
 
-const u32 BSR_TABLE[BSR_TABLE_SIZE];
+extern const u32 BSR_TABLE[BSR_TABLE_SIZE];
 //extern u32 EBSR_Level[63];
 
 extern UE_MAC_INST *UE_mac_inst;
