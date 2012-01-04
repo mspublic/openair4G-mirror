@@ -31,8 +31,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
@@ -46,10 +44,9 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 #    include "platform_types.h"
 #    include "platform_constants.h"
-#    include "rlc_am_proto_extern.h"
-#    include "rlc_tm_proto_extern.h"
 #    include "rlc_am.h"
 #    include "rlc_um.h"
+#    include "rlc_tm.h"
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
@@ -106,20 +103,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #define  RLC_MUI_UNDEFINED     0
 
 
-
-
-/*! \struct  rlc_tm_info_t
-* \brief Structure containing RLC TM protocol configuration parameters.
-*/
-typedef volatile struct {
-  u32_t             e_r;
-  u32_t             timer_discard;
-  u32_t             sdu_discard_mode;
-  u32_t             segmentation_indication;
-  u32_t             delivery_of_erroneous_sdu;
-} rlc_tm_info_t;
-
-
 /*! \struct  rlc_info_t
 * \brief Structure containing RLC protocol configuration parameters.
 */
@@ -127,7 +110,7 @@ typedef volatile struct {
   rlc_mode_t             rlc_mode;
   union {
       rlc_am_info_t              rlc_am_info; /*!< \sa rlc_am.h. */
-      rlc_tm_info_t              rlc_tm_info;
+      rlc_tm_info_t              rlc_tm_info; /*!< \sa rlc_tm.h. */
       rlc_um_info_t              rlc_um_info; /*!< \sa rlc_um.h. */
   }rlc;
 } rlc_info_t;
@@ -181,7 +164,7 @@ typedef struct rlc_t {
     rlc_pointer_t        m_rlc_pointer[MAX_RB];                            /*!< \brief Link between radio bearer ID and RLC protocol instance. */
     rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];     /*!< \brief RLC AM protocol instances. */
     rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];     /*!< \brief RLC UM protocol instances. */
-    struct rlc_tm_entity m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
+    rlc_tm_entity_t      m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
 }rlc_t;
 
 // RK-LG was protected, public for debug
@@ -295,9 +278,13 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, chan_id_
 //-----------------------------------------------------------------------------
 //   PUBLIC RLC CONSTANTS
 //-----------------------------------------------------------------------------
+/** RLC null type identifier. */
 #define  RLC_NONE  0
+/** RLC AM type identifier. */
 #define  RLC_AM    1
+/** RLC UM type identifier. */
 #define  RLC_UM    2
+/** RLC TM type identifier. */
 #define  RLC_TM    4
 
 //-----------------------------------------------------------------------------
@@ -370,7 +357,7 @@ public_rlc(void            rlc_data_conf    (module_id_t, rb_id_t, mui_t, rlc_tx
 */
 
 public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
-                                              rb_id_t        rb_idP,
+                              rb_id_t        rb_idP,
 							  unsigned int* tx_pdcp_sdu,
 							  unsigned int* tx_pdcp_sdu_discarded,
 							  unsigned int* tx_retransmit_pdu_unblock,
