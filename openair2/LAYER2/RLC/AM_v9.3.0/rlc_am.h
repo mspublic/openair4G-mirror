@@ -83,17 +83,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //#        include "rlc_am_very_simple_test.h"
 #endif
 
-/*! \struct  rlc_am_info_t
-* \brief Structure containing RLC AM configuration parameters.
-*/
-typedef volatile struct {
-    u16_t max_retx_threshold;  /*!< \brief Maximum number of retransmissions for one RLC AM PDU. */
-    u16_t poll_pdu;            /*!< \brief Generate a status each poll_pdu pdu sent. */
-    u16_t poll_byte;           /*!< \brief Generate a status each time poll_byte bytes have been sent. */
-    u32_t t_poll_retransmit;   /*!< \brief t-PollRetransmit timer initial value. */
-    u32_t t_reordering;        /*!< \brief t-Reordering timer initial value. */
-    u32_t t_status_prohibit;   /*!< \brief t-StatusProhibit timer initial value. */
-} rlc_am_info_t;
 
 
 /*! \fn void     rlc_am_release (rlc_am_entity_t *rlcP)
@@ -102,6 +91,9 @@ typedef volatile struct {
 */
 public_rlc_am(void     rlc_am_release (rlc_am_entity_t *rlcP);)
 
+/** @addtogroup _rlc_am_init_impl_
+* @{
+*/
 
 /*! \fn void config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission. After this configuration the RLC AM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state.
@@ -112,6 +104,7 @@ public_rlc_am(void     rlc_am_release (rlc_am_entity_t *rlcP);)
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
 public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP);)
+/** @} */
 
 /*! \fn void     rlc_am_stat_req     (rlc_am_entity_t *rlcP, unsigned int* tx_pdcp_sdu,unsigned int* tx_pdcp_sdu_discarded,unsigned int* tx_retransmit_pdu_unblock,unsigned int* tx_retransmit_pdu_by_status,unsigned int* tx_retransmit_pdu,unsigned int* tx_data_pdu,unsigned int* tx_control_pdu,unsigned int* rx_sdu,unsigned int* rx_error_pdu,unsigned int* rx_data_pdu,unsigned int* rx_data_pdu_out_of_window,unsigned int* rx_control_pdu)
 * \brief    Request TX and RX statistics of a RLC UM protocol instance.
