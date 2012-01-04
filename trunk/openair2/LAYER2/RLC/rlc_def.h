@@ -47,6 +47,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    define RLC_RESET_AND_SUSPEND_STATE               0x14
 #    define RLC_LOCAL_SUSPEND_STATE                   0x08
 //----------------------------------------------------------
+enum RLC_OPERATION_MODE { TRANSMITTER_ONLY = 0x00,
+RECEIVER_ONLY = 0x01,
+TRANSMITTER_AND_RECEIVER = 0x02
+};
+//----------------------------------------------------------
 #    define RLC_SDU_MAX_SIZE                            1800
 #    define RLC_SDU_MAX_SIZE_CONTROL_PLANE              2000
 #    define RLC_SDU_MAX_SIZE_DATA_PLANE                 1800
@@ -63,6 +68,7 @@ enum RLC_SDU_DISCARD_MODE { SDU_DISCARD_MODE_RESET = 0x00,
   SDU_DISCARD_MODE_MAX_DAT_RETRANSMISSION = 0x04,
   SDU_DISCARD_MODE_NOT_CONFIGURED = 0x10
 };
+
 
 
 #    define RLC_SDU_NO_DISCARD_MAX_DAT_RETRANSMISSION 0x00
