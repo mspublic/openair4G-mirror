@@ -474,7 +474,9 @@ typedef struct {
   /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)  
   u32 F;  
   /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
-  u8 Nl;  
+  u8 Nl;
+  /// current delta_pucch
+  s8 delta_PUCCH;
 } LTE_DL_UE_HARQ_t;
 
 

@@ -67,14 +67,17 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
       case 0:
 	*subframe = 7;
 	*frame = current_frame;
+	break;
       case 4:
 	*subframe = 2;
 	*frame = current_frame+1;
+	break;
       case 5:
 	*subframe = 2;
 	*frame = current_frame+1;
+	break;
       case 9:
-	*subframe = 9;
+	*subframe = 7;
 	*frame = current_frame+1;
 	break;
       }
@@ -144,12 +147,27 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
   u8 ul_subframe=0;
 
   if (frame_parms->frame_type ==0) {
-    ul_subframe = (current_subframe-4)%10;
+    ul_subframe = (current_subframe>4) ? (current_subframe-4) : (current_subframe+6);
   }
   else {
-    if (frame_parms->tdd_config == 3) {
+    switch (frame_parms->tdd_config) {
+    case 1:
       switch (current_subframe) {
-	
+
+      case 9:
+      case 0:
+	ul_subframe = 7;
+	break;
+      case 5:
+      case 7:
+	ul_subframe = 2;
+	break;
+
+      }
+      break;
+    case 3:
+      switch (current_subframe) {
+
       case 0:
       case 5:
       case 6:
@@ -165,9 +183,29 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
 	ul_subframe = 2;
 	break;
       }
-    }
-    else {
+      break;
+    case 4:
+      switch (current_subframe) {
+
+      case 0:
+      case 5:
+      case 6:
+      case 8:
+      case 9:
+	ul_subframe = 2;
+	break;
+      case 7:
+	ul_subframe = 3;
+	break;
+      }
+      break;
+    case 5:
+      ul_subframe =2;
+      break;
+    default:
       msg("get_Msg3_harq_pid: Unsupported TDD configuration %d\n",frame_parms->tdd_config);
+      mac_xface->macphy_exit("");
+      break;
     }
   }
     
@@ -395,6 +433,24 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
 
   switch (frame_parms->tdd_config) {
 
+  case 1:
+    switch (subframe) {
+    case 0:
+    case 4:
+    case 5:
+    case 9:
+      return(SF_DL);
+      break;
+    case 2:
+    case 3:
+    case 7:
+    case 8:
+      return(SF_UL);
+      break;
+    default:
+      return(SF_S);
+      break;
+    }
   case 3:
     if  ((subframe<1) || (subframe>=5)) 
       return(SF_DL);
@@ -408,7 +464,8 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     }
     break;
   default:
-    msg("[PHY_PROCEDURES_LTE] phy_procedures_lte_common.c subframe %d Unsupported TDD mode %d\n",subframe,frame_parms->tdd_config);
+    msg("[PHY] phy_procedures_lte_common.c subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
+    mac_xface->macphy_exit("");
     return(255);
     
   }
@@ -431,7 +488,7 @@ unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
   else {
     switch (frame_parms->tdd_config) {
     case 1:
-      if ((subframe == 2) || (subframe == 3) || (subframe == 7) || (subframe == 8))
+      if ((subframe == 1) || (subframe == 4) || (subframe == 6) || (subframe == 9))
 	return(1);
       break;
     case 3:
@@ -454,7 +511,24 @@ unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
   return(0);
 }
 
+u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n){
 
+    if ((frame_parms->frame_type == 1) && 
+	(frame_parms->tdd_config == 1) &&
+	((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+      return((n+6)%10);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     ((n==0)||(n==1)||(n==5)||(n==6)))  
+      return((n+7)%10);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     (n==9)) // tdd_config 6 SF 9
+      return((n+5)%10);
+    else
+      return((n+4)%10);
+
+}
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
   s8 UE_id;
   if ((PHY_vars_eNB_g == NULL) || (PHY_vars_eNB_g[Mod_id] == NULL)) {

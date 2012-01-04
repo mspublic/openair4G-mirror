@@ -1989,7 +1989,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 #endif
 
   // This is the REG allocation algorithm from 36-211, second part of Section 6.8.5
-  printf("DCI : txdataF %p (0 %p)\n",&txdataF[0][512*14*subframe],&txdataF[0][0]);
+  //  printf("DCI : txdataF %p (0 %p)\n",&txdataF[0][512*14*subframe],&txdataF[0][0]);
   for (kprime=0;kprime<frame_parms->N_RB_DL*12;kprime++) {
     for (lprime=0;lprime<num_pdcch_symbols;lprime++) {
 

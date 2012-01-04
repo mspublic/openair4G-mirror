@@ -247,15 +247,26 @@ void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
 			u32 *frame,
 			u8 *subframe);
 
+/* \brief Get ULSCH harq_pid for Msg3 from RAR subframe.  This returns n+k mod 10 (k>6) and corresponds to the rule in Section 6.1.1 from 36.213
+   @param frame_parms Pointer to DL Frame Parameters
+   @param current_subframe subframe of RAR transmission
+   @returns harq_pid (0 ... 7)
+ */
 u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 current_subframe);
 
 /* \brief Get ULSCH harq_pid from PHICH subframe
    @param frame_parms Pointer to DL Frame Parameters
    @param subframe subframe of PHICH
-   @returns hard_pid (0 ... 7)
+   @returns harq_pid (0 ... 7)
  */
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
+/* \brief Get PDSCH subframe (n+k) from PDCCH subframe n using relationship from Table 8-2 from 36.213
+   @param frame_parms Pointer to DL Frame Parameters
+   @param n subframe of PDCCH
+   @returns PDSCH subframe (0 ... 7) (note: this is n+k from Table 8-2)
+ */
+u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n);
 
 //
 /*!

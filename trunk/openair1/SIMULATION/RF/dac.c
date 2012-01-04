@@ -56,6 +56,8 @@ double dac_fixed_gain(double **s_re,
 		      u32 input_offset,
 		      u32 nb_tx_antennas,
 		      u32 length,
+		      u32 input_offset_meas,
+		      u32 length_meas,
 		      u8 B,
 		      double txpwr_dBm) {
 
@@ -63,7 +65,7 @@ double dac_fixed_gain(double **s_re,
   int aa;
   double amp,amp1;
  
-  amp1 = sqrt((double)signal_energy((s32*)&input[0][input_offset],length));//(1.0/sqrt(2.0)) * AMP*sqrt(300.0/512); 
+  amp1 = sqrt((double)signal_energy((s32*)&input[0][input_offset_meas],length_meas));//(1.0/sqrt(2.0)) * AMP*sqrt(300.0/512); 
 
   for (i=0;i<length;i++) {
     for (aa=0;aa<nb_tx_antennas;aa++) {

@@ -59,7 +59,7 @@
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
-//#include "UTIL/LOG/log.h"
+#include "UTIL/LOG/log.h"
 //#endif
 
 #ifndef OPENAIR2
@@ -540,48 +540,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
       }
     }
-    phy_vars_ue->generate_prach=0;
-    if (phy_vars_ue->UE_mode[eNB_id] == PRACH) {
-      // check if we have PRACH opportunity
-      if (is_prach_subframe(&phy_vars_ue->lte_frame_parms,next_slot>>1)) {
-#ifdef OPENAIR2
-	// ask L2 for RACH transport
-	if ((phy_vars_ue->prach_resources[eNB_id] = mac_xface->ue_get_rach(phy_vars_ue->Mod_id,eNB_id,next_slot>>1))!=NULL) {
-#endif
-	  
-	  //	if (phy_vars_ue->prach_timer==0) {
-	  phy_vars_ue->generate_prach=1;
-	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
-	  
-	  if (abstraction_flag == 0) {
-	    msg("[PHY][UE  %d][RARPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
-		phy_vars_ue->Mod_id,
-		mac_xface->frame,
-		next_slot>>1,
-		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
-		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
-		phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
-		phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
-	    
-	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,mac_xface->frame);
-	    msg("[PHY][UE  %d][RARPROC] PRACH digital power %d dB\n",
-		phy_vars_ue->Mod_id,
-		dB_fixed(prach_power));
-	  }
-	  else {
-	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
-	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
-	  }
-	  msg("[PHY][UE  %d][RARPROC] Frame %d, slot %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), TX_GAIN %d\n",
-	      phy_vars_ue->Mod_id,mac_xface->frame,next_slot,eNB_id,
-	      phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
-	      get_PL(phy_vars_ue->Mod_id,eNB_id));
-	  phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
-	}	  
-#ifdef OPENAIR2
-      }
-#endif
-    }
+
     
     if (phy_vars_ue->UE_mode[eNB_id] != PRACH) {
       //#ifdef DEBUG_PHY_PROC
@@ -730,12 +689,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  //	  debug_msg("[PHY][UE  %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
 	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1)
 	    mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,eNB_id,ulsch_input_buffer,input_buffer_length);
-	  /*#ifdef DEBUG_PHY_PROC
-	  debug_msg("[PHY][UE] Frame %d, subframe %d : ULSCH SDU (TX)  (%d bytes) : ",mac_xface->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+#ifdef DEBUG_PHY_PROC
+	  msg("[PHY][UE] Frame %d, subframe %d : ULSCH SDU (TX)  (%d bytes) : ",mac_xface->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
-	    debug_msg("%x.",ulsch_input_buffer[i]);
-	  debug_msg("\n");
-	  #endif*/
+	    msg("%x.",ulsch_input_buffer[i]);
+	  msg("\n");
+#endif
 #else //OPENAIR2
 	  for (i=0;i<input_buffer_length;i++)
 	    ulsch_input_buffer[i]= i;
@@ -770,6 +729,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #else
 	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,scfdma_amps[phy_vars_ue->lte_frame_parms.N_RB_DL],(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
 #endif
+	}
+	if (abstraction_flag==1) {
+	  // clear SR
+	  phy_vars_ue->sr=0;
 	}
       } // ULSCH is active
 #ifdef PUCCH
@@ -808,9 +771,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	if (get_ack(&phy_vars_ue->lte_frame_parms,
 		    phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack,
 		    (next_slot>>1),pucch_ack_payload) > 0) {
-	  
-	  
-	  // we need to transmit ACK/NAK
+	  // we need to transmit ACK/NAK in this subframe
 	  
 	  generate_ul_signal = 1;
 	  
@@ -925,6 +886,50 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       } 
     } // mode != PRACH
   }// next_slot is even
+  else {  // next_slot is odd, do the PRACH here
+    phy_vars_ue->generate_prach=0;
+    if (phy_vars_ue->UE_mode[eNB_id] == PRACH) {
+      // check if we have PRACH opportunity
+      if (is_prach_subframe(&phy_vars_ue->lte_frame_parms,next_slot>>1)) {
+#ifdef OPENAIR2
+	// ask L2 for RACH transport
+	if ((phy_vars_ue->prach_resources[eNB_id] = mac_xface->ue_get_rach(phy_vars_ue->Mod_id,eNB_id,next_slot>>1))!=NULL) {
+#endif
+	  
+	  //	if (phy_vars_ue->prach_timer==0) {
+	  phy_vars_ue->generate_prach=1;
+	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
+	  
+	  if (abstraction_flag == 0) {
+	    msg("[PHY][UE  %d][RARPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+		phy_vars_ue->Mod_id,
+		mac_xface->frame,
+		next_slot>>1,
+		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
+		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+		phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
+		phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
+	    
+	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,mac_xface->frame);
+	    msg("[PHY][UE  %d][RARPROC] PRACH digital power %d dB\n",
+		phy_vars_ue->Mod_id,
+		dB_fixed(prach_power));
+	  }
+	  else {
+	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
+	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
+	  }
+	  msg("[PHY][UE  %d][RARPROC] Frame %d, slot %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), TX_GAIN %d, l3msg \n",
+	      phy_vars_ue->Mod_id,mac_xface->frame,next_slot,eNB_id,
+	      phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
+	      get_PL(phy_vars_ue->Mod_id,eNB_id));
+	  phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
+	}	  
+#ifdef OPENAIR2
+      }
+#endif
+    } // mode is PRACH
+  } // next_slot is odd
 }
 
 void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
@@ -1985,8 +1990,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	if (mac_xface->frame < phy_vars_ue->dlsch_ra_errors[eNB_id])
 	  phy_vars_ue->dlsch_ra_errors[eNB_id]=0;
 
-	phy_vars_ue->dlsch_ue_ra[eNB_id]->rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
-
+	if (phy_vars_ue->prach_resources[eNB_id]!=NULL)
+	  phy_vars_ue->dlsch_ue_ra[eNB_id]->rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
+	else {
+	  LOG_D(PHY,"[UE %d] Frame %d, subframe %d: FATAL, prach_resources is NULL\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1);
+	  mac_xface->macphy_exit("");
+	}
 	/*
 #ifdef DEBUG_PHY_PROC
 	debug_msg("[PHY][UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot==0)?9 : (last_slot>>1)));

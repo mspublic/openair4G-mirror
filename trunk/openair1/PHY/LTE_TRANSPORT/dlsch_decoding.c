@@ -482,16 +482,19 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 0: // SI
     dlsch_ue = phy_vars_ue->dlsch_ue_SI[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_SI;
-    msg("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
+    //    msg("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
+    /*
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
       msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
+      msg("\n");*/
+    return(1);
     break;
   case 1: // RA
     dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_ra;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
+    return(1);
     break;
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
