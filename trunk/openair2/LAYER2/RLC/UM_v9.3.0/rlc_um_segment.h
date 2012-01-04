@@ -31,11 +31,13 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
+*/
+/** @defgroup _rlc_um_segment_impl_ RLC UM Segmentation Implementation
+* @ingroup _rlc_um_impl_
+* @{
 */
 #    ifndef __RLC_UM_SEGMENT_PROTO_EXTERN_H__
 #        define __RLC_UM_SEGMENT_PROTO_EXTERN_H__
@@ -60,6 +62,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #                define public_rlc_um_segment(x)     extern x
 #            endif
 #        endif
-#
+/*! \fn void rlc_um_segment_10 (struct rlc_um_entity *rlcP)
+* \brief    Segmentation procedure with 10 bits sequence number, segment the first SDU in buffer and create a PDU of the size (nb_bytes_to_transmit) requested by MAC if possible and put it in the list "pdus_to_mac_layer".
+* \param[in]  rlcP        RLC UM protocol instance pointer.
+*/
 protected_rlc_um_segment(void rlc_um_segment_10 (struct rlc_um_entity *rlcP));
+/** @} */
 #    endif

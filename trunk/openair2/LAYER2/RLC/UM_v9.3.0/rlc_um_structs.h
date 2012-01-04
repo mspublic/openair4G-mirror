@@ -31,8 +31,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
@@ -42,54 +40,85 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 #        include "platform_types.h"
 #        include "list.h"
-#        include "rlc_am_constants.h"
+#        include "rlc_um_constants.h"
 #        include "mac_primitives.h"
 #        include "rlc_primitives.h"
 //#ifdef USER_MODE
 #        include "mac_rlc_primitives.h"
 //#endif //USER_MODE
 //-----------------------
+/**
+* @addtogroup _rlc_um_impl_
+* @{
+*/
+/*! \struct  rlc_um_tx_sdu_management_t
+* \brief Structure containing SDU variables related to its segmentation and transmission.
+*/
 typedef struct rlc_um_tx_sdu_management {
-  u8_t             *first_byte;
-  s32_t             sdu_creation_time;
-  u16_t             sdu_remaining_size;
+    u8_t             *first_byte;                 /*!< \brief Pointer on SDU payload. */
+    s32_t             sdu_creation_time;          /*!< \brief Time stamped with mac_xface->frame. */
+    u16_t             sdu_remaining_size;         /*!< \brief Remaining size in bytes to be filled in a PDU. */
   u16_t             sdu_test_remaining_size;
-  u16_t             sdu_segmented_size;
-  u16_t             sdu_size;
+  u16_t             sdu_segmented_size;           /*!< \brief Bytes already segmented in a/several PDU(s). */
+  u16_t             sdu_size;                     /*!< \brief SDU size in bytes. */
 }rlc_um_tx_sdu_management_t;
-//-----------------------
-struct rlc_um_tx_data_pdu_management {
-  union {
-    struct mac_tb_req tb_req;
-    struct mac_tx_tb_management tb_mngt;
-#        ifdef BYPASS_L1
-    struct mac_tb_ind dummy2;
-    struct mac_rx_tb_management dummy3;
-    struct rlc_indication dummy4;
-#        endif
-  } dummy;
-};
-//-----------------------
+/** @} */
+
+/**
+* @addtogroup _rlc_um_segment_impl_
+* @{
+*/
+/*! \struct  rlc_um_pdu_sn_5_t
+* \brief Structure helping coding and decoding the first byte of a UMD PDU.
+*/
 typedef struct rlc_um_pdu_sn_5 {
 /*  u8_t fi:2;
   u8_t e:1;
   u8_t sn:5;*/
-  u8_t     b1;
-  u8_t     data[3];
+  u8_t     b1;      /*!< \brief 1st byte. */
+  u8_t     data[3]; /*!< \brief Following bytes. */
 } __attribute__((__packed__)) rlc_um_pdu_sn_5_t ;
-//-----------------------
+
+/*! \struct  rlc_um_pdu_sn_10_t
+* \brief Structure helping coding and decoding the first 2 bytes of a UMD PDU.
+*/
 typedef struct rlc_um_pdu_sn_10 {
-  u8_t  b1;
-  u8_t  b2;
-  u8_t  data[2];
+    u8_t  b1;      /*!< \brief 1st byte. */
+    u8_t  b2;      /*!< \brief 2nd byte. */
+    u8_t  data[2]; /*!< \brief Following bytes. */
 }__attribute__((__packed__)) rlc_um_pdu_sn_10_t ;
 
+/*! \struct  rlc_am_e_li_t
+* \brief Structure helping coding and decoding LI and e bits in UMD PDUs.
+*/
 typedef struct rlc_um_e_li {
-  u8_t  b1;
-  u8_t  b2;
-  u8_t  b3;
+    u8_t  b1; /*!< \brief 1st byte. */
+    u8_t  b2; /*!< \brief 2nd byte. */
+    u8_t  b3; /*!< \brief 3rd byte. */
 }rlc_um_e_li_t;
-//-----------------------
+/** @} */
+/**
+* @addtogroup _rlc_um_segment_impl_
+* @{
+*/
+/*! \struct  rlc_um_pdu_info_t
+* \brief Structure for storing decoded informations from the header of a UMD PDU.
+*/
+typedef struct rlc_um_pdu_info {
+    u16_t  free_bits:3; /*!< \brief unused bits in bitfield. */
+    u16_t  fi:2;        /*!< \brief Framing Info field. */
+    u16_t  e:1;         /*!< \brief Extension bit field. */
+    u16_t  sn:10;       /*!< \brief Sequence Number field. */
+    u16_t  num_li;      /*!< \brief Number of Length Indicators. */
+    s16_t  li_list[RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU]; /*!< \brief List of Length Indicators. */
+    s16_t  hidden_size; /*!< \brief Part of payload size in bytes that is not included in the sum of LI fields. */;
+    u8_t*  payload;     /*!< \brief Pointer on PDU payload. */
+    s16_t  payload_size;/*!< \brief Size of payload in bytes. */
+    s16_t  header_size; /*!< \brief Size of header in bytes (including SO field and LI fields). */
+} rlc_um_pdu_info_t ;
+/** @} */
+
+
 struct rlc_um_data_req_alloc {  // alloc enought bytes for sdu mngt also
   union {
     struct rlc_um_data_req dummy1;
@@ -97,16 +126,4 @@ struct rlc_um_data_req_alloc {  // alloc enought bytes for sdu mngt also
   } dummy;
 };
 
-typedef struct rlc_um_pdu_info {
-    u16_t  free_bits:3;
-    u16_t  fi:2;
-    u16_t  e:1;
-    u16_t  sn:10;
-    u16_t  num_li;
-    s16_t  li_list[RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU];
-    s16_t  hidden_size;
-    u8_t*  payload;
-    s16_t  payload_size;
-    s16_t  header_size;
-} rlc_um_pdu_info_t ;
 #    endif
