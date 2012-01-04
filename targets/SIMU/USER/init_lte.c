@@ -126,7 +126,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     }
 
     // ULSCH for RA
-    PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0] = new_eNB_ulsch(3,abstraction_flag);
+    PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0] = new_eNB_ulsch(4,abstraction_flag);
     if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0]) {
       msg("Can't get eNB ulsch structures\n");
       exit(-1);
