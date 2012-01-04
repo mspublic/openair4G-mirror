@@ -477,7 +477,6 @@ main (int argc, char **argv)
 
   u16 Nid_cell = 0;
   s32 UE_id, eNB_id, ret;
-  u8 awgn_flag = 0;
 
   // time calibration for soft realtime mode  
   struct timespec time_spec;
@@ -486,6 +485,7 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
+  u8 awgn_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
   FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
@@ -791,17 +791,15 @@ main (int argc, char **argv)
 						       //map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						       oai_emulation.environment_system_config.system_bandwidth_MB,
 						       forgetting_factor,
-						       awgn_flag,
 						       0,
 						       0);
 	}
       else {
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						     (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
-						     awgn_flag,
 						     0,
 						     0);
 	}
@@ -811,11 +809,10 @@ main (int argc, char **argv)
 #endif
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
-						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						   (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						   //Rayleigh1,
 						   oai_emulation.environment_system_config.system_bandwidth_MB,
 						   forgetting_factor,
-						   awgn_flag,
 						   0,
 						   0);
       
@@ -840,7 +837,7 @@ main (int argc, char **argv)
   openair_daq_vars.ue_ul_nb_rb = 2;
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=100;
+    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
@@ -1019,9 +1016,10 @@ main (int argc, char **argv)
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
 	//#ifdef DEBUG_SIM
-	printf ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",
+	printf ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
 	   eNB_id, mac_xface->frame, slot, next_slot >> 1,
-	   PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->rxdataF_ext, PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
+		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	//#endif
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 
@@ -1059,7 +1057,7 @@ main (int argc, char **argv)
 	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
 	      exit(-1);
 	    }
-	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-1))) {
+	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-2))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
