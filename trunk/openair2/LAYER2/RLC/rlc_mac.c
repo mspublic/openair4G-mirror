@@ -8,8 +8,8 @@
 
 //-----------------------------------------------------------------------------
 #define RLC_MAC_C
-//#include "rtos_header.h"
 #include "rlc.h"
+#include "UTIL/LOG/log.h"
 
 #define DEBUG_MAC_INTERFACE
 

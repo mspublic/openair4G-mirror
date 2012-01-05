@@ -28,13 +28,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 *******************************************************************************/
 
 #define RLC_C
-//#include "rtos_header.h"
 #include "rlc.h"
-//#include "mpls.h"
 #include "mem_block.h"
 #include "../MAC/extern.h"
 #include "./AM/rlc_am_util_proto_extern.h"
-//#include "../PDCP/pdcp_proto_extern.h"
+#include "UTIL/LOG/log.h"
 extern void pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP);
 
 #define DEBUG_RLC_PDCP_INTERFACE
@@ -314,7 +312,7 @@ int
 rlc_module_init ()
 {
 //-----------------------------------------------------------------------------
-   msg("[RLC] MODULE INIT\n");
+   LOG_D(RLC, "MODULE INIT\n");
    rlc_rrc_data_ind  = NULL;
    rlc_rrc_data_conf = NULL;
    memset(rlc, 0, sizeof(rlc_t) * MAX_MODULES);
