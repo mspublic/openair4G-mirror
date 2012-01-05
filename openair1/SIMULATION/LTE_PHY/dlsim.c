@@ -19,6 +19,7 @@
 #include "LAYER2/MAC/vars.h"
 
 #include "OCG_vars.h"
+#include "UTIL/LOG/log.h"
 
 #ifdef XFORMS
 #include "forms.h"
