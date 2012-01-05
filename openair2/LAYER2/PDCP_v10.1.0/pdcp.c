@@ -106,6 +106,8 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
     pdu_header.dc = PDCP_DATA_PDU;
     pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
 
+    LOG_I(PDCP, "Sequence number %d is being assigned\n", pdu_header.sn);
+
     /*
      * Fill PDU buffer with the struct's fields
      */
@@ -118,8 +120,8 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
     memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sdu_buffer, sdu_buffer_size);
 
     /* Print octets of outgoing data in hexadecimal form */
-    LOG_D(PDCP, "Following content will be sent over RLC:\n");
-    util_print_hex_octets(PDCP, pdcp_pdu->data, pdcp_pdu_size);
+    // XXX LOG_D(PDCP, "Following content will be sent over RLC:\n");
+    // XXX util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
 
 #ifdef PDCP_UNIT_TEST
     /* 
@@ -205,15 +207,13 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
   /*
    * Check if incoming SDU is long enough to carry a PDU header
    */
-#if 0
   if (sdu_buffer_size < PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) {
-    LOG_W(PDCP, "Incoming SDU is short of size (size:%d)! Ignoring...\n", sdu_buffer_size);
+    LOG_W(PDCP, "Incoming (from RLC) SDU is short of size (size:%d)! Ignoring...\n", sdu_buffer_size);
 #ifndef PDCP_UNIT_TEST
     free_mem_block(sdu_buffer);
 #endif
     return FALSE;
   }
-#endif
 
   /*
    * Parse the PDU placed at the beginning of SDU to check
@@ -248,14 +248,23 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
 #else
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = module_id;
 #endif 
+
+    // XXX Decompression would be done at this point
       
-    // PROCESS OF DECOMPRESSION HERE:
-    memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], &sdu_buffer->data[0], sdu_buffer_size);
+    /*
+     * After checking incoming sequence number PDCP header 
+     * has to be stripped off so here we copy SDU buffer starting 
+     * from its second byte (skipping 0th and 1st octets, i.e. 
+     * PDCP header)
+     */
+    memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], \
+            &sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], \
+            sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
     list_add_tail_eurecom (new_sdu, sdu_list);
 
     /* Print octets of incoming data in hexadecimal form */
-    LOG_D(PDCP, "Following content has been received from RLC:\n");
-    util_print_hex_octets(PDCP, new_sdu->data, sdu_buffer_size + sizeof(pdcp_data_ind_header_t));
+    // XXX LOG_D(PDCP, "Following content has been received from RLC:\n");
+    // XXX util_print_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size + sizeof(pdcp_data_ind_header_t));
 
     /*
      * XXX Following part causes SIGSEGV!
@@ -313,7 +322,7 @@ pdcp_run ()
   
   pdcp_fifo_read_input_sdus();
   // PDCP -> NAS traffic
-#ifndef TEST_PDCP
+#ifndef PDCP_UNIT_TEST
   pdcp_fifo_flush_sdus();
 #endif
 }
@@ -375,8 +384,7 @@ pdcp_module_init ()
     LOG_E(PDCP, "Cannot create NAS2PDCP fifo %d (ERROR %d)\n", NAS2PDCP_FIFO, ret);
 
     return -1;
-  }
-  else{
+  } else {
     LOG_I(PDCP, "Created NAS2PDCP fifo %d\n", NAS2PDCP_FIFO);
     rtf_reset(NAS2PDCP_FIFO);
   }
@@ -395,7 +403,6 @@ void
 pdcp_module_cleanup ()
 //-----------------------------------------------------------------------------
 {
-
 #ifndef USER_MODE
   rtf_destroy(NAS2PDCP_FIFO);
   rtf_destroy(PDCP2NAS_FIFO);
@@ -408,27 +415,38 @@ pdcp_layer_init ()
 {
 //-----------------------------------------------------------------------------
   unsigned int i,j,k; 
-    list_init (&pdcp_sdu_list, NULL);
 
-    LOG_I(PDCP, "pdcp_layer_init \n ");
-    pdcp_output_sdu_bytes_to_write=0;
-    pdcp_output_header_bytes_to_write=0;
-    pdcp_input_sdu_remaining_size_to_read=0;
-    //    for (i=0;i<NB_INST;i++)
-    for (i=0;i<NB_UE_INST;i++)
-      for (k=0;k<NB_CNX_CH;k++)
-	for(j=0;j<NB_RAB_MAX;j++){
-	  Pdcp_stats_tx[i][k][j]=0;
-	  Pdcp_stats_tx_bytes[i][k][j]=0;
-	  Pdcp_stats_tx_bytes_last[i][k][j]=0;
-	  Pdcp_stats_tx_rate[i][k][j]=0;
-	  
-	  Pdcp_stats_rx[i][k][j]=0;
-	  Pdcp_stats_rx_bytes[i][k][j]=0;
-	  Pdcp_stats_rx_bytes_last[i][k][j]=0;
-	  Pdcp_stats_rx_rate[i][k][j]=0;
-	}
+  /*
+   * Initialize SDU list
+   */
+  list_init(&pdcp_sdu_list, NULL);
 
+  LOG_I(PDCP, "PDCP layer has been initialized\n");
+
+  pdcp_output_sdu_bytes_to_write=0;
+  pdcp_output_header_bytes_to_write=0;
+  pdcp_input_sdu_remaining_size_to_read=0;
+
+  for (i=0;i<NB_UE_INST;i++) {
+    for (k=0;k<NB_CNX_CH;k++) {
+      for(j=0;j<NB_RAB_MAX;j++) {
+        Pdcp_stats_tx[i][k][j]=0;
+        Pdcp_stats_tx_bytes[i][k][j]=0;
+        Pdcp_stats_tx_bytes_last[i][k][j]=0;
+        Pdcp_stats_tx_rate[i][k][j]=0;
+
+        Pdcp_stats_rx[i][k][j]=0;
+        Pdcp_stats_rx_bytes[i][k][j]=0;
+        Pdcp_stats_rx_bytes_last[i][k][j]=0;
+        Pdcp_stats_rx_rate[i][k][j]=0;
+
+	/*
+	 * Initialize PDCP entities (see pdcp_t at pdcp.h)
+	 */
+        pdcp_config_req(i+k, j);
+      }
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
