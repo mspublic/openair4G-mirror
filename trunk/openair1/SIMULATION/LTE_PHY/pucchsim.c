@@ -109,7 +109,6 @@ int main(int argc, char **argv) {
   unsigned char eNB_id = 0;
   u16 Nid_cell=0;
 
-  u8 awgn_flag=0;
   int n_frames=1;
   channel_desc_t *UE2eNB;
   u32 nsymb,tx_lev,tx_lev_dB;
@@ -158,7 +157,7 @@ int main(int argc, char **argv) {
 	{
 	case 'a':
 	  printf("Running AWGN simulation\n");
-	  awgn_flag = 1;
+	  channel_model = AWGN;
 	  ntrials=1;
 	  break;
 	case 'f':
@@ -373,7 +372,6 @@ int main(int argc, char **argv) {
 				channel_model,
 				BW,
 				0.0,
-				awgn_flag,
 				0,
 				0);
   
@@ -483,22 +481,8 @@ int main(int argc, char **argv) {
   
   for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
-      if (awgn_flag == 0) {
 	s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
 	s_im[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
-      }
-      else {
-	for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
-	  if (aa==0) {
-	    r_re[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
-	    r_im[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
-	  }
-	  else {
-	    r_re[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
-	    r_im[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
-	  }
-	}
-      }
     }
   }
 
@@ -521,35 +505,10 @@ int main(int argc, char **argv) {
     for (trial=0; trial<n_frames; trial++) {
       
 
-      pucch_sinr=0.0;
-      if (abstraction_flag==1)
-	printf("*********************** trial %d ***************************\n",trial);
 
-      while (pucch_sinr>-2.0) {
-
-	if (awgn_flag == 0) {	
-
-	  multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-	  /*	  
-	  if (abstraction_flag == 1) {
-	    freq_channel(UE2eNB,25);
-	    pucch_sinr = compute_pucch_sinr(UE2eNB,NULL,NULL,SNR,SNR+interf1,SNR+interf2,25);
-	    printf("total_sinr %f\n",compute_sinr(UE2eNB,UE2eNB1,UE2eNB2,SNR,SNR+interf1,SNR+interf2,25));
-	    printf("pucch_sinr %f => BLER %f\n",pucch_sinr,pucch_bler(pucch_sinr));
-	  }
-	  else {
-	    pucch_sinr = -3.0;
-	  }
-	  */
-	  pucch_sinr = -3.0;
-	  //	  exit(-1);
-	} // awgn_flag
-	else {
-	  pucch_sinr = -3.0;
-	}
-      }
-      
+      multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
+			2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+	       
       sigma2_dB = N0;//10*log10((double)tx_lev) - SNR;
       tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);
       if (n_frames==1)
