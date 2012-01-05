@@ -1044,6 +1044,14 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
 	      u8 subframe,
 	      u8 eNB_id);
 
+
+/** \brief  This routine provides the relationship between a PHICH TXOp and its corresponding PUSCH subframe (Table 8.3.-1 from 36.213).
+   @param frame_parms Pointer to DL frame configuration parameters
+   @param subframe Subframe of received/transmitted PHICH
+*/
+u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
+
+
 void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
 void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats);

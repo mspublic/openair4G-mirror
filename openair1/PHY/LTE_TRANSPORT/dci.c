@@ -1536,7 +1536,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
   
-  log2_maxh = 5+(log2_approx(avgs)/2);
+  log2_maxh = 2+(log2_approx(avgs)/2);
 #ifdef DEBUG_PHY
   msg("[PDCCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgP[0],avgs);
 #endif
@@ -1807,10 +1807,10 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 
   num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
-  //printf("Frame %d subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
-  //	 mac_xface->frame,subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
+  //  printf("Frame %d subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
+  //  	 mac_xface->frame,subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
   generate_pcfich(num_pdcch_symbols,
-		  amp*3,
+		  amp,
 		  frame_parms,
 		  txdataF,
 		  subframe);
@@ -1870,7 +1870,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   msg("[PHY] PDCCH Modulation\n");
 #endif
   // Now do modulation
-  gain_lin_QPSK = (s16)((2*amp*ONE_OVER_SQRT2_Q15)>>15);  
+  gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   e_ptr = e;
   if (frame_parms->mode1_flag) { //SISO
 

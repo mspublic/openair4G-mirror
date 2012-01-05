@@ -528,6 +528,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
   if ((next_slot%2)==0) {
+    //    printf("[PHY][UE] Frame %d, subframe %d Clearing TX buffer\n",mac_xface->frame,next_slot>>1);
     if ((abstraction_flag==0)) {      
       for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
 	//	printf("[PHY][UE][RARPROC] frame %d subframe %d Clearing TX buffer\n",mac_xface->frame,next_slot>>1);
@@ -537,7 +538,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #else
 	memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][next_slot*(frame_parms->samples_per_tti>>1)],
 	       0,(frame_parms->samples_per_tti)*sizeof(s32));
+	memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*7*(frame_parms->ofdm_symbol_size)],
+	       0,14*(frame_parms->ofdm_symbol_size)*sizeof(s32));
 #endif
+	if ((next_slot>>1) == 8)
+	  write_output("txsigF8_pre.m","txsF8_pre", &phy_vars_ue->lte_ue_common_vars.txdataF[0][14*phy_vars_ue->lte_frame_parms.ofdm_symbol_size*8],
+		       phy_vars_ue->lte_frame_parms.ofdm_symbol_size*14,1,1);	      
       }
     }
 
@@ -786,7 +792,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      mac_xface->frame, next_slot>>1,
 	      n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1]);
 	  if (SR_payload>0) {
-	    msg("[PHY][UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1 (SR for PUSCH), n1_pucch %d\n",
+	    msg("[PHY][UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b (with SR for PUSCH), n1_pucch %d\n",
 		phy_vars_ue->Mod_id, 
 		phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 		mac_xface->frame, next_slot>>1,
@@ -863,7 +869,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  
 	  for (aa=0; aa<1; aa++) {
 	    if (frame_parms->Ncp == 1) 
-	      PHY_ofdm_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input
+	      PHY_ofdm_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size],        // input
 			   &phy_vars_ue->lte_ue_common_vars.txdata[aa][frame_parms->samples_per_tti*subframe],         // output
 			   frame_parms->log2_symbol_size,                // log2_fft_size
 			   nsymb,                 // number of symbols
@@ -872,14 +878,31 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			   frame_parms->rev,           // bit-reversal permutation
 			   CYCLIC_PREFIX);
 	    else
-	      normal_prefix_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],
+	      normal_prefix_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size],
 				&phy_vars_ue->lte_ue_common_vars.txdata[aa][frame_parms->samples_per_tti*subframe],
 				nsymb,
 				&phy_vars_ue->lte_frame_parms);
-	    
+	    /*
+	    if ((next_slot>>1) == 8) {
+	      printf("Symbol 0 %p (offset %d) base %p\n", 
+		     &phy_vars_ue->lte_ue_common_vars.txdataF[0][nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe],
+		     nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe,
+		     phy_vars_ue->lte_ue_common_vars.txdataF[0]);
+	      write_output("txsigF8.m","txsF8", &phy_vars_ue->lte_ue_common_vars.txdataF[0][nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe],
+			   phy_vars_ue->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);	      
+	      write_output("txsig8.m","txs8", &phy_vars_ue->lte_ue_common_vars.txdata[0][phy_vars_ue->lte_frame_parms.samples_per_tti*subframe],
+			   phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);	      
+	    }
+	    */
 #ifndef OFDMA_ULSCH
 	    apply_7_5_kHz(phy_vars_ue,subframe<<1);
 	    apply_7_5_kHz(phy_vars_ue,1+(subframe<<1));
+	    /*
+	    if ((next_slot>>1) == 8) {
+	      write_output("txsig8_mod.m","txs8_mod", &phy_vars_ue->lte_ue_common_vars.txdata[0][phy_vars_ue->lte_frame_parms.samples_per_tti*subframe],
+			   phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);	      
+	    }
+	    */
 #endif
 	  }
 	} // generate_ul_signal == 1
@@ -1268,7 +1291,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   unsigned int dci_cnt, i;
   //DCI_PDU *DCI_pdu;
   u16 ra_RNTI;
-  u8 harq_pid = phich_subframe_to_harq_pid(&phy_vars_ue->lte_frame_parms,last_slot>>1);
+  u8 harq_pid;
   s8 UE_id;
 
   /*
@@ -1287,7 +1310,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     dci_cnt = dci_decoding_procedure(phy_vars_ue,
 				     dci_alloc_rx,
 				     eNB_id,last_slot>>1);
-    
+    //    msg("[PHY][UE  %d][PUSCH] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1);
+ 
     if (is_phich_subframe(&phy_vars_ue->lte_frame_parms,last_slot>>1)) {
       rx_phich(phy_vars_ue,
 	       last_slot>>1,eNB_id);
@@ -1316,6 +1340,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     if (UE_id>=0) {
       //      msg("Checking PHICH for UE  %d (eNB %d)\n",UE_id,i);
       if (is_phich_subframe(&phy_vars_ue->lte_frame_parms,last_slot>>1)) {
+	harq_pid = phich_subframe_to_harq_pid(&phy_vars_ue->lte_frame_parms,last_slot>>1);	
 	if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->status == ACTIVE) {
 	  if (PHY_vars_eNB_g[i]->ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_ACK==0) { // NAK
 	    if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
@@ -1594,7 +1619,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
   u8 i_mod = 0;
-
+  
+  msg("UE_RX 1 last_slot %d \n",last_slot);
 
   if (phy_vars_ue->lte_frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
@@ -1609,7 +1635,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
   if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_S) 
     if ((last_slot%2)==0)
-      n_symb = 3;
+      n_symb = 5;//3;
     else
       n_symb = 0;
   else
@@ -1617,7 +1643,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
   // RX processing of symbols in last_slot
   for (l=0;l<n_symb;l++) {
-
+    msg("UE_RX 2 : l %d\n",l);
     if (abstraction_flag == 0) {
       slot_fep(phy_vars_ue,
 	       l,
@@ -2101,12 +2127,13 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       
     }
 
+    msg("UE_RX 3 : l %d\n",l);
     if (((last_slot%2)==0) && (l==pilot1))  {
-      /*
-#ifdef DEBUG_PHY_PROC
-      debug_msg("[PHY][UE  %d] Frame %d, slot %d: Calling pdcch procedures (eNB %d\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,eNB_id);
-#endif
-      */
+      
+      //#ifdef DEBUG_PHY_PROC
+      msg("[PHY][UE  %d] Frame %d, slot %d: Calling pdcch procedures (eNB %d\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,eNB_id);
+      //#endif
+      
       if (lte_ue_pdcch_procedures(eNB_id,last_slot,phy_vars_ue,abstraction_flag) == -1) {
 	/*
 #ifdef DEBUG_PHY_PROC

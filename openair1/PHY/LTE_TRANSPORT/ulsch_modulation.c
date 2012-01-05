@@ -256,7 +256,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
     return;
   }
 
-  if (harq_pid > 2) {
+  if (harq_pid > 3) {
     msg("ulsch_modulation.c: Illegal harq_pid %d\n",harq_pid);
     return;
   }
@@ -726,6 +726,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
     re_offset0++;
   }
   //  msg("re_offset0 %d\n",re_offset0);
+
+
   for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = re_offset0;
     symbol_offset = (u32)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
@@ -758,6 +760,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
     re_offset0++;
   }
   //    msg("re_offset0 %d\n",re_offset0);
+  //  printf("txdataF %p\n",&txdataF[0][0]);
   for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = re_offset0;
     symbol_offset = (u32)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
@@ -774,7 +777,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       for (i=0;i<Msc_PUSCH;i++,j++) {
 
 #ifdef DEBUG_ULSCH_MODULATION
-	msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1]);
+	msg("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1],&txptr[re_offset]);
 #endif //DEBUG_ULSCH_MODULATION
 	txptr[re_offset++] = ulsch->z[j];
 

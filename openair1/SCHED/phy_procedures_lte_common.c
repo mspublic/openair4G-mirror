@@ -315,7 +315,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	   unsigned char subframe,
 	   unsigned char *o_ACK) {
 
-  //  printf("get_ack: SF %d\n",subframe);
+  printf("get_ack: SF %d\n",subframe);
   u8 status=0;
   
   if (frame_parms->frame_type == 0) {
@@ -471,13 +471,16 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
   }
 }
 
+lte_subframe_t get_subframe_direction(u8 Mod_id,u8 subframe) {
+
+  return(subframe_select(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,subframe));
+
+}
+
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 
-  if (frame_parms->frame_type == 0)  // FDD
-    // harq_pid is (2*(frame_number mod 4) + subframe mod 8)
-    return(((mac_xface->frame<<1) + subframe)&7); 
-  else // TDD
-    return((subframe+2)%10);
+  //  printf("phich_subframe_to_harq_pid.c: subframe %d\n",subframe);
+  return(subframe2harq_pid(frame_parms,phich_subframe2_pusch_subframe(frame_parms,subframe)));
 }
 
 unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
