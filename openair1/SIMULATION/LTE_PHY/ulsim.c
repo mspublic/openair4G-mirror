@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 
   int eNB_id = 0;
   int UE_id = 0;
-  unsigned char nb_rb=2,first_rb=0,mcs=4,awgn_flag=0,round=0,bundling_flag=1;
+  unsigned char nb_rb=2,first_rb=0,mcs=4,round=0,bundling_flag=1;
   unsigned char l;
   SCM_t channel_model=Rayleigh1_corr;
 
@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
   while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:")) != -1) {
     switch (c) {
     case 'a':
-      awgn_flag = 1;
+      channel_model = AWGN;
       break;
     case 'b':
       bundling_flag = 0;
@@ -419,7 +419,6 @@ int main(int argc, char **argv) {
 				channel_model,
 				BW,
 				forgetting_factor,
-				awgn_flag,
 				0,
 				0);
   PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(3,0);
@@ -732,23 +731,14 @@ int main(int argc, char **argv) {
       
 	for (i=0;i<PHY_vars_eNB->lte_frame_parms.samples_per_tti;i++) {
 	  for (aa=0;aa<1;aa++) {
-	    if (awgn_flag == 0) {
-	      s_re[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)]);
-	      s_im[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
-	    }
-	    else {
-	      r_re[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)]);
-	      r_im[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
-	    }
+	    s_re[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)]);
+	    s_im[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
 	  }
 	}
       
-	if (awgn_flag == 0) {	
-	  multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-			    PHY_vars_eNB->lte_frame_parms.samples_per_tti,0);
+	multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
+			  PHY_vars_eNB->lte_frame_parms.samples_per_tti,0);
 	
-	}
-
 	if (n_frames==1)
 	  printf("Sigma2 %f (sigma2_dB %f), tx_gain %f (%f dB)\n",sigma2,sigma2_dB,tx_gain,20*log10(tx_gain));
 	for (i=0; i<PHY_vars_eNB->lte_frame_parms.samples_per_tti; i++) {
