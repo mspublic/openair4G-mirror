@@ -28,7 +28,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 *******************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_REASSEMBLY_C
-//#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #ifdef USER_MODE
@@ -39,6 +38,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "rlc_primitives.h"
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
+#include "UTIL/LOG/log.h"
 
 #define DEBUG_RLC_UM_REASSEMBLY 1
 #define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
@@ -62,9 +62,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
   int             index;
 #endif
 
-#ifdef DEBUG_RLC_UM_REASSEMBLY
-  msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] reassembly()  %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, lengthP);
-#endif
+  LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] reassembly()  %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, lengthP);
 
   if (lengthP <= 0) {
       return;
@@ -98,12 +96,12 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
       rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write] = 0;
 #endif
     } else {
-      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] [max_sdu size %d] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_max_size);
+      LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] [max_sdu size %d] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_max_size);
       // erase  SDU
       rlcP->output_sdu_size_to_write = 0;
     }
   } else {
-    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY]ERROR  OUTPUT SDU IS NULL\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+    LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY]ERROR  OUTPUT SDU IS NULL\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
   }
 }
 //-----------------------------------------------------------------------------
@@ -117,8 +115,7 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
 #endif*/
 
   if ((rlcP->output_sdu_in_construction)) {
-#ifdef DEBUG_RLC_UM_SEND_SDU
-    msg ("\n\n\n[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] %d bytes sdu %p\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction);
+    LOG_D(RLC, "\n\n\n[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] %d bytes sdu %p\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction);
 /*#ifndef USER_MODE
   rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
   sec = (rlc_um_time_us/ 1000000);
@@ -127,12 +124,10 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
   usec =  rlc_um_time_us % 1000000;
   msg ("[RLC_UM_LITE][RB  %d] at time %2d:%2d.%6d\n", rlcP->rb_id, min, sec , usec);
 #endif*/
-#endif
+
     if (rlcP->output_sdu_size_to_write > 0) {
-#ifdef DEBUG_RLC_STATS
         rlcP->rx_sdus += 1;
-#endif
-        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ASCII=%s\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->output_sdu_in_construction->data);
+        //msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ASCII=%s\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->output_sdu_in_construction->data);
 /*#ifdef USER_MODE
         if (strncmp(tcip_sdu, (char*)(&rlcP->output_sdu_in_construction->data[0]), strlen(tcip_sdu)) == 0) {
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] OK SDU TCP-IP\n\n\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
@@ -153,12 +148,8 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
 #endif
         rlcP->output_sdu_in_construction = NULL;
     } else {
-
-      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ERROR SIZE <= 0 ... DO NOTHING, SET SDU SIZE TO 0\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame);
-      //msg("[RLC_UM][MOD %d] Freeing mem_block ...\n", rlcP->module_id);
-      //free_mem_block (rlcP->output_sdu_in_construction);
+      LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ERROR SIZE <= 0 ... DO NOTHING, SET SDU SIZE TO 0\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame);
     }
-
     rlcP->output_sdu_size_to_write = 0;
   }
 }
