@@ -204,9 +204,12 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
       ulsch->harq_processes[harq_pid]->round++;
     }
 
-
-    ulsch->f_pusch = delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC] +
-      mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id);
+    // initialize power control based on PRACH power
+	ulsch->f_pusch = delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC] +
+	mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id);
+	msg("[PHY][UE %d][PUSCH PC] Initializing f_pusch to %d dB, TPC %d (delta_PUSCH_msg2 %d dB), deltaP_rampup %d dB\n",
+	    phy_vars_ue->Mod_id,ulsch->f_pusch,ulsch->harq_processes[harq_pid]->TPC,delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC],
+	    mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id));
     
 
 #ifdef DEBUG_RAR

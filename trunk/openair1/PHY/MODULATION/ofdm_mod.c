@@ -21,7 +21,7 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
   //  printf("nsymb %d\n",nsymb);
   for (i=0;i<2*nsymb/frame_parms->symbols_per_tti;i++) {
     //    printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),
-    //	   txdata+(i*(frame_parms->samples_per_tti>>1)));
+    //    	   txdata+(i*(frame_parms->samples_per_tti>>1)));
     
     PHY_ofdm_mod(txdataF+(i*NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti>>1),        // input
 		 txdata+(i*frame_parms->samples_per_tti>>1),         // output

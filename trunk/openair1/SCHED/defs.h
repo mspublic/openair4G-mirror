@@ -210,6 +210,13 @@ void phy_procedures_eNB_S_RX(u8 last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstract
 */
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
+/*!
+  \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
+  @param Mod_id Index of eNB
+  @param subframe Subframe index
+  @returns Subframe type (DL,UL,S) 
+*/
+lte_subframe_t get_subframe_direction(u8 Mod_id, u8 subframe);
 
 /*!
   \brief Function to indicate PHICH transmission subframes.  Implements Table 9.1.2-1 for TDD.

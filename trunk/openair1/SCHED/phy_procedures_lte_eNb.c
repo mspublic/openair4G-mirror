@@ -179,7 +179,8 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 
   LTE_eNB_DLSCH_t *DLSCH_ptr;  
   LTE_eNB_ULSCH_t *ULSCH_ptr;  
-  u8 subframe_m4,subframe_p4; 
+  //  u8 subframe_m4;
+  u8 ulsch_subframe; 
   u8 i;
   s8 UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id]);
 
@@ -191,31 +192,40 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 
   if (ul_flag == 0)  {// this is a DL request
     DLSCH_ptr = PHY_vars_eNB_g[Mod_id]->dlsch_eNB[(u32)UE_id][0];
-    
+    /*    
     if (subframe<4)
       subframe_m4 = subframe+6;
     else
       subframe_m4 = subframe-4;
+    */
 #ifdef DEBUG_PHY_PROC
-    //msg("get_ue_active_harq_pid: subframe_m4 %d\n",subframe_m4);
+    msg("[PHY][eNB] get_ue_active_harq_pid: Frame %d subframe %d, current harq_id %d\n",
+	mac_xface->frame,subframe,DLSCH_ptr->harq_ids[subframe]);
 #endif
     // switch on TDD or FDD configuration here later
     *harq_pid = DLSCH_ptr->harq_ids[subframe];
     if ((*harq_pid<DLSCH_ptr->Mdlharq) && 
-	((DLSCH_ptr->harq_processes[*harq_pid]->round > 0)))
+	((DLSCH_ptr->harq_processes[*harq_pid]->round > 0))) {
+
       *round = DLSCH_ptr->harq_processes[*harq_pid]->round;
-    else if ((subframe_m4==5) || (subframe_m4==6)) {
-      *harq_pid = 0;//DLSCH_ptr->harq_ids[subframe_m4];//Ankit
-      *round    = DLSCH_ptr->harq_processes[*harq_pid]->round;
+      msg("round %d\n",*round);
+    
+    //    else if ((subframe_m4==5) || (subframe_m4==6)) {
+    //      *harq_pid = 0;//DLSCH_ptr->harq_ids[subframe_m4];//Ankit
+    //     *round    = DLSCH_ptr->harq_processes[*harq_pid]->round;
+    //    }
     }
     else {
       // get first free harq_pid (i.e. round 0)
       for (i=0;i<DLSCH_ptr->Mdlharq;i++) {
 	if (DLSCH_ptr->harq_processes[i]!=NULL) {
 	  if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
-	    *harq_pid = 0;//i; //(Ankit)
+	    *harq_pid = i;//0;//i; //(Ankit)
 	    *round = 0;
 	    return(0);
+	  }
+	  else {
+	    msg("process %d is active\n",i);
 	  }
 	}
 	else {
@@ -228,12 +238,10 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
   else {  // This is a UL request
 
     ULSCH_ptr = PHY_vars_eNB_g[Mod_id]->ulsch_eNB[(u32)UE_id];
-    subframe_p4 = subframe+4;
-    if (subframe_p4>9)
-      subframe_p4-=10;
+    ulsch_subframe = pdcch_alloc2ul_subframe(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,subframe);
 
     // Note this is for TDD configuration 3,4,5 only
-    *harq_pid = subframe_p4-2;
+    *harq_pid = subframe2harq_pid(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,ulsch_subframe);
     *round    = ULSCH_ptr->harq_processes[*harq_pid]->round;
     msg("[PHY][eNB %d][PUSCH %d] Frame %d subframe %d Checking HARQ, round %d\n",Mod_id,*harq_pid,mac_xface->frame+((subframe==0)?1:0),subframe,*round);
   }
@@ -933,7 +941,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	}
 #ifdef DEBUG_PHY_PROC
 	msg("[PHY][eNB %d][PUSCH %d] Frame %d subframe %d Generated format0 DCI (rnti %x, dci %x) (DCI pos %d/%d), aggregation %d\n",
-	    phy_vars_eNB->Mod_id, subframe2_ul_harq(&phy_vars_eNB->lte_frame_parms,next_slot>>1),
+	    phy_vars_eNB->Mod_id, subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1)),
 	    mac_xface->frame+(((next_slot>>1)==0)?1:0), 
 	    next_slot>>1,DCI_pdu->dci_alloc[i].rnti,
 	    *(unsigned int *)&DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1287,12 +1295,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     if (is_phich_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1)) {
 
 	msg("[PHY][eNB %d] Frame %d, subframe %d: Calling generate_phich_top\n",phy_vars_eNB->Mod_id,mac_xface->frame, next_slot>>1);
-	generate_phich_top(phy_vars_eNB,
-			   next_slot>>1,
-			   1024,
-			   sect_id,
-			   abstraction_flag);
-      }
+	for (sect_id=0;sect_id<number_of_cards;sect_id++) {
+	  generate_phich_top(phy_vars_eNB,
+			     next_slot>>1,
+			     AMP,
+			     sect_id,
+			     abstraction_flag);
+	}
+    }
   }
 
 
@@ -1599,12 +1609,12 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   u8 UE_id;
 
   if (abstraction_flag == 0) {
-    /*
+    
     msg("[PHY][eNB %d][RARPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
 	mac_xface->frame,subframe,
 	dB_fixed(signal_energy(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
 			     512)) - phy_vars_eNB->rx_total_gain_eNB_dB);
-    */
+    
     rx_prach(phy_vars_eNB,
 	     subframe,
 	     preamble_energy_list,
@@ -1896,7 +1906,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
 #ifdef DEBUG_PHY_PROC
-      msg("[PHY][eNB %d][PUSCH %d] frame %d subframe %d RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
+      msg("[PHY][eNB %d][PUSCH %d][RARPROC] frame %d subframe %d RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
 	  phy_vars_eNB->Mod_id,harq_pid,
 	  mac_xface->frame,last_slot>>1,
 	  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[0]),
@@ -2172,7 +2182,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		phy_vars_eNB->ulsch_eNB[i]->rnti,mac_xface->frame,last_slot>>1);
 	    mac_xface->SR_indication(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[i][0]->rnti,last_slot>>1);
 	  }
-	}
+	} // do_SR==1
       
 	if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
 	  return;
@@ -2198,7 +2208,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				    last_slot>>1);
 #endif
 	  }	
-	}
+	} // FDD
 	else {  //TDD
 	
 	  bundling_flag = phy_vars_eNB->pucch_config_dedicated[i].tdd_AckNackFeedbackMode;
