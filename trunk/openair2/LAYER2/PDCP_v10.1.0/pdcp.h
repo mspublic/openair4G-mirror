@@ -84,6 +84,10 @@ typedef struct pdcp_t {
 /*
  * Following symbolic constant alters the behaviour of PDCP 
  * and makes it linked to PDCP test code under targets/TEST/PDCP/
+ *
+ * For the version at SVN repository this should be UNDEFINED!
+ * XXX And later this should be configured through the Makefile 
+ * under targets/TEST/PDCP/
  */
 #undef PDCP_UNIT_TEST
 
