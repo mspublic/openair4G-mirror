@@ -38,6 +38,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/extern.h"
+#include "UTIL/LOG/log.h"
 
 #define TRACE_RLC_AM_FREE_SDU
 //-----------------------------------------------------------------------------
@@ -64,7 +65,7 @@ void rlc_am_free_in_sdu(rlc_am_entity_t *rlcP, unsigned int index_in_bufferP)
         }
     }
 #ifdef TRACE_RLC_AM_FREE_SDU
-    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FREE SDU] SDU INDEX %03d current_sdu_index=%d next_sdu_index=%d nb_sdu_no_segmented=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, index_in_bufferP, rlcP->current_sdu_index, rlcP->next_sdu_index, rlcP->nb_sdu_no_segmented);
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FREE SDU] SDU INDEX %03d current_sdu_index=%d next_sdu_index=%d nb_sdu_no_segmented=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, index_in_bufferP, rlcP->current_sdu_index, rlcP->next_sdu_index, rlcP->nb_sdu_no_segmented);
 #endif
 }
 // called when segmentation is done

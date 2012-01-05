@@ -223,7 +223,7 @@ typedef struct rlc_am_pdu_info {
 * @addtogroup _rlc_am_timers_impl_
 * @{
 */
-/*! \struct  rlc_am_pdu_info_t
+/*! \struct  rlc_am_timer_t
 * \brief Generic structure for implementing a timer.
 */
 typedef struct rlc_am_timer {

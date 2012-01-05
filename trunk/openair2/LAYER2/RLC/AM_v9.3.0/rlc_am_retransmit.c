@@ -34,6 +34,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "rlc_am.h"
 #include "rlc.h"
 #include "LAYER2/MAC/extern.h"
+#include "UTIL/LOG/log.h"
 #define TRACE_RLC_AM_RESEGMENT
 #define TRACE_RLC_AM_FORCE_TRAFFIC
 #define TRACE_RLC_AM_NACK
@@ -88,7 +89,7 @@ void rlc_am_nack_pdu (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_t s
             rlcP->first_retrans_pdu_sn = snP;
         }
 #ifdef TRACE_RLC_AM_NACK
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][NACK-PDU] NACK PDU SN %04d previous retx_count %d  1ST_RETRANS_PDU %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].retx_count, rlcP->first_retrans_pdu_sn);
+        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][NACK-PDU] NACK PDU SN %04d previous retx_count %d  1ST_RETRANS_PDU %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].retx_count, rlcP->first_retrans_pdu_sn);
 #endif
         rlcP->pdu_retrans_buffer[snP].flags.retransmit = 1;
 
@@ -117,7 +118,7 @@ void rlc_am_nack_pdu (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_t s
     }
 #ifdef TRACE_RLC_AM_NACK
     else {
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][NACK-PDU] ERROR NACK MISSING PDU SN %05d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP);
+        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][NACK-PDU] ERROR NACK MISSING PDU SN %05d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP);
         assert(2==3);
     }
 #endif
@@ -137,7 +138,7 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u16_t snP)
         free_mem_block(mb);
         rlcP->pdu_retrans_buffer[snP].mem_block = NULL;
 #ifdef TRACE_RLC_AM_ACK
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] ACK PDU SN %05d previous retx_count %d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].retx_count);
+        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] ACK PDU SN %05d previous retx_count %d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].retx_count);
 #endif
         rlcP->retrans_num_pdus  -= 1;
         rlcP->retrans_num_bytes -= rlcP->pdu_retrans_buffer[snP].header_and_payload_size;
@@ -180,7 +181,7 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u16_t snP)
 
             rlcP->vt_ms   = (rlcP->vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
 #ifdef TRACE_RLC_AM_ACK
-            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED VT(A) %04d VT(MS) %04d  VT(S) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_ms, rlcP->vt_s);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED VT(A) %04d VT(MS) %04d  VT(S) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_ms, rlcP->vt_s);
 #endif
         }
         if (snP == rlcP->first_retrans_pdu_sn) {
@@ -188,7 +189,7 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u16_t snP)
                 rlcP->first_retrans_pdu_sn = (rlcP->first_retrans_pdu_sn  + 1) & RLC_AM_SN_MASK;
                 if (rlcP->pdu_retrans_buffer[rlcP->first_retrans_pdu_sn].retx_count >= 0) {
 #ifdef TRACE_RLC_AM_ACK
-                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED  first_retrans_pdu_sn -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->first_retrans_pdu_sn);
+                    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED  first_retrans_pdu_sn -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->first_retrans_pdu_sn);
 #endif
                     break;
                 }
@@ -196,13 +197,13 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u16_t snP)
             if (rlcP->vt_s == rlcP->first_retrans_pdu_sn) {
                 rlcP->first_retrans_pdu_sn = -1;
 #ifdef TRACE_RLC_AM_ACK
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED  first_retrans_pdu_sn -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->first_retrans_pdu_sn);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED  first_retrans_pdu_sn -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->first_retrans_pdu_sn);
 #endif
             }
         }
     } else {
 #ifdef TRACE_RLC_AM_ACK
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] WARNING ACK PDU SN %05d -> NO PDU TO ACK\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP);
+        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] WARNING ACK PDU SN %05d -> NO PDU TO ACK\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP);
 #endif
         if (mb != NULL) {
             free_mem_block(mb);
@@ -221,7 +222,7 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u16_t snP)
 
                 rlcP->vt_ms   = (rlcP->vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
 #ifdef TRACE_RLC_AM_ACK
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED VT(A) %04d VT(MS) %04d  VT(S) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_ms, rlcP->vt_s);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][ACK-PDU] UPDATED VT(A) %04d VT(MS) %04d  VT(S) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_ms, rlcP->vt_s);
 #endif
             }
         }
@@ -318,7 +319,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
             int stop_offset        = rlcP->pdu_retrans_buffer[snP].nack_so_stop;
 
 #ifdef TRACE_RLC_AM_RESEGMENT
-            msg ("\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ORIGINAL PDU SN %04d:\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP);
+            LOG_D(RLC, "\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ORIGINAL PDU SN %04d:\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, snP);
             rlc_am_display_data_pdu_infos(rlcP, &pdu_info);
 #endif
 
@@ -329,7 +330,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                 rlcP->pdu_retrans_buffer[snP].nack_so_stop = rlcP->pdu_retrans_buffer[snP].payload_size - 1;
                 stop_offset = rlcP->pdu_retrans_buffer[snP].nack_so_stop;
 #ifdef TRACE_RLC_AM_RESEGMENT
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] UPDATED RETRANS PDU SN %04d nack_so_stop FROM 0x7FFF to %05d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  snP, stop_offset);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] UPDATED RETRANS PDU SN %04d nack_so_stop FROM 0x7FFF to %05d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  snP, stop_offset);
 #endif
             }
 
@@ -380,13 +381,13 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
             assert(max_copy_payload_size > 0);
             assert(test_pdu_remaining_size > 0);
 #ifdef TRACE_RLC_AM_RESEGMENT
-            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] HOLE FOUND SO %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  start_offset, stop_offset);
-            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ORIGINAL FI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (pdu_original->b1 & 0x18) >> 3);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] HOLE FOUND SO %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  start_offset, stop_offset);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ORIGINAL FI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (pdu_original->b1 & 0x18) >> 3);
 #endif
             // second constraint the size of the pdu requested by MAC layer
             if (max_copy_payload_size > test_pdu_remaining_size) {
 #ifdef TRACE_RLC_AM_RESEGMENT
-                  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] CUT max_copy_payload_size with test_pdu_remaining_size %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_pdu_remaining_size);
+                  LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] CUT max_copy_payload_size with test_pdu_remaining_size %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_pdu_remaining_size);
 #endif
                   max_copy_payload_size = test_pdu_remaining_size;
             }
@@ -400,15 +401,15 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
             //.find the li corresponding to the nack_so_start (start_offset)
             if (pdu_info.num_li > 0) {
                 #ifdef TRACE_RLC_AM_RESEGMENT
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ORIGINAL NUM LI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  pdu_info.num_li);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ORIGINAL NUM LI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  pdu_info.num_li);
                 #endif
                 while ((li_index < pdu_info.num_li) && (continue_fill_pdu_with_pdu)) {
                     #ifdef TRACE_RLC_AM_RESEGMENT
-                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] FIND LI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_info.li_list[li_index]);
+                    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] FIND LI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_info.li_list[li_index]);
                     #endif
                     if (max_copy_payload_size > test_pdu_remaining_size) {
         #ifdef TRACE_RLC_AM_RESEGMENT
-                          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] CUT max_copy_payload_size with test_pdu_remaining_size %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_pdu_remaining_size);
+                          LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] CUT max_copy_payload_size with test_pdu_remaining_size %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_pdu_remaining_size);
         #endif
                           max_copy_payload_size = test_pdu_remaining_size;
                     }
@@ -421,7 +422,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                     if (test_start_offset < test_li_sum) {
 
                         #ifdef TRACE_RLC_AM_RESEGMENT
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] test_start_offset < test_li_sum  %d < %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, test_start_offset, test_li_sum);
+                        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] test_start_offset < test_li_sum  %d < %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, test_start_offset, test_li_sum);
                         #endif
                         /*if (test_max_copy_payload_size > (test_li_sum - test_start_offset)) {
                             #ifdef TRACE_RLC_AM_RESEGMENT
@@ -432,8 +433,8 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
 
                         if ((max_copy_payload_size + test_start_offset) < test_li_sum) {
                             #ifdef TRACE_RLC_AM_RESEGMENT
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (max_copy_payload_size %d + test_start_offset %d) < test_li_sum %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, max_copy_payload_size, test_start_offset, test_li_sum);
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_start_offset + max_copy_payload_size - 1, max_copy_payload_size );
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (max_copy_payload_size %d + test_start_offset %d) < test_li_sum %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, max_copy_payload_size, test_start_offset, test_li_sum);
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_start_offset + max_copy_payload_size - 1, max_copy_payload_size );
                             #endif
                             assert(max_copy_payload_size > 0);
                             continue_fill_pdu_with_pdu = 0;
@@ -444,8 +445,8 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
 
                         } else if ((max_copy_payload_size + test_start_offset) == test_li_sum) {
                             #ifdef TRACE_RLC_AM_RESEGMENT
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (max_copy_payload_size + test_start_offset) == test_li_sum %d == %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (max_copy_payload_size + test_start_offset) , test_li_sum);
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_start_offset + max_copy_payload_size - 1, max_copy_payload_size );
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (max_copy_payload_size + test_start_offset) == test_li_sum %d == %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (max_copy_payload_size + test_start_offset) , test_li_sum);
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_start_offset + max_copy_payload_size - 1, max_copy_payload_size );
                             #endif
                             assert(max_copy_payload_size > 0);
                             continue_fill_pdu_with_pdu = 0;
@@ -456,8 +457,8 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
 
                         } else if ((max_copy_payload_size + test_start_offset - (test_li_length_in_bytes ^ 3)) > test_li_sum) {
                             #ifdef TRACE_RLC_AM_RESEGMENT
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (max_copy_payload_size + test_start_offset - (test_li_length_in_bytes ^ 3)) > test_li_sum %d > %d\n SET LI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (max_copy_payload_size + test_start_offset)  + (test_li_length_in_bytes ^ 3), test_li_sum, test_li_sum - test_start_offset);
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_li_sum - 1, test_li_sum - test_start_offset );
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (max_copy_payload_size + test_start_offset - (test_li_length_in_bytes ^ 3)) > test_li_sum %d > %d\n SET LI %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (max_copy_payload_size + test_start_offset)  + (test_li_length_in_bytes ^ 3), test_li_sum, test_li_sum - test_start_offset);
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_li_sum - 1, test_li_sum - test_start_offset );
                             #endif
                             assert((test_li_sum - test_start_offset) > 0);
                             test_li_list[test_num_li++] = test_li_sum - test_start_offset;
@@ -468,15 +469,15 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                                                           test_li_length_in_bytes;
 
                             max_copy_payload_size       = max_copy_payload_size - test_li_sum + test_start_offset - test_li_length_in_bytes;
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] NOW max_copy_payload_size %d BYTES test_start_offset %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_li_sum);
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] NOW max_copy_payload_size %d BYTES test_start_offset %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_li_sum);
                             // normally the next while itereation will add bytes to PDU
                             //not_test_fi = not_test_fi | 0x01;  // set b0, last byte does correspond to last byte of a SDU
                             test_start_offset           = test_li_sum;
 
                         } else {
                             #ifdef TRACE_RLC_AM_RESEGMENT
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (test_max_copy_payload_size + test_start_offset ) > test_li_sum %d > %d\n NO REMAINING SIZE FOR LI",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (max_copy_payload_size + test_start_offset), test_li_sum);
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_li_sum - 1, test_li_sum - test_start_offset );
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (test_max_copy_payload_size + test_start_offset ) > test_li_sum %d > %d\n NO REMAINING SIZE FOR LI",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  (max_copy_payload_size + test_start_offset), test_li_sum);
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPY SO %d -> %d  %d BYTES\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_li_sum - 1, test_li_sum - test_start_offset );
                             #endif
                             assert((test_li_sum - test_start_offset) > 0);
                             continue_fill_pdu_with_pdu = 0;
@@ -493,7 +494,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                     // and it cant be the first data field of the original PDU
                     } else if (test_start_offset == test_li_sum) {
                         #ifdef TRACE_RLC_AM_RESEGMENT
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (test_start_offset == test_li_sum) %d == %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_li_sum);
+                        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (test_start_offset == test_li_sum) %d == %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  test_start_offset , test_li_sum);
                         #endif
                         if ((test_num_li == 0) && (test_pdu_copy_size == 0)) {
                             not_test_fi = not_test_fi | 0x02;  // set b1, first byte does correspond to first byte of a SDU
@@ -509,7 +510,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
 
                     if (max_copy_payload_size > test_pdu_remaining_size) {
                         #ifdef TRACE_RLC_AM_RESEGMENT
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] TRYING HIDDEN SIZE...CUT max_copy_payload_size with test_pdu_remaining_size %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_pdu_remaining_size);
+                        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] TRYING HIDDEN SIZE...CUT max_copy_payload_size with test_pdu_remaining_size %d -> %d\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id,  max_copy_payload_size, test_pdu_remaining_size);
                         #endif
                           max_copy_payload_size = test_pdu_remaining_size;
                     }
@@ -517,13 +518,13 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                     if  ((max_copy_payload_size + test_start_offset) >= (pdu_info.hidden_size + test_li_sum)) {
                         test_pdu_copy_size += (pdu_info.hidden_size  + test_li_sum - test_start_offset);
                         #ifdef TRACE_RLC_AM_RESEGMENT
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPYING WHOLE REMAINING SIZE %d (max_copy_payload_size %d, test_start_offset %d, pdu_info.hidden_size %d test_li_sum %d test_pdu_copy_size %d)\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_info.hidden_size  + test_li_sum - test_start_offset, max_copy_payload_size, test_start_offset, pdu_info.hidden_size, test_li_sum, test_pdu_copy_size);
+                        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPYING WHOLE REMAINING SIZE %d (max_copy_payload_size %d, test_start_offset %d, pdu_info.hidden_size %d test_li_sum %d test_pdu_copy_size %d)\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_info.hidden_size  + test_li_sum - test_start_offset, max_copy_payload_size, test_start_offset, pdu_info.hidden_size, test_li_sum, test_pdu_copy_size);
                         #endif
                         test_start_offset   = pdu_info.hidden_size   + test_li_sum;
                         not_test_fi = (not_test_fi & 0x2) | (not_fi_original & 0x1);  // set b0 idendical to the b0 of the non segmented PDU
                     } else {
                         #ifdef TRACE_RLC_AM_RESEGMENT
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPYING REMAINING SIZE %d (/%d)\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, max_copy_payload_size, pdu_info.hidden_size);
+                        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COPYING REMAINING SIZE %d (/%d)\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id, max_copy_payload_size, pdu_info.hidden_size);
                         #endif
                         test_pdu_copy_size += max_copy_payload_size;
                         test_start_offset = test_start_offset + max_copy_payload_size;
@@ -532,7 +533,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                 }
             } else { // num_li == 0
                 #ifdef TRACE_RLC_AM_RESEGMENT
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (num_li == 0)\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] (num_li == 0)\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id);
                 #endif
                 test_pdu_copy_size = max_copy_payload_size;
                 if ((stop_offset ==  (start_offset + max_copy_payload_size - 1)) && (stop_offset == rlcP->pdu_retrans_buffer[snP].payload_size - 1)) {
@@ -552,7 +553,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
             //---------------------------------------------------------------
             // fill the segment pdu with Lis and data
             //---------------------------------------------------------------
-            msg ("[FRAME XXXXX][RLC_AM][MOD XX][RB XX][RE-SEGMENT] fill the segment pdu with Lis and data, test_num_li %d\n",test_num_li);
+            LOG_D(RLC, "[FRAME XXXXX][RLC_AM][MOD XX][RB XX][RE-SEGMENT] fill the segment pdu with Lis and data, test_num_li %d\n",test_num_li);
             if (test_num_li > 0) {
                 pdu_sub_segment->b1 = pdu_sub_segment->b1 | 0x04; // set E bit
                 test_li_length_in_bytes = 1;
@@ -580,12 +581,12 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                         *sizeP               = *sizeP - 1;
                     }
 #ifdef TRACE_RLC_AM_RESEGMENT
-                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ADD LI %d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, test_li_list[fill_num_li]);
+                    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ADD LI %d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, test_li_list[fill_num_li]);
 #endif
                 }
             } else {
 #ifdef TRACE_RLC_AM_RESEGMENT
-                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ADD NO LI\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id);
+                    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] ADD NO LI\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id);
 #endif
                 fill_payload = (u8_t*)e_li_sub_segment;
             }
@@ -605,15 +606,15 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
                 rlcP->pdu_retrans_buffer[snP].flags.retransmit = 0;
 
 #ifdef TRACE_RLC_AM_RESEGMENT
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d SO %d %d BYTES PAYLOAD %d BYTES LSF!\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP, start_offset, ((struct mac_tb_req*)(mb_sub_segment->data))->tb_size_in_bits >> 3, test_pdu_copy_size);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d SO %d %d BYTES PAYLOAD %d BYTES LSF!\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP, start_offset, ((struct mac_tb_req*)(mb_sub_segment->data))->tb_size_in_bits >> 3, test_pdu_copy_size);
 #endif
             }
 #ifdef TRACE_RLC_AM_RESEGMENT
               else {
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d SO %d %d BYTES PAYLOAD %d BYTES\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP, start_offset, ((struct mac_tb_req*)(mb_sub_segment->data))->tb_size_in_bits >> 3, test_pdu_copy_size);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d SO %d %d BYTES PAYLOAD %d BYTES\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP, start_offset, ((struct mac_tb_req*)(mb_sub_segment->data))->tb_size_in_bits >> 3, test_pdu_copy_size);
             }
 #endif
-            msg ("[FRAME XXXXX][RLC_AM][MOD XX][RB XX][RE-SEGMENT] *sizeP %d = *sizeP %d - test_pdu_copy_size %d\n",*sizeP - test_pdu_copy_size, *sizeP,  test_pdu_copy_size);
+            LOG_D(RLC, "[FRAME XXXXX][RLC_AM][MOD XX][RB XX][RE-SEGMENT] *sizeP %d = *sizeP %d - test_pdu_copy_size %d\n",*sizeP - test_pdu_copy_size, *sizeP,  test_pdu_copy_size);
 
             *sizeP = *sizeP - test_pdu_copy_size;
             //---------------------------------------------------------------
@@ -622,7 +623,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
             rlc_am_remove_hole(rlcP, snP, start_offset, test_pdu_copy_size+start_offset - 1);
             //rlcP->pdu_retrans_buffer[snP].nack_so_start = rlcP->pdu_retrans_buffer[snP].nack_so_start + test_pdu_copy_size;
 #ifdef TRACE_RLC_AM_RESEGMENT
-            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d NOW nack_so_start %d nack_so_stop %d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d NOW nack_so_start %d nack_so_stop %d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop);
 #endif
             /*if (rlcP->pdu_retrans_buffer[snP].nack_so_start == rlcP->pdu_retrans_buffer[snP].nack_so_stop) {
                 rlcP->pdu_retrans_buffer[snP].nack_so_start = 0;
@@ -630,7 +631,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
             }*/
         } else {
 #ifdef TRACE_RLC_AM_RESEGMENT
-            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COULD NOT GET INFO FOR DATA PDU SN %04d -> RETURN NULL\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] COULD NOT GET INFO FOR DATA PDU SN %04d -> RETURN NULL\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP);
 #endif
             return NULL;
         }
@@ -639,7 +640,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u16_t snP, 
         return mb_sub_segment;
     } else {
 #ifdef TRACE_RLC_AM_RESEGMENT
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d BUT NO PDU AVAILABLE -> RETURN NULL\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP);
+        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] RE-SEND DATA PDU SN %04d BUT NO PDU AVAILABLE -> RETURN NULL\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, snP);
 #endif
         assert(3==4);
         return NULL;
@@ -653,9 +654,9 @@ void rlc_am_tx_buffer_display (rlc_am_entity_t* rlcP, char* messageP)
     int         i, loop = 0;
 
     if (messageP) {
-        msg ("\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer %s VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, messageP, rlcP->vt_a, rlcP->vt_s);
+        LOG_D(RLC, "\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer %s VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, messageP, rlcP->vt_a, rlcP->vt_s);
     } else {
-        msg ("\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_s);
+        LOG_D(RLC, "\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_s);
     }
 
     while (rlcP->vt_s != sn) {
@@ -694,7 +695,7 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
     rlc_am_pdu_sn_10_t*  pdu_sn_10;
 
 #ifdef TRACE_RLC_AM_FORCE_TRAFFIC
-    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] rlc_am_retransmit_any_pdu()\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id);
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] rlc_am_retransmit_any_pdu()\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id);
 #endif
     while (sn != sn_end) {
         if (rlcP->pdu_retrans_buffer[sn].mem_block != NULL) {
@@ -704,7 +705,7 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
             }
             if (rlcP->pdu_retrans_buffer[sn].header_and_payload_size <= rlcP->nb_bytes_requested_by_mac) {
 #ifdef TRACE_RLC_AM_FORCE_TRAFFIC
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] RE-SEND DATA PDU SN %04d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, sn);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] RE-SEND DATA PDU SN %04d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, sn);
 #endif
                 rlc_am_nack_pdu (rlcP, sn, 0, 0x7FFF);
                 // no need for update rlcP->nb_bytes_requested_by_mac
@@ -726,7 +727,7 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
     // so re-segment a pdu if possible
     if (found_pdu) {
 #ifdef TRACE_RLC_AM_FORCE_TRAFFIC
-         msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] SEND SEGMENT OF DATA PDU SN %04d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, found_pdu_sn);
+         LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] SEND SEGMENT OF DATA PDU SN %04d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, found_pdu_sn);
 #endif
         if (rlcP->nb_bytes_requested_by_mac > 4) {
             rlc_am_nack_pdu (rlcP, found_pdu_sn, 0, 0x7FFF);
@@ -743,7 +744,7 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
         }
 #ifdef TRACE_RLC_AM_FORCE_TRAFFIC
         else {
-         msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] ... BUT NOT ENOUGH BYTES ALLOWED BY MAC %0d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, rlcP->nb_bytes_requested_by_mac);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] ... BUT NOT ENOUGH BYTES ALLOWED BY MAC %0d\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, rlcP->nb_bytes_requested_by_mac);
 #endif
         }
     }
