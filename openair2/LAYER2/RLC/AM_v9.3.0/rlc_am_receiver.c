@@ -35,6 +35,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "rlc_am.h"
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
+#include "UTIL/LOG/log.h"
 
 #define TRACE_RLC_AM_RX
 //#define DEBUG_RLC_AM_DISPLAY_TB_DATA
@@ -95,7 +96,7 @@ signed int rlc_am_get_data_pdu_infos(rlc_am_pdu_sn_10_t* headerP, s16_t total_si
                 sum_li += pdu_infoP->li_list[pdu_infoP->num_li];
                 pdu_infoP->num_li = pdu_infoP->num_li + 1;
                 if (pdu_infoP->num_li > RLC_AM_MAX_SDU_IN_PDU) {
-                    msg("[FRAME %05d][RLC_AM][MOD XX][RB XX][GET PDU INFO]  SN %04d TOO MANY LIs ", mac_xface->frame, pdu_infoP->sn);
+                    LOG_E(RLC, "[FRAME %05d][RLC_AM][MOD XX][RB XX][GET PDU INFO]  SN %04d TOO MANY LIs ", mac_xface->frame, pdu_infoP->sn);
                     return -2;
                 }
             }
@@ -111,7 +112,7 @@ signed int rlc_am_get_data_pdu_infos(rlc_am_pdu_sn_10_t* headerP, s16_t total_si
         }
         return 0;
     } else {
-        msg("[FRAME %05d][RLC_AM][MOD XX][RB XX][GET DATA PDU INFO]  SN %04d ERROR CONTROL PDU ", mac_xface->frame,  pdu_infoP->sn);
+        LOG_W(RLC, "[FRAME %05d][RLC_AM][MOD XX][RB XX][GET DATA PDU INFO]  SN %04d ERROR CONTROL PDU ", mac_xface->frame,  pdu_infoP->sn);
         return -1;
     }
 }
@@ -135,7 +136,7 @@ void rlc_am_display_data_pdu_infos(rlc_am_entity_t *rlcP, rlc_am_pdu_info_t* pdu
         }
         msg("\n");
     } else {
-        msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] ERROR RX CONTROL PDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+        LOG_E(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] ERROR RX CONTROL PDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
     }
 }
 // assumed the sn of the tb is equal to VR(MS)
@@ -153,7 +154,7 @@ void rlc_am_rx_update_vr_ms(rlc_am_entity_t *rlcP,mem_block_t* tbP)
             pdu_info_cursor = &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
             if (((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received == 0) {
 #ifdef TRACE_RLC_AM_RX
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms, pdu_info_cursor->sn);
+               LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms, pdu_info_cursor->sn);
 #endif
                 rlcP->vr_ms = pdu_info_cursor->sn;
                 return;
@@ -161,7 +162,7 @@ void rlc_am_rx_update_vr_ms(rlc_am_entity_t *rlcP,mem_block_t* tbP)
             cursor = cursor->next;
         } while (cursor != NULL);
 #ifdef TRACE_RLC_AM_RX
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms, (pdu_info_cursor->sn + 1)  & RLC_AM_SN_MASK);
+        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms, (pdu_info_cursor->sn + 1)  & RLC_AM_SN_MASK);
 #endif
         rlcP->vr_ms = (pdu_info_cursor->sn + 1)  & RLC_AM_SN_MASK;
     }
@@ -182,7 +183,7 @@ void rlc_am_rx_update_vr_r(rlc_am_entity_t *rlcP,mem_block_t* tbP)
                 return;
             }
 #ifdef TRACE_RLC_AM_RX
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][UPDATE VR(R)] UPDATED VR(R) %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, (pdu_info_cursor->sn + 1) & RLC_AM_SN_MASK);
+        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][UPDATE VR(R)] UPDATED VR(R) %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, (pdu_info_cursor->sn + 1) & RLC_AM_SN_MASK);
 #endif
             if (((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.rf == 1) {
                 if (((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.lsf == 1) {
@@ -223,7 +224,7 @@ rlc_am_receive_routing (rlc_am_entity_t *rlcP, struct mac_data_ind data_indP)
 #ifdef RLC_AM_GENERATE_ERRORS
             if (random() % 10 == 4) {
                 ((struct mac_tb_ind *) (tb->data))->error_indication = 1;
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RX ROUTING]  RX PDU GENERATE ERROR", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RX ROUTING]  RX PDU GENERATE ERROR", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
             }
 #endif
 
@@ -238,14 +239,14 @@ rlc_am_receive_routing (rlc_am_entity_t *rlcP, struct mac_data_ind data_indP)
                     rlcP->stat_rx_control_pdu += 1;
                     rlc_am_receive_process_control_pdu (rlcP, tb, first_byte, tb_size_in_bytes);
                 }
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RX ROUTING] VR(R)=%03d VR(MR)=%03d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, rlcP->vr_mr);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RX ROUTING] VR(R)=%03d VR(MR)=%03d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, rlcP->vr_mr);
             }
         } else {
 #ifdef DEBUG_RLC_STATS
             rlcP->rx_pdus_in_error += 1;
 #endif
 #ifdef TRACE_RLC_AM_RX
-            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RX ROUTING] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RX ROUTING] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
 #endif
         }
         //free_mem_block (tb);
@@ -347,19 +348,19 @@ void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, mem_block_t* tbP, u
 
           if (pdu_info->p) {
 #ifdef TRACE_RLC_AM_RX
-              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  POLL BIT SET, STATUS REQUESTED:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+              LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  POLL BIT SET, STATUS REQUESTED:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
 #endif
               rlcP->status_requested = 1;
           }
 #ifdef TRACE_RLC_AM_RX
-              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU] VR(R) %04d VR(H) %04d VR(MR) %04d VR(MS) %04d VR(X) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, rlcP->vr_h, rlcP->vr_mr, rlcP->vr_ms, rlcP->vr_x);
+              LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU] VR(R) %04d VR(H) %04d VR(MR) %04d VR(MS) %04d VR(X) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, rlcP->vr_h, rlcP->vr_mr, rlcP->vr_ms, rlcP->vr_x);
 #endif
 
           if (rlc_am_rx_list_insert_pdu(rlcP, tbP) < 0) {
               free_mem_block (tbP);
               rlcP->stat_rx_data_pdu_duplicate += 1;
 #ifdef TRACE_RLC_AM_RX
-              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+              LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
 #endif
               rlcP->status_requested = 1;
           } else {
@@ -396,7 +397,7 @@ void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, mem_block_t* tbP, u
 
 
 #ifdef TRACE_RLC_AM_RX
-            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  RX LIST AFTER INSERTION:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  RX LIST AFTER INSERTION:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
             rlc_am_rx_list_display(rlcP, "rlc_am_receive_process_data_pdu AFTER INSERTION ");
 #endif
             if (rlc_am_sn_gte_vr_h(rlcP, pdu_info->sn) > 0) {
@@ -427,12 +428,12 @@ void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, mem_block_t* tbP, u
             }
           }
 #ifdef TRACE_RLC_AM_RX
-          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU] VR(R) %04d VR(H) %04d  VR(MS) %04d  VR(MR) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, rlcP->vr_h, rlcP->vr_ms, rlcP->vr_mr);
+          LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU] VR(R) %04d VR(H) %04d  VR(MS) %04d  VR(MR) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, rlcP->vr_h, rlcP->vr_ms, rlcP->vr_mr);
 #endif
       } else {
           free_mem_block (tbP);
 #ifdef TRACE_RLC_AM_RX
-          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  PDU OUT OF RX WINDOW, DISCARDED, STATUS REQUESTED:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+          LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  PDU OUT OF RX WINDOW, DISCARDED, STATUS REQUESTED:\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
 #endif
           rlcP->status_requested = 1;
           rlcP->stat_rx_data_pdu_out_of_window += 1;
