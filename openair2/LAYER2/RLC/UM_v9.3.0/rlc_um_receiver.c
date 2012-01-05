@@ -28,7 +28,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 *******************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_RECEIVER_C
-//#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc.h"
@@ -38,6 +37,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "mac_primitives.h"
 #include "list.h"
 #include "MAC_INTERFACE/extern.h"
+#include "UTIL/LOG/log.h"
 
 #define DEBUG_RLC_UM_DISPLAY_TB_DATA
 //#define RLC_UM_GENERATE_ERRORS
@@ -79,9 +79,7 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
                 msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
             }
         } else {
-#ifdef DEBUG_RLC_STATS
             rlcP->rx_pdus_in_error += 1;
-#endif
 #ifdef DEBUG_RLC_UM_RX
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
 #endif
