@@ -295,7 +295,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
   mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
   mac_xface->get_SB_size	      	   = Get_SB_size;
- 
+  mac_xface->get_subframe_direction    = get_subframe_direction;
 
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
