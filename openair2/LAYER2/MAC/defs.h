@@ -510,8 +510,12 @@ void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE);
 void schedule_ulsch(u8 Mod_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
+@param Mod_id Instance of eNB
+@param subframe Index of subframe
+@param rballoc Bitmask for allowable subband allocations
+@param RA_scheduled RA was scheduled in this subframe
 */
-void fill_DLSCH_dci(u8 Mod_id,u8 subframe,u32 rballoc);
+void fill_DLSCH_dci(u8 Mod_id,u8 subframe,u32 rballoc,u8 RA_scheduled);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
 @param Mod_id Instance ID of eNB

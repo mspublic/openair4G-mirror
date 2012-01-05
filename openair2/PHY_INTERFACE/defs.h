@@ -165,12 +165,16 @@ typedef struct
     /// Function for UE/eNB MAC to retrieve f_id of particular PRACH resource in TDD
     u8 (*get_fid_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 
+    /// Function for eNB MAC to retrieve subframe direction
+    lte_subframe_t (*get_subframe_direction)(u8 Mod_id, u8 subframe);
+
     // MAC Helper functions
     /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (Po_NOMINAL_PUSCH parameter)
     s8 (*get_Po_NOMINAL_PUSCH)(u8 Mod_id);
 
     /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (deltaP_rampup parameter)
     s8 (*get_deltaP_rampup)(u8 Mod_id);
+
 
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
 
