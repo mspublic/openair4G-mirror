@@ -34,6 +34,7 @@
 * \version 0.1
 */
 
+#include "UTIL/LOG/log.h"
 #include "platform_types.h"
 #include "platform_constants.h"
 #include "pdcp_primitives.h"
@@ -108,7 +109,7 @@ BOOL pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer(unsigned char
    * Fill Data or Control field
    */
   if (pdu->dc == PDCP_CONTROL_PDU) {
-    printf("[DEBUG] Setting PDU as a Control PDU\n");
+    LOG_D(PDCP, "Setting PDU as a Control PDU\n");
     pdu_buffer[0] |= 0x80; // set the first bit as 1
   }
 

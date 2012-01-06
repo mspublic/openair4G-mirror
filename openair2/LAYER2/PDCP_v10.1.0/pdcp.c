@@ -120,8 +120,8 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
     memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sdu_buffer, sdu_buffer_size);
 
     /* Print octets of outgoing data in hexadecimal form */
-    // XXX LOG_D(PDCP, "Following content will be sent over RLC:\n");
-    // XXX util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
+    LOG_D(PDCP, "Following content will be sent over RLC:\n");
+    util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
 
 #ifdef PDCP_UNIT_TEST
     /* 
@@ -263,8 +263,8 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
     list_add_tail_eurecom (new_sdu, sdu_list);
 
     /* Print octets of incoming data in hexadecimal form */
-    // XXX LOG_D(PDCP, "Following content has been received from RLC:\n");
-    // XXX util_print_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size + sizeof(pdcp_data_ind_header_t));
+    LOG_D(PDCP, "Following content has been received from RLC:\n");
+    util_print_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size + sizeof(pdcp_data_ind_header_t));
 
     /*
      * XXX Following part causes SIGSEGV!
