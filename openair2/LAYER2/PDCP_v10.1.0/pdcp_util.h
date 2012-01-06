@@ -57,8 +57,8 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
 
   // XXX Utilisation of LOG_D here is temporary, LOG_T will be used afterwards so 
   // don't be scared of garbage output caused by PDCP, it'll be fixed soon :)
-  LOG_T(component, "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
-  LOG_T(component, "-----+-------------------------------------------------|\n");
+  LOG_D(component, "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
+  LOG_D(component, "-----+-------------------------------------------------|\n");
   LOG_T(component, " 000 |");
   for (octet_index = 0; octet_index < size; ++octet_index) {
     /*
@@ -68,8 +68,10 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
     /*
      * Align newline and pipes according to the octets in groups of 2
      */
-    if (octet_index != 0 && (octet_index+1) % 16 == 0)
-      LOG_T(component, " |\n %03d |", octet_index);
+    if (octet_index != 0 && (octet_index+1) % 16 == 0){
+      LOG_T(component, " |\n");
+      LOG_T(component, " %03d |", octet_index);
+    }
   }
 
   /*
