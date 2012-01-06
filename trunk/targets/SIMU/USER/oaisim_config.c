@@ -154,7 +154,7 @@ void init_oai_emulation() {
    oai_emulation.info.nb_master =0;
    oai_emulation.info.ethernet_id=0;
    oai_emulation.info.multicast_group=0;
-   oai_emulation.info.g_log_level= LOG_DEBUG;
+   oai_emulation.info.g_log_level= LOG_TRACE;
 	
     
     oai_emulation.info.frame_type=1;
@@ -197,22 +197,20 @@ void oaisim_config() {
 
 int olg_config() {
 
-  set_glog(oai_emulation.info.g_log_level,LOG_MED); //g_glog
+  set_glog(oai_emulation.info.g_log_level,LOG_LOW); //g_glog
+  // component, log level, log interval
+  set_log(OMG,  LOG_INFO, 20);
+  set_log(EMU,  LOG_INFO,  10);
+  set_log(OCG,  LOG_INFO, 1);  
+  set_log(MAC,  LOG_TRACE, 1);  
+  set_log(RLC,  LOG_TRACE, 1);  
+  set_log(PHY,  LOG_DEBUG, 1);  
+  set_log(PDCP, LOG_TRACE, 1);  
+  set_log(RRC,  LOG_TRACE, 1);  
   
-  if (oai_emulation.emulation_config.performance.layer.omg)
-    set_comp_log(OMG,  LOG_DEBUG, LOG_LOW, 10);
-  if (oai_emulation.emulation_config.performance.layer.emu)
-    set_comp_log(EMU,  LOG_DEBUG, LOG_LOW, 10);
+  // set_comp_log(MAC, LOG_TRACE, LOG_FULL,1);
   
-  // for those not in XML file
-  set_comp_log(OCG,  LOG_INFO, LOG_LOW, 1);  
-  set_comp_log(MAC,  LOG_DEBUG, LOG_LOW, 1);  
-  set_comp_log(RLC,  LOG_DEBUG, LOG_LOW, 1);  
-  set_comp_log(PHY,  LOG_DEBUG, LOG_LOW, 1);  
-  set_comp_log(PDCP,  LOG_DEBUG, LOG_LOW, 1);  
-  set_comp_log(RRC,  LOG_DEBUG, LOG_LOW, 1);  
-   
-  LOG_T(LOG,"global log level is set to %d \n", oai_emulation.info.g_log_level );
+    LOG_T(LOG,"global log level is set to %d \n", oai_emulation.info.g_log_level );
   return 1; 
 }
 

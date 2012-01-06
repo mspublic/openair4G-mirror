@@ -28,12 +28,11 @@
 *******************************************************************************/
 
 /*! \file log.h
-* \brief log file for openair
+* \brief openair log generator (OLG) for
 * \author Navid Nikaein
-* \date 2009
-* \version 0.3
-* \warning This component can be runned only in user-space
-* @ingroup routing
+* \date 2012
+* \version 0.5
+* @ingroup util
 
 */
 
@@ -77,7 +76,8 @@ extern "C" {
  *  @brief the macros that describe the maximum length of LOG
  * @{*/
 #define MAX_LOG_ITEM 50 /*!< \brief the maximum length of a LOG item, what is LOG_ITEM ??? */
-#define MAX_LOG_TOTAL 1000 /*!< \brief the maximum length of a log */
+#define MAX_LOG_INFO 1000 /*!< \brief the maximum length of a log */
+#define MAX_LOG_TOTAL 1500 /*!< \brief the maximum length of a log */
 /* @}*/ 
 
 /** @defgroup _log_level Message levels defined by LOG
@@ -200,12 +200,13 @@ extern "C" {
 #define FLAG_LEVEL     0x010
 #define FLAG_FUNCT     0x020
 #define FLAG_FILE_LINE 0x040
-#define FLAG_LOG_TRACE 0x100 
+#define FLAG_TIME      0x100 
 
 #define LOG_NONE        0x00
 #define LOG_LOW         0x04
-#define LOG_MED         0x34
-#define LOG_FULL        0x74
+#define LOG_MED         0x14
+#define LOG_HIGH        0x34
+#define LOG_FULL        0x175
 
 #define OAI_OK 0		/*!< \brief all ok */
 #define OAI_ERR 1		/*!< \brief generic error */

@@ -338,11 +338,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   unsigned char first_element=0,last_size=0,i;
   unsigned char mac_header_control_elements[16],*ce_ptr;
 
-#ifdef DEBUG_HEADER_PARSING
+  //#ifdef DEBUG_HEADER_PARSING
   LOG_D(MAC,"[UE] Generate ULSCH : num_sdus %d\n",num_sdus);
   for (i=0;i<num_sdus;i++)
-    LOG_T(MAC,"[UE] sdu %d : lcid %d length %d\n",i,sdu_lcids[i],sdu_lengths[i]);
-#endif
+    LOG_T(MAC,"[UE] sdu %d : lcid %d length %d",i,sdu_lcids[i],sdu_lengths[i]);
+  LOG_T(MAC,"\n");
+  //#endif
   ce_ptr = &mac_header_control_elements[0];
 
   if ((short_padding == 1) || (short_padding == 2)) {
@@ -533,12 +534,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
   mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
 
-#ifdef DEBUG_HEADER_PARSING
-  LOG_T(MAC, "[UE] MAC header : ");
+  //#ifdef DEBUG_HEADER_PARSING
+  LOG_T(MAC," [UE %d] header : ", crnti);
   for (i=0;i<((unsigned char*)mac_header_ptr - mac_header);i++) 
     LOG_T(MAC,"%2x.",mac_header[i]);
   LOG_T(MAC,"\n");
-#endif
+  //#endif
   return((unsigned char*)mac_header_ptr - mac_header);
 
 }
