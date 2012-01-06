@@ -64,28 +64,24 @@
 #include "UTIL/LOG/log.h"
 
 #ifdef NAS_NETLINK
+  #include <sys/socket.h>
+  #include <linux/netlink.h>
 
+  extern struct sockaddr_nl nas_src_addr, nas_dest_addr;
+  extern struct nlmsghdr *nas_nlh;
+  extern struct iovec nas_iov;
+  extern int nas_sock_fd;
+  extern struct msghdr nas_msg;
 
+  #define MAX_PAYLOAD 1600
 
-#include <sys/socket.h>
-#include <linux/netlink.h>
+  unsigned char pdcp_read_state = 0;
 
-
-
-extern struct sockaddr_nl nas_src_addr, nas_dest_addr;
-extern struct nlmsghdr *nas_nlh;
-extern struct iovec nas_iov;
-extern int nas_sock_fd;
-extern struct msghdr nas_msg;
-
-#define MAX_PAYLOAD 1600  /* maximum payload size*/
-
-unsigned char pdcp_read_state = 0;
-
-char pdcp_read_payload[MAX_PAYLOAD];
+  unsigned char pdcp_read_payload[MAX_PAYLOAD];
 #endif
+
 pdcp_data_req_header_t pdcp_read_header;
-//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 int
 pdcp_fifo_flush_sdus ()
@@ -379,8 +375,6 @@ int
 pdcp_fifo_read_input_sdus ()
 {
 //-----------------------------------------------------------------------------
-  int             cont;
-  int             bytes_read;
   int len;
 
 
@@ -399,14 +393,14 @@ pdcp_fifo_read_input_sdus ()
       else {
 #ifdef PDCP_DEBUG
 #ifdef LINUX
-		printf("[PDCP][NETLINK] Received socket with length %d (nlmsg_len = %d)\n",len,nas_nlh->nlmsg_len-sizeof(struct nlmsghdr));
-#endif PDCP_DEBUG
-#ifdef PDCP_DEBUG
-		printf("[PDCP][NETLINK] nlmsg_len = %d (%d,%d)\n",nas_nlh->nlmsg_len,
-		       sizeof(pdcp_data_req_header_t),
-		       sizeof(struct nlmsghdr));
-#endif LINUX
-#endif PDCP_DEBUG
+		LOG_D(PDCP, "[PDCP][NETLINK] Received socket with length %d (nlmsg_len = %d)\n", \
+                            len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr));
+#else
+		LOG_D(PDCP, "[PDCP][NETLINK] nlmsg_len = %d (%d,%d)\n", \
+                            nas_nlh->nlmsg_len, sizeof(pdcp_data_req_header_t), \
+                            sizeof(struct nlmsghdr));
+#endif // LINUX
+#endif // PDCP_DEBUG
       }
 #ifdef LINUX
       if (nas_nlh->nlmsg_len == sizeof (pdcp_data_req_header_t) + sizeof(struct nlmsghdr)) {
@@ -452,13 +446,13 @@ pdcp_fifo_read_input_sdus ()
 	  pdcp_read_header.inst +  oai_emulation.info.first_enb_local;
 
 #ifdef PDCP_DEBUG
-	printf("[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+	LOG_D(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
 	       Mac_rlc_xface->frame, 
 	       pdcp_read_header.inst,
 	       len,
 	       nas_nlh->nlmsg_len-sizeof(struct nlmsghdr),
 	       pdcp_read_header.rb_id);
-#endif PDCP_DEBUG
+#endif
 	  
 	pdcp_data_req(pdcp_read_header.inst,
 		      pdcp_read_header.rb_id,
@@ -467,5 +461,7 @@ pdcp_fifo_read_input_sdus ()
       }
       
     }
+
+    // XXX This one is supposed to return an `int` but what?!
 }
 #endif
