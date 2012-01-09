@@ -773,7 +773,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       if (abstraction_flag==0) {
        
 	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-	    printf("Generating PSS (frame %d, subframe %d)\n",mac_xface->frame,next_slot>>1);
+	  //	    printf("Generating PSS (frame %d, subframe %d)\n",mac_xface->frame,next_slot>>1);
 	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 		       4*AMP,
 		       &phy_vars_eNB->lte_frame_parms,
@@ -1280,7 +1280,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     }
 
     // if we have PHICH to generate
-    printf("[PHY][eNB] Frame %d subframe %d Checking for phich\n",mac_xface->frame,next_slot>>1); 
+    //    printf("[PHY][eNB] Frame %d subframe %d Checking for phich\n",mac_xface->frame,next_slot>>1); 
     if (is_phich_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1)) {
 
 	msg("[PHY][eNB %d] Frame %d, subframe %d: Calling generate_phich_top\n",phy_vars_eNB->Mod_id,mac_xface->frame, next_slot>>1);
@@ -1683,7 +1683,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   // check if we have to detect PRACH first
   if ((last_slot&1)==1)
     if (is_prach_subframe(&phy_vars_eNB->lte_frame_parms,last_slot>>1)>0) {
-      printf("Frame %d, subframe %d : Calling prach_procedures\n",mac_xface->frame,last_slot>>1);
+      //      printf("Frame %d, subframe %d : Calling prach_procedures\n",mac_xface->frame,last_slot>>1);
       prach_procedures(phy_vars_eNB,last_slot>>1,abstraction_flag);
     }
 
@@ -1773,7 +1773,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   */
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,last_slot>>1);
-  printf("eNB RX: subframe %d => Got harq_pid %d\n",last_slot>>1,harq_pid);
+  //  printf("eNB RX: subframe %d => Got harq_pid %d\n",last_slot>>1,harq_pid);
 #ifdef OPENAIR2
   if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
     two_ues_connected = 1;
