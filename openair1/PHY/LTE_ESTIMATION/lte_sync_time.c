@@ -312,7 +312,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 	peak_val = tmp[s];
 	peak_pos = n;
 	sync_source = s;
-	printf("s %d: sync_out %d, sync_out2  %d (sync_corr %d,%d)\n",s,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue[n],sync_corr_ue[n+length]);
+	//	printf("s %d: sync_out %d, sync_out2  %d (sync_corr %d,%d)\n",s,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue[n],sync_corr_ue[n+length]);
 
       } 
     }
