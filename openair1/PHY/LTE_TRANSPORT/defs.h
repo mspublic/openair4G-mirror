@@ -605,6 +605,13 @@ typedef enum {format0,
 } DCI_format_t;
 
 typedef enum {
+  SI_PDSCH=0,
+  RA_PDSCH,
+  PDSCH,
+  PMCH
+} PDSCH_t;
+
+typedef enum {
   pucch_format1,
   pucch_format1a,
   pucch_format1b,

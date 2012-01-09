@@ -1640,17 +1640,14 @@ int main(int argc, char **argv) {
 		  for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols;
 		       m<pilot2;
 		       m++) {
-		    if (rx_dlsch(&PHY_vars_UE->lte_ue_common_vars,
-				 PHY_vars_UE->lte_ue_pdsch_vars,
-				 &PHY_vars_UE->lte_frame_parms,
+		    if (rx_pdsch(PHY_vars_UE,
+				 PDSCH,
 				 eNB_id,
 				 eNB_id_i,
-				 PHY_vars_UE->dlsch_ue[0],
 				 subframe,
 				 m,
 				 (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
 				 dual_stream_UE,
-				 &PHY_vars_UE->PHY_measurements,
 				 i_mod)==-1) {
 
 		      dlsch_active = 0;
@@ -1664,17 +1661,14 @@ int main(int argc, char **argv) {
 		  for (m=pilot2;
 		       m<pilot3;
 		       m++)
-		    if (rx_dlsch(&PHY_vars_UE->lte_ue_common_vars,
-				 PHY_vars_UE->lte_ue_pdsch_vars,
-				 &PHY_vars_UE->lte_frame_parms,
+		    if (rx_pdsch(PHY_vars_UE,
+				 PDSCH,
 				 eNB_id,
 				 eNB_id_i,
-				 PHY_vars_UE->dlsch_ue[0],
 				 subframe,
 				 m,
 				 0,
 				 dual_stream_UE,
-				 &PHY_vars_UE->PHY_measurements,
 				 i_mod)==-1) {
 		      dlsch_active=0;
 		      break;
@@ -1685,17 +1679,14 @@ int main(int argc, char **argv) {
 		  for (m=pilot3;
 		       m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
 		       m++)
-		    if (rx_dlsch(&PHY_vars_UE->lte_ue_common_vars,
-				 PHY_vars_UE->lte_ue_pdsch_vars,
-				 &PHY_vars_UE->lte_frame_parms,
+		    if (rx_pdsch(PHY_vars_UE,
+				 PDSCH,
 				 eNB_id,
 				 eNB_id_i,
-				 PHY_vars_UE->dlsch_ue[0],
 				 subframe,
 				 m,
 				 0,
 				 dual_stream_UE,
-				 &PHY_vars_UE->PHY_measurements,
 				 i_mod)==-1) {
 		      dlsch_active=0;
 		      break;

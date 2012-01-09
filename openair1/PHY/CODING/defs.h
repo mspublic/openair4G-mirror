@@ -180,7 +180,7 @@ u32 lte_rate_matching_cc(u32 RCC,
 \param Qm modulation order (2,4,6)
 \param Nl number of layers (1,2)
 \param r segment number
-\param E the number of coded bits per segment 
+\param E_out the number of coded bits per segment 
 \returns 0 on success, -1 on failure
 */
 
@@ -288,7 +288,7 @@ void ccodedab_init_inv(void);
 \brief This function initializes the different crc tables.*/
 void crcTableInit (void);
 
-/*!\fn void crc24a(u8 *inPtr, s8 bitlen)
+/*!\fn u32 crc24a(u8 *inPtr, s32 bitlen)
 \brief This computes a 24-bit crc ('a' variant for overall transport block) 
 based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
@@ -296,7 +296,7 @@ based on 3GPP UMTS/LTE specifications.
 */
 u32 crc24a (u8 *inPtr, s32 bitlen);
 
-/*!\fn void crc24b(u8 *inPtr, s32 bitlen)
+/*!\fn u32 crc24b(u8 *inPtr, s32 bitlen)
 \brief This computes a 24-bit crc ('b' variant for transport-block segments) 
 based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
@@ -304,19 +304,19 @@ based on 3GPP UMTS/LTE specifications.
 */
 u32 crc24b (u8 *inPtr, s32 bitlen);
 
-/*!\fn void crc16(u8 *inPtr, s8 bitlen)
+/*!\fn u32 crc16(u8 *inPtr, s32 bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
 u32 crc16 (u8 *inPtr, s32 bitlen);
 
-/*!\fn void crc12(u8 *inPtr, s8 bitlen)
+/*!\fn u32 crc12(u8 *inPtr, s32 bitlen)
 \brief This computes a 12-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
 u32 crc12 (u8 *inPtr, s32 bitlen);
 
-/*!\fn void crc8(u8 *inPtr, s32 bitlen)
+/*!\fn u32 crc8(u8 *inPtr, s32 bitlen)
 \brief This computes a 8-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/

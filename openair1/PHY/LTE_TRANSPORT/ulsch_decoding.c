@@ -195,7 +195,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   u8 crc_type;
   u8 *columnset;
   unsigned int sumKr=0;
-  unsigned int Qprime,L,G,Q_CQI,Q_RI,Q_ACK,H,Hprime,Hpp,Cmux,Rmux,Rmux_prime,O_RCC;
+  unsigned int Qprime,L,G,Q_CQI,Q_RI,H,Hprime,Hpp,Cmux,Rmux_prime,O_RCC;
   unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK=0,len_RI=0;
   u8 q_ACK[MAX_ACK_PAYLOAD],q_RI[MAX_RI_PAYLOAD];
   int metric,metric_new;
@@ -314,7 +314,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       Qprime = 4*nb_rb * 12;
   }
 
-  Q_ACK = Qprime * Q_m;
+  //  Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
 #ifdef DEBUG_ULSCH_DECODING
   msg("ulsch_decoding.c: Qprime_ACK %d, Msc_initial %d, Nsymb_initial %d, sumKr %d\n",
@@ -359,11 +359,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   Hpp = Hprime + Qprime_RI;
   
   Cmux       = ulsch->Nsymb_pusch;
-  Rmux       = Hpp*Q_m/Cmux;
+  //  Rmux       = Hpp*Q_m/Cmux;
   Rmux_prime = Hpp/Cmux;
   
 #ifdef DEBUG_ULSCH_DECODING
-  msg("ulsch_decoding.c: G raw %d, Hpp %d, Cmux %d, Rmux %d, Rmux_prime %d\n",G,Hpp,Cmux,Rmux,Rmux_prime);
+  msg("ulsch_decoding.c: G raw %d, Hpp %d, Cmux %d, Rmux_prime %d\n",G,Hpp,Cmux,Rmux_prime);
 #endif
   // Clear "tag" interleaving matrix to allow for CQI/DATA identification
   memset(ytag,0,Cmux*Rmux_prime);

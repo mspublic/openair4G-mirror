@@ -75,7 +75,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
   int i, l;
 
-  u32  pbch_D,pbch_D_bytes,pbch_E;//,pbch_coded_bytes;
+  u32  pbch_D,pbch_E;//,pbch_coded_bytes;
   u8 pbch_a[PBCH_A>>3];
   u8 RCC;
 
@@ -88,7 +88,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
   u16 amask=0;
 
   pbch_D    = 16+PBCH_A;
-  pbch_D_bytes   = pbch_D>>3;
 
   pbch_E  = (frame_parms->Ncp==0) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
   //  pbch_E_bytes = pbch_coded_bits>>3;
@@ -691,7 +690,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
   int symbol,i;
   u32 nsymb = (frame_parms->Ncp==0) ? 14:12;
-  u32  pbch_D,pbch_D_bytes,pbch_E;
+  u32  pbch_E;
   u8 pbch_a[8];
   u8 RCC;
 
@@ -700,8 +699,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   u16 crc;
 
 
-  pbch_D    = 16+PBCH_A;
-  pbch_D_bytes   = pbch_D>>3;
+  //  pbch_D    = 16+PBCH_A;
 
   pbch_E  = (frame_parms->Ncp==0) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
   pbch_e_rx = &lte_ue_pbch_vars->llr[frame_mod4*(pbch_E>>2)];

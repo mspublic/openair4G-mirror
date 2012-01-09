@@ -7359,25 +7359,53 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
 int avg[4];
 
-int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-	     LTE_UE_PDSCH **lte_ue_pdsch_vars,
-	     LTE_DL_FRAME_PARMS *frame_parms,
+int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
+	     PDSCH_t type,
 	     unsigned char eNB_id,
 	     unsigned char eNB_id_i, //if this == NUMBER_OF_eNB_MAX, we assume MU interference
-	     LTE_UE_DLSCH_t **dlsch_ue,
 	     u8 subframe,
 	     unsigned char symbol,
 	     unsigned char first_symbol_flag,
 	     unsigned char dual_stream_flag,
-	     PHY_MEASUREMENTS *phy_measurements,
 	     unsigned char i_mod) {
   
+  LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars;
+  LTE_UE_PDSCH **lte_ue_pdsch_vars;
+  LTE_DL_FRAME_PARMS *frame_parms    = &phy_vars_ue->lte_frame_parms;
+  PHY_MEASUREMENTS *phy_measurements = &phy_vars_ue->PHY_measurements;
+  LTE_UE_DLSCH_t   **dlsch_ue;
+
   unsigned short nb_rb;
 
-  unsigned char aatx,aarx,symbol_mod,pilots=0;
+  unsigned char aatx,aarx,symbol_mod;
   int avgs, rb;
 
   unsigned char harq_pid0;
+
+  switch (type) {
+  case SI_PDSCH:
+    lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id];
+    dlsch_ue          = &phy_vars_ue->dlsch_ue_SI[eNB_id];
+    break;
+  case RA_PDSCH:
+    lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id];
+    dlsch_ue          = &phy_vars_ue->dlsch_ue_ra[eNB_id];
+    break;
+  case PDSCH:
+    lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars[eNB_id];
+    dlsch_ue          = phy_vars_ue->dlsch_ue[eNB_id];
+    break;
+  case PMCH:
+    msg("[PHY][UE %d][FATAL] Frame %d subframe %d: PMCH not supported yet\n",mac_xface->frame,subframe,type);
+    mac_xface->macphy_exit("");
+    return(-1);
+    break;
+  default:
+    msg("[PHY][UE %d][FATAL] Frame %d subframe %d: Unknown PDSCH format %d\n",mac_xface->frame,subframe,type);
+    mac_xface->macphy_exit("");
+    return(-1);
+    break;
+  }
 
   if (eNB_id > 2) {
     msg("dlsch_demodulation.c: Illegal eNB_id %d\n",eNB_id);
@@ -7405,10 +7433,13 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   }
   //  printf("rx_dlsch : eNB_id %d, eNB_id_i %d, dual_stream_flag %d\n",eNB_id,eNB_id_i,dual_stream_flag); 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
+  /*
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
     pilots=1;
   else 
     pilots=0;
+  */
 
   harq_pid0 = dlsch_ue[0]->current_harq_pid;
 

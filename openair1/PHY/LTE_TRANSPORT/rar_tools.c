@@ -128,7 +128,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
   LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
-  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
+  //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
 
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
   u8 harq_pid = subframe2harq_pid(frame_parms,subframe);

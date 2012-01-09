@@ -76,7 +76,7 @@ void multadd_complex_vector_real_scalar(s16 *x,
 					u32 N);
 
 
-/*!\fn s32 mult_cpx_vector(s16 *x1,s16 *x2,s16 *y,u32 N,u16 output_shift)
+/*!\fn s32 mult_cpx_vector(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors in repeated format.
 
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -93,7 +93,7 @@ s32 mult_cpx_vector(s16 *x1,
 		    u32 N, 
 		    s32 output_shift);
 
-/*!\fn s32 mult_cpx_vector_norep(s16 *x1,s16 *x2,s16 *y,u32 N,u16 output_shift)
+/*!\fn s32 mult_cpx_vector_norep(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors with normal formatted output.
 
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -140,7 +140,7 @@ s32 mult_cpx_vector_norep_conj2(s16 *x1,
 				u32 N, 
 				s32 output_shift);
 
-/*!\fn s32 mult_cpx_vector2(s16 *x1,s16 *x2,s16 *y,u32 N,u16 output_shift)
+/*!\fn s32 mult_cpx_vector2(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors.
 
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -157,7 +157,7 @@ s32 mult_cpx_vector2(s16 *x1,
 		     u32 N, 
 		     s32 output_shift);
 
-/*!\fn s32 mult_cpx_vector_add(s16 *x1,s16 *x2,s16 *y,u32 N,u16 output_shift)
+/*!\fn s32 mult_cpx_vector_add(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
 
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -210,7 +210,7 @@ s32 shift_and_pack(s16 *y,
 		   u32 N, 
 		   s32 output_shift);
 
-/*!\fn s32 mult_cpx_vector_h(s16 *x1,s16 *x2,s16 *y,u32 N,u16 output_shift,s16 sign)
+/*!\fn s32 mult_cpx_vector_h(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift,s16 sign)
 This function performs optimized componentwise multiplication of the vector x1 with the conjugate of the vector x2. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
 
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -316,7 +316,7 @@ void fft3072(s16 *sigF,s16 *sig);
 void fft24576(s16 *sigF,s16 *sig);
 
 
-/*!\fn int rotate_cpx_vector(short *x,short *alpha,short *y,unsigned int N,unsigned short output_shift, unsigned char format)
+/*!\fn int rotate_cpx_vector(s16 *x,s16 *alpha,s16 *y,u32 N,u16 output_shift, u8 format)
 This function performs componentwise multiplication of a vector with a complex scalar.
 @param x Vector input (Q1.15)  in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
@@ -448,7 +448,7 @@ void Zero_Buffer_nommx(void *buf,u32 length);
 
 void mmxcopy(void *dest,void *src,int size);
 
-/*!\fn int signal_energy(int *,u32);
+/*!\fn s32 signal_energy(int *,u32);
 \brief Computes the signal energy per subcarrier
 */
 s32 signal_energy(s32 *,u32);

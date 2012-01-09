@@ -259,6 +259,7 @@ typedef struct
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_eNB_MAX];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_eNB_MAX];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_eNB_MAX];

@@ -288,7 +288,7 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
   u8 pcfich_quad;
   u8 i,j;
-  u16 m,reg_offset;
+  u16 reg_offset;
 
   s32 **rxdataF_comp = lte_ue_pdcch_vars->rxdataF_comp;
   s16 pcfich_d[32],*pcfich_d_ptr;
@@ -297,7 +297,7 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
   // demapping
   // loop over 4 quadruplets and lookup REGs
-  m=0;
+  //  m=0;
   pcfich_d_ptr = pcfich_d;
 
   for (pcfich_quad=0;pcfich_quad<4;pcfich_quad++) {

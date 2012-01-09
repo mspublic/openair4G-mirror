@@ -21,7 +21,7 @@ static u32 bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24
 u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
 
   u32 RTC = (D>>5), ND, ND3;
-  u32 row,col,Kpi,Kpi3,index;
+  u32 row,col,Kpi,index;
   u32 index3,k;
 #ifdef RM_DEBUG
   u32 nulled=0;
@@ -30,7 +30,7 @@ u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
   if ((D&0x1f) > 0)
     RTC++;
   Kpi = (RTC<<5);
-  Kpi3 = Kpi*3;
+  //  Kpi3 = Kpi*3;
   ND = Kpi - D;
 #ifdef RM_DEBUG
   printf("sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
@@ -78,7 +78,7 @@ u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
 u32 sub_block_interleaving_cc(u32 D, u8 *d,u8 *w) {
 
   u32 RCC = (D>>5), ND, ND3;
-  u32 row,col,Kpi,Kpi3,index;
+  u32 row,col,Kpi,index;
   u32 index3,k;
 #ifdef RM_DEBUG_CC
   u32 nulled=0;
@@ -87,7 +87,7 @@ u32 sub_block_interleaving_cc(u32 D, u8 *d,u8 *w) {
   if ((D&0x1f) > 0)
     RCC++;
   Kpi = (RCC<<5);
-  Kpi3 = Kpi*3;
+  //  Kpi3 = Kpi*3;
   ND = Kpi - D;
 #ifdef RM_DEBUG_CC
   printf("sub_block_interleaving_cc : D = %d (%d), d %p, w %p\n",D,D*3,d,w);
@@ -131,13 +131,13 @@ u32 sub_block_interleaving_cc(u32 D, u8 *d,u8 *w) {
 void sub_block_deinterleaving_turbo(u32 D,s16 *d,s16 *w) {
 
   u32 RTC = (D>>5), ND, ND3;
-  u32 row,col,Kpi,Kpi3,index;
+  u32 row,col,Kpi,index;
   u32 index3,k;
 
   if ((D&0x1f) > 0)
     RTC++;
   Kpi = (RTC<<5);
-  Kpi3 = Kpi*3;
+  //  Kpi3 = Kpi*3;
   ND = Kpi - D;
 #ifdef RM_DEBUG2
   printf("sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
@@ -170,13 +170,13 @@ void sub_block_deinterleaving_turbo(u32 D,s16 *d,s16 *w) {
 void sub_block_deinterleaving_cc(u32 D,s8 *d,s8 *w) {
 
   u32 RCC = (D>>5), ND, ND3;
-  u32 row,col,Kpi,Kpi3,index;
+  u32 row,col,Kpi,index;
   u32 index3,k;
 
   if ((D&0x1f) > 0)
     RCC++;
   Kpi = (RCC<<5);
-  Kpi3 = Kpi*3;
+  //  Kpi3 = Kpi*3;
   ND = Kpi - D;
 #ifdef RM_DEBUG2
   printf("sub_block_interleaving_cc : D = %d (%d), d %p, w %p\n",D,D*3,d,w);
@@ -209,8 +209,8 @@ void sub_block_deinterleaving_cc(u32 D,s8 *d,s8 *w) {
 
 u32 generate_dummy_w(u32 D, u8 *w,u8 F) {
 
-  u32 RTC = (D>>5), ND, ND3;
-  u32 col,Kpi,Kpi3,index;
+  u32 RTC = (D>>5), ND;
+  u32 col,Kpi,index;
   s32 k;
 #ifdef RM_DEBUG
   u32 nulled=0;
@@ -219,13 +219,13 @@ u32 generate_dummy_w(u32 D, u8 *w,u8 F) {
   if ((D&0x1f) > 0)
     RTC++;
   Kpi = (RTC<<5);
-  Kpi3 = Kpi*3;
+  //  Kpi3 = Kpi*3;
   ND = Kpi - D;
 #ifdef RM_DEBUG
   printf("dummy sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
   printf("RTC = %d, Kpi=%d, ND=%d, F=%d (Nulled %d)\n",RTC,Kpi,ND,F,(2*F + 3*ND));
 #endif
-  ND3 = ND*3;
+  //  ND3 = ND*3;
 
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
   k=0;
@@ -280,8 +280,8 @@ u32 generate_dummy_w(u32 D, u8 *w,u8 F) {
  
 u32 generate_dummy_w_cc(u32 D, u8 *w){
 
-  u32 RCC = (D>>5), ND, ND3;
-  u32 col,Kpi,Kpi3,index;
+  u32 RCC = (D>>5), ND;
+  u32 col,Kpi,index;
   s32 k;
 #ifdef RM_DEBUG_CC
   u32 nulled=0;
@@ -290,13 +290,13 @@ u32 generate_dummy_w_cc(u32 D, u8 *w){
   if ((D&0x1f) > 0)
     RCC++;
   Kpi = (RCC<<5);
-  Kpi3 = Kpi*3;
+  //  Kpi3 = Kpi*3;
   ND = Kpi - D;
 #ifdef RM_DEBUG_CC
   printf("dummy sub_block_interleaving_cc : D = %d (%d)\n",D,D*3);
   printf("RCC = %d, Kpi=%d, ND=%d, (Nulled %d)\n",RCC,Kpi,ND,3*ND);
 #endif
-  ND3 = ND*3;
+  //  ND3 = ND*3;
 
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
   k=0;

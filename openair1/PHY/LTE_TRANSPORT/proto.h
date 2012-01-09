@@ -566,36 +566,30 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 dlsch_id,
 			u8 eNB_id);
 
-/** \brief This function is the top-level entry point to dlsch demodulation, after frequency-domain transformation and channel estimation.  It performs
+/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
     - RE extraction (pilot, PBCH, synch. signals)
     - antenna combining (MRC, Alamouti, cycling)
     - LLR computation
-    @param lte_ue_common_vars Pointer to Common RX variable structure for UE
-    @param lte_ue_dlsch_vars Pointer to DLSCH signal variable structure for UE
-    @param frame_parms Pointer to frame descriptor
+    @param phy_vars_ue Pointer to PHY variables
+    @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
     @param eNB_id eNb index (Nid1) 0,1,2
     @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
-    @param dlsch_ue Pointer to DLSCH coding variable structure for UE
     @param subframe Subframe number
     @param symbol Symbol on which to act (within sub-frame)
     @param first_symbol_flag set to 1 on first DLSCH symbol
     @param dual_stream_UE Flag to indicate dual-stream interference cancellation
-    @param phy_measurements Pointer to UE PHY measurements procedure
     @param i_mod Modulation order of the interfering stream
 */
-s32 rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-	     LTE_UE_PDSCH **lte_ue_pdsch_vars,
-	     LTE_DL_FRAME_PARMS *frame_parms,
+s32 rx_pdsch(PHY_VARS_UE *phy_vars_ue,
+	     PDSCH_t type,
 	     u8 eNB_id,
 	     u8 eNB_id_i,
-	     LTE_UE_DLSCH_t **dlsch_ue,
 	     u8 subframe,
 	     u8 symbol,
 	     u8 first_symbol_flag,
 	     u8 dual_stream_UE,
-	     PHY_MEASUREMENTS *phy_measurements,
 	     u8 i_mod);
 
 s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
@@ -835,7 +829,7 @@ s32 generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 
 /*!
   \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).
-  @params frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
+  @param frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
 void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
 
 s32 compareints (const void * a, const void * b);
