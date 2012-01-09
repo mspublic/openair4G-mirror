@@ -550,9 +550,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*7*(frame_parms->ofdm_symbol_size)],
 	       0,14*(frame_parms->ofdm_symbol_size)*sizeof(s32));
 #endif
-	if ((next_slot>>1) == 8)
-	  write_output("txsigF8_pre.m","txsF8_pre", &phy_vars_ue->lte_ue_common_vars.txdataF[0][14*phy_vars_ue->lte_frame_parms.ofdm_symbol_size*8],
-		       phy_vars_ue->lte_frame_parms.ofdm_symbol_size*14,1,1);	      
       }
     }
 
@@ -2085,7 +2082,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    
 	    if (timing_advance!=0xffff) {
 
-	      msg("[PHY][UE  %d][RARPROC] Frame %d subframe %d Got rnti %x and timing advance %d from RAR\n",
+	      msg("[PHY][UE  %d][RARPROC] Frame Got rnti %x and timing advance %d from RAR\n",
 		  phy_vars_ue->Mod_id,
 		  mac_xface->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
