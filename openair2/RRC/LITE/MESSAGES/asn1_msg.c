@@ -145,7 +145,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 				   buffer,
 				   200);
 #ifdef USER_MODE
-  printf("[RRC][eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  msg("[RRC][eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1)
@@ -281,7 +281,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.ul_CyclicPrefixLength=UL_CyclicPrefixLength_len1;
 
   //assign_enum(&(*sib2)->ue_TimersAndConstants.t300, UE_TimersAndConstants__t300_ms1000);
-  (*sib2)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms1000;
+  (*sib2)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms100;
  
   //assign_enum(&(*sib2)->ue_TimersAndConstants.t301, UE_TimersAndConstants__t301_ms1000);
   (*sib2)->ue_TimersAndConstants.t301=UE_TimersAndConstants__t301_ms1000;
@@ -356,7 +356,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 				   buffer,
 				   100);
 #ifdef USER_MODE
-  printf("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  msg("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1) {
@@ -407,7 +407,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 				   100);
 
 #ifdef USER_MODE
-  printf("[RRC][UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  msg("[RRC][UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -466,7 +466,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer) {
 
 
 #ifdef USER_MODE
-  printf("RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  msg("[RRC][UE] RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -498,7 +498,7 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 				   100);
 
 #ifdef USER_MODE
-  printf("RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+ msg("[RRC][UE] RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -594,7 +594,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   ASN_SEQUENCE_ADD(&SRB_list->list,SRB1_config2);
-
+  /*
   /// SRB2
   SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
   *SRB2_config = SRB2_config2;
@@ -646,6 +646,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   ASN_SEQUENCE_ADD(&SRB_list->list,SRB2_config2);
+  */
 
   // PhysicalConfigDedicated
 
@@ -803,7 +804,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 				   100);
 
 #ifdef USER_MODE
-  printf("RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  msg("[RRC][eNB] RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
   FREEMEM(SRB_list);
@@ -860,7 +861,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
   *SRB2_config = SRB2_config2;
 
-  SRB2_config2->srb_Identity = 1;
+  SRB2_config2->srb_Identity = 2;
   SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
   SRB2_config2->rlc_Config   = SRB2_rlc_config;
   
@@ -986,13 +987,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 				   buffer,
 				   100);
 
-  //#ifdef USER_MODE
-  msg("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-  // for (i=0;i<30;i++)
-  //    msg("%x.",buffer[i]);
-  // msg("\n");
-  
-  //#endif
+#ifdef USER_MODE
+  msg("[RRC][eNB] RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
 
   FREEMEM(SRB_list);
   FREEMEM(DRB_list);

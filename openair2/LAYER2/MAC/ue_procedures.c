@@ -228,7 +228,9 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
   unsigned short rx_lengths[MAX_NUM_RB];
+  unsigned char *tx_sdu;
 
+  
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
 #ifdef DEBUG_HEADER_PARSING
@@ -243,8 +245,19 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 #ifdef DEBUG_HEADER_PARSING
 	LOG_D(MAC,"[UE %d] CE %d : UE contention resolution for RRC :",Mod_id,i);
 	LOG_T(MAC, "[UE] %x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
-	// Send to RRC here
 #endif
+	if (UE_mac_inst[Mod_id].RA_active == 1) {
+	  UE_mac_inst[Mod_id].RA_active=0;
+	  // check if RA procedure has finished completely (no contention)
+	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)];
+	  for (i=0;i<6;i++)
+	    if (tx_sdu[i] != payload_ptr[i]) {
+	      LOG_D(MAC,"Contention detected, RA failed\n");
+	      mac_xface->ra_failed(Mod_id,eNB_index);
+	      return;
+	    }
+	  UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 0;
+	}
 	payload_ptr+=6;
 	break;
       case TIMING_ADV_CMD:
@@ -552,7 +565,6 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
   u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
   u16 sdu_length_total=0;
-  u16 pdu_length_total=0;
   BSR_SHORT bsr_short;
   BSR_LONG bsr_long;
   BSR_SHORT *bsr_s=&bsr_short;
@@ -730,8 +742,8 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     
 }
 
-// called at each slot (next_slot%2==0)
-void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
+// called at each subframe 
+UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_index) {
 
   int lcid; // lcid index
  
@@ -739,10 +751,42 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
   int bucketsizeduration;
   int bucketsizeduration_max;
   mac_rlc_status_resp_t rlc_status[11];
- 
+  struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
+
   Mac_rlc_xface->frame=mac_xface->frame;
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
+  
+  switch (Rrc_xface->rrc_rx_tx(Mod_id,0,eNB_index)) {
+  case RRC_OK:
+    break;
+  case RRC_ConnSetup_failed:
+    LOG_D(MAC,"RRCConnectionSetup failed, returning to IDLE state");
+    return(CONNECTION_LOST);
+    break;
+  default:
+    break;
+  }
+
+  // Check timers
+  if (UE_mac_inst[Mod_id].RA_contention_resolution_timer_active == 1) {
+    if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
+      rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
+    else {
+      LOG_D(MAC,"FATAL: radioResourceConfigCommon is NULL!!!\n");
+      mac_xface->macphy_exit("");
+      return;
+    }
+    UE_mac_inst[Mod_id].RA_contention_resolution_cnt++;
+    if (UE_mac_inst[Mod_id].RA_contention_resolution_cnt == 
+	((1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3)) {
+      UE_mac_inst[Mod_id].RA_active = 0;
+      // Signal PHY to quit RA procedure
+      mac_xface->ra_failed(Mod_id,eNB_index);
+      LOG_D(MAC,"Counter resolution timer expired, RA failed\n");
+    }
+  }
+
   
   // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
   // outlined in Sections 5.4.4 an 5.4.5 of 36.321
@@ -795,6 +839,8 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
   }
   
   // Call PHR procedure as described in Section 5.4.6 in 36.321
+
+  return(CONNECTION_OK);
 }
 
 u8 get_bsr_len (u8 Mod_id, u16 buflen) {

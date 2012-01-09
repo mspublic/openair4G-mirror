@@ -110,7 +110,7 @@ typedef struct
     void (*chbch_phy_sync_success) (u8 Mod_id, u8 CH_index);
 
     /// Only calls the PDCP for now
-    void (*ue_scheduler)(u8 Mod_id, u8 subframe, lte_subframe_t direction);
+    UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_id);
 
     /// PHY-Config-Dedicated UE
     void (*phy_config_dedicated_ue)(u8 Mod_id,u8 CH_index,
@@ -126,9 +126,11 @@ typedef struct
     void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
 			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
+    /// Function to indicate failure of contention resolution or RA procedure
+    void (*ra_failed)(u8 Mod_id,u8 eNB_index);
 
-
-
+    /// Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
+    void (*Msg3_transmitted)(u8 Mod_id,u8 eNB_id);
 
     // PHY Helper Functions
 
