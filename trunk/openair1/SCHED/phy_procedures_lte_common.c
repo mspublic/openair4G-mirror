@@ -315,7 +315,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	   unsigned char subframe,
 	   unsigned char *o_ACK) {
 
-  printf("get_ack: SF %d\n",subframe);
+  //  printf("get_ack: SF %d\n",subframe);
   u8 status=0;
   
   if (frame_parms->frame_type == 0) {
