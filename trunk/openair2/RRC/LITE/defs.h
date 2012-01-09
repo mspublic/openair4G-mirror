@@ -49,11 +49,14 @@ ________________________________________________________________*/
 //#define NUM_PRECONFIGURED_LCHAN (NB_CH_CX*2)  //BCCH, CCCH
 
 #define CH_READY 0
-#define RRC_IDLE 1
-#define RRC_PRE_SYNCHRO 2
-#define RRC_PRE_ASSOCIATED 3
-#define RRC_ASSOCIATED 4
-#define RRC_CONNECTED 5
+
+typedef enum  {
+  RRC_IDLE=0,
+  RRC_SI_RECEIVED,
+  RRC_CONNECTED
+} UE_STATE_t;
+
+
 
 #define NB_CNX_eNB MAX_MOBILES_PER_RG
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
@@ -62,18 +65,13 @@ ________________________________________________________________*/
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s ) 
 
 
-#define MSG_L2ID(p) msg("[INFO] L2ID=%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",\
-	                (p).L2_id[0],(p).L2_id[1], (p).L2_id[2],(p).L2_id[3],\
-	                (p).L2_id[4],(p).L2_id[5], (p).L2_id[6],(p).L2_id[7] )
-
-
 #define PAYLOAD_SIZE_MAX 1024
 
-#define NB_RAB_BRODCAST_MAX 2
-#define MAX_ALLOWED_BCCH_MISS 10
+
+
 
 typedef struct{
-  u8 Status;
+  UE_STATE_t State;
   u8 SIB1Status;
   u8 SIStatus;
   u8 SIwindowsize;
@@ -87,6 +85,12 @@ typedef struct{
   u8 Rach_time_alloc;
   unsigned short Rach_freq_alloc;
   //  L2_ID CH_mac_id;
+  u8 T300_active;
+  u8 T300_cnt;
+  u8 T304_active;
+  u8 T304_cnt;
+  u8 T310_active;
+  u8 T310_cnt;
 }UE_RRC_INFO;
 
 typedef struct{
@@ -215,6 +219,12 @@ char openair_rrc_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id);
 
+/** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
+@param Mod_id Instance of UE/eNB
+@param eNB_flag Flag to indicate if this instance is and eNB or UE
+@param index Index of corresponding eNB (for UE)
+*/
+RRC_status_t rrc_rx_tx(u8 Mod_id,u8 eNB_flag,u8 index);
 
 // UE RRC Procedures
 

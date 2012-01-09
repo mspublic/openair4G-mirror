@@ -12,6 +12,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
+#include "UTIL/LOG/log.h"
 #define DEBUG_RRC 1
 extern eNB_MAC_INST *eNB_mac_inst;
 extern UE_MAC_INST *UE_mac_inst;
@@ -72,13 +73,13 @@ int rrc_init_global_param(void){
 
   Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
   Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;
-  Rrc_xface->openair_rrc_UE_init = openair_rrc_ue_init;
-  Rrc_xface->mac_rrc_data_ind=mac_rrc_data_ind;
-  Rrc_xface->mac_rrc_data_req=mac_rrc_data_req;
-  Rrc_xface->rrc_data_indP=(void *)rlcrrc_data_ind;
-  //  Rrc_xface->rrc_rx_tx=rrc_rx_tx;
-  Rrc_xface->mac_rrc_meas_ind=mac_rrc_meas_ind;
-  Rrc_xface->get_rrc_status=get_rrc_status;
+  Rrc_xface->openair_rrc_UE_init  = openair_rrc_ue_init;
+  Rrc_xface->mac_rrc_data_ind     = mac_rrc_data_ind;
+  Rrc_xface->mac_rrc_data_req     = mac_rrc_data_req;
+  Rrc_xface->rrc_data_indP        = (void *)rlcrrc_data_ind;
+  Rrc_xface->rrc_rx_tx            = rrc_rx_tx;
+  Rrc_xface->mac_rrc_meas_ind     = mac_rrc_meas_ind;
+  Rrc_xface->get_rrc_status       = get_rrc_status;
 
   //Rrc_xface->rrc_get_status = ...
 
@@ -216,7 +217,7 @@ void openair_rrc_top_init(void){
   Header_size=sizeof(msg_head_t);
 
 #endif //NO_RRM
-Data_to_read=0;
+  Data_to_read=0;
 #endif //USER_MODE
 
 }
@@ -225,5 +226,25 @@ int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
   if(eNB_flag == 1)
     return(eNB_rrc_inst[Mod_id].Info.Status[index]);
   else
-    return(UE_rrc_inst[Mod_id].Info[index].Status);
+    return(UE_rrc_inst[Mod_id].Info[index].State);
+}
+
+u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
+
+RRC_status_t rrc_rx_tx(u8 Mod_id,u8 eNB_flag,u8 index){
+
+  if(eNB_flag == 0) {
+    // check timers
+
+    if (UE_rrc_inst[Mod_id].Info[index].T300_active) {
+      LOG_D(RRC,"T300 Count %d ms\n",UE_rrc_inst[Mod_id].Info[index].T300_cnt);
+      if (UE_rrc_inst[Mod_id].Info[index].T300_cnt == T300[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t300]) {
+	UE_rrc_inst[Mod_id].Info[index].T300_active = 0;
+	return(RRC_ConnSetup_failed);
+      }
+      UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
+    }
+  }
+
+  return(RRC_OK);
 }

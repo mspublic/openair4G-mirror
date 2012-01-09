@@ -41,7 +41,6 @@ s8 mac_rrc_lite_data_req( unsigned char Mod_id,
 
   SRB_INFO *Srb_info;
   u8 Sdu_size=0;
-  u8 i;  
 
 #ifdef DEBUG_RRC
   msg("[RRC] Mod_id=%d: mac_rrc_data_req to SRB ID=%d\n",Mod_id,Srb_id);
@@ -107,13 +106,15 @@ s8 mac_rrc_lite_data_req( unsigned char Mod_id,
 
   else{   //This is an UE
 #ifdef DEBUG_RRC
-    msg("[RRC][UE%d] Filling rach,SRB_ID %d\n",Mod_id,Srb_id);
-    msg("Buffers status %d,\n",UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size);
+    msg("[RRC][UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_id,Mac_rlc_xface->frame,Srb_id);
+    msg("[RRC][UE %d] Frame %d Buffer status %d,\n",Mod_id,Mac_rlc_xface->frame, UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size);
 #endif
     if( (UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size);
       u8 Ret_size=UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size;
       UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
+      UE_rrc_inst[Mod_id].Info[eNB_index].T300_active = 1;
+      UE_rrc_inst[Mod_id].Info[eNB_index].T300_cnt = 0;
       //      msg("[RRC][UE %d] Sending rach\n",Mod_id);
       return(Ret_size);
     }
@@ -174,10 +175,11 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
        
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
-	if (UE_rrc_inst[Mod_id].Info[eNB_index].Status == RRC_IDLE) {
-	  msg("[RRC][UE %d] Received First System Info Switching to RRC_PRE_SYNCHRO\n",Mod_id);
-	  UE_rrc_inst[Mod_id].Info[eNB_index].Status = RRC_PRE_SYNCHRO;
+	if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE) {
+	  msg("[RRC][UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
+	  UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_SI_RECEIVED;
 	}
+	// After SI is received, prepare RRCConnectionRequest
 	rrc_ue_generate_RRCConnectionRequest(Mod_id,eNB_index);
       }
     }   
@@ -233,12 +235,12 @@ void rrc_lite_out_of_sync_ind(unsigned char Mod_id, unsigned short eNB_index){
 /*-------------------------------------------------------------------------------------------*/
 
 
-  rlc_info_t rlc_infoP;
-  rlc_infoP.rlc_mode=RLC_UM;
+//  rlc_info_t rlc_infoP;
+//  rlc_infoP.rlc_mode=RLC_UM;
 
   msg("______________[NODE %d][RRC] OUT OF SYNC FROM CH %d______________\n ",NODE_ID[Mod_id],eNB_index);
   
-  UE_rrc_inst[Mod_id].Info[eNB_index].Status=RRC_IDLE;
+  UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
   UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;	
   UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;	
   UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
@@ -267,7 +269,7 @@ u8 get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index){
   if(eNB_flag == 1)
     return(eNB_rrc_inst[Mod_id].Info.Status);
   else
-    return(UE_rrc_inst[Mod_id].Info[eNB_index].Status);
+    return(UE_rrc_inst[Mod_id].Info[eNB_index].State);
 }
 */
 

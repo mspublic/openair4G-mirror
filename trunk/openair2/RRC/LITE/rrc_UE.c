@@ -66,7 +66,10 @@ char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
 
   msg("[OPENAIR][RRC] INIT UE %d (eNB %d)\n",Mod_id,eNB_index);
 
-  UE_rrc_inst[Mod_id].Info[eNB_index].Status=RRC_IDLE;
+  UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
+  UE_rrc_inst[Mod_id].Info[eNB_index].T300_active = 0;
+  UE_rrc_inst[Mod_id].Info[eNB_index].T304_active = 0;
+  UE_rrc_inst[Mod_id].Info[eNB_index].T310_active = 0;
   UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
   UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
   UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
@@ -178,7 +181,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
 
   if (dl_ccch_msg->message.present == DL_CCCH_MessageType_PR_c1) {
 
-    if (UE_rrc_inst[Mod_id].Info[eNB_index].Status == RRC_PRE_SYNCHRO) {
+    if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_SI_RECEIVED) {
 
       switch (dl_ccch_msg->message.choice.c1.present) {
 
@@ -202,7 +205,8 @@ int rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
 	msg("[RRC][UE%d] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
 	// Get configuration
 
-
+	// Release T300 timer
+	UE_rrc_inst[Mod_id].Info[eNB_index].T300_active=0;
 	rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
 						    &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup.criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated);
 
@@ -334,7 +338,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 						    RadioResourceConfigDedicated_t *radioResourceConfigDedicated) {
 
   long SRB_id,DRB_id;
-  int i,ret,cnt;
+  int i,cnt;
   LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
 
   // Save physicalConfigDedicated if present
@@ -386,7 +390,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 	else {
 	  UE_rrc_inst[Mod_id].SRB1_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
 
-	  ret = rrc_ue_establish_srb1(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
+	  rrc_ue_establish_srb1(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
 	  if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig) {
 	    if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
 	      SRB1_logicalChannelConfig = &UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
@@ -420,7 +424,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 	  
 	  UE_rrc_inst[Mod_id].SRB2_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
 
-	  ret = rrc_ue_establish_srb2(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
+	  rrc_ue_establish_srb2(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
 	  if (UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig) {
 	    if (UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue){
 	      SRB2_logicalChannelConfig = &UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
@@ -460,7 +464,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
       else {
 	UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
 
-	ret = rrc_ue_establish_drb(Mod_id,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
+	rrc_ue_establish_drb(Mod_id,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
 	// MAC/PHY Configuration
 	Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
 					  (RadioResourceConfigCommonSIB_t *)NULL,
@@ -477,7 +481,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
     }
   }
 
-  UE_rrc_inst[Mod_id].Info[eNB_index].Status = RRC_CONNECTED;
+  UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_CONNECTED;
 
 
 }
@@ -509,7 +513,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
 
   DL_DCCH_Message_t dldcchmsg;
   DL_DCCH_Message_t *dl_dcch_msg=&dldcchmsg;
-  asn_dec_rval_t dec_rval;
+  //  asn_dec_rval_t dec_rval;
   int i;
 
   if (Srb_id != 1) {
@@ -525,15 +529,15 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
     msg("%x.",Buffer[i]);
   msg("\n");
 
-  dec_rval = uper_decode(NULL,
-			 &asn_DEF_DL_DCCH_Message,
-			 (void**)&dl_dcch_msg,
-			 (uint8_t*)Buffer,
-			 100,0,0);
+  uper_decode(NULL,
+	      &asn_DEF_DL_DCCH_Message,
+	      (void**)&dl_dcch_msg,
+	      (uint8_t*)Buffer,
+	      100,0,0);
 
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
-    if (UE_rrc_inst[Mod_id].Info[eNB_index].Status == RRC_CONNECTED) {
+    if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_CONNECTED) {
 
       switch (dl_dcch_msg->message.choice.c1.present) {
 

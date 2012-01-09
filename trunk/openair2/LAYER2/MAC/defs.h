@@ -91,6 +91,10 @@
 
 #define BSR_TABLE_SIZE 64
 
+typedef enum {
+  CONNECTION_OK=0,
+  CONNECTION_LOST
+} UE_L2_STATE_t;
 
 typedef struct {
   u8 RAPID:6;
@@ -453,6 +457,10 @@ typedef struct{
   u8 RA_backoff_subframe;
   /// Random-access Group B maximum path-loss
   u16 RA_maxPL;
+  /// Random-access Contention Resolution Timer active flag
+  u8 RA_contention_resolution_timer_active;
+  /// Random-access Contention Resolution Timer count value
+  u8 RA_contention_resolution_cnt;
 }UE_MAC_INST;
 
 
@@ -685,7 +693,10 @@ u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
 void out_of_sync_ind(u8 Mod_id,u16);
+
 void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
+
+
 void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
 
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
@@ -759,13 +770,15 @@ void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
-/*! \fn  void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction)
+/*! \fn  UE_L2_state_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_index)
    \brief UE scehdular where all the ue background tasks are done
 \param[in] Mod_id instance of the UE
 \param[in] subframe the subframe number
 \param[in] direction subframe direction
+\param[in] eNB_index instance of eNB
+@returns L2 state (CONNETION_OK or CONNECTION_LOST)
 */
-void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction);
+UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 
 
 /*! \fn  u8 get_bsr_len (u8 Mod_id, u16 bufflen);
@@ -829,6 +842,13 @@ int get_ms_bucketsizeduration(u8 bucketsizeduration);
 \return the time in ms
 */
 int get_sf_retxBSRTimer(u8 retxBSR_Timer);
+
+/*! \brief Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
+\param[in] Mod_id Instance index of UE
+\param[in] eNB_id Index of eNB
+*/
+void Msg3_tx(u8 Mod_id,u8 eNB_id);
+
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
 

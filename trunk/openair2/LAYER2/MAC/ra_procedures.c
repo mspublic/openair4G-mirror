@@ -179,6 +179,14 @@ void get_prach_resources(u8 Mod_id,
   UE_mac_inst[Mod_id].RA_prach_resources.ra_RNTI = 1 + t_id + 10*f_id;
 }
 
+void Msg3_tx(u8 Mod_id,u8 eNB_id) {
+
+  // start contention resolution timer
+  UE_mac_inst[Mod_id].RA_contention_resolution_cnt = 0;
+  UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 1;
+}
+
+
 PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u8 eNB_index,u8 subframe){
 
 
