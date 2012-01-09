@@ -723,7 +723,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       if (abstraction_flag==0) {
 	
 	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-	  printf("Generating PSS (frame %d, subframe %d)\n",mac_xface->frame,next_slot>>1);
+	  //	  printf("Generating PSS (frame %d, subframe %d)\n",mac_xface->frame,next_slot>>1);
 	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 		       4*AMP,
 		       &phy_vars_eNB->lte_frame_parms,
