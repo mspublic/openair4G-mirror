@@ -297,27 +297,27 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     t0_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t0_ra;
     t1_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t1_ra;
     t2_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t2_ra;
-#ifdef PRACH_DEBUG    
-    msg("[PHY] prach.c: Checking for PRACH (ConfigIndex %d) in TDD subframe %d (%d,%d,%d)\n",
+    //#ifdef PRACH_DEBUG    
+    msg("[PHY][PRACH] prach.c: Checking for PRACH (ConfigIndex %d) in TDD subframe %d (%d,%d,%d)\n",
 	prach_ConfigIndex,
 	subframe,
 	t0_ra,t1_ra,t2_ra);
-#endif    
+    //#endif    
     if ((((t0_ra == 1) && ((mac_xface->frame &1)==0))||  // frame is even and PRACH is in even frames
 	 ((t0_ra == 2) && ((mac_xface->frame &1)==1))||  // frame is odd and PRACH is in odd frames
 	 (t0_ra == 0)) &&                                // PRACH is in all frames
-	(((subframe<6)&&(t1_ra==0)) ||                   // PRACH is in 1st half-frame
-	 (((subframe>5)&&(t1_ra==1))))) {                // PRACH is in 2nd half-frame
+	(((subframe<5)&&(t1_ra==0)) ||                   // PRACH is in 1st half-frame
+	 (((subframe>4)&&(t1_ra==1))))) {                // PRACH is in 2nd half-frame
       if (prach_ConfigIndex<48)                          // PRACH only in normal UL subframe 
 	return((((subframe%5)-2)==t2_ra));
       else                                               // PRACH can be in UpPTS
 	return((((subframe%5)-1)==t2_ra));
     }
     else
-      return(-1);
+      return(1==2);
   }
   // shouldn't get here!
-  return(-1);
+  return(2==1);
 }
 
 s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
@@ -347,9 +347,8 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   u8 f_ra,t1_ra;
   u16 N_ZC = (prach_fmt <4)?839:139;
   u8 not_found;
-  u8 nsymb;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  u16 subframe_offset;
+  //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  //  u16 subframe_offset;
   s16 k;
   s16 *Xu,*e;
   s32 Xu_re,Xu_im;
@@ -466,8 +465,8 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     msg("[PHY] prach.c: More than 4 preamble root sequences are not supported yet (got %d)!!!!\n",preamble_offset);
     mac_xface->macphy_exit("");
   }
-  nsymb = (frame_parms->Ncp==0) ? 14:12;
-  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
+  //  nsymb = (frame_parms->Ncp==0) ? 14:12;
+  //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
   
   k = (12*n_ra_prb) - 6*phy_vars_ue->lte_frame_parms.N_RB_UL;
   if (k<0)
@@ -633,9 +632,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   u8 f_ra,t1_ra;
   u16 N_ZC = (prach_fmt <4)?839:139;
   u8 not_found;
-  u8 nsymb;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
-  u16 subframe_offset;
+  //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  //  u16 subframe_offset;
   s16 k;
   s16 *Xu;
   u16 offset;
@@ -714,8 +712,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   }
   
   Ncp = (Ncp*phy_vars_eNB->lte_frame_parms.N_RB_UL/100); 
-  nsymb = (frame_parms->Ncp==0) ? 14:12;
-  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
+  //  nsymb = (frame_parms->Ncp==0) ? 14:12;
+  //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
 
   preamble_offset_old = 99;
 

@@ -430,7 +430,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 
   LTE_eNB_COMMON *eNB_common_vars                = &phy_vars_eNB->lte_eNB_common_vars;
   LTE_DL_FRAME_PARMS *frame_parms                = &phy_vars_eNB->lte_frame_parms;
-  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &phy_vars_eNB->pucch_config_dedicated[UE_id];
+  //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &phy_vars_eNB->pucch_config_dedicated[UE_id];
   s8 sigma2_dB                                   = phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dB;
   u32 u,v,n,aa;
   u32 z[12*14];
@@ -447,7 +447,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
   s16 *rxptr;
   u32 symbol_offset;
   s16 stat_ref_re,stat_ref_im,*cfo,chest_re,chest_im;
-  s32 stat_re,stat_im;
+  s32 stat_re=0,stat_im=0;
   s32 stat,stat_max=0;
 
   u8 deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;

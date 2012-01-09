@@ -52,7 +52,7 @@ void rf_rx(double **r_re,
 
   double pn_amp      = pow(10.0,.1*pn_amp_dBc);
   double I0 = pow(10.0,.05*I0_dB);
-  double dummy;
+  //  double dummy;
 
   int i,a,have_interference=0;
 
@@ -136,10 +136,12 @@ void rf_rx(double **r_re,
       r_im[a][i] = tmp_im;
 
     }
-    if (nb_rx_antennas == 1) {
-      dummy = gaussdouble(0.0,1.0);
-      dummy = gaussdouble(0.0,1.0);
-    }
+
+
+    //    if (nb_rx_antennas == 1) {
+    //      dummy = gaussdouble(0.0,1.0);
+    //      dummy = gaussdouble(0.0,1.0);
+    //    }
     // First apply frequency/phase offsets + phase noise
     //    U[i%pn_len]=uniformrandom()*pn_amp_lin;
     //    p_noise = 0;

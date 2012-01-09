@@ -108,7 +108,7 @@ unsigned int cqi2hex(unsigned short cqi) {
 
 
 void do_diff_cqi(u8 N_RB_DL,
-		u8 *DL_subband_cqi,
+		 u8 *DL_subband_cqi,
 		 u8 DL_cqi,
 		 u32 diffcqi1) {
 
@@ -162,39 +162,39 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats) {
   switch(uci_format){
   case wideband_cqi_rank1_2A:
     stats->DL_cqi[0]     = (((wideband_cqi_rank1_2A_5MHz *)o)->cqi1);
-    if (stats->DL_cqi[0] > 15)
-      stats->DL_cqi[0] = 15;
+    if (stats->DL_cqi[0] > 24)
+      stats->DL_cqi[0] = 24;
     stats->DL_pmi_single = ((wideband_cqi_rank1_2A_5MHz *)o)->pmi;   
     break;
   case wideband_cqi_rank2_2A:
     stats->DL_cqi[0]     = (((wideband_cqi_rank2_2A_5MHz *)o)->cqi1);
-    if (stats->DL_cqi[0] > 15)
-      stats->DL_cqi[0] = 15;      
+    if (stats->DL_cqi[0] > 24)
+      stats->DL_cqi[0] = 24;      
     stats->DL_cqi[1]     = (((wideband_cqi_rank2_2A_5MHz *)o)->cqi2);
-    if (stats->DL_cqi[1] > 15)
-      stats->DL_cqi[1] = 15;      
+    if (stats->DL_cqi[1] > 24)
+      stats->DL_cqi[1] = 24;      
     stats->DL_pmi_dual   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi; 
     break;
   case HLC_subband_cqi_nopmi:
     stats->DL_cqi[0]     = (((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1);
-    if (stats->DL_cqi[0] > 15)
-      stats->DL_cqi[0] = 15;      
+    if (stats->DL_cqi[0] > 24)
+      stats->DL_cqi[0] = 24;      
     do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1);
     break;
   case HLC_subband_cqi_rank1_2A:
     stats->DL_cqi[0]     = (((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1);
-    if (stats->DL_cqi[0] > 15)
-      stats->DL_cqi[0] = 15;     
+    if (stats->DL_cqi[0] > 24)
+      stats->DL_cqi[0] = 24;     
     do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],(((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1));      
     stats->DL_pmi_single = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi;    
     break;
   case HLC_subband_cqi_rank2_2A:
     stats->DL_cqi[0]     = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1);
-    if (stats->DL_cqi[0] > 15)
-      stats->DL_cqi[0] = 15;      
+    if (stats->DL_cqi[0] > 24)
+      stats->DL_cqi[0] = 24;      
     stats->DL_cqi[1]     = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2);
-    if (stats->DL_cqi[1] > 15)
-      stats->DL_cqi[1] = 15;      
+    if (stats->DL_cqi[1] > 24)
+      stats->DL_cqi[1] = 24;      
     do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1));      
     do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[1],stats->DL_cqi[1],(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2));      
     stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi; 

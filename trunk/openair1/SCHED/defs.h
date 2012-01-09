@@ -266,6 +266,13 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 current_subframe);
    @param subframe subframe of PHICH
    @returns harq_pid (0 ... 7)
  */
+
+/** \brief Function to indicate failure of contention resolution or RA procedure.  It places the UE back in PRACH mode.
+    @param Mod_id Instance index of UE
+    @param eNB_index Index of eNB
+ */
+void ra_failed(u8 Mod_id,u8 eNB_index);
+
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
 /* \brief Get PDSCH subframe (n+k) from PDCCH subframe n using relationship from Table 8-2 from 36.213
@@ -396,6 +403,23 @@ void process_HARQ_feedback(u8 UE_id,
 */ 
 UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index);
 
+/** \brief This function implements the power control mechanism for PUCCH from 36.213.
+    @param phy_vars_ue PHY variables
+    @param subframe Index of subframe
+    @param eNB_id Index of eNB
+    @param pucch_fmt Format of PUCCH that is being transmitted
+    @returns Transmit power
+ */
+s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t pucch_fmt);
+
+/** \brief This function implements the power control mechanism for PUCCH from 36.213.
+    @param phy_vars_ue PHY variables
+    @param subframe Index of subframe
+    @param eNB_id Index of eNB
+    @param j index of type of PUSCH (SPS, Normal, Msg3)
+    @returns Transmit power
+ */
+void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j);
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti);
 int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);

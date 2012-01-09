@@ -334,23 +334,12 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,
  
 void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
 
-  int aa,l,sync_pos,sync_pos_slot;
-  s32 sync_val;
   unsigned char sect_id=0; 
-  char UE_id=0;
-  int time_in=0, time_out=0;
-  short *x, *y;
+
 
   if (last_slot%2 == 0) {
     for (sect_id=0;sect_id<number_of_cards;sect_id++) {
-      /*
-	sprintf(fname,"rxsigF0_%d.m",sect_id);
-	sprintf(vname,"rxsF0_%d",sect_id);
-	write_output(fname,vname, &phy_vars_eNB->lte_eNB_common_vars.rxdataF[sect_id][0][(19*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size)<<1],512*2,2,1);
-	sprintf(fname,"rxsigF1_%d.m",sect_id);
-	sprintf(vname,"rxsF1_%d",sect_id);
-	write_output(fname,vname, &phy_vars_eNB->lte_eNB_common_vars.rxdataF[sect_id][1][(19*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size)<<1],512*2,2,1);
-      */
+    
       if (abstraction_flag == 0) {
 	lte_eNB_I0_measurements(phy_vars_eNB,
 				sect_id,
@@ -576,11 +565,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
   u8 *pbch_pdu=&phy_vars_eNB->pbch_pdu[0];
   //  unsigned int nb_dci_ue_spec = 0, nb_dci_common = 0;
-  u16 input_buffer_length, re_allocated;
+  u16 input_buffer_length, re_allocated=0;
   u32 sect_id = 0,i,aa;
   u8 harq_pid;
   DCI_PDU *DCI_pdu;
-  u8 *DLSCH_pdu;
+  u8 *DLSCH_pdu=NULL;
 #ifndef OPENAIR2
   DCI_PDU DCI_pdu_tmp;
   u8 DLSCH_pdu_tmp[768*8];
@@ -1603,7 +1592,7 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
 
 void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag) {
 
-  u16 preamble_energy_list[64],preamble_tx,preamble_delay_list[64];
+  u16 preamble_energy_list[64],preamble_delay_list[64];
   u16 preamble_max,preamble_energy_max;
   u16 i;
   u8 UE_id;
@@ -1635,15 +1624,13 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   }
   preamble_energy_max = preamble_energy_list[0];
   preamble_max = 0;
-  //      printf("preamble_tx : %d\n",preamble_tx);
   for (i=1;i<64;i++) {
     if (preamble_energy_max < preamble_energy_list[i]) {
-      //      printf("**preamble %d => %d\n",i,preamble_energy_list[i]);
-      
       preamble_energy_max = preamble_energy_list[i];
       preamble_max = i;
     }
   }
+
   /*
   msg("[PHY] Most likely preamble %d, energy %d dB delay %d\n",
       preamble_max,
@@ -1679,7 +1666,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   u32 l, ret,i,j;
   u32 sect_id=0;
   u32 harq_pid, round;
-  u8 SR_payload,*pucch_payload,pucch_payload0[2],pucch_payload1[2];
+  u8 SR_payload,*pucch_payload=NULL,pucch_payload0[2],pucch_payload1[2];
   s16 n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3;
   u8 do_SR=0,pucch_sel;
   s16 metric0,metric1;
@@ -1696,6 +1683,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   // check if we have to detect PRACH first
   if ((last_slot&1)==1)
     if (is_prach_subframe(&phy_vars_eNB->lte_frame_parms,last_slot>>1)>0) {
+      printf("Frame %d, subframe %d : Calling prach_procedures\n",mac_xface->frame,last_slot>>1);
       prach_procedures(phy_vars_eNB,last_slot>>1,abstraction_flag);
     }
 
@@ -1991,11 +1979,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef OPENAIR2
 	    mac_xface->cancel_ra_proc(0,0);
 #endif
+	    /*
 #ifdef USER_MODE
 	    if (abstraction_flag == 0)
 	      dump_ulsch(phy_vars_eNB);
 	    exit(-1);
 #endif
+	    */
 	  }
 	  else {
 	    // activate retransmission for Msg3 (signalled to UE PHY by PHICH (not MAC/DCI)
@@ -2156,7 +2146,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
 	if (do_SR == 1) {
 	
-	  msg("[PHY][eNB %d][SR %x] Frame %d: Checking SR\n",phy_vars_eNB->Mod_id,
+	  msg("[PHY][eNB %d][SR %x] Frame %d subframe %d Checking SR\n",phy_vars_eNB->Mod_id,
 	      phy_vars_eNB->ulsch_eNB[i]->rnti,mac_xface->frame,last_slot>>1);
 	  if (abstraction_flag == 0)
 	    metric0 = rx_pucch(phy_vars_eNB,
@@ -2178,7 +2168,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	  }
 	  if (SR_payload == 1) {
-	    msg("[PHY][eNB %d][SR %x] Frame %d: Got SR for PUSCH, transmitting to MAC\n",phy_vars_eNB->Mod_id,
+	    msg("[PHY][eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n",phy_vars_eNB->Mod_id,
 		phy_vars_eNB->ulsch_eNB[i]->rnti,mac_xface->frame,last_slot>>1);
 	    mac_xface->SR_indication(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[i][0]->rnti,last_slot>>1);
 	  }

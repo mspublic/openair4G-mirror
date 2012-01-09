@@ -165,7 +165,7 @@ u32 ulsch_encoding(u8 *a,
 		   u8 control_only_flag,
 		   u8 Nbundled) {
   
-  u16 offset;
+  //  u16 offset;
   u32 crc=1;
   u16 iind;
   u16 A;
@@ -176,7 +176,7 @@ u32 ulsch_encoding(u8 *a,
   u32 sumKr=0;
   u32 Qprime,L,G,Q_CQI=0,Q_RI=0,Q_ACK=0,H=0,Hprime=0,Hpp=0,Cmux=0,Rmux=0,Rmux_prime=0;
   u32 Qprime_ACK=0,Qprime_CQI=0,Qprime_RI=0,len_ACK=0,len_RI=0;
-  u32 E;
+  //  u32 E;
   u8 ack_parity;
   u32 i,q,j,iprime;
   u16 o_RCC;
@@ -305,7 +305,7 @@ u32 ulsch_encoding(u8 *a,
 	msg("Qm %d\n",Q_m);
 #endif
 	
-	offset=0;
+	//	offset=0;
 	
 	
 #ifdef DEBUG_ULSCH_CODING    
@@ -486,10 +486,10 @@ u32 ulsch_encoding(u8 *a,
 				      &ulsch->o_d[96], 
 				      ulsch->o_w);
 
-    E = lte_rate_matching_cc(o_RCC,
-			     Q_CQI,
-			     ulsch->o_w,
-			     ulsch->q);
+    lte_rate_matching_cc(o_RCC,
+			 Q_CQI,
+			 ulsch->o_w,
+			 ulsch->q);
     
   }
 

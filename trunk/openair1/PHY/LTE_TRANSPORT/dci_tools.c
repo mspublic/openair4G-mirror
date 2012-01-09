@@ -1337,6 +1337,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 
     }
   }
+  return(255);
 }
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
@@ -1408,8 +1409,7 @@ u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id) {
 
 u16 quantize_wideband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
 
-  u16 pmiq;
-  u16 pmivect = 0;
+  u16 pmiq=0;
   u8 rank = meas->rank[eNB_id];
   //int pmi;
   int pmi_re,pmi_im;
@@ -1434,9 +1434,9 @@ u16 quantize_wideband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
   }
 
 
-  return(pmivect);
+  return(pmiq);
 }
-
+/*
 u8 sinr2cqi(int sinr) {
   if (sinr<-3)
     return(0);
@@ -1445,12 +1445,68 @@ u8 sinr2cqi(int sinr) {
   else
     return(3+(sinr>>1));
 }
+*/
+// sinr => MCS => CQI
+// 15.5 => 25  => 12
+// 15   => 24  => 12
+// 14   => 23  => 11
+// 13   => 22  => 11
+// 12   => 21  => 10
+// 11   => 20  => 10
+// 10   => 19  => 9
+// 9    => 18  => 9
+// 8.5  => 17  => 8
+// 8    => 16  => 8
+// 7    => 15  => 7
+// 6    => 14  => 7
+// 5    => 13  => 6
+// 4.5  => 12  => 6
+// 4    => 11  => 5
+// 3    => 10  => 5
+// 2.5  => 9   => 4
+// 1.5  => 8   => 4
+// 1    => 7   => 3
+// 0    => 6   => 3
+// -.5  => 5   => 2
+// -1.5 => 4   => 2
+// -2.5 => 3   => 1
+// -3.5 => 2   => 1
+// -4   => 1   => 0
+// -4.5 => 0   => 0
+ 
+u8 sinr2cqi(int sinr) {
 
-//u8 sinr2cqi(int sinr) {
-//
-//  return(sinr+4.5);
-//
-//}
+  if (sinr<=-4)
+    return(0);
+  else if (sinr < -2)
+    return(1);
+  else if (sinr <= 0)
+    return(2);
+  else if (sinr < 2)
+    return(3);
+  else if (sinr < 3)
+    return(4);
+  else if (sinr < 5)
+    return(5);
+  else if (sinr < 6)
+    return(6);
+  else if (sinr < 8)
+    return(7);
+  else if (sinr < 9)
+    return(8);
+  else if (sinr < 11)
+    return(9);
+  else if (sinr < 13)
+    return(10);
+  else if (sinr < 15)
+    return(11);
+  else if (sinr < 16)
+    return(12);
+  else if (sinr>=16)
+    return(13);
+
+  return(0);
+}
 
 //u32 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
 //

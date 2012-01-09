@@ -949,7 +949,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
   u32 x1, x2, s=0;
   u8 reset = 1;
   s16 cs[12];
-  u32 i,i2,i3,phich_quad,j;
+  u32 i,i2,i3,phich_quad;
   s32 **rxdataF_comp = lte_ue_pdcch_vars[eNB_id]->rxdataF_comp;
   u8 Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
   u8 NSF_PHICH = 4;

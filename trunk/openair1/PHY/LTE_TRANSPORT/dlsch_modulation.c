@@ -143,12 +143,13 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   u8 qam64_table_offset_im = 0;
   u8 qam16_table_offset_re = 0;
   u8 qam16_table_offset_im = 0;
-  s16 gain_lin_QPSK,gain_lin_16QAM1,gain_lin_16QAM2;
+  s16 gain_lin_QPSK;//,gain_lin_16QAM1,gain_lin_16QAM2;
   s16 re_off=re_offset;
   gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   u8 first_re,last_re;
   s32 tmp_sample1,tmp_sample2;
 
+  /*
   switch (mod_order) {
   case 2:
     // QPSK single stream
@@ -167,6 +168,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   default:
     break;
   }
+*/
+
 #ifdef DEBUG_DLSCH_MODULATION
   printf("allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d, nu %d\n",mod_order,symbol_offset,re_offset,skip_dc,skip_half,*jj, output[*jj], output[1+*jj],nu);
 #endif

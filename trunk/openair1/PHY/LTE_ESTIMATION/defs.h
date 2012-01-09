@@ -31,10 +31,10 @@ void lte_sync_time_free(void);
 The algorithm uses a time domain correlation with a downsampled version of the received signal. 
 \param rxdata Received time domain data for all rx antennas
 \param frame_parms LTE DL frame parameter structure
-\param eNb_id return value with the eNb_id
+\param eNB_id return value with the eNb_id
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
-int lte_sync_time(int **rxdata, ///rx data in time domain
+int lte_sync_time(int **rxdata, 
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  int *eNB_id);
 
@@ -60,22 +60,21 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
 
 /*!
 \brief This function performs channel estimation including frequency and temporal interpolation
-\param dl_ch_estimates pointer to structure that holds channel estimates (one slot)
-\param rxdataF pointer to received data in freq domain
-\param frame_parms pointer to LTE frame parameters
+\param phy_vars_ue Pointer to UE PHY variables
+\param eNB_id Index of target eNB
+\param eNB_offset Offset for interfering eNB (in terms cell ID mod 3)
 \param Ns slot number (0..19)
 \param p antenna port 
 \param l symbol within slot
 \param symbol symbol within frame
 */
 int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+			      u8 eNB_id,
 			      u8 eNB_offset,
-			      int **dl_ch_estimates,
-			      int **rxdataF,
-			      unsigned char Ns,
-			      unsigned char p,
-			      unsigned char l,
-			      unsigned char symbol);
+			      u8 Ns,
+			      u8 p,
+			      u8 l,
+			      u8 symbol);
 
 #ifdef EMOS
 int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS],

@@ -33,9 +33,7 @@ void PHY_ofdm_mod(int *input,
 
 /*! 
 \brief This function implements the OFDM front end processor on reception (FEP)
-\param eNB_id eNB index on which to act
-\param frame_parms LTE DL Frame Parameters
-\param ue_common_vars LTE UE Common Vars
+\param phy_vars_ue Pointer to PHY variables
 \param l symbol within slot (0..6/7)
 \param Ns Slot number (0..19)
 \param sample_offset offset within rxdata (points to beginning of subframe)

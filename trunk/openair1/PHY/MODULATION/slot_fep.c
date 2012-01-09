@@ -84,21 +84,17 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_FEP
       debug_msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
-      lte_dl_channel_estimation(phy_vars_ue,0,
-				ue_common_vars->dl_ch_estimates[eNB_id],
-				ue_common_vars->rxdataF,
+      lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
 				Ns,
 				aa,
 				l,
 				symbol);
-      lte_dl_channel_estimation(phy_vars_ue,1,ue_common_vars->dl_ch_estimates[(eNB_id+1)%3],
-				ue_common_vars->rxdataF,
+      lte_dl_channel_estimation(phy_vars_ue,eNB_id,1,
 				Ns,
 				aa,
 				l,
 				symbol);
-      lte_dl_channel_estimation(phy_vars_ue,2,ue_common_vars->dl_ch_estimates[(eNB_id+2)%3],
-				ue_common_vars->rxdataF,
+      lte_dl_channel_estimation(phy_vars_ue,eNB_id,2,
 				Ns,
 				aa,
 				l,
