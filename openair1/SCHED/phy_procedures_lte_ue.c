@@ -196,7 +196,7 @@ void ra_failed(u8 Mod_id,u8 eNB_index) {
   // if contention resolution fails, go back to PRACH
   PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index] = PRACH;
   LOG_D(PHY,"Random-access procedure fails, going back to PRACH\n");
-  exit(-1);
+  //  exit(-1);
 }
 
 UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index) {
@@ -1964,7 +1964,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
 #ifdef USER_MODE
-	    dump_dlsch_SI(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)));
+	    //	    dump_dlsch_SI(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)));
 #endif
 	    return(-1);
 	  }
@@ -2070,12 +2070,13 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	}
 	else {
 #ifdef DEBUG_PHY_PROC
-	  msg("[PHY][UE  %d][RARPROC] Received RAR in frame %d, subframe %d, mode %d\n",phy_vars_ue->Mod_id,mac_xface->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)), phy_vars_ue->UE_mode[eNB_id]);
+	  msg("[PHY][UE  %d][RARPROC] Frame %d subframe %d Received RAR  mode %d\n",phy_vars_ue->Mod_id,mac_xface->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)), phy_vars_ue->UE_mode[eNB_id]);
 #endif	  
 	  if ((phy_vars_ue->UE_mode[eNB_id] != PUSCH) && (phy_vars_ue->prach_resources[eNB_id]->Msg3!=NULL)) {
 #ifdef OPENAIR2
-	    msg("[PHY][UE  %d][RARPROC] Invoking MAC for RAR (current preamble %d)\n",
-		phy_vars_ue->Mod_id,phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);			
+	    msg("[PHY][UE  %d][RARPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n",
+		phy_vars_ue->Mod_id,mac_xface->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
+		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);			
 
 	    timing_advance = mac_xface->ue_process_rar(phy_vars_ue->Mod_id,
 						       phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b,
@@ -2084,8 +2085,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    
 	    if (timing_advance!=0xffff) {
 
-	      msg("[PHY][UE  %d][RARPROC] Got rnti %x and timing advance %d from RAR\n",
+	      msg("[PHY][UE  %d][RARPROC] Frame %d subframe %d Got rnti %x and timing advance %d from RAR\n",
 		  phy_vars_ue->Mod_id,
+		  mac_xface->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 		  timing_advance);		
 	      
@@ -2113,9 +2115,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
 	    }
 	    else {  // PRACH preamble doesn't match RAR
-	      msg("[PHY][UE  %d][RARPROC] Received RAR preamble doesn't match !!!\n",
-		  phy_vars_ue->Mod_id);
-	      exit(-1);
+	      msg("[PHY][UE  %d][RARPROC] Received RAR preamble (%d) doesn't match !!!\n",
+		  phy_vars_ue->Mod_id,
+		  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);
+	      //	      exit(-1);
 	    }
 	  } // mode != PUSCH
 	} //ret <= MAX_ITERATIONS
@@ -2294,8 +2297,11 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 				  last_slot>>1, 
 				  subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1),
 				  eNB_id);
-    if (ret == CONNECTION_LOST)
+    if (ret == CONNECTION_LOST) {
+      LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",phy_vars_ue->Mod_id,
+	    mac_xface->frame,next_slot>>1)
       phy_vars_ue->UE_mode[eNB_id] = PRACH;
+    }
   }
 #endif
 }

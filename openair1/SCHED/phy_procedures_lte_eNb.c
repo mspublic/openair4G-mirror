@@ -1598,12 +1598,12 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   u8 UE_id;
 
   if (abstraction_flag == 0) {
-    
+    /*
     msg("[PHY][eNB %d][RARPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
 	mac_xface->frame,subframe,
 	dB_fixed(signal_energy(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
 			     512)) - phy_vars_eNB->rx_total_gain_eNB_dB);
-    
+    */
     rx_prach(phy_vars_eNB,
 	     subframe,
 	     preamble_energy_list,
