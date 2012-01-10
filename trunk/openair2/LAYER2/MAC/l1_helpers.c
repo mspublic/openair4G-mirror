@@ -8,7 +8,7 @@ s8 get_Po_NOMINAL_PUSCH(u8 Mod_id) {
   if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
     rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
   else {
-    LOG_D(MAC,"[UE %d] FATAL Frame %d: radioResourceConfigCommon is NULL !!!\n",Mod_id,mac_xface->frame);
+    LOG_D(MAC,"[UE %d] FATAL radioResourceConfigCommon is NULL !!!\n",Mod_id);
     mac_xface->macphy_exit("");
   }
 

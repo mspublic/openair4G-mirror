@@ -75,9 +75,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #endif
 
 
-/*! \fn void     rlc_um_stat_req     (struct rlc_um_entity *rlcP, unsigned int* tx_pdcp_sdu, unsigned int* tx_pdcp_sdu_discarded, unsigned int* tx_data_pdu, unsigned int* rx_sdu, unsigned int* rx_error_pdu, unsigned int* rx_data_pdu, unsigned int* rx_data_pdu_out_of_window)
+/*! \fn void     rlc_um_stat_req     (struct rlc_um_entity *rlcP, u32_t frame, unsigned int* tx_pdcp_sdu, unsigned int* tx_pdcp_sdu_discarded, unsigned int* tx_data_pdu, unsigned int* rx_sdu, unsigned int* rx_error_pdu, unsigned int* rx_data_pdu, unsigned int* rx_data_pdu_out_of_window)
 * \brief    Request TX and RX statistics of a RLC UM protocol instance.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
+* \param[in]  frame                     Frame index.
 * \param[out] tx_pdcp_sdu               Number of transmitted SDUs coming from upper layers.
 * \param[out] tx_pdcp_sdu_discarded     Number of discarded SDUs coming from upper layers.
 * \param[out] tx_data_pdu               Number of transmitted PDUs to lower layers.
@@ -87,13 +88,14 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \param[out] rx_data_pdu_out_of_window Number of data PDUs received out of the receive window.
 */
 public_rlc_um( void     rlc_um_stat_req     (struct rlc_um_entity *rlcP,
-							  unsigned int* tx_pdcp_sdu,
-							  unsigned int* tx_pdcp_sdu_discarded,
-							  unsigned int* tx_data_pdu,
-							  unsigned int* rx_sdu,
-							  unsigned int* rx_error_pdu,
-							  unsigned int* rx_data_pdu,
-							  unsigned int* rx_data_pdu_out_of_window);)
+					     u32_t                frame,
+					     unsigned int*        tx_pdcp_sdu,
+					     unsigned int*        tx_pdcp_sdu_discarded,
+					     unsigned int*        tx_data_pdu,
+					     unsigned int*        rx_sdu,
+					     unsigned int*        rx_error_pdu,
+					     unsigned int*        rx_data_pdu,
+					     unsigned int*        rx_data_pdu_out_of_window);)
 
 /*! \fn void     rlc_um_get_pdus (void *rlcP)
 * \brief    Request the segmentation of SDUs based on status previously sent by MAC.
@@ -101,21 +103,23 @@ public_rlc_um( void     rlc_um_stat_req     (struct rlc_um_entity *rlcP,
 */
 private_rlc_um(   void     rlc_um_get_pdus (void *rlcP);)
 
-/*! \fn void rlc_um_rx (void *rlcP, struct mac_data_ind data_indication)
+/*! \fn void rlc_um_rx (void *rlcP, u32_t frame, struct mac_data_ind data_indication)
 * \brief    Process the received PDUs from lower layer.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
+* \param[in]  frame                     Frame Index.
 * \param[in]  data_indication           PDUs from MAC.
 */
-protected_rlc_um( void     rlc_um_rx (void *rlcP, struct mac_data_ind data_indication);)
-
+protected_rlc_um( void     rlc_um_rx (void *rlcP, u32_t frame, struct mac_data_ind data_indication);)
+ 
 /*! \fn struct mac_status_resp rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind tx_statusP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
+* \param[in]  frame                     Frame index.
 * \param[in]  tbs_sizeP                 Number of bytes requested by MAC for next transmission.
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
+public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
 
 /*! \fn struct mac_data_req rlc_um_mac_data_request (void *rlcP)
 * \brief    Gives PDUs to lower layer MAC.
@@ -125,12 +129,13 @@ public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (void *rlc
 public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (void *rlcP);)
 
 
-/*! \fn void     rlc_um_mac_data_indication (void *rlcP, struct mac_data_ind data_indP)
+/*! \fn void     rlc_um_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
 * \brief    Receive PDUs from lower layer MAC.
 * \param[in]  rlcP             RLC UM protocol instance pointer.
+* \param[in]  frame            Frame index.
 * \param[in]  data_indP        PDUs from MAC.
 */
-public_rlc_um(   void     rlc_um_mac_data_indication (void *rlcP, struct mac_data_ind data_indP);)
+public_rlc_um(   void     rlc_um_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP);)
 
 
 /*! \fn void     rlc_um_data_req (void *rlcP, mem_block_t *sduP)

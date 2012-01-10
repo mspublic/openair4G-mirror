@@ -31,7 +31,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "rlc.h"
 #include "mem_block.h"
 #include "../MAC/extern.h"
-#include "./AM/rlc_am_util_proto_extern.h"
 #include "UTIL/LOG/log.h"
 extern void pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP);
 
@@ -41,19 +40,20 @@ extern void pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t d
 
 //-----------------------------------------------------------------------------
 rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
-                                              rb_id_t        rb_idP,
-							  unsigned int* tx_pdcp_sdu,
-							  unsigned int* tx_pdcp_sdu_discarded,
-							  unsigned int* tx_retransmit_pdu_unblock,
-							  unsigned int* tx_retransmit_pdu_by_status,
-							  unsigned int* tx_retransmit_pdu,
-							  unsigned int* tx_data_pdu,
-							  unsigned int* tx_control_pdu,
-							  unsigned int* rx_sdu,
-							  unsigned int* rx_error_pdu,
-							  unsigned int* rx_data_pdu,
-							  unsigned int* rx_data_pdu_out_of_window,
-							  unsigned int* rx_control_pdu) {
+				  u32_t frame,
+				  rb_id_t        rb_idP,
+				  unsigned int* tx_pdcp_sdu,
+				  unsigned int* tx_pdcp_sdu_discarded,
+				  unsigned int* tx_retransmit_pdu_unblock,
+				  unsigned int* tx_retransmit_pdu_by_status,
+				  unsigned int* tx_retransmit_pdu,
+				  unsigned int* tx_data_pdu,
+				  unsigned int* tx_control_pdu,
+				  unsigned int* rx_sdu,
+				  unsigned int* rx_error_pdu,
+				  unsigned int* rx_data_pdu,
+				  unsigned int* rx_data_pdu_out_of_window,
+				  unsigned int* rx_control_pdu) {
 //-----------------------------------------------------------------------------
   if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
@@ -75,19 +75,20 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
                         break;
 
                     case RLC_AM:
-                          rlc_am_stat_req     (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
-							  tx_pdcp_sdu,
-							  tx_pdcp_sdu_discarded,
-							  tx_retransmit_pdu_unblock,
-							  tx_retransmit_pdu_by_status,
-							  tx_retransmit_pdu,
-							  tx_data_pdu,
-							  tx_control_pdu,
-							  rx_sdu,
-							  rx_error_pdu,
-							  rx_data_pdu,
-							  rx_data_pdu_out_of_window,
-							  rx_control_pdu);
+		      rlc_am_stat_req     (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
+					   frame,
+					   tx_pdcp_sdu,
+					   tx_pdcp_sdu_discarded,
+					   tx_retransmit_pdu_unblock,
+					   tx_retransmit_pdu_by_status,
+					   tx_retransmit_pdu,
+					   tx_data_pdu,
+					   tx_control_pdu,
+					   rx_sdu,
+					   rx_error_pdu,
+					   rx_data_pdu,
+					   rx_data_pdu_out_of_window,
+					   rx_control_pdu);
                           return RLC_OP_STATUS_OK;
                         break;
 
@@ -104,48 +105,49 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
             			*rx_data_pdu = 0;
             			*rx_data_pdu_out_of_window = 0;
             			*rx_control_pdu = 0;
-                    rlc_um_stat_req     (&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
-							  tx_pdcp_sdu,
-							  tx_pdcp_sdu_discarded,
-							  tx_data_pdu,
-							  rx_sdu,
-							  rx_error_pdu,
-							  rx_data_pdu,
-							  rx_data_pdu_out_of_window);
-                        return RLC_OP_STATUS_OK;
+				rlc_um_stat_req     (&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
+						     frame,
+						     tx_pdcp_sdu,
+						     tx_pdcp_sdu_discarded,
+						     tx_data_pdu,
+						     rx_sdu,
+						     rx_error_pdu,
+						     rx_data_pdu,
+						     rx_data_pdu_out_of_window);
+				return RLC_OP_STATUS_OK;
                         break;
 
                     case RLC_TM:
-            			*tx_pdcp_sdu = 0;
-            			*tx_pdcp_sdu_discarded = 0;
-            			*tx_retransmit_pdu_unblock = 0;
-            			*tx_retransmit_pdu_by_status = 0;
-            			*tx_retransmit_pdu = 0;
-            			*tx_data_pdu = 0;
-            			*tx_control_pdu = 0;
-            			*rx_sdu = 0;
-            			*rx_error_pdu = 0;
-            			*rx_data_pdu = 0;
-            			*rx_data_pdu_out_of_window = 0;
-            			*rx_control_pdu = 0;
-                        return RLC_OP_STATUS_BAD_PARAMETER;
-                        break;
+		      *tx_pdcp_sdu = 0;
+		      *tx_pdcp_sdu_discarded = 0;
+		      *tx_retransmit_pdu_unblock = 0;
+		      *tx_retransmit_pdu_by_status = 0;
+		      *tx_retransmit_pdu = 0;
+		      *tx_data_pdu = 0;
+		      *tx_control_pdu = 0;
+		      *rx_sdu = 0;
+		      *rx_error_pdu = 0;
+		      *rx_data_pdu = 0;
+		      *rx_data_pdu_out_of_window = 0;
+		      *rx_control_pdu = 0;
+		      return RLC_OP_STATUS_BAD_PARAMETER;
+		      break;
 
                     default:
-			*tx_pdcp_sdu = 0;
-			*tx_pdcp_sdu_discarded = 0;
-			*tx_retransmit_pdu_unblock = 0;
-			*tx_retransmit_pdu_by_status = 0;
-			*tx_retransmit_pdu = 0;
-			*tx_data_pdu = 0;
-			*tx_control_pdu = 0;
-			*rx_sdu = 0;
-			*rx_error_pdu = 0;
-			*rx_data_pdu = 0;
-			*rx_data_pdu_out_of_window = 0;
-			*rx_control_pdu = 0;
-                        return RLC_OP_STATUS_BAD_PARAMETER;
-
+		      *tx_pdcp_sdu = 0;
+		      *tx_pdcp_sdu_discarded = 0;
+		      *tx_retransmit_pdu_unblock = 0;
+		      *tx_retransmit_pdu_by_status = 0;
+		      *tx_retransmit_pdu = 0;
+		      *tx_data_pdu = 0;
+		      *tx_control_pdu = 0;
+		      *rx_sdu = 0;
+		      *rx_error_pdu = 0;
+		      *rx_data_pdu = 0;
+		      *rx_data_pdu_out_of_window = 0;
+		      *rx_control_pdu = 0;
+		      return RLC_OP_STATUS_BAD_PARAMETER;
+		      
                   }
       } else {
           return RLC_OP_STATUS_BAD_PARAMETER;

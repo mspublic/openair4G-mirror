@@ -281,7 +281,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.ul_CyclicPrefixLength=UL_CyclicPrefixLength_len1;
 
   //assign_enum(&(*sib2)->ue_TimersAndConstants.t300, UE_TimersAndConstants__t300_ms1000);
-  (*sib2)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms100;
+  (*sib2)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms200;
  
   //assign_enum(&(*sib2)->ue_TimersAndConstants.t301, UE_TimersAndConstants__t301_ms1000);
   (*sib2)->ue_TimersAndConstants.t301=UE_TimersAndConstants__t301_ms1000;

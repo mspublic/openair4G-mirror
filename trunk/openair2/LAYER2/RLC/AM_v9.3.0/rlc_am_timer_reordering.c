@@ -37,14 +37,14 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 # include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 //-----------------------------------------------------------------------------
-void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP)
+void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
     return ; // for debug
 
 
     if (rlcP->t_reordering.running) {
-        if (rlcP->t_reordering.frame_time_out == mac_xface->frame) {
+        if (rlcP->t_reordering.frame_time_out == frame) {
             // 5.1.3.2.4 Actions when t-Reordering expires
             // When t-Reordering expires, the receiving side of an AM RLC entity shall:
             //     - update VR(MS) to the SN of the first AMD PDU with SN >= VR(X) for which not all byte segments have been
@@ -76,13 +76,13 @@ void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP)
                     }
                     cursor = cursor->next;
                 } while (cursor != NULL);
-                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT UPDATED VR(MS) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT UPDATED VR(MS) %04d\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms);
             }
 
             if (rlc_am_sn_gt_vr_ms(rlcP, rlcP->vr_h)) {
                 rlcP->vr_x = rlcP->vr_h;
-                rlcP->t_reordering.frame_time_out = mac_xface->frame + rlcP->t_reordering.time_out;
-                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT, RESTARTED T-REORDERING, UPDATED VR(X) to VR(R) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_x);
+                rlcP->t_reordering.frame_time_out = frame + rlcP->t_reordering.time_out;
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT, RESTARTED T-REORDERING, UPDATED VR(X) to VR(R) %04d\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_x);
             }
 
             rlcP->status_requested = 1;
@@ -90,24 +90,24 @@ void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP)
     }
 }
 //-----------------------------------------------------------------------------
-void rlc_am_stop_and_reset_timer_reordering(rlc_am_entity_t *rlcP)
+void rlc_am_stop_and_reset_timer_reordering(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
-    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STOPPED AND RESET\n", mac_xface->frame,
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STOPPED AND RESET\n", frame,
                         rlcP->module_id, rlcP->rb_id);
     rlcP->t_reordering.running         = 0;
     rlcP->t_reordering.frame_time_out  = 0;
     rlcP->t_reordering.timed_out       = 0;
 }
 //-----------------------------------------------------------------------------
-void rlc_am_start_timer_reordering(rlc_am_entity_t *rlcP)
+void rlc_am_start_timer_reordering(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
     rlcP->t_reordering.running         = 1;
-    rlcP->t_reordering.frame_time_out  = mac_xface->frame + rlcP->t_reordering.time_out;
+    rlcP->t_reordering.frame_time_out  = frame + rlcP->t_reordering.time_out;
     rlcP->t_reordering.timed_out       = 0;
     LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STARTED (TIME-OUT = FRAME %05d)\n",
-            mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->t_reordering.frame_time_out);
+            frame, rlcP->module_id, rlcP->rb_id, rlcP->t_reordering.frame_time_out);
 }
 //-----------------------------------------------------------------------------
 void rlc_am_init_timer_reordering(rlc_am_entity_t *rlcP, u32_t time_outP)

@@ -15,6 +15,7 @@ extern unsigned short RIV2first_rb_LUT25[512];
 extern inline unsigned int taus(void);
 
 unsigned short fill_rar(u8 Mod_id,
+			u32 frame,
 			u8 *dlsch_buffer,
 			u16 N_RB_UL) {
 
@@ -36,17 +37,17 @@ unsigned short fill_rar(u8 Mod_id,
   rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;
 
 #ifdef DEBUG_RAR
-  LOG_D(MAC,"[MAC][eNB %d] Generating RAR for CRNTI %x\n",Mod_id,rar->t_crnti);
+  LOG_D(MAC,"[eNB %d] Frame %d Generating RAR for CRNTI %x\n",Mod_id,frame,rar->t_crnti);
 #endif
   return(rar->t_crnti);
 }
 
-u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index) {
+u16 ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
 
-  printf("In process_rar : preamble_index %d, received %d\n",preamble_index,rarh->RAPID);
+  LOG_D(MAC,"[UE %d] Frame %d In process_rar : preamble_index %d, received %d\n",Mod_id,frame,preamble_index,rarh->RAPID);
 #ifdef DEBUG_RAR
   LOG_T(MAC,"[UE %d] rarh->E %d\n",Mod_id,rarh->E);
   LOG_D(MAC,"[UE %d] rarh->T %d\n",Mod_id,rarh->T);

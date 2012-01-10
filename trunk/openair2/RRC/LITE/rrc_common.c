@@ -90,7 +90,8 @@ int rrc_init_global_param(void){
 #endif
   msg("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
 
-  if(Mac_rlc_xface==NULL || Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
+  if(Mac_rlc_xface==NULL || 
+     Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
     return -1;
   Mac_rlc_xface->rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
 
@@ -194,7 +195,7 @@ void rrc_config_buffer(SRB_INFO *Srb_info, u8 Lchan_type, u8 Role){
 void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
-  Rrc_xface->Frame_index=Mac_rlc_xface->frame;
+  Rrc_xface->Frame_index=frame;
 
   msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
   msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d\n",NB_INST);
@@ -231,13 +232,15 @@ int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
 
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
 
-RRC_status_t rrc_rx_tx(u8 Mod_id,u8 eNB_flag,u8 index){
+RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 
   if(eNB_flag == 0) {
     // check timers
 
     if (UE_rrc_inst[Mod_id].Info[index].T300_active) {
-      LOG_D(RRC,"T300 Count %d ms\n",UE_rrc_inst[Mod_id].Info[index].T300_cnt);
+      if ((UE_rrc_inst[Mod_id].Info[index].T300_cnt % 10) == 0)
+	LOG_D(RRC,"[UE %d][RARPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
+	      UE_rrc_inst[Mod_id].Info[index].T300_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T300_cnt == T300[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t300]) {
 	UE_rrc_inst[Mod_id].Info[index].T300_active = 0;
 	return(RRC_ConnSetup_failed);

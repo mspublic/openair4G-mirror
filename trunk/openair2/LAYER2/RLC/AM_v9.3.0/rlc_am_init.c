@@ -36,11 +36,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 //-----------------------------------------------------------------------------
-void rlc_am_init(rlc_am_entity_t *rlcP)
+void rlc_am_init(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
     int saved_allocation = rlcP->allocation;
-    msg ("[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] STATE VARIABLES, BUFFERS, LISTS\n", mac_xface->frame);
+    msg ("[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] STATE VARIABLES, BUFFERS, LISTS\n", frame);
     memset(rlcP, 0, sizeof(rlc_am_entity_t));
     rlcP->allocation = saved_allocation;
 
@@ -53,8 +53,8 @@ void rlc_am_init(rlc_am_entity_t *rlcP)
     rlcP->input_sdus               = (rlc_am_tx_sdu_management_t*)((rlcP->input_sdus_alloc)->data);
     rlcP->pdu_retrans_buffer_alloc = get_free_mem_block((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t));
     rlcP->pdu_retrans_buffer       = (rlc_am_tx_data_pdu_management_t*)((rlcP->pdu_retrans_buffer_alloc)->data);
-	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] input_sdus[] = %p  element size=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
-	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] pdu_retrans_buffer[] = %p element size=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
+	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] input_sdus[] = %p  element size=%d\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
+	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] pdu_retrans_buffer[] = %p element size=%d\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
 
     // TX state variables
     rlcP->vt_a    = 0;
@@ -75,10 +75,10 @@ void rlc_am_init(rlc_am_entity_t *rlcP)
     rlcP->first_retrans_pdu_sn         = -1;
 }
 //-----------------------------------------------------------------------------
-void rlc_am_cleanup(rlc_am_entity_t *rlcP)
+void rlc_am_cleanup(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
-    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CLEANUP]\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CLEANUP]\n", frame, rlcP->module_id, rlcP->rb_id);
 
     list2_free(&rlcP->receiver_buffer);
     list_free(&rlcP->pdus_to_mac_layer);
@@ -116,6 +116,7 @@ void rlc_am_cleanup(rlc_am_entity_t *rlcP)
 }
 //-----------------------------------------------------------------------------
 void rlc_am_configure(rlc_am_entity_t *rlcP,
+		      u32_t frame,
                       u16_t max_retx_thresholdP,
                       u16_t poll_pduP,
                       u16_t poll_byteP,
@@ -124,7 +125,7 @@ void rlc_am_configure(rlc_am_entity_t *rlcP,
                       u32_t t_status_prohibitP)
 //-----------------------------------------------------------------------------
 {
-    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, max_retx_thresholdP, poll_pduP, poll_byteP, t_poll_retransmitP, t_reorderingP, t_status_prohibitP);
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n", frame, rlcP->module_id, rlcP->rb_id, max_retx_thresholdP, poll_pduP, poll_byteP, t_poll_retransmitP, t_reorderingP, t_status_prohibitP);
 
     rlcP->max_retx_threshold = max_retx_thresholdP;
     rlcP->poll_pdu           = poll_pduP;
@@ -136,10 +137,10 @@ void rlc_am_configure(rlc_am_entity_t *rlcP,
     rlc_am_init_timer_status_prohibit(rlcP, t_status_prohibitP);
 }
 //-----------------------------------------------------------------------------
-void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
+void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32 frame, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 //-----------------------------------------------------------------------------
 {
-    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", mac_xface->frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
 
     rlcP->module_id = module_idP;
     rlcP->rb_id     = rb_idP;

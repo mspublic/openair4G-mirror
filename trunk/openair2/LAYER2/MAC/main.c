@@ -43,18 +43,19 @@ ________________________________________________________________*/
 
 
 /***********************************************************************/
-void chbch_phy_sync_success(unsigned char Mod_id,unsigned char eNB_index){  //init as MR
+void dl_phy_sync_success(unsigned char Mod_id,u32 frame,unsigned char eNB_index){  //init as MR
 /***********************************************************************/
   // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
-  if( (layer2_init_UE(Mod_id)==-1) || (Rrc_xface->openair_rrc_UE_init(Mod_id,eNB_index)==-1) )
+  if( (layer2_init_UE(Mod_id)==-1) || 
+      (Rrc_xface->openair_rrc_UE_init(Mod_id,eNB_index)==-1) )
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
 
-}
+} 
 
 /***********************************************************************/
-void mrbch_phy_sync_failure(unsigned char Mod_id, unsigned char Free_ch_index){//init as CH 
+void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH 
   /***********************************************************************/
-  LOG_I(MAC,"FRAME %d: Node %d, NO PHY SYNC to master\n",mac_xface->frame,Mod_id);
+  LOG_I(MAC,"FRAME %d: Node %d, NO PHY SYNC to master\n",frame,Mod_id);
   if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id)==-1))
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
   
@@ -81,10 +82,10 @@ char layer2_init_UE(unsigned char Mod_id){
 }
 
 /***********************************************************************/
-void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short eNB_index){
+void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 /***********************************************************************/
 
-  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,eNB_index);
+  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id, frame, eNB_index);
 }
  
 
@@ -217,7 +218,7 @@ int mac_init_global_param(){
 
   //  mac_xface->macphy_data_ind=macphy_data_ind;
   mac_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
-  mac_xface->chbch_phy_sync_success=chbch_phy_sync_success;
+  mac_xface->dl_phy_sync_success=dl_phy_sync_success;
   Mac_rlc_xface->macphy_exit=  mac_xface->macphy_exit;
   Mac_rlc_xface->frame = 0;
   //  Mac_rlc_xface->mac_config_req=mac_config_req;
@@ -236,7 +237,7 @@ int mac_init_global_param(){
   Mac_rlc_xface->pdcp_run=pdcp_run;
   Mac_rlc_xface->pdcp_data_req=pdcp_data_req;	
   Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
-  Mac_rlc_xface->chbch_phy_sync_success=chbch_phy_sync_success;
+  Mac_rlc_xface->dl_phy_sync_success=dl_phy_sync_success;
 
   LOG_I(MAC,"[MAIN] RLC interface setup and init\n");
   rrc_init_global_param();
@@ -333,8 +334,6 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
 
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
    
-  mac_xface->frame=0;
-  
   mac_xface->macphy_init();
 
   //Mac_rlc_xface->Is_cluster_head[0] = 1;

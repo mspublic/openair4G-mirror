@@ -70,13 +70,15 @@ protected_rlc_um_reassembly(void rlc_um_clear_rx_sdu (rlc_um_entity_t *rlcP));
 * \param[in]  srcP        Pointer on data to be reassemblied.
 * \param[in]  lengthP     Length to reassembly.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
+* \param[in]  frame       Frame index.
 */
-protected_rlc_um_reassembly(void     rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP));
+protected_rlc_um_reassembly(void     rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP, u32_t frame));
 
-/*! \fn void rlc_um_send_sdu (rlc_um_entity_t *rlcP)
+/*! \fn void rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame)
 * \brief    Send SDU if any reassemblied to upper layer.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
+* \param[in]  frame       Frame index.
 */
-protected_rlc_um_reassembly(void     rlc_um_send_sdu (rlc_um_entity_t *rlcP));
+protected_rlc_um_reassembly(void     rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame));
 /** @} */
 #    endif

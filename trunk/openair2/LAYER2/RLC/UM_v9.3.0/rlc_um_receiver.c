@@ -43,7 +43,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //#define RLC_UM_GENERATE_ERRORS
 //-----------------------------------------------------------------------------
 void
-rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
+rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
 
@@ -57,7 +57,7 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
 #endif
 
 #ifdef DEBUG_RLC_UM_DISPLAY_TB_DATA
-        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] DUMP RX PDU(%d bytes):", rlcP->module_id, rlcP->rb_id, mac_xface->frame, ((struct mac_tb_ind *) (tb->data))->size);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] DUMP RX PDU(%d bytes):", rlcP->module_id, rlcP->rb_id, frame, ((struct mac_tb_ind *) (tb->data))->size);
         for (tb_size_in_bytes = 0; tb_size_in_bytes < ((struct mac_tb_ind *) (tb->data))->size; tb_size_in_bytes++) {
             msg ("%02X.", ((struct mac_tb_ind *) (tb->data))->data_ptr[tb_size_in_bytes]);
         }
@@ -67,7 +67,7 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
 #ifdef RLC_UM_GENERATE_ERRORS
             if (random() % 10 == 4) {
                 ((struct mac_tb_ind *) (tb->data))->error_indication = 1;
-                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]  RX PDU GENERATE ERROR", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]  RX PDU GENERATE ERROR", rlcP->module_id, rlcP->rb_id, frame);
             }
 #endif
 
@@ -75,13 +75,13 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
             first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
             tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
             if (tb_size_in_bytes > 0) {
-                rlc_um_receive_process_dar (rlcP, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
-                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
+	      rlc_um_receive_process_dar (rlcP, frame, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
+	      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
             }
         } else {
             rlcP->rx_pdus_in_error += 1;
 #ifdef DEBUG_RLC_UM_RX
-            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame);
 #endif
         }
         free_mem_block (tb);

@@ -56,22 +56,22 @@ ________________________________________________________________*/
 #include "openair_rrc_L2_interface.h"
  
 /********************************************************************************************************************/
-s8 mac_rrc_data_req(u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index){
+s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,s8 *Buffer,u8 eNB_flag,u8 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
   return(rrc_L2_data_req_rx(Mod_id,Srb_id,Nb_tb,Buffer,eNB_index));
 #else 
-  return(mac_rrc_lite_data_req(Mod_id,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index));
+  return(mac_rrc_lite_data_req(Mod_id,frame,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index));
 #endif //CELLULAR
 }   
    
 /********************************************************************************************************************/
-s8 mac_rrc_data_ind(unsigned  char Mod_id, unsigned short Srb_id, char *Sdu,unsigned short Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
+s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, s8 *Sdu,u16 Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
 /********************************************************************************************************************/
 #ifdef CELLULAR
   return(rrc_L2_mac_data_ind_rx());
 #else 
-  return(mac_rrc_lite_data_ind(Mod_id,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index));
+  return(mac_rrc_lite_data_ind(Mod_id,frame,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index));
 #endif //CELLULAR
 }
 
@@ -106,12 +106,12 @@ void mac_sync_ind(u8 Mod_id,u8 Status){
 }
 
 /********************************************************************************************************************/
-void mac_out_of_sync_ind(u8 Mod_id,unsigned short eNB_index){
+void mac_out_of_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
   rrc_L2_out_sync_ind_rx();
 #else 
-  rrc_lite_out_of_sync_ind(Mod_id,eNB_index);
+  rrc_lite_out_of_sync_ind(Mod_id,frame,eNB_index);
 #endif //CELLULAR
 }
 
