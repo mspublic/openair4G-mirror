@@ -61,15 +61,13 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
   
   if (ethernet_flag == 0)
     return;
-  // LOG_D(EMU, "frame %d subframe %d slot %d direction %d ethernet flag %d\n", 
-  //	mac_xface->frame, next_slot>>1, last_slot+1,direction,ethernet_flag);
  
   //DL
   //if ( ((direction == SF_DL) && ((next_slot%2)== 0)) || ((direction == SF_S) && (next_slot==1))){ 
   if ( ((direction == SF_DL) && ((next_slot%2)== 0)) || (next_slot==1)){ 
     //LOG_T(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
     //assert((start = clock())!=-1);// t0= time(NULL);
-    emu_transport_DL(mac_xface->frame, last_slot,next_slot);
+    emu_transport_DL(frame, last_slot,next_slot);
     //stop = clock(); //t1= time(NULL);
     //LOG_T(PERF,"emu_transport_DL diff time %f (ms)\n",	(double) (stop-start)/1000);
   }
@@ -77,7 +75,7 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
   if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
     //  LOG_T(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
     //assert((start = clock())!=-1);//t0= time(NULL);
-    emu_transport_UL(mac_xface->frame, last_slot , next_slot);
+    emu_transport_UL(frame, last_slot , next_slot);
     // stop = clock(); // t1= time(NULL);
     //LOG_T(PERF,"emu_transport_UL diff time %f (ms)\n",	(double) (stop-start)/1000);
     

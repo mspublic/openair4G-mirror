@@ -857,7 +857,7 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
 
   msg("[PHY] EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d\n",eNB_id,pbch_phase);
 
-  if (pbch_phase == (mac_xface->frame % 4)) {
+  if (pbch_phase == (phy_vars_ue->frame % 4)) {
 
     // abtract pbch error here
     // pbch_error = pbch_abstraction();

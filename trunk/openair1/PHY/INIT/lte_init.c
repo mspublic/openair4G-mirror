@@ -66,7 +66,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
 
-  msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,mac_xface->frame);
+  msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,PHY_vars_eNB_g[Mod_id]->frame);
 
   lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
   lte_frame_parms->prach_config_common.prach_Config_enabled=1;
@@ -154,7 +154,7 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
 
-  msg("[PHY][UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,mac_xface->frame,CH_index);
+  msg("[PHY][UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame,CH_index);
 
   lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
 
@@ -228,7 +228,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
     physicalConfigDedicated = phy_vars_eNB->physicalConfigDedicated[UE_id];
     if (physicalConfigDedicated != NULL) {
-      msg("[PHY][eNB %d] Frame %d: Sent physicalConfigDedicated for UE %d\n",phy_vars_eNB->Mod_id, mac_xface->frame,UE_id);
+      msg("[PHY][eNB %d] Frame %d: Sent physicalConfigDedicated for UE %d\n",phy_vars_eNB->Mod_id, phy_vars_eNB->frame,UE_id);
       msg("------------------------------------------------------------------------\n");
       
       if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -320,7 +320,7 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
     phy_vars_eNB->physicalConfigDedicated[UE_id] = physicalConfigDedicated;
   }  
   else {
-    msg("[PHY][eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,UE_id);
+    msg("[PHY][eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, phy_vars_eNB->frame,UE_id);
     return;
   }
 
@@ -335,7 +335,7 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 
     
     if (physicalConfigDedicated) {
-      msg("[PHY][UE %d] Frame %d: Received physicalConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,CH_index);
+      msg("[PHY][UE %d] Frame %d: Received physicalConfigDedicated from eNB %d\n",Mod_id, phy_vars_ue->frame,CH_index);
       msg("------------------------------------------------------------------------\n");
 
       if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -412,7 +412,7 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 
     }
     else {
-      msg("[PHY][UE %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,CH_index);
+      msg("[PHY][UE %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, phy_vars_ue->frame,CH_index);
       return;
     }
     

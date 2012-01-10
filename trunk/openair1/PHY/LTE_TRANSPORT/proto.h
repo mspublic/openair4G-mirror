@@ -1144,11 +1144,12 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 /*!
   \brief Check for PRACH TXop in subframe
-  @param phy_vars_ue Pointer to ue top-level descriptor
+  @param frame_parms Pointer to LTE_DL_FRAME_PARMS
+  @param frame frame index to check
   @param subframe subframe index to check
   @returns 0 on success
 */
-int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
+int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe);
 
 /*!
   \brief Generate PRACH waveform

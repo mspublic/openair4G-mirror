@@ -55,7 +55,6 @@ int generate_sss(mod_sym_t **txdataF,
 
   Nid2 = frame_parms->Nid_cell % 3;
   Nid1 = frame_parms->Nid_cell/3;
-  debug_msg("Generating SSS for Nid_cell %d (%d,%d)\n",frame_parms->Nid_cell,Nid2,Nid1);
 
   if (slot_offset < 3) 
     d = &d0_sss[62*(Nid2 + (Nid1*3))];

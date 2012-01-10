@@ -945,7 +945,7 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
     payload[1] = PHY_vars_UE_g[UE_id]->pucch_payload[1];    
   }
   else 
-    msg("[PHY][eNB] Frame %d: Can't handle formats 2/2a/2b\n",mac_xface->frame);
+    msg("[PHY][eNB] Frame %d: Can't handle formats 2/2a/2b\n",phy_vars_eNB->frame);
 
   return(0);
 }

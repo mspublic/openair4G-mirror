@@ -178,7 +178,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 
     ulsch->uci_format = HLC_subband_cqi_nopmi;
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
-    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 
+    if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
     ulsch->O_ACK                                  = 2;
@@ -213,12 +213,12 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     
 
 #ifdef DEBUG_RAR
-    debug_msg("ulsch (ue,ra): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    debug_msg("ulsch (ue,ra): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-    debug_msg("ulsch (ue,ra): nb_rb    %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    debug_msg("ulsch (ue,ra): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
-    debug_msg("ulsch (ue,ra): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-    debug_msg("ulsch (ue,ra): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    msg("ulsch (ue,ra): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    msg("ulsch (ue,ra): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+    msg("ulsch (ue,ra): nb_rb    %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    msg("ulsch (ue,ra): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+    msg("ulsch (ue,ra): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    msg("ulsch (ue,ra): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
 #endif
     return(0);
 }
