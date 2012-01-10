@@ -880,13 +880,13 @@ main (int argc, char **argv)
   l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
 
   for (i = 0; i < NB_eNB_INST; i++)
-    mac_xface->mrbch_phy_sync_failure (i, i);
+    mac_xface->mrbch_phy_sync_failure (i, 0, i);
 #ifdef DEBUG_SIM
   printf ("[SIM] Synching to eNB\n");
 #endif
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      mac_xface->chbch_phy_sync_success (UE_id, 0);	//UE_id%NB_eNB_INST);
+      mac_xface->dl_phy_sync_success (UE_id, 0, 0);	//UE_id%NB_eNB_INST);
   }
 #endif
 
@@ -907,7 +907,7 @@ main (int argc, char **argv)
       Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
 #endif 
 
-  for (mac_xface->frame=0; mac_xface->frame<oai_emulation.info.n_frames; mac_xface->frame++) {
+  for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
     // Handling the cooperation Flag
     if (cooperation_flag == 2)
@@ -916,7 +916,7 @@ main (int argc, char **argv)
 	  PHY_vars_eNB_g[0]->cooperation_flag = 2;
       }
     */
-    oai_emulation.info.frame = mac_xface->frame; 
+    oai_emulation.info.frame = frame; 
     update_nodes(oai_emulation.info.time);  
 
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
@@ -954,7 +954,7 @@ main (int argc, char **argv)
 #endif 
    
     if (oai_emulation.info.n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
-      mac_xface->frame %=(oai_emulation.info.n_frames-1);
+      frame %=(oai_emulation.info.n_frames-1);
       // set the emulation time based on 1ms subframe number
       oai_emulation.info.time += 0.01; // emu time in s 
     }
@@ -1019,14 +1019,15 @@ main (int argc, char **argv)
 	   eNB_id++) {
 	//#ifdef DEBUG_SIM
 	printf ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
-	   eNB_id, mac_xface->frame, slot, next_slot >> 1,
+	   eNB_id, frame, slot, next_slot >> 1,
 		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
 		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	//#endif
+	PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 
 #ifndef NAS_NETLINK
-	//if ((mac_xface->frame % 10) == 0) {
+	//if ((frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
@@ -1042,15 +1043,16 @@ main (int argc, char **argv)
       for (UE_id = oai_emulation.info.first_ue_local; 
 	   (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1); 
 	   UE_id++)
-	if (mac_xface->frame >= (UE_id * 20)) {	// activate UE only after 20*UE_id frames so that different UEs turn on separately
+	if (frame >= (UE_id * 20)) {	// activate UE only after 20*UE_id frames so that different UEs turn on separately
 
 #ifdef DEBUG_SIM
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
-	     UE_id, mac_xface->frame, slot, next_slot >> 1);
+	     UE_id, frame, slot, next_slot >> 1);
 #endif
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
-	    if (mac_xface->frame>0) {
+	    printf("UE %d : synched (%d)\n",UE_id,PHY_vars_UE_g[UE_id]->UE_mode[0]);
+	    if (frame>0) {
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 	    }
 	  }
@@ -1059,8 +1061,9 @@ main (int argc, char **argv)
 	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
 	      exit(-1);
 	    }
-	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-2))) {
+	    if ((frame>0) && (last_slot == (SLOTS_PER_FRAME-2))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
+	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
 		write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
@@ -1072,6 +1075,7 @@ main (int argc, char **argv)
 	      write_output("pbch_rxF_ext0.m","pbch_ext0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],6*12*4,1,1);
 	      write_output("pbch_rxF_comp0.m","pbch_comp0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],6*12*4,1,1);
 	      write_output("pbch_rxF_llr.m","pbch_llr",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
+	      */
 	    }
  	  }
 #ifndef NAS_NETLINK
@@ -1110,7 +1114,7 @@ main (int argc, char **argv)
 	}
       }
 
-      if ((last_slot == 1) && (mac_xface->frame == 0)
+      if ((last_slot == 1) && (frame == 0)
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
 	write_output ("dlchan0.m", "dlch0",
@@ -1128,7 +1132,7 @@ main (int argc, char **argv)
 		      PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
       }
       /*
-         if ((last_slot==1) && (mac_xface->frame==1)) {
+         if ((last_slot==1) && (frame==1)) {
          write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
          write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
          }
@@ -1141,7 +1145,7 @@ main (int argc, char **argv)
 	if (td>0) {
 	  td_avg = (int)(((K*(long)td) + (((1<<3)-K)*((long)td_avg)))>>3); // in us
 	  LOG_I(EMU,"sleep frame %d, average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",
-		mac_xface->frame, td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
+		frame, td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
 	}  
 	if (td_avg<(TARGET_SF_TIME_NS - SF_DEVIATION_OFFSET_NS)){
 	  sleep_time_us += SLEEP_STEP_US; 
@@ -1154,7 +1158,7 @@ main (int argc, char **argv)
 
     }				//end of slot
 
-    if ((mac_xface->frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
+    if ((frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
