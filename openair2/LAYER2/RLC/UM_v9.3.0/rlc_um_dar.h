@@ -85,15 +85,17 @@ private_rlc_um_dar(  int rlc_um_read_length_indicators(unsigned char**dataP, rlc
 /*! \fn void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, signed int snP)
 * \brief    Try reassembly PDUs from DAR buffer, starting at sequence number snP.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
+* \param[in]  frame       Frame index.
 * \param[in]  snP         Sequence number.
 */
-private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, signed int snP));
+private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, signed int snP));
 
-/*! \fn void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP)
+/*! \fn void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame)
 * \brief    Check if t-Reordering expires and take the appropriate actions as described in 3GPP specifications.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
+* \param[in]  frame       Frame index.
 */
-private_rlc_um_dar(  void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP));
+private_rlc_um_dar(  void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame));
 
 /*! \fn mem_block_t *rlc_um_remove_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP)
 * \brief    Remove the PDU with sequence number snP from the DAR buffer and return it.
@@ -111,31 +113,34 @@ private_rlc_um_dar(  mem_block_t *rlc_um_remove_pdu_from_dar_buffer(rlc_um_entit
 */
 private_rlc_um_dar(  inline mem_block_t* rlc_um_get_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP));
 
-/*! \fn signed int rlc_um_in_window(rlc_um_entity_t *rlcP, signed int lower_boundP, signed int snP, signed int higher_boundP)
+/*! \fn signed int rlc_um_in_window(rlc_um_entity_t *rlcP, u32_t frame, signed int lower_boundP, signed int snP, signed int higher_boundP)
 * \brief    Compute if the sequence number of a PDU is in a window .
 * \param[in]  rlcP           RLC UM protocol instance pointer.
+* \param[in]  frame          Frame index.
 * \param[in]  lower_boundP   Lower bound of a window.
 * \param[in]  snP            Sequence number of a theorical PDU.
 * \param[in]  higher_boundP  Higher bound of a window.
 * \return     -2 if lower_boundP  > sn, -1 if higher_boundP < sn, 0 if lower_boundP  < sn < higher_boundP, 1 if lower_boundP  == sn, 2 if higher_boundP == sn, 3 if higher_boundP == sn == lower_boundP.
 */
-protected_rlc_um_dar(inline signed int rlc_um_in_window(rlc_um_entity_t *rlcP, signed int lower_boundP, signed int snP, signed int higher_boundP));
+protected_rlc_um_dar(inline signed int rlc_um_in_window(rlc_um_entity_t *rlcP, u32_t frame, signed int lower_boundP, signed int snP, signed int higher_boundP));
 
-/*! \fn signed int rlc_um_in_reordering_window(rlc_um_entity_t *rlcP, signed int snP)
+/*! \fn signed int rlc_um_in_reordering_window(rlc_um_entity_t *rlcP, u32_t frame, signed int snP)
 * \brief    Compute if the sequence number of a PDU is in a window .
 * \param[in]  rlcP           RLC UM protocol instance pointer.
+* \param[in]  frame          Frame index.
 * \param[in]  snP            Sequence number of a theorical PDU.
 * \return     0 if snP is in reordering window, else -1.
 */
-protected_rlc_um_dar(inline signed int rlc_um_in_reordering_window(rlc_um_entity_t *rlcP, signed int snP));
+protected_rlc_um_dar(inline signed int rlc_um_in_reordering_window(rlc_um_entity_t *rlcP, u32_t frame, signed int snP));
 
-/*! \fn void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP)
+/*! \fn void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP)
 * \brief    Apply the DAR process for a PDU: put it in DAR buffer and try to reassembly or discard it.
 * \param[in]  rlcP       RLC UM protocol instance pointer.
+* \param[in]  frame      Frame index.
 * \param[in]  pdu_memP   mem_block_t wrapper for a UM PDU .
 * \param[in]  pduP       Pointer on the header of the UM PDU.
 * \param[in]  tb_sizeP   Size of the UM PDU.
 */
-protected_rlc_um_dar(void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP));
+protected_rlc_um_dar(void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP));
 /** @} */
 #    endif

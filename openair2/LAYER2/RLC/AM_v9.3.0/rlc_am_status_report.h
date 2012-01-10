@@ -106,27 +106,30 @@ protected_rlc_am_status_report( signed int rlc_am_get_control_pdu_infos (rlc_am_
 */
 protected_rlc_am_status_report( void rlc_am_display_control_pdu_infos(rlc_am_control_pdu_info_t* pdu_infoP);)
 
-/*! \fn void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, mem_block_t*  tbP, u8_t* first_byte, u16_t tb_size_in_bytes)
+/*! \fn void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t*  tbP, u8_t* first_byte, u16_t tb_size_in_bytes)
 * \brief      Process the informations contained in the control PDU.
 * \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  frame             Frame index.
 * \param[in]  tbP               Control PDU embedded in a mem_block_t structure.
 * \param[in]  first_byte        Pointer on first byte of control PDU.
 * \param[in]  tb_size_in_bytes  Size of serialized control PDU in bytes.
 */
-protected_rlc_am_status_report( void       rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, mem_block_t*  tbP, u8_t* first_byte, u16_t tb_size_in_bytes);)
+protected_rlc_am_status_report( void       rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t*  tbP, u8_t* first_byte, u16_t tb_size_in_bytes);)
 
-/*! \fn int  rlc_am_write_status_pdu(rlc_am_pdu_sn_10_t* rlc_am_pdu_sn_10P, rlc_am_control_pdu_info_t* pdu_infoP)
+/*! \fn int  rlc_am_write_status_pdu(u32_t frame,rlc_am_pdu_sn_10_t* rlc_am_pdu_sn_10P, rlc_am_control_pdu_info_t* pdu_infoP)
 * \brief      Remove all marked holes for PDU with sequence number "snP".
+* \param[in]  frame               Frame index.
 * \param[in]  rlc_am_pdu_sn_10P   Pointer on the header of the RLC AM control PDU.
 * \param[in]  pdu_infoP           Struct containing PDU control informations elements.
 * \return     The number of bytes that have been written.
 */
-protected_rlc_am_status_report(int  rlc_am_write_status_pdu(rlc_am_pdu_sn_10_t* rlc_am_pdu_sn_10P, rlc_am_control_pdu_info_t* pdu_infoP);)
+protected_rlc_am_status_report(int  rlc_am_write_status_pdu(u32_t frame, rlc_am_pdu_sn_10_t* rlc_am_pdu_sn_10P, rlc_am_control_pdu_info_t* pdu_infoP);)
 
-/*! \fn void        rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
+/*! \fn void        rlc_am_send_status_pdu(rlc_am_entity_t* rlcP, u32_t frame)
 * \brief      Send a status PDU based on the receiver buffer content.
 * \param[in]  rlcP           RLC AM protocol instance pointer.
+* \param[in]  frame          Frame index.
 */
-protected_rlc_am_status_report(void        rlc_am_send_status_pdu(rlc_am_entity_t* rlcP);)
+protected_rlc_am_status_report(void        rlc_am_send_status_pdu(rlc_am_entity_t* rlcP, u32_t frame);)
 /** @} */
 #endif

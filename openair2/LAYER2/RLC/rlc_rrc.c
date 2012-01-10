@@ -32,14 +32,14 @@ rb_release_rlc_um (struct rlc_um_entity *rlcP, module_id_t module_idP)
 }
 //-----------------------------------------------------------------------------
 rlc_op_status_t
-rb_release_rlc_am (struct rlc_am_entity *rlcP, module_id_t module_idP)
+rb_release_rlc_am (struct rlc_am_entity *rlcP, u32_t frame, module_id_t module_idP)
 {
 //-----------------------------------------------------------------------------
-  rlc_am_cleanup(rlcP);
+  rlc_am_cleanup(rlcP,frame);
   return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, rb_id_t rb_idP) {
+rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, rb_id_t rb_idP, u32_t frame) {
 //-----------------------------------------------------------------------------
   int rlc_mode = rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type;
   //
@@ -47,7 +47,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, rb_id_t rb_idP) {
   switch (rlc_mode) {
   case RLC_AM:
       LOG_D(RLC, "[RLC_RRC][MOD_id %d] RELEASE RAB AM %d \n",module_idP,rb_idP);
-    status = rb_release_rlc_am(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
+      status = rb_release_rlc_am(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, module_idP);
     rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
         break;
   case RLC_TM:
@@ -141,7 +141,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_m
     return RLC_OP_STATUS_OUT_OF_RESSOURCES;
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP) {
+rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP) {
 //-----------------------------------------------------------------------------
 //  msg("[RLC][MOD_id %d] CONFIG_REQ for Rab %d\n",module_idP,rb_idP);
 #warning TO DO rrc_rlc_config_req
@@ -157,24 +157,27 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, config_action_t ac
             switch (rlc_infoP.rlc_mode) {
                 case RLC_AM:
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB AM\n", module_idP, rb_idP);
-                    config_req_rlc_am(                               &rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
-                                    module_idP,
-                                    &rlc_infoP.rlc.rlc_am_info,
-                                    rb_idP, rb_typeP);
+                    config_req_rlc_am(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
+				      frame,
+				      module_idP,
+				      &rlc_infoP.rlc.rlc_am_info,
+				      rb_idP, rb_typeP);
                     break;
                 case RLC_UM:
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB UM\n", module_idP, rb_idP);
                     config_req_rlc_um(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
-                                    module_idP,
-                                    &rlc_infoP.rlc.rlc_um_info,
-                                    rb_idP, rb_typeP);
+				      frame,
+				      module_idP,
+				      &rlc_infoP.rlc.rlc_um_info,
+				      rb_idP, rb_typeP);
                     break;
                 case RLC_TM:
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB TM\n", module_idP, rb_idP);
                     config_req_rlc_tm(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
-                                    module_idP,
-                                    &rlc_infoP.rlc.rlc_tm_info,
-                                    rb_idP, rb_typeP);
+				      frame,
+				      module_idP,
+				      &rlc_infoP.rlc.rlc_tm_info,
+				      rb_idP, rb_typeP);
                     break;
                 default:
                 return RLC_OP_STATUS_BAD_PARAMETER;
@@ -182,7 +185,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, config_action_t ac
             break;
 
         case ACTION_REMOVE:
-            return rrc_rlc_remove_rlc(module_idP, rb_idP);
+	  return rrc_rlc_remove_rlc(module_idP, rb_idP,frame);
             break;
         default:
             return RLC_OP_STATUS_BAD_PARAMETER;
@@ -191,7 +194,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, config_action_t ac
     return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP) {
+rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP) {
 //-----------------------------------------------------------------------------
   mem_block_t*   sdu;
 

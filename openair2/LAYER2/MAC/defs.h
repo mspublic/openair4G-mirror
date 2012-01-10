@@ -553,15 +553,23 @@ s8 get_deltaP_rampup(u8 Mod_id);
 
 //main.c
 
-void chbch_phy_sync_success(u8 Mod_id,u8 CH_index);
-void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
+void chbch_phy_sync_success(u8 Mod_id,u32 frame,u8 CH_index);
+
+void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 Free_ch_index);
+
 int mac_top_init(void);
+
 char layer2_init_UE(u8 Mod_id);
+
 char layer2_init_eNB(u8 Mod_id, u8 Free_ch_index); 
+
 void mac_switch_node_function(u8 Mod_id);
+
 int mac_init_global_param(void);
+
 void mac_top_cleanup(void);
-void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
+
+void mac_UE_out_of_sync_ind(u8 Mod_id,u32 frame, u16 CH_index);
 
 
 // eNB functions
@@ -573,7 +581,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 can be scheduled.
 @param subframe Index of current subframe
 */
-void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u8 subframe); 
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe); 
 
 /* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary numeber of times after eNB_dlsch_ulsch_scheduler
 in a given subframe.
@@ -581,14 +589,14 @@ in a given subframe.
 @param subframe Index of current subframe
 @returns Pointer to generated DCI for subframe
 */
-DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
+DCI_PDU *get_dci_sdu(u8 Mod_id,u32 frame,u8 subframe);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
 @param Mod_id Instance ID of eNB
 @param preamble_index index of the received RA request
 @param timing_offset Offset in samples of the received PRACH w.r.t. eNB timing. This is used to 
 */
-void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
+void initiate_ra_proc(u8 Mod_id,u32 frame, u16 preamble_index,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
 
 
 /* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the t-CRNTI.
@@ -597,7 +605,7 @@ void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id
 @param N_RB_UL Number of UL resource blocks
 @returns t_CRNTI
 */
-u16  fill_rar(u8 Mod_id,
+u16  fill_rar(u8 Mod_id,u32 frame,
 	      u8 *dlsch_buffer,
 	      u16 N_RB_UL);
 
@@ -606,33 +614,29 @@ u16  fill_rar(u8 Mod_id,
 @param rnti RNTI of UE transmitting l3msg
 @param l3msg Pointer to received l3msg
 */
-void terminate_ra_proc(u8 Mod_id,u16 rnti, u8 *l3msg);
+void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti, u8 *l3msg);
 
 /* \brief Function to indicate a failed RA response.  It removes all temporary variables related to the initial connection of a UE
 @param Mod_id Instance ID of eNB
 @param preamble_index index of the received RA request.
 */
-void cancel_ra_proc(u8 Mod_id, u16 preamble_index);
+void cancel_ra_proc(u8 Mod_id,u32 frame, u16 preamble_index);
 
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of eNB
 @param rnti RNTI of UE transmitting the SR
 @param sdu Pointer to received SDU
 */
-void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
+void rx_sdu(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu);
 
 /* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
 @param Mod_id Instance ID of eNB
 @param rnti RNTI of UE transmitting the SR
 @param subframe Index of subframe where SR was received
 */
-void SR_indication(u8 Mod_id,u16 rnti, u8 subframe);
+void SR_indication(u8 Mod_id,u32 frame,u16 rnti, u8 subframe);
 
-void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
-
-
-
-u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
+u8 *get_dlsch_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 TBindex);
 //added for ALU icic purpose
 u32 Get_Cell_SBMap(u8 Mod_id);
 void UpdateSBnumber(unsigned char Mod_id);
@@ -687,26 +691,26 @@ u32 req_new_ulsch(u8 Mod_id);
 @param subframe subframe number
 @returns 0 for no SR, 1 for SR
 */
-u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti,u8 subframe);
+u32 ue_get_SR(u8 Mod_id, u32 frame, u8 eNB_id,u16 rnti,u8 subframe);
 
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
-void out_of_sync_ind(u8 Mod_id,u16);
+void out_of_sync_ind(u8 Mod_id, u32 frame, u16);
 
-void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
+void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 
-void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
+void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u8 CH_index);
 
-void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
 @param Mod_id Index of UE instance
 @param New_Msg3 Flag to indicate this call is for a new Msg3
 @param subframe Index of subframe for PRACH transmission (0 ... 9)
 @returns A pointer to a PRACH_RESOURCES_t */
-PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u8 new_Msg3,u8 subframe);
+PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame,u8 new_Msg3,u8 subframe);
 
 /* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
@@ -716,7 +720,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u8 new_Msg3,u8 subframe);
 random-access procedure
 @returns timing advance or 0xffff if preamble doesn't match
 */
-u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
+u16 ue_process_rar(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
 
 
 /* \brief Generate header for UL-SCH.  This function parses the desired control elements and sdus and generates the header as described
@@ -770,7 +774,7 @@ void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
-/*! \fn  UE_L2_state_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_index)
+/*! \fn  UE_L2_state_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index)
    \brief UE scehdular where all the ue background tasks are done
 \param[in] Mod_id instance of the UE
 \param[in] subframe the subframe number
@@ -778,7 +782,7 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 \param[in] eNB_index instance of eNB
 @returns L2 state (CONNETION_OK or CONNECTION_LOST)
 */
-UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_index);
+UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 
 
 /*! \fn  u8 get_bsr_len (u8 Mod_id, u16 bufflen);
@@ -847,7 +851,7 @@ int get_sf_retxBSRTimer(u8 retxBSR_Timer);
 \param[in] Mod_id Instance index of UE
 \param[in] eNB_id Index of eNB
 */
-void Msg3_tx(u8 Mod_id,u8 eNB_id);
+void Msg3_tx(u8 Mod_id,u32 frame,u8 eNB_id);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

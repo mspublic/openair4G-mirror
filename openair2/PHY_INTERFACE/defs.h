@@ -33,39 +33,36 @@ typedef struct
     /// Pointer function that stops the low-level scheduler due an exit condition        
     void (*macphy_exit)(const char *);          
     
-    /// Frame counter
-    unsigned int frame;
-
     // eNB functions
     /// Invoke dlsch/ulsch scheduling procedure for new subframe
-    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u8 subframe);
+    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);
 
     /// Fill random access response sdu, passing timing advance
-    u16 (*fill_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
+    u16 (*fill_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
 
     /// Terminate the RA procedure upon reception of l3msg on ulsch
-    void (*terminate_ra_proc)(u8 Mod_id,u16 UE_id, u8 *l3msg);
+    void (*terminate_ra_proc)(u8 Mod_id,u32 frame,u16 UE_id, u8 *l3msg);
 
     /// Initiate the RA procedure upon reception (hypothetical) of a valid preamble
-    void (*initiate_ra_proc)(u8 Mod_id,u16 preamble,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
+    void (*initiate_ra_proc)(u8 Mod_id,u32 frame,u16 preamble,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
 
     /// cancel an ongoing RA procedure 
-    void (*cancel_ra_proc)(u8 Mod_id,u16 preamble);
+    void (*cancel_ra_proc)(u8 Mod_id,u32 frame,u16 preamble);
 
     /// Get DCI for current subframe from MAC
-    DCI_PDU* (*get_dci_sdu)(u8 Mod_id,u8 subframe);
+    DCI_PDU* (*get_dci_sdu)(u8 Mod_id,u32 frame,u8 subframe);
 
     /// Get DLSCH sdu for particular RNTI and Transport block index
-    u8* (*get_dlsch_sdu)(u8 Mod_id,u16 rnti,u8 TB_index);
+    u8* (*get_dlsch_sdu)(u8 Mod_id,u32 frame,u16 rnti,u8 TB_index);
 
     /// Send ULSCH sdu to MAC for given rnti
-    void (*rx_sdu)(u8 Mod_id,u16 rnti, u8 *sdu);
+    void (*rx_sdu)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu);
 
     /// Indicate failure to synch to external source
-    void (*mrbch_phy_sync_failure) (u8 Mod_id,u8 Free_ch_index);
+    void (*mrbch_phy_sync_failure) (u8 Mod_id,u32 frame, u8 Free_ch_index);
 
     /// Indicate Scheduling Request from UE
-    void (*SR_indication)(u8 Mod_id,u16 rnti,u8 subframe);
+    void (*SR_indication)(u8 Mod_id,u32 frame,u16 rnti,u8 subframe);
 
     /// Configure Common PHY parameters from SIB1
     void (*phy_config_sib1_eNB)(u8 Mod_id,
@@ -86,31 +83,31 @@ typedef struct
     // UE functions
 
     /// Indicate loss of synchronization of PBCH
-    void (*out_of_sync_ind)(u8 Mod_id,u16);
+    void (*out_of_sync_ind)(u8 Mod_id,u32 frame,u16);
 
     ///  Send a received SI sdu
-    void (*ue_decode_si)(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
+    void (*ue_decode_si)(u8 Mod_id,u32 frame, u8 CH_index, void *pdu, u16 len);
 
     /// Send a received DLSCH sdu to MAC
-    void (*ue_send_sdu)(u8 Mod_id,u8 *sdu,u8 CH_index);
+    void (*ue_send_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u8 CH_index);
 
     /// Retrieve ULSCH sdu from MAC
-    void (*ue_get_sdu)(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+    void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
     /// Retrieve RRCConnectionReq from MAC
-    PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u8 Msg3_flag,u8 subframe);
+    PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);
 
     /// Process Random-Access Response
-    u16 (*ue_process_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
+    u16 (*ue_process_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
 
     /// Get SR payload (0,1) from UE MAC
-    u32 (*ue_get_SR)(u8 Mod_id,u8 eNB_id,u16 rnti,u8 subframe);
+    u32 (*ue_get_SR)(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti,u8 subframe);
 
     /// Indicate synchronization with valid PBCH
-    void (*chbch_phy_sync_success) (u8 Mod_id, u8 CH_index);
+    void (*dl_phy_sync_success) (u8 Mod_id,u32 frame, u8 CH_index);
 
     /// Only calls the PDCP for now
-    UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_id);
+    UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u32 frame,u8 subframe, lte_subframe_t direction,u8 eNB_id);
 
     /// PHY-Config-Dedicated UE
     void (*phy_config_dedicated_ue)(u8 Mod_id,u8 CH_index,
@@ -130,7 +127,7 @@ typedef struct
     void (*ra_failed)(u8 Mod_id,u8 eNB_index);
 
     /// Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
-    void (*Msg3_transmitted)(u8 Mod_id,u8 eNB_id);
+    void (*Msg3_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
 
     // PHY Helper Functions
 

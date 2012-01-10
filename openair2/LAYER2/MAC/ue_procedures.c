@@ -159,7 +159,7 @@ u32 req_new_ulsch(u8 Mod_id){
 }
 
 
-u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
+u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
   
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
   //  int MGL=6;// measurement gap length in ms
@@ -176,7 +176,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
   */
 
   // determin the measurement gap
-  LOG_D(MAC,"[UE %d][SR %x] Frame %d subframe %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",Mod_id,rnti,mac_xface->frame,subframe,
+  LOG_D(MAC,"[UE %d][SR %x] Frame %d subframe %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",Mod_id,rnti,frame,subframe,
 	UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER,
 	(1<<(2+UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax)),
 	UE_mac_inst[Mod_id].scheduling_info.SR_pending);
@@ -193,7 +193,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
     }
     T=MGRP/10;
     //check the measurement gap and sr prohibit timer
-    if ((subframe ==  gapOffset %10) && ((mac_xface->frame %T) == (floor(gapOffset/10))) 
+    if ((subframe ==  gapOffset %10) && ((frame %T) == (floor(gapOffset/10))) 
 	&& (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running =0)){
       UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
       return(0);
@@ -223,7 +223,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
   }
 }
 
-void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
+void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
@@ -235,7 +235,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 
 #ifdef DEBUG_HEADER_PARSING
   LOG_D(MAC,"[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,
-	mac_xface->frame,eNB_index,num_ce,num_sdu);
+	frame,eNB_index,num_ce,num_sdu);
 #endif
 
   for (i=0;i<num_ce;i++) {
@@ -265,7 +265,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 	LOG_D(MAC,"[UE] CE %d : UE Timing Advance :",i);
 	LOG_T(MAC,"[UE] %d\n",payload_ptr[0]);
 #endif
-	process_timing_advance(payload_ptr[0]);
+	process_timing_advance(Mod_id,payload_ptr[0]);
 	payload_ptr++;
 	break;
       case DRX_CMD:
@@ -290,48 +290,58 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 
       LOG_D(MAC,"[UE %d] RX CCCH -> RRC (%d bytes)\n",Mod_id,rx_lengths[i]);
       Rrc_xface->mac_rrc_data_ind(Mod_id,
+				  frame,
 				  CCCH,
 				  (char *)payload_ptr,rx_lengths[i],0,eNB_index);
 
     }
     else if (rx_lcids[i] == DCCH) {
       LOG_D(MAC,"[UE %d] RX  DCCH \n",Mod_id);
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
-				      DCCH,
-				      (char *)payload_ptr,
-				      rx_lengths[i],
-				      1,
-				      NULL);
+      mac_rlc_data_ind(Mod_id+NB_eNB_INST,
+		       frame,
+		       DCCH,
+		       (char *)payload_ptr,
+		       rx_lengths[i],
+		       1,
+		       NULL);
     }
     else if (rx_lcids[i] == DCCH1) {
       LOG_D(MAC,"[UE %d] RX  DCCH1 \n",Mod_id);
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
-				      DCCH1,
-				      (char *)payload_ptr,
-				      rx_lengths[i],
-				      1,
-				      NULL);
+      mac_rlc_data_ind(Mod_id+NB_eNB_INST,
+		       frame,
+		       DCCH1,
+		       (char *)payload_ptr,
+		       rx_lengths[i],
+		       1,
+		       NULL);
     }
     else if (rx_lcids[i] == DTCH) {
       LOG_D(MAC,"[UE %d][PDSCH] RX DTCH%d %d bytes to RLC \n",Mod_id,rx_lcids[i],rx_lengths[i]);
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
-				      DTCH,
-				      (char *)payload_ptr,
+      mac_rlc_data_ind(Mod_id+NB_eNB_INST,
+		       frame,
+		       DTCH,
+		       (char *)payload_ptr,
 				      rx_lengths[i],
-				      1,
-				      NULL);
+		       1,
+		       NULL);
     }
 
   }
 }
 
-void ue_decode_si(u8 Mod_id, u8 eNB_index, void *pdu,u16 len) {
+void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
-  LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,mac_xface->frame,BCCH);
+  LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,frame,BCCH);
 #endif
 
-  Rrc_xface->mac_rrc_data_ind(Mod_id,BCCH,(char *)pdu,len,0,eNB_index);
+  Rrc_xface->mac_rrc_data_ind(Mod_id,
+			      frame,
+			      BCCH,
+			      (char *)pdu,
+			      len,
+			      0,
+			      eNB_index);
 
 }
 
@@ -557,7 +567,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
 }
 
-void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
+void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
   u8 dcch_header_len,dcch1_header_len,dtch_header_len, bsr_header_len, bsr_ce_len=0, bsr_len;
@@ -590,14 +600,14 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   // Check for DCCH first
   sdu_lengths[0]=0;
   if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DCCH] > 0) {
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 				    DCCH,
 				    (buflen-dcch_header_len-bsr_len));
     LOG_D(MAC,"[UE %d] DCCH has %d bytes to send (buffer %d, header %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,Mod_id+NB_eNB_INST);
     
-    sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
-						      DCCH,
-						      (char *)&ulsch_buff[sdu_lengths[0]]);
+    sdu_lengths[0] += mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
+				       DCCH,
+				       (char *)&ulsch_buff[sdu_lengths[0]]);
     
     sdu_length_total += sdu_lengths[0];
     sdu_lcids[0] = DCCH;
@@ -614,15 +624,15 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   // DCCH1
   if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DCCH1] > 0) {
     
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 				    DCCH1,
 				    (buflen-bsr_len-dcch_header_len-dcch1_header_len-sdu_length_total));
     
     LOG_D(MAC,"[UE %d] DCCH1 has %d bytes to send (buffer %d, header %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len+dcch1_header_len,Mod_id+NB_eNB_INST);
     
-    sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
-							    DCCH1,
-							    (char *)&ulsch_buff[sdu_lengths[0]]);
+    sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
+					     DCCH1,
+					     (char *)&ulsch_buff[sdu_lengths[0]]);
     sdu_length_total += sdu_lengths[num_sdus];
     sdu_lcids[num_sdus] = DCCH1;
     LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH1\n",Mod_id,sdu_lengths[num_sdus]);
@@ -644,18 +654,18 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
       dtch_header_len = sizeof(SCH_SUBHEADER_LONG);
     
     
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 				    DTCH,
 				    buflen-bsr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
     
     LOG_D(MAC,"[UE %d] DTCH has %d bytes to send (buffer %d, header %d))\n",
 	  Mod_id,rlc_status.bytes_in_buffer,buflen,dtch_header_len);
     
-    sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
-							    DTCH,
-							    (char *)&ulsch_buff[sdu_length_total]);
+    sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
+					     DTCH,
+					     (char *)&ulsch_buff[sdu_length_total]);
     
-      LOG_D(MAC,"[UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
+    LOG_D(MAC,"[UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
       sdu_lcids[num_sdus] = DTCH;
       sdu_length_total += sdu_lengths[num_sdus];
       num_sdus++; 
@@ -743,7 +753,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 }
 
 // called at each subframe 
-UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 eNB_index) {
+UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index) {
 
   int lcid; // lcid index
  
@@ -753,15 +763,18 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 e
   mac_rlc_status_resp_t rlc_status[11];
   struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
 
-  Mac_rlc_xface->frame=mac_xface->frame;
+  Mac_rlc_xface->frame=frame;
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
   
-  switch (Rrc_xface->rrc_rx_tx(Mod_id,0,eNB_index)) {
+  switch (Rrc_xface->rrc_rx_tx(Mod_id,
+			       frame,
+			       0,
+			       eNB_index)) {
   case RRC_OK:
     break;
   case RRC_ConnSetup_failed:
-    LOG_D(MAC,"RRCConnectionSetup failed, returning to IDLE state");
+    LOG_D(MAC,"RRCConnectionSetup failed, returning to IDLE state\n");
     return(CONNECTION_LOST);
     break;
   default:
@@ -775,7 +788,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 e
     else {
       LOG_D(MAC,"FATAL: radioResourceConfigCommon is NULL!!!\n");
       mac_xface->macphy_exit("");
-      return;
+      return(RRC_OK);
     }
     UE_mac_inst[Mod_id].RA_contention_resolution_cnt++;
     if (UE_mac_inst[Mod_id].RA_contention_resolution_cnt == 
@@ -805,7 +818,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 e
 	  UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration;
       }
       // measure the buffer size 
-      rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+      rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 					    lcid,
 					    0);//tb_size does not reauire when requesting the status
       //    LOG_D(MAC,"[UE %d] rlc buffer (lcid %d, byte %d)BSR level %d\n", 
@@ -816,7 +829,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction,u8 e
 	//	UE_mac_inst[Mod_id].scheduling_info.num_BSR++;
 	UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
 	LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCID %d with BSR level %d (%d bytes in RLC)\n", 
-	      Mod_id, mac_xface->frame,subframe,lcid,
+	      Mod_id, frame,subframe,lcid,
 	      UE_mac_inst[Mod_id].scheduling_info.BSR[lcid],
 	      rlc_status[lcid].bytes_in_buffer);
       } else {
@@ -874,9 +887,9 @@ void update_bsr(u8 Mod_id, u8 lcid){
 
   mac_rlc_status_resp_t rlc_status;
   
-  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
-					lcid,
-					0);//tb_size does not reauire when requesting the status
+  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
+				  lcid,
+				  0);//tb_size does not reauire when requesting the status
   if (rlc_status.bytes_in_buffer > 0 ) {
     UE_mac_inst[Mod_id].scheduling_info.BSR[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status.bytes_in_buffer);
     UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] = rlc_status.bytes_in_buffer;

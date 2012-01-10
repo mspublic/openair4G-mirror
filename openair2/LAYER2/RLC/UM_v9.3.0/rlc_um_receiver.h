@@ -58,11 +58,12 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 #        include "rlc_um_entity.h"
 #        include "mac_primitives.h"
-/*! \fn void rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
+/*! \fn void rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, struct mac_data_ind data_indP)
 * \brief    Handle the MAC data indication, retreive the transport blocks and send them one by one to the DAR process.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
+* \param[in]  frame       Frame index.
 * \param[in]  data_indP   Data indication structure containing transport block received from MAC layer.
 */
-protected_rlc_um_receiver( void rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP));
+protected_rlc_um_receiver( void rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, struct mac_data_ind data_indP));
 /** @} */
 #    endif

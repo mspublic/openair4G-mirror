@@ -20,13 +20,13 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       u16 *SIperiod) {
   
   if (eNB_flag==0) {
-    LOG_I(MAC,"[CONFIG][UE %d] Frame %d: Configuring MAC/PHY from eNB %d\n",Mod_id,mac_xface->frame,eNB_index);
+    LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_id,eNB_index);
     UE_mac_inst[Mod_id].tdd_Config = tdd_Config;
   }else {
     if (physicalConfigDedicated == NULL){
-      LOG_I(MAC,"[CONFIG][eNB %d] Frame %d: Configuring MAC/PHY\n",Mod_id,mac_xface->frame);
+      LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY\n",Mod_id);
     } else{
-      LOG_I(MAC,"[CONFIG][eNB %d] Frame %d: Configuring MAC/PHY for UE %d (%x)\n",Mod_id,mac_xface->frame,UE_id,find_UE_RNTI(Mod_id,UE_id));
+      LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY for UE %d (%x)\n",Mod_id,UE_id,find_UE_RNTI(Mod_id,UE_id));
     }
   }
   

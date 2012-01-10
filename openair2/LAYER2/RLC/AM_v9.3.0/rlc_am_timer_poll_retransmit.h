@@ -58,11 +58,12 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #        endif
 #    endif
 
-/*! \fn void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP)
+/*! \fn void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame)
 * \brief      Check if timer Poll-retransmit has timed-out, if so it is stopped and has the status "timed-out".
 * \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  frame             Frame index
 */
-protected_rlc_am_timer_poll_retransmit(void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP));
+protected_rlc_am_timer_poll_retransmit(void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame));
 
 /*! \fn int  rlc_am_is_timer_poll_retransmit_timed_out(rlc_am_entity_t *rlcP)
 * \brief      Boolean function, check if timer Poll-retransmit has timed-out.
@@ -71,17 +72,19 @@ protected_rlc_am_timer_poll_retransmit(void rlc_am_check_timer_poll_retransmit(r
 */
 protected_rlc_am_timer_poll_retransmit(int  rlc_am_is_timer_poll_retransmit_timed_out(rlc_am_entity_t *rlcP);)
 
-/*! \fn void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP)
+/*! \fn void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame)
 * \brief      Stop and reset the timer Poll-retransmit.
 * \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  frame             Frame index
 */
-protected_rlc_am_timer_poll_retransmit(void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP);)
+protected_rlc_am_timer_poll_retransmit(void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame);)
 
-/*! \fn void rlc_am_start_timer_poll_retransmit(rlc_am_entity_t *rlcP)
+/*! \fn void rlc_am_start_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame)
 * \brief      Re-arm (based on RLC AM config parameter) and start timer Poll-retransmit.
 * \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  frame             Frame index
 */
-protected_rlc_am_timer_poll_retransmit(void rlc_am_start_timer_poll_retransmit(rlc_am_entity_t *rlcP);)
+protected_rlc_am_timer_poll_retransmit(void rlc_am_start_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame);)
 
 /*! \fn void rlc_am_init_timer_poll_retransmit(rlc_am_entity_t *rlcP, u32_t time_outP)
 * \brief      Initialize the timer Poll-retransmit with RLC AM time-out config parameter.

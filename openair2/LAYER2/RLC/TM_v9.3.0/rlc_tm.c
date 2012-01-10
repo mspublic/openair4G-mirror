@@ -115,7 +115,7 @@ rlc_tm_no_segment (rlc_tm_entity_t *rlcP)
 }
 //-----------------------------------------------------------------------------
 void
-rlc_tm_rx (void *argP, struct mac_data_ind data_indP)
+rlc_tm_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
 
@@ -168,10 +168,10 @@ rlc_tm_mac_data_request (void *rlcP)
 
 //-----------------------------------------------------------------------------
 void
-rlc_tm_mac_data_indication (void *rlcP, struct mac_data_ind data_indP)
+rlc_tm_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  rlc_tm_rx (rlcP, data_indP);
+  rlc_tm_rx (rlcP, frame, data_indP);
 }
 
 //-----------------------------------------------------------------------------

@@ -81,22 +81,24 @@ private_rlc_tm(void rlc_tm_send_sdu (rlc_tm_entity_t *rlcP, u8_t error_indicatio
 */
 private_rlc_tm(void rlc_tm_no_segment (rlc_tm_entity_t *rlcP);)
 
-/*! \fn void rlc_tm_rx (void *rlcP, struct mac_data_ind data_indP)
+/*! \fn void rlc_tm_rx (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
 * \brief    Process the received PDUs from lower layer.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
+* \param[in]  frame                     Frame index.
 * \param[in]  data_indP                 PDUs from MAC.
 */
-private_rlc_tm( void     rlc_tm_rx (void *rlcP, struct mac_data_ind data_indP);)
+private_rlc_tm( void     rlc_tm_rx (void *rlcP, u32_t frame, struct mac_data_ind data_indP);)
 
 
-/*! \fn struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind tx_statusP)
+/*! \fn struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct mac_status_ind tx_statusP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
+* \param[in]  frame                     Frame index.
 * \param[in]  tbs_sizeP                 Number of bytes requested by MAC for next transmission.
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-public_rlc_tm( struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, u16 tb_sizeP, struct mac_status_ind tx_statusP);)
+public_rlc_tm( struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, u32_t frame, u16 tb_sizeP, struct mac_status_ind tx_statusP);)
 
 
 /*! \fn struct mac_data_req rlc_tm_mac_data_request (void *rlcP)
@@ -107,12 +109,13 @@ public_rlc_tm( struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, 
 public_rlc_tm( struct mac_data_req  rlc_tm_mac_data_request (void *rlcP);)
 
 
-/*! \fn void     rlc_tm_mac_data_indication (void *rlcP, struct mac_data_ind data_indP)
+/*! \fn void     rlc_tm_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
 * \brief    Receive PDUs from lower layer MAC.
 * \param[in]  rlcP             RLC TM protocol instance pointer.
+* \param[in]  frame            Frame Index.
 * \param[in]  data_indP        PDUs from MAC.
 */
-public_rlc_tm( void rlc_tm_mac_data_indication (void *rlcP, struct mac_data_ind data_indP);)
+public_rlc_tm( void rlc_tm_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP);)
 
 
 /*! \fn void     rlc_tm_data_req (void *rlcP, mem_block_t *sduP)

@@ -37,7 +37,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 //-----------------------------------------------------------------------------
-void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP)
+void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
   // 5.2.2.3 Expiry of t-PollRetransmit
@@ -50,15 +50,15 @@ void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP)
   //     - include a poll in a RLC data PDU as described in section 5.2.2.1.
 
     if (rlcP->t_poll_retransmit.running) {
-        if (rlcP->t_poll_retransmit.frame_time_out == mac_xface->frame) {
+        if (rlcP->t_poll_retransmit.frame_time_out == frame) {
             rlcP->t_poll_retransmit.running   = 0;
             rlcP->t_poll_retransmit.timed_out = 1;
-            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T_POLL_RETRANSMIT] TIME-OUT\n", mac_xface->frame,
+            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T_POLL_RETRANSMIT] TIME-OUT\n", frame,
                         rlcP->module_id, rlcP->rb_id);
 
 
 #warning         TO DO rlc_am_check_timer_poll_retransmit
-            rlcP->t_poll_retransmit.frame_time_out = mac_xface->frame + rlcP->t_poll_retransmit.time_out;
+            rlcP->t_poll_retransmit.frame_time_out = frame + rlcP->t_poll_retransmit.time_out;
         }
     }
 }
@@ -69,23 +69,23 @@ int rlc_am_is_timer_poll_retransmit_timed_out(rlc_am_entity_t *rlcP)
     return rlcP->t_poll_retransmit.timed_out;
 }
 //-----------------------------------------------------------------------------
-void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP)
+void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
-   LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T_POLL_RETRANSMIT] STOPPED AND RESET\n", mac_xface->frame,
+   LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T_POLL_RETRANSMIT] STOPPED AND RESET\n", frame,
                         rlcP->module_id, rlcP->rb_id);
     rlcP->t_poll_retransmit.running         = 0;
     rlcP->t_poll_retransmit.frame_time_out  = 0;
     rlcP->t_poll_retransmit.timed_out       = 0;
 }
 //-----------------------------------------------------------------------------
-void rlc_am_start_timer_poll_retransmit(rlc_am_entity_t *rlcP)
+void rlc_am_start_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
     rlcP->t_poll_retransmit.running         = 1;
-    rlcP->t_poll_retransmit.frame_time_out  = mac_xface->frame + rlcP->t_poll_retransmit.time_out;
+    rlcP->t_poll_retransmit.frame_time_out  = frame + rlcP->t_poll_retransmit.time_out;
     rlcP->t_poll_retransmit.timed_out       = 0;
-    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T_POLL_RETRANSMIT] STARTED (TIME-OUT = FRAME %05d)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->t_poll_retransmit.frame_time_out);
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T_POLL_RETRANSMIT] STARTED (TIME-OUT = FRAME %05d)\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->t_poll_retransmit.frame_time_out);
 }
 //-----------------------------------------------------------------------------
 void rlc_am_init_timer_poll_retransmit(rlc_am_entity_t *rlcP, u32_t time_outP)
