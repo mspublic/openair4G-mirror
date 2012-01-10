@@ -145,12 +145,10 @@ void do_DL_sig(double **r_re0,double **r_im0,
   u8 hold_channel=0;
   u8 aatx,aarx;
 
-  /*
   if (next_slot==0)
     hold_channel = 0;
   else
     hold_channel = 1;
-  */
 
   if (abstraction_flag != 0) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
@@ -406,12 +404,11 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
   u8 hold_channel=0;
   u8 aatx,aarx;
-  /*
+
   if (next_slot==4)
     hold_channel = 0;
   else
     hold_channel = 1;
-  */
 
   if (abstraction_flag!=0) {
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
