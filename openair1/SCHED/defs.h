@@ -336,7 +336,7 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 
-void process_timing_advance(u8 timing_advance);
+void process_timing_advance(u8 Mod_id,u8 timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance);
 
 

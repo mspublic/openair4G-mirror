@@ -224,7 +224,7 @@ u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type) {
 }
 
 
-int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
+int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
 
   u8 prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex; 
   u8 tdd_config         = frame_parms->tdd_config; 
@@ -235,8 +235,8 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
   //  printf("In is_prach_subframe ...\n");
   if (frame_parms->frame_type == 0) { //FDD
     //implement Table 5.7.1-2 from 36.211 (Rel-10, p.41)
-    if ((((mac_xface->frame&1) == 1) && (subframe < 9)) ||
-	(((mac_xface->frame&1) == 0) && (subframe == 9)))  // This is an odd frame, ignore even-only PRACH frames
+    if ((((frame&1) == 1) && (subframe < 9)) ||
+	(((frame&1) == 0) && (subframe == 9)))  // This is an odd frame, ignore even-only PRACH frames
       if (((prach_ConfigIndex&0xf)<3) || // 0,1,2,16,17,18,32,33,34,48,49,50
 	  ((prach_ConfigIndex&0x1f)==18) || // 18,50
 	  ((prach_ConfigIndex&0xf)==15))   // 15,47
@@ -303,8 +303,8 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 	subframe,
 	t0_ra,t1_ra,t2_ra);
     //#endif    
-    if ((((t0_ra == 1) && ((mac_xface->frame &1)==0))||  // frame is even and PRACH is in even frames
-	 ((t0_ra == 2) && ((mac_xface->frame &1)==1))||  // frame is odd and PRACH is in odd frames
+    if ((((t0_ra == 1) && ((frame &1)==0))||  // frame is even and PRACH is in even frames
+	 ((t0_ra == 2) && ((frame &1)==1))||  // frame is odd and PRACH is in odd frames
 	 (t0_ra == 0)) &&                                // PRACH is in all frames
 	(((subframe<5)&&(t1_ra==0)) ||                   // PRACH is in 1st half-frame
 	 (((subframe>4)&&(t1_ra==1))))) {                // PRACH is in 2nd half-frame

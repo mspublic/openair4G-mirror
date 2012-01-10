@@ -1271,7 +1271,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 #endif
 
   if (frame_parms->frame_type == 0) {
-    return(((mac_xface->frame<<1)+subframe)&7);
+    return(((frame<<1)+subframe)&7);
   }
   else {
 
@@ -1668,12 +1668,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     if (harq_pid == 255) {
       msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
-	  mac_xface->frame, subframe, rnti, dci_format);
+	  phy_vars_ue->frame, subframe, rnti, dci_format);
       return(-1);
     }
     if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc > RIV_max) {
       msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, rb_alloc > RIV_max\n", 	  
-	  mac_xface->frame, subframe, rnti, dci_format);
+	  phy_vars_ue->frame, subframe, rnti, dci_format);
       return(-1);
     }
 
@@ -1685,14 +1685,14 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     if (phy_vars_ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
       msg("[PHY][UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
-	  phy_vars_ue->Mod_id,harq_pid,mac_xface->frame,subframe,ulsch->f_pusch,
+	  phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe,ulsch->f_pusch,
 	  delta_PUSCH_acc[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC],
 	  phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC);
       ulsch->f_pusch += delta_PUSCH_acc[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC];
     }
     else {
       msg("[PHY][UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ABS) %d, adjusting to %d (TPC %d)\n",
-	  phy_vars_ue->Mod_id,harq_pid,mac_xface->frame,subframe,ulsch->f_pusch,
+	  phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe,ulsch->f_pusch,
 	  delta_PUSCH_abs[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC],
 	  phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC);
       ulsch->f_pusch = delta_PUSCH_abs[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC];
@@ -1848,7 +1848,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
 
 #ifdef DEBUG_PHY
-    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
+    if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10))
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 #endif
 
@@ -1901,7 +1901,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   }
   else {
     msg("dci_tools.c: frame %d, subframe %d: FATAL ERROR, generate_ue_ulsch_params_from_dci, Illegal dci_format %d\n",
-	mac_xface->frame, subframe,dci_format);
+	phy_vars_ue->frame, subframe,dci_format);
     return(-1);
   }
 

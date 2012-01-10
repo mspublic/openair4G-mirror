@@ -6354,7 +6354,6 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
     
     rxF       = &rxdataF[aarx][(frame_parms->first_carrier_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
 
-    //debug_msg("Doing extraction with pmi %x\n",pmi2hex_2Ar1(pmi));
 
     if ((frame_parms->N_RB_DL&1) == 0)  // even number of RBs
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
@@ -7396,12 +7395,12 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue          = phy_vars_ue->dlsch_ue[eNB_id];
     break;
   case PMCH:
-    msg("[PHY][UE %d][FATAL] Frame %d subframe %d: PMCH not supported yet\n",mac_xface->frame,subframe,type);
+    msg("[PHY][UE %d][FATAL] Frame %d subframe %d: PMCH not supported yet\n",phy_vars_ue->frame,subframe,type);
     mac_xface->macphy_exit("");
     return(-1);
     break;
   default:
-    msg("[PHY][UE %d][FATAL] Frame %d subframe %d: Unknown PDSCH format %d\n",mac_xface->frame,subframe,type);
+    msg("[PHY][UE %d][FATAL] Frame %d subframe %d: Unknown PDSCH format %d\n",phy_vars_ue->frame,subframe,type);
     mac_xface->macphy_exit("");
     return(-1);
     break;

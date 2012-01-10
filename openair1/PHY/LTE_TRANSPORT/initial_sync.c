@@ -173,15 +173,19 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
       break;
     }
     
-    mac_xface->frame = 	(((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]&3)<<6) + (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[1]>>2))<<2;
-    mac_xface->frame += frame_mod4;
+    phy_vars_ue->frame = 	(((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]&3)<<6) + (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[1]>>2))<<2;
+    phy_vars_ue->frame += frame_mod4;
+
+#ifndef USER_MODE
     // one frame delay
-    mac_xface->frame ++;
+    phy_vars_ue->frame ++;
+#endif
+
     msg("[PHY][UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
 	phy_vars_ue->Mod_id,
 	frame_parms->mode1_flag,
 	pbch_tx_ant,
-	mac_xface->frame,
+	phy_vars_ue->frame,
 	frame_parms->N_RB_DL,
 	frame_parms->phich_config_common.phich_duration,
 	frame_parms->phich_config_common.phich_resource);
@@ -398,13 +402,16 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 #ifdef OPENAIR2
     msg("[openair][SCHED][SYNCH] Sending synch status to higher layers\n");
     //mac_resynch();
-    mac_xface->chbch_phy_sync_success(phy_vars_ue->Mod_id,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif //OPENAIR2
 
     generate_pcfich_reg_mapping(frame_parms);
     generate_phich_reg_mapping(frame_parms);
     
     phy_vars_ue->UE_mode[0] = PRACH;
+    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
+    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;
+    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
   }
 
   phy_adjust_gain(phy_vars_ue,0);
