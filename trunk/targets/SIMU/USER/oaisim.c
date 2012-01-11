@@ -460,6 +460,7 @@ main (int argc, char **argv)
   double forgetting_factor=0.0;
   int map1,map2;
   double **ShaF= NULL;
+  u32 frame=0;
 
   // Framing variables
   s32 slot, last_slot, next_slot;
