@@ -219,6 +219,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, u16 Msc_PUSCH, u8 Nsymb) {
 #endif
 void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
+		      u32 frame,
 		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
@@ -238,7 +239,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
   //  u8 harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
+  u8 harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
   u8 Q_m;
   mod_sym_t *txptr;
   u32 symbol_offset;

@@ -1263,7 +1263,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   }
 */
 
-u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
+u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
 
 #ifdef DEBUG_DCI
   if (frame_parms->frame_type == 1)
@@ -1308,7 +1308,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
       break;
     case 3:
       if ((subframe<2) || (subframe>4)) {
-	msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
 	mac_xface->macphy_exit("");
 	return(255);
       }
@@ -1663,7 +1663,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (rnti == ra_rnti)
       harq_pid = 0;
     else
-      harq_pid = subframe2harq_pid(frame_parms,(subframe+4)%10);
+      harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,(subframe+4)%10);
     //    msg("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
@@ -1933,7 +1933,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   if (dci_format == format0) {
 
 
-    harq_pid = subframe2harq_pid(frame_parms,(subframe+4)%10);
+    harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->frame,(subframe+4)%10);
     rb_alloc = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
     if (rb_alloc>RIV_max) {
       msg("dci_tools.c: ERROR: Format 0: rb_alloc > RIV_max\n");

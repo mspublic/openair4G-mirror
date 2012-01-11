@@ -492,7 +492,7 @@ void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
 
   if (next_slot%2==0) {      
     // get harq_pid from subframe relationship
-    harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,(next_slot>>1));    
+    harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,(next_slot>>1));    
     if (harq_pid==255) {
       LOG_D(PHY,"[UE%d] Frame %d : ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n",
 	  0,phy_vars_ue->frame);
@@ -578,7 +578,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
     
       // get harq_pid from subframe relationship
-      harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,(next_slot>>1));
+      harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,(next_slot>>1));
       
       
 #ifdef OPENAIR2
@@ -758,9 +758,21 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Po_PUSCH : %d dBm\n",
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->tx_power_dBm);
 #ifdef OFDMA_ULSCH
-	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,AMP,(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
+	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,\
+			   AMP,
+			   phy_vars_ue->frame,
+			   (next_slot>>1),
+			   &phy_vars_ue->lte_frame_parms,
+			   phy_vars_ue->ulsch_ue[eNB_id],
+			   phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
 #else
-	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,scfdma_amps[phy_vars_ue->lte_frame_parms.N_RB_DL],(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
+	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,
+			   scfdma_amps[phy_vars_ue->lte_frame_parms.N_RB_DL],
+			   phy_vars_ue->frame,
+			   (next_slot>>1),
+			   &phy_vars_ue->lte_frame_parms,
+			   phy_vars_ue->ulsch_ue[eNB_id],
+			   phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
 #endif
 	}
 	if (abstraction_flag==1) {
@@ -1371,7 +1383,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     if (UE_id>=0) {
       //      msg("Checking PHICH for UE  %d (eNB %d)\n",UE_id,i);
       if (is_phich_subframe(&phy_vars_ue->lte_frame_parms,last_slot>>1)) {
-	harq_pid = phich_subframe_to_harq_pid(&phy_vars_ue->lte_frame_parms,last_slot>>1);	
+	harq_pid = phich_subframe_to_harq_pid(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,last_slot>>1);	
 	if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->status == ACTIVE) {
 	  if (PHY_vars_eNB_g[i]->ulsch_eNB[(u32)UE_id]->harq_processes[harq_pid]->phich_ACK==0) { // NAK
 	    if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {

@@ -57,6 +57,7 @@ extern unsigned short RIV_max;
 
 #ifdef OPENAIR2
 int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
+				       u32 frame,
 				       unsigned char subframe,
 				       LTE_eNB_ULSCH_t *ulsch,
 				       LTE_DL_FRAME_PARMS *frame_parms) {
@@ -65,7 +66,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
-  u8 harq_pid = get_Msg3_harq_pid(frame_parms,subframe);
+  u8 harq_pid = get_Msg3_harq_pid(frame_parms,frame,subframe);
   
   msg("[PHY][eNB]generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
   
@@ -131,7 +132,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
 
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
-  u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
+  u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
 
     
    
