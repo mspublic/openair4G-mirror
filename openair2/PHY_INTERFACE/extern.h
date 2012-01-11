@@ -10,7 +10,6 @@
 #include "defs.h"
 
 
-extern unsigned int frame;
 extern unsigned int mac_debug;
 #ifdef PHYSIM
 extern MAC_xface *mac_xface;

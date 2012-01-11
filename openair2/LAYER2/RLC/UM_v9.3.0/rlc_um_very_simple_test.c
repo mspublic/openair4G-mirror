@@ -44,7 +44,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 //-----------------------------------------------------------------------------
 void
-rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  unsigned int sdu_typeP) {
+rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  u32_t frame, unsigned int sdu_typeP) {
 //-----------------------------------------------------------------------------
     mem_block_t *sdu_mem;
     switch (sdu_typeP) {
@@ -57,7 +57,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  unsigned int sdu_typeP) {
                 ((struct rlc_um_data_req*)(sdu_mem->data))->use_special_li = sizeof (struct rlc_um_data_req_alloc) - sizeof (struct rlc_um_data_req);
                 strcpy (&sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)], tcip_sdu);
                 sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)+ strlen(tcip_sdu)+1] = 0;
-                rlc_um_data_req     (rlcP,  sdu_mem);
+                rlc_um_data_req     (rlcP,  frame, sdu_mem);
             }
             break;
         case RLC_UM_TEST_SDU_TYPE_VOIP:
@@ -69,7 +69,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  unsigned int sdu_typeP) {
                 ((struct rlc_um_data_req*)(sdu_mem->data))->use_special_li = 0;
                 strcpy (&sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)], voip_sdu);
                 sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)+ strlen(voip_sdu)+1] = 0;
-                rlc_um_data_req     (rlcP,  sdu_mem);
+                rlc_um_data_req     (rlcP,  frame, sdu_mem);
             }
             break;
         case RLC_UM_TEST_SDU_TYPE_SMALL:
@@ -81,7 +81,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  unsigned int sdu_typeP) {
                 ((struct rlc_um_data_req*)(sdu_mem->data))->use_special_li = 0;
                 strcpy (&sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)], very_small_sdu);
                 sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)+ strlen(very_small_sdu)+1] = 0;
-                rlc_um_data_req     (rlcP,  sdu_mem);
+                rlc_um_data_req     (rlcP, frame, sdu_mem);
             }
             break;
         default:;

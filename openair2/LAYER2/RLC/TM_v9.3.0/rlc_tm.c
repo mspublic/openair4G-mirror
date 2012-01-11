@@ -39,7 +39,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
 void
-rlc_tm_send_sdu (rlc_tm_entity_t *rlcP, u8_t error_indicationP, u8 * srcP, u16_t length_in_bitsP)
+rlc_tm_send_sdu (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flag, u8_t error_indicationP, u8 * srcP, u16_t length_in_bitsP)
 {
     //-----------------------------------------------------------------------------
     int             length_in_bytes;
@@ -65,7 +65,7 @@ rlc_tm_send_sdu (rlc_tm_entity_t *rlcP, u8_t error_indicationP, u8 * srcP, u16_t
         memcpy (&rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write], srcP, length_in_bytes);
 
         #warning loss of error indication parameter
-        rlc_data_ind (rlcP->module_id, rlcP->rb_id, length_in_bytes, rlcP->output_sdu_in_construction, rlcP->is_data_plane);
+        rlc_data_ind (rlcP->module_id, frame, eNB_flag, rlcP->rb_id, length_in_bytes, rlcP->output_sdu_in_construction, rlcP->is_data_plane);
         rlcP->output_sdu_in_construction = NULL;
     } else {
         msg ("[RLC_TM %p][SEND_SDU] ERROR  OUTPUT SDU IS NULL\n", rlcP);
@@ -115,7 +115,7 @@ rlc_tm_no_segment (rlc_tm_entity_t *rlcP)
 }
 //-----------------------------------------------------------------------------
 void
-rlc_tm_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
+rlc_tm_rx (void *argP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
 
@@ -129,7 +129,7 @@ rlc_tm_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
 
         ((struct rlc_tm_rx_pdu_management *) (tb->data))->first_byte = first_byte;
 
-        rlc_tm_send_sdu (rlc, (((struct mac_tb_ind *) (tb->data))->error_indication), first_byte, data_indP.tb_size);
+        rlc_tm_send_sdu (rlc,  frame, eNB_flag, (((struct mac_tb_ind *) (tb->data))->error_indication), first_byte, data_indP.tb_size);
         free_mem_block (tb);
     }
 }
@@ -168,10 +168,10 @@ rlc_tm_mac_data_request (void *rlcP)
 
 //-----------------------------------------------------------------------------
 void
-rlc_tm_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
+rlc_tm_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  rlc_tm_rx (rlcP, frame, data_indP);
+  rlc_tm_rx (rlcP, frame, eNB_flag, data_indP);
 }
 
 //-----------------------------------------------------------------------------

@@ -79,6 +79,6 @@ protected_rlc_um_reassembly(void     rlc_um_reassembly (u8_t * srcP, s32_t lengt
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  frame       Frame index.
 */
-protected_rlc_um_reassembly(void     rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame));
+protected_rlc_um_reassembly(void     rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame,u8 eNB_flag));
 /** @} */
 #    endif

@@ -62,14 +62,15 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #                define public_rlc_um_dar(x)     extern x
 #            endif
 #        endif
-/*! \fn signed int rlc_um_get_pdu_infos(rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP)
+/*! \fn signed int rlc_um_get_pdu_infos(u32_t frame,rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP)
 * \brief    Extract PDU informations (header fields, data size, etc) from the serialized PDU.
+* \param[in]  frame             Frame index.
 * \param[in]  headerP             RLC UM header PDU pointer.
 * \param[in]  total_sizeP         Size of RLC UM PDU.
 * \param[in]  pdu_infoP           Structure containing extracted informations from PDU.
 * \return     0 if no error was encountered during the parsing of the PDU, else -1;
 */
-private_rlc_um_dar(  signed int rlc_um_get_pdu_infos(rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP));
+private_rlc_um_dar(  signed int rlc_um_get_pdu_infos(u32_t frame, rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP));
 
 /*! \fn int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP)
 * \brief    Reset protocol variables and state variables to initial values.
@@ -82,20 +83,22 @@ private_rlc_um_dar(  signed int rlc_um_get_pdu_infos(rlc_um_pdu_sn_10_t* headerP
 */
 private_rlc_um_dar(  int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP));
 
-/*! \fn void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, signed int snP)
+/*! \fn void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int snP)
 * \brief    Try reassembly PDUs from DAR buffer, starting at sequence number snP.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  frame       Frame index.
+* \param[in]  eNB_flag    Flag to indicate eNB (1) or UE (0).
 * \param[in]  snP         Sequence number.
 */
-private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, signed int snP));
+private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int snP));
 
-/*! \fn void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame)
+/*! \fn void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag)
 * \brief    Check if t-Reordering expires and take the appropriate actions as described in 3GPP specifications.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  frame       Frame index.
+* \param[in]  eNB_flag    Flag to indicate eNB(1) or UE (1)
 */
-private_rlc_um_dar(  void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame));
+private_rlc_um_dar(  void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag));
 
 /*! \fn mem_block_t *rlc_um_remove_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP)
 * \brief    Remove the PDU with sequence number snP from the DAR buffer and return it.
@@ -133,14 +136,15 @@ protected_rlc_um_dar(inline signed int rlc_um_in_window(rlc_um_entity_t *rlcP, u
 */
 protected_rlc_um_dar(inline signed int rlc_um_in_reordering_window(rlc_um_entity_t *rlcP, u32_t frame, signed int snP));
 
-/*! \fn void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP)
+/*! \fn void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP)
 * \brief    Apply the DAR process for a PDU: put it in DAR buffer and try to reassembly or discard it.
 * \param[in]  rlcP       RLC UM protocol instance pointer.
 * \param[in]  frame      Frame index.
+* \param[in]  eNB_flag   Flag to indicated eNB (1) or UE (0).
 * \param[in]  pdu_memP   mem_block_t wrapper for a UM PDU .
 * \param[in]  pduP       Pointer on the header of the UM PDU.
 * \param[in]  tb_sizeP   Size of the UM PDU.
 */
-protected_rlc_um_dar(void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP));
+protected_rlc_um_dar(void rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, mem_block_t *pdu_memP,rlc_um_pdu_sn_10_t *pduP, u16_t tb_sizeP));
 /** @} */
 #    endif

@@ -47,6 +47,7 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_i
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
       rlc_um_set_debug_infos(rlcP, frame, module_idP, rb_idP, rb_typeP);
       rlc_um_configure(rlcP,
+		       frame,
 		       config_umP->timer_reordering,
 		       config_umP->sn_field_length,
 		       config_umP->is_mXch);
@@ -164,7 +165,8 @@ rlc_um_cleanup (rlc_um_entity_t *rlcP)
 
 //-----------------------------------------------------------------------------
 void rlc_um_configure(rlc_um_entity_t *rlcP,
-                      u32_t timer_reorderingP,
+                      u32_t frame,
+		      u32_t timer_reorderingP,
                       u32_t sn_field_lengthP,
                       u32_t is_mXchP)
 //-----------------------------------------------------------------------------

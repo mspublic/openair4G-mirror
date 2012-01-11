@@ -195,7 +195,6 @@ void rrc_config_buffer(SRB_INFO *Srb_info, u8 Lchan_type, u8 Role){
 void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
-  Rrc_xface->Frame_index=frame;
 
   msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
   msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d\n",NB_INST);

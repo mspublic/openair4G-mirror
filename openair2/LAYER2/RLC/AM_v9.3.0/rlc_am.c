@@ -207,7 +207,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP,u32_t frame)
                     tx_data_pdu_management = &rlcP->pdu_retrans_buffer[rlcP->first_retrans_pdu_sn];
 
                     if ((tx_data_pdu_management->header_and_payload_size <= rlcP->nb_bytes_requested_by_mac) && (tx_data_pdu_management->retx_count >= 0) && (tx_data_pdu_management->nack_so_start == 0) && (tx_data_pdu_management->nack_so_stop == 0x7FFF)) {
-                        mem_block_t* copy = rlc_am_retransmit_get_copy(rlcP, rlcP->first_retrans_pdu_sn);
+		      mem_block_t* copy = rlc_am_retransmit_get_copy(rlcP, frame,rlcP->first_retrans_pdu_sn);
                         LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] RE-SEND DATA PDU SN %04d   %d BYTES\n",frame,  rlcP->module_id,rlcP->rb_id, rlcP->first_retrans_pdu_sn, tx_data_pdu_management->header_and_payload_size);
                         list_add_tail_eurecom (copy, &rlcP->pdus_to_mac_layer);
                         rlcP->nb_bytes_requested_by_mac = rlcP->nb_bytes_requested_by_mac - tx_data_pdu_management->header_and_payload_size;
@@ -290,7 +290,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP,u32_t frame)
 }
 //-----------------------------------------------------------------------------
 void
-rlc_am_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
+rlc_am_rx (void *argP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
 
@@ -304,7 +304,7 @@ rlc_am_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
         break;
 
       case RLC_DATA_TRANSFER_READY_STATE:
-        rlc_am_receive_routing (rlc, frame, data_indP);
+        rlc_am_receive_routing (rlc, frame, eNB_flag, data_indP);
         break;
 
       default:
@@ -371,15 +371,15 @@ rlc_am_mac_data_request (void *rlcP,u32 frame)
 }
 //-----------------------------------------------------------------------------
 void
-rlc_am_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
+rlc_am_mac_data_indication (void *rlcP, u32_t frame, u8 eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  rlc_am_rx (rlcP, frame, data_indP);
+  rlc_am_rx (rlcP, frame, eNB_flag, data_indP);
 }
 
 //-----------------------------------------------------------------------------
 void
-rlc_am_data_req (void *rlcP, mem_block_t * sduP)
+rlc_am_data_req (void *rlcP, u32_t frame, mem_block_t * sduP)
 {
 //-----------------------------------------------------------------------------
   rlc_am_entity_t *rlc = (rlc_am_entity_t *) rlcP;

@@ -32,7 +32,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "mem_block.h"
 #include "../MAC/extern.h"
 #include "UTIL/LOG/log.h"
-extern void pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP);
+extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP);
 
 #define DEBUG_RLC_PDCP_INTERFACE
 
@@ -157,7 +157,7 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
   }
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP) {
+rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP) {
 //-----------------------------------------------------------------------------
   mem_block_t* new_sdu;
 
@@ -194,7 +194,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t 
                           ((struct rlc_am_data_req *) (new_sdu->data))->mui  = muiP;
                           ((struct rlc_am_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_am_data_req_alloc);
 			  free_mem_block(sduP);
-                          rlc_am_data_req(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], new_sdu);
+                          rlc_am_data_req(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, new_sdu);
                           return RLC_OP_STATUS_OK;
                         } else {
                           //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : out of memory\n", __FILE__, __LINE__);
@@ -215,7 +215,9 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t 
                           ((struct rlc_um_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
                           free_mem_block(sduP);
 
-			  rlc_um_data_req(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], new_sdu);
+			  rlc_um_data_req(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], 
+					  frame,
+					  new_sdu);
 
                           //free_mem_block(new_sdu);
                           return RLC_OP_STATUS_OK;
@@ -273,28 +275,28 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t 
 }
 
 //-----------------------------------------------------------------------------
-void rlc_data_ind     (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP) {
+void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP) {
 //-----------------------------------------------------------------------------
     if ((is_data_planeP)) {
 #ifdef DEBUG_RLC_PDCP_INTERFACE
       msg("[RLC] TTI %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
-	  Mac_rlc_xface->frame, module_idP,
+	  frame, module_idP,
 	  sduP,
 	  sdu_sizeP,
           rb_idP);
 #endif //DEBUG_RLC_PDCP_INTERFACE
-       pdcp_data_ind (module_idP, rb_idP, sdu_sizeP, sduP);
+      pdcp_data_ind (module_idP, frame, eNB_flag, rb_idP, sdu_sizeP, sduP);
     } else {
         if (rlc_rrc_data_ind != NULL) {
 #ifdef DEBUG_RLC_PDCP_INTERFACE
-            msg("[RLC] TTI %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
-	    Mac_rlc_xface->frame, module_idP,
+            msg("[RLC] Frame %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
+	    frame, module_idP,
 	    sduP,
 	    sdu_sizeP,
             rb_idP);
 #endif //DEBUG_RLC_PDCP_INTERFACE
 	  // msg("[RLC] RRC DATA IND\n");
-            rlc_rrc_data_ind(module_idP , rb_idP , sdu_sizeP , sduP->data);
+            rlc_rrc_data_ind(module_idP , frame, rb_idP , sdu_sizeP , sduP->data);
 	  //msg("[RLC] Freeing SDU\n");
             free_mem_block(sduP);
         }

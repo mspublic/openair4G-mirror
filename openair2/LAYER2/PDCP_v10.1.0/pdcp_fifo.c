@@ -84,7 +84,7 @@ pdcp_data_req_header_t pdcp_read_header;
 
 //-----------------------------------------------------------------------------
 int
-pdcp_fifo_flush_sdus ()
+pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
 {
 //-----------------------------------------------------------------------------
 
@@ -108,7 +108,7 @@ pdcp_fifo_flush_sdus ()
 
 #ifdef PDCP_DEBUG
 	  LOG_I(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
-	      Mac_rlc_xface->frame,
+	      frame,
 	      ((pdcp_data_ind_header_t *)(sdu->data))->inst,
 	      ((pdcp_data_ind_header_t *)(sdu->data))->data_size,
 	      ((pdcp_data_ind_header_t *)(sdu->data))->rb_id);
@@ -140,8 +140,8 @@ pdcp_fifo_flush_sdus ()
 
 
 #ifdef PDCP_DEBUG
-      LOG_I(PDCP, "TTI %d Sent %d Bytes of header to Nas_mesh\n",
-	  Mac_rlc_xface->frame,
+      LOG_I(PDCP, "Frame %d Sent %d Bytes of header to Nas_mesh\n",
+	  frame,
 	  bytes_wrote);
 #endif //PDCP_DEBUG
 
@@ -173,8 +173,8 @@ pdcp_fifo_flush_sdus ()
 #endif // USER_MODE
 
 #ifdef PDCP_DEBUG
-	  LOG_I(PDCP, "PDCP->IP TTI %d INST %d: Sent %d Bytes of data from rab %d to Nas_mesh\n",
-	      Mac_rlc_xface->frame,
+	  LOG_I(PDCP, "PDCP->IP Frame %d INST %d: Sent %d Bytes of data from rab %d to Nas_mesh\n",
+	      frame,
 	      ((pdcp_data_ind_header_t *)(sdu->data))->inst,
 	      bytes_wrote,
 	      ((pdcp_data_ind_header_t *)(sdu->data))->rb_id);
@@ -227,14 +227,14 @@ pdcp_fifo_flush_sdus ()
     if ((pdcp_nb_sdu_sent)) {
       if ((pdcp_2_nas_irq > 0)) {
 #ifdef PDCP_DEBUG
-	LOG_I(PDCP, "TTI %d : Trigger NAS RX interrupt\n",
-	    Mac_rlc_xface->frame);
+	LOG_I(PDCP, "Frame %d : Trigger NAS RX interrupt\n",
+	    frame);
 #endif //PDCP_DEBUG
 
            rt_pend_linux_srq (pdcp_2_nas_irq);
       } else {
-        LOG_E(PDCP, "TTI %d: ERROR IF IP STACK WANTED : NOTIF PACKET(S) pdcp_2_nas_irq not initialized : %d\n", 
-	     Mac_rlc_xface->frame,
+        LOG_E(PDCP, "Frame %d: ERROR IF IP STACK WANTED : NOTIF PACKET(S) pdcp_2_nas_irq not initialized : %d\n", 
+	     frame,
 	     pdcp_2_nas_irq);
       }
     }
@@ -250,7 +250,7 @@ pdcp_fifo_flush_sdus ()
  * returns a negative  value if an error was encountered while reading the rt fifo
  */
 int
-pdcp_fifo_read_input_sdus_remaining_bytes ()
+pdcp_fifo_read_input_sdus_remaining_bytes (u32_t frame,u8_t eNB_flag)
 {
 //-----------------------------------------------------------------------------
   sdu_size_t             bytes_read=0;
@@ -277,8 +277,8 @@ pdcp_fifo_read_input_sdus_remaining_bytes ()
         return 0;
       } else {
 #ifdef PDCP_DEBUG
-	LOG_I(PDCP, "TTI %d: IP->RADIO RECEIVED COMPLETE SDU size %d inst %d rb %d\n", 
-	    Mac_rlc_xface->frame,
+	LOG_I(PDCP, "Frame %d: IP->RADIO RECEIVED COMPLETE SDU size %d inst %d rb %d\n", 
+	    frame,
 	    pdcp_input_sdu_size_read, 
 	    pdcp_input_header.inst,
 	    pdcp_input_header.rb_id);
@@ -289,6 +289,7 @@ pdcp_fifo_read_input_sdus_remaining_bytes ()
 #endif
         pdcp_data_req (pdcp_input_header.inst, 
 		       pdcp_input_header.rb_id, 
+		       frame,eNB_flag,
 		       pdcp_input_header.data_size, 
 		       pdcp_input_sdu_buffer);
 
@@ -307,14 +308,14 @@ pdcp_fifo_read_input_sdus_remaining_bytes ()
 
 //-----------------------------------------------------------------------------
 int
-pdcp_fifo_read_input_sdus ()
+pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
 {
 //-----------------------------------------------------------------------------
   int             cont;
   int             bytes_read;
 
   // if remaining bytes to read
-  if (pdcp_fifo_read_input_sdus_remaining_bytes () > 0) {
+  if (pdcp_fifo_read_input_sdus_remaining_bytes (frame,eNB_flag) > 0) {
 
     // all bytes that had to be read for a SDU were read
     // if not overflow of list, try to get new sdus from rt fifo
@@ -331,7 +332,7 @@ pdcp_fifo_read_input_sdus ()
 
 #ifdef PDCP_DEBUG
 	LOG_D(PDCP, "[PDCP_FIFOS] TTI %d Read %d Bytes of data (header %d) from Nas_mesh\n",
-	    Mac_rlc_xface->frame,
+	    frame,
 	    bytes_read,
 	    sizeof(pdcp_data_req_header_t));
 #endif // PDCP_DEBUG
@@ -340,7 +341,7 @@ pdcp_fifo_read_input_sdus ()
         if (pdcp_input_index_header == sizeof (pdcp_data_req_header_t)) {
 #ifdef PDCP_DEBUG
 	  LOG_D(PDCP, "TTI %d IP->RADIO READ HEADER sdu size %d\n", 
-	      Mac_rlc_xface->frame,
+	      frame,
 	      pdcp_input_header.data_size);
 #endif //PDCP_DEBUG
           pdcp_input_index_header = 0;
@@ -353,7 +354,7 @@ pdcp_fifo_read_input_sdus ()
 	  pdcp_input_sdu_remaining_size_to_read = pdcp_input_header.data_size;
           pdcp_input_sdu_size_read     = 0;
           // we know the size of the sdu, so read the sdu;
-          cont = pdcp_fifo_read_input_sdus_remaining_bytes ();
+          cont = pdcp_fifo_read_input_sdus_remaining_bytes (frame,eNB_flag);
         } else {
           cont = 0;
         }
@@ -372,7 +373,7 @@ pdcp_fifo_read_input_sdus ()
 
 //-----------------------------------------------------------------------------
 int
-pdcp_fifo_read_input_sdus ()
+pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
 {
 //-----------------------------------------------------------------------------
   int len;
@@ -447,7 +448,7 @@ pdcp_fifo_read_input_sdus ()
 
 #ifdef PDCP_DEBUG
 	LOG_D(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
-	       Mac_rlc_xface->frame, 
+	       frame, 
 	       pdcp_read_header.inst,
 	       len,
 	       nas_nlh->nlmsg_len-sizeof(struct nlmsghdr),
@@ -455,6 +456,7 @@ pdcp_fifo_read_input_sdus ()
 #endif
 	  
 	pdcp_data_req(pdcp_read_header.inst,
+		      frame,eNB_flag,
 		      pdcp_read_header.rb_id,
 		      pdcp_read_header.data_size,
 		      pdcp_read_payload);

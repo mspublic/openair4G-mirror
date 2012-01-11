@@ -175,7 +175,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 			 100,0,0);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
-    LOG_D(RRC,"[UE %d] Frame %d : Failed to decode SIB 1 (%d bytes)\n",Mod_id,frame,dec_rval.consumed);
+    LOG_D(RRC,"[UE %d] Frame %d : Failed to decode SIB 1 (%d bytes)\n",Mod_id,dec_rval.consumed);
     return -1;
   }
   
@@ -226,7 +226,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 }
 
 
-s32 rrc_ue_establish_srb1(u8 Mod_id,u8 eNB_index,
+s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct SRB_ToAddMod *SRB_config) { // add descriptor from RRC PDU
 
   u8 lchan_id = DCCH;
@@ -252,7 +252,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u8 eNB_index,
   return(0);
 }
 
-s32 rrc_ue_establish_srb2(u8 Mod_id,u8 eNB_index,
+s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct SRB_ToAddMod *SRB_config) { // add descriptor from RRC PDU
 
   u8 lchan_id = DCCH1;
@@ -391,7 +391,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	else {
 	  UE_rrc_inst[Mod_id].SRB1_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
 
-	  rrc_ue_establish_srb1(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
+	  rrc_ue_establish_srb1(Mod_id,frame,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
 	  if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig) {
 	    if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
 	      SRB1_logicalChannelConfig = &UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
@@ -425,7 +425,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	  
 	  UE_rrc_inst[Mod_id].SRB2_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
 
-	  rrc_ue_establish_srb2(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
+	  rrc_ue_establish_srb2(Mod_id,frame,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
 	  if (UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig) {
 	    if (UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue){
 	      SRB2_logicalChannelConfig = &UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
@@ -597,7 +597,7 @@ const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","
 int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
-  int i;
+
 
   memset(*sib1,0,sizeof(SystemInformationBlockType1_t));
   dec_rval = uper_decode(NULL,
@@ -607,7 +607,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 			 100,0,0);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
-    LOG_D(RRC,"[UE %d] Frame %d : Failed to decode SIB 1 (%d bytes)\n",Mod_id,frame,dec_rval.consumed);
+    LOG_D(RRC,"[UE %d] Failed to decode SIB 1 (%d bytes)\n",Mod_id,dec_rval.consumed);
     return -1;
   }
 
@@ -752,7 +752,7 @@ void dump_sib3(SystemInformationBlockType3_t *sib3) {
 }
 
 //const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
-int decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
+int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 
   asn_dec_rval_t dec_rval;
   SystemInformation_t **si=&UE_rrc_inst[Mod_id].si[eNB_index][si_window];
@@ -771,7 +771,7 @@ int decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
 			 100,0,0);
 
   if ((dec_rval.code != RC_OK) || (dec_rval.consumed==0)) {
-    LOG_D(RRC,"[UE %d] Frame %d : Failed to decode SI (%d bytes)\n",Mod_id,frame,dec_rval.consumed);
+    LOG_D(RRC,"[UE %d] Failed to decode SI (%d bytes)\n",Mod_id,dec_rval.consumed);
     return -1;
   }
 

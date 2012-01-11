@@ -202,14 +202,14 @@ rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id
   if (sdu != NULL) {
     //    msg("[RRC_RLC] MEM_ALLOC %p\n",sdu);
     memcpy (sdu->data, sduP, sdu_sizeP);
-    return rlc_data_req(module_idP, rb_idP, muiP, confirmP, sdu_sizeP, sdu);
+    return rlc_data_req(module_idP, frame, rb_idP, muiP, confirmP, sdu_sizeP, sdu);
   } else {
     return RLC_OP_STATUS_INTERNAL_ERROR;
   }
 }
 
 //-----------------------------------------------------------------------------
-void   rrc_rlc_register_rrc ( void            (*rrc_data_indP)  (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP),
+void   rrc_rlc_register_rrc ( void            (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP),
 							  void            (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP) ) {
 //-----------------------------------------------------------------------------
    rlc_rrc_data_ind  = rrc_data_indP;
