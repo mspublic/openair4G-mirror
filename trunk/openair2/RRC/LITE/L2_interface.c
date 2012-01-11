@@ -167,7 +167,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
 	  msg("[RRC][UE %d] Frame %d : Received SI (%d bytes), in window %d (SIperiod %d, SIwindowsize %d)\n",Mod_id,frame,Sdu_len,si_window,UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod,UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize);
 	  memcpy(UE_rrc_inst[Mod_id].SI[eNB_index],&Sdu[0],Sdu_len);
-	  if (decode_SI(Mod_id,eNB_index,si_window)==0) {
+	  if (decode_SI(Mod_id,frame,eNB_index,si_window)==0) {
 	    msg("[RRC][UE %d] Frame %d :Decoded SI successfully\n",Mod_id,frame);
 	    UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
 	  }
@@ -217,7 +217,7 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 }
 
 //------------------------------------------------------------------------------------------------------------------//
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 Srb_id, u32 sdu_size,u8 *Buffer){
+void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;

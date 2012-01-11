@@ -259,17 +259,18 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u32 frame,u8 CH_index)
 /** \brief Establish SRB1 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param Mod_id Instance ID of UE
     \param frame Frame index
-    \param CH_index Index of corresponding eNB/CH
+    \param eNB_index Index of corresponding eNB/CH
     \param SRB_config Pointer to SRB_ToAddMod IE from configuration
     @returns 0 on success*/
-s32  rrc_ue_establish_srb1(u8 Mod_id,u8 CH_index,struct SRB_ToAddMod *SRB_config);
+s32  rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,struct SRB_ToAddMod *SRB_config);
 
 /** \brief Establish SRB2 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param Mod_id Instance ID of UE
-    \param CH_index Index of corresponding eNB/CH
+    \param frame Frame index
+    \param eNB_index Index of corresponding eNB/CH
     \param SRB_config Pointer to SRB_ToAddMod IE from configuration
     @returns 0 on success*/
-s32  rrc_ue_establish_srb2(u8 Mod_id,u8 CH_index,struct SRB_ToAddMod *SRB_config);
+s32  rrc_ue_establish_srb2(u8 Mod_id,u32 frame, u8 eNB_index,struct SRB_ToAddMod *SRB_config);
 
 /** \brief Establish a DRB according to DRB_ToAddMod structure
     \param Mod_id Instance ID of UE
@@ -331,7 +332,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 s8 mac_rrc_lite_data_req( u8 Mod_id, u32 frame, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
 s8 mac_rrc_lite_data_ind( u8 Mod_id,  u32 frame, unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
 void mac_sync_ind( u8 Mod_id, u8 status);
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
+void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 void rrc_lite_out_of_sync_ind(u8 Mod_id, u32 frame, unsigned short eNB_index);
 
 //MESSAGES/asn1_msg.c
@@ -413,7 +414,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 
 int decode_SIB1(u8 Mod_id,u8 CH_index);
 
-int decode_SI(u8 Mod_id,u8 CH_index,u8 si_window);
+int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
 int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
 

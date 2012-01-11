@@ -92,22 +92,24 @@ protected_rlc_am_receiver( void rlc_am_rx_update_vr_ms(rlc_am_entity_t *rlcP,u32
 */
 protected_rlc_am_receiver( void rlc_am_rx_update_vr_r (rlc_am_entity_t *rlcP,u32_t frame, mem_block_t* tbP);)
 
-/*! \fn void rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, struct mac_data_ind data_indP)
+/*! \fn void rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 * \brief      Convert transport blocks received from MAC layer into RLC AM PDUs, and dispatch to the right processing block these PDUS upon their type (CONTROL/DATA).
 * \param[in]  rlcP           RLC AM protocol instance pointer.
 * \param[in]  frame          Frame index.
+* \param[in]  eNB_flag       Flag to indicate eNB (1) or UE (0).
 * \param[in]  data_indP      Transport blocks received from MAC layer.
 */
-protected_rlc_am_receiver( void rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, struct mac_data_ind data_indP));
+protected_rlc_am_receiver( void rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP));
 
-/*! \fn void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, mem_block_t* tbP, u8_t* first_byteP, u16_t tb_size_in_bytesP)
+/*! \fn void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flag, mem_block_t* tbP, u8_t* first_byteP, u16_t tb_size_in_bytesP)
 * \brief      Process an incoming data PDU received from MAC layer.
 * \param[in]  rlcP              RLC AM protocol instance pointer.
 * \param[in]  frame             Frame index.
+* \param[in]  eNB_flag          Flag to indicate eNB (1) or UE (0).
 * \param[in]  tbP               PDU embedded in a mem_block_t struct.
 * \param[in]  first_byteP       Pointer on first byte of the PDU.
 * \param[in]  tb_size_in_bytesP Transport block size in bytes (same as PDU size in bytes).
 */
-private_rlc_am_receiver( void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, mem_block_t* tbP, u8_t* first_byteP, u16_t tb_size_in_bytesP));
+private_rlc_am_receiver( void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flag, mem_block_t* tbP, u8_t* first_byteP, u16_t tb_size_in_bytesP));
 /** @} */
 #    endif

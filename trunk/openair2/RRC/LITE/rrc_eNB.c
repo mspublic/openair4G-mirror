@@ -372,7 +372,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 
 mui_t rrc_eNB_mui=0;
 
-void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
+void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_index) {
 
   u8 buffer[100];
   u8 size;
@@ -402,7 +402,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_inde
 
 
    
-  rrc_eNB_generate_RRCConnectionReconfiguration(Mod_id,UE_index);
+  rrc_eNB_generate_RRCConnectionReconfiguration(Mod_id,frame,UE_index);
   
   
 }

@@ -199,7 +199,7 @@ void rlc_am_rx_update_vr_r(rlc_am_entity_t *rlcP,u32_t frame,mem_block_t* tbP)
 }
 //-----------------------------------------------------------------------------
 void
-rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, struct mac_data_ind data_indP)
+rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 //-----------------------------------------------------------------------------
 {
 
@@ -234,7 +234,7 @@ rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, struct mac_data_ind 
             if (tb_size_in_bytes > 0) {
                 if ((*first_byte & 0x80) == 0x80) {
                     rlcP->stat_rx_data_pdu += 1;
-                    rlc_am_receive_process_data_pdu (rlcP, frame, tb, first_byte, tb_size_in_bytes);
+                    rlc_am_receive_process_data_pdu (rlcP, frame, eNB_flag, tb, first_byte, tb_size_in_bytes);
                 } else {
                     rlcP->stat_rx_control_pdu += 1;
                     rlc_am_receive_process_control_pdu (rlcP, frame, tb, first_byte, tb_size_in_bytes);
@@ -253,7 +253,7 @@ rlc_am_receive_routing (rlc_am_entity_t *rlcP, u32_t frame, struct mac_data_ind 
     }                           // end while
 }
 //-----------------------------------------------------------------------------
-void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, mem_block_t* tbP, u8_t* first_byteP, u16_t tb_size_in_bytesP)
+void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flag, mem_block_t* tbP, u8_t* first_byteP, u16_t tb_size_in_bytesP)
 //-----------------------------------------------------------------------------
 {
   // 5.1.3.2 Receive operations
@@ -356,11 +356,11 @@ void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, mem_bl
               LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU] VR(R) %04d VR(H) %04d VR(MR) %04d VR(MS) %04d VR(X) %04d\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_r, rlcP->vr_h, rlcP->vr_mr, rlcP->vr_ms, rlcP->vr_x);
 #endif
 
-          if (rlc_am_rx_list_insert_pdu(rlcP, tbP) < 0) {
-              free_mem_block (tbP);
-              rlcP->stat_rx_data_pdu_duplicate += 1;
+	      if (rlc_am_rx_list_insert_pdu(rlcP, frame,tbP) < 0) {
+		free_mem_block (tbP);
+		rlcP->stat_rx_data_pdu_duplicate += 1;
 #ifdef TRACE_RLC_AM_RX
-              LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n", frame, rlcP->module_id, rlcP->rb_id);
+		LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n", frame, rlcP->module_id, rlcP->rb_id);
 #endif
               rlcP->status_requested = 1;
           } else {
@@ -412,7 +412,7 @@ void rlc_am_receive_process_data_pdu (rlc_am_entity_t *rlcP, u32_t frame, mem_bl
 		  rlc_am_rx_update_vr_r(rlcP, frame, tbP);
 		  rlcP->vr_mr = (rlcP->vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
                 }
-                rlc_am_rx_list_reassemble_rlc_sdus(rlcP,frame);
+                rlc_am_rx_list_reassemble_rlc_sdus(rlcP,frame,eNB_flag);
             }
             if (rlcP->t_reordering.running) {
                 if ((rlcP->vr_x == rlcP->vr_r) || ((rlc_am_in_rx_window(rlcP, pdu_info->sn) == 0) && (rlcP->vr_x != rlcP->vr_mr))) {

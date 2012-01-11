@@ -43,6 +43,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 #include "rlc_um_very_simple_test.h"
 //#define RLC_UM_TEST_TRAFFIC
+#define DEBUG_RLC_UM_TX_STATUS 1
 
 //-----------------------------------------------------------------------------
 void
@@ -142,7 +143,7 @@ rlc_um_get_pdus (void *argP,u32_t frame)
 
 //-----------------------------------------------------------------------------
 void
-rlc_um_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
+rlc_um_rx (void *argP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
   rlc_um_entity_t *rlc = (rlc_um_entity_t *) argP;
@@ -178,7 +179,7 @@ rlc_um_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
         // entity:
         // - enters the LOCAL_SUSPEND state.
         data_indP.tb_size = data_indP.tb_size >> 3;
-        rlc_um_receive (rlc, frame, data_indP);
+        rlc_um_receive (rlc, frame, eNB_flag, data_indP);
         break;
 
       case RLC_LOCAL_SUSPEND_STATE:
@@ -208,11 +209,11 @@ rlc_um_rx (void *argP, u32_t frame, struct mac_data_ind data_indP)
 
 //-----------------------------------------------------------------------------
 struct mac_status_resp
-rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind tx_statusP)
+rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct mac_status_ind tx_statusP)
 {
 //-----------------------------------------------------------------------------
   struct mac_status_resp status_resp;
-
+ 
   status_resp.buffer_occupancy_in_pdus    = 0;
   status_resp.buffer_occupancy_in_bytes   = 0;
   status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
@@ -291,15 +292,15 @@ rlc_um_mac_data_request (void *rlcP,u32 frame)
 
 //-----------------------------------------------------------------------------
 void
-rlc_um_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
+rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  rlc_um_rx (rlcP, frame, data_indP);
+  rlc_um_rx (rlcP, frame, eNB_flag, data_indP);
 }
  
 //-----------------------------------------------------------------------------
 void
-rlc_um_data_req (void *rlcP, mem_block_t *sduP)
+rlc_um_data_req (void *rlcP, u32_t frame, mem_block_t *sduP)
 {
 //-----------------------------------------------------------------------------
   rlc_um_entity_t *rlc = (rlc_um_entity_t *) rlcP;

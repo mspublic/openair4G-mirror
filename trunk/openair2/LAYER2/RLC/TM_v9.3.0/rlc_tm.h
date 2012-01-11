@@ -109,13 +109,14 @@ public_rlc_tm( struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, 
 public_rlc_tm( struct mac_data_req  rlc_tm_mac_data_request (void *rlcP);)
 
 
-/*! \fn void     rlc_tm_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP)
+/*! \fn void     rlc_tm_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 * \brief    Receive PDUs from lower layer MAC.
 * \param[in]  rlcP             RLC TM protocol instance pointer.
 * \param[in]  frame            Frame Index.
+* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0).
 * \param[in]  data_indP        PDUs from MAC.
 */
-public_rlc_tm( void rlc_tm_mac_data_indication (void *rlcP, u32_t frame, struct mac_data_ind data_indP);)
+public_rlc_tm( void rlc_tm_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP);)
 
 
 /*! \fn void     rlc_tm_data_req (void *rlcP, mem_block_t *sduP)

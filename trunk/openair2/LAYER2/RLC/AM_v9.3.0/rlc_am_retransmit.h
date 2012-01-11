@@ -77,13 +77,14 @@ protected_rlc_am_retransmit(void         rlc_am_nack_pdu (rlc_am_entity_t *rlcP,
 */
 protected_rlc_am_retransmit(void         rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP);)
 
-/*! \fn mem_block_t* rlc_am_retransmit_get_copy (rlc_am_entity_t *rlcP, u16_t snP)
+/*! \fn mem_block_t* rlc_am_retransmit_get_copy (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
 * \param[in]  rlcP         RLC AM protocol instance pointer.
+* \param[in]  frame        Frame index.
 * \param[in]  snP          Sequence number of the PDU to be copied.
 * \return                  A copy of the PDU having sequence number equal to parameter snP.
 */
-protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_copy (rlc_am_entity_t *rlcP, u16_t snP));
+protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_copy (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP));
 
 /*! \fn mem_block_t* rlc_am_retransmit_get_subsegment (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t *sizeP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.

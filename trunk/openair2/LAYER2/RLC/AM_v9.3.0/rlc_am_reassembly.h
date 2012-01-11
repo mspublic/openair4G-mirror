@@ -76,15 +76,16 @@ private_rlc_am_reassembly(   void rlc_am_reassembly   (u8_t * srcP, s32_t length
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
 * \param[in]  frame                     Frame index.
 */
-private_rlc_am_reassembly(   void rlc_am_send_sdu     (rlc_am_entity_t *rlcP,u32_t frame);)
+private_rlc_am_reassembly(   void rlc_am_send_sdu     (rlc_am_entity_t *rlcP,u32_t frame, u8_t eNB_flag);)
 
-/*! \fn void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t* tbP)
+/*! \fn void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, u8_t eNB_flag, mem_block_t* tbP)
 * \brief    Reassembly a RLC AM PDU, depending of the content of this PDU, data will be reassemblied to the current output SDU, the current will be sent to higher layers or not, after or before the reassembly, or no send of SDU will be triggered, depending on FI field in PDU header.
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
 * \param[in]  frame                     Frame index.
+* \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0).
 * \param[in]  tbP                       RLC AM PDU embedded in a mem_block_t.
 */
-protected_rlc_am_reassembly( void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t* tbP);)
+protected_rlc_am_reassembly( void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, u8_t eNB_flag, mem_block_t* tbP);)
 /** @} */
 #endif
 

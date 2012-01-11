@@ -92,19 +92,19 @@ typedef struct pdcp_t {
 #undef PDCP_UNIT_TEST
 
 #ifdef PDCP_UNIT_TEST
-public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                                 unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag,rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                                 mem_block_t* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
 #else
-public_pdcp(BOOL pdcp_data_req (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer);)
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, mem_block_t* sdu_buffer);)
+public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer);)
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, mem_block_t* sdu_buffer);)
 #endif
 
 public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
 public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
 
-public_pdcp(void pdcp_run ();)
+public_pdcp(void pdcp_run (u32_t frame, u8_t eNB_flag);)
 public_pdcp(int pdcp_module_init ();)
 public_pdcp(void pdcp_module_cleanup ();)
 public_pdcp(void pdcp_layer_init ();)
@@ -113,9 +113,9 @@ public_pdcp(void pdcp_layer_cleanup ();)
 #define PDCP2NAS_FIFO 21
 #define NAS2PDCP_FIFO 22
 
-protected_pdcp_fifo(int pdcp_fifo_flush_sdus ();)
-protected_pdcp_fifo(int pdcp_fifo_read_input_sdus_remaining_bytes ();)
-protected_pdcp_fifo(int pdcp_fifo_read_input_sdus();)
+protected_pdcp_fifo(int pdcp_fifo_flush_sdus (u32_t,u8_t);)
+protected_pdcp_fifo(int pdcp_fifo_read_input_sdus_remaining_bytes (u32_t,u8_t);)
+protected_pdcp_fifo(int pdcp_fifo_read_input_sdus(u32_t,u8_t);)
 //-----------------------------------------------------------------------------
 
 /*

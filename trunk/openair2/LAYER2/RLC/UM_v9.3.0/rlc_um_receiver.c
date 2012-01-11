@@ -43,7 +43,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //#define RLC_UM_GENERATE_ERRORS
 //-----------------------------------------------------------------------------
 void
-rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, struct mac_data_ind data_indP)
+rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, struct mac_data_ind dat
             first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
             tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
             if (tb_size_in_bytes > 0) {
-	      rlc_um_receive_process_dar (rlcP, frame, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
+	      rlc_um_receive_process_dar (rlcP, frame, eNB_flag, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
 	      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
             }
         } else {

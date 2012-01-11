@@ -66,14 +66,14 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "PHY/defs.h"
 
 //-----------------------------------------------------------------------------
-/*! \fn signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t* tbP)
+/*! \fn signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP u32_t frame, mem_block_t* tbP)
 * \brief      Insert a PDU in the RX buffer (implemented with a list).
 * \param[in]  rlcP         RLC AM protocol instance pointer.
 * \param[in]  frame        Frame index.
 * \param[in]  tbP          A PDU embedded in a mem_block_t.
 * \return     Zero if the PDU could be inserted in the RX buffer, a negative value if the PDU could not be inserted.
 */
-protected_rlc_am_rx_list( signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP);)
+protected_rlc_am_rx_list( signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t* tbP);)
 
 /*! \fn void rlc_am_rx_check_all_byte_segments(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t* tbP)
 * \brief      Check if all sub-segments of a PDU are received, if yes then call rlc_am_rx_mark_all_segments_received() procedure.
@@ -91,12 +91,13 @@ protected_rlc_am_rx_list( void rlc_am_rx_check_all_byte_segments(rlc_am_entity_t
 */
 protected_rlc_am_rx_list( void rlc_am_rx_mark_all_segments_received(rlc_am_entity_t* rlcP, u32_t frame, mem_block_t* first_segment_tbP);)
 
-/*! \fn void rlc_am_rx_list_reassemble_rlc_sdus(rlc_am_entity_t* rlcP,u32_t frame)
+/*! \fn void rlc_am_rx_list_reassemble_rlc_sdus(rlc_am_entity_t* rlcP,u32_t frame,u8_t eNB_flag)
 * \brief      Reassembly all SDUS that it is possible to reassembly by parsing the RX buffer and looking for PDUs having the flag 'all segments received'.
 * \param[in]  rlcP         RLC AM protocol instance pointer.
-* \param[in]  u32_t        Frame index.
+* \param[in]  frame        Frame index.
+* \param[in]  eNB_flag     Flag to indicate eNB (1) or UE (0).
 */
-protected_rlc_am_rx_list( void rlc_am_rx_list_reassemble_rlc_sdus(rlc_am_entity_t* rlcP,u32_t frame);)
+protected_rlc_am_rx_list( void rlc_am_rx_list_reassemble_rlc_sdus(rlc_am_entity_t* rlcP,u32_t frame,u8_t eNB_flag);)
 
 /*! \fn mem_block_t* list2_insert_before_element (mem_block_t * element_to_insertP, mem_block_t * elementP, list2_t * listP)
 * \brief      Insert a PDU embedded in a mem_block_t in a list at a position before a designated element of the list.

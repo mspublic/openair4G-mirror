@@ -299,6 +299,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
       LOG_D(MAC,"[UE %d] RX  DCCH \n",Mod_id);
       mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
+		       0,
 		       DCCH,
 		       (char *)payload_ptr,
 		       rx_lengths[i],
@@ -309,6 +310,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
       LOG_D(MAC,"[UE %d] RX  DCCH1 \n",Mod_id);
       mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
+		       0,
 		       DCCH1,
 		       (char *)payload_ptr,
 		       rx_lengths[i],
@@ -319,6 +321,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
       LOG_D(MAC,"[UE %d][PDSCH] RX DTCH%d %d bytes to RLC \n",Mod_id,rx_lcids[i],rx_lengths[i]);
       mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
+		       0,
 		       DTCH,
 		       (char *)payload_ptr,
 				      rx_lengths[i],
@@ -613,7 +616,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     sdu_lcids[0] = DCCH;
     LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
     num_sdus = 1;
-    update_bsr(Mod_id, DCCH);
+    update_bsr(Mod_id, frame, DCCH);
     //header_len +=2;
   }
   else {
@@ -637,7 +640,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     sdu_lcids[num_sdus] = DCCH1;
     LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH1\n",Mod_id,sdu_lengths[num_sdus]);
     num_sdus++;
-    update_bsr(Mod_id, DCCH1);
+    update_bsr(Mod_id, frame, DCCH1);
     //dcch_header_len +=2; // include dcch1
   }
   else {
@@ -669,7 +672,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
       sdu_lcids[num_sdus] = DTCH;
       sdu_length_total += sdu_lengths[num_sdus];
       num_sdus++; 
-      update_bsr(Mod_id, DTCH);
+      update_bsr(Mod_id, frame, DTCH);
   }
   else { // no rlc pdu : generate the dummy header
     dtch_header_len = 0; 
@@ -836,7 +839,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 	UE_mac_inst[Mod_id].scheduling_info.BSR[lcid]=0;
       }
     }
-    update_bsr(Mod_id, lcid);
+    update_bsr(Mod_id, frame, lcid);
   }
     
   // UE has no valid phy config dedicated ||  no valid/released  SR 
@@ -883,7 +886,7 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen) {
 }
 
 
-void update_bsr(u8 Mod_id, u8 lcid){
+void update_bsr(u8 Mod_id, u32 frame, u8 lcid){
 
   mac_rlc_status_resp_t rlc_status;
   

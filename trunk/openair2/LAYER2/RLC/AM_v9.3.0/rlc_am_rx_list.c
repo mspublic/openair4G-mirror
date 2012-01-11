@@ -46,7 +46,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 // returns 0 if success
 // returns neg value if failure
 //-----------------------------------------------------------------------------
-signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
+signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, u32 frame, mem_block_t* tbP)
 //-----------------------------------------------------------------------------
 {
     rlc_am_pdu_info_t* pdu_info        = &((rlc_am_rx_pdu_management_t*)(tbP->data))->pdu_info;
@@ -426,7 +426,7 @@ void rlc_am_rx_mark_all_segments_received(rlc_am_entity_t* rlcP, u32_t frame, me
     }
 }
 //-----------------------------------------------------------------------------
-void rlc_am_rx_list_reassemble_rlc_sdus(rlc_am_entity_t* rlcP,u32_t frame)
+void rlc_am_rx_list_reassemble_rlc_sdus(rlc_am_entity_t* rlcP,u32_t frame, u8_t eNB_flag)
 //-----------------------------------------------------------------------------
 {
     mem_block_t*                cursor;
@@ -442,7 +442,7 @@ void rlc_am_rx_list_reassemble_rlc_sdus(rlc_am_entity_t* rlcP,u32_t frame)
     do {
         if (rlc_am_rx_pdu_management->all_segments_received > 0) {
             cursor = list2_remove_head(&rlcP->receiver_buffer);
-            rlc_am_reassemble_pdu(rlcP, frame, cursor);
+            rlc_am_reassemble_pdu(rlcP, frame, eNB_flag, cursor);
             rlc_am_rx_old_pdu_management = rlc_am_rx_pdu_management;
             cursor = list2_get_head(&rlcP->receiver_buffer);
             if (cursor == NULL) {

@@ -496,42 +496,47 @@ int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 eNB_id,
 /** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
 for the message.
 @param Mod_id Instance ID of eNB
+@param frame Frame index
 @param subframe Subframe number on which to act
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE);
+void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 *nprb,u8 *nCCE);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
+@param frame Frame index
 @param subframe Subframe number on which to act
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE);
+void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,u8 *nCCE);
 
 /** \brief ULSCH Scheduling.
 @param Mod_id Instance ID of eNB
+@param frame Frame index
 @param subframe Subframe number on which to act
 @param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch(u8 Mod_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
+void schedule_ulsch(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe,u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 @param Mod_id Instance of eNB
+@param frame Frame index
 @param subframe Index of subframe
 @param rballoc Bitmask for allowable subband allocations
 @param RA_scheduled RA was scheduled in this subframe
 */
-void fill_DLSCH_dci(u8 Mod_id,u8 subframe,u32 rballoc,u8 RA_scheduled);
+void fill_DLSCH_dci(u8 Mod_id,u32 frame,u8 subframe,u32 rballoc,u8 RA_scheduled);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
 @param Mod_id Instance ID of eNB
+@param frame Frame index
 @param subframe Subframe on which to act
 @param nb_rb_used0 Number of PRB used by SI/RA
 @param nCCE_used Number of CCE used by SI/RA
 */
-void schedule_ue_spec(u8 Mod_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
+void schedule_ue_spec(u8 Mod_id,u32 frame,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE
@@ -809,12 +814,13 @@ BSR_SHORT *get_bsr_short(u8 Mod_id, u8 bsr_len);
 */
 BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
 
-/*! \fn  void update_bsr(u8 Mod_id, u8 lcid)
+/*! \fn  void update_bsr(u8 Mod_id, u32 frame, u8 lcid)
    \brief get the rlc stats and update the bsr level for each lcid 
 \param[in] Mod_id instance of the UE
+\param[in] frame Frame index
 \param[in] lcid logical channel identifier
 */
-void update_bsr(u8 Mod_id, u8 lcid);
+void update_bsr(u8 Mod_id, u32 frame, u8 lcid);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 

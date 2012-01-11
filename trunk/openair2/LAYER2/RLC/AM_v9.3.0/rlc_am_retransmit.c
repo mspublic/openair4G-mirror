@@ -229,7 +229,7 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP)
     }
 }
 //-----------------------------------------------------------------------------
-mem_block_t* rlc_am_retransmit_get_copy (rlc_am_entity_t *rlcP, u16_t snP)
+mem_block_t* rlc_am_retransmit_get_copy (rlc_am_entity_t *rlcP, u32 frame, u16_t snP)
 //-----------------------------------------------------------------------------
 {
     mem_block_t* mb_original = rlcP->pdu_retrans_buffer[snP].mem_block;
@@ -709,7 +709,7 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP,u32_t frame)
 #endif
                 rlc_am_nack_pdu (rlcP, frame, sn, 0, 0x7FFF);
                 // no need for update rlcP->nb_bytes_requested_by_mac
-                pdu = rlc_am_retransmit_get_copy(rlcP, sn);
+                pdu = rlc_am_retransmit_get_copy(rlcP, frame, sn);
                 pdu_sn_10 = (rlc_am_pdu_sn_10_t*) (&pdu->data[sizeof(struct mac_tb_req)]);
                 rlc_am_pdu_polling(rlcP, frame, pdu_sn_10, rlcP->pdu_retrans_buffer[sn].header_and_payload_size);
                 pdu_sn_10->b1 = pdu_sn_10->b1 | 0x20;

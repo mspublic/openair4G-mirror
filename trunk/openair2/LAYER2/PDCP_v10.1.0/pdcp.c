@@ -49,7 +49,7 @@
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
 
-extern rlc_op_status_t rlc_data_req(module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
+extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 
 //-----------------------------------------------------------------------------
 /*
@@ -60,11 +60,11 @@ extern rlc_op_status_t rlc_data_req(module_id_t, rb_id_t, mui_t, confirm_t, sdu_
  * code at targets/TEST/PDCP/test_pdcp.c:test_pdcp_data_req()
  */
 #ifdef PDCP_UNIT_TEST
-BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                    unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list)
 #else
-BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
-                   unsigned char* sdu_buffer)
+  BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+		     unsigned char* sdu_buffer)
 #endif
 {
 //-----------------------------------------------------------------------------
@@ -136,7 +136,7 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
      * Ask sublayer to transmit data and check return value 
      * to see if RLC succeeded
      */
-    rlc_op_status_t rlc_status = rlc_data_req(module_id, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdcp_pdu_size, pdcp_pdu);
+    rlc_op_status_t rlc_status = rlc_data_req(module_id, frame, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdcp_pdu_size, pdcp_pdu);
     switch (rlc_status) {
       case RLC_OP_STATUS_OK:
         LOG_I(PDCP, "Data sending request over RLC succeeded!\n");
@@ -163,7 +163,7 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
      * Control arrives here only if rlc_data_req() returns RLC_OP_STATUS_OK 
      * so we return TRUE afterwards
      */
-    if (Mac_rlc_xface->Is_cluster_head[module_id] == 1) {
+    if (eNB_flag == 1) {
       Pdcp_stats_tx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
       Pdcp_stats_tx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH] += sdu_buffer_size;
     } else {
@@ -182,10 +182,10 @@ BOOL pdcp_data_req(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
 
 //-----------------------------------------------------------------------------
 #ifdef PDCP_UNIT_TEST
-BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer, pdcp_t* pdcp_test_entity, list_t* test_list)
 #else
-BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+  BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer)
 #endif
 {
@@ -241,7 +241,7 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
 
     // Here there is no virtualization possible
 #ifdef IDROMEL_NEMO
-    if (Mac_rlc_xface->Is_cluster_head[module_id] == 0)
+    if (eNB_flag == 0)
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = rab_id/8;
     else
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = 0;
@@ -275,7 +275,7 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
      * 247	    if (Mac_rlc_xface->Is_cluster_head[module_id]==1) 
      */
 #if 0
-    if (Mac_rlc_xface->Is_cluster_head[module_id]==1) {
+    if (eNB_flag==1) {
       Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
       Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size;
     } else {
@@ -292,7 +292,7 @@ BOOL pdcp_data_ind(module_id_t module_id, rb_id_t rab_id, sdu_size_t sdu_buffer_
 
 //-----------------------------------------------------------------------------
 void
-pdcp_run ()
+pdcp_run (u32_t frame,u8 eNB_flag)
 {
 //-----------------------------------------------------------------------------
   // NAS -> PDCP traffic
@@ -304,7 +304,7 @@ pdcp_run ()
   #endif
 #endif
   unsigned int diff, i, k, j;
-  if ((Mac_rlc_xface->frame % 128) == 0) { 
+  if ((frame % 128) == 0) { 
     //    for(i=0;i<NB_INST;i++)
     for (i=0; i < NB_UE_INST; i++)
       for (j=0; j < NB_CNX_CH; j++)
@@ -320,10 +320,10 @@ pdcp_run ()
 	}
   }
   
-  pdcp_fifo_read_input_sdus();
+  pdcp_fifo_read_input_sdus(frame,eNB_flag);
   // PDCP -> NAS traffic
 #ifndef PDCP_UNIT_TEST
-  pdcp_fifo_flush_sdus();
+  pdcp_fifo_flush_sdus(frame,eNB_flag);
 #endif
 }
 

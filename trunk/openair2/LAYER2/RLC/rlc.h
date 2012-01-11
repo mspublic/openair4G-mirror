@@ -146,7 +146,7 @@ typedef struct {
 
 
 
-protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , rb_id_t , sdu_size_t , char* );)
+protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , u32_t, rb_id_t , sdu_size_t , char* );)
 protected_rlc(void            (*rlc_rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t );)
 
 /*! \struct  rlc_pointer_t
@@ -238,12 +238,12 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, config
 */
 public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 
-/*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
+/*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
 * \param[in]  rrc_data_indP       Pointer on RRC data indicate function.
 * \param[in]  rrc_data_confP      Pointer on RRC data confirm callback function.
 */
-public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*),
+public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , u32_t, rb_id_t , sdu_size_t , char*),
                 void (*rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t) );)
 
 //-----------------------------------------------------------------------------
@@ -259,10 +259,11 @@ public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_
 */
 public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, u32_t, chan_id_t, char*);)
 
-/*! \fn void mac_rlc_data_ind     (module_id_t module_idP, u32_t frame, chan_id_t rb_idP, u32_t frame, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
+/*! \fn void mac_rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, chan_id_t rb_idP, u32_t frame, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
 * \brief    Interface with MAC layer, deserialize the transport blocks sent by MAC, then map data indication to the RLC instance corresponding to the radio bearer identifier.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
+* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  frame            Frame index.
 * \param[in]  bufferP          Memory area containing the transport blocks sent by MAC.
@@ -270,7 +271,7 @@ public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, u32_t, c
 * \param[in]  num_tbP          Number of transport blocks.
 * \param[in]  crcs             Array of CRC decoding.
 */
-public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, u32_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
+public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, u32_t, u8_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
 
 /*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t frame, chan_id_t rb_idP, tb_size_t tb_sizeP)
 * \brief    Interface with MAC layer, request and set the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
@@ -297,9 +298,10 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, c
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------
-/*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
+/*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
 * \brief    Interface with higher layers, map request to the RLC corresponding to the radio bearer.
 * \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  frame            Frame index.
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
@@ -307,17 +309,19 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, c
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
+public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
 
-/*! \fn void rlc_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP)
+/*! \fn void rlc_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP)
 * \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.
 * \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  frame            Frame index
+* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  sdu_sizeP        Size of SDU in bytes.
 * \param[in]  sduP             SDU.
 * \param[in]  is_data_planeP   Boolean, is data radio bearer or not.
 */
-public_rlc(void            rlc_data_ind     (module_id_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
+public_rlc(void            rlc_data_ind     (module_id_t, u32_t frame, u8_t eNB_flag, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
 
 
 /*! \fn void rlc_data_conf     (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP)

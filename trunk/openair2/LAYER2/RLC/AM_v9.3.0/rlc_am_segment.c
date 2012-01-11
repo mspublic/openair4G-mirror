@@ -477,7 +477,7 @@ void rlc_am_segment_10 (rlc_am_entity_t *rlcP,u32_t frame)
         //nb_bytes_to_transmit = nb_bytes_to_transmit - data_pdu_size;
         nb_bytes_to_transmit = 0; // 1 PDU only
 
-        mem_block_t* copy = rlc_am_retransmit_get_copy (rlcP, (rlcP->vt_s-1) & RLC_AM_SN_MASK);
+        mem_block_t* copy = rlc_am_retransmit_get_copy (rlcP, frame,(rlcP->vt_s-1) & RLC_AM_SN_MASK);
         list_add_tail_eurecom (copy, &rlcP->segmentation_pdu_list);
 
     }
