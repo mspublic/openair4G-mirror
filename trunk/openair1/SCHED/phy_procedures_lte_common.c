@@ -142,6 +142,7 @@ void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
+		     u32 frame,
 		     unsigned char current_subframe) {
 
   u8 ul_subframe=0;
@@ -209,7 +210,7 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
     
-  return(subframe2harq_pid(frame_parms,ul_subframe));
+  return(subframe2harq_pid(frame_parms,frame,ul_subframe));
 
 }
 
@@ -477,10 +478,10 @@ lte_subframe_t get_subframe_direction(u8 Mod_id,u8 subframe) {
 
 }
 
-u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
+u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
 
   //  printf("phich_subframe_to_harq_pid.c: subframe %d\n",subframe);
-  return(subframe2harq_pid(frame_parms,phich_subframe2_pusch_subframe(frame_parms,subframe)));
+  return(subframe2harq_pid(frame_parms,frame,phich_subframe2_pusch_subframe(frame_parms,subframe)));
 }
 
 unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {

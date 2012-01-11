@@ -209,7 +209,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   x2 = ((u32)ulsch->rnti<<14) + ((u32)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   
   //  harq_pid = (ulsch->RRCConnRequest_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
-  harq_pid = subframe2harq_pid(frame_parms,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->frame,subframe);
 
   if (harq_pid==255) {
     msg("ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
@@ -1010,7 +1010,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   u8 UE_id;
   u16 rnti;
-  u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,subframe);
+  u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,subframe);
   
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
 #ifdef DEBUG_PHY

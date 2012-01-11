@@ -837,6 +837,7 @@ s32 compareints (const void * a, const void * b);
 
 void ulsch_modulation(mod_sym_t **txdataF,
 		      s16 amp,
+		      u32 frame,
 		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
@@ -851,7 +852,7 @@ void ulsch_extract_rbs_single(s32 **rxdataF,
 			      u8 Ns,
 			      LTE_DL_FRAME_PARMS *frame_parms);
 
-u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
+u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe);
 u8 subframe2harq_pid_eNBrx(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
 s32 generate_ue_dlsch_params_from_dci(u8 subframe,
@@ -876,6 +877,7 @@ s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       u16 DL_pmi_single);
 
 s32 generate_eNB_ulsch_params_from_rar(u8 *rar_pdu,
+				       u32 frame,
 				       u8 subframe,
 				       LTE_eNB_ULSCH_t *ulsch,
 				       LTE_DL_FRAME_PARMS *frame_parms);

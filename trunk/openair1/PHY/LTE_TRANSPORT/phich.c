@@ -938,7 +938,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
 
   //  u8 HI;
-  u8 harq_pid = phich_subframe_to_harq_pid(frame_parms,subframe);
+  u8 harq_pid = phich_subframe_to_harq_pid(frame_parms,phy_vars_ue->frame,subframe);
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
   s16 phich_d[24],*phich_d_ptr,HI16;
   //  unsigned int i,aa;
@@ -1280,7 +1280,7 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
     NSF_PHICH = 2;
   pusch_subframe = phich_subframe2_pusch_subframe(frame_parms,subframe);
 
-  harq_pid = subframe2harq_pid(frame_parms,pusch_subframe);
+  harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->frame,pusch_subframe);
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
     if (ulsch_eNB[UE_id]) {
