@@ -25,10 +25,10 @@
 #include "RRC/LITE/vars.h"
 #include "UTIL/LOG/log.h"
 #endif
-//#ifndef PHY_EMUL
+
 #include "from_grlib_softconfig.h"
 #include "from_grlib_softregs.h"
-//#endif //PHY_EMUL
+
 #include "linux/moduleparam.h"
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
@@ -37,10 +37,6 @@
 /*------------------------------------------------*/
 /*   Prototypes                                   */
 /*------------------------------------------------*/
-#ifdef KERNEL2_4
-static int   init_module( void );
-static void  cleanup_module(void);
-#else
 static int   openair_init_module( void );
 static void  openair_cleanup_module(void);
 
@@ -52,8 +48,6 @@ int openair_device_release (struct inode *inode,struct file *filp);
 int openair_device_mmap    (struct file *filp, struct vm_area_struct *vma);
 int openair_device_ioctl   (struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg)
 ;
-
-#endif
 
 /* The variable 'updatefirmware' defined below is used by the driver at insmod time
  * to decide if whether or not it must jump directly to user firmware settled in Scratch Pad
@@ -81,33 +75,12 @@ extern char *bigphys_current,*bigphys_ptr;
 extern int intr_in;
 /*------------------------------------------------*/
 
-#ifdef KERNEL2_4
-static struct file_operations openair_fops[] = {{
-  THIS_MODULE,
-  NULL,               //llseek
-  NULL,               //read
-  NULL,               //write
-  NULL,               //readdir
-  NULL,               //poll
-  openair_device_ioctl,       //ioctl
-  openair_device_mmap,        //mmap
-  openair_device_open,        //open
-  NULL,               //flush
-  openair_device_release,     //release
-  NULL,               //fsync
-  NULL,               //fasync
-  NULL,               //check_media_change
-  NULL,               //revalidate
-  NULL}};             //lock
-//-----------------------------------------------------------------------------
-#else
 static struct file_operations openair_fops = {
 ioctl:openair_device_ioctl,
 open: openair_device_open,
 release:openair_device_release,
 mmap: openair_device_mmap
 };
-#endif
 
 extern int pci_enable_pcie_error_reporting(struct pci_dev *dev);
 extern int pci_cleanup_aer_uncorrect_error_status(struct pci_dev *dev);
@@ -152,7 +125,7 @@ static int __init openair_init_module( void )
   int32_t temp_size;
   unsigned int readback;  
 
-#ifndef PHY_EMUL
+
 #ifndef NOCARD_TEST     
   //------------------------------------------------
   // Look for GRPCI
@@ -308,7 +281,6 @@ static int __init openair_init_module( void )
 
   }
 #endif //NOCARD_TEST
-#endif //PHY_EMUL
 
   //------------------------------------------------
   // Register the device
@@ -317,11 +289,7 @@ static int __init openair_init_module( void )
   major = openair_MAJOR;
 
   if((res = register_chrdev(major, "openair", 
-#ifdef KERNEL2_4
-			    openair_fops
-#else
 			    &openair_fops
-#endif
 			    )) < 0){
     printk("[openair][INIT_MODULE][ERROR]:  can't register char device driver, major : %d, error: %d\n", major, res);
     return -EIO;
@@ -363,37 +331,6 @@ static int __init openair_init_module( void )
 #endif //BIGPHYSAREA
 
 #ifdef RTAI_ENABLED
-
-  /*
-#ifdef PC_TARGET
-  // Allocate memory for PHY low-level data structures
-  PHY_vars = kmalloc(sizeof(PHY_VARS),GFP_KERNEL);
-  memset(PHY_vars,0,sizeof(PHY_VARS));
-#endif // PC_TARGET
-
-  PHY_config = kmalloc(sizeof(PHY_CONFIG),GFP_KERNEL);  
-  memset(PHY_config,0,sizeof(PHY_CONFIG));
-
-#ifdef PC_TARGET
-  if (PHY_vars)
-    printk("[openair][MODULE][INFO] Allocated %d bytes for PHY_vars at %p\n",
-	sizeof(PHY_VARS),PHY_vars);
-  else {
-    printk("[openair][MODULE][ERROR] Could not allocate memory for PHY_vars\n");
-    openair_cleanup();
-    return -ENODEV;
-  }
-#endif //PC_TARGET
-
-  if (PHY_config)
-    printk("[openair][MODULE][INFO] Allocated %d bytes for PHY_config at %p\n",
-	sizeof(PHY_CONFIG),PHY_config);
-  else {
-    printk("[openair][MODULE][ERROR] Could not allocate memory for PHY_config\n");
-    openair_cleanup();
-    return -ENODEV;
-  }
-  */
 
   rt_set_oneshot_mode();
 
@@ -501,15 +438,14 @@ static void __exit openair_cleanup_module(void)
 }
 static void  openair_cleanup(void) {
 
-#ifndef PHY_EMUL
+
   int i;
-#endif //PHY_EMUL
+
 
   unregister_chrdev(major,"openair");
 
 #ifdef RTAI_ENABLED
   printk("[openair][CLEANUP] Cleaning PHY Variables\n");
-#ifndef PHY_EMUL
 
   openair_sched_cleanup();
 
@@ -528,26 +464,18 @@ static void  openair_cleanup(void) {
 #endif
 
 
-#endif //PHY_EMUL
 #endif //RTAI_ENABLED
 
-#ifndef PHY_EMUL
+  unsigned int *fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
+
+  for (i=0;i<256;i++)
+    printk("fwaddr %x : %x\n",&fw_block[i],fw_block[i]);
+
   for (i=0;i<number_of_cards;i++) {
     if (bar[i])
       iounmap((void *)bar[i]);
   }
-#endif //PHY_EMUL
 
-  /*
-#ifdef RTAI_ENABLED
-#ifdef PC_TARGET
-    if (PHY_vars)
-      kfree(PHY_vars);
-#endif    
-    if (PHY_config)
-      kfree(PHY_config);
-#endif //RTAI_ENABLED
-  */
 
 #ifdef BIGPHYSAREA
   if (bigphys_ptr != (char *)NULL) {
@@ -567,27 +495,6 @@ static void  openair_cleanup(void) {
 }
 
 
-
-/*
-#ifdef RTAI_ENABLED
-// Dump PHY Framing configuration
-
-void dump_config() {
-
-  printk("[openair][CONFIG][INFO] PHY_config = %p\n",PHY_config);
-  printk("[openair][CONFIG][INFO] PHY_framing.fc_khz = %d\n",(unsigned int)PHY_config->PHY_framing.fc_khz);
-  printk("[openair][CONFIG][INFO] PHY_framing.fs_khz = %d\n",(unsigned int)PHY_config->PHY_framing.fs_khz);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nsymb = %d\n",PHY_config->PHY_framing.Nsymb);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nd = %d\n",PHY_config->PHY_framing.Nd);
-  printk("[openair][CONFIG][INFO] PHY_framing.log2Nd = %d\n",PHY_config->PHY_framing.log2Nd);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nc = %d\n",PHY_config->PHY_framing.Nc);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nz = %d\n",PHY_config->PHY_framing.Nz);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nf = %d\n",PHY_config->PHY_framing.Nf);
-
-} 
-
-#endif //RTAI_ENABLED
-*/
 
 MODULE_AUTHOR
   ("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>, Florian KALTENBERGER <florian.kaltenberger@eurecom.fr>");
