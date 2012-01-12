@@ -908,7 +908,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {    
       if (DCI_pdu->dci_alloc[i].format == format0) {  // this is a ULSCH allocation
 
-	harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,((next_slot>>1)+4)%10);
+	harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,
+				     pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1));
 	if (harq_pid==255) {
 	  msg("[PHY][eNB %d] Frame %d: Bad harq_pid for ULSCH allocation\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame);
 #ifdef USER_MODE
@@ -1315,7 +1316,8 @@ void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,u8 last_slot,u8 UE_id, u8 harq_pid)
   
   msg("[PHY][eNB %d][RARPROC] frame %d : subframe %d (last_slot %d): process_Msg3 UE_id %d (active %d, subframe %d, frame %d)\n",
       phy_vars_eNB->Mod_id,
-      phy_vars_eNB->frame,last_slot>>1,last_slot,UE_id,phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_active,
+      phy_vars_eNB->frame,last_slot>>1,last_slot,
+      UE_id,phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_active,
       phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_subframe,
       phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_frame);
   phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_flag = 0;
@@ -1780,9 +1782,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   */
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,last_slot>>1);
-  //  printf("eNB RX: subframe %d => Got harq_pid %d\n",last_slot>>1,harq_pid);
+
 #ifdef OPENAIR2
-  if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
+  if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && 
+      (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
     two_ues_connected = 1;
 #else
     two_ues_connected = 1;
@@ -1791,10 +1794,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
   for (i=0;i<NUMBER_OF_UE_MAX;i++) { 
 
+    /*
     if ((i == 1) && (phy_vars_eNB->cooperation_flag > 0) && (two_ues_connected == 1))
       break;
-
-
+    */
 #ifdef OPENAIR2
     if (phy_vars_eNB->eNB_UE_stats[i].mode == RA_RESPONSE)
       process_Msg3(phy_vars_eNB,last_slot,i,harq_pid);
@@ -2199,7 +2202,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	} // do_SR==1
       
 	if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
-	  return;
+	  
 	}
 	else if (phy_vars_eNB->lte_frame_parms.frame_type==0) { // FDD
 	  // if SR was detected, use the n1_pucch from SR, else use n1_pucch0

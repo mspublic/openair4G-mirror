@@ -476,6 +476,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     phy_vars_ue->total_TBS_last[eNB_id] = 0;
     phy_vars_ue->bitrate[eNB_id] = 0;
     phy_vars_ue->total_received_bits[eNB_id] = 0;
+    phy_vars_ue->tx_power_dBm=-127;
   }
 
   if (abstraction_flag == 0) {
