@@ -64,7 +64,6 @@ void init_SI_UE(u8 Mod_id,u8 eNB_index) {
 char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
   /*-----------------------------------------------------------------------------*/
 
-
   LOG_D(RRC,"[UE %d] INIT (eNB %d)\n",Mod_id,eNB_index);
 
   UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
@@ -88,7 +87,6 @@ char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
 #ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
   openair_rrc_on(Mod_id);
 #endif
-
 
   return 0;
 }
@@ -163,6 +161,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
   int i;
 
   memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
+
   LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes)\n",Mod_id,Srb_info->Rx_buffer.payload_size);
   for (i=0;i<Srb_info->Rx_buffer.payload_size;i++)
     msg("%2x.",Srb_info->Rx_buffer.Payload[i]);
@@ -179,7 +178,6 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
     return -1;
   }
   
-
   if (dl_ccch_msg->message.present == DL_CCCH_MessageType_PR_c1) {
 
     if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_SI_RECEIVED) {
@@ -187,6 +185,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
       switch (dl_ccch_msg->message.choice.c1.present) {
 
       case DL_CCCH_MessageType__c1_PR_NOTHING :
+
 	LOG_D(RRC,"[UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",Mod_id,frame);
 	return 0;
 	break;
@@ -404,6 +403,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	    SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
 	  }
 	  
+
 	  rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			     (RadioResourceConfigCommonSIB_t *)NULL,
 			     UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
@@ -556,6 +556,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
 
+
 	LOG_D(RRC,"[UE %d] Frame %d: Processing RRCConnectionReconfiguration from eNB %d\n",
 	      Mod_id,frame,eNB_index);
 	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
@@ -591,13 +592,13 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 const char siWindowLength[7][5] = {"1ms\0","2ms\0","5ms\0","10ms\0","15ms\0","20ms\0","40ms\0"};
 const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
 
-const char SIBType[16][6] ={"SIB3\0","SIB4\0","SIB5\0","SIB6\0","SIB7\0","SIB8\0","SIB9\0","SIB10\0","SIB11\0","Sp0\0","Sp1\0","Sp2\0","Sp3\0","Sp4\0"};
+const char SIBType[16][6] ={"SIB3\0","SIB4\0","SIB5\0","SIB6\0","SIB7\0","SIB8\0","SIB9\0","SIB10\0","SIB11\0","SIB12\0","SIB13\0","Sp2\0","Sp3\0","Sp4\0"};
 const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
 
 int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
-
+  int i;
 
   memset(*sib1,0,sizeof(SystemInformationBlockType1_t));
   dec_rval = uper_decode(NULL,
@@ -751,6 +752,15 @@ void dump_sib3(SystemInformationBlockType3_t *sib3) {
 
 }
 
+void dump_sib13(SystemInformationBlockType13_r9_t *sib13) {
+
+  msg("[RRC][UE] Dumping SIB13\n");
+  msg("[RRC][UE] dumping sib13 second time\n");
+  msg("NotificationRepetitionCoeff-r9 : %ld\n", sib13->notificationConfig_r9.notificationRepetitionCoeff_r9);
+  msg("NotificationOffset-r9 : %d\n", (int)sib13->notificationConfig_r9.notificationOffset_r9);
+  msg("notificationSF-Index-r9 : %d\n", (int)sib13->notificationConfig_r9.notificationSF_Index_r9);
+
+}
 //const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
 int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 
@@ -780,7 +790,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
   for (i=0;i<30;i++)
     msg("%x.",UE_rrc_inst[Mod_id].SI[eNB_index][i]);
   msg("\n");
-  
+
   // Dump contents
   if ((*si)->criticalExtensions.present==SystemInformation__criticalExtensions_PR_systemInformation_r8) {
     msg("(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count %d\n",
@@ -847,6 +857,28 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11:
       UE_rrc_inst[Mod_id].sib11[eNB_index] = &typeandinfo->choice.sib11;
       LOG_D(RRC,"[UE %d] Found SIB11 from eNB %d\n",Mod_id,eNB_index);
+      break;
+    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920:
+      UE_rrc_inst[Mod_id].sib11[eNB_index] = &typeandinfo->choice.sib12_v920;
+      msg("[RRC][UE %d] Found SIB12 from eNB %d\n",Mod_id,eNB_index);
+
+      break;
+    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920:
+      UE_rrc_inst[Mod_id].sib13[eNB_index] = &typeandinfo->choice.sib13_v920;
+      msg("[RRC][UE %d] Found SIB13 from eNB %d\n",Mod_id,eNB_index);
+      dump_sib13(UE_rrc_inst[Mod_id].sib13[eNB_index]);
+      /*
+      Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+					&UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
+					(struct PhysicalConfigDedicated *)NULL,
+					(MAC_MainConfig_t *)NULL,
+					0,
+					(struct LogicalChannelConfig *)NULL,
+					(MeasGapConfig_t *)NULL,
+					(TDD_Config_t *)NULL,
+					NULL,
+					NULL);
+      */
       break;
     default:
       break;

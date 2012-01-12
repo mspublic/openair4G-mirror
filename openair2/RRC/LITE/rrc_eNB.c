@@ -62,7 +62,9 @@ void init_SI(u8 Mod_id) {
 						 eNB_rrc_inst[Mod_id].SIB23,
 						&eNB_rrc_inst[Mod_id].systemInformation,
 						&eNB_rrc_inst[Mod_id].sib2,
-						&eNB_rrc_inst[Mod_id].sib3);
+						&eNB_rrc_inst[Mod_id].sib3,
+                                                &eNB_rrc_inst[Mod_id].sib13,
+                                                eNB_rrc_inst[Mod_id].MBMS_flag);
     if (eNB_rrc_inst[Mod_id].sizeof_SIB23 == -1)
       mac_xface->macphy_exit("");
 
@@ -121,6 +123,9 @@ char openair_rrc_eNB_init(u8 Mod_id){
   for(j=0;j<(NB_CNX_eNB+1);j++){
     eNB_rrc_inst[Mod_id].Srb2[j].Active=0;
   }
+
+  // This has to come from some top-level configuration
+  eNB_rrc_inst[Mod_id].MBMS_flag = 0;
 
   /// System Information INIT
   init_SI(Mod_id);
