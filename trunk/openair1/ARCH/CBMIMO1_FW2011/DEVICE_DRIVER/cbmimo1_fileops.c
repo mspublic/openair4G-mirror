@@ -1300,14 +1300,30 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       }
       else {  // This is ExpressMIMO
 	update_firmware_ubuffer   = (unsigned int*)((unsigned int*)arg)[3];
+	update_firmware_kbuffer = (unsigned int*)kmalloc(update_firmware_length * 4 /* 4 because kmalloc expects bytes */,
+							 GFP_KERNEL);
+	if (!update_firmware_kbuffer) {
+	  printk("[openair][IOCTL]  Could NOT allocate %u bytes from kernel memory (kmalloc failed).\n", lendian_length * 4);
+	  return -1; 
+	  break;
+	}
 	fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
 	/* Copy the data block from user space */
 	fw_block[0] = update_firmware_address;
 	fw_block[1] = update_firmware_length;
-	tmp = copy_from_user(&fw_block[3],
+	//	printk("copy_from_user %p => %p (pci) => %p (ahb) length %d\n",update_firmware_ubuffer,&fw_block[16],update_firmware_address,update_firmware_length);
+	tmp = copy_from_user(update_firmware_kbuffer,
 			     update_firmware_ubuffer, /* from */
-			     lendian_length * 4       /* in bytes */
+			     update_firmware_length * 4       /* in bytes */
 			     );
+	pci_map_single(pdev[0],(void*)fw_block, update_firmware_length*4,PCI_DMA_BIDIRECTIONAL);
+	for (i=0;i<update_firmware_length;i++) {
+	  fw_block[16+i] = ((unsigned int *)update_firmware_kbuffer)[i];
+	  // Endian flipping is done in user-space so undo it
+	  invert4(fw_block[16+i]);
+	}
+
+	kfree(update_firmware_kbuffer);
 	
 	if (tmp) {
 	  printk("[openair][IOCTL] Could NOT copy all data from user-space to kernel-space (%d bytes remained uncopied).\n", tmp);
@@ -1395,6 +1411,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	       sparc_tmp_0, sparc_tmp_1, ioctl_ack_cnt);
       }
       else {
+	printk("[openair][IOCTL] ok asked Leon to set stack and start execution (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
+	fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
+	/* Copy the data block from user space */
+	fw_block[0] = update_firmware_start_address;
+	fw_block[1] = update_firmware_stack_pointer;
+
+	openair_dma(0,EXMIMO_START_EXEC);
 
       }
     break;
