@@ -25,10 +25,10 @@
 #include "RRC/LITE/vars.h"
 #include "UTIL/LOG/log.h"
 #endif
-//#ifndef PHY_EMUL
+
 #include "from_grlib_softconfig.h"
 #include "from_grlib_softregs.h"
-//#endif //PHY_EMUL
+
 #include "linux/moduleparam.h"
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
@@ -37,10 +37,6 @@
 /*------------------------------------------------*/
 /*   Prototypes                                   */
 /*------------------------------------------------*/
-#ifdef KERNEL2_4
-static int   init_module( void );
-static void  cleanup_module(void);
-#else
 static int   openair_init_module( void );
 static void  openair_cleanup_module(void);
 
@@ -52,8 +48,6 @@ int openair_device_release (struct inode *inode,struct file *filp);
 int openair_device_mmap    (struct file *filp, struct vm_area_struct *vma);
 int openair_device_ioctl   (struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg)
 ;
-
-#endif
 
 /* The variable 'updatefirmware' defined below is used by the driver at insmod time
  * to decide if whether or not it must jump directly to user firmware settled in Scratch Pad
@@ -78,35 +72,19 @@ static void openair_cleanup(void);
 extern char *bigphys_current,*bigphys_ptr;
 #endif
 
+extern int intr_in;
 /*------------------------------------------------*/
 
-#ifdef KERNEL2_4
-static struct file_operations openair_fops[] = {{
-  THIS_MODULE,
-  NULL,               //llseek
-  NULL,               //read
-  NULL,               //write
-  NULL,               //readdir
-  NULL,               //poll
-  openair_device_ioctl,       //ioctl
-  openair_device_mmap,        //mmap
-  openair_device_open,        //open
-  NULL,               //flush
-  openair_device_release,     //release
-  NULL,               //fsync
-  NULL,               //fasync
-  NULL,               //check_media_change
-  NULL,               //revalidate
-  NULL}};             //lock
-//-----------------------------------------------------------------------------
-#else
 static struct file_operations openair_fops = {
 ioctl:openair_device_ioctl,
 open: openair_device_open,
 release:openair_device_release,
 mmap: openair_device_mmap
 };
-#endif
+
+extern int pci_enable_pcie_error_reporting(struct pci_dev *dev);
+extern int pci_cleanup_aer_uncorrect_error_status(struct pci_dev *dev);
+
 
 int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
 
@@ -115,15 +93,21 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
   rt_task = rt_smp_current[rtai_cpuid()];
 
   printk("[openair][TRAP_HANDLER] vec %d, signo %d, task %p, ip %04x (%04x), frame %d, slot %d\n", 
-	 vec, signo, rt_task, regs->ip, regs->ip - (unsigned int) &bigphys_malloc, mac_xface->frame, openair_daq_vars.slot_count);
+         vec, signo, rt_task, (unsigned int)regs->ip, (unsigned int)regs->ip - (unsigned int) &bigphys_malloc, mac_xface->frame, openair_daq_vars.slot_count);
+
+  if (PHY_vars_eNB_g!=NULL)
+    dump_frame_parms(&PHY_vars_eNB_g[0]->lte_frame_parms);
+  else if (PHY_vars_UE_g!=NULL)
+    dump_frame_parms(&PHY_vars_UE_g[0]->lte_frame_parms);
 
   openair_sched_exit("[openair][TRAP_HANDLER] Exiting!");
 
   rt_task_suspend(rt_task);
-  
+
   return 1;
 
 }
+
 
 
 #ifdef KERNEL2_6 
@@ -139,14 +123,14 @@ static int __init openair_init_module( void )
   
   char *adr;
   int32_t temp_size;
-  
+  unsigned int readback;  
 
-#ifndef PHY_EMUL
+
 #ifndef NOCARD_TEST     
   //------------------------------------------------
   // Look for GRPCI
   //------------------------------------------------
-  unsigned long i=0;  
+  unsigned int i=0;  
   printk("[openair][INIT_MODULE][INFO]: Looking for GRLIB (%x,%x)\n",
 	 FROM_GRLIB_CFG_PCIVID,
 	 FROM_GRLIB_CFG_PCIDID);
@@ -154,21 +138,35 @@ static int __init openair_init_module( void )
   pdev[0] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, NULL);
 
   if(pdev[0]) {
-    printk("[openair][INIT_MODULE][INFO]:  openair card %ld found, bus %x, primary %x, secondate %x\n",i,
+    printk("[openair][INIT_MODULE][INFO]:  openair card (CBMIMO1) %d found, bus %x, primary %x, secondate %x\n",i,
 	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
     i=1;
+    vid = FROM_GRLIB_CFG_PCIVID;
+    did = FROM_GRLIB_CFG_PCIDID;
   }
   else {
-    printk("[openair][INIT_MODULE][INFO]:  no card found:\n");
+    printk("[openair][INIT_MODULE][INFO]:  no CBMIMO1 card found, checking for Express MIMO:\n");
     
-    return -ENODEV;
+    pdev[0] = pci_get_device(XILINX_VENDOR, XILINX_ID, NULL);
+    if(pdev[0]) {
+      printk("[openair][INIT_MODULE][INFO]:  openair card (ExpressMIMO) %d found, bus %x, primary %x, secondary %x\n",i,
+	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
+      i=1;
+      vid = XILINX_VENDOR;
+      did = XILINX_ID;
+      
+    }
+    else {
+      printk("[openair][INIT_MODULE][INFO]:  no card found, stopping.\n");
+      return -ENODEV;
+    }
   }
 
   // Now look for more cards on the same bus
   while (i<3) {
-    pdev[i] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, pdev[i-1]);
+    pdev[i] = pci_get_device(vid,did, pdev[i-1]);
     if(pdev[i]) {
-      printk("[openair][INIT_MODULE][INFO]:  openair card %ld found, bus %x, primary %x, secondate %x\n",i,
+      printk("[openair][INIT_MODULE][INFO]:  openair card %d found, bus %x, primary %x, secondary %x\n",i,
 	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
       i++;
     }
@@ -182,13 +180,16 @@ static int __init openair_init_module( void )
 
   for (i=0;i<number_of_cards;i++) {
     if(pci_enable_device(pdev[i])) {
-      printk("[openair][INIT_MODULE][INFO]: Could not enable device %ld\n",i);
+      printk("[openair][INIT_MODULE][INFO]: Could not enable device %d\n",i);
 
       return -ENODEV;
     }
     else {
-	
-      printk("[openair][INIT_MODULE][INFO]: Device %ld (%p)enabled\n",i,pdev[i]);
+      //      pci_read_config_byte(pdev[i], PCI_INTERRUPT_PIN, &pdev[i]->pin);
+      //      if (pdev[i]->pin)
+      //	pci_read_config_byte(pdev[i], PCI_INTERRUPT_LINE, &pdev[i]->irq);
+
+      printk("[openair][INIT_MODULE][INFO]: Device %d (%p)enabled, irq %d\n",i,pdev[i],pdev[i]->irq);
     }
       
       
@@ -196,38 +197,22 @@ static int __init openair_init_module( void )
     pci_set_master(pdev[i]);
       
       
-    //pci_module_init(pdev);
-      
-    // Now map the openair Memory Spaces
-      
-    // get PCI memory mapped I/O space base address from BARs
-  
-    //    bar_index = 0;
-    /*
-    mm_start = pci_resource_start(pdev[i], bar_index);
-    mm_end = pci_resource_end(pdev[i], bar_index);
-    mm_len = pci_resource_len(pdev[i], bar_index);
-    mm_flags = pci_resource_flags(pdev[i], bar_index);
 
-    bar[i] = (unsigned int)ioremap_nocache(mm_start,mm_len);
-    bar_len[i] = mm_len;
-    printk("[openair][INIT_MODULE][INFO]: BAR%d card %d = %p (%p), length %x bytes\n",bar_index,i,bar[i],mm_start,bar_len[i]);
-    */
 
   }
 
-
-  for (i=0;i<number_of_cards;i++) {
-    openair_readl(pdev[i], 
-		  FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, 
-		  &res);
-    if ((res & FROM_GRLIB_BOOT_GOK) != 0)
-      printk("[openair][INIT_MODULE][INFO]: LEON3 on card %ld is ok!\n",i);
-    else {
-      printk("[openair][INIT_MODULE][INFO]: Readback from LEON CMD %x\n",res);
-      return -ENODEV;
+  if (vid != XILINX_VENDOR) {
+    for (i=0;i<number_of_cards;i++) {
+      openair_readl(pdev[i], 
+		    FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, 
+		    &res);
+      if ((res & FROM_GRLIB_BOOT_GOK) != 0)
+	printk("[openair][INIT_MODULE][INFO]: LEON3 on card %d is ok!\n",i);
+      else {
+	printk("[openair][INIT_MODULE][INFO]: Readback from LEON CMD %x\n",res);
+	return -ENODEV;
+      }
     }
-  }
   /* The boot strap of Leon is waiting for us, polling the HOK bit and 
    * waiting for us to assert it high.
    * If we also set the flag IRQ_FROM_PCI_IS_JUMP_USER_ENTRY in the PCI Irq field,
@@ -245,17 +230,57 @@ static int __init openair_init_module( void )
    * we ask for auto. jump to user firmware.
    * (for more information on how to transmit parameter to modules at insmod time,
    * refer to [LinuxDeviceDrivers, 3rd edition, by Corbet/Rubini/Kroah-Hartman] pp 35-36). */
-  for (i=0;i<number_of_cards;i++) {
-    if (!updatefirmware) {
-      printk("[openair][INIT_MODULE][INFO]: Card %ld Setting HOK bit with auto jump to user firmware.\n",i);
-      openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY);
-    } else {
-      printk("[openair][INIT_MODULE][INFO]: Setting HOK bit WITHOUT auto jump to user firmware.\n");
-      openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+    for (i=0;i<number_of_cards;i++) {
+      if (!updatefirmware) {
+	printk("[openair][INIT_MODULE][INFO]: Card %d Setting HOK bit with auto jump to user firmware.\n",i);
+	openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY);
+      } else {
+	printk("[openair][INIT_MODULE][INFO]: Setting HOK bit WITHOUT auto jump to user firmware.\n");
+	openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+      }
     }
   }
+  else {
+
+    if (pci_enable_pcie_error_reporting(pdev[0]) > 0)
+      printk("[openair][INIT_MODULE][INFO]: Enabled PCIe error reporting\n");
+    else
+      printk("[openair][INIT_MODULE][INFO]: Failed to enable PCIe error reporting\n");
+
+    pci_cleanup_aer_uncorrect_error_status(pdev[0]);
+
+    
+    mmio_start = pci_resource_start(pdev[0], 0);
+
+    mmio_length = pci_resource_len(pdev[0], 0);
+    mmio_flags = pci_resource_flags(pdev[0], 0);
+
+    if (check_mem_region(mmio_start,256) < 0) {
+      printk("[openair][INIT_MODULE][FATAL] : Cannot get memory region 0, aborting\n");
+      return(-1);
+    }
+    request_mem_region(mmio_start,256,"openair_rf");
+    
+
+    bar[0] = pci_iomap(pdev[0],0,mmio_length);
+    //    bar_len[i] = mm_len;
+    printk("[openair][INIT_MODULE][INFO]: BAR0 card %d = %p\n",i,bar[0]);
+
+    printk("[openair][INIT_MODULE][INFO]: Writing %x to BAR0+0x1c (PCIBASE)\n",0x12345678);
+
+    iowrite32(0x12345678,(bar[0]+0x1c));
+
+    readback = ioread32(bar[0]+0x1c);
+    if (readback != 0x12345678) {
+      printk("[openair][INIT_MODULE][INFO]: Readback of FPGA register failed (%x)\n",readback);
+      release_mem_region(mmio_start,256);
+      return(-1);
+    }
+
+
+
+  }
 #endif //NOCARD_TEST
-#endif //PHY_EMUL
 
   //------------------------------------------------
   // Register the device
@@ -264,11 +289,7 @@ static int __init openair_init_module( void )
   major = openair_MAJOR;
 
   if((res = register_chrdev(major, "openair", 
-#ifdef KERNEL2_4
-			    openair_fops
-#else
 			    &openair_fops
-#endif
 			    )) < 0){
     printk("[openair][INIT_MODULE][ERROR]:  can't register char device driver, major : %d, error: %d\n", major, res);
     return -EIO;
@@ -284,6 +305,7 @@ static int __init openair_init_module( void )
 #ifdef BIGPHYSAREA
   printk("[openair][module] calling Bigphys_alloc_page for %d ...\n", BIGPHYS_NUMPAGES);
   bigphys_ptr = (char *)bigphysarea_alloc_pages(BIGPHYS_NUMPAGES,0,GFP_KERNEL);
+  //bigphys_ptr = (char *)alloc_pages_exact(BIGPHYS_NUMPAGES*4096,GFP_KERNEL);
   if (bigphys_ptr == (char *)NULL) {
     printk("[openair][MODULE][ERROR] Cannot Allocate Memory for shared data\n");
     openair_cleanup();
@@ -304,45 +326,31 @@ static int __init openair_init_module( void )
     memset(bigphys_ptr,0,BIGPHYS_NUMPAGES*PAGE_SIZE);
   }
 
+  if (vid == XILINX_VENDOR)  // This is ExpressMIMO
+    exmimo_firmware_init();
 #endif //BIGPHYSAREA
 
 #ifdef RTAI_ENABLED
-
-  /*
-#ifdef PC_TARGET
-  // Allocate memory for PHY low-level data structures
-  PHY_vars = kmalloc(sizeof(PHY_VARS),GFP_KERNEL);
-  memset(PHY_vars,0,sizeof(PHY_VARS));
-#endif // PC_TARGET
-
-  PHY_config = kmalloc(sizeof(PHY_CONFIG),GFP_KERNEL);  
-  memset(PHY_config,0,sizeof(PHY_CONFIG));
-
-#ifdef PC_TARGET
-  if (PHY_vars)
-    printk("[openair][MODULE][INFO] Allocated %d bytes for PHY_vars at %p\n",
-	sizeof(PHY_VARS),PHY_vars);
-  else {
-    printk("[openair][MODULE][ERROR] Could not allocate memory for PHY_vars\n");
-    openair_cleanup();
-    return -ENODEV;
-  }
-#endif //PC_TARGET
-
-  if (PHY_config)
-    printk("[openair][MODULE][INFO] Allocated %d bytes for PHY_config at %p\n",
-	sizeof(PHY_CONFIG),PHY_config);
-  else {
-    printk("[openair][MODULE][ERROR] Could not allocate memory for PHY_config\n");
-    openair_cleanup();
-    return -ENODEV;
-  }
-  */
 
   rt_set_oneshot_mode();
 
   start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
 #endif //RTAI_ENABLED
+
+  printk("[OPENAIR][SCHED][INIT] Trying to get IRQ %d\n",pdev[0]->irq);
+  if (rt_request_irq(pdev[0]->irq,
+		     slot_irq_handler,
+		     NULL,0) == 0) {
+    rt_enable_irq(pdev[0]->irq);
+    openair_irq_enabled=1;
+    printk("[OPENAIR][SCHED][INIT] Got IRQ %d\n",pdev[0]->irq);
+
+  }
+  else {
+    printk("[OPENAIR][SCHED][INIT] Cannot get IRQ %d for HW\n",pdev[0]->irq);
+    return(-1);
+    openair_irq_enabled=0;
+  }
 
   openair_daq_vars.mac_registered  = 0;
   openair_daq_vars.node_configured = 0;
@@ -389,7 +397,7 @@ static int __init openair_init_module( void )
   fifo_printf_init();
 
 #ifdef OPENAIR2
-  logInit(LOG_DEBUG);
+  logInit();
 #endif
 
   printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);
@@ -413,27 +421,31 @@ static void __exit openair_cleanup_module(void)
 {
   printk("[openair][CLEANUP MODULE]\n");
 
+  if (vid == XILINX_VENDOR)
+    release_mem_region(mmio_start,256);
+
+
   openair_cleanup();
 
   fifo_printf_clean_up();
+  pci_printk_fifo_clean_up();
 
 #ifdef OPENAIR2
-  //logClean();
+  logClean();
 #endif
 
   
 }
 static void  openair_cleanup(void) {
 
-#ifndef PHY_EMUL
+
   int i;
-#endif //PHY_EMUL
+
 
   unregister_chrdev(major,"openair");
 
 #ifdef RTAI_ENABLED
   printk("[openair][CLEANUP] Cleaning PHY Variables\n");
-#ifndef PHY_EMUL
 
   openair_sched_cleanup();
 
@@ -452,31 +464,24 @@ static void  openair_cleanup(void) {
 #endif
 
 
-#endif //PHY_EMUL
 #endif //RTAI_ENABLED
 
-#ifndef PHY_EMUL
+  unsigned int *fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
+
+  for (i=0;i<256;i++)
+    printk("fwaddr %x : %x\n",&fw_block[i],fw_block[i]);
+
   for (i=0;i<number_of_cards;i++) {
     if (bar[i])
       iounmap((void *)bar[i]);
   }
-#endif //PHY_EMUL
 
-  /*
-#ifdef RTAI_ENABLED
-#ifdef PC_TARGET
-    if (PHY_vars)
-      kfree(PHY_vars);
-#endif    
-    if (PHY_config)
-      kfree(PHY_config);
-#endif //RTAI_ENABLED
-  */
 
 #ifdef BIGPHYSAREA
   if (bigphys_ptr != (char *)NULL) {
     printk("[openair][MODULE][INFO] Freeing BigPhys buffer\n");
     bigphysarea_free_pages((void *)bigphys_ptr);
+    //free_pages_exact((void *)bigphys_ptr,BIGPHYS_NUMPAGES*4096);
   }
 #endif //BIGPHYSAREA
 
@@ -485,30 +490,11 @@ static void  openair_cleanup(void) {
   printk("[openair][MODULE][INFO] RTAI Timer stopped\n");
 #endif //RTAI_ENABLED
 
+  //printk("[openair] intr_in = %d\n",intr_in);
+
 }
 
 
-
-/*
-#ifdef RTAI_ENABLED
-// Dump PHY Framing configuration
-
-void dump_config() {
-
-  printk("[openair][CONFIG][INFO] PHY_config = %p\n",PHY_config);
-  printk("[openair][CONFIG][INFO] PHY_framing.fc_khz = %d\n",(unsigned int)PHY_config->PHY_framing.fc_khz);
-  printk("[openair][CONFIG][INFO] PHY_framing.fs_khz = %d\n",(unsigned int)PHY_config->PHY_framing.fs_khz);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nsymb = %d\n",PHY_config->PHY_framing.Nsymb);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nd = %d\n",PHY_config->PHY_framing.Nd);
-  printk("[openair][CONFIG][INFO] PHY_framing.log2Nd = %d\n",PHY_config->PHY_framing.log2Nd);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nc = %d\n",PHY_config->PHY_framing.Nc);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nz = %d\n",PHY_config->PHY_framing.Nz);
-  printk("[openair][CONFIG][INFO] PHY_framing.Nf = %d\n",PHY_config->PHY_framing.Nf);
-
-} 
-
-#endif //RTAI_ENABLED
-*/
 
 MODULE_AUTHOR
   ("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>, Florian KALTENBERGER <florian.kaltenberger@eurecom.fr>");

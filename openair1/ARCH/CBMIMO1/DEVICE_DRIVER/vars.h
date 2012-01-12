@@ -16,10 +16,15 @@
 
 unsigned int openair_irq;
 
-
+u32 openair_irq_enabled=0;
 
 struct pci_dev *pdev[4];
-unsigned long bar[4],iobar[4],bar_len[4];
+
+void __iomem *bar[4];
+resource_size_t mmio_start,mmio_length;
+unsigned int mmio_flags;
+
+unsigned int vid,did;
 
 char card,master_id;
 
@@ -32,6 +37,8 @@ unsigned int pci_buffer[4][2*NB_ANTENNAS_RX];
 unsigned int mbox;
 
 PCI_interface_t *pci_interface[4];
+exmimo_pci_interface_bot *exmimo_pci_bot;
+exmimo_pci_interface_t *exmimo_pci_interface[4];
 
 unsigned short NODE_ID[1];
 //EXPORT_SYMBOL(NODE_ID);
