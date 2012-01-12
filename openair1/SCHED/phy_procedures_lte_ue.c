@@ -540,6 +540,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
   if ((next_slot%2)==0) {
+    phy_vars_ue->tx_power_dBm=-127;
+
     //    printf("[PHY][UE] Frame %d, subframe %d Clearing TX buffer\n",phy_vars_ue->frame,next_slot>>1);
     if ((abstraction_flag==0)) {      
       for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
@@ -582,14 +584,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       
       
 #ifdef OPENAIR2
-      LOG_D(PHY,"[UE  %d][RARPROC] Frame %d: Msg3_active (%d,%d,%d) in subframe %d, for harq_pid %d\n",
-	  phy_vars_ue->Mod_id,
-	  phy_vars_ue->frame,
-	  phy_vars_ue->ulsch_ue_Msg3_active[eNB_id],
-	  phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id],
-	  phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id],
-	  next_slot>>1,harq_pid);
-
       if ((phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) && 
 	  (phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id] == phy_vars_ue->frame) && 
 	  (phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id] == (next_slot>>1))) { // Initial Transmission of Msg3
@@ -948,8 +942,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	} // generate_ul_signal == 1
       } 
     } // mode != PRACH
-  }// next_slot is even
-  else {  // next_slot is odd, do the PRACH here
+    //  }// next_slot is even
+    //  else {  // next_slot is odd, do the PRACH here
     phy_vars_ue->generate_prach=0;
     if (phy_vars_ue->UE_mode[eNB_id] == PRACH) {
       // check if we have PRACH opportunity
@@ -968,27 +962,27 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  
 	  if (abstraction_flag == 0) {
 	    LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
-		phy_vars_ue->Mod_id,
-		phy_vars_ue->frame,
-		next_slot>>1,
-		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
-		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
-		phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
-		phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
+		  phy_vars_ue->Mod_id,
+		  phy_vars_ue->frame,
+		  next_slot>>1,
+		  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
+		  phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+		  phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
+		  phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
 	    
 	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
 	    LOG_D(PHY,"[UE  %d][RARPROC] PRACH digital power %d dB\n",
-		phy_vars_ue->Mod_id,
-		dB_fixed(prach_power));
+		  phy_vars_ue->Mod_id,
+		  dB_fixed(prach_power));
 	  }
 	  else {
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
 	  }
 	  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, slot %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), l3msg \n",
-	      phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot,eNB_id,
-	      phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
-	      get_PL(phy_vars_ue->Mod_id,eNB_id));
+		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot,eNB_id,
+		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
+		get_PL(phy_vars_ue->Mod_id,eNB_id));
 	  phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
 	}	  
 #ifdef OPENAIR2
@@ -2308,9 +2302,6 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 #ifdef OPENAIR2
   UE_L2_STATE_t ret;
 #endif
-
-  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, slot %d: UE_mode %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot,
-    phy_vars_ue->UE_mode[eNB_id]);
 
   if (subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1)==SF_UL) {
     phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag);
