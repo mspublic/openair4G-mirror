@@ -93,7 +93,12 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
   rt_task = rt_smp_current[rtai_cpuid()];
 
   printk("[openair][TRAP_HANDLER] vec %d, signo %d, task %p, ip %04x (%04x), frame %d, slot %d\n", 
-         vec, signo, rt_task, (unsigned int)regs->ip, (unsigned int)regs->ip - (unsigned int) &bigphys_malloc, mac_xface->frame, openair_daq_vars.slot_count);
+         vec, signo, 
+		 rt_task, 
+         (unsigned int)regs->ip, 
+         (unsigned int)regs->ip - (unsigned int) &bigphys_malloc, 
+         (openair_daq_vars.is_eNB==1)?PHY_vars_eNB_g[0]->frame:PHY_vars_UE_g[0]->frame, 
+         openair_daq_vars.slot_count);
 
   if (PHY_vars_eNB_g!=NULL)
     dump_frame_parms(&PHY_vars_eNB_g[0]->lte_frame_parms);

@@ -193,7 +193,7 @@ int mult_cpx_vector_norep(s16 *x1,
   y_128 = (__m128i *)&y[0];
 
 #ifndef USER_MODE
-  debug_msg("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
+  //debug_msg("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
 #endif
 
   // we compute 4 cpx multiply for each loop
@@ -398,7 +398,7 @@ int mult_cpx_vector_norep2(s16 *x1,
   x2_128 = (__m128i *)&x2[0];
 
 #ifndef USER_MODE
-  debug_msg("mult_cpx_vector_norep2: x1 %p, x2 %p, y %p, shift %d, N %d\n",x1,x2,y,output_shift,N);
+  //debug_msg("mult_cpx_vector_norep2: x1 %p, x2 %p, y %p, shift %d, N %d\n",x1,x2,y,output_shift,N);
 #endif
 
   // we compute 2 cpx multiply for each loop

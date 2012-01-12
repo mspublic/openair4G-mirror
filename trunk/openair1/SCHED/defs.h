@@ -61,6 +61,7 @@ enum openair_SYNCH_STATUS {
 
 
 typedef struct {
+  u8 is_eNB;
   u8 mode;
   u8 synch_source;
   u32  slot_count;

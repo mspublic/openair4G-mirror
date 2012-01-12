@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <sys/types.h>
 #include <sys/time.h>
 #include <assert.h>
 #include <string.h>
@@ -20,6 +21,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 //#include "openair_defs.h"
 //#include <sys/socket.h>
 #include <netinet/in.h>
@@ -78,7 +80,8 @@ multicast_link_init ()
     strcpy (group_list[group].host_addr, multicast_group_list[group]);
     group_list[group].port = 46014 + group;
     group_list[group].socket = make_socket_inet (SOCK_DGRAM, &group_list[group].port, &sin);
-
+    printf("multicast_link_init(): Created socket %d for group %d, port %d\n",
+	   group_list[group].socket,group,group_list[group].port);
     if (setsockopt (group_list[group].socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof (reuse_addr)) < 0) {
             msg ("[MULTICAST] ERROR : setsockopt:SO_REUSEADDR, exiting ...");
       exit (EXIT_FAILURE);
@@ -227,8 +230,8 @@ multicast_link_main_loop (void *param)
 
     readsocks = select (highsock + 1, &socks, (fd_set *) 0, (fd_set *) 0, &timeout);
     if (readsocks < 0) {
-      msg ("select");
-      exit (EXIT_FAILURE);
+      //      msg ("multicast_link_main_loop: select failed with ERROR %s (readsocks %d)\n",strerror(readsocks),readsocks);
+      //      exit (EXIT_FAILURE);
     }
     if(readsocks>0) {
       //msg("calling multicast link read\n");
