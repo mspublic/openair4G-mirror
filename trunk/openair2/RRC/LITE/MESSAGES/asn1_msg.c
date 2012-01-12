@@ -26,6 +26,7 @@
 #include "RRCConnectionSetup.h"
 #include "SRB-ToAddModList.h"
 #include "DRB-ToAddModList.h"
+#include "MCCH-Message.h"
 
 #include "RRCConnectionSetupComplete.h"
 #include "RRCConnectionReconfigurationComplete.h"
@@ -145,7 +146,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 				   buffer,
 				   200);
 #ifdef USER_MODE
-  msg("[RRC][eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  printf("[RRC][eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1)
@@ -157,16 +158,20 @@ uint8_t do_SIB23(uint8_t Mod_id,
 		 uint8_t *buffer,  
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
-		 SystemInformationBlockType3_t **sib3) {
+		 SystemInformationBlockType3_t **sib3,
+                 SystemInformationBlockType13_r9_t **sib13,
+		 uint8_t MBMS_flag) {
 
 
   //  SystemInformationBlockType2_t *sib2;
   //  SystemInformationBlockType3_t *sib3;
+  //  SystemInformationBlockType13_r9_t *sib13;
 
-
-  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
+  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part, *sib13_part;
 
   asn_enc_rval_t enc_rval;
+  MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
+  struct MBSFN_AreaInfo_r9 *MBSFN_Area1, *MBSFN_Area2;
 
 
   sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -180,6 +185,12 @@ uint8_t do_SIB23(uint8_t Mod_id,
   *sib2 = &sib2_part->choice.sib2;
   *sib3 = &sib3_part->choice.sib3;
 
+  if (MBMS_flag == 1) {
+    sib13_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    memset(sib13_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    sib13_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
+    *sib13 = &sib13_part->choice.sib13_v920;
+  }
 
   // sib2
 
@@ -281,7 +292,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.ul_CyclicPrefixLength=UL_CyclicPrefixLength_len1;
 
   //assign_enum(&(*sib2)->ue_TimersAndConstants.t300, UE_TimersAndConstants__t300_ms1000);
-  (*sib2)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms200;
+  (*sib2)->ue_TimersAndConstants.t300=UE_TimersAndConstants__t300_ms1000;
  
   //assign_enum(&(*sib2)->ue_TimersAndConstants.t301, UE_TimersAndConstants__t301_ms1000);
   (*sib2)->ue_TimersAndConstants.t301=UE_TimersAndConstants__t301_ms1000;
@@ -336,6 +347,61 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA = 1;
   (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA_SF = (struct SpeedStateScaleFactors *)NULL;
 
+  // SIB13
+  // fill in all elements of SIB13 if present
+  if (MBMS_flag == 1) { 
+    //  adding for MBMS SIB13
+    //  Notification for mcch change
+    
+    //  assign_enum((*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9,MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2);
+    (*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9= MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
+    (*sib13)->notificationConfig_r9.notificationOffset_r9= 0;
+    (*sib13)->notificationConfig_r9.notificationSF_Index_r9= 1;
+    
+    //  MBSFN-AreaInfoList
+
+    MBSFNArea_list= &(*sib13)->mbsfn_AreaInfoList_r9;//CALLOC(1,sizeof(*MBSFNArea_list));   
+    memset(MBSFNArea_list,0,sizeof(*MBSFNArea_list));
+    
+       
+    // MBSFN Area 1
+    MBSFN_Area1= CALLOC(1, sizeof(*MBSFN_Area1));
+    MBSFN_Area1->mbsfn_AreaId_r9= 1;
+    MBSFN_Area1->non_MBSFNregionLength= MBSFN_AreaInfo_r9__non_MBSFNregionLength_s1;
+    MBSFN_Area1->notificationIndicator_r9= 0;
+    MBSFN_Area1->mcch_Config_r9.mcch_RepetitionPeriod_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_RepetitionPeriod_r9_rf32;
+    MBSFN_Area1->mcch_Config_r9.mcch_Offset_r9= 0;
+    MBSFN_Area1->mcch_Config_r9.mcch_ModificationPeriod_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_ModificationPeriod_r9_rf512;
+    //  Subframe Allocation Info 
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf= MALLOC(1);
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.size= 1;
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x9;
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
+    
+    MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__signallingMCS_r9_n2;
+    
+    ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
+    
+    //MBSFN Area 2
+    MBSFN_Area2= CALLOC(1, sizeof(*MBSFN_Area2));
+    MBSFN_Area2->mbsfn_AreaId_r9= 2;
+    MBSFN_Area2->non_MBSFNregionLength= MBSFN_AreaInfo_r9__non_MBSFNregionLength_s1;
+    MBSFN_Area2->notificationIndicator_r9= 0;
+    MBSFN_Area2->mcch_Config_r9.mcch_RepetitionPeriod_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_RepetitionPeriod_r9_rf32;
+    MBSFN_Area2->mcch_Config_r9.mcch_Offset_r9= 0;
+    MBSFN_Area2->mcch_Config_r9.mcch_ModificationPeriod_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_ModificationPeriod_r9_rf512;
+    // Subframe Allocation Info
+    MBSFN_Area2->mcch_Config_r9.sf_AllocInfo_r9.buf= MALLOC(1);
+    MBSFN_Area2->mcch_Config_r9.sf_AllocInfo_r9.size= 1;
+    MBSFN_Area2->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x9;
+    MBSFN_Area2->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
+    
+    MBSFN_Area2->mcch_Config_r9.signallingMCS_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__signallingMCS_r9_n2;
+    
+    ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area2);
+    
+    //  end of adding for MBMS SIB13
+  }
 
   memset((void*)systemInformation,0,sizeof(SystemInformation_t));
 
@@ -348,6 +414,10 @@ uint8_t do_SIB23(uint8_t Mod_id,
   ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib2_part);
   ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib3_part);
 
+  if (MBMS_flag == 1) {
+    ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
+  }
+
 #ifdef USER_MODE
   xer_fprint(stdout, &asn_DEF_SystemInformation, (void*)systemInformation);
 #endif
@@ -356,7 +426,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 				   buffer,
 				   100);
 #ifdef USER_MODE
-  msg("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  printf("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1) {
@@ -407,7 +477,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 				   100);
 
 #ifdef USER_MODE
-  msg("[RRC][UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  printf("[RRC][UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -466,7 +536,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer) {
 
 
 #ifdef USER_MODE
-  msg("[RRC][UE] RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  printf("RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -498,7 +568,7 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 				   100);
 
 #ifdef USER_MODE
- msg("[RRC][UE] RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  printf("RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -594,7 +664,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   ASN_SEQUENCE_ADD(&SRB_list->list,SRB1_config2);
-  /*
+
   /// SRB2
   SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
   *SRB2_config = SRB2_config2;
@@ -646,7 +716,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   ASN_SEQUENCE_ADD(&SRB_list->list,SRB2_config2);
-  */
 
   // PhysicalConfigDedicated
 
@@ -804,7 +873,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 				   100);
 
 #ifdef USER_MODE
-  msg("[RRC][eNB] RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  printf("RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
   FREEMEM(SRB_list);
@@ -861,7 +930,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
   *SRB2_config = SRB2_config2;
 
-  SRB2_config2->srb_Identity = 2;
+  SRB2_config2->srb_Identity = 1;
   SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
   SRB2_config2->rlc_Config   = SRB2_rlc_config;
   
@@ -987,15 +1056,110 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 				   buffer,
 				   100);
 
-#ifdef USER_MODE
-  msg("[RRC][eNB] RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
+  //#ifdef USER_MODE
+  msg("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  // for (i=0;i<30;i++)
+  //    msg("%x.",buffer[i]);
+  // msg("\n");
+  
+  //#endif
 
   FREEMEM(SRB_list);
   FREEMEM(DRB_list);
 
   return((enc_rval.encoded+7)/8);
 }
+
+uint8_t TMGI[6] = {0,1,2,3,4,5};
+
+uint8_t do_MCCHMessage(uint8_t *buffer) {
+
+  asn_enc_rval_t enc_rval;
+  
+  MCCH_Message_t mcch_msg;
+  
+  MBSFNAreaConfiguration_r9_t *mbsfnAreaConfiguration_r9;
+  
+  mcch_msg.message.present		= MCCH_MessageType_PR_c1;
+  mcch_msg.message.choice.c1.present	= MCCH_MessageType__c1_PR_mbsfnAreaConfiguration_r9;
+  mbsfnAreaConfiguration_r9	= &mcch_msg.message.choice.c1.choice.mbsfnAreaConfiguration_r9;
+
+  // CommonSF-Alloc-r9 
+  CommonSF_AllocPatternList_r9_t *mbmsSubframeConfig_list;
+  
+  mbmsSubframeConfig_list= CALLOC(1,sizeof(*mbmsSubframeConfig_list));
+  mbmsSubframeConfig_list= &(mbsfnAreaConfiguration_r9->commonSF_Alloc_r9);
+  
+    //Radio Frame allocation for MBMS data
+  struct MBSFN_SubframeConfig *mbsfn_SubframeConfig;
+  mbsfn_SubframeConfig= CALLOC(1,sizeof(*mbsfn_SubframeConfig));
+  mbsfn_SubframeConfig->radioframeAllocationPeriod= MBSFN_SubframeConfig__radioframeAllocationPeriod_n2;
+  mbsfn_SubframeConfig->radioframeAllocationOffset= 0;
+    //Subframe Allocation for MBMS data
+  mbsfn_SubframeConfig->subframeAllocation.present= MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.buf= CALLOC(6,1);
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.size= 5;
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.buf[0]=1;
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.buf[1]=0;
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.buf[2]=0;
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.buf[3]=1;
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.buf[4]=0;
+  mbsfn_SubframeConfig->subframeAllocation.choice.oneFrame.bits_unused= 1;
+    
+  ASN_SEQUENCE_ADD(&mbmsSubframeConfig_list->list,mbsfn_SubframeConfig);
+
+  //  commonSF-AllocPeriod-r9
+  mbsfnAreaConfiguration_r9->commonSF_AllocPeriod_r9= MBSFNAreaConfiguration_r9__commonSF_AllocPeriod_r9_rf4;
+
+  //  pmch-InfoList-r9
+  PMCH_InfoList_r9_t *pmchInfo_list;
+  pmchInfo_list= CALLOC(1, sizeof(*pmchInfo_list));
+  pmchInfo_list= &(mbsfnAreaConfiguration_r9->pmch_InfoList_r9);
+
+  struct PMCH_Info_r9 *pmch1_Info;
+  pmch1_Info= CALLOC(1, sizeof(*pmch1_Info));
+    //PMCH-Config-r9
+    pmch1_Info->pmch_Config_r9.sf_AllocEnd_r9= 24; 
+    pmch1_Info->pmch_Config_r9.dataMCS_r9= 2;
+    pmch1_Info->pmch_Config_r9.mch_SchedulingPeriod_r9= PMCH_Config_r9__mch_SchedulingPeriod_r9_rf32;
+
+    //MBMS-SessionInfoList-r9
+    MBMS_SessionInfoList_r9_t *mbmsSessionInfo_list;
+    mbmsSessionInfo_list= CALLOC(1,sizeof(*mbmsSessionInfo_list));
+    mbmsSessionInfo_list= &(pmch1_Info->mbms_SessionInfoList_r9);
+
+    struct MBMS_SessionInfo_r9 *mbms1_SesstionInfo;
+    mbms1_SesstionInfo= CALLOC(1,sizeof(*mbms1_SesstionInfo));
+  
+    mbms1_SesstionInfo->tmgi_r9.plmn_Id_r9.present= TMGI_r9__plmn_Id_r9_PR_plmn_Index_r9;
+    mbms1_SesstionInfo->tmgi_r9.plmn_Id_r9.choice.plmn_Index_r9= 1;
+    
+//    mbms1_SesstionInfo->tmgi_r9.serviceId_r9.buf=CALLOC(1,3);
+//    mbms1_SesstionInfo->tmgi_r9.serviceId_r9.size=///not finish yet
+
+    memset(&mbms1_SesstionInfo->tmgi_r9.serviceId_r9,0,sizeof(OCTET_STRING_t));
+    OCTET_STRING_fromBuf(&mbms1_SesstionInfo->tmgi_r9.serviceId_r9,(const char*)&TMGI[3],3);
+    
+    mbms1_SesstionInfo->logicalChannelIdentity_r9= 0;
+  
+
+    ASN_SEQUENCE_ADD(&mbmsSessionInfo_list->list,mbms1_SesstionInfo);
+
+  ASN_SEQUENCE_ADD(&pmchInfo_list->list,pmch1_Info);
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_MCCH_Message,
+				   (void*)&mcch_msg,
+				   buffer,
+				   100);
+
+#ifdef USER_MODE
+  printf("[RRC][eNB] MCCHMessage Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
+  return((enc_rval.encoded+7)/8);
+
+}
+
 
 #ifndef USER_MODE
 int init_module(void)

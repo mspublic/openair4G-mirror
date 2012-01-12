@@ -167,6 +167,8 @@ typedef struct{
   SystemInformation_t systemInformation;
   SystemInformationBlockType2_t *sib2;
   SystemInformationBlockType3_t *sib3;
+  SystemInformationBlockType13_r9_t *sib13;
+  u8 MBMS_flag;
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_eNB];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_eNB];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_eNB][8];
@@ -201,6 +203,7 @@ typedef struct{
   SystemInformationBlockType9_t *sib9[NB_CNX_UE];
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
+  SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
@@ -357,7 +360,9 @@ uint8_t do_SIB23(uint8_t Mod_id,
 		 uint8_t *buffer,  
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
-		 SystemInformationBlockType3_t **sib3);
+		 SystemInformationBlockType3_t **sib3,
+                 SystemInformationBlockType13_r9_t **sib13,
+		 uint8_t MBMS_flag);
 
 /** 
 \brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This 
@@ -411,6 +416,13 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 					struct SRB_ToAddMod **SRB2_config,
 					struct DRB_ToAddMod **DRB_config,
 					struct PhysicalConfigDedicated  **physicalConfigDedicated);
+
+/**
+\brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
+@param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
+@returns Size of encoded bit stream in bytes*/
+uint8_t do_MCCHMessage(uint8_t *buffer);
+
 
 int decode_SIB1(u8 Mod_id,u8 CH_index);
 

@@ -43,6 +43,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
     
     eNB_rrc_inst[Mod_id].Srb0.Active=1;
    
+    
   }
 
   else{

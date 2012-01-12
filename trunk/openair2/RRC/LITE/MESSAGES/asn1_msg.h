@@ -31,13 +31,17 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 @param systemInformation Pointer to asn1c C representation of SI PDU
 @param sib2 Pointer (returned) to sib2 component withing SI PDU
 @param sib3 Pointer (returned) to sib3 component withing SI PDU
+@param sib13 Pointer (returned) to sib13 component withing SI PDU
+@param MBMS_flag Indicates presence of MBMS system information (when 1)
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB23(uint8_t Mod_id,
 		 uint8_t *buffer,
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
-		 SystemInformationBlockType3_t **sib3);
+		 SystemInformationBlockType3_t **sib3,
+                 SystemInformationBlockType13_r9_t **sib13,
+		 uint8_t MBMS_flag);
 
 /** 
 \brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This 
@@ -93,6 +97,11 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 			      struct DRB_ToAddMod **DRB_config,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
 
+/**
+\brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
+@param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
+@returns Size of encoded bit stream in bytes*/
+uint8_t do_MCCHMessage(uint8_t *buffer);
 
 
 
