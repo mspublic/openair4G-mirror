@@ -327,7 +327,7 @@ static int __init openair_init_module( void )
   }
 
   if (vid == XILINX_VENDOR)  // This is ExpressMIMO
-    exmimo_firmware_init();
+
 #endif //BIGPHYSAREA
 
 #ifdef RTAI_ENABLED
@@ -409,6 +409,10 @@ static int __init openair_init_module( void )
   printk("[openair][MODULE][INFO] &bigphys_malloc = %p\n",&bigphys_malloc);
 
   printk("[openair][MODULE][INFO] Done init\n");
+
+  exmimo_firmware_init();
+
+  msg("[openair][MODULE][INFO] Done init\n");
   return 0;
 }
 
