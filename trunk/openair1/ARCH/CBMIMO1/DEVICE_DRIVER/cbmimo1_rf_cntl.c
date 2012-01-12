@@ -91,8 +91,10 @@ void openair_set_rx_gain_openair(unsigned char card_id,unsigned char rxgain00,un
 
   // Store the result in shared PCI memory so that the FPGA can detect and read the new value
   openair_daq_vars.rx_gain_val  = rxgain;
-  if (pci_interface[card_id]) 
+  if (pci_interface[card_id]) {
     pci_interface[card_id]->rx_gain_val = openair_daq_vars.rx_gain_val;
+    pci_interface[card_id]->rx_gain_cval = 0;
+  }
   else
     printk("[openair][RF_CNTL] rxgainreg not configured\n");
 
@@ -107,8 +109,10 @@ void openair_set_rx_gain_cal_openair(unsigned char card_id,unsigned int gain_dB)
   //printk("[openair][RF_CNTL] Setting RX gains to %d dB \n",gain_dB);
   
   // Store the result in shared PCI memory so that the FPGA can detect and read the new value
-  if (pci_interface[card_id]) 
+  if (pci_interface[card_id]) {
     pci_interface[card_id]->rx_gain_cval  = gain_dB;
+    pci_interface[card_id]->rx_gain_val = 0;
+  }
   else
     printk("[openair][RF_CNTL] rxgainreg not configured\n");
 
