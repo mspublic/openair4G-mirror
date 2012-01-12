@@ -183,8 +183,10 @@ void openair1_restart(void) {
     openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
   //  openair_daq_vars.tx_test=0;
   openair_daq_vars.sync_state = 0;
-  mac_xface->frame = 0;
-
+  if (openair_daq_vars.is_eNB==0)
+    PHY_vars_eNB_g[0]->frame = 0;
+  else
+    PHY_vars_UE_g[0]->frame = 0; 
   /*
   if ((mac_xface->is_cluster_head) && (mac_xface->is_primary_cluster_head)) {
     openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
@@ -395,11 +397,8 @@ static void * openair_thread(void *param) {
   
   printk("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
-  if (mac_xface->is_primary_cluster_head == 1) {
+  if (openair_daq_vars.is_eNB == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
-  }
-  else if (mac_xface->is_secondary_cluster_head == 1) {
-    msg("[openair][SCHED][openair_thread] Configuring openair_thread for secondary clusterhead\n");
   }
   else {
     msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
@@ -470,10 +469,10 @@ static void * openair_thread(void *param) {
       rt_time_in = rt_get_time_ns();
 
 #ifdef DEBUG_PHY
-      debug_msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
+      //debug_msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
 #endif
 
-      if (mac_xface->is_cluster_head) {
+      if (openair_daq_vars.is_eNB==1) {
 	if (PHY_vars_eNB_g && PHY_vars_eNB_g[0]) {
 	  phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[0],0);
 #ifndef IFFT_FPGA
@@ -582,8 +581,8 @@ static void * openair_thread(void *param) {
 		rt_time_in,rt_time_out,rt_diff);
       */
       if (rt_diff > 500000) 
-	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, time_in %llu, time_out %llu, diff %llu\n", 
-	    mac_xface->frame, last_slot,
+	msg("[SCHED][OPENAIR_THREAD] last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, time_in %llu, time_out %llu, diff %llu\n", 
+	    last_slot,
 	    time_in,time_out,diff,
 	    rt_time_in,rt_time_out,rt_diff);
       
@@ -657,6 +656,8 @@ int slot_irq_handler(int irq, void *cookie) {
 
   intr_in = 1;
 
+  msg("Got PCIe interrupt ...\n");
+
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
     if (openair_daq_vars.node_configured > 0) {
@@ -670,7 +671,10 @@ int slot_irq_handler(int irq, void *cookie) {
 	openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
 	//openair_daq_vars.slot_count=adac_cnt>>3;
 	if (openair_daq_vars.slot_count==0)
-	  mac_xface->frame++;
+      if (openair_daq_vars.is_eNB==1)
+	     PHY_vars_eNB_g[0]->frame++;
+      else
+         PHY_vars_UE_g[0]->frame++;
 	
 	//if ((adac_cnt>>3) == 0)
 	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
@@ -678,8 +682,8 @@ int slot_irq_handler(int irq, void *cookie) {
 	
 	if ((intr_cnt%2000) < 20) {
 	  tv = rt_get_time_ns();
-	  msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d, MAC Frame %d\n",
-	      tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,hw_frame,mac_xface->frame);
+	  msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d\n",
+	      tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,hw_frame);
 	}
 	
 	openair_daq_vars.last_adac_cnt=adac_cnt;
@@ -717,8 +721,8 @@ int slot_irq_handler(int irq, void *cookie) {
 	    //msg("[SCHED][slot_irq_handler] Locked openair_mutex, instance_cnt=%d\n",openair_daq_vars.instance_cnt);
 	    
 	    if (openair_daq_vars.instance_cnt == 0)   {// PHY is still busy
-	      msg("[SCHED][slot_irq_handler] ERROR slot interrupt while processing, instance_cnt=%d, frame=%d\n",
-		  openair_daq_vars.instance_cnt,mac_xface->frame);
+	      msg("[SCHED][slot_irq_handler] ERROR slot interrupt while processing, instance_cnt=%d\n",
+		  openair_daq_vars.instance_cnt);
 	      
 	      // unlock the mutex
 	      if (pthread_mutex_unlock (&openair_mutex) != 0) {
@@ -766,7 +770,8 @@ int slot_irq_handler(int irq, void *cookie) {
     return IRQ_NONE;
   }
   else { //EXPRESS MIMO
-
+    
+    msg("Got Exmimo PCIe interrupt ...\n");
 
     irqval = ioread32(bar[0]);
 
@@ -809,7 +814,6 @@ s32 openair_sched_init(void) {
   
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
   
-  mac_xface->frame = 0;
   
   openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
   
@@ -822,13 +826,12 @@ s32 openair_sched_init(void) {
   pthread_cond_init(&openair_cond,NULL);
   
   
-  if (mac_xface->is_primary_cluster_head == 1) {
+  if (openair_daq_vars.is_eNB==1){
     printk("[openair][SCHED][init] Configuring primary clusterhead\n");
-  }
-  else if (mac_xface->is_secondary_cluster_head == 1) {
-    printk("[openair][SCHED][init] Configuring secondary clusterhead\n");
+    PHY_vars_eNB_g[0]->frame=0;
   }
   else {
+    PHY_vars_UE_g[0]->frame=0;
     printk("[openair][SCHED][init] Configuring regular node\n");
   }
 
@@ -919,7 +922,7 @@ void openair_sched_exit(char *str) {
   u8 i;
 
   msg("%s\n",str);
-  msg("[OPENAIR][SCHED] Frame %d: openair_sched_exit() called, preparing to exit ...\n",mac_xface->frame);
+  msg("[OPENAIR][SCHED] openair_sched_exit() called, preparing to exit ...\n");
   
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;

@@ -153,11 +153,11 @@ static void * dlsch_thread(void *param) {
     dlsch_instance_cnt[dlsch_thread_index]--;
     pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]);	
 
-    debug_msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d from cpu %d\n",mac_xface->frame,dlsch_thread_index,rtai_cpuid());
+    msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d from cpu %d\n",phy_vars_ue->frame,dlsch_thread_index,rtai_cpuid());
 
     time_in = openair_get_mbox();
 
-    if (mac_xface->frame < phy_vars_ue->dlsch_errors[eNB_id]) {
+    if (phy_vars_ue->frame < phy_vars_ue->dlsch_errors[eNB_id]) {
       phy_vars_ue->dlsch_errors[eNB_id]=0;
       phy_vars_ue->dlsch_received[eNB_id] = 0;
     }
@@ -177,7 +177,7 @@ static void * dlsch_thread(void *param) {
 			 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			 0,
 			 dlsch_subframe[dlsch_thread_index]<<1);
-      debug_msg("[PHY][UE %d] Calling dlsch_decoding for subframe %d\n",phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index]);
+      msg("[PHY][UE %d] Calling dlsch_decoding for subframe %d\n",phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index]);
       ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			   &phy_vars_ue->lte_frame_parms,
 				 phy_vars_ue->dlsch_ue[eNB_id][0],
@@ -198,14 +198,14 @@ static void * dlsch_thread(void *param) {
       else {
 	
 #ifdef OPENAIR2
-	mac_xface->ue_send_sdu(phy_vars_ue->Mod_id,
+	mac_xface->ue_send_sdu(phy_vars_ue->Mod_id,phy_vars_ue->frame,
 			       phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
 			       0);
 #endif
       }
     }
     
-    if (mac_xface->frame % 100 == 0) {
+    if (phy_vars_ue->frame % 100 == 0) {
       if ((phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]) != 0) 
 	phy_vars_ue->dlsch_fer[eNB_id] = (100*(phy_vars_ue->dlsch_errors[eNB_id] - phy_vars_ue->dlsch_errors_last[eNB_id]))/(phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]);
       phy_vars_ue->dlsch_errors_last[eNB_id] = phy_vars_ue->dlsch_errors[eNB_id];
@@ -214,12 +214,12 @@ static void * dlsch_thread(void *param) {
     }
     
     
-    debug_msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",
-	      phy_vars_ue->Mod_id,mac_xface->frame,dlsch_subframe[dlsch_thread_index],ret,
+    msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",
+	      phy_vars_ue->Mod_id,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],ret,
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs,
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS);
-    debug_msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
-	      phy_vars_ue->Mod_id,mac_xface->frame,dlsch_subframe[dlsch_thread_index],
+    msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
+	      phy_vars_ue->Mod_id,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	      phy_vars_ue->dlsch_errors[eNB_id],
 	      phy_vars_ue->dlsch_received[eNB_id],
 	      phy_vars_ue->dlsch_fer[eNB_id],

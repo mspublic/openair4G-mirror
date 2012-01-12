@@ -83,7 +83,7 @@ include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
-CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) $(EXTRA_CFLAGS)
+CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) $(UTIL_incl)
 # EXTRA_CFLAGS = 
 
 #STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o

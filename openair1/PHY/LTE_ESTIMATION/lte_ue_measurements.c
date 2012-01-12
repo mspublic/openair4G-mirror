@@ -47,11 +47,11 @@ __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 s16 get_PL(u8 Mod_id,u8 eNB_index) {
 
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
-
-  printf("get_PL : rssi %d, eNB power %d\n",
-	 phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index],
-	 phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower);
-
+  /*
+  msg("get_PL : rssi %d, eNB power %d\n",
+      phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index],
+      phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower);
+  */
   return((s16)(-phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index] + 
 	       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower));
 }

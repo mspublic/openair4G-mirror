@@ -74,7 +74,9 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
   //  int             num_flows;
   //  int             current_flow; 
   int             m_id, n_enb, n_ue, n_dci, total_tbs=0, total_header=0;
-  
+ 
+  printf("in bypass_rx_data ...\n");
+ 
  
   pthread_mutex_lock(&emul_low_mutex);
   if(emul_low_mutex_var){
@@ -87,6 +89,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
     //exit(0);
     pthread_mutex_unlock(&emul_low_mutex);
   }
+
   else{
     //LOG_T(EMU,"BYPASS_RX_DATA: IN, Num_bytesp=%d...\n",num_bytesP);
     bypass_read_header = (bypass_proto2multicast_header_t *) (&rx_bufferP[bytes_read]);
@@ -105,7 +108,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 	      frame, next_slot>>1);
       //chek if MASTER in my List
       // switch(Emulation_status){
-      switch(messg->Message_type){	
+    switch(messg->Message_type){	
 	//case WAIT_SYNC_TRANSPORT:
       
       case WAIT_PM_TRANSPORT_INFO:
@@ -273,7 +276,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 
   }
 
-
+  printf("leaving ...\n");
   return bytes_read;
 }
 

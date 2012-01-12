@@ -283,10 +283,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.ulsch_allocation_mode = 0;
 
       //mac_xface->slots_per_frame = SLOTS_PER_FRAME;
-      mac_xface->is_cluster_head = 0;
-      mac_xface->is_primary_cluster_head = 0;
-      mac_xface->is_secondary_cluster_head = 0;
-      mac_xface->cluster_head_index = 0;
+      openair_daq_vars.is_eNB = 0;
+      //mac_xface->is_primary_cluster_head = 0;
+      //mac_xface->is_secondary_cluster_head = 0;
+      //mac_xface->cluster_head_index = 0;
 
 
       printk("[openair][IOCTL] Setting up registers\n");
@@ -436,7 +436,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	
 	//mac_xface->mrbch_phy_sync_failure(0,0);
 
-	Mac_rlc_xface->Is_cluster_head[0] = 1;
 #endif
 
 	/*
@@ -465,10 +464,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       clean_eNb_dlsch(PHY_vars_eNB_g[0]->dlsch_eNB_ra,0);
 
 
-      mac_xface->is_cluster_head = 1;
-      mac_xface->is_primary_cluster_head = 1;
-      mac_xface->is_secondary_cluster_head = 0;
-      mac_xface->cluster_head_index = 0;
+      openair_daq_vars.is_eNB = 1;
+      //mac_xface->is_primary_cluster_head = 1;
+      //mac_xface->is_secondary_cluster_head = 0;
+      //mac_xface->cluster_head_index = 0;
 
       openair_daq_vars.node_id = PRIMARY_CH;
       //openair_daq_vars.dual_tx = 1;
@@ -713,10 +712,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  */
 	} 
 	
-      mac_xface->is_cluster_head = 0;
-      mac_xface->is_primary_cluster_head = 0;
-      mac_xface->is_secondary_cluster_head = 0;
-      mac_xface->cluster_head_index = 0;
+      openair_daq_vars.is_eNB = 0;
+      //mac_xface->is_primary_cluster_head = 0;
+      //mac_xface->is_secondary_cluster_head = 0;
+      //mac_xface->cluster_head_index = 0;
 
       openair_daq_vars.node_id = NODE;
 
@@ -868,8 +867,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.tx_test=0;
       openair_daq_vars.mode = openair_NOT_SYNCHED;
       openair_daq_vars.sync_state = 0;
-      mac_xface->frame = 0;
-      mac_xface->is_cluster_head = 0;
+      //mac_xface->frame = 0;
+      openair_daq_vars.is_eNB = 0;
 
       /*
       for (j=0;j<NB_ANTENNAS;j++) 
