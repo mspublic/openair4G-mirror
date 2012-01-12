@@ -410,12 +410,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
   if (next_slot==4) {
     hold_channel = 0;
-    random_channel(UE2eNB[UE_id][eNB_id]);
   }
-  /*
-  else
-    hold_channel = 1;
-  */
+
 
   if (abstraction_flag!=0) {
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
@@ -484,7 +480,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifdef DEBUG_SIM	  
 	  rx_pwr = signal_energy_fp2(UE2eNB[UE_id][eNB_id]->ch[0],
 				     UE2eNB[UE_id][eNB_id]->channel_length)*UE2eNB[UE_id][eNB_id]->channel_length;
-	  printf("[SIM][UL] Channel UE %d => eNB %d : %f dB (hold %d)\n",UE_id,eNB_id,10*log10(rx_pwr),hold_channel);  
+	  printf("[SIM][UL] slot %d Channel UE %d => eNB %d : %f dB (hold %d)\n",next_slot,UE_id,eNB_id,10*log10(rx_pwr),hold_channel);  
 #endif
 	  
 #ifdef DEBUG_SIM    
