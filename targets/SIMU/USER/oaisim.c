@@ -794,6 +794,7 @@ main (int argc, char **argv)
 						       forgetting_factor,
 						       0,
 						       0);
+
 	}
       else {
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
@@ -804,7 +805,7 @@ main (int argc, char **argv)
 						     0,
 						     0);
 	}
-      
+      random_channel(eNB2UE[eNB_id][UE_id]);      
 #ifdef DEBUG_SIM
      printf ("[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
 #endif
@@ -816,7 +817,7 @@ main (int argc, char **argv)
 						   forgetting_factor,
 						   0,
 						   0);
-      
+      random_channel(UE2eNB[UE_id][eNB_id]);
     }
   }
 
@@ -1054,6 +1055,7 @@ main (int argc, char **argv)
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    printf("UE %d : synched (%d)\n",UE_id,PHY_vars_UE_g[UE_id]->UE_mode[0]);
 	    if (frame>0) {
+	      PHY_vars_UE_g[UE_id]->frame = frame;
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 	    }
 	  }
