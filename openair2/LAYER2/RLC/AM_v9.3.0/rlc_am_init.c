@@ -53,8 +53,8 @@ void rlc_am_init(rlc_am_entity_t *rlcP,u32_t frame)
     rlcP->input_sdus               = (rlc_am_tx_sdu_management_t*)((rlcP->input_sdus_alloc)->data);
     rlcP->pdu_retrans_buffer_alloc = get_free_mem_block((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t));
     rlcP->pdu_retrans_buffer       = (rlc_am_tx_data_pdu_management_t*)((rlcP->pdu_retrans_buffer_alloc)->data);
-	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] input_sdus[] = %p  element size=%d\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
-	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] pdu_retrans_buffer[] = %p element size=%d\n", frame, rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
+	msg ("[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] input_sdus[] = %p  element size=%d\n", frame, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
+	msg ("[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] pdu_retrans_buffer[] = %p element size=%d\n", frame, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
 
     // TX state variables
     rlcP->vt_a    = 0;

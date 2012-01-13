@@ -204,14 +204,15 @@ private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, 
 */
 private_rlc_rrc(rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t, u32_t, rb_id_t);)
 
-/*! \fn rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_mode_t rlc_modeP)
+/*! \fn rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t rb_idP, rlc_mode_t rlc_modeP)
 * \brief  Add a RLC protocol instance to a radio bearer.
 * \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  frameP           Frame index.
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  rlc_modeP        Mode of RLC (AM, UM, TM).
 * \return     A status about the processing, OK or error code.
 */
-private_rlc_rrc(rlc_op_status_t rrc_rlc_add_rlc      (module_id_t, rb_id_t, rlc_mode_t);)
+private_rlc_rrc(rlc_op_status_t rrc_rlc_add_rlc      (module_id_t, u32_t, rb_id_t, rlc_mode_t);)
 
 /*! \fn rlc_op_status_t rrc_rlc_config_req (module_id_t module_idP, u32_t frame, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP)
 * \brief  Function for RRC to configure a Radio Bearer.
@@ -324,15 +325,16 @@ public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, rb_id_t, mui_t,
 public_rlc(void            rlc_data_ind     (module_id_t, u32_t frame, u8_t eNB_flag, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
 
 
-/*! \fn void rlc_data_conf     (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP)
+/*! \fn void rlc_data_conf     (module_id_t module_idP, u32_t frameP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP)
 * \brief    Interface with higher layers, confirm to upper layer the transmission status for a SDU stamped with a MUI, scheduled for transmission.
 * \param[in]  module_idP       Virtualized module identifier.
+* \param[in]  frameP           Frame index
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  statusP          Status of the transmission (RLC_SDU_CONFIRM_YES, RLC_SDU_CONFIRM_NO).
 * \param[in]  is_data_planeP   Boolean, is data radio bearer or not.
 */
-public_rlc(void            rlc_data_conf    (module_id_t, rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
+public_rlc(void            rlc_data_conf    (module_id_t, u32_t, rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
 
 
 /*! \fn rlc_op_status_t rlc_stat_req     (module_id_t module_idP,

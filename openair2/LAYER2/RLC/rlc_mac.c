@@ -9,6 +9,7 @@
 //-----------------------------------------------------------------------------
 #define RLC_MAC_C
 #include "rlc.h"
+#include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
 #define DEBUG_MAC_INTERFACE
@@ -155,21 +156,48 @@ void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, 
 
                     case RLC_AM:
 #ifdef DEBUG_MAC_INTERFACE
-		      msg("MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rb_idP, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
+                        msg("MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rb_idP, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
 #endif
+                        if (num_tbP > 0) {
+                            LOG_D(RLC, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][MAC_DATA_IND/ %d TB(s)][RLC_AM][MOD %02d][RB %02d]\n",
+                                frame,
+                                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+                                module_idP,
+                                num_tbP,
+                                module_idP,
+                                rb_idP);
+                        }
 
-		      rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
+                        rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
                         break;
 
                     case RLC_UM:
 #ifdef DEBUG_MAC_INTERFACE
-		      msg("MAC DATA IND TO RLC_UM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
+                        msg("MAC DATA IND TO RLC_UM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
 #endif
-		      rlc_um_mac_data_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
+                        if (num_tbP > 0) {
+                            LOG_D(RLC, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][MAC_DATA_IND/ %d TB(s)][RLC_UM][MOD %02d][RB %02d]\n",
+                                frame,
+                                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+                                module_idP,
+                                num_tbP,
+                                module_idP,
+                                rb_idP);
+                        }
+                        rlc_um_mac_data_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
                         break;
 
                     case RLC_TM:
-		      rlc_tm_mac_data_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
+                        if (num_tbP > 0) {
+                            LOG_D(RLC, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][MAC_DATA_IND/ %d TB(s)][RLC_TM][MOD %02d][RB %02d]\n",
+                                frame,
+                                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+                                module_idP,
+                                num_tbP,
+                                module_idP,
+                                rb_idP);
+                        }
+                        rlc_tm_mac_data_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
                         break;
 
                     default:
@@ -202,7 +230,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t fram
                         break;
 
                     case RLC_AM:
-		      status_resp = rlc_am_mac_status_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame, tb_sizeP, tx_status);
+                        status_resp = rlc_am_mac_status_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame, tb_sizeP, tx_status);
                         mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
                         mac_rlc_status_resp.pdus_in_buffer = status_resp.buffer_occupancy_in_pdus;
                         return mac_rlc_status_resp;

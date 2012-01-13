@@ -93,6 +93,19 @@ void rlc_am_release (rlc_am_entity_t *rlcP)
 void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reordering=%d t_status_prohibit=%d --->][RLC_AM][MOD %02d][RB %02d]\n",
+                                                                                                       frame,
+                                                                                                       ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+                                                                                                       module_idP,
+                                                                                                       config_amP->max_retx_threshold,
+                                                                                                       config_amP->poll_pdu,
+                                                                                                       config_amP->poll_byte,
+                                                                                                       config_amP->t_poll_retransmit,
+                                                                                                       config_amP->t_reordering,
+                                                                                                       config_amP->t_status_prohibit,
+                                                                                                       module_idP,
+                                                                                                       rb_idP);
+
   rlc_am_init(rlcP,frame);
   rlc_am_set_debug_infos(rlcP, frame, module_idP, rb_idP, rb_typeP);
   rlc_am_configure(rlcP,frame,
@@ -102,7 +115,7 @@ void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_i
 		   config_amP->t_poll_retransmit,
 		   config_amP->t_reordering,
 		   config_amP->t_status_prohibit);
-  
+
 }
 //-----------------------------------------------------------------------------
 void rlc_am_stat_req     (rlc_am_entity_t *rlcP,
@@ -366,6 +379,15 @@ rlc_am_mac_data_request (void *rlcP,u32 frame)
   LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] MAC_DATA_REQUEST %05d BYTES REQUESTED -> %d TBs\n", frame, ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id, nb_bytes_requested_by_mac, data_req.data.nb_elements);
   data_req.buffer_occupancy_in_bytes   = rlc_am_get_buffer_occupancy_in_bytes((rlc_am_entity_t *)rlcP,frame);
   data_req.rlc_info.rlc_protocol_state = ((rlc_am_entity_t *) rlcP)->protocol_state;
+  if (data_req.data.nb_elements > 0) {
+      LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) --->][MAC_%s][MOD %02d][]\n",
+            frame,
+            ((rlc_am_entity_t *) rlcP)->module_id,
+            ((rlc_am_entity_t *) rlcP)->rb_id,
+            data_req.data.nb_elements,
+            ( Mac_rlc_xface->Is_cluster_head[((rlc_am_entity_t *) rlcP)->module_id] == 1) ? "eNB":"UE",
+            ((rlc_am_entity_t *) rlcP)->module_id);
+  }
 
   return data_req;
 }

@@ -43,6 +43,14 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
 {
     //-----------------------------------------------------------------------------
+    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%d sn_field_length=%d is_mXch=%d --->][RLC_UM][MOD %02d][RB %02d]\n", frame,
+                                                                                                       ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+                                                                                                       module_idP,
+                                                                                                       config_umP->timer_reordering,
+                                                                                                       config_umP->sn_field_length,
+                                                                                                       config_umP->is_mXch,
+                                                                                                       module_idP,
+                                                                                                       rb_idP);
     rlc_um_init(rlcP);
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
       rlc_um_set_debug_infos(rlcP, frame, module_idP, rb_idP, rb_typeP);

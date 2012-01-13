@@ -199,12 +199,12 @@ void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_
     LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] RX CONTROL PDU VT(A) %04d VT(S) %04d POLL_SN %04d ACK_SN %04d\n",
 	  frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_s, rlcP->poll_sn, g_rlc_am_control_pdu_info.ack_sn);
     rlc_am_display_control_pdu_infos(&g_rlc_am_control_pdu_info);
-    
+
     u16_t        ack_sn    = g_rlc_am_control_pdu_info.ack_sn;
     u16_t        sn_cursor = rlcP->vt_a;
     u16_t        nack_sn;
     unsigned int nack_index;
-    
+
     // 5.2.1 Retransmission
     //
     // The transmitting side of an AM RLC entity can receive a negative acknowledgement (notification of reception failure
@@ -216,7 +216,7 @@ void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_
     //     - if the SN of the corresponding AMD PDU falls within the range VT(A) <= SN < VT(S):
     //         - consider the AMD PDU or the portion of the AMD PDU for which a negative acknowledgement was
     //           received for retransmission.
-    
+
     // 5.2.2.2    Reception of a STATUS report
     // Upon reception of a STATUS report from the receiving RLC AM entity the
     // transmitting side of an AM RLC entity shall:
@@ -227,11 +227,11 @@ void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_
     //         - stop and reset t-PollRetransmit.
     assert(ack_sn < RLC_AM_SN_MODULO);
     assert(g_rlc_am_control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
-    
+
     if (rlc_am_in_tx_window(rlcP, ack_sn) > 0) {
       rlcP->num_nack_so = 0;
       rlcP->num_nack_sn = 0;
-      
+
       if (g_rlc_am_control_pdu_info.num_nack == 0) {
 	while (sn_cursor != ack_sn) {
 	  if (sn_cursor == rlcP->poll_sn) {
@@ -254,7 +254,7 @@ void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_
 			     sn_cursor,
 			     g_rlc_am_control_pdu_info.nack_list[nack_index].so_start,
 			     g_rlc_am_control_pdu_info.nack_list[nack_index].so_end);
-	    
+
 	    nack_index = nack_index + 1;
 	    if (nack_index == g_rlc_am_control_pdu_info.num_nack) {
 	      nack_sn = 0xFFFF; // value never reached by sn
@@ -270,7 +270,7 @@ void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_
 	    sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
 	  }
 	}
-	
+
       }
     } else {
       LOG_N(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] WARNING CONTROL PDU ACK SN OUT OF WINDOW\n", frame, rlcP->module_id, rlcP->rb_id);

@@ -213,7 +213,7 @@ rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct m
 {
 //-----------------------------------------------------------------------------
   struct mac_status_resp status_resp;
- 
+
   status_resp.buffer_occupancy_in_pdus    = 0;
   status_resp.buffer_occupancy_in_bytes   = 0;
   status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
@@ -287,6 +287,9 @@ rlc_um_mac_data_request (void *rlcP,u32 frame)
     data_req.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->header_min_length_in_bytes;
   }
   data_req.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
+  if (data_req.data.nb_elements > 0) {
+      LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) --->][MAC][MOD %02d][]\n",frame, ((rlc_um_entity_t *) rlcP)->module_id,((rlc_um_entity_t *) rlcP)->rb_id, data_req.data.nb_elements,((rlc_um_entity_t *) rlcP)->module_id);
+  }
   return data_req;
 }
 
@@ -297,7 +300,7 @@ rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_d
 //-----------------------------------------------------------------------------
   rlc_um_rx (rlcP, frame, eNB_flag, data_indP);
 }
- 
+
 //-----------------------------------------------------------------------------
 void
 rlc_um_data_req (void *rlcP, u32_t frame, mem_block_t *sduP)
