@@ -59,7 +59,7 @@ void
 pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, char* sduP)
 {
 //-----------------------------------------------------------------------------
- 
+
     mem_block_t      *new_sdu = NULL;
     //    int i;
 
@@ -75,7 +75,7 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
 #ifdef PDCP_DATA_REQ_DEBUG
 	  msg("[PDCP] TTI %d, INST %d: PDCP_DATA_REQ size %d RAB %d:\n",Mac_rlc_xface->frame,module_idP,data_sizeP,rab_idP);
 
-	  //	  for (i=0;i<20;i++) 
+	  //	  for (i=0;i<20;i++)
 	  //	    msg("%02X.",((unsigned char*)sduP)[i]);
 	  //	  msg("\n");
 #endif //PDCP_DATA_REQ_DEBUG
@@ -89,15 +89,15 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
 	    }
 	    else{
 	      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP; 
-	      
+	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP;
+
 	    }
 
         } else {
 	  msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ OUT OF MEMORY\n", rab_idP);
         }
 	//	free_mem_block (sduP);
-	
+
     } else {
             msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ SDU SIZE %d\n", rab_idP, data_sizeP);
     }
@@ -109,16 +109,16 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
   //-----------------------------------------------------------------------------
   mem_block_t      *new_sdu = NULL;
   int i;
-  
+
   if ((data_sizeP > 0)) {
-    
+
     //   if(Mac_rlc_xface->Is_cluster_head[0]==1 && Mac_rlc_xface->frame%10==0)
-    //msg("[PDCP][RAB %d][INST %d] PDCP_DATA_IND size %d\n", rab_idP,module_idP,data_sizeP);  
-    
+    //msg("[PDCP][RAB %d][INST %d] PDCP_DATA_IND size %d\n", rab_idP,module_idP,data_sizeP);
+
 #ifdef PDCP_DATA_IND_DEBUG
-    msg("[PDCP][RAB %d][INST %d] TTI %d PDCP_DATA_IND size %d\n", 
-	rab_idP,module_idP,Mac_rlc_xface->frame,data_sizeP);  
-    
+    msg("[PDCP][RAB %d][INST %d] TTI %d PDCP_DATA_IND size %d\n",
+	rab_idP,module_idP,Mac_rlc_xface->frame,data_sizeP);
+
     for (i=0;i<20;i++)
       msg("%02X.",(unsigned char)sduP->data[i]);
     msg("\n");
@@ -126,7 +126,7 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
 #endif //PDCP_DATA_IND_DEBUG
 
     new_sdu = get_free_mem_block (data_sizeP + sizeof (pdcp_data_ind_header_t));
-    
+
     if (new_sdu) {
       memset (new_sdu->data, 0, sizeof (pdcp_data_ind_header_t));
       ((pdcp_data_ind_header_t *) new_sdu->data)->rb_id     = rab_idP;
@@ -138,11 +138,11 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
 	((pdcp_data_ind_header_t *) new_sdu->data)->inst = rab_idP/8;
       else
 	((pdcp_data_ind_header_t *) new_sdu->data)->inst = 0;
-      
+
 #else
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = module_idP;
-#endif 
-      
+#endif
+
       // PROCESS OF DECOMPRESSION HERE:
       memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], &sduP->data[0], data_sizeP);
       list_add_tail_eurecom (new_sdu, &pdcp_sdu_list);
@@ -152,12 +152,12 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
       }
       else{
 	Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP; 
-	
+	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP;
+
       }
     }
 
-    
+
     free_mem_block (sduP);
   }
 }
@@ -172,7 +172,7 @@ pdcp_run (void)
 #ifdef USER_MODE
   //#define PDCP_DUMMY_BUFFER_SIZE 38
   //  unsigned char pdcp_dummy_buffer[PDCP_DUMMY_BUFFER_SIZE];
-  
+
 
   //msg("[PDCP] PDCP Run Id %d\n",modId);
 
@@ -198,13 +198,13 @@ pdcp_run (void)
     }
     // pdcp_data_req(0,28,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
     //       pdcp_data_req(0,36,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-    
+
     }*/
 
 #endif
 #endif
   unsigned int diff,i,k,j;
-  if((Mac_rlc_xface->frame%128)==0) { 
+  if((Mac_rlc_xface->frame%128)==0) {
     //    for(i=0;i<NB_INST;i++)
     for(i=0;i<NB_UE_INST;i++)
       for (j=0;j<NB_CNX_CH;j++)
@@ -212,20 +212,32 @@ pdcp_run (void)
 	  diff = Pdcp_stats_tx_bytes[i][j][k];
 	  Pdcp_stats_tx_bytes[i][j][k]=0;
 	  Pdcp_stats_tx_rate[i][j][k] = (diff*8)>>7;// (Pdcp_stats_tx_rate[i][k]*1+(7*diff*8)>>7)/8;
-	  
-	  
+
+
 	  diff = Pdcp_stats_rx_bytes[i][j][k];
 	  Pdcp_stats_rx_bytes[i][j][k]=0;
 	  Pdcp_stats_rx_rate[i][j][k] =(diff*8)>>7;//(Pdcp_stats_rx_rate[i][k]*1 + (7*diff*8)>>7)/8;
 	}
   }
 
+
   // printf("[PDCP]Read sdus from NAS\n");
   pdcp_fifo_read_input_sdus();
     // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus();
-  
 
+  /*printf("PDCP TTI %d\n", Mac_rlc_xface->frame);
+  for (i = 0; i < 3; i++) {
+      printf("[RLC_RRC][MOD ID %d] AM:",  i);
+      for (j = 0; j < RLC_MAX_NUM_INSTANCES_RLC_AM; j++) {
+          printf("%d", rlc[i].m_rlc_am_array[j].allocation);
+      }
+      printf("\n[RLC_RRC][MOD ID %d] UM:", i);
+      for (j = 0; j < RLC_MAX_NUM_INSTANCES_RLC_UM; j++) {
+          printf("%d", rlc[i].m_rlc_um_array[j].allocation);
+      }
+      printf("\n");
+  }*/
 }
 //-----------------------------------------------------------------------------
 void
@@ -281,7 +293,7 @@ pdcp_module_init ()
 
   return(0);
 
-} 
+}
 //-----------------------------------------------------------------------------
 void
 pdcp_module_cleanup ()
@@ -298,7 +310,7 @@ void
 pdcp_layer_init ()
 {
 //-----------------------------------------------------------------------------
-  unsigned int i,j,k; 
+  unsigned int i,j,k;
     list_init (&pdcp_sdu_list, NULL);
 
     msg("[PDCP] pdcp_layer_init \n ");
@@ -313,13 +325,13 @@ pdcp_layer_init ()
 	  Pdcp_stats_tx_bytes[i][k][j]=0;
 	  Pdcp_stats_tx_bytes_last[i][k][j]=0;
 	  Pdcp_stats_tx_rate[i][k][j]=0;
-	  
+
 	  Pdcp_stats_rx[i][k][j]=0;
 	  Pdcp_stats_rx_bytes[i][k][j]=0;
 	  Pdcp_stats_rx_bytes_last[i][k][j]=0;
 	  Pdcp_stats_rx_rate[i][k][j]=0;
 	}
-    
+
 }
 //-----------------------------------------------------------------------------
 void

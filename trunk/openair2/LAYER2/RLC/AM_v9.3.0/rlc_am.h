@@ -95,16 +95,17 @@ public_rlc_am(void     rlc_am_release (rlc_am_entity_t *rlcP);)
 * @{
 */
 
-/*! \fn void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
+/*! \fn void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission. After this configuration the RLC AM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
 * \param[in]  frame                     Frame index.
+* \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0)
 * \param[in]  module_idP                Virtualized module identifier.
 * \param[in]  config_amP                Configuration parameters for RLC UM instance.
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
-public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP);)
+public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP);)
 /** @} */
 
 /*! \fn void     rlc_am_stat_req     (rlc_am_entity_t *rlcP, unsigned int* tx_pdcp_sdu,unsigned int* tx_pdcp_sdu_discarded,unsigned int* tx_retransmit_pdu_unblock,unsigned int* tx_retransmit_pdu_by_status,unsigned int* tx_retransmit_pdu,unsigned int* tx_data_pdu,unsigned int* tx_control_pdu,unsigned int* rx_sdu,unsigned int* rx_error_pdu,unsigned int* rx_data_pdu,unsigned int* rx_data_pdu_out_of_window,unsigned int* rx_control_pdu)

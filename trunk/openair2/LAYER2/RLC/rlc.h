@@ -214,22 +214,24 @@ private_rlc_rrc(rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t, u32_t, rb_id_
 */
 private_rlc_rrc(rlc_op_status_t rrc_rlc_add_rlc      (module_id_t, u32_t, rb_id_t, rlc_mode_t);)
 
-/*! \fn rlc_op_status_t rrc_rlc_config_req (module_id_t module_idP, u32_t frame, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP)
+/*! \fn rlc_op_status_t rrc_rlc_config_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index.
+* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
 * \param[in]  actionP          Action for this radio bearer (add, modify, remove).
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  rb_typeP         Type of radio bearer (signalling, data).
 * \param[in]  rlc_infoP        RLC configuration parameters issued from Radio Resource Manager.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, config_action_t, rb_id_t, rb_type_t, rlc_info_t );)
+public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, u8_t , config_action_t, rb_id_t, rb_type_t, rlc_info_t );)
 
-/*! \fn rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP)
+/*! \fn rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP)
 * \brief  Function for RRC to send a SDU through a Signalling Radio Bearer.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
+* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
@@ -237,7 +239,7 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, config
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
+public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 
 /*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
@@ -260,11 +262,11 @@ public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_
 */
 public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, u32_t, chan_id_t, char*);)
 
-/*! \fn void mac_rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, chan_id_t rb_idP, u32_t frame, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
+/*! \fn void mac_rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, chan_id_t rb_idP, u32_t frame, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
 * \brief    Interface with MAC layer, deserialize the transport blocks sent by MAC, then map data indication to the RLC instance corresponding to the radio bearer identifier.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
-* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
+* \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  frame            Frame index.
 * \param[in]  bufferP          Memory area containing the transport blocks sent by MAC.
@@ -299,10 +301,11 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, c
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------
-/*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
+/*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
 * \brief    Interface with higher layers, map request to the RLC corresponding to the radio bearer.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index.
+* \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
@@ -310,13 +313,13 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, c
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
+public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
 
 /*! \fn void rlc_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP)
 * \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
-* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
+* \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  sdu_sizeP        Size of SDU in bytes.
 * \param[in]  sduP             SDU.
@@ -325,16 +328,17 @@ public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, rb_id_t, mui_t,
 public_rlc(void            rlc_data_ind     (module_id_t, u32_t frame, u8_t eNB_flag, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
 
 
-/*! \fn void rlc_data_conf     (module_id_t module_idP, u32_t frameP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP)
+/*! \fn void rlc_data_conf     (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP)
 * \brief    Interface with higher layers, confirm to upper layer the transmission status for a SDU stamped with a MUI, scheduled for transmission.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frameP           Frame index
+* \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  statusP          Status of the transmission (RLC_SDU_CONFIRM_YES, RLC_SDU_CONFIRM_NO).
 * \param[in]  is_data_planeP   Boolean, is data radio bearer or not.
 */
-public_rlc(void            rlc_data_conf    (module_id_t, u32_t, rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
+public_rlc(void            rlc_data_conf    (module_id_t, u32_t, u8_t , rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
 
 
 /*! \fn rlc_op_status_t rlc_stat_req     (module_id_t module_idP,

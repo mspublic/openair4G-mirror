@@ -74,16 +74,17 @@ typedef volatile struct {
 } rlc_um_info_t;
 
 
-/*! \fn void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
+/*! \fn void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
 * \brief    Allocate memory for RLC UM instance, reset protocol variables, and set protocol parameters. After this configuration the RLC UM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[in]  frame                     Frame index.
+* \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0)
 * \param[in]  module_idP                Virtualized module identifier.
 * \param[in]  config_umP                Configuration parameters for RLC UM instance.
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
-public_rlc_um_control_primitives(   void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP);)
+public_rlc_um_control_primitives(   void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP);)
 
 /*! \fn void rlc_um_init (rlc_um_entity_t *rlcP)
 * \brief    Initialize a RLC UM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC UM protocol instance will be in RLC_NULL_STATE state.
@@ -113,14 +114,15 @@ public_rlc_um_control_primitives(   void rlc_um_cleanup(rlc_um_entity_t *rlcP);)
 */
 protected_rlc_um_control_primitives(void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t frame, u32_t timer_reorderingP, u32_t sn_field_lengthP, u32_t is_mXchP);)
 
-/*! \fn void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
+/*! \fn void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 * \brief    Set debug informations for a RLC UM protocol instance, these informations are only for trace purpose.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[in]  frame                     Frame index.
+* \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0)
 * \param[in]  module_idP                Virtualized module identifier.
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
-protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP);)
+protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP);)
 /** @} */
 #    endif

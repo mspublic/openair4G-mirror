@@ -137,7 +137,7 @@ void rlc_am_configure(rlc_am_entity_t *rlcP,
     rlc_am_init_timer_status_prohibit(rlcP, t_status_prohibitP);
 }
 //-----------------------------------------------------------------------------
-void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32 frame, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
+void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32 frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 //-----------------------------------------------------------------------------
 {
     msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
@@ -149,4 +149,5 @@ void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32 frame, module_id_t module
     } else {
       rlcP->is_data_plane = 0;
     }
+    rlcP->is_enb = eNB_flagP;
 }

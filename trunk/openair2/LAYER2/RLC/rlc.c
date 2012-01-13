@@ -157,7 +157,7 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
   }
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP) {
+rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP) {
 //-----------------------------------------------------------------------------
   mem_block_t* new_sdu;
 
@@ -169,18 +169,17 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t r
           if (sduP != NULL) {
               if (sdu_sizeP > 0) {
 #ifdef DEBUG_RLC_DATA_REQ
-		msg("RLC_TYPE : %d\n",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
+                  msg("RLC_TYPE : %d\n",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
 #endif
                   switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                     case RLC_NONE:
-                    free_mem_block(sduP);
-                        //handle_event(WARNING,"FILE %s FONCTION rlc_data_req() LINE %s : no radio bearer configured :%d\n", __FILE__, __LINE__, rb_idP);
+                        free_mem_block(sduP);
                         return RLC_OP_STATUS_BAD_PARAMETER;
                         break;
 
                     case RLC_AM:
 #ifdef DEBUG_RLC_DATA_REQ
-		      msg("RLC_AM\n");
+		                msg("RLC_AM\n");
 #endif
                         new_sdu = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_am_data_req_alloc));
 
@@ -194,18 +193,26 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t r
                           ((struct rlc_am_data_req *) (new_sdu->data))->mui  = muiP;
                           ((struct rlc_am_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_am_data_req_alloc);
                     	  free_mem_block(sduP);
-                          LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_AM_DATA_REQ/%d Bytes --->][RLC_AM][MOD %02d][RB %02d]\n",
+                          if (rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
+                              LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_AM_DATA_REQ/%d Bytes --->][RLC_AM][MOD %02d][RB %02d]\n",
                                  frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
+                          } else {
+                              if (eNB_flagP) {
+                                  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_AM_DATA_REQ/%d Bytes --->][RLC_AM][MOD %02d][RB %02d]\n",
+                                     frame, module_idP, sdu_sizeP, module_idP, rb_idP);
+                              } else {
+                                  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_AM_DATA_REQ/%d Bytes --->][RLC_AM][MOD %02d][RB %02d]\n",
+                                     frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
+                              }
+                          }
                           rlc_am_data_req(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, new_sdu);
                           return RLC_OP_STATUS_OK;
                         } else {
-                          //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : out of memory\n", __FILE__, __LINE__);
                           return RLC_OP_STATUS_INTERNAL_ERROR;
                         }
                         break;
 
                     case RLC_UM:
-		       // msg("[RLC] Getting RLC_UM memblock\n");
                         new_sdu = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc));
 
                         if (new_sdu != NULL) {
@@ -217,14 +224,23 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t r
                           ((struct rlc_um_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
                           free_mem_block(sduP);
 
-                          LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_UM_DATA_REQ/%d Bytes --->][RLC_UM][MOD %02d][RB %02d]\n",
+                          if (rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
+                              LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_UM_DATA_REQ/%d Bytes --->][RLC_UM][MOD %02d][RB %02d]\n",
                                  frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
+                          } else {
+                              if (eNB_flagP) {
+                                  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_UM_DATA_REQ/%d Bytes --->][RLC_UM][MOD %02d][RB %02d]\n",
+                                     frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
+                              } else {
+                                  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_UM_DATA_REQ/%d Bytes --->][RLC_UM][MOD %02d][RB %02d]\n",
+                                     frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
+                              }
+                          }
                           rlc_um_data_req(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, new_sdu);
 
                           //free_mem_block(new_sdu);
                           return RLC_OP_STATUS_OK;
                         } else {
-                          //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : out of memory\n", __FILE__, __LINE__);
                           return RLC_OP_STATUS_INTERNAL_ERROR;
                         }
                         break;
@@ -240,8 +256,18 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t r
                           ((struct rlc_tm_data_req *) (new_sdu->data))->data_size = sdu_sizeP;
                           ((struct rlc_tm_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_tm_data_req_alloc);
                           free_mem_block(sduP);
-                          LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_TM_DATA_REQ/%d Bytes --->][RLC_TM][MOD %02d][RB %02d]\n",
+                          if (rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
+                              LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_TM_DATA_REQ/%d Bytes --->][RLC_TM][MOD %02d][RB %02d]\n",
                                  frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
+                          } else {
+                              if (eNB_flagP) {
+                                  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_TM_DATA_REQ/%d Bytes --->][RLC_TM][MOD %02d][RB %02d]\n",
+                                     frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
+                              } else {
+                                  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_TM_DATA_REQ/%d Bytes --->][RLC_TM][MOD %02d][RB %02d]\n",
+                                     frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
+                              }
+                          }
                           rlc_tm_data_req(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], new_sdu);
                           return RLC_OP_STATUS_OK;
                         } else {
@@ -312,13 +338,13 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
 #endif //DEBUG_RLC_PDCP_INTERFACE
         switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
             case RLC_AM:
-                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE", module_idP);
+                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                 break;
             case RLC_UM:
-                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE", module_idP);
+                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                 break;
             case RLC_TM:
-                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE", module_idP);
+                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                 break;
         }
 	  // msg("[RLC] RRC DATA IND\n");
@@ -329,19 +355,19 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
     }
 }
 //-----------------------------------------------------------------------------
-void rlc_data_conf     (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP) {
+void rlc_data_conf     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP) {
 //-----------------------------------------------------------------------------
     if (!(is_data_planeP)) {
         if (rlc_rrc_data_conf != NULL) {
             switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                 case RLC_AM:
-                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, muiP, ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE", module_idP);
+                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
                     break;
                 case RLC_UM:
-                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, muiP, ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",  module_idP);
+                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
                     break;
                 case RLC_TM:
-                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, muiP, ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",  module_idP);
+                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
                     break;
             }
             rlc_rrc_data_conf (module_idP , rb_idP , muiP, statusP);

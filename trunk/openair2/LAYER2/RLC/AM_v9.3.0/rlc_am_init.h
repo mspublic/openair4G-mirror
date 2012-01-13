@@ -113,14 +113,15 @@ public_rlc_am_init( void rlc_am_configure(rlc_am_entity_t *rlcP,
                                           u32_t t_reorderingP,
                                           u32_t t_status_prohibitP);)
 
-/*! \fn void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
+/*! \fn void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 * \brief    Set informations that will be displayed in traces, helping the debug process.
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
 * \param[in]  frame                     Frame index
+* \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0)
 * \param[in]  module_idP                Virtualization variable, module identifier.
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or data).
 */
-public_rlc_am_init( void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP);)
+public_rlc_am_init( void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP);)
 /** @} */
 #endif

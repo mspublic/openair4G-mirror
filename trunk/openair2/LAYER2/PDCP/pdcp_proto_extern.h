@@ -21,7 +21,7 @@ extern void     control_pdcp (struct pdcp_entity *pdcpP);
 extern void	pdcp_process_input_sdus_high(struct pdcp_entity *pdcpP);
 extern void     pdcp_process_input_sdus_am (struct pdcp_entity *pdcpP, u16 data_sizeP, mem_block * sduP);
 extern void     pdcp_process_output_sdus (struct pdcp_entity *pdcpP, mem_block * sduP, u8 rb_idP);
-extern void 	pdcp_process_output_sdus_high (struct pdcp_entity *pdcpP, mem_block * sduP, u16 data_sizeP,  u16 rb_idP);					
+extern void 	pdcp_process_output_sdus_high (struct pdcp_entity *pdcpP, mem_block * sduP, u16 data_sizeP,  u16 rb_idP);
 extern void     pdcp_process_input_sdus_um (struct pdcp_entity *pdcpP, u16 data_sizeP, mem_block * sduP);
 extern void     pdcp_process_input_sdus_tr (struct pdcp_entity *pdcpP, u16 data_sizeP, mem_block * sduP);
 extern void     init_pdcp (struct pdcp_entity *pdcpP, struct rb_dispatcher *rbP, u8 rb_idP);

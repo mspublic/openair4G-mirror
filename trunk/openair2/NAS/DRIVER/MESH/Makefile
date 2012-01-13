@@ -85,10 +85,10 @@ endif
 #      REVOIR LE CLEAN
 ####################################################
 
-#netlink.ko: 
+#netlink.ko:
 	#make $(x)$(y) NAS_NETLINK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
 
-#nasmesh.ko: 
+#nasmesh.ko:
 #	make  V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
 print:
 	@echo linux kernel ge 22: $(IS_KERNEL_SUBVERSION_GREATER_THAN_22)

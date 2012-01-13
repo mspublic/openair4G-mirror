@@ -90,7 +90,7 @@ void rlc_am_release (rlc_am_entity_t *rlcP)
 
 }
 //-----------------------------------------------------------------------------
-void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
+void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reordering=%d t_status_prohibit=%d --->][RLC_AM][MOD %02d][RB %02d]\n",
@@ -107,7 +107,7 @@ void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, module_id_t module_i
                                                                                                        rb_idP);
 
   rlc_am_init(rlcP,frame);
-  rlc_am_set_debug_infos(rlcP, frame, module_idP, rb_idP, rb_typeP);
+  rlc_am_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
   rlc_am_configure(rlcP,frame,
 		   config_amP->max_retx_threshold,
 		   config_amP->poll_pdu,
