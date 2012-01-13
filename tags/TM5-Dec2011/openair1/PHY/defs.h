@@ -255,6 +255,7 @@ typedef struct
   u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
+  s8 tx_power_dBm;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
