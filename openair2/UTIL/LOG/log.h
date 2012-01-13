@@ -108,11 +108,14 @@ extern "C" {
 #ifndef LOG_DEBUG
 #	define	LOG_DEBUG	7	/*!< \brief debug-level messages */
 #endif
+#ifndef LOG_MSC
+#	define	LOG_MSC	        8	/*!< \brief message sequence chart -level  */
+#endif
 #ifndef LOG_TRACE
-#	define	LOG_TRACE	8	/*!< \brief debug-level messages */
+#	define	LOG_TRACE	9	/*!< \brief trace-level messages */
 #endif
 
-#define NUM_LOG_LEVEL  9	/*!< \brief the number of message levels users have with LOG */
+#define NUM_LOG_LEVEL  10	/*!< \brief the number of message levels users have with LOG */
 /* @}*/ 
 
 
@@ -143,6 +146,7 @@ extern "C" {
 #define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
 #define LOG_I(c, x...) logIt(c, LOG_INFO, x)
 #define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
+#define LOG_M(c, x...) logIt(c, LOG_MSC, x)  // specifc log for the MSC chart
 #define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
 /*
 #else
@@ -234,6 +238,9 @@ typedef struct  {
     int level;
     int flag;
     int interval;
+    int   fd;
+    int   filelog;
+    char* filelog_name;
 }log_component_t;
 
 typedef struct  {

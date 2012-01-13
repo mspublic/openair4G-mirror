@@ -1269,6 +1269,8 @@ main (int argc, char **argv)
  destroyMat(ShaF,map1, map2);
  if (oai_emulation.info.cli_enabled)
    cli_server_cleanup();
+ 
+ logClean();
 
   return(0);
 }
