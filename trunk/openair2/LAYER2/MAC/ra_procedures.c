@@ -49,6 +49,8 @@
 #include "SIMULATION/simulation_defs.h"
 #endif
 
+extern inline unsigned int taus(void);
+
 s8 get_DELTA_PREAMBLE(u8 Mod_id) {
 
   u8 prachConfigIndex = UE_mac_inst[Mod_id].radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
