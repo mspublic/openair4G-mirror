@@ -153,7 +153,7 @@ help (void) {
   printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:err) \n");
   printf
     ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
-  printf ("-x Set the transmission mode (1,2,6 supported for now)\n");
+  printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
   printf ("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
