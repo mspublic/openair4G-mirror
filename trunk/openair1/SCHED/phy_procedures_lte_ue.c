@@ -984,10 +984,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
 		get_PL(phy_vars_ue->Mod_id,eNB_id));
 	  phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
-	}	  
 #ifdef OPENAIR2
-      }
+	}
 #endif
+      }	  
     } // mode is PRACH
   } // next_slot is odd
 }
@@ -2118,7 +2118,6 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      
 	      timing_advance = 0;
 	      process_timing_advance_rar(phy_vars_ue,timing_advance);
-#endif
 	      
 	      phy_vars_ue->ulsch_ue_Msg3_active[eNB_id]=1;
 	      get_Msg3_alloc(&phy_vars_ue->lte_frame_parms,
@@ -2145,6 +2144,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);
 	      //	      exit(-1);
 	    }
+#endif
 	  } // mode != PUSCH
 	} //ret <= MAX_ITERATIONS
 	/*      

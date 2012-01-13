@@ -330,10 +330,12 @@ static int __init openair_init_module( void )
     bigphys_current = bigphys_ptr;
     memset(bigphys_ptr,0,BIGPHYS_NUMPAGES*PAGE_SIZE);
   }
+#endif //BIGPHYSAREA
 
   if (vid == XILINX_VENDOR)  // This is ExpressMIMO
+    exmimo_firmware_init();
 
-#endif //BIGPHYSAREA
+
 
 #ifdef RTAI_ENABLED
 
@@ -415,7 +417,7 @@ static int __init openair_init_module( void )
 
   printk("[openair][MODULE][INFO] Done init\n");
 
-  exmimo_firmware_init();
+
 
   msg("[openair][MODULE][INFO] Done init\n");
   return 0;
@@ -437,7 +439,9 @@ static void __exit openair_cleanup_module(void)
   openair_cleanup();
 
   fifo_printf_clean_up();
-  pci_printk_fifo_clean_up();
+
+  if (vid == XILINX_VENDOR)
+   pci_printk_fifo_clean_up();
 
 #ifdef OPENAIR2
   logClean();
@@ -474,11 +478,6 @@ static void  openair_cleanup(void) {
 
 
 #endif //RTAI_ENABLED
-
-  unsigned int *fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
-
-  for (i=0;i<256;i++)
-    printk("fwaddr %x : %x\n",&fw_block[i],fw_block[i]);
 
   for (i=0;i<number_of_cards;i++) {
     if (bar[i])
