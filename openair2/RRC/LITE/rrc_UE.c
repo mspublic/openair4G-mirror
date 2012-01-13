@@ -137,7 +137,7 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 eNB_ind
             frame,
             Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
 
-  rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame,DCCH,rrc_mui++,0,size,(char*)buffer);
+  rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
 
 }
 
@@ -154,7 +154,7 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
       LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_UE][MOD %02d][][Tx RRCConnectionReconfigurationComplete to ENB index %d][RRC_UE][MOD %02d][]\n",
             frame,
             Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
-  rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame,DCCH,rrc_mui++,0,size,(char*)buffer);
+  rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
 }
 
 
@@ -198,8 +198,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
       LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_UE][MOD %02d][][Rx rrcConnectionReestablishment from ENB index %d][RRC_UE][MOD %02d][]\n",
-            frame,
-            Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
+            frame, Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
 	LOG_D(RRC,"[UE%d] Frame %d : Received RRCConnectionReestablishment on DL-CCCH-Message\n",Mod_id,frame);
 	return 0;
 	break;
@@ -209,15 +208,13 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
       LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_UE][MOD %02d][][Rx rrcConnectionReject from ENB index %d][RRC_UE][MOD %02d][]\n",
-            frame,
-            Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
+            frame, Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
 	LOG_D(RRC,"[UE%d] Frame %d : Received RRCConnectionReject on DL-CCCH-Message\n",Mod_id,frame);
 	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
       LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_UE][MOD %02d][][Rx rrcConnectionSetup from ENB index %d][RRC_UE][MOD %02d][]\n",
-            frame,
-            Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
+            frame, Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
 	LOG_D(RRC,"[UE%d][RARPROC] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,frame);
 	// Get configuration
 
@@ -260,7 +257,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
       lchan_id,
       eNB_index);
 
-  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
 
 
@@ -286,7 +283,7 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
       lchan_id,
       eNB_index);
 
-  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
 
@@ -306,7 +303,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
     return(-1);
     break;
   case RLC_Config_PR_um_Bi_Directional :
-    rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,ACTION_ADD,
+    rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
 		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
 		       RADIO_ACCESS_BEARER,Rlc_info_um);
 #ifdef NAS_NETLINK

@@ -54,6 +54,7 @@ typedef struct rlc_tm_entity {
   u16_t             is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
   // for stats and trace purpose :
   u16_t             rb_id;             /*!< \brief Radio bearer identifier, for statistics and trace purpose. */
+  boolean_t         is_enb;            /*!< \brief To know if the RLC belongs to a eNB or UE. */
   //-----------------------------
   // tranmission
   //-----------------------------

@@ -70,7 +70,7 @@ BOOL pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
 
   // Check if the size of SN is valid (see 3GPP TS 36.323 v10.1.0 item 6.3.2)
   if (pdcp_entity->seq_num_size != 5 && pdcp_entity->seq_num_size != 7 && pdcp_entity->seq_num_size != 12) {
-    LOG_W(PDCP, "Incoming SN size is invalid! (Expected: {5 | 7 | 12}, Received: %d\n", pdcp_entity->seq_num_size); 
+    LOG_W(PDCP, "Incoming SN size is invalid! (Expected: {5 | 7 | 12}, Received: %d\n", pdcp_entity->seq_num_size);
     return FALSE;
   }
 
@@ -152,12 +152,12 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
     return FALSE;
 
   /*
-   * XXX Since we do not implement reordering window yet we expect to receive 
-   * exactly the next SN from lower layer. When reordering window is implemented 
+   * XXX Since we do not implement reordering window yet we expect to receive
+   * exactly the next SN from lower layer. When reordering window is implemented
    * the operator utilized here should be >= as stated in 5.1.2.1.2
    */
   if (seq_num == pdcp_entity->next_pdcp_rx_sn) {
-    // Incoming sequence number is in accordance with the RX window so 
+    // Incoming sequence number is in accordance with the RX window so
     // update PDCP status for next expected RX sequence number
     LOG_I(PDCP, "Next expected SN (%d) arrived, advancing RX window\n", seq_num);
 
@@ -168,7 +168,7 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
         seq_num, pdcp_entity->next_pdcp_rx_sn);
 
     return FALSE;
-  } 
+  }
 }
 
 

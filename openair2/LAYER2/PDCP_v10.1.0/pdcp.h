@@ -63,7 +63,7 @@ typedef struct pdcp_t {
 
   /*
    * Sequence number state variables
-   * 
+   *
    * TX and RX window
    */
   u16  next_pdcp_tx_sn;
@@ -82,11 +82,11 @@ typedef struct pdcp_t {
 } pdcp_t;
 
 /*
- * Following symbolic constant alters the behaviour of PDCP 
+ * Following symbolic constant alters the behaviour of PDCP
  * and makes it linked to PDCP test code under targets/TEST/PDCP/
  *
  * For the version at SVN repository this should be UNDEFINED!
- * XXX And later this should be configured through the Makefile 
+ * XXX And later this should be configured through the Makefile
  * under targets/TEST/PDCP/
  */
 #undef PDCP_UNIT_TEST

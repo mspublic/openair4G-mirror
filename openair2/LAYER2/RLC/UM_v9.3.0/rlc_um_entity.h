@@ -54,6 +54,7 @@ typedef struct rlc_um_entity {
   u8_t              is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
   u8_t              protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
   u16_t             is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
+  boolean_t         is_enb;             /*!< \brief To know if the RLC belongs to a eNB or UE. */
   //-----------------------------
   // PROTOCOL VARIABLES
   //-----------------------------

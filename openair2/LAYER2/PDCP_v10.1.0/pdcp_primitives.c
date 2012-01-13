@@ -40,7 +40,7 @@
 #include "pdcp_primitives.h"
 
 /*
- * Parses sequence number out of buffer of User Plane PDCP Data PDU with 
+ * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *
  * @param pdu_buffer PDCP PDU buffer
@@ -67,7 +67,7 @@ u16 pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer)
 }
 
 /*
- * Parses sequence number out of buffer of User Plane PDCP Data PDU with 
+ * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * short PDCP SN (7-bit)
  *
  * @param pdu_buffer PDCP PDU buffer

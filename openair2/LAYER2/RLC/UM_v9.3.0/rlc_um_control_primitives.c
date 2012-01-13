@@ -40,7 +40,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 #include "rlc_um_control_primitives.h"
 //-----------------------------------------------------------------------------
-void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
+void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
 {
     //-----------------------------------------------------------------------------
     LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%d sn_field_length=%d is_mXch=%d --->][RLC_UM][MOD %02d][RB %02d]\n", frame,
@@ -53,7 +53,7 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_i
                                                                                                        rb_idP);
     rlc_um_init(rlcP);
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-      rlc_um_set_debug_infos(rlcP, frame, module_idP, rb_idP, rb_typeP);
+      rlc_um_set_debug_infos(rlcP, frame, module_idP, eNB_flagP, rb_idP, rb_typeP);
       rlc_um_configure(rlcP,
 		       frame,
 		       config_umP->timer_reordering,
@@ -212,7 +212,7 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
     rlc_um_reset_state_variables (rlcP);
 }
 //-----------------------------------------------------------------------------
-void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
+void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 //-----------------------------------------------------------------------------
 {
     LOG_D(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
@@ -224,4 +224,5 @@ void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, module_id_t modu
     } else {
         rlcP->is_data_plane = 0;
     }
+    rlcP->is_enb = eNB_flagP;
 }

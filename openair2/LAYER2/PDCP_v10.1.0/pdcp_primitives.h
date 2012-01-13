@@ -35,7 +35,7 @@
  * 6.2.2 Control Plane PDCP Data PDU
  */
 typedef struct {
-  u8 sn;      // PDCP sequence number will wrap around 2^5-1 so 
+  u8 sn;      // PDCP sequence number will wrap around 2^5-1 so
               // reserved field is unnecessary here
   u32 mac_i;  // Integration protection is not implemented (pad with 0)
 } pdcp_control_plane_data_pdu_header;
@@ -68,7 +68,7 @@ typedef struct {
 #define PDCP_CONTROL_PDU_INTERSPERSED_ROHC_FEEDBACK_HEADER_SIZE 1
 
 /*
- * Parses sequence number out of buffer of User Plane PDCP Data PDU with 
+ * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *
  * @param pdu_buffer PDCP PDU buffer
@@ -77,7 +77,7 @@ typedef struct {
 u16 pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer);
 
 /*
- * Parses sequence number out of buffer of User Plane PDCP Data PDU with 
+ * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * short PDCP SN (7-bit)
  *
  * @param pdu_buffer PDCP PDU buffer

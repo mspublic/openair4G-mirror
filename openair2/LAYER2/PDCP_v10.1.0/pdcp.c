@@ -49,7 +49,7 @@
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
 
-extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
+extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 
 //-----------------------------------------------------------------------------
 /*
@@ -124,8 +124,8 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
 
 #ifdef PDCP_UNIT_TEST
-    /* 
-     * Here we add PDU to the list and return to test code without 
+    /*
+     * Here we add PDU to the list and return to test code without
      * handing it off to RLC
      */
     list_add_tail_eurecom(pdcp_pdu, test_list);
@@ -133,10 +133,10 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     return TRUE;
 #else
     /*
-     * Ask sublayer to transmit data and check return value 
+     * Ask sublayer to transmit data and check return value
      * to see if RLC succeeded
      */
-    rlc_op_status_t rlc_status = rlc_data_req(module_id, frame, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdcp_pdu_size, pdcp_pdu);
+    rlc_op_status_t rlc_status = rlc_data_req(module_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdcp_pdu_size, pdcp_pdu);
     switch (rlc_status) {
       case RLC_OP_STATUS_OK:
         LOG_I(PDCP, "Data sending request over RLC succeeded!\n");
@@ -160,7 +160,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     }
 
     /*
-     * Control arrives here only if rlc_data_req() returns RLC_OP_STATUS_OK 
+     * Control arrives here only if rlc_data_req() returns RLC_OP_STATUS_OK
      * so we return TRUE afterwards
      */
     if (eNB_flag == 1) {
@@ -168,7 +168,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
       Pdcp_stats_tx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH] += sdu_buffer_size;
     } else {
       Pdcp_stats_tx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
-      Pdcp_stats_tx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH] += sdu_buffer_size; 
+      Pdcp_stats_tx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH] += sdu_buffer_size;
     }
 
     return TRUE;
@@ -198,7 +198,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   list_t* sdu_list = &pdcp_sdu_list;
 #endif
   mem_block_t *new_sdu = NULL;
-  
+
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
     return FALSE;
@@ -247,14 +247,14 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = 0;
 #else
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = module_id;
-#endif 
+#endif
 
     // XXX Decompression would be done at this point
-      
+
     /*
-     * After checking incoming sequence number PDCP header 
-     * has to be stripped off so here we copy SDU buffer starting 
-     * from its second byte (skipping 0th and 1st octets, i.e. 
+     * After checking incoming sequence number PDCP header
+     * has to be stripped off so here we copy SDU buffer starting
+     * from its second byte (skipping 0th and 1st octets, i.e.
      * PDCP header)
      */
     memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], \
@@ -272,7 +272,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
      * Program received signal SIGSEGV, Segmentation fault.
      * 0x0805904a in pdcp_data_ind (module_id=0, rab_id=0, sdu_buffer_size=10, sdu_buffer=0x9267f20, pdcp_test_entity=0x851bf20, test_list=0x806a2e0)
      * at /homes/demiray/workspace/openair4G/trunk/openair2/LAYER2/PDCP_v10.1.0/pdcp.c:247
-     * 247	    if (Mac_rlc_xface->Is_cluster_head[module_id]==1) 
+     * 247	    if (Mac_rlc_xface->Is_cluster_head[module_id]==1)
      */
 #if 0
     if (eNB_flag==1) {
@@ -280,7 +280,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
       Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size;
     } else {
       Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
-      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size; 
+      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size;
     }
 #endif
   }
@@ -304,7 +304,7 @@ pdcp_run (u32_t frame,u8 eNB_flag)
   #endif
 #endif
   unsigned int diff, i, k, j;
-  if ((frame % 128) == 0) { 
+  if ((frame % 128) == 0) {
     //    for(i=0;i<NB_INST;i++)
     for (i=0; i < NB_UE_INST; i++)
       for (j=0; j < NB_CNX_CH; j++)
@@ -312,14 +312,14 @@ pdcp_run (u32_t frame,u8 eNB_flag)
 	  diff = Pdcp_stats_tx_bytes[i][j][k];
 	  Pdcp_stats_tx_bytes[i][j][k]=0;
 	  Pdcp_stats_tx_rate[i][j][k] = (diff*8)>>7;// (Pdcp_stats_tx_rate[i][k]*1+(7*diff*8)>>7)/8;
-	  
-	  
+
+
 	  diff = Pdcp_stats_rx_bytes[i][j][k];
 	  Pdcp_stats_rx_bytes[i][j][k]=0;
 	  Pdcp_stats_rx_rate[i][j][k] =(diff*8)>>7;//(Pdcp_stats_rx_rate[i][k]*1 + (7*diff*8)>>7)/8;
 	}
   }
-  
+
   pdcp_fifo_read_input_sdus(frame,eNB_flag);
   // PDCP -> NAS traffic
 #ifndef PDCP_UNIT_TEST
@@ -414,7 +414,7 @@ void
 pdcp_layer_init ()
 {
 //-----------------------------------------------------------------------------
-  unsigned int i,j,k; 
+  unsigned int i,j,k;
 
   /*
    * Initialize SDU list

@@ -144,7 +144,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
     return RLC_OP_STATUS_OUT_OF_RESSOURCES;
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP) {
+rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP) {
 //-----------------------------------------------------------------------------
 //  msg("[RLC][MOD_id %d] CONFIG_REQ for Rab %d\n",module_idP,rb_idP);
 #warning TO DO rrc_rlc_config_req
@@ -153,7 +153,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, confi
     switch (actionP) {
 
         case ACTION_ADD:
-            if (rb_typeP == SIGNALLING_RADIO_BEARER) LOG_D(PDCP, "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_idP, rb_idP);
+            if (rb_typeP != SIGNALLING_RADIO_BEARER) LOG_D(PDCP, "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_idP, rb_idP);
             if ((status = rrc_rlc_add_rlc(module_idP, frame, rb_idP, rlc_infoP.rlc_mode)) != RLC_OP_STATUS_OK) {
               return status;
             }
@@ -163,6 +163,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, confi
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB AM\n", module_idP, rb_idP);
                     config_req_rlc_am(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
 				      frame,
+                      eNB_flagP,
 				      module_idP,
 				      &rlc_infoP.rlc.rlc_am_info,
 				      rb_idP, rb_typeP);
@@ -171,6 +172,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, confi
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB UM\n", module_idP, rb_idP);
                     config_req_rlc_um(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
 				      frame,
+                      eNB_flagP,
 				      module_idP,
 				      &rlc_infoP.rlc.rlc_um_info,
 				      rb_idP, rb_typeP);
@@ -179,6 +181,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, confi
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB TM\n", module_idP, rb_idP);
                     config_req_rlc_tm(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
 				      frame,
+                      eNB_flagP,
 				      module_idP,
 				      &rlc_infoP.rlc.rlc_tm_info,
 				      rb_idP, rb_typeP);
@@ -198,7 +201,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, confi
     return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP) {
+rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP) {
 //-----------------------------------------------------------------------------
   mem_block_t*   sdu;
 
@@ -206,7 +209,7 @@ rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, rb_id
   if (sdu != NULL) {
     //    msg("[RRC_RLC] MEM_ALLOC %p\n",sdu);
     memcpy (sdu->data, sduP, sdu_sizeP);
-    return rlc_data_req(module_idP, frame, rb_idP, muiP, confirmP, sdu_sizeP, sdu);
+    return rlc_data_req(module_idP, frame, eNB_flagP, rb_idP, muiP, confirmP, sdu_sizeP, sdu);
   } else {
     return RLC_OP_STATUS_INTERNAL_ERROR;
   }

@@ -58,6 +58,7 @@ typedef struct rlc_am_entity {
   module_id_t     module_id;                          /*!< \brief Virtualization index for this protocol instance, means handset or eNB index. */
   u16_t           rb_id;                              /*!< \brief Radio bearer identifier, for statistics and trace purpose. */
   boolean_t       is_data_plane;                      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
+  boolean_t       is_enb;                             /*!< \brief To know if the RLC belongs to a eNB or UE. */
 
   signed int      sdu_buffer_occupancy;               /*!< \brief Number of bytes of unsegmented SDUs. */
   signed int      retransmission_buffer_occupancy;    /*!< \brief Number of bytes of PDUs in retransmission buffer waiting for a ACK. */

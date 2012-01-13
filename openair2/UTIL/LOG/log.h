@@ -62,14 +62,14 @@ extern "C" {
 #endif
 
 /** @defgroup _LOG LOG Generator
- * @{*/ 
-/* @}*/ 
+ * @{*/
+/* @}*/
 
 /** @defgroup _macro Macro Definition
  *  @ingroup _LOG
  *  @brief these macros are used in the code of LOG
  * @{*/
-/* @}*/ 
+/* @}*/
 
 /** @defgroup _max_length Maximum Length of LOG
  *  @ingroup _macro
@@ -78,7 +78,7 @@ extern "C" {
 #define MAX_LOG_ITEM 50 /*!< \brief the maximum length of a LOG item, what is LOG_ITEM ??? */
 #define MAX_LOG_INFO 1000 /*!< \brief the maximum length of a log */
 #define MAX_LOG_TOTAL 1500 /*!< \brief the maximum length of a log */
-/* @}*/ 
+/* @}*/
 
 /** @defgroup _log_level Message levels defined by LOG
  *  @ingroup _macro
@@ -116,7 +116,7 @@ extern "C" {
 #endif
 
 #define NUM_LOG_LEVEL  10	/*!< \brief the number of message levels users have with LOG */
-/* @}*/ 
+/* @}*/
 
 
 /** @defgroup _logIt logIt function
@@ -128,7 +128,7 @@ extern "C" {
 #else
 #define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #endif
-/* @}*/ 
+/* @}*/
 
 
 /** @defgroup _debugging debugging macros
@@ -161,7 +161,7 @@ extern "C" {
 #define LOG_T(c, x...) msg(x)
 #endif
 */
-/* @}*/ 
+/* @}*/
 
 
 /** @defgroup _useful_functions useful functions in LOG
@@ -204,7 +204,7 @@ extern "C" {
 #define FLAG_LEVEL     0x010
 #define FLAG_FUNCT     0x020
 #define FLAG_FILE_LINE 0x040
-#define FLAG_TIME      0x100 
+#define FLAG_TIME      0x100
 
 #define LOG_NONE        0x00
 #define LOG_LOW         0x04

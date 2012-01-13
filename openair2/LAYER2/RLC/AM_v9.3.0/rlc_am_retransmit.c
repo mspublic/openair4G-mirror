@@ -109,7 +109,7 @@ void rlc_am_nack_pdu (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_st
 #ifdef TEST_RLC_AM
 		  rlc_am_v9_3_0_test_data_conf (rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO);
 #else
-		  rlc_data_conf(rlcP->module_id, frame, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO, rlcP->is_data_plane);
+		  rlc_data_conf(rlcP->module_id, frame, rlcP->is_enb, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO, rlcP->is_data_plane);
 #endif
 		  rlc_am_free_in_sdu(rlcP, frame, sdu_index);
                 }
@@ -157,7 +157,7 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP)
 #ifdef TEST_RLC_AM
                 rlc_am_v9_3_0_test_data_conf (rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_YES);
 #else
-                rlc_data_conf(rlcP->module_id, frame, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_YES, rlcP->is_data_plane);
+                rlc_data_conf(rlcP->module_id, frame, rlcP->is_enb, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_YES, rlcP->is_data_plane);
 #endif
                 rlc_am_free_in_sdu(rlcP, frame, sdu_index);
             }
