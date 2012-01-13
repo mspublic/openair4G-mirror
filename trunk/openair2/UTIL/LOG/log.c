@@ -371,7 +371,6 @@ int  set_log(int component, int level, int interval) {
   if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
     if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
       g_log->log_component[component].level = level;
-      printf ("navid hello set com %d, level %d\n", component, level);
       switch (level) {
       case LOG_TRACE: 
 	g_log->log_component[component].flag = LOG_HIGH ;
