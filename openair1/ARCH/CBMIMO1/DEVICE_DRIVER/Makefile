@@ -158,10 +158,11 @@ openair_rf-objs += $(L2_OBJS)
 openair_rf-objs += $(LIST_OBJ)
 openair_rf-objs += $(TIMER_OBJ)
 openair_rf-objs += $(MEM_OBJ)
-openair_rf-objs += $(LOG_OBJS)
 else
 openair_rf-objs += $(MAC_XFACE_OBJS)
 endif
+
+openair_rf-objs += $(LOG_OBJS)
 
 test:
 	echo $(openair_rf-objs)

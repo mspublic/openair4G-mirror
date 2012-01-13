@@ -8,7 +8,8 @@ CFLAGS = -Wall -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_
 #-DICC 
 
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
-CFLAGS += $(L2_incl)
+include $(OPENAIR2_DIR)/UTIL/Makefile.inc
+CFLAGS += $(L2_incl) $(UTIL_incl)
 
 ifdef DEBUGPHY
 CFLAGS += -DDEBUG_PHY

@@ -656,7 +656,7 @@ int slot_irq_handler(int irq, void *cookie) {
 
   intr_in = 1;
 
-  msg("Got PCIe interrupt ...\n");
+  //  msg("Got PCIe interrupt ...\n");
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
@@ -671,10 +671,10 @@ int slot_irq_handler(int irq, void *cookie) {
 	openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
 	//openair_daq_vars.slot_count=adac_cnt>>3;
 	if (openair_daq_vars.slot_count==0)
-      if (openair_daq_vars.is_eNB==1)
-	     PHY_vars_eNB_g[0]->frame++;
-      else
-         PHY_vars_UE_g[0]->frame++;
+	  if (openair_daq_vars.is_eNB==1)
+	    PHY_vars_eNB_g[0]->frame++;
+	  else
+	    PHY_vars_UE_g[0]->frame++;
 	
 	//if ((adac_cnt>>3) == 0)
 	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
@@ -771,7 +771,7 @@ int slot_irq_handler(int irq, void *cookie) {
   }
   else { //EXPRESS MIMO
     
-    msg("Got Exmimo PCIe interrupt ...\n");
+    //    msg("Got Exmimo PCIe interrupt ...\n");
 
     irqval = ioread32(bar[0]);
 
@@ -786,7 +786,7 @@ int slot_irq_handler(int irq, void *cookie) {
 	//	process_slot_interrupt();
       }
       else if (irqcmd == PCI_PRINTK) {
-	msg("Got PCIe interrupt for printk ...\n");
+	//	msg("Got PCIe interrupt for printk ...\n");
 	pci_fifo_printk();
 	
       }
@@ -825,7 +825,7 @@ s32 openair_sched_init(void) {
   
   pthread_cond_init(&openair_cond,NULL);
   
-  
+  /*
   if (openair_daq_vars.is_eNB==1){
     printk("[openair][SCHED][init] Configuring primary clusterhead\n");
     PHY_vars_eNB_g[0]->frame=0;
@@ -834,7 +834,7 @@ s32 openair_sched_init(void) {
     PHY_vars_UE_g[0]->frame=0;
     printk("[openair][SCHED][init] Configuring regular node\n");
   }
-
+  */
   openair_daq_vars.mode = openair_NOT_SYNCHED;
   
 #ifdef EMOS
