@@ -31,19 +31,19 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
 
   if( Mac_rlc_xface->Is_cluster_head[Mod_id] == 1){
 
-    
+
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].SI,BCCH,1);
-    
+
     eNB_rrc_inst[Mod_id].SI.Active=1;
-    
-    
-    
-    
+
+
+
+
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].Srb0,CCCH,1);
-    
+
     eNB_rrc_inst[Mod_id].Srb0.Active=1;
-   
-    
+
+
   }
 
   else{
@@ -91,7 +91,7 @@ int rrc_init_global_param(void){
 #endif
   msg("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
 
-  if(Mac_rlc_xface==NULL || 
+  if(Mac_rlc_xface==NULL ||
      Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
     return -1;
   Mac_rlc_xface->rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
