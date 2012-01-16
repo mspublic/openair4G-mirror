@@ -385,7 +385,7 @@ rlc_am_mac_data_request (void *rlcP,u32 frame)
             ((rlc_am_entity_t *) rlcP)->module_id,
             ((rlc_am_entity_t *) rlcP)->rb_id,
             data_req.data.nb_elements,
-            ( Mac_rlc_xface->Is_cluster_head[((rlc_am_entity_t *) rlcP)->module_id] == 1) ? "eNB":"UE",
+            (((rlc_am_entity_t *) rlcP)->is_enb) ? "eNB":"UE",
             ((rlc_am_entity_t *) rlcP)->module_id);
   }
 

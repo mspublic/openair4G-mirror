@@ -101,17 +101,17 @@ tbs_size_t mac_rlc_data_req     (module_id_t module_idP, u32_t frame, chan_id_t 
                         break;
 
                     case RLC_AM:
-                        data_request = rlc_am_mac_data_request(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index]);
+                        data_request = rlc_am_mac_data_request(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame);
                         return mac_rlc_serialize_tb(bufferP, data_request.data);
                         break;
 
                     case RLC_UM:
-                        data_request = rlc_um_mac_data_request(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index]);
+                        data_request = rlc_um_mac_data_request(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame);
                         return mac_rlc_serialize_tb(bufferP, data_request.data);
                         break;
 
                     case RLC_TM:
-                        data_request = rlc_tm_mac_data_request(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index]);
+                        data_request = rlc_tm_mac_data_request(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame);
                         return mac_rlc_serialize_tb(bufferP, data_request.data);
                         break;
 

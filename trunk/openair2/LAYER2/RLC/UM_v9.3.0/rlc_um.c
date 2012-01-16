@@ -288,7 +288,13 @@ rlc_um_mac_data_request (void *rlcP,u32 frame)
   }
   data_req.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
   if (data_req.data.nb_elements > 0) {
-      LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) --->][MAC][MOD %02d][]\n",frame, ((rlc_um_entity_t *) rlcP)->module_id,((rlc_um_entity_t *) rlcP)->rb_id, data_req.data.nb_elements,((rlc_um_entity_t *) rlcP)->module_id);
+      LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) --->][MAC_%s][MOD %02d][]\n",
+            frame,
+            ((rlc_um_entity_t *) rlcP)->module_id,
+            ((rlc_um_entity_t *) rlcP)->rb_id,
+            data_req.data.nb_elements,
+            (((rlc_um_entity_t *) rlcP)->is_enb) ? "eNB":"UE",
+            ((rlc_um_entity_t *) rlcP)->module_id);
   }
   return data_req;
 }

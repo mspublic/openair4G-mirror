@@ -151,7 +151,7 @@ rlc_tm_mac_status_indication (void *rlcP, u16 tb_sizeP, struct mac_status_ind tx
 
 //-----------------------------------------------------------------------------
 struct mac_data_req
-rlc_tm_mac_data_request (void *rlcP)
+rlc_tm_mac_data_request (void *rlcP, u32_t frame)
 {
 //-----------------------------------------------------------------------------
   struct mac_data_req data_req;
