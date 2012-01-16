@@ -304,6 +304,7 @@ void
 rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
+  LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_UM_MAC_DATA_IND %p\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, frame, rlcP);
   rlc_um_rx (rlcP, frame, eNB_flag, data_indP);
 }
 
