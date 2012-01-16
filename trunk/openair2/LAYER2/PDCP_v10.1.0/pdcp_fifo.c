@@ -288,8 +288,8 @@ pdcp_fifo_read_input_sdus_remaining_bytes (u32_t frame,u8_t eNB_flag)
 	pdcp_read_header.inst = 0;
 #endif
         pdcp_data_req (pdcp_input_header.inst,
+		       frame, eNB_flag,
 		       pdcp_input_header.rb_id,
-		       frame,eNB_flag,
 		       pdcp_input_header.data_size,
 		       pdcp_input_sdu_buffer);
 
