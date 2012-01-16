@@ -122,12 +122,13 @@ protected_rlc_um( void     rlc_um_rx (void *rlcP, u32_t frame, u8_t eNB_flag, st
 */
 public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
 
-/*! \fn struct mac_data_req rlc_um_mac_data_request (void *rlcP)
+/*! \fn struct mac_data_req rlc_um_mac_data_request (void *rlcP, u32_t frame)
 * \brief    Gives PDUs to lower layer MAC.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
+* \param[in]  frame                     Frame Index.
 * \return     A PDU of the previously requested number of bytes, and the updated maximum number of bytes that can be served by RLC instance to MAC for next RLC transmission.
 */
-public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (void *rlcP);)
+public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (void *rlcP, u32_t frame);)
 
 
 /*! \fn void     rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag,struct mac_data_ind data_indP)
