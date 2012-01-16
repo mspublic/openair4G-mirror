@@ -34,31 +34,26 @@
 * \version 0.5
 * \warning This component can be runned only in user-space
 * @ingroup pdcp
-
 */
 
 #define PDCP_FIFO_C
+#define PDCP_DEBUG 1
+//#define IDROMEL_NEMO 1
+
 #include "pdcp.h"
 #ifdef USER_MODE
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#define rtf_put write
-#define rtf_get read
-
+  #include <errno.h>
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <unistd.h>
+  #define rtf_put write
+  #define rtf_get read
 #else
-#include <rtai_fifos.h>
+  #include <rtai_fifos.h>
 #endif //USER_MODE
-
 
 #include "../MAC/extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
-
-#define PDCP_DEBUG 1
-
-//#define IDROMEL_NEMO 1
-
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/log.h"
@@ -76,7 +71,6 @@
   #define MAX_PAYLOAD 1600
 
   unsigned char pdcp_read_state = 0;
-
   unsigned char pdcp_read_payload[MAX_PAYLOAD];
 #endif
 
@@ -94,8 +88,7 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
   u8              cont = 1;
   int ret;
 
-
-  while ((sdu) && (cont)) {
+  while (sdu && cont) {
 
 #ifdef USER_MODE
     // asjust the instance id when passing sdu to IP
@@ -107,11 +100,9 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
 #endif
 
 #ifdef PDCP_DEBUG
-	  LOG_I(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
-	      frame,
-	      ((pdcp_data_ind_header_t *)(sdu->data))->inst,
-	      ((pdcp_data_ind_header_t *)(sdu->data))->data_size,
-	      ((pdcp_data_ind_header_t *)(sdu->data))->rb_id);
+    LOG_I(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
+                 frame, ((pdcp_data_ind_header_t *)(sdu->data))->inst,
+                 ((pdcp_data_ind_header_t *)(sdu->data))->data_size, ((pdcp_data_ind_header_t *)(sdu->data))->rb_id);
 #endif //PDCP_DEBUG
 
     cont = 0;
@@ -138,7 +129,6 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
       bytes_wrote = pdcp_output_header_bytes_to_write;
 #endif //USER_MODE
 
-
 #ifdef PDCP_DEBUG
       LOG_I(PDCP, "Frame %d Sent %d Bytes of header to Nas_mesh\n",
 	  frame,
@@ -149,7 +139,6 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
         pdcp_output_header_bytes_to_write = pdcp_output_header_bytes_to_write - bytes_wrote;
 
         if (!pdcp_output_header_bytes_to_write) { // continue with sdu
-
           pdcp_output_sdu_bytes_to_write = ((pdcp_data_ind_header_t *) sdu->data)->data_size;
 
 #ifndef USER_MODE
@@ -162,8 +151,7 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
 	  nas_nlh->nlmsg_len += pdcp_output_sdu_bytes_to_write;
 	  ret = sendmsg(nas_sock_fd,&nas_msg,0);
 	  if (ret<0) {
-	    LOG_D(PDCP, "[PDCP_FIFOS] sendmsg returns %d\n",ret);
-	    perror("error code:");
+	    LOG_D(PDCP, "[PDCP_FIFOS] sendmsg returns %d (errno: %d)\n", ret, errno);
 	    mac_xface->macphy_exit("");
 	    break;
 	  }
@@ -195,7 +183,7 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
             LOG_W(PDCP, "RADIO->IP SEND SDU CONGESTION!\n");
           }
         } else {
-          LOG_W(PDCP, "[PDCP] RADIO->IP SEND SDU CONGESTION!\n");
+          LOG_W(PDCP, "RADIO->IP SEND SDU CONGESTION!\n");
         }
       }
     } else {
@@ -254,21 +242,15 @@ pdcp_fifo_read_input_sdus_remaining_bytes (u32_t frame,u8_t eNB_flag)
 {
 //-----------------------------------------------------------------------------
   sdu_size_t             bytes_read=0;
+
   // if remaining bytes to read
-
-
-
   if (pdcp_input_sdu_remaining_size_to_read > 0) {
-
-    // printk("[PDCP][INFO] read_input_sdus pdcp_input_sdu_remaining_size_to_read = %d \n", pdcp_input_sdu_remaining_size_to_read);
     bytes_read = rtf_get (NAS2PDCP_FIFO,
 			  &(pdcp_input_sdu_buffer[pdcp_input_sdu_size_read]),
 			  pdcp_input_sdu_remaining_size_to_read);
 
-    //printk("[PDCP][INFO] read fifo returned %d \n", bytes_read);
     if (bytes_read > 0) {
-
-      //LOG_D(PDCP, "[PDCP_FIFOS] Read %d remaining Bytes of data from Nas_mesh\n",bytes_read);
+      LOG_D(PDCP, "[PDCP_FIFOS] Read %d remaining bytes of data from Nas_mesh\n", bytes_read);
 
       pdcp_input_sdu_remaining_size_to_read = pdcp_input_sdu_remaining_size_to_read - bytes_read;
       pdcp_input_sdu_size_read = pdcp_input_sdu_size_read + bytes_read;
@@ -305,10 +287,9 @@ pdcp_fifo_read_input_sdus_remaining_bytes (u32_t frame,u8_t eNB_flag)
 }
 
 #ifndef NAS_NETLINK
-
 //-----------------------------------------------------------------------------
 int
-pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
+pdcp_fifo_read_input_sdus (u32_t frame, u8_t eNB_flag)
 {
 //-----------------------------------------------------------------------------
   int             cont;
@@ -322,14 +303,11 @@ pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
     cont = 1;
 
     while (cont > 0) {
-
       bytes_read = rtf_get (NAS2PDCP_FIFO,
                             &(((u8 *) & pdcp_input_header)[pdcp_input_index_header]),
                             sizeof (pdcp_data_req_header_t) - pdcp_input_index_header);
 
-
       if (bytes_read > 0) {
-
 #ifdef PDCP_DEBUG
 	LOG_D(PDCP, "[PDCP_FIFOS] TTI %d Read %d Bytes of data (header %d) from Nas_mesh\n",
 	    frame,
@@ -345,7 +323,7 @@ pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
 	      pdcp_input_header.data_size);
 #endif //PDCP_DEBUG
           pdcp_input_index_header = 0;
-	  if(pdcp_input_header.data_size<0){
+	  if (pdcp_input_header.data_size < 0) {
 	    LOG_E(PDCP, "READ_FIFO: DATA_SIZE %d < 0\n",pdcp_input_header.data_size);
 
 	    mac_xface->macphy_exit("");
@@ -369,8 +347,6 @@ pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
 
 #else //NAS_NETLINK
 
-
-
 //-----------------------------------------------------------------------------
 int
 pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
@@ -378,92 +354,73 @@ pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
 //-----------------------------------------------------------------------------
   int len;
 
-
-
-    if (pdcp_read_state == 0) {
-
+  if (pdcp_read_state == 0) {
 #ifdef LINUX
-      len = recvmsg(nas_sock_fd, &nas_msg, 0);
+    len = recvmsg(nas_sock_fd, &nas_msg, 0);
 #else
-      len = -1;
+    len = -1;
 #endif
 
-      if (len<0) {
-	// nothing in pdcp NAS socket
-      }
-      else {
+    if (len<0) {
+      // nothing in pdcp NAS socket
+    } else {
 #ifdef PDCP_DEBUG
-#ifdef LINUX
-		LOG_D(PDCP, "[PDCP][NETLINK] Received socket with length %d (nlmsg_len = %d)\n", \
-                            len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr));
-#else
-		LOG_D(PDCP, "[PDCP][NETLINK] nlmsg_len = %d (%d,%d)\n", \
-                            nas_nlh->nlmsg_len, sizeof(pdcp_data_req_header_t), \
-                            sizeof(struct nlmsghdr));
-#endif // LINUX
+  #ifdef LINUX
+    LOG_D(PDCP, "[PDCP][NETLINK] Received socket with length %d (nlmsg_len = %d)\n", \
+                len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr));
+  #else
+    LOG_D(PDCP, "[PDCP][NETLINK] nlmsg_len = %d (%d,%d)\n", \
+                nas_nlh->nlmsg_len, sizeof(pdcp_data_req_header_t), \
+                sizeof(struct nlmsghdr));
+  #endif // LINUX
 #endif // PDCP_DEBUG
-      }
-#ifdef LINUX
-      if (nas_nlh->nlmsg_len == sizeof (pdcp_data_req_header_t) + sizeof(struct nlmsghdr)) {
-
-	pdcp_read_state = 1;  //get
-	memcpy((void *)&pdcp_read_header,
-	       (void *)NLMSG_DATA(nas_nlh),
-	       sizeof(pdcp_data_req_header_t));
-      }
-#else //LINUX
-      pdcp_read_state = 1;
-#endif //LINUX
     }
 
-    if (pdcp_read_state == 1) {
-
 #ifdef LINUX
-      len = recvmsg(nas_sock_fd, &nas_msg, 0);
+    if (nas_nlh->nlmsg_len == sizeof (pdcp_data_req_header_t) + sizeof(struct nlmsghdr)) {
+      pdcp_read_state = 1;  //get
+      memcpy((void *)&pdcp_read_header, (void *)NLMSG_DATA(nas_nlh), sizeof(pdcp_data_req_header_t));
+    }
 #else
-      len = -1;
-#endif //LINUX
+    pdcp_read_state = 1;
+#endif
+  }
 
-      if (len<0) {
-	// nothing in pdcp NAS socket
-      }
-      else {
+  if (pdcp_read_state == 1) {
+#ifdef LINUX
+    len = recvmsg(nas_sock_fd, &nas_msg, 0);
+#else
+    len = -1;
+#endif
 
-
-	pdcp_read_state = 0;
-	//	print_active_requests()
+    if (len < 0) {
+      // nothing in pdcp NAS socket
+    } else {
+      pdcp_read_state = 0;
+      // print_active_requests()
 
 #ifdef LINUX
-	memcpy(pdcp_read_payload,
-	       (unsigned char *)NLMSG_DATA(nas_nlh),
-	       nas_nlh->nlmsg_len - sizeof(struct nlmsghdr));
+      memcpy(pdcp_read_payload, (unsigned char *)NLMSG_DATA(nas_nlh), nas_nlh->nlmsg_len - sizeof(struct nlmsghdr));
 #endif
 
 #ifdef IDROMEL_NEMO
-	pdcp_read_header.inst = 0;
+      pdcp_read_header.inst = 0;
 #endif
-	pdcp_read_header.inst = (pdcp_read_header.inst >= oai_emulation.info.nb_enb_local) ?
-	  pdcp_read_header.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
-	  pdcp_read_header.inst +  oai_emulation.info.first_enb_local;
+      pdcp_read_header.inst = (pdcp_read_header.inst >= oai_emulation.info.nb_enb_local) ? \
+              pdcp_read_header.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
+              pdcp_read_header.inst +  oai_emulation.info.first_enb_local;
 
 #ifdef PDCP_DEBUG
-	LOG_D(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
-	       frame,
-	       pdcp_read_header.inst,
-	       len,
-	       nas_nlh->nlmsg_len-sizeof(struct nlmsghdr),
-	       pdcp_read_header.rb_id);
+      LOG_D(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n", \
+                  frame, pdcp_read_header.inst, len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr), pdcp_read_header.rb_id);
 #endif
 
-	pdcp_data_req(pdcp_read_header.inst,
-		      frame,eNB_flag,
-		      pdcp_read_header.rb_id,
-		      pdcp_read_header.data_size,
-		      pdcp_read_payload);
-      }
-
+      pdcp_data_req(pdcp_read_header.inst, frame, eNB_flag, pdcp_read_header.rb_id, pdcp_read_header.data_size, pdcp_read_payload);
     }
 
-    // XXX This one is supposed to return an `int` but what?!
+  }
+
+  // XXX This one is supposed to return an `int` but what?!
 }
-#endif
+#endif // NAS_NETLINK
+
