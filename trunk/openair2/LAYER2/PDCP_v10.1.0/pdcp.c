@@ -77,8 +77,10 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   mem_block_t* pdcp_pdu = NULL;
   u16 pdcp_pdu_size = sdu_buffer_size + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 
+  LOG_I(PDCP, "Data request notification for PDCP entity with module ID %d and radio bearer ID %d\n", module_id, rab_id);
+
   if (sdu_buffer_size == 0) {
-    LOG_W(PDCP, "Handed SDU is of size 0!\n");
+    LOG_W(PDCP, "Handed SDU is of size 0! Ignoring...\n");
     return FALSE;
   }
 
@@ -86,19 +88,20 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
    * XXX MAX_IP_PACKET_SIZE is 4096, shouldn't this be MAX SDU size, which is 8188 bytes?
    */
   if (sdu_buffer_size > MAX_IP_PACKET_SIZE) {
-    LOG_W(PDCP, "Requested data size (%d) is bigger than that can be handled by PDCP!\n", sdu_buffer_size);
+    LOG_W(PDCP, "Requested SDU size (%d) is bigger than that can be handled by PDCP!\n", sdu_buffer_size);
+    // XXX What does following call do?
     mac_xface->macphy_exit("");
   }
 
   /*
-   * Allocate a new block for the header and the payload
+   * Allocate a new block for the new PDU (i.e. PDU header and SDU payload)
    */
   LOG_D(PDCP, "Asking for a new mem_block of size %d\n", pdcp_pdu_size);
   pdcp_pdu = get_free_mem_block(pdcp_pdu_size);
 
   if (pdcp_pdu != NULL) {
     /*
-     * Create a Data PDU with header and appended data
+     * Create a Data PDU with header and append data
      *
      * Place User Plane PDCP Data PDU header first
      */
@@ -106,7 +109,18 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     pdu_header.dc = PDCP_DATA_PDU;
     pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
 
-    LOG_I(PDCP, "Sequence number %d is being assigned\n", pdu_header.sn);
+    /*
+     * Validate incoming sequence number, there might be a problem with PDCP initialization
+     */
+    if (pdu_header.sn > pdcp_calculate_max_seq_num_for_given_size(pdcp->seq_num_size)) {
+      LOG_E(PDCP, "Generated sequence number (%lu) is greater than a sequence number could ever be!\n", pdu_header.sn);
+      LOG_E(PDCP, "There must be a problem with PDCP initialization, ignoring this PDU...\n");
+
+      free_mem_block(pdcp_pdu);
+      return FALSE;
+    }
+
+    LOG_I(PDCP, "Sequence number %d is assigned to current PDU\n", pdu_header.sn);
 
     /*
      * Fill PDU buffer with the struct's fields
@@ -120,7 +134,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sdu_buffer, sdu_buffer_size);
 
     /* Print octets of outgoing data in hexadecimal form */
-    LOG_D(PDCP, "Following content will be sent over RLC:\n");
+    LOG_D(PDCP, "Following content will be sent over RLC (PDCP PDU header is the first two bytes)\n");
     util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
 
 #ifdef PDCP_UNIT_TEST
@@ -199,6 +213,8 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 #endif
   mem_block_t *new_sdu = NULL;
 
+  LOG_I(PDCP, "Data indication notification for PDCP entity with module ID %d and radio bearer ID %d\n", module_id, rab_id);
+
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
     return FALSE;
@@ -222,11 +238,11 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   u16 sequence_number = pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer->data);
 
   if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp) == TRUE) {
-    LOG_D(PDCP, "Incoming SDU carries a PDU with a SN (%d) in accordance with RX window, yay!\n", sequence_number);
-    LOG_D(PDCP, "Passing to NAS driver...\n");
+    LOG_I(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window, yay!\n", sequence_number);
+    LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
   } else {
-    LOG_D(PDCP, "Incoming SDU carries a PDU with an unexpected SN (%d), RX windows snyc might have lost!\n", sequence_number);
-    LOG_D(PDCP, "Ignoring SDU...\n");
+    LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
+    LOG_D(PDCP, "Ignoring PDU...\n");
     free_mem_block(sdu_buffer);
 
     return FALSE;
@@ -235,6 +251,9 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   new_sdu = get_free_mem_block(sdu_buffer_size + sizeof (pdcp_data_ind_header_t));
 
   if (new_sdu) {
+    /*
+     * Prepend PDCP indication header which is going to be removed at pdcp_fifo_flush_sdus()
+     */
     memset(new_sdu->data, 0, sizeof (pdcp_data_ind_header_t));
     ((pdcp_data_ind_header_t *) new_sdu->data)->rb_id     = rab_id;
     ((pdcp_data_ind_header_t *) new_sdu->data)->data_size = sdu_buffer_size;
@@ -257,32 +276,25 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
      * from its second byte (skipping 0th and 1st octets, i.e.
      * PDCP header)
      */
-    memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], \
-            &sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], \
-            sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
+    memcpy(&new_sdu->data[sizeof (pdcp_data_ind_header_t)], \
+           &sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], \
+           sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
     list_add_tail_eurecom (new_sdu, sdu_list);
 
     /* Print octets of incoming data in hexadecimal form */
-    LOG_D(PDCP, "Following content has been received from RLC:\n");
+    LOG_D(PDCP, "Following content has been received from RLC (PDCP header has already been removed):\n");
     util_print_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size + sizeof(pdcp_data_ind_header_t));
 
     /*
-     * XXX Following part causes SIGSEGV!
-     *
-     * Program received signal SIGSEGV, Segmentation fault.
-     * 0x0805904a in pdcp_data_ind (module_id=0, rab_id=0, sdu_buffer_size=10, sdu_buffer=0x9267f20, pdcp_test_entity=0x851bf20, test_list=0x806a2e0)
-     * at /homes/demiray/workspace/openair4G/trunk/openair2/LAYER2/PDCP_v10.1.0/pdcp.c:247
-     * 247	    if (Mac_rlc_xface->Is_cluster_head[module_id]==1)
+     * Update PDCP statistics
      */
-#if 0
     if (eNB_flag==1) {
       Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
       Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size;
     } else {
-      Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
-      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size;
+      Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH]++;
+      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size; 
     }
-#endif
   }
 
   free_mem_block(sdu_buffer);
@@ -295,36 +307,36 @@ void
 pdcp_run (u32_t frame,u8 eNB_flag)
 {
 //-----------------------------------------------------------------------------
-  // NAS -> PDCP traffic
 
 #ifndef NAS_NETLINK
   #ifdef USER_MODE
-  #define PDCP_DUMMY_BUFFER_SIZE 38
+    #define PDCP_DUMMY_BUFFER_SIZE 38
     unsigned char pdcp_dummy_buffer[PDCP_DUMMY_BUFFER_SIZE];
   #endif
 #endif
   unsigned int diff, i, k, j;
-  if ((frame % 128) == 0) {
-    //    for(i=0;i<NB_INST;i++)
-    for (i=0; i < NB_UE_INST; i++)
-      for (j=0; j < NB_CNX_CH; j++)
-	for (k=0; k < NB_RAB_MAX; k++) {
-	  diff = Pdcp_stats_tx_bytes[i][j][k];
-	  Pdcp_stats_tx_bytes[i][j][k]=0;
-	  Pdcp_stats_tx_rate[i][j][k] = (diff*8)>>7;// (Pdcp_stats_tx_rate[i][k]*1+(7*diff*8)>>7)/8;
 
+  if ((frame % 128) == 0) { 
+    for (i=0; i < NB_UE_INST; i++) {
+      for (j=0; j < NB_CNX_CH; j++) {
+        for (k=0; k < NB_RAB_MAX; k++) {
+          diff = Pdcp_stats_tx_bytes[i][j][k];
+          Pdcp_stats_tx_bytes[i][j][k] = 0;
+          Pdcp_stats_tx_rate[i][j][k] = (diff*8) >> 7;
 
-	  diff = Pdcp_stats_rx_bytes[i][j][k];
-	  Pdcp_stats_rx_bytes[i][j][k]=0;
-	  Pdcp_stats_rx_rate[i][j][k] =(diff*8)>>7;//(Pdcp_stats_rx_rate[i][k]*1 + (7*diff*8)>>7)/8;
-	}
+          diff = Pdcp_stats_rx_bytes[i][j][k];
+          Pdcp_stats_rx_bytes[i][j][k] = 0;
+          Pdcp_stats_rx_rate[i][j][k] = (diff*8) >> 7;
+        }
+      }
+    }
   }
 
+  // NAS -> PDCP traffic
   pdcp_fifo_read_input_sdus(frame,eNB_flag);
+
   // PDCP -> NAS traffic
-#ifndef PDCP_UNIT_TEST
   pdcp_fifo_flush_sdus(frame,eNB_flag);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -355,7 +367,7 @@ void
 pdcp_config_release (module_id_t module_id, rb_id_t rab_id)
 {
 //-----------------------------------------------------------------------------
-    LOG_I(PDCP, "pdcp_config_release()\n");
+  LOG_I(PDCP, "pdcp_config_release()\n");
 }
 //-----------------------------------------------------------------------------
 
@@ -414,7 +426,7 @@ void
 pdcp_layer_init ()
 {
 //-----------------------------------------------------------------------------
-  unsigned int i,j,k;
+  unsigned int i, j, k;
 
   /*
    * Initialize SDU list
@@ -454,9 +466,9 @@ void
 pdcp_layer_cleanup ()
 //-----------------------------------------------------------------------------
 {
-    list_free (&pdcp_sdu_list);
+  list_free (&pdcp_sdu_list);
 }
 
 #ifndef USER_MODE
-EXPORT_SYMBOL(pdcp_2_nas_irq);
+  EXPORT_SYMBOL(pdcp_2_nas_irq);
 #endif //USER_MODE

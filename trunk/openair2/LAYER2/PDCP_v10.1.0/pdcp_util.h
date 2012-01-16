@@ -55,8 +55,6 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
 
   unsigned long octet_index = 0;
 
-  // XXX Utilisation of LOG_D here is temporary, LOG_T will be used afterwards so
-  // don't be scared of garbage output caused by PDCP, it'll be fixed soon :)
   LOG_D(component, "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
   LOG_D(component, "-----+-------------------------------------------------|\n");
   LOG_T(component, " 000 |");
@@ -84,4 +82,3 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
 }
 
 #endif // PDCP_UTIL_H
-

@@ -40,6 +40,7 @@
 /*
  * Initializes sequence numbering state
  * @param pdcp_entity The PDCP entity to be initialized
+ * @return BOOL TRUE on success, FALSE otherwise
  */
 BOOL pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
 {
