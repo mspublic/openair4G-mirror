@@ -41,6 +41,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include "oml.h"
 #else
 #include <asm/io.h>
 #include <asm/rtai.h>
@@ -49,7 +50,6 @@
 #define time(x) (unsigned int)(rt_get_time_ns())
 #endif
 
-typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
 
 unsigned int s0[MAX_NUM_COMPS], s1[MAX_NUM_COMPS], s2[MAX_NUM_COMPS], b[MAX_NUM_COMPS], r[MAX_NUM_COMPS];
 
@@ -111,7 +111,7 @@ unsigned int dtaus(unsigned int comp, unsigned int a, unsigned b){
   return (int) (((double)taus(comp)/(double)0xffffffff)* (double)(b-a) + (double)a);
 }
 
-
+#ifdef STANDALONE
 main() {
 
   unsigned int i,randomg, randphy;
@@ -128,4 +128,4 @@ main() {
   printf("after %d run: get rand for (OMG 0x%x, PHY 0x%x)\n",i, get_rand(OTG), get_rand(PHY));
   
 }
-
+#endif 
