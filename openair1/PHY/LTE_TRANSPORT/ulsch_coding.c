@@ -188,7 +188,7 @@ u32 ulsch_encoding(u8 *a,
     return(-1);
   }
 
-  if (harq_pid > 3) {
+  if (harq_pid > 7) {
     msg("ulsch_coding.c: Illegal harq_pid %d\n",harq_pid);
     return(-1);
   }

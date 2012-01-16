@@ -317,7 +317,7 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,
 	    phy_vars_eNB->frame,next_slot>>1);
 	
 	generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		     AMP,
+		     4*AMP,
 		     &phy_vars_eNB->lte_frame_parms,
 		     2,
 		     next_slot);
@@ -608,7 +608,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       // First half of PSS/SSS (FDD)
       if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
 	generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		     AMP,
+		     4*AMP,
 		     &phy_vars_eNB->lte_frame_parms,
 		     (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 		     next_slot);
@@ -741,7 +741,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
        
 	if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
 	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       AMP,
+		       4*AMP,
 		       &phy_vars_eNB->lte_frame_parms,
 		       (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 		       next_slot);
