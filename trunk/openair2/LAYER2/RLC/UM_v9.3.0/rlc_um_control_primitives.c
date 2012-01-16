@@ -54,7 +54,7 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
                 rb_idP);
     rlc_um_init(rlcP);
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-      rlc_um_set_debug_infos(rlcP, frame, module_idP, eNB_flagP, rb_idP, rb_typeP);
+      rlc_um_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
       rlc_um_configure(rlcP,
 		       frame,
 		       config_umP->timer_reordering,
