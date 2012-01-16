@@ -108,27 +108,30 @@ u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subf
 
   nsymb = (frame_parms->Ncp==0) ? 14 : 12;
 
-  //    printf("adjust_G_tdd2 : symbol %d, subframe %d\n",symbol,subframe);
+  //      printf("adjust_G2 : symbol %d, subframe %d\n",symbol,subframe);
   if ((subframe!=0) && (subframe!=5))  // if not PBCH/SSS or SSS
     return(0);
 
-  //first half of slot
-  if (symbol<(nsymb>>1))
+  //first half of slot and TDD (no adjustments in first slot)
+  if ((symbol<(nsymb>>1))&&
+      (frame_parms->frame_type == 1))
     return(0);
 
   // after PBCH
   if (frame_parms->frame_type==1) { //TDD 
-    if ((symbol>((nsymb>>1)+3)) && (symbol!=(nsymb-1)))
+    if ((symbol>((nsymb>>1)+3)) && 
+	(symbol!=(nsymb-1)))  ///SSS
       return(0);
 
-    if ((subframe==5) && (symbol!=(nsymb-1)))
+    if ((subframe==5) && (symbol!=(nsymb-1))) ///SSS
       return(0);
   }
   else {  // FDD
-    if ((symbol>((nsymb>>1)+3)) && (symbol!=(nsymb-1)) && (symbol!=(nsymb-2)))
+    if ((symbol>((nsymb>>1)+3)) || 
+	(symbol<((nsymb>>1)-2))) 
       return(0);
 
-    if ((subframe==5) && (symbol!=(nsymb-1))&& (symbol!=(nsymb-1)))
+    if ((subframe==5) && (symbol!=((nsymb>>1)-1))&& (symbol!=((nsymb>>1)-2)))
       return(0);
   }
 
@@ -180,8 +183,8 @@ u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subf
       }
     }
   }
-  //  printf("re_pbch_sss %d\n",re_pbch_sss);
-  return(((frame_parms->frame_type==0) ? 2 : 1) * re_pbch_sss);
+  //    printf("re_pbch_sss %d\n",re_pbch_sss);
+  return(re_pbch_sss);
 }
 
 u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe) {
@@ -189,7 +192,7 @@ u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
   u16 rb,re_pbch_sss=0;
   u8 rb_alloc_ind;
 
-  if ((subframe!=0) && (subframe!=5))  // if not PBCH/SSS or SSS
+  if ((subframe!=0) && (subframe!=5))  // if not PBCH/SSS/PSS or SSS/PSS
     return(0);
 
 
@@ -212,7 +215,7 @@ u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
       
       if (rb_alloc_ind==1) {
 	if ((rb==(frame_parms->N_RB_DL>>1)-3) || 
-	    (rb==((frame_parms->N_RB_DL>>1)+3))) {
+	    (rb==((frame_parms->N_RB_DL>>1)+3))) {  //rb taken by PBCH/SSS
 	  re_pbch_sss += 6;
 	}
 	else

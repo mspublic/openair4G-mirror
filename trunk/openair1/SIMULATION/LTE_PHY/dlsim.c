@@ -274,10 +274,11 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
 }
 #endif
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag,u16 Nid_cell,u8 tdd_config,u8 N_RB_DL,u8 osf) {
+void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag,u8 fdd_flag, u16 Nid_cell,u8 tdd_config,u8 N_RB_DL,u8 osf) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms;
   int i;
+
 
   printf("Start lte_param_init\n");
   PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
@@ -299,7 +300,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->phich_config_common.phich_resource         = oneSixth;
   lte_frame_parms->tdd_config         = tdd_config;
-  lte_frame_parms->frame_type         = 1;
+  lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
   //  lte_frame_parms->Csrs = 2;
   //  lte_frame_parms->Bsrs = 0;
   //  lte_frame_parms->kTC = 0;44
@@ -511,7 +512,7 @@ int main(int argc, char **argv) {
   short *uncoded_ber_bit;
   u8 N_RB_DL=25,osf=1;
   s16 amp;
-
+  u8 fdd_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form;
   char title[255];
@@ -525,7 +526,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpDm:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -548,6 +549,9 @@ int main(int argc, char **argv) {
 	break;
       case 'o':
 	rx_sample_offset = atoi(optarg);
+	break;
+      case 'D':
+	fdd_flag = 1;
 	break;
       case 'r':
 	/*
@@ -724,7 +728,7 @@ int main(int argc, char **argv) {
     printf("dual_stream_UE=%d\n", dual_stream_UE);
   }
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell,tdd_config,N_RB_DL,osf);  
+  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf);  
 
   
   printf("Setting mcs = %d\n",mcs);
@@ -1260,31 +1264,31 @@ int main(int argc, char **argv) {
 
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
-			subframe*2,
+			(subframe*2),
 			&PHY_vars_eNB->lte_frame_parms);
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
-			subframe*2+1,
+			(subframe*2)+1,
 			&PHY_vars_eNB->lte_frame_parms);
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
-			subframe*2+2,
+			(subframe*2)+2,
 			&PHY_vars_eNB->lte_frame_parms);
 
 #ifdef IFFT_FPGA
 	    if (n_frames==1) {
-	      write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],300*nsymb*10,1,4);
+	      write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][subframe*nsymb*300],300*nsymb,1,4);
 	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-		write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][1],300*nsymb*10,1,4);
+		write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][1][subframe*nsymb*300],300*nsymb,1,4);
 	      write_output("txsigF20.m","txsF20", txdataF2[0], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
 		write_output("txsigF21.m","txsF21", txdataF2[1], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	    }
 #else //IFFT_FPGA
 	    if (n_frames==1) {
-	      write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+	      write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
 	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-		write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+		write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
 	    }
 #endif
 
@@ -1298,7 +1302,9 @@ int main(int argc, char **argv) {
 	  
 	    if (n_frames==1) {
 	      printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
-	      write_output("txsig0.m","txs0", PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	      write_output("txsig0.m","txs0", &PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0][subframe* PHY_vars_eNB->lte_frame_parms.samples_per_tti],
+			   
+			   PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
 	    }
 	  }
 	  /*

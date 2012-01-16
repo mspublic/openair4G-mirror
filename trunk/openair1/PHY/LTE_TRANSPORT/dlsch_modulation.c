@@ -1155,24 +1155,31 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  else
 	    skip_dc = 0;
 	  // PBCH
-	  if ((subframe_offset==0) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4))) {
+	  if ((subframe_offset==0) && 
+	      (rb>((frame_parms->N_RB_DL>>1)-3)) && 
+	      (rb<((frame_parms->N_RB_DL>>1)+3)) && 
+	      (l>=(nsymb>>1)) && 
+	      (l<((nsymb>>1) + 4))) {
 	    rb_alloc_ind = 0;
 	  }
 	  //PBCH subframe 0, symbols nsymb>>1 ... nsymb>>1 + 3
-	  if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+	  if ((subframe_offset==0) && 
+	      (rb==((frame_parms->N_RB_DL>>1)-3)) && 
+	      (l>=(nsymb>>1)) && 
+	      (l<((nsymb>>1) + 4)))
 	    skip_half=1;
-	  else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+	  else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
 	    skip_half=2;
 	
 	  if (frame_parms->frame_type == 1) { // TDD
 	    //SSS TDD
-	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
 	      rb_alloc_ind = 0;
 	    }
 	    //SSS TDD
-	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-1))
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==(nsymb-1)))
 	      skip_half=1;
-	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
+	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)))
 	      skip_half=2;
 	    
 	    //PSS TDD
@@ -1186,15 +1193,17 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	      skip_half=2;
 	  }
 	  else {
-
 	    //PSS FDD
-	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-1)) ) {
+	    if (((subframe_offset==0)||(subframe_offset==5)) && 
+		(rb>((frame_parms->N_RB_DL>>1)-3)) && 
+		(rb<((frame_parms->N_RB_DL>>1)+3)) && 
+		(l==((nsymb>>1)-1)) ) {
 	      rb_alloc_ind = 0;
 	    }
 	    //PSS FDD
 	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==((nsymb>>1)-1)))
 	      skip_half=1;
-	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-1)))
+	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(((nsymb>>1)-1))))
 	      skip_half=2;
 
 	    //SSS FDD
@@ -1202,9 +1211,9 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	      rb_alloc_ind = 0;
 	    }
 	    //SSS FDD
-	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && ((l==(nsymb>>1)-2)))
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && ((l==((nsymb>>1)-2))))
 	      skip_half=1;
-		else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && ((l==(nsymb>>1)-2)))
+	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && ((l==(nsymb>>1)-2)))
 	      skip_half=2;
 
 	  }
