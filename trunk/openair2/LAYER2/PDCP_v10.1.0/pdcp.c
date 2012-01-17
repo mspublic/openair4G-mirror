@@ -450,10 +450,23 @@ pdcp_layer_init ()
   pdcp_output_sdu_bytes_to_write=0;
   pdcp_output_header_bytes_to_write=0;
   pdcp_input_sdu_remaining_size_to_read=0;
-
-  for (i=0;i<NB_UE_INST;i++) {
-    for (k=0;k<NB_CNX_CH;k++) {
-      for(j=0;j<NB_RAB_MAX;j++) {
+  /*
+   * Initialize PDCP entities (see pdcp_t at pdcp.h)
+   */
+  // set RB for eNB
+  for (i=0;i  < NB_eNB_INST; i++) 
+    for (j=NB_eNB_INST; j < NB_eNB_INST+NB_UE_INST; j++ ) 
+      pdcp_config_req(i, (j-1) * MAX_NUM_RB + DTCH  ); // default DRB
+  
+  // set RB for UE
+  for (i=NB_eNB_INST;i<NB_eNB_INST+NB_UE_INST; i++) 
+    for (j=0;j<NB_eNB_INST; j++) 
+      pdcp_config_req(i, j * MAX_NUM_RB + DTCH ); // default DRB
+  
+  
+  for (i=0;i<NB_UE_INST;i++) { // ue
+    for (k=0;k<NB_eNB_INST;k++) { // enb
+      for(j=0;j<NB_RAB_MAX;j++) {//rb
         Pdcp_stats_tx[i][k][j]=0;
         Pdcp_stats_tx_bytes[i][k][j]=0;
         Pdcp_stats_tx_bytes_last[i][k][j]=0;
@@ -463,11 +476,6 @@ pdcp_layer_init ()
         Pdcp_stats_rx_bytes[i][k][j]=0;
         Pdcp_stats_rx_bytes_last[i][k][j]=0;
         Pdcp_stats_rx_rate[i][k][j]=0;
-
-	/*
-	 * Initialize PDCP entities (see pdcp_t at pdcp.h)
-	 */
-        pdcp_config_req(i+k, j);
       }
     }
   }
