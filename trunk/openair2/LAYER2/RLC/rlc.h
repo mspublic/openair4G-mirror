@@ -50,6 +50,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
+#    include "UTIL/LOG/log.h"
 #    include "mem_block.h"
 #    include "PHY/defs.h"
 //-----------------------------------------------------------------------------
@@ -165,6 +166,8 @@ typedef struct rlc_t {
     rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];     /*!< \brief RLC AM protocol instances. */
     rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];     /*!< \brief RLC UM protocol instances. */
     rlc_tm_entity_t      m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
+    char                 m_mscgen_trace[260];
+    unsigned char        m_mscgen_trace_length;
 }rlc_t;
 
 // RK-LG was protected, public for debug
@@ -301,6 +304,17 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, c
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------
+/*
+ * Prints incoming byte stream in hexadecimal and readable form
+ *
+ * @param componentP Component identifier, see macros defined in UTIL/LOG/log.h
+ * @param dataP      Pointer to data buffer to be displayed
+ * @param sizeP      Number of octets in data buffer
+ */
+public_rlc(void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, unsigned long sizeP);)
+
+
+
 /*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
 * \brief    Interface with higher layers, map request to the RLC corresponding to the radio bearer.
 * \param[in]  module_idP       Virtualized module identifier.

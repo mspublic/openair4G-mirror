@@ -115,8 +115,6 @@ void rlc_am_send_sdu (rlc_am_entity_t *rlcP,u32_t frame, u8_t eNB_flag)
 #ifdef TRACE_RLC_STATS
         rlcP->rx_sdus += 1;
 #endif
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND_SDU] ASCII=%s\n", frame,rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_in_construction->data);
-
 #ifdef TEST_RLC_AM
         rlc_am_v9_3_0_test_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write,
 rlcP->output_sdu_in_construction);
