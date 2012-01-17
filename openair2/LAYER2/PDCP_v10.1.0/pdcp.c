@@ -199,7 +199,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer, pdcp_t* pdcp_test_entity, list_t* test_list)
 #else
-  BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer)
 #endif
 {
@@ -242,10 +242,17 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
   } else {
     LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
+    /*
+     * XXX Till we implement in-sequence delivery and duplicate discarding 
+     * mechanism all out-of-order packets will be delivered to RRC/IP
+     */
+#if 0
     LOG_D(PDCP, "Ignoring PDU...\n");
     free_mem_block(sdu_buffer);
-
     return FALSE;
+#else
+    LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
+#endif
   }
 
   new_sdu = get_free_mem_block(sdu_buffer_size + sizeof (pdcp_data_ind_header_t));
@@ -287,10 +294,11 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 
     /*
      * Update PDCP statistics
+     * XXX Following two actions are identical, is there a merge error?
      */
-    if (eNB_flag==1) {
-      Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
-      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size;
+    if (eNB_flag == 1) {
+      Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH]++;
+      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size;
     } else {
       Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH]++;
       Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size; 
