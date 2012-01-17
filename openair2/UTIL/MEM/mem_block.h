@@ -42,7 +42,7 @@ public_mem_block(mem_block_t *get_free_copy_mem_block_up (void);)
 public_mem_block(mem_block_t *copy_mem_block (mem_block_t * leP, mem_block_t * destP);)
 public_mem_block(void         display_mem_load (void);)
 
-public_mem_block(void         check_mem_area (void *arg);)
+public_mem_block(void         check_mem_area (void);)
 #    ifdef USER_MODE
 private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #    endif

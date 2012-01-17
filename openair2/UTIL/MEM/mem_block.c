@@ -298,7 +298,7 @@ get_free_copy_mem_block (void)
   } else {
     msg ("[MEM_MNGT][ERROR] POOL COPY IS EMPTY\n");
     //#ifdef DEBUG_MEM_MNGT_ALLOC
-    check_mem_area ((void *)&mem_block_var);
+    check_mem_area ();
     //    break_point ();
     //#endif
 
@@ -364,11 +364,11 @@ display_mem_load (void)
 
 //-----------------------------------------------------------------------------
 void
-check_mem_area (void *arg)
+check_mem_area (void)
 {
 //-----------------------------------------------------------------------------
   int             index, mb_index;
-  mem_pool       *memory = (mem_pool *) arg;
+  mem_pool       *memory = (mem_pool *) &mem_block_var;
 
   for (index = 0; index < MEM_MNGT_MB0_NB_BLOCKS; index++) {
     if ((memory->mem_blocks[index].data != &(memory->mem_pool0[index][0])) && (memory->mem_blocks[index].pool_id != MEM_MNGT_POOL_ID0)) {
