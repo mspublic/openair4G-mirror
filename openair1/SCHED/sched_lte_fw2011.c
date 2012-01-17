@@ -209,17 +209,17 @@ void openair_sync(void) {
   int status;
   int length;
   int ret;
-  static unsigned char clear=1, clear2=1;
-  int Nsymb, sync_pos, sync_pos_slot;
-  int Ns;
-  int l;
-  int rx_power;
-  unsigned int adac_cnt;
-  int pbch_decoded = 0;
-  int frame_mod4,pbch_tx_ant;
-  u8  dummy;
+  //  static unsigned char clear=1, clear2=1;
+  //  int Nsymb, sync_pos, sync_pos_slot;
+  //  int Ns;
+  // int l;
+  //  int rx_power;
+  //  unsigned int adac_cnt;
+  //  int pbch_decoded = 0;
+  //  int frame_mod4,pbch_tx_ant;
+  //  u8  dummy;
 
-  RTIME time;
+  //  RTIME time;
 
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
@@ -646,7 +646,7 @@ static void * openair_thread(void *param) {
 
 int slot_irq_handler(int irq, void *cookie) {
 
-  unsigned int adac_cnt,val;
+  unsigned int adac_cnt;
   unsigned short irqval;
   LTE_DL_FRAME_PARMS *frame_parms=lte_frame_parms_g;
   int rc;
@@ -657,25 +657,31 @@ int slot_irq_handler(int irq, void *cookie) {
   intr_in = 1;
 
   //  msg("Got PCIe interrupt ...\n");
+  intr_cnt++;
+  if (intr_cnt%2000 == 0)
+    msg("Interrupt cnt %d\n",intr_cnt);
+
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
-    if (openair_daq_vars.node_configured > 0) {
       // check interrupt status register
-      pci_read_config_word(pdev[0],6 , &irqval);
-      
-      if ((irqval&8) != 0)  {
+    pci_read_config_word(pdev[0],6 , &irqval);
+    
+    if ((irqval&8) != 0)  {
+
+      if (openair_daq_vars.node_configured > 0) {
+	
 	adac_cnt = (*(unsigned int *)mbox);
-	intr_cnt++;
+
 	
 	openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
 	//openair_daq_vars.slot_count=adac_cnt>>3;
-	if (openair_daq_vars.slot_count==0)
+	if (openair_daq_vars.slot_count==0) {
 	  if (openair_daq_vars.is_eNB==1)
 	    PHY_vars_eNB_g[0]->frame++;
 	  else
 	    PHY_vars_UE_g[0]->frame++;
-	
+	}
 	//if ((adac_cnt>>3) == 0)
 	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
 	  hw_frame++;
@@ -734,8 +740,12 @@ int slot_irq_handler(int irq, void *cookie) {
 	      openair_daq_vars.instance_cnt++; //now it should be 0
 	      
 	      // Signal MAC_PHY Scheduler
-	      // msg("[SCHED][slot_irq_handler] Signaling MACPHY scheduler\n");
-	      
+	      if ((openair_daq_vars.is_eNB==1) && 
+		  (PHY_vars_eNB_g[0]->frame<100))
+		msg("[SCHED][slot_irq_handler] Signaling eNB MACPHY scheduler for slot %d\n",openair_daq_vars.slot_count);
+	      else if ((openair_daq_vars.is_eNB==0) && 
+		       (PHY_vars_UE_g[0]->frame<100))
+		msg("[SCHED][slot_irq_handler] Signaling UE MACPHY scheduler for slot %d\n",openair_daq_vars.slot_count);
 	      // unlock the mutex
 	      if (pthread_mutex_unlock (&openair_mutex) != 0) {
 		msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
@@ -750,20 +760,20 @@ int slot_irq_handler(int irq, void *cookie) {
 	    }
 	  }
 	}
-	
-	rt_ack_irq(irq);
-	intr_in = 0;
-	return IRQ_HANDLED;
-	
-      } 
-      else {  // CBMIMO is not source of interrupt
-	
-	rt_pend_linux_irq(irq);
-	intr_in = 0;
-	return IRQ_NONE;
-      }
-
-    } // node_configured > 0
+      } // node_configured > 0
+      rt_ack_irq(irq);
+      intr_in = 0;
+      return IRQ_HANDLED;
+      
+    } 
+    else {  // CBMIMO is not source of interrupt
+      
+      rt_pend_linux_irq(irq);
+      intr_in = 0;
+      return IRQ_NONE;
+    }
+    
+    
     // CBMIMO1 is not activated yet (no interrupts!)
     rt_pend_linux_irq(irq);
     intr_in = 0;
@@ -808,8 +818,10 @@ int slot_irq_handler(int irq, void *cookie) {
 
 
 s32 openair_sched_init(void) {
-  
+
+
   int error_code;
+
   int* tmp;
   
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
@@ -893,8 +905,9 @@ s32 openair_sched_init(void) {
 
 void openair_sched_cleanup() {
 
+#ifdef EMOS
   int error_code;
-
+#endif
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;
 
