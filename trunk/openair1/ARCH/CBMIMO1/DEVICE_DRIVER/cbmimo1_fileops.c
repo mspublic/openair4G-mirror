@@ -218,19 +218,19 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[openair][IOCTL] Allocating frame_parms\n");
       
 #ifdef OPENAIR_LTE
-      openair_daq_vars.node_configured = phy_init_top(frame_parms);
-      msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
+      ret = phy_init_top(frame_parms);
+      msg("[openair][IOCTL] phy_init_top done: %d\n",ret);
       
       frame_parms->twiddle_fft      = twiddle_fft;
       frame_parms->twiddle_ifft     = twiddle_ifft;
       frame_parms->rev              = rev;
       
       phy_init_lte_top(frame_parms);
-      msg("[openair][IOCTL] phy_init_lte_top done: %d\n",openair_daq_vars.node_configured);
+      msg("[openair][IOCTL] phy_init_lte_top done: %d\n",ret);
 #else
-      openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
+      ret = phy_init(NB_ANTENNAS_TX);
 #endif
-      if (openair_daq_vars.node_configured < 0) {
+      if (ret < 0) {
 	printk("[openair][IOCTL] Error in configuring PHY\n");
 	break;
       }
@@ -304,6 +304,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	printk("[openair][IOCTL] Error in starting scheduler\n");
       else
 	printk("[openair][IOCTL] Scheduler started\n");
+
+      openair_daq_vars.node_configured = 1;
 
       // add Layer 1 stats in /proc/openair	
       add_openair1_stats();

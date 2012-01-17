@@ -656,32 +656,39 @@ int slot_irq_handler(int irq, void *cookie) {
 
   intr_in = 1;
 
-  //  msg("Got PCIe interrupt ...\n");
-  intr_cnt++;
   if (intr_cnt%2000 == 0)
     msg("Interrupt cnt %d\n",intr_cnt);
-
+  intr_cnt++;
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
-      // check interrupt status register
+    // check interrupt status register
     pci_read_config_word(pdev[0],6 , &irqval);
     
     if ((irqval&8) != 0)  {
 
+      //msg("got interrupt for CBMIMO1, intr_cnt=%d, node_configured=%d\n",intr_cnt,openair_daq_vars.node_configured);
+
+      // RESET PCI IRQ
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK|FROM_GRLIB_PCI_IRQ_ACK);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+	
       if (openair_daq_vars.node_configured > 0) {
 	
 	adac_cnt = (*(unsigned int *)mbox);
-
 	
 	openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
 	//openair_daq_vars.slot_count=adac_cnt>>3;
+
+	/*
 	if (openair_daq_vars.slot_count==0) {
 	  if (openair_daq_vars.is_eNB==1)
 	    PHY_vars_eNB_g[0]->frame++;
 	  else
 	    PHY_vars_UE_g[0]->frame++;
 	}
+	*/
+
 	//if ((adac_cnt>>3) == 0)
 	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
 	  hw_frame++;
@@ -698,10 +705,6 @@ int slot_irq_handler(int irq, void *cookie) {
 	  if ((hw_frame %100) == 0)
 	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, MAC Frame %d (interrupt cnt %d)\n",hw_frame,mac_xface->frame,intr_cnt);
 	*/
-	
-	// RESET PCI IRQ
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK|FROM_GRLIB_PCI_IRQ_ACK);
-	openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
 	
 	
 	tv = rt_get_time();
@@ -740,12 +743,15 @@ int slot_irq_handler(int irq, void *cookie) {
 	      openair_daq_vars.instance_cnt++; //now it should be 0
 	      
 	      // Signal MAC_PHY Scheduler
+	      /*
 	      if ((openair_daq_vars.is_eNB==1) && 
 		  (PHY_vars_eNB_g[0]->frame<100))
 		msg("[SCHED][slot_irq_handler] Signaling eNB MACPHY scheduler for slot %d\n",openair_daq_vars.slot_count);
 	      else if ((openair_daq_vars.is_eNB==0) && 
 		       (PHY_vars_UE_g[0]->frame<100))
 		msg("[SCHED][slot_irq_handler] Signaling UE MACPHY scheduler for slot %d\n",openair_daq_vars.slot_count);
+	      */
+
 	      // unlock the mutex
 	      if (pthread_mutex_unlock (&openair_mutex) != 0) {
 		msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
@@ -772,8 +778,7 @@ int slot_irq_handler(int irq, void *cookie) {
       intr_in = 0;
       return IRQ_NONE;
     }
-    
-    
+       
     // CBMIMO1 is not activated yet (no interrupts!)
     rt_pend_linux_irq(irq);
     intr_in = 0;

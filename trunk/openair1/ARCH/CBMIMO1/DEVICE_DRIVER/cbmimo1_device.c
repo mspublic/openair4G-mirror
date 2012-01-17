@@ -484,6 +484,11 @@ static void  openair_cleanup(void) {
       iounmap((void *)bar[i]);
   }
 
+  // unregister interrupt
+  printk("[openair][CLEANUP] disabling interrupt\n");
+  rt_disable_irq(pdev[0]->irq);
+  openair_irq_enabled=0;
+
 
 #ifdef BIGPHYSAREA
   if (bigphys_ptr != (char *)NULL) {
