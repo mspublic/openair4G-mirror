@@ -157,9 +157,32 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_fla
                                 mem_block_t* sdu_buffer);)
 #endif // PDCP_UNIT_TEST
 
+/*! \fn void pdcp_config_req(module_id_t, rb_id_t)
+* \brief This functions initializes relevant PDCP entity
+* \param[in] module_id Module ID of relevant PDCP entity
+* \param[in] rab_id Radio Bearer ID of relevant PDCP entity
+* \return none
+* \note None
+* @ingroup _pdcp
+*/
 public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
+/*! \fn void pdcp_config_release(module_id_t, rb_id_t)
+* \brief This functions is unused
+* \param[in] module_id Module ID of relevant PDCP entity
+* \param[in] rab_id Radio Bearer ID of relevant PDCP entity
+* \return none
+* \note None
+* @ingroup _pdcp
+*/
 public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
-
+/*! \fn void pdcp_run(u32_t, u8_t)
+* \brief Runs PDCP entity to let it handle incoming/outgoing SDUs
+* \param[in] frame Frame number
+* \param[in] eNB_flag Indicates if this PDCP entity belongs to an eNB or to a UE
+* \return none
+* \note None
+* @ingroup _pdcp
+*/
 public_pdcp(void pdcp_run (u32_t frame, u8_t eNB_flag);)
 public_pdcp(int pdcp_module_init ();)
 public_pdcp(void pdcp_module_cleanup ();)

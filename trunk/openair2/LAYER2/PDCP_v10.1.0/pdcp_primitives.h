@@ -68,6 +68,22 @@ typedef struct {
 #define PDCP_CONTROL_PDU_INTERSPERSED_ROHC_FEEDBACK_HEADER_SIZE 1
 
 /*
+ * 6.2.6 PDCP Control PDU for PDCP status report
+ */
+typedef struct {
+  u8 dc;
+  u8 pdu_type; // PDU type (see 6.3.8)
+  u16 first_missing_sn; // First missing PDCP SN
+  unsigned char* window_bitmap; // Ack/Nack information coded as a bitmap
+  u16 window_bitmap_size;
+} pdcp_control_pdu_for_pdcp_status_report;
+/*
+ * Following symbolic constant is the size of FIXED part of this PDU
+ * so bitmap size should be added to find total header size
+ */
+#define PDCP_CONTROL_PDU_STATUS_REPORT_HEADER_SIZE 2
+
+/*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *
