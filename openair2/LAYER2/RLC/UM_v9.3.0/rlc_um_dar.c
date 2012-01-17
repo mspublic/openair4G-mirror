@@ -211,6 +211,8 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                             // one whole segment of SDU in PDU
                             rlc_um_reassembly (data, size, rlcP,frame);
                         } else {
+                            //LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
+                            //      frame, rlcP->module_id,rlcP->rb_id, rlcP->module_id,rlcP->rb_id);
                             rlcP->reassembly_missing_sn_detected = 1; // not necessary but for readability of the code
                         }
 
@@ -322,9 +324,11 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                             break;
 #ifdef USER_MODE
                         default:
-			  assert(1 != 1);
+                            assert(1 != 1);
 #endif
-			  rlcP->reassembly_missing_sn_detected = 1;
+                            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
+                                  frame, rlcP->module_id,rlcP->rb_id, rlcP->module_id,rlcP->rb_id);
+                            rlcP->reassembly_missing_sn_detected = 1;
                     }
                 }
             }
@@ -332,6 +336,8 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
             rlcP->dar_buffer[sn] = NULL;
         } else {
             rlcP->last_reassemblied_missing_sn = sn;
+            //LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN %04d detected][RLC_UM][MOD %02d][RB %02d]\n",
+            //                      frame, rlcP->module_id,rlcP->rb_id, sn, rlcP->module_id,rlcP->rb_id);
             rlcP->reassembly_missing_sn_detected = 1;
             rlc_um_clear_rx_sdu(rlcP);
         }

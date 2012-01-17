@@ -271,30 +271,44 @@ rlc_um_mac_data_request (void *rlcP,u32 frame)
 {
 //-----------------------------------------------------------------------------
   struct mac_data_req data_req;
+  rlc_um_entity_t *l_rlc = (rlc_um_entity_t *) rlcP;
 
   rlc_um_get_pdus (rlcP,frame);
 
   list_init (&data_req.data, NULL);
-  list_add_list (&((rlc_um_entity_t *) rlcP)->pdus_to_mac_layer, &data_req.data);
+  list_add_list (&l_rlc->pdus_to_mac_layer, &data_req.data);
 #ifdef DEBUG_RLC_STATS
-  ((rlc_um_entity_t *) rlcP)->tx_pdus += data_req.data.nb_elements;
+  l_rlc->tx_pdus += data_req.data.nb_elements;
 #endif
 
-  LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, frame, data_req.data.nb_elements);
 
-  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
+  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (l_rlc);
   if (data_req.buffer_occupancy_in_bytes > 0) {
-    data_req.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->header_min_length_in_bytes;
+    data_req.buffer_occupancy_in_bytes += l_rlc->header_min_length_in_bytes;
   }
-  data_req.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
+  data_req.rlc_info.rlc_protocol_state = l_rlc->protocol_state;
   if (data_req.data.nb_elements > 0) {
-      LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) --->][MAC_%s][MOD %02d][]\n",
-            frame,
-            ((rlc_um_entity_t *) rlcP)->module_id,
-            ((rlc_um_entity_t *) rlcP)->rb_id,
-            data_req.data.nb_elements,
-            (((rlc_um_entity_t *) rlcP)->is_enb) ? "eNB":"UE",
-            ((rlc_um_entity_t *) rlcP)->module_id);
+      LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_req.data.nb_elements);
+      mem_block_t *tb;
+      rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) ",
+              frame,
+              l_rlc->module_id,
+              l_rlc->rb_id,
+              data_req.data.nb_elements);
+
+      tb = data_req.data.head;
+      while (tb != NULL) {
+          rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
+                                                                 (((struct mac_tb_req *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_req *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
+                                                                 ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3);
+          tb = tb->next;
+      }
+      rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "BO=%d --->][MAC_%s][MOD %02d][]\n",
+            data_req.buffer_occupancy_in_bytes,
+            (l_rlc->is_enb) ? "eNB":"UE",
+            l_rlc->module_id);
+      rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
+      LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
   }
   return data_req;
 }
@@ -304,8 +318,32 @@ void
 rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_UM_MAC_DATA_IND %p\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, frame, rlcP);
-  rlc_um_rx (rlcP, frame, eNB_flag, data_indP);
+    rlc_um_entity_t *l_rlc = (rlc_um_entity_t *) rlcP;
+    mem_block_t     *tb;
+
+    if (data_indP.data.nb_elements > 0) {
+        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_IND %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_indP.data.nb_elements);
+        rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][--- MAC_DATA_IND/ %d TB(s) ",
+              frame,
+              (l_rlc->is_enb) ? "eNB":"UE",
+              l_rlc->module_id,
+              data_indP.data.nb_elements);
+
+        tb = data_indP.data.head;
+        while (tb != NULL) {
+            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
+                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
+                                                                 ((struct mac_tb_ind *) (tb->data))->size);
+            tb = tb->next;
+        }
+        rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " --->][RLC_UM][MOD %02d][RB %02d]\n",
+            l_rlc->module_id,
+            l_rlc->rb_id);
+
+        rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
+        LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
+    }
+    rlc_um_rx (rlcP, frame, eNB_flag, data_indP);
 }
 
 //-----------------------------------------------------------------------------

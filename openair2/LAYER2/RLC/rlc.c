@@ -38,6 +38,42 @@ extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, r
 
 #define DEBUG_RLC_DATA_REQ 1
 
+void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, unsigned long sizeP)
+{
+  unsigned long octet_index = 0;
+
+  if (dataP == NULL) {
+    return;
+  }
+
+
+  LOG_D(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
+  LOG_D(componentP, "------+-------------------------------------------------|\n");
+  for (octet_index = 0; octet_index < sizeP; octet_index++) {
+    if ((octet_index % 16) == 0){
+      if (octet_index != 0) {
+          LOG_T(componentP, " |\n");
+      }
+      LOG_T(componentP, " %04d |", octet_index);
+    }
+    /*
+     * Print every single octet in hexadecimal form
+     */
+    LOG_T(componentP, " %02x", dataP[octet_index]);
+    /*
+     * Align newline and pipes according to the octets in groups of 2
+     */
+  }
+
+  /*
+   * Append enough spaces and put final pipe
+   */
+  unsigned char index;
+  for (index = octet_index; index < 16; ++index)
+    LOG_T(componentP, "   ");
+  LOG_T(componentP, " |\n");
+}
+
 //-----------------------------------------------------------------------------
 rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 				  u32_t frame,
@@ -168,6 +204,10 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
           if (sduP != NULL) {
               if (sdu_sizeP > 0) {
+                  LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_req:\n",
+                                 frame, module_idP, rb_idP);
+                  rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
+
 #ifdef DEBUG_RLC_DATA_REQ
                   msg("RLC_TYPE : %d\n",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
 #endif
@@ -307,6 +347,10 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
 //-----------------------------------------------------------------------------
 void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP) {
 //-----------------------------------------------------------------------------
+    LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_ind:\n", frame, module_idP, rb_idP);
+    rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
+    check_mem_area();
+
     if ((is_data_planeP)) {
 #ifdef DEBUG_RLC_PDCP_INTERFACE
       msg("[RLC] TTI %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",

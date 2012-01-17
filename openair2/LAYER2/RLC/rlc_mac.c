@@ -35,17 +35,13 @@ struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, n
             ((struct mac_tb_ind *) (tb->data))->data_ptr = (u8_t*)&tb->data[sizeof (mac_rlc_max_rx_header_size_t)];
             ((struct mac_tb_ind *) (tb->data))->size = tb_sizeP;
             if (crcsP)
-	      ((struct mac_tb_ind *) (tb->data))->error_indication = crcsP[nb_tb_read];
+                ((struct mac_tb_ind *) (tb->data))->error_indication = crcsP[nb_tb_read];
 
             memcpy(((struct mac_tb_ind *) (tb->data))->data_ptr, &bufferP[tbs_size], tb_sizeP);
 
 #ifdef DEBUG_MAC_INTERFACE
-            int tb_size_in_bytes;
             msg ("[MAC-RLC] DUMP RX PDU(%d bytes):", tb_sizeP);
-            for (tb_size_in_bytes = 0; tb_size_in_bytes < tb_sizeP; tb_size_in_bytes++) {
-                msg ("%02X.", ((struct mac_tb_ind *) (tb->data))->data_ptr[tb_size_in_bytes]);
-            }
-            msg ("\n");
+            rlc_util_print_hex_octets(MAC, ((struct mac_tb_ind *) (tb->data))->data_ptr, tb_sizeP);
 #endif
             nb_tb_read = nb_tb_read + 1;
             tbs_size   = tbs_size   + tb_sizeP;
@@ -54,9 +50,7 @@ struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, n
         num_tbP = num_tbP - 1;
   }
   data_ind.no_tb            = nb_tb_read;
-  //data_ind.error_indication = 0;
   data_ind.tb_size          = tb_sizeP << 3;
-  // msg("[RLC] DESERIALIZE: TB_SIZE %d\n",tb_sizeP);
 
   return data_ind;
 }
@@ -73,16 +67,10 @@ tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP) {
     if (tb != NULL) {
        tb_size = ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3;
 #ifdef DEBUG_MAC_INTERFACE
-        int tb_size_in_bytes;
         msg ("[MAC-RLC] DUMP TX PDU(%d bytes):", tb_size);
-        for (tb_size_in_bytes = 0; tb_size_in_bytes < tb_size; tb_size_in_bytes++) {
-            msg ("%02X.", ((struct mac_tb_req *) (tb->data))->data_ptr[tb_size_in_bytes]);
-        }
-        msg ("\n");
+        rlc_util_print_hex_octets(MAC, ((struct mac_tb_req *) (tb->data))->data_ptr, tb_size);
 #endif
-      // printf("mac_rlc_serialize_tb() tb size %d\n", tb_size);
        memcpy(&bufferP[tbs_size], &((struct mac_tb_req *) (tb->data))->data_ptr[0], tb_size);
-       //msg("[RLC-MAC] if RAB UM TB SN %d\n", (unsigned int)(bufferP[tbs_size] >> 1) & 0x7F);
        tbs_size = tbs_size + tb_size;
        free_mem_block(tb);
     }
@@ -158,15 +146,6 @@ void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, 
 #ifdef DEBUG_MAC_INTERFACE
                         msg("MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rb_idP, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
 #endif
-                        if (num_tbP > 0) {
-                            LOG_D(RLC, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][MAC_DATA_IND/ %d TB(s)][RLC_AM][MOD %02d][RB %02d]\n",
-                                frame,
-                                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
-                                module_idP,
-                                num_tbP,
-                                module_idP,
-                                rb_idP);
-                        }
 
                         rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
                         break;
@@ -175,28 +154,13 @@ void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, 
 #ifdef DEBUG_MAC_INTERFACE
                         msg("MAC DATA IND TO RLC_UM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
 #endif
-                        if (num_tbP > 0) {
-                            LOG_D(RLC, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][MAC_DATA_IND/ %d TB(s)][RLC_UM][MOD %02d][RB %02d]\n",
-                                frame,
-                                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
-                                module_idP,
-                                num_tbP,
-                                module_idP,
-                                rb_idP);
-                        }
                         rlc_um_mac_data_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
                         break;
 
                     case RLC_TM:
-                        if (num_tbP > 0) {
-                            LOG_D(RLC, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][MAC_DATA_IND/ %d TB(s)][RLC_TM][MOD %02d][RB %02d]\n",
-                                frame,
-                                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
-                                module_idP,
-                                num_tbP,
-                                module_idP,
-                                rb_idP);
-                        }
+#ifdef DEBUG_MAC_INTERFACE
+                        msg("MAC DATA IND TO RLC_TM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
+#endif
                         rlc_tm_mac_data_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
                         break;
 

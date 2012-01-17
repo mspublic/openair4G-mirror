@@ -154,15 +154,39 @@ struct mac_data_req
 rlc_tm_mac_data_request (void *rlcP, u32_t frame)
 {
 //-----------------------------------------------------------------------------
+  rlc_tm_entity_t *l_rlc = (rlc_tm_entity_t *) rlcP;
   struct mac_data_req data_req;
 
-  rlc_tm_no_segment ((rlc_tm_entity_t *)rlcP);
+  rlc_tm_no_segment (l_rlc);
   list_init (&data_req.data, NULL);
-  list_add_list (&((rlc_tm_entity_t *) rlcP)->pdus_to_mac_layer, &data_req.data);
+  list_add_list (&l_rlc->pdus_to_mac_layer, &data_req.data);
 
-  data_req.buffer_occupancy_in_bytes = ((rlc_tm_entity_t *) rlcP)->buffer_occupancy;
-  data_req.buffer_occupancy_in_pdus = data_req.buffer_occupancy_in_bytes / ((rlc_tm_entity_t *) rlcP)->rlc_pdu_size;
-  data_req.rlc_info.rlc_protocol_state = ((rlc_tm_entity_t *) rlcP)->protocol_state;
+  data_req.buffer_occupancy_in_bytes = l_rlc->buffer_occupancy;
+  data_req.buffer_occupancy_in_pdus = data_req.buffer_occupancy_in_bytes / l_rlc->rlc_pdu_size;
+  data_req.rlc_info.rlc_protocol_state = l_rlc->protocol_state;
+  if (data_req.data.nb_elements > 0) {
+      LOG_D(RLC, "[RLC_TM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_req.data.nb_elements);
+      mem_block_t *tb;
+      rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) ",
+              frame,
+              l_rlc->module_id,
+              l_rlc->rb_id,
+              data_req.data.nb_elements);
+
+      tb = data_req.data.head;
+      while (tb != NULL) {
+          rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "%d Bytes ",
+                                                                 ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3);
+          tb = tb->next;
+      }
+      rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "BO=%d --->][MAC_%s][MOD %02d][]\n",
+            data_req.buffer_occupancy_in_bytes,
+            (l_rlc->is_enb) ? "eNB":"UE",
+            l_rlc->module_id);
+      rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
+      LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
+  }
+
   return data_req;
 }
 
@@ -171,7 +195,31 @@ void
 rlc_tm_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  rlc_tm_rx (rlcP, frame, eNB_flag, data_indP);
+    rlc_tm_entity_t *l_rlc = (rlc_tm_entity_t *) rlcP;
+    mem_block_t     *tb;
+
+    if (data_indP.data.nb_elements > 0) {
+        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_IND %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_indP.data.nb_elements);
+        rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][--- MAC_DATA_IND/ %d TB(s) ",
+              frame,
+              (l_rlc->is_enb) ? "eNB":"UE",
+              l_rlc->module_id,
+              data_indP.data.nb_elements);
+
+        tb = data_indP.data.head;
+        while (tb != NULL) {
+            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "%d Bytes ",
+                                                                 ((struct mac_tb_ind *) (tb->data))->size);
+            tb = tb->next;
+        }
+        rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " --->][RLC_TM][MOD %02d][RB %02d]\n",
+            l_rlc->module_id,
+            l_rlc->rb_id);
+
+        rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
+        LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
+    }
+    rlc_tm_rx (rlcP, frame, eNB_flag, data_indP);
 }
 
 //-----------------------------------------------------------------------------
