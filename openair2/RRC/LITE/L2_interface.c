@@ -34,7 +34,7 @@ u32 mui=0;
 
 s8 mac_rrc_lite_data_req( u8 Mod_id,
 			  u32 frame,
-			  u16 Srb_id, 
+			  u16 Srb_id,
 			  u8 Nb_tb,
 			  char *Buffer,
 			  u8 eNB_flag,
@@ -53,7 +53,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 
     if((Srb_id & RAB_OFFSET) == BCCH){
       if(eNB_rrc_inst[Mod_id].SI.Active==0) return 0;
-      
+
       // All even frames transmit SIB in SF 5
       if ((Mac_rlc_xface->frame%2) == 0) {
 	memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].SIB1,eNB_rrc_inst[Mod_id].sizeof_SIB1);
@@ -80,8 +80,8 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
       else
 	return(0);
     }
-	
-    
+
+
     if( (Srb_id & RAB_OFFSET ) == CCCH){
       msg("[RRC][eNB%d] CCCH request (Srb_id %d)\n",Mod_id,Srb_id);
 
@@ -98,14 +98,14 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 	Sdu_size = Srb_info->Tx_buffer.payload_size;
 	Srb_info->Tx_buffer.payload_size=0;
       }
-      
+
       return (Sdu_size);
     }
-  
-    
-  
+
+
+
   }
-  
+
 
   else{   //This is an UE
 #ifdef DEBUG_RRC
@@ -129,7 +129,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 }
 
 //--------------------------------------------------------------------------------------------//
-s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_len,u8 eNB_flag,u8 eNB_index ){ 
+s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_len,u8 eNB_flag,u8 eNB_index ){
   //------------------------------------------------------------------------------------------//
 
   SRB_INFO *Srb_info;
@@ -137,9 +137,9 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 
 #ifdef DEBUG_RRC
   if (Srb_id == BCCH)
-    msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index); 
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index);
   else
-    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index);
 #endif
 
   if(eNB_flag == 0){
@@ -162,7 +162,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	}
       }
       else {
-	if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) && 
+	if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	    (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
 	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
 	  msg("[RRC][UE %d] Frame %d : Received SI (%d bytes), in window %d (SIperiod %d, SIwindowsize %d)\n",Mod_id,frame,Sdu_len,si_window,UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod,UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize);
@@ -173,9 +173,9 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	  }
 
 	}
-      } 
+      }
 
-       
+
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
 	if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE) {
@@ -185,12 +185,12 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	// After SI is received, prepare RRCConnectionRequest
 	rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
       }
-    }   
+    }
 
 
     if((Srb_id & RAB_OFFSET) == CCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[eNB_index];
-      
+
       //      msg("[RRC] RX_CCeNB_DATA %d bytes: ",Sdu_len);
       if (Sdu_len>0) {
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
@@ -208,7 +208,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
  }
 
   return(0);
-  
+
 }
 
 //-------------------------------------------------------------------------------------------//
@@ -229,9 +229,9 @@ void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u32 Srb_id, u32 sdu_size,u8 *Bu
     rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
     rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,frame,DCCH_index,Buffer,UE_index);
-  
-} 
- 
+
+}
+
 
 /*-------------------------------------------------------------------------------------------*/
 void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
@@ -242,15 +242,15 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 //  rlc_infoP.rlc_mode=RLC_UM;
 
   LOG_D(RRC,"[UE %d] Frame %d OUT OF SYNC FROM CH %d\n ",Mod_id,frame,eNB_index);
-  
+
   UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
-  UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;	
-  UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;	
+  UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
+  UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
   UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
-  
+
   UE_rrc_inst[Mod_id].Srb0[eNB_index].Rx_buffer.payload_size=0;
   UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
-  
+
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Rx_buffer.payload_size=0;
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=0;
 
@@ -265,7 +265,7 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
   }
 
 
-} 
+}
 
 /*
 u8 get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index){

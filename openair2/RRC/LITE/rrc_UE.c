@@ -133,9 +133,8 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 eNB_ind
   LOG_D(RRC,"[UE %d][RARPROC] Frame %d : Generating RRCConnectionSetupComplete\n",Mod_id,frame);
 
   size = do_RRCConnectionSetupComplete(buffer);
-      LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_UE][MOD %02d][][Tx RRCConnectionSetupComplete to ENB index %d][RRC_UE][MOD %02d][]\n",
-            frame,
-            Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+                                     frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
 
   rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
 
@@ -150,10 +149,9 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
   LOG_D(RRC,"[UE %d] Frame %d : Generating RRCConnectionReconfigurationComplete\n",Mod_id,frame);
 
   size = do_RRCConnectionReconfigurationComplete(buffer);
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionReconfigurationComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+                                     frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
 
-      LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_UE][MOD %02d][][Tx RRCConnectionReconfigurationComplete to ENB index %d][RRC_UE][MOD %02d][]\n",
-            frame,
-            Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
   rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
 }
 
@@ -207,8 +205,8 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
-      LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_UE][MOD %02d][][Rx rrcConnectionReject from ENB index %d][RRC_UE][MOD %02d][]\n",
-            frame, Mod_id+NB_eNB_INST, eNB_index, Mod_id+NB_eNB_INST);
+      LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND (rrcConnectionReject from eNB %d) --->][RRC_UE][MOD %02d][]\n",
+                                     frame, Mod_id+NB_eNB_INST, DCCH, eNB_index, Mod_id+NB_eNB_INST);
 	LOG_D(RRC,"[UE%d] Frame %d : Received RRCConnectionReject on DL-CCCH-Message\n",Mod_id,frame);
 	return 0;
 	break;

@@ -18,11 +18,11 @@ extern void *bigphys_malloc(int);
 void rrc_init_ch_req(unsigned char Mod_id, rrm_init_ch_req_t  *smsg){
  u16 Index;
  MAC_CONFIG_REQ Mac_config_req;
- // MAC_MEAS_REQ Mac_meas_req;  
+ // MAC_MEAS_REQ Mac_meas_req;
 
-  msg("-----------------------------------------------------------------------------------------------------------------\n"); 
+  msg("-----------------------------------------------------------------------------------------------------------------\n");
   printk("[RRC_CONFIG]OPENAIR RRC INIT CH %d...\n",Mod_id);
- 
+
  Mac_config_req.Lchan_type = smsg->Lchan_desc_srb0.Lchan_t;
  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&smsg->Lchan_desc_srb0,LCHAN_DESC_SIZE); //0 rx, 1 tx
  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&smsg->Lchan_desc_srb0,LCHAN_DESC_SIZE); //0 rx, 1 tx
@@ -64,31 +64,31 @@ void rrc_init_ch_req(unsigned char Mod_id, rrm_init_ch_req_t  *smsg){
  CH_rrc_inst[Mod_id].Srb1.Tx_buffer.generate_fun=ch_rrc_generate_ccch;
  CH_rrc_inst[Mod_id].Srb1.Active=1;
 
- //CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id[0]=i;	
+ //CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id[0]=i;
 
- //      CH_rrc_inst[Mod_id].Info.UE_list[0]=0;	
-      
+ //      CH_rrc_inst[Mod_id].Info.UE_list[0]=0;
+
 }
 
 void rrc_init_mr_req(unsigned char Mod_id, rrci_init_mr_req_t  *smsg){
   u16 Index;
   MAC_CONFIG_REQ Mac_config_req;
-  // MAC_MEAS_REQ Mac_meas_req;  
-  msg("-----------------------------------------------------------------------------------------------------------------\n"); 
-  msg("[RRC_CONFIG]: Node %d: INIT MR REQUEST for CH %d\n",NODE_ID[Mod_id],smsg->CH_index);  
+  // MAC_MEAS_REQ Mac_meas_req;
+  msg("-----------------------------------------------------------------------------------------------------------------\n");
+  msg("[RRC_CONFIG]: Node %d: INIT MR REQUEST for CH %d\n",NODE_ID[Mod_id],smsg->CH_index);
   Mac_config_req.Lchan_type = smsg->Lchan_desc_srb0.Lchan_t;
   memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&smsg->Lchan_desc_srb0,LCHAN_DESC_SIZE); //0 rx, 1 tx
   memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&smsg->Lchan_desc_srb0,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  
+
   Mac_config_req.UE_CH_index=smsg->CH_index;
   Mac_config_req.Lchan_id.Index=(smsg->CH_index << RAB_SHIFT2) + BCCH;
   Index=Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
   msg("[OPENAIR][RRC][RRC_CONFIG] NODE %d, Config BCCH %d done\n",UE_rrc_inst[Mod_id-NB_CH_INST].Node_id,Index);
-  
+
   UE_rrc_inst[Mod_id].Srb0[smsg->CH_index].Srb_id = Index;
   memcpy(& UE_rrc_inst[Mod_id-NB_CH_INST].Srb0[smsg->CH_index].Lchan_desc[0],(LCHAN_DESC*)&smsg->Lchan_desc_srb0,LCHAN_DESC_SIZE); //0 rx, 1 tx
   memcpy(& UE_rrc_inst[Mod_id-NB_CH_INST].Srb0[smsg->CH_index].Lchan_desc[1],(LCHAN_DESC*)&smsg->Lchan_desc_srb0,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  
+
   rrc_config_buffer(&UE_rrc_inst[Mod_id-NB_CH_INST].Srb0[smsg->CH_index],BCCH,0);
   ((CH_BCCH_HEADER*)(&UE_rrc_inst[Mod_id-NB_CH_INST].Srb0[smsg->CH_index].Rx_buffer.Header[0]))->Rv_tb_idx=0;
   UE_rrc_inst[Mod_id-NB_CH_INST].Srb0[smsg->CH_index].Active=1;
@@ -104,14 +104,14 @@ void rrc_init_mr_req(unsigned char Mod_id, rrci_init_mr_req_t  *smsg){
       UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Last_report_frame=Rrc_xface->Frame_index;
       UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Next_check_frame=Rrc_xface->Frame_index+1000;
   */
-  
+
   //printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config CCCH %d done\n",NODE_ID[Mod_id],Index);
   //      printk("check meas, LC_Index %d, Next %d, Last %d, Int %d \n",UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Mac_meas_req.Lchan_id.Index,UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Next_check_frame,UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Last_report_frame,UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Mac_meas_req.Rep_interval);
-  
+
   Mac_config_req.Lchan_type = smsg->Lchan_desc_srb1.Lchan_t;
   memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&smsg->Lchan_desc_srb1,LCHAN_DESC_SIZE); //0 rx, 1 tx
   memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&smsg->Lchan_desc_srb1,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  
+
   Mac_config_req.UE_CH_index=smsg->CH_index;
   Mac_config_req.Lchan_id.Index=(smsg->CH_index << RAB_SHIFT2) + CCCH;
   Index=Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
@@ -123,7 +123,7 @@ void rrc_init_mr_req(unsigned char Mod_id, rrci_init_mr_req_t  *smsg){
   ((CH_CCCH_HEADER*)(&UE_rrc_inst[Mod_id-NB_CH_INST].Srb1[smsg->CH_index].Rx_buffer.Header[0]))->Rv_tb_idx=0;
     UE_rrc_inst[Mod_id-NB_CH_INST].Srb1[smsg->CH_index].Active=1;
       /*
-	
+
 	Mac_meas_req.Lchan_id.Index = Index;
 	//    Mac_meas_req.UE_CH_index = i;
 	Mac_meas_req.Meas_trigger = CCCH_MEAS_TRIGGER;
@@ -136,8 +136,8 @@ void rrc_init_mr_req(unsigned char Mod_id, rrci_init_mr_req_t  *smsg){
 	UE_rrc_inst[Mod_id].Srb1[i].Meas_entry->Next_check_frame=Rrc_xface->Frame_index+1000;
 	//printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config CCCH %d done\n",NODE_ID[Mod_id],Index);
       */
-  
-  
+
+
 }
 
 
@@ -146,12 +146,12 @@ void rrc_init_mr_req(unsigned char Mod_id, rrci_init_mr_req_t  *smsg){
 void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transaction_t Trans_id){
 
   MAC_CONFIG_REQ Mac_config_req;
-  MAC_MEAS_REQ Mac_meas_req;  
+  MAC_MEAS_REQ Mac_meas_req;
   unsigned short Idx,UE_index,In_idx;
- 
+
 
   switch(Action){
-    
+
   case RRM_RB_ESTABLISH_REQ:
     {
       rrm_rb_establish_req_t *p = (rrm_rb_establish_req_t *) smsg ;
@@ -179,12 +179,12 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	memcpy(&CH_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[1],(LCHAN_DESC*)&p->Lchan_desc,LCHAN_DESC_SIZE); //0 rx, 1 tx
 	//      CH_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[0] = &DCCH_LCHAN_DESC;
 	//      CH_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[1] = &DCCH_LCHAN_DESC;
-      
+
 	//CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Rb_info.Lchan_desc[0] = &msg->Lchan_desc;
-	// CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Rb_info.Lchan_desc[1] = &msg-;  
+	// CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Rb_info.Lchan_desc[1] = &msg-;
 	//Configure a correponding measurement process
-	//	msg("[RRC]Inst %d: Programing RADIO CONFIG of DCCH LCHAN %d\n",Mod_id,Idx); 
-	//CH_rrc_inst[Mod_id].Nb_rb[UE_index]++;       
+	//	msg("[RRC]Inst %d: Programing RADIO CONFIG of DCCH LCHAN %d\n",Mod_id,Idx);
+	//CH_rrc_inst[Mod_id].Nb_rb[UE_index]++;
 	//msg("[OPENAIR][RRC] CALLING RLC CONFIG RADIO BEARER %d\n",Idx);
 	Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_um);
 	/*
@@ -195,8 +195,8 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	}
 	else
 	  memcpy(UE_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.CH_ip_addr,p->L3_info,16);
-	*/ 
-	  
+	*/
+
 
 
 
@@ -223,15 +223,15 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Next_check_frame = Rrc_xface->Frame_index + 250;
 	CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Status = NEED_RADIO_CONFIG;//RADIO CFG
 	CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Rb_info.Rb_id = Idx;
-	
+
 	memcpy(&CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Rb_info.Lchan_desc[0],&p->Lchan_desc,LCHAN_DESC_SIZE); //0 rx, 1 tx
 	memcpy(&CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Rb_info.Lchan_desc[1],&p->Lchan_desc,LCHAN_DESC_SIZE); //0 rx, 1 tx
-	
+
 	//Configure a correponding measurement process
-	msg("[RRC]Inst %d: Programing RADIO CONFIG of DTCH LCHAN %d\n",Mod_id,Idx); 
-	//CH_rrc_inst[Mod_id].Nb_rb[UE_index]++;       
+	msg("[RRC]Inst %d: Programing RADIO CONFIG of DTCH LCHAN %d\n",Mod_id,Idx);
+	//CH_rrc_inst[Mod_id].Nb_rb[UE_index]++;
 	//msg("[OPENAIR][RRC] CALLING RLC CONFIG RADIO BEARER %d\n",Idx);
-	
+
 	//	if(p->Mac_rlc_meas_desc !=NULL){
 	if(p->Lchan_desc.Lchan_t!=DTCH){
 	  Mac_meas_req.Lchan_id.Index = Idx;
@@ -241,13 +241,13 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	  Mac_meas_req.Rep_amount = p->Mac_rlc_meas_desc.Rep_amount;
 	  Mac_meas_req.Rep_interval = p->Mac_rlc_meas_desc.Rep_interval;
 	  CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Rb_info.Meas_entry=Mac_rlc_xface->mac_meas_req(Mod_id,&Mac_meas_req);
-	  CH_rrc_inst[Mod_id].Rab_meas[In_idx][UE_index].Status=NEED_RADIO_CONFIG;  
+	  CH_rrc_inst[Mod_id].Rab_meas[In_idx][UE_index].Status=NEED_RADIO_CONFIG;
 	  CH_rrc_inst[Mod_id].Rab_meas[In_idx][UE_index].Mac_meas_req.Lchan_id.Index=Idx;
 	  CH_rrc_inst[Mod_id].Rab_meas[In_idx][UE_index].Last_report_frame=Rrc_xface->Frame_index;
 	  CH_rrc_inst[Mod_id].Rab_meas[In_idx][UE_index].Next_check_frame=Rrc_xface->Frame_index+Mac_meas_req.Rep_interval;
-	}	  
-	
-      
+	}
+
+
 	if(p->Lchan_desc.Lchan_t==DTCH){
 	  CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Status = RADIO_CONFIG_OK;//RADIO CFG
 	  Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx,RADIO_ACCESS_BEARER,Rlc_info_um);
@@ -266,16 +266,16 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	send_msg(&S_rrc,msg_rrc_rb_establish_cfm(Mod_id,Idx,1,Trans_id));
     }
     break;
-    
-    
+
+
   case RRM_RB_MODIFY_REQ:{
-    //rrm_rb_modify_req_t *p = (rrm_rb_modify_req_t *) msg ;    
+    //rrm_rb_modify_req_t *p = (rrm_rb_modify_req_t *) msg ;
   }
   case RRM_RB_RELEASE_REQ:{
     //rrm_rb_release_req_t *p = (rrm_rb_release_req_t *) msg ;
   }
   }
-  
 
-  
+
+
 }
