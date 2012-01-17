@@ -40,7 +40,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "UTIL/LOG/log.h"
 
 #define DEBUG_RLC_UM_DISPLAY_TB_DATA
-//#define RLC_UM_GENERATE_ERRORS
+#define DEBUG_RLC_UM_RX
 //-----------------------------------------------------------------------------
 void
 rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
@@ -80,6 +80,8 @@ rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct m
             }
         } else {
             rlcP->rx_pdus_in_error += 1;
+            LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %d][TB indicated in error by MAC, dropped][RLC_UM][MOD %02d][RB %d]\n",
+                 frame, rlcP->module_id, rlcP->rb_id, rlcP->module_id, rlcP->rb_id);
 #ifdef DEBUG_RLC_UM_RX
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame);
 #endif

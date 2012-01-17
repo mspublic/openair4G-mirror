@@ -36,6 +36,8 @@ struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, n
             ((struct mac_tb_ind *) (tb->data))->size = tb_sizeP;
             if (crcsP)
                 ((struct mac_tb_ind *) (tb->data))->error_indication = crcsP[nb_tb_read];
+            else
+                ((struct mac_tb_ind *) (tb->data))->error_indication = 0;
 
             memcpy(((struct mac_tb_ind *) (tb->data))->data_ptr, &bufferP[tbs_size], tb_sizeP);
 
