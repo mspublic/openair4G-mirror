@@ -72,11 +72,9 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
       }
       else {
 	bzero(tmp_ptr_tx,tx_dma_buffer_size_bytes+2*PAGE_SIZE);
-#ifndef USER_MODE
 	pci_buffer[card_id][(2*i)] = (unsigned int)tmp_ptr_tx;
 	tmp_ptr_tx = (mod_sym_t*)(((unsigned int)tmp_ptr_tx + PAGE_SIZE -1) & PAGE_MASK);
 	//      reserve_mem(tmp_ptr_tx,FRAME_LENGTH_BYTES+2*PAGE_SIZE);
-#endif // //USER_MODE
 #ifdef DEBUG_PHY
 	msg("[PHY][INIT] TX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
 	    (void *)tmp_ptr_tx,
@@ -86,12 +84,7 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
       }
       
       
-      
-      
-#ifndef USER_MODE
       TX_DMA_BUFFER[card_id][i] = (int) tmp_ptr_tx;
-#endif //USER_MODE
-      
       
       
       // RX DMA Buffers
@@ -106,13 +99,10 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
       }
       else {
 	bzero(tmp_ptr,FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES+2*PAGE_SIZE);
-#ifndef USER_MODE
 	pci_buffer[card_id][1+(2*i)] = (int) tmp_ptr;
-	
 	tmp_ptr = (int*) (((unsigned long)tmp_ptr + PAGE_SIZE -1) & PAGE_MASK);
 	//          reserve_mem(tmp_ptr,FRAME_LENGTH_BYTES+2*PAGE_SIZE);
 	
-#endif //USER_MODE
 #ifdef DEBUG_PHY
 	msg("[PHY][INIT] RX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
 	    (void *)tmp_ptr,
@@ -121,20 +111,11 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
       }
       
       
-      
-      
-#ifndef USER_MODE
       RX_DMA_BUFFER[card_id][i] = (int) tmp_ptr;
-#endif // //USER_MODE
     }
-    
-    
-   
-    //  printk("[PHY][INIT] mbox = %p,rxgainreg = %p\n",PHY_vars->mbox,rxgainreg);
-    
+        
   }    
 
-#ifndef USER_MODE
 #ifndef NOCARD_TEST
   for (card_id=0;card_id<number_of_cards;card_id++) {
     // Allocate memory for PCI interface and store pointers to dma buffers
@@ -149,9 +130,9 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
 	pci_interface[card_id]->adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
 	pci_interface[card_id]->dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
       }
-      
+
       mbox = (unsigned int)(&pci_interface[0]->adac_cnt);
-      
+      msg("[PHY][INIT] mbox = %p\n",mbox);
     }
     else {
       msg("[PHY][INIT] Setting up Leon PCIe interface structure\n");
@@ -164,8 +145,8 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
 	exmimo_pci_interface[card_id]->rf.dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
       }
     }
+  }
 #endif //NOCARD_TEST
-#endif // USER_MODE
 
   return(0);
 
