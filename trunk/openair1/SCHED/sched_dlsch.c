@@ -217,7 +217,7 @@ static void * dlsch_thread(void *param) {
     }
     
     
-    debug_msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_decoding ret %d (mcs %d, TBS %d), time_in %dm time_out %d\n",
+    msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_decoding ret %d (mcs %d, TBS %d), time_in %dm time_out %d\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],ret,
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs,
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS,
@@ -241,7 +241,7 @@ static void * dlsch_thread(void *param) {
     }
   }
 
-  debug_msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",dlsch_thread_index);  
+  msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",dlsch_thread_index);  
 
 }
 
