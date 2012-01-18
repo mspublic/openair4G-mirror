@@ -128,7 +128,7 @@ static void * dlsch_thread(void *param) {
 
   rt_set_runnable_on_cpuid(pthread_self(),1);
 
-  printk("[openair][SCHED][DLSCH] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %d\n",
+  printk("[openair][SCHED][DLSCH] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %lu\n",
       dlsch_thread_index,
       (unsigned int)pthread_self(),
       pthread_self()->uses_fpu,
@@ -143,15 +143,19 @@ static void * dlsch_thread(void *param) {
 
   while (exit_openair == 0){
     
-    pthread_mutex_lock(&dlsch_mutex[dlsch_thread_index]);
-
-    while (dlsch_instance_cnt[dlsch_thread_index] < 0) {
-      pthread_cond_wait(&dlsch_cond[dlsch_thread_index],&dlsch_mutex[dlsch_thread_index]);
+    if (pthread_mutex_lock(&dlsch_mutex[dlsch_thread_index]) != 0) {
+      msg("[openair][SCHED][DLSCH] error locking mutex.\n");
     }
+    else {
 
+      while (dlsch_instance_cnt[dlsch_thread_index] < 0) {
+	pthread_cond_wait(&dlsch_cond[dlsch_thread_index],&dlsch_mutex[dlsch_thread_index]);
+      }
 
-    dlsch_instance_cnt[dlsch_thread_index]--;
-    pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]);	
+      if (pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]) != 0) {	
+	msg("[openair][SCHED][DLSCH] error unlocking mutex.\n");
+      }
+    }
 
     msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d from cpu %d\n",phy_vars_ue->frame,dlsch_thread_index,rtai_cpuid());
 
@@ -184,9 +188,8 @@ static void * dlsch_thread(void *param) {
 			   dlsch_subframe[dlsch_thread_index],
 			   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
       
-      
-      
       time_out = openair_get_mbox();
+
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	phy_vars_ue->dlsch_errors[eNB_id]++;
 	
@@ -214,10 +217,11 @@ static void * dlsch_thread(void *param) {
     }
     
     
-    msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",
+    debug_msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_decoding ret %d (mcs %d, TBS %d), time_in %dm time_out %d\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],ret,
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs,
-	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS);
+	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS,
+	      time_in, time_out);
     msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	      phy_vars_ue->dlsch_errors[eNB_id],
@@ -225,14 +229,24 @@ static void * dlsch_thread(void *param) {
 	      phy_vars_ue->dlsch_fer[eNB_id],
 	      phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id]);
     
+    if (pthread_mutex_lock(&dlsch_mutex[dlsch_thread_index]) != 0) {
+      msg("[openair][SCHED][DLSCH] error locking mutex.\n");
+    }
+    else {
+      dlsch_instance_cnt[dlsch_thread_index]--;
+      
+      if (pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]) != 0) {	
+	msg("[openair][SCHED][DLSCH] error unlocking mutex.\n");
+      }
+    }
   }
-  
-  msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",dlsch_thread_index);
-  dlsch_instance_cnt[dlsch_thread_index] = 99;
+
+  debug_msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",dlsch_thread_index);  
+
 }
 
 int init_dlsch_threads(void) {
-
+  
   int error_code;
   struct sched_param p;
   int dlsch_thread_index;
