@@ -190,7 +190,10 @@ int phy_init(unsigned char nb_antennas_tx) {
   printk("[PHY][INIT] Setting up Leon PCI interface structure\n");
   pci_interface = (PCI_interface_t *)((unsigned int)(tmp_ptr + ((OFDM_SYMBOL_SIZE_BYTES+FRAME_LENGTH_BYTES+PAGE_SIZE)>>2)));
   printk("[PHY][INIT] PCI interface at %p\n",pci_interface);
-  openair_writel(pdev[0],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface));  
+  if (vid != XILINX_VENDOR)
+    openair_writel(pdev[0],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface));  
+  else
+    iowrite32((unsigned int)virt_to_phys((volatile void*)pci_interface),(bar[0]+0x1c));
 
   mbox = (unsigned int)(&pci_interface->adac_cnt);
   for (i=0;i<NB_ANTENNAS_RX;i++) {
