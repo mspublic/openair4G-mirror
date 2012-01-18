@@ -127,16 +127,16 @@ typedef struct {
   u16 LCID:5;  // octet 1 LSB
   u16 E:1;
   u16 R:2;     // octet 1 MSB
-  u16 L:7;     // octet 2 LSB
   u16 F:1;     // octet 2 MSB
+  u16 L:7;     // octet 2 LSB
 } __attribute__((__packed__))SCH_SUBHEADER_SHORT;
 
 typedef struct {
   u32 LCID:5;   // octet 1 LSB
   u32 E:1;
   u32 R:2;      // octet 1 MSB
+  u32 F:1;      // octet 3 MSB     
   u32 L:15;      // octet 3/2 LSB
-  u32 F:1;      // octet 2 MSB     
   u32 padding:8; 
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
  
@@ -374,7 +374,7 @@ typedef struct {
   /// buffer status for each lcid
   u8  BSR[MAX_NUM_LCID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcid
-  u8  BSR_bytes[MAX_NUM_LCID];
+  u16  BSR_bytes[MAX_NUM_LCID];
   /// short bsr lcid
   u8  BSR_short_lcid;
   /// SR pending as defined in 36.321

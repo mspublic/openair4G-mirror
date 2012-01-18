@@ -60,7 +60,7 @@
 //#define DEBUG_RACH_MAC
 //#define DEBUG_RACH_RRC
 //#define DEBUG_SI_RRC
-//#define DEBUG_HEADER_PARSING
+#define DEBUG_HEADER_PARSING
 
 /*
 #ifndef USER_MODE
@@ -120,14 +120,14 @@ unsigned char *parse_header(unsigned char *mac_header,
 
       if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
-	mac_header_ptr += sizeof(SCH_SUBHEADER_SHORT);
+	mac_header_ptr += 2;
       }
       else {
 	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
-	mac_header_ptr += sizeof(SCH_SUBHEADER_LONG);
+	mac_header_ptr += 3;
       }
 #ifdef DEBUG_HEADER_PARSING
-      LOG_T(MAC,"[UE] sdu %d lcid %d length %d\n",num_sdus,lcid,length);
+      LOG_T(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",num_sdus,lcid,length,mac_header_ptr-mac_header);
 #endif
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -136,12 +136,10 @@ unsigned char *parse_header(unsigned char *mac_header,
     else {  // This is a control element subheader
       rx_ces[num_ces] = lcid;
       num_ces++;
+      mac_header_ptr ++;
 #ifdef DEBUG_HEADER_PARSING
-      LOG_T(MAC,"[UE]ce %d lcid %d\n",num_ces,lcid);
+      LOG_T(MAC,"[UE] ce %d lcid %d (offset now %d)\n",num_ces,lcid,mac_header_ptr-mac_header);
 #endif
-
-
-      mac_header_ptr += sizeof(SCH_SUBHEADER_FIXED);
     }
   }
   *num_ce = num_ces;
@@ -239,9 +237,14 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
   LOG_D(MAC,"[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,
 	frame,eNB_index,num_ce,num_sdu);
 #endif
-
+  /*
+  msg("[MAC][eNB %d] First 32 bytes of DLSCH : \n");
+  for (i=0;i<32;i++)
+    msg("%x.",sdu[i]);
+  msg("\n");  
+  */
   for (i=0;i<num_ce;i++) {
-
+    //    printf("ce %d : %d\n",i,rx_ces[i]);
       switch (rx_ces[i]) {
       case UE_CONT_RES:
 #ifdef DEBUG_HEADER_PARSING
@@ -251,7 +254,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
 	  UE_mac_inst[Mod_id].RA_active=0;
 	  // check if RA procedure has finished completely (no contention)
-	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)];
+	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[2];//2=sizeof(SCH_SUBHEADER_SHORT);
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
 	      LOG_D(MAC,"Contention detected, RA failed\n");
@@ -264,8 +267,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
 	break;
       case TIMING_ADV_CMD:
 #ifdef DEBUG_HEADER_PARSING
-	LOG_D(MAC,"[UE] CE %d : UE Timing Advance :",i);
-	LOG_T(MAC,"[UE] %d\n",payload_ptr[0]);
+	LOG_D(MAC,"[UE] CE %d : UE Timing Advance : %d",i,payload_ptr[0]);
 #endif
 	process_timing_advance(Mod_id,payload_ptr[0]);
 	payload_ptr++;
@@ -326,7 +328,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
 		       0,
 		       DTCH,
 		       (char *)payload_ptr,
-				      rx_lengths[i],
+		       rx_lengths[i],
 		       1,
 		       NULL);
     }
@@ -418,7 +420,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     else {
       first_element=1;
     }
-    mac_header_ptr->R = 0;
+    mac_header_ptr->R    = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = CRNTI;
     last_size=1;
@@ -588,11 +590,11 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   int lcid;
   // Compute header length
 
-  dcch_header_len=sizeof(SCH_SUBHEADER_SHORT);
-  dcch1_header_len=sizeof(SCH_SUBHEADER_SHORT);
+  dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
+  dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   // hypo length,in case of long header skip the padding byte
-  dtch_header_len=(UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 128 ) ? sizeof(SCH_SUBHEADER_LONG)-1 : sizeof(SCH_SUBHEADER_SHORT);
-  bsr_header_len = sizeof(SCH_SUBHEADER_FIXED);
+  dtch_header_len=(UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 128 ) ? 3 : 2 ; //sizeof(SCH_SUBHEADER_LONG)-1 : sizeof(SCH_SUBHEADER_SHORT);
+  bsr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
   bsr_ce_len = get_bsr_len (Mod_id, buflen);
   if (bsr_ce_len > 0 ){
     bsr_len = bsr_ce_len + bsr_header_len;
@@ -656,15 +658,15 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     // adjust the dtch header lenght
     if ((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 128) &&
 	((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH]+bsr_len+dcch_header_len+dcch1_header_len+dtch_header_len) > buflen))
-      dtch_header_len = sizeof(SCH_SUBHEADER_LONG);
+      dtch_header_len = 3;//sizeof(SCH_SUBHEADER_LONG);
 
 
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 				    DTCH,
 				    buflen-bsr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
 
-    LOG_D(MAC,"[UE %d] DTCH has %d bytes to send (buffer %d, header %d))\n",
-	  Mod_id,rlc_status.bytes_in_buffer,buflen,dtch_header_len);
+    LOG_D(MAC,"[UE %d] DTCH has %d bytes to send (buffer %d, header %d), BSR_bytes[DTCH] %d)\n",
+	  Mod_id,rlc_status.bytes_in_buffer,buflen,dtch_header_len,UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH]);
 
     sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
 					     DTCH,
@@ -872,7 +874,7 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen) {
   pdu=0;
   for (lcid=DCCH; lcid <= DTCH; lcid++ ) { // dcch, dcch1, dtch
     if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] > 0 )
-      pdu += (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] + sizeof(SCH_SUBHEADER_SHORT) + bsr_len);
+      pdu += (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] +  bsr_len + 2); //2 = sizeof(SCH_SUBHEADER_SHORT)
     if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] > 128 ) // long header size: adjust the header size
       pdu += 1;
     // current phy buff can not transport all sdu for this lcid -> transmit a bsr for this lcid

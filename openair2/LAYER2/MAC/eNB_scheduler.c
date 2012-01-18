@@ -24,7 +24,7 @@
 
 
 #define DEBUG_eNB_SCHEDULER 1
-//#define DEBUG_HEADER_PARSING 0
+#define DEBUG_HEADER_PARSING 0
 //#define DEBUG_PACKET_TRACE 0
 
 //#define ICIC 0
@@ -380,14 +380,14 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 
       if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
-	mac_header_ptr += sizeof(SCH_SUBHEADER_SHORT);
+	mac_header_ptr += 2;//sizeof(SCH_SUBHEADER_SHORT);
       }
       else {
 	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
-	mac_header_ptr += sizeof(SCH_SUBHEADER_LONG);
+	mac_header_ptr += 3;//sizeof(SCH_SUBHEADER_LONG);
       }
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[eNB %d] sdu %d lcid %d length %d\n",Mod_id,num_sdus,lcid,length);
+      LOG_D(MAC,"[eNB] sdu %d lcid %d length %d\n",num_sdus,lcid,length);
 #endif
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -399,7 +399,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
       //#ifdef DEBUG_HEADER_PARSING
       LOG_D(MAC,"[eNB] bsr ce %d lcid %d\n",num_ces,lcid);
       //#endif
-      mac_header_ptr += sizeof(SCH_SUBHEADER_FIXED);
+      mac_header_ptr++;// sizeof(SCH_SUBHEADER_FIXED);
     }
   }
   *num_ce = num_ces;
@@ -524,8 +524,8 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned char short_padding) {
 
   SCH_SUBHEADER_FIXED *mac_header_ptr = (SCH_SUBHEADER_FIXED *)mac_header;
-  unsigned char first_element=0,last_size=0,i;
-  unsigned char mac_header_control_elements[16],*ce_ptr;
+  u8 first_element=0,last_size=0,i;
+  u8 mac_header_control_elements[16],*ce_ptr;
 
   ce_ptr = &mac_header_control_elements[0];
 
@@ -571,11 +571,11 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = TIMING_ADV_CMD;
     last_size=1;
-    //    printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
+    //        printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
     ((TIMING_ADVANCE_CMD *)ce_ptr)->R=0;
     ((TIMING_ADVANCE_CMD *)ce_ptr)->TA=timing_advance_cmd&0x3f;
     ce_ptr+=sizeof(TIMING_ADVANCE_CMD);
-    //    printf("offset %d\n",ce_ptr-mac_header_control_elements);
+    //        printf("offset %d\n",ce_ptr-mac_header_control_elements);
   }
 
   if (ue_cont_res_id) {
@@ -667,12 +667,14 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 
 
     mac_header_ptr+=last_size;
-
+    //    printf("After subheaders %d\n",(u8*)mac_header_ptr - mac_header);
 
     if ((ce_ptr-mac_header_control_elements) > 0) {
+      //      printf("Copying %d bytes for control elements\n",ce_ptr-mac_header_control_elements);
       memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
       mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
     }
+    //    printf("After CEs %d\n",(u8*)mac_header_ptr - mac_header);
   }
 
   return((unsigned char*)mac_header_ptr - mac_header);
@@ -1427,9 +1429,10 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
       case 1:
 
       case 2:
-
+	printf("Adding UE spec DCI for %d PRBS (%x) => ",nb_rb,rballoc);
 	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
 	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
+	//	printf("%x\n",((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
 	add_ue_spec_dci(DCI_pdu,
 			DLSCH_dci,
 			rnti,
@@ -3744,7 +3747,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	    eNB_UE_stats->UE_timing_offset/4,
 	    next_ue);
 #endif
-
+	/*	      
+	msg("[MAC][eNB %d] First 16 bytes of DLSCH : \n");
+	for (i=0;i<16;i++)
+	  msg("%x.",dlsch_buffer[i]);
+	msg("\n");
+	*/
 	// cycle through SDUs and place in dlsch_buffer
 	memcpy(&eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0][offset],dlsch_buffer,sdu_length_total);
 	// memcpy(&eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
@@ -3764,7 +3772,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 #ifndef FULL_BUFFER
 
 	while (TBS < (sdu_length_total + offset))  {
-	  nb_rb += 2;  // to be replaced with RA allocation size for other than 25 PRBs!!!!!!!
+	  nb_rb += 2;  // 
 	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
 	    TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,mac_xface->lte_frame_parms->N_RB_DL);
@@ -4241,8 +4249,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
-	// schedule_ue_spec(Mod_id,subframe,0,0);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+      schedule_ue_spec(Mod_id,frame,subframe,nprb,nCCE);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
     }
 
     break;
