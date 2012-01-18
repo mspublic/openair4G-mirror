@@ -367,6 +367,12 @@ void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TIMER t-Reordering expiration\n", rlcP->module_id, rlcP->rb_id, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] timer_reordering=%d frame=%d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->timer_reordering, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] set VR(UR)=%03d to", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur);
+            LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- t-Reordering Timed-out --->][RLC_UM][MOD %02d][RB %02d]\n",
+                frame,
+                rlcP->module_id,
+                rlcP->rb_id,
+                rlcP->module_id,
+                rlcP->rb_id);
             rlcP->vr_ur = rlcP->vr_ux;
             while (rlc_um_get_pdu_from_dar_buffer(rlcP, rlcP->vr_ur)) {
                 rlcP->vr_ur = (rlcP->vr_ur+1)%rlcP->sn_modulo;

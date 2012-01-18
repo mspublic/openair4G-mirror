@@ -97,7 +97,7 @@ void rlc_am_release (rlc_am_entity_t *rlcP)
 void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
-  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reordering=%d t_status_prohibit=%d --->][RLC_AM][MOD %02d][RB %02d]\n",
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d) --->][RLC_AM][MOD %02d][RB %02d]\n",
                                                                                                        frame,
                                                                                                        ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
                                                                                                        module_idP,
@@ -397,9 +397,21 @@ rlc_am_mac_data_request (void *rlcP,u32 frame)
 
       tb = data_req.data.head;
       while (tb != NULL) {
-          rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
+          if ((((struct mac_tb_req *) (tb->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
+              rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
                                                                  (((struct mac_tb_req *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_req *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
                                                                  ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3);
+          } else {
+              if ((((struct mac_tb_req *) (tb->data))->data_ptr[1] & 0x02) == 0 ) {
+                  rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " STATUS ACK SN %d ... %d Bytes ",
+                                                                 (((struct mac_tb_req *) (tb->data))->data_ptr[1] >> 2) +  (((u16_t)((((struct mac_tb_req *) (tb->data))->data_ptr[0]) & 0x0F)) << 8),
+                                                                 ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3);
+              } else {
+                  rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " STATUS ACK SN %d %d Bytes ",
+                                                                 (((struct mac_tb_req *) (tb->data))->data_ptr[1] >> 2) +  (((u16_t)((((struct mac_tb_req *) (tb->data))->data_ptr[0]) & 0x0F)) << 8),
+                                                                 ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3);
+              }
+          }
           tb = tb->next;
       }
       rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "BO=%d --->][MAC_%s][MOD %02d][]\n",
@@ -430,9 +442,21 @@ rlc_am_mac_data_indication (void *rlcP, u32_t frame, u8 eNB_flag, struct mac_dat
 
         tb = data_indP.data.head;
         while (tb != NULL) {
-            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
-                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
-                                                                 ((struct mac_tb_ind *) (tb->data))->size);
+            if ((((struct mac_tb_ind *) (tb->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
+                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+            } else {
+                if ((((struct mac_tb_ind *) (tb->data))->data_ptr[1] & 0x02) == 0 ) {
+                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " STATUS ACK SN %d ... %d Bytes ",
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1] >> 2) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x0F)) << 8),
+                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+                } else {
+                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " STATUS ACK SN %d %d Bytes ",
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1] >> 2) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x0F)) << 8),
+                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+                }
+            }
             tb = tb->next;
         }
         rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " --->][RLC_AM][MOD %02d][RB %02d]\n",

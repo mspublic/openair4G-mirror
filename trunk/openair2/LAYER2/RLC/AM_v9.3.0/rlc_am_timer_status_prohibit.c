@@ -47,6 +47,12 @@ void rlc_am_check_timer_status_prohibit(rlc_am_entity_t *rlcP,u32_t frame)
 
             LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-STATUS-PROHIBIT] TIME-OUT\n", frame,
                         rlcP->module_id, rlcP->rb_id);
+            LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- t-StatusProhibit Timed-out --->][RLC_AM][MOD %02d][RB %02d]\n",
+                frame,
+                rlcP->module_id,
+                rlcP->rb_id,
+                rlcP->module_id,
+                rlcP->rb_id);
 #warning         TO DO rlc_am_check_timer_status_prohibit
             rlcP->t_status_prohibit.frame_time_out = frame + rlcP->t_status_prohibit.time_out;
         }

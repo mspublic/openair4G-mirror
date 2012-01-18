@@ -55,7 +55,12 @@ void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP,u32_t frame)
             rlcP->t_poll_retransmit.timed_out = 1;
             LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T_POLL_RETRANSMIT] TIME-OUT\n", frame,
                         rlcP->module_id, rlcP->rb_id);
-
+            LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- t-PollRetransmit Timed-out --->][RLC_AM][MOD %02d][RB %02d]\n",
+                frame,
+                rlcP->module_id,
+                rlcP->rb_id,
+                rlcP->module_id,
+                rlcP->rb_id);
 
 #warning         TO DO rlc_am_check_timer_poll_retransmit
             rlcP->t_poll_retransmit.frame_time_out = frame + rlcP->t_poll_retransmit.time_out;
