@@ -57,11 +57,7 @@ int generate_pss(mod_sym_t **txdataF,
   unsigned short k,m,aa;
   u8 Nid2;
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
   unsigned char *primary_sync_tab;
-#else
-  short *primary_sync;
-#endif
 #else
   short *primary_sync;
 #endif
@@ -71,33 +67,21 @@ int generate_pss(mod_sym_t **txdataF,
   switch (Nid2) {
   case 0:
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
     primary_sync_tab = primary_synch0_tab;
-#else
-    primary_sync = primary_synch0;
-#endif
 #else
     primary_sync = primary_synch0;
 #endif
     break;
   case 1:
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
     primary_sync_tab = primary_synch1_tab;
-#else
-    primary_sync = primary_synch1;
-#endif
 #else
     primary_sync = primary_synch1;
 #endif
     break;
   case 2:
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
     primary_sync_tab = primary_synch2_tab;
-#else
-    primary_sync = primary_synch2;
-#endif
 #else
     primary_sync = primary_synch2;
 #endif
@@ -117,18 +101,13 @@ int generate_pss(mod_sym_t **txdataF,
 
   // The PSS occupies the inner 6 RBs, which start at
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
   k = (frame_parms->N_RB_DL-3)*12+5;
-#else
-  k = frame_parms->ofdm_symbol_size-3*12+5;
-#endif
 #else
   k = frame_parms->ofdm_symbol_size-3*12+5;
 #endif
   //printf("[PSS] k = %d\n",k);
   for (m=5;m<67;m++) {
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
     txdataF[aa][slot_offset*Nsymb/2*frame_parms->N_RB_DL*12 + symbol*frame_parms->N_RB_DL*12 + k] = primary_sync_tab[m];
 #else
     ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
@@ -138,27 +117,10 @@ int generate_pss(mod_sym_t **txdataF,
 			    symbol*frame_parms->ofdm_symbol_size + k) + 1] = 
       (amp * primary_sync[2*m+1]) >> 15;
 #endif
-#else
-    //        printf("generate_pss: offset is %d (Nsymb %d)\n",slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
-    // 	   symbol*frame_parms->ofdm_symbol_size,Nsymb);
-    ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
-			    symbol*frame_parms->ofdm_symbol_size + k)] = 
-      (amp * primary_sync[2*m]) >> 15; 
-    ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
-			    symbol*frame_parms->ofdm_symbol_size + k) + 1] = 
-      (amp * primary_sync[2*m+1]) >> 15;
-#endif	
     k+=1;
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT
     if (k >= frame_parms->N_RB_DL*12) 
       k-=frame_parms->N_RB_DL*12;
-#else
-    if (k >= frame_parms->ofdm_symbol_size) {
-      k++; //skip DC
-      k-=frame_parms->ofdm_symbol_size;
-    }
-#endif
 #else
     if (k >= frame_parms->ofdm_symbol_size) {
       k++; //skip DC
