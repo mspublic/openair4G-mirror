@@ -27,7 +27,7 @@ typedef enum {
 typedef struct PHY_FRAMING {
   u_long	 fc_khz;         /*!< \brief Carrier Frequency (kHz)*/
   u_long	 fs_khz;         /*!< \brief Sampling Frequency (kHz)*/
-  u_short         Nsymb ;         /*!< \brief Number of OFDM Symbols per TTI */
+  u_short        Nsymb ;         /*!< \brief Number of OFDM Symbols per TTI */
   u_short        Nd;             /*!< \brief Number of OFDM Carriers */
   u_char         log2Nd;         /*!< \brief Log2 of Number of OFDM Carriers */
   u_short	 Nc;             /*!< \brief Number of Prefix Samples*/
@@ -37,27 +37,12 @@ typedef struct PHY_FRAMING {
 } PHY_FRAMING;
 
 
+/// mod_sym_t is the type of txdataF
 #ifdef IFFT_FPGA
-
-  #ifndef RAW_IFFT
-  typedef unsigned char mod_sym_t;
-  #else
-  typedef int mod_sym_t;
-  #endif //RAW_IFFT
-
+typedef unsigned char mod_sym_t; 
 #else
-  #ifdef IFFT_FPGA_UE
-    #ifndef RAW_IFFT
-    typedef unsigned char mod_sym_t;
-    #else
-    typedef int mod_sym_t;
-    #endif //RAW_IFFT
-  #else
-  typedef int mod_sym_t;
-  #endif
-#endif
-
-
+typedef int mod_sym_t;
+#endif //IFFT_FPGA
 
 
 #endif /*__PHY_SPEC_DEFS_TOP_H__ */ 
