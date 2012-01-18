@@ -90,6 +90,8 @@ void init_SI(u8 Mod_id) {
 
     msg("pusch_config_common.cyclicShift  = %ld\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
 
+  LOG_D(RRC, "[MSC_MSG][FRAME unknown][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) --->][MAC_UE][MOD %02d][]\n",
+             Mod_id, Mod_id);
     Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,0,0,
 				      (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
 				      (struct PhysicalConfigDedicated *)NULL,
@@ -307,7 +309,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
       break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest :
-      LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx rrcConnectionRequest][RRC_eNB][MOD %02d][]\n",
+      LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_eNB][MOD %02d][][--- MAC_DATA_IND  (rrcConnectionRequest on SRB0) -->][RRC_eNB][MOD %02d][]\n",
             frame, Mod_id, Mod_id);
 
       rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
@@ -375,7 +377,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 	break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentRequest :
-      LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx rrcConnectionReestablishmentRequest][RRC_eNB][MOD %02d][]\n",
+      LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_eNB][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReestablishmentRequest on SRB0) -->][RRC_eNB][MOD %02d][]\n",
             frame, Mod_id, Mod_id);
       LOG_D(RRC,"[eNB %d] Frame %d : RRCConnectionReestablishmentRequest not supported yet\n",Mod_id,frame);
       break;
@@ -411,8 +413,9 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
 
   LOG_D(RRC,"[eNB %d] Generate %d bytes (RRCConnectionReconfiguration) for DCCH UE %d\n",Mod_id,size,UE_index);
-  LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Tx rrcConnectionReconfiguration][RRC_eNB][MOD %02d][]\n",
-            frame, Mod_id, Mod_id);
+
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+                                     frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
   rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
 
 
@@ -464,6 +467,8 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 #endif
 
 
+    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
+            frame, Mod_id, UE_index, Mod_id);
 	DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity;
 	Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
 					  (RadioResourceConfigCommonSIB_t *)NULL,
@@ -485,6 +490,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			     RADIO_ACCESS_BEARER,Rlc_info_um);
 	}
 	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 0;
+    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
+            frame, Mod_id, UE_index, Mod_id);
+
 	Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
 					  (RadioResourceConfigCommonSIB_t *)NULL,
 					  eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
@@ -542,6 +550,8 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
   }
   */
 
+  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 UE %d) --->][MAC_eNB][MOD %02d][]\n",
+            frame, Mod_id, UE_index, Mod_id);
   Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
 				    (RadioResourceConfigCommonSIB_t *)NULL,
 				    eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
