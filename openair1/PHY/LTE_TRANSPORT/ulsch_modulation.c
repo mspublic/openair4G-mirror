@@ -239,7 +239,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
   //  u8 harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  u8 harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
+  u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==0)?1:0)+frame,subframe);
   u8 Q_m;
   mod_sym_t *txptr;
   u32 symbol_offset;
@@ -257,7 +257,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
     return;
   }
 
-  if (harq_pid > 3) {
+  if (harq_pid > 7) {
     msg("ulsch_modulation.c: Illegal harq_pid %d\n",harq_pid);
     return;
   }

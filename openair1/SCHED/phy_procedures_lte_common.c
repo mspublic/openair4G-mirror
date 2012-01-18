@@ -146,9 +146,11 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned char current_subframe) {
 
   u8 ul_subframe=0;
+  u32 ul_frame;
 
   if (frame_parms->frame_type ==0) {
     ul_subframe = (current_subframe>4) ? (current_subframe-4) : (current_subframe+6);
+    ul_frame    = (current_subframe>3) ? (frame+1) : frame; 
   }
   else {
     switch (frame_parms->tdd_config) {
@@ -210,7 +212,7 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
     
-  return(subframe2harq_pid(frame_parms,frame,ul_subframe));
+  return(subframe2harq_pid(frame_parms,ul_frame,ul_subframe));
 
 }
 
@@ -480,8 +482,10 @@ lte_subframe_t get_subframe_direction(u8 Mod_id,u8 subframe) {
 
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
 
-  //  printf("phich_subframe_to_harq_pid.c: subframe %d\n",subframe);
-  return(subframe2harq_pid(frame_parms,frame,phich_subframe2_pusch_subframe(frame_parms,subframe)));
+  printf("phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
+  return(subframe2harq_pid(frame_parms,
+			   phich_frame2_pusch_frame(frame_parms,frame,subframe),
+			   phich_subframe2_pusch_subframe(frame_parms,subframe)));
 }
 
 unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
@@ -533,6 +537,26 @@ u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n){
       return((n+4)%10);
 
 }
+
+u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n){
+
+    if ((frame_parms->frame_type == 1) && 
+	(frame_parms->tdd_config == 1) &&
+	((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+      return(frame + (n==1 ? 0 : 1));
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     ((n==0)||(n==1)||(n==5)||(n==6)))  
+      return(frame + (n>=5 ? 1 : 0));
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     (n==9)) // tdd_config 6 SF 9
+      return(frame+1);
+    else
+      return(frame+(n>=6 ? 1 : 0));
+
+}
+
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
   s8 UE_id;
   if ((PHY_vars_eNB_g == NULL) || (PHY_vars_eNB_g[Mod_id] == NULL)) {

@@ -403,7 +403,7 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_flag    = format;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_Ncs1    = ncs1;
 
-  phy_vars_ue->sr = sr;
+
   UE_transport_info[phy_vars_ue->Mod_id].cntl.sr            = sr;
 
   if (format == pucch_format1a) {
@@ -414,6 +414,9 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
   else if (format == pucch_format1b) {
     phy_vars_ue->pucch_payload[0] = pucch_payload[0] + (pucch_payload[1]<<1);
     UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_payload = pucch_payload[0] + (pucch_payload[1]<<1);
+  }
+  else if (format == pucch_format1) {
+    phy_vars_ue->sr = sr;
   }
 }
 

@@ -581,12 +581,14 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
     
       // get harq_pid from subframe relationship
-      harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,(next_slot>>1));
+      harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,
+				   (((next_slot>>1)==0)?1:0) + phy_vars_ue->frame,
+				   (next_slot>>1));
       
-      
+
 #ifdef OPENAIR2
       if ((phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) && 
-	  (phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id] == phy_vars_ue->frame) && 
+	  (phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id] == (((next_slot>>1)==0)?1:0) + phy_vars_ue->frame) && 
 	  (phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id] == (next_slot>>1))) { // Initial Transmission of Msg3
 	
 	phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
@@ -945,12 +947,13 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     } // mode != PRACH
     //  }// next_slot is even
     //  else {  // next_slot is odd, do the PRACH here
-    phy_vars_ue->generate_prach=0;
+
     if (phy_vars_ue->UE_mode[eNB_id] == PRACH) {
       // check if we have PRACH opportunity
 
       if (is_prach_subframe(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,next_slot>>1)) {
 #ifdef OPENAIR2
+	phy_vars_ue->generate_prach=0;
 	// ask L2 for RACH transport
 	if ((phy_vars_ue->prach_resources[eNB_id] = mac_xface->ue_get_rach(phy_vars_ue->Mod_id,
 									   phy_vars_ue->frame,
@@ -958,8 +961,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 									   next_slot>>1))!=NULL) {
 #endif
 	  
-	  //	if (phy_vars_ue->prach_timer==0) {
 	  phy_vars_ue->generate_prach=1;
+	  phy_vars_ue->prach_cnt=0;
 	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
 	  
 	  if (abstraction_flag == 0) {
@@ -981,17 +984,22 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
 	  }
-	  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, slot %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), l3msg \n",
-		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot,eNB_id,
+	  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), l3msg \n",
+		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
 		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
 		get_PL(phy_vars_ue->Mod_id,eNB_id));
 	  phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
 #ifdef OPENAIR2
 	}
 #endif
-      }	  
+      }
+      else {
+	phy_vars_ue->prach_cnt++;
+	if (phy_vars_ue->prach_cnt==2)
+	  phy_vars_ue->generate_prach=0;
+      }
     } // mode is PRACH
-  } // next_slot is odd
+  } // next_slot is even
 }
 
 void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
@@ -1813,8 +1821,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
 	  }
 
-#ifdef PHY_ABSTRACTION
 	  else {
+	    printf("Calling dlsch_decoding_emul ...\n");
 #ifdef PHY_ABSTRACTION
 	    ret = dlsch_decoding_emul(phy_vars_ue,
 				      (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
@@ -1822,7 +1830,6 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				      eNB_id);
 #endif
 	  }
-#endif
 
 	  // for debugging
 	  // ret = (1+MAX_TURBO_ITERATIONS);
@@ -2098,6 +2105,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef DEBUG_PHY_PROC
 	  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d subframe %d Received RAR  mode %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)), phy_vars_ue->UE_mode[eNB_id]);
 #endif	  
+
 	  if ((phy_vars_ue->UE_mode[eNB_id] != PUSCH) && (phy_vars_ue->prach_resources[eNB_id]->Msg3!=NULL)) {
 #ifdef OPENAIR2
 	    LOG_D(PHY,"[UE  %d][RARPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n",
@@ -2131,7 +2139,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      LOG_D(PHY,"[UE  %d][RARPROC] Got Msg3_alloc Frame %d subframe %d: Msg3_frame %d, Msg3_subframe %d\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->frame,
-		  last_slot>>1,
+		  (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		  phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id],
 		  phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id]);
 

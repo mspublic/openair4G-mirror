@@ -328,6 +328,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     break;
   case format1:
+
     harq_pid  = ((DCI1_5MHz_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
       msg("dci_tools.c: ERROR: Format 1: harq_pid >= 8\n");
@@ -1663,7 +1664,9 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (rnti == ra_rnti)
       harq_pid = 0;
     else
-      harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,(subframe+4)%10);
+      harq_pid = subframe2harq_pid(frame_parms,
+				   pdcch_alloc2ul_frame(frame_parms,phy_vars_ue->frame,subframe),
+				   pdcch_alloc2ul_subframe(frame_parms,subframe));
     //    msg("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
@@ -1933,7 +1936,12 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   if (dci_format == format0) {
 
 
-    harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->frame,(subframe+4)%10);
+    harq_pid = subframe2harq_pid(frame_parms,			      
+				 pdcch_alloc2ul_frame(frame_parms,
+						      ((subframe==0)?1:0)+phy_vars_eNB->frame,
+						      subframe),
+				 pdcch_alloc2ul_subframe(frame_parms,subframe));
+
     rb_alloc = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
     if (rb_alloc>RIV_max) {
       msg("dci_tools.c: ERROR: Format 0: rb_alloc > RIV_max\n");
