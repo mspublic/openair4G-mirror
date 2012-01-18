@@ -29,7 +29,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   s32 **ul_ch_estimates_0=  eNB_pusch_vars->drs_ch_estimates_0[eNB_id];
   s32 **ul_ch_estimates_1=  eNB_pusch_vars->drs_ch_estimates_1[eNB_id];
   s32 **rxdataF_ext=  eNB_pusch_vars->rxdataF_ext[eNB_id];
-  u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->frame,subframe);
+  u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
 
   u16 N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
   u16 aa,k,Msc_RS,Msc_RS_idx,symbol_offset,i,j;

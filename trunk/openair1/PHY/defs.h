@@ -304,6 +304,7 @@ typedef struct
   int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
   u8               generate_prach;
+  u8               prach_cnt;
   u8               prach_PreambleIndex;
   //  u8               prach_timer;
   int              rx_offset; // Timing offset

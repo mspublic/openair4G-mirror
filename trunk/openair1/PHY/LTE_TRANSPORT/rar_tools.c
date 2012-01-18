@@ -68,7 +68,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
   u8 harq_pid = get_Msg3_harq_pid(frame_parms,frame,subframe);
   
-  msg("[PHY][eNB]generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
+  msg("[PHY][eNB][RARPROC] generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
   
   ulsch->harq_processes[harq_pid]->TPC                = rar->TPC;
 
@@ -108,7 +108,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
   msg("ulsch ra (eNB): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
   msg("ulsch ra (eNB): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  msg("ulsch ra (eNB): harq_pid %d\n",0);
+  msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
   msg("ulsch ra (eNB): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
   msg("ulsch ra (eNB): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
   msg("ulsch ra (eNB): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
@@ -123,7 +123,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 				      unsigned char eNB_id ){
   
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
-
+  u32 frame              = phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id];
   unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
   unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
   LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
