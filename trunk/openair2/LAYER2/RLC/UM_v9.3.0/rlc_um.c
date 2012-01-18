@@ -331,8 +331,11 @@ rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_d
 
         tb = data_indP.data.head;
         while (tb != NULL) {
-            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
+            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %c%c%c %d Bytes ",
                                                                  (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
+                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x10) ?  '}':'{',
+                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x08) ?  '{':'}',
+                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x04) ?  'E':'_',
                                                                  ((struct mac_tb_ind *) (tb->data))->size);
             tb = tb->next;
         }
