@@ -297,7 +297,7 @@ enum MODE {
 /// Data structure for transmission.
 typedef struct {
   // RAW TX sample buffer
-  mod_sym_t *TX_DMA_BUFFER[2];
+  char *TX_DMA_BUFFER[2];
   /*
   // Total transmit gain
   unsigned int tx_total_gain_dB;
