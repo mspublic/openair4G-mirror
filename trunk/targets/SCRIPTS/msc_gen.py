@@ -27,7 +27,7 @@ import os.path
 from datetime import date
 
 MSCGEN_OUTPUT_TYPE       = "png"
-MAX_MESSAGES_PER_PAGE    = 100
+MAX_MESSAGES_PER_PAGE    = 36
 
 SYSTEM_FRAME_NUMBER_STR  = 'FRAME'
 MODULE_STR               = 'MOD'
@@ -65,16 +65,16 @@ g_messages         = []
 g_display_order_dic  = {'IP': 0, 'RRC_eNB': 1, 'RRC_UE': 1, 'PDCP': 32, 'RLC_AM': 33, 'RLC_UM': 33, 'RLC_TM': 33, 'MAC_eNB': 1024, 'MAC_UE': 1024, 'PHY': 2048}
 
 # Display color of messages of sending entities
-g_display_color  = {'IP':      '\"#00ff00\"',
-                    'RRC_UE':  '\"#008080\"',
-                    'RRC_eNB': '\"#008080\"',
-                    'PDCP':    '\"#0000ff\"',
-                    'RLC_AM':  '\"#ffb000\"',
-                    'RLC_UM':  '\"#ffb000\"',
-                    'RLC_TM':  '\"#ffb000\"',
-                    'MAC_UE':  '\"#808000\"',
-                    'MAC_eNB': '\"#808000\"',
-                    'PHY':     '\"#00ff00\"'}
+g_display_color  = {'IP':      '\"teal\"',
+                    'RRC_UE':  '\"red\"',
+                    'RRC_eNB': '\"red\"',
+                    'PDCP':    '\"blue\"',
+                    'RLC_AM':  '\"navy\"',
+                    'RLC_UM':  '\"navy\"',
+                    'RLC_TM':  '\"navy\"',
+                    'MAC_UE':  '\"indigo\"',
+                    'MAC_eNB': '\"indigo\"',
+                    'PHY':     '\"purple\"'}
 
 
 g_final_display_order_list = []
@@ -133,6 +133,7 @@ def parse_oai_log_file():
         entity_name_src       = 'unknown'
         entity_name_main_src  = 'unknown'
         entity_name_type_src  = 'unknown'
+        entity_tuple_name_src = 'unknown'
 
         module_id_dest        = 'unknown'
         radio_bearer_id_dest  = '-1'
@@ -140,6 +141,7 @@ def parse_oai_log_file():
         entity_name_dest      = 'unknown'
         entity_name_main_dest = 'unknown'
         entity_name_type_dest = 'unknown'
+        entity_tuple_name_dest= 'unknown'
 
         # if line is a trace of the creation of a new protocol instance
         if MSC_NEW_STR in line:
@@ -222,6 +224,12 @@ def parse_oai_log_file():
                 entity_name_main_src = entity_dic['name_main']
                 entity_name_type_src = entity_dic['name_type']
 
+                if entity_name_type_src != '':
+                    entity_tuple_name_src = entity_name_main_src + '_' + entity_name_type_src
+                else:
+                    entity_tuple_name_src = entity_name_main_src
+
+
                 message              = partition[5].strip().strip(']').strip('<').strip('>').strip('-')
 
 
@@ -242,8 +250,8 @@ def parse_oai_log_file():
                 message_dic['entity_src']      = protocol_entity_src
                 message_dic['entity_dst']      = protocol_entity_dest
                 message_dic['msg']             = message
-                message_dic['line_color']      = g_display_color[entity_name_src]
-                message_dic['text_color']      = g_display_color[entity_name_src]
+                message_dic['line_color']      = g_display_color[entity_tuple_name_src]
+                message_dic['text_color']      = g_display_color[entity_tuple_name_src]
                 message_dic['time']            = system_frame_number
                 message_dic['seq_no']          = sequence_number_generator()
                 #print ('%s' % message_dic)
@@ -271,6 +279,11 @@ def parse_oai_log_file():
                 entity_name_main_src = entity_dic['name_main']
                 entity_name_type_src = entity_dic['name_type']
 
+                if entity_name_type_src != '':
+                    entity_tuple_name_src = entity_name_main_src + '_' + entity_name_type_src
+                else:
+                    entity_tuple_name_src = entity_name_main_src
+
 
                 box                   = partition[5].strip().strip(']')
 
@@ -293,7 +306,7 @@ def parse_oai_log_file():
                 message_dic['box']              = box
                 message_dic['box_type']         = 'note'
                 message_dic['text_color']       = '\"#000000\"'
-                message_dic['textbg_color']     = g_display_color[entity_name_src]
+                message_dic['textbg_color']     = g_display_color[entity_tuple_name_src]
                 message_dic['time']             = system_frame_number
                 message_dic['seq_no']           = sequence_number_generator()
                 #print ('%s' % message_dic)
