@@ -172,6 +172,13 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
 
             if (!pdcp_output_sdu_bytes_to_write) { // OK finish with this SDU
 	      // LOG_D(PDCP, "rb sent a sdu qos_sap %d\n", sapiP);
+              LOG_D(PDCP,
+                    "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- PDCP_DATA_IND / %d Bytes --->][IP][MOD %02d][]\n",
+                    frame,
+                    ((pdcp_data_ind_header_t *)(sdu->data))->inst,
+                    ((pdcp_data_ind_header_t *)(sdu->data))->rb_id,
+                    ((pdcp_data_ind_header_t *)(sdu->data))->data_size,
+                    ((pdcp_data_ind_header_t *)(sdu->data))->inst);
 
               list_remove_head (&pdcp_sdu_list);
               free_mem_block (sdu);
@@ -413,6 +420,9 @@ pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
 #ifdef PDCP_DEBUG
       LOG_D(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n", \
                   frame, pdcp_read_header.inst, len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr), pdcp_read_header.rb_id);
+      LOG_D(PDCP, "[MSC_MSG][FRAME %05d][IP][MOD %02d][][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %02d][RB %02d]\n",
+                                 frame, pdcp_read_header.inst,  pdcp_read_header.data_size, pdcp_read_header.inst, pdcp_read_header.rb_id);
+
 #endif
 
       pdcp_data_req(pdcp_read_header.inst, frame, eNB_flag, pdcp_read_header.rb_id, pdcp_read_header.data_size, pdcp_read_payload);
