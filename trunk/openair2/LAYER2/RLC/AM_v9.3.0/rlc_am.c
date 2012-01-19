@@ -429,8 +429,12 @@ void
 rlc_am_mac_data_indication (void *rlcP, u32_t frame, u8 eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-    rlc_am_entity_t *l_rlc = (rlc_am_entity_t *) rlcP;
-    mem_block_t     *tb;
+    rlc_am_entity_t           *l_rlc = (rlc_am_entity_t *) rlcP;
+    rlc_am_pdu_info_t         pdu_info;
+    rlc_am_control_pdu_info_t control_pdu_info;
+    mem_block_t               *tb;
+    int                       num_li;
+    int                       num_nack;
 
     if (data_indP.data.nb_elements > 0) {
         LOG_D(RLC, "[RLC_AM][MOD %d][RB %d][FRAME %05d] MAC_DATA_IND %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_indP.data.nb_elements);
@@ -443,23 +447,51 @@ rlc_am_mac_data_indication (void *rlcP, u32_t frame, u8 eNB_flag, struct mac_dat
         tb = data_indP.data.head;
         while (tb != NULL) {
             if ((((struct mac_tb_ind *) (tb->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
-                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %c%c%c%c%c %d Bytes ",
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x40) ?  'R':'_',
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x20) ?  'P':'_',
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x10) ?  '}':'{',
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x08) ?  '{':'}',
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x04) ?  'E':'_',
-                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+                rlc_am_get_data_pdu_infos(frame,(rlc_am_pdu_sn_10_t*) ((struct mac_tb_ind *) (tb->data))->data_ptr, (s16_t) ((struct mac_tb_ind *) (tb->data))->size, &pdu_info);
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length],
+                                                                       "\\nSN %d %c%c%c%c%c",
+                                                                       (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
+                                                                       (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x40) ?  'R':'_',
+                                                                       (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x20) ?  'P':'_',
+                                                                       (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x10) ?  '}':'{',
+                                                                       (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x08) ?  '{':'}',
+                                                                       (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x04) ?  'E':'_');
+                num_li = 0;
+                if (pdu_info.num_li > 0) {
+                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "/LI(");
+                    while (num_li != (pdu_info.num_li - 1)) {
+                        rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "%d,",
+                                                                        pdu_info.li_list[num_li]);
+                        num_li += 1;
+                    }
+                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "%d)", pdu_info.li_list[num_li]);
+                }
+
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length],
+                                                                       "/%d Bytes ",
+                                                                       ((struct mac_tb_ind *) (tb->data))->size);
             } else {
-                if ((((struct mac_tb_ind *) (tb->data))->data_ptr[1] & 0x02) == 0 ) {
-                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " STATUS ACK SN %d ... %d Bytes ",
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1] >> 2) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x0F)) << 8),
-                                                                    ((struct mac_tb_ind *) (tb->data))->size);
-                } else {
-                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " STATUS ACK SN %d %d Bytes ",
-                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1] >> 2) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x0F)) << 8),
-                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+                rlc_am_get_control_pdu_infos((rlc_am_pdu_sn_10_t*) ((struct mac_tb_ind *) (tb->data))->data_ptr,
+                                             (s16_t) ((struct mac_tb_ind *) (tb->data))->size,
+                                             &control_pdu_info);
+
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length],
+                                                                       "\\nSTATUS ACK SN %d",
+                                                                       control_pdu_info.ack_sn);
+                num_nack = 0;
+                while  (num_nack != control_pdu_info.num_nack) {
+                    if (control_pdu_info.nack_list[num_nack].e2) {
+                        rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length],
+                                                                               "\\nNACK SN %d {%d:%d}",
+                                                                               control_pdu_info.nack_list[num_nack].nack_sn,
+                                                                               control_pdu_info.nack_list[num_nack].so_start,
+                                                                               control_pdu_info.nack_list[num_nack].so_end);
+                    } else {
+                        rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length],
+                                                                               "\\nNACK SN %d",
+                                                                               control_pdu_info.nack_list[num_nack].nack_sn);
+                    }
+                    num_nack += 1;
                 }
             }
             tb = tb->next;

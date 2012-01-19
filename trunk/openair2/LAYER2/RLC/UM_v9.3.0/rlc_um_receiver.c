@@ -56,31 +56,24 @@ rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct m
         rlcP->rx_pdus += 1;
 #endif
 
-#ifdef DEBUG_RLC_UM_DISPLAY_TB_DATA
-        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] DUMP RX PDU(%d bytes):", rlcP->module_id, rlcP->rb_id, frame, ((struct mac_tb_ind *) (tb->data))->size);
-        for (tb_size_in_bytes = 0; tb_size_in_bytes < ((struct mac_tb_ind *) (tb->data))->size; tb_size_in_bytes++) {
-            msg ("%02X.", ((struct mac_tb_ind *) (tb->data))->data_ptr[tb_size_in_bytes]);
-        }
-        msg ("\n");
-#endif
 
 #ifdef RLC_UM_GENERATE_ERRORS
-            if (random() % 10 == 4) {
-                ((struct mac_tb_ind *) (tb->data))->error_indication = 1;
-                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]  RX PDU GENERATE ERROR", rlcP->module_id, rlcP->rb_id, frame);
-            }
+        if (random() % 10 == 4) {
+            ((struct mac_tb_ind *) (tb->data))->error_indication = 1;
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]  RX PDU GENERATE ERROR", rlcP->module_id, rlcP->rb_id, frame);
+        }
 #endif
 
         if (!(((struct mac_tb_ind *) (tb->data))->error_indication)) {
             first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
             tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
             if (tb_size_in_bytes > 0) {
-	      rlc_um_receive_process_dar (rlcP, frame, eNB_flag, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
-	      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
+                rlc_um_receive_process_dar (rlcP, frame, eNB_flag, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
             }
         } else {
             rlcP->rx_pdus_in_error += 1;
-            LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %d][TB indicated in error by MAC, dropped][RLC_UM][MOD %02d][RB %d]\n",
+            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %d][TB indicated in error by MAC, dropped][RLC_UM][MOD %02d][RB %d]\n",
                  frame, rlcP->module_id, rlcP->rb_id, rlcP->module_id, rlcP->rb_id);
 #ifdef DEBUG_RLC_UM_RX
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame);
