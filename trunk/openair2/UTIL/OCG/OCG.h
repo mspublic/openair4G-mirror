@@ -71,6 +71,7 @@ extern "C" {
 #define DIR_TO_MOBIGEN "XML_to_mobigen/" /*!< \brief the folder that mobigen detects XML file from OCG */
 
 #define NUMBER_OF_MASTER_MAX   20
+
 /* @}*/ 
 
 
@@ -185,7 +186,9 @@ enum {
 				}Ricean_8Tap;
 
 				typedef struct {
-					double decorrelation_distance_m;// (m), default 100m					double variance_dB;// (dB), default 10dB					double inter_site_correlation;// (0...1), default 1, not yet implemented
+					double decorrelation_distance_m;// (m), default 100m
+					double variance_dB;// (dB), default 10dB
+					double inter_site_correlation;// (0...1), default 1, not yet implemented
 				}Shadowing;
 
 		typedef struct {
@@ -395,79 +398,39 @@ typedef struct {
 
 
 		typedef struct {
-			char *selected_option;
-			int cbr;
-			int gaming;
-			int m2m;
-		}Application_Type;
-
-				typedef struct {
-					char *selected_option;
-					int udp;
-					int tcp;
-				}Transport_Protocol;
-					
-				typedef struct {
-					char *selected_option;
-					int fixed;
-					int uniform;
-				}Packet_Size;	/*!< \brief Distribution of packet size  */
-
-				////// options of Packet_Size
-				typedef struct {
-					double fixed_value_byte;
-				}Fixed_Packet_Size;
-					
-				typedef struct {
-					double min_value_byte;
-					double max_value_byte;
-				}Uniform_Packet_Size;
-				//////
-
-				typedef struct {
-					char *selected_option;
-					int fixed;
-					int uniform;
-					int poisson;
-				}Inter_Arrival_Time;	/*!< \brief Distribution of packet's inter-arrival time */
-
-				////// options of Inter_Arrival_Time
-				typedef struct {
-					double fixed_value_ms;
-				}Fixed_Inter_Arrival_Time;
-					
-				typedef struct {
-					double min_value_ms;
-					double max_value_ms;
-				}Uniform_Inter_Arrival_Time;
-					
-				typedef struct {
-					double expected_inter_arrival_time_ms;
-				}Poisson_Inter_Arrival_Time;
-				//////
+			char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		}Predefined_Traffic;
 
 		typedef struct {
-			Transport_Protocol transport_protocol;
-
-			Packet_Size packet_size;
-			// ! Note: the following two options are for Packet_Size, we put them here for the sake of simplicity of the XML file
-			Fixed_Packet_Size fixed_packet_size;
-			Uniform_Packet_Size uniform_packet_size;
-
-			Inter_Arrival_Time inter_arrival_time; 
-			// ! Note: the following three options are for Inter_Arrival_Time, we put them here for the sake of simplicity of the XML file
-			Fixed_Inter_Arrival_Time fixed_inter_arrival_time;
-			Uniform_Inter_Arrival_Time uniform_inter_arrival_time;
-			Poisson_Inter_Arrival_Time poisson_inter_arrival_time;
-		}Traffic;
+			char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *traffic[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *transport_protocol[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *ip_version[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int idt_min_ms[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int idt_max_ms[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int idt_standard_deviation[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int idt_lambda[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			char *size_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int size_min_byte[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int size_max_byte[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int size_standard_deviation[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int size_lambda[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int stream[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+			int destination_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		}Customized_Traffic;
 
 /** @defgroup _app_config Application Configuration
  *  @ingroup _OSD_basic
  *  @brief Including application type and traffic information
  * @{*/ 
 typedef struct {
-	Application_Type application_type;
-	Traffic traffic;
+	Predefined_Traffic predefined_traffic;
+	Customized_Traffic customized_traffic;
 }Application_Config;
 /* @}*/
 
@@ -572,6 +535,7 @@ typedef struct {
 	unsigned char ocm_enabled;
 	unsigned char opt_enabled;
 	unsigned char otg_enabled;
+	unsigned char otg_traffic;
         unsigned char omg_model_enb;
 	unsigned char omg_model_ue;
 	unsigned char omg_model_ue_current; // when mixed mbility is used 
@@ -594,6 +558,9 @@ typedef struct {
 	unsigned char extended_prefix_flag;
 	unsigned char N_RB_DL;
 	unsigned char transmission_mode;
+
+	int max_predefined_traffic_config_index;
+	int max_customized_traffic_config_index;
 
 }Info;
 /* @}*/

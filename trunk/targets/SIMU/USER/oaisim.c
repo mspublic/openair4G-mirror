@@ -526,7 +526,7 @@ main (int argc, char **argv)
     double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePToFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:A"))
+  while ((c = getopt (argc, argv, "haePoFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A"))
 	 != -1) {
 
     switch (c) {
@@ -644,6 +644,7 @@ main (int argc, char **argv)
       break;
     case 'T':
       oai_emulation.info.otg_enabled = 1;
+      oai_emulation.info.otg_traffic = atoi (optarg);
       break;
     case 'P':
       oai_emulation.info.opt_enabled = 1;
@@ -717,7 +718,7 @@ main (int argc, char **argv)
     LOG_I (EMU, " Total number of master %d my master id %d\n", oai_emulation.info.nb_master, oai_emulation.info.master_id);
 #ifdef LINUX
     // RK: Where is this now?
-    //    init_bypass ();
+       init_bypass ();
 #endif
 
     while (emu_tx_status != SYNCED_TRANSPORT) {

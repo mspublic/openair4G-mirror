@@ -42,11 +42,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <errno.h>
+
 #include "otg_tx.h"
 #include "otg_tx_socket.h"
 #include "otg_vars.h"
-#include "../MATH/oml.h"
-#include "../../../openair1/PHY/CODING/defs.h"
 #include "../MATH/oml.h"
 #include "net_data.h"
 #include "otg_config.h"
@@ -111,24 +117,23 @@ printf("client TCP IPv4\n");
  
 	SOCKET sock;
 	SOCKADDR_IN sin;
-	char buffer[32] = "aymen";
 	int sock_err;
 	double idt;
 	int size;
 	char *payload;
  
-    /* Si les sockets Windows fonctionnent */
+    /*  If we are in the case of Windows sockets*/
     if(!erreur)
     {
-        /* Création de la socket */
+        /* Create socket */
         sock = socket(AF_INET, SOCK_STREAM, 0);
  
-        /* Configuration de la connexion */
+        /* Configure the connection */
         sin.sin_addr.s_addr = inet_addr("127.0.0.1");
         sin.sin_family = AF_INET;
         sin.sin_port = htons(PORT);
  
-        /* Si l'on a réussi à se connecter */
+        /* connection is ok */
         if(connect(sock, (SOCKADDR*)&sin, sizeof(sin)) != SOCKET_ERROR)
         {
             printf("Create socket %s with dst port %d\n", inet_ntoa(sin.sin_addr), htons(sin.sin_port));
@@ -151,14 +156,14 @@ printf("client TCP IPv4\n");
 		}
 
 	//}
-        /* sinon, on affiche "Impossible de se connecter" */
+        /* connection is not possible..." */
         else
         {
             printf("Connection is not possible\n");
         }
  
 	
-        /* On ferme la socket */
+        /* close the socket */
         closesocket(sock);
  
         #if defined (WIN32)
@@ -179,12 +184,59 @@ printf("client TCP IPv6\n");
 
 }
 
+
+
+
 void client_socket_udp_ip4(int src, int dst, int state)
 {
 
+	int size;
+	char *payload;
+
 printf("client UDP IPv4\n");
 
+  int sockfd, ok, addr_in_size;
+  u_short portnum = 12345;
+  struct sockaddr_in *to;
+  struct hostent *toinfo;
+  char *msg, *htoname = "127.0.0.1";
+  u_long toaddr;
+
+//  msg = (char *)malloc(MAX_SIZE);
+  to = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+
+  if((toinfo = gethostbyname(htoname)) == NULL){
+    fprintf(stderr,"Error %d in gethostbyname: %s\n",
+      errno,sys_errlist[errno]);
+    exit(errno);
+  };
+  toaddr = *(u_long *)toinfo->h_addr_list[0];
+
+  addr_in_size = sizeof(struct sockaddr_in);
+  memset((char *)to,(char)0,addr_in_size);
+
+  to->sin_family = AF_INET;
+  to->sin_addr.s_addr = toaddr;
+  to->sin_port = portnum;
+
+  if((sockfd = socket (PF_INET, SOCK_DGRAM, 0)) == -1){
+    fprintf(stderr,"Error %d in socket: %s\n",errno,sys_errlist[errno]);
+    exit(errno);
+  };
+
+	size=size_dist(src, dst, state);
+	printf("packet size= %d \n", size);
+	payload=payload_pkts(size);
+
+
+    if(sendto(sockfd,payload,size,0,(struct sockaddr *)to,addr_in_size) == -1){
+      fprintf(stderr,"Error %d in sendto: %s\n",errno,sys_errlist[errno]);
+      exit(errno);
+    }
+
 }
+
+
 
 void client_socket_udp_ip6(int src, int dst, int state)
 {

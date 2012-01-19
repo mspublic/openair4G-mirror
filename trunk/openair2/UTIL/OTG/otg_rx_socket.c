@@ -49,6 +49,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include <errno.h>
 
 #include "otg_config.h"
@@ -200,10 +207,64 @@ void server_socket_tcp_ip4()
 }
 
 
+void server_socket_udp_ip4()
+{
+
+
+int sockfd, cc, addr_in_size;
+  u_short portnum = 12345;
+  struct sockaddr_in *my_addr, *from;
+  char *msg;
+  u_long fromaddr;
+
+  addr_in_size = sizeof(struct sockaddr_in);
+
+  msg = (char *)malloc(MAXSIZE);
+  from = (struct sockaddr_in *)malloc(addr_in_size);
+  my_addr = (struct sockaddr_in *)malloc(addr_in_size);
+
+  memset((char *)my_addr,(char)0,addr_in_size);
+  my_addr->sin_family = AF_INET;
+  my_addr->sin_addr.s_addr = htonl(INADDR_ANY);
+  my_addr->sin_port = portnum;
+
+  if((sockfd = socket (PF_INET, SOCK_DGRAM, 0)) < 0){
+    fprintf(stderr,"Error %d in socket: %s\n",errno,sys_errlist[errno]);
+    exit(errno);
+  };
+
+  if(bind(sockfd, (struct sockaddr *)my_addr, addr_in_size) < 0){
+    fprintf(stderr,"Error %d in bind: %s\n",errno,sys_errlist[errno]);
+    if(errno != EADDRINUSE) exit(errno);
+  };
+
+  fprintf(stdout,"Ready to receive UDP traffic\n");
+
+  while(1){
+    if((cc = recvfrom (sockfd,msg,MAXSIZE,0,(struct sockaddr *)from,
+           &addr_in_size)) == -1){
+      fprintf(stderr,"Error %d in recvfrom: %s\n",
+        errno,sys_errlist[errno]);
+      exit(errno);
+    };
+    fromaddr = from->sin_addr.s_addr;
+    msg[cc] = '\0';
+    fprintf(stdout,"From %s port %d: %s\n",
+      (gethostbyaddr((char *)&fromaddr,
+         sizeof(fromaddr),
+         AF_INET))->h_name,
+       from->sin_port,msg);
+
+  }
+
+
+}
+
 int main()
 {
 
-server_socket_tcp_ip4();
+//server_socket_tcp_ip4();
+server_socket_udp_ip4();
 
 return 0;
 

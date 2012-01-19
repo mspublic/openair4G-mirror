@@ -345,9 +345,9 @@ pdcp_run (u32_t frame,u8 eNB_flag)
 
   // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus(frame,eNB_flag);
-  if ( eNB_flag == 1){
-    //set_emu_time(frame);
-    //otg_rx(otg_tx(frame, x,y,z));
+  if ( eNB_flag == 0){
+	LOG_T(OTG, "TEST Calling OTG \n");
+	//check_packet(packet_gen(0, 1, 0));    //set_emu_time(frame);
   }
 }
 

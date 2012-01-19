@@ -128,23 +128,26 @@ static int number_of_grid_x_;
 static int number_of_grid_y_;
 
 static int application_config_;		/*!< \brief indicating that the parsing position is now within App_Config_*/
+static int predefined_traffic_;
+static int customized_traffic_;
 static int application_type_;			/*!< \brief indicating that the parsing position is now within App_Type_*/
+static int source_id_;
+static int destination_id_;
 static int traffic_;			/*!< \brief indicating that the parsing position is now within Traffic_*/
 static int transport_protocol_;	/*!< \brief indicating that the parsing position is now within Transport_Protocol_*/
-static int packet_size_;		/*!< \brief indicating that the parsing position is now within Packet_Size_*/
-static int fixed_packet_size_;
-static int fixed_value_byte_;
-static int uniform_packet_size_;
-static int min_value_byte_;
-static int max_value_byte_;
-static int inter_arrival_time_;
-static int fixed_inter_arrival_time_;
-static int fixed_value_ms_;
-static int uniform_inter_arrival_time_;
-static int min_value_ms_;
-static int max_value_ms_;
-static int poisson_inter_arrival_time_;
-static int expected_inter_arrival_time_ms_;	/*!< \brief indicating that the parsing position is now within Inter_Arrival_Time_*/
+static int ip_version_;
+static int idt_dist_;
+static int idt_min_ms_;
+static int idt_max_ms_;
+static int idt_standard_deviation_;
+static int idt_lambda_;
+static int size_dist_;
+static int size_min_byte_;
+static int size_max_byte_;
+static int size_standard_deviation_;
+static int size_lambda_;
+static int stream_;
+static int destination_port_;
 
 static int emulation_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
 static int emulation_time_ms_;
@@ -334,42 +337,52 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_GRID_Y")) {
 		number_of_grid_y_ = 1;
 
-	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_CONFIG")) {
+	} else if (!xmlStrcmp(name, "APPLICATION_CONFIG")) {
 		application_config_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_TYPE")) {
+		oai_emulation.info.max_predefined_traffic_config_index = 0;
+		oai_emulation.info.max_customized_traffic_config_index = 0;
+	} else if (!xmlStrcmp(name, "PREDEFINED_TRAFFIC")) {
+		predefined_traffic_ = 1;
+		oai_emulation.info.max_predefined_traffic_config_index ++;
+	} else if (!xmlStrcmp(name, "CUSTOMIZED_TRAFFIC")) {
+		customized_traffic_ = 1;
+		oai_emulation.info.max_customized_traffic_config_index ++;
+	} else if (!xmlStrcmp(name, "SOURCE_ID")) {
+		source_id_ = 1;
+	} else if (!xmlStrcmp(name, "DESTINATION_ID")) {
+		destination_id_ = 1;
+	} else if (!xmlStrcmp(name, "APPLICATION_TYPE")) {
 		application_type_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "TRAFFIC")) {
+	} else if (!xmlStrcmp(name, "TRAFFIC")) {
 		traffic_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "TRANSPORT_PROTOCOL")) {
+	} else if (!xmlStrcmp(name, "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "PACKET_SIZE")) {
-		packet_size_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_PACKET_SIZE")) {
-		fixed_packet_size_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_byte")) {
-		fixed_value_byte_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_PACKET_SIZE")) {
-		uniform_packet_size_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_byte")) {
-		min_value_byte_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_byte")) {
-		max_value_byte_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_ARRIVAL_TIME")) {
-		inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_INTER_ARRIVAL_TIME")) {
-		fixed_inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_ms")) {
-		fixed_value_ms_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_INTER_ARRIVAL_TIME")) {
-		uniform_inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_ms")) {
-		min_value_ms_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_ms")) {
-		max_value_ms_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "POISSON_INTER_ARRIVAL_TIME")) {
-		poisson_inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "EXPECTED_INTER_ARRIVAL_TIME_ms")) {
-		expected_inter_arrival_time_ms_ = 1;
+	} else if (!xmlStrcmp(name, "IP_VERSION")) {
+		ip_version_ = 1;
+	} else if (!xmlStrcmp(name, "IDT_DIST")) {
+		idt_dist_ = 1;
+	} else if (!xmlStrcmp(name, "IDT_MIN_ms")) {
+		idt_min_ms_ = 1;
+	} else if (!xmlStrcmp(name, "IDT_MAX_ms")) {
+		idt_max_ms_ = 1;
+	} else if (!xmlStrcmp(name, "IDT_STANDARD_DEVIATION")) {
+		idt_standard_deviation_ = 1;
+	} else if (!xmlStrcmp(name, "IDT_LAMBDA")) {
+		idt_lambda_ = 1;
+	} else if (!xmlStrcmp(name, "SIZE_DIST")) {
+		size_dist_ = 1;
+	} else if (!xmlStrcmp(name, "SIZE_MIN_byte")) {
+		size_min_byte_ = 1;
+	} else if (!xmlStrcmp(name, "SIZE_MAX_byte")) {
+		size_max_byte_ = 1;
+	} else if (!xmlStrcmp(name, "SIZE_STANDARD_DEVIATION")) {
+		size_standard_deviation_ = 1;
+	} else if (!xmlStrcmp(name, "SIZE_LAMBDA")) {
+		size_lambda_ = 1;
+	} else if (!xmlStrcmp(name, "STREAM")) {
+		stream_ = 1;
+	} else if (!xmlStrcmp(name, "DESTINATION_PORT")) {
+		destination_port_ = 1;
 
 	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_CONFIG")) {
 		emulation_config_ = 1;
@@ -581,42 +594,48 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_GRID_Y")) {
 		number_of_grid_y_ = 0;
 
-	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_CONFIG")) {
+	} else if (!xmlStrcmp(name, "APPLICATION_CONFIG")) {
 		application_config_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_TYPE")) {
+	} else if (!xmlStrcmp(name, "PREDEFINED_TRAFFIC")) {
+		predefined_traffic_ = 0;
+	} else if (!xmlStrcmp(name, "CUSTOMIZED_TRAFFIC")) {
+		customized_traffic_ = 0;
+	} else if (!xmlStrcmp(name, "SOURCE_ID")) {
+		source_id_ = 0;
+	} else if (!xmlStrcmp(name, "DESTINATION_ID")) {
+		destination_id_ = 0;
+	} else if (!xmlStrcmp(name, "APPLICATION_TYPE")) {
 		application_type_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "TRAFFIC")) {
+	} else if (!xmlStrcmp(name, "TRAFFIC")) {
 		traffic_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "TRANSPORT_PROTOCOL")) {
+	} else if (!xmlStrcmp(name, "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "PACKET_SIZE")) {
-		packet_size_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_PACKET_SIZE")) {
-		fixed_packet_size_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_byte")) {
-		fixed_value_byte_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_PACKET_SIZE")) {
-		uniform_packet_size_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_byte")) {
-		min_value_byte_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_byte")) {
-		max_value_byte_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_ARRIVAL_TIME")) {
-		inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_INTER_ARRIVAL_TIME")) {
-		fixed_inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_ms")) {
-		fixed_value_ms_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_INTER_ARRIVAL_TIME")) {
-		uniform_inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_ms")) {
-		min_value_ms_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_ms")) {
-		max_value_ms_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "POISSON_INTER_ARRIVAL_TIME")) {
-		poisson_inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name,(unsigned char*) "EXPECTED_INTER_ARRIVAL_TIME_ms")) {
-		expected_inter_arrival_time_ms_ = 0;
+	} else if (!xmlStrcmp(name, "IP_VERSION")) {
+		ip_version_ = 0;
+	} else if (!xmlStrcmp(name, "IDT_DIST")) {
+		idt_dist_ = 0;
+	} else if (!xmlStrcmp(name, "IDT_MIN_ms")) {
+		idt_min_ms_ = 0;
+	} else if (!xmlStrcmp(name, "IDT_MAX_ms")) {
+		idt_max_ms_ = 0;
+	} else if (!xmlStrcmp(name, "IDT_STANDARD_DEVIATION")) {
+		idt_standard_deviation_ = 0;
+	} else if (!xmlStrcmp(name, "IDT_LAMBDA")) {
+		idt_lambda_ = 0;
+	} else if (!xmlStrcmp(name, "SIZE_DIST")) {
+		size_dist_ = 0;
+	} else if (!xmlStrcmp(name, "SIZE_MIN_byte")) {
+		size_min_byte_ = 0;
+	} else if (!xmlStrcmp(name, "SIZE_MAX_byte")) {
+		size_max_byte_ = 0;
+	} else if (!xmlStrcmp(name, "SIZE_STANDARD_DEVIATION")) {
+		size_standard_deviation_ = 0;
+	} else if (!xmlStrcmp(name, "SIZE_LAMBDA")) {
+		size_lambda_ = 0;
+	} else if (!xmlStrcmp(name, "STREAM")) {
+		stream_ = 0;
+	} else if (!xmlStrcmp(name, "DESTINATION_PORT")) {
+		destination_port_ = 0;
 
 	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_CONFIG")) {
 		emulation_config_ = 0;
@@ -848,39 +867,47 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 			}
 
 		} else if (application_config_) {
-			if (application_type_) {
-				oai_emulation.application_config.application_type.selected_option = strndup(ch, len);
-			} else if (traffic_) {
-				if (transport_protocol_) {
-					oai_emulation.application_config.traffic.transport_protocol.selected_option = strndup(ch, len);
-				} else if (packet_size_) {
-					oai_emulation.application_config.traffic.packet_size.selected_option = strndup(ch, len);
-				} else if (fixed_packet_size_) {
-					if (fixed_value_byte_) {
-						oai_emulation.application_config.traffic.fixed_packet_size.fixed_value_byte = atof(ch);
-					}
-				} else if (uniform_packet_size_) {
-					if (min_value_byte_) {
-						oai_emulation.application_config.traffic.uniform_packet_size.min_value_byte = atof(ch);
-					} else if (max_value_byte_) {
-						oai_emulation.application_config.traffic.uniform_packet_size.max_value_byte = atof(ch);
-					}
-				} else if (inter_arrival_time_) {
-					oai_emulation.application_config.traffic.inter_arrival_time.selected_option = strndup(ch, len);
-				} else if (fixed_inter_arrival_time_) {
-					if (fixed_value_ms_) {
-						oai_emulation.application_config.traffic.fixed_inter_arrival_time.fixed_value_ms = atof(ch);
-					}
-				} else if (uniform_inter_arrival_time_) {
-					if (min_value_ms_) {
-						oai_emulation.application_config.traffic.uniform_inter_arrival_time.min_value_ms = atof(ch);
-					} else if (max_value_ms_) {
-						oai_emulation.application_config.traffic.uniform_inter_arrival_time.max_value_ms = atof(ch);
-					}
-				} else if (poisson_inter_arrival_time_) {
-					if (expected_inter_arrival_time_ms_) {
-						oai_emulation.application_config.traffic.poisson_inter_arrival_time.expected_inter_arrival_time_ms = atof(ch);
-					}
+			if (predefined_traffic_) {
+				if (source_id_) {
+					oai_emulation.application_config.predefined_traffic.source_id[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
+				} else if (destination_id_) {
+					oai_emulation.application_config.predefined_traffic.destination_id[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
+				} else if (application_type_) {
+					oai_emulation.application_config.predefined_traffic.application_type[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
+				}
+			} else if (customized_traffic_) {
+				if (source_id_) {
+					oai_emulation.application_config.customized_traffic.source_id[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+				} else if (destination_id_) {
+					oai_emulation.application_config.customized_traffic.destination_id[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+				} else if (transport_protocol_) {
+					oai_emulation.application_config.customized_traffic.transport_protocol[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+				} else if (ip_version_) {
+					oai_emulation.application_config.customized_traffic.ip_version[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+				} else if (idt_dist_) {
+					oai_emulation.application_config.customized_traffic.idt_dist[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+				} else if (idt_min_ms_) {
+					oai_emulation.application_config.customized_traffic.idt_min_ms[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (idt_max_ms_) {
+					oai_emulation.application_config.customized_traffic.idt_max_ms[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (idt_standard_deviation_) {
+					oai_emulation.application_config.customized_traffic.idt_standard_deviation[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+				} else if (idt_lambda_) {
+					oai_emulation.application_config.customized_traffic.idt_lambda[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (size_dist_) {
+					oai_emulation.application_config.customized_traffic.size_dist[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+				} else if (size_min_byte_) {
+					oai_emulation.application_config.customized_traffic.size_min_byte[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (size_max_byte_) {
+					oai_emulation.application_config.customized_traffic.size_max_byte[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (size_standard_deviation_) {
+					oai_emulation.application_config.customized_traffic.size_standard_deviation[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (size_lambda_) {
+					oai_emulation.application_config.customized_traffic.size_lambda[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (stream_) {
+					oai_emulation.application_config.customized_traffic.stream[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+				} else if (destination_port_) {
+					oai_emulation.application_config.customized_traffic.destination_port[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
 				}
 			}
 

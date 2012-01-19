@@ -298,13 +298,21 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
   	  sizeof(UE_cntl));
 
    
-  /* LOG_D(EMU, "Fill phy UE %d vars PRACH is (%d, %d)!\n", 
+   LOG_I(EMU, "Fill phy UE %d vars PRACH is (%d, %d) preamble (%d,%d)!\n", 
 	ue_id,
 	UE_transport_info[ue_id].cntl.prach_flag,
-	ue_cntl_delay[subframe%2].prach_flag);
-  */
+	 ue_cntl_delay[subframe%2].prach_flag,
+	 UE_transport_info[ue_id].cntl.prach_id,
+	 ue_cntl_delay[subframe%2].prach_id);
 
-  PHY_vars_UE_g[ue_id]->generate_prach = ue_cntl_delay[subframe%2].prach_flag ;
+   //ue_cntl_delay[subframe%2].prach_flag ;
+   PHY_vars_UE_g[ue_id]->generate_prach = UE_transport_info[ue_id].cntl.prach_flag; 
+   if (PHY_vars_UE_g[ue_id]->generate_prach == 1) {
+     //     if (PHY_vars_UE_g[ue_id]->prach_resources[enb_id] == NULL)
+     //  PHY_vars_UE_g[ue_id]->prach_resources[enb_id] = malloc(sizeof(PRACH_RESOURCES_t));
+     //ue_cntl_delay[subframe%2].prach_id;
+     PHY_vars_UE_g[ue_id]->prach_PreambleIndex = UE_transport_info[ue_id].cntl.prach_id; 
+   }
 
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
     
@@ -322,10 +330,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
 
 
-     if (PHY_vars_UE_g[ue_id]->prach_resources[enb_id] == NULL)
-       PHY_vars_UE_g[ue_id]->prach_resources[enb_id] = malloc(sizeof(PRACH_RESOURCES_t));
-     
-     PHY_vars_UE_g[ue_id]->prach_resources[enb_id]->ra_PreambleIndex = ue_cntl_delay[subframe%2].prach_id;
+
      
      PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
      
