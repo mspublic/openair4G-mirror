@@ -146,9 +146,12 @@ void
 rlc_um_rx (void *argP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  rlc_um_entity_t *rlc = (rlc_um_entity_t *) argP;
+  rlc_um_entity_t    *l_rlc = (rlc_um_entity_t *) argP;
+  mem_block_t        *tb;
+  rlc_um_pdu_info_t  pdu_info;
+  int                num_li;
 
-  switch (rlc->protocol_state) {
+  switch (l_rlc->protocol_state) {
 
       case RLC_NULL_STATE:
         // from 3GPP TS 25.322 V9.2.0 p43
@@ -158,7 +161,33 @@ rlc_um_rx (void *argP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP
         // establishment, the RLC entity:
         //   - is created; and
         //   - enters the DATA_TRANSFER_READY state.
-        LOG_N(RLC, "[RLC_UM][MOD %d] ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", rlc->module_id);
+        LOG_N(RLC, "[RLC_UM][MOD %d] ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", l_rlc->module_id);
+
+        if (data_indP.data.nb_elements > 0) {
+            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_IND %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_indP.data.nb_elements);
+            rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][--- MAC_DATA_IND/ %d TB(s) ",
+                frame,
+                (l_rlc->is_enb) ? "eNB":"UE",
+                l_rlc->module_id,
+                data_indP.data.nb_elements);
+
+            tb = data_indP.data.head;
+            while (tb != NULL) {
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %c%c%c %d Bytes ",
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x10) ?  '}':'{',
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x08) ?  '{':'}',
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x04) ?  'E':'_',
+                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+                tb = tb->next;
+            }
+            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " DROPPED RLC NULL STATE ---X][RLC_UM][MOD %02d][RB %02d]\n",
+                l_rlc->module_id,
+                l_rlc->rb_id);
+
+            rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
+            LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
+        }
         list_free (&data_indP.data);
         break;
 
@@ -179,7 +208,48 @@ rlc_um_rx (void *argP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP
         // entity:
         // - enters the LOCAL_SUSPEND state.
         data_indP.tb_size = data_indP.tb_size >> 3;
-        rlc_um_receive (rlc, frame, eNB_flag, data_indP);
+        if (data_indP.data.nb_elements > 0) {
+            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_IND %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_indP.data.nb_elements);
+            rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][--- MAC_DATA_IND/ %d TB(s) ",
+                frame,
+                (l_rlc->is_enb) ? "eNB":"UE",
+                l_rlc->module_id,
+                data_indP.data.nb_elements);
+
+            tb = data_indP.data.head;
+            while (tb != NULL) {
+                rlc_um_get_pdu_infos(frame,(rlc_um_pdu_sn_10_t*) ((struct mac_tb_ind *) (tb->data))->data_ptr, (s16_t) ((struct mac_tb_ind *) (tb->data))->size, &pdu_info);
+
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "\\nSN %d/%c%c%c",
+                                                                    pdu_info.sn,
+                                                                    (pdu_info.fi & 0x02) ?  '}':'{',
+                                                                    (pdu_info.fi & 0x01) ?  '}':'{',
+                                                                    (pdu_info.e) ?  'E':'_');
+                num_li = 0;
+                if (pdu_info.num_li > 0) {
+                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "/LI(");
+                    while (num_li != (pdu_info.num_li - 1)) {
+                        rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "%d,",
+                                                                        pdu_info.li_list[num_li]);
+                        num_li += 1;
+                    }
+                    rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "%d)", pdu_info.li_list[num_li]);
+                }
+
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], "/%d Bytes ",
+                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+
+                tb = tb->next;
+            }
+            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " --->][RLC_UM][MOD %02d][RB %02d]\n",
+                l_rlc->module_id,
+                l_rlc->rb_id);
+
+            rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
+            LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
+        }
+
+        rlc_um_receive (l_rlc, frame, eNB_flag, data_indP);
         break;
 
       case RLC_LOCAL_SUSPEND_STATE:
@@ -199,11 +269,37 @@ rlc_um_rx (void *argP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP
         // - stays in the LOCAL_SUSPEND state;
         // - modifies only the protocol parameters and timers as indicated by
         //   upper layers.
-        LOG_N(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_LOCAL_SUSPEND_STATE\n", rlc->module_id, rlc->rb_id, frame);
+        LOG_N(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_LOCAL_SUSPEND_STATE\n", l_rlc->module_id, l_rlc->rb_id, frame);
+        if (data_indP.data.nb_elements > 0) {
+            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_IND %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_indP.data.nb_elements);
+            rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][--- MAC_DATA_IND/ %d TB(s) ",
+                frame,
+                (l_rlc->is_enb) ? "eNB":"UE",
+                l_rlc->module_id,
+                data_indP.data.nb_elements);
+
+            tb = data_indP.data.head;
+            while (tb != NULL) {
+                rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %c%c%c %d Bytes ",
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x10) ?  '}':'{',
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x08) ?  '{':'}',
+                                                                    (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x04) ?  'E':'_',
+                                                                    ((struct mac_tb_ind *) (tb->data))->size);
+                tb = tb->next;
+            }
+            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " DROPPED RLC LOCAL SUSPEND STATE ---X][RLC_UM][MOD %02d][RB %02d]\n",
+                l_rlc->module_id,
+                l_rlc->rb_id);
+
+            rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
+            LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
+        }
+        list_free (&data_indP.data);
         break;
 
       default:
-        LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TX UNKNOWN PROTOCOL STATE %02X hex\n", rlc->module_id, rlc->rb_id, frame, rlc->protocol_state);
+        LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TX UNKNOWN PROTOCOL STATE %02X hex\n", l_rlc->module_id, l_rlc->rb_id, frame, l_rlc->protocol_state);
   }
 }
 
@@ -319,33 +415,6 @@ rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_d
 {
 //-----------------------------------------------------------------------------
     rlc_um_entity_t *l_rlc = (rlc_um_entity_t *) rlcP;
-    mem_block_t     *tb;
-
-    if (data_indP.data.nb_elements > 0) {
-        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_IND %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_indP.data.nb_elements);
-        rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][MAC_%s][MOD %02d][][--- MAC_DATA_IND/ %d TB(s) ",
-              frame,
-              (l_rlc->is_enb) ? "eNB":"UE",
-              l_rlc->module_id,
-              data_indP.data.nb_elements);
-
-        tb = data_indP.data.head;
-        while (tb != NULL) {
-            rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %c%c%c %d Bytes ",
-                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_ind *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
-                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x10) ?  '}':'{',
-                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x08) ?  '{':'}',
-                                                                 (((struct mac_tb_ind *) (tb->data))->data_ptr[0] & 0x04) ?  'E':'_',
-                                                                 ((struct mac_tb_ind *) (tb->data))->size);
-            tb = tb->next;
-        }
-        rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " --->][RLC_UM][MOD %02d][RB %02d]\n",
-            l_rlc->module_id,
-            l_rlc->rb_id);
-
-        rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length] = 0;
-        LOG_D(RLC, "%s", rlc[l_rlc->module_id].m_mscgen_trace);
-    }
     rlc_um_rx (rlcP, frame, eNB_flag, data_indP);
 }
 
