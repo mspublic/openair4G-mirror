@@ -122,7 +122,7 @@ void logInit (void) {
     g_log->log_component[RLC].flag = LOG_MED;
     g_log->log_component[RLC].interval =  1;
     g_log->log_component[RLC].fd = 0;
-    g_log->log_component[RLC].filelog = 1;
+    g_log->log_component[RLC].filelog = 0;
     g_log->log_component[RLC].filelog_name = "/tmp/rlc_msc.log";
     
     g_log->log_component[PDCP].name = "PDCP";
@@ -138,7 +138,7 @@ void logInit (void) {
     g_log->log_component[RRC].flag = LOG_MED;
     g_log->log_component[RRC].interval =  1;
     g_log->log_component[RRC].fd = 0;
-    g_log->log_component[RRC].filelog = 1;
+    g_log->log_component[RRC].filelog = 0;
     g_log->log_component[RRC].filelog_name = "/tmp/rrc_msc.log";
     
     g_log->log_component[EMU].name = "EMU";
@@ -188,7 +188,14 @@ void logInit (void) {
     g_log->log_component[CLI].fd = 0;
     g_log->log_component[CLI].filelog =  0;
     g_log->log_component[CLI].filelog_name = "";
-    
+     
+    g_log->log_component[MSC].name = "MSC";
+    g_log->log_component[MSC].level = LOG_TRACE;
+    g_log->log_component[MSC].flag =  LOG_MED;
+    g_log->log_component[MSC].interval =  1;
+    g_log->log_component[MSC].fd = 0;
+    g_log->log_component[MSC].filelog =  1;
+    g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
        
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
@@ -224,7 +231,7 @@ void logInit (void) {
   }
   // could put a loop here to check for all comps
   for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if (g_log->log_component[i].filelog_name) 
+    if (g_log->log_component[i].filelog) 
       g_log->log_component[i].fd = open(g_log->log_component[i].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   }
 #else
@@ -352,7 +359,8 @@ void logRecord( const char *file, const char *func,
     write(gfd, g_buff_total, strlen(g_buff_total));
   } 
   for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if ((g_log->log_component[i].filelog_name) && (level == LOG_MSC)) 
+    if ((g_log->log_component[i].filelog) && (level == LOG_MSC))
+	//&&(comp ==  map_str_to_int(, g_log->log_component[i].name))) 
       write(g_log->log_component[i].fd, g_buff_total, strlen(g_buff_total));
   }
 #else
@@ -478,7 +486,7 @@ void logClean (void) {
     close(gfd);
   }
   for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if (g_log->log_component[i].filelog_name) 
+    if (g_log->log_component[i].filelog) 
       close(g_log->log_component[i].fd);
   }
 #endif
