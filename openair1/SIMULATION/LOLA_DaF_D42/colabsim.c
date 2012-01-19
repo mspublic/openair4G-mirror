@@ -1,3 +1,8 @@
+//**************************************************************
+// Compile with:
+// $ make colabsim
+//**************************************************************
+
 #include <string.h>
 #include <math.h>
 #include <execinfo.h>
@@ -342,11 +347,6 @@ int main(int argc, char **argv) {
       for(k = 0; k < input_buffer_length; k++)
         input_buffer[k] = (u8)(taus()&0xff);
 
-  //alloc_distributed_transport_channel(phy_vars_ch_dest, phy_vars_mr, n_relays, rnti_hop2);
-  //for(k = 0; k < n_relays; k++)
-  //  setup_mr(phy_vars_mr[k], frame_parms);
-  //setup_ch_dest(phy_vars_ch_dest, frame_parms);
-
       for(round = 0; round < n_rounds && !decoded_at_all_mr; round++) {
         // Clear txdataF vector
         memset(&phy_vars_ch_src->lte_eNB_common_vars.txdataF[0][0][0], 0, 
@@ -524,7 +524,7 @@ int main(int argc, char **argv) {
 
       // Set role of each relay (alternating STANDARD and ALTERNATE)
       for(k = 0; k < n_relays; k++) {
-        relay_role[k] = 0; //k & 1;
+        relay_role[k] = k & 1;
       }
 
       decoded_at_ch = false;
@@ -549,6 +549,10 @@ int main(int argc, char **argv) {
           // Generate transport channel parameters
           generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, rnti_hop2, (subframe_hop2+6)%10, 
               format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
+          if(relay_role[k] == RELAY_ROLE_STANDARD)
+            phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
+          else
+            phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
 
           // Generate uplink reference signal
           generate_drs_pusch(phy_vars_mr[k], 0, AMP, subframe_hop2, 0, N_RB);
