@@ -1,10 +1,3 @@
-//**************************************************************
-// Compile with:
-// $ make colabsim
-//
-// Currently working with rev 1531
-//**************************************************************
-
 #include <string.h>
 #include <math.h>
 #include <execinfo.h>
@@ -24,6 +17,10 @@
 #include "LAYER2/MAC/vars.h"
 
 #include "OCG_vars.h"
+
+#ifndef RA_RNTI
+#define RA_RNTI 0xfffe
+#endif
 
 typedef unsigned char bool;
 const bool false = 0;
@@ -276,7 +273,7 @@ int main(int argc, char **argv) {
 
   // Create distributed DCI and generate transport channel parameters,
   // in order to determine hop 2 transfer block size
-  harq_pid_hop2 = subframe2harq_pid(frame_parms, subframe_hop2);
+  harq_pid_hop2 = subframe2harq_pid(frame_parms, 0, subframe_hop2);
   setup_distributed_dci(&dci_hop2, rnti_hop2, 0, args.mcs_hop2);
   generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, rnti_hop2, (subframe_hop2+6)%10,
       format0, phy_vars_mr[0], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
@@ -344,6 +341,11 @@ int main(int argc, char **argv) {
       // Generate input data
       for(k = 0; k < input_buffer_length; k++)
         input_buffer[k] = (u8)(taus()&0xff);
+
+  //alloc_distributed_transport_channel(phy_vars_ch_dest, phy_vars_mr, n_relays, rnti_hop2);
+  //for(k = 0; k < n_relays; k++)
+  //  setup_mr(phy_vars_mr[k], frame_parms);
+  //setup_ch_dest(phy_vars_ch_dest, frame_parms);
 
       for(round = 0; round < n_rounds && !decoded_at_all_mr; round++) {
         // Clear txdataF vector
@@ -471,7 +473,7 @@ int main(int argc, char **argv) {
 
           // Compute raw bit error rate
           raw_ber = compute_ber_soft(phy_vars_ch_src->dlsch_eNB[0][0]->e,
-              phy_vars_mr[k]->lte_ue_dlsch_vars[0]->llr[0], n_coded_bits_hop1);
+              phy_vars_mr[k]->lte_ue_pdsch_vars[0]->llr[0], n_coded_bits_hop1);
           ber_hop1[k] += raw_ber;
           n_frames_hop1[k]++;
           if(args.verbose > 0)
@@ -479,11 +481,11 @@ int main(int argc, char **argv) {
 
           // Unscramble received bits
           dlsch_unscrambling(frame_parms, phy_vars_mr[k]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-              phy_vars_mr[k]->dlsch_ue[0][0], n_coded_bits_hop1, phy_vars_mr[k]->lte_ue_dlsch_vars[0]->llr[0],
+              phy_vars_mr[k]->dlsch_ue[0][0], n_coded_bits_hop1, phy_vars_mr[k]->lte_ue_pdsch_vars[0]->llr[0],
               0, subframe_hop1 << 1);
 
           // Decode received bits
-          n_iter = dlsch_decoding(phy_vars_mr[k]->lte_ue_dlsch_vars[0]->llr[0],
+          n_iter = dlsch_decoding(phy_vars_mr[k]->lte_ue_pdsch_vars[0]->llr[0],
               frame_parms, phy_vars_mr[k]->dlsch_ue[0][0], subframe_hop1, 
               phy_vars_mr[k]->lte_ue_pdcch_vars[0]->num_pdcch_symbols);
 
@@ -522,7 +524,7 @@ int main(int argc, char **argv) {
 
       // Set role of each relay (alternating STANDARD and ALTERNATE)
       for(k = 0; k < n_relays; k++) {
-        relay_role[k] = k & 1;
+        relay_role[k] = 0; //k & 1;
       }
 
       decoded_at_ch = false;
@@ -547,10 +549,6 @@ int main(int argc, char **argv) {
           // Generate transport channel parameters
           generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, rnti_hop2, (subframe_hop2+6)%10, 
               format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
-          if(relay_role[k] == RELAY_ROLE_STANDARD)
-            phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
-          else
-            phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
 
           // Generate uplink reference signal
           generate_drs_pusch(phy_vars_mr[k], 0, AMP, subframe_hop2, 0, N_RB);
@@ -563,7 +561,7 @@ int main(int argc, char **argv) {
           }
 
           // Modulate ULSCH data
-          ulsch_modulation(phy_vars_mr[k]->lte_ue_common_vars.txdataF, AMP, subframe_hop2, 
+          ulsch_modulation(phy_vars_mr[k]->lte_ue_common_vars.txdataF, AMP, 0, subframe_hop2, 
               frame_parms, phy_vars_mr[k]->ulsch_ue[0], relay_role[k] == RELAY_ROLE_STANDARD ? 0 : 2);
 
           if(args.verbose > 2)
@@ -607,7 +605,7 @@ int main(int argc, char **argv) {
 
         // Compute uncoded bit error rate (assuming data was decoded at all MR)
         raw_ber = compute_ber_soft(phy_vars_mr[0]->ulsch_ue[0]->b_tilde,
-            phy_vars_ch_dest->lte_eNB_ulsch_vars[0]->llr, n_coded_bits_hop2);
+            phy_vars_ch_dest->lte_eNB_pusch_vars[0]->llr, n_coded_bits_hop2);
         ber_hop2 += raw_ber;
         n_frames_hop2++;
         if(args.verbose > 0) {
@@ -916,26 +914,14 @@ void setup_ch_src(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
 {
   phy_vars->lte_frame_parms = *frame_parms;
 
-  phy_init_lte_eNB(&phy_vars->lte_frame_parms,
-      &phy_vars->lte_eNB_common_vars,
-      phy_vars->lte_eNB_ulsch_vars,
-      0,
-      phy_vars,
-      0,
-      0);
+  phy_init_lte_eNB(phy_vars, 0, 1, 0);
 }
 
 void setup_ch_dest(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
 {
   phy_vars->lte_frame_parms = *frame_parms;
 
-  phy_init_lte_eNB(&phy_vars->lte_frame_parms,
-      &phy_vars->lte_eNB_common_vars,
-      phy_vars->lte_eNB_ulsch_vars,
-      0,
-      phy_vars,
-      2, // Distributed Alamouti
-      0);
+  phy_init_lte_eNB(phy_vars, 0, 0, 0);
 }
 
 void setup_mr(PHY_VARS_UE* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
@@ -946,15 +932,7 @@ void setup_mr(PHY_VARS_UE* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
   lte_gold(frame_parms, phy_vars->lte_gold_table[1], 1);
   lte_gold(frame_parms, phy_vars->lte_gold_table[2], 2);
 
-  phy_init_lte_ue(&phy_vars->lte_frame_parms,
-      &phy_vars->lte_ue_common_vars,
-      phy_vars->lte_ue_dlsch_vars,
-      phy_vars->lte_ue_dlsch_vars_SI,
-      phy_vars->lte_ue_dlsch_vars_ra,
-      phy_vars->lte_ue_pbch_vars,
-      phy_vars->lte_ue_pdcch_vars,
-      phy_vars,
-      0);
+  phy_init_lte_ue(phy_vars, 0);
 }
 
 void alloc_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti)
@@ -1147,9 +1125,7 @@ void ofdm_fep(PHY_VARS_UE* phy_vars_mr, u8 subframe)
 int rx_dlsch_symbol(PHY_VARS_UE* phy_vars, u8 subframe, u8 symbol, u8 first_symbol)
 {
   int s;
-  s = rx_dlsch(&phy_vars->lte_ue_common_vars, phy_vars->lte_ue_dlsch_vars,
-      &phy_vars->lte_frame_parms, 0, 0, phy_vars->dlsch_ue[0], subframe,
-      symbol, first_symbol, 0, &phy_vars->PHY_measurements, 0);
+  s = rx_pdsch(phy_vars, PDSCH, 0, 0, subframe, symbol, first_symbol, 0, 0);
   if(s == -1)
     printf("DLSCH receiver error\n");
   return s;
