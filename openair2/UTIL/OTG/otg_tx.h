@@ -165,7 +165,7 @@ double get_emu_time (void);
 * \note 
 * @ingroup  _otg
 */
-unsigned int crc_gen(char *packet,  CRC crc);
+//unsigned int crc_gen(char *packet,  CRC crc);
 
 
 /*! \fn char *otg_header_gen( char* flag, int time, int seq_num);

@@ -45,7 +45,7 @@
 #include "otg_defs.h"
 //#include "../../../openair1/PHY/CODING/defs.h" // for CRC computing 
 #include "otg_vars.h"
-
+#include "UTIL/LOG/log.h"
 int check_packet(char *packet){
 	
 	int status_ok=0;
@@ -121,13 +121,13 @@ int check_packet(char *packet){
 
 	if (NULL != packet){
 
-	printf ("Received packet=%s\n",packet);
+	LOG_D(OTG,"Received packet=%s\n",packet);
 	status_ok=1;
 		packet=NULL;  					
 		free(packet);
 	}
 
-	printf("RX Free packet\n");
+	printf("OTG RX Free packet\n");
 
 	return(status_ok);
 

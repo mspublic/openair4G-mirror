@@ -118,9 +118,11 @@ double wichman_hill() {
 // Uniform Distribution using the Uniform_Random_Number_Generator
 
 double uniform_dist(double min, double max) {
+	printf ("OTG :: MIN = %lf\n", min);
+	printf ("OTG :: MAX = %lf\n", max);
 	double uniform_rn;
         uniform_rn = (max - min) * uniform_rng(rng_func) + min;
-        printf ("Uniform Random Nb = %lf\n", uniform_rn);	
+        printf ("OTG :: Uniform Random Nb = %lf\n", uniform_rn);	
 	return uniform_rn;
 }
 
@@ -128,6 +130,8 @@ double uniform_dist(double min, double max) {
 
 double gaussian_dist(double mean, double std_dev) {
 	double x_rand1,x_rand2, w, gaussian_rn_1, gaussian_rn_2;
+
+printf ("OTG :: Gaussian mean= %lf and std deviation= %lf \n", mean, std_dev);
 	do {
 		do {
 			x_rand1 = 2.0 * uniform_rng() - 1;
@@ -138,7 +142,7 @@ double gaussian_dist(double mean, double std_dev) {
 		gaussian_rn_1 = (std_dev * (x_rand1 * w)) + mean;
 		gaussian_rn_2 = (std_dev * (x_rand2 * w)) + mean;
 	} while (gaussian_rn_1 <= 0);
-	printf ("Gaussian Random Nb= %lf\n", gaussian_rn_1);
+	printf ("OTG :: Gaussian Random Nb= %lf\n", gaussian_rn_1);
 		
 	return gaussian_rn_1;
 
@@ -148,12 +152,16 @@ double gaussian_dist(double mean, double std_dev) {
 
 double exponential_dist(double lambda)
 {	
+
 	double exponential_rn;
+
+printf ("OTG :: Exponential lambda= %lf\n", lambda);
+
 	if (log(uniform_rng()) > 0)
 		exponential_rn = log(uniform_rng()) / lambda;
 	else
 		exponential_rn = -log(uniform_rng()) / lambda;
-	printf ("Exponential Random Nb = %lf \n", exponential_rn);
+	printf ("OTG :: Exponential Random Nb = %lf \n", exponential_rn);
 	return exponential_rn;
 }
 
@@ -165,13 +173,16 @@ double poisson_dist(double lambda)
 	int k = 0;
 	p = 1;
 	L = exp(-lambda);
+
+printf ("OTG :: Poisson lambda= %lf\n", lambda);
+
 	do {
 		u = uniform_rng();
 		p = p * u;
 		k += 1;
 	} while (p > L);
 	poisson_rn = k - 1;
-	printf ("Poisson Random Nb = %lf \n", poisson_rn);
+	printf ("OTG :: Poisson Random Nb = %lf \n", poisson_rn);
 	return poisson_rn;  
 
 }

@@ -1,4 +1,4 @@
-
+//#include "../../../openair1/PHY/impl_defs.h"
 
 
 
@@ -6,8 +6,8 @@
 #define MAX_NUM_NODE_TYPES 2 // enb/ch and ue/mr
 #define MAX_NUM_TRAFFIC_STATE 3 // enb/ch and ue/mr
 #define MAX_NUM_NODES  2// 12 total number of nodes in the emulation scneario, we may use grouping to aggregate nodes, at rlc this could be rb id
-
-
+//#define MAX_NUM_NODES NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX
+ 
 //IDT DISTRIBUTION PARAMETERS
 #define IDT_DIST POISSON
 #define IDT_MIN 2 // unit second

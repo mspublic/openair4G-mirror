@@ -40,6 +40,8 @@
 
 
 
+
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +52,7 @@
 //#include "../../../openair1/PHY/CODING/defs.h" // for CRC copmputing 
 //#include "net_data.h"
 #include "otg_config.h"
+//#include "UTIL/LOG/log.h"
 
 #define STANDALONE 1 
 
@@ -81,10 +84,6 @@ double time_dist(int src, int dst, int state) {
 
 double idt;
  
-
-
-	
-
 	#ifdef STANDALONE
 
 	if (g_otg->idt_dist[src][dst][state] == UNIFORM)
@@ -95,7 +94,8 @@ double idt;
 	idt=  ceil(MAXIDT * exponential_dist(g_otg->idt_lambda[src][dst][state]));
 	else if (g_otg->idt_dist[src][dst][state] == POISSON)
 	idt =  ceil(MAXIDT * poisson_dist(g_otg->idt_lambda[src][dst][state]));
-
+	else if (g_otg->idt_dist[src][dst][state] == FIXED)
+	idt = (int) ceil(g_otg->idt_min[src][dst][state]);
 	#else
 	idt = (get_emu_time() % (1000 / idt)) ? 1.0 : 0.0; // need to be revised  
 	#endif
@@ -109,7 +109,7 @@ return idt;
 
 int size_dist(int src, int dst, int state) {
 int size;
-
+	
 	if (g_otg->size_dist[src][dst][state] == UNIFORM)
 	size = (int) ceil(uniform_dist(g_otg->size_min[src][dst][state], g_otg->size_max[src][dst][state]));
 	else if (g_otg->size_dist[src][dst][state] == GAUSSIAN)
@@ -118,27 +118,236 @@ int size;
 	size= (int) ceil(exponential_dist(g_otg->size_lambda[src][dst][state]));
 	else if (g_otg->size_dist[src][dst][state] == POISSON)
 	size = (int) ceil(poisson_dist(g_otg->size_lambda[src][dst][state]));
+	else if (g_otg->size_dist[src][dst][state] == FIXED)
+	size = (int) ceil(g_otg->size_min[src][dst][state]);
 	printf ("Packet Size Distribution= %d \n", size);
+
+
 	return size;
 
 
 }
 
+void init_predef_otg() {
+int i;
+int j;
+
+	for (i=0; i<g_otg->num_nodes; i++){
+		for (j=0; j<g_otg->num_nodes; j++){
+			if (g_otg->application_type[i][j] == CBR) {
+				g_otg->trans_proto[i] = 0;
+				g_otg->ip_v[i] = 0;
+				g_otg->idt_dist[i][j][0] = FIXED;
+				g_otg->idt_dist[i][j][1] = FIXED;
+
+				g_otg->idt_min[i][j][0] =  10;
+				g_otg->idt_min[i][j][1] =  10;
+
+
+				g_otg->idt_max[i][j][0] =  10;
+				g_otg->idt_max[i][j][1] =  10;
+
+				g_otg->idt_std_dev[i][j][0] = 0;
+				g_otg->idt_std_dev[i][j][1] = 0;
+
+				g_otg->idt_lambda[i][j][0] = 0;
+				g_otg->idt_lambda[i][j][1] = 0;
+
+				g_otg->size_dist[i][j][0] = FIXED;
+				g_otg->size_dist[i][j][1] = FIXED;
+	printf("OTG_CONFIG CBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
+				g_otg->size_min[i][j][0] =  50;
+				g_otg->size_min[i][j][1] =  50;
+
+
+				g_otg->size_max[i][j][0] =  50;
+				g_otg->size_max[i][j][1] =  50;
+
+				g_otg->size_std_dev[i][j][0] = 0;
+				g_otg->size_std_dev[i][j][1] = 0;
+
+				g_otg->size_lambda[i][j][0] = 0;
+				g_otg->size_lambda[i][j][1] = 0;
+
+				g_otg->dst_port[j] = 0;
+
+			} else if (g_otg->application_type[i][j] == M2M_AP) { 
+
+				g_otg->trans_proto[i] = 0;
+				g_otg->ip_v[i] = 0;
+
+				g_otg->idt_dist[i][j][0] = UNIFORM;
+				g_otg->idt_dist[i][j][1] = EXPONENTIAL;
+	printf("OTG_CONFIG M2M_AP, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
+				g_otg->idt_min[i][j][0] =  100;
+				g_otg->idt_min[i][j][1] =  0;
+
+
+				g_otg->idt_max[i][j][0] =  500;
+				g_otg->idt_max[i][j][1] =  0;
+
+				g_otg->idt_std_dev[i][j][0] = 0;
+				g_otg->idt_std_dev[i][j][1] = 0;
+
+				g_otg->idt_lambda[i][j][0] = 0;
+				g_otg->idt_lambda[i][j][1] = 5; //pkt/s
+
+				g_otg->size_dist[i][j][0] = FIXED;
+				g_otg->size_dist[i][j][1] = EXPONENTIAL;
+
+				g_otg->size_min[i][j][0] =  8000;
+				g_otg->size_min[i][j][1] =  0;
+
+
+				g_otg->size_max[i][j][0] =  8000;
+				g_otg->size_max[i][j][1] =  0;
+
+				g_otg->size_std_dev[i][j][0] = 0;
+				g_otg->size_std_dev[i][j][1] = 0;
+
+				g_otg->size_lambda[i][j][0] = 0;
+				g_otg->size_lambda[i][j][1] = 1/8000;
+
+				g_otg->dst_port[j] = 0;
+
+			} else if (g_otg->application_type[i][j] == M2M_BR) { 
+
+				g_otg->trans_proto[i] = 0;
+				g_otg->ip_v[i] = 0;
+
+				g_otg->idt_dist[i][j][0] = UNIFORM;
+				g_otg->idt_dist[i][j][1] = EXPONENTIAL;
+	printf("OTG_CONFIG M2M_BR, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
+				g_otg->idt_min[i][j][0] =  100;
+				g_otg->idt_min[i][j][1] =  0;
+
+
+				g_otg->idt_max[i][j][0] =  500;
+				g_otg->idt_max[i][j][1] =  0;
+
+				g_otg->idt_std_dev[i][j][0] = 0;
+				g_otg->idt_std_dev[i][j][1] = 0;
+
+				g_otg->idt_lambda[i][j][0] = 0;
+				g_otg->idt_lambda[i][j][1] = 10; //pkt/s
+
+				g_otg->size_dist[i][j][0] = FIXED;
+				g_otg->size_dist[i][j][1] = EXPONENTIAL;
+
+				g_otg->size_min[i][j][0] =  8000;
+				g_otg->size_min[i][j][1] =  0;
+
+
+				g_otg->size_max[i][j][0] =  8000;
+				g_otg->size_max[i][j][1] =  0;
+
+				g_otg->size_std_dev[i][j][0] = 0;
+				g_otg->size_std_dev[i][j][1] = 0;
+
+				g_otg->size_lambda[i][j][0] = 0;
+				g_otg->size_lambda[i][j][1] = 1/8000;
+
+				g_otg->dst_port[j] = 0;
+
+			} else if (g_otg->application_type[i][j] == GAMING_OA) { 
+
+				g_otg->trans_proto[i] = 0;
+				g_otg->ip_v[i] = 0;
+
+				g_otg->idt_dist[i][j][0] = UNIFORM;
+				g_otg->idt_dist[i][j][1] = UNIFORM;
+	printf("OTG_CONFIG GAMING_OA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
+				g_otg->idt_min[i][j][0] =  69;
+				g_otg->idt_min[i][j][1] =  69;
+
+
+				g_otg->idt_max[i][j][0] =  103;
+				g_otg->idt_max[i][j][1] =  103;
+
+				g_otg->idt_std_dev[i][j][0] = 0;
+				g_otg->idt_std_dev[i][j][1] = 0;
+
+				g_otg->idt_lambda[i][j][0] = 0;
+				g_otg->idt_lambda[i][j][1] = 0; //pkt/s
+
+				g_otg->size_dist[i][j][0] = GAUSSIAN;
+				g_otg->size_dist[i][j][1] = GAUSSIAN;
+
+				g_otg->size_min[i][j][0] =  4.6;
+				g_otg->size_min[i][j][1] =  4.6;
+
+
+				g_otg->size_max[i][j][0] =  42.2;
+				g_otg->size_max[i][j][1] =  42.2;
+
+				g_otg->size_std_dev[i][j][0] = 0;
+				g_otg->size_std_dev[i][j][1] = 0;
+
+				g_otg->size_lambda[i][j][0] = 0;
+				g_otg->size_lambda[i][j][1] = 0;
+
+				g_otg->dst_port[j] = 0;
+			} else if (g_otg->application_type[i][j] == GAMING_TF) { 
+
+				g_otg->trans_proto[i] = 0;
+				g_otg->ip_v[i] = 0;
+
+				g_otg->idt_dist[i][j][0] = UNIFORM;
+				g_otg->idt_dist[i][j][1] = UNIFORM;
+	printf("OTG_CONFIG GAMING_TF, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
+				g_otg->idt_min[i][j][0] =  31;
+				g_otg->idt_min[i][j][1] =  31;
+
+
+				g_otg->idt_max[i][j][0] =  42;
+				g_otg->idt_max[i][j][1] =  42;
+
+				g_otg->idt_std_dev[i][j][0] = 0;
+				g_otg->idt_std_dev[i][j][1] = 0;
+
+				g_otg->idt_lambda[i][j][0] = 0;
+				g_otg->idt_lambda[i][j][1] = 0; //pkt/s
+
+				g_otg->size_dist[i][j][0] = GAUSSIAN;
+				g_otg->size_dist[i][j][1] = GAUSSIAN;
+
+				g_otg->size_min[i][j][0] =  4.6;
+				g_otg->size_min[i][j][1] =  4.6;
+
+
+				g_otg->size_max[i][j][0] =  42.2;
+				g_otg->size_max[i][j][1] =  42.2;
+
+				g_otg->size_std_dev[i][j][0] = 0;
+				g_otg->size_std_dev[i][j][1] = 0;
+
+				g_otg->size_lambda[i][j][0] = 0;
+				g_otg->size_lambda[i][j][1] = 0;
+
+				g_otg->dst_port[j] = 0;
+			}
+		}
+	}
+}
 
 // init OTG with config parameters
+/*
 void init_config_otg() {
 
 int i, j, k;
 
-	for (i=0; i<MAX_NUM_NODES; i++){
+	for (i=0; i<g_otg->num_nodes; i++){
 
 		//g_otg->trans_proto[i]=TCP;
 		
 		g_otg->duration[i]=5; //100
+		g_otg->dst_port[i]=DST_PORT;
+		//g_otg->dst_ip[i]=(char*)malloc(100*sizeof(char*));
+		g_otg->dst_ip[i]=DST_IP;
 
+		for (j=0; j<g_otg->num_nodes; j++){
 
-
-		for (j=0; j<MAX_NUM_NODES; j++){
+			g_otg->application_type[i][j]=1;	
 			for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
 
 				g_otg->idt_dist[i][j][k]=IDT_DIST;
@@ -154,9 +363,7 @@ int i, j, k;
 				g_otg->size_lambda[i][j][k]=PKTS_SIZE_LAMBDA;
 
 
-				g_otg->dst_port[i][j][k]=DST_PORT;
-				g_otg->dst_ip[i][j][k]=(char*)malloc(100*sizeof(char*));
-				g_otg->dst_ip[i][j][k]=DST_IP;
+
 				
 				
 				
@@ -165,7 +372,7 @@ int i, j, k;
 	}
 }
 
-
+*/
 // Generate a random string[size]
 char *random_string(int size, ALPHABET data_type) {
 
@@ -174,7 +381,7 @@ char *random_string(int size, ALPHABET data_type) {
 
 	data=(char*)malloc(size*sizeof(char*));
 
-	if (data_type==NUM)
+	if (data_type==1)
 	{
 		for(i=0;i<size;i++){
     			pos = rand()%(strlen(ALPHABET_NUM));		
@@ -200,73 +407,66 @@ char *packet_gen(int src, int dst, int state){
 
 	double idt;
 	int size;
-	char *payload;
-	char *otg_header;
-	char *header;
-	char *tmp_packet;
-	char *packet;
-	//char *crc_header;
+	char *payload=NULL;
+	char *otg_header=NULL;
+	char *header=NULL;
+	char *packet_payload=NULL;
+	char *packet=NULL;
 
+	//if ((g_otg->application_type[src][dst] == 0) && (g_otg->idt_dist[src][dst][0] == 0))
+	if (g_otg->idt_dist[src][dst][0] == 0)
+		return 0;	
 
+	printf("OTG :: Source =%d\n",src);
+	printf("OTG :: Destination =%d\n",dst);
+	printf("OTG :: Application=%d\n",g_otg->application_type[src][dst]);
+	printf("OTG :: lambda IDT = %d\n", g_otg->idt_lambda[src][dst][1]);
+	printf("OTG :: lambda PKTS = %d\n", g_otg->size_lambda[src][dst][1]);
+	printf("OTG :: transport protocol = %d\n", g_otg->trans_proto[src]);
+	printf("OTG :: IP version = %d\n",  g_otg->ip_v[src]);
 
-	idt=time_dist(src, dst, state);					
+	idt=time_dist(src, dst, state);	
+	printf("OTG :: IDT = %lf\n",idt);			
 	size=size_dist(src, dst, state);
-	payload=payload_pkts(size-HDR_OTG_SIZE); //include OTG header in the payload  
-	printf("==============STEP 1: PAYLOAD OK============= \n");
-
-	//otg_header=otg_header_gen("OTG", otg_info->emu_time,  otg_info->seq_num[src], payload);
-
-
-
+	printf("OTG :: Payload size=%d\n",size);
 	
-
+	
+	  
+	payload=payload_pkts(size);
+	printf("==============STEP 1: OTG PAYLOAD OK============= \n");
+	printf("OTG payload= (%d, %s) \n", size, payload);
+	
+	
+	printf("==============STEP 2: OTG protocol HEADER OK============== \n");	
 	header=header_gen(g_otg->ip_v[src], g_otg->trans_proto[src]);
-	
-	printf("==============STEP 2: HEADER OK============== \n");
+	printf("OTG protocol HEADER= (%d, %s) \n", strlen(header),header);
+	otg_info->emu_time= 1000; // to modify 
+	otg_info->seq_num[src]= 77; // to modify
 
-	printf("HEADER= %s \n", header);
-
-	packet=(char*)malloc((strlen(payload) + strlen(header))*sizeof(char*));
-	
+	printf("==============STEP 3: OTG control HEADER OK========== \n");
 	otg_header=otg_header_gen(OTG_CTRL_FLAG, otg_info->emu_time,  otg_info->seq_num[src]);
+	printf("OTG control HEADER= (%d, %s) \n", strlen(otg_header), otg_header);
 
-	printf("==============STEP 3: OTG HEADER OK========== \n");
 	
-	printf("OTG HEADER= %s \n", otg_header);
+	packet=(char*)malloc((strlen(payload) + strlen(header))*sizeof(char*));
+	memset(packet, 0, strlen(packet));
+	snprintf(packet, strlen(otg_header)+1, "%s", otg_header);
+
+	if (strlen(header) > strlen(otg_header)) {
+		strncat(packet, header, strlen(header) - strlen(otg_header) );}
+
+	strncat(packet, payload, strlen(payload));
+	printf("OTG packet= (%d, %s) \n", strlen(payload) + strlen(header), packet);
 
 
-	tmp_packet=(char*)malloc((strlen(payload) + strlen(header))*sizeof(char*));
-	sprintf(tmp_packet, "%s%s", header, payload);
-	
-	//printf ("Generated tmp Packet= %s\n", tmp_packet);
-
-	packet=(char*)malloc((100 + strlen(otg_header) + strlen(payload) + strlen(header))*sizeof(char*));
-	
-	// No need to compute CRC 	
-	/*otg_hdr->crc16=crc_gen(tmp_packet, CRC_FLAG);	
-	printf("==============STEP 4: CRC OK================ \n");
-	sprintf(packet, "%u%s%s",crc_gen(tmp_packet, CRC_FLAG), otg_header ,tmp_packet);
-	*/
-
-	sprintf(packet,"%s%s", otg_header ,tmp_packet);
-	printf ("TMP PACKET SIZE: %d \n", strlen(tmp_packet));
-
-		if (NULL != tmp_packet){
-			tmp_packet=NULL;
-			free(tmp_packet);
+		if (NULL != packet_payload){
+			packet_payload=NULL;
+			free(packet_payload);
 		}
 
 
 	printf("==============STEP 5: PACKET OK============= \n");	
 
-	printf ("------Packet Gen------\n");
-	printf ("PACKET SIZE: %d \n", strlen(packet));
-	printf ("HEADER SIZE: %d \n", strlen(header));
-	printf ("PAYLOAD SIZE: %d \n", strlen(payload));
-	printf ("OTG CTL SIZE: %d \n", strlen(otg_header));
-	
-
-	
 	if (NULL != header){
 		header=NULL;
 		free(header);
@@ -286,7 +486,7 @@ char *packet_gen(int src, int dst, int state){
 
 }
 
-
+/*
 unsigned int crc_gen(char *packet, CRC crc){
 
 	unsigned int hdr_crc;
@@ -328,12 +528,13 @@ unsigned int crc_gen(char *packet, CRC crc){
 	return (hdr_crc);
 }
 
+*/
+
 
 char *header_gen(int ip_v, int trans_proto){
 
-	int packet_size, hdr_size=0;
+	int hdr_size=0;
 	char *hdr;
-	char *packet;
 
 	if (ip_v==0) { 
 		hdr_size=HDR_IP_v4_MIN;
@@ -350,7 +551,7 @@ char *header_gen(int ip_v, int trans_proto){
 	}
 
 	hdr=(char*)malloc(hdr_size*sizeof(char*));
-	hdr=random_string(hdr_size,NUM);	
+	hdr=random_string(hdr_size,NUM);
 
 
 return(hdr);
@@ -376,73 +577,26 @@ char *otg_header_gen( char *flag, int time, int seq_num){
 	char *tmp;
 
 int i;
-
 	ctrl_head=(char*)malloc(HDR_OTG_SIZE *sizeof(char*)); 
-	//strcpy(otg_hdr->flag,flag); 
-	//otg_hdr->time=time; 
-	//otg_hdr->seq_num=seq_num;
+	snprintf(ctrl_head, HDR_OTG_SIZE, "%d%d", time, seq_num);
+	return ctrl_head;
 
-	//printf("GENERATED FLAG=%d\n",  otg_hdr->flag);
-	printf("GENERATED FLAG=%s\n", OTG_CTRL_FLAG);		
-// TIME 
-	time_s=(char*)malloc(HDR_OTG_TIME_SIZE*sizeof(char*));
-	tmp=(char*)malloc(HDR_OTG_TIME_SIZE*sizeof(char*));		
-	sprintf(time_s, "%d", time);
-		for(i=0; i<HDR_OTG_TIME_SIZE-strlen(time_s); i++){		
-			strncat(tmp,"0",1);	
-		}
-	sprintf(time_s,"%s%d",tmp,time);
-	printf("GENERATED INT TIME=%d\n",time);
-	printf("GENERATED CHAR TIME=%s\n",time_s);
-		if (NULL != tmp){
-			tmp=NULL;
-			free(tmp);
-		}
-// SEQ NB
-	seq_num_s=(char*)malloc(HDR_OTG_SEQ_SIZE*sizeof(char*));
-	tmp=(char*)malloc(HDR_OTG_SEQ_SIZE*sizeof(char*));		
-	sprintf(seq_num_s, "%d", seq_num);
-		for(i=0; i<HDR_OTG_SEQ_SIZE-strlen(seq_num_s); i++){		
-			strncat(tmp,"0",1);	
-		}
-	sprintf(seq_num_s,"%s%d",tmp,seq_num);
-	printf("GENERATED INT SEQ NB=%d\n",seq_num);
-	printf("GENERATED CHAR SEQ NB=%s\n",seq_num_s);
-		if (NULL != tmp){
-			tmp=NULL;
-			free(tmp);
-		}
-	//printf("GENERATED SEQ NB=%d\n", seq_num);
-	sprintf(ctrl_head, "%s%s%s%s", OTG_CTRL_FLAG, time_s, seq_num_s,END_OTG_HEADER);
-
-	printf("OTG CONTROL HEADER=%s\n",ctrl_head);
-
-		if (NULL != time_s){
-			time_s=NULL;
-			free(time_s);
-		}
-
-		if (NULL != seq_num_s){
-			seq_num_s=NULL;
-			free(seq_num_s);
-		}
-	return(ctrl_head);
 }
 
 
 
 void free_addr_otg(){
-	int i, j, k; 
-		for (i=0; i<MAX_NUM_NODES; i++){
-			for (j=0; j<MAX_NUM_NODES; j++){
-				for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
+	int i; 
+		for (i=0; i<g_otg->num_nodes; i++){
+			//for (j=0; j<g_otg->num_nodes; j++){
+			//	for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
 
-					if (NULL != g_otg->dst_ip[i][j][k]){
-						g_otg->dst_ip[i][j][k]=NULL;
-						free(g_otg->dst_ip[i][j][k]);
+					if (NULL != g_otg->dst_ip[i]){
+						g_otg->dst_ip[i]=NULL;
+						free(g_otg->dst_ip[i]);
 					}
-				}
-			}
+				//}
+			//}
 		}
 }
 
