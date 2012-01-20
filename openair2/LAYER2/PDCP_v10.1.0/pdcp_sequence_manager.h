@@ -72,5 +72,10 @@ BOOL pdcp_advance_rx_window(pdcp_t* pdcp_entity);
  * @return TRUE if it is valid, FALSE otherwise
  */
 BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity);
+/**
+* Updates missing PDU bitmap with incoming sequence number
+* @return TRUE if successful, FALSE otherwise
+*/
+BOOL pdcp_mark_current_pdu_as_received(u16 seq_num, pdcp_t* pdcp_entity);
 
 #endif

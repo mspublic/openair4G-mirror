@@ -370,6 +370,7 @@ pdcp_config_req (module_id_t module_id, rb_id_t rab_id)
    * XXX Sequence number size shouldn't be hardcoded! This is temporary!
    */
   pdcp_array[module_id][rab_id].seq_num_size = 12;
+  pdcp_array[module_id][rab_id].first_missing_pdu = -1;
 
   LOG_I(PDCP, "PDCP entity of module %d, radio bearer %d configured\n", module_id, rab_id);
 }
