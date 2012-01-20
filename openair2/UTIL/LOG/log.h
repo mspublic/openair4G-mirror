@@ -108,8 +108,8 @@ extern "C" {
 #ifndef LOG_DEBUG
 #	define	LOG_DEBUG	7	/*!< \brief debug-level messages */
 #endif
-#ifndef LOG_MSC
-#	define	LOG_MSC	        8	/*!< \brief message sequence chart -level  */
+#ifndef LOG_FILE
+#	define	LOG_FILE        8	/*!< \brief message sequence chart -level  */
 #endif
 #ifndef LOG_TRACE
 #	define	LOG_TRACE	9	/*!< \brief trace-level messages */
@@ -146,7 +146,7 @@ extern "C" {
 #define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
 #define LOG_I(c, x...) logIt(c, LOG_INFO, x)
 #define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#define LOG_M(c, x...) logIt(c, LOG_MSC, x)  // specifc log for the MSC chart
+#define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
 #define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
 /*
 #else
