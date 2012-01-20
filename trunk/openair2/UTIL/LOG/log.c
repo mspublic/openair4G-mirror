@@ -99,7 +99,7 @@ void logInit (void) {
     g_log->log_component[PHY].interval =  1;
     g_log->log_component[PHY].fd = 0;
     g_log->log_component[PHY].filelog = 0;
-    g_log->log_component[PHY].filelog_name = "/tmp/phy_msc.log";
+    g_log->log_component[PHY].filelog_name = "/tmp/phy.log";
     
     g_log->log_component[MAC].name = "MAC";
     g_log->log_component[MAC].level = LOG_INFO;
@@ -107,7 +107,7 @@ void logInit (void) {
     g_log->log_component[MAC].interval =  1;
     g_log->log_component[MAC].fd = 0;
     g_log->log_component[MAC].filelog = 1;
-    g_log->log_component[MAC].filelog_name = "/tmp/mac_msc.log";
+    g_log->log_component[MAC].filelog_name = "/tmp/mac.log";
     
     g_log->log_component[OPT].name = "OPT";
     g_log->log_component[OPT].level = LOG_INFO;
@@ -123,7 +123,7 @@ void logInit (void) {
     g_log->log_component[RLC].interval =  1;
     g_log->log_component[RLC].fd = 0;
     g_log->log_component[RLC].filelog = 0;
-    g_log->log_component[RLC].filelog_name = "/tmp/rlc_msc.log";
+    g_log->log_component[RLC].filelog_name = "/tmp/rlc.log";
     
     g_log->log_component[PDCP].name = "PDCP";
     g_log->log_component[PDCP].level = LOG_INFO;
@@ -131,7 +131,7 @@ void logInit (void) {
     g_log->log_component[PDCP].interval =  1;
     g_log->log_component[PDCP].fd = 0;
     g_log->log_component[PDCP].filelog = 0;
-    g_log->log_component[PDCP].filelog_name = "/tmp/pdcp_msc.log";
+    g_log->log_component[PDCP].filelog_name = "/tmp/pdcp.log";
     
     g_log->log_component[RRC].name = "RRC";
     g_log->log_component[RRC].level = LOG_TRACE;
@@ -139,7 +139,7 @@ void logInit (void) {
     g_log->log_component[RRC].interval =  1;
     g_log->log_component[RRC].fd = 0;
     g_log->log_component[RRC].filelog = 0;
-    g_log->log_component[RRC].filelog_name = "/tmp/rrc_msc.log";
+    g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
     
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
@@ -205,6 +205,7 @@ void logInit (void) {
     g_log->level2string[LOG_NOTICE]        = "N"; // NOTICE
     g_log->level2string[LOG_INFO]          = "I"; //INFO
     g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
+    g_log->level2string[LOG_FILE]          = "F"; // file
     g_log->level2string[LOG_TRACE]         = "T"; // TRACE
 
     g_log->onlinelog = 1; //online log file
@@ -283,7 +284,7 @@ void logRecord( const char *file, const char *func,
   va_end(args);
 
  // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if (level == LOG_MSC){
+  if (level == LOG_FILE){
     bypass_log_hdr = 1;
   }
   else if (((level < LOG_TRACE) && (level >= LOG_EMERG)) ) {
@@ -349,7 +350,7 @@ void logRecord( const char *file, const char *func,
 
 #ifdef USER_MODE
   // OAI printf compatibility 
-  if ((g_log->onlinelog == 1) && (level != LOG_MSC)) 
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE)) 
     printf("%s",g_buff_total);
 
   if (g_log->syslog) {
@@ -358,10 +359,8 @@ void logRecord( const char *file, const char *func,
   if (g_log->filelog) {
     write(gfd, g_buff_total, strlen(g_buff_total));
   } 
-  for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if ((g_log->log_component[i].filelog) && (level == LOG_MSC))
-	//&&(comp ==  map_str_to_int(, g_log->log_component[i].name))) 
-      write(g_log->log_component[i].fd, g_buff_total, strlen(g_buff_total));
+  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
+      write(g_log->log_component[comp].fd, g_buff_total, strlen(g_buff_total));
   }
 #else
   if (len > MAX_LOG_TOTAL) {
