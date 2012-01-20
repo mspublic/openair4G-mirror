@@ -64,8 +64,8 @@ __m128i zero,tmp_result;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_
 #endif
 
 //#define DEBUG_PHY
-//#define ENABLE_FXP // Fxp only
-#define ENABLE_FLP // dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() are flp (independently)
+#define ENABLE_FXP // Fxp only
+//#define ENABLE_FLP // dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() are flp (independently)
 //#define COMPARE_FLP_AND_FXP
 
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_10 __attribute__((aligned(16))); 
