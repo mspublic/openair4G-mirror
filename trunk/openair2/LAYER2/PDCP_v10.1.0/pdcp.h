@@ -78,7 +78,17 @@ typedef struct pdcp_t {
    */
   u16  last_submitted_pdcp_rx_sn;
 
-  // here ROHC variables for header compression/decompression
+  /*
+   * Following array is used as a bitmap holding missing sequence
+   * numbers to generate a PDCP Control PDU for PDCP status
+   * report (see 6.2.6)
+   */
+  u8 missing_pdu_bitmap[512];
+  /*
+   * This is intentionally signed since we need a 'NULL' value
+   * which is not also a valid sequence number
+   */
+  short int first_missing_pdu;
 } pdcp_t;
 
 /*
@@ -210,6 +220,16 @@ typedef struct pdcp_data_ind_header_t {
   sdu_size_t           data_size;
   int       inst;
 } pdcp_data_ind_header_t;
+
+#if 0
+/*
+ * Missing PDU information struct, a copy of this will be enqueued 
+ * into pdcp.missing_pdus for every missing PDU
+ */
+typedef struct pdcp_missing_pdu_info_t {
+  u16 sequence_number;
+} pdcp_missing_pdu_info_t;
+#endif
 
 /*
  * PDCP limit values

@@ -35,7 +35,7 @@
 
 #include "pdcp_sequence_manager.h"
 #include "UTIL/LOG/log_if.h"
-#include <math.h>
+#include "pdcp_util.h"
 
 /*
  * Initializes sequence numbering state
@@ -168,8 +168,47 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
     LOG_E(PDCP, "D'oh! Incoming SN is not the one we expected to receive! (Incoming:%d, Expected:%d)\n", \
         seq_num, pdcp_entity->next_pdcp_rx_sn);
 
+    /*
+     * Update first missing PDU (used in PDCP Control PDU for 
+     * PDCP status report, see 6.2.6)
+     */
+    if (pdcp_entity->first_missing_pdu != -1)
+      pdcp_entity->first_missing_pdu = pdcp_entity->next_pdcp_rx_sn;
+
+    /*
+     * Update missing PDU bitmap
+     */
+#if 0
+    if (pdcp_mark_current_pdu_as_received(seq_num, pdcp_entity) == TRUE) {
+      LOG_I(PDCP, "Received sequence number successfuly marked\n");
+    } else {
+      LOG_W(PDCP, "Cannot mark received sequence number on the bitmap!\n");
+    }
+#endif
+    pdcp_mark_current_pdu_as_received(seq_num, pdcp_entity);
+
     return FALSE;
   }
 }
 
+BOOL pdcp_mark_current_pdu_as_received(u16 seq_num, pdcp_t* pdcp_entity)
+{
+  /*
+   * Incoming sequence number and PDCP entity were already
+   * validated in pdcp_is_rx_seq_number_valid() so we don't 
+   * check here
+   */
 
+  /*
+   * Find relevant octet
+   */
+  u16 octet_index = seq_num / 8;
+  /*
+   * Set relevant bit
+   */
+  LOG_D(PDCP, "Marking %d. bit of %d. octet of status bitmap\n", (seq_num % 8) + 1, octet_index);
+  util_mark_nth_bit_of_octet(&pdcp_entity->missing_pdu_bitmap[octet_index], seq_num % 8); 
+  util_print_binary_representation("Current state of relevant octet: ", pdcp_entity->missing_pdu_bitmap[octet_index]);
+
+  return TRUE;
+}

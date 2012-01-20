@@ -37,6 +37,7 @@
 #define PDCP_UTIL_H
 
 #include "UTIL/LOG/log.h"
+#include "../../COMMON/platform_types.h"
 
 /*
  * Prints incoming byte stream in hexadecimal and readable form
@@ -46,39 +47,17 @@
  * @param size Number of octets in data buffer
  * @return none
  */
-void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned long size)
-{
-  if (data == NULL) {
-    LOG_W(component, "Incoming buffer is NULL! Ignoring...\n");
-    return;
-  }
+void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned long size);
 
-  unsigned long octet_index = 0;
+/*
+ * Prints binary representation of given octet prepending 
+ * passed log message
+ *
+ * @param Octet as an unsigned character
+ * @return None
+ */
+void util_print_binary_representation(unsigned char* message, u8_t octet);
 
-  LOG_D(component, "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
-  LOG_D(component, "-----+-------------------------------------------------|\n");
-  LOG_T(component, " 000 |");
-  for (octet_index = 0; octet_index < size; ++octet_index) {
-    /*
-     * Print every single octet in hexadecimal form
-     */
-    LOG_T(component, " %02x", data[octet_index]);
-    /*
-     * Align newline and pipes according to the octets in groups of 2
-     */
-    if (octet_index != 0 && (octet_index+1) % 16 == 0){
-      LOG_T(component, " |\n");
-      LOG_T(component, " %03d |", octet_index);
-    }
-  }
-
-  /*
-   * Append enough spaces and put final pipe
-   */
-  unsigned char index;
-  for (index = octet_index; index < 16; ++index)
-    LOG_T(component, "   ");
-  LOG_T(component, " |\n");
-}
+void util_mark_nth_bit_of_octet(u8_t* octet, u8_t index);
 
 #endif // PDCP_UTIL_H
