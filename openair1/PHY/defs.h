@@ -259,6 +259,7 @@ typedef struct
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_eNB_MAX+1];
+  //LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_eNB_MAX];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_eNB_MAX];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_eNB_MAX];

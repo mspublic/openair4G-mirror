@@ -593,6 +593,36 @@ typedef struct {
 } LTE_UE_PDSCH;
 
 typedef struct {
+  /// Received frequency-domain signal after extraction
+  s32 **rxdataF_ext;
+  /// Received frequency-domain signal after extraction and channel compensation
+  double **rxdataF_comp;
+  /// Downlink channel estimates extracted in PRBS
+  s32 **dl_ch_estimates_ext;
+  /// Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS
+  double **dl_ch_rho_ext;
+  /// Downlink PMIs extracted in PRBS and grouped in subbands
+  u8 *pmi_ext;
+  /// Magnitude of Downlink Channel (16QAM level/First 64QAM level)
+  double **dl_ch_mag;
+  /// Magnitude of Downlink Channel (2nd 64QAM level)
+  double **dl_ch_magb;
+  /// Cross-correlation of two eNB signals
+  double **rho;
+  /// never used... always send dl_ch_rho_ext instead...
+  double **rho_i;  
+  /// Pointers to llr vectors (2 TBs)
+  s16 *llr[2];
+  /// \f$\log_2(\max|H_i|^2)\f$
+  u8 log2_maxh;
+  /// Pointers to llr vectors (128-bit alignment)
+  s16 **llr128;  
+  //u32 *rb_alloc;
+  //u8 Qm[2];
+  //MIMO_mode_t mimo_mode;
+} LTE_UE_PDSCH_FLP;
+
+typedef struct {
   /// pointers to extracted PDCCH symbols in frequency-domain
   s32 **rxdataF_ext;
   /// pointers to extracted and compensated PDCCH symbols in frequency-domain

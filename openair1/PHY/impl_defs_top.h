@@ -203,14 +203,14 @@
 ///Third Amplitude for QAM64 (\f$ 2^{15} \times 1/\sqrt{42}\f$)
 #define QAM64_n3 5056
 
-/// First Amplitude for QAM16 for TM5 Receiver (\f$ 2^{15} \times 1/sqrt(5)\f$)
+/// First Amplitude for QAM16 for TM5 (\f$ 2^{15} \times 2/sqrt(20)\f$)
 #define QAM16_TM5_n1 14654
 /// Second Amplitude for QAM16 for TM5 Receiver (\f$ 2^{15} \times 1/\sqrt{20}\f$)
 #define QAM16_TM5_n2 7327
 
-///First Amplitude for QAM64 for TM5 Receiver (\f$ 2^{15} \times 2/\sqrt{21}\f$)
+///First Amplitude for QAM64 (\f$ 2^{15} \times 4/\sqrt{84}\f$)
 #define QAM64_TM5_n1 14301
-///Second Amplitude for QAM64 for TM5 Receiver (\f$ 2^{15} \times 1/\sqrt{21}\f$)
+///Second Amplitude for QAM64 (\f$ 2^{15} \times 2/\sqrt{84}\f$)
 #define QAM64_TM5_n2 7150
 ///Third Amplitude for QAM64 for TM5 Receiver (\f$ 2^{15} \times 1/\sqrt{84}\f$)
 #define QAM64_TM5_n3 3575
