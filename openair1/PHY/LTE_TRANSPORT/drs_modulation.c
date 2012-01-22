@@ -72,14 +72,16 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 
   cyclic_shift0 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 		   phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2 +
-		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]) % 12;
+		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]+
+		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
 
   cyclic_shift1 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 		   phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2 +
-		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]) % 12;
+		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
+		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
 
-  //     cyclic_shift0 = 0;
-  //      cyclic_shift1 = 0;
+  //       cyclic_shift0 = 0;
+  //        cyclic_shift1 = 0;
   Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE

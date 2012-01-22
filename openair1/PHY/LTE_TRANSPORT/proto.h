@@ -840,8 +840,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      u32 frame,
 		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch,
-		      u8 cooperation_flag);
+		      LTE_UE_ULSCH_t *ulsch);
 
 
 void ulsch_extract_rbs_single(s32 **rxdataF,

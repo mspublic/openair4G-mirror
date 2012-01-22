@@ -755,21 +755,21 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Po_PUSCH : %d dBm\n",
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->tx_power_dBm);
 #ifdef OFDMA_ULSCH
-	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,\
+	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,
 			   AMP,
 			   phy_vars_ue->frame,
 			   (next_slot>>1),
 			   &phy_vars_ue->lte_frame_parms,
-			   phy_vars_ue->ulsch_ue[eNB_id],
-			   phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
+			   phy_vars_ue->ulsch_ue[eNB_id]);
+
 #else
 	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,
 			   scfdma_amps[phy_vars_ue->lte_frame_parms.N_RB_DL],
 			   phy_vars_ue->frame,
 			   (next_slot>>1),
 			   &phy_vars_ue->lte_frame_parms,
-			   phy_vars_ue->ulsch_ue[eNB_id],
-			   phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
+			   phy_vars_ue->ulsch_ue[eNB_id]);
+
 #endif
 	}
 	if (abstraction_flag==1) {
