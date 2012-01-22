@@ -527,12 +527,12 @@ int main(int argc, char **argv) {
     randominit(0);
       
 
-    harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,subframe);
+    harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe);
 
     if (input_fd == NULL) {
       input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       input_buffer = (unsigned char *)malloc(input_buffer_length+4);
-      mac_xface->frame=1;
+      PHY_vars_UE->frame=1;
       if (n_frames == 1) {
 	trch_out_fd = fopen("ulsch_trch.txt","w");
 	for (i=0;i<input_buffer_length;i++) {
@@ -620,12 +620,13 @@ int main(int argc, char **argv) {
 	  }
 	  
 #ifdef OFDMA_ULSCH
-	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],cooperation_flag);
+	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,
+			   PHY_vars_UE->frame,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0]);
 #else  
 	  //	  printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
 	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],
-			   subframe,&PHY_vars_UE->lte_frame_parms,
-			   PHY_vars_UE->ulsch_ue[0],cooperation_flag);
+			   PHY_vars_UE->frame,subframe,&PHY_vars_UE->lte_frame_parms,
+			   PHY_vars_UE->ulsch_ue[0]);
 #endif
 	  
 #ifdef IFFT_FPGA_UE

@@ -37,21 +37,22 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: offset %d, symbol %d, nb_prefix_samples %d\n",symbol, nb_prefix_samples);
+  msg("slot_fep: Ns %d offset %d, symbol %d, nb_prefix_samples %d\n",Ns,slot_offset,symbol, nb_prefix_samples);
 #endif
 
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 
-#ifdef DEBUG_FEP
-    if ((Ns==5) && (eNB_id==0) && (aa==0)) 
-      write_output("eNB_rx.m","rxs",&eNB_common_vars->rxdata_7_5kHz[0][0][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol],((frame_parms->ofdm_symbol_size+nb_prefix_samples)*6),1,1);
-    if ((Ns==7) && (eNB_id==0) && (symbol==11)) 
-      write_output("eNB_rx.m","rxs",&eNB_common_vars->rxdata_7_5kHz[0][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol],(frame_parms->ofdm_symbol_size),1,1);
-#endif
     if (l==0) {
-	     
-      fft((short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+
+
+      fft(
+#ifndef OFDMA_ULSCH	     
+	  (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
 							       nb_prefix_samples0],
+#else
+	  (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+							nb_prefix_samples0],
+#endif
 	  (short*)&eNB_common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
@@ -60,7 +61,12 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 	  0);
     }
     else {
-      fft((short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+      fft(
+#ifndef OFDMA_ULSCH
+	  (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+#else
+          (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+#endif
 							       (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
 							       (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
 	  (short*)&eNB_common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],

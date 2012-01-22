@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
   DCI_ALLOC_t dci_hop1;
   DCI_ALLOC_t dci_hop2;
 
-  SCM_t channel_model = Rayleigh1;
+  SCM_t channel_model = AWGN;//Rayleigh1;
   channel_vars_t channel_vars;
   sh_channel_t** channels_hop1;
   sh_channel_t** channels_hop2;
@@ -549,14 +549,15 @@ int main(int argc, char **argv) {
           // Generate transport channel parameters
           generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, rnti_hop2, (subframe_hop2+6)%10, 
               format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
-          if(relay_role[k] == RELAY_ROLE_STANDARD)
+          if(relay_role[k] == RELAY_ROLE_STANDARD) {
             phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
-          else
+	  }
+          else {
             phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
-
+	  }
           // Generate uplink reference signal
-          generate_drs_pusch(phy_vars_mr[k], 0, AMP, subframe_hop2, 0, N_RB);
-
+	  generate_drs_pusch(phy_vars_mr[k], 0, AMP, subframe_hop2, 0, N_RB);
+	    
           // Encode ULSCH data
           if(ulsch_encoding(mr_buffer[k], frame_parms, phy_vars_mr[k]->ulsch_ue[0],
                 harq_pid_hop2, 1, 0, 1) == -1) {
@@ -565,8 +566,9 @@ int main(int argc, char **argv) {
           }
 
           // Modulate ULSCH data
-          ulsch_modulation(phy_vars_mr[k]->lte_ue_common_vars.txdataF, AMP, 0, subframe_hop2, 
-              frame_parms, phy_vars_mr[k]->ulsch_ue[0], relay_role[k] == RELAY_ROLE_STANDARD ? 0 : 2);
+
+	  ulsch_modulation(phy_vars_mr[k]->lte_ue_common_vars.txdataF, AMP, 0, subframe_hop2, 
+			   frame_parms, phy_vars_mr[k]->ulsch_ue[0]);
 
           if(args.verbose > 2)
             print_ulsch_ue_stats(phy_vars_mr[k]->ulsch_ue[0]);
@@ -605,7 +607,7 @@ int main(int argc, char **argv) {
           slot_fep_ul(frame_parms, &phy_vars_ch_dest->lte_eNB_common_vars, l, 2*subframe_hop2+1, 0, 0);
 
         // Receive ULSCH data
-        rx_ulsch(phy_vars_ch_dest, subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 0);
+        rx_ulsch(phy_vars_ch_dest, subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 2);
 
         // Compute uncoded bit error rate (assuming data was decoded at all MR)
         raw_ber = compute_ber_soft(phy_vars_mr[0]->ulsch_ue[0]->b_tilde,
@@ -637,7 +639,19 @@ int main(int argc, char **argv) {
           write_output("rxch0v.m", "rxch0", &phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0]
               [subframe_hop2*frame_parms->samples_per_tti], frame_parms->samples_per_tti, 1, 1);
           write_output("h2rxf0v.m", "h2rxf0", phy_vars_ch_dest->lte_eNB_common_vars.rxdataF[0][0],
-              2*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti, 2, 1);
+		       2*frame_parms->ofdm_symbol_size*n_symbols_per_slot*2, 2, 1);
+          write_output("h2rxfe0v.m", "h2rxfe0", phy_vars_ch_dest->lte_eNB_pusch_vars[0]->rxdataF_ext2[0][0],
+		       12*phy_vars_ch_dest->lte_frame_parms.N_RB_UL*n_symbols_per_slot*2, 1, 1);
+	  write_output("rxF_comp.m","rxFcomp",&phy_vars_ch_dest->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0][0],
+		       12*phy_vars_ch_dest->lte_frame_parms.N_RB_UL*n_symbols_per_slot*2,1,1);
+	  write_output("rxF_comp0.m","rxFcomp0",&phy_vars_ch_dest->lte_eNB_pusch_vars[0]->rxdataF_comp_0[0][0][0],
+		       12*phy_vars_ch_dest->lte_frame_parms.N_RB_UL*n_symbols_per_slot*2,1,1);
+	  write_output("rxF_comp1.m","rxFcomp1",&phy_vars_ch_dest->lte_eNB_pusch_vars[0]->rxdataF_comp_1[0][0][0],
+		       12*phy_vars_ch_dest->lte_frame_parms.N_RB_UL*n_symbols_per_slot*2,1,1);
+	  write_output("chest0.m","ch0",phy_vars_ch_dest->lte_eNB_pusch_vars[0]->drs_ch_estimates_0[0][0],
+		       12*phy_vars_ch_dest->lte_frame_parms.N_RB_UL*n_symbols_per_slot*2,1,1);
+	  write_output("chest1.m","ch1",phy_vars_ch_dest->lte_eNB_pusch_vars[0]->drs_ch_estimates_1[0][0],
+		       12*phy_vars_ch_dest->lte_frame_parms.N_RB_UL*n_symbols_per_slot*2,1,1);
         }
       }
 
@@ -903,6 +917,12 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   frame_parms->mode1_flag = (transmission_mode == 1 ? 1 : 0);
   frame_parms->nb_antennas_tx = n_txantenna_ch;
   frame_parms->nb_antennas_rx = n_rxantenna_mr;
+
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+
+
   
   init_frame_parms(frame_parms, oversampling);
   phy_init_top(frame_parms);
@@ -911,6 +931,7 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   frame_parms->rev = rev;
 
   phy_init_lte_top(frame_parms);
+  init_ul_hopping(frame_parms);
   dump_frame_parms(frame_parms);
 }
 
@@ -918,14 +939,15 @@ void setup_ch_src(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
 {
   phy_vars->lte_frame_parms = *frame_parms;
 
-  phy_init_lte_eNB(phy_vars, 0, 1, 0);
+  phy_init_lte_eNB(phy_vars, 0, 0, 0);
 }
 
 void setup_ch_dest(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
 {
   phy_vars->lte_frame_parms = *frame_parms;
 
-  phy_init_lte_eNB(phy_vars, 0, 0, 0);
+  phy_init_lte_eNB(phy_vars,0,2,0);
+
 }
 
 void setup_mr(PHY_VARS_UE* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
@@ -1094,7 +1116,7 @@ void transmit_subframe(sh_channel_t* channel, s32** src, s32** dst, LTE_DL_FRAME
 {
   int k;
 
-  for(k = 0; k < nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; k++) {
+  for(k = 0; k < frame_parms->samples_per_tti; k++) {
     channel->cvars->s_re[0][k] = (double)((s16*)src[0])[2*subframe*frame_parms->samples_per_tti + (k<<1)];
     channel->cvars->s_im[0][k] = (double)((s16*)src[0])[2*subframe*frame_parms->samples_per_tti + (k<<1) + 1];
     //channel->cvars->s_re[1][k] = 0;
@@ -1103,9 +1125,9 @@ void transmit_subframe(sh_channel_t* channel, s32** src, s32** dst, LTE_DL_FRAME
 
   multipath_channel(channel->channel, channel->cvars->s_re, channel->cvars->s_im,
       channel->cvars->r_re, channel->cvars->r_im,
-      nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES, 0);
+      frame_parms->samples_per_tti, 0);
 
-  for(k = 0; k < nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; k++) {
+  for(k = 0; k < frame_parms->samples_per_tti; k++) {
     ((s16*)dst[0])[2*subframe*frame_parms->samples_per_tti + (k<<1)] = 
       (s16) (channel->cvars->r_re[0][k] + awgn_stddev*gaussdouble(0.0, 1.0));
     ((s16*)dst[0])[2*subframe*frame_parms->samples_per_tti + (k<<1) + 1] = 
@@ -1205,8 +1227,10 @@ double compute_ber_soft(u8* ref, s16* rec, int n)
   int e = 0;
 
   for(k = 0; k < n; k++)
-    if((ref[k]==1) != (rec[k]<0))
+    if((ref[k]==1) != (rec[k]<0)) {
+      //      printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
       e++;
+    }
 
   return (double)e / (double)n;
 }
