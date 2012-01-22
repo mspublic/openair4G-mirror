@@ -40,7 +40,7 @@
 #include "oaisim.h"
 
 #define RF
-#define DEBUG_SIM
+//#define DEBUG_SIM
 
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -216,7 +216,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
       s16 nb_samples=301;
       //      double scale = pow(10.0,(enb_data[att_eNB_id]->tx_power_dBm + eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
       double scale = pow(10.0,(PHY_vars_eNB_g[att_eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower+eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
-      printf("[CHANNEL_SIM] scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
+      //      printf("[CHANNEL_SIM] scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
       desc1 = eNB2UE[att_eNB_id][UE_id];
       freq_channel(desc1,frame_parms->N_RB_DL,nb_samples);
       //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
