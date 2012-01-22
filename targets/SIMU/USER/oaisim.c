@@ -1090,20 +1090,16 @@ main (int argc, char **argv)
 	}
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
  
-      if (direction  == SF_DL) {
+      if ((direction  == SF_DL)||
+	  (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,
                   ue_data,next_slot,abstraction_flag,frame_parms);
-	/*
-	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	  printf("DL B(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	*/
       }
-      else if (direction  == SF_UL) {
+      if ((direction  == SF_UL)||
+	  (frame_parms->frame_type==0)){
 	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
-      else {//it must be a special subframe
+      if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
 	  /*
@@ -1148,8 +1144,8 @@ main (int argc, char **argv)
 	td = (int) (time_now - time_last);
 	if (td>0) {
 	  td_avg = (int)(((K*(long)td) + (((1<<3)-K)*((long)td_avg)))>>3); // in us
-	  LOG_I(EMU,"sleep frame %d, average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",
-		frame, td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
+	  LOG_I(EMU,"sleep frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",
+		frame, time_now,time_last,td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
 	}  
 	if (td_avg<(TARGET_SF_TIME_NS - SF_DEVIATION_OFFSET_NS)){
 	  sleep_time_us += SLEEP_STEP_US; 
