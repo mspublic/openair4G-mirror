@@ -38,6 +38,7 @@
 
 #include "UTIL/LOG/log.h"
 #include "../../COMMON/platform_types.h"
+#include "pdcp.h"
 
 /*
  * Prints incoming byte stream in hexadecimal and readable form
@@ -58,6 +59,6 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
  */
 void util_print_binary_representation(unsigned char* message, u8_t octet);
 
-void util_mark_nth_bit_of_octet(u8_t* octet, u8_t index);
+BOOL util_mark_nth_bit_of_octet(u8_t* octet, u8_t index);
 
 #endif // PDCP_UTIL_H

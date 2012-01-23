@@ -153,18 +153,25 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
     return FALSE;
 
   /*
+   * Mark received sequence numbers to keep track of missing ones
+   * (and to build PDCP Control PDU for PDCP status report)
+   */
+  if (pdcp_mark_current_pdu_as_received(seq_num, pdcp_entity) == TRUE) {
+    LOG_I(PDCP, "Received sequence number successfuly marked\n");
+  } else {
+    LOG_W(PDCP, "Cannot mark received sequence number on the bitmap!\n");
+  }
+
+  /*
    * XXX Since we do not implement reordering window yet we expect to receive
    * exactly the next SN from lower layer. When reordering window is implemented
    * the operator utilized here should be >= as stated in 5.1.2.1.2
    */
   if (seq_num == pdcp_entity->next_pdcp_rx_sn) {
-    // Incoming sequence number is in accordance with the RX window so
-    // update PDCP status for next expected RX sequence number
     LOG_I(PDCP, "Next expected SN (%d) arrived, advancing RX window\n", seq_num);
 
     return pdcp_advance_rx_window(pdcp_entity);
   } else {
-    // XXX This is an error just because we don't have a reordering window!
     LOG_E(PDCP, "D'oh! Incoming SN is not the one we expected to receive! (Incoming:%d, Expected:%d)\n", \
         seq_num, pdcp_entity->next_pdcp_rx_sn);
 
@@ -174,18 +181,6 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
      */
     if (pdcp_entity->first_missing_pdu != -1)
       pdcp_entity->first_missing_pdu = pdcp_entity->next_pdcp_rx_sn;
-
-    /*
-     * Update missing PDU bitmap
-     */
-#if 0
-    if (pdcp_mark_current_pdu_as_received(seq_num, pdcp_entity) == TRUE) {
-      LOG_I(PDCP, "Received sequence number successfuly marked\n");
-    } else {
-      LOG_W(PDCP, "Cannot mark received sequence number on the bitmap!\n");
-    }
-#endif
-    pdcp_mark_current_pdu_as_received(seq_num, pdcp_entity);
 
     return FALSE;
   }
