@@ -39,6 +39,8 @@
 #include "platform_constants.h"
 #include "pdcp_primitives.h"
 
+extern BOOL util_mark_nth_bit_of_octet(u8_t* octet, u8_t index);
+
 /*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
@@ -91,7 +93,7 @@ u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer)
  * @param pdu_buffer PDCP PDU buffer
  * @return TRUE on success, FALSE otherwise
  */
-BOOL pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer(unsigned char* pdu_buffer, \
+BOOL pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_buffer, \
      pdcp_user_plane_data_pdu_header_with_long_sn* pdu)
 {
   if (pdu_buffer == NULL || pdu == NULL)
@@ -112,6 +114,40 @@ BOOL pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer(unsigned char
     LOG_D(PDCP, "Setting PDU as a Control PDU\n");
     pdu_buffer[0] |= 0x80; // set the first bit as 1
   }
+
+  return TRUE;
+}
+
+/*
+ * Fills the incoming PDU buffer with with given control PDU
+ *
+ * @param pdu_buffer The buffer that PDU will be serialized into
+ * @param pdu A status report header
+ * @return TRUE on success, FALSE otherwise
+ */
+BOOL pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_buffer, \
+     u8 bitmap[512], pdcp_control_pdu_for_pdcp_status_report* pdu)
+{
+  if (pdu_buffer == NULL || pdu == NULL)
+    return FALSE;
+
+  /*
+   * Data or Control field and PDU type (already 0x00, noop)
+   *
+   * Set leftmost bit to set this PDU as `Control PDU'
+   */
+  util_mark_nth_bit_of_octet(((u8_t*)&pdu_buffer[0]), 1);
+
+  /*
+   * Fill `First Missing PDU SN' field
+   */
+  pdu_buffer[0] |= ((pdu->first_missing_sn >> 8) & 0xFF);
+  pdu_buffer[1] |= (pdu->first_missing_sn && 0xFF);
+
+  /*
+   * Append `bitmap'
+   */
+  memcpy(pdu_buffer + 2, bitmap, 512);
 
   return TRUE;
 }
