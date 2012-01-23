@@ -56,7 +56,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
   /*
    * Get the current time and format it.
    */
-
+#ifdef OPENAIR1
   if (mac_xface->is_cluster_head == 0) {
     if (PHY_vars_UE_g)
       len += dump_ue_stats(PHY_vars_UE_g[0],buffer,len);
@@ -65,6 +65,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
     if (PHY_vars_eNB_g) 
       len += dump_eNB_stats(PHY_vars_eNB_g[0],buffer,len);
   }
+#endif
 
   return len;
 }

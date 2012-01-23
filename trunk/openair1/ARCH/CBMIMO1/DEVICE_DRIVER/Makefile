@@ -40,6 +40,7 @@ EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 #EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -fno-unit-at-a-time -march=i686 -fno-strength-reduce  -fno-exceptions -pipe -mmmx -msse -msse2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fno-common -ffreestanding -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
 #EXTRA_CFLAGS += -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
+
 EXTRA_CFLAGS += -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -nostdinc -O2 
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
@@ -50,7 +51,7 @@ CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi
 
 EXTRA_CFLAGS += $(CPUFLAGS)
 
-EXTRA_CFLAGS += -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -DDLSCH_THREAD 
+EXTRA_CFLAGS += -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP 
 
 ifdef DEBUG_PHY
 EXTRA_CFLAGS += -DDEBUG_PHY
@@ -90,6 +91,10 @@ endif
 
 ifeq ($(OPENAIR_LTE),1)
 EXTRA_CFLAGS += -DOPENAIR_LTE 
+endif
+
+ifeq ($(OPENAIR1),1)
+EXTRA_CFLAGS += -DDLSCH_THREAD -DOPENAIR1
 endif
 
 ifeq ($(OPENAIR2),1)
@@ -136,7 +141,9 @@ openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
 else
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_fw2011.o
 endif
+ifeq ($(OPENAIR1),1)
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
+endif
 
 # Init
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o

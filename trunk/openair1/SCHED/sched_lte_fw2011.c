@@ -169,7 +169,7 @@ rtheap_t rt_heap;
 unsigned int sync_slot_cnt=0;
 unsigned int sync_getting_frame = 0;
 
-static int hw_frame = 0;
+//static int hw_frame = 0;
 static int intr_cnt = 0;
 
 int intr_in = 0;
@@ -277,6 +277,7 @@ void openair_sync(void) {
     sync_slot_cnt++;
   }     //(openair_daq_vars.one_shot_get_frame == 0)  
 
+#ifdef OPENAIR1
   if ((openair_daq_vars.do_synch==1) && (openair_daq_vars.node_configured == 3)) {// the node has been cofigured as a UE and we do sync
 
     if (sync_getting_frame == 0) {
@@ -308,6 +309,7 @@ void openair_sync(void) {
 
       msg("[openair][SCHED][SYNCH] starting sync\n");
 
+      
       if (initial_sync(PHY_vars_UE_g[0]) == 0) {
 		
 	if (openair_daq_vars.node_running == 1) {
@@ -354,6 +356,7 @@ void openair_sync(void) {
     }
     sync_slot_cnt++;
   }
+#endif
 }
 
 
@@ -404,8 +407,9 @@ static void * openair_thread(void *param) {
     msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
   }
   
-
+#ifdef OPENAIR1
   lte_sync_time_init(frame_parms);
+#endif
 
   openair_daq_vars.sync_state=0;
 
@@ -472,8 +476,10 @@ static void * openair_thread(void *param) {
       //debug_msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
 #endif
 
+#ifdef OPENAIR1
       if (openair_daq_vars.is_eNB==1) {
 	if (PHY_vars_eNB_g && PHY_vars_eNB_g[0]) {
+	  PHY_vars_eNB_g[0]->frame = openair_daq_vars.hw_frame;
 	  phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[0],0);
 #ifndef IFFT_FPGA
 	  slot_offset_F = (next_slot)*
@@ -484,25 +490,30 @@ static void * openair_thread(void *param) {
 
 	  for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++) {
 	    if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1) {
+	      
 	      /*
-	      debug_msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_offset_F %d, slot_offset %d, input %p, output %p, samples_per_tti %d\n", 
-			mac_xface->frame, 
-			slot_offset_F,
-			slot_offset,
-			&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
-			&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
-			PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti);
-	      if (((mac_xface->frame%1000)==0) && ((next_slot>>1)==5) && (aa==0)) {
-		for (i=2560;i<3072;i++)
-		  debug_msg("%d:(%d,%d), ",i,((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2],
-			    ((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2+1]);
-		debug_msg("\n");
-	      }
+	      if ((openair_daq_vars.hw_frame%100) == 0)
+		msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_offset_F %d, slot_offset %d, input %p, output %p, samples_per_tti %d\n", 
+		    openair_daq_vars.hw_frame, 
+		    slot_offset_F,
+		    slot_offset,
+		    &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+		    &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+		    PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti);
 	      */
 	      /*
-	      for (i=0;i<6;i+=2)
+	      for (i=0;i<6;i++) {
 		memset(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F+i*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size],0,PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size*sizeof(int));
-		//((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i*512+150)*2]=1024;
+		((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i*512+75)*2]=1024;
+	      }
+	      */
+	      /*	      
+	      for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size;i++)
+		((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2]=i;
+	      */
+	      /*
+	      for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti>>1;i++)
+		((char*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa]))[(slot_offset+i)*2] = (char) 0; //(i/30);
 	      */
 
 	      PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],        // input
@@ -517,6 +528,25 @@ static void * openair_thread(void *param) {
 			   PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,  // IFFT twiddle factors
 			   PHY_vars_eNB_g[0]->lte_frame_parms.rev,           // bit-reversal permutation
 			   CYCLIC_PREFIX);
+
+	      if (((openair_daq_vars.hw_frame%1000)==0) && (next_slot==0) && (aa==0)) {
+		/*
+		for (i=0;i<511;i++) {
+		  msg("twiddle_ifft(%d) = (%d, %d)\n", i, 
+		      PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft[4*i], 
+		      PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft[4*i+1]);
+		}
+		*/
+		for (i=0;i<512;i++)
+		  msg("X(%d)=(%d,%d), ",i,((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2],
+			    ((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2+1]);
+		msg("\n");
+		for (i=0;i<640;i++)
+		  msg("x(%d)=(%d,%d), ",i,((char*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa]))[(slot_offset+i)*2],
+			    ((char*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa]))[(slot_offset+i)*2+1]);
+		msg("\n");
+		//exit_openair=1;
+	      }
 
 	    }
 	    else {
@@ -565,7 +595,7 @@ static void * openair_thread(void *param) {
 	  }
 #endif
       }
-
+#endif //OPENAIR1
 
       time_out = openair_get_mbox();
       rt_time_out = rt_get_time_ns();
@@ -598,7 +628,7 @@ static void * openair_thread(void *param) {
 
     else {   // synchronization and get frame
 
-      if ((hw_frame%100==0) && (openair_daq_vars.slot_count==0) && (openair_daq_vars.mode != openair_SYNCHED))
+      if ((openair_daq_vars.hw_frame%100==0) && (openair_daq_vars.slot_count==0) && (openair_daq_vars.mode != openair_SYNCHED))
 	openair_daq_vars.do_synch=1;
 
       openair_sync();
@@ -656,9 +686,9 @@ int slot_irq_handler(int irq, void *cookie) {
 
   intr_in = 1;
 
+  intr_cnt++;
   if (intr_cnt%2000 == 0)
     msg("Interrupt cnt %d\n",intr_cnt);
-  intr_cnt++;
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
@@ -677,33 +707,24 @@ int slot_irq_handler(int irq, void *cookie) {
 	
 	adac_cnt = (*(unsigned int *)mbox);
 	
-	openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
-	//openair_daq_vars.slot_count=adac_cnt>>3;
-
-	/*
-	if (openair_daq_vars.slot_count==0) {
-	  if (openair_daq_vars.is_eNB==1)
-	    PHY_vars_eNB_g[0]->frame++;
-	  else
-	    PHY_vars_UE_g[0]->frame++;
-	}
-	*/
+	//openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
+	openair_daq_vars.slot_count=adac_cnt>>3;
 
 	//if ((adac_cnt>>3) == 0)
 	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
-	  hw_frame++;
+	  openair_daq_vars.hw_frame++;
 	
-	if ((intr_cnt%2000) < 20) {
+	if (((openair_daq_vars.hw_frame %100) == 0) && (openair_daq_vars.hw_frame>0)) {
 	  tv = rt_get_time_ns();
-	  msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d\n",
-	      tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,hw_frame);
+	  msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d, slot %d\n",
+	      tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,openair_daq_vars.hw_frame,openair_daq_vars.slot_count);
 	}
 	
 	openair_daq_vars.last_adac_cnt=adac_cnt;
 	
 	/*
-	  if ((hw_frame %100) == 0)
-	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, MAC Frame %d (interrupt cnt %d)\n",hw_frame,mac_xface->frame,intr_cnt);
+	  if ((openair_daq_vars.hw_frame %100) == 0)
+	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, interrupt cnt %d\n",openair_daq_vars.hw_frame,intr_cnt);
 	*/
 	
 	
@@ -768,6 +789,8 @@ int slot_irq_handler(int irq, void *cookie) {
 	}
       } // node_configured > 0
       rt_ack_irq(irq);
+      rt_unmask_irq(irq);
+      rt_enable_irq(irq);
       intr_in = 0;
       return IRQ_HANDLED;
       
@@ -806,6 +829,8 @@ int slot_irq_handler(int irq, void *cookie) {
 	
       }
       rt_ack_irq(irq);
+      rt_unmask_irq(irq);
+      rt_enable_irq(irq);
       intr_in = 0;
       return IRQ_HANDLED;
     }
@@ -836,7 +861,7 @@ s32 openair_sched_init(void) {
   
   openair_daq_vars.last_adac_cnt=-1;            
   
-  
+  exit_openair=0;
   
   pthread_mutex_init(&openair_mutex,NULL);
   
