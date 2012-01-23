@@ -59,6 +59,13 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
  */
 void util_print_binary_representation(unsigned char* message, u8_t octet);
 
+/*
+ * Sets the bit of `octet' at index `index'
+ *
+ * @param octet Octet
+ * @param index Index
+ * @return TRUE on success, FALSE otherwise
+ */
 BOOL util_mark_nth_bit_of_octet(u8_t* octet, u8_t index);
 
 #endif // PDCP_UTIL_H

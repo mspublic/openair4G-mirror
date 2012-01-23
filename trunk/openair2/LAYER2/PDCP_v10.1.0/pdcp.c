@@ -125,7 +125,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     /*
      * Fill PDU buffer with the struct's fields
      */
-    if (pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
+    if (pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
       LOG_W(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
       return FALSE;
     }
