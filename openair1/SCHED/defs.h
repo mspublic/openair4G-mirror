@@ -101,6 +101,7 @@ typedef struct {
   u32  dlsch_transmission_mode;
   u32  ulsch_allocation_mode;
   u32  rx_total_gain_dB;
+  u32  hw_frame;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE
