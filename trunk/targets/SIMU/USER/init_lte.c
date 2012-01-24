@@ -146,6 +146,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
     PHY_vars_eNB_g[eNB_id]->check_for_MUMIMO_transmissions = 0;
 
+    PHY_vars_eNB_g[eNB_id]->FULL_MUMIMO_transmissions = 0;
+
     PHY_vars_eNB_g[eNB_id]->check_for_SUMIMO_transmissions = 0;
   }
 

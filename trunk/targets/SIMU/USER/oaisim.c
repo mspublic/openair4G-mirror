@@ -138,7 +138,7 @@ help (void) {
   printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:err) \n");
   printf
     ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
-  printf ("-x Set the transmission mode (1,2,6 supported for now)\n");
+  printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
   printf ("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
@@ -787,14 +787,14 @@ main (int argc, char **argv)
       printf ("[SIM] Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
 #endif
       if (oai_emulation.info.transmission_mode == 5) {
-	  eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
-						       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						       (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
-						       //map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
-						       oai_emulation.environment_system_config.system_bandwidth_MB,
-						       forgetting_factor,
-						       0,
-						       0);
+	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
+						     //(awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						     oai_emulation.environment_system_config.system_bandwidth_MB,
+						     forgetting_factor,
+						     0,
+						     0);
 
 	}
       else {

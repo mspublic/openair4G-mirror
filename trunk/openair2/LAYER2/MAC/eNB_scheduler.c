@@ -57,9 +57,6 @@
 
 
 
-
-
-
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 0
 //#define DEBUG_PACKET_TRACE 0
@@ -1489,7 +1486,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
 //***************************PRE_PROCESSOR for MU-MIMO IN TM5*********************************//
 /*
-This function is specific to TM5, where it compares the all the available UEs for orthogonal PMIs and schedules them in MU-MIMO,
+This function is specific to TM5, where it compares all the available UEs for orthogonal PMIs and schedules them in MU-MIMO,
 if it has more traffic compared to SU-MIMO
 1. dl_pow_off gives an indication whether the UE is scheduled in MU-MIMO (0) or SU-MIMO(1) mode
 2. pre_nb_available_rbs gives the total number of RBs available for each UE
@@ -1510,13 +1507,13 @@ void tm5_pre_processor (unsigned char Mod_id,
   unsigned char granted_UEs;
   u16 nCCE;
   unsigned char aggregation;
-  u16 nb_available_rb,j,rnti,rnti0=0,rnti1=0,rnti_temp,rnti_k[2][7];
+  u16 nb_available_rb,j,TBS,rnti,rnti0=0,rnti1=0,rnti_temp,rnti_k[2][7];
   //nb_rb,TBS;
-  unsigned char round_temp=0,round_k=0;
+  unsigned char round=0,round_temp=0,round_k=0;
   //round=0;
-  unsigned char harq_pid_temp=0,harq_pid_k=0;
+  unsigned char harq_pid_temp=0,harq_pid_k=0,harq_pid=0;
   //harq_pid=0;
-  //  void *DLSCH_dci;
+  void *DLSCH_dci;
   LTE_eNB_UE_stats* eNB_UE_stats;
   LTE_eNB_UE_stats* eNB_UE_stats0;
   LTE_eNB_UE_stats* eNB_UE_stats1;
@@ -1525,13 +1522,13 @@ void tm5_pre_processor (unsigned char Mod_id,
   unsigned char k0=0,k1=0,k2=0,k3=0,k4=0,k5=0,k6=0;
   unsigned char i0=0,i1=0,i2=0,i3=0,i4=0,i5=0,i6=0;
   //u8 dl_pow_off[256];
-  //  u8 status=0;
-  u16 i=0,ii=0,check=0,jj=0; //total_rbs=0;
+  u8 status=0;
+  u16 i=0,ii=0,check=0,jj=0,total_rbs=0;
   //unsigned char rballoc_sub[256][7];
   //u16 pre_nb_available_rbs[256];
   u8 MIMO_mode_indicator[7]= {2,2,2,2,2,2,2};
   u8 total_DL_cqi_MUMIMO = 0,total_DL_cqi_SUMIMO = 0;
-
+  u16 total_TBS_SUMIMO = 0,total_TBS_MUMIMO = 0; 
 
   /// Initialization
   for(i=0;i<256;i++)
@@ -3229,9 +3226,9 @@ void tm5_pre_processor (unsigned char Mod_id,
 	MIMO_mode_indicator[6] = 1;
       }
     }
-
-
-
+  
+    
+  /*    
   for(i=0;i<7;i++){
 
     if(MIMO_mode_indicator[i] == 0){
@@ -3239,6 +3236,7 @@ void tm5_pre_processor (unsigned char Mod_id,
       rnti1 = find_UE_RNTI(Mod_id,ue[1][i]);
       eNB_UE_stats0 = mac_xface->get_eNB_UE_stats(Mod_id,rnti0);
       eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
+      TBS0 = mac_xface->get_TBS(eNB_UE_stats0->DL_cqi[0],nb_available_rb);
       total_DL_cqi_MUMIMO = total_DL_cqi_MUMIMO + eNB_UE_stats0->DL_cqi[0] + eNB_UE_stats1->DL_cqi[0];
     }
     else if (MIMO_mode_indicator[i] == 1){
@@ -3247,30 +3245,38 @@ void tm5_pre_processor (unsigned char Mod_id,
       total_DL_cqi_SUMIMO = total_DL_cqi_SUMIMO + eNB_UE_stats0->DL_cqi[0];
     }
   }
+  */
 
 
 
-
+  
   if((MIMO_mode_indicator[0] == 0)|| (MIMO_mode_indicator[1] == 0) || (MIMO_mode_indicator[2] == 0) ||  (MIMO_mode_indicator[3] == 0) ||
      (MIMO_mode_indicator[4] == 0)|| (MIMO_mode_indicator[5] == 0) || (MIMO_mode_indicator[6] == 0)){
-
+    
+    
+    for( UE_id = 0; UE_id < granted_UEs; UE_id++){
+      next_ue = UE_id;
+      rnti = find_UE_RNTI(Mod_id, next_ue);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+      TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],pre_nb_available_rbs[next_ue]);
+      total_TBS_MUMIMO = TBS + total_TBS_MUMIMO;
+    }
+    
 
     for (UE_id=0;UE_id<granted_UEs;UE_id++)
       {
-
-
 	next_ue = UE_id;
 	// If nobody is left, exit while loop and go to next step
 	if (next_ue == 255)
 	  break;
-
+	
 	// This is an allocated UE_id
 	rnti = find_UE_RNTI(Mod_id,next_ue);
 	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 
 	if (eNB_UE_stats==NULL)
 	  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-
+	
 	switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
 	case 1:break;
 	case 2:break;
@@ -3295,13 +3301,15 @@ void tm5_pre_processor (unsigned char Mod_id,
 	default: break;
 	}
       }
+    
     rnti = find_UE_RNTI(Mod_id,UE_SU_MIMO);
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-    if((7*eNB_UE_stats->DL_cqi[0]) > (total_DL_cqi_SUMIMO + total_DL_cqi_MUMIMO)){
-
+    total_TBS_SUMIMO = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_available_rb);
+    if(total_TBS_SUMIMO >= total_TBS_MUMIMO){
+      
       dl_pow_off[UE_SU_MIMO] = 1;
       pre_nb_available_rbs[UE_SU_MIMO] = 25;
-
+      
       for(j=0;j<7;j++){
 	rballoc_sub[UE_SU_MIMO][j] = 1;
 	ue[0][j] = UE_SU_MIMO;
@@ -3331,7 +3339,11 @@ void tm5_pre_processor (unsigned char Mod_id,
        (MIMO_mode_indicator[4] == 0)|| (MIMO_mode_indicator[5] == 0) || (MIMO_mode_indicator[6] == 0))
       PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions + 1;
 
-  PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions + 1;
+  if((MIMO_mode_indicator[0] == 0)&& (MIMO_mode_indicator[1] == 0) && (MIMO_mode_indicator[2] == 0) &&  (MIMO_mode_indicator[3] == 0) &&
+     (MIMO_mode_indicator[4] == 0)&& (MIMO_mode_indicator[5] == 0) && (MIMO_mode_indicator[6] == 0))
+    PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions + 1;
+  
+      PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions + 1;
 
 
 
@@ -3371,7 +3383,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u16 sdu_length_total=0;
   //  unsigned char loop_count;
   unsigned char DAI;
-  u16 i=0,ii=0;//check=0,jj=0;
+  u16 i=0,ii=0,check=0,jj=0;
   u8 dl_pow_off[256];
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
@@ -3472,10 +3484,11 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     eNB_UE_stats->dlsch_mcs1 = (eNB_UE_stats->DL_cqi[0]<<1);
 
-#ifdef FULL_BUFFER
+#ifdef BUFFER
     while(eNB_UE_stats->dlsch_mcs1 > 9){
-      eNB_UE_stats->DL_cqi[0] = eNB_UE_stats->DL_cqi[0]-1;
-      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0];
+      //eNB_UE_stats->DL_cqi[0] = eNB_UE_stats->DL_cqi[0]-1;
+      //eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0]<<1;
+      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1 - 1;
     }
 #endif
     // Get candidate harq_pid from PHY
@@ -3525,10 +3538,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  break;
 	case 5:
 	  // if(nb_rb>10){
+	  //((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->DL_cqi[0]<<1;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi = 0;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv = round&3;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  if(dl_pow_off[next_ue] == 2)
+	    dl_pow_off[next_ue] = 1;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = dl_pow_off[next_ue];
 	  // }
 	  break;
@@ -3555,14 +3571,16 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
-      TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
-
+      //TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
+      TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
       // check first for RLC data on DCCH
       header_len_dcch = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
 
-      LOG_D(MAC,"[eNB %d][DCCH] Requesting %d bytes from RLC (mcs %d, nb_available_rb %d)\n",
-	    Mod_id,TBS-header_len_dcch,
-	    eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
+
+#ifdef DEBUG_eNB_SCHEDULER
+      LOG_D(MAC,"[eNB %d][DCCH] Requesting %d bytes from RLC (mcs %d, nb_available_rb %d)\n",Mod_id,TBS-header_len_dcch,
+	  eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+#endif
 
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+(MAX_NUM_RB*next_ue),
 				      (TBS-header_len_dcch)); // transport block set size
@@ -3657,7 +3675,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	header_len_dtch = 0;
       }
 
-#ifdef FULL_BUFFER
+#ifdef BUFFER
       //header_len_dcch = 2;
 #endif
 
@@ -3691,26 +3709,26 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	// Now compute number of required RBs for total sdu length
 	// Assume RAH format 2
 
-#ifdef FULL_BUFFER
+#ifdef BUFFER
 	nb_rb = nb_available_rb;
 #else
 	nb_rb = 2;
 #endif
 
-	TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_rb);
+	TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
 
 
-#ifndef FULL_BUFFER
+#ifndef BUFFER
 
 	while (TBS < (sdu_length_total + offset))  {
 	  nb_rb += 2;  // 
 	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
-	    TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,mac_xface->lte_frame_parms->N_RB_DL);
+	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
 	    nb_rb = mac_xface->lte_frame_parms->N_RB_DL;
 	    break;
 	  }
-	  TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_rb);
+	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
 	}
 #endif
 
@@ -3718,7 +3736,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
-	    Mod_id,eNB_UE_stats->DL_cqi[0]<<1,TBS,nb_rb);
+	    Mod_id,eNB_UE_stats->dlsch_mcs1,TBS,nb_rb);
 	// msg("[MAC][eNB ] Reminder of DLSCH with random data %d %d %d %d \n",
 	//	TBS, sdu_length_total, offset, TBS-sdu_length_total-offset);
 #endif
@@ -3750,7 +3768,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	case 1:
 	case 2:
 	default:
-	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->DL_cqi[0]<<1;
+	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->dlsch_mcs1;
 	  //if(((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs > 9)
 	  //((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = 9;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
@@ -3760,7 +3778,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  break;
 	case 4:
 	  //  if (nb_rb>10) {
-	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0]<<1;
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->dlsch_mcs1;
 	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
 	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
@@ -3778,11 +3796,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  break;
 	case 5:
 
-	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->DL_cqi[0]<<1;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->dlsch_mcs1;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi = 1;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv = round&3;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  if(dl_pow_off[next_ue] == 2)
+	    dl_pow_off[next_ue] = 1;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = dl_pow_off[next_ue];
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
 	  break;

@@ -822,7 +822,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   // for the moment use transmission_mode_rrc
   //physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
 
-  switch (transmission_mode){
+  switch (transmission_mode_rrc){
   case 1:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;
