@@ -2084,7 +2084,6 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 					       subframe);
   eNB_transport_info[phy_vars_eNB->Mod_id].cntl.cfi=num_pdcch_symbols;
 
-  msg("[PHY] EMUL eNB %d generate_dci_top_emul : num_pdcch_symbols = %d\n",phy_vars_eNB->Mod_id,num_pdcch_symbols);
   memcpy(phy_vars_eNB->dci_alloc[subframe&1],dci_alloc,sizeof(DCI_ALLOC_t)*(num_ue_spec_dci+num_common_dci));
   phy_vars_eNB->num_ue_spec_dci[subframe&1]=num_ue_spec_dci;
   phy_vars_eNB->num_common_dci[subframe&1]=num_common_dci;

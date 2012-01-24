@@ -50,7 +50,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
 
     for(i=0;i<NB_SIG_CNX_UE;i++){
 
-      msg("[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
+      LOG_D(RRC, "[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
       UE_rrc_inst[Mod_id].Srb0[i].Srb_id = CCCH;
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -89,11 +89,13 @@ int rrc_init_global_param(void){
 #ifndef NO_RRM
   Rrc_xface->fn_rrc=fn_rrc;
 #endif
-  msg("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
+  LOG_D(RRC, "[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
 
-  if(Mac_rlc_xface==NULL ||
-     Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
+  if((Mac_rlc_xface==NULL) || (Mac_rlc_xface->rrc_rlc_register_rrc==NULL) ||
+     (rlcrrc_data_ind==NULL)) {
+    LOG_E(RRC,"Data structured is not initialized \n");
     return -1;
+  }
   Mac_rlc_xface->rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
 
 
@@ -139,7 +141,7 @@ int L3_xface_init(void){
 #ifdef USER_MODE
 
   int sock ;
-  msg("[RRC][L3_XFACE] init de l'interface \n");
+  LOG_D(RRC, "[L3_XFACE] init de l'interface \n");
 
   if(open_socket(&S_rrc, RRC_RRM_SOCK_PATH, RRM_RRC_SOCK_PATH,0)==-1)
     return (-1);
@@ -197,16 +199,16 @@ void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
 
-  msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
-  msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d\n",NB_INST);
+  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
+  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d\n",NB_INST);
 
   UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
   memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
-  msg("ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
+  LOG_D(RRC,"ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
 
   eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
   memset(eNB_rrc_inst,0,NB_eNB_INST*sizeof(eNB_RRC_INST));
-  msg("ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
+  LOG_D(RRC,"ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
 
 #ifndef NO_RRM
 #ifndef USER_MODE

@@ -68,12 +68,12 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
   u8 harq_pid = get_Msg3_harq_pid(frame_parms,frame,subframe);
   
-  msg("[PHY][eNB][RARPROC] generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
+  LOG_D(PHY,"[eNB][RARPROC] generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
   
   ulsch->harq_processes[harq_pid]->TPC                = rar->TPC;
 
   if (rar->rb_alloc>RIV_max) {
-    msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+    LOG_E(PHY,"[eNB] dci_tools.c: ERROR: rb_alloc > RIV_max\n");
     return(-1);
   }
   ulsch->harq_processes[harq_pid]->rar_alloc          = 1;

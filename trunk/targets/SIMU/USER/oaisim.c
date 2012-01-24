@@ -909,6 +909,8 @@ main (int argc, char **argv)
   if(Process_Flag==1)
       Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
 #endif 
+  
+  LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
@@ -975,8 +977,8 @@ main (int argc, char **argv)
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  printf("[CHANNEL_SIM] Path loss bw enB %d at (%f,%f) and UE%d at (%f,%f) is %f (ShaF %f)\n",
-		 eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
+	  LOG_D(OCM,"Path loss bandwidth for eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
+		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
 		 eNB2UE[eNB_id][UE_id]->path_loss_dB,
 		 ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	}
@@ -992,11 +994,9 @@ main (int argc, char **argv)
 	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower; //+20 to offset the difference in tx power of the UE wrt eNB
 	  else
 	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
-#ifdef DEBUG_SIM
-	  printf("[SIM] Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
-		 PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
+	  LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
+		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
 	  //	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
-#endif
 	}
       }
     }
@@ -1020,15 +1020,14 @@ main (int argc, char **argv)
       for (eNB_id=oai_emulation.info.first_enb_local;
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
-	//#ifdef DEBUG_SIM
-	printf ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
-	   eNB_id, frame, slot, next_slot >> 1,
-		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
-		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
-	//#endif
+	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
+	      eNB_id, frame, slot, next_slot >> 1,
+	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
+	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+	
 	PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
-
+	
 #ifndef NAS_NETLINK
 	//if ((frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
@@ -1042,19 +1041,16 @@ main (int argc, char **argv)
       // Call ETHERNET emulation here
       if ((next_slot % 2) == 0)
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
-
+      
       for (UE_id = oai_emulation.info.first_ue_local; 
 	   (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1); 
 	   UE_id++)
 	if (frame >= (UE_id * 20)) {	// activate UE only after 20*UE_id frames so that different UEs turn on separately
 
-#ifdef DEBUG_SIM
-	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
+	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, frame, slot, next_slot >> 1);
-#endif
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
-	    printf("UE %d : synched (%d)\n",UE_id,PHY_vars_UE_g[UE_id]->UE_mode[0]);
 	    if (frame>0) {
 	      PHY_vars_UE_g[UE_id]->frame = frame;
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
@@ -1090,13 +1086,10 @@ main (int argc, char **argv)
 	}
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
  
-      if ((direction  == SF_DL)||
-	  (frame_parms->frame_type==0)){
-	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,
-                  ue_data,next_slot,abstraction_flag,frame_parms);
+      if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
+	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
-      if ((direction  == SF_UL)||
-	  (frame_parms->frame_type==0)){
+      if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
 	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
       if ((direction == SF_S)) {//it must be a special subframe
@@ -1144,7 +1137,7 @@ main (int argc, char **argv)
 	td = (int) (time_now - time_last);
 	if (td>0) {
 	  td_avg = (int)(((K*(long)td) + (((1<<3)-K)*((long)td_avg)))>>3); // in us
-	  LOG_I(EMU,"sleep frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",
+	  LOG_D(EMU,"sleep frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",
 		frame, time_now,time_last,td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
 	}  
 	if (td_avg<(TARGET_SF_TIME_NS - SF_DEVIATION_OFFSET_NS)){
@@ -1210,12 +1203,13 @@ main (int argc, char **argv)
 
     // calibrate at the end of each frame if there is some time  left
     if((sleep_time_us > 0)&& (ethernet_flag ==0)){
-      LOG_I(EMU,"Go to sleep for %dus\n",sleep_time_us);
+      LOG_I(EMU,"Adjust average frame duration, sleep for %d us\n",sleep_time_us);
       usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
   }	//end of frame
   
+  LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   // relase all rx state
   if (ethernet_flag == 1) {

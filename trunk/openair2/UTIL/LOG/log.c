@@ -196,6 +196,14 @@ void logInit (void) {
     g_log->log_component[MSC].fd = 0;
     g_log->log_component[MSC].filelog =  1;
     g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
+ 
+    g_log->log_component[OCM].name = "OCM";
+    g_log->log_component[OCM].level = LOG_TRACE;
+    g_log->log_component[OCM].flag =  LOG_MED;
+    g_log->log_component[OCM].interval =  1;
+    g_log->log_component[OCM].fd = 0;
+    g_log->log_component[OCM].filelog =  0;
+    g_log->log_component[OCM].filelog_name = "/tmp/ocm.log";
        
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT

@@ -53,8 +53,8 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
       input_node_list = input_node_list->next;
     }
     else {
-      printf("extract_position: Null pointer!!!\n");
-      exit(-1);
+      LOG_E(OCM, "extract_position: Null pointer!!!\n");
+      //exit(-1);
     }
   }
 }
@@ -145,7 +145,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
   //for (aarx=0; aarx<eNB2UE->nb_rx; aarx++)
     *N0 = thermal_noise + ue_data->rx_noise_level;//? all the element have the same noise level?????
       
-  printf("[CHANNEL_SIM] path loss %lf, noise %lf, signal %lf, snr %lf\n", 
+    LOG_D(OCM,"Path loss %lf, noise %lf, signal %lf, snr %lf\n", 
 	 eNB2UE->path_loss_dB, 
 	 thermal_noise + ue_data->rx_noise_level,
 	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB,
@@ -233,9 +233,9 @@ void get_beta_map() {
       }
       fclose(fp);
     }
-    printf("\n table for mcs %d\n",mcs);
+    LOG_D(OCM," Print the table for mcs %d\n",mcs);
     for (table_len = 0; table_len < 9; table_len++)
-      printf("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+      msg("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
   free(file_path);
 }

@@ -689,7 +689,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  
 	  if (abstraction_flag==0) {
 	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
-	      msg("ulsch_coding.c: FATAL ERROR: returning\n");
+	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	      mac_xface->macphy_exit("");
 	      return;
 	    }
@@ -739,7 +739,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       phy_vars_ue->ulsch_ue[eNB_id],
 			       harq_pid,
 			       phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
-	      msg("ulsch_coding.c: FATAL ERROR: returning\n");
+	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	      return;
 	    }
 	  }
@@ -853,6 +853,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 	  else {
 #ifdef PHY_ABSTRACTION
+	    LOG_D(PHY,"Calling generate_pucch_emul ...\n");
 	    generate_pucch_emul(phy_vars_ue,
 				format,
 				phy_vars_ue->lte_frame_parms.pucch_config_common.nCS_AN,
@@ -883,6 +884,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			   next_slot>>1);	 
 	  }
 	  else {
+	    LOG_D(PHY,"Calling generate_pucch_emul ...\n");
 	    generate_pucch_emul(phy_vars_ue,
 				pucch_format1,
 				phy_vars_ue->lte_frame_parms.pucch_config_common.nCS_AN,
@@ -1206,7 +1208,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
 
     if (pbch_tx_ant>2){
-      msg("[openair][SCHED][SYNCH] PBCH decoding: pbch_tx_ant>2 not supported\n");
+      LOG_W(PHY,"[openair][SCHED][SYNCH] PBCH decoding: pbch_tx_ant>2 not supported\n");
       return;
     }
 
@@ -1375,7 +1377,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       LOG_D(PHY,"[UE  %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms.Nid_cell);
       mac_xface->macphy_exit("");
     }
-    
+    LOG_D(PHY,"Calling dci_decoding_proc_emul ...\n");
     dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
 					  PHY_vars_eNB_g[i]->num_ue_spec_dci[(last_slot>>1)&1],
 					  PHY_vars_eNB_g[i]->num_common_dci[(last_slot>>1)&1],
@@ -1666,7 +1668,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
   u8 i_mod = 0;
   
-  msg("UE_RX 1 last_slot %d \n",last_slot);
+  //msg("UE_RX 1 last_slot %d \n",last_slot);
 
   if (phy_vars_ue->lte_frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
@@ -1822,7 +1824,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 
 	  else {
-	    printf("Calling dlsch_decoding_emul ...\n");
+	    LOG_D(PHY,"Calling dlsch_decoding_emul ...\n");
 #ifdef PHY_ABSTRACTION
 	    ret = dlsch_decoding_emul(phy_vars_ue,
 				      (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
@@ -1982,6 +1984,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef PHY_ABSTRACTION
 	  else {
 #ifdef PHY_ABSTRACTION
+	    LOG_D(PHY,"Calling dlsch_decoding_emul ...\n");
 	    ret = dlsch_decoding_emul(phy_vars_ue,
 				      (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				      0,
@@ -2084,6 +2087,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef PHY_ABSTRACTION
 	else {
 #ifdef PHY_ABSTRACTION
+	  LOG_D(PHY,"Calling dlsch_decoding_emul ...\n");
 	  ret = dlsch_decoding_emul(phy_vars_ue,
 				    (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				    1,
