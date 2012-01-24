@@ -1030,12 +1030,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   phy_vars_eNB->total_transmitted_bits = 0;
   phy_vars_eNB->total_system_throughput = 0;
 
-  for(UE_id = 0; UE_id<NUMBER_OF_UE_MAX;UE_id++){
-    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS = 0;
-    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last = 0;
-    phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits = 0;
-    phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate = 0;
-  }
 
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
   generate_pcfich_reg_mapping(frame_parms);
@@ -1045,6 +1039,12 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
     phy_vars_eNB->first_run_timing_advance[UE_id] = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 
     memset(&phy_vars_eNB->eNB_UE_stats[UE_id],0,sizeof(LTE_eNB_UE_stats));
+
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate = 0;
+
     phy_vars_eNB->physicalConfigDedicated[UE_id] = NULL;
   }
   phy_vars_eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.

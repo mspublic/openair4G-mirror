@@ -228,13 +228,16 @@ typedef struct
 
 
   ///check for Total Transmissions
-  u16 check_for_total_transmissions;
+  unsigned int check_for_total_transmissions;
 
   ///check for MU-MIMO Transmissions
-  u16 check_for_MUMIMO_transmissions;
+  unsigned int check_for_MUMIMO_transmissions;
 
   ///check for SU-MIMO Transmissions
-  u16 check_for_SUMIMO_transmissions;
+  unsigned int check_for_SUMIMO_transmissions;
+
+  ///check for FULL MU-MIMO Transmissions
+  unsigned int  FULL_MUMIMO_transmissions;
 
   /// Counter for total bitrate, bits and throughput in downlink
   unsigned int total_dlsch_bitrate;

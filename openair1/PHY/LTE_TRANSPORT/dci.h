@@ -497,7 +497,7 @@ struct DCI1E_5MHz_2A_M10PRB_TDD {
   u8 dl_power_off:1;
 } __attribute__ ((__packed__));
 typedef struct DCI1E_5MHz_2A_M10PRB_TDD DCI1E_5MHz_2A_M10PRB_TDD_t;
-#define sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t 43
+#define sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t 34
 
 
 /// DCI Format Type 2 (5 MHz, TDD, 2 Antenna Ports, less than 10 PRBs, 41 bits)

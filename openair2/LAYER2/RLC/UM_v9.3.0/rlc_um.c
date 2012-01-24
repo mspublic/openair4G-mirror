@@ -42,7 +42,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 
 #include "rlc_um_very_simple_test.h"
-//#define RLC_UM_TEST_TRAFFIC
+
+
 #define DEBUG_RLC_UM_TX_STATUS 1
 
 //-----------------------------------------------------------------------------
@@ -318,10 +319,11 @@ rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct m
 
 #ifdef RLC_UM_TEST_TRAFFIC
 
-    // if(((rlc_um_entity_t *) rlcP)->nb_sdu <32)
-    // rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
-
-
+    if(frame >100){
+      if(((rlc_um_entity_t *) rlcP)->nb_sdu <32)
+	rlc_um_test_send_sdu(rlcP, frame, RLC_UM_TEST_SDU_TYPE_TCPIP);
+    }
+    /*
     //if(frame > 50){
       if ((frame % 200) == 0) {
 	rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
@@ -333,6 +335,7 @@ rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct m
 	rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_SMALL);
       }
       //}
+      */
 #endif
 
   ((rlc_um_entity_t *) rlcP)->nb_bytes_requested_by_mac = tbs_sizeP;
