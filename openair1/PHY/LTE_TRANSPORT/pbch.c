@@ -290,7 +290,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNB,u8 *pbch_pdu) {
   
-  msg("[PHY] EMUL UE generate_pbch_emul eNB %d\n",phy_vars_eNB->Mod_id);
+  LOG_D(PHY,"[eNB %d] generate_pbch_emul \n",phy_vars_eNB->Mod_id);
   eNB_transport_info[phy_vars_eNB->Mod_id].cntl.pbch_flag=1;
   // Copy PBCH payload 
   eNB_transport_info[phy_vars_eNB->Mod_id].cntl.pbch_payload=*(u32 *)pbch_pdu;
@@ -855,7 +855,7 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
 
   u8 pbch_error=0;
 
-  msg("[PHY] EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d\n",eNB_id,pbch_phase);
+  LOG_D(PHY,"EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d\n",eNB_id,pbch_phase);
 
   if (pbch_phase == (phy_vars_ue->frame % 4)) {
 

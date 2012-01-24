@@ -278,7 +278,7 @@ int olg_config() {
   set_log(RLC,  LOG_TRACE, 1);  
   set_log(PHY,  LOG_DEBUG, 1);  
   set_log(PDCP, LOG_TRACE, 1);  
-  set_log(RRC,  LOG_TRACE, 1);  
+  set_log(RRC,  LOG_DEBUG, 1);  
   
   // set_comp_log(MAC, LOG_TRACE, LOG_FULL,1);
   

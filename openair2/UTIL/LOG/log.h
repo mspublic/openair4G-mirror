@@ -207,7 +207,7 @@ extern "C" {
 #define FLAG_TIME      0x100
 
 #define LOG_NONE        0x00
-#define LOG_LOW         0x04
+#define LOG_LOW         0x14
 #define LOG_MED         0x14
 #define LOG_HIGH        0x34
 #define LOG_FULL        0x175
@@ -223,7 +223,7 @@ extern "C" {
 
 //static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PDCP, RRC, PERF,RB, CLI, MSC, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PDCP, RRC, PERF,RB, CLI, MSC, OCM, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 

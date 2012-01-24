@@ -168,7 +168,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	if (find_ue(PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id])>=0) {
 	  // UE with UE_id is connected to eNb with eNB_id
 	  att_eNB_id=eNB_id;
-	  printf("[SIM][DL] ue with UE id %d attached to eNB id %d\n",UE_id,eNB_id);
+	  LOG_I(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
 	}
       }
 
@@ -178,25 +178,25 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  if (min_path_loss<eNB2UE[eNB_id][UE_id]->path_loss_dB) {
 	    min_path_loss = eNB2UE[eNB_id][UE_id]->path_loss_dB;
 	    att_eNB_id=eNB_id;
-	    printf("[SIM][DL] ue with UE id %d attached to eNB id %d\n",UE_id,eNB_id);
+	    LOG_I(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
 	  }
 	}
       }
 
       if (att_eNB_id<0) {
-	printf("[SIM][DL] Cannot find eNB for UE %d, Exiting.\n",UE_id);
-	exit(-1);
+	LOG_E(OCM,"Cannot find eNB for UE %d, return\n",UE_id);
+	return; //exit(-1);
       }
 
       rx_pwr = signal_energy_fp2(eNB2UE[att_eNB_id][UE_id]->ch[0],
 				 eNB2UE[att_eNB_id][UE_id]->channel_length)*eNB2UE[att_eNB_id][UE_id]->channel_length;
-      printf("[SIM][DL] Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
+      LOG_D(OCM,"Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
 	     eNB_id,UE_id,
 	     PHY_vars_eNB_g[att_eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower,
 	     //	     enb_data[att_eNB_id]->tx_power_dBm,
 	     
 	     eNB2UE[att_eNB_id][UE_id]->path_loss_dB);
-      printf("[SIM][DL] Channel eNB %d => UE %d : gain %f dB (%f)\n",att_eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
+      LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",att_eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
 
     
       // calculate the SNR for the attached eNB
@@ -285,7 +285,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 				//				enb_data[eNB_id]->tx_power_dBm); 
 				PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
 #ifdef DEBUG_SIM
-	printf("[SIM][DL] eNB %d: tx_pwr %f dBm, for slot %d (subframe %d)\n",
+	LOG_D(OCM,"eNB %d: tx_pwr %f dBm, for slot %d (subframe %d)\n",
 	       eNB_id,
 	       10*log10(tx_pwr),
 	       next_slot,
@@ -297,7 +297,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 #ifdef DEBUG_SIM	  
 	rx_pwr = signal_energy_fp2(eNB2UE[eNB_id][UE_id]->ch[0],
 				   eNB2UE[eNB_id][UE_id]->channel_length)*eNB2UE[eNB_id][UE_id]->channel_length;
-	printf("[SIM][DL] Channel eNB %d => UE %d : Channel gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
+	LOG_D(OCM,"Channel eNB %d => UE %d : Channel gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
 #endif
 	
 	

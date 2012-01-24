@@ -469,11 +469,11 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       break;
   }
   if (eNB_id2==NB_eNB_INST) {
-    msg("phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
+    LOG_E(PHY,"FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
     mac_xface->macphy_exit("");
   }
 
-  msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
+  LOG_D(PHY,"UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
 
   //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);
 
@@ -547,11 +547,11 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       memcpy(dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   default:
-    msg("dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
+    LOG_E(PHY,"dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
     return(1+MAX_TURBO_ITERATIONS);
   }
 
-  msg("[PHY][FATAL] dlsch_decoding.c: Should never exit here ...\n");
+  LOG_E(PHY,"[FATAL] dlsch_decoding.c: Should never exit here ...\n");
   return(0);
 }
 #endif

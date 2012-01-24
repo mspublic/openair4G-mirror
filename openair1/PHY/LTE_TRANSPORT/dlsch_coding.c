@@ -340,7 +340,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     memcpy(dlsch->harq_processes[harq_pid]->b,
 	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-    msg("[PHY] EMUL eNB %d dlsch_encoding_emul, tbs is %d\n", 
+    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d\n", 
 	phy_vars_eNB->Mod_id,
 	dlsch->harq_processes[harq_pid]->TBS>>3);
 
