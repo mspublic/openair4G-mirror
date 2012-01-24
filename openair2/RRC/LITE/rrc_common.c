@@ -241,7 +241,7 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 
     if (UE_rrc_inst[Mod_id].Info[index].T300_active) {
       if ((UE_rrc_inst[Mod_id].Info[index].T300_cnt % 10) == 0)
-	LOG_D(RRC,"[UE %d][RARPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
+	LOG_D(RRC,"[UE %d][RAPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
 	      UE_rrc_inst[Mod_id].Info[index].T300_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T300_cnt == T300[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t300]) {
 	UE_rrc_inst[Mod_id].Info[index].T300_active = 0;

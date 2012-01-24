@@ -546,7 +546,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     //    printf("[PHY][UE] Frame %d, subframe %d Clearing TX buffer\n",phy_vars_ue->frame,next_slot>>1);
     if ((abstraction_flag==0)) {      
       for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
-	//	printf("[PHY][UE][RARPROC] frame %d subframe %d Clearing TX buffer\n",phy_vars_ue->frame,next_slot>>1);
+	//	printf("[PHY][UE][RAROC] frame %d subframe %d Clearing TX buffer\n",phy_vars_ue->frame,next_slot>>1);
 #ifdef IFFT_FPGA
 	memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*(frame_parms->N_RB_DL*12)*(frame_parms->symbols_per_tti>>1)],
 	       0,(frame_parms->N_RB_DL*12)*(frame_parms->symbols_per_tti)*sizeof(mod_sym_t));
@@ -597,7 +597,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 					    eNB_id);
 	
 	phy_vars_ue->ulsch_ue[eNB_id]->power_offset = 14;
-	LOG_D(PHY,"[UE  %d][RARPROC] Frame %d: Setting Msg3_flag in subframe %d, for harq_pid %d\n",
+	LOG_D(PHY,"[UE  %d][RAPROC] Frame %d: Setting Msg3_flag in subframe %d, for harq_pid %d\n",
 	    phy_vars_ue->Mod_id,
 	    phy_vars_ue->frame,
 	    next_slot>>1,
@@ -672,7 +672,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//#endif
 	
 	if (Msg3_flag == 1) {
-	  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, Subframe %d next slot %d Generating Msg3 (nb_rb %d, first_rb %d, Ndi %d, rvidx %d) : %x.%x.%x.%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1, next_slot, 
+	  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d next slot %d Generating Msg3 (nb_rb %d, first_rb %d, Ndi %d, rvidx %d) : %x.%x.%x.%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1, next_slot, 
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi,
@@ -968,7 +968,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
 	  
 	  if (abstraction_flag == 0) {
-	    LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+	    LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->frame,
 		  next_slot>>1,
@@ -978,7 +978,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		  phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
 	    
 	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
-	    LOG_D(PHY,"[UE  %d][RARPROC] PRACH digital power %d dB\n",
+	    LOG_D(PHY,"[UE  %d][RAPROC] PRACH digital power %d dB\n",
 		  phy_vars_ue->Mod_id,
 		  dB_fixed(prach_power));
 	  }
@@ -986,7 +986,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
 	  }
-	  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), l3msg \n",
+	  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), l3msg \n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
 		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
 		get_PL(phy_vars_ue->Mod_id,eNB_id));
@@ -1394,7 +1394,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  if (PHY_vars_eNB_g[i]->ulsch_eNB[(u32)UE_id]->harq_processes[harq_pid]->phich_ACK==0) { // NAK
 	    if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
 #ifdef DEBUG_PHY_PROC
-	      LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, subframe %d: Msg3 PHICH, received NAK\n",
+	      LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Msg3 PHICH, received NAK\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->frame,
 		  last_slot>>1);
@@ -1412,7 +1412,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  else {
 #ifdef DEBUG_PHY_PROC
 	    if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) 
-	      LOG_D(PHY,"[UE  %d][RARPROC] Frame %d, subframe %d: Msg3 PHICH, received ACK\n",
+	      LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Msg3 PHICH, received ACK\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->frame,
 		  last_slot>>1);
@@ -1563,7 +1563,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       if ((dci_alloc_rx[i].rnti == phy_vars_ue->prach_resources[eNB_id]->ra_RNTI) && 
 	  (dci_alloc_rx[i].format == format1A)) {
 #ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[UE  %d][RARPROC] subframe %d: Found RA rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
+	LOG_D(PHY,"[UE  %d][RAPROC] subframe %d: Found RA rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
 	/*
 	  if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
 	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -2107,12 +2107,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	}
 	else {
 #ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[UE  %d][RARPROC] Frame %d subframe %d Received RAR  mode %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)), phy_vars_ue->UE_mode[eNB_id]);
+	  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d subframe %d Received RAR  mode %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)), phy_vars_ue->UE_mode[eNB_id]);
 #endif	  
 
 	  if ((phy_vars_ue->UE_mode[eNB_id] != PUSCH) && (phy_vars_ue->prach_resources[eNB_id]->Msg3!=NULL)) {
 #ifdef OPENAIR2
-	    LOG_D(PHY,"[UE  %d][RARPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n",
+	    LOG_D(PHY,"[UE  %d][RAPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);			
 
@@ -2124,7 +2124,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    
 	    if (timing_advance!=0xffff) {
 
-	      LOG_D(PHY,"[UE  %d][RARPROC] Frame %d subframe %d Got rnti %x and timing advance %d from RAR\n",
+	      LOG_D(PHY,"[UE  %d][RAPROC] Frame %d subframe %d Got rnti %x and timing advance %d from RAR\n",
 		    phy_vars_ue->Mod_id,
 		    phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
@@ -2140,7 +2140,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			     &phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id],
 			     &phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id]);
 
-	      LOG_D(PHY,"[UE  %d][RARPROC] Got Msg3_alloc Frame %d subframe %d: Msg3_frame %d, Msg3_subframe %d\n",
+	      LOG_D(PHY,"[UE  %d][RAPROC] Got Msg3_alloc Frame %d subframe %d: Msg3_frame %d, Msg3_subframe %d\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->frame,
 		  (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
@@ -2153,7 +2153,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
 	    }
 	    else {  // PRACH preamble doesn't match RAR
-	      LOG_D(PHY,"[UE  %d][RARPROC] Received RAR preamble (%d) doesn't match !!!\n",
+	      LOG_D(PHY,"[UE  %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);
 	      //	      exit(-1);

@@ -274,12 +274,12 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
 
       if (harq_pid>1) {
-	msg("dci_tools.c: ERROR: Format 1A: harq_pid > 1\n");
+	LOG_E(PHY,"ERROR: Format 1A: harq_pid > 1\n");
 	return(-1);
       }
       rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
       if (rballoc>RIV_max) {
-	msg("dci_tools.c: ERROR: Format 1A: rb_alloc (%x) > RIV_max (%x)\n",rballoc,RIV_max);
+	LOG_E(PHY,"ERROR: Format 1A: rb_alloc (%x) > RIV_max (%x)\n",rballoc,RIV_max);
 	return(-1);
       }
       NPRB      = RIV2nb_rb_LUT25[rballoc];
@@ -331,7 +331,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     harq_pid  = ((DCI1_5MHz_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: Format 1: harq_pid >= 8\n");
+      LOG_E(PHY,"ERROR: Format 1: harq_pid >= 8\n");
       return(-1);
     }
 
@@ -388,7 +388,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: Format 2_2A_M10PRB: harq_pid >= 8\n");
+      LOG_E(PHY,"ERROR: Format 2_2A_M10PRB: harq_pid >= 8\n");
       return(-1);
     }
 
@@ -509,7 +509,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     harq_pid  = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: Format 1E_2A_M10PRB: harq_pid >= 8\n");
+      LOG_E(PHY,"ERROR: Format 1E_2A_M10PRB: harq_pid >= 8\n");
       return(-1);
     }
 
@@ -628,7 +628,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     break;
   default:
-    msg("dci_tools.c: Unknown DCI format\n");
+    LOG_E(PHY,"Unknown DCI format\n");
     return(-1);
     break;
   }

@@ -29,11 +29,11 @@
 
 /*! \file rrc_UE.c
 * \brief rrc procedures for UE
-* \author Raymond Knopp
+* \author Raymond Knopp and Navid Nikaein
 * \date 2011
 * \version 1.0 
 * \company Eurecom
-* \email: raymond.knopp@eurecom.fr
+* \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
 */ 
 
 
@@ -96,8 +96,8 @@ void init_SI_UE(u8 Mod_id,u8 eNB_index) {
 char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
   /*-----------------------------------------------------------------------------*/
 
-  LOG_D(RRC,"[UE %d] INIT (eNB %d)\n",Mod_id,eNB_index);
-  LOG_D(RRC, "[MSC_NEW][FRAME 00000][RRC_UE][MOD %02d][]\n", Mod_id+NB_eNB_INST);
+  LOG_D(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",Mod_id,eNB_index);
+  LOG_D(RRC,"[MSC_NEW][FRAME 00000][RRC_UE][MOD %02d][]\n", Mod_id+NB_eNB_INST);
 
   UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
   UE_rrc_inst[Mod_id].Info[eNB_index].T300_active = 0;
@@ -162,7 +162,7 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 eNB_ind
   u8 buffer[32];
   u8 size;
 
-  LOG_D(RRC,"[UE %d][RARPROC] Frame %d : Generating RRCConnectionSetupComplete\n",Mod_id,frame);
+  LOG_D(RRC,"[UE %d][RAPROC] Frame %d : Generating RRCConnectionSetupComplete\n",Mod_id,frame);
 
   size = do_RRCConnectionSetupComplete(buffer);
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
@@ -250,7 +250,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionSetup ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
-	LOG_I(RRC,"[UE%d][RARPROC] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,frame);
+	LOG_I(RRC,"[UE%d][RAPROC] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,frame);
 	// Get configuration
 
 	// Release T300 timer
@@ -537,7 +537,8 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   }
 
   UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_CONNECTED;
-
+  LOG_D(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",Mod_id,eNB_index);
+  
 
 }
 
