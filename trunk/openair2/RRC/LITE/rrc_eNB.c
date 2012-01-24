@@ -30,11 +30,11 @@
 
 /*! \file rrc_eNB.c
 * \brief rrc procedures for eNB
-* \author Raymond Knopp
+* \author Raymond Knopp and Navid Nikaein
 * \date 2011
 * \version 1.0 
 * \company Eurecom
-* \email: raymond.knopp@eurecom.fr
+* \email: raymond.knopp@eurecom.fr and navid.nikaein@eurecom.fr
 */ 
 
 
@@ -147,7 +147,7 @@ char openair_rrc_eNB_init(u8 Mod_id){
   /*-----------------------------------------------------------------------------*/
 
   unsigned char j;
-  LOG_I(RRC,"[eNB %d] Init ...\n",Mod_id);
+  LOG_I(RRC,"[eNB %d] Init (UE State = RRC_IDLE)...\n",Mod_id);
   LOG_D(RRC, "[MSC_NEW][FRAME 00000][RRC_eNB][MOD %02d][]\n", Mod_id);
 
   for (j=0; j<NB_CNX_eNB; j++)
@@ -262,7 +262,8 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 	if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
 	  rrc_eNB_process_RRCConnectionSetupComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
 	  eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_CONNECTED;
-      LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\nNow CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
+	  LOG_D(RRC,"[eNB %d] UE %d State = RRC_CONNECTED \n",Mod_id,UE_index);
+	  LOG_D(RRC,"[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\nNow CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
             frame, Mod_id, UE_index, Mod_id);
 	}
       break;
@@ -353,13 +354,12 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 	memcpy(&Rrc_xface->UE_id[Mod_id][UE_index],(u8 *)rrcConnectionRequest->ue_Identity.choice.randomValue.buf,5);
 	memcpy(&eNB_rrc_inst[Mod_id].Info.UE_list[UE_index],(u8 *)rrcConnectionRequest->ue_Identity.choice.randomValue.buf,5);
 
-	LOG_I(RRC,"[eNB %d] Frame %d : Accept New connexion from UE %x%x%x%x%x (UE_index %d)____________\n",Mod_id,frame,
+	LOG_I(RRC,"[eNB %d] Frame %d : Accept new connection from UE %d (%x%x%x%x%x)\n",Mod_id,frame,UE_index,
 	    eNB_rrc_inst[Mod_id].Info.UE_list[UE_index][0],
 	    eNB_rrc_inst[Mod_id].Info.UE_list[UE_index][1],
 	    eNB_rrc_inst[Mod_id].Info.UE_list[UE_index][2],
 	    eNB_rrc_inst[Mod_id].Info.UE_list[UE_index][3],
-	    eNB_rrc_inst[Mod_id].Info.UE_list[UE_index][4],
-	    UE_index);
+	    eNB_rrc_inst[Mod_id].Info.UE_list[UE_index][4]);
 
 	//CONFIG SRB2  (DCCHs, ONE per User)  //meas && lchan Cfg
 	//eNB_rrc_inst[Mod_id].Info.Dtch_bd_config[UE_index].Status=NEED_RADIO_CONFIG;
@@ -458,7 +458,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_index,RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
 
 
-  LOG_I(RRC,"[eNB %d][RARPROC] Frame %d : processing RRCConnectionSetupComplete from UE %d\n",Mod_id,frame,UE_index);
+  LOG_I(RRC,"[eNB %d][RAPROC] Frame %d : processing RRCConnectionSetupComplete from UE %d\n",Mod_id,frame,UE_index);
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
 
@@ -545,7 +545,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 
   LogicalChannelConfig_t *SRB1_logicalChannelConfig;//,*SRB2_logicalChannelConfig;
 
-  LOG_I(RRC,"[eNB %d][RARPROC] Frame %d : Generating RRCConnectionSetup for UE %d \n",Mod_id,frame,UE_index);
+  LOG_I(RRC,"[eNB %d][RAPROC] Frame %d : Generating RRCConnectionSetup for UE %d \n",Mod_id,frame,UE_index);
 
   eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionSetup((u8 *)eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.Payload,
@@ -596,7 +596,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 				    (u8 *)NULL,
 				    (u16 *)NULL);
 
-  LOG_I(RRC,"[eNB %d][RARPROC] Generate %d bytes (RRCConnectionSetup for UE %d) for CCCH \n",Mod_id,eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size,UE_index);
+  LOG_I(RRC,"[eNB %d][RAPROC] Generate %d bytes (RRCConnectionSetup for UE %d) for CCCH \n",Mod_id,eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size,UE_index);
 
 
 

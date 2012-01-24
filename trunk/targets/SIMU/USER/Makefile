@@ -163,9 +163,11 @@ ifeq ($(rrc_cellular_UE),1)
 endif
 
 nasmesh_fix:
+	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 nasmesh_nl:
+	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink.ko)	
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 rb_tool:

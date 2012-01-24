@@ -9,10 +9,11 @@
 #else
 #include <linux/module.h>  /* Needed by all modules */
 #endif
-//#ifdef USER_MODE
+#ifdef USER_MODE
 //#include "RRC/LITE/defs.h"
 //#include "COMMON/mac_rrc_primitives.h"
-//#endif
+#include "UTIL/LOG/log.h"
+#endif
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -146,7 +147,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 				   buffer,
 				   200);
 #ifdef USER_MODE
-  printf("[RRC][eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"[eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1)
@@ -426,7 +427,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 				   buffer,
 				   100);
 #ifdef USER_MODE
-  printf("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"[eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1) {
@@ -477,7 +478,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 				   100);
 
 #ifdef USER_MODE
-  printf("[RRC][UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -536,7 +537,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer) {
 
 
 #ifdef USER_MODE
-  printf("RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -568,7 +569,7 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 				   100);
 
 #ifdef USER_MODE
-  printf("RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+ LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -873,7 +874,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 				   100);
 
 #ifdef USER_MODE
-  printf("RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  LOG_D(RRC,"RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
   FREEMEM(SRB_list);
@@ -1153,7 +1154,7 @@ uint8_t do_MCCHMessage(uint8_t *buffer) {
 				   100);
 
 #ifdef USER_MODE
-  printf("[RRC][eNB] MCCHMessage Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"[eNB] MCCHMessage Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);

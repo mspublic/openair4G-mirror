@@ -81,7 +81,7 @@ s8 get_DELTA_PREAMBLE(u8 Mod_id) {
   case 4:
     return(8);
   default:
-    msg("[MAC][UE %d] ue_procedures.c: FATAL, Illegal preambleformat %d, prachConfigIndex %d\n",
+    LOG_E(MAC,"[UE %d] ue_procedures.c: FATAL, Illegal preambleformat %d, prachConfigIndex %d\n",
 	Mod_id,
 	preambleformat,prachConfigIndex);
     mac_xface->macphy_exit("");
@@ -106,7 +106,7 @@ void get_prach_resources(u8 Mod_id,
   if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
     rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
   else {
-    LOG_D(MAC,"[UE %d] FATAL  radioResourceConfigCommon is NULL !!!\n",Mod_id);
+    LOG_E(MAC,"[UE %d] FATAL  radioResourceConfigCommon is NULL !!!\n",Mod_id);
     mac_xface->macphy_exit("");
   }
 
@@ -262,7 +262,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 	}
       }
       else {  // RACH is active
-	LOG_D(MAC,"[MAC][UE %d][RARPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",Mod_id,
+	LOG_D(MAC,"[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",Mod_id,
 	      frame,subframe,UE_mac_inst[Mod_id].RA_window_cnt,
 	      UE_mac_inst[Mod_id].RA_tx_frame,UE_mac_inst[Mod_id].RA_tx_subframe);
 	// compute backoff parameters
@@ -281,7 +281,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 	  if (frame_diff < 0)
 	    frame_diff = -frame_diff;
 	  UE_mac_inst[Mod_id].RA_window_cnt -= ((10*frame_diff) + (subframe-UE_mac_inst[Mod_id].RA_tx_subframe));
-	  LOG_D(MAC,"[MAC][UE %d][RARPROC] frame %d, subframe %d: RA Active, adjusted window cnt %d\n",Mod_id,
+	  LOG_D(MAC,"[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, adjusted window cnt %d\n",Mod_id,
 		frame,subframe,UE_mac_inst[Mod_id].RA_window_cnt);
 	}
 	if ((UE_mac_inst[Mod_id].RA_window_cnt<=0) &&

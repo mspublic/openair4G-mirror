@@ -1211,7 +1211,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
 #endif
   if (HI16>0) {   //NACK
     if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
-      msg("[PHY][UE  %d][PUSCH %d][RARPROC] Frame %d subframe %d Msg3 PHICH, received NAK (%d) nseq %d, ngroup %d\n\n",
+      msg("[PHY][UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received NAK (%d) nseq %d, ngroup %d\n\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
 	  subframe,
@@ -1241,7 +1241,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
   }
   else {    //ACK
     if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) 
-      msg("[PHY][UE  %d][PUSCH %d][RARPROC] Frame %d subframe %d Msg3 PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
+      msg("[PHY][UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
 	  subframe,
@@ -1320,7 +1320,7 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 	    &txdataF[0][0]);
 #endif
 	if (ulsch_eNB[UE_id]->Msg3_active == 1) {
-	  msg("[PHY][eNB %d][PUSCH %d][RARPROC] Frame %d, subframe %d: Generating Msg3 PHICH for UE %d, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d\n",
+	  msg("[PHY][eNB %d][PUSCH %d][RAPROC] Frame %d, subframe %d: Generating Msg3 PHICH for UE %d, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d\n",
 	      phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->frame,subframe,
 	      UE_id,ngroup_PHICH,Ngroup_PHICH,nseq_PHICH,ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_ACK,
 	      ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb);

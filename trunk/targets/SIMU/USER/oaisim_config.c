@@ -274,7 +274,7 @@ int olg_config() {
   set_log(OMG,  LOG_INFO, 20);
   set_log(EMU,  LOG_INFO,  10);
   set_log(OCG,  LOG_INFO, 1);  
-  set_log(MAC,  LOG_TRACE, 1);  
+  set_log(MAC,  LOG_DEBUG, 1);  
   set_log(RLC,  LOG_TRACE, 1);  
   set_log(PHY,  LOG_DEBUG, 1);  
   set_log(PDCP, LOG_TRACE, 1);  

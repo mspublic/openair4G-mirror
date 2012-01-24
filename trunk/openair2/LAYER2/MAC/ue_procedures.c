@@ -210,7 +210,7 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
       UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=1;
     } else
       UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=0;
-    //   LOG_D(MAC,"[UE %d] instruct phy to signal SR navid ", Mod_id);
+    //   LOG_D(MAC,"[UE %d] instruct phy to signal SR ", Mod_id);
     return(1); //instruct phy to signal SR
   }
   else{
@@ -511,12 +511,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
   for (i=0;i<num_sdus;i++) {
 #ifdef DEBUG_HEADER_PARSING
-    LOG_T(MAC,"[UE]sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
+    LOG_T(MAC,"[UE] sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
 #endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE]last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+      LOG_D(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
@@ -536,8 +536,8 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
       last_size=2;
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE]short sdu\n");
-      LOG_T(MAC,"[UE]last subheader : %x (R%d,E%d,LCID%d,F%d,L%d)\n",
+      LOG_D(MAC,"[UE] short sdu\n");
+      LOG_T(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d,F%d,L%d)\n",
 	  ((u16*)mac_header_ptr)[0],
 	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R,
 	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E,
@@ -555,7 +555,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
       last_size=3;
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE]long sdu\n");
+      LOG_D(MAC,"[UE] long sdu\n");
 #endif
     }
   }

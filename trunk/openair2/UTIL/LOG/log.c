@@ -276,7 +276,7 @@ void logRecord( const char *file, const char *func,
   c = &g_log->log_component[comp];
   
   // only log messages which are enabled and are below the global log level and component's level threshold
-  if ((c->level > g_log->level) || (level > c->level) || (c->flag == LOG_NONE) ){
+  if ((c->level > g_log->level) || (level > c->level)){
     //  || ((mac_xface->frame % c->interval) != 0)) { 
     return;
   }
@@ -292,7 +292,7 @@ void logRecord( const char *file, const char *func,
   va_end(args);
 
  // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if (level == LOG_FILE){
+  if ((level == LOG_FILE) ||  (c->flag == LOG_NONE) ){
     bypass_log_hdr = 1;
   }
   else if (((level < LOG_TRACE) && (level >= LOG_EMERG)) ) {
