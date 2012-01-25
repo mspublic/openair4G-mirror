@@ -67,6 +67,15 @@
 #define msg debug_msg
 #endif
 */
+mapping BSR_names[] = {
+    {"NONE", 0},
+    {"SHORT BSR", 1},
+    {"TRUNCATED BSR", 2},
+    {"LONG BSR", 3},
+    {"PADDING BSR", 3},
+    {NULL, -1}
+};
+
 extern inline unsigned int taus(void);
 
 
@@ -94,7 +103,6 @@ void ue_init_mac(){
       LOG_I(MAC,"[UE%d] Applying default logical channel config for lcid %d\n",i,j);
       UE_mac_inst[i].scheduling_info.Bj[j]=-1;
       UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
-      UE_mac_inst[i].scheduling_info.new_transmission_flag[j]=0; // only the DTCH chanels are relavent
     }
   }
 }
@@ -148,17 +156,6 @@ unsigned char *parse_header(unsigned char *mac_header,
   return(mac_header_ptr);
 }
 
-u32 req_new_ulsch(u8 Mod_id){
-
-  int drb;
-  for (drb=DTCH; drb < MAX_NUM_LCID; drb++){
-    if (UE_mac_inst[Mod_id].scheduling_info.new_transmission_flag[drb] == 1) // new transmission found
-      return 1;
-  }
-  return 0;
-}
-
-
 u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
 
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
@@ -168,19 +165,13 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
   int T=0;
   //  int sfn=0;
 
-  // Commented for the moment because this doesn't check the SRBs and so the connection cannot go through,
-  /*
-
-  if (req_new_ulsch(Mod_id) == 0)
-    return 0;
-  */
-
   // determin the measurement gap
-  LOG_D(MAC,"[UE %d][SR %x] Frame %d subframe %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",Mod_id,rnti,frame,subframe,
+  /*LOG_D(MAC,"[UE %d][SR %x] Frame %d subframe %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
+	Mod_id,rnti,frame,subframe,
 	UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER,
 	(1<<(2+UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax)),
 	UE_mac_inst[Mod_id].scheduling_info.SR_pending);
-
+  */
   if (UE_mac_inst[Mod_id].measGapConfig !=NULL){
     if (UE_mac_inst[Mod_id].measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0){
       MGRP= 40;
@@ -210,7 +201,11 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
       UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=1;
     } else
       UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=0;
-    //   LOG_D(MAC,"[UE %d] instruct phy to signal SR ", Mod_id);
+    LOG_D(MAC,"[UE %d][SR %x] Frame %d subframe %d sned SR_indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
+	Mod_id,rnti,frame,subframe,
+	UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER,
+	(1<<(2+UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax)),
+	UE_mac_inst[Mod_id].scheduling_info.SR_pending);
     return(1); //instruct phy to signal SR
   }
   else{
@@ -470,7 +465,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       first_element=1;
     }
 #ifdef DEBUG_HEADER_PARSING
-    LOG_D(MAC,"[UE] Scheduler SHORT BSR Header\n");
+    //LOG_D(MAC,"[UE] Scheduler SHORT BSR Header\n");
 #endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
@@ -691,20 +686,20 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     lcid = UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid;
     bsr_s->LCGID = lcid;
     bsr_s->Buffer_size = UE_mac_inst[Mod_id].scheduling_info.BSR[lcid];
-    LOG_D(MAC,"[UE %d] report short bsr (lcid %d, buffer size %d)\n", Mod_id, lcid, UE_mac_inst[Mod_id].scheduling_info.BSR[lcid]);
+    LOG_D(MAC,"[UE %d] report SHORT BSR with level %d for lcid %d\n", 
+	  Mod_id, UE_mac_inst[Mod_id].scheduling_info.BSR[lcid],lcid);
   } else if (bsr_ce_len == sizeof(BSR_LONG))  {
     bsr_s = NULL;
     bsr_l->Buffer_size0 = UE_mac_inst[Mod_id].scheduling_info.BSR[CCCH];
     bsr_l->Buffer_size1 = UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH];
     bsr_l->Buffer_size2 = UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH1];
     bsr_l->Buffer_size3 = UE_mac_inst[Mod_id].scheduling_info.BSR[DTCH];
-    LOG_D(MAC, "[UE %d] report long bsr (bufferSize0 %d,bufferSize1 %d,bufferSize2 %d,bufferSize3 %d)\n", Mod_id,
+    LOG_D(MAC, "[UE %d] report long BSR (level lcid0 %d,level lcid1 %d,level lcid2 %d,level lcid3 %d)\n", Mod_id,
 	  UE_mac_inst[Mod_id].scheduling_info.BSR[CCCH],
 	  UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH],
 	  UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH1],
 	  UE_mac_inst[Mod_id].scheduling_info.BSR[DTCH]);
   } else {
-    UE_mac_inst[Mod_id].scheduling_info.new_transmission_flag[DTCH]=1;
     bsr_s = NULL;
     bsr_l = NULL;
   }
@@ -873,6 +868,7 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen) {
   bsr_len =0;
   pdu=0;
   for (lcid=DCCH; lcid <= DTCH; lcid++ ) { // dcch, dcch1, dtch
+    //LOG_D(MAC,"BSR Bytes%d for lcid %d\n", UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid], lcid);
     if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] > 0 )
       pdu += (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] +  bsr_len + 2); //2 = sizeof(SCH_SUBHEADER_SHORT)
     if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] > 128 ) // long header size: adjust the header size
@@ -885,7 +881,8 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen) {
     }
   }
   if ( bsr_len > 0 )
-    LOG_D(MAC,"BSR len is %d (ch%d, pdu %d) \n", bsr_len, bsr_channel, pdu);
+    LOG_D(MAC,"[UE %d] Prepare a %s (Transport Block Size %d, MAC pdu Size %d) \n", 
+	  Mod_id, map_int_to_str(BSR_names, bsr_len), buflen, pdu);
   return bsr_len;
 }
 
@@ -896,17 +893,15 @@ void update_bsr(u8 Mod_id, u32 frame, u8 lcid){
 
   rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 				  lcid,
-				  0);//tb_size does not reauire when requesting the status
+				  0);//tb_size does not require when requesting the status
   if (rlc_status.bytes_in_buffer > 0 ) {
     UE_mac_inst[Mod_id].scheduling_info.BSR[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status.bytes_in_buffer);
     UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] = rlc_status.bytes_in_buffer;
     UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid = lcid; // only applicable to short bsr
-    if ( UE_mac_inst[Mod_id].scheduling_info.new_transmission_flag[lcid] == 0)
-       UE_mac_inst[Mod_id].scheduling_info.new_transmission_flag[lcid]=1;
     LOG_D(MAC,"[UE %d] BSR level %d (lcid %d, rlc buffer %d byte)\n",
 	  Mod_id, UE_mac_inst[Mod_id].scheduling_info.BSR[lcid], lcid, rlc_status.bytes_in_buffer);
   } else {
-    UE_mac_inst[Mod_id].scheduling_info.new_transmission_flag[lcid]=0;
+    //LOG_D(MAC,"[UE %d] clear BSR info for lcid %d\n",Mod_id, lcid);
     UE_mac_inst[Mod_id].scheduling_info.BSR[lcid]=0;
     UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid]=0;
     UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid = 0;
