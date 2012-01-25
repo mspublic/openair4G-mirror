@@ -39,7 +39,7 @@ Blah Blah
 dma_addr_t dma_handle[4];
 
 // Get from HW addresses
-int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_PARMS *frame_parms) {
+int init_signal_buffers(LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned char card_id,i;
 
@@ -48,8 +48,7 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
   unsigned int tx_dma_buffer_size_bytes;
 
   for (card_id=0;card_id<number_of_cards;card_id++) {
-    for (i=0;i<NB_ANTENNAS_RX;i++) {
-      
+    for (i=0;i<NB_ANTENNAS_TX;i++) {
       
       // Allocate memory for TX DMA Buffer
       
@@ -85,8 +84,9 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
       
       
       TX_DMA_BUFFER[card_id][i] = (int) tmp_ptr_tx;
+    }
       
-      
+    for (i=0;i<NB_ANTENNAS_RX;i++) {
       // RX DMA Buffers
       tmp_ptr = (int *)bigmalloc16(FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES+2*PAGE_SIZE);
       
@@ -232,7 +232,7 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
     
 
 #ifndef USER_MODE
-  init_signal_buffers(number_of_cards,1,frame_parms);
+  init_signal_buffers(frame_parms);
 #endif
   
 #ifdef DEBUG_PHY    

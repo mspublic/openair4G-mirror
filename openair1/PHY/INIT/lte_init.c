@@ -15,6 +15,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 
+//#define DEBUG_PHY
 
 void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
 		    u8 N_RB_DL,
@@ -675,7 +676,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars_ra[%d] = %p\n",eNB_id,ue_pdsch_vars_ra[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_pdcch_vars[%d] = %p\n",eNB_id,ue_pdcch_vars[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_prach_vars[%d] = %p\n",eNB_id,ue_prach_vars[eNB_id]);
-    msg("[OPENAIR][LTE PHY][INIT] prach_resources[%d] = %p\n",eNB_id,prach_resources[eNB_id]);
+    //msg("[OPENAIR][LTE PHY][INIT] prach_resources[%d] = %p\n",eNB_id,prach_resources[eNB_id]);
 #endif
 
     if (abstraction_flag == 0) {

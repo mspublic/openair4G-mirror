@@ -9285,10 +9285,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 //#define ENABLE_FLP
 
 #ifdef ENABLE_FXP
-  printf("rx_pdsch, Full Fxp version\n");
+  msg("rx_pdsch, Full Fxp version\n");
 #endif
 #ifdef ENABLE_FLP
-  printf("rx_pdsch, Flp WITHIN dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() only\n");
+  msg("rx_pdsch, Flp WITHIN dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() only\n");
 #endif
 
   unsigned short nb_rb;
@@ -9347,7 +9347,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     msg("dlsch_demodulation.c: Null lte_frame_parms\n");
     return(-1);
   }
-  //  printf("rx_dlsch : eNB_id %d, eNB_id_i %d, dual_stream_flag %d\n",eNB_id,eNB_id_i,dual_stream_flag); 
+  //  msg("rx_dlsch : eNB_id %d, eNB_id_i %d, dual_stream_flag %d\n",eNB_id,eNB_id_i,dual_stream_flag); 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   /*
@@ -9435,7 +9435,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
   } //else n_tx>1
 
-  //  printf("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
+  //  msg("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
   if (nb_rb==0) {
     msg("dlsch_modulation.c: nb_rb=0\n");
     return(-1);
@@ -9545,7 +9545,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
   }
   else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding
-    //    printf("Channel compensation for precoding\n");
+    //    msg("Channel compensation for precoding\n");
     if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_eNB_MAX)) {
 #ifdef COMPARE_FLP_AND_FXP
       // Store reference streams for the sake of comparison
@@ -9559,17 +9559,17 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars__eNB_id__dl_ch_estimates_ext[1][i] = lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i];
 	}
       
-      printf("pilots=%d, symbol=%d, frame_parms->N_RB_DL=%d\n", pilots, symbol, frame_parms->N_RB_DL);
-      printf("dl_ch_0_ext before flp in if=[");
+      msg("pilots=%d, symbol=%d, frame_parms->N_RB_DL=%d\n", pilots, symbol, frame_parms->N_RB_DL);
+      msg("dl_ch_0_ext before flp in if=[");
       int index = 300;
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_1_ext before flp in if=[");
+      msg("dl_ch_1_ext before flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 #endif
 
 #ifdef ENABLE_FLP
@@ -9577,25 +9577,25 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP
-      printf("dl_ch_estimates_ext flp in if=[");
+      msg("dl_ch_estimates_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_ext flp in if=[");
+      msg("rxdataF_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_mag flp in if=[");
+      msg("dl_ch_mag flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_comp flp in if=[");
+      msg("rxdataF_comp flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
       
       for (i=0; i<index; i++)
 	{
@@ -9603,15 +9603,15 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i]  = lte_ue_pdsch_vars__eNB_id__dl_ch_estimates_ext[1][i];
 	}
 
-      printf("dl_ch_0 before fxp in if=[");
+      msg("dl_ch_0 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_1 before fxp in if=[");
+      msg("dl_ch_1 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 #endif
       
 #ifdef ENABLE_FXP
@@ -9619,27 +9619,27 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP
-      printf("dl_ch_estimates_ext fxp in if=[");
+      msg("dl_ch_estimates_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_ext fxp in if=[");
+      msg("rxdataF_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_mag fxp in if=[");
+      msg("dl_ch_mag fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_comp fxp in if=[");
+      msg("rxdataF_comp fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("---\n");
+      msg("---\n");
 #endif
 
       // if interference source is MU interference, assume opposite precoder was used at eNB
@@ -9661,28 +9661,28 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  break;
 	}
 	//	if (rb==0)
-	//	  printf("pmi %d, pmi_i %d\n",lte_ue_pdsch_vars[eNB_id]->pmi_ext[rb],lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[rb]);
+	//	  msg("pmi %d, pmi_i %d\n",lte_ue_pdsch_vars[eNB_id]->pmi_ext[rb],lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[rb]);
 	
       }
 
       // apply opposite precoder to calculate interfering stream
       #ifdef COMPARE_FLP_AND_FXP
-      //printf("----------channel_compensation_prec\n");
+      //msg("----------channel_compensation_prec\n");
       for (i=0; i<300; i++)
 	{
 	  lte_ue_pdsch_vars__eNB_id_i__dl_ch_estimates_ext[0][i] = lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12+i];
 	  lte_ue_pdsch_vars__eNB_id_i__dl_ch_estimates_ext[1][i] = lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i];
 	}
 
-      printf("dl_ch0 before flp in if=[");
+      msg("dl_ch0 before flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch1 before flp in if=[");
+      msg("dl_ch1 before flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 #endif
       
 #ifdef ENABLE_FLP
@@ -9690,25 +9690,25 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
 
 #ifdef COMPARE_FLP_AND_FXP
-      printf("dl_ch_estimates_ext flp in if=[");
+      msg("dl_ch_estimates_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
       
-      printf("rxdataF_ext flp in if=[");
+      msg("rxdataF_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("dl_ch_mag flp in if=[");
+      msg("dl_ch_mag flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("rxdataF_comp flp in if=[");
+      msg("rxdataF_comp flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
      
       // For testing only
       for (i=0; i<300; i++)
@@ -9717,15 +9717,15 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i]  = lte_ue_pdsch_vars__eNB_id_i__dl_ch_estimates_ext[1][i];
 	}
       
-      printf("dl_ch_0 before fxp in if=[");
+      msg("dl_ch_0 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("dl_ch_1 before fxp in if=[");
+      msg("dl_ch_1 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 #endif
 
 #ifdef ENABLE_FXP      
@@ -9733,27 +9733,27 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP      
-      printf("dl_ch_estimates_ext fxp in if=[");
+      msg("dl_ch_estimates_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("rxdataF_ext fxp in if=[");
+      msg("rxdataF_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("dl_ch_mag fxp in if=[");
+      msg("dl_ch_mag fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("rxdataF_comp fxp in if=[");
+      msg("rxdataF_comp fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("------------\n");
+      msg("------------\n");
 #endif
   
 #ifdef DEBUG_PHY
@@ -9769,20 +9769,20 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
 
 #ifdef COMPARE_FLP_AND_FXP      
-      printf("dl_ch flp = [");
+      msg("dl_ch flp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 
-      printf("dl_chi flp = [");
+      msg("dl_chi flp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 
-      printf("dl_ch_rho flp = [");
+      msg("dl_ch_rho flp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 #endif
 
 #ifdef ENABLE_FXP
@@ -9790,20 +9790,20 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
 
 #ifdef COMPARE_FLP_AND_FXP      
-      printf("dl_ch fxp  [");
+      msg("dl_ch fxp  [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
       
-      printf("dl_chi fxp = [");
+      msg("dl_chi fxp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 
-      printf("dl_ch_rho fxp = [");
+      msg("dl_ch_rho fxp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 #endif       
     }
     else {
@@ -9825,7 +9825,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
   }
 
-  //  printf("MRC\n");
+  //  msg("MRC\n");
   if (frame_parms->nb_antennas_rx > 1)
     dlsch_detection_mrc(frame_parms,
 			lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
@@ -9838,7 +9838,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			nb_rb,
 			dual_stream_flag); 
 
-  //  printf("Combining");
+  //  msg("Combining");
   // Single-layer transmission formats
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {
     if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO) ||

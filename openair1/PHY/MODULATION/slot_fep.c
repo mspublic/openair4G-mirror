@@ -40,7 +40,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   }
 
 #ifdef DEBUG_FEP
-  debug_msg("slot_fep: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d\n", Ns, symbol, nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset);
+  msg("slot_fep: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d\n", Ns, symbol, nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset);
 #endif
   
 
@@ -84,7 +84,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
 #ifndef PERFECT_CE
 #ifdef DEBUG_FEP
-      debug_msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+      msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
       lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
 				Ns,

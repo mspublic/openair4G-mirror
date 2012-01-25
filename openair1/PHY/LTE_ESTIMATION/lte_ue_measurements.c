@@ -56,6 +56,7 @@ s16 get_PL(u8 Mod_id,u8 eNB_index) {
 	       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower));
 }
 
+
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
@@ -211,8 +212,10 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	    phy_vars_ue->PHY_measurements.subband_cqi_tot[eNB_id][subband]=0;
 	  
 	  if (subband<6) {
-	    //	    	    for (i=0;i<48;i++)
-	    //	    	      printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
+	    /*
+	    for (i=0;i<48;i++)
+	      msg("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
+	    */
 	    phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband] = 
 	      (signal_energy_nodc(dl_ch0,48) + signal_energy_nodc(dl_ch1,48))*rx_power_correction;
 	    if ( phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband] < phy_vars_ue->PHY_measurements.n0_power[aarx])
