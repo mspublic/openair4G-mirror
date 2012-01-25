@@ -348,7 +348,7 @@ rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct m
 
   status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
 #ifdef DEBUG_RLC_UM_TX_STATUS
-  if (((rlc_um_entity_t *) rlcP)->rb_id > 0) {
+  if ((((rlc_um_entity_t *) rlcP)->rb_id > 0) && (status_resp.buffer_occupancy_in_bytes > 0)) {
     LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_STATUS_INDICATION (DATA) %d bytes -> %d bytes\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, frame, tbs_sizeP, status_resp.buffer_occupancy_in_bytes);
     if ((tx_statusP.tx_status == MAC_TX_STATUS_SUCCESSFUL) && (tx_statusP.no_pdu)) {
       LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_STATUS_INDICATION  TX STATUS   SUCCESSFUL %d PDUs\n",((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, frame, tx_statusP.no_pdu);
@@ -387,7 +387,7 @@ rlc_um_mac_data_request (void *rlcP,u32 frame)
   }
   data_req.rlc_info.rlc_protocol_state = l_rlc->protocol_state;
   if (data_req.data.nb_elements > 0) {
-      LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_req.data.nb_elements);
+      LOG_I(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_req.data.nb_elements);
       mem_block_t *tb;
       rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) ",
               frame,
@@ -433,7 +433,7 @@ rlc_um_data_req (void *rlcP, u32_t frame, mem_block_t *sduP)
   int min, sec, usec;
 #endif
 
-  LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_UM_DATA_REQ size %d Bytes, BO %d , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
+  LOG_I(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_UM_DATA_REQ size %d Bytes, BO %d , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
      rlc->module_id,
      rlc->rb_id,
      frame,

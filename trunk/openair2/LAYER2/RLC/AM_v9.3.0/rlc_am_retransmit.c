@@ -426,7 +426,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(rlc_am_entity_t *rlcP, u32_t frame
                         #endif
                         /*if (test_max_copy_payload_size > (test_li_sum - test_start_offset)) {
                             #ifdef TRACE_RLC_AM_RESEGMENT
-                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] CUT test_max_copy_payload_size with test_li_sum - test_start_offset %d -> %d\n",frame, rlcP->module_id, rlcP->rb_id,  test_max_copy_payload_size, test_li_sum - test_start_offset);
+                            LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][RE-SEGMENT] CUT test_max_copy_payload_size with test_li_sum - test_start_offset %d -> %d\n",frame, rlcP->module_id, rlcP->rb_id,  test_max_copy_payload_size, test_li_sum - test_start_offset);
                             #endif
                             test_max_copy_payload_size = test_li_sum - test_start_offset;
                         }*/
@@ -662,26 +662,26 @@ void rlc_am_tx_buffer_display (rlc_am_entity_t* rlcP, u32_t frame, char* message
     while (rlcP->vt_s != sn) {
         if (rlcP->pdu_retrans_buffer[sn].mem_block) {
             if ((loop % 1) == 0) {
-                msg ("\nTX SN:\t");
+                LOG_D(RLC, "\nTX SN:\t");
             }
             if (rlcP->pdu_retrans_buffer[sn].flags.retransmit) {
-                msg ("%04d %d/%d Bytes (NACK RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
+                LOG_D(RLC, "%04d %d/%d Bytes (NACK RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
             } else {
-                msg ("%04d %d/%d Bytes (RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
+                LOG_D(RLC, "%04d %d/%d Bytes (RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
             }
             if (rlcP->pdu_retrans_buffer[sn].num_holes == 0) {
-               msg ("SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].nack_so_start, rlcP->pdu_retrans_buffer[sn].nack_so_stop);
+               LOG_D(RLC, "SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].nack_so_start, rlcP->pdu_retrans_buffer[sn].nack_so_stop);
             } else {
                 for (i=0; i<rlcP->pdu_retrans_buffer[sn].num_holes;i++){
                     assert(i < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
-                    msg ("SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].hole_so_start[i], rlcP->pdu_retrans_buffer[sn].hole_so_stop[i]);
+                    LOG_D(RLC, "SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].hole_so_start[i], rlcP->pdu_retrans_buffer[sn].hole_so_stop[i]);
                 }
             }
             loop++;
         }
         sn = (sn + 1) & RLC_AM_SN_MASK;
     }
-   msg ("\n");
+   LOG_D(RLC, "\n");
 }
 //-----------------------------------------------------------------------------
 void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP,u32_t frame)

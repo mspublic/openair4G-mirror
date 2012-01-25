@@ -170,18 +170,18 @@ void rlc_am_display_control_pdu_infos(rlc_am_control_pdu_info_t* pdu_infoP)
     int num_nack;
 
     if (!pdu_infoP->d_c) {
-        LOG_D(RLC, "CONTROL PDU ACK SN %04d", pdu_infoP->ack_sn);
+        LOG_T(RLC, "CONTROL PDU ACK SN %04d", pdu_infoP->ack_sn);
 
         for (num_nack = 0; num_nack < pdu_infoP->num_nack; num_nack++) {
             if (pdu_infoP->nack_list[num_nack].e2) {
-                LOG_D(RLC, "\n\tNACK SN %04d SO START %05d SO END %05d",  pdu_infoP->nack_list[num_nack].nack_sn,
+                LOG_T(RLC, "\n\tNACK SN %04d SO START %05d SO END %05d",  pdu_infoP->nack_list[num_nack].nack_sn,
                                                       pdu_infoP->nack_list[num_nack].so_start,
                                                       pdu_infoP->nack_list[num_nack].so_end);
             } else {
-                LOG_D(RLC, "\n\tNACK SN %04d",  pdu_infoP->nack_list[num_nack].nack_sn);
+                LOG_T(RLC, "\n\tNACK SN %04d",  pdu_infoP->nack_list[num_nack].nack_sn);
             }
         }
-        msg("\n");
+       LOG_T(RLC, "\n");
     } else {
         LOG_E(RLC, "CAN'T DISPLAY CONTROL INFO: PDU IS DATA PDU\n");
     }
