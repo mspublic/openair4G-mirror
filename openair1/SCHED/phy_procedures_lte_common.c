@@ -482,7 +482,7 @@ lte_subframe_t get_subframe_direction(u8 Mod_id,u8 subframe) {
 
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
 
-  printf("phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
+  msg("phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
   return(subframe2harq_pid(frame_parms,
 			   phich_frame2_pusch_frame(frame_parms,frame,subframe),
 			   phich_subframe2_pusch_subframe(frame_parms,subframe)));
