@@ -100,7 +100,7 @@ void ue_init_mac(){
     UE_mac_inst[i].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[i].scheduling_info.retxBSR_Timer);
 
     for (j=0; j < MAX_NUM_LCID; j++){
-      LOG_I(MAC,"[UE%d] Applying default logical channel config for lcid %d\n",i,j);
+      LOG_I(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
       UE_mac_inst[i].scheduling_info.Bj[j]=-1;
       UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
     }
@@ -686,7 +686,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     lcid = UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid;
     bsr_s->LCGID = lcid;
     bsr_s->Buffer_size = UE_mac_inst[Mod_id].scheduling_info.BSR[lcid];
-    LOG_D(MAC,"[UE %d] report SHORT BSR with level %d for lcid %d\n", 
+    LOG_D(MAC,"[UE %d] report SHORT BSR with level %d for LCGID %d\n", 
 	  Mod_id, UE_mac_inst[Mod_id].scheduling_info.BSR[lcid],lcid);
   } else if (bsr_ce_len == sizeof(BSR_LONG))  {
     bsr_s = NULL;
@@ -694,7 +694,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     bsr_l->Buffer_size1 = UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH];
     bsr_l->Buffer_size2 = UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH1];
     bsr_l->Buffer_size3 = UE_mac_inst[Mod_id].scheduling_info.BSR[DTCH];
-    LOG_D(MAC, "[UE %d] report long BSR (level lcid0 %d,level lcid1 %d,level lcid2 %d,level lcid3 %d)\n", Mod_id,
+    LOG_D(MAC, "[UE %d] report long BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d)\n", Mod_id,
 	  UE_mac_inst[Mod_id].scheduling_info.BSR[CCCH],
 	  UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH],
 	  UE_mac_inst[Mod_id].scheduling_info.BSR[DCCH1],
@@ -830,7 +830,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 	UE_mac_inst[Mod_id].scheduling_info.BSR[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
 	//	UE_mac_inst[Mod_id].scheduling_info.num_BSR++;
 	UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
-	LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCID %d with BSR level %d (%d bytes in RLC)\n",
+	LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCGID %d with BSR level %d (%d bytes in RLC)\n",
 	      Mod_id, frame,subframe,lcid,
 	      UE_mac_inst[Mod_id].scheduling_info.BSR[lcid],
 	      rlc_status[lcid].bytes_in_buffer);
@@ -898,7 +898,7 @@ void update_bsr(u8 Mod_id, u32 frame, u8 lcid){
     UE_mac_inst[Mod_id].scheduling_info.BSR[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status.bytes_in_buffer);
     UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcid] = rlc_status.bytes_in_buffer;
     UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid = lcid; // only applicable to short bsr
-    LOG_D(MAC,"[UE %d] BSR level %d (lcid %d, rlc buffer %d byte)\n",
+    LOG_D(MAC,"[UE %d] BSR level %d (LCGID %d, rlc buffer %d byte)\n",
 	  Mod_id, UE_mac_inst[Mod_id].scheduling_info.BSR[lcid], lcid, rlc_status.bytes_in_buffer);
   } else {
     //LOG_D(MAC,"[UE %d] clear BSR info for lcid %d\n",Mod_id, lcid);

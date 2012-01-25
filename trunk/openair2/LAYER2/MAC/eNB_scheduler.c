@@ -464,21 +464,21 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu) {
 
     switch (rx_ces[i]) { // implement and process BSR + CRNTI +
     case POWER_HEADROOM:
-      LOG_I(MAC,"[eNB] Received PHR R = %d PH = %d\n", (payload_ptr[0]>>6), payload_ptr[0]&0x3f);
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d : Received PHR R = %d PH = %d\n", rx_ces[i], (payload_ptr[0]>>6), payload_ptr[0]&0x3f);
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
     case CRNTI:
-      LOG_I(MAC,"[eNB] Received CRNTI %d \n", payload_ptr[0]);
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d : Received CRNTI %d \n", rx_ces[i], payload_ptr[0]);
       payload_ptr+=1;
       break;
     case TRUNCATED_BSR:
     case SHORT_BSR :
-      LOG_I(MAC,"[eNB] Received short BSR lcid = %d bsr = %d\n", (payload_ptr[0]>>6), payload_ptr[0]&0x3f);
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d : Received short BSR LCGID = %d bsr = %d\n", rx_ces[i],(payload_ptr[0]>>6), payload_ptr[0]&0x3f);
       eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[(payload_ptr[0]>>6)] = (payload_ptr[0]&0x3f);
       payload_ptr+=1;//sizeof(SHORT_BSR); // fixme
       break;
     case LONG_BSR :
-      LOG_I(MAC,"[eNB] Received long BSR \n");
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d :Received long BSR \n", rx_ces[i]);
       eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[3] = (payload_ptr[0]&0x3f);
       eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[2] = (payload_ptr[0]&0xfc0);
       eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[1] = (payload_ptr[0]&0x3F000);
@@ -492,7 +492,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu) {
   }
 
   for (i=0;i<num_sdu;i++) {
-    //msg("SDU %d : LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
+    LOG_D(MAC,"SDU Number %d MAC Subheader SDU_LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
 
     if ((rx_lcids[i] == DCCH)||(rx_lcids[i] == DCCH1)) {
       //      if(eNB_mac_inst[Mod_id].Dcch_lchan[UE_id].Active==1){
