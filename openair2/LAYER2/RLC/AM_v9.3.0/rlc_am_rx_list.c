@@ -352,7 +352,7 @@ void rlc_am_rx_check_all_byte_segments(rlc_am_entity_t* rlcP, u32_t frame, mem_b
         if (((rlc_am_rx_pdu_management_t*)(cursor->previous->data))->pdu_info.sn == sn) {
             //list2_add_head(cursor->previous, &list);
             cursor = cursor->previous;
-    msg("rlc_am_rx_check_all_byte_segments(%d) @2\n",sn);
+            //msg("rlc_am_rx_check_all_byte_segments(%d) @2\n",sn);
         } else {
             break;
         }
@@ -515,31 +515,31 @@ void rlc_am_rx_list_display (rlc_am_entity_t* rlcP, char* messageP)
 
     cursor = rlcP->receiver_buffer.head;
     if (messageP) {
-        msg ("Display list %s %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, messageP, rlcP->vr_r);
+        LOG_T(RLC, "Display list %s %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, messageP, rlcP->vr_r);
     } else {
-        msg ("Display list %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, rlcP->vr_r);
+        LOG_T(RLC, "Display list %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, rlcP->vr_r);
     }
     if (cursor) {
     // almost one element
         while (cursor != NULL) {
             //if (((loop % 16) == 0) && (loop > 0)) {
             if ((loop % 4) == 0) {
-                msg ("\nRX SN:\t");
+                LOG_T(RLC, "\nRX SN:\t");
             }
             if (((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.rf) {
                 if (((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.lsf) {
-                    msg ("%04d (%04d->%04d LSF)\t",
+                    LOG_T(RLC, "%04d (%04d->%04d LSF)\t",
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.sn,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so + ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.payload_size - 1);
                 } else {
-                    msg ("%04d (%04d->%04d)\t",
+                    LOG_T(RLC, "%04d (%04d->%04d)\t",
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.sn,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so + ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.payload_size - 1);
                 }
             } else {
-                msg ("%04d (%04d NOSEG)\t",
+                LOG_T(RLC, "%04d (%04d NOSEG)\t",
                     ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.sn,
                     ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.payload_size);
             }
@@ -550,8 +550,8 @@ void rlc_am_rx_list_display (rlc_am_entity_t* rlcP, char* messageP)
             cursor = cursor->next;
             loop++;
         }
-        msg ("\n");
+        LOG_T(RLC, "\n");
     } else {
-        msg ("\nNO ELEMENTS\n");
+        LOG_T(RLC, "\nNO ELEMENTS\n");
     }
 }

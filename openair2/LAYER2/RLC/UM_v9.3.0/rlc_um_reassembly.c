@@ -82,9 +82,9 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP,u32_t frame
   if ((rlcP->output_sdu_in_construction)) {
 
 #ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
-    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] DATA :", rlcP->module_id, rlcP->rb_id, frame);
+    LOG_T(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] DATA :", rlcP->module_id, rlcP->rb_id, frame);
     for (index = 0; index < lengthP; index++) {
-      msg ("%02X.", srcP[index]);
+      LOG_T(RLC, "%02X.", srcP[index]);
     }
     msg ("\n");
 #endif

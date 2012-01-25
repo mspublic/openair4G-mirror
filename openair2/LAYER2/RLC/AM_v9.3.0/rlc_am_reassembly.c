@@ -66,9 +66,9 @@ void rlc_am_reassembly (u8_t * srcP, s32_t lengthP, rlc_am_entity_t *rlcP, u32_t
   if (rlcP->output_sdu_in_construction != NULL) {
 
 #ifdef TRACE_RLC_AM_DISPLAY_HEX_DATA
-    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PAYLOAD] DATA :", frame, rlcP->module_id, rlcP->rb_id);
+    LOG_T(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PAYLOAD] DATA :", frame, rlcP->module_id, rlcP->rb_id);
     for (index = 0; index < lengthP; index++) {
-      msg ("%02X.", srcP[index]);
+      LOG_T(RLC, "%02X.", srcP[index]);
     }
     msg ("\n");
 #endif
@@ -77,8 +77,8 @@ void rlc_am_reassembly (u8_t * srcP, s32_t lengthP, rlc_am_entity_t *rlcP, u32_t
         memcpy (&rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write], srcP, lengthP);
 #ifdef TRACE_RLC_AM_DISPLAY_ASCII_DATA
         rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write + lengthP] = 0;
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PAYLOAD] DATA :", frame, rlcP->module_id, rlcP->rb_id);
-        msg ("%s\n", &rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write]);
+        LOG_T(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PAYLOAD] DATA :", frame, rlcP->module_id, rlcP->rb_id);
+        LOG_T(RLC, "%s\n", &rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write]);
 #endif
         rlcP->output_sdu_size_to_write += lengthP;
     } else {
@@ -169,8 +169,8 @@ void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, u8_t eNB_flag, me
 #endif
                 // one last segment of SDU
                 //if (rlcP->reassembly_missing_sn_detected == 0) {
-		rlc_am_reassembly (pdu_info->payload, pdu_info->payload_size, rlcP,frame);
-		rlc_am_send_sdu(rlcP,frame,eNB_flag);
+                rlc_am_reassembly (pdu_info->payload, pdu_info->payload_size, rlcP,frame);
+                rlc_am_send_sdu(rlcP,frame,eNB_flag);
                 //} // else { clear sdu already done
                 //rlcP->reassembly_missing_sn_detected = 0;
                 break;
@@ -195,11 +195,11 @@ void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, u8_t eNB_flag, me
         switch (pdu_info->fi) {
             case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef TRACE_RLC_AM_RX_DECODE
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=11 (00) Li=", frame, rlcP->module_id, rlcP->rb_id);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=11 (00) Li=", frame, rlcP->module_id, rlcP->rb_id);
                 for (i=0; i < pdu_info->num_li; i++) {
-                    msg("%d ",pdu_info->li_list[i]);
+                    LOG_D(RLC, "%d ",pdu_info->li_list[i]);
                 }
-                msg("\n");
+                LOG_D(RLC, "\n");
                 //msg(" remaining size %d\n",size);
 #endif
                 // N complete SDUs
@@ -219,57 +219,57 @@ void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, u8_t eNB_flag, me
                 break;
             case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef TRACE_RLC_AM_RX_DECODE
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=10 (01) Li=", frame, rlcP->module_id, rlcP->rb_id);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=10 (01) Li=", frame, rlcP->module_id, rlcP->rb_id);
                 for (i=0; i < pdu_info->num_li; i++) {
-                    msg("%d ",pdu_info->li_list[i]);
+                    LOG_D(RLC, "%d ",pdu_info->li_list[i]);
                 }
-                msg("\n");
+                LOG_D(RLC, "\n");
                 //msg(" remaining size %d\n",size);
 #endif
                 // N complete SDUs + one segment of SDU in PDU
                 rlc_am_send_sdu(rlcP,frame,eNB_flag);
                 j = 0;
                 for (i = 0; i < pdu_info->num_li; i++) {
-		  rlc_am_reassembly (&pdu_info->payload[j], pdu_info->li_list[i], rlcP,frame);
-		  rlc_am_send_sdu(rlcP,frame,eNB_flag);
-		  j = j + pdu_info->li_list[i];
+                    rlc_am_reassembly (&pdu_info->payload[j], pdu_info->li_list[i], rlcP,frame);
+                    rlc_am_send_sdu(rlcP,frame,eNB_flag);
+                    j = j + pdu_info->li_list[i];
                 }
                 if (pdu_info->hidden_size > 0) { // normally should always be > 0 but just for help debug
                     // data is already ok, done by last loop above
-		  rlc_am_reassembly (&pdu_info->payload[j], pdu_info->hidden_size, rlcP, frame);
+                   rlc_am_reassembly (&pdu_info->payload[j], pdu_info->hidden_size, rlcP, frame);
                 }
                 //rlcP->reassembly_missing_sn_detected = 0;
                 break;
             case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef TRACE_RLC_AM_RX_DECODE
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=01 (10) Li=", frame, rlcP->module_id, rlcP->rb_id);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=01 (10) Li=", frame, rlcP->module_id, rlcP->rb_id);
                 for (i=0; i < pdu_info->num_li; i++) {
-                    msg("%d ",pdu_info->li_list[i]);
+                    LOG_D(RLC, "%d ",pdu_info->li_list[i]);
                 }
-                msg("\n");
+                LOG_D(RLC, "\n");
                 //msg(" remaining size %d\n",size);
 #endif
                 // one last segment of SDU + N complete SDUs in PDU
                 j = 0;
                 for (i = 0; i < pdu_info->num_li; i++) {
-		  rlc_am_reassembly (&pdu_info->payload[j], pdu_info->li_list[i], rlcP,frame);
-		  rlc_am_send_sdu(rlcP,frame,eNB_flag);
-		  j = j + pdu_info->li_list[i];
+                    rlc_am_reassembly (&pdu_info->payload[j], pdu_info->li_list[i], rlcP,frame);
+                    rlc_am_send_sdu(rlcP,frame,eNB_flag);
+                    j = j + pdu_info->li_list[i];
                 }
                 if (pdu_info->hidden_size > 0) { // normally should always be > 0 but just for help debug
                     // data is already ok, done by last loop above
-		  rlc_am_reassembly (&pdu_info->payload[j], pdu_info->hidden_size, rlcP,frame);
-		  rlc_am_send_sdu(rlcP,frame,eNB_flag);
+                    rlc_am_reassembly (&pdu_info->payload[j], pdu_info->hidden_size, rlcP,frame);
+                    rlc_am_send_sdu(rlcP,frame,eNB_flag);
                 }
                 //rlcP->reassembly_missing_sn_detected = 0;
                 break;
             case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef TRACE_RLC_AM_RX_DECODE
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=00 (11) Li=", frame, rlcP->module_id, rlcP->rb_id);
+                LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=00 (11) Li=", frame, rlcP->module_id, rlcP->rb_id);
                 for (i=0; i < pdu_info->num_li; i++) {
-                    msg("%d ",pdu_info->li_list[i]);
+                    LOG_D(RLC, "%d ",pdu_info->li_list[i]);
                 }
-                msg("\n");
+                LOG_D(RLC, "\n");
                 //msg(" remaining size %d\n",size);
 #endif
                 j = 0;
