@@ -379,8 +379,6 @@ typedef struct {
   u8  BSR_short_lcid;
   /// SR pending as defined in 36.321
   u8  SR_pending;
-  /// new transmission flag for each DRB used for SR
-  u8  new_transmission_flag[MAX_NUM_RB];
   /// SR_COUNTER as defined in 36.321
   u16 SR_COUNTER;
   /// retxBSR-Timer, default value is sf2560

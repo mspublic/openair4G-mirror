@@ -439,7 +439,8 @@ void SR_indication(u8 Mod_id,u32 frame, u16 rnti, u8 subframe) {
 
   u8 UE_id = find_UE_id(Mod_id,rnti);
 
-  LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframe %d Signaling SR\n",Mod_id,rnti,frame,subframe);
+  LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframe %d received SR_indication for UE %d\n",
+	Mod_id,rnti,frame,subframe,UE_id);
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 1;
 
 }
@@ -1030,7 +1031,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]]+
 	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]];  // This is when remaining data in UE buffers (even if SR is triggered)
 
-	  LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduled UE (DCCH bsr %d, DCCH1 bsr %d, DTCH bsr %d), BO %d\n",
+	  LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduled UE (DCCH BSR %d, DCCH1 BSR %d, DTCH BSR %d), BO %d\n",
 		Mod_id,rnti,frame,subframe,
 		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] ,
 		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1],
