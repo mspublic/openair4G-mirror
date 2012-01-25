@@ -297,12 +297,12 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
     t0_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t0_ra;
     t1_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t1_ra;
     t2_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t2_ra;
-    //#ifdef PRACH_DEBUG    
+#ifdef PRACH_DEBUG    
     LOG_D(PHY,"[PRACH] Checking for PRACH format (ConfigIndex %d) in TDD subframe %d (%d,%d,%d)\n",
 	prach_ConfigIndex,
 	subframe,
 	t0_ra,t1_ra,t2_ra);
-    //#endif    
+#endif    
     if ((((t0_ra == 1) && ((frame &1)==0))||  // frame is even and PRACH is in even frames
 	 ((t0_ra == 2) && ((frame &1)==1))||  // frame is odd and PRACH is in odd frames
 	 (t0_ra == 0)) &&                                // PRACH is in all frames

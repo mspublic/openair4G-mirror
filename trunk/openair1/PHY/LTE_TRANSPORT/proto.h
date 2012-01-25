@@ -1195,6 +1195,7 @@ u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 u8 Get_SB_size(u8 n_rb_dl);
 //end ALU's algo
 
+u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe);
 
 
 /**@}*/

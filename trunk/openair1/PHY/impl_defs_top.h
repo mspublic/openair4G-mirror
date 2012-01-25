@@ -296,20 +296,17 @@ enum MODE {
 
 /// Data structure for transmission.
 typedef struct {
-  // RAW TX sample buffer
+  /// RAW TX sample buffer
   char *TX_DMA_BUFFER[2];
-  /*
-  // Total transmit gain
-  unsigned int tx_total_gain_dB;
-  */
 } TX_VARS ;  
-
 
 /// Data structure for reception.
 typedef struct {
-  int *RX_DMA_BUFFER;
-} RX_VARS;
-
+  /// RAW TX sample buffer
+  char *TX_DMA_BUFFER[2];
+  /// RAW RX sample buffer
+  int *RX_DMA_BUFFER[2];
+} TX_RX_VARS;
 
 /// Measurement Variables
 #ifndef OPENAIR_LTE

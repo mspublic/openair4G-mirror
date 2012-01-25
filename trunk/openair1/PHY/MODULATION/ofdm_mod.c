@@ -87,6 +87,16 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 	log2fftsize/2,     // normalized FFT (i.e. 1/sqrt(N) multiplicative factor)
 	0);
 
+    
+    //memset(temp,0,1<<log2fftsize);
+    /*
+#ifdef DEBUG_OFDM_MOD
+    for (j=0;j<(1<<log2fftsize);j++) {
+      msg("twiddle_ifft(%d) = (%d, %d)\n", j, twiddle_ifft[2*j], twiddle_ifft[2*j+1]);
+    }
+#endif
+    */
+
     // Copy to frame buffer with Cyclic Extension
     // Note:  will have to adjust for synchronization offset!
     
