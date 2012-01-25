@@ -70,7 +70,7 @@ ifdef PERFECT_CE
 CFLAGS += -DPERFECT_CE
 endif
 
-CFLAGS += -DNO_RRM -DOPENAIR2 #-DPHY_ABSTRACTION
+CFLAGS += -DNO_RRM -DOPENAIR1 #-DOPENAIR2 #-DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
@@ -98,7 +98,7 @@ ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
 endif
 
-all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim
+all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
@@ -135,6 +135,10 @@ prachsim : $(OBJ) prachsim.c
 ulsim : $(OBJ) ulsim.c #ulsim_form.c
 	@echo "Compiling [ulsim.c]"
 	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm  -lblas
+
+syncsim : $(OBJ) syncsim.c
+	@echo "Compiling syncsim.c"
+	@$(CC) syncsim.c  -o syncsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
 
 clean :
 	rm -f $(OBJ)
