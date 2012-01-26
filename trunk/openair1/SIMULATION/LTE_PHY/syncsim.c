@@ -1247,7 +1247,7 @@ int main(int argc, char **argv) {
       */
       
       for (n_trials=0;n_trials<ntrials;n_trials++) {
-	//printf("n_trial %d\n",n_trials);
+
 	for (i=0; i<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_rx;aa++) {
 	    if (n_trials==0) {
@@ -1302,13 +1302,16 @@ int main(int argc, char **argv) {
 	*/
 
 	if (initial_sync(PHY_vars_UE)==0) {
-	  msg("pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
-	      PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
+	  //	  msg("pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
+	  //	      PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
 	}
 	else {
-	  n_errors++;
-	  n_errors2++;
-	  msg("pbch error\n");
+	  if (PHY_vars_UE->lte_frame_parms.Nid_cell !=  Nid_cell)
+	    n_errors2++;
+	  else
+	    n_errors++;
+	  
+	  //	  msg("pbch error\n");
 	}
 
 
@@ -1340,7 +1343,11 @@ int main(int argc, char **argv) {
 	break;
     } // trials
     if (abstraction_flag==0) {
-      printf("SNR %f : n_errors2 = %d/%d (BLER %e,40ms BLER %e,%d,%d), n_alamouti %d\n", SNR,n_errors2,ntrials*(1+trial),(double)n_errors2/(ntrials*(1+trial)),pow((double)n_errors2/(ntrials*(1+trial)),4),ntrials,trial,n_alamouti);
+      printf("SNR %f : PSS/SSS errors %d/%d (Perror %e) PBCH errors = %d/%d (BLER %e), n_alamouti %d\n", 
+	     SNR,
+	     n_errors2,ntrials*(1+trial),(double)n_errors2/(ntrials*(1+trial)),
+	     n_errors,(ntrials*(1+trial)-n_errors2),(double)n_errors/(ntrials*(1+trial)-n_errors2),
+	     n_alamouti);
       if (write_output_file==1)
 	fprintf(output_fd,"%f %e\n",SNR,(double)n_errors2/(ntrials*(1+trial)));
     }
