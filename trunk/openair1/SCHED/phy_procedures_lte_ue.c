@@ -995,12 +995,16 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	}
 #endif
       }
-      else {
-	phy_vars_ue->prach_cnt++;
+      //      printf("[PHY][UE] frame %d subframe %d : generate_prach %d, prach_cnt %d\n",phy_vars_ue->frame,next_slot>>1,phy_vars_ue->generate_prach,phy_vars_ue->prach_cnt);
+      //      else {
+      {	phy_vars_ue->prach_cnt++;
 	if (phy_vars_ue->prach_cnt==2)
-	  phy_vars_ue->generate_prach=0;
+	  phy_vars_ue->generate_prach=0; 
       }
     } // mode is PRACH
+    else {
+      phy_vars_ue->generate_prach=0; 
+    }
   } // next_slot is even
 }
 

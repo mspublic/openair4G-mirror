@@ -1189,7 +1189,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	    //PSS TDD
 	    if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
 	      skip_half=1;
-	    else if ((subframe_offset==1) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
+	    else if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
 	      skip_half=2;
 	  }
 	  else {
