@@ -5840,21 +5840,21 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     u8 first_symbol_flag,
 		     unsigned short nb_rb,
 		     u16 pbch_pss_sss_adjust,
-		     short **llr128p) {
+		     s16 **llr32p) {
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag;
-  __m128i *llr128;
+  __m128i llr128[2];
   int i,len;
   unsigned char symbol_mod,len_mod4=0;
-  
+  u32 *llr32;
 //  printf("dlsch_rx.c: dlsch_16qam_llr: symbol %d\n",symbol);
 
   if (first_symbol_flag==1) {
-    llr128 = (__m128i*)dlsch_llr;
+    llr32 = (u32*)dlsch_llr;
   }
   else {
-    llr128 = (__m128i*)(*llr128p);
+    llr32 = (u32*)*llr32p;
   }
   
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
@@ -5871,11 +5871,17 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = nb_rb*12 - pbch_pss_sss_adjust;
   }
 
-  //printf("16qam llr symbol %d : len %d, pbch_pss_sss_adjust %d\n",symbol,len,pbch_pss_sss_adjust);
+  // update output pointer according to number of REs in this symbol (<<2 because 4 bits per RE)
+  if (first_symbol_flag == 1)
+    *llr32p = dlsch_llr + (len<<2);
+  else
+    *llr32p += (len<<2);
+
+    printf("16qam llr symbol %d : len %d, pbch_pss_sss_adjust %d\n",symbol,len,pbch_pss_sss_adjust);
   len_mod4 = len&3;
   len>>=2;  // length in quad words (4 REs)
-  len+=(len_mod4>>1);
-  //printf("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
+  len+=(len_mod4==0 ? 0 : 1);
+    printf("16qam llr symbol %d : len %d (%d) => %p\n",symbol,len,len_mod4,(*llr32p));
   
   for (i=0;i<len;i++) {
 
@@ -5888,16 +5894,27 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
     llr128[0] = _mm_unpacklo_epi32(rxF[i],mmtmpD0); // lambda_1=y_R, lambda_2=|y_R|-|h|^2, lamda_3=y_I, lambda_4=|y_I|-|h|^2
     llr128[1] = _mm_unpackhi_epi32(rxF[i],mmtmpD0);
-    llr128+=2;
+    llr32[0] = ((u32 *)&llr128[0])[0];
+    llr32[1] = ((u32 *)&llr128[0])[1];
+    llr32[2] = ((u32 *)&llr128[0])[2];
+    llr32[3] = ((u32 *)&llr128[0])[3];
+    llr32[4] = ((u32 *)&llr128[1])[0];
+    llr32[5] = ((u32 *)&llr128[1])[1];
+    llr32[6] = ((u32 *)&llr128[1])[2];
+    llr32[7] = ((u32 *)&llr128[1])[3];
+    llr32+=8;
+    //    llr128+=2;
 
     //    print_bytes("rxF[i]",&rxF[i]);
     //    print_bytes("rxF[i+1]",&rxF[i+1]);
   }
 
-  if (len_mod4>0)
+  /*
+  if (len_mod4>1)
     *llr128p = (short *)(llr128-1);
   else
     *llr128p = (short *)(llr128);
+    */
 
   _mm_empty();
   _m_empty();
@@ -5918,9 +5935,10 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag,*ch_magb;
-  int j=0,i,len;
+  int j=0,i,len,len2;
   unsigned char symbol_mod,len_mod4;
   static short *llr;
+  s16 *llr2;
 
   if (first_symbol_flag==1)
     llr = dlsch_llr;
@@ -5942,10 +5960,13 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = nb_rb*12 - pbch_pss_sss_adjust;
   }
 
+  llr2=llr;
+  llr+=(len*6);
+
   //  printf("16qam llr symbol %d : len %d\n",symbol,len);
   len_mod4 =len&3;
-  len>>=2;  // length in quad words (4 REs)
-  len+=(len_mod4>>1);
+  len2=len>>2;  // length in quad words (4 REs)
+  len2+=(len_mod4?0:1);
   //  printf("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
 
   for (i=0;i<len;i++) {
@@ -5958,12 +5979,12 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
     // loop over all LLRs in quad word (24 coded bits)
     for (j=0;j<8;j+=2) {
-      llr[0] = ((short *)&rxF[i])[j];
-      llr[1] = ((short *)&rxF[i])[j+1];
-      llr[2] = ((short *)&mmtmpD1)[j];
-      llr[3] = ((short *)&mmtmpD1)[j+1];
-      llr[4] = ((short *)&mmtmpD2)[j];
-      llr[5] = ((short *)&mmtmpD2)[j+1];
+      llr2[0] = ((short *)&rxF[i])[j];
+      llr2[1] = ((short *)&rxF[i])[j+1];
+      llr2[2] = ((short *)&mmtmpD1)[j];
+      llr2[3] = ((short *)&mmtmpD1)[j+1];
+      llr2[4] = ((short *)&mmtmpD2)[j];
+      llr2[5] = ((short *)&mmtmpD2)[j+1];
       
 #ifdef DEBUG_LLR
       printf("llr[0]=%d\n", llr[0]);
@@ -5974,14 +5995,12 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
       printf("llr[5]=%d\n", llr[5]);
 #endif
       
-      llr+=6;
+      llr2+=6;
     }
 
   }
 
-  if (len_mod4>0)
-    llr = llr - 12;
- 
+
   _mm_empty();
   _m_empty();
 
@@ -6533,6 +6552,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 
   if (frame_parms->frame_type == 1) {  // TDD
     sss_symb = nsymb-1;
+    pss_symb = 2;
   }
   else {
     sss_symb = (nsymb>>1)-2;
@@ -6649,6 +6669,17 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
 	    skip_half=2;
 	}
+	
+	if ((frame_parms->frame_type == 1) &&
+	    (subframe==6)){  //TDD Subframe 6
+	  if ((rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
+	    rb_alloc_ind = 0;
+	  }
+	  if ((rb==((frame_parms->N_RB_DL>>1)-3)) && (l==pss_symb))
+	    skip_half=1;
+	  else if ((rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
+	    skip_half=2;
+	}
 
 	if (rb_alloc_ind==1) {
 	  /*	  	  
@@ -6755,6 +6786,14 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  rb_alloc_ind = 0;
 	}
       }
+
+      if ((frame_parms->frame_type == 1) &&
+	  (subframe==6)){
+      //PSS
+	if ((rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
+	  rb_alloc_ind = 0;
+	}
+      }
       //	printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);      
       //      printf("DC rb %d (%p)\n",rb,rxF);
       if (rb_alloc_ind==1) {
@@ -6845,6 +6884,17 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==pss_symb))
 	    skip_half=1;
 	  else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
+	    skip_half=2;
+	}
+
+	if ((frame_parms->frame_type == 1) &&
+	    (subframe==6)){  //TDD Subframe 6
+	  if ((rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
+	    rb_alloc_ind = 0;
+	  }
+	  if ((rb==((frame_parms->N_RB_DL>>1)-3)) && (l==pss_symb))
+	    skip_half=1;
+	  else if ((rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
 	    skip_half=2;
 	}
 	

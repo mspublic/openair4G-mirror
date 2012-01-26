@@ -345,7 +345,6 @@ DCI1E_5MHz_2A_M10PRB_TDD_t  DLSCH_alloc_pdu2_1E[2];
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 //#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
-#define DLSCH_RB_ALLOC 0x1fff // all 25 RBs
 //#define DLSCH_RB_ALLOC 0x0001
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -449,7 +448,7 @@ int main(int argc, char **argv) {
   int eNB_id = 0, eNB_id_i = NUMBER_OF_eNB_MAX;
   unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
   unsigned char i_mod = 2;
-  unsigned short NB_RB=conv_nprb(0,DLSCH_RB_ALLOC);
+  unsigned short NB_RB;
   unsigned char Ns,l,m;
   u16 tdd_config=3;
   u16 n_rnti=0x1234;
@@ -517,6 +516,7 @@ int main(int argc, char **argv) {
   FD_lte_scope *form;
   char title[255];
 #endif
+  u32 DLSCH_RB_ALLOC = 0x1fff;
 
   signal(SIGSEGV, handler); 
 
@@ -554,15 +554,7 @@ int main(int argc, char **argv) {
 	fdd_flag = 1;
 	break;
       case 'r':
-	/*
-	ricean_factor = pow(10,-.1*atof(optarg));
-	if (ricean_factor>1) {
-	  printf("Ricean factor must be between 0 and 1\n");
-	  exit(-1);
-	}
-	*/
-	printf("Please use the -G option to select the channel model\n");
-	exit(-1);
+	DLSCH_RB_ALLOC = atoi(optarg);
 	break;
       case 'F':
 	forgetting_factor = atof(optarg);
@@ -716,6 +708,7 @@ int main(int argc, char **argv) {
       }
   }
 
+  NB_RB=conv_nprb(0,DLSCH_RB_ALLOC);
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
   form = create_form_lte_scope();
