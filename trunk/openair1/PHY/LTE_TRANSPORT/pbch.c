@@ -729,7 +729,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
     max_h = pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
 			       frame_parms,
 			       symbol);
-    log2_maxh = 5+(log2_approx(max_h)/2);
+    log2_maxh = 3+(log2_approx(max_h)/2);
     
 #ifdef DEBUG_PBCH
     msg("[PHY] PBCH log2_maxh = %d (%d)\n",log2_maxh,max_h);

@@ -223,10 +223,12 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
   s16 *d0,*d5;
 
   if (phy_vars_ue->lte_frame_parms.frame_type == 0) { // FDD 
+#ifdef DEBUG_SSS
     if (phy_vars_ue->lte_frame_parms.Ncp == 0)
       msg("[PHY][UE%d] Doing SSS for FDD Normal Prefix\n",phy_vars_ue->Mod_id);
     else
       msg("[PHY][UE%d] Doing SSS for FDD Extended Prefix\n",phy_vars_ue->Mod_id);
+#endif
     // Do FFTs for SSS/PSS
     // SSS
     slot_fep(phy_vars_ue,
@@ -242,10 +244,12 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
 	     0);
   }
   else {   // TDD
+#ifdef DEBUG_SSS
     if (phy_vars_ue->lte_frame_parms.Ncp == 0)
       msg("[PHY][UE%d] Doing SSS for TDD Normal Prefix\n",phy_vars_ue->Mod_id);
     else
       msg("[PHY][UE%d] Doing SSS for TDD Extended Prefix\n",phy_vars_ue->Mod_id);
+#endif
     // SSS
     slot_fep(phy_vars_ue,
 	     (frame_parms->symbols_per_tti>>1)-1,  // last symbol of 
