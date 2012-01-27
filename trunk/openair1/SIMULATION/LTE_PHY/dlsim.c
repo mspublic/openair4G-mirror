@@ -32,7 +32,6 @@
 #define BW 7.68
 
 //#define ABSTRACTION
-
 //#define PERFECT_CE
 
 /*
@@ -1638,58 +1637,124 @@ int main(int argc, char **argv) {
 
 		  for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols;
 		       m<pilot2;
-		       m++) {
-		    if (rx_pdsch(PHY_vars_UE,
-				 PDSCH,
-				 eNB_id,
-				 eNB_id_i,
-				 subframe,
-				 m,
-				 (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
-				 dual_stream_UE,
-				 i_mod)==-1) {
-
-		      dlsch_active = 0;
-		      break;
+		       m++) 
+		    {
+#if defined ENABLE_FXP || ENABLE_FLP
+		      printf("fxp or flp release used\n");
+		      if (rx_pdsch(PHY_vars_UE,
+				   PDSCH,
+				   eNB_id,
+				   eNB_id_i,
+				   subframe,
+				   m,
+				   (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
+				   dual_stream_UE,
+				   i_mod)==-1)
+			{
+			  dlsch_active = 0;
+			  break;
+			}
+#endif
+#ifdef ENABLE_FULL_FLP
+		      printf("Full flp release used\n");
+		      if (rx_pdsch_full_flp(PHY_vars_UE,
+					    PDSCH,
+					    eNB_id,
+					    eNB_id_i,
+					    subframe,
+					    m,
+					    (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
+					    dual_stream_UE,
+					    i_mod)==-1)
+			{
+			  dlsch_active = 0;
+			  break;
+			  }
+#endif
 		    }
-		  }
-	       
 		}
 		  
-		if ((Ns==(1+(2*subframe))) && (l==pilot1)) {// process symbols (6 Extended Prefix),7,8,9 
-		  for (m=pilot2;
-		       m<pilot3;
-		       m++)
-		    if (rx_pdsch(PHY_vars_UE,
-				 PDSCH,
-				 eNB_id,
-				 eNB_id_i,
-				 subframe,
-				 m,
-				 0,
-				 dual_stream_UE,
-				 i_mod)==-1) {
-		      dlsch_active=0;
-		      break;
-		    }
-		}
-	      
+		if ((Ns==(1+(2*subframe))) && (l==pilot1))
+		  {// process symbols (6 Extended Prefix),7,8,9 
+		    for (m=pilot2;
+			 m<pilot3;
+			 m++)
+		      {
+#if defined ENABLE_FXP || ENABLE_FLP
+			printf("fxp or flp release used\n");
+			if (rx_pdsch(PHY_vars_UE,
+				     PDSCH,
+				     eNB_id,
+				     eNB_id_i,
+				     subframe,
+				     m,
+				     0,
+				     dual_stream_UE,
+				     i_mod)==-1)
+			  {
+			    dlsch_active=0;
+			    break;
+			  }
+#endif
+#ifdef ENABLE_FULL_FLP
+		      printf("Full flp release used\n");
+		      if (rx_pdsch_full_flp(PHY_vars_UE,
+					    PDSCH,
+					    eNB_id,
+					    eNB_id_i,
+					    subframe,
+					    m,
+					    0,
+					    dual_stream_UE,
+					    i_mod)==-1)
+			{
+			  dlsch_active=0;
+			  break;
+			}
+#endif
+		      }
+		  }
+		
 		if ((Ns==(2+(2*subframe))) && (l==0))  // process symbols 10,11,(12,13 Normal Prefix) do deinterleaving for TTI
-		  for (m=pilot3;
-		       m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
-		       m++)
-		    if (rx_pdsch(PHY_vars_UE,
-				 PDSCH,
-				 eNB_id,
-				 eNB_id_i,
-				 subframe,
-				 m,
-				 0,
-				 dual_stream_UE,
-				 i_mod)==-1) {
-		      dlsch_active=0;
-		      break;
-		    }
+		  {
+		    for (m=pilot3;
+			 m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
+			 m++)
+		      {
+#if defined ENABLE_FXP || ENABLE_FLP
+			printf("fxp or flp release used\n");
+			if (rx_pdsch(PHY_vars_UE,
+				     PDSCH,
+				     eNB_id,
+				     eNB_id_i,
+				     subframe,
+				     m,
+				     0,
+				     dual_stream_UE,
+				     i_mod)==-1)
+			  {
+			    dlsch_active=0;
+			    break;
+			  }
+#endif
+#ifdef ENABLE_FULL_FLP
+		      printf("Full flp release used\n");
+		      if (rx_pdsch_full_flp(PHY_vars_UE,
+					    PDSCH,
+					    eNB_id,
+					    eNB_id_i,
+					    subframe,
+					    m,
+					    0,
+					    dual_stream_UE,
+					    i_mod)==-1)
+			{
+			  dlsch_active=0;
+			  break;
+			}
+#endif
+		      }
+		  }
 		
 		if ((n_frames==1) && (Ns==(2+(2*subframe))) && (l==0))  {
 		  write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);

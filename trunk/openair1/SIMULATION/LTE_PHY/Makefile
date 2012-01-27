@@ -12,7 +12,7 @@ OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
-CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
+CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
 
 LFLAGS = -lm -lblas -lxml2 -lrt
 
@@ -74,6 +74,23 @@ CFLAGS += -DNO_RRM -DOPENAIR1 #-DOPENAIR2 #-DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
+ifdef ENABLE_FXP
+CFLAGS += -DENABLE_FXP # Fxp only
+else
+ ifdef ENABLE_FLP
+ CFLAGS += -DENABLE_FLP # dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() are flp (independently)	
+ else
+  ifdef ENABLE_FULL_FLP
+  CFLAGS += -DENABLE_FULL_FLP # Flp inside of rx_pdsch() (dlsch_detection_mrc(), dual_stream_correlation(), channel_compensation_prec(), qam16_qam16_mu_mimo() and dlsch_16qam_16qam_llr)
+  else
+  CFLAGS += -DENABLE_FXP # Fxp only by default
+  endif
+ endif
+endif
+
+ifdef COMPARE_FLP_AND_FXP
+CFLAGS += -DCOMPARE_FLP_AND_FXP
+endif
 
 include $(TOP_DIR)/PHY/Makefile.inc
 #SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
