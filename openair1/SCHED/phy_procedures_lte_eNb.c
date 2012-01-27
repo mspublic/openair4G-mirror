@@ -1805,11 +1805,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef OPENAIR2
   if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && 
       (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH)) {
-    two_ues_connected = 1;
+    two_ues_connected = 1;}
 #else
     two_ues_connected = 1;
 #endif
-  }
   */
 
   pusch_active = 0;
