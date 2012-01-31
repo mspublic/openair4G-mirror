@@ -301,7 +301,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
   lte_frame_parms->tdd_config = 3;
-  lte_frame_parms->frame_type = 1;
+  lte_frame_parms->frame_type = 0;
   init_frame_parms(lte_frame_parms,osf);
   
   //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -763,12 +763,53 @@ int main(int argc, char **argv) {
     pbch_pdu[1]=1;
     pbch_pdu[2]=0;
     
-    generate_pss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
-		 1024,
-		 &PHY_vars_eNb->lte_frame_parms,
-		 2,
-		 2);
-    
+    if (PHY_vars_eNb->lte_frame_parms.frame_type == 0) {
+      generate_pss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   (PHY_vars_eNb->lte_frame_parms.Ncp==0) ? 6 : 5,
+		   0);
+      generate_sss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   (PHY_vars_eNb->lte_frame_parms.Ncp==0) ? 5 : 4,
+		   0);
+      generate_pss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   (PHY_vars_eNb->lte_frame_parms.Ncp==0) ? 6 : 5,
+		   10);
+      generate_sss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   (PHY_vars_eNb->lte_frame_parms.Ncp==0) ? 5 : 4,
+		   10);
+
+    }
+    else {
+      generate_sss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   (PHY_vars_eNb->lte_frame_parms.Ncp==0) ? 6 : 5,
+		   1);
+      generate_pss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   2,
+		   2);
+      generate_sss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   (PHY_vars_eNb->lte_frame_parms.Ncp==0) ? 6 : 5,
+		   11);
+      generate_pss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		   AMP,
+		   &PHY_vars_eNb->lte_frame_parms,
+		   2,
+		   12);
+
+
+    }
     memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
     dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
     dci_alloc[0].L          = 2;
@@ -1292,7 +1333,7 @@ int main(int argc, char **argv) {
 
 
 		if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
-		  //if (n_frames==1)
+		  if (n_frames==1)
 		    msg("pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
 			PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
 		}
@@ -1320,7 +1361,7 @@ int main(int argc, char **argv) {
 #endif
 	}
 	else {
-	  msg("sync not successfull\n");
+	  //	  msg("sync not successfull\n");
 	} 
       } //noise trials
       if (abstraction_flag==1) {
