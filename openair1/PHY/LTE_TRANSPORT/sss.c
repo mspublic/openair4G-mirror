@@ -41,6 +41,8 @@
 #include "defs.h"
 #include "PHY/extern.h"
 
+#define DEBUG_SSS
+
 int generate_sss(mod_sym_t **txdataF,
 		 short amp,
 		 LTE_DL_FRAME_PARMS *frame_parms,
@@ -357,8 +359,10 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
 	  phy_vars_ue->lte_frame_parms.Nid_cell = Nid2+(3*Nid1);
 	  *phase_max = phase;
 	  *flip_max=flip;
-	  //	  printf("(flip,phase,Nid1) (%d,%d,%d), metric_phase %d tot_metric %d, phase_max %d, flip_max %d\n",flip,phase,Nid1,metric,*tot_metric,*phase_max,*flip_max);
-
+#ifdef DEBUG_SSS
+	  msg("(flip,phase,Nid1) (%d,%d,%d), metric_phase %d tot_metric %d, phase_max %d, flip_max %d\n",flip,phase,Nid1,metric,*tot_metric,*phase_max,*flip_max);
+#endif
+	  
 	}
       }
     } 
