@@ -43,6 +43,8 @@
 #include "defs.h"
 #include "extern.h"
 
+#define DEBUG_INIT_SYNCH
+
 int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 
   u8 l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
@@ -59,7 +61,13 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 	     phy_vars_ue->rx_offset,
 	     0);
   }
-  
+
+  slot_fep(phy_vars_ue,
+	   0,
+	   2,
+	   phy_vars_ue->rx_offset,
+	   0);
+
   lte_ue_measurements(phy_vars_ue,
 		      phy_vars_ue->rx_offset,
 		      0,
@@ -180,7 +188,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
     // one frame delay
     phy_vars_ue->frame ++;
 #endif
-    /*
+#ifdef DEBUG_INIT_SYNCH
     msg("[PHY][UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
 	phy_vars_ue->Mod_id,
 	frame_parms->mode1_flag,
@@ -189,7 +197,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 	frame_parms->N_RB_DL,
 	frame_parms->phich_config_common.phich_duration,
 	frame_parms->phich_config_common.phich_resource);
-    */
+#endif
     return(0);
   }
   else {
@@ -214,7 +222,9 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 			   (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
   sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
 
-  //  msg("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
+#ifdef DEBUG_INIT_SYNCH
+  msg("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
+#endif
 
   // SSS detection
   // First try FDD normal prefix (one symbol before PSS)
@@ -287,8 +297,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
    
     rx_sss(phy_vars_ue,&metric_tdd_ncp,&flip_tdd_ncp,&phase_tdd_ncp);
     Nid_cell_tdd_ncp = frame_parms->Nid_cell; 
-    //    printf("TDD Normal prefix CellId %d metric %d, phase %d, flip %d\n",
-    //	   Nid_cell_tdd_ncp,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp);
+#ifdef DEBUG_INIT_SYNCH
+    msg("TDD Normal prefix CellId %d metric %d, phase %d, flip %d\n",
+    	   Nid_cell_tdd_ncp,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp);
+#endif
   }
 
     // Nod TDD extended prefix
@@ -312,6 +324,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 #ifdef DEBUG_INIT_SYNCH
     printf("TDD Extended prefix CellId %d metric %d, phase %d, flip %d\n",
 	   Nid_cell_tdd_ecp,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp);
+#endif
+  }
+  else {
+#ifdef DEBUG_INIT_SYNCH
+    msg("SSS error condition : sync_pos2 %d, sync_pos_slot %d\n", sync_pos2, sync_pos_slot);
 #endif
   }
   
@@ -391,7 +408,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 #endif
       ret = pbch_detection(phy_vars_ue);
       if (ret == -1) { // TDD Normal CP failed, try TDD Ext. CP
-
+	return(-1);
 	phy_vars_ue->lte_frame_parms.Ncp=1;
 	phy_vars_ue->lte_frame_parms.frame_type=1;
 	phy_vars_ue->lte_frame_parms.Nid_cell = Nid_cell_tdd_ecp;
