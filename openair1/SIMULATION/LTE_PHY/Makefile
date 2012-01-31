@@ -115,6 +115,8 @@ ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
 endif
 
+OBJ += openair_hw.o
+
 all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
