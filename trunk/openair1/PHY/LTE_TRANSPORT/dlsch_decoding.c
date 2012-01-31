@@ -369,7 +369,7 @@ u32  dlsch_decoding(short *dlsch_llr,
       Kr = dlsch->harq_processes[harq_pid]->Kplus;
 
     Kr_bytes = Kr>>3;
-    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
+    //    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
     if (r==0) {
       memcpy(dlsch->harq_processes[harq_pid]->b,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
