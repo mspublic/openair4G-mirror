@@ -1,6 +1,5 @@
 * TDD mode 1
 * [du]lsch_ue_col for collaborative links
 * Define TBS_FIX (pilots for several CH)
-* MR-specific RS generation
 * Generate output result files
 

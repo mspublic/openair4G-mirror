@@ -57,9 +57,11 @@ typedef struct {
   int verbose;
   analysis_t analysis;
   int n_relays;
-  int n_frames;
+  int n_pdu;
+  int n_harq;
   int mcs_hop1;
   int mcs_hop2;
+  SCM_t channel_model;
   double snr_hop1[MAX_RELAYS];
   double snr_hop2[MAX_RELAYS];
   const char* results_fn;
@@ -82,16 +84,15 @@ typedef struct {
 } sh_channel_t;
 
 int parse_args(int argc, char** argv, args_t* args);
+int parse_channel_model(const char* str, SCM_t* model);
 bool parse_snr(const char* str, double* snr, int n);
 void print_usage(const char* prog);
+void print_channel_usage();
 void signal_handler(int sig);
 void setup_snrs_single(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays);
 void setup_snrs_sweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
 void setup_snrs_bsweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
 void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmission_mode);
-void setup_ch_src(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms);
-void setup_ch_dest(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms);
-void setup_mr(PHY_VARS_UE* phy_vars, LTE_DL_FRAME_PARMS* frame_parms);
 void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs);
 void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs);
 void alloc_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti);
@@ -113,7 +114,8 @@ void print_dlsch_ue_stats(LTE_UE_DLSCH_t* d);
 void print_ulsch_ue_stats(LTE_UE_ULSCH_t* d);
 void print_ulsch_eNB_stats(LTE_eNB_ULSCH_t* d);
 int block_valid(u8* ref, u8* rec, int n);
-void print_results(int n_relays, double* snr_hop1, double* snr_hop2, double* ber_hop1, double ber_hop2, int blocks_valid, int n_frames);
+void print_results(int n_relays, double* snr_hop1, double* snr_hop2, double* ber_hop1, double ber_hop2, int tbs_hop1, int tbs_hop2,
+    int n_pdu, int n_succ_pdu_hop1, int n_succ_pdu_hop2, int n_frames_hop1, int n_frames_hop2);
 
 int main(int argc, char **argv) {
   args_t args;
@@ -127,7 +129,6 @@ int main(int argc, char **argv) {
   DCI_ALLOC_t dci_hop1;
   DCI_ALLOC_t dci_hop2;
 
-  SCM_t channel_model = AWGN;//Rayleigh1;
   channel_vars_t channel_vars;
   sh_channel_t** channels_hop1;
   sh_channel_t** channels_hop2;
@@ -137,7 +138,6 @@ int main(int argc, char **argv) {
   double* snr_hop1;
   double* snr_hop2;
   int n_tests;
-  int n_rounds = 4;
   int n_relays;
 
   u16 rnti_hop1 = 0x1515;
@@ -164,6 +164,7 @@ int main(int argc, char **argv) {
   int test;
   int frame;
   int round;
+  int i;
   int k;
   int l;
   int n_iter;
@@ -173,11 +174,13 @@ int main(int argc, char **argv) {
   bool decoded_at_mr[MAX_RELAYS];
   bool decoded_at_ch;
 
+  int n_succ_pdu_hop1;
+  int n_succ_pdu_hop2;
   double ber_hop1[MAX_RELAYS];
   double ber_hop2;
-  int blocks_valid;
-  int n_frames_hop1[MAX_RELAYS];
+  int n_frames_hop1;
   int n_frames_hop2;
+  int n_ber_frames_hop1[MAX_RELAYS];
 
   char fnbuf[80];
   char varbuf[80];
@@ -186,8 +189,13 @@ int main(int argc, char **argv) {
   FILE* results = 0;
 
   // Parse arguments
-  if(parse_args(argc, argv, &args) > 0) {
+  k = parse_args(argc, argv, &args);
+  if(k == 1) {
     print_usage(argv[0]);
+    exit(1);
+  }
+  else if(k == 2) {
+    print_channel_usage();
     exit(1);
   }
 
@@ -246,10 +254,17 @@ int main(int argc, char **argv) {
 
   // Setup PHY structures
   setup_frame_params(frame_parms, 1);
-  setup_ch_src(phy_vars_ch_src, frame_parms);
-  for(k = 0; k < n_relays; k++)
-    setup_mr(phy_vars_mr[k], frame_parms);
-  setup_ch_dest(phy_vars_ch_dest, frame_parms);
+  phy_vars_ch_src->lte_frame_parms = *frame_parms;
+  phy_init_lte_eNB(phy_vars_ch_src, 0, 0, 0);
+  for(k = 0; k < n_relays; k++) {
+    phy_vars_mr[k]->lte_frame_parms = *frame_parms;
+    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[0], 0);
+    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[1], 1);
+    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[2], 2);
+    phy_init_lte_ue(phy_vars_mr[k], 0);
+  }
+  phy_vars_ch_dest->lte_frame_parms = *frame_parms;
+  phy_init_lte_eNB(phy_vars_ch_dest, 0, 2, 0);
 
   // Allocate temporary signal structures
   rxdata[0] = malloc(10*frame_parms->samples_per_tti);
@@ -263,26 +278,31 @@ int main(int argc, char **argv) {
   // Setup channel structures
   channel_vars = alloc_channel_vars(frame_parms);
   for(k = 0; k < n_relays; k++) {
-    channels_hop1[k] = alloc_sh_channel(&channel_vars, channel_model, n_txantenna_ch, n_rxantenna_mr);
-    channels_hop2[k] = alloc_sh_channel(&channel_vars, channel_model, n_txantenna_mr, n_rxantenna_ch);
+    channels_hop1[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_ch, n_rxantenna_mr);
+    channels_hop2[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_mr, n_rxantenna_ch);
   }
 
   // Create broadcast DCI and generate transport channel parameters,
-  // in order to determine hop 1 transfer block size
+  // in order to determine hop 1 transfer block size and number of coded bits
   setup_broadcast_dci(&dci_hop1, rnti_hop1, 0, args.mcs_hop1);
   generate_eNB_dlsch_params_from_dci(subframe_hop1, dci_hop1.dci_pdu, 
       rnti_hop1, format1, phy_vars_ch_src->dlsch_eNB[0], frame_parms, 
       SI_RNTI, RA_RNTI, P_RNTI,
       phy_vars_ch_src->eNB_UE_stats[0].DL_pmi_single);
   hop1_tbs = phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->TBS;
+  n_coded_bits_hop1 = get_G(frame_parms, phy_vars_ch_src->dlsch_eNB[0][0]->nb_rb,
+      phy_vars_ch_src->dlsch_eNB[0][0]->rb_alloc,
+      get_Qm(phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->mcs),
+      n_avail_pdcch_symbols, subframe_hop1);
 
   // Create distributed DCI and generate transport channel parameters,
-  // in order to determine hop 2 transfer block size
+  // in order to determine hop 2 transfer block size and number of coded bits
   harq_pid_hop2 = subframe2harq_pid(frame_parms, 0, subframe_hop2);
   setup_distributed_dci(&dci_hop2, rnti_hop2, 0, args.mcs_hop2);
   generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, rnti_hop2, (subframe_hop2+6)%10,
       format0, phy_vars_mr[0], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
   hop2_tbs = phy_vars_mr[0]->ulsch_ue[0]->harq_processes[harq_pid_hop2]->TBS;
+  n_coded_bits_hop2 = get_ulsch_G(phy_vars_mr[0]->ulsch_ue[0], harq_pid_hop2);
 
   if(args.verbose > 1) {
     print_dlsch_eNB_stats(phy_vars_ch_src->dlsch_eNB[0][0]);
@@ -292,7 +312,9 @@ int main(int argc, char **argv) {
     dump_dci(frame_parms, &dci_hop1);
     dump_dci(frame_parms, &dci_hop2);
   }
-  printf("Using hop 1 TBS=%d, hop 2 TBS=%d\n", hop1_tbs, hop2_tbs);
+  printf("Hop 1: TBS=%d, G=%d, rate=%f. Hop 2: TBS=%d, G=%d, rate=%f\n", 
+      hop1_tbs, n_coded_bits_hop1, (float)hop1_tbs/(float)n_coded_bits_hop1,
+      hop2_tbs, n_coded_bits_hop2, (float)hop2_tbs/(float)n_coded_bits_hop2);
 
   colab_tbs = hop1_tbs < hop2_tbs ? hop1_tbs : hop2_tbs;
 
@@ -326,13 +348,15 @@ int main(int argc, char **argv) {
     // Clear error result vectors
     for(k = 0; k < n_relays; k++) {
       ber_hop1[k] = 0.0;
-      n_frames_hop1[k] = 0;
+      n_ber_frames_hop1[k] = 0;
     }
     ber_hop2 = 0.0;
+    n_frames_hop1 = 0;
     n_frames_hop2 = 0;
-    blocks_valid = 0;
+    n_succ_pdu_hop1 = 0;
+    n_succ_pdu_hop2 = 0;
 
-    for(frame = 0; frame < args.n_frames; frame++) {
+    for(frame = 0; frame < args.n_pdu; frame++) {
       if(args.verbose == 0) {
         printf("Transmitting frame %d\r", frame);
         fflush(stdout);
@@ -347,7 +371,7 @@ int main(int argc, char **argv) {
       for(k = 0; k < input_buffer_length; k++)
         input_buffer[k] = (u8)(taus()&0xff);
 
-      for(round = 0; round < n_rounds && !decoded_at_all_mr; round++) {
+      for(round = 0; round < args.n_harq && !decoded_at_all_mr; round++) {
         // Clear txdataF vector
         memset(&phy_vars_ch_src->lte_eNB_common_vars.txdataF[0][0][0], 0, 
             FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
@@ -372,11 +396,6 @@ int main(int argc, char **argv) {
           exit(1);
         }
         
-        n_coded_bits_hop1 = get_G(frame_parms, phy_vars_ch_src->dlsch_eNB[0][0]->nb_rb,
-            phy_vars_ch_src->dlsch_eNB[0][0]->rb_alloc,
-            get_Qm(phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->mcs),
-            n_avail_pdcch_symbols, subframe_hop1);
-
         // Encode source data
         if(dlsch_encoding(input_buffer, frame_parms, n_avail_pdcch_symbols,
               phy_vars_ch_src->dlsch_eNB[0][0], subframe_hop1) < 0)
@@ -400,10 +419,6 @@ int main(int argc, char **argv) {
         generate_pilots(phy_vars_ch_src, phy_vars_ch_src->lte_eNB_common_vars.txdataF[0],
             1024, LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
-        //write_output("ctxF0v.m", "ctxF0", 
-        //    phy_vars_ch_src->lte_eNB_common_vars.txdataF[0][0], 
-        //    FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX, 1, 1);
-
         // OFDM modulation
         ofdm_modulation(phy_vars_ch_src->lte_eNB_common_vars.txdataF[0],
             phy_vars_ch_src->lte_eNB_common_vars.txdata[0],
@@ -421,6 +436,7 @@ int main(int argc, char **argv) {
               phy_vars_mr[k]->lte_ue_common_vars.rxdata,
               frame_parms, subframe_hop1, frame_parms->symbols_per_tti+1, awgn_stddev);
         }
+        n_frames_hop1++;
 
         // Decode at all relays
         for(k = 0; k < n_relays; k++) {
@@ -463,19 +479,12 @@ int main(int argc, char **argv) {
           for(l = n_symbols_per_slot+pilot1_symbol; l < 2*n_symbols_per_slot; l++)
             if(rx_dlsch_symbol(phy_vars_mr[k], subframe_hop1, l, 0) == -1)
               break;
-          //write_output("dlsch_e.m", "e", phy_vars_ch_src->dlsch_eNB[0][0]->e, n_coded_bits, 1, 4);
-
-          //snprintf(fnbuf, 80, "crxF%d_0v.m", k);
-          //snprintf(varbuf, 80, "crxF%d_0", k);
-          //write_output(fnbuf, varbuf, 
-          //    phy_vars_mr[k]->lte_ue_common_vars.rxdataF[0], 
-          //    2*frame_parms->ofdm_symbol_size*2*n_symbols_per_slot, 2, 1);
 
           // Compute raw bit error rate
           raw_ber = compute_ber_soft(phy_vars_ch_src->dlsch_eNB[0][0]->e,
               phy_vars_mr[k]->lte_ue_pdsch_vars[0]->llr[0], n_coded_bits_hop1);
           ber_hop1[k] += raw_ber;
-          n_frames_hop1[k]++;
+          n_ber_frames_hop1[k]++;
           if(args.verbose > 0)
             printf("Received %d bits at MR %d, raw BER: %f\n", n_coded_bits_hop1, k, raw_ber);
 
@@ -499,11 +508,35 @@ int main(int argc, char **argv) {
           }
         }
 
+        if(args.debug_output) {
+          if(round == 0)
+            write_output("hop1_e.m", "e", phy_vars_ch_src->dlsch_eNB[0][0]->e, n_coded_bits_hop1, 1, 4);
+          snprintf(fnbuf, 80, "hop1_r%d_ch_txdataFv.m", round);
+          snprintf(varbuf, 80, "hop1_r%d_ch_txdataF", round);
+          write_output(fnbuf, varbuf, phy_vars_ch_src->lte_eNB_common_vars.txdataF[0][0],
+              FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX, 1, 1);
+          snprintf(fnbuf, 80, "hop1_r%d_ch_txdatav.m", round);
+          snprintf(varbuf, 80, "hop1_r%d_ch_txdata", round);
+          write_output(fnbuf, varbuf, phy_vars_ch_src->lte_eNB_common_vars.txdata[0][0], 
+              10*frame_parms->samples_per_tti, 1, 1);
+          for(k = 0; k < n_relays; k++) {
+            snprintf(fnbuf, 80, "hop1_r%d_mr%d_rxdatav.m", round, k);
+            snprintf(varbuf, 80, "hop1_r%d_mr%d_rxdata", round, k);
+            write_output(fnbuf, varbuf, phy_vars_mr[k]->lte_ue_common_vars.rxdata[0], 
+                10*frame_parms->samples_per_tti, 1, 1);
+            snprintf(fnbuf, 80, "hop1_r%d_mr%d_rxdataFv.m", round, k);
+            snprintf(varbuf, 80, "hop1_r%d_mr%d_rxdataF", round, k);
+            write_output(fnbuf, varbuf, phy_vars_mr[k]->lte_ue_common_vars.rxdataF[0],
+                2*frame_parms->ofdm_symbol_size*2*n_symbols_per_slot, 2, 1);
+          }
+        }
+
         decoded_at_all_mr = true;
         for(k = 0; k < n_relays; k++)
           if(!decoded_at_mr[k])
             decoded_at_all_mr = false;
       }
+
       //for(k = 0; k < n_relays; k++) {
       //  for(l = 0; l < input_buffer_length; l++) {
       //    if(input_buffer[l] != phy_vars_mr[k]->dlsch_ue[0][0]->harq_processes[0]->b[l]) {
@@ -511,11 +544,13 @@ int main(int argc, char **argv) {
       //    }
       //  }
       //}
+      
       if(!decoded_at_all_mr) {
         if(args.verbose > 0)
           printf("Not decoded at all relays, dropping block\n");
         continue;
       }
+      n_succ_pdu_hop1++;
 
       // copy received data to intermediate buffers
       for(k = 0; k < n_relays; k++) {
@@ -528,7 +563,7 @@ int main(int argc, char **argv) {
       }
 
       decoded_at_ch = false;
-      for(round = 0; round < n_rounds && !decoded_at_ch; round++) {
+      for(round = 0; round < args.n_harq && !decoded_at_ch; round++) {
         // create second hop dci
         setup_distributed_dci(&dci_hop2, rnti_hop2, round, args.mcs_hop2);
         if(args.verbose > 1)
@@ -551,13 +586,13 @@ int main(int argc, char **argv) {
               format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
           if(relay_role[k] == RELAY_ROLE_STANDARD) {
             phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
-	  }
+          }
           else {
             phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
-	  }
+          }
           // Generate uplink reference signal
-	  generate_drs_pusch(phy_vars_mr[k], 0, AMP, subframe_hop2, 0, N_RB);
-	    
+          generate_drs_pusch(phy_vars_mr[k], 0, AMP, subframe_hop2, 0, N_RB);
+    
           // Encode ULSCH data
           if(ulsch_encoding(mr_buffer[k], frame_parms, phy_vars_mr[k]->ulsch_ue[0],
                 harq_pid_hop2, 1, 0, 1) == -1) {
@@ -566,9 +601,8 @@ int main(int argc, char **argv) {
           }
 
           // Modulate ULSCH data
-
-	  ulsch_modulation(phy_vars_mr[k]->lte_ue_common_vars.txdataF, AMP, 0, subframe_hop2, 
-			   frame_parms, phy_vars_mr[k]->ulsch_ue[0]);
+          ulsch_modulation(phy_vars_mr[k]->lte_ue_common_vars.txdataF, AMP, 0, subframe_hop2, 
+              frame_parms, phy_vars_mr[k]->ulsch_ue[0]);
 
           if(args.verbose > 2)
             print_ulsch_ue_stats(phy_vars_mr[k]->ulsch_ue[0]);
@@ -593,8 +627,14 @@ int main(int argc, char **argv) {
               rxdata[0][subframe_hop2*frame_parms->samples_per_tti + l];
         }
 
-        // Determine number of coded bits
-        n_coded_bits_hop2 = get_ulsch_G(phy_vars_mr[0]->ulsch_ue[0], harq_pid_hop2);
+        for (i=0;i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
+          ((short*) &phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0]
+           [(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i] = 
+            (short) ((awgn_stddev*gaussdouble(0.0,1.0)));
+          ((short*) &phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0]
+           [(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i+1] = 
+            (short) ((awgn_stddev*gaussdouble(0.0,1.0)));
+        }
 
         // Generate eNB transport channel parameters
         generate_eNB_ulsch_params_from_dci(dci_hop2.dci_pdu, rnti_hop2, (subframe_hop2+6)%10, 
@@ -631,11 +671,25 @@ int main(int argc, char **argv) {
         }
 
         if(args.debug_output) {
-          write_output("rtxF0v.m", "rtxF0", phy_vars_mr[0]->lte_ue_common_vars.txdataF[0],
-              FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX, 1, 1);
-          write_output("t0v.m", "t0", phy_vars_mr[0]->lte_ue_common_vars.txdata[0], 10*frame_parms->samples_per_tti, 1, 1);
-          write_output("t1v.m", "t1", phy_vars_mr[1]->lte_ue_common_vars.txdata[0], 10*frame_parms->samples_per_tti, 1, 1);
-          write_output("r0v.m", "r0", phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0], 10*frame_parms->samples_per_tti, 1, 1);
+          for(k = 0; k < n_relays; k++) {
+            snprintf(fnbuf, 80, "hop2_r%d_mr%d_txdataFv.m", round, k);
+            snprintf(varbuf, 80, "hop2_r%d_mr%d_txdataF", round, k);
+            write_output(fnbuf, varbuf, phy_vars_mr[k]->lte_ue_common_vars.txdataF[0],
+                FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX, 1, 1);
+            snprintf(fnbuf, 80, "hop2_r%d_mr%d_txdatav.m", round, k);
+            snprintf(varbuf, 80, "hop2_r%d_mr%d_txdata", round, k);
+            write_output(fnbuf, varbuf, phy_vars_mr[k]->lte_ue_common_vars.txdata[0], 
+                10*frame_parms->samples_per_tti, 1, 1);
+          }
+          snprintf(fnbuf, 80, "hop2_r%d_ch_rxdatav.m", round);
+          snprintf(varbuf, 80, "hop2_r%d_ch_rxdata", round);
+          write_output(fnbuf, varbuf, phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0], 
+              10*frame_parms->samples_per_tti, 1, 1);
+          snprintf(fnbuf, 80, "hop2_r%d_ch_rxdataFv.m", round);
+          snprintf(varbuf, 80, "hop2_r%d_ch_rxdataF", round);
+          write_output(fnbuf, varbuf, phy_vars_ch_dest->lte_eNB_common_vars.rxdataF[0][0],
+              20*frame_parms->ofdm_symbol_size*2*n_symbols_per_slot, 2, 1);
+
           write_output("rxch0v.m", "rxch0", &phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0]
               [subframe_hop2*frame_parms->samples_per_tti], frame_parms->samples_per_tti, 1, 1);
           write_output("h2rxf0v.m", "h2rxf0", phy_vars_ch_dest->lte_eNB_common_vars.rxdataF[0][0],
@@ -658,7 +712,7 @@ int main(int argc, char **argv) {
       if(decoded_at_ch) {
         if(block_valid(input_buffer, phy_vars_ch_dest->ulsch_eNB[0]->harq_processes[harq_pid_hop2]->b,
               input_buffer_length)) {
-          blocks_valid++;
+          n_succ_pdu_hop2++;
         } else {
           printf("Frame %d decoded successfully, but contained errors\n", frame);
         }
@@ -666,8 +720,8 @@ int main(int argc, char **argv) {
     }
 
     for(k = 0; k < n_relays; k++)
-      if(n_frames_hop1[k] > 0)
-        ber_hop1[k] /= (double)n_frames_hop1[k];
+      if(n_ber_frames_hop1[k] > 0)
+        ber_hop1[k] /= (double)n_ber_frames_hop1[k];
       else
         ber_hop1[k] = 0.0;
     if(n_frames_hop2 > 0)
@@ -675,7 +729,8 @@ int main(int argc, char **argv) {
     else
       ber_hop2 = 0.0;
 
-    print_results(n_relays, snr_hop1, snr_hop2, ber_hop1, ber_hop2, blocks_valid, args.n_frames);
+    print_results(n_relays, snr_hop1, snr_hop2, ber_hop1, ber_hop2, hop1_tbs, hop2_tbs,
+        args.n_pdu, n_succ_pdu_hop1, n_succ_pdu_hop2, n_frames_hop1, n_frames_hop2);
   }
 
   if(store_results)
@@ -723,9 +778,11 @@ int parse_args(int argc, char** argv, args_t* args)
   args->debug_output = false;
   args->debug_print = false;
   args->verbose = 0;
-  args->n_frames = 1;
+  args->n_pdu = 1;
+  args->n_harq = 4;
   args->mcs_hop1 = 0;
   args->mcs_hop2 = 0;
+  args->channel_model = Rayleigh8;
   args->results_fn = 0;
   args->analysis = analysis_single;
 
@@ -735,7 +792,7 @@ int parse_args(int argc, char** argv, args_t* args)
     args->snr_hop2[k] = 10.0;
 
   snr_set = false;
-  while((c = getopt_long(argc, argv, "hovn:m:r:", long_options, NULL)) != -1) {
+  while((c = getopt_long(argc, argv, "hovn:m:r:H:C:", long_options, NULL)) != -1) {
     switch(c) {
     case 'h':
       return 1;
@@ -746,7 +803,16 @@ int parse_args(int argc, char** argv, args_t* args)
       args->verbose++;
       break;
     case 'n':
-      args->n_frames = atoi(optarg);
+      args->n_pdu = atoi(optarg);
+      break;
+    case 'H':
+      args->n_harq = atoi(optarg);
+      break;
+    case 'C':
+      if(strcmp(optarg, "help") == 0)
+        return 2;
+      if(!parse_channel_model(optarg, &args->channel_model))
+        return 1;
       break;
     case 'm':
       args->mcs_hop1 = args->mcs_hop2 = atoi(optarg);
@@ -814,6 +880,25 @@ bool parse_snr(const char* str, double* snr, int n)
   return true;
 }
 
+int parse_channel_model(const char* str, SCM_t* model)
+{
+  if(strcmp(str, "A") == 0) *model = SCM_A;
+  else if(strcmp(str, "B") == 0) *model = SCM_B;
+  else if(strcmp(str, "C") == 0) *model = SCM_C;
+  else if(strcmp(str, "D") == 0) *model = SCM_D;
+  else if(strcmp(str, "E") == 0) *model = EPA;
+  else if(strcmp(str, "F") == 0) *model = EVA;
+  else if(strcmp(str, "G") == 0) *model = ETU;
+  else if(strcmp(str, "H") == 0) *model = Rayleigh8;
+  else if(strcmp(str, "I") == 0) *model = Rayleigh1;
+  else if(strcmp(str, "J") == 0) *model = Rayleigh1_corr;
+  else if(strcmp(str, "K") == 0) *model = Rayleigh1_anticorr;
+  else if(strcmp(str, "L") == 0) *model = Rice8;
+  else if(strcmp(str, "M") == 0) *model = Rice1;
+  else return false;
+  return true;
+}
+
 void print_usage(const char* prog)
 {
   printf("Usage: %s [options]\n", prog);
@@ -823,23 +908,53 @@ void print_usage(const char* prog)
   printf("  -v         : increase verbosity level [0]\n");
   printf("  -o         : output MATLAB signal files (implies -n 1) [no]\n");
   printf("  -r FILE    : write results to FILE\n");
-  printf("  -n NUM     : simulate NUM frames [1]\n");
+  printf("  -n NUM     : simulate NUM MAC PDUs [1]\n");
+  printf("  -H NUM     : do NUM HARQ rounds in each hop [4]\n");
+  printf("     note: the hop 1 RVs are 0,0,1,1,2,2,3,3,0,0,..., the hop 2 RV is always 0\n");
+  printf("  -C CHANNEL : set the channel model, use -C help for available models [Rayleigh8]\n");
   printf("\n");
   printf("    SNR options:\n");
   printf("  --snr SNR  : set snr for all links to SNR [10.0]\n");
   printf("  --snr1 SNR : set snr for hop 1 to SNR\n");
   printf("  --snr2 SNR : set snr for hop 2 to SNR\n");
   printf("      for --snr1 and --snr2, SNR may be either a single value or a vector with n_relays elements\n");
+  printf("      e.g.: --snr1 \"4.0 6.0\" sets the SNR from CH1 to MR1 and MR2 to 4.0 and 6.0, respectively\n");
   printf("\n");
   printf("    Analysis setup (only one may be specified):\n");
   printf("  --single : single point analysis [default]\n");
   printf("  --sweep  : sweep snr of first relay of both hops [-10..+10]\n");
   printf("  --bsweep : sweep first relay of hop 1 [-10..+10], first relay of hop 2 [+10..-10]\n");
+  printf("      note: the swept range is relative to the specified SNR\n");
   printf("\n");
   printf("    Modulation and coding options:\n");
   printf("  -m MCS     : set mcs for both hops to MCS [0]\n");
   printf("  --mcs1 MCS : set mcs for hop 1 to MCS\n");
   printf("  --mcs2 MCS : set mcs for hop 2 to MCS\n");
+  printf("\n");
+  printf("    Definition of results:\n");
+  printf("  BLER is the fraction of MAC PDUs that are not successfully delivered from CH1 to CH2\n");
+  printf("  BER is the fraction of coded bits that are incorrectly received for each link\n");
+  printf("  avg bits/frame is TBS*n_pdu/n_frames, where n_pdu is the number of successfully received MAC PDUs\n");
+  printf("    (for hop 1: decoded by both MR), and n_frames is the number of LTE frames transmitted for the hop\n");
+  printf("  norm. delay is the average number of LTE frames required for the successful transmission of a MAC PDU\n");
+}
+
+void print_channel_usage()
+{
+  printf("Available channel models:\n");
+  printf("  A: SCM-A\n");
+  printf("  B: SCM-B\n");
+  printf("  C: SCM-C\n");
+  printf("  D: SCM-D\n");
+  printf("  E: EPA\n");
+  printf("  F: EVA\n");
+  printf("  G: ETU\n");
+  printf("  H: Rayleigh8\n");
+  printf("  I: Rayleigh1\n");
+  printf("  J: Rayleigh1_corr\n");
+  printf("  K: Rayleigh1_anticorr\n");
+  printf("  L: Rice8\n");
+  printf("  M: Rice1\n");
 }
 
 void signal_handler(int sig) 
@@ -922,8 +1037,6 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
 
-
-  
   init_frame_parms(frame_parms, oversampling);
   phy_init_top(frame_parms);
   frame_parms->twiddle_fft = twiddle_fft;
@@ -933,32 +1046,6 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   phy_init_lte_top(frame_parms);
   init_ul_hopping(frame_parms);
   dump_frame_parms(frame_parms);
-}
-
-void setup_ch_src(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
-{
-  phy_vars->lte_frame_parms = *frame_parms;
-
-  phy_init_lte_eNB(phy_vars, 0, 0, 0);
-}
-
-void setup_ch_dest(PHY_VARS_eNB* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
-{
-  phy_vars->lte_frame_parms = *frame_parms;
-
-  phy_init_lte_eNB(phy_vars,0,2,0);
-
-}
-
-void setup_mr(PHY_VARS_UE* phy_vars, LTE_DL_FRAME_PARMS* frame_parms)
-{
-  phy_vars->lte_frame_parms = *frame_parms;
-
-  lte_gold(frame_parms, phy_vars->lte_gold_table[0], 0);
-  lte_gold(frame_parms, phy_vars->lte_gold_table[1], 1);
-  lte_gold(frame_parms, phy_vars->lte_gold_table[2], 2);
-
-  phy_init_lte_ue(phy_vars, 0);
 }
 
 void alloc_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti)
@@ -1026,7 +1113,7 @@ void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs)
 
   dci_data->dai = 1;
   dci_data->TPC = 0;
-  dci_data->rv = (harq_round >> 1);
+  dci_data->rv = (harq_round >> 1) & 0x03;
   dci_data->ndi = (harq_round == 0 ? 1 : 0);
   dci_data->harq_pid = 0;
   dci_data->mcs = mcs;
@@ -1328,20 +1415,24 @@ int block_valid(u8* ref, u8* rec, int n)
   return 1;
 }
 
-void print_results(int n_relays, double* snr_hop1, double* snr_hop2, double* ber_hop1, double ber_hop2,
-    int blocks_valid, int n_frames)
+void print_results(int n_relays, double* snr_hop1, double* snr_hop2, double* ber_hop1, double ber_hop2, int tbs_hop1, int tbs_hop2,
+    int n_pdu, int n_succ_pdu_hop1, int n_succ_pdu_hop2, int n_frames_hop1, int n_frames_hop2)
 {
   int k;
 
-  printf("SNR hop 1: (");
+  printf("Hop 1: SNR (");
   for(k = 0; k < n_relays; k++)
     printf("%.1f%s", snr_hop1[k], k < n_relays-1 ? ", " : "");
-  printf("), SNR hop 2: (");
-  for(k = 0; k < n_relays; k++)
-    printf("%.1f%s", snr_hop2[k], k < n_relays-1 ? ", " : "");
-  printf("), BER hop 1: (");
+  printf("), BER (");
   for(k = 0; k < n_relays; k++)
     printf("%f%s", ber_hop1[k], k < n_relays-1 ? ", " : "");
-  printf("), BER hop 2: %f, BLER: %d/%d\n", ber_hop2, n_frames-blocks_valid, n_frames);
+  printf("), avg bits/frame %f, norm. delay %f\n", (double)(tbs_hop1*n_succ_pdu_hop1)/(double)n_frames_hop1,
+      (double)n_frames_hop1/(double)n_succ_pdu_hop1);
+  printf("Hop 2: SNR (");
+  for(k = 0; k < n_relays; k++)
+    printf("%.1f%s", snr_hop2[k], k < n_relays-1 ? ", " : "");
+  printf("), BER %f, avg bits/frame %f, norm. delay %f\n", ber_hop2, (double)(tbs_hop2*n_succ_pdu_hop2)/(double)n_frames_hop2,
+      (double)n_frames_hop2/(double)n_succ_pdu_hop2);
+  printf("Collaborative link BLER: %d/%d\n", n_pdu-n_succ_pdu_hop2, n_pdu);
 }
 
