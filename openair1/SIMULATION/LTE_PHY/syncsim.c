@@ -308,7 +308,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->N_RB_UL            = N_RB_DL;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = 0;
+  lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   //  lte_frame_parms->Csrs = 2;
@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
 
   char c;
 
-  int i,l,aa,aarx;
+  int i,iout,l,aa,aarx;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
   u8 snr1set=0;
   //mod_sym_t **txdataF;
@@ -1119,45 +1119,50 @@ int main(int argc, char **argv) {
     n_frames=1;
   }
 
-
-  for (i=0;i<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
+  iout = taus()%(FRAME_LENGTH_COMPLEX_SAMPLES>>2);
+  printf("iout %d\n",iout);
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
       if (awgn_flag == 0) {
-	s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-	s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+    
+	s_re[aa][iout] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+	s_im[aa][iout] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	if (interf1>-20) {
-	  s_re1[aa][i] = ((double)(((short *)txdata1[aa]))[(i<<1)]);
-	  s_im1[aa][i] = ((double)(((short *)txdata1[aa]))[(i<<1)+1]);
+	  s_re1[aa][iout] = ((double)(((short *)txdata1[aa]))[(i<<1)]);
+	  s_im1[aa][iout] = ((double)(((short *)txdata1[aa]))[(i<<1)+1]);
 	}
 	if (interf2>-20) {
-	  s_re2[aa][i] = ((double)(((short *)txdata2[aa]))[(i<<1)]);
-	  s_im2[aa][i] = ((double)(((short *)txdata2[aa]))[(i<<1)+1]);
+	  s_re2[aa][iout] = ((double)(((short *)txdata2[aa]))[(i<<1)]);
+	  s_im2[aa][iout] = ((double)(((short *)txdata2[aa]))[(i<<1)+1]);
 	}
       }
       else {
 	for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
 	  if (aa==0) {
-	    r_re[aarx][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-	    r_im[aarx][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+	    r_re[aarx][iout] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+	    r_im[aarx][iout] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	  }
 	  else {
-	    r_re[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)]);
-	    r_im[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+	    r_re[aarx][iout] += ((double)(((short *)txdata[aa]))[(i<<1)]);
+	    r_im[aarx][iout] += ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	  }
 	  	  
 	  if (interf1>=-20) {
-	    r_re[aarx][i]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
-	    r_im[aarx][i]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
+	    r_re[aarx][iout]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
+	    r_im[aarx][iout]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
 	    
 	  }
 	  if (interf2>=-20) {
-	    r_re[aarx][i]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
-	    r_im[aarx][i]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
+	    r_re[aarx][iout]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
+	    r_im[aarx][iout]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
 	  }
 	  
 	}
       }
     }
+    iout++;
+    if (iout==FRAME_LENGTH_COMPLEX_SAMPLES)
+      iout=0;
   }
 
 
@@ -1242,7 +1247,7 @@ int main(int argc, char **argv) {
 		 10*log10(signal_energy(PHY_vars_UE->lte_ue_common_vars.rxdata[0],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
 	}
 	*/
-	printf("Calling initial_sync\n");
+	//	printf("Calling initial_sync\n");
 
 	if (initial_sync(PHY_vars_UE)==0) {
 	  //	  msg("pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
@@ -1319,14 +1324,22 @@ int main(int argc, char **argv) {
 #endif 
 
   for (i=0;i<2;i++) {
+    printf("Freeing s_re[%d]\n",i);
     free(s_re[i]);
+    printf("Freeing s_im[%d]\n",i);
     free(s_im[i]);
+    printf("Freeing r_re[%d]\n",i);
     free(r_re[i]);
+    printf("Freeing r_im[%d]\n",i);
     free(r_im[i]);
   }
+  printf("Freeing s_re\n");
   free(s_re);
+  printf("Freeing s_im\n");
   free(s_im);
+  printf("Freeing r_re\n");
   free(r_re);
+  printf("Freeing r_im\n");
   free(r_im);
 
 
