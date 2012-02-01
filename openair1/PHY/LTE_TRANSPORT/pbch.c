@@ -56,7 +56,7 @@ extern __m128i zero;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
 #endif
   
-//#define DEBUG_PBCH 1
+#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2
@@ -245,7 +245,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
     for (rb=0;rb<6;rb++) {
 
 #ifdef DEBUG_PBCH
-      msg("RB %d, jj %d, re_offset %d, symbol_offset %d, pilots %d\n",rb,jj,re_offset, symbol_offset, pilots);
+      msg("RB %d, jj %d, re_offset %d, symbol_offset %d, pilots %d, nushift %d\n",rb,jj,re_offset, symbol_offset, pilots,frame_parms->nushift);
 #endif
       allocate_REs_in_RB(txdataF,
 			 &jj,
@@ -308,18 +308,18 @@ u16 pbch_extract(int **rxdataF,
   u16 rb,nb_rb=6;
   u8 i,j,aarx,aatx;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
-
+ 
   u32 nsymb = (frame_parms->Ncp==0) ? 7:6;
   u32 symbol_mod = symbol % nsymb;
 
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   int ch_offset = frame_parms->N_RB_DL*6-3*12;
-
+  
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    //printf("extract_rbs: symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",symbol_mod,
-    //   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
-    //   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
+    printf("extract_rbs (nushift %d): symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",frame_parms->nushift,symbol_mod,
+	   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
+	   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
 
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
     rxF_ext    = &rxdataF_ext[aarx][symbol_mod*(6*12)];

@@ -3,6 +3,8 @@
 #include "defs.h"
 //#define DEBUG_FEP
 
+#define SOFFSET 0
+
 int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	     unsigned char l,
 	     unsigned char Ns,
@@ -51,7 +53,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
       fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
 					       slot_offset +
 					       nb_prefix_samples0 + 
-					       subframe_offset],
+					       subframe_offset -
+					       SOFFSET],
 	  (short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
@@ -65,7 +68,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 					       slot_offset +
 					       (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
 					       (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
-					       subframe_offset],
+					       subframe_offset-
+					       SOFFSET],
 	  (short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
