@@ -56,7 +56,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chan
 
   float avg, cum_avg;
 
-  extern int* sync_corr_ue;
+  extern int* sync_corr_ue0;
   
   u16 nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
@@ -114,7 +114,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chan
   // sync_corr
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++){
     time2[i] = (float) i;
-    sig2[i] = (float) sync_corr_ue[i];
+    sig2[i] = (float) sync_corr_ue0[i];
   }
 
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
@@ -281,27 +281,29 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chan
   free(llr);
   free(llr_time);
 
-}
+}  
 #endif
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u8 frame_type,u16 Nid_cell,u8 N_RB_DL,u8 osf) {
+void lte_param_init(int alloc_flag,unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u8 frame_type,u16 Nid_cell,u8 N_RB_DL,u8 osf) {
 
   unsigned int ind;
   LTE_DL_FRAME_PARMS *lte_frame_parms;
   int i;
 
-  printf("Start lte_param_init, frame_type %d, extended_prefix %d\n",frame_type,extended_prefix_flag);
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_eNB1 = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_eNB2 = malloc(sizeof(PHY_VARS_eNB));
+  if (alloc_flag==1) {
+    printf("Start lte_param_init, frame_type %d, extended_prefix %d\n",frame_type,extended_prefix_flag);
+    PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
+    PHY_vars_eNB1 = malloc(sizeof(PHY_VARS_eNB));
+    PHY_vars_eNB2 = malloc(sizeof(PHY_VARS_eNB));
+    
+    PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
+    //PHY_config = malloc(sizeof(PHY_CONFIG));
+    mac_xface = malloc(sizeof(MAC_xface));
+    
+    randominit(0);
+    set_taus_seed(0);
+  }
 
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
-
-  randominit(0);
-  set_taus_seed(0);
-  
   lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
 
   lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
@@ -320,39 +322,41 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->frame_type = frame_type;
   init_frame_parms(lte_frame_parms,osf);
   
-  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
-  phy_init_top(lte_frame_parms); //allocation
-  
-  lte_frame_parms->twiddle_fft      = twiddle_fft;
-  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-  lte_frame_parms->rev              = rev;
-  
-  phy_init_lte_top(lte_frame_parms);
-
   memcpy((void*)&PHY_vars_UE->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  phy_init_lte_ue(PHY_vars_UE,0);
-  for (i=0;i<3;i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
+  
+  if (alloc_flag == 1) {
+    phy_init_top(lte_frame_parms); //allocation
+    
+    lte_frame_parms->twiddle_fft      = twiddle_fft;
+    lte_frame_parms->twiddle_ifft     = twiddle_ifft;
+    lte_frame_parms->rev              = rev;
+    
+    phy_init_lte_top(lte_frame_parms);
+    
 
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
+    phy_init_lte_ue(PHY_vars_UE,0);
+    for (i=0;i<3;i++)
+      lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
+    
+    phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
+    
+    memcpy((void*)&PHY_vars_eNB1->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+    PHY_vars_eNB1->lte_frame_parms.nushift=1;
+    PHY_vars_eNB1->lte_frame_parms.Nid_cell=2;
+    
+    memcpy((void*)&PHY_vars_eNB2->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+    PHY_vars_eNB2->lte_frame_parms.nushift=2;
+    PHY_vars_eNB2->lte_frame_parms.Nid_cell=3;
 
-  memcpy((void*)&PHY_vars_eNB1->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB1->lte_frame_parms.nushift=1;
-  PHY_vars_eNB1->lte_frame_parms.Nid_cell=2;
+    phy_init_lte_eNB(PHY_vars_eNB1,0,0,0);
+    
+    phy_init_lte_eNB(PHY_vars_eNB2,0,0,0);
+    
+    phy_init_lte_top(lte_frame_parms);
 
-  memcpy((void*)&PHY_vars_eNB2->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB2->lte_frame_parms.nushift=2;
-  PHY_vars_eNB2->lte_frame_parms.Nid_cell=3;
-
-  phy_init_lte_eNB(PHY_vars_eNB1,0,0,0);
- 
-  phy_init_lte_eNB(PHY_vars_eNB2,0,0,0);
-
-  phy_init_lte_top(lte_frame_parms);
-
-  printf("Done lte_param_init\n");
-
+    printf("Done lte_param_init\n");
+  }
 
 }
 
@@ -609,7 +613,7 @@ int main(int argc, char **argv) {
   if (transmission_mode==2)
     n_tx=2;
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,
+  lte_param_init(1,n_tx,n_rx,transmission_mode,extended_prefix_flag,
 		 frame_type,Nid_cell,N_RB_DL,osf);
 
   if (snr1set==0) {
@@ -1112,11 +1116,7 @@ int main(int argc, char **argv) {
 
 
     printf("Doing Acquisition from OAI HW\n");
-    fc=0;
-    ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
-    sleep(2);   
-    snr0=snr1-.1;
-    n_frames=1;
+    snr0=snr1-.1; 
   }
 
   iout = taus()%(FRAME_LENGTH_COMPLEX_SAMPLES>>2);
@@ -1240,6 +1240,16 @@ int main(int argc, char **argv) {
 	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	    }
 	  }    
+	}
+	else {
+	  fc=0;
+	  lte_param_init(0,n_tx,n_rx,transmission_mode,extended_prefix_flag,
+			 frame_type,Nid_cell,N_RB_DL,osf);
+	  ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
+	  sleep(1);   
+	  for (i=0;i<76800;i+=1024)
+	    printf("rx_buffer %d => %x\n",i,((unsigned int*)PHY_vars_UE->lte_ue_common_vars.rxdata[0])[i]);
+
 	}
 	/*
 	if (n_trials==0) {
