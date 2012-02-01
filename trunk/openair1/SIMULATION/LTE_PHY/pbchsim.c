@@ -292,7 +292,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->N_RB_UL            = N_RB_DL;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = 0;
+  lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   //  lte_frame_parms->Csrs = 2;
@@ -323,12 +323,12 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   phy_init_lte_eNB(PHY_vars_eNb,0,0,0);
 
   memcpy((void*)&PHY_vars_eNb1->lte_frame_parms,(void*)&PHY_vars_eNb->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNb1->lte_frame_parms.nushift=1;
-  PHY_vars_eNb1->lte_frame_parms.Nid_cell=2;
+  PHY_vars_eNb1->lte_frame_parms.nushift=Nid_cell+1;
+  PHY_vars_eNb1->lte_frame_parms.Nid_cell=(Nid_cell+1)%1;
 
   memcpy((void*)&PHY_vars_eNb2->lte_frame_parms,(void*)&PHY_vars_eNb->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNb2->lte_frame_parms.nushift=2;
-  PHY_vars_eNb2->lte_frame_parms.Nid_cell=3;
+  PHY_vars_eNb2->lte_frame_parms.nushift=Nid_cell+2;
+  PHY_vars_eNb2->lte_frame_parms.Nid_cell=(Nid_cell+2)%6;
 
   phy_init_lte_eNB(PHY_vars_eNb1,0,0,0);
  
@@ -1229,140 +1229,116 @@ int main(int argc, char **argv) {
 	fclose(rx_frame_file);
 	*/
 
-	sync_pos = lte_sync_time(PHY_vars_UE->lte_ue_common_vars.rxdata, 
-				 &PHY_vars_UE->lte_frame_parms, 
-				 &PHY_vars_UE->lte_ue_common_vars.eNb_id);
 	
-	// the sync is in the 3rd (last_ symbol of the special subframe
-	// so the position wrt to the start of the frame is 
-	sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + 10;
-
-	//sync_pos = sync_pos_slot;
-	
-	//	msg("eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
+	for (l=0;l<PHY_vars_eNb->lte_frame_parms.symbols_per_tti;l++) {
 	  
-	if (((sync_pos - sync_pos_slot) >=0 ) && 
-	    ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - PHY_vars_eNb->lte_frame_parms.samples_per_tti)) ) {
+	  subframe_offset = (l/PHY_vars_eNb->lte_frame_parms.symbols_per_tti)*PHY_vars_eNb->lte_frame_parms.samples_per_tti;
+	  //	    printf("subframe_offset = %d\n",subframe_offset);
 	  
-	  for (l=0;l<PHY_vars_eNb->lte_frame_parms.symbols_per_tti;l++) {
+	  slot_fep(PHY_vars_UE,
+		   l%(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
+		   l/(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
+		   0,
+		   0);
+	  
+	  
+	  if (l==0) {
+	    lte_ue_measurements(PHY_vars_UE,
+				0,
+				1,
+				0);
 	    
-	    subframe_offset = (l/PHY_vars_eNb->lte_frame_parms.symbols_per_tti)*PHY_vars_eNb->lte_frame_parms.samples_per_tti;
-	    //	    printf("subframe_offset = %d\n",subframe_offset);
+	    if (trial%100 == 0) {
+	      msg("[PHY_PROCEDURES_LTE] frame %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+		  trial,
+		  PHY_vars_UE->PHY_measurements.rx_rssi_dBm[0], 
+		  PHY_vars_UE->PHY_measurements.wideband_cqi_dB[0][0],
+		  PHY_vars_UE->PHY_measurements.wideband_cqi_dB[0][1],
+		  PHY_vars_UE->PHY_measurements.wideband_cqi[0][0],
+		  PHY_vars_UE->PHY_measurements.wideband_cqi[0][1],
+		  PHY_vars_UE->rx_total_gain_dB);
 	      
-	    slot_fep(PHY_vars_UE,
-		     l%(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
-		     l/(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
-		     sync_pos-sync_pos_slot,
-		     0);
+	      msg("[PHY_PROCEDURES_LTE] frame %d, N0 digital (%d, %d) dB, linear (%d, %d)\n",
+		  trial,
+		  PHY_vars_UE->PHY_measurements.n0_power_dB[0],
+		  PHY_vars_UE->PHY_measurements.n0_power_dB[1],
+		  PHY_vars_UE->PHY_measurements.n0_power[0],
+		  PHY_vars_UE->PHY_measurements.n0_power[1]);
 	      
-
-	      if (l==0) {
-		lte_ue_measurements(PHY_vars_UE,
-				    0,
-				    1,
-				    0);
-		
-		if (trial%100 == 0) {
-		  msg("[PHY_PROCEDURES_LTE] frame %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
-		      trial,
-		      PHY_vars_UE->PHY_measurements.rx_rssi_dBm[0], 
-		      PHY_vars_UE->PHY_measurements.wideband_cqi_dB[0][0],
-		      PHY_vars_UE->PHY_measurements.wideband_cqi_dB[0][1],
-		      PHY_vars_UE->PHY_measurements.wideband_cqi[0][0],
-		      PHY_vars_UE->PHY_measurements.wideband_cqi[0][1],
-		      PHY_vars_UE->rx_total_gain_dB);
-		  
-		  msg("[PHY_PROCEDURES_LTE] frame %d, N0 digital (%d, %d) dB, linear (%d, %d)\n",
-		      trial,
-		      PHY_vars_UE->PHY_measurements.n0_power_dB[0],
-		      PHY_vars_UE->PHY_measurements.n0_power_dB[1],
-		      PHY_vars_UE->PHY_measurements.n0_power[0],
-		      PHY_vars_UE->PHY_measurements.n0_power[1]);
-		  
-		  msg("[PHY_PROCEDURES_LTE] frame %d, freq_offset_filt = %d\n",
-		      trial, freq_offset);
-		  
-		}
-		   
-		/*
-		lte_adjust_synch(&PHY_vars_UE->lte_frame_parms,
-				 PHY_vars_UE,
-				 0,
-				 1,
-				 16384);
-		*/
-	      }
+	      msg("[PHY_PROCEDURES_LTE] frame %d, freq_offset_filt = %d\n",
+		  trial, freq_offset);
 	      
-	      if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?4:3)) {
-		//sprintf(fname,"dl_ch00_%d.m",l);
-		//sprintf(vname,"dl_ch00_%d",l);
-		//write_output(fname,vname,&(lte_ue_common_vars->dl_ch_estimates[0][lte_frame_parms->ofdm_symbol_size*(l%6)]),lte_frame_parms->ofdm_symbol_size,1,1);
-		
-		lte_est_freq_offset(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0],
-				    &PHY_vars_UE->lte_frame_parms,
-				    l,
-				    &freq_offset);
-	      }
-	      
-	      if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?10:9)) {
-		
-		for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
-		  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
-					PHY_vars_UE->lte_ue_pbch_vars[0],
-					&PHY_vars_UE->lte_frame_parms,
-					0,
-					SISO,
-					frame_mod4);
-		  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
-		    PHY_vars_UE->lte_frame_parms.mode1_flag = 1;
-		    break;
-		  }
-
-		  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
-					PHY_vars_UE->lte_ue_pbch_vars[0],
-					&PHY_vars_eNb->lte_frame_parms,
-					0,
-					ALAMOUTI,
-					frame_mod4);
-		  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
-		    PHY_vars_UE->lte_frame_parms.mode1_flag = 0;
-		    n_alamouti++;
-		    break;
-		  }
-		}
-
-
-		if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
-		  if (n_frames==1)
-		    msg("pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
-			PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
-		}
-		else {
-		  n_errors++;
-		  n_errors2++;
-		  //if (n_frames==1)
-		    msg("pbch error\n");
-		}
-	      }
+	    }
+	    
 	  }
-#ifdef XFORMS
-      do_forms2(form_dl,
-		frame_parms,  
-		PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates_time,
-		PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0],
-		PHY_vars_UE->lte_ue_common_vars.rxdata,
-		PHY_vars_UE->lte_ue_common_vars.rxdataF,
-		PHY_vars_UE->lte_ue_dlsch_vars[0]->rxdataF_comp[0],
-		PHY_vars_UE->lte_ue_dlsch_vars[3]->rxdataF_comp[0],
-		PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0],
-		PHY_vars_UE->lte_ue_pbch_vars[0]->rxdataF_comp[0],
-		PHY_vars_UE->lte_ue_pbch_vars[0]->llr,
-		1920);
-#endif
+	  
+	  if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?4:3)) {
+	    //sprintf(fname,"dl_ch00_%d.m",l);
+	    //sprintf(vname,"dl_ch00_%d",l);
+	    //write_output(fname,vname,&(lte_ue_common_vars->dl_ch_estimates[0][lte_frame_parms->ofdm_symbol_size*(l%6)]),lte_frame_parms->ofdm_symbol_size,1,1);
+	    
+	    lte_est_freq_offset(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0],
+				&PHY_vars_UE->lte_frame_parms,
+				l,
+				&freq_offset);
+	  }
+	  
+	  if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?10:9)) {
+	    
+	    for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
+	      pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
+				    PHY_vars_UE->lte_ue_pbch_vars[0],
+				    &PHY_vars_UE->lte_frame_parms,
+				    0,
+				    SISO,
+				    frame_mod4);
+	      if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+		PHY_vars_UE->lte_frame_parms.mode1_flag = 1;
+		break;
+	      }
+	      
+	      pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
+				    PHY_vars_UE->lte_ue_pbch_vars[0],
+				    &PHY_vars_eNb->lte_frame_parms,
+				    0,
+				    ALAMOUTI,
+				    frame_mod4);
+	      if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+		PHY_vars_UE->lte_frame_parms.mode1_flag = 0;
+		n_alamouti++;
+		break;
+	      }
+	    }
+	    
+	    
+	    if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+	      if (n_frames==1)
+		msg("pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
+		    PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
+	    }
+	    else {
+	      n_errors++;
+	      n_errors2++;
+	      //if (n_frames==1)
+	      msg("pbch error\n");
+	    }
+	  }
 	}
-	else {
-	  //	  msg("sync not successfull\n");
-	} 
+#ifdef XFORMS
+	do_forms2(form_dl,
+		  frame_parms,  
+		  PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates_time,
+		  PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0],
+		  PHY_vars_UE->lte_ue_common_vars.rxdata,
+		  PHY_vars_UE->lte_ue_common_vars.rxdataF,
+		  PHY_vars_UE->lte_ue_dlsch_vars[0]->rxdataF_comp[0],
+		  PHY_vars_UE->lte_ue_dlsch_vars[3]->rxdataF_comp[0],
+		  PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0],
+		  PHY_vars_UE->lte_ue_pbch_vars[0]->rxdataF_comp[0],
+		  PHY_vars_UE->lte_ue_pbch_vars[0]->llr,
+		  1920);
+#endif
+	
       } //noise trials
       if (abstraction_flag==1) {
 	printf("SNR %f : n_errors = %d/%d, n_alamouti %d\n", SNR,n_errors,ntrials,n_alamouti);
