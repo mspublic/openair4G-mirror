@@ -54,7 +54,7 @@
  * @{
  */
 
-#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+
 
 #define NSOFT 1827072
 #define LTE_NULL 2 

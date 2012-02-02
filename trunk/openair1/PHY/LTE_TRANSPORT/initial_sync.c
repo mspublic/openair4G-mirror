@@ -260,6 +260,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   }
 
   if (ret==-1) {
+
     // Now FDD extended prefix
     frame_parms->Ncp=1;
     frame_parms->frame_type=0;
@@ -372,10 +373,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     //mac_resynch();
     mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif //OPENAIR2
-
+ 
     generate_pcfich_reg_mapping(frame_parms);
     generate_phich_reg_mapping(frame_parms);
-    
+   
     phy_vars_ue->UE_mode[0] = PRACH;
     phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
     phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;

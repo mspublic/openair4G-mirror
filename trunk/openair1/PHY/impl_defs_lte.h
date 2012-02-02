@@ -58,6 +58,10 @@
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 
 #define SSS_AMP 1148
+
+#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+
+
 typedef enum {
   normal=0,
   extended=1
@@ -459,7 +463,12 @@ typedef struct {
   u8 SIwindowsize;
   /// Period of SI windows used for repetition of one SI message (in frames)
   u16 SIPeriod;
-
+  /// REGs assigned to PCFICH
+  u16 pcfich_reg[4];
+  /// Index of first REG assigned to PCFICH
+  u8 pcfich_first_reg_idx;
+  /// REGs assigned to PHICH
+  u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {

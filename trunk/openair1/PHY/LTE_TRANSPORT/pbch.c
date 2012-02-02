@@ -56,7 +56,7 @@ extern __m128i zero;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
 #endif
   
-#define DEBUG_PBCH 1
+//#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2
@@ -316,11 +316,11 @@ u16 pbch_extract(int **rxdataF,
   int ch_offset = frame_parms->N_RB_DL*6-3*12;
   
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-    
+    /*
     printf("extract_rbs (nushift %d): symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",frame_parms->nushift,symbol_mod,
 	   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
 	   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
-
+    */
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
     rxF_ext    = &rxdataF_ext[aarx][symbol_mod*(6*12)];
 

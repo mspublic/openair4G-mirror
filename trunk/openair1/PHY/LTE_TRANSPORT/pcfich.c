@@ -40,8 +40,8 @@
 #include "PHY/defs.h"
 #include "MAC_INTERFACE/extern.h"
 
-u16 pcfich_reg[4];
-u8 pcfich_first_reg_idx = 0;
+//u16 pcfich_reg[4];
+//u8 pcfich_first_reg_idx = 0;
 
 //#define DEBUG_PCFICH
 
@@ -49,28 +49,31 @@ void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 
   u16 kbar = 6 * (frame_parms->Nid_cell %(2*frame_parms->N_RB_DL));
   u16 first_reg;
-
+  u16 *pcfich_reg = frame_parms->pcfich_reg;
+  
   pcfich_reg[0] = kbar/6;
   first_reg = pcfich_reg[0];
 
+  frame_parms->pcfich_first_reg_idx=0;
+
   pcfich_reg[1] = ((kbar + (frame_parms->N_RB_DL>>1)*6)%(frame_parms->N_RB_DL*12))/6;
   if (pcfich_reg[1] < pcfich_reg[0]) {
-    pcfich_first_reg_idx = 1;
+    frame_parms->pcfich_first_reg_idx = 1;
     first_reg = pcfich_reg[1];
   }  
   pcfich_reg[2] = ((kbar + (frame_parms->N_RB_DL)*6)%(frame_parms->N_RB_DL*12))/6;
   if (pcfich_reg[2] < first_reg) {
-    pcfich_first_reg_idx = 2;
+    frame_parms->pcfich_first_reg_idx = 2;
     first_reg = pcfich_reg[2];
   }
   pcfich_reg[3] = ((kbar + ((3*frame_parms->N_RB_DL)>>1)*6)%(frame_parms->N_RB_DL*12))/6;
   if (pcfich_reg[3] < first_reg) {
-    pcfich_first_reg_idx = 3;
+    frame_parms->pcfich_first_reg_idx = 3;
     first_reg = pcfich_reg[3];
   }
   
 #ifdef DEBUG_PCFICH
-  debug_msg("[PHY] pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
+  msg("[PHY] pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
 #endif
 }
 
@@ -143,6 +146,7 @@ void generate_pcfich(u8 num_pdcch_symbols,
   u8 qpsk_table_offset = 0; 
   u8 qpsk_table_offset2 = 0;
 #endif
+  u16 *pcfich_reg = frame_parms->pcfich_reg;
 
 #ifdef DEBUG_PCFICH
   msg("[PHY] Generating PCFICH for %d PDCCH symbols, AMP %d\n",num_pdcch_symbols,amp);
@@ -294,6 +298,7 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
   s16 pcfich_d[32],*pcfich_d_ptr;
   s32 metric,old_metric=-16384;
   u8 num_pdcch_symbols=3;
+  u16 *pcfich_reg = frame_parms->pcfich_reg;
 
   // demapping
   // loop over 4 quadruplets and lookup REGs

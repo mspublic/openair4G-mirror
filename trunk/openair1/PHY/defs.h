@@ -163,6 +163,8 @@ typedef struct
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
 
+
+
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
 
@@ -282,6 +284,7 @@ typedef struct
   s8               g_pucch[NUMBER_OF_eNB_MAX];
   /// cell-specific reference symbols
   unsigned int lte_gold_table[3][20][2][14];
+
 
 
   char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];

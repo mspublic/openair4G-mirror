@@ -64,14 +64,15 @@ __m128i zero2;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero2,(xmmy)))
 #endif
 
-extern u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
-extern u16 pcfich_reg[4];
+//extern u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
+//extern u16 pcfich_reg[4];
 
 u32 check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,u32 kprime,u8 lprime,u8 mi) {
 
   u16 i;
   u16 Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);
   u16 mprime;
+  u16 *pcfich_reg = frame_parms->pcfich_reg;
 
   if ((lprime>0) && (frame_parms->Ncp==0) )
     return(0);
@@ -111,9 +112,9 @@ u32 check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,u32 kprime,u8 lprime,u8 mi) 
     
     
     for (i=0;i<Ngroup_PHICH;i++) {
-      if ((mprime == phich_reg[i][0]) || 
-	  (mprime == phich_reg[i][1]) || 
-	  (mprime == phich_reg[i][2]))  {
+      if ((mprime == frame_parms->phich_reg[i][0]) || 
+	  (mprime == frame_parms->phich_reg[i][1]) || 
+	  (mprime == frame_parms->phich_reg[i][2]))  {
 #ifdef DEBUG_DCI_ENCODING
 	msg("[PHY] REG %d (lprime %d) allocated to PHICH\n",mprime,lprime);
 #endif
@@ -1746,6 +1747,7 @@ u8 get_num_pdcch_symbols(u8 num_dci,
 
   // compute numCCE
   for (i=0;i<num_dci;i++) {
+    //    printf("dci %d => %d\n",i,dci_alloc[i].L);
     numCCE += (1<<(dci_alloc[i].L));
   }
 
@@ -1807,8 +1809,8 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 
   num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
-  //  printf("Frame %d subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
-  //  	 mac_xface->frame,subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
+  //   printf("subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
+  //    	 subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
   generate_pcfich(num_pdcch_symbols,
 		  amp,
 		  frame_parms,
@@ -2403,6 +2405,27 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   u16 ra_rnti;
   u8 format0_found=0,format_c_found=0;
   u8 tmode = phy_vars_ue->transmission_mode[eNB_id];
+  u8 frame_type = frame_parms->frame_type;
+  u8 format1A_size_bits,format1A_size_bytes;
+  u8 format0_size_bits,format0_size_bytes;
+  u8 format1_size_bits,format1_size_bytes;
+
+  if (frame_type == 1) {// TDD
+    format1A_size_bits  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+    format1A_size_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
+    format0_size_bits  = sizeof_DCI0_5MHz_TDD_1_6_t;
+    format0_size_bytes = sizeof(DCI0_5MHz_TDD_1_6_t);
+    format1_size_bits  = sizeof_DCI1_5MHz_TDD_t;
+    format1_size_bytes = sizeof(DCI1_5MHz_TDD_t);
+  }
+  else {
+    format1A_size_bits  = sizeof_DCI1A_5MHz_FDD_t;
+    format1A_size_bytes = sizeof(DCI1A_5MHz_FDD_t);
+    format0_size_bits  = sizeof_DCI0_5MHz_FDD_t;
+    format0_size_bytes = sizeof(DCI0_5MHz_FDD_t);
+    format1_size_bits  = sizeof_DCI1_5MHz_FDD_t;
+    format1_size_bytes = sizeof(DCI1_5MHz_FDD_t);
+  }
 
   if (phy_vars_ue->prach_resources[eNB_id])
     ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
@@ -2422,8 +2445,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  format1A,
 			  format1A,
 			  format0,
-			  sizeof_DCI1A_5MHz_TDD_1_6_t,
-			  sizeof(DCI1A_5MHz_TDD_1_6_t),
+			  format1A_size_bits,
+			  format1A_size_bytes,
 			  &dci_cnt,
 			  &format0_found,
 			  &format_c_found,
@@ -2449,8 +2472,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  format1A,
 			  format1A,
 			  format0,
-			  sizeof_DCI1A_5MHz_TDD_1_6_t,
-			  sizeof(DCI1A_5MHz_TDD_1_6_t),
+			  format1A_size_bits,
+			  format1A_size_bytes,
 			  &dci_cnt,
 			  &format0_found,
 			  &format_c_found,
@@ -2476,8 +2499,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  format1A,
 			  format1A,
 			  format0,
-			  sizeof_DCI0_5MHz_TDD_1_6_t,
-			  sizeof(DCI0_5MHz_TDD_1_6_t),
+			  format0_size_bits,
+			  format0_size_bytes,
 			  &dci_cnt,
 			  &format0_found,
 			  &format_c_found,
@@ -2502,8 +2525,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  format1A,
 			  format1A,
 			  format0,
-			  sizeof_DCI0_5MHz_TDD_1_6_t,
-			  sizeof(DCI0_5MHz_TDD_1_6_t),			  
+			  format0_size_bits,
+			  format0_size_bytes,
 			  &dci_cnt,
 			  &format0_found,
 			  &format_c_found,
@@ -2529,8 +2552,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    format1A,
 			    format1A,
 			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
+			    format1_size_bits,
+			    format1_size_bytes,
 			    &dci_cnt,
 			    &format0_found,
 			    &format_c_found,
@@ -2557,8 +2580,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    format1A,
 			    format1A,
 			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
+			    format1_size_bits,
+			    format1_size_bytes,
 			    &dci_cnt,
 			    &format0_found,
 			    &format_c_found,
@@ -2584,8 +2607,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    format1A,
 			    format1A,
 			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
+			    format1_size_bits,
+			    format1_size_bytes,
 			    &dci_cnt,
 			    &format0_found,
 			    &format_c_found,
@@ -2612,8 +2635,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    format1A,
 			    format1A,
 			    format1,
-			    sizeof_DCI1_5MHz_TDD_t,
-			    sizeof(DCI1_5MHz_TDD_t),
+			    format1_size_bits,
+			    format1_size_bytes,
 			    &dci_cnt,
 			    &format0_found,
 			    &format_c_found,
