@@ -1640,7 +1640,7 @@ int main(int argc, char **argv) {
 		       m++) 
 		    {
 #if defined ENABLE_FXP || ENABLE_FLP
-		      printf("fxp or flp release used\n");
+		      //		      printf("fxp or flp release used\n");
 		      if (rx_pdsch(PHY_vars_UE,
 				   PDSCH,
 				   eNB_id,
@@ -1681,7 +1681,7 @@ int main(int argc, char **argv) {
 			 m++)
 		      {
 #if defined ENABLE_FXP || ENABLE_FLP
-			printf("fxp or flp release used\n");
+			//			printf("fxp or flp release used\n");
 			if (rx_pdsch(PHY_vars_UE,
 				     PDSCH,
 				     eNB_id,
@@ -1722,7 +1722,7 @@ int main(int argc, char **argv) {
 			 m++)
 		      {
 #if defined ENABLE_FXP || ENABLE_FLP
-			printf("fxp or flp release used\n");
+			//			printf("fxp or flp release used\n");
 			if (rx_pdsch(PHY_vars_UE,
 				     PDSCH,
 				     eNB_id,
