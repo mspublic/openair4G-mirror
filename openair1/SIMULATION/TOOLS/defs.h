@@ -183,7 +183,7 @@ int random_channel(channel_desc_t *desc);
 		       double **tx_sig_im, 
 		       double **rx_sig_re,
 		       double **rx_sig_im,
-		       u16 length,
+		       u32 length,
 		       u8 keep_channel)
 
 \brief This function generates and applys a random frequency selective random channel model.
@@ -201,7 +201,7 @@ void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_im, 
 		       double **rx_sig_re,
 		       double **rx_sig_im,
-		       u16 length,
+		       u32 length,
 		       u8 keep_channel);
 /*
 \fn double compute_pbch_sinr(channel_desc_t *desc,
