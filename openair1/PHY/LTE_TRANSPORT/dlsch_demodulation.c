@@ -10187,10 +10187,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   //#define ENABLE_FLP
   
 #ifdef ENABLE_FXP
-  printf("rx_pdsch, Full Fxp version\n");
+  //  printf("rx_pdsch, Full Fxp version\n");
 #endif
 #ifdef ENABLE_FLP
-  printf("rx_pdsch, Flp WITHIN dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() only\n");
+  //  printf("rx_pdsch, Flp WITHIN dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() only\n");
 #endif
 
   unsigned short nb_rb;

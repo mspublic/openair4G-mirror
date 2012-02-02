@@ -357,11 +357,11 @@ u32  dlsch_decoding(short *dlsch_llr,
   }
   // Reassembly of Transport block here
   offset = 0;
-  
+  /*  
   msg("harq_pid %d\n",harq_pid);
   msg("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
   msg("C %d\n",dlsch->harq_processes[harq_pid]->C);
-  
+  */
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
     if (r<dlsch->harq_processes[harq_pid]->Cminus)
       Kr = dlsch->harq_processes[harq_pid]->Kminus;
@@ -375,12 +375,12 @@ u32  dlsch_decoding(short *dlsch_llr,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
 	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3)- ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
       offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3) - ((dlsch->harq_processes[harq_pid]->C>1)?3:0);
-            msg("copied %d bytes to b sequence (harq_pid %d)\n",
-      	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
-          msg("b[0] = %x,c[%d] = %x\n",
-      	  dlsch->harq_processes[harq_pid]->b[0],
-      	  dlsch->harq_processes[harq_pid]->F>>3,
-      	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
+      //            msg("copied %d bytes to b sequence (harq_pid %d)\n",
+      //      	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
+    //          msg("b[0] = %x,c[%d] = %x\n",
+    //  	  dlsch->harq_processes[harq_pid]->b[0],
+    //  	  dlsch->harq_processes[harq_pid]->F>>3,
+    //  	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
     }
     else {
       memcpy(dlsch->harq_processes[harq_pid]->b+offset,

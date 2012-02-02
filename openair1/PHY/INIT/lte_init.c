@@ -1100,6 +1100,10 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   phy_vars_eNB->total_transmitted_bits = 0;
   phy_vars_eNB->total_system_throughput = 0;
 
+  msg("[PHY][eNB %d] Initializing DL_FRAME_PARMS : N_RB_DL %d, PHICH Resource %d, PHICH Duration %d\n",
+      phy_vars_eNB->Mod_id,
+      frame_parms->N_RB_DL,frame_parms->phich_config_common.phich_resource,
+      frame_parms->phich_config_common.phich_duration);
 
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
   generate_pcfich_reg_mapping(frame_parms);
