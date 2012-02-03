@@ -1642,10 +1642,9 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 			      subframe,
 			      lte_ue_pdcch_vars[eNB_id],
 			      mimo_mode);
-
-  //  msg("[PDCCH] Frame %d subframe %d n_pdcch_symbols from PCFICH =%d\n",mac_xface->frame,subframe,n_pdcch_symbols);
-
 #ifdef DEBUG_DCI_DECODING
+  msg("[PDCCH] subframe %d n_pdcch_symbols from PCFICH =%d\n",subframe,n_pdcch_symbols);
+
   msg("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
 #endif
 

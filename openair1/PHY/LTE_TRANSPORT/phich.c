@@ -252,7 +252,8 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
   }
   
 #ifdef DEBUG_PHICH
-  msg("[PHY] Ngroup_PHICH %d (phich_config_common.phich_resource %d)\n",((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1)),frame_parms->phich_config_common.phich_resource);
+  msg("[PHY] Ngroup_PHICH %d (phich_config_common.phich_resource %d,NidCell %d,Ncp %d, frame_type %d)\n",((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1)),frame_parms->phich_config_common.phich_resource,
+      frame_parms->Nid_cell,frame_parms->Ncp,frame_parms->frame_type);
 #endif
 
   // This is the algorithm from Section 6.9.3 in 36-211
@@ -260,7 +261,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 
     if (frame_parms->Ncp==0){  // normal prefix
 
-      frame_parms->phich_reg[mprime][0] = (1+frame_parms->Nid_cell + mprime)%n0;
+      frame_parms->phich_reg[mprime][0] = (frame_parms->Nid_cell + mprime)%n0;
 
       if (frame_parms->phich_reg[mprime][0]>=pcfich_reg[frame_parms->pcfich_first_reg_idx])
 	frame_parms->phich_reg[mprime][0]++;
@@ -271,7 +272,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
       if (frame_parms->phich_reg[mprime][0]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+3)&3])
 	frame_parms->phich_reg[mprime][0]++;
 
-      frame_parms->phich_reg[mprime][1] = (1+frame_parms->Nid_cell + mprime + (n0/3))%n0;
+      frame_parms->phich_reg[mprime][1] = (frame_parms->Nid_cell + mprime + (n0/3))%n0;
 
       if (frame_parms->phich_reg[mprime][1]>=pcfich_reg[frame_parms->pcfich_first_reg_idx])
 	frame_parms->phich_reg[mprime][1]++;
@@ -282,7 +283,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
       if (frame_parms->phich_reg[mprime][1]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+3)&3])
 	frame_parms->phich_reg[mprime][1]++;
  
-     frame_parms->phich_reg[mprime][2] = (1+frame_parms->Nid_cell + mprime + (2*n0/3))%n0;
+     frame_parms->phich_reg[mprime][2] = (frame_parms->Nid_cell + mprime + (2*n0/3))%n0;
       if (frame_parms->phich_reg[mprime][2]>=pcfich_reg[frame_parms->pcfich_first_reg_idx])
 	frame_parms->phich_reg[mprime][2]++;
       if (frame_parms->phich_reg[mprime][2]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+1)&3])

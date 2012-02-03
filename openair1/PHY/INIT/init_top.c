@@ -135,14 +135,12 @@ int init_signal_buffers(LTE_DL_FRAME_PARMS *frame_parms) {
       msg("[PHY][INIT] mbox = %p\n",mbox);
     }
     else {
-      msg("[PHY][INIT] Setting up Leon PCIe interface structure\n");
-      exmimo_pci_interface[card_id] = (exmimo_pci_interface_t *)bigmalloc16(sizeof(exmimo_pci_interface_t));
-      msg("[PHY][INIT] PCIe interface %d at %p\n",card_id,exmimo_pci_interface[card_id]);
+      msg("[PHY][INIT] PCIe interface %d at %p\n",card_id,exmimo_pci_interface);
       //      openair_writel(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface[card_id]));  
       
       for (i=0;i<NB_ANTENNAS_RX;i++) {
-	exmimo_pci_interface[card_id]->rf.adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
-	exmimo_pci_interface[card_id]->rf.dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
+	exmimo_pci_interface->rf.adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
+	exmimo_pci_interface->rf.dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
       }
     }
   }
@@ -334,10 +332,7 @@ void phy_cleanup(void) {
 
   for (card_id=0;card_id<number_of_cards;card_id++) {
 
-    if (vid == XILINX_VENDOR) {
-      pci_free_consistent(pdev[card_id],sizeof(exmimo_pci_interface),exmimo_pci_interface[card_id],dma_handle[card_id]);
-      msg("[PHY][INIT] Freeing exmimo_pci_interface %d\n",card_id);
-    }
+
     
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       
