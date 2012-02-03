@@ -536,7 +536,7 @@ main (int argc, char **argv)
     case 'C':
       oai_emulation.info.tdd_config = atoi (optarg);
       if (oai_emulation.info.tdd_config > 6) {
-	msg ("Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
+	LOG_E(EMU,"Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
 	exit (-1);
       }
       break;
@@ -544,13 +544,13 @@ main (int argc, char **argv)
       oai_emulation.info.N_RB_DL = atoi (optarg);
       if ((oai_emulation.info.N_RB_DL != 6) && (oai_emulation.info.N_RB_DL != 15) && (oai_emulation.info.N_RB_DL != 25)
 	  && (oai_emulation.info.N_RB_DL != 50) && (oai_emulation.info.N_RB_DL != 75) && (oai_emulation.info.N_RB_DL != 100)) {
-	msg ("Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", oai_emulation.info.N_RB_DL);
+	LOG_E(EMU,"Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", oai_emulation.info.N_RB_DL);
 	exit (-1);
       }
     case 'N':
       Nid_cell = atoi (optarg);
       if (Nid_cell > 503) {
-	msg ("Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
+	LOG_E(EMU,"Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
 	exit(-1);
       }
       break;
@@ -560,7 +560,7 @@ main (int argc, char **argv)
     case 'x':
       oai_emulation.info.transmission_mode = atoi (optarg);
       if ((oai_emulation.info.transmission_mode != 1) &&  (oai_emulation.info.transmission_mode != 2) && (oai_emulation.info.transmission_mode != 5) && (oai_emulation.info.transmission_mode != 6)) {
-	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
+	LOG_E(EMU, "Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
 	exit(-1);
       }
       break;
@@ -587,12 +587,12 @@ main (int argc, char **argv)
       break;
     case 'k':
       //ricean_factor = atof (optarg);
-      printf("[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
+      LOG_E(EMU,"[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
       exit(-1);
       break;
     case 't':
       //Td = atof (optarg);
-      printf("[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
+      LOG_E(EMU,"[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
       exit(-1);
       break;
     case 'f':
@@ -680,11 +680,11 @@ main (int argc, char **argv)
   oaisim_config(); // config OMG and OCG, OPT, OTG, OLG
 
   if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX ) {
-    printf ("Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
+    LOG_E(EMU,"Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
     exit (-1);
   }
   if (oai_emulation.info.nb_enb_local > NUMBER_OF_eNB_MAX) {
-    printf ("Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
+    LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
     exit (-1);
   }
 	
@@ -698,9 +698,10 @@ main (int argc, char **argv)
     sinr_dB = snr_dB - 20;
 
   // setup ntedevice interface (netlink socket)
-  printf("[INIT] Starting NAS netlink interface\n");
+#ifdef NAS_NETLINK  
+  LOG_I(EMU,"[INIT] Starting NAS netlink interface\n");
   ret = netlink_init ();
-
+#endif
 
   if (ethernet_flag == 1) {
     oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
@@ -716,14 +717,10 @@ main (int argc, char **argv)
       j *= 2;
     }
     LOG_I (EMU, " Total number of master %d my master id %d\n", oai_emulation.info.nb_master, oai_emulation.info.master_id);
-#ifdef LINUX
-    // RK: Where is this now?
-       init_bypass ();
-#endif
+    init_bypass ();
 
     while (emu_tx_status != SYNCED_TRANSPORT) {
       LOG_I (EMU, " Waiting for EMU Transport to be synced\n");
-      printf("****\n");
       emu_transport_sync ();	//emulation_tx_rx();
     }
   }				// ethernet flag
@@ -741,15 +738,15 @@ main (int argc, char **argv)
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
 #endif
       
-  LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
-  LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
-  printf("Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, awgn_flag %d\n",
+  LOG_I(EMU,"total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
+  LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
+  LOG_T(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, awgn_flag %d\n",
   	 1+oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,awgn_flag);
   
 
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
-  printf ("Nid_cell %d\n", frame_parms->Nid_cell);
+  //printf ("Nid_cell %d\n", frame_parms->Nid_cell);
 
   /* Added for PHY abstraction */
   if (abstraction_flag) 
@@ -772,7 +769,7 @@ main (int argc, char **argv)
   ShaF = init_SF(map1,map2,DECOR_DIST,SF_VAR);
 
   // size of area to generate shadow fading map
-  printf("Simulation area x=%f, y=%f\n",
+  LOG_D(EMU,"Simulation area x=%f, y=%f\n",
 	 oai_emulation.topology_config.area.x_km,
 	 oai_emulation.topology_config.area.y_km);
  
@@ -783,9 +780,7 @@ main (int argc, char **argv)
   // initialize channel descriptors
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-#ifdef DEBUG_SIM
-      printf ("[SIM] Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
-#endif
+      LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
       if (oai_emulation.info.transmission_mode == 5) {
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
@@ -807,9 +802,7 @@ main (int argc, char **argv)
 						     0);
 	}
       random_channel(eNB2UE[eNB_id][UE_id]);      
-#ifdef DEBUG_SIM
-     printf ("[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
-#endif
+      LOG_D(OCM,"[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
 						   (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
@@ -884,9 +877,6 @@ main (int argc, char **argv)
 
   for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
-#ifdef DEBUG_SIM
-  printf ("[SIM] Synching to eNB\n");
-#endif
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
       mac_xface->dl_phy_sync_success (UE_id, 0, 0);	//UE_id%NB_eNB_INST);
@@ -903,11 +893,9 @@ main (int argc, char **argv)
 
 #ifdef PROC
   if(Channel_Flag==1)
-	  Channel_Inst(node_id,port,s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms);
-
-
+    Channel_Inst(node_id,port,s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms);
   if(Process_Flag==1)
-      Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
+    Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
 #endif 
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
@@ -1036,7 +1024,7 @@ main (int argc, char **argv)
 	  //}
 #endif
       }
-      emu_transport (frame, last_slot, next_slot, direction, ethernet_flag);
+      emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
 
       // Call ETHERNET emulation here
       if ((next_slot % 2) == 0)
@@ -1084,7 +1072,7 @@ main (int argc, char **argv)
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
 #endif
 	}
-      emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
+      emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
  
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
