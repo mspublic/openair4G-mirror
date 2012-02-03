@@ -34,7 +34,9 @@ void exmimo_firmware_init() {
   printk("firmware_code_block_ptr : %x\n",exmimo_pci_bot->firmware_block_ptr);
   exmimo_pci_bot->printk_buffer_ptr = virt_to_phys((unsigned int*)bigphys_malloc(1024));
   printk("printk_buffer_ptr : %x\n",exmimo_pci_bot->printk_buffer_ptr);
-  exmimo_pci_bot->pci_interface_ptr = virt_to_phys((unsigned int*)bigphys_malloc(sizeof(exmimo_pci_interface_t)));
+
+  exmimo_pci_interface = (exmimo_pci_interface_t *)bigphys_malloc(sizeof(exmimo_pci_interface_t)); 
+  exmimo_pci_bot->pci_interface_ptr = virt_to_phys((unsigned int*)exmimo_pci_interface);
   printk("pci_interface_ptr : %x\n",exmimo_pci_bot->pci_interface_ptr);  
 
   pci_printk_fifo_init();

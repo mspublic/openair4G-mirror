@@ -115,12 +115,8 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
 
 
 
-#ifdef KERNEL2_6 
-static int __init openair_init_module( void ) 
-#else 
-  int init_module( void ) 
-#endif //KERNEL2_6
-{
+
+static int __init openair_init_module( void ) {
   //-----------------------------------------------------------------------------
   int res = 0;
   // unsigned long i;
@@ -421,12 +417,7 @@ static int __init openair_init_module( void )
 }
 
   
-#ifdef KERNEL2_6 
-static void __exit openair_cleanup_module(void)
-#else 
-  void cleanup_module(void)
-#endif //KERNEL2_6
-{
+static void __exit openair_cleanup_module(void) {
   printk("[openair][CLEANUP MODULE]\n");
 
   if (vid == XILINX_VENDOR)

@@ -38,7 +38,7 @@ unsigned int mbox;
 
 PCI_interface_t *pci_interface[4];
 exmimo_pci_interface_bot *exmimo_pci_bot;
-exmimo_pci_interface_t *exmimo_pci_interface[4];
+exmimo_pci_interface_t *exmimo_pci_interface;
 
 unsigned short NODE_ID[1];
 //EXPORT_SYMBOL(NODE_ID);

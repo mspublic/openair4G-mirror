@@ -29,6 +29,8 @@ extern int transmission_mode_rrc; //fixme
 #include "from_grlib_softregs.h"
 #include "cbmimo1_pci.h"
 
+extern int rx_sig_fifo;
+
 void set_taus_seed(void);
 
 int dummy_cnt = 0;
@@ -63,15 +65,15 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
   unsigned long phys,pos;
   unsigned long start = (unsigned long)vma->vm_start; 
   unsigned long size = (unsigned long)(vma->vm_end-vma->vm_start); 
+  int i;
 
-
-  /*
+  
   printk("[openair][MMAP]  called (%x,%x,%x) prot %x\n", 
 	 vma->vm_start, 
 	 vma->vm_end, 
 	 size,
 	 vma->vm_page_prot);
-  */
+  
 
 #ifdef BIGPHYSAREA  
   
@@ -85,13 +87,12 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
 	   (unsigned int)size);
     return -EINVAL;
   }
-  /* start off at the PCI BAR0 */
 
 
   pos = (unsigned long) bigphys_ptr;
   phys = virt_to_phys((void *)pos);
   
-  //  printk("[openair][MMAP]  WILL START MAPPING AT %p (%p) \n", (void*)pos,virt_to_phys(pos));
+  printk("[openair][MMAP]  WILL START MAPPING AT %p (%p) \n", (void*)pos,virt_to_phys(pos));
   
   /* loop through all the physical pages in the buffer */ 
   /* Remember this won't work for vmalloc()d memory ! */
@@ -106,38 +107,8 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
     return -EAGAIN;
   }
 
-  //  for (i=0;i<16;i++)
-  //    printk("[openair][MMAP] rxsig %d = %x\n",i,RX_DMA_BUFFER[0][i]);
-
-
-  /*
-  while (size > 0) {
-    
-
-    
-    printk("[openair][MMAP] Mapping phys %x,virt %x\n",phys,start);
-
-
-    if (remap_pfn_range(vma, 
-			start, 
-			phys>>PAGE_SHIFT, 
-			PAGE_SIZE, 
-			vma->vm_page_prot)) {
-      
-      printk("[openair][MMAP] ERROR EAGAIN\n");
-      return -EAGAIN;
-    }
-    
-    start+=PAGE_SIZE;
-    pos+=PAGE_SIZE;
-    
-    if (size > PAGE_SIZE)
-      size-=PAGE_SIZE;
-    else {
-      size = 0;
-    }
-    }
-  */
+  for (i=0;i<16;i++)
+    printk("[openair][MMAP] rxsig %d = %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
 
 
 #endif //BIGPHYSAREA
@@ -211,7 +182,23 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef RTAI_ENABLED
     
     if (openair_daq_vars.node_configured > 0) {
-      printk("[openair][IOCTL] NODE ALREADY CONFIGURED (%d), DYNAMIC RECONFIGURATION NOT SUPPORTED YET!!!!!!!\n",openair_daq_vars.node_configured);
+      printk("[openair][IOCTL] NODE ALREADY CONFIGURED Triggering reset of OAI firmware",openair_daq_vars.node_configured);
+
+      if (vid == XILINX_VENDOR) {  // This is ExpressMIMO
+	exmimo_firmware_init();
+	ret = setup_regs(0,frame_parms);
+	udelay(10000);
+	openair_dma(0,EXMIMO_CONFIG);
+      }
+      
+      udelay(10000);
+      for (i=0;i<number_of_cards;i++) { 
+	ret = setup_regs(i,frame_parms);
+	if (vid != XILINX_VENDOR)
+	  pci_interface[i]->freq_offset = 0;
+	//	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	
+      }
     }
     else {
       copy_from_user((void*)frame_parms,arg_ptr,sizeof(LTE_DL_FRAME_PARMS));
@@ -300,7 +287,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	//	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 	
       }
-      
+
+      if (vid == XILINX_VENDOR) {
+	openair_dma(0,EXMIMO_CONFIG);
+	udelay(10000);
+      }
       // usleep(10);
       ret = openair_sched_init();
       if (ret != 0)
@@ -846,10 +837,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.node_running = 0;
 #ifndef NOCARD_TEST
 
+      /*
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
 	bzero((void*) TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
       udelay(1000);
-
+      */
 
       openair_daq_vars.node_id = NODE;
 #ifdef OPENAIR_LTE
@@ -920,28 +912,56 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME; //this puts the node into RX mode only for TDD, its ignored in FDD mode
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
+
+
+    if (vid != XILINX_VENDOR) {
+
 #ifdef RTAI_ENABLED
-    if (openair_daq_vars.node_configured > 0) {
+      if (openair_daq_vars.node_configured > 0) {
+	
+	openair_daq_vars.node_id = NODE;      
+	
+	for (i=0;i<number_of_cards;i++)
+	  ret = setup_regs(i,frame_parms);
 
-      openair_daq_vars.node_id = NODE;      
+	
+	openair_daq_vars.one_shot_get_frame=1;
+	
+      }
+      else {
+	printk("[openair][GET_BUFFER][ERROR]  Radio not configured\n");
+	return -1;
+      }
       
-      for (i=0;i<number_of_cards;i++)
-	ret = setup_regs(i,frame_parms);
-
-      openair_daq_vars.one_shot_get_frame=1;
-
+#else
+      
+      
+#endif // RTAI_ENABLED
     }
     else {
-      printk("[openair][GET_BUFFER][ERROR]  Radio not configured\n");
-      return -1;
+
+      setup_regs(0,frame_parms);
+      openair_dma(0,EXMIMO_GET_FRAME);
+      
+      udelay(10000);
+      udelay(10000);
+
+      pci_dma_sync_single_for_cpu(pdev[0], 
+				  exmimo_pci_interface->rf.adc_head[0],
+				  76800*4, 
+				  PCI_DMA_FROMDEVICE);
+      printk("RX_DMA_BUFFER[0][0] 0x%x\n",RX_DMA_BUFFER[0][0]);
+      for (i=0;i<76800;i+=1024)
+	printk("rx_buffer %d => %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
+      /*
+      for (i=0;i<NB_ANTENNAS_RX;i++)
+	rtf_put(rx_sig_fifo,
+		(unsigned char*)RX_DMA_BUFFER[0][i],FRAME_LENGTH_BYTES);
+      */
+      
     }
-
-#else
-
-
-#endif // RTAI_ENABLED
     break;
-
+    
     //----------------------
 
   case openair_GET_CONFIG:
@@ -1432,6 +1452,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	openair_dma(0,EXMIMO_START_EXEC);
 
+	udelay(1000);
+
+	exmimo_firmware_init();
+
       }
     break;
           
@@ -1446,28 +1470,29 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       }
       else {
 	printk("[openair][IOCTL] ok asked Leon to reboot.\n");
+	openair_dma(0,EXMIMO_REBOOT);
       }
       break;
 	
-      case UPDATE_FIRMWARE_TEST_GOK:
-	if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
-	  /* No loop, just a single test (the polling loop should better be placed in user-space code). */
-	  openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-	  rmb();
-	  if (tmp & FROM_GRLIB_BOOT_GOK)
-	    return 0;
-	  else
-	    return -1;
-	}
-	else {
-	  printk("[openair][IOCTL] TEST_GOK command doesn't work with ExpressMIMO, check User-space call!!!!\n");
-	}
-	break;
-	
-      default:
-	return -1;
-	break;
-	
+    case UPDATE_FIRMWARE_TEST_GOK:
+      if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
+	/* No loop, just a single test (the polling loop should better be placed in user-space code). */
+	openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+	rmb();
+	if (tmp & FROM_GRLIB_BOOT_GOK)
+	  return 0;
+	else
+	  return -1;
+      }
+      else {
+	printk("[openair][IOCTL] TEST_GOK command doesn't work with ExpressMIMO, check User-space call!!!!\n");
+      }
+      break;
+      
+    default:
+      return -1;
+      break;
+      
     }
     break;
   
