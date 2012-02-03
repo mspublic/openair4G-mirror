@@ -118,33 +118,46 @@ typedef struct {
 } exmimo_pcidma_t;
 
 typedef struct {
-  int adc_head[4];            // PCI addresses of ADC buffers in PC memory (Read by LEON during init)
-  int dac_head[4];            // PCI addresses of DAC buffers in PC memory (Read by LEON during init)
-  unsigned int rf_freq0;
-  unsigned int rf_freq1;
-  unsigned int rf_freq2;
-  unsigned int rf_freq3;
-  unsigned int tx_gain00;
-  unsigned int tx_gain01; 
-  unsigned int tx_gain10; 
-  unsigned int tx_gain11; 
-  unsigned int tx_gain20;
-  unsigned int tx_gain21; 
-  unsigned int tx_gain30; 
-  unsigned int tx_gain31; 
-  unsigned int rx_gain00;
-  unsigned int rx_gain01; 
-  unsigned int rx_gain10; 
-  unsigned int rx_gain11; 
-  unsigned int rx_gain20;
-  unsigned int rx_gain21; 
-  unsigned int rx_gain30; 
-  unsigned int rx_gain31; 
-  unsigned int rf_mode0;
-  unsigned int rf_mode1;
-  unsigned int rf_mode2;
-  unsigned int rf_mode3;
+  uint32_t adc_head[4];            // PCI addresses of ADC buffers in PC memory (Read by LEON during init)
+  uint32_t dac_head[4];            // PCI addresses of DAC buffers in PC memory (Read by LEON during init)
+  uint32_t rf_freq_rx0;
+  uint32_t rf_freq_rx1;
+  uint32_t rf_freq_rx2;
+  uint32_t rf_freq_rx3;
+  uint32_t rf_freq_tx0;
+  uint32_t rf_freq_tx1;
+  uint32_t rf_freq_tx2;
+  uint32_t rf_freq_tx3;
+  // Lime0 TX VGA1
+  uint32_t tx_gain00;
+  // Lime0 TX VGA2 
+  uint32_t tx_gain01; 
+  uint32_t tx_gain10; 
+  uint32_t tx_gain11; 
+  uint32_t tx_gain20;
+  uint32_t tx_gain21; 
+  uint32_t tx_gain30; 
+  uint32_t tx_gain31; 
+  // Lime0 RX VGA1
+  uint32_t rx_gain00;
+  // Lime0 RX VGA2
+  uint32_t rx_gain01; 
+  uint32_t rx_gain10; 
+  uint32_t rx_gain11; 
+  uint32_t rx_gain20;
+  uint32_t rx_gain21; 
+  uint32_t rx_gain30; 
+  uint32_t rx_gain31; 
+  //LIME RF modes
+  // 16:13|12:9 |8:7    |6:3  |2      |1   |0   |
+  // LNA  |RXLPF|RXLPFen|TXLPF|TXLPFen|RXen|TXen|
+  uint32_t rf_mode0;
+  uint32_t rf_mode1;
+  uint32_t rf_mode2;
+  uint32_t rf_mode3;
+  // LIME calibration parameters
 } exmimo_rf_t;
+
 
 typedef struct {
   unsigned int cyclic_prefix_mode;

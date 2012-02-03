@@ -38,7 +38,7 @@ extern unsigned int mbox;
 
 extern PCI_interface_t *pci_interface[4];
 extern exmimo_pci_interface_bot *exmimo_pci_bot;
-extern exmimo_pci_interface_t *exmimo_pci_interface[4];
+extern exmimo_pci_interface_t *exmimo_pci_interface;
 
 extern unsigned int vid,did;
 
