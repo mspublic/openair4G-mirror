@@ -45,7 +45,7 @@
 #include "PHY/vars.h"
 #endif
 
-//#define DEBUG_DCI
+#define DEBUG_DCI
 
 u32  localRIV2alloc_LUT25[512];
 u32  distRIV2alloc_LUT25[512];
@@ -249,12 +249,12 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
   u16 rballoc;
   u8 NPRB,tbswap,tpmi=0;
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1;
-  u8 frame_type;
-  u8 vrb_type;
-  u8 mcs;
-  u8 rv;
-  u8 ndi;
-  u8 rah;
+  u8 frame_type=frame_parms->frame_type;
+  u8 vrb_type=0;
+  u8 mcs=0;
+  u8 rv=0;
+  u8 ndi=0;
+  u8 rah=0;
   //  printf("Generate eNB DCI, format %d, rnti %x (pdu %p)\n",dci_format,rnti,dci_pdu);
 
   switch (dci_format) {
@@ -268,7 +268,8 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     if ((rnti==si_rnti) || (rnti==ra_rnti) || (rnti==p_rnti)){  //
       harq_pid=0;
       // see 36-212 V8.6.0 p. 45
-      NPRB      = ((frame_type == 1) ? (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) :
+      NPRB      = ((frame_type == 1) ? 
+		   (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) :
 		   (((DCI1A_5MHz_FDD_t *)dci_pdu)->TPC&1)) + 2;
 
       //printf("TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC);
@@ -794,15 +795,15 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 				      u16 p_rnti) {
 
   u8 harq_pid=0;
-  u16 rballoc;
-  u8 frame_type;
-  u8 vrb_type;
-  u8 mcs;
-  u8 rv;
-  u8 ndi;
-  u8 rah;
-  u8 TPC;
-  u8 NPRB,tbswap,tpmi;
+  u16 rballoc=0;
+  u8 frame_type=frame_parms->frame_type;
+  u8 vrb_type=0;
+  u8 mcs=0;
+  u8 rv=0;
+  u8 ndi=0;
+  u8 rah=0;
+  u8 TPC=0;
+  u8 NPRB=0,tbswap=0,tpmi=0;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
 
 #ifdef DEBUG_DCI

@@ -75,7 +75,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
   //  int             current_flow; 
   int             m_id, n_enb, n_ue, n_dci, total_tbs=0, total_header=0;
  
-  printf("in bypass_rx_data ...\n");
+  // printf("in bypass_rx_data ...\n");
  
  
   pthread_mutex_lock(&emul_low_mutex);
@@ -276,7 +276,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 
   }
 
-  printf("leaving ...\n");
+  //printf("leaving ...\n");
   return bytes_read;
 }
 
