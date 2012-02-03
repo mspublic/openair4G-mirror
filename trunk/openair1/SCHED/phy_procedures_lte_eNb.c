@@ -2411,33 +2411,22 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
 
   if (((phy_vars_eNB->lte_frame_parms.frame_type == 1)&&(subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_DL))||
       (phy_vars_eNB->lte_frame_parms.frame_type == 0)){
-#ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_TX(%d)\n",
-	phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-#endif
+    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_TX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
     phy_procedures_eNB_TX(next_slot,phy_vars_eNB,abstraction_flag);
   }
   if (((phy_vars_eNB->lte_frame_parms.frame_type == 1 )&&(subframe_select(&phy_vars_eNB->lte_frame_parms,last_slot>>1)==SF_UL))||
       (phy_vars_eNB->lte_frame_parms.frame_type == 0)){
-#ifdef DEBUG_PHY_PROC
     LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_RX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
-#endif
     phy_procedures_eNB_RX(last_slot,phy_vars_eNB,abstraction_flag);
   }
   if ((subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_S) &&
       ((next_slot&1)==0)) {
-#ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_TX(%d)\n",
-	phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-#endif
+    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_TX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
     phy_procedures_eNB_TX(next_slot,phy_vars_eNB,abstraction_flag);
   }
   if ((subframe_select(&phy_vars_eNB->lte_frame_parms,last_slot>>1)==SF_S) &&
       ((last_slot&1)==0)){
-#ifdef DEBUG_PHY_PROC
-    //    msg("[PHY][eNB %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n",
-    //	phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
-#endif
+    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
     phy_procedures_eNB_S_RX(last_slot,phy_vars_eNB,abstraction_flag);
   }
 }
