@@ -249,6 +249,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     
     rx_sss(phy_vars_ue,&metric_fdd_ncp,&flip_fdd_ncp,&phase_fdd_ncp);
     frame_parms->nushift  = frame_parms->Nid_cell%6;
+    if (flip_fdd_ncp==1)
+      phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
     init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
     for (i=0;i<3;i++)
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
@@ -260,6 +262,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   }
 
   if (ret==-1) {
+
+    return(-1);
 
     // Now FDD extended prefix
     frame_parms->Ncp=1;
@@ -279,6 +283,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
       
       rx_sss(phy_vars_ue,&metric_fdd_ecp,&flip_fdd_ecp,&phase_fdd_ecp);
       frame_parms->nushift  = frame_parms->Nid_cell%6;
+      if (flip_fdd_ecp==1)
+	phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
       init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
       for (i=0;i<3;i++)
 	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
@@ -313,6 +319,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	
       
       rx_sss(phy_vars_ue,&metric_tdd_ncp,&flip_tdd_ncp,&phase_tdd_ncp);
+      if (flip_tdd_ncp==1)
+	phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
       frame_parms->nushift  = frame_parms->Nid_cell%6;
       init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
       for (i=0;i<3;i++)
@@ -346,6 +354,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	      
       rx_sss(phy_vars_ue,&metric_tdd_ecp,&flip_tdd_ecp,&phase_tdd_ecp);
       frame_parms->nushift  = frame_parms->Nid_cell%6;
+      if (flip_tdd_ecp==1)
+	phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
       init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
       for (i=0;i<3;i++)
 	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    

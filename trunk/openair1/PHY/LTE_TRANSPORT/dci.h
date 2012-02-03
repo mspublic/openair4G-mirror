@@ -145,12 +145,10 @@ struct DCI1_5MHz_TDD {
 typedef struct DCI1_5MHz_TDD DCI1_5MHz_TDD_t;
 #define sizeof_DCI1_5MHz_TDD_t 30
 
-/// DCI Format Type 1 (5 MHz, FDD, 28 bits)
+/// DCI Format Type 1 (5 MHz, FDD, 27 bits)
 struct DCI1_5MHz_FDD {
   /// dummy bits (not transmitted)
-  u32 dummy:4;
-  /// dummy bit (transmitted)
-  u32 dummy_1:1;
+  u32 dummy:5;
   /// Power Control
   u32 TPC:2;
   /// Redundancy version
@@ -168,7 +166,7 @@ struct DCI1_5MHz_FDD {
 } __attribute__ ((__packed__));
 
 typedef struct DCI1_5MHz_FDD DCI1_5MHz_FDD_t;
-#define sizeof_DCI1_5MHz_FDD_t 28
+#define sizeof_DCI1_5MHz_FDD_t 27
 
 /// RA Procedure PDSCH (FDD), 13 bits
 struct RA_PDSCH_FDD {
