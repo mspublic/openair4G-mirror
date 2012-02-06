@@ -52,14 +52,6 @@
 #include "SIMULATION/simulation_defs.h"
 #endif
 
-//#define DEBUG_UE_MAC_CTRL
-//#define DEBUG_UE_MAC_RLC
-//#define DEBUG_MAC_REPORT
-//#define DEBUG_MAC_SCHEDULING
-
-//#define DEBUG_RACH_MAC
-//#define DEBUG_RACH_RRC
-//#define DEBUG_SI_RRC
 #define DEBUG_HEADER_PARSING
 
 /*
@@ -135,7 +127,7 @@ unsigned char *parse_header(unsigned char *mac_header,
 	mac_header_ptr += 3;
       }
 #ifdef DEBUG_HEADER_PARSING
-      LOG_T(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",num_sdus,lcid,length,mac_header_ptr-mac_header);
+      LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",num_sdus,lcid,length,mac_header_ptr-mac_header);
 #endif
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -146,7 +138,7 @@ unsigned char *parse_header(unsigned char *mac_header,
       num_ces++;
       mac_header_ptr ++;
 #ifdef DEBUG_HEADER_PARSING
-      LOG_T(MAC,"[UE] ce %d lcid %d (offset now %d)\n",num_ces,lcid,mac_header_ptr-mac_header);
+      LOG_D(MAC,"[UE] ce %d lcid %d (offset now %d)\n",num_ces,lcid,mac_header_ptr-mac_header);
 #endif
     }
   }
@@ -244,7 +236,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
       case UE_CONT_RES:
 #ifdef DEBUG_HEADER_PARSING
 	LOG_D(MAC,"[UE %d] CE %d : UE contention resolution for RRC :",Mod_id,i);
-	LOG_T(MAC, "[UE] %x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
+	LOG_D(MAC, "[UE] %x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 #endif
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
 	  UE_mac_inst[Mod_id].RA_active=0;
@@ -333,9 +325,9 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
 
 void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
-#ifdef DEBUG_SI_RRC
-  LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,frame,BCCH);
-#endif
+  int i;
+
+  LOG_T(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
   Rrc_xface->mac_rrc_data_ind(Mod_id,
 			      frame,
@@ -363,12 +355,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   unsigned char first_element=0,last_size=0,i;
   unsigned char mac_header_control_elements[16],*ce_ptr;
 
-  //#ifdef DEBUG_HEADER_PARSING
   LOG_D(MAC,"[UE] Generate ULSCH : num_sdus %d\n",num_sdus);
+#ifdef DEBUG_HEADER_PARSING
   for (i=0;i<num_sdus;i++)
     LOG_T(MAC,"[UE] sdu %d : lcid %d length %d",i,sdu_lcids[i],sdu_lengths[i]);
   LOG_T(MAC,"\n");
-  //#endif
+#endif
   ce_ptr = &mac_header_control_elements[0];
 
   if ((short_padding == 1) || (short_padding == 2)) {
@@ -465,7 +457,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       first_element=1;
     }
 #ifdef DEBUG_HEADER_PARSING
-    //LOG_D(MAC,"[UE] Scheduler SHORT BSR Header\n");
+    LOG_D(MAC,"[UE] Scheduler SHORT BSR Header\n");
 #endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
@@ -559,12 +551,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
   mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
 
-  //#ifdef DEBUG_HEADER_PARSING
+#ifdef DEBUG_HEADER_PARSING
   LOG_T(MAC," [UE %d] header : ", crnti);
   for (i=0;i<((unsigned char*)mac_header_ptr - mac_header);i++)
     LOG_T(MAC,"%2x.",mac_header[i]);
   LOG_T(MAC,"\n");
-  //#endif
+#endif
   return((unsigned char*)mac_header_ptr - mac_header);
 
 }

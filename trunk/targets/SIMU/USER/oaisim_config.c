@@ -65,7 +65,7 @@ mapping otg_ip_version_names[] =
 
 mapping otg_distribution_names[] =
 {
-	{"no_customized_traffic", 0},
+    {"no_customized_traffic", 0},
     {"min_num_dist", 1},
     {"uniform", 2},
     {"gaussian", 3},
@@ -85,7 +85,7 @@ void init_oai_emulation() {
 	oai_emulation.environment_system_config.fading.large_scale.selected_option = "free_space";
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_exponent = 2.0;
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_0_dB = -50;
-	oai_emulation.environment_system_config.fading.small_scale.selected_option = "Rice1";
+	oai_emulation.environment_system_config.fading.small_scale.selected_option = "AWGN";
 	oai_emulation.environment_system_config.fading.ricean_8tap.rice_factor_dB = 0;
 	oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m = 0;
 	oai_emulation.environment_system_config.fading.shadowing.variance_dB = 0;
@@ -229,6 +229,7 @@ void init_oai_emulation() {
     
     oai_emulation.info.frame_type=1;
     oai_emulation.info.tdd_config=3;
+    oai_emulation.info.tdd_config_S=0;
     oai_emulation.info.extended_prefix_flag=0;
     oai_emulation.info.N_RB_DL=25;
     oai_emulation.info.transmission_mode=2;
@@ -260,7 +261,7 @@ void oaisim_config() {
   ocg_config_topo(); // packet tracer using wireshark
  	// if T is set or ocg enabled 
   if (oai_emulation.info.otg_enabled || oai_emulation.info.ocg_enabled)
-	ocg_config_app(); // packet generator 
+    ocg_config_app(); // packet generator 
   ocg_config_emu(); // packet generator 
 
 

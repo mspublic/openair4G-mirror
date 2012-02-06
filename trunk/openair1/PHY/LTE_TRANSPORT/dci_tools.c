@@ -45,7 +45,7 @@
 #include "PHY/vars.h"
 #endif
 
-#define DEBUG_DCI
+//#define DEBUG_DCI
 
 u32  localRIV2alloc_LUT25[512];
 u32  distRIV2alloc_LUT25[512];

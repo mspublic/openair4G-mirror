@@ -555,6 +555,7 @@ typedef struct {
 	unsigned int n_frames_flag; // if set, then let the emulation goes to infinity
 	unsigned char frame_type;
 	unsigned char tdd_config;
+	unsigned char tdd_config_S;
 	unsigned char extended_prefix_flag;
 	unsigned char N_RB_DL;
 	unsigned char transmission_mode;

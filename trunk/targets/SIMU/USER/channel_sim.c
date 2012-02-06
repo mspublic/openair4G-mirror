@@ -196,7 +196,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	     //	     enb_data[att_eNB_id]->tx_power_dBm,
 	     
 	     eNB2UE[att_eNB_id][UE_id]->path_loss_dB);
-      LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",att_eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
+      //LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",att_eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
+       LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
 
     
       // calculate the SNR for the attached eNB
