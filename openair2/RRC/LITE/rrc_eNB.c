@@ -86,7 +86,7 @@ void init_SI(u8 Mod_id) {
     mac_xface->macphy_exit("");
   }
 
-  if (eNB_rrc_inst[Mod_id].sizeof_SIB1 == -1)
+  if (eNB_rrc_inst[Mod_id].sizeof_SIB1 == 255)
     mac_xface->macphy_exit("");
 
   eNB_rrc_inst[Mod_id].SIB23 = (u8 *)malloc16(64);
@@ -98,7 +98,7 @@ void init_SI(u8 Mod_id) {
 						&eNB_rrc_inst[Mod_id].sib3,
                                                 &eNB_rrc_inst[Mod_id].sib13,
                                                 eNB_rrc_inst[Mod_id].MBMS_flag);
-    if (eNB_rrc_inst[Mod_id].sizeof_SIB23 == -1)
+    if (eNB_rrc_inst[Mod_id].sizeof_SIB23 == 255)
       mac_xface->macphy_exit("");
 
     LOG_D(RRC,"[eNB %d] SIB2/3 Contents (partial)\n", Mod_id);
@@ -484,7 +484,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
 			   RADIO_ACCESS_BEARER,Rlc_info_um);
 	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
-
+	
+	LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n", 
+	      Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity);
 #ifdef NAS_NETLINK
 	nas_config(Mod_id,// interface index
 		   Mod_id+1, // thrid octet
@@ -499,9 +501,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 		     ipv4_address(Mod_id+1,NB_eNB_INST+UE_index+1));//daddr
 #endif
 
-
-    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
-            frame, Mod_id, UE_index, Mod_id);
+	LOG_D(RRC,"[eNB %d] State = Attached (UE %d)\n",Mod_id,UE_index);	 
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
+	      frame, Mod_id, UE_index, Mod_id);
 	DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity;
 	Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
 					  (RadioResourceConfigCommonSIB_t *)NULL,

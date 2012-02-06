@@ -48,7 +48,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
 
   else{
 
-    for(i=0;i<NB_SIG_CNX_UE;i++){
+    for(i=0;i<NB_eNB_INST;i++){
 
       LOG_D(RRC, "[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
       UE_rrc_inst[Mod_id].Srb0[i].Srb_id = CCCH;

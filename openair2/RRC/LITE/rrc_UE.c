@@ -338,9 +338,13 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
     return(-1);
     break;
   case RLC_Config_PR_um_Bi_Directional :
+      
+    LOG_D(RRC,"[UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n", 
+	  Mod_id,frame,DRB_config->drb_Identity);
+     
     rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
 		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
-		       RADIO_ACCESS_BEARER,Rlc_info_um);
+		       RADIO_ACCESS_BEARER,Rlc_info_um); 
 #ifdef NAS_NETLINK
     nas_config(oai_emulation.info.nb_enb_local+Mod_id,// interface index
 	       oai_emulation.info.nb_enb_local+Mod_id+1,
@@ -355,6 +359,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 		 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,eNB_index+1));//daddr
 
 #endif
+    LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",Mod_id,eNB_index);	 
     break;
   case RLC_Config_PR_um_Uni_Directional_UL :
   case RLC_Config_PR_um_Uni_Directional_DL :

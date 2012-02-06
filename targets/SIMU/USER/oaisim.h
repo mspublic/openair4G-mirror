@@ -25,6 +25,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
  		   u8 frame_type,
 		   u8 tdd_config,
+		   u8 tdd_config_S,
 		   u8 extended_prefix_flag, 
 		   u8 N_RB_DL,
 		   u16 Nid_cell,

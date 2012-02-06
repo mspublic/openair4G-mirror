@@ -39,6 +39,7 @@
 void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u8 frame_type,
 		   u8 tdd_config,
+		   u8 tdd_config_S,
 		   u8 extended_prefix_flag, 
 		   u8 N_RB_DL,
 		   u16 Nid_cell,
@@ -69,6 +70,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   *frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   (*frame_parms)->frame_type         = frame_type;
   (*frame_parms)->tdd_config         = tdd_config;
+  (*frame_parms)->tdd_config_S       = tdd_config_S;
   (*frame_parms)->N_RB_DL            = N_RB_DL;
   (*frame_parms)->N_RB_UL            = (*frame_parms)->N_RB_DL;
   (*frame_parms)->phich_config_common.phich_resource = oneSixth;

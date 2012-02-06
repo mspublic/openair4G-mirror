@@ -263,8 +263,6 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 
   if (ret==-1) {
 
-    return(-1);
-
     // Now FDD extended prefix
     frame_parms->Ncp=1;
     frame_parms->frame_type=0;
