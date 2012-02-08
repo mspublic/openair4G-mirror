@@ -573,7 +573,12 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     LOG_D(RLC, "      Data filtered (%d bytes)\n", pdu_info.hidden_size);
     #endif
 
-
+    // rlc_um_in_window() returns -2 if lower_bound  > sn
+    // rlc_um_in_window() returns -1 if higher_bound < sn
+    // rlc_um_in_window() returns  0 if lower_bound  < sn < higher_bound
+    // rlc_um_in_window() returns  1 if lower_bound  == sn
+    // rlc_um_in_window() returns  2 if higher_bound == sn
+    // rlc_um_in_window() returns  3 if higher_bound == sn == lower_bound
     if ((in_window == 1) || (in_window == 0)){
         LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  VR(UH) – UM_Window_Size) <= SN %d < VR(UR) -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame, sn);
         //discard the PDU
@@ -582,7 +587,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
         return;
     }
     if ((rlc_um_get_pdu_from_dar_buffer(rlcP, sn))) {
-      in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_ur, sn, rlcP->vr_uh);
+        in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_ur, sn, rlcP->vr_uh);
         if (in_window == 0){
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  VR(UR) < SN %d < VR(UH) and RECEIVED BEFORE-> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame, sn);
             //discard the PDU
@@ -590,6 +595,9 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
             pdu_memP = NULL;
             return;
         }
+        // 2 lines to avoid memory leaks
+        mem_block_t *pdu = rlc_um_remove_pdu_from_dar_buffer(rlcP, sn);
+        free_mem_block(pdu);
     }
     rlc_um_store_pdu_in_dar_buffer(rlcP, frame, pdu_memP, sn);
 
