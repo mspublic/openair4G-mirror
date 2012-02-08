@@ -67,7 +67,7 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
     emu_transport_DL(frame, last_slot,next_slot);
   }
   // UL
-  if ( ((frame_type == 1) && ((direction == SF_UL)) || (frame_type == 0) ){
+  if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ){
     emu_transport_UL(frame, last_slot , next_slot);
   }
 }
