@@ -92,7 +92,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 	LOG_E(RRC,"[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_id);
 	mac_xface->macphy_exit("");
       }
-      if ((Mac_rlc_xface->frame%2) == 0) {
+      if ((frame%2) == 0) {
 	memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].SIB1,eNB_rrc_inst[Mod_id].sizeof_SIB1);
 #ifdef DEBUG_RRC
 	LOG_D(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_id,Rrc_xface->Frame_index);
