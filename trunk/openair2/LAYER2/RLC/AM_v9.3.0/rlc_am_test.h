@@ -26,7 +26,7 @@ Forums       : http://forums.eurecom.fsr/openairinterface
 Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
-/*! \file rlc_am_structs.h
+/*! \file rlc_am_test.h
 * \brief This file defines the prototypes of RLC AM test functions.
 * \author GAUTHIER Lionel
 * \date 2010-2011
@@ -36,7 +36,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \note
 * \bug
 * \warning
-*/#    ifndef __RLC_AM_TEST_H__
+*/
+#    ifndef __RLC_AM_TEST_H__
 #        define __RLC_AM_TEST_H__
 #        ifdef RLC_AM_TEST_C
 #            define private_rlc_am_test(x)    x
@@ -53,8 +54,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #                define public_rlc_am_test(x)     extern x
 #            endif
 #        endif
-public_rlc_am_test(rlc_am_entity_t       am_tx;)
-public_rlc_am_test(rlc_am_entity_t       am_rx;)
+public_rlc_am_test(rlc_am_entity_t       g_am_tx;)
+public_rlc_am_test(rlc_am_entity_t       g_am_rx;)
 
 protected_rlc_am_test(void rlc_am_v9_3_0_test_windows();)
 protected_rlc_am_test(void rlc_am_v9_3_0_test_read_write_bit_field();)
