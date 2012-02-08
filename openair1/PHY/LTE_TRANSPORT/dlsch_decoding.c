@@ -44,7 +44,7 @@
 #include "PHY/CODING/extern.h"
 #include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
-//#define DEBUG_DLSCH_DECODING
+#define DEBUG_DLSCH_DECODING
 
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
@@ -489,16 +489,24 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_SI;
     //    msg("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
-    /*
+#ifdef DEBUG_DLSCH_DECODING   
+    LOG_D(PHY,"SI Decoded\n");
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
       msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-      msg("\n");*/
+    msg("\n");
+#endif
     return(1);
     break;
   case 1: // RA
     dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_ra;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
+#ifdef DEBUG_DLSCH_DECODING   
+    LOG_D(PHY,"RA Decoded\n");
+    for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
+      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
+    msg("\n");
+#endif
     return(1);
     break;
   case 2: // TB0

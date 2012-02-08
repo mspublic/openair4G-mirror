@@ -43,7 +43,7 @@ struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, n
 
 #ifdef DEBUG_MAC_INTERFACE
             LOG_T(RLC, "[MAC-RLC] DUMP RX PDU(%d bytes):\n", tb_sizeP);
-            rlc_util_print_hex_octets(MAC, ((struct mac_tb_ind *) (tb->data))->data_ptr, tb_sizeP);
+            rlc_util_print_hex_octets(RLC, ((struct mac_tb_ind *) (tb->data))->data_ptr, tb_sizeP);
 #endif
             nb_tb_read = nb_tb_read + 1;
             tbs_size   = tbs_size   + tb_sizeP;
@@ -70,7 +70,7 @@ tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP) {
        tb_size = ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3;
 #ifdef DEBUG_MAC_INTERFACE
         LOG_T(RLC, "[MAC-RLC] DUMP TX PDU(%d bytes):\n", tb_size);
-        rlc_util_print_hex_octets(MAC, ((struct mac_tb_req *) (tb->data))->data_ptr, tb_size);
+        rlc_util_print_hex_octets(RLC, ((struct mac_tb_req *) (tb->data))->data_ptr, tb_size);
 #endif
        memcpy(&bufferP[tbs_size], &((struct mac_tb_req *) (tb->data))->data_ptr[0], tb_size);
        tbs_size = tbs_size + tb_size;

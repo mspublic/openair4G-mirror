@@ -659,7 +659,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   }
 
 
-  //  printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
+    printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
   /*
     printf("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
@@ -3656,7 +3656,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       // check for DTCH and update header information
       // here we should loop over all possible DTCH
 
-      header_len_dtch = 3; // 3 bytes DTCH SDU subheader
+      header_len_dtch = 3 + 1; // 3 bytes DTCH SDU subheader + timing advance ce
 
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),
 				      TBS-header_len_dcch-sdu_length_total-header_len_dtch);
@@ -3667,7 +3667,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 						 DTCH+(MAX_NUM_RB*next_ue),
 						 (char*)&dlsch_buffer[sdu_length_total]);
 	if (sdu_lengths[num_sdus] < 128)
-	  header_len_dtch = 2;
+	  header_len_dtch = 2 + 1; // 2 bytes DTCH SDU subheader fix + timing advance ce
 
 	LOG_D(MAC,"[eNB %d] Got %d bytes for DTCH \n",Mod_id,sdu_lengths[num_sdus]);
 	sdu_lcids[num_sdus] = DTCH;
@@ -3718,7 +3718,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
 
 
-
+	
 	while (TBS < (sdu_length_total + offset))  {
 	  nb_rb += 2;  // 
 	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs

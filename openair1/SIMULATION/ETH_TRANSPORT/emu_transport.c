@@ -63,13 +63,11 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
     return;
  
   //DL
-  if ( ((frame_type == 1) && (((direction == SF_DL) && ((next_slot%2) == 0)) || ((direction == SF_S) && (next_slot==1))))   
-       || (frame_type == 0) ){ 
+  if ( ( (frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
     emu_transport_DL(frame, last_slot,next_slot);
   }
   // UL
-  if ( ((frame_type == 1) && (((direction == SF_UL) && ((next_slot%2) == 0)) || ((direction == SF_S) && ((last_slot%2)==1))))
-       || (frame_type == 0) ){
+  if ( ((frame_type == 1) && ((direction == SF_UL)) || (frame_type == 0) ){
     emu_transport_UL(frame, last_slot , next_slot);
   }
 }
@@ -290,7 +288,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
   	  sizeof(UE_cntl));
 
    
-   LOG_I(EMU, "Fill phy UE %d vars PRACH is (%d, %d) preamble (%d,%d)!\n", 
+   LOG_D(EMU, "Fill phy UE %d vars PRACH is (%d, %d) preamble (%d,%d)!\n", 
 	ue_id,
 	UE_transport_info[ue_id].cntl.prach_flag,
 	 ue_cntl_delay[subframe%2].prach_flag,
@@ -308,11 +306,13 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
 
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
     
-     // LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
+     //LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
      
      pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
      
-     PHY_vars_UE_g[ue_id]->sr=UE_transport_info[ue_id].cntl.sr;
+     PHY_vars_UE_g[ue_id]->sr=ue_cntl_delay[subframe%2].sr ;// UE_transport_info[ue_id].cntl.sr;
+     
+     //if (PHY_vars_UE_g[ue_id]->sr) LOG_I(EMU,"SR is %d \n", PHY_vars_UE_g[ue_id]->sr);
      
      if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
        PHY_vars_UE_g[ue_id]->pucch_payload[0] = UE_transport_info[ue_id].cntl.pucch_payload;
