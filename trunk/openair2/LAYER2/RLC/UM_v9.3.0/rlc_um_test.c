@@ -27,6 +27,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 *******************************************************************************/
 #define RLC_UM_MODULE
+#define RLC_C
 #define RLC_UM_TEST_C
 #include <execinfo.h>
 #include <stdio.h>
@@ -36,10 +37,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include <assert.h>
 #include <signal.h>
 #include <sys/time.h>
-#include <curses.h>
+//#include <curses.h>
 
-
-//#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc.h"
@@ -58,6 +57,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #define TEST_MAX_SEND_SDU 8192
 #define TARGET_MAX_RX_ERROR_RATE 10
 #define TARGET_MAX_TX_ERROR_RATE 10
+static int  g_frame = 0;
 static int  g_error_on_phy = 0;
 static int  g_random_sdu;
 static int  g_random_nb_frames;
@@ -130,11 +130,12 @@ void rlc_um_v9_3_0_test_windows()
 
    rlc_um_init(&um1);
    rlc_um_init(&um2);
-   rlc_um_set_debug_infos(&um1, 0, 0, 1);
-   rlc_um_set_debug_infos(&um2, 1, 1, 1);
 
-   rlc_um_configure(&um1, timer_reordering, sn_field_length, is_mXch);
-   rlc_um_configure(&um2, timer_reordering, sn_field_length, is_mXch);
+   rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1);
+   rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1);
+
+   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, is_mXch);
+   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, is_mXch);
 
    // RX window with vr_uh > vr_ur
    for (h = 0; h < RLC_UM_SN_10_BITS_MODULO; h++) {
@@ -142,14 +143,14 @@ void rlc_um_v9_3_0_test_windows()
        for (w = 1; w < RLC_UM_WINDOW_SIZE_SN_10_BITS; w++) {
            um1.vr_ur = (um1.vr_uh - w) & RLC_UM_SN_10_BITS_MASK;
            for (sn = ((um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK) ; sn != um1.vr_uh; sn = ((sn+1) & RLC_UM_SN_10_BITS_MASK)) {
-               assert(rlc_um_in_reordering_window(&um1, sn) >= 0);
+               assert(rlc_um_in_reordering_window(&um1, g_frame, sn) >= 0);
                // returns -2 if lower_bound  > sn
                // returns -1 if higher_bound < sn
                // returns  0 if lower_bound  < sn < higher_bound
                // returns  1 if lower_bound  == sn
                // returns  2 if higher_bound == sn
                // returns  3 if higher_bound == sn == lower_bound
-               result = rlc_um_in_window(&um1, (um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, um1.vr_uh);
+               result = rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, um1.vr_uh);
                assert((result < 2) && (result >=0));
            }
 
@@ -160,8 +161,8 @@ void rlc_um_v9_3_0_test_windows()
                // returns  1 if lower_bound  == sn
                // returns  2 if higher_bound == sn
                // returns  3 if higher_bound == sn == lower_bound
-               assert(rlc_um_in_window(&um1, (um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, (um1.vr_uh -1) & RLC_UM_SN_10_BITS_MASK) < 0);
-               assert(rlc_um_in_reordering_window(&um1, sn) < 0);
+               assert(rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, (um1.vr_uh -1) & RLC_UM_SN_10_BITS_MASK) < 0);
+               assert(rlc_um_in_reordering_window(&um1, g_frame, sn) < 0);
            }
 
        }
@@ -189,13 +190,13 @@ void rlc_um_v9_3_0_test_send_sdu(rlc_um_entity_t *um_txP, int sdu_indexP)
 
   if (sdu != NULL) {
       // PROCESS OF COMPRESSION HERE:
-      printf("[FRAME %05d][RLC][MOD %02d][RB %02d] TX SDU %d %04d bytes\n",mac_xface->frame,um_txP->module_id, um_txP->rb_id, sdu_indexP, strlen(g_sdus[sdu_indexP]) + 1);
+      printf("[FRAME %05d][RLC][MOD %02d][RB %02d] TX SDU %d %04d bytes\n",g_frame,um_txP->module_id, um_txP->rb_id, sdu_indexP, strlen(g_sdus[sdu_indexP]) + 1);
       memset (sdu->data, 0, sizeof (struct rlc_um_data_req_alloc));
       strcpy (&sdu->data[sizeof (struct rlc_um_data_req_alloc)],g_sdus[sdu_indexP]);
 
       ((struct rlc_um_data_req *) (sdu->data))->data_size = strlen(g_sdus[sdu_indexP])+ 1;
       ((struct rlc_um_data_req *) (sdu->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
-      rlc_um_data_req(um_txP, sdu);
+      rlc_um_data_req(um_txP, g_frame, sdu);
 
       g_send_sdu_ids[g_send_id_write_index[um_txP->rb_id]++][um_txP->rb_id] = sdu_indexP;
       assert(g_send_id_write_index[um_txP->rb_id] < TEST_MAX_SEND_SDU);
@@ -277,23 +278,23 @@ void rlc_um_v9_3_0_test_exchange_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, bytes_txP, tx_status);
-  data_request_tx        = rlc_um_mac_data_request(um_txP);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, bytes_rxP, tx_status);
-  data_request_rx        = rlc_um_mac_data_request(um_rxP);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, bytes_txP, tx_status);
+  data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, bytes_rxP, tx_status);
+  data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
 
 
   rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &g_drop_tx, &g_tx_packets, &g_dropped_tx_packets);
   rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &g_drop_rx, &g_rx_packets, &g_dropped_rx_packets);
-  rlc_um_mac_data_indication(um_rxP, data_ind_rx);
-  rlc_um_mac_data_indication(um_txP, data_ind_tx);
-  mac_xface->frame += 1;
+  rlc_um_mac_data_indication(um_rxP, g_frame, um_rxP->is_enb, data_ind_rx);
+  rlc_um_mac_data_indication(um_txP, g_frame, um_rxP->is_enb, data_ind_tx);
+  g_frame += 1;
 
   //rlc_um_tx_buffer_display(um_txP,NULL);
   //assert(um_txP->t_status_prohibit.time_out != 1);
   //assert(um_rxP->t_status_prohibit.time_out != 1);
   //assert(!((um_txP->vt_a == 954) && (um_txP->vt_us == 53)));
-  //assert(mac_xface->frame <= 151);
+  //assert(g_frame <= 151);
   //check_mem_area(NULL);
   //display_mem_load();
 }
@@ -302,9 +303,9 @@ void rlc_um_v9_3_0_test_data_conf(module_id_t module_idP, rb_id_t rb_idP, mui_t 
 //-----------------------------------------------------------------------------
 {
     if (statusP == RLC_SDU_CONFIRM_YES) {
-        printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM SEND SDU MUI %05d\n",mac_xface->frame,module_idP, rb_idP, muiP);
+        printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM SEND SDU MUI %05d\n",g_frame,module_idP, rb_idP, muiP);
     } else {
-        printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM LOST SDU MUI %05d\n",mac_xface->frame,module_idP, rb_idP, muiP);
+        printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM LOST SDU MUI %05d\n",g_frame,module_idP, rb_idP, muiP);
     }
 }
 //-----------------------------------------------------------------------------
@@ -315,19 +316,19 @@ void rlc_um_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_si
     if (g_error_on_phy == 0) {
         for (i = 0; i < 37; i++) {
             if (strcmp(g_sdus[i], sduP->data) == 0) {
-                printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",mac_xface->frame,module_idP, rb_idP, i, sizeP);
+                printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",g_frame,module_idP, rb_idP, i, sizeP);
                 assert(TEST_MAX_SEND_SDU > g_send_id_read_index[rb_idP]);
                 assert(g_send_id_write_index[rb_idP^1] > g_send_id_read_index[rb_idP]);
 
                 if (g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] != i) {
 
-                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-2, g_send_sdu_ids[g_send_id_read_index[rb_idP]-2][rb_idP^1]);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-2, g_send_sdu_ids[g_send_id_read_index[rb_idP]-2][rb_idP^1]);
 
-                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-1, g_send_sdu_ids[g_send_id_read_index[rb_idP]-1][rb_idP^1]);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-1, g_send_sdu_ids[g_send_id_read_index[rb_idP]-1][rb_idP^1]);
 
-                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1]);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1]);
 
-                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_id_read_index = %d sdu sent = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], i);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_id_read_index = %d sdu sent = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], i);
                 }
                 assert(g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] == i);
                 g_send_id_read_index[rb_idP] += 1;
@@ -335,20 +336,20 @@ void rlc_um_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_si
                 return;
             }
         }
-        printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",mac_xface->frame,module_idP, rb_idP,  sizeP);
+        printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",g_frame,module_idP, rb_idP,  sizeP);
         free_mem_block(sduP);
         assert(1==2);
     } else {
         for (i = 0; i < 37; i++) {
             if (strcmp(g_sdus[i], sduP->data) == 0) {
-                printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",mac_xface->frame,module_idP, rb_idP, i, sizeP);
+                printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",g_frame,module_idP, rb_idP, i, sizeP);
                 assert(TEST_MAX_SEND_SDU > g_send_id_read_index[rb_idP]);
                 g_send_id_read_index[rb_idP] += 1;
                 free_mem_block(sduP);
                 return;
             }
         }
-        printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",mac_xface->frame,module_idP, rb_idP,  sizeP);
+        printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",g_frame,module_idP, rb_idP,  sizeP);
         free_mem_block(sduP);
         return;
     }
@@ -366,8 +367,8 @@ void rlc_um_v9_3_0_test_tx_rx()
   um_info.is_mXch          = 0;
 
   srand (0);
-  config_req_rlc_um (&um_tx, 0, &um_info, 0, SIGNALLING_RADIO_BEARER);
-  config_req_rlc_um (&um_rx, 1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
 
 
   #ifdef TEST1

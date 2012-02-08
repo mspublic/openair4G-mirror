@@ -45,7 +45,7 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
     //-----------------------------------------------------------------------------
     LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%d sn_field_length=%d is_mXch=%d --->][RLC_UM][MOD %02d][RB %02d]    \n",
                 frame,
-                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+                ( eNB_flagP == 1) ? "eNB":"UE",
                 module_idP,
                 config_umP->timer_reordering,
                 config_umP->sn_field_length,
