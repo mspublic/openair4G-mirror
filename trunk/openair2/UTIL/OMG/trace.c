@@ -1,15 +1,50 @@
-/*
- * trace.c
- *
- *  Created on: Aug 11, 2011
- *      Author: suppoor
- */
+/*******************************************************************************
+
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file trace.c
+* \brief The trace-based mobility model for OMG/OAI (mobility is statically imported from a file)
+* \author  S. Uppoor
+* \date 2011
+* \version 0.1
+* \company INRIA
+* \email: sandesh.uppor@inria.fr
+* \note
+* \warning
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
 #include "trace.h"
 #include "omg.h"
+
 
 
 int start_trace_generator(omg_global_param omg_param_list) {
@@ -23,11 +58,16 @@ int start_trace_generator(omg_global_param omg_param_list) {
   // MobilityPtr mobility = NULL;
 
   //read the mobility file here
+  //table=read_mobility_file(omg_param_list.mobility_file); // JHNOTE: in order to debug, please give and change name here...
+
+
+  //table=read_mobility_file("/home/training/OpenAir4G/openair4G/trunk/openair2/UTIL/OMG/mobility.txt"); // need a parameter here to pass mobility file
 
   //char* file_name = "mobility.txt";
   table=read_mobility_file(omg_param_list.mobility_file); // JHNOTE: in order to debug, please give and change name here...
 
   //table=read_mobility_file(omg_param_list.mobility_file); // need a parameter here to pass mobility file
+
   sort_veh_movement(table);
 
   if (omg_param_list.nodes <= 0){
