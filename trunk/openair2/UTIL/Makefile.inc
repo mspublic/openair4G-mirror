@@ -37,6 +37,11 @@ OMG_OBJS +=  $(OMG_DIR)/rwalk.o
 OMG_OBJS +=  $(OMG_DIR)/hashtable.o
 OMG_OBJS +=  $(OMG_DIR)/mobility_parser.o
 OMG_OBJS +=  $(OMG_DIR)/trace.o
+OMG_OBJS +=  $(OMG_DIR)/sumo.o
+OMG_OBJS +=  $(OMG_DIR)/id_manager.o
+OMG_OBJS +=  $(OMG_DIR)/client_traci_OMG.o
+OMG_OBJS +=  $(OMG_DIR)/storage_traci_OMG.o
+OMG_OBJS +=  $(OMG_DIR)/socket_traci_OMG.o
 
 OTG_OBJS =  $(OTG_DIR)/otg_tx.o
 OTG_OBJS +=  $(OTG_DIR)/otg_rx.o
