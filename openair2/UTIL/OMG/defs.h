@@ -39,6 +39,11 @@
 
 // TYPEDEFS 
 
+#define true 1
+#define false 0
+
+typedef char bool;
+
 /*!A sructure that includes all the characteristic mobility elements of a node  */
 typedef struct mobility_struct {
 	double X_from; /*!< The X coordinate of the previous location of the node */
@@ -109,8 +114,23 @@ typedef struct omg_global_param{
 	int mobility_type; /*!< The chosen mobility model for the nodes in question. It should be one of the types inumarated as #mobility_types*/
 	int nodes_type; /*!< The type of the nodes in question. It should be one of the types inumarated as #node_types */
   	int seed; /*!< The seed used to generate the random positions*/
-	char* mobility_file; /*!< The mobility file name */
+	char* mobility_file; /*!< The mobility file name containing the mobility traces used by the TRACE model */
+        char* sumo_command; /*!< The command to start SUMO; Either 'sumo' or 'sumo-gui' in case a GUI would be required; see SUMO for further details */
+        char* sumo_config; /*!< The configuration file for SUMO; it must be a '.cfg' file located in ./SUMO/Scenarios folder */
+	int sumo_start; /*!< The time at which SUMO should start; Default: 0s */
+        int sumo_end; /*!< The time at which SUMO should stop; It shold be greater or equal to OAI */
+        int sumo_step; /*!< The simulation step of SUMO, in ms. it is 1000ms by default (i.e. SUMO updates its mobility every second) */
+        char* sumo_host; /*!< The IP host address where SUMO will be run. */
+        int sumo_port; /*!< The port number attached to SUMO on the host */
 }omg_global_param; 
+
+/*!A string List structure */
+struct string_list_struct {
+	char* string;  /*! a string */
+	struct string_list_struct *next; /*!< A pointer to the next string in the list */
+}string_list_struct;
+
+typedef struct string_list_struct* String_list; /*!< The typedef that reflects a #string_list_struct*/
 
 /* PROTOTYPES */
 
@@ -142,6 +162,7 @@ NodePtr get_node_position(int node_type, int nID);
  */
 Node_list add_entry(NodePtr node, Node_list Node_Vector);
 
+
 /**
  * \fn void display_node_list(Node_list Node_Vector)
  * \brief Display the useful informaion about the specified Node_list (for instance the nodes IDs, their types (UE, eNB, etc.), their corresponding mobility models, their status (moving, sleeping) and  their current positions)
@@ -160,6 +181,45 @@ void display_node_list(Node_list Node_Vector);
  */
 Node_list remove_node(Node_list list, int nID, int node_type);
 
+/**
+ * \fn NodePtr find_node(Node_list list, int nID, int node_type)
+ * \brief Returns the OAI node of ID nID and type node_type; 
+ * \param list a pointer of type Node_list that represents the Node_Vector from which the element is to be located
+ * \param nID an int that represents the ID of the node to be located
+ * \param node_type an int that represents the type of the node to be located in the Node_list
+ * \return a pointer to the Node
+ */
+NodePtr find_node(Node_list list, int nID, int node_type);
+
+/**
+ * \fn void delete_entry(Node_list Node_Vector)
+ * \brief Delete a Node_list entry node; calls delete_node to subsequently delete the node; free the memory
+ * \param list a pointer of type Node_list that represents the entry to be deleted
+ */
+void delete_entry(Node_list Node_Vector);
+
+/**
+ * \fn void delete_entry(NodePtr node)
+ * \brief Delete a node, and all subsequent data in its structure; free the memory
+ * \param node a pointer to the node that should be deleted
+ */
+void delete_node(NodePtr node);
+
+/**
+ * \fn void clear node_List(Node_list list)
+ * \brief Totally clears a Node_list and its substructure; free the memory
+ * \param list a pointer of type Node_list that represents the list to be cleared
+ * \return reference to the HEAD of the cleared Node_list
+ */
+Node_list clear_node_List(Node_list list);
+
+/**
+ * \fn void init_node_list(Node_list list)
+ * \brief reset a node list, put the reference to each node to NULL, but does not delete the node
+ * \param list a pointer of type Node_list that represents the list to be reset
+ * \return reference to the HEAD of the reset Node_list
+ */
+Node_list reset_node_list(Node_list list);
 
 /**
  * \fn void display_node_position(int ID, int generator, int type, int mobile, double X, double Y)
@@ -257,10 +317,27 @@ Job_list quick_sort (Job_list list);
  */
 Job_list remove_job(Job_list list, int nID, int node_type);
 
+/**
+ * \fn int length(char* s)
+ * \brief Helper function to return the length of a string
+ * \param s the string, of which we will return the length
+ * \return the length of the string c
+ */
+int length(char* s);
+
+/**
+ * \fn void reset_String_list(String_list)
+ * \brief clears the String_list and free memory
+ * \param list the String_list to be cleared; 
+ * \return reference to the HEAD of the cleared String_list
+ */
+String_list clear_String_list(String_list list);
 
 /**
  * \fn void usage()
  * \brief Define the arguments that can be used in the STAND_ALONE method to launch the OMG generator (mainly for test and debug purpose)
   */
 void usage(void);
+
+
 #endif /*  __DEFS_H__ */

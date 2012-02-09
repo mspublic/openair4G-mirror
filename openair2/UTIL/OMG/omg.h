@@ -57,7 +57,7 @@ Given the great importance of mobility features in the world of wireless communi
 
 /** @defgroup _omg_ OMG: The mobility generator of OpenAirInterface
  *  @ingroup _omg
-OMG, or OpenAir Mobility Generation has born to add the mobility features to OpenAir given the increasing importance of VANETs in the world of wireless networks and the need for simulation to explore this area. OMG includes the most used mobility models, namely \b Random \b Walk and \b Random \b Way \b Point and is able to accept other mobility models. Thus, it is capable of abstracting the motion of vehicles or mobile nodes in different ways. And since it is also useful to model the fix nodes that can exist in the road to communicate with the mobile nodes, a \b STATIC model is also included in OMG. \n
+OMG, or OpenAir Mobility Generation has born to add the mobility features to OpenAir given the increasing importance of realistic mobility patterns in the world of wireless networks and the need for simulation to explore this area. OMG includes the most used mobility models, in three classes, namely: \b EMBEDDED \b TRACE \ FEDERATED. In the \b EMBEDDED class, random mobility is embedded in OMG. The most used random models have been implemneted, namely \b Random \b Walk , \b Random \b Way \b Point and \b Graph based mobility. The \b TRACE class is able to load into OMG and OAI trace-based mobility files. The \b FEDERATED class allows OMG to interface with an external mobility/traffic generator to obtain and change mobility patterns. The \b FEDERATED class currently support the federation with SUMO, Simulation of Urban Mobility, but could easily be extended to accept other simulator. Thus, it is capable of abstracting the motion of vehicles or mobile nodes in different ways. And since it is also useful to model the fix nodes that can exist in the road to communicate with the mobile nodes, a \b STATIC model is also included in OMG. \n
 OMG has a direct relation ship with the already existing \b OCG module (OpenAir Config Generation). Actually, this latter module is responsible of setting the emulation time to synchronize OMG, requesting OMG to start simulation scenario, update the nodes positions and many other features. (see section Specification) \n 
 */
 
@@ -94,6 +94,22 @@ Thanks to its simplicity of implementation, Random Walk is a widely used mobilit
 
  */
 
+/** @defgroup _trace_mob Trace-based Mobility Model
+ *  @ingroup _mob_models
+
+The trace-based mobility model allows a user to provide external mobility traces, eithe gathered from realistic monitoring, from an different simulator or specififed according to particular scenarios. The trace format follows that of <TIME> <ID> <X> <Y> <SPEED>, but new parser could easily be added. \n
+Node that this requires the user to specify in OCG the name of the trace file, which should be located user the ./TRACE folder. \n
+....................figure
+
+ */
+
+/** @defgroup _sumo_mob SUMO Mobility Model
+ *  @ingroup _mob_models
+
+When professional and close-to-realisty mobility patterns are required, in paticular considering pedestrian, public transportation or private vehicles in urban areas, the simulator SUMO is a popular choice. Accordingly, OMG interfaces itself with SUMO using the OMG TraCI interface and exchange commands and mobility informations via sockets. OMG holds a ID manager to map nodes ID from OAI and nodes ID from SUMO. When SUMO is used, OMG does not have any job related to mobility as it delegates it to SUMO.\n
+....................figure
+
+ */
 
 
 /** @defgroup _mob_models_in_openair Mobility Models in OpenAir

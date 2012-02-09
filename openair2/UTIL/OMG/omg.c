@@ -51,6 +51,7 @@
 #include "rwp.h"
 #include "rwalk.h"
 #include "trace.h"
+#include "sumo.h"
 
 //#define STANDALONE
 
@@ -79,6 +80,15 @@ void init_mobility_generator(omg_global_param omg_param_list) {
     Job_Vector = quick_sort (Job_Vector);
     LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
     display_job_list(Job_Vector);
+    break;   
+    
+  case RWALK: 
+    start_rwalk_generator(omg_param_list);
+    LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
+    display_job_list(Job_Vector);
+    Job_Vector = quick_sort (Job_Vector);
+    LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
+    display_job_list(Job_Vector);
     break;
 
   case TRACE:
@@ -88,16 +98,12 @@ void init_mobility_generator(omg_global_param omg_param_list) {
       Job_Vector = quick_sort (Job_Vector);
       LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n");
       display_job_list(Job_Vector);
-      break;    
-    
-  case RWALK: 
-    start_rwalk_generator(omg_param_list);
-    LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
-    display_job_list(Job_Vector);
-    Job_Vector = quick_sort (Job_Vector);
-    LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
-    display_job_list(Job_Vector);
-    
+      LOG_D(OMG," --------OMG will load static mobility traces from user specified file-------- \n");
+      break; 
+
+  case SUMO: 
+    start_sumo_generator(omg_param_list);
+    LOG_D(OMG," --------OMG will interface with SUMO for mobility generation-------- \n");
     break;
   
   default:
@@ -124,15 +130,18 @@ void update_node_vector(int mobility_type, double cur_time){
   case RWP:
     update_rwp_nodes(cur_time);
     break;
-  case TRACE:
-      update_trace_nodes(cur_time);
-      break;     
   case RWALK:
     update_rwalk_nodes(cur_time);
     break;
-    
+  case TRACE:
+    update_trace_nodes(cur_time);
+    break;     
+  case SUMO:  
+    update_sumo_nodes(cur_time);
+    break;
+
   default:
-    LOG_N(OMG, "Static or Unsupported generator %d \n", omg_param_list.mobility_type);
+    LOG_N(OMG, "STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
   }
 }
 
@@ -140,22 +149,27 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
   Node_list Vector = NULL;
   if (Node_Vector[mobility_type] != NULL){
     switch (mobility_type) {
-    case RWP:
+   case STATIC:
+      LOG_D(OMG,"get_static_positions\n");
+      Vector = (Node_list)Node_Vector[STATIC];
+      break; 
+   case RWP:
       get_rwp_positions_updated(cur_time);
       Vector = Node_Vector[RWP];
+      break;
+    case RWALK:
+      get_rwalk_positions_updated(cur_time);
+      Vector = Node_Vector[RWALK];
       break;
     case TRACE:
       get_trace_positions_updated(cur_time);
       Vector = Node_Vector[TRACE];
       break;   
-    case STATIC:
-      LOG_D(OMG,"get_static_positions\n");
-      Vector = (Node_list)Node_Vector[STATIC];
-    break;
-    case RWALK:
-      get_rwalk_positions_updated(cur_time);
-      Vector = Node_Vector[RWALK];
-    break;
+    case SUMO:
+      LOG_D(OMG,"getting positions from SUMO\n");
+      get_sumo_positions_updated(cur_time);
+      Vector = Node_Vector[SUMO];
+      break;
     
     default:
       Vector = NULL;
@@ -175,25 +189,27 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
 
 // get the position for a specific node 
 NodePtr get_node_position(int node_type, int nID){
- int found = 0;  //not found
- int i=0;
- while ((i<MAX_NUM_MOB_TYPES) && (found == 0)){ 
+  int found = 0;  //not found
+  int i=0;
+  while ((i<MAX_NUM_MOB_TYPES) && (found == 0)){ 
      	if (Node_Vector[i] != NULL){
-        Node_list tmp = Node_Vector[i];
-        while ((tmp != NULL) && (found == 0)){
-  	     	   if ((tmp->node->ID == nID) && (tmp->node->type == node_type)) {
-             LOG_T(OMG, "found a node vector %d node id %d with type %d\n",i, tmp->node->ID, tmp->node->type);	
-			    found = 1;   //found
-				 display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
-				 return tmp->node;
+          Node_list tmp = Node_Vector[i];
+          while ((tmp != NULL) && (found == 0)){
+  	    if ((tmp->node->ID == nID) && (tmp->node->type == node_type)) {
+              LOG_T(OMG, "found a node vector %d node id %d with type %d\n",i, tmp->node->ID, tmp->node->type);	
+	      found = 1;   //found
+	      display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+	      return tmp->node;
+            }
+	  tmp = tmp->next;
           }
-			  tmp = tmp->next;
        }
-     }
-     i++;
-}
-if (found == 0 ){LOG_N(OMG, "Node does not exist\n");}
-    return NULL;
+       i++;
+  }
+  if (found == 0 ){
+    LOG_N(OMG, "Node does not exist\n");
+  }
+  return NULL;
 }
 
 /*NodePtr get_node_position(int mobility_type, int node_type, int nID){
@@ -245,213 +261,103 @@ void set_new_mob_type(int nID, int node_type, int new_mob, double cur_time){
   int old_mob = err;
   int found = 0;  //not found
   while ((i<MAX_NUM_MOB_TYPES) && (found == 0)){ 
-      if (Node_Vector[i] != NULL){
+     if (Node_Vector[i] != NULL){
         Node_list tmp = Node_Vector[i];
         while ((tmp != NULL) && (found == 0)){
-  	       if ((tmp->node->ID == nID) && (tmp->node->type == node_type)) {
+  	  if ((tmp->node->ID == nID) && (tmp->node->type == node_type)) {
              found = 1;   //found
-  				 old_mob = i;
-      		 LOG_D( OMG,"old mob %d\n", old_mob );  //LOG_N
-				 if (old_mob == new_mob){
-   				 LOG_D(OMG, "Nothing to change (%d == %d)\n",old_mob, new_mob);
-   			    return;
-  				 }
-				 else {
+  	     old_mob = i;
+      	    LOG_D( OMG,"old mob %d\n", old_mob );  //LOG_N
+	    if (old_mob == new_mob){
+              LOG_D(OMG, "Nothing to change (%d == %d)\n",old_mob, new_mob);
+   	      return;
+  	    }
+	    else {
                LOG_D(OMG,"Node_Vector[%d] != NULL\n", old_mob);
-   				//int done = 1;
+   	       //int done = 1;
                //Node_list Vector = Node_Vector[old_mob];
                //NodePtr nd = NULL;
-					NodePtr nd =  tmp->node;
-		 			if (new_mob == STATIC) { //OKEY            // remove from Job_Vector
-          			LOG_D(OMG, "new_mob == STATIC\n");
-	       			nd->mobile = 0;
-	       			nd->mob->speed = 0.0;
+	       NodePtr nd =  tmp->node;
+	       if (new_mob == STATIC) { //OKEY            // remove from Job_Vector
+          	 LOG_D(OMG, "new_mob == STATIC\n");
+	       	 nd->mobile = 0;
+	       	 nd->mob->speed = 0.0;
 
-	       			nd->mob->X_from = nd->X_pos;
-	       			nd->mob->Y_from = nd->Y_pos;
-			 			nd->mob->X_to = nd->X_pos;
-	       			nd->mob->Y_to = nd->Y_pos;
-	       			//nd->X_pos = nd->mob->X_to;
-	       			//nd->Y_pos = nd->mob->Y_to;
-		   			 LOG_D(OMG, "Before remove");
-		   			 display_job_list( Job_Vector);
+  		 nd->mob->X_from = nd->X_pos;
+	       	 nd->mob->Y_from = nd->Y_pos;
+		 nd->mob->X_to = nd->X_pos;
+	         nd->mob->Y_to = nd->Y_pos;
+	       	 //nd->X_pos = nd->mob->X_to;
+	       	 //nd->Y_pos = nd->mob->Y_to;
+		 LOG_D(OMG, "Before remove");
+		 display_job_list( Job_Vector);
 
-			 			if (Job_Vector != NULL){
-		      		  Job_Vector = remove_job(Job_Vector, nID, node_type);  //nd->ID
-		    			  //LOG_D(OMG, "After remove\n");
-	        			  Job_Vector_len--;
-            		  LOG_D(OMG, "After remove\n");
-		      		  display_job_list( Job_Vector);
-          		  }
-			 		  else {
-			 		    LOG_E(OMG, "ERROR, Job_Vector == NULL while there are mobile nodes");
-          		  }		
-		    
-	           }
+		 if (Job_Vector != NULL){
+		   Job_Vector = remove_job(Job_Vector, nID, node_type);  //nd->ID
+		   //LOG_D(OMG, "After remove\n");
+	           Job_Vector_len--;
+                   LOG_D(OMG, "After remove\n");
+		   display_job_list( Job_Vector);
+                 }
+		 else {
+		   LOG_E(OMG, "ERROR, Job_Vector == NULL while there are mobile nodes");
+          	 }		  
+	       } 
 	    
-	    		Node_Vector[old_mob] = remove_node(Node_Vector[old_mob], nID, node_type);
-		 		Node_Vector_len[old_mob]--;
-	    		nd->ID = nID; //Node_Vector_len[new_mob]; 
-				LOG_D(OMG, "Node_Vector_len[new_mob]  %d\n", Node_Vector_len[new_mob]);
-				LOG_D(OMG, "nd->ID  %d\n", nd->ID);
-      		nd->generator = new_mob;    // ---> it is changed in Job_Vector if new_mob is RWP or RWALK
+	       Node_Vector[old_mob] = remove_node(Node_Vector[old_mob], nID, node_type);
+	       Node_Vector_len[old_mob]--;
+	       nd->ID = nID; //Node_Vector_len[new_mob]; 
+	       LOG_D(OMG, "Node_Vector_len[new_mob]  %d\n", Node_Vector_len[new_mob]);
+	       LOG_D(OMG, "nd->ID  %d\n", nd->ID);
+      	       nd->generator = new_mob;    // ---> it is changed in Job_Vector if new_mob is RWP or RWALK
 
-	    		Node_Vector[new_mob] = add_entry(nd, Node_Vector[new_mob]);
-		 		Node_Vector_len[new_mob]++;
+	       Node_Vector[new_mob] = add_entry(nd, Node_Vector[new_mob]);
+	       Node_Vector_len[new_mob]++;
 
-				if (old_mob == STATIC){		//OKEY  	  // add to Job_Vector , start by sleeping
-		  			LOG_D(OMG, "old_mob == STATIC\n");
+	       if (old_mob == STATIC){		// add to Job_Vector , start by sleeping
+	         LOG_D(OMG, "old_mob == STATIC\n");
 		 
-         		if(Job_Vector == NULL){
-			 		  LOG_D(OMG, "Job_Vector == NULL\n");
-			  		  first_Job_time = cur_time; 
-		  			}
-              else {
-					  LOG_D(OMG, "Job_Vector != NULL\n");
-			        first_Job_time = Job_Vector->pair->a;
-		        }
+                 if(Job_Vector == NULL){
+		   LOG_D(OMG, "Job_Vector == NULL\n");
+		   first_Job_time = cur_time; 
+	         }
+                 else {
+		   LOG_D(OMG, "Job_Vector != NULL\n");
+		   first_Job_time = Job_Vector->pair->a;
+	         }
 
-        		  LOG_D(OMG, "-------------------------------------------------------------	first_Job_time %f\n", first_Job_time);
- 		        Pair pair = malloc(sizeof(Pair)) ;
+                 LOG_D(OMG, "-------------------------------------------------------------	first_Job_time %f\n", first_Job_time);
+ 	         Pair pair = malloc(sizeof(Pair)) ;
 
-		        nd->mob->sleep_duration = (double) ((int) (randomGen(omg_param_list.min_sleep, omg_param_list.max_sleep)*100))/ 100;
-		        LOG_D(OMG, "node: %d \tsleep duration : %.2f\n",nd->ID, nd->mob->sleep_duration);
-	 	        pair->a = first_Job_time + 1 + nd->mob->sleep_duration; //when to wake up    ????
-	           LOG_D(OMG, "to wake up at time: cur_time + sleep_duration : %.2f\n", pair->a);
+	         nd->mob->sleep_duration = (double) ((int) (randomGen(omg_param_list.min_sleep, omg_param_list.max_sleep)*100))/ 100;
+	         LOG_D(OMG, "node: %d \tsleep duration : %.2f\n",nd->ID, nd->mob->sleep_duration);
+	         pair->a = first_Job_time + 1 + nd->mob->sleep_duration; //when to wake up    ????
+	         LOG_D(OMG, "to wake up at time: cur_time + sleep_duration : %.2f\n", pair->a);
 
-		        pair->b = nd;
-              Job_Vector = add_job(pair, Job_Vector);
-			     Job_Vector_len++;
-		     }
-		     LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
-			  display_job_list(Job_Vector);
-			  Job_Vector = quick_sort (Job_Vector);
-			  LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
-		 	  display_job_list(Job_Vector);
+	         pair->b = nd;
+                 Job_Vector = add_job(pair, Job_Vector);
+	         Job_Vector_len++;
+	       }
+               LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
+	       display_job_list(Job_Vector);
+	       Job_Vector = quick_sort (Job_Vector);
+	       LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
+	       display_job_list(Job_Vector);
 
 				
-   		  LOG_D(OMG, "--------display Node_Vector[new_mob]--------\n");
-    	     display_node_list(Node_Vector[new_mob]);
-    	     LOG_D(OMG, "--------display Node_Vector[old_mob]--------\n");
-    	     display_node_list(Node_Vector[old_mob]);
-           return;
-          }
-			 }
+   	       LOG_D(OMG, "--------display Node_Vector[new_mob]--------\n");
+    	       display_node_list(Node_Vector[new_mob]);
+    	       LOG_D(OMG, "--------display Node_Vector[old_mob]--------\n");
+    	       display_node_list(Node_Vector[old_mob]);
+               return;
+            }
+	}
         tmp = tmp->next;
        } 
      }
    i++;
   }
 }
-
- /*if (old_mob == err){
-      LOG_N( OMG,"Node (ID= %d,type= %d) does not exist\n", nID, node_type );  //LOG_N
- }
- else{
-  if (old_mob == new_mob){
-    LOG_N(OMG, "Nothing to change (%d == %d)\n",old_mob, new_mob);
-    return;
-  }
-  //LOG_D(OMG,"old_mob %d\n",old_mob);
-  //if (Node_Vector[old_mob] != NULL){
-  
-    LOG_D(OMG,"Node_Vector[%d] != NULL\n", old_mob);
-    int done = 1;
-    Node_list Vector = Node_Vector[old_mob];
-    NodePtr nd = NULL;
-    while (Vector != NULL){
-      if ((Vector->node->ID == nID) && (Vector->node->type == node_type)){
-        //LOG_D(OMG, "Vector->node->ID == nID && Vector->node->type == node_type\n");
-       done =0;  //found
-		 nd =  Vector->node;
-		 if (new_mob == STATIC) { //OKEY            // remove from Job_Vector
-          LOG_D(OMG, "new_mob == STATIC\n");
-	       nd->mobile = 0;
-	       nd->mob->speed = 0.0;
-	       nd->mob->X_from = nd->X_pos;
-	       nd->mob->Y_from = nd->Y_pos;
-			 nd->mob->X_to = nd->X_pos;
-	       nd->mob->Y_to = nd->Y_pos;
-	       //nd->X_pos = nd->mob->X_to;
-	       //nd->Y_pos = nd->mob->Y_to;
-		    LOG_D(OMG, "Before remove");
-		    display_job_list( Job_Vector);
-
-			 if (Job_Vector != NULL){
-		      Job_Vector = remove_job(Job_Vector, nID, node_type);  //nd->ID
-		    //LOG_D(OMG, "After remove\n");
-	         Job_Vector_len--;
-            LOG_D(OMG, "After remove\n");
-		      display_job_list( Job_Vector);
-          }
-			 else {
-			  LOG_E(OMG, "ERROR, Job_Vector == NULL while there are mobile nodes");
-          }
-		    
-	    }
-	    
-	    Node_Vector[old_mob] = remove_node(Node_Vector[old_mob], nID, node_type);
-		 Node_Vector_len[old_mob]--;
-	    nd->ID = nID; //Node_Vector_len[new_mob]; 
-		 LOG_D(OMG, "Node_Vector_len[new_mob]  %d\n", Node_Vector_len[new_mob]);
-		 LOG_D(OMG, "nd->ID  %d\n", nd->ID);
-       nd->generator = new_mob;    // ---> it is changed in Job_Vector if new_mob is RWP or RWALK
-
-	    Node_Vector[new_mob] = add_entry(nd, Node_Vector[new_mob]);
-		 Node_Vector_len[new_mob]++;
-
-       
-
-		if (old_mob == STATIC){		//OKEY  	  // add to Job_Vector , start by sleeping
-		  LOG_D(OMG, "old_mob == STATIC\n");
-		 
-         if(Job_Vector == NULL){
-			  LOG_D(OMG, "Job_Vector == NULL\n");
-			  first_Job_time = cur_time; 
-		  }
-          else {
-			LOG_D(OMG, "Job_Vector != NULL\n");
-			 first_Job_time = Job_Vector->pair->a;
-		  }
-
-        LOG_D(OMG, "-------------------------------------------------------------	first_Job_time %f\n", first_Job_time);
- 		  Pair pair = malloc(sizeof(Pair)) ;
-
-		  nd->mob->sleep_duration = (double) ((int) (randomGen(omg_param_list.min_sleep, omg_param_list.max_sleep)*100))/ 100;
-		  LOG_D(OMG, "node: %d \tsleep duration : %.2f\n",nd->ID, nd->mob->sleep_duration);
-	 	  pair->a = first_Job_time + 1 + nd->mob->sleep_duration; //when to wake up    ????
-	      LOG_D(OMG, "to wake up at time: cur_time + sleep_duration : %.2f\n", pair->a);
-
-		  pair->b = nd;
-          Job_Vector = add_job(pair, Job_Vector);
-			 Job_Vector_len++;
-		}
-		LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
-		display_job_list(Job_Vector);
-		Job_Vector = quick_sort (Job_Vector);
-		LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
-		display_job_list(Job_Vector);
-
-				
-   	LOG_I(OMG, "--------display Node_Vector[new_mob]--------\n");
-    	display_node_list(Node_Vector[new_mob]);
-    	LOG_I(OMG, "--------display Node_Vector[old_mob]--------\n");
-    	display_node_list(Node_Vector[old_mob]);
-
-	  return;
-      }
-      Vector = Vector->next;
-    }
-    if (done != 0 ){
-      LOG_E( OMG,"Node (ID= %d,type= %d, generator= %d) does not exist\n", nID, node_type, old_mob );  //LOG_N
-    }
-  
-  //else {
-   // LOG_E( OMG,"No node of mobility model %d is available  \n",  old_mob); //LOG_N
- // }
-}
-}
-}*/
 
 /*// openair emu will set this valut as a function of frame number
 void set_time(double time) {

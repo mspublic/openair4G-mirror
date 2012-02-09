@@ -1,9 +1,42 @@
-/*
- * mobility_parser.c
- *
- *  Created on: Aug 10, 2011
- *      Author: suppoor
- */
+/*******************************************************************************
+
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file mobility_parser.c
+* \brief A parser for trace-based mobility information (parsed from a file)
+* \author  S. Uppoor
+* \date 2011
+* \version 0.1
+* \company INRIA
+* \email: sandesh.uppor@inria.fr
+* \note
+* \warning
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -18,12 +51,12 @@ struct Exnode* gen_list(){
 }
 
 //read the mobility file and generates a hashtable of linked list with key pointing to vehicle id
-hash_table_t* read_mobility_file(char mobility_file[]){
+hash_table_t* read_mobility_file(char* mobility_file[]){
 		FILE *fp;
 	    char str[128];
 	    hash_table_t *table = hash_table_new(MODE_ALLREF);
 	    if((fp=fopen(mobility_file, "r"))==NULL) {
-	      printf("Cannot open file. %s\n",mobility_file);
+	      printf("Cannot open file %s\n", mobility_file);
 	      exit(1);
 	    }
 	    Exnode* headRef;
@@ -32,6 +65,7 @@ hash_table_t* read_mobility_file(char mobility_file[]){
 	    head_node_info=Node_info;
 	    int *keyholder[10];
 	    int i=0;
+	    
 	    while(!feof(fp)) {
 	      if(fgets(str, 126, fp)) { // happy go for small mobility file :-)
 	    	  char * pch;
@@ -68,21 +102,24 @@ hash_table_t* read_mobility_file(char mobility_file[]){
 
 	      	  }
 	      	  node->next=NULL;
-
+		  printf("start UE Trace-driven Mobility - Reading File an getting node %d...\n", node->vid);
 	      	  //check in the hash table if the key exist node->vid if exist ? initialize headRef
 	      	  int *value = NULL;
-	      	  value = (int *)HT_LOOKUP(table, &node->vid);
+	      	  value = (int *)HT_LOOKUP(table, &(node->vid));
 	      	  if (value==NULL){
 	      		if (Node_info==NULL){
 	      			Node_info=build_node_info(Node_info,node->vid,&(node->vid));
 	      			head_node_info=Node_info;
+	      			printf("head_node_info %d\n",head_node_info->vid);
+
 	      		}
 	      		else{
 	      			build_node_info(Node_info,node->vid,&(node->vid));
+
 	      		}
 	      		keyholder[i]=&node->vid;i++;
 	      		//printf("Before to hash %p %d %lf\n",node,(node->vid),(node->time));
-	      		hash_table_add(table, &(node->vid), sizeof(node->vid), node, sizeof(&node));
+	      		hash_table_add(table, &(node->vid), sizeof(node->vid), node, sizeof(node));
 	      		//puts("NO node doesnt exist");
 	      		headRef=gen_list();
 
@@ -90,6 +127,7 @@ hash_table_t* read_mobility_file(char mobility_file[]){
 	      	  else{
 	      		 //puts("Yes node exist");
 	      		 headRef = (Exnode *)value;
+	      		 printf("value returned %f\n",headRef->time);
 	      		 //printf("After from hash %p %d\n",headRef, headRef->vid );
 
 	      	  }
@@ -101,6 +139,7 @@ hash_table_t* read_mobility_file(char mobility_file[]){
 	    }
 
 	    fclose(fp);
+
 	    return table;
 }
 
@@ -330,26 +369,26 @@ int main(){
 	Exnode* next_loc=NULL;
 	hash_table_t *table=read_mobility_file();
 	sort_veh_movement(table);
-	printf("count--> %d \n",get_num_nodes());
+	printf("Number of nodes --> %d \n",get_num_nodes());
 	next_loc=get_next_position(table,22);
-	printf("node details\n %lf %lf %lf %lf %d\n",next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	//next_loc=NULL;
 	next_loc=get_next_position(table,22);
-	printf("node details\n %lf %lf %lf %lf %d\n",next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	//next_loc=NULL;
 	next_loc=get_next_position(table,22);
 	if (next_loc!=NULL){
-	printf("node details\n %lf %lf %lf %lf %d\n",next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	//next_loc=NULL;
 	}next_loc=get_next_position(table,11);
-	printf("node details\n %lf %lf %lf %lf %d\n",next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	next_loc=get_next_position(table,11);
 	//if (next_loc!=NULL){
-	printf("node details\n %lf %lf %lf %lf %d\n",next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	next_loc=get_next_position(table,11);
-	printf("node details\n %lf %lf %lf %lf %d\n",next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	next_loc=get_next_position(table,11);
-	printf("node details\n %lf %lf %lf %lf %d\n",next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	reset_visit_status(table,20.0,11);
 	node_info* head_node=head_node_info;
 
