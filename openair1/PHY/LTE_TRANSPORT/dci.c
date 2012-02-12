@@ -1860,7 +1860,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   }
 
   // Scrambling
-  
+  //  printf("pdcch scrambling\n");
   pdcch_scrambling(frame_parms,
 		   subframe,
 		   e,
