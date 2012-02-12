@@ -33,6 +33,7 @@ ________________________________________________________________*/
 #include "RRCConnectionSetup.h"
 #include "RRCConnectionSetupComplete.h"
 #include "RRCConnectionRequest.h"
+#include "BCCH-DL-SCH-Message.h"
 
 //#include "L3_rrc_defs.h"
 #ifndef NO_RRM
@@ -163,12 +164,15 @@ typedef struct{
   u8 sizeof_SIB1;
   u8 *SIB23;
   u8 sizeof_SIB23;
-  SystemInformationBlockType1_t sib1;
-  SystemInformation_t systemInformation;
+  BCCH_DL_SCH_Message_t siblock1;
+  BCCH_DL_SCH_Message_t systemInformation;
+  SystemInformationBlockType1_t *sib1;
   SystemInformationBlockType2_t *sib2;
   SystemInformationBlockType3_t *sib3;
+#ifdef Rel10
   SystemInformationBlockType13_r9_t *sib13;
   u8 MBMS_flag;
+#endif
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_eNB];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_eNB];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_eNB][8];
@@ -203,7 +207,10 @@ typedef struct{
   SystemInformationBlockType9_t *sib9[NB_CNX_UE];
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
+#ifdef Rel10
+  SystemInformationBlockType12_r9_t *sib12[NB_CNX_UE];
   SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
+#endif
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
@@ -220,7 +227,7 @@ void openair_rrc_top_init(void);
 char openair_rrc_eNB_init(u8 Mod_id);
 char openair_rrc_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
-void openair_rrc_on(u8 Mod_id);
+void openair_rrc_on(u8 Mod_id,u8 eNB_flag);
 
 /** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
 @param Mod_id Instance of UE/eNB
@@ -335,7 +342,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 s8 mac_rrc_lite_data_req( u8 Mod_id, u32 frame, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
 s8 mac_rrc_lite_data_ind( u8 Mod_id,  u32 frame, unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
 void mac_sync_ind( u8 Mod_id, u8 status);
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u32 Rb_id, u32 sdu_size,u8 *Buffer);
+void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 void rrc_lite_out_of_sync_ind(u8 Mod_id, u32 frame, unsigned short eNB_index);
 
 //MESSAGES/asn1_msg.c
@@ -347,6 +354,7 @@ void rrc_lite_out_of_sync_ind(u8 Mod_id, u32 frame, unsigned short eNB_index);
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
+		BCCH_DL_SCH_Message_t *bcch_message,
 		SystemInformationBlockType1_t *sib1);
 /** 
 \brief Generate a default configuration for SIB2/SIB3 in one System Information PDU (eNB).
@@ -360,9 +368,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
 		 uint8_t *buffer,  
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
-		 SystemInformationBlockType3_t **sib3,
+		 SystemInformationBlockType3_t **sib3
+#ifdef Rel10
+		 ,
                  SystemInformationBlockType13_r9_t **sib13,
-		 uint8_t MBMS_flag);
+		 uint8_t MBMS_flag
+#endif
+);
 
 /** 
 \brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This 
@@ -389,6 +401,7 @@ PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting 
 @param transmission_mode Transmission mode for UE (1-9)
 @param UE_id UE index for this message
 @param Transaction_id Transaction_ID for this message
+@param frame_parms Pointer to DL Frame Configuration parameters for physicalConfigDedicated
 @param SRB1_config Pointer (returned) to SRB1_config IE for this UE
 @param physicalConfigDedicated Pointer (returned) to PhysicalConfigDedicated IE for this UE
 @returns Size of encoded bit stream in bytes*/
@@ -396,6 +409,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t transmission_mode,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
+			      LTE_DL_FRAME_PARMS *frame_parms,
 			      struct SRB_ToAddMod **SRB1_config,
 			      struct SRB_ToAddMod **SRB2_config,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated);

@@ -183,6 +183,9 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
     //msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
 
     if(Srb_id == BCCH){
+
+      decode_BCCH_DLSCH_Message(Mod_id,frame,eNB_index,Sdu,Sdu_len);
+      /*
       if ((frame %2) == 0) {
 	if (UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 0) {
 	  LOG_D(RRC,"[UE %d] Frame %d : Received SIB1 from eNB %d (%d bytes)\n",Mod_id,frame,eNB_index,Sdu_len);
@@ -207,9 +210,11 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	    LOG_D(RRC,"[UE %d] Frame %d :Decoded SI successfully\n",Mod_id,frame);
 	    UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
 	  }
+	  }
 
-	}
-      }
+
+    
+	  }
 
 
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
@@ -218,16 +223,15 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	  LOG_I(RRC,"[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
 	  UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_SI_RECEIVED;
 	}
-	// After SI is received, prepare RRCConnectionRequest
-	rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
       }
+      */
     }
 
 
     if((Srb_id & RAB_OFFSET) == CCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[eNB_index];
 
-      //      msg("[RRC] RX_CCeNB_DATA %d bytes: ",Sdu_len);
+      
       if (Sdu_len>0) {
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
 	Srb_info->Rx_buffer.payload_size = Sdu_len;
@@ -253,7 +257,7 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 }
 
 //------------------------------------------------------------------------------------------------------------------//
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u32 Srb_id, u32 sdu_size,u8 *Buffer){
+void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
@@ -261,7 +265,7 @@ void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u32 Srb_id, u32 sdu_size,u8 *Bu
 
   LOG_D(RRC,"RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
       DCCH_index,UE_index,sdu_size);
-  if(Mac_rlc_xface->Is_cluster_head[Mod_id]==1)
+  if (eNB_flag ==1)
     rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
     rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,frame,DCCH_index,Buffer,UE_index);
@@ -292,7 +296,7 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 
   if(UE_rrc_inst[Mod_id].Srb2[eNB_index].Active==1){
     msg("[RRC Inst %d] eNB_index %d, Remove RB %d\n ",Mod_id,eNB_index,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
-    Mac_rlc_xface->rrc_rlc_config_req(Mod_id+NB_eNB_INST,ACTION_REMOVE,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
+    rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
     UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
     UE_rrc_inst[Mod_id].Srb2[eNB_index].Status=IDLE;
     UE_rrc_inst[Mod_id].Srb2[eNB_index].Next_check_frame=0;

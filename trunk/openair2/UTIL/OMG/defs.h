@@ -42,7 +42,8 @@
 #define true 1
 #define false 0
 
-typedef char bool;
+//typedef char bool;
+#include <stdbool.h>
 
 /*!A sructure that includes all the characteristic mobility elements of a node  */
 typedef struct mobility_struct {

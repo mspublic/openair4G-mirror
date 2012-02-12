@@ -396,6 +396,7 @@ rlc_am_mac_data_request (void *rlcP,u32 frame)
               data_req.data.nb_elements);
 
       tb = data_req.data.head;
+
       while (tb != NULL) {
           if ((((struct mac_tb_req *) (tb->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
               rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",

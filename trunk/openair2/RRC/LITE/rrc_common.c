@@ -20,7 +20,7 @@ extern UE_MAC_INST *UE_mac_inst;
 
 
 /*------------------------------------------------------------------------------*/
-void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and associated rrc_buffers,
+void openair_rrc_on(u8 Mod_id,u8 eNB_flag){//configure  BCCH & CCCH Logical Channels and associated rrc_buffers,
   //configure associated SRBs
   /*------------------------------------------------------------------------------*/
 
@@ -29,7 +29,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
   msg("OPENAIR RRC IN....\n");
 
 
-  if( Mac_rlc_xface->Is_cluster_head[Mod_id] == 1){
+  if( eNB_flag == 1){
 
 
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].SI,BCCH,1);

@@ -392,7 +392,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
                 break;
         }*/
 	  // msg("[RLC] RRC DATA IND\n");
-            rlc_rrc_data_ind(module_idP , frame, rb_idP , sdu_sizeP , sduP->data);
+            rlc_rrc_data_ind(module_idP , frame, eNB_flag, rb_idP , sdu_sizeP , sduP->data);
 	  //msg("[RLC] Freeing SDU\n");
             free_mem_block(sduP);
         }

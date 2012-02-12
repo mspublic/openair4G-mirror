@@ -54,11 +54,19 @@ struct LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
 
 
 // These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
-LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {&LCSRB1,
-								  &logicalChannelSR_Mask_r9};
+LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {&LCSRB1
+#ifdef Rel10
+								  ,
+								  &logicalChannelSR_Mask_r9
+#endif
+                                                                 };
 
-LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {&LCSRB2,
-								 &logicalChannelSR_Mask_r9};
+LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {&LCSRB2
+#ifdef Rel10
+								 ,
+								 &logicalChannelSR_Mask_r9
+#endif
+                                                                 };
 
 //CONSTANTS
 rlc_info_t Rlc_info_um,Rlc_info_am_config;

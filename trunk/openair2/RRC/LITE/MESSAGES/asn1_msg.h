@@ -22,6 +22,7 @@
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
+		BCCH_DL_SCH_Message_t *bcch_message,
 		SystemInformationBlockType1_t *sib1);
 
 /** 
@@ -39,9 +40,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
 		 uint8_t *buffer,
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
-		 SystemInformationBlockType3_t **sib3,
+		 SystemInformationBlockType3_t **sib3
+#ifdef Rel10
+		 ,
                  SystemInformationBlockType13_r9_t **sib13,
-		 uint8_t MBMS_flag);
+		 uint8_t MBMS_flag
+#endif
+);
 
 /** 
 \brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This 
@@ -76,6 +81,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t transmission_mode,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
+			      LTE_DL_FRAME_PARMS *frame_parms,
 			      struct SRB_ToAddMod **SRB1_config,
 			      struct SRB_ToAddMod **SRB2_config,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
