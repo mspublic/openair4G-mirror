@@ -477,17 +477,29 @@ int main (int argc, char **argv) {
     if (args.RRCmessage == RRCSIB1) {
       if (args.input1_sdu_flag == 1) {
 	for (i=0;i<args.input1_sdu_len;i++)
-	  printf("%x.",args.input1_sdu[i]);
+	  printf("%02x ",args.input1_sdu[i]);
 	printf("\n");
        	ue_decode_si(0,142,0,args.input1_sdu,args.input1_sdu_len);
+      }
+      else {
+	printf("\n\nSIB1\n\n");
+	for (i=0;i<eNB_rrc_inst[0].sizeof_SIB1;i++)
+	  printf("%02x ",eNB_rrc_inst[0].SIB1[i]);
+	printf("\n");
       }
     }
     else if (args.RRCmessage == RRCSIB2_3) {
       if (args.input1_sdu_flag == 1) {
 	for (i=0;i<args.input2_sdu_len;i++)
-	  printf("%x.",args.input2_sdu[i]);
+	  printf("%02x ",args.input2_sdu[i]);
 	printf("\n");
 	ue_decode_si(0,149,0,args.input1_sdu,args.input1_sdu_len);
+      }
+      else {
+	printf("\n\nSIB2_3\n\n");
+	for (i=0;i<eNB_rrc_inst[0].sizeof_SIB23;i++)
+	  printf("%02x ",eNB_rrc_inst[0].SIB23[i]);
+	printf("\n");
       }
     }
     else if ((args.input1_sdu_flag == 1)&&
@@ -515,8 +527,9 @@ int main (int argc, char **argv) {
 					       sdu0,        // contention res id
 					       0);
 	memcpy(&dlsch_buffer[payload_offset],sdu1,sdu_len1);
+	printf("\nRRCConnectionSetup (DLSCH input / MAC output)\n\n");
 	for (i=0;i<sdu_len1+payload_offset;i++)
-	  printf("%x.",(unsigned char)sdu1[i]);
+	  printf("%02x ",(unsigned char)sdu1[i]);
 	printf("\n");
 	
 	break;
@@ -538,17 +551,13 @@ int main (int argc, char **argv) {
 					       NULL,                                  // contention res idk
 					       0);  
 	memcpy(&dlsch_buffer[payload_offset],sdu3,sdu_len3);
+	printf("\nRRCConnectionReconfiguration (DLSCH input / MAC output)\n\n");
 	for (i=0;i<sdu_len3+payload_offset;i++)
-	  printf("%x.",(unsigned char)dlsch_buffer[i]);
+	  printf("%02x ",(unsigned char)dlsch_buffer[i]);
 	printf("\n");
 	
 	break;
-      case RRCSIB1:
-	printf("Doing eNB RRCSIB1\n");
-	break;
-      case RRCSIB2_3:
-	printf("Doing eNB RRCSIB2_3\n");
-	break;
+
       default:
 	printf("Unknown eNB_RRC SDU (%d), exiting\n",args.RRCmessage);
 	break;
@@ -564,15 +573,16 @@ int main (int argc, char **argv) {
     switch (args.RRCmessage) {
       
     case RRCConnectionRequest:
-      printf("Doing UE RRCConnectionRequest\n");
+
       sdu_len0 = attach_ue0(sdu0);
+      printf("\n\nRRCConnectionRequest\n\n");
       for (i=0;i<sdu_len0;i++)
-	printf("%x.",(unsigned char)sdu0[i]);
+	printf("%02x ",(unsigned char)sdu0[i]);
       printf("\n");
 
       break;
     case RRCConnectionSetupComplete:
-      printf("Doing UE RRCConnectionSetupComplete\n");
+
       sdu_len0=attach_ue0(sdu0);
       sdu_len1 = attach_ue1(sdu1);
       sdu_len2 = attach_ue2(sdu1,sdu_len1,sdu2);
@@ -592,12 +602,14 @@ int main (int argc, char **argv) {
 					     NULL); // long_bsr
       printf("Got MAC header of length %d\n",payload_offset);
       memcpy(&ulsch_buffer[payload_offset],sdu2,sdu_len2);
+
+      printf("\n\nRRCConnectionSetupComplete (ULSCH input / MAC output)\n\n");
       for (i=0;i<sdu_len2+payload_offset;i++)
-	printf("%x.",(unsigned char)ulsch_buffer[i]);
+	printf("%02x ",(unsigned char)ulsch_buffer[i]);
       printf("\n");
       break;
     case RRCConnectionReconfigurationComplete:
-      printf("Doing UE RRCConnectionReconfigurationComplete\n");
+
       sdu_len0=attach_ue0(sdu0);
       sdu_len1=attach_ue1(sdu1);
       sdu_len2 = attach_ue2(sdu1,sdu_len1,sdu2);
@@ -619,8 +631,9 @@ int main (int argc, char **argv) {
       printf("Got MAC header of length %d\n",payload_offset);
       memcpy(&ulsch_buffer[payload_offset],sdu4,sdu_len4);
 
+      printf("\n\nRRCConnectionReconfigurationComplete (ULSCH input / MAC output)\n\n");
       for (i=0;i<sdu_len4+payload_offset;i++)
-	printf("%x.",(unsigned char)ulsch_buffer[i]);
+	printf("%02x ",(unsigned char)ulsch_buffer[i]);
       printf("\n");
 
       break;
@@ -633,5 +646,6 @@ int main (int argc, char **argv) {
 
 
   free(mac_xface);
+
   return(0);
 }
