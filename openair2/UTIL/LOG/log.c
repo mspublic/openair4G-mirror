@@ -266,7 +266,7 @@ void logRecord( const char *file, const char *func,
   struct timespec time_spec;
   unsigned int time_now_ns;
   unsigned int time_now_s;
-  clock_gettime (CLOCK_REALTIME, &time_spec);
+//  clock_gettime (CLOCK_REALTIME, &time_spec);
   time_now_ns = (unsigned int) time_spec.tv_nsec;
   //time_now_s = (unsigned int) time_spec.tv_sec;
    //clock_t time_now = clock() / (CLOCKS_PER_SEC / 1000);// time in ms

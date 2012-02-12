@@ -125,7 +125,7 @@ int mac_top_init(){
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
 
-  LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
+  LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d\n",NB_INST);
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
@@ -148,9 +148,9 @@ int mac_top_init(){
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;//0: MR, 1: CH, 2: not CH neither MR
 #endif
 
-    Mac_rlc_xface->Node_id[Mod_id]=NODE_ID[Mod_id];
+    //    Mac_rlc_xface->Node_id[Mod_id]=NODE_ID[Mod_id];
   }
-  Mac_rlc_xface->frame=Mac_rlc_xface->frame;
+  //  Mac_rlc_xface->frame=Mac_rlc_xface->frame;
 
 
   if (Is_rrc_registered == 1){

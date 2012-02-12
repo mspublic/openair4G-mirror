@@ -147,7 +147,7 @@ typedef struct {
 
 
 
-protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , u32_t, rb_id_t , sdu_size_t , char* );)
+protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , u32_t, u8_t, rb_id_t , sdu_size_t , char* );)
 protected_rlc(void            (*rlc_rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t );)
 
 /*! \struct  rlc_pointer_t
@@ -244,12 +244,12 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, u8_t ,
 */
 public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 
-/*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
+/*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
 * \param[in]  rrc_data_indP       Pointer on RRC data indicate function.
 * \param[in]  rrc_data_confP      Pointer on RRC data confirm callback function.
 */
-public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , u32_t, rb_id_t , sdu_size_t , char*),
+public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , u32_t, u8_t, rb_id_t , sdu_size_t , char*),
                 void (*rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t) );)
 
 //-----------------------------------------------------------------------------

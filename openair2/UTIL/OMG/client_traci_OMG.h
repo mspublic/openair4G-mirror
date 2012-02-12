@@ -46,7 +46,7 @@
 
 #include "omg.h" 
 
-#include "TraCIConstants.h"
+//#include "TraCIConstants.h"
 #include "storage_traci_OMG.h"
 #include "socket_traci_OMG.h"
 

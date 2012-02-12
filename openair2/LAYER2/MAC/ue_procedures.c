@@ -104,27 +104,35 @@ unsigned char *parse_header(unsigned char *mac_header,
 			    unsigned char *num_sdu,
 			    unsigned char *rx_ces,
 			    unsigned char *rx_lcids,
-			    unsigned short *rx_lengths) {
+			    unsigned short *rx_lengths,
+			    unsigned short tb_length) {
 
   unsigned char not_done=1,num_ces=0,num_sdus=0,lcid;
   unsigned char *mac_header_ptr = mac_header;
-  unsigned short length;
+  unsigned short length,ce_len=0;
 
   while (not_done==1) {
 
-    if (((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E == 0)
+    if (((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E == 0) {
+      printf("E=0\n");
       not_done = 0;
-
+    }
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
     if (lcid < UE_CONT_RES) {
-
-      if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
-	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
-	mac_header_ptr += 2;
+      printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
+      if (not_done==0) {
+	mac_header_ptr++;
+	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
       }
       else {
-	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
-	mac_header_ptr += 3;
+	if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
+	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
+	  mac_header_ptr += 2;
+	}
+	else {
+	  length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
+	  mac_header_ptr += 3;
+	}
       }
 #ifdef DEBUG_HEADER_PARSING
       LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",num_sdus,lcid,length,mac_header_ptr-mac_header);
@@ -134,9 +142,18 @@ unsigned char *parse_header(unsigned char *mac_header,
       num_sdus++;
     }
     else {  // This is a control element subheader
-      rx_ces[num_ces] = lcid;
-      num_ces++;
-      mac_header_ptr ++;
+      if (lcid == SHORT_PADDING) {
+	mac_header_ptr++;
+      }
+      else {
+	rx_ces[num_ces] = lcid;
+	num_ces++;
+	mac_header_ptr ++;
+	if (lcid==TIMING_ADV_CMD)
+	  ce_len++;
+	else if (lcid==UE_CONT_RES)
+	  ce_len+=6;
+      }
 #ifdef DEBUG_HEADER_PARSING
       LOG_D(MAC,"[UE] ce %d lcid %d (offset now %d)\n",num_ces,lcid,mac_header_ptr-mac_header);
 #endif
@@ -210,15 +227,15 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
   }
 }
 
-void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
+void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
   unsigned short rx_lengths[MAX_NUM_RB];
   unsigned char *tx_sdu;
 
-
-  payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
+  printf("sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
+  payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
 #ifdef DEBUG_HEADER_PARSING
   LOG_D(MAC,"[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,
@@ -234,17 +251,14 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
     //    printf("ce %d : %d\n",i,rx_ces[i]);
       switch (rx_ces[i]) {
       case UE_CONT_RES:
-#ifdef DEBUG_HEADER_PARSING
-	LOG_D(MAC,"[UE %d] CE %d : UE contention resolution for RRC :",Mod_id,i);
-	LOG_D(MAC, "[UE] %x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
-#endif
+	LOG_D(MAC,"[UE %d][RAPROC] CE %d : UE contention resolution for RRC : %x,%x,%x,%x,%x,%x\n",Mod_id,i,payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
 	  UE_mac_inst[Mod_id].RA_active=0;
 	  // check if RA procedure has finished completely (no contention)
 	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[2];//2=sizeof(SCH_SUBHEADER_SHORT);
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
-	      LOG_D(MAC,"Contention detected, RA failed\n");
+	      LOG_D(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
 	      mac_xface->ra_failed(Mod_id,eNB_index);
 	      return;
 	    }
@@ -265,12 +279,6 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
 #endif
 	payload_ptr++;
 	break;
-      case SHORT_PADDING:
-#ifdef DEBUG_HEADER_PARSING
-	LOG_D(MAC,"[UE] CE %d : UE 1 byte Padding :",i);
-#endif
-	payload_ptr++;
-	break;
       }
   }
   for (i=0;i<num_sdu;i++) {
@@ -280,6 +288,11 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u8 eNB_index) {
     if (rx_lcids[i] == CCCH) {
 
       LOG_D(MAC,"[UE %d] RX CCCH -> RRC (%d bytes)\n",Mod_id,rx_lengths[i]);
+      int j;
+      for (j=0;j<rx_lengths[i];j++)
+	msg("%x.",(unsigned char)payload_ptr[j]);
+      msg("\n");
+
       Rrc_xface->mac_rrc_data_ind(Mod_id,
 				  frame,
 				  CCCH,
@@ -804,8 +817,14 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 	(UE_mac_inst[Mod_id].logicalChannelConfig[lcid])) {
       // meausre the Bj
       if ((direction == SF_UL)&& (UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] >= 0)){
-	bucketsizeduration = UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->prioritisedBitRate * TTI;
-	bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
+	if (UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters) {
+	  bucketsizeduration = UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->prioritisedBitRate * TTI;
+	  bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[Mod_id].logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
+	}
+	else {
+	  LOG_E(MAC,"[UE %d] lcid %d, NULL ul_SpecificParameters\n",Mod_id,lcid);
+	  mac_xface->macphy_exit("");
+	}
 	if ( UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] > bucketsizeduration_max )
 	  UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration_max;
 	else
@@ -834,8 +853,14 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   }
 
   // UE has no valid phy config dedicated ||  no valid/released  SR
-  if ((UE_mac_inst[Mod_id].physicalConfigDedicated == NULL) ||
-      (UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig == NULL) ||
+  if ((UE_mac_inst[Mod_id].physicalConfigDedicated == NULL)) {
+    // cancel all pending SRs
+    UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+    LOG_D(MAC,"[MAC][UE %d] Release all SRs \n", Mod_id);
+    return(CONNECTION_OK);
+  }
+
+  if ((UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig == NULL) ||
       (UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_release)){
 
     // initiate RA with CRNTI included in msg3 (no contention) as descibed in 36.321 sec 5.1.5

@@ -12,7 +12,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
-#define DEBUG_MAC_INTERFACE
+//#define DEBUG_MAC_INTERFACE
 
 // tb_size_t in bytes
 //-----------------------------------------------------------------------------
