@@ -45,7 +45,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #endif
 
-#define DEBUG_PHICH 1
+//#define DEBUG_PHICH 1
 
 //extern unsigned short pcfich_reg[4];
 //extern unsigned char pcfich_first_reg_idx;

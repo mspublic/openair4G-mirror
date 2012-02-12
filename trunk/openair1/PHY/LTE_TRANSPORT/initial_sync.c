@@ -384,6 +384,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
  
     generate_pcfich_reg_mapping(frame_parms);
     generate_phich_reg_mapping(frame_parms);
+    //    init_prach625(frame_parms);
    
     phy_vars_ue->UE_mode[0] = PRACH;
     phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;

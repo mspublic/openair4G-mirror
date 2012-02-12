@@ -43,7 +43,7 @@
 //u16 pcfich_reg[4];
 //u8 pcfich_first_reg_idx = 0;
 
-#define DEBUG_PCFICH
+//#define DEBUG_PCFICH
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 

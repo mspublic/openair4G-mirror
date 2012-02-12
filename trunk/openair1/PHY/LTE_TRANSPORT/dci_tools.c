@@ -742,6 +742,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->dai);
  
     else if (frame_parms->frame_type == 0) {
+
       msg("DCI format1 (FDD, 5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
 	  dci->rnti,
 	  ((u32*)&dci->dci_pdu)[0],
@@ -761,6 +762,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
   case format1A:  // This is DLSCH allocation for control traffic
     if ((frame_parms->frame_type == 1) &&
 	(frame_parms->tdd_config>0)) {
+
       msg("DCI format1A (TDD1-6, 5MHz), rnti %x (%x)\n",dci->rnti,((u32*)&dci->dci_pdu[0])[0]);
       msg("VRB_TYPE %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
       msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
@@ -773,6 +775,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 
     }
     else if (frame_parms->frame_type == 0) {
+
       msg("DCI format1A(FDD, 5MHz), rnti %x (%x)\n",dci->rnti,((u32*)&dci->dci_pdu[0])[0]);
       msg("VRB_TYPE %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
       msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
@@ -781,11 +784,13 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
       msg("NDI %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
       msg("RV %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rv);
       msg("TPC %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
+
     }
     break;
   case format2_2A_L10PRB:
     break;
   case format2_2A_M10PRB:
+
     msg("DCI format2_2A_M10PRB, rnti %x (%8x %8x): harq_pid %d, tb_swap %d, rah %d, rb_alloc %x, mcs1 %d, mcs2 %d, rv1 %d, rv2 %d, tpmi %d, ndi1 %d, ndi2 %d\n",
 	dci->rnti,
 	((u32 *)&dci->dci_pdu)[1],
@@ -802,8 +807,10 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi1,
 	((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi2
 	);
+
     break;
   case format1E_2A_M10PRB:
+
     msg("DCI format1E_2A_M10PRB, rnti %x (%8x): harq_pid %d, rah %d, rb_alloc %x, mcs %d, rv %d, tpmi %d, ndi %d, dl_power_offset %d\n",
 	dci->rnti,
 	((u32 *)&dci->dci_pdu)[0],
@@ -817,6 +824,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	((DCI1E_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi,
 	((DCI1E_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->dl_power_off
 	);
+
     break;
   default:
     return(-1);

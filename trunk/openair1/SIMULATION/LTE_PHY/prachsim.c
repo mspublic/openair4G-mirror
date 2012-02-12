@@ -60,7 +60,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->kTC = 0;
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-  lte_frame_parms->tdd_config = 3;
+  lte_frame_parms->tdd_config = 1;
   lte_frame_parms->frame_type = 1;
   init_frame_parms(lte_frame_parms,osf);
   
@@ -88,6 +88,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 }
 
+extern u16 prach_root_sequence_map0_3[838];
 
 int main(int argc, char **argv) {
 
@@ -127,9 +128,11 @@ int main(int argc, char **argv) {
   u8 osf=1,N_RB_DL=25;
   u32 prach_errors=0;
   u8 subframe=3;
-  u16 preamble_energy_list[64],preamble_tx,preamble_delay_list[64];
+  u16 preamble_energy_list[64],preamble_tx=99,preamble_delay_list[64];
   u16 preamble_max,preamble_energy_max;
   PRACH_RESOURCES_t prach_resources;
+  u8 prach_fmt;
+  int N_ZC;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -145,7 +148,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "haA:Cr:pg:i:j:n:s:S:t:x:y:z:N:F:")) != -1)
+  while ((c = getopt (argc, argv, "haA:Cr:p:g:i:j:n:s:S:t:x:y:z:N:F:")) != -1)
     {
       switch (c)
 	{
@@ -217,7 +220,7 @@ int main(int argc, char **argv) {
 	  Td= atof(optarg);
 	  break;
 	case 'p':
-	  extended_prefix_flag=1;
+	  preamble_tx=atoi(optarg);
 	  break;
 	case 'r':
 	  ricean_factor = pow(10,-.1*atof(optarg));
@@ -363,17 +366,30 @@ int main(int argc, char **argv) {
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+
+
   PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex=0; 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
+  prach_fmt = get_prach_fmt(PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+			    PHY_vars_eNB->lte_frame_parms.frame_type);
+  N_ZC = (prach_fmt <4)?839:139;
+  
+  compute_prach_seq(prach_root_sequence_map0_3[PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex],N_ZC, PHY_vars_eNB->X_u);
+
+  compute_prach_seq(prach_root_sequence_map0_3[PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex],N_ZC, PHY_vars_UE->X_u);
+
   PHY_vars_UE->lte_ue_prach_vars[0]->amp = (s32)scfdma_amps[6];
 
   PHY_vars_UE->prach_resources[0] = &prach_resources;
+  if (preamble_tx == 99)
+    preamble_tx = (u16)(taus()&0x3f);
+  if (n_frames == 1)
+     printf("raPreamble %d\n",preamble_tx);
 
-  preamble_tx = (u16)(taus()&0x3f);
   PHY_vars_UE->prach_resources[0]->ra_PreambleIndex = preamble_tx;
   PHY_vars_UE->prach_resources[0]->ra_TDD_map_index = 0;
 
@@ -388,7 +404,8 @@ int main(int argc, char **argv) {
     //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     // multipath channel
-  
+  dump_prach_config(&PHY_vars_eNB->lte_frame_parms,subframe);
+
   for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<1;aa++) {
       if (awgn_flag == 0) {
@@ -453,7 +470,6 @@ int main(int argc, char **argv) {
 
       preamble_energy_max = preamble_energy_list[0];
       preamble_max = 0;
-      //      printf("preamble_tx : %d\n",preamble_tx);
       for (i=1;i<64;i++) {
 	if (preamble_energy_max < preamble_energy_list[i]) {
 	  //	  printf("preamble %d => %d\n",i,preamble_energy_list[i]);
@@ -471,6 +487,7 @@ int main(int argc, char **argv) {
 		     &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
 		     frame_parms->samples_per_tti,1,1);
 	write_output("rxsigF0.m","rxsF0", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
+	write_output("prach_preamble.m","prachp",&PHY_vars_eNB->X_u[0],839,1,1);
       }
     }
     printf("SNR %f dB: errors %d/%d\n",SNR,prach_errors,n_frames);
