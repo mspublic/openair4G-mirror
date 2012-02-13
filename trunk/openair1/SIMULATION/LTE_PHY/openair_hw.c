@@ -36,19 +36,20 @@ unsigned int mem_base;
 int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
 		 PHY_VARS_UE  *phy_vars_ue,
 		 PHY_VARS_eNB *phy_vars_eNB) {
-  int i;
+  int i,j;
 
   frame_parms->dual_tx = 0;
   frame_parms->freq_idx = 0;
   fc = 0;
   
   printf("Opening /dev/openair0\n");
-  if ((openair_fd = open("/dev/openair0", O_RDONLY)) <0) {
+  if ((openair_fd = open("/dev/openair0", O_RDWR)) <0) {
     fprintf(stderr,"Error %d opening /dev/openair0\n",openair_fd);
     exit(-1);
   }
   
   ioctl(openair_fd,openair_DUMP_CONFIG,frame_parms);
+  sleep(1);
   //    ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
   ioctl(openair_fd,openair_GET_VARS,&dummy_tx_rx_vars);
   ioctl(openair_fd,openair_GET_BIGPHYSTOP,(void *)&bigphys_top);
@@ -65,33 +66,50 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
   
   mem_base = (unsigned int) mmap(0,
 				 BIGPHYS_NUMPAGES*4096,
-				 PROT_READ,
-				 MAP_PRIVATE,
+				 PROT_READ|PROT_WRITE,
+				 MAP_SHARED|MAP_FIXED,//MAP_SHARED,
 				 openair_fd,
 				 0);
   
   if (mem_base != -1)
     msg("MEM base= 0x%x\n",mem_base);
-  else
+  else {
     msg("Could not map physical memory\n");
- 
-
+    close(openair_fd);
+    exit(-1);
+  }
+  
   if (phy_vars_ue) {
     
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
       free(phy_vars_ue->lte_ue_common_vars.rxdata[i]);
-      phy_vars_ue->lte_ue_common_vars.rxdata[i] = (int)dummy_tx_rx_vars.RX_DMA_BUFFER[0]-bigphys_top+mem_base;
+      phy_vars_ue->lte_ue_common_vars.rxdata[i] = (s32*)((int)dummy_tx_rx_vars.RX_DMA_BUFFER[0]-bigphys_top+mem_base);
       printf("rxdata[%d] @ %p\n",i,phy_vars_ue->lte_ue_common_vars.rxdata[i]);
+    }
+    for (i=0;i<frame_parms->nb_antennas_tx;i++) {
+      free(phy_vars_ue->lte_ue_common_vars.txdata[i]);
+      phy_vars_ue->lte_ue_common_vars.txdata[i] = (s32*)((int)dummy_tx_rx_vars.TX_DMA_BUFFER[0]-bigphys_top+mem_base);
+      printf("txdata[%d] @ %p\n",i,phy_vars_ue->lte_ue_common_vars.txdata[i]);
     }
   }
 
   if (phy_vars_eNB) {
     // replace RX signal buffers with mmaped HW versions
+    for (i=0;i<frame_parms->nb_antennas_rx;i++) {
+      free(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
+      phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = (s32*)((int)dummy_tx_rx_vars.RX_DMA_BUFFER[0]-bigphys_top+mem_base);
+      printf("rxdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
+    }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
-      free(phy_vars_ue->lte_ue_common_vars.txdata[i]);
-      phy_vars_ue->lte_ue_common_vars.txdata[i] = (int)dummy_tx_rx_vars.TX_DMA_BUFFER[0]-bigphys_top+mem_base;
-      printf("txdata[%d] @ %p\n",i,phy_vars_ue->lte_ue_common_vars.txdata[i]);
+      free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
+      phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (s32*)((int)dummy_tx_rx_vars.TX_DMA_BUFFER[0]-bigphys_top+mem_base);
+      printf("txdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
+      for (j=0;j<16;j++) {
+	printf("txbuffer %d: %x\n",j,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i][j]);
+	phy_vars_eNB->lte_eNB_common_vars.txdata[0][i][j] = 16-j;
+      }
+      //      msync(openair_fd);
     }
   }
 
