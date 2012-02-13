@@ -14,6 +14,7 @@ typedef struct {
 #define EXMIMO_REBOOT     0x0004
 #define EXMIMO_CONFIG     0x0005
 #define EXMIMO_GET_FRAME  0x0006
+#define EXMIMO_TX_FRAME   0x0007
 
 #define SLOT_INTERRUPT 0x1111
 #define PCI_PRINTK 0x2222

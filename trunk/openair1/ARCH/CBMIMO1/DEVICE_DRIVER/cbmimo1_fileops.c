@@ -110,6 +110,9 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
   for (i=0;i<16;i++)
     printk("[openair][MMAP] rxsig %d = %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
 
+  for (i=0;i<16;i++)
+    ((unsigned int*)TX_DMA_BUFFER[0][0])[i] = i;
+
 
 #endif //BIGPHYSAREA
   return 0; 
@@ -1177,34 +1180,49 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.tx_test=1;
     ret = setup_regs(0,frame_parms);
 
-    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+    /*
+      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+      
+      bzero((void*)TX_DMA_BUFFER[0][0],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      bzero((void*)TX_DMA_BUFFER[0][1],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      copy_from_user((unsigned char*)&dummy_tx_vars,
+		     (unsigned char*)arg,
+		     sizeof(TX_VARS));
+      
+      copy_from_user((unsigned char*)TX_DMA_BUFFER[0][0],
+		     (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[0],
+		     FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      copy_from_user((unsigned char*)TX_DMA_BUFFER[0][1],
+		     (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[1],
+		     FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      
+      printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0][0],(void *)arg,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      
+      for (i=0;i<128;i++) {
+	printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][0])[i]);
+	printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][1])[i]);
+      }
+      
+      
 
-    bzero((void*)TX_DMA_BUFFER[0][0],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-    bzero((void*)TX_DMA_BUFFER[0][1],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-    copy_from_user((unsigned char*)&dummy_tx_vars,
-		   (unsigned char*)arg,
-		   sizeof(TX_VARS));
-        
-    copy_from_user((unsigned char*)TX_DMA_BUFFER[0][0],
-		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[0],
-		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-    copy_from_user((unsigned char*)TX_DMA_BUFFER[0][1],
-		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[1],
-		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-    
-    printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0][0],(void *)arg,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-    
+      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    }
+    else {
+
+    }
+    */
+
     for (i=0;i<128;i++) {
       printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][0])[i]);
       printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][1])[i]);
     }
-    
 
-
-    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
-		
-
-
+    if (vid != XILINX_VENDOR) {
+      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    }
+    else {
+      openair_dma(0,EXMIMO_TX_FRAME);
+    }
     break;
 
   case openair_START_TX_SIG_NO_OFFSET:
