@@ -814,22 +814,22 @@ int main(int argc, char **argv) {
     
     if (PHY_vars_eNB->lte_frame_parms.frame_type == 1) {
       generate_pss(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		   1024,
+		   AMP,
 		   &PHY_vars_eNB->lte_frame_parms,
 		   2,
 		   2);
       generate_pss(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		   1024,
+		   AMP,
 		   &PHY_vars_eNB->lte_frame_parms,
 		   2,
 		   12);
       generate_sss(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		   1024,
+		   AMP,
 		   &PHY_vars_eNB->lte_frame_parms,
 		   (PHY_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 		   1);
       generate_sss(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		   1024,
+		   AMP,
 		   &PHY_vars_eNB->lte_frame_parms,
 		   (PHY_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 		   11);
@@ -864,7 +864,7 @@ int main(int argc, char **argv) {
     
     generate_pilots(PHY_vars_eNB,
 		    PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		    1024,
+		    AMP,
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
 
@@ -874,13 +874,13 @@ int main(int argc, char **argv) {
  
     generate_pbch(&PHY_vars_eNB->lte_eNB_pbch,
 		  PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		  1024,
+		  AMP,
 		  &PHY_vars_eNB->lte_frame_parms,
 		  pbch_pdu,
 		  0);
     /*
     generate_pbch(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		  1024,
+		  AMP,
 		  &PHY_vars_eNB->lte_frame_parms,
 		  pbch_pdu,
 		  3);
@@ -888,7 +888,7 @@ int main(int argc, char **argv) {
 
     if (interf1>-20) {
       generate_pss(PHY_vars_eNB1->lte_eNB_common_vars.txdataF[0],
-		   1024,
+		   AMP,
 		   &PHY_vars_eNB1->lte_frame_parms,
 		   (PHY_vars_eNB1->lte_frame_parms.Ncp==0)?6:5,
 		   0);
@@ -899,13 +899,13 @@ int main(int argc, char **argv) {
       
       generate_pilots(PHY_vars_eNB1,
 		      PHY_vars_eNB1->lte_eNB_common_vars.txdataF[0],
-		      1024,
+		      AMP,
 		      2);//LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
       
       
       generate_pbch(&PHY_vars_eNB1->lte_eNB_pbch,
 		    PHY_vars_eNB1->lte_eNB_common_vars.txdataF[0],
-		    1024,
+		    AMP,
 		    &PHY_vars_eNB1->lte_frame_parms,
 		    pbch_pdu,
 		    0);
@@ -914,7 +914,7 @@ int main(int argc, char **argv) {
     
     if (interf2>-20) {
       generate_pss(PHY_vars_eNB2->lte_eNB_common_vars.txdataF[0],
-		   1024,
+		   AMP,
 		   &PHY_vars_eNB2->lte_frame_parms,
 		   (PHY_vars_eNB2->lte_frame_parms.Ncp==0)?6:5,
 		   0);
@@ -925,13 +925,13 @@ int main(int argc, char **argv) {
       
       generate_pilots(PHY_vars_eNB2,
 		      PHY_vars_eNB2->lte_eNB_common_vars.txdataF[0],
-		      1024,
+		      AMP,
 		      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
       
       
       generate_pbch(&PHY_vars_eNB2->lte_eNB_pbch,
 		    PHY_vars_eNB2->lte_eNB_common_vars.txdataF[0],
-		    1024,
+		    AMP,
 		    &PHY_vars_eNB2->lte_frame_parms,
 		    pbch_pdu,
 		    0);
@@ -971,7 +971,7 @@ int main(int argc, char **argv) {
 					 0,
 					 dci_alloc,
 					 0,
-					 1024,
+					 AMP,
 					 &PHY_vars_eNB->lte_frame_parms,
 					 PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id],
 					 0);
@@ -980,7 +980,7 @@ int main(int argc, char **argv) {
 					 0,
 					 dci_alloc,
 					 0,
-					 1024,
+					 AMP,
 					 &PHY_vars_eNB->lte_frame_parms,
 					 PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id],
 					 5);
@@ -1167,7 +1167,7 @@ int main(int argc, char **argv) {
 	    r_re[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)]);
 	    r_im[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	  }
-	  	  
+	  /*	  	  
 	  if (interf1>=-20) {
 	    r_re[aarx][i]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
 	    r_im[aarx][i]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
@@ -1177,7 +1177,7 @@ int main(int argc, char **argv) {
 	    r_re[aarx][i]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
 	    r_im[aarx][i]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
 	  }
-	  
+	  */
 	}
       }
     }
@@ -1318,11 +1318,13 @@ int main(int argc, char **argv) {
 	      n_errors2++;
 	    else
 	      n_errors++;
-	    
+
+	  // avoid ra_RNTI=0
+
 	    //	  msg("pbch error\n");
 	  }
 	  
-	  
+ 	  
 #ifdef XFORMS
 	  do_forms2(form_dl,
 		    frame_parms,  
