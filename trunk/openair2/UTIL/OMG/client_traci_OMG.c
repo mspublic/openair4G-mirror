@@ -43,7 +43,7 @@
 #include <string.h>
 
 #include "client_traci_OMG.h"
-
+#include "TraCIConstants.h"
 
 void handshake(char *hoststr,int portno){
     
