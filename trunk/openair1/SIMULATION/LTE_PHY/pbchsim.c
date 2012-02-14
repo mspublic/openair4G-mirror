@@ -268,7 +268,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chan
 }
 #endif
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 N_RB_DL,u8 osf) {
+void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,unsigned char frame_type, u16 Nid_cell,u8 N_RB_DL,u8 osf) {
 
   unsigned int ind;
   LTE_DL_FRAME_PARMS *lte_frame_parms;
@@ -301,7 +301,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
   lte_frame_parms->tdd_config = 3;
-  lte_frame_parms->frame_type = 0;
+  lte_frame_parms->frame_type = frame_type;
   init_frame_parms(lte_frame_parms,osf);
   
   //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -397,6 +397,7 @@ int main(int argc, char **argv) {
 
   int openair_fd,rx_sig_fifo_fd,get_frame=0;
   int frequency=0,fc=0;
+  unsigned char frame_type = 0;
 
 #ifdef XFORMS
   FD_lte_scope *form_dl;
@@ -420,7 +421,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "haA:Cr:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:")) != -1)
+  while ((c = getopt (argc, argv, "haA:Cr:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:d")) != -1)
     {
       switch (c)
 	{
@@ -432,6 +433,9 @@ int main(int argc, char **argv) {
 	case 'f':
 	  output_fd = fopen(optarg,"w");
 	  write_output_file=1;
+	  break;
+	case 'd':
+	  frame_type = 1;
 	  break;
 	case 'G':
 	  if ((openair_fd = open("/dev/openair0", O_RDWR,0)) <0) {
@@ -566,6 +570,7 @@ int main(int argc, char **argv) {
 	  printf("-h This message\n");
 	  printf("-a Use AWGN channel and not multipath\n");
 	  printf("-p Use extended prefix mode\n");
+	  printf("-d Use TDD\n");
 	  printf("-n Number of frames to simulate\n");
 	  printf("-r Ricean factor (dB, 0 means Rayleigh, 100 is almost AWGN\n");
 	  printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
@@ -592,7 +597,7 @@ int main(int argc, char **argv) {
   if (transmission_mode==2)
     n_tx=2;
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell,N_RB_DL,osf);
+  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,N_RB_DL,osf);
 
 
   if (snr1set==0) {
@@ -826,7 +831,7 @@ int main(int argc, char **argv) {
     
     generate_pilots(PHY_vars_eNb,
 		    PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
-		    1024,
+		    2*AMP,
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
 
