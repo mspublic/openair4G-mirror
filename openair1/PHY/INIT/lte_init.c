@@ -1119,7 +1119,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
   generate_pcfich_reg_mapping(frame_parms);
   generate_phich_reg_mapping(frame_parms);
-  init_prach625(frame_parms);
+  //  init_prach625(frame_parms);
 
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     phy_vars_eNB->first_run_timing_advance[UE_id] = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.

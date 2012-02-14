@@ -2429,7 +2429,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   if (phy_vars_ue->prach_resources[eNB_id])
     ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
   else
-    ra_rnti = 0;
+    ra_rnti = 99;
 
   // First check common search spaces at aggregation 4 (SI_RNTI and RA_RNTI format 1A), 
   // and UE_SPEC format0 (PUSCH) too while we're at it

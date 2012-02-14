@@ -37,7 +37,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_table[20][2][14],u8 o
       
       x2 = Ncp + 
 	(Nid_cell<<1) + 
-	(((1+(Nid_cell<<1))*(1 + ((frame_parms->Ncp==0?4:3)*l) + (7*(1+ns))))<<10); //cinit
+	(((1+(Nid_cell<<1))*(1 + (((frame_parms->Ncp==0)?4:3)*l) + (7*(1+ns))))<<10); //cinit
       //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0
       //      printf("cinit (ns %d, l %d) => %d\n",ns,l,x2);
