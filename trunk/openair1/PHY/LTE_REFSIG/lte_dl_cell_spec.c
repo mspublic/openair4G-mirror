@@ -6,7 +6,7 @@
 #include "defs.h"
 #include "PHY/defs.h"
 
-extern unsigned int lte_gold_table[3][20][2][14];
+//extern unsigned int lte_gold_table[3][20][2][14];
 //#define DEBUG_DL_CELL_SPEC
 
 int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
@@ -84,9 +84,9 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
     output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
-    debug_msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+    msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
 	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    debug_msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif 
 
     mprime++;
@@ -145,7 +145,7 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
 	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_table[eNB_id][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif 
 
     mprime++;

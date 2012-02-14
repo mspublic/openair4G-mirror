@@ -4,7 +4,7 @@
 #include "defs.h"
 #include "PHY/defs.h"
 #include "filt96_32.h"
-//#define DEBUG_CH
+//#define DEBUG_CH 
 int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 			      u8 eNB_id,
 			      u8 eNB_offset,
@@ -52,8 +52,6 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   symbol_offset = phy_vars_ue->lte_frame_parms.ofdm_symbol_size*symbol;
 
   k = (nu + nushift)%6;
-  if (k > 6)
-    k -=6;
   
 #ifdef DEBUG_CH
   printf("Channel Estimation : ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d\n",ch_offset,phy_vars_ue->lte_frame_parms.ofdm_symbol_size,phy_vars_ue->lte_frame_parms.Ncp,l,Ns,k);

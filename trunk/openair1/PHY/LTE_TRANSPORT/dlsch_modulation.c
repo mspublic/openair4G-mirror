@@ -52,7 +52,8 @@
 u8 is_not_pilot(u8 pilots, u8 re, u8 nushift, u8 use2ndpilots) {
 
   u8 offset = (pilots==2)?3:0;
-
+  int nushiftmod3 = nushift%3;
+ 
   if (pilots==0)
     return(1);
 
@@ -61,7 +62,7 @@ u8 is_not_pilot(u8 pilots, u8 re, u8 nushift, u8 use2ndpilots) {
       return(1);
   }
   else { // 2 antenna pilots
-    if ((re!=nushift) && (re!=nushift+6) && (re!=nushift+3) && (re!=nushift+9))
+    if ((re!=nushiftmod3) && (re!=nushiftmod3+6) && (re!=nushiftmod3+3) && (re!=nushiftmod3+9))
       return(1);
   }
   return(0);
