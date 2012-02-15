@@ -8253,8 +8253,10 @@ void dlsch_channel_compensation(int **rxdataF_ext,
   }
 
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
-    if (mod_order == 4)
+    if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
+      QAM_amp128b = _mm_xor_si128(QAM_amp128b,QAM_amp128b);
+    }    
     else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1); // 
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
@@ -8621,16 +8623,20 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
   //printf("comp prec: symbol %d, pilots %d\n",symbol, pilots);
 
   if (dl_power_off==1) {
-    if (mod_order == 4)
+    if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);
+      QAM_amp128b = _mm_xor_si128(QAM_amp128b,QAM_amp128b);
+    }
     else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1);
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
     }
   }
   else {
-    if (mod_order == 4)
+    if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_TM5_n1);
+      QAM_amp128b = _mm_xor_si128(QAM_amp128b,QAM_amp128b);
+    }
     else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_TM5_n1);
       QAM_amp128b = _mm_set1_epi16(QAM64_TM5_n2);
