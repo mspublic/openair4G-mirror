@@ -236,6 +236,22 @@ for m=1:1:length(mcs)
     Optimum_beta1(mcs(m)+1) = beta_out(1);
     Optimum_beta2(mcs(m)+1) = beta_out(2);
 %***************************************************************************************
+% BLER Plot w.r.t Mean Effective SINR
+%***************************************************************************************
+h_fig = figure;
+avg_SINR_p = mean(SINR_p');
+grid on
+semilogy(avg_SINR_p,BLER_meas,plot_style{m+1})
+xlim([-8 15])
+ylim([1e-3 1])
+s = strcat('LTE TM1 Avergae Abstraction MCS ', num2str(mcs(m)));
+    title(s);
+    ylabel 'BLER'
+    xlabel 'SINR_{average}'
+    s2 = strcat('BLER_{meas} MCS ', num2str(mcs(m)));
+    legend(s2, 'Location',  'Best');
+ 
+%***************************************************************************************
 % BLER Plot w.r.t Effective SINR
 %***************************************************************************************
     h_fig = figure;
@@ -243,7 +259,7 @@ for m=1:1:length(mcs)
     hold on
     grid on
     semilogy(snr,bler,'m-x');
-    xlim([-10 15])
+    xlim([-8 15])
     ylim([1e-3 1])
     s = strcat('LTE TM1 EESM MCS ', num2str(mcs(m)), ',beta1= ',num2str(Optimum_beta1(mcs(m)+1)),',beta2= ',num2str(Optimum_beta2(mcs(m)+1)), ', MSE= ',num2str(MSE_final(mcs(m)+1)));
     title(s);
