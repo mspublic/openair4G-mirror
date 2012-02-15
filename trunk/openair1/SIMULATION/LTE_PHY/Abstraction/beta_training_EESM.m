@@ -71,7 +71,7 @@ for m=1:1:length(mcs)
 %***************************************************************************************    
 %Reference AWGN Curves
 %***************************************************************************************
-    data = dlmread(sprintf('/root/DEVEL/trunk/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN_SISO_Winter_School/awgn_bler_tx1_mcs%d.csv',mcs(m)),';',1,0);
+    data = dlmread(sprintf('../BLER_SIMULATIONS/AWGN_SISO_Winter_School/awgn_bler_tx1_mcs%d.csv',mcs(m)),';',1,0);
     snr = data(:,1);
     ble = data(:,5)./data(:,6); % round 1
         
