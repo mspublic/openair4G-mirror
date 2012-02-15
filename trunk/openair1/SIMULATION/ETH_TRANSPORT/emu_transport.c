@@ -310,7 +310,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      
      pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
      
-     PHY_vars_UE_g[ue_id]->sr=ue_cntl_delay[subframe%2].sr ;// UE_transport_info[ue_id].cntl.sr;
+//     PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[subframe%2].sr;// UE_transport_info[ue_id].cntl.sr;
      
      //if (PHY_vars_UE_g[ue_id]->sr) LOG_I(EMU,"SR is %d \n", PHY_vars_UE_g[ue_id]->sr);
      
@@ -332,7 +332,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
      
      ulsch->o_RI[0]                          = ue_cntl_delay[subframe%2].pusch_ri & 0x1;
-     ulsch->o_RI[0]                          = (ue_cntl_delay[subframe%2].pusch_ri>>1) & 0x1;
+     ulsch->o_RI[1]                          = (ue_cntl_delay[subframe%2].pusch_ri>>1) & 0x1;
      
      ulsch->o_ACK[0]                          = ue_cntl_delay[subframe%2].pusch_ack & 0x1;
      ulsch->o_ACK[1]                          = (ue_cntl_delay[subframe%2].pusch_ack>>1) & 0x1;
