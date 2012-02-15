@@ -1,4 +1,9 @@
-
+%***************************************************************************************
+% Calibration of Adjustment Factors for Exponential Effective SINR Mapping Methdology 
+% For 3GPP Long Term Evolution (LTE) 
+% Eurecom Institute
+% (c) Imran Latif, Communications Mobile, 2012  
+%***************************************************************************************
 %close all
 %clear all
 
@@ -49,7 +54,7 @@ modu=4;
 % Modulation used.
 
 p=50;
-save_out=0;
+save_out=1;
 %***************************************************************************************
 % Main Execution Loop starts from here:
 %***************************************************************************************
@@ -269,18 +274,18 @@ s = strcat('LTE TM1 Avergae Abstraction MCS ', num2str(mcs(m)));
     s3 = strcat('BLER_{AWGN} MCS ', num2str(mcs(m)));
     legend(s2,s3, 'Location',  'Best');
     
-    if(save_out==1)
-        saveas(h_fig,fullfile(pathname,strcat('IA_RX_M1_MIESM_TX5_mcs',num2str(mcs(m)) ,'.eps')),'epsc2');
-        saveas(h_fig,fullfile(pathname,strcat('IA_RX_M1_MIESM_TX5_mcs',num2str(mcs(m)) ,'.fig')),'fig');
-        saveas(h_fig,fullfile(pathname,strcat('IA_RX_M1_MIESM_TX5_mcs',num2str(mcs(m)) ,'.jpg')),'jpg');
-    end
+   % if(save_out==1)
+   %     saveas(h_fig,fullfile(pathname,strcat('IA_RX_M1_MIESM_TX5_mcs',num2str(mcs(m)) ,'.eps')),'epsc2');
+   %     saveas(h_fig,fullfile(pathname,strcat('IA_RX_M1_MIESM_TX5_mcs',num2str(mcs(m)) ,'.fig')),'fig');
+   %     saveas(h_fig,fullfile(pathname,strcat('IA_RX_M1_MIESM_TX5_mcs',num2str(mcs(m)) ,'.jpg')),'jpg');
+   % end
 end
 %***************************************************************************************
 %For saving the files
 %***************************************************************************************
  if(save_out)
-     save(fullfile(pathname, 'opt_beta.dat'),'opt_beta');
-     save(fullfile(pathname, 'MSE.dat'),'MSE_final');
+     save(strcat('opt_beta_mcs',num2str(mcs(m)),'.dat'),'Optimum_beta*')
+     save(strcat('MSE_mcs',num2str(mcs(m)),'.dat'),'MSE_final')
  end
 
 
