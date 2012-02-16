@@ -315,6 +315,13 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 }  // num_pdcch_symbols loop
 
 
+void generate_phich_emul(LTE_DL_FRAME_PARMS *frame_parms,
+			 u8 HI,
+			 u8 subframe) {
+
+
+}
+
 mod_sym_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
 mod_sym_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2 
 
@@ -1337,7 +1344,13 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			 txdataF);
 	}
 	else {
-
+	  /*
+	  generate_phich_emul(frame_parms,
+			      //nseq_PHICH,
+			      //ngroup_PHICH,
+			      ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_ACK,
+			      subframe);
+	  */
 	}
 	// if no format0 DCI was transmitted by MAC, prepare the 
 	// MCS parameters for the retransmission

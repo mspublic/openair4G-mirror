@@ -50,7 +50,7 @@ typedef struct  {
   u32 pss:2;
   u32 sss:8;
   u32 cfi:2;
-  u32 phich:19;
+  u32 phich:19; // max 200 bit
   //  u32 pbch_payload:24;
   u32 pbch_payload;
 } eNB_cntl;

@@ -135,21 +135,21 @@ void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u32 frame, u8 eNB_index){
   if(UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size ==0){
 
     // Get RRCConnectionRequest, fill random for now
-
-
     // Generate random byte stream for contention resolution
-    msg("[RRC][UE %d] : RRCConnectionRequest:\n");
     for (i=0;i<6;i++) {
       rv[i]=taus()&0xff;
-      msg("%x.",rv[i]);
+      LOG_T(RRC,"%x.",rv[i]);
     }
-    msg("\n");
+    LOG_T(RRC,"\n");
     UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size = do_RRCConnectionRequest((u8 *)UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.Payload,rv);
 
+    LOG_I(RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCConnectionRequest (bytes %d, eNB %d)\n", 
+	  Mod_id, frame, UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size, eNB_index);
+     
     for (i=0;i<UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size;i++) {
-      msg("%x.",UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.Payload[i]);
+      LOG_T(RRC,"%x.",UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.Payload[i]);
     }
-    msg("\n");
+    LOG_T(RRC,"\n");
     /*
       UE_rrc_inst[Mod_id].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
 
@@ -170,10 +170,12 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 eNB_ind
   u8 buffer[32];
   u8 size;
 
-  LOG_D(RRC,"[UE %d][RAPROC] Frame %d : Generating RRCConnectionSetupComplete\n",Mod_id,frame);
-
   size = do_RRCConnectionSetupComplete(buffer);
-  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+  
+  LOG_I(RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionSetupComplete (bytes%d, eNB %d)\n",
+	Mod_id,frame, size, eNB_index);
+
+   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
                                      frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
 
   rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
@@ -186,12 +188,13 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
 
   u8 buffer[32], size;
 
-  LOG_D(RRC,"[UE %d] Frame %d : Generating RRCConnectionReconfigurationComplete\n",Mod_id,frame);
-
   size = do_RRCConnectionReconfigurationComplete(buffer);
+  
+  LOG_I(RRC,"[UE %d] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionReconfigurationComplete (bytes %d, eNB_index %d)\n",
+	Mod_id,frame, size, eNB_index);
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionReconfigurationComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
-                                     frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
-
+	frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
+  
   rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
 }
 
@@ -219,7 +222,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
   xer_fprint(stdout,&asn_DEF_DL_CCCH_Message,(void*)dl_ccch_msg);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
-    LOG_D(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%d bytes)\n",Mod_id,dec_rval.consumed);
+    LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%d bytes)\n",Mod_id,dec_rval.consumed);
     return -1;
   }
 
@@ -238,27 +241,27 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReestablishment ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
-	LOG_I(RRC,"[UE%d] Frame %d : Received RRCConnectionReestablishment on DL-CCCH-Message\n",Mod_id,frame);
+	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n",Mod_id,frame);
 	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (RRCConnectionReestablishmentReject ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
-	LOG_I(RRC,"[UE%d] Frame %d : Received RRCConnectionReestablishmentReject on DL-CCCH-Message\n",Mod_id,frame);
+	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n",Mod_id,frame);
 	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReject ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
-	LOG_I(RRC,"[UE%d] Frame %d : Received RRCConnectionReject on DL-CCCH-Message\n",Mod_id,frame);
+	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",Mod_id,frame);
 	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionSetup ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
-	LOG_I(RRC,"[UE%d][RAPROC] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,frame);
+	LOG_I(RRC,"[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup \n",Mod_id,frame);
 	// Get configuration
 
 	// Release T300 timer
@@ -295,10 +298,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
   memcpy(&UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
 
-  LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n",
-      Mod_id,
-      lchan_id,
-      eNB_index);
+  LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", Mod_id,lchan_id,eNB_index);
 
   rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
@@ -321,10 +321,7 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
   memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
 
-  LOG_I(RRC,"[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",
-      Mod_id,
-      lchan_id,
-      eNB_index);
+  LOG_I(RRC,"[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",Mod_id,lchan_id,eNB_index);
 
   rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
@@ -336,7 +333,8 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
 
 s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
-
+  int oip_ifup=0;
+  
     LOG_D(RRC,"[UE] Frame %d: Configuring DRB %ld/LCID %d\n",
       frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
 
@@ -354,20 +352,26 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
 		       RADIO_ACCESS_BEARER,Rlc_info_um); 
 #ifdef NAS_NETLINK
-    nas_config(oai_emulation.info.nb_enb_local+Mod_id,// interface index
+    LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d\n", Mod_id, oai_emulation.info.nb_enb_local+Mod_id);
+    oip_ifup=nas_config(oai_emulation.info.nb_enb_local+Mod_id,// interface index
 	       oai_emulation.info.nb_enb_local+Mod_id+1,
 	       NB_eNB_INST+Mod_id+1);
-    LOG_I(RB,"rb_conf_ipv4: Mod_id %d emu_info.nb_enb_local+Mod_id %d\n",  Mod_id,  oai_emulation.info.nb_enb_local+Mod_id);
-    rb_conf_ipv4(0,//add
-		 Mod_id,//cx align with the UE index
-		 oai_emulation.info.nb_enb_local+Mod_id,//inst num_ue+ue_index
- 		 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
-		 0,//dscp
-		 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,NB_eNB_INST+Mod_id+1),//saddr
-		 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,eNB_index+1));//daddr
-
+    if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
+      LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",  
+	    Mod_id,
+	    oai_emulation.info.nb_enb_local+Mod_id,
+	    (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
+	    
+	    rb_conf_ipv4(0,//add
+			 Mod_id,//cx align with the UE index
+			 oai_emulation.info.nb_enb_local+Mod_id,//inst num_ue+ue_index
+			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
+			 0,//dscp
+			 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,NB_eNB_INST+Mod_id+1),//saddr
+			 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,eNB_index+1));//daddr
+	    LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",Mod_id,eNB_index);	 
+    }
 #endif
-    LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",Mod_id,eNB_index);	 
     break;
   case RLC_Config_PR_um_Uni_Directional_UL :
   case RLC_Config_PR_um_Uni_Directional_DL :
@@ -560,6 +564,8 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 eNB_index) {
 
+  LOG_I(RRC,"[UE %d] Frame %d: Logical Channel DL-DCCH (SRB1), Processing RRCConnectionReconfiguration (eNB %d)\n",
+	Mod_id,frame,eNB_index);
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
@@ -586,7 +592,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
   int i;
 
   if (Srb_id != 1) {
-    LOG_D(RRC,"[UE %d] Frame %d: Received message on SRB2, should not have ...\n",Mod_id,frame);
+    LOG_D(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB1), should not have ...\n",Mod_id,frame);
     return;
   }
 
@@ -625,10 +631,6 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
-
-
-	LOG_I(RRC,"[UE %d] Frame %d: Processing RRCConnectionReconfiguration from eNB %d\n",
-	      Mod_id,frame,eNB_index);
 	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
 	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
 	break;
