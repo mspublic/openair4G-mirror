@@ -3,6 +3,11 @@
 #define __NO_VERSION__
 #endif
  
+#include "defs.h"
+#include "PHY/extern.h"
+#include "MAC_INTERFACE/extern.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+
 #ifdef CBMIMO1
 #include "ARCH/COMMON/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
@@ -13,11 +18,6 @@
 //#include "pci_commands.h"
 #endif //CBMIMO1
 
-#include "defs.h"
-#include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-
 /*!
 * @addtogroup _PHY_STRUCTURES_
 * Memory Initializaion and Cleanup for LTE MODEM.
@@ -25,7 +25,8 @@
 \section _Memory_init_ Memory Initialization for LTE MODEM
 Blah Blah
 */
-//#define DEBUG_PHY
+
+#define DEBUG_PHY
 
 /*
 #ifndef USER_MODE

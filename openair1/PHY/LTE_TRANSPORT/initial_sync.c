@@ -219,7 +219,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   u8 i;
   int ret=-1;
 
-  printf("**************************************************************\n");
+  msg("**************************************************************\n");
   // First try FDD normal prefix
   frame_parms->Ncp=0;
   frame_parms->frame_type=0;
@@ -247,7 +247,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   if (((sync_pos2 - sync_pos_slot) >=0 ) && 
       ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
     
-    printf("Calling sss detection (FDD normal CP)\n");
+    msg("Calling sss detection (FDD normal CP)\n");
     rx_sss(phy_vars_ue,&metric_fdd_ncp,&flip_fdd_ncp,&phase_fdd_ncp);
     frame_parms->nushift  = frame_parms->Nid_cell%6;
     if (flip_fdd_ncp==1)
@@ -277,7 +277,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     else
       phy_vars_ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
 
-    printf("nb_prefix_samples %d, rx_offset %d\n",frame_parms->nb_prefix_samples,phy_vars_ue->rx_offset);
+    msg("nb_prefix_samples %d, rx_offset %d\n",frame_parms->nb_prefix_samples,phy_vars_ue->rx_offset);
 
     if (((sync_pos2 - sync_pos_slot) >=0 ) && 
       ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
@@ -364,8 +364,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	  ret = pbch_detection(phy_vars_ue);
 	  
 #ifdef DEBUG_INIT_SYNCH
-	  printf("TDD Extended prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
-		 frame_parms->Nid_cell,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp,ret);
+      msg("TDD Extended prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
+	  frame_parms->Nid_cell,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp,ret);
 #endif
 	}
 	else {
@@ -380,7 +380,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
  
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 #ifdef DEBUG_INIT_SYNCH
-    msg("[PHY][UE%d] In synch, rx_offset %d samples\n",phy_vars_ue->rx_offset);
+    msg("[PHY][UE%d] In synch, rx_offset %d samples\n",phy_vars_ue->Mod_id, phy_vars_ue->rx_offset);
 #endif
 #ifdef OPENAIR2
 	msg("[PHY][UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
@@ -393,9 +393,9 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     //    init_prach625(frame_parms);
    
     phy_vars_ue->UE_mode[0] = PRACH;
-    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
+    //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
     phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;
-    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
+    //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
 
     phy_adjust_gain(phy_vars_ue,0);
 
@@ -413,6 +413,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     msg("[PHY][UE%d] Initial sync : Estimated Nid_cell %d, Frame_type %d\n",phy_vars_ue->Mod_id,
 	frame_parms->Nid_cell,frame_parms->frame_type);
     //#endif
+
+    phy_vars_ue->UE_mode[0] = NOT_SYNCHED;
+    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors;
+    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors++;
+    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq++;
 
   }
 

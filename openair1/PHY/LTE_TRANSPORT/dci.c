@@ -2290,8 +2290,9 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,
             	printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
       */
       crc = (crc16(dci_decoded_output,sizeof_bits)>>16) ^ extract_crc(dci_decoded_output,sizeof_bits); 
-      
-	     
+#ifdef DEBUG_DCI_DECODING
+      msg("crc =>%x\n",crc);
+#endif
 
       if (((L>1) && ((crc == si_rnti)||
 		     (crc == ra_rnti)))||
@@ -2401,7 +2402,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
   LTE_DL_FRAME_PARMS *frame_parms  = &phy_vars_ue->lte_frame_parms;
   u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,0);
-  u16 ra_rnti;
+  u16 ra_rnti=99;
   u8 format0_found=0,format_c_found=0;
   u8 tmode = phy_vars_ue->transmission_mode[eNB_id];
   u8 frame_type = frame_parms->frame_type;
@@ -2428,8 +2429,6 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 
   if (phy_vars_ue->prach_resources[eNB_id])
     ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
-  else
-    ra_rnti = 99;
 
   // First check common search spaces at aggregation 4 (SI_RNTI and RA_RNTI format 1A), 
   // and UE_SPEC format0 (PUSCH) too while we're at it

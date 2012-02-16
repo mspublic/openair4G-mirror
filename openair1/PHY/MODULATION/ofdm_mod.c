@@ -24,7 +24,11 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
     //    	   txdata+(i*(frame_parms->samples_per_tti>>1)));
     
     PHY_ofdm_mod(txdataF+(i*NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti>>1),        // input
+#ifdef BIT8_TX
+		 txdata+(i*frame_parms->samples_per_tti>>2),         // output
+#else
 		 txdata+(i*frame_parms->samples_per_tti>>1),         // output
+#endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
 		 1,                 // number of symbols
 		 frame_parms->nb_prefix_samples0,               // number of prefix samples
@@ -35,7 +39,11 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
     
 
     PHY_ofdm_mod(txdataF+NUMBER_OF_OFDM_CARRIERS+(i*NUMBER_OF_OFDM_CARRIERS*(frame_parms->symbols_per_tti>>1)),        // input
+#ifdef BIT8_TX
+		 txdata+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0>>1)+(i*(frame_parms->samples_per_tti>>2)),         // output
+#else
 		 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
+#endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
 		 6,                 // number of symbols
 		 frame_parms->nb_prefix_samples,               // number of prefix samples

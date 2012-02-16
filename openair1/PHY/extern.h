@@ -47,7 +47,9 @@ extern unsigned char primary_synch2_tab[72];
 extern int *primary_synch0_time;
 extern int *primary_synch1_time;
 extern int *primary_synch2_time;
-extern int *sync_corr_ue;
+extern int *sync_corr_ue0;
+extern int *sync_corr_ue1;
+extern int *sync_corr_ue2;
 
 
 //extern short **txdataF_rep_tmp;
