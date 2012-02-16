@@ -78,6 +78,6 @@ until (size < 1)
 
 write_tcxo
 
-gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF');         %  deactivate output
+%gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF');         %  deactivate output
 
 

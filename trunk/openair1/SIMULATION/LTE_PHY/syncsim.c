@@ -423,7 +423,8 @@ int main(int argc, char **argv) {
   u8 N_RB_DL=25,osf=1;
 
   int openair_fd;
-  int frequency=0,fc=0;
+  int frequency=0,tcxo=74,fc=0;
+  unsigned char temp[4];
 
   TX_RX_VARS dummy_tx_rx_vars;
   unsigned int bigphys_top;
@@ -458,7 +459,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "aehCf:g:i:j:n:r:s:t:x:y:z:A:F:N:O:R:S:ZYD")) != -1)
+  while ((c = getopt (argc, argv, "aehCf:g:i:j:n:r:s:t:x:y:z:A:F:N:O:R:S:ZYDT:")) != -1)
     {
       switch (c)
 	{
@@ -593,6 +594,9 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	  break;
+	case 'T':
+	  tcxo = atoi(optarg);
+	  break;
 	default:
 	case 'h':
 	  printf("%s -h(elp) -a(wgn on) -e(xtended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -r Ricean_FactordB -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",argv[0]);
@@ -643,7 +647,10 @@ int main(int argc, char **argv) {
   if ((oai_hw_input == 1)||
       (oai_hw_output == 1)){
     openair_fd=setup_oai_hw(frame_parms,PHY_vars_UE,PHY_vars_eNB);
+    msg("setting TCXO to %d\n",tcxo);
+    ioctl(openair_fd,openair_SET_TCXO_DAC,(void *)&tcxo);
   }
+
 #ifdef IFFT_FPGA
   txdata    = (int **)malloc16(2*sizeof(int*));
   txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
@@ -1382,8 +1389,19 @@ int main(int argc, char **argv) {
   }
   else {
     printf("Sending frame to OAI HW\n");
+    temp[0] = 110;
+    temp[1] = 110;
+    temp[2] = 110;
+    temp[3] = 110;
+    ioctl(openair_fd,openair_SET_TX_GAIN,(void *)&temp[0]);
     ioctl(openair_fd,openair_START_TX_SIG,(void *)NULL);
   }
+
+#ifdef XFORMS
+  fl_hide_form(form_dl);
+  //fl_free_form(form_dl);
+#endif
+
 
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
@@ -1423,10 +1441,6 @@ int main(int argc, char **argv) {
       (oai_hw_output==1)){
     close(openair_fd);
   }
-
-#ifdef XFORMS
-  fl_free_form(form_dl);
-#endif
 
   return(n_errors);
 

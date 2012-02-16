@@ -168,6 +168,7 @@ u16 prach_root_sequence_map4[138] = {  1,138,2,137,3,136,4,135,5,134,6,133,7,132
 
 u16 du[838];
 
+#ifdef USER_MODE
 void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 
   FILE *fd;
@@ -186,6 +187,7 @@ void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
   fclose(fd);
 
 }
+#endif
 
 // This function finds the
 void fill_du(u8 prach_fmt) {

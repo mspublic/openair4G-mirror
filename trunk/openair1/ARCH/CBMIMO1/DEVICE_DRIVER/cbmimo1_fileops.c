@@ -609,7 +609,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	PHY_vars_UE_g[0]->Mod_id = 0;
 	// this is only for visualization in the scope
-	PHY_vars_UE_g[0]->lte_ue_common_vars.sync_corr = sync_corr_ue;
+	PHY_vars_UE_g[0]->lte_ue_common_vars.sync_corr = sync_corr_ue0;
 
   
 	// allocate dlsch structures

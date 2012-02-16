@@ -41,7 +41,7 @@
 #include "defs.h"
 #include "PHY/extern.h"
 
-#define DEBUG_SSS
+//#define DEBUG_SSS
 
 int generate_sss(mod_sym_t **txdataF,
 		 short amp,
