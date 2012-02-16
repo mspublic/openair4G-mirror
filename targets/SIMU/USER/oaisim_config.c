@@ -273,13 +273,14 @@ int olg_config() {
   set_glog(oai_emulation.info.g_log_level,LOG_LOW); //g_glog
   // component, log level, log interval
   set_log(OMG,  LOG_INFO, 20);
-  set_log(EMU,  LOG_INFO,  10);
-  set_log(OCG,  LOG_INFO, 1);  
+  set_log(EMU,  LOG_INFO,  20);
+  set_log(OCG,  LOG_INFO, 20);  
   set_log(MAC,  LOG_DEBUG, 1);  
   set_log(RLC,  LOG_TRACE, 1);  
   set_log(PHY,  LOG_DEBUG, 1);  
   set_log(PDCP, LOG_TRACE, 1);  
   set_log(RRC,  LOG_DEBUG, 1);  
+  set_log(OCM,  LOG_INFO, 20);  
   
   // set_comp_log(MAC, LOG_TRACE, LOG_FULL,1);
   

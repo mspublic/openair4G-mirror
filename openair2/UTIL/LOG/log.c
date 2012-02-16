@@ -173,13 +173,13 @@ void logInit (void) {
     g_log->log_component[PERF].filelog = 0;
     g_log->log_component[PERF].filelog_name = "";
     
-    g_log->log_component[RB].name = "RB";
-    g_log->log_component[RB].level = LOG_INFO;
-    g_log->log_component[RB].flag =  LOG_MED;
-    g_log->log_component[RB].interval =  1;
-    g_log->log_component[RB].fd = 0;
-    g_log->log_component[RB].filelog = 0;
-    g_log->log_component[RB].filelog_name = "";
+    g_log->log_component[OIP].name = "OIP";
+    g_log->log_component[OIP].level = LOG_INFO;
+    g_log->log_component[OIP].flag =  LOG_MED;
+    g_log->log_component[OIP].interval =  1;
+    g_log->log_component[OIP].fd = 0;
+    g_log->log_component[OIP].filelog = 0;
+    g_log->log_component[OIP].filelog_name = "";
     
     g_log->log_component[CLI].name = "CLI";
     g_log->log_component[CLI].level = LOG_INFO;
@@ -388,7 +388,7 @@ int  set_log(int component, int level, int interval) {
       g_log->log_component[component].level = level;
       switch (level) {
       case LOG_TRACE: 
-	g_log->log_component[component].flag = LOG_HIGH ;
+	g_log->log_component[component].flag = LOG_MED ;
 	break;
       case LOG_DEBUG:
 	g_log->log_component[component].flag = LOG_MED ;

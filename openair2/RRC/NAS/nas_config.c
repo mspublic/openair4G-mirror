@@ -49,6 +49,8 @@
 #include <net/route.h>
 
 #include "nas_config.h"
+#include "UTIL/LOG/log.h"
+
 
 //default values according to the examples, 
 
@@ -119,21 +121,21 @@ int set_gateway(char *interfaceName, char *gateway)
 
         if(strstr(strerror(errno),"File exists") == NULL)
         {
-            printf("ioctl SIOCADDRT failed : %s\n",strerror(errno));
+	  LOG_E(OIP,"ioctl SIOCADDRT failed : %s\n",strerror(errno));
             return 2;
         }
         else /*if SIOCADDRT error is route exist, retrun success*/
         {
-            printf("File Exist ...\n");
-            printf("set_gateway OK!\n");
-            return 0;
+	  LOG_I(OIP,"File Exist ...\n");
+	  LOG_I(OIP,"set_gateway OK!\n");
+	  return 0;
         }
 
     }
 
     close(sock_fd);
 
-    printf("Set Gateway OK!\n");
+    LOG_D(OIP,"Set Gateway OK!\n");
     return 0;
 }
 
@@ -145,9 +147,8 @@ int setInterfaceParameter(char *interfaceName, char *settingAddress, int operati
     struct ifreq ifr;
     struct sockaddr_in addr;
 
-    if((sock_fd = socket(AF_INET,SOCK_DGRAM,0)) < 0)
-    {
-        printf("Setting operation %d, for %s, address, %s : socket failed",
+    if((sock_fd = socket(AF_INET,SOCK_DGRAM,0)) < 0)    {
+      LOG_E(OIP,"Setting operation %d, for %s, address, %s : socket failed\n",
                operation, interfaceName, settingAddress);
         return 1;
     }
@@ -161,10 +162,9 @@ int setInterfaceParameter(char *interfaceName, char *settingAddress, int operati
     inet_aton(settingAddress,&addr.sin_addr);
     memcpy(&ifr.ifr_ifru.ifru_addr,&addr,sizeof(struct sockaddr_in));
 
-    if(ioctl(sock_fd,operation,&ifr) < 0)
-    {
+    if(ioctl(sock_fd,operation,&ifr) < 0)    {
         close(sock_fd);
-        printf("Setting operation %d, for %s, address, %s : ioctl call failed",
+        LOG_E(OIP,"Setting operation %d, for %s, address, %s : ioctl call failed\n",
                operation, interfaceName, settingAddress);
         return 2;
     }
@@ -184,7 +184,7 @@ int bringInterfaceUp(char *interfaceName, int up)
 
     if((sock_fd = socket(AF_INET,SOCK_DGRAM,0)) < 0)
     {
-        printf("Bringing interface UP, for %s, failed creating socket\n", interfaceName);
+      LOG_E(OIP,"Bringing interface UP, for %s, failed creating socket\n", interfaceName);
         return 1;
     }
 
@@ -197,7 +197,7 @@ int bringInterfaceUp(char *interfaceName, int up)
       	if (ioctl(sock_fd, SIOCSIFFLAGS, (caddr_t)&ifr) == -1)
         {
             close(sock_fd);
-            printf("Bringing interface UP, for %s, failed UP ioctl", interfaceName);
+            LOG_E(OIP,"Bringing interface UP, for %s, failed UP ioctl\n", interfaceName);
             return 2;
         }
     }
@@ -208,7 +208,7 @@ int bringInterfaceUp(char *interfaceName, int up)
         if (ioctl(sock_fd, SIOCSIFFLAGS, (caddr_t)&ifr) == -1)
         {
             close(sock_fd);
-            printf("Bringing interface UP, for %s, failed UP ioctl", interfaceName);
+            LOG_E(OIP,"Bringing interface UP, for %s, failed UP ioctl\n", interfaceName);
             return 2;
         }
     }
@@ -245,7 +245,7 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet){
   char ipAddress[20];
   char broadcastAddress[20];
   char interfaceName[8];
-    
+  int returnValue;
   sprintf(ipAddress, "10.0.%d.%d", thirdOctet,fourthOctet);
 
   sprintf(broadcastAddress, "10.0.%d.255", thirdOctet);
@@ -254,7 +254,7 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet){
   
   bringInterfaceUp(interfaceName, 0);
   // sets the machine address
-  int returnValue= setInterfaceParameter(interfaceName, ipAddress,SIOCSIFADDR);
+  returnValue= setInterfaceParameter(interfaceName, ipAddress,SIOCSIFADDR);
   
   // sets the machine network mask
   if(!returnValue)

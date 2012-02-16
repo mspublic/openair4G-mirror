@@ -42,7 +42,7 @@
 #include "SIMULATION/TOOLS/defs.h"
 #include "UTIL/LOG/log.h"
  
-#define DEBUG_RAR
+//#define DEBUG_RAR
 
 extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];
@@ -73,9 +73,8 @@ unsigned short fill_rar(u8 Mod_id,
   rar->cqi_req                = 1;
   rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;
 
-#ifdef DEBUG_RAR
-  LOG_D(MAC,"[eNB %d] Frame %d Generating RAR for CRNTI %x\n",Mod_id,frame,rar->t_crnti);
-#endif
+  LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Generating RAR for CRNTI %x\n",Mod_id,frame,rar->t_crnti);
+
   return(rar->t_crnti);
 }
 
@@ -84,22 +83,22 @@ u16 ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 preamb
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   
-  LOG_D(MAC,"[UE %d] Frame %d process_rar : preamble_index %d, received %d\n",Mod_id,frame,preamble_index,rarh->RAPID);
+  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : process RAR : preamble_index %d, received %d\n",Mod_id,frame,preamble_index,rarh->RAPID);
   
 #ifdef DEBUG_RAR
-  LOG_T(MAC,"[UE %d] rarh->E %d\n",Mod_id,rarh->E);
-  LOG_D(MAC,"[UE %d] rarh->T %d\n",Mod_id,rarh->T);
-  LOG_D(MAC,"[UE %d] rarh->RAPID %d\n",Mod_id,rarh->RAPID);
+  LOG_D(MAC,"[UE %d][RAPROC] rarh->E %d\n",Mod_id,rarh->E);
+  LOG_D(MAC,"[UE %d][RAPROC] rarh->T %d\n",Mod_id,rarh->T);
+  LOG_D(MAC,"[UE %d][RAPROC] rarh->RAPID %d\n",Mod_id,rarh->RAPID);
 
-  LOG_D(MAC,"[UE %d] rar->R %d\n",Mod_id,rar->R);
-  LOG_D(MAC,"[UE %d] rar->Timing_Advance_Command %d\n",Mod_id,rar->Timing_Advance_Command);
-  LOG_D(MAC,"[UE %d] rar->hopping_flag %d\n",Mod_id,rar->hopping_flag);
-  LOG_D(MAC,"[UE %d] rar->rb_alloc %d\n",Mod_id,rar->rb_alloc);
-  LOG_D(MAC,"[UE %d] rar->mcs %d\n",Mod_id,rar->mcs);
-  LOG_D(MAC,"[UE %d] rar->TPC %d\n",Mod_id,rar->TPC);
-  LOG_D(MAC,"[UE %d] rar->UL_delay %d\n",Mod_id,rar->UL_delay);
-  LOG_D(MAC,"[UE %d] rar->cqi_req %d\n",Mod_id,rar->cqi_req);
-  LOG_D(MAC,"[UE %d] rar->t_crnti %x\n",Mod_id,rar->t_crnti);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->R %d\n",Mod_id,rar->R);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->Timing_Advance_Command %d\n",Mod_id,rar->Timing_Advance_Command);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->hopping_flag %d\n",Mod_id,rar->hopping_flag);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->rb_alloc %d\n",Mod_id,rar->rb_alloc);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->mcs %d\n",Mod_id,rar->mcs);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->TPC %d\n",Mod_id,rar->TPC);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->UL_delay %d\n",Mod_id,rar->UL_delay);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->cqi_req %d\n",Mod_id,rar->cqi_req);
+  LOG_D(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",Mod_id,rar->t_crnti);
 #endif
   if (preamble_index == rarh->RAPID) {
     *t_crnti = rar->t_crnti;

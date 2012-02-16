@@ -47,8 +47,8 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, uns
   }
 
 
-  LOG_T(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
-  LOG_T(componentP, "------+-------------------------------------------------|\n");
+  LOG_D(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
+  LOG_D(componentP, "------+-------------------------------------------------|\n");
   for (octet_index = 0; octet_index < sizeP; octet_index++) {
     if ((octet_index % 16) == 0){
       if (octet_index != 0) {
@@ -209,7 +209,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                   rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
 
 #ifdef DEBUG_RLC_DATA_REQ
-                  msg("RLC_TYPE : %d\n",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
+                  LOG_D(RLC,"RLC_TYPE : %d ",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
 #endif
                   switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                     case RLC_NONE:

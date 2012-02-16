@@ -264,7 +264,20 @@ void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u32 frame, u8 CH_index);
     \param Mod_id Instance ID of UE
     \param frame Frame index
     \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u32 frame,u8 CH_index);
+void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u32 frame,u8 CH_index);\
+
+/** \brief process the received rrcConnectionReconfiguration message at UE 
+    \param Mod_id Instance ID of UE
+    \param frame Frame index
+    \param *rrcConnectionReconfiguration pointer to the sturcture
+    \param CH_index Index of corresponding eNB/CH*/
+void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,u8 eNB_index);
+
+/** \brief Generates/Encodes RRCConnectionReconfigurationComplete  message at UE 
+    \param Mod_id Instance ID of UE
+    \param frame Frame index
+    \param CH_index Index of corresponding eNB/CH*/
+void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, u8 eNB_index);
 
 /** \brief Establish SRB1 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param Mod_id Instance ID of UE
@@ -336,6 +349,12 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_inde
    \param UE_index Index of UE transmitting the messages
    \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
+
+/**\brief Generate/decode the RRCConnectionReconfiguration at eNB
+   \param Mod_id Instance ID for eNB/CH
+   \param frame Frame index
+   \param UE_index Index of UE transmitting the messages*/
+void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_index);
 
 
 //L2_interface.c

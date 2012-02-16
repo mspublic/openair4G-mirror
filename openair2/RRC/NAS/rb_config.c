@@ -40,7 +40,7 @@ static int socket_enabled;
 void init_socket(void){
   
   if ((fd=socket(AF_INET6, SOCK_DGRAM, 0)) < 0){
-    LOG_E(RB,"ERROR opening socket");
+    LOG_E(OIP,"ERROR opening socket\n");
     socket_enabled=0;
   }
   socket_enabled=1;
@@ -60,26 +60,26 @@ int rb_validate_config_ipv4(int cx, int inst, int rb) {
   struct sockaddr_in sa;
 
   if (inst == -1){
-    LOG_E(RB,"Specify an interface\n");
+    LOG_E(OIP,"Specify an interface\n");
     return(1);
   }
   
   if (rb == -1) {
-    LOG_E(RB,"Specify an RAB identifier \n");
+    LOG_E(OIP,"Specify an RAB identifier \n");
     return (1);
   }
   
   if (cx == -1) {
-    LOG_E(RB,"Specify an LCR \n");
+    LOG_E(OIP,"Specify an LCR \n");
     return(1);
   }
   /* 
   if ( inet_aton(src,&saddr_ipv4)<= 0) {
-    LOG_E(RB,"Specify a source IP address\n");
+    LOG_E(OIP,"Specify a source IP address\n");
     return(1);
   }
    if (inet_aton(src,&saddr_ipv4)<= 0 0) {
-    LOG_E(RB,"Specify a destination IP address\n");
+    LOG_E(OIP,"Specify a destination IP address\n");
     return(1);
     }
   */
@@ -108,11 +108,11 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
   rb_ioctl_init(inst);
 
   if (rb_validate_config_ipv4(cx,inst,rb) > 0){
-    LOG_E(RB, "RB configuration failed, inputs parameters incorrect\n");
+    LOG_E(OIP, "OIP configuration failed, inputs parameters incorrect\n");
     return (1);
   }
   
-  // add an RB
+  // add an OIP
   if (action == 0 ) {
     
     msgreq = (struct nas_msg_rb_establishment_request *)(gifr.msg);
@@ -122,8 +122,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
     
     gifr.type =  NAS_MSG_RB_ESTABLISHMENT_REQUEST;
     if ((err=ioctl(fd, NAS_IOCTL_RRM, &gifr)) < 0){
-      perror("IOCTL error: RB ESTAB REQ\n");
-      LOG_E(RB,"IOCTL error: RB ESTAB REQ");
+      perror("IOCTL error: OIP ESTAB REQ\n");
+      LOG_E(OIP,"IOCTL error: OIP ESTAB REQ");
     }
     
     msgreq_class = (struct nas_msg_class_add_request *)(gifr.msg);
@@ -143,8 +143,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
     gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
     
     if ((err=ioctl(fd, NAS_IOCTL_RRM, &gifr)) < 0 ){
-      perror("IOCTL error: DIR SEND: ADD REQ\n");
-      LOG_E(RB,"IOCTL error: DIR SEND: ADD REQ");
+      perror("IOCTL error: DIR SEND: ADD REQ");
+      LOG_E(OIP,"IOCTL error: DIR SEND: ADD REQ\n");
     }
     
     msgreq_class->rab_id = rb;
@@ -156,12 +156,12 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
     gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
     
     if ((err=ioctl(fd, NAS_IOCTL_RRM, &gifr)) < 0 ){
-      perror("IOCTL error: DIR RECEIVE: ADD REQ\n");
-      LOG_E(RB,"IOCTL error: DIR RECEIVE: ADD REQ");
+      perror("IOCTL error: DIR RECEIVE: ADD REQ");
+      LOG_E(OIP,"IOCTL error: DIR RECEIVE: ADD REQ\n");
     }
     
   }
-  // RB DEL 	
+  // OIP DEL 	
   else if (action == 1) {
     
     msgrel = (struct nas_msg_rb_release_request *)(gifr.msg);
@@ -171,8 +171,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
     gifr.type =  NAS_MSG_RB_RELEASE_REQUEST;
     
     if ((err=ioctl(fd, NAS_IOCTL_RRM, &gifr)) < 0){
-      perror("IOCTL error: RB RELEASE REQ\n");
-      LOG_E(RB,"IOCTL error: RB RELEASE REQ\n");
+      perror("IOCTL error: OIP RELEASE REQ");
+      LOG_E(OIP,"IOCTL error: OIP RELEASE REQ\n");
     }
     
     msgdel_class = (struct nas_msg_class_del_request *)(gifr.msg);
@@ -184,8 +184,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
     gifr.type =  NAS_MSG_CLASS_DEL_REQUEST;
     
     if ((err=ioctl(fd, NAS_IOCTL_RRM, &gifr)) < 0 ){
-      perror("IOCTL error: DIR SEND : CLASS DEL REQ\n");
-      LOG_E(RB,"IOCTL error: DIR SEND : CLASS DEL REQ");
+      perror("IOCTL error: DIR SEND : CLASS DEL REQ");
+      LOG_E(OIP,"IOCTL error: DIR SEND : CLASS DEL REQ\n");
     }
     
     msgdel_class->lcr = cx;
@@ -195,8 +195,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
     gifr.type =  NAS_MSG_CLASS_DEL_REQUEST;
     
     if ((err=ioctl(fd, NAS_IOCTL_RRM, &gifr)) < 0 ){
-      perror("IOCTL error: DIR RECEIVE : CLASS DEL REQ\n");
-      LOG_E(RB,"IOCTL erro: DIR RECEIVE : CLASS DEL REQ");
+      perror("IOCTL error: DIR RECEIVE : CLASS DEL REQ");
+      LOG_E(OIP,"IOCTL erro: DIR RECEIVE : CLASS DEL REQ\n");
     }
     
   }
@@ -213,7 +213,7 @@ int rb_stats_req(int inst) {
   }	/* request stats without defining the interface */ 
   else if  (inst == -1){
     //	printf("Specify an interface for statistics request \n");
-    LOG_E(RB,"Specify an interface for statistics request \n");
+    LOG_E(OIP,"Specify an interface for statistics request \n");
     return (1);
   } 
   
@@ -226,14 +226,14 @@ int rb_stats_req(int inst) {
   
   if ((err = ioctl(fd, NAS_IOCTL_RRM, &gifr)) < 0 ) {
     perror("IOCTL error: STATS REQ FAILED\n");
-    LOG_E(RB,"IOCTL error: STATS REQ FAILED");
+    LOG_E(OIP,"IOCTL error: STATS REQ FAILED\n");
   }
   
-  LOG_I(RB,"ioctl :Statistics request");
-  LOG_I(RB,"tx_packets = %u, rx_packets = %u\n", msgrep->tx_packets, msgrep->rx_packets);
-  LOG_I(RB,"tx_bytes = %u, rx_bytes = %u\n", msgrep->tx_bytes, msgrep->rx_bytes);
-  LOG_I(RB,"tx_errors = %u, rx_errors = %u\n", msgrep->tx_errors, msgrep->rx_errors);
-  LOG_I(RB,"tx_dropped = %u, rx_dropped = %u\n", msgrep->tx_dropped, msgrep->rx_dropped);
+  LOG_I(OIP,"ioctl :Statistics request");
+  LOG_I(OIP,"tx_packets = %u, rx_packets = %u\n", msgrep->tx_packets, msgrep->rx_packets);
+  LOG_I(OIP,"tx_bytes = %u, rx_bytes = %u\n", msgrep->tx_bytes, msgrep->rx_bytes);
+  LOG_I(OIP,"tx_errors = %u, rx_errors = %u\n", msgrep->tx_errors, msgrep->rx_errors);
+  LOG_I(OIP,"tx_dropped = %u, rx_dropped = %u\n", msgrep->tx_dropped, msgrep->rx_dropped);
   
   return (0);
 	

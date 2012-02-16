@@ -35,12 +35,6 @@
 * \company Eurecom
 * \email: raymond.knopp@eurecom.fr 
 */ 
-
-
-
-
-
-
 //#include "openair_types.h"
 //#include "openair_defs.h"
 //#include "openair_proto.h"
@@ -137,11 +131,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 
       return (Sdu_size);
     }
-
-
-
   }
-
 
   else{   //This is an UE
 #ifdef DEBUG_RRC
