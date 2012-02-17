@@ -599,7 +599,6 @@ int main(int argc, char **argv) {
 	  break;
 	default:
 	case 'h':
-	  printf("%s -h(elp) -a(wgn on) -e(xtended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -r Ricean_FactordB -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",argv[0]);
 	  printf("-h This message\n");
 	  printf("-a Use AWGN channel and not multipath\n");
 	  printf("-e Use extended prefix mode\n");
@@ -622,6 +621,9 @@ int main(int argc, char **argv) {
 	  printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
 	  printf("-f Output filename (.txt format) for Pe/SNR results\n");
 	  printf("-F Input filename (.txt format) for RX conformance testing\n");
+	  printf("-Y just generate tx frame and send it to hardware\n");
+	  printf("-Z grab frame from hardware and do rx processing\n");
+	  printf("-T set TCXO parameter on hardware\n");
 	  exit (-1);
 	  break;
 	}
@@ -644,12 +646,15 @@ int main(int argc, char **argv) {
 
   frame_parms = &PHY_vars_eNB->lte_frame_parms;
 
-  if ((oai_hw_input == 1)||
-      (oai_hw_output == 1)){
-    openair_fd=setup_oai_hw(frame_parms,PHY_vars_UE,PHY_vars_eNB);
-    msg("setting TCXO to %d\n",tcxo);
-    ioctl(openair_fd,openair_SET_TCXO_DAC,(void *)&tcxo);
-  }
+  if (oai_hw_input == 1)
+    openair_fd=setup_oai_hw(frame_parms,PHY_vars_UE,NULL);
+
+  if (oai_hw_output == 1)
+    openair_fd=setup_oai_hw(frame_parms,NULL,PHY_vars_eNB);
+
+  msg("setting TCXO to %d\n",tcxo);
+  ioctl(openair_fd,openair_SET_TCXO_DAC,(void *)&tcxo);
+  
 
 #ifdef IFFT_FPGA
   txdata    = (int **)malloc16(2*sizeof(int*));

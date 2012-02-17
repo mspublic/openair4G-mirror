@@ -67,7 +67,7 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
   mem_base = (unsigned int) mmap(0,
 				 BIGPHYS_NUMPAGES*4096,
 				 PROT_READ|PROT_WRITE,
-				 MAP_SHARED|MAP_FIXED,//MAP_SHARED,
+				 MAP_SHARED, //|MAP_FIXED,//MAP_SHARED,
 				 openair_fd,
 				 0);
   
@@ -100,6 +100,10 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
       free(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
       phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = (s32*)((int)dummy_tx_rx_vars.RX_DMA_BUFFER[0]-bigphys_top+mem_base);
       printf("rxdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
+      for (j=0;j<16;j++) {
+	printf("rxbuffer %d: %x\n",j,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j]);
+	phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j] = 16-j;
+      }
     }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
       free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
