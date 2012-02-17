@@ -496,7 +496,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   for (i=0;i<8;i++) { // num max DRB (11-3-8)
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
       LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",
-	  Mod_id,UE_index,
+	    Mod_id,frame, UE_index,
 	  (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity,
 	  (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->logicalChannelIdentity);
       if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
