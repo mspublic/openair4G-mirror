@@ -107,8 +107,13 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
     return -EAGAIN;
   }
 
+  /*
   for (i=0;i<16;i++)
     printk("[openair][MMAP] rxsig %d = %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
+  */
+
+  for (i=0;i<16;i++)
+    ((unsigned int*)RX_DMA_BUFFER[0][0])[i] = i;
 
   for (i=0;i<16;i++)
     ((unsigned int*)TX_DMA_BUFFER[0][0])[i] = i;
@@ -185,7 +190,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef RTAI_ENABLED
     
     if (openair_daq_vars.node_configured > 0) {
-      printk("[openair][IOCTL] NODE ALREADY CONFIGURED Triggering reset of OAI firmware",openair_daq_vars.node_configured);
+      printk("[openair][IOCTL] NODE ALREADY CONFIGURED Triggering reset of OAI firmware\n",openair_daq_vars.node_configured);
 
       if (vid == XILINX_VENDOR) {  // This is ExpressMIMO
 	exmimo_firmware_init();
