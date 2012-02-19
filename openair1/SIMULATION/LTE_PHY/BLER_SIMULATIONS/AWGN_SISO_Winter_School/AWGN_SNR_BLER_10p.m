@@ -3,9 +3,7 @@ set(0, 'Defaultaxesfontsize', 14);
 set(0, 'DefaultLineLineWidth', 2);
 
 %%
-root_path = './AWGN_SISO_Winter_School/'
-
-snr_all = -20:0.2:40;
+root_path = '../AWGN_SISO_Winter_School';
 
 plot_style = {'b-*';'r-*';'g-*';'y-*';'k-*';...
     'b-o';'r-o';'g-o';'y-o';'k-o';...
@@ -20,14 +18,9 @@ legend_str = {};
 i=1;
 for mcs=0:25
     file = fullfile(root_path,sprintf('awgn_bler_tx1_mcs%d.csv',mcs));
-    
+    data = dlmread(file,';',1,0);
     snr = data(:,1);
     bler = data(:,5)./data(:,6); % round 1
-    
-   % snr_interp = snr(1):0.01:snr(end);
-   % bler_interp = interp1(snr,bler,snr_interp,'linear');
-   % snr = snr_interp;
-   % bler = bler_interp;
     
     snr_tmp = snr(bler<0.1);
     c_rate(i) = data(1,4);
@@ -42,16 +35,16 @@ end
 
 %%
 
-h_fig = figure(1);
-%h_leg = legend(legend_str,'location','eastoutside');
-%set(h_leg,'FontSize',10);
+figure;
+h_leg = legend(legend_str,'location','eastoutside');
+set(h_leg,'FontSize',10);
 title('AWGN Performance Curves for LTE 5 MhZ');
 ylabel 'BLER'
 xlabel 'SNR'
 ylim([0.001 1])
 grid on
 
-h_fig = figure(2);
+figure;
 plot(c_rate(1:10), snr_10p(1:10),'r-x');
 hold on
 grid on
