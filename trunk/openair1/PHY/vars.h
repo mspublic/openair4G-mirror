@@ -22,9 +22,9 @@ unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
 #ifdef OPENAIR_LTE
 #include "PHY/LTE_REFSIG/primary_synch.h"
-int *primary_synch0_time;
-int *primary_synch1_time;
-int *primary_synch2_time;
+s16 *primary_synch0_time;
+s16 *primary_synch1_time;
+s16 *primary_synch2_time;
 #endif
 
 #include "PHY/CODING/vars.h"

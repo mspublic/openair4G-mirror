@@ -226,7 +226,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   init_frame_parms(frame_parms,1);
 
   sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars.rxdata, 
-			   frame_parms, 
+			   frame_parms,
 			   (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
 
   sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
