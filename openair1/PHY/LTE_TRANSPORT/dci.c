@@ -787,9 +787,9 @@ void pdcch_extract_rbs_single(s32 **rxdataF,
   u16 rb,nb_rb=0;
   u8 i,j,aarx;
   s32 *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
+  
 
-
-
+  int nushiftmod3 = frame_parms->nushift%3;
   u8 symbol_mod;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
@@ -853,10 +853,10 @@ void pdcch_extract_rbs_single(s32 **rxdataF,
 	else {
 	  j=0;
 	  for (i=0;i<12;i++) {
-	    if ((i!=frame_parms->nushift) &&
-		(i!=frame_parms->nushift+3) &&
-		(i!=frame_parms->nushift+6) &&
-		(i!=frame_parms->nushift+9)) {
+	    if ((i!=nushiftmod3) &&
+		(i!=(nushiftmod3+3)) &&
+		(i!=(nushiftmod3+6)) &&
+		(i!=(nushiftmod3+9))) {
 	      rxF_ext[j]=rxF[i<<1];
 	      //	      	      	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 	      dl_ch0_ext[j++]=dl_ch0[i];
@@ -877,8 +877,8 @@ void pdcch_extract_rbs_single(s32 **rxdataF,
       if (symbol_mod==0) {
 	j=0;
 	for (i=0;i<6;i++) {
-	  if ((i!=frame_parms->nushift) &&
-	      (i!=frame_parms->nushift+3)){
+	  if ((i!=nushiftmod3) &&
+	      (i!=(nushiftmod3+3))){
 	    dl_ch0_ext[j]=dl_ch0[i];
 	    rxF_ext[j++]=rxF[i<<1];
 	    //	    	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
@@ -886,8 +886,8 @@ void pdcch_extract_rbs_single(s32 **rxdataF,
 	}
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	for (;i<12;i++) {
-	  if ((i!=frame_parms->nushift+6) &&
-	      (i!=frame_parms->nushift+9)){
+	  if ((i!=(nushiftmod3+6)) &&
+	      (i!=(nushiftmod3+9))){
 	    dl_ch0_ext[j]=dl_ch0[i];
 	    rxF_ext[j++]=rxF[(1+i-6)<<1];
 	    //	    	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
@@ -937,10 +937,10 @@ void pdcch_extract_rbs_single(s32 **rxdataF,
 	else {
 	  j=0;
 	  for (i=0;i<12;i++) {
-	    if ((i!=frame_parms->nushift) &&
-		(i!=frame_parms->nushift+3) &&
-		(i!=frame_parms->nushift+6) &&
-		(i!=frame_parms->nushift+9)) {
+	    if ((i!=(nushiftmod3)) &&
+		(i!=(nushiftmod3+3)) &&
+		(i!=(nushiftmod3+6)) &&
+		(i!=(nushiftmod3+9))) {
 	      rxF_ext[j]=rxF[i<<1];
 	      //	      	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 	      dl_ch0_ext[j++]=dl_ch0[i];
@@ -974,6 +974,7 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
   u8 i,aarx,j;
   s32 *dl_ch0,*dl_ch0_ext,*dl_ch1,*dl_ch1_ext,*rxF,*rxF_ext;
   u8 symbol_mod;
+  int nushiftmod3 = frame_parms->nushift%3;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -1021,10 +1022,10 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
 	else {
 	  j=0;
 	  for (i=0;i<12;i++) {
-	    if ((i!=frame_parms->nushift) &&
-		(i!=frame_parms->nushift+3) &&
-		(i!=frame_parms->nushift+6) &&
-		(i!=frame_parms->nushift+9)) {
+	    if ((i!=nushiftmod3) &&
+		(i!=nushiftmod3+3) &&
+		(i!=nushiftmod3+6) &&
+		(i!=nushiftmod3+9)) {
 
 	      rxF_ext[j]=rxF[i<<1];
 	      //	      	      	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
@@ -1068,10 +1069,10 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
 	else {
 	  j=0;
 	  for (i=0;i<12;i++) {
-	    if ((i!=frame_parms->nushift) &&
-		(i!=frame_parms->nushift+3) &&
-		(i!=frame_parms->nushift+6) &&
-		(i!=frame_parms->nushift+9)) {
+	    if ((i!=nushiftmod3) &&
+		(i!=nushiftmod3+3) &&
+		(i!=nushiftmod3+6) &&
+		(i!=nushiftmod3+9)) {
 	      rxF_ext[j]=rxF[i<<1];
 	      //	      	      	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 	      dl_ch0_ext[j]=dl_ch0[i];
@@ -1119,8 +1120,8 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
       else {
 	j=0;
 	for (i=0;i<6;i++) {
-	  if ((i!=frame_parms->nushift) &&
-	      (i!=frame_parms->nushift+3)){
+	  if ((i!=nushiftmod3) &&
+	      (i!=nushiftmod3+3)){
 	    dl_ch0_ext[j]=dl_ch0[i];
 	    dl_ch1_ext[j]=dl_ch1[i];
 	    rxF_ext[j++]=rxF[i<<1];
@@ -1129,8 +1130,8 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
 	}
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	for (;i<12;i++) {
-	  if ((i!=frame_parms->nushift+6) &&
-	      (i!=frame_parms->nushift+9)){
+	  if ((i!=nushiftmod3+6) &&
+	      (i!=nushiftmod3+9)){
 	    dl_ch0_ext[j]=dl_ch0[i];
 	    dl_ch1_ext[j]=dl_ch1[i];
 	    rxF_ext[j++]=rxF[(1+i-6)<<1];
@@ -1171,10 +1172,10 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
 	else {
 	  j=0;
 	  for (i=0;i<12;i++) {
-	    if ((i!=frame_parms->nushift) &&
-		(i!=frame_parms->nushift+3) &&
-		(i!=frame_parms->nushift+6) &&
-		(i!=frame_parms->nushift+9)) {
+	    if ((i!=nushiftmod3) &&
+		(i!=nushiftmod3+3) &&
+		(i!=nushiftmod3+6) &&
+		(i!=nushiftmod3+9)) {
 	      rxF_ext[j]=rxF[i<<1];
 	      //	      	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 	      dl_ch0_ext[j]=dl_ch0[i];
@@ -1804,7 +1805,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   u8 qpsk_table_offset2 = 0;
 #endif
 
-
+  int nushiftmod3 = frame_parms->nushift%3;
 
 
   num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
@@ -2024,7 +2025,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	    // kprime represents REG	    
 
 	    for (i=0;i<6;i++) {
-	      if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+	      if ((i!=(nushiftmod3))&&(i!=(nushiftmod3+3))) {
 		txdataF[0][tti_offset+i] = wbar[0][mprime];
 		if (frame_parms->nb_antennas_tx > 1)
 		  txdataF[1][tti_offset+i] = wbar[1][mprime];
