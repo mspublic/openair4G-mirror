@@ -1,21 +1,27 @@
 function delta=delta_BLER_1(beta)
 global SINR_p BLER_meas snr bler SINR_awgn abs_mode modu Pm tx_mode alpha seta
 
+  if (any(beta==0))
+    delta=Inf;
+return
+end
+
 p = 50;
 if(abs_mode==0) %MIESM Mapping
     
-    eval(['load ' '/root/DEVEL/trunk/openair1/SIMULATION/LTE_PHY/Abstraction/siso_MI_abs_' num2str(modu) 'Qam.mat'])
+    eval(['load ' 'siso_MI_abs_' num2str(modu) 'Qam.mat'])
     
     [x y]= size(SINR_p);
     RBIR = [];
     %SINR_eff = [];
     for t=1:1:x
         s = SINR_p(t,:);
-        s(s<-10)=-10;
-        s(s>49)=49;
+        %s(s<-10)=-10;
+        %s(s>49)=49;
         
         eval(['SI_p = interp1(newSNR,newC_siso_' num2str(modu) 'QAM,s, ''linear'' , ''extrap'');']);
        RBIR(t) = (sum(SI_p/beta(1))/Pm);
+
     end
     SINR_eff = interp1(newRBIR, newSNR, RBIR,'linear');
     SINR_eff = SINR_eff .* beta(2);
