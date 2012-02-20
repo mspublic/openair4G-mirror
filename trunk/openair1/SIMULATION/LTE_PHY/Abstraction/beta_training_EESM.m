@@ -81,10 +81,10 @@ for m=1:1:length(mcs)
    snr = snr(ble<0.99);
    snr = snr(blerr>0.001); 
 
-    snr_interp = snr(1):0.001:snr(end);
-    bler_interp = interp1(snr,bler,snr_interp,'linear');
-    snr = snr_interp;
-    bler = bler_interp;
+    %snr_interp = snr(1):0.001:snr(end);
+    %bler_interp = interp1(snr,bler,snr_interp,'linear');
+    %snr = snr_interp;
+    %bler = bler_interp;
    
 %***************************************************************************************
 % Data Extraction on Sub carrier basis data file saved using dlsim and reference
@@ -162,7 +162,7 @@ for m=1:1:length(mcs)
 %***************************************************************************************
 % for optmimized betas calculation using fminsearch
 %***************************************************************************************
-    beta_out=zeros(1,2);
+    beta_out=ones(1,2);
     %[opt_beta(mcs(m)), MSE] = fminsearch(@delta_BLER_1,opt_beta_new(mcs(m)))
     [beta_out, MSE] = fminsearch(@delta_BLER_1,[1 1])
 
@@ -172,18 +172,18 @@ for m=1:1:length(mcs)
     
     if(abs_mode==0) %MIESM Mapping
         
-        eval(['load ' '/root/DEVEL/trunk/openair1/SIMULATION/LTE_PHY/Abstraction/siso_MI_abs_' num2str(modu) 'Qam.mat'])
+        eval(['load ' 'siso_MI_abs_' num2str(modu) 'Qam.mat'])
         
         [xize y]= size(SINR_p);
         RBIR = [];
         for t=1:1:xize
             s = SINR_p(t,:);
-            s(s<-10)=-10;
-            s(s>49)=49;
+            %s(s<-10)=-10;
+            %s(s>49)=49;
              eval(['SI_p = interp1(newSNR,newC_siso_' num2str(modu) 'QAM,s, ''linear'' , ''extrap'');']);
-             RBIR(t) = (sum(SI_p/beta_out(1))/Pm);
+             RBIR(t) = mean(SI_p/beta_out(1));
         end
-         SINR_eff = interp1(newRBIR, newSNR, RBIR,'linear');
+         SINR_eff = interp1(newC_siso_4QAM, newSNR, RBIR,'linear');
          SINR_eff = SINR_eff .* beta_out(2); 
          
         
@@ -245,16 +245,20 @@ for m=1:1:length(mcs)
 %***************************************************************************************
 h_fig = figure;
 avg_SINR_p = mean(SINR_p');
-grid on
 semilogy(avg_SINR_p,BLER_meas,plot_style{m+1})
 xlim([-8 15])
 ylim([1e-3 1])
-s = strcat('LTE TM1 Avergae Abstraction MCS ', num2str(mcs(m)));
+s = strcat('LTE TM1 Average Abstraction MCS ', num2str(mcs(m)));
     title(s);
     ylabel 'BLER'
     xlabel 'SINR_{average}'
+    hold on
+    grid on
+    semilogy(snr,bler,'m-x');
+
     s2 = strcat('BLER_{meas} MCS ', num2str(mcs(m)));
-    legend(s2, 'Location',  'Best');
+   s3 = strcat('BLER_{AWGN} MCS ', num2str(mcs(m)));
+    legend(s2, s3, 'Location',  'Best');
  
 %***************************************************************************************
 % BLER Plot w.r.t Effective SINR
