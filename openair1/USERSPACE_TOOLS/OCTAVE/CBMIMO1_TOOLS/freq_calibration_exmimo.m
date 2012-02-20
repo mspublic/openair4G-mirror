@@ -6,18 +6,17 @@ hold off
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
-freqband=0;            % frequency band used by the openair card (depricated)
 
 cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 dual_tx = 0;
 tdd = 1;
 
-fc = 1902600e3+freqband*5e6;   % this has to be the same as in the config file
+fc = 1907600e3;   % this has to be the same as in the config file
 fs = 7680e3;
 %fs = 6500e3;
 fref = fc+fs/4;
 power_dBm=-70;
-
+f_off_min = 1e6;
 
 %gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal generator
 %gpib_send(gpib_card,gpib_device,['POW ' int2str(power_dBm+cables_loss_dB) 'dBm']);
@@ -27,27 +26,23 @@ power_dBm=-70;
 
 %keyboard;
 
-oarf_config(freqband,tdd,dual_tx)
 
-oarf_set_rx_rfmode(0);
-    
-oarf_set_rx_gain(70,70,0,0);
 
 sleep(2)
 
-step = 128;
-tcxo_freq = 128;
-
-f_off_min = 1e6;
-tcxo_freq_min = 256;
-
+step = 4096;
+i=0;
 do 
+  format long
+  fc
+  oarf_config_exmimo(fc,tdd,dual_tx,30);
 
-  step = step/2;
-  tcxo_freq
-  oarf_set_tcxo_dac(tcxo_freq);
-  sleep(2);
-  s=oarf_get_frame(freqband);   %oarf_get_frame
+%30);
+
+  i=i+1;
+  sleep(1);
+  s=oarf_get_frame(0);   %oarf_get_frame
+
   nb_rx = size(s,2);
 
   % find the DC component
@@ -69,20 +64,18 @@ do
 
   
   if (abs(f_off) < f_off_min)
-    tcxo_freq_min = tcxo_freq; 
       f_off_min = abs((f_off));
   end
 
   if ((f_off) > 0)
-    tcxo_freq = tcxo_freq + step;
+    fc = fc + step;
   else
-    tcxo_freq = tcxo_freq - step;
+    fc = fc - step;
   endif
 
+  step = step/2;
+until (step < 50)
 
-until (step < 1)
-
-write_tcxo
 
 %gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF');         %  deactivate output
 

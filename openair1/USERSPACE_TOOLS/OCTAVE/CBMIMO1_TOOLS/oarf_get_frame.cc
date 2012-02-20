@@ -64,7 +64,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   const int freq = args(0).int_value();  
 
   octave_value returnvalue;
-  int openair_fd,i,rx_sig_fifo_fd,rf_cntl_fifo_fd;
+  int openair_fd,i,aa,rx_sig_fifo_fd,rf_cntl_fifo_fd;
   unsigned int length;//mem_base;
   short *rx_sig[4];
   int fc;
@@ -78,7 +78,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   TX_RX_VARS dummy_tx_rx_vars;
   LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
 
-  unsigned int     bigphys_top;
+  unsigned int bigphys_top;
   unsigned int mem_base;
 
   if ((openair_fd = open("/dev/openair0", O_RDWR,0)) <0)
@@ -117,11 +117,12 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
 
   dump_frame_parms(frame_parms);
 
-  ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES,NB_ANTENNAS_RX);
-  short dma_buffer_local[2*NB_ANTENNAS_RX*FRAME_LENGTH_COMPLEX_SAMPLES];
+  ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES,frame_parms->nb_antennas_rx);
 
   /* 
   // version using FIFO
+  short dma_buffer_local[2*NB_ANTENNAS_RX*FRAME_LENGTH_COMPLEX_SAMPLES];
+
   // Flush RX sig fifo
   ((unsigned int *)&dma_buffer_local[0])[0] = 1 | ((freq&7)<<1) | ((freq&7)<<4);
   ioctl(openair_fd,openair_GET_BUFFER,(void *)dma_buffer_local);
@@ -166,19 +167,18 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   }
 
   for (i=0;i<frame_parms->nb_antennas_rx;i++)
-      rx_sig[i] = (short *)(mem_base + (unsigned int)dummy_tx_rx_vars.RX_DMA_BUFFER[i]-bigphys_top);
+    rx_sig[i] = (short *)(mem_base + (unsigned int)dummy_tx_rx_vars.RX_DMA_BUFFER[i]-bigphys_top);
 
   
   fc=0;
+  msg("Getting buffer...\n");
   ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
   sleep(1);   
 
 
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++)
-  {
-    dx(i,0)=Complex( rx_sig[0][i*2], rx_sig[0][i*2+1] );
-    dx(i,1)=Complex( rx_sig[1][i*2], rx_sig[1][i*2+1] );
-  }  
+    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++)
+      dx(i,aa)=Complex( rx_sig[aa][i*2], rx_sig[aa][i*2+1] );
 
   close(openair_fd);
 
