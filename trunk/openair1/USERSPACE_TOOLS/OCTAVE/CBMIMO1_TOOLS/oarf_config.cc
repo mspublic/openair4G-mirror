@@ -81,7 +81,7 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   if (any_bad_argument(args))
        return octave_value_list();
        
-  const int freq = args(0).int_value();  
+  const uint freq = args(0).int_value();  
   //const std::string configfile = args(1).string_value();
   //const std::string scenariofile = args(2).string_value();
   const int tdd = args(1).int_value();

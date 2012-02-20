@@ -21,7 +21,7 @@ OPENAIROBJS +=$(OPENAIR1_DIR)/PHY/TOOLS/fft.o
 
 #OPENAIROBJS = $(OPENAIR1_DIR)/PHY/CONFIG/openair_readconfigfile.o $(OPENAIR1_DIR)/PHY/CONFIG/openair_configure.o 
 
-OCTAVEOBJS =  oarf_set_tcxo_dac.oct oarf_config.oct oarf_set_calibrated_rx_gain.oct oarf_set_tx_gain.oct oarf_get_frame.oct oarf_set_rx_gain.oct  oarf_set_rx_rfmode.oct oarf_stop.oct oarf_send_frame.oct
+OCTAVEOBJS =  oarf_set_tcxo_dac.oct oarf_config.oct oarf_config_exmimo.oct oarf_set_calibrated_rx_gain.oct oarf_set_tx_gain.oct oarf_get_frame.oct oarf_set_rx_gain.oct  oarf_set_rx_rfmode.oct oarf_stop.oct oarf_send_frame.oct
 
 all: $(OCTAVEOBJS) gpib_send.oct 
 
