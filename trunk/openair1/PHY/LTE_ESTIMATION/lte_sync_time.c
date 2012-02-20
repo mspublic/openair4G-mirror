@@ -21,7 +21,7 @@
 #include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
 #endif
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 int* sync_corr_ue0 = NULL;
 int* sync_corr_ue1 = NULL;
@@ -353,9 +353,10 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 	peak_val = tmp[s];
 	peak_pos = n;
 	sync_source = s;
+	/*
 	printf("s %d: n %d sync_out %d, sync_out2  %d (sync_corr %d,%d), (%d,%d) (%d,%d)\n",s,n,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue0[n],
 	       sync_corr_ue0[n+length],((s16*)&sync_out[s])[0],((s16*)&sync_out[s])[1],((s16*)&sync_out2[s])[0],((s16*)&sync_out2[s])[1]);
-
+	*/
       } 
     }
   }

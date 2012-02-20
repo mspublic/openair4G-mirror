@@ -167,10 +167,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   u8 size;
   unsigned int *fw_block;
 
-  scale = &scale_mem;
+  unsigned int get_frame_cnt=0;
 
+  scale = &scale_mem;
+  /*
   printk("[openair][IOCTL] In ioctl(), ioctl = %x (%x,%x)\n",cmd,openair_START_1ARY_CLUSTERHEAD,openair_START_NODE);
-  
+  */
   switch(cmd) {
     
 
@@ -188,17 +190,28 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     set_taus_seed();
     
 #ifdef RTAI_ENABLED
-    
+    copy_from_user((void*)frame_parms,arg_ptr,sizeof(LTE_DL_FRAME_PARMS));
+    dump_frame_parms(frame_parms);
+    printk("[openair][IOCTL] Allocating frame_parms\n");
+
     if (openair_daq_vars.node_configured > 0) {
       printk("[openair][IOCTL] NODE ALREADY CONFIGURED Triggering reset of OAI firmware\n",openair_daq_vars.node_configured);
 
       if (vid == XILINX_VENDOR) {  // This is ExpressMIMO
-	exmimo_firmware_init();
+	//	exmimo_firmware_init();
+	//openair_dma(0,EXMIMO_PCIE_INIT);
 	ret = setup_regs(0,frame_parms);
+	/*
+	pci_dma_sync_single_for_device(pdev[0], 
+				    exmimo_pci_interface,
+				    1024, 
+				    PCI_DMA_TODEVICE);
+	*/
 	udelay(10000);
+	//printk("freq: %d gain: %d\n",exmimo_pci_interface->rf.rf_freq_rx0,exmimo_pci_interface->rf.rx_gain00);
 	openair_dma(0,EXMIMO_CONFIG);
       }
-      
+      /*
       udelay(10000);
       for (i=0;i<number_of_cards;i++) { 
 	ret = setup_regs(i,frame_parms);
@@ -207,11 +220,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	//	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 	
       }
+      */
     }
     else {
-      copy_from_user((void*)frame_parms,arg_ptr,sizeof(LTE_DL_FRAME_PARMS));
-      dump_frame_parms(frame_parms);
-      printk("[openair][IOCTL] Allocating frame_parms\n");
 
       ret = phy_init_top(frame_parms);
       msg("[openair][IOCTL] phy_init_top done: %d\n",ret);
@@ -740,13 +751,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.rx_total_gain_dB = MIN_RF_GAIN;
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
       openair_set_rx_gain_cal_openair(0,PHY_vars_UE_g[0]->rx_total_gain_dB);
-      
+      /*
       msg("[openair][IOCTL] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",
 	  RX_DMA_BUFFER[0],
 	  PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],
 	  RX_DMA_BUFFER[1],
 	  PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[1]);
-
+      */
 #ifdef DLSCH_THREAD
       ret = init_dlsch_threads();
       if (ret != 0)
@@ -882,13 +893,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       udelay(1000);
  #endif // NOCARD_TEST
-      if (vid == XILINX_VENDOR) { 
+      /*
+      if (vid == XILINX_VENDOR) {
 	printk("ADC0 (%p) :",(unsigned int *)RX_DMA_BUFFER[0][0]);
 	for (i=0;i<128;i++) {
 	  printk("%x.",((unsigned int *)RX_DMA_BUFFER[0][0])[i]);
 	}
       }
-      printk("\n");
+      printk("\n");*/
     }
     else {
       printk("[openair][STOP][ERROR] Cannot stop, radio is not configured ...\n");
@@ -908,20 +920,20 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   
   case openair_GET_BUFFER:
 
-    printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
+    //    printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #else
     openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
-    printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
+    //    printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
 
     //openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME; //this puts the node into RX mode only for TDD, its ignored in FDD mode
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
 
-
+    
     if (vid != XILINX_VENDOR) {
 
 #ifdef RTAI_ENABLED
@@ -948,23 +960,27 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     }
     else {
 
+      openair_daq_vars.get_frame_done = 0;
       setup_regs(0,frame_parms);
+      get_frame_cnt=0;
       openair_dma(0,EXMIMO_GET_FRAME);
       
-      udelay(10000);
-      udelay(10000);
+      while ((get_frame_cnt<30) &&
+	     (openair_daq_vars.get_frame_done == 0)) {
+	udelay(1000);
+	get_frame_cnt++;
+      }
+      if (get_frame_cnt==30)
+	printk("Get frame error\n");
 
       pci_dma_sync_single_for_cpu(pdev[0], 
 				  exmimo_pci_interface->rf.adc_head[0],
 				  76800*4, 
 				  PCI_DMA_FROMDEVICE);
+      /*
       printk("RX_DMA_BUFFER[0][0] 0x%x\n",RX_DMA_BUFFER[0][0]);
       for (i=0;i<76800;i+=1024)
 	printk("rx_buffer %d => %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
-      /*
-      for (i=0;i<NB_ANTENNAS_RX;i++)
-	rtf_put(rx_sig_fifo,
-		(unsigned char*)RX_DMA_BUFFER[0][i],FRAME_LENGTH_BYTES);
       */
       
     }

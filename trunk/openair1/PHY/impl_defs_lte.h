@@ -414,7 +414,11 @@ typedef struct {
   /// TDD S-subframe configuration (0-9)
   u8 tdd_config_S;
   /// Frequency index of CBMIMO1 card
-  u8 freq_idx;               
+  u8 freq_idx;
+  /// Frequency for ExpressMIMO/LIME
+  u32 carrier_freq;
+  /// RX gain for ExpressMIMO/LIME
+  u32 rxgain;
   /// Turns on second TX of CBMIMO1 card
   u8 dual_tx;                
 /// flag to indicate SISO transmission

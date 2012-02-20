@@ -35,11 +35,16 @@ unsigned int mem_base;
 
 int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
 		 PHY_VARS_UE  *phy_vars_ue,
-		 PHY_VARS_eNB *phy_vars_eNB) {
+		 PHY_VARS_eNB *phy_vars_eNB,
+		 uint32_t carrier_freq,
+		 uint32_t rxgain) {
   int i,j;
 
-  frame_parms->dual_tx = 0;
-  frame_parms->freq_idx = 0;
+  frame_parms->dual_tx      = 0;
+  frame_parms->freq_idx     = 0;
+  frame_parms->carrier_freq = carrier_freq;
+  frame_parms->rxgain       = rxgain;
+
   fc = 0;
   
   printf("Opening /dev/openair0\n");
@@ -117,5 +122,6 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
 
+  printf("Setting frequency to %d Hz, Gain to %d dB\n",carrier_freq,rxgain);
   return(openair_fd);
 }
