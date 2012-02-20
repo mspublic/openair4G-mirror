@@ -686,9 +686,6 @@ int slot_irq_handler(int irq, void *cookie) {
 
   intr_in = 1;
 
-  intr_cnt++;
-  if (intr_cnt%2000 == 0)
-    msg("Interrupt cnt %d\n",intr_cnt);
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
@@ -827,6 +824,10 @@ int slot_irq_handler(int irq, void *cookie) {
 	//	msg("Got PCIe interrupt for printk ...\n");
 	pci_fifo_printk();
 	
+      }
+      else if (irqcmd == GET_FRAME_DONE) {
+	msg("Got PCIe interrupt for GET_FRAME_DONE ...\n");
+	openair_daq_vars.get_frame_done=1;
       }
       rt_ack_irq(irq);
       rt_unmask_irq(irq);
