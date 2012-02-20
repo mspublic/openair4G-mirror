@@ -351,7 +351,7 @@ void pdcch_demapping(u16 *llr,u16 *wbar,LTE_DL_FRAME_PARMS *frame_parms,u8 num_p
       tti_offset0 = symbol_offset + re_offset0;
       // if REG is allocated to PHICH, skip it
       if (check_phich_reg(frame_parms,kprime,lprime,mi) == 1) {
-	//	msg("dci_demapping : skipping REG %d\n",(lprime==0)?kprime/6 : kprime>>2);
+	//msg("dci_demapping : skipping REG %d\n",(lprime==0)?kprime/6 : kprime>>2);
 	if ((lprime == 0)&&((kprime%6)==0))
 	  re_offset0+=4;
       }

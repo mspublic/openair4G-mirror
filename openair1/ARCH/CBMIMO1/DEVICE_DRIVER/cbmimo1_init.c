@@ -121,13 +121,13 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
 #else
 
     pci_interface[card_id]->node_id = openair_daq_vars.node_id;
-    printk("[openair][INIT] DAQ_NODE_ID = %d\n",openair_daq_vars.node_id);
+    //    printk("[openair][INIT] DAQ_NODE_ID = %d\n",openair_daq_vars.node_id);
     
     pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
     //printk("[openair][INIT] Card %d TIMING_ADVANCE = %d\n",card_id,openair_daq_vars.timing_advance);
     
     pci_interface[card_id]->samples_per_frame = FRAME_LENGTH_COMPLEX_SAMPLES;
-    printk("[openair][INIT] Card %d samples_per_frame = %d\n",card_id,FRAME_LENGTH_COMPLEX_SAMPLES);
+    //    printk("[openair][INIT] Card %d samples_per_frame = %d\n",card_id,FRAME_LENGTH_COMPLEX_SAMPLES);
 
     pci_interface[card_id]->frame_offset = 1;//FRAME_LENGTH_COMPLEX_SAMPLES-1;
     
@@ -164,10 +164,10 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
   else {
     
     exmimo_pci_interface->framing.tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
-    printk("[openair][INIT] Card %d TX_RX_SWITCH_POINT = %d\n",card_id,openair_daq_vars.tx_rx_switch_point);
+    //    printk("[openair][INIT] Card %d TX_RX_SWITCH_POINT = %d\n",card_id,openair_daq_vars.tx_rx_switch_point);
     
     exmimo_pci_interface->framing.timing_advance = openair_daq_vars.timing_advance;
-    printk("[openair][INIT] Card %d TIMING_ADVANCE = %d\n",card_id,openair_daq_vars.timing_advance);
+    //    printk("[openair][INIT] Card %d TIMING_ADVANCE = %d\n",card_id,openair_daq_vars.timing_advance);
     
     exmimo_pci_interface->framing.cyclic_prefix_mode  = frame_parms->Ncp;
     exmimo_pci_interface->framing.log2_ofdm_symbol_size = LOG2_NUMBER_OF_OFDM_CARRIERS; 
@@ -182,7 +182,9 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
       exmimo_pci_interface->rf.dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
     }
 
-
+    //    printk("Freq %d, Gain %d\n",frame_parms->carrier_freq,frame_parms->rxgain);
+    exmimo_pci_interface->rf.rf_freq_rx0          = frame_parms->carrier_freq;
+    exmimo_pci_interface->rf.rx_gain00            = frame_parms->rxgain;
   }
 #endif // RTAI_ENABLED
     
