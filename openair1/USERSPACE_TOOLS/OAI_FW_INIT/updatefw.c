@@ -76,10 +76,9 @@ void show_usage(char* pgname) {
   fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
   fprintf(stderr, "          and jump to firmware entry.\n");
   fprintf(stderr, "Usage:\n");
-  fprintf(stderr, "  %s [-f|--firmware 'filename'] [-s|--stackptr value] [-b|--forcereboot]\n");
+  fprintf(stderr, "  %s [-f|--firmware 'filename'] [-s|--stackptr value] [-b|--forcereboot]\n",pgname);
   fprintf(stderr, "   "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
-  fprintf(stderr, "[-v|-vv|-vvv|-vvvv] [-h|--help] [-p|--pretend]\n\n",
-                  pgname);
+  fprintf(stderr, "[-v|-vv|-vvv|-vvvv] [-h|--help] [-p|--pretend]\n\n");
   fprintf(stderr, "  [-f|--firmware ]     Mandatory option, to set the name of the executable file\n");
   fprintf(stderr, "                       of the firmware to update the remote card with.\n");
   fprintf(stderr, "                       The file should be an executable file in the Sparc32 ELF binary\n");
