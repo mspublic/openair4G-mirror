@@ -343,7 +343,7 @@ DCI1E_5MHz_2A_M10PRB_TDD_t  DLSCH_alloc_pdu2_1E[2];
 
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
-//#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
+//#define DLSCH_RB_ALLOC 0x1fbf // ignore DC component,RB13
 //#define DLSCH_RB_ALLOC 0x0001
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -806,9 +806,9 @@ int main(int argc, char **argv) {
  //sprintf(tikz_fname, "second_bler_tx%d_u2%d_mcs%d_chan%d_nsimus%d",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
  
 #ifdef SINGLE_RELAY
-  sprintf(tikz_fname, "/home/emre/Projects/openair/results/results_relay_sim/channel_%d/SR_effectiveRate_tx%d_u2=%d_mcs%d_nsimus%d_alpha%f",channel_model,transmission_mode,dual_stream_UE,mcs,n_frames,alpha_SNR);
+  //sprintf(tikz_fname, "/home/emre/Projects/openair/results/results_relay_sim/channel_%d/SR_effectiveRate_tx%d_u2=%d_mcs%d_nsimus%d_alpha%f",channel_model,transmission_mode,dual_stream_UE,mcs,n_frames,alpha_SNR);
 #else
-  sprintf(tikz_fname, "/home/emre/Projects/openair/results/results_relay_sim/channel_%d/effectiveRate_tx%d_u2=%d_mcs%d_nsimus%d_alpha%f",channel_model,transmission_mode,dual_stream_UE,mcs,n_frames,alpha_SNR);
+  //sprintf(tikz_fname, "/home/emre/Projects/openair/results/results_relay_sim/channel_%d/effectiveRate_tx%d_u2=%d_mcs%d_nsimus%d_alpha%f",channel_model,transmission_mode,dual_stream_UE,mcs,n_frames,alpha_SNR);
 #endif
 
 tikz_fd = fopen(tikz_fname,"w");
