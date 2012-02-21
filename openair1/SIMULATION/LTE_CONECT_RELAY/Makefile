@@ -148,11 +148,11 @@ all:  relaysim
 $(OBJ) : %.o : %.c
 	@echo 
 	@echo Compiling $< ...
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 relaysim : $(OBJ) relaysim.c
 	@echo "Compiling relaysim.c ..."
-	@$(CC) relaysim.c  -o relaysim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
+	$(CC) relaysim.c  -o relaysim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
 
 clean :
 	rm -f $(OBJ)
