@@ -53,9 +53,6 @@
 
 int start_sumo_generator(omg_global_param omg_param_list) {
 
-  
-  pid_t pid;
-
   char sumo_line[300];
  // char filename [300];
 
@@ -108,6 +105,8 @@ int start_sumo_generator(omg_global_param omg_param_list) {
   
   departed  = NULL;
   arrived = NULL;
+
+  last_update_time = 0.0;
 
   // just check for faulty values
   if (omg_param_list.nodes <= 0){
@@ -239,7 +238,11 @@ bool activate_and_map(char *sumo_id) {
 
 
 void update_sumo_nodes(double cur_time) {
+   if((cur_time - last_update_time) < MIN_SUMO_STEP)   // the min time interval for SUMO must be 100ms or more
+      return;
 	
+   last_update_time = cur_time;  // keeps track of the last update time to get the update interval
+
    commandSimulationStep(cur_time);// Advance the SUMO simulation by cur_time units
 
    update_IDs();  // both are in the  traCI client
@@ -296,4 +299,12 @@ NodePtr get_first_inactive_OAI_node(Node_list list, int node_type) {
     }
   }
   return NULL;  // all nodes are active already..reached the maximum number of OAI nodes 
+}
+
+bool stop_sumo_generator() {
+
+  commandClose(); // closing the connection with SUMO via TraCI
+  close_connection(); // closing the socket connection
+  kill(pid); // killing SUMO in case it could not close by itself
+  return true;
 }

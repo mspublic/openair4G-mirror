@@ -131,9 +131,16 @@ void processSubscriptions() {
 
 int extractCommandStatus(storage *s, unsigned char commandId, char * description)
 {
+	 int success=0;
+
+         if(s == NULL) {
+           LOG_E(OMG, " client_traci_OMG::extractCommandStatus():  Tracker is NULL \n");
+           return success=0;
+	}
+
 	// validate the the message response from SUMO
 	int storageLength_ = storageLength(s);
-	int success=0;
+
 	// tracker currently points to the begining of the recieved data in the linked list        
         tracker = s;
         storage *freeTracker = tracker;   // save it for calling free
@@ -233,7 +240,14 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
     	if (extractCommandStatus(receiveExact(), CMD_GET_VEHICLE_VARIABLE, description)){//<---RESPONSE_GET_VEHICLE_VARIABLE
 	
     	// validate result state
-        
+        if(tracker == NULL) {
+            LOG_E(OMG, " client_traci_OMG::commandGetVehicleVariable():  Tracker is NULL \n");
+            /*vehicle->x = -1.0;
+	    vehicle->y = -1.0;
+	    vehicle->speed = -1.0;*/
+            return;
+	}
+
 	int res = readUnsignedByte();
 	int Length = readInt();
        	int cmdId =readUnsignedByte();
@@ -293,7 +307,11 @@ int commandGetMaxSUMONodesVariable()
     	if (extractCommandStatus(receiveExact(), CMD_SCENARIO, description)){//<---RESPONSE_GET_VEHICLE_VARIABLE
 	
     	  // validate result state
-        
+          
+          if(tracker == NULL) {
+            LOG_E(OMG, " client_traci_OMG::commandGetMaxSUMONodesVariable():  Tracker is NULL \n");
+            return -1;
+	  }
 	  int res = readUnsignedByte();
 	  int Length = readInt();
        	  int cmdId =readUnsignedByte();

@@ -167,8 +167,8 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
       break;   
     case SUMO:
       LOG_D(OMG,"getting positions from SUMO\n");
-      get_sumo_positions_updated(cur_time);
-      Vector = Node_Vector[SUMO];
+      Vector = get_sumo_positions_updated(cur_time);
+     // Vector = Node_Vector[SUMO];
       break;
     
     default:
