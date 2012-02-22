@@ -125,8 +125,8 @@ help (void) {
   printf ("-m Gives a fixed DL mcs\n");
   printf ("-r Activates rate adaptation (DL for now)\n");
   printf ("-n Set the number of frames for the simulation\n");
-  printf ("-s snr_dB set a fixed (average) SNR, this deactivate the openair channel model generator (OCM)\n");
-  printf ("-S snir_dB set a fixed (average) SNIR, this deactivate the openair channel model generator (OCM)\n");
+  printf ("-s snr_dB set a fixed (average) SNR, this deactivates the openair channel model generator (OCM)\n");
+  printf ("-S snir_dB set a fixed (average) SNIR, this deactivates the openair channel model generator (OCM)\n");
   printf ("-k Set the Ricean factor (linear)\n");
   printf ("-t Set the delay spread (microseconds)\n");
   printf ("-f Set the forgetting factor for time-variation\n");
@@ -976,12 +976,16 @@ main (int argc, char **argv)
     else {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
+
 	  //UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
-	  if (eNB_id == (UE_id % NB_eNB_INST))
+	  if (eNB_id == (UE_id % NB_eNB_INST)) {
+	    eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower; //+20 to offset the difference in tx power of the UE wrt eNB
-	  else
+	  }
+	  else {
+	    eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
+	  }
 	  LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
 		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
 	  //	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
