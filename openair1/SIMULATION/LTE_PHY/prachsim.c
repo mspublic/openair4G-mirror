@@ -361,14 +361,14 @@ int main(int argc, char **argv) {
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
  
-  PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex=0; 
+  PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex=1; 
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
 
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex=0; 
+  PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex=1; 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;

@@ -43,7 +43,7 @@
 #include "defs.h"
 #include "extern.h"
 
-//#define DEBUG_INIT_SYNCH
+#define DEBUG_INIT_SYNCH
 
 int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 

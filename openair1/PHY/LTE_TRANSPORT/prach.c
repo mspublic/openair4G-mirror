@@ -436,7 +436,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     preamble_shift *= NCS;
     
     // This is the offset in the root sequence table (5.7.2-4 from 36.211)
-    preamble_offset += rootSequenceIndex;
+    //    preamble_offset += rootSequenceIndex;
   }
   else { // This is the high-speed case
 #ifdef PRACH_DEBUG
@@ -446,7 +446,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     preamble_index0=preamble_index;
     // set preamble_offset to initial rootSequenceIndex and look if we need more root sequences for this
     // preamble index and find the corresponding cyclic shift
-    preamble_offset = rootSequenceIndex;
+    preamble_offset = 0;//rootSequenceIndex;
     while (not_found == 1) {
       if ( (du[rootSequenceIndex]<(N_ZC/3)) && (du[rootSequenceIndex]>NCS) ) {
 	n_shift_ra     = du[rootSequenceIndex]/NCS;
@@ -751,14 +751,14 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	preamble_shift += NCS;
       
       // This is the offset in the root sequence table (5.7.2-4 from 36.211)
-      preamble_offset += rootSequenceIndex;
+      //      preamble_offset += rootSequenceIndex;
     }
     else { // This is the high-speed case
       not_found=1;
       preamble_index0=preamble_index;
       // set preamble_offset to initial rootSequenceIndex and look if we need more root sequences for this
       // preamble index and find the corresponding cyclic shift
-      preamble_offset = rootSequenceIndex;
+      preamble_offset = 0;//rootSequenceIndex;
       while (not_found == 1) {
 	if ( (du[rootSequenceIndex]<(N_ZC/3)) && (du[rootSequenceIndex]>NCS) ) {
 	  n_shift_ra     = du[rootSequenceIndex]/NCS;

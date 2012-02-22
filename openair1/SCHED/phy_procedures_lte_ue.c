@@ -983,7 +983,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		  phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
 		  phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
 		  phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
-	    
+	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = scfdma_amps[6];
 	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
 	    LOG_D(PHY,"[UE  %d][RAPROC] PRACH digital power %d dB\n",
 		  phy_vars_ue->Mod_id,
@@ -1756,7 +1756,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
     // process last DLSCH symbols + invoke decoding
     if (((last_slot%2)==0) && (l==0)) {
-
+      // Regular PDSCH
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
 	if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	  dual_stream_UE = 1;
@@ -1774,7 +1774,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  for (m=pilot3;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++) {
 
 	    rx_pdsch(phy_vars_ue,
-		     SI_PDSCH,
+		     PDSCH,
 		     eNB_id,
 		     eNB_id_i,
 		     (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),  // subframe
@@ -1931,6 +1931,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))].send_harq_status = 0;
       }
 
+      // SI_DLSCH
       if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
 #ifdef DEBUG_PHY_PROC
 	//debug_msg("SI is active\n");
