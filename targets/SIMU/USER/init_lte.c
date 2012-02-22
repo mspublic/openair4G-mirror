@@ -60,6 +60,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
     PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
+    printf("PHY_vars_UE_g[%d] %p\n",UE_id,PHY_vars_UE_g[UE_id]);
   }// end navid
 
   //PHY_config = malloc(sizeof(PHY_CONFIG));
