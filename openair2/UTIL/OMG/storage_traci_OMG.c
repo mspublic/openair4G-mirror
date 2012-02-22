@@ -106,18 +106,21 @@ void rearange(){
         }
 
 unsigned char readChar(){
-        if (tracker!=NULL)
-	{
+       // if (tracker!=NULL)
+//	{
         	unsigned char hd = tracker->item;
         	        
         	tracker = tracker->next;
                	return hd;
-	}else
-	{
-	//printf("Tracker is null\n");
-	}
+	//}else
+//	{
+ //       LOG_E(OMG, " Storage::readChar():  Tracker is NULL \n");
+ //       unsigned char *error = NULL;
+ //       return error;  // 
+//	}
 
-        }
+        
+}
 
 void writeChar(unsigned char value){
                 storage *temp;

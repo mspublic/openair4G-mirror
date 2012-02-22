@@ -43,12 +43,21 @@
 
 #include "omg.h"
 #include "id_manager.h" 
+#include <stdio.h>
+
+#define MIN_SUMO_STEP 100  // 100ms is the smallest allowed SUMO update step
+
+/*! A global variable used to store the SUMO process ID to later kill it smoothly when OAI askes OMG to stop SUMO*/
+pid_t pid;
 
 /*! A sumo global variable representing the OMG-SUMO ID manager. It is created at the start_sumo_generator() and keep a mapping between SUMO and OAI IDs.  */
 IDManagerPtr id_manager;
 
 /*! A Node_list intended to contain the list of OAI 'active' nodes in SUMO. replaces the return of the full Node_Vector when OAI requests the new positions of its nodes. The list is reset at each use, but the pointer to the respective nodes is just set to NULL*/
 Node_list active_nodes;
+
+/*! A global variable keeping track of the last update time of SUMO, to be used to get the update interval when update_sumo_nodes(cur_time) is called */
+double last_update_time; 
 
 /**
  * \fn void start_sumo_generator(omg_global_param omg_param_list)
@@ -112,5 +121,11 @@ bool desactivate_and_unmap(char *sumo_id);
  */
 bool activate_and_map(char *sumo_id);
 
+/**
+ * \fn int stop_sumo_generator()
+ * \brief stops SUMO, stop the socket and kills SUMO process in the child domain.
+ * \return true in case of success; false otherwise
+ */
+bool stop_sumo_generator();
 
 #endif /* SUMO_H_ */
