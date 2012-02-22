@@ -200,9 +200,8 @@ void initiate_ra_proc(u8 Mod_id, u32 frame, u16 preamble_index,s16 timing_offset
       eNB_mac_inst[Mod_id].RA_template[i].rnti = taus();
       eNB_mac_inst[Mod_id].RA_template[i].RA_rnti = 1+subframe+(10*f_id);
       eNB_mac_inst[Mod_id].RA_template[i].preamble_index = preamble_index;
-      LOG_D(MAC,"[eNB %d] Frame %d Activating RAR generation for process %d, rnti %x\n",
-	    Mod_id,frame,i,eNB_mac_inst[Mod_id].RA_template[i].rnti);
-
+      LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Activating RAR generation for process %d, rnti %x\n",Mod_id,frame,i,eNB_mac_inst[Mod_id].RA_template[i].rnti);
+      
       return;
     }
   }
