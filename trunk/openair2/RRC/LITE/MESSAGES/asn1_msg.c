@@ -27,7 +27,9 @@
 #include "RRCConnectionSetup.h"
 #include "SRB-ToAddModList.h"
 #include "DRB-ToAddModList.h"
+#ifdef Rel10
 #include "MCCH-Message.h"
+#endif
 
 #include "RRCConnectionSetupComplete.h"
 #include "RRCConnectionReconfigurationComplete.h"

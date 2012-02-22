@@ -73,8 +73,9 @@ unsigned short fill_rar(u8 Mod_id,
   rar->cqi_req                = 1;
   rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;
 
-  LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Generating RAR for CRNTI %x\n",Mod_id,frame,rar->t_crnti);
-
+#ifdef DEBUG_RAR
+  LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Generating RAR for CRNTI %x,preamble %d/%d\n",Mod_id,frame,rar->t_crnti,rarh->RAPID,eNB_mac_inst[Mod_id].RA_template[0].preamble_index);
+#endif
   return(rar->t_crnti);
 }
 
