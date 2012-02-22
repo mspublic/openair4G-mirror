@@ -115,14 +115,14 @@ void do_forms2(FD_lte_scope *form,
   }
 
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-
+  fl_set_xyplot_ybounds(form->channel_t_re,0,1e6);
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
     sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
     time2[i] = (float) i;
   }
 
-  //fl_set_xyplot_ybounds(form->channel_t_im,0,100);
+  fl_set_xyplot_ybounds(form->channel_t_im,30,60);
   //fl_set_xyplot_data(form->channel_t_im,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
   fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
   //}
