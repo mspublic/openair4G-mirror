@@ -17,6 +17,9 @@
 
 //#define DEBUG_PHY
 
+extern u16 prach_root_sequence_map0_3[838];
+extern u16 prach_root_sequence_map4[138];
+
 void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
 		    u8 N_RB_DL,
 		    u8 Nid_cell,
@@ -68,6 +71,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
   int N_ZC;
   u8 prach_fmt;
+  int u;
 
   msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,PHY_vars_eNB_g[Mod_id]->frame);
 
@@ -80,8 +84,10 @@ void phy_config_sib2_eNB(u8 Mod_id,
   
   prach_fmt = get_prach_fmt(radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex,lte_frame_parms->frame_type);
   N_ZC = (prach_fmt <4)?839:139;
-  
-  compute_prach_seq(lte_frame_parms->prach_config_common.rootSequenceIndex,N_ZC, PHY_vars_eNB_g[Mod_id]->X_u);
+  u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
+    prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
+
+  compute_prach_seq(u,N_ZC, PHY_vars_eNB_g[Mod_id]->X_u);
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
   lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
@@ -155,12 +161,14 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
 }
 
+
 void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
   int N_ZC;
   u8 prach_fmt;
+  int u;
 
   msg("[PHY][UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame,CH_index);
 
@@ -174,8 +182,10 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
   
   prach_fmt = get_prach_fmt(radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex,lte_frame_parms->frame_type);
   N_ZC = (prach_fmt <4)?839:139;
+  u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
+    prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
   
-  compute_prach_seq(lte_frame_parms->prach_config_common.rootSequenceIndex,N_ZC, PHY_vars_UE_g[Mod_id]->X_u);
+  compute_prach_seq(u,N_ZC, PHY_vars_UE_g[Mod_id]->X_u);
 
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;

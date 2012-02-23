@@ -385,7 +385,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 #ifdef OPENAIR2
 	msg("[PHY][UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
     //mac_resynch();
-    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+	mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif //OPENAIR2
  
     generate_pcfich_reg_mapping(frame_parms);

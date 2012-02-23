@@ -977,8 +977,10 @@ void compute_prach_seq(unsigned int u,unsigned int N_ZC, u32 *X_u) {
   init_prach_tables(N_ZC);
 
   inv_u = ZC_inv[u];
-
-  for (k=0;k<N_ZC;k++)
+  //  printf("u %d, inv_u %d\n",u,inv_u);
+  for (k=0;k<N_ZC;k++) {
     X_u[k] = ((u32*)ru)[(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC];
+    //    printf("X_u[%d] (%d) : %d,%d\n",k,(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[k])[0],((s16*)&X_u[k])[1]);
+  }
 
 }
