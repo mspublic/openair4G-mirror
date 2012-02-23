@@ -467,8 +467,9 @@ main (int argc, char **argv)
   s32 slot, last_slot, next_slot;
 
   // variables/flags which are set by user on command-line
-  double snr_dB, sinr_dB;
+  double snr_dB, sinr_dB,snr_direction;
   u8 set_snr=0,set_sinr=0;
+  u8 ue_connection_test=0;
 
   u8 cooperation_flag;		// for cooperative communication
   u8 target_dl_mcs = 4;
@@ -526,10 +527,11 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePoFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A"))
+  while ((c = getopt (argc, argv, "haePoFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
 	 != -1) {
 
     switch (c) {
+
     case 'F':			// set FDD
       oai_emulation.info.frame_type = 0;
       break;
@@ -583,6 +585,10 @@ main (int argc, char **argv)
     case 'S':
       sinr_dB = atoi (optarg);
       set_sinr = 1;
+      oai_emulation.info.ocm_enabled=0;
+      break;
+    case 'J':
+      ue_connection_test=1;
       oai_emulation.info.ocm_enabled=0;
       break;
     case 'k':
@@ -879,7 +885,7 @@ main (int argc, char **argv)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      mac_xface->dl_phy_sync_success (UE_id, 0, 0);	//UE_id%NB_eNB_INST);
+      mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);	//UE_id%NB_eNB_INST);
   }
 #endif
 
@@ -900,6 +906,8 @@ main (int argc, char **argv)
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
+  snr_direction = -1;
+  snr_dB=20;
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
     // Handling the cooperation Flag
@@ -909,6 +917,14 @@ main (int argc, char **argv)
 	  PHY_vars_eNB_g[0]->cooperation_flag = 2;
       }
     */
+    if (ue_connection_test==1) {
+      if ((frame%20) == 0)
+	snr_dB += snr_direction;
+      if (snr_dB == -12)
+	snr_direction=1;
+      else if (snr_dB==20)
+	snr_direction=-1;
+    }
     oai_emulation.info.frame = frame; 
     update_nodes(oai_emulation.info.time);  
 
