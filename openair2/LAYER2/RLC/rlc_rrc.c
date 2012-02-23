@@ -76,7 +76,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
     unsigned int index;
     unsigned int index_max;
     unsigned int allocation;
-
+    
     switch (rlc_modeP) {
         case RLC_AM:
             index_max = RLC_MAX_NUM_INSTANCES_RLC_AM;
@@ -88,12 +88,14 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
             index_max = RLC_MAX_NUM_INSTANCES_RLC_UM;
             break;
         default:
-            return RLC_OP_STATUS_BAD_PARAMETER;
+	  LOG_E(RLC,"Got bad RLC type %d\n",rlc_modeP);
+	  return RLC_OP_STATUS_BAD_PARAMETER;
     }
 
     for (index = 0; index < index_max; index++) {
         switch (rlc_modeP) {
             case RLC_AM:
+
                 allocation = rlc[module_idP].m_rlc_am_array[index].allocation;
                 if (!(allocation)) {
                     rlc[module_idP].m_rlc_am_array[index].allocation = 1;
@@ -146,7 +148,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP) {
 //-----------------------------------------------------------------------------
-//  msg("[RLC][MOD_id %d] CONFIG_REQ for Rab %d\n",module_idP,rb_idP);
+  msg("[RLC][MOD_id %d] CONFIG_REQ for Rab %d\n",module_idP,rb_idP);
 #warning TO DO rrc_rlc_config_req
     rlc_op_status_t status;
 

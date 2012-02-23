@@ -299,7 +299,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
 
 
   LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", Mod_id,lchan_id,eNB_index);
-
+ 
   rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
 
@@ -507,16 +507,16 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
             frame, Mod_id, eNB_index, Mod_id);
-	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
-					    (RadioResourceConfigCommonSIB_t *)NULL,
-					    UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
-					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
-					    2,
-					    SRB2_logicalChannelConfig,
-					    UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
-					    (TDD_Config_t *)NULL,
-					    (u8 *)NULL,
-					    (u16 *)NULL);
+      rrc_mac_config_req(Mod_id,0,0,eNB_index,
+			 (RadioResourceConfigCommonSIB_t *)NULL,
+			 UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+			 UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
+			 2,
+			 SRB2_logicalChannelConfig,
+			 UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
+			 (TDD_Config_t *)NULL,
+			 (u8 *)NULL,
+			 (u16 *)NULL);
 	}
       }
     }
@@ -538,17 +538,17 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	// MAC/PHY Configuration
 	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
 	      frame, Mod_id, DRB_id, eNB_index, Mod_id);
-	Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
-					  (RadioResourceConfigCommonSIB_t *)NULL,
-					  UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
-					  UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
-					  *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
-					  UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
-					  UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
-					  (TDD_Config_t*)NULL,
-					  (u8 *)NULL,
-					  (u16 *)NULL);
-
+	rrc_mac_config_req(Mod_id,0,0,eNB_index,
+			   (RadioResourceConfigCommonSIB_t *)NULL,
+			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+			   UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
+			   *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
+			   UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
+			   UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
+			   (TDD_Config_t*)NULL,
+			   (u8 *)NULL,
+			   (u16 *)NULL);
+	
       }
     }
   }
@@ -729,7 +729,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   int i;
 
-  LOG_D(RRC,"[UE %d] Frame %d : Dumping SIB 1 (%d bits)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
+  LOG_D(RRC,"[UE %d] : Dumping SIB 1 (%d bits)\n",Mod_id,dec_rval.consumed);
 
   //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);
 
@@ -765,17 +765,17 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize = siWindowLength_int[(*sib1)->si_WindowLength];
   LOG_D(RRC, "[MSC_MSG][FRAME unknown][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB1 params eNB %d) --->][MAC_UE][MOD %02d][]\n",
              Mod_id, eNB_index, Mod_id);
-  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
-				    (RadioResourceConfigCommonSIB_t *)NULL,
-				    (struct PhysicalConfigDedicated *)NULL,
-				    (MAC_MainConfig_t *)NULL,
-				    0,
-				    (struct LogicalChannelConfig *)NULL,
-				    (MeasGapConfig_t *)NULL,
-				    UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
-				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
-				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod);
- 
+  rrc_mac_config_req(Mod_id,0,0,eNB_index,
+		     (RadioResourceConfigCommonSIB_t *)NULL,
+		     (struct PhysicalConfigDedicated *)NULL,
+		     (MAC_MainConfig_t *)NULL,
+		     0,
+		     (struct LogicalChannelConfig *)NULL,
+		     (MeasGapConfig_t *)NULL,
+		     UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
+		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
+		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod);
+  
   UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status = 1;
   return 0;
 
@@ -915,16 +915,16 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
       dump_sib2(UE_rrc_inst[Mod_id].sib2[eNB_index]);
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB2 params  eNB %d) --->][MAC_UE][MOD %02d][]\n",
             frame, Mod_id, eNB_index, Mod_id);
-      Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
-					&UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
-					(struct PhysicalConfigDedicated *)NULL,
-					(MAC_MainConfig_t *)NULL,
-					0,
-					(struct LogicalChannelConfig *)NULL,
-					(MeasGapConfig_t *)NULL,
-					(TDD_Config_t *)NULL,
-					NULL,
-					NULL);
+      rrc_mac_config_req(Mod_id,0,0,eNB_index,
+			 &UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
+			 (struct PhysicalConfigDedicated *)NULL,
+			 (MAC_MainConfig_t *)NULL,
+			 0,
+			 (struct LogicalChannelConfig *)NULL,
+			 (MeasGapConfig_t *)NULL,
+			 (TDD_Config_t *)NULL,
+			 NULL,
+			 NULL);
       UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
       // After SI is received, prepare RRCConnectionRequest
       rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);

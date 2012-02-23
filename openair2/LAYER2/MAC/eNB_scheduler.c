@@ -255,7 +255,7 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *l3msg) {
 	}
 
 	if (Is_rrc_registered == 1)
-	  Rrc_xface->mac_rrc_data_ind(Mod_id,frame,CCCH,(char *)payload_ptr,rx_lengths[0],1,Mod_id);
+	  mac_rrc_data_ind(Mod_id,frame,CCCH,(char *)payload_ptr,rx_lengths[0],1,Mod_id);
 	  // add_user.  This is needed to have the rnti for configuring UE (PHY). The UE is removed if RRC
 	  // doesn't provide a CCCH SDU
 
@@ -749,12 +749,12 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned ch
 
   unsigned char bcch_sdu_length;
 
-  bcch_sdu_length = Rrc_xface->mac_rrc_data_req(Mod_id,
-						frame,
-						BCCH,1,
-						(char*)&eNB_mac_inst[Mod_id].BCCH_pdu.payload[0],
-						1,
-						Mod_id);
+  bcch_sdu_length = mac_rrc_data_req(Mod_id,
+				     frame,
+				     BCCH,1,
+				     (char*)&eNB_mac_inst[Mod_id].BCCH_pdu.payload[0],
+				     1,
+				     Mod_id);
   if (bcch_sdu_length > 0) {
     LOG_D(MAC,"[eNB %d] Frame %d : BCCH->BCH, Received %d bytes \n",Mod_id,frame,bcch_sdu_length);
 
@@ -817,12 +817,12 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 	if (Is_rrc_registered == 1) {
 
 	  // Get RRCConnectionSetup for Piggyback
-	  rrc_sdu_length = Rrc_xface->mac_rrc_data_req(Mod_id,
-						       frame,
-						       0,1,
-						       (char*)&eNB_mac_inst[Mod_id].CCCH_pdu.payload[0],
-						       1,
-						       Mod_id);
+	  rrc_sdu_length = mac_rrc_data_req(Mod_id,
+					    frame,
+					    0,1,
+					    (char*)&eNB_mac_inst[Mod_id].CCCH_pdu.payload[0],
+					    1,
+					    Mod_id);
 	  if (rrc_sdu_length == -1)
 	    mac_xface->macphy_exit("[MAC][eNB Scheduler] CCCH not allocated\n");
 	  else {
@@ -1019,7 +1019,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	//ULSCH_dci1 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[1].ULSCH_DCI[harq_pid];
 
 	//msg("FAIL\n");
-	status = Rrc_xface->get_rrc_status(Mod_id,1,next_ue);
+	status = get_rrc_status(Mod_id,1,next_ue);
 	//status0 = Rrc_xface->get_rrc_status(Mod_id,1,0);
 	//status1 = Rrc_xface->get_rrc_status(Mod_id,1,1);
 
@@ -4074,10 +4074,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   DCI_pdu->Num_ue_spec_dci = 0;
   eNB_mac_inst[Mod_id].bcch_active = 0;
 
-  //  Mac_rlc_xface->frame= frame;
-  //  Rrc_xface->Frame_index=Mac_rlc_xface->frame;
-
-  Mac_rlc_xface->pdcp_run();
+  pdcp_run();
 #ifdef ICIC
   // navid: the following 2 functions does not work properly when there is user-plane traffic
   UpdateSBnumber(Mod_id);

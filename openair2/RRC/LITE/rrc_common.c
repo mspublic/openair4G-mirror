@@ -69,34 +69,35 @@ int rrc_init_global_param(void){
 
 
   //#ifdef USER_MODE
-  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
+  //  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
   //#endif //USRE_MODE
 
-  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
-  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;
-  Rrc_xface->openair_rrc_UE_init  = openair_rrc_ue_init;
-  Rrc_xface->mac_rrc_data_ind     = mac_rrc_data_ind;
-  Rrc_xface->mac_rrc_data_req     = mac_rrc_data_req;
-  Rrc_xface->rrc_data_indP        = (void *)rlcrrc_data_ind;
-  Rrc_xface->rrc_rx_tx            = rrc_rx_tx;
-  Rrc_xface->mac_rrc_meas_ind     = mac_rrc_meas_ind;
-  Rrc_xface->get_rrc_status       = get_rrc_status;
+  //  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
+  //  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;
+  //  Rrc_xface->openair_rrc_UE_init  = openair_rrc_ue_init;
+  //  Rrc_xface->mac_rrc_data_ind     = mac_rrc_data_ind;
+  //Rrc_xface->mac_rrc_data_req     = mac_rrc_data_req;
+  // Rrc_xface->rrc_data_indP        = (void *)rlcrrc_data_ind;
+  //  Rrc_xface->rrc_rx_tx            = rrc_rx_tx;
+  //  Rrc_xface->mac_rrc_meas_ind     = mac_rrc_meas_ind;
+  //  Rrc_xface->get_rrc_status       = get_rrc_status;
 
   //Rrc_xface->rrc_get_status = ...
 
-  Mac_rlc_xface->mac_out_of_sync_ind=mac_out_of_sync_ind;
+  //  Mac_rlc_xface->mac_out_of_sync_ind=mac_out_of_sync_ind;
 
 #ifndef NO_RRM
-  Rrc_xface->fn_rrc=fn_rrc;
+  //  Rrc_xface->fn_rrc=fn_rrc;
 #endif
-  LOG_D(RRC, "[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
-
+  //  LOG_D(RRC, "[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
+  /*
   if((Mac_rlc_xface==NULL) || (Mac_rlc_xface->rrc_rlc_register_rrc==NULL) ||
      (rlcrrc_data_ind==NULL)) {
     LOG_E(RRC,"Data structured is not initialized \n");
     return -1;
   }
-  Mac_rlc_xface->rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
+  */
+  rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
 
 
   DCCH_LCHAN_DESC.transport_block_size=4;
@@ -233,12 +234,40 @@ int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
 }
 
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
+u16 T310[8] = {100,200,300,400,600,1000,1500,2000};
 
+rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
+
+  if (UE_rrc_inst[Mod_id].Info[eNB_index].State!=RRC_CONNECTED) {
+    UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
+    UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
+    UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
+    UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
+    
+    UE_rrc_inst[Mod_id].Srb0[eNB_index].Rx_buffer.payload_size=0;
+    UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
+    
+    UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Rx_buffer.payload_size=0;
+    UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=0;
+    
+    if(UE_rrc_inst[Mod_id].Srb2[eNB_index].Active==1){
+      msg("[RRC Inst %d] eNB_index %d, Remove RB %d\n ",Mod_id,eNB_index,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
+      rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
+      UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
+      UE_rrc_inst[Mod_id].Srb2[eNB_index].Status=IDLE;
+      UE_rrc_inst[Mod_id].Srb2[eNB_index].Next_check_frame=0;
+    }
+  }
+  else {  // Restablishment procedure
+
+  }
+}
+    
 RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
-
+      
   if(eNB_flag == 0) {
     // check timers
-
+    
     if (UE_rrc_inst[Mod_id].Info[index].T300_active) {
       if ((UE_rrc_inst[Mod_id].Info[index].T300_cnt % 10) == 0)
 	LOG_D(RRC,"[UE %d][RAPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
@@ -248,6 +277,18 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 	return(RRC_ConnSetup_failed);
       }
       UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
+    }
+    
+    if (UE_rrc_inst[Mod_id].Info[index].T310_active) {
+      if ((UE_rrc_inst[Mod_id].Info[index].T310_cnt % 10) == 0)
+	LOG_D(RRC,"[UE %d] Frame %d T310 Count %d ms\n",Mod_id,frame,
+	      UE_rrc_inst[Mod_id].Info[index].T310_cnt);
+      if (UE_rrc_inst[Mod_id].Info[index].T310_cnt == T310[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t310]) {
+	UE_rrc_inst[Mod_id].Info[index].T310_active = 0;
+	rrc_t310_expiration(frame,Mod_id,index);
+	return(RRC_PHY_RESYNCH);
+      }
+      UE_rrc_inst[Mod_id].Info[index].T310_cnt++;
     }
   }
 
