@@ -76,7 +76,8 @@ result could be based on an event-driven measurement report.
 
 typedef enum {
   RRC_OK=0,
-  RRC_ConnSetup_failed
+  RRC_ConnSetup_failed,
+  RRC_PHY_RESYNCH
 } RRC_status_t;
 
 

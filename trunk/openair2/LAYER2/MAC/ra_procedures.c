@@ -210,13 +210,13 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 
       if (UE_mac_inst[Mod_id].RA_active == 0) {
 	// check if RRC is ready to initiate the RA procedure
-	Size = Rrc_xface->mac_rrc_data_req(Mod_id,
-					   frame,
-					   CCCH,1,
-					   (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)],0,
-					   eNB_index);
+	Size = mac_rrc_data_req(Mod_id,
+				frame,
+				CCCH,1,
+				(char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)],0,
+				eNB_index);
 	Size16 = (u16)Size;
-
+	
 	//	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
     LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
              frame, Mod_id, eNB_index, Mod_id);

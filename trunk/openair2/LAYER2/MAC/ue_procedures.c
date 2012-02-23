@@ -295,10 +295,10 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	msg("%x.",(unsigned char)payload_ptr[j]);
       msg("\n");
 
-      Rrc_xface->mac_rrc_data_ind(Mod_id,
-				  frame,
-				  CCCH,
-				  (char *)payload_ptr,rx_lengths[i],0,eNB_index);
+      mac_rrc_data_ind(Mod_id,
+		       frame,
+		       CCCH,
+		       (char *)payload_ptr,rx_lengths[i],0,eNB_index);
 
     }
     else if (rx_lcids[i] == DCCH) {
@@ -344,13 +344,13 @@ void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
   LOG_T(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
-  Rrc_xface->mac_rrc_data_ind(Mod_id,
-			      frame,
-			      BCCH,
-			      (char *)pdu,
-			      len,
-			      0,
-			      eNB_index);
+  mac_rrc_data_ind(Mod_id,
+		   frame,
+		   BCCH,
+		   (char *)pdu,
+		   len,
+		   0,
+		   eNB_index);
 
 }
 
@@ -775,14 +775,14 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   mac_rlc_status_resp_t rlc_status[11];
   struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
   
-  Mac_rlc_xface->frame=frame;
-  Rrc_xface->Frame_index=Mac_rlc_xface->frame;
-  Mac_rlc_xface->pdcp_run();
+  //Mac_rlc_xface->frame=frame;
+  //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
+  pdcp_run();
 
-  switch (Rrc_xface->rrc_rx_tx(Mod_id,
-			       frame,
-			       0,
-			       eNB_index)) {
+  switch (rrc_rx_tx(Mod_id,
+		    frame,
+		    0,
+		    eNB_index)) {
   case RRC_OK:
     break;
   case RRC_ConnSetup_failed:
@@ -839,8 +839,8 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 					    lcid,
 					    0);//tb_size does not reauire when requesting the status
-      //    LOG_D(MAC,"[UE %d] rlc buffer (lcid %d, byte %d)BSR level %d\n",
-      //	  Mod_id, lcid, rlc_status[lcid].bytes_in_buffer, UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]);
+      //      LOG_D(MAC,"[UE %d] frame %d rlc buffer (lcid %d, byte %d)BSR level %d\n",
+      //	    Mod_id, frame, lcid, rlc_status[lcid].bytes_in_buffer, UE_mac_inst[Mod_id].scheduling_info.BSR[lcid]);
       if (rlc_status[lcid].bytes_in_buffer > 0 ) {
 	//set the bsr for all lcid by searching the table to find the bsr level
 	UE_mac_inst[Mod_id].scheduling_info.BSR[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
@@ -861,7 +861,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   if ((UE_mac_inst[Mod_id].physicalConfigDedicated == NULL)) {
     // cancel all pending SRs
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
-    LOG_D(MAC,"[UE %d] Release all SRs \n", Mod_id);
+    //    LOG_D(MAC,"[UE %d] Release all SRs \n", Mod_id);
     return(CONNECTION_OK);
   }
 

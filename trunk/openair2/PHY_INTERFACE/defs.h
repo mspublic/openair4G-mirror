@@ -104,7 +104,7 @@ typedef struct
     u32 (*ue_get_SR)(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti,u8 subframe);
 
     /// Indicate synchronization with valid PBCH
-    void (*dl_phy_sync_success) (u8 Mod_id,u32 frame, u8 CH_index);
+    void (*dl_phy_sync_success) (u8 Mod_id,u32 frame, u8 CH_index,u8 first_sync);
 
     /// Only calls the PDCP for now
     UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u32 frame,u8 subframe, lte_subframe_t direction,u8 eNB_id);

@@ -89,7 +89,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
       if ((frame%2) == 0) {
 	memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].SIB1,eNB_rrc_inst[Mod_id].sizeof_SIB1);
 #ifdef DEBUG_RRC
-	LOG_D(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_id,Rrc_xface->Frame_index);
+	LOG_D(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_id,frame);
 	for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_SIB1;i++)
 	  msg("%x.",Buffer[i]);
 	msg("\n");
@@ -100,7 +100,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
       else if ((frame%8) == 1){
 	memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].SIB23,eNB_rrc_inst[Mod_id].sizeof_SIB23);
 #ifdef DEBUG_RRC
-	LOG_D(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_id,Rrc_xface->Frame_index);
+	LOG_D(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_id,frame);
 	for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_SIB23;i++)
 	  msg("%x.",Buffer[i]);
 	msg("\n");
@@ -113,7 +113,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 
 
     if( (Srb_id & RAB_OFFSET ) == CCCH){
-      LOG_D(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_id,Rrc_xface->Frame_index, Srb_id);
+      LOG_D(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_id,frame, Srb_id);
 
       if(eNB_rrc_inst[Mod_id].Srb0.Active==0) {
 	LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_id);
@@ -273,27 +273,12 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 
   LOG_D(RRC,"[UE %d] Frame %d OUT OF SYNC FROM CH %d\n ",Mod_id,frame,eNB_index);
 
-  UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
-  UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
-  UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
-  UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
-
-  UE_rrc_inst[Mod_id].Srb0[eNB_index].Rx_buffer.payload_size=0;
-  UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
-
-  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Rx_buffer.payload_size=0;
-  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=0;
-
-  if(UE_rrc_inst[Mod_id].Srb2[eNB_index].Active==1){
-    msg("[RRC Inst %d] eNB_index %d, Remove RB %d\n ",Mod_id,eNB_index,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
-    rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
-    UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
-    UE_rrc_inst[Mod_id].Srb2[eNB_index].Status=IDLE;
-    UE_rrc_inst[Mod_id].Srb2[eNB_index].Next_check_frame=0;
-
-
+  if ((UE_rrc_inst[Mod_id].Info[eNB_index].T310_active=1) &&
+      (UE_rrc_inst[Mod_id].Info[eNB_index].T310_cnt==1) ) {
+      
+      
   }
-
+  
 
 }
 
