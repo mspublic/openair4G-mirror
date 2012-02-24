@@ -777,7 +777,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   
   //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
-  pdcp_run();
+  pdcp_run(frame, 0);
 
   switch (rrc_rx_tx(Mod_id,
 		    frame,

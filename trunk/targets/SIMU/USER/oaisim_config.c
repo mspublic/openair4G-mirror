@@ -281,7 +281,7 @@ int olg_config() {
   set_log(PDCP, LOG_TRACE, 1);  
   set_log(RRC,  LOG_DEBUG, 1);  
   set_log(OCM,  LOG_INFO, 20);  
-  
+  set_log(OTG,  LOG_DEBUG, 1);  
   // set_comp_log(MAC, LOG_TRACE, LOG_FULL,1);
   
     LOG_T(LOG,"global log level is set to %d \n", oai_emulation.info.g_log_level );

@@ -4074,7 +4074,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   DCI_pdu->Num_ue_spec_dci = 0;
   eNB_mac_inst[Mod_id].bcch_active = 0;
 
-  pdcp_run();
+  pdcp_run(frame, 1);
 #ifdef ICIC
   // navid: the following 2 functions does not work properly when there is user-plane traffic
   UpdateSBnumber(Mod_id);
