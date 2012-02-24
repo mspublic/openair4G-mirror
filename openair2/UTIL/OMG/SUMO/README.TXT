@@ -4,11 +4,17 @@ OpenAir Mobility Generator (OMG) - Mobility provided by the SUMO simulator
 
 Notes: 
 
-  - The Simulation of Urban Mobility (SUMO) needs to be downloaded, configured and compiled. Please download it from this address 
+  - The Simulation of Urban Mobility (SUMO) needs to be downloaded, configured and compiled. Please download the sources from this address 
    
        http://sumo.sourceforge.net/
-  
-    and follow the installation instructions. OMG will look for the SUMO and SUMO-GUI exectuable from this SUMO folder.
+
+    or alternatively chechout from the following SUMO svn
+       
+       svn co https://sumo.svn.sourceforge.net/svnroot/sumo sumo 
+
+     and follow the installation instructions
+
+  - OMG will look for the SUMO and SUMO-GUI exectuable from this SUMO folder.
 
   - SUMO/SCENARIOS is the default folder for SUMO scenarios. Please add all required scenario on that folder. 
 
@@ -27,7 +33,13 @@ Notes:
       sumo-gui 
 
 
+   - Once installation completed, please check that SUMO is working properly by following the STANDALONE scenario 
+     - GUI: lauch: sumo-gui 
+            load: scen.sumo.cfg
+
+     - CommandLine: sumo -c scen.sumo.cfg -b 0 -e 1000 -v
+
 ----------------------------------------------------------------------------------
 The OpenAirInterface Team 
-openair2@eurecom.fr
+openair_tech@eurecom.fr
 ----------------------------------------------------------------------------------
