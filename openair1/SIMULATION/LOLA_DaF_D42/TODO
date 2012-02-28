@@ -1,5 +1,8 @@
 * TDD mode 1
 * [du]lsch_ue_col for collaborative links
 * Define TBS_FIX (pilots for several CH)
-* Generate output result files
+* Document output result file format
+* Configurable number of RB
+* Add more DF relaying strategies
+* AMC?
 
