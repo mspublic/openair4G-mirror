@@ -11,6 +11,7 @@
 #include "UTIL/OMG/omg.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_vars.h"
+#include "UTIL/OTG/otg.h"
 
 
 mapping log_level_names[] =
@@ -66,13 +67,11 @@ mapping otg_ip_version_names[] =
 mapping otg_distribution_names[] =
 {
     {"no_customized_traffic", 0},
-    {"min_num_dist", 1},
-    {"uniform", 2},
-    {"gaussian", 3},
-    {"exponential", 4},
-    {"poisson", 5},
-    {"max_num_dist", 6},
-    {"fixed", 7}, // just added: tell Aymen
+    {"uniform", 1},
+    {"gaussian", 2},
+    {"exponential", 3},
+    {"poisson", 4},
+    {"fixed", 5}, // just added: tell Aymen
     {NULL, -1}
 };
 
@@ -201,8 +200,9 @@ void init_oai_emulation() {
   oai_emulation.info.nb_ue_local= 1;//default 1 UE 
   oai_emulation.info.nb_enb_local= 1;//default 1 eNB
   oai_emulation.info.ethernet_flag=0;
-  oai_emulation.info.ocm_enabled=1;// flag c
+  oai_emulation.info.ocm_enabled=1;// flag ?
   oai_emulation.info.ocg_enabled=0;// flag c
+  oai_emulation.info.otg_enabled=0;// flag T
   oai_emulation.info.opt_enabled=0; // P flag
   oai_emulation.info.cli_enabled=0;// I flag
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
@@ -260,8 +260,10 @@ void oaisim_config() {
   ocg_config_env();// mobility gen
   ocg_config_topo(); // packet tracer using wireshark
  	// if T is set or ocg enabled 
-  if (oai_emulation.info.otg_enabled || oai_emulation.info.ocg_enabled)
+
+  if (oai_emulation.info.otg_enabled || oai_emulation.info.ocg_enabled) {
     ocg_config_app(); // packet generator 
+}
   ocg_config_emu(); // packet generator 
 
 
@@ -359,7 +361,7 @@ int ocg_config_topo() {
 
 	omg_param_list.min_sleep = (oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_sleep_ms == 0) ? 0.1 : oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_sleep_ms;
 	omg_param_list.max_sleep = (oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_sleep_ms == 0) ? 0.1 : oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_sleep_ms;
-	
+
 	omg_param_list.mobility_file = (char*) malloc(256);
 	sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")); // default trace-driven mobility file
 
@@ -387,12 +389,11 @@ int ocg_config_app(){
 
 	int predefined_traffic_config_index;
 	int customized_traffic_config_index;
-	
+
 	init_all_otg();
 
 	g_otg->num_nodes = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_ue_local;
 
-	printf("OCG_init_OTG\n");
 	for (i=0; i<g_otg->num_nodes; i++){
 		g_otg->duration[i]=oai_emulation.emulation_config.emulation_time_ms;
 		g_otg->dst_port[i]=oai_emulation.application_config.customized_traffic.destination_port[i];
