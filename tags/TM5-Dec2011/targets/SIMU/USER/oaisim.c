@@ -30,8 +30,11 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
+
+
 #ifdef XFORMS
 #include <forms.h>
+#include "MUMIMO_form.h"
 #include "phy_procedures_sim_form.h"
 #include "../../../openair1/USERSPACE_TOOLS/SCOPE/lte_scope.h"
 #endif //XFORMS
@@ -108,6 +111,9 @@ mapping small_scale_names[] =
     {NULL, -1}
 };
 
+
+
+
 extern int transmission_mode_rrc;//FIXME!!!
 
 #ifdef LINUX
@@ -161,7 +167,150 @@ help (void) {
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
 }
 
+
+
+
 #ifdef XFORMS
+void do_forms_MUMIMO (FD_MUMIMO * form,
+		      unsigned int frames, 
+		      unsigned int *subband,
+		      double SUMIMO, 
+		      double MUMIMO, 
+		      double FULL_MUMIMO, 
+		      double total,
+		      double avg,
+		      double instant){
+//,unsigned int avgerage_throughput,unsigned int instantaneous_throughput)
+  double SU=0, MU=0, FMU=0, NO=0;
+  double avg_d=0;
+  avg_d = avg/((frames+1)*10);
+  double instant_d = 0;
+  int i;
+
+  instant_d = instant/1000;
+
+  if(total > 0){
+    SU = (SUMIMO/total)*100;
+    MU = ((MUMIMO-FULL_MUMIMO)/total)*100;
+    FMU = (FULL_MUMIMO/total)*100;
+    NO = ((total-SUMIMO-MUMIMO)/total)*100;
+  }
+
+  if (oai_emulation.info.transmission_mode != 5){
+    for(i=0;i<7;i++)
+      subband[i] = 1;
+  }
+
+  fl_set_chart_lcolor(form->subband,FL_WHITE);
+  fl_set_chart_lsize(form->subband,10);
+  fl_set_chart_bounds(form->subband,0,2);
+  if(subband[0]==0 && subband[1]==0 && subband[2]==0 && subband[3]==0 && subband[4]==0 && subband[5]==0 && subband[6]==0){
+  fl_replace_chart_value(form->subband,1,subband[0],"1",FL_WHITE);
+  fl_replace_chart_value(form->subband,2,0,"",FL_YELLOW);
+  fl_replace_chart_value(form->subband,3,subband[1],"2",FL_WHITE);
+  fl_replace_chart_value(form->subband,4,0,"",FL_YELLOW);
+  fl_replace_chart_value(form->subband,5,subband[2],"3",FL_WHITE);
+  fl_replace_chart_value(form->subband,6,0,"",FL_YELLOW);
+  fl_replace_chart_value(form->subband,7,subband[3],"4",FL_WHITE);
+  fl_replace_chart_value(form->subband,8,0,"",FL_YELLOW);
+  fl_replace_chart_value(form->subband,9,subband[4],"5",FL_WHITE);
+  fl_replace_chart_value(form->subband,10,0,"",FL_YELLOW);
+  fl_replace_chart_value(form->subband,11,subband[5],"6",FL_WHITE);
+  fl_replace_chart_value(form->subband,12,0,"",FL_YELLOW);
+  fl_replace_chart_value(form->subband,13,subband[6],"7",FL_WHITE);
+  }
+  else
+    if(subband[0]==1 && subband[1]==1 && subband[2]==1 && subband[3]==1 && subband[4]==1 && subband[5]==1 && subband[6]==1){
+      fl_replace_chart_value(form->subband,1,subband[0],"1",FL_RED);
+      fl_replace_chart_value(form->subband,2,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,3,subband[1],"2",FL_RED);
+      fl_replace_chart_value(form->subband,4,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,5,subband[2],"3",FL_RED);
+      fl_replace_chart_value(form->subband,6,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,7,subband[3],"4",FL_RED);
+      fl_replace_chart_value(form->subband,8,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,9,subband[4],"5",FL_RED);
+      fl_replace_chart_value(form->subband,10,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,11,subband[5],"6",FL_RED);
+      fl_replace_chart_value(form->subband,12,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,13,subband[6],"7",FL_RED); 
+    }  
+    else
+      if(subband[0]==2 && subband[1]==2 && subband[2]==2 && subband[3]==2 && subband[4]==2 && subband[5]==2 && subband[6]==2){
+      fl_replace_chart_value(form->subband,1,subband[0],"1",FL_BLUE);
+      fl_replace_chart_value(form->subband,2,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,3,subband[1],"2",FL_BLUE);
+      fl_replace_chart_value(form->subband,4,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,5,subband[2],"3",FL_BLUE);
+      fl_replace_chart_value(form->subband,6,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,7,subband[3],"4",FL_BLUE);
+      fl_replace_chart_value(form->subband,8,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,9,subband[4],"5",FL_BLUE);
+      fl_replace_chart_value(form->subband,10,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,11,subband[5],"6",FL_BLUE);
+      fl_replace_chart_value(form->subband,12,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,13,subband[6],"7",FL_BLUE); 
+      }
+      else
+	{
+      fl_replace_chart_value(form->subband,1,subband[0],"1",FL_GREEN);
+      fl_replace_chart_value(form->subband,2,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,3,subband[1],"2",FL_GREEN);
+      fl_replace_chart_value(form->subband,4,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,5,subband[2],"3",FL_GREEN);
+      fl_replace_chart_value(form->subband,6,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,7,subband[3],"4",FL_GREEN);
+      fl_replace_chart_value(form->subband,8,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,9,subband[4],"5",FL_GREEN);
+      fl_replace_chart_value(form->subband,10,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,11,subband[5],"6",FL_GREEN);
+      fl_replace_chart_value(form->subband,12,0,"",FL_YELLOW);
+      fl_replace_chart_value(form->subband,13,subband[6],"7",FL_GREEN); 
+	}
+  if (oai_emulation.info.transmission_mode == 5){
+    fl_set_chart_lsize(form->piechart,12);
+    fl_replace_chart_value(form->piechart,1,SU,"",FL_RED);
+    fl_replace_chart_value(form->piechart,2,MU,"",FL_GREEN);
+    fl_replace_chart_value(form->piechart,3,FMU,"",FL_BLUE);
+    fl_replace_chart_value(form->piechart,4,NO,"",FL_WHITE);
+  }
+  fl_set_xyplot_xbounds(form->plot_avg,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form->plot_avg,0,800);
+  fl_set_xyplot_ytics(form->plot_avg,8,10);
+  fl_set_object_color(form->plot_avg,FL_BLACK,FL_YELLOW);
+  fl_replace_xyplot_point(form->plot_avg,frames,frames+1,avg_d);
+  
+  fl_set_xyplot_xbounds(form->plot_instant_SU,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form->plot_instant_SU,0,1000);
+  fl_set_xyplot_ytics(form->plot_instant_SU,10,10);
+
+  fl_set_xyplot_xbounds(form->plot_instant_MU,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form->plot_instant_MU,0,1000);
+  fl_set_xyplot_ytics(form->plot_instant_MU,10,10);
+
+  fl_set_xyplot_xbounds(form->plot_instant_FMU,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form->plot_instant_FMU,0,1000);
+  fl_set_xyplot_ytics(form->plot_instant_FMU,10,10);
+  
+  //obj = fl_replace_xyplot_point(form->plot_instant,frames,frames+1,0);
+  if(subband[0]==0 && subband[1]==0 && subband[2]==0 && subband[3]==0 && subband[4]==0 && subband[5]==0 && subband[6]==0)
+    msg("No Transmision");
+  //fl_set_object_color(form->plot_instant,FL_BLACK,FL_WHITE);
+  else
+    if(subband[0]==1 && subband[1]==1 && subband[2]==1 && subband[3]==1 && subband[4]==1 && subband[5]==1 && subband[6]==1)
+      //fl_set_object_color(form->plot_instant,FL_BLACK,FL_RED);
+      fl_replace_xyplot_point(form->plot_instant_SU,frames,frames+1,instant_d);
+    else
+      if(subband[0]==2 && subband[1]==2 && subband[2]==2 && subband[3]==2 && subband[4]==2 && subband[5]==2 && subband[6]==2)
+	//fl_set_object_color(form->plot_instant,FL_BLACK,FL_BLUE);
+	fl_replace_xyplot_point(form->plot_instant_FMU,frames,frames+1,instant_d);
+      else
+	//fl_set_object_color(form->plot_instant,FL_BLACK,FL_GREEN);
+	fl_replace_xyplot_point(form->plot_instant_MU,frames,frames+1,instant_d);
+
+  //fl_replace_xyplot_point(form->plot_instant,frames,frames+1,instant_d);
+}
+
 void
 do_forms (FD_phy_procedures_sim * form,
 	  LTE_UE_PDSCH ** lte_ue_pdsch_vars, LTE_eNB_PUSCH ** lte_eNB_pusch_vars, struct complex **ch, u32 ch_len)
@@ -499,8 +648,14 @@ main (int argc, char **argv)
   int td, td_avg, sleep_time_us;
 
   lte_subframe_t direction;
+  //unsigned int subband[7] = {0,1,0,1,1,0,1};
+  float xdata[10000], ydata[10000];
+  int points;
+  double avg_throughput=0,instant_throughput=0;
+
 
 #ifdef XFORMS
+  FD_MUMIMO *form_MUMIMO;
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
   FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
   FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -739,6 +894,8 @@ main (int argc, char **argv)
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
 
+
+
 #ifndef NAS_NETLINK
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
@@ -858,8 +1015,11 @@ main (int argc, char **argv)
     LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0] );
   }
 
-  
+
+
+
 #ifdef XFORMS
+
   fl_initialize (&argc, argv, NULL, 0, 0);
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -882,6 +1042,61 @@ main (int argc, char **argv)
     sprintf (title, "LTE UL SCOPE UE %d", eNB_id);
     fl_show_form (form_ul[eNB_id]->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
   }
+
+  fl_initialize (&argc, argv, NULL, 0, 0);
+  form_MUMIMO = create_form_MUMIMO(oai_emulation.info.transmission_mode);
+  sprintf (title, "Performace Parameters for Downlink");
+  fl_show_form (form_MUMIMO->MUMIMO, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+  
+  fl_set_chart_lcolor(form_MUMIMO->subband,FL_WHITE);
+  fl_set_chart_lsize(form_MUMIMO->subband,10);
+  fl_add_chart_value(form_MUMIMO->subband,0,"1",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"2",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"3",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"4",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"5",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"6",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"",FL_YELLOW);
+  fl_add_chart_value(form_MUMIMO->subband,0,"7",FL_YELLOW);
+
+  //fl_set_chart_lcolor(form_MUMIMO->piechart,FL_BLACK);
+  //fl_set_chart_lsize(form_MUMIMO->piechart,14);
+  //fl_set_chart_lposition(form_MUMIMO->piechart,0);
+  if(oai_emulation.info.transmission_mode == 5){
+  fl_add_chart_value(form_MUMIMO->piechart,0,"",FL_RED);
+  fl_add_chart_value(form_MUMIMO->piechart,0,"",FL_GREEN);
+  fl_add_chart_value(form_MUMIMO->piechart,0,"",FL_BLUE);
+  fl_add_chart_value(form_MUMIMO->piechart,0,"",FL_WHITE);
+  //fl_clear_chart(form_MUMIMO->piechart);
+  }
+  for(points = 0; points < oai_emulation.info.n_frames;points++){
+    xdata[points] = points+1;
+    ydata[points] = 0;
+  }
+  fl_set_xyplot_xbounds(form_MUMIMO->plot_avg,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form_MUMIMO->plot_avg,0,800);
+  fl_set_xyplot_data(form_MUMIMO->plot_avg,xdata,ydata,oai_emulation.info.n_frames,"Average System Throughput in Kbps","Number of Frames","Throughput");
+  
+  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant_SU,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form_MUMIMO->plot_instant_SU,0,1000);
+  fl_set_object_color(form_MUMIMO->plot_instant_SU,FL_BLACK,FL_RED);
+  fl_set_xyplot_data(form_MUMIMO->plot_instant_SU,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
+
+  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant_MU,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form_MUMIMO->plot_instant_MU,0,1000);
+  fl_set_object_color(form_MUMIMO->plot_instant_MU,FL_BLACK,FL_GREEN);
+  fl_set_xyplot_data(form_MUMIMO->plot_instant_MU,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
+
+  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant_FMU,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form_MUMIMO->plot_instant_FMU,0,1000);
+  fl_set_object_color(form_MUMIMO->plot_instant_FMU,FL_BLACK,FL_BLUE);
+  fl_set_xyplot_data(form_MUMIMO->plot_instant_FMU,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
+  
 #endif
 
 
@@ -923,9 +1138,14 @@ main (int argc, char **argv)
 	  PHY_vars_eNB_g[0]->cooperation_flag = 2;
       }
     */
+    for(UE_id=oai_emulation.info.first_ue_local; UE_id<(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);UE_id++)
+      PHY_vars_eNB_g[0]->eNB_UE_stats[UE_id].dlsch_bitrate = 0;
+
+    for(i=0;i<7;i++)
+    PHY_vars_eNB_g[0]->subband[i] = 0;
+
     oai_emulation.info.frame = mac_xface->frame; 
     update_nodes(oai_emulation.info.time);  
-
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
 
@@ -1157,7 +1377,10 @@ main (int argc, char **argv)
       }// end if next_slot%2
      }// if Channel_Flag==0
 
-    }				//end of slot
+
+     
+    }			//end of slot
+
 
     if ((mac_xface->frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -1167,6 +1390,26 @@ main (int argc, char **argv)
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     }
+
+#ifdef XFORMS
+     avg_throughput = 0;
+     instant_throughput = 0;
+     for(UE_id=0; UE_id < NB_UE_INST; UE_id++){
+       avg_throughput = PHY_vars_eNB_g[0]->eNB_UE_stats[UE_id].total_transmitted_bits + avg_throughput;
+       
+       instant_throughput = PHY_vars_eNB_g[0]->eNB_UE_stats[UE_id].dlsch_bitrate + instant_throughput;
+     }
+     //fl_freeze_form(form_MUMIMO);
+     do_forms_MUMIMO(form_MUMIMO,mac_xface->frame,PHY_vars_eNB_g[0]->subband,
+		     PHY_vars_eNB_g[0]->check_for_SUMIMO_transmissions,
+		     PHY_vars_eNB_g[0]->check_for_MUMIMO_transmissions,
+		     PHY_vars_eNB_g[0]->FULL_MUMIMO_transmissions,
+		     PHY_vars_eNB_g[0]->check_for_total_transmissions,
+		     avg_throughput,
+		     instant_throughput);
+     //fl_unfreeze_form (form_MUMIMO);
+//,PHY_vars_eNB_g[eNB_id]->average_throughput,PHY_vars_eNB_g[eNB_id]->instantaneous_throughput);
+#endif
   
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {

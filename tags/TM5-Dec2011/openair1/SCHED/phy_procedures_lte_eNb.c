@@ -1696,7 +1696,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   PUCCH_FMT_t format;
   u8 nPRS;
   u8 two_ues_connected = 0;
-
+  phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = 0;
   //  msg("Running phy_procedures_eNB_RX(%d)\n",last_slot);
   if (abstraction_flag == 0) {
     for (l=0;l<phy_vars_eNB->lte_frame_parms.symbols_per_tti/2;l++) {
@@ -2058,12 +2058,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[harq_pid][round];
       }
 
-      if(mac_xface->frame % 10 == 0) {
+      //if(mac_xface->frame % 10 == 0) {
 	phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*10;
+						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*100;
 	
 	phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
-      }
+	//}
     }
   
 

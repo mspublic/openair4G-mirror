@@ -1007,6 +1007,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   phy_vars_eNB->total_dlsch_bitrate = 0;
   phy_vars_eNB->total_transmitted_bits = 0;
   phy_vars_eNB->total_system_throughput = 0;
+  phy_vars_eNB->subband[7] = (0,0,0,0,0,0,0);
 
 
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
