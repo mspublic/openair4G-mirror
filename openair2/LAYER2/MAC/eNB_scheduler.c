@@ -1660,7 +1660,7 @@ void tm5_pre_processor (unsigned char Mod_id,
   u8 MIMO_mode_indicator[7]= {2,2,2,2,2,2,2};
   u8 total_DL_cqi_MUMIMO = 0,total_DL_cqi_SUMIMO = 0;
   u16 total_TBS_SUMIMO = 0,total_TBS_MUMIMO = 0; 
-
+  unsigned int subband[7]={0,0,0,0,0,0,0};
   /// Initialization 
   for(i=0;i<256;i++)
     {
@@ -3496,6 +3496,13 @@ void tm5_pre_processor (unsigned char Mod_id,
     //msg("***********RB Alloc for every subband for UE%d ***********\n",UE_id);
     for(i=0;i<7;i++){
       PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub[UE_id][i];
+      subband[i] = subband[i]+rballoc_sub[UE_id][i];
+      if(subband[i] > 1)
+	PHY_vars_eNB_g[Mod_id]->subband[i] = 2;
+      else if(subband[i] == 1)
+	PHY_vars_eNB_g[Mod_id]->subband[i] = 1;
+      else
+	PHY_vars_eNB_g[Mod_id]->subband[i] = 0;
       //msg("RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
     }
     PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[UE_id];
