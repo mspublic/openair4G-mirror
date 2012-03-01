@@ -205,20 +205,28 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+
+    chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
     if (nb_tx==2 && nb_rx==2) {
-      chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
       for (i = 0; i<6; i++) 
 	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
     }
+    else if (nb_tx==2 && nb_rx==1) {
+      for (i = 0; i<6; i++) 
+	chan_desc->R_sqrt[i] = (struct complex*) &R21_sqrt[i][0];
+    }
+    else if (nb_tx==1 && nb_rx==2) {
+      for (i = 0; i<6; i++) 
+	chan_desc->R_sqrt[i] = (struct complex*) &R12_sqrt[i][0];
+    }
     else {
-      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
       for (i = 0; i<6; i++) {
 	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
 	  chan_desc->R_sqrt[i][j].x = 1.0;
 	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
-	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+	msg("correlation matrix not implemented for nb_tx==%d and nb_rx==%d, using identity\n", nb_tx, nb_rx);
       }
     }
     break;
