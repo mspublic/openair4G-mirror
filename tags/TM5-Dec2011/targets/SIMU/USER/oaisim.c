@@ -278,7 +278,7 @@ void do_forms_MUMIMO (FD_MUMIMO * form,
     fl_replace_chart_value(form->piechart,4,NO,"",FL_WHITE);
   }
   fl_set_xyplot_xbounds(form->plot_avg,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form->plot_avg,0,800);
+  fl_set_xyplot_ybounds(form->plot_avg,0,1000);
   fl_set_xyplot_ytics(form->plot_avg,8,10);
   fl_set_object_color(form->plot_avg,FL_BLACK,FL_YELLOW);
   fl_replace_xyplot_point(form->plot_avg,frames,frames+1,avg_d);
@@ -1077,7 +1077,7 @@ main (int argc, char **argv)
     ydata[points] = 0;
   }
   fl_set_xyplot_xbounds(form_MUMIMO->plot_avg,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form_MUMIMO->plot_avg,0,800);
+  fl_set_xyplot_ybounds(form_MUMIMO->plot_avg,0,1000);
   fl_set_xyplot_data(form_MUMIMO->plot_avg,xdata,ydata,oai_emulation.info.n_frames,"Average System Throughput in Kbps","Number of Frames","Throughput");
 
   fl_add_xyplot_overlay(form_MUMIMO->plot_avg,1,xdata,ydata,1,FL_CYAN);

@@ -52,10 +52,10 @@
 	fl_set_object_color(obj,FL_WHITE,FL_WHITE);
 	  }
 
-    obj = fl_add_box(FL_FLAT_BOX,670,45,170,20,"Overall Average Throughput");
+    obj = fl_add_box(FL_FLAT_BOX,680,45,170,20,"Overall Average Throughput");
     fl_set_object_color(obj,FL_CYAN,FL_CYAN); 
     fl_set_object_lsize(obj,8);
-    obj = fl_add_box(FL_FLAT_BOX,670,65,170,20,"Average Throughput over 10 Frames");
+    obj = fl_add_box(FL_FLAT_BOX,680,65,170,20,"Average Throughput over 10 Frames");
     fl_set_object_color(obj,FL_YELLOW,FL_YELLOW);
     fl_set_object_lsize(obj,8);
 
