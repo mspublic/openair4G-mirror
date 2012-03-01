@@ -3643,12 +3643,15 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
  
     eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0];
 
+    
 #ifdef FULL_BUFFER
     while(eNB_UE_stats->dlsch_mcs1 > 9){
       eNB_UE_stats->DL_cqi[0] = eNB_UE_stats->DL_cqi[0]-1;
       eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0];
     }
 #endif	  
+    
+    
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
     printf("Got harq_pid %d, round %d\n",harq_pid,round);

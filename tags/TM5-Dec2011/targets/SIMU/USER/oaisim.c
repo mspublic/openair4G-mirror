@@ -178,12 +178,15 @@ void do_forms_MUMIMO (FD_MUMIMO * form,
 		      double MUMIMO, 
 		      double FULL_MUMIMO, 
 		      double total,
+		      double overall_avg,
 		      double avg,
 		      double instant){
 //,unsigned int avgerage_throughput,unsigned int instantaneous_throughput)
   double SU=0, MU=0, FMU=0, NO=0;
+  double overall_avg_d = 0;
   double avg_d=0;
-  avg_d = avg/((frames+1)*10);
+  overall_avg_d = overall_avg/((frames+1)*10);
+  avg_d = avg/1000;
   double instant_d = 0;
   int i;
 
@@ -279,34 +282,31 @@ void do_forms_MUMIMO (FD_MUMIMO * form,
   fl_set_xyplot_ytics(form->plot_avg,8,10);
   fl_set_object_color(form->plot_avg,FL_BLACK,FL_YELLOW);
   fl_replace_xyplot_point(form->plot_avg,frames,frames+1,avg_d);
+
+  fl_insert_xyplot_data(form->plot_avg,1,frames-1,frames+1,overall_avg_d);
+
+
   
-  fl_set_xyplot_xbounds(form->plot_instant_SU,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form->plot_instant_SU,0,1000);
-  fl_set_xyplot_ytics(form->plot_instant_SU,10,10);
+  fl_set_xyplot_xbounds(form->plot_instant,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form->plot_instant,0,1000);
+  fl_set_xyplot_ytics(form->plot_instant,10,10);
 
-  fl_set_xyplot_xbounds(form->plot_instant_MU,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form->plot_instant_MU,0,1000);
-  fl_set_xyplot_ytics(form->plot_instant_MU,10,10);
-
-  fl_set_xyplot_xbounds(form->plot_instant_FMU,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form->plot_instant_FMU,0,1000);
-  fl_set_xyplot_ytics(form->plot_instant_FMU,10,10);
   
   //obj = fl_replace_xyplot_point(form->plot_instant,frames,frames+1,0);
   if(subband[0]==0 && subband[1]==0 && subband[2]==0 && subband[3]==0 && subband[4]==0 && subband[5]==0 && subband[6]==0)
-    msg("No Transmision");
-  //fl_set_object_color(form->plot_instant,FL_BLACK,FL_WHITE);
+    fl_insert_xyplot_data(form->plot_instant,1,frames-1,frames+1,instant_d);
   else
     if(subband[0]==1 && subband[1]==1 && subband[2]==1 && subband[3]==1 && subband[4]==1 && subband[5]==1 && subband[6]==1)
-      //fl_set_object_color(form->plot_instant,FL_BLACK,FL_RED);
-      fl_replace_xyplot_point(form->plot_instant_SU,frames,frames+1,instant_d);
+      fl_insert_xyplot_data(form->plot_instant,2,frames-1,frames+1,instant_d);
     else
       if(subband[0]==2 && subband[1]==2 && subband[2]==2 && subband[3]==2 && subband[4]==2 && subband[5]==2 && subband[6]==2)
 	//fl_set_object_color(form->plot_instant,FL_BLACK,FL_BLUE);
-	fl_replace_xyplot_point(form->plot_instant_FMU,frames,frames+1,instant_d);
+	fl_insert_xyplot_data(form->plot_instant,4,frames-1,frames+1,instant_d);
+  //fl_replace_xyplot_point(form->plot_instant_FMU,frames,frames+1,instant_d);
       else
 	//fl_set_object_color(form->plot_instant,FL_BLACK,FL_GREEN);
-	fl_replace_xyplot_point(form->plot_instant_MU,frames,frames+1,instant_d);
+	//fl_replace_xyplot_point(form->plot_instant_MU,frames,frames+1,instant_d);
+	fl_insert_xyplot_data(form->plot_instant,3,frames-1,frames+1,instant_d);
 
   //fl_replace_xyplot_point(form->plot_instant,frames,frames+1,instant_d);
 }
@@ -651,7 +651,7 @@ main (int argc, char **argv)
   //unsigned int subband[7] = {0,1,0,1,1,0,1};
   float xdata[10000], ydata[10000];
   int points;
-  double avg_throughput=0,instant_throughput=0;
+  double overall_avg_throughput=0,avg_throughput=0,instant_throughput=0;
 
 
 #ifdef XFORMS
@@ -1064,9 +1064,7 @@ main (int argc, char **argv)
   fl_add_chart_value(form_MUMIMO->subband,0,"",FL_YELLOW);
   fl_add_chart_value(form_MUMIMO->subband,0,"7",FL_YELLOW);
 
-  //fl_set_chart_lcolor(form_MUMIMO->piechart,FL_BLACK);
-  //fl_set_chart_lsize(form_MUMIMO->piechart,14);
-  //fl_set_chart_lposition(form_MUMIMO->piechart,0);
+
   if(oai_emulation.info.transmission_mode == 5){
   fl_add_chart_value(form_MUMIMO->piechart,0,"",FL_RED);
   fl_add_chart_value(form_MUMIMO->piechart,0,"",FL_GREEN);
@@ -1081,22 +1079,21 @@ main (int argc, char **argv)
   fl_set_xyplot_xbounds(form_MUMIMO->plot_avg,0,oai_emulation.info.n_frames+1);
   fl_set_xyplot_ybounds(form_MUMIMO->plot_avg,0,800);
   fl_set_xyplot_data(form_MUMIMO->plot_avg,xdata,ydata,oai_emulation.info.n_frames,"Average System Throughput in Kbps","Number of Frames","Throughput");
-  
-  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant_SU,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form_MUMIMO->plot_instant_SU,0,1000);
-  fl_set_object_color(form_MUMIMO->plot_instant_SU,FL_BLACK,FL_RED);
-  fl_set_xyplot_data(form_MUMIMO->plot_instant_SU,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
 
-  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant_MU,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form_MUMIMO->plot_instant_MU,0,1000);
-  fl_set_object_color(form_MUMIMO->plot_instant_MU,FL_BLACK,FL_GREEN);
-  fl_set_xyplot_data(form_MUMIMO->plot_instant_MU,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
+  fl_add_xyplot_overlay(form_MUMIMO->plot_avg,1,xdata,ydata,1,FL_CYAN);
+  fl_set_xyplot_overlay_type(form_MUMIMO->plot_avg,1,FL_POINTS_XYPLOT);
 
-  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant_FMU,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form_MUMIMO->plot_instant_FMU,0,1000);
-  fl_set_object_color(form_MUMIMO->plot_instant_FMU,FL_BLACK,FL_BLUE);
-  fl_set_xyplot_data(form_MUMIMO->plot_instant_FMU,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
   
+
+  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_ybounds(form_MUMIMO->plot_instant,0,1000);
+  fl_set_object_color(form_MUMIMO->plot_instant,FL_BLACK,FL_ORANGE);
+  fl_set_xyplot_data(form_MUMIMO->plot_instant,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
+
+  fl_add_xyplot_overlay(form_MUMIMO->plot_instant,2,xdata,ydata,1,FL_RED);
+  fl_add_xyplot_overlay(form_MUMIMO->plot_instant,3,xdata,ydata,1,FL_GREEN);
+  fl_add_xyplot_overlay(form_MUMIMO->plot_instant,4,xdata,ydata,1,FL_BLUE);
+  fl_add_xyplot_overlay(form_MUMIMO->plot_instant,1,xdata,ydata,1,FL_WHITE);
 #endif
 
 
@@ -1392,11 +1389,12 @@ main (int argc, char **argv)
     }
 
 #ifdef XFORMS
-     avg_throughput = 0;
-     instant_throughput = 0;
+    overall_avg_throughput = 0;
+    avg_throughput = 0;
+    instant_throughput = 0;
      for(UE_id=0; UE_id < NB_UE_INST; UE_id++){
-       avg_throughput = PHY_vars_eNB_g[0]->eNB_UE_stats[UE_id].total_transmitted_bits + avg_throughput;
-       
+       avg_throughput = PHY_vars_eNB_g[0]->eNB_UE_stats[UE_id].average_throughput + avg_throughput;
+       overall_avg_throughput = PHY_vars_eNB_g[0]->eNB_UE_stats[UE_id].total_transmitted_bits + overall_avg_throughput;
        instant_throughput = PHY_vars_eNB_g[0]->eNB_UE_stats[UE_id].dlsch_bitrate + instant_throughput;
      }
      //fl_freeze_form(form_MUMIMO);
@@ -1405,6 +1403,7 @@ main (int argc, char **argv)
 		     PHY_vars_eNB_g[0]->check_for_MUMIMO_transmissions,
 		     PHY_vars_eNB_g[0]->FULL_MUMIMO_transmissions,
 		     PHY_vars_eNB_g[0]->check_for_total_transmissions,
+		     overall_avg_throughput,
 		     avg_throughput,
 		     instant_throughput);
      //fl_unfreeze_form (form_MUMIMO);

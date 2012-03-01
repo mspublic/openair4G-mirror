@@ -1020,9 +1020,11 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
     memset(&phy_vars_eNB->eNB_UE_stats[UE_id],0,sizeof(LTE_eNB_UE_stats));
 
     phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS = 0;
-    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last1 = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_last10 = 0;
     phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits = 0;
     phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate = 0;
+    phy_vars_eNB->eNB_UE_stats[UE_id].average_throughput = 0;
 
     phy_vars_eNB->physicalConfigDedicated[UE_id] = NULL;
   }
