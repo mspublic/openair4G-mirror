@@ -11,7 +11,7 @@
 #include "UTIL/OMG/omg.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_vars.h"
-#include "UTIL/OTG/otg.h"
+//#include "UTIL/OTG/otg.h"
 
 
 mapping log_level_names[] =
