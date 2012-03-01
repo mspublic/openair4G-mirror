@@ -128,9 +128,6 @@ rlc_um_reset_state_variables (rlc_um_entity_t *rlcP)
   rlcP->next_sdu_index = 0;
   rlcP->current_sdu_index = 0;
 
-  rlcP->last_reassemblied_sn = 0;
-  //rlcP->reassembly_missing_pdu_detected = 0;
-
   // TX SIDE
   rlcP->vt_us = 0;
   // RX SIDE
@@ -201,7 +198,8 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->um_window_size = 0;
     }
 
-    rlcP->last_reassemblied_missing_sn = rlcP->sn_modulo - 1;
+    rlcP->last_reassemblied_sn  = rlcP->sn_modulo - 1;
+    rlcP->last_reassemblied_missing_sn  = rlcP->sn_modulo - 1;
     rlcP->reassembly_missing_sn_detected = 0;
     // timers
     rlcP->timer_reordering         = 0;

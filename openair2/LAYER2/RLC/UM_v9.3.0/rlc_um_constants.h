@@ -77,5 +77,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 /** Internal event defined for state model of the RLC UM. */
 #        define RLC_UM_RECEIVE_CRLC_RESUME_REQ_EVENT                                  0x12
+
+/** Marker in RX buffer meaning that a PDU has been received. */
+#        define RLC_UM_PDU_PREVIOUSLY_RECEIVED 0x01
 /** @} */
 #    endif
