@@ -10,9 +10,9 @@ typedef struct{
   FL_OBJECT *subband;
   FL_OBJECT *piechart;
   FL_OBJECT *plot_avg;
-  FL_OBJECT *plot_instant_SU;
-  FL_OBJECT *plot_instant_MU;
-  FL_OBJECT *plot_instant_FMU;
+  FL_OBJECT *plot_instant;
+  //FL_OBJECT *plot_instant_MU;
+  //FL_OBJECT *plot_instant_FMU;
 } FD_MUMIMO;
 
 

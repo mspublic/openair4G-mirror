@@ -2060,10 +2060,16 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
       //if(mac_xface->frame % 10 == 0) {
 	phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*100;
+						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last1)*100;
 	
-	phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
+	phy_vars_eNB->eNB_UE_stats[i].total_TBS_last1 = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
 	//}
+	if(mac_xface->frame%10 == 0){
+	  phy_vars_eNB->eNB_UE_stats[i].average_throughput = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
+							      phy_vars_eNB->eNB_UE_stats[i].total_TBS_last10)*10;
+
+	  phy_vars_eNB->eNB_UE_stats[i].total_TBS_last10 = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
+	}
     }
   
 

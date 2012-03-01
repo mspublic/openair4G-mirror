@@ -515,11 +515,15 @@ typedef struct {
   //  SRS_param_t SRS_parameters;
   unsigned int total_TBS;
   //
-  unsigned int total_TBS_last;
+  unsigned int total_TBS_last1;
+  //
+  unsigned int total_TBS_last10;
   //
   unsigned int dlsch_bitrate;
   //
   unsigned int total_transmitted_bits;
+  //
+  unsigned int average_throughput;
 } LTE_eNB_UE_stats;
 
 typedef struct {
