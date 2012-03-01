@@ -54,6 +54,9 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #define TEST4
 #define TEST5
 
+#define INCREMENT_FRAME_YES 1
+#define INCREMENT_FRAME_NO  0
+
 #define TEST_MAX_SEND_SDU 8192
 #define TARGET_MAX_RX_ERROR_RATE 10
 #define TARGET_MAX_TX_ERROR_RATE 10
@@ -61,19 +64,30 @@ static int  g_frame = 0;
 static int  g_error_on_phy = 0;
 static int  g_random_sdu;
 static int  g_random_nb_frames;
+
 static int  g_random_tx_pdu_size;
 static int  g_random_rx_pdu_size;
+
 static int  g_target_tx_error_rate;
 static int  g_target_rx_error_rate;
+
 static int  g_tx_packets = 0;
 static int  g_dropped_tx_packets = 0;
 static int  g_rx_packets = 0;
 static int  g_dropped_rx_packets = 0;
 static int  g_drop_rx = 0;
 static int  g_drop_tx = 0;
+
 static int  g_send_sdu_ids[TEST_MAX_SEND_SDU][2];
 static int  g_send_id_write_index[2];
 static int  g_send_id_read_index[2];
+
+// time in frame numbers
+#define MAX_TIME_DELAYED_PDU_DUE_TO_HARQ     256
+static struct mac_data_ind g_tx_delayed_indications[MAX_TIME_DELAYED_PDU_DUE_TO_HARQ];
+static struct mac_data_ind g_rx_delayed_indications[MAX_TIME_DELAYED_PDU_DUE_TO_HARQ];
+
+
 static s8_t *g_sdus[] = {"En dépit de son volontarisme affiché, le premier ministre est de plus en plus décrié pour son incompétence. La tension politique et dans l'opinion publique est encore montée d'un cran au Japon, sur fond d'inquiétantes nouvelles, avec du plutonium détecté dans le sol autour de la centrale de Fukushima. Le premier ministre Naoto Kan a solennellement déclaré que son gouvernement était «en état d'alerte maximum». Tout en reconnaissant que la situation restait «imprévisible». Ce volontarisme affiché par le premier ministre - que Nicolas Sarkozy rencontrera demain lors d'une visite au Japon - ne l'a pas empêché d'être la cible de violentes critiques de la part de parlementaires sur sa gestion de la crise. Attaqué sur le manque de transparence, il a assuré qu'il rendait publiques toutes les informations en sa possession. Un député de l'opposition, Yosuke Isozaki, a aussi reproché à Naoto Kan de ne pas avoir ordonné l'évacuation des populations dans la zone comprise entre 20 et 30 km autour de la centrale. «Peut-il y avoir quelque chose de plus irresponsable que cela ?», a-t-il lancé. Pour l'heure, la zone d'évacuation est limitée à un rayon de 20 km, seul le confinement étant recommandé pour les 10 km suivants. Sur ce sujet, les autorités japonaises ont été fragilisées mardi par les déclarations de Greenpeace, affirmant que ses experts avaient détecté une radioactivité dangereuse à 40 km de la centrale. L'organisation écologiste a appelé à une extension de la zone d'évacuation, exhortant Tokyo à «cesser de privilégier la politique aux dépens de la science». L'Agence japonaise de sûreté nucléaire a balayé ces critiques.",
 
 "La pâquerette (Bellis perennis) est une plante vivace des prés, des pelouses, des bords de chemins et des prairies, haute de dix à vingt centimètres, de la famille des Astéracées, dont les fleurs naissent sur des inflorescences appelées capitules : celles du pourtour, que l'on croit à tort être des pétales, appelées fleurs ligulées, parce qu'elles ont la forme d'une languette, ou demi-fleurons, sont des fleurs femelles, dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes, appelées fleurs tubuleuses, parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites. Ainsi, contrairement à l'opinion populaire, ce qu'on appelle une « fleur » de pâquerette n'est en réalité pas « une » fleur mais un capitule portant des fleurs très nombreuses.Leurs fruits s'envolent grâce au vent et dégagent des odeurs qui attirent les insectes.Une variété muricole peut pousser sur des murs humides verticaux.Les pâquerettes sont des fleurs rustiques et très communes en Europe, sur les gazons, les prairies, les chemins et les zones d'herbe rase.Elles ont la particularité, comme certaines autres fleurs de plantes herbacées, de se fermer la nuit et de s'ouvrir le matin pour s'épanouir au soleil ; elles peuvent aussi se fermer pendant les averses, voire un peu avant, ce qui permet dans les campagnes de prédire la pluie légèrement à l'avance.",
@@ -115,6 +129,44 @@ static s8_t *g_sdus[] = {"En dépit de son volontarisme affiché, le premier min
 ", parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites."
 };
 
+
+//-----------------------------------------------------------------------------
+void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, unsigned long sizeP)
+//-----------------------------------------------------------------------------
+{
+    unsigned long octet_index = 0;
+
+    if (dataP == NULL) {
+        return;
+    }
+
+
+    LOG_T(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
+    LOG_T(componentP, "------+-------------------------------------------------|\n");
+    for (octet_index = 0; octet_index < sizeP; octet_index++) {
+        if ((octet_index % 16) == 0){
+            if (octet_index != 0) {
+                LOG_T(componentP, " |\n");
+            }
+            LOG_T(componentP, " %04d |", octet_index);
+        }
+        /*
+         * Print every single octet in hexadecimal form
+         */
+        LOG_T(componentP, " %02x", dataP[octet_index]);
+        /*
+         * Align newline and pipes according to the octets in groups of 2
+         */
+    }
+
+    /*
+     * Append enough spaces and put final pipe
+     */
+    unsigned char index;
+    for (index = octet_index; index < 16; ++index)
+        LOG_T(componentP, "   ");
+    LOG_T(componentP, " |\n");
+}
 
 //-----------------------------------------------------------------------------
 void rlc_um_v9_3_0_test_windows()
@@ -205,8 +257,61 @@ void rlc_um_v9_3_0_test_send_sdu(rlc_um_entity_t *um_txP, int sdu_indexP)
     exit(-1);
   }
 }
+
 //-----------------------------------------------------------------------------
-void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP, int *tx_packetsP, int* dropped_tx_packetsP) //-----------------------------------------------------------------------------
+void rlc_um_v9_3_0_buffer_delayed_rx_mac_data_ind(struct mac_data_ind* data_indP, signed int time_delayedP)
+//-----------------------------------------------------------------------------
+{
+    int   frame_modulo;
+    mem_block_t* tb;
+
+    if (time_delayedP <= 0) {
+        frame_modulo = g_frame % MAX_TIME_DELAYED_PDU_DUE_TO_HARQ;
+    } else {
+        frame_modulo = (g_frame + time_delayedP) % MAX_TIME_DELAYED_PDU_DUE_TO_HARQ;
+    }
+    while (data_indP->data.nb_elements > 0) {
+        tb = list_remove_head (&data_indP->data);
+        if (tb != NULL) {
+            if (time_delayedP < 0) {
+                list_add_head(tb, &g_rx_delayed_indications[frame_modulo].data);
+            } else {
+                list_add_tail_eurecom(tb, &g_rx_delayed_indications[frame_modulo].data);
+            }
+            g_rx_delayed_indications[frame_modulo].no_tb  += 1;
+        }
+    }
+    assert(data_indP->data.head == NULL);
+}
+//-----------------------------------------------------------------------------
+void rlc_um_v9_3_0_buffer_delayed_tx_mac_data_ind(struct mac_data_ind* data_indP, signed int time_delayedP)
+//-----------------------------------------------------------------------------
+{
+    int   frame_modulo;
+    mem_block_t* tb;
+
+    if (time_delayedP <= 0) {
+        frame_modulo = g_frame % MAX_TIME_DELAYED_PDU_DUE_TO_HARQ;
+    } else {
+        frame_modulo = (g_frame + time_delayedP) % MAX_TIME_DELAYED_PDU_DUE_TO_HARQ;
+    }
+    while (data_indP->data.nb_elements > 0) {
+        tb = list_remove_head (&data_indP->data);
+        if (tb != NULL) {
+            if (time_delayedP < 0) {
+                list_add_head(tb, &g_rx_delayed_indications[frame_modulo].data);
+            } else {
+                list_add_tail_eurecom(tb, &g_rx_delayed_indications[frame_modulo].data);
+            }
+            g_rx_delayed_indications[frame_modulo].no_tb  += 1;
+        }
+    }
+    assert(data_indP->data.head == NULL);
+}
+
+//-----------------------------------------------------------------------------
+void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP, int *tx_packetsP, int* dropped_tx_packetsP)
+//-----------------------------------------------------------------------------
 {
 
 
@@ -227,6 +332,7 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
         if (*drop_countP == 0) {
             tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
             if (tb_dst != NULL) {
+                tb_dst->next = NULL;
                 ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
                 ((struct mac_tb_ind *) (tb_dst->data))->data_ptr         = &tb_dst->data[sizeof (mac_rlc_max_rx_header_size_t)];
                 ((struct mac_tb_ind *) (tb_dst->data))->size             = tb_size;
@@ -287,17 +393,67 @@ void rlc_um_v9_3_0_test_exchange_pdus(rlc_um_entity_t *um_txP,
   rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &g_drop_tx, &g_tx_packets, &g_dropped_tx_packets);
   rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &g_drop_rx, &g_rx_packets, &g_dropped_rx_packets);
   rlc_um_mac_data_indication(um_rxP, g_frame, um_rxP->is_enb, data_ind_rx);
-  rlc_um_mac_data_indication(um_txP, g_frame, um_rxP->is_enb, data_ind_tx);
+  rlc_um_mac_data_indication(um_txP, g_frame, um_txP->is_enb, data_ind_tx);
   g_frame += 1;
-
-  //rlc_um_tx_buffer_display(um_txP,NULL);
-  //assert(um_txP->t_status_prohibit.time_out != 1);
-  //assert(um_rxP->t_status_prohibit.time_out != 1);
-  //assert(!((um_txP->vt_a == 954) && (um_txP->vt_us == 53)));
-  //assert(g_frame <= 151);
-  //check_mem_area(NULL);
+  //check_mem_area();
   //display_mem_load();
 }
+//-----------------------------------------------------------------------------
+void rlc_um_v9_3_0_test_exchange_delayed_pdus(rlc_um_entity_t *um_txP,
+                                      rlc_um_entity_t *um_rxP,
+                                      u16_t           bytes_txP,
+                                      u16_t           bytes_rxP,
+                                      signed int      time_tx_delayedP, // if -1 added to the head of current frame tx mac data ind if any
+                                                                        // if 0  added to the tail of current frame tx mac data ind if any
+                                                                        // if > 0  added to the tail of frame+time_tx_delayedP mac data ind if any
+                                      signed int      time_rx_delayedP, // if -1 added to the head of current frame rx mac data ind if any
+                                                                        // if 0  added to the tail of current frame rx mac data ind if any
+                                                                        // if > 0  added to the tail of frame+time_rx_delayedP mac data ind if any
+                                      int             is_frame_incrementedP)
+//-----------------------------------------------------------------------------
+{
+  struct mac_data_req    data_request_tx;
+  struct mac_data_req    data_request_rx;
+  struct mac_data_ind    data_ind_tx;
+  struct mac_data_ind    data_ind_rx;
+  struct mac_status_ind  tx_status;
+  struct mac_status_resp mac_rlc_status_resp_tx;
+  struct mac_status_resp mac_rlc_status_resp_rx;
+  int                    frame_modulo = g_frame % MAX_TIME_DELAYED_PDU_DUE_TO_HARQ;
+
+
+  memset(&data_request_tx, 0, sizeof(struct mac_data_req));
+  memset(&data_request_rx, 0, sizeof(struct mac_data_req));
+  memset(&data_ind_tx,     0, sizeof(struct mac_data_ind));
+  memset(&data_ind_rx,     0, sizeof(struct mac_data_ind));
+  memset(&tx_status,       0, sizeof(struct mac_status_ind));
+  memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
+  memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
+
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, bytes_txP, tx_status);
+  data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, bytes_rxP, tx_status);
+  data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
+
+
+  rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &g_drop_tx, &g_tx_packets, &g_dropped_tx_packets);
+  rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &g_drop_rx, &g_rx_packets, &g_dropped_rx_packets);
+
+  rlc_um_v9_3_0_buffer_delayed_rx_mac_data_ind(&data_ind_rx, time_tx_delayedP);
+  rlc_um_v9_3_0_buffer_delayed_tx_mac_data_ind(&data_ind_tx, time_rx_delayedP);
+
+
+  rlc_um_mac_data_indication(um_rxP, g_frame, um_rxP->is_enb, g_rx_delayed_indications[frame_modulo]);
+  memset(&g_rx_delayed_indications[frame_modulo], 0, sizeof(struct mac_data_ind));
+
+  rlc_um_mac_data_indication(um_txP, g_frame, um_txP->is_enb, g_tx_delayed_indications[frame_modulo]);
+  memset(&g_tx_delayed_indications[frame_modulo], 0, sizeof(struct mac_data_ind));
+
+  if (is_frame_incrementedP) {
+      g_frame += 1;
+  }
+}
+
 //-----------------------------------------------------------------------------
 void rlc_um_v9_3_0_test_data_conf(module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 //-----------------------------------------------------------------------------
@@ -355,20 +511,136 @@ void rlc_um_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_si
     }
 }
 //-----------------------------------------------------------------------------
-void rlc_um_v9_3_0_test_tx_rx()
+void rlc_um_v9_3_0_test_reordering(void)
+//-----------------------------------------------------------------------------
+{
+    rlc_um_info_t     um_info;
+    int                   i,j,r;
+
+    um_info.timer_reordering = 32;
+    um_info.sn_field_length  = 10;
+    um_info.is_mXch          = 0;
+
+    srand (0);
+    config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
+    config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+
+    rlc_um_display_rx_window(&um_tx);
+
+    rlc_um_display_rx_window(&um_rx);
+
+
+    srand (0);
+
+
+    // BIG SDU SMALL PDUS NO ERRORS
+    rlc_um_v9_3_0_test_reset_sdus();
+    for (i = 0; i < 128; i++) {
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3,    200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3,    200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3,    200, um_info.timer_reordering - 5, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 4,    200, 7, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 5,    200, 5, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 6,    200, 3, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 7,    200, 1, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 8,    200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 9,    200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 10,   200, 7, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 11,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 12,   200, 5, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 13,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 14,   200, 3, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 15,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 16,   200, 1, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 17,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 18,   200, 3, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 19,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 20,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 21,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 22,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 23,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 24,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 25,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 26,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 27,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 28,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 29,   200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+
+        assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+        printf("\n\n\n\n\n\n\n\n");
+
+    }
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test_reordering 3: END OF TEST BIG SDU, SMALL PDUs\n\n\n\n");
+
+    rlc_um_v9_3_0_test_reset_sdus();
+
+    for (j = 0; j < 16; j++) {
+        //i = getchar();
+
+        rlc_um_v9_3_0_test_reset_sdus();
+
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+        for (i = 0; i < 32; i++) {
+            rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, 0, 0, INCREMENT_FRAME_YES);
+        }
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+
+
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, 0, 0, INCREMENT_FRAME_YES);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, um_info.timer_reordering + 5, 0, INCREMENT_FRAME_YES);
+        for (i = 0; i < 600; i++) {
+            rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, 0, 0, INCREMENT_FRAME_YES);
+        }
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        printf("g_send_id_read_index[1]=%d g_send_id_write_index[0]=%d Loop %d (1)\n", g_send_id_read_index[1], g_send_id_write_index[0], j);
+        assert (g_send_id_read_index[1] != g_send_id_write_index[0]);
+
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, 0, 0, INCREMENT_FRAME_YES);
+        for (i = 0; i < 600; i++) {
+            if ((i % 32) == 0) {
+                rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, um_info.timer_reordering + 5, 0, INCREMENT_FRAME_YES);
+            } else {
+                rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 3, 200, 0, 0, INCREMENT_FRAME_YES);
+            }
+        }
+        rlc_um_v9_3_0_test_exchange_delayed_pdus(&um_tx, &um_rx, 2000, 200, 0, 0, INCREMENT_FRAME_YES);
+        printf("g_send_id_read_index[1]=%d g_send_id_write_index[0]=%d Loop %d (2)\n", g_send_id_read_index[1], g_send_id_write_index[0], j);
+
+        assert (g_send_id_read_index[1] != g_send_id_write_index[0]);
+    }
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test_reordering 4: END OF TEST BIG SDU, SMALL PDUs\n\n\n\n");
+}
+//-----------------------------------------------------------------------------
+void rlc_um_v9_3_0_test_tx_rx(void)
 //-----------------------------------------------------------------------------
 {
   rlc_um_info_t     um_info;
   int                   i,j,r;
 
 
-  um_info.timer_reordering = 2000;
+  um_info.timer_reordering = 32;
   um_info.sn_field_length  = 10;
   um_info.is_mXch          = 0;
 
   srand (0);
   config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
   config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+
+  rlc_um_display_rx_window(&um_tx);
+
+  rlc_um_display_rx_window(&um_rx);
 
 
   #ifdef TEST1
@@ -572,6 +844,8 @@ void rlc_um_v9_3_0_test_tx_rx()
     #endif
   }
   #ifdef TEST5
+  rlc_um_display_rx_window(&um_tx);
+  rlc_um_display_rx_window(&um_rx);
   for (r = 0; r < 1024; r++) {
     srand (r);
     g_error_on_phy = 1;
@@ -586,7 +860,8 @@ void rlc_um_v9_3_0_test_tx_rx()
                 g_random_sdu = rand() % 37;
                 rlc_um_v9_3_0_test_send_sdu(&um_tx, g_random_sdu);
                 g_random_sdu = rand() % 37;
-                rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+                //rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+
 
                 g_random_nb_frames   = rand() % 4;
                 for (j = 0; j < g_random_nb_frames; j++) {
@@ -594,6 +869,9 @@ void rlc_um_v9_3_0_test_tx_rx()
                     g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
                     rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
                 }
+                //rlc_um_display_rx_window(&um_tx);
+                rlc_um_display_rx_window(&um_rx);
+
                 int dropped = (rand() % 3);
                 if ((dropped == 0) && (g_tx_packets > 0)){
                     if ((((g_dropped_tx_packets + 1)*100) / g_tx_packets) <= g_target_tx_error_rate) {
@@ -615,7 +893,11 @@ void rlc_um_v9_3_0_test_tx_rx()
             printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 5: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d ) TX RX WITH ERRORS ON PHY LAYER:\n\n\n\n",r, g_target_tx_error_rate, g_target_rx_error_rate);
             //assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
             //assert (g_send_id_read_index[0] == g_send_id_write_index[1]);
-            printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(g_dropped_tx_packets*100)/g_tx_packets, g_target_tx_error_rate, (g_dropped_rx_packets*100)/g_rx_packets, g_target_rx_error_rate);
+            printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",
+                   (g_tx_packets >0)?(g_dropped_tx_packets*100)/g_tx_packets:0,
+                   g_target_tx_error_rate,
+                   (g_rx_packets >0)?(g_dropped_rx_packets*100)/g_rx_packets:0,
+                   g_target_rx_error_rate);
 
         }
     }
@@ -659,10 +941,11 @@ void rlc_um_v9_3_0_test(void)
 //-----------------------------------------------------------------------------
 {
     pool_buffer_init();
-    rlc_um_v9_3_0_test_tx_rx();
 
     // tested OK
-    rlc_um_v9_3_0_test_windows();
+    //rlc_um_v9_3_0_test_windows();
+    rlc_um_v9_3_0_test_reordering();
+    rlc_um_v9_3_0_test_tx_rx();
 
     printf("rlc_um_v9_3_0_test: END OF TESTS\n");
     exit(0);

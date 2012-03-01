@@ -94,6 +94,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP,u32_t frame
       rlcP->output_sdu_size_to_write += lengthP;
 #ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
       rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write] = 0;
+      rlc_util_print_hex_octets(RLC, rlcP->output_sdu_in_construction->data, rlcP->output_sdu_size_to_write);
 #endif
     } else {
       LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] [max_sdu size %d] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->module_id, rlcP->rb_id, frame, sdu_max_size);

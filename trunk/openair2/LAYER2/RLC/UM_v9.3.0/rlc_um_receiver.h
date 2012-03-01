@@ -58,6 +58,13 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 #        include "rlc_um_entity.h"
 #        include "mac_primitives.h"
+
+/*! \fn void rlc_um_display_rx_window(struct rlc_um_entity *rlcP)
+* \brief    Display the content of the RX buffer, the output stream is targeted to TTY terminals because of escape sequences.
+* \param[in]  rlcP        RLC UM protocol instance pointer.
+*/
+protected_rlc_um_receiver( void rlc_um_display_rx_window(struct rlc_um_entity *rlcP);)
+
 /*! \fn void rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, struct mac_data_ind data_indP)
 * \brief    Handle the MAC data indication, retreive the transport blocks and send them one by one to the DAR process.
 * \param[in]  rlcP        RLC UM protocol instance pointer.

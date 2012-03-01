@@ -419,6 +419,7 @@ rlc_um_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_d
 //-----------------------------------------------------------------------------
     rlc_um_entity_t *l_rlc = (rlc_um_entity_t *) rlcP;
     rlc_um_rx (rlcP, frame, eNB_flag, data_indP);
+    rlc_um_check_timer_dar_time_out(rlcP,frame,eNB_flag);
 }
 
 //-----------------------------------------------------------------------------
@@ -442,6 +443,7 @@ rlc_um_data_req (void *rlcP, u32_t frame, mem_block_t *sduP)
 	 rlc->nb_sdu,
       rlc->current_sdu_index,
 	 rlc->next_sdu_index);
+
   /*#ifndef USER_MODE
   rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
   sec = (rlc_um_time_us/ 1000000);
