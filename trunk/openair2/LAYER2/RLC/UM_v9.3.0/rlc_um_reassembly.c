@@ -62,7 +62,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP,u32_t frame
   int             index;
 #endif
 
-  LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] reassembly()  %d bytes\n", rlcP->module_id, rlcP->rb_id, frame, lengthP);
+  LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] reassembly()  %d bytes %d bytes already reassemblied\n", rlcP->module_id, rlcP->rb_id, frame, lengthP, rlcP->output_sdu_size_to_write);
 
   if (lengthP <= 0) {
       return;
@@ -76,24 +76,19 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP,u32_t frame
 
   if (rlcP->output_sdu_in_construction == NULL) {
     //    msg("[RLC_UM_LITE] Getting mem_block ...\n");
-    rlcP->output_sdu_in_construction = get_free_mem_block (RLC_SDU_MAX_SIZE_DATA_PLANE);
+    rlcP->output_sdu_in_construction = get_free_mem_block (sdu_max_size);
     rlcP->output_sdu_size_to_write = 0;
   }
+
   if ((rlcP->output_sdu_in_construction)) {
 
-#ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
-    LOG_T(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] DATA :", rlcP->module_id, rlcP->rb_id, frame);
-    for (index = 0; index < lengthP; index++) {
-      LOG_T(RLC, "%02X.", srcP[index]);
-    }
-    msg ("\n");
-#endif
     // check if no overflow in size
     if ((rlcP->output_sdu_size_to_write + lengthP) <= sdu_max_size) {
       memcpy (&rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write], srcP, lengthP);
       rlcP->output_sdu_size_to_write += lengthP;
 #ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
       rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write] = 0;
+      LOG_T(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] DATA :", rlcP->module_id, rlcP->rb_id, frame);
       rlc_util_print_hex_octets(RLC, rlcP->output_sdu_in_construction->data, rlcP->output_sdu_size_to_write);
 #endif
     } else {
@@ -104,45 +99,21 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP,u32_t frame
   } else {
     LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY]ERROR  OUTPUT SDU IS NULL\n", rlcP->module_id, rlcP->rb_id, frame);
   }
+
 }
 //-----------------------------------------------------------------------------
 void
 rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame, u8_t eNB_flag)
 {
 //-----------------------------------------------------------------------------
-/*#ifndef USER_MODE
-  unsigned long int rlc_um_time_us;
-  int min, sec, usec;
-#endif*/
 
   if ((rlcP->output_sdu_in_construction)) {
     LOG_D(RLC, "\n\n\n[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] %d bytes sdu %p\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction);
-/*#ifndef USER_MODE
-  rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
-  sec = (rlc_um_time_us/ 1000000);
-  min = (sec / 60) % 60;
-  sec = sec % 60;
-  usec =  rlc_um_time_us % 1000000;
-  msg ("[RLC_UM_LITE][RB  %d] at time %2d:%2d.%6d\n", rlcP->rb_id, min, sec , usec);
-#endif*/
 
     if (rlcP->output_sdu_size_to_write > 0) {
         rlcP->rx_sdus += 1;
-        //msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ASCII=%s\n",rlcP->module_id, rlcP->rb_id, frame, rlcP->output_sdu_in_construction->data);
-/*#ifdef USER_MODE
-        if (strncmp(tcip_sdu, (char*)(&rlcP->output_sdu_in_construction->data[0]), strlen(tcip_sdu)) == 0) {
-            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] OK SDU TCP-IP\n\n\n", rlcP->module_id, rlcP->rb_id, frame);
-        } else if (strncmp(voip_sdu, rlcP->output_sdu_in_construction->data, strlen(voip_sdu)) == 0) {
-            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] OK SDU VOIP\n\n\n", rlcP->module_id, rlcP->rb_id, frame);
-        } else if (strncmp(very_small_sdu, rlcP->output_sdu_in_construction->data, strlen(very_small_sdu)) == 0) {
-            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] OK SDU SMALL\n\n\n", rlcP->module_id, rlcP->rb_id, frame);
-        } else {
-            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] UNKNOWN SDU\n\n\n", rlcP->module_id, rlcP->rb_id, frame);
-        }
-#endif*/
 #ifdef TEST_RLC_UM
-        rlc_um_v9_3_0_test_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write,
-							 rlcP->output_sdu_in_construction);
+        rlc_um_v9_3_0_test_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction);
 #else
         // msg("[RLC] DATA IND ON MOD_ID %d RB ID %d, size %d\n",rlcP->module_id, rlcP->rb_id, frame,rlcP->output_sdu_size_to_write);
         rlc_data_ind (rlcP->module_id, frame, eNB_flag, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction,rlcP->is_data_plane);

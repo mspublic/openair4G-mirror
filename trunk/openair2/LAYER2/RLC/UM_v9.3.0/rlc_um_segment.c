@@ -309,6 +309,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP,u32_t frame)
         pdu_tb_req->data_ptr        = (unsigned char*)pdu;
         pdu_tb_req->tb_size_in_bits = (data_pdu_size - pdu_remaining_size) << 3;
         list_add_tail_eurecom (pdu_mem, &rlcP->pdus_to_mac_layer);
+        rlc_util_print_hex_octets(RLC, pdu_mem->data, data_pdu_size);
         pdu = NULL;
         pdu_mem = NULL;
 
