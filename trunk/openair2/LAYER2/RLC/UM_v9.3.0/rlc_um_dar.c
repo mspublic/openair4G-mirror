@@ -170,7 +170,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
     //sn = (rlcP->last_reassemblied_sn + 1) % rlcP->sn_modulo;
     sn = start_snP;
 
-    check_mem_area();
+    //check_mem_area();
 
     while (continue_reassembly) {
         if ((pdu_mem = rlcP->dar_buffer[sn])) {
@@ -688,9 +688,9 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     //          -stop and reset t-Reordering;
     if (rlcP->timer_reordering_running) {
         if (rlcP->vr_uh != rlcP->vr_ux) {
-	  in_window = rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ux);
+            in_window = rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ux);
             if (in_window < 0) {
-            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n", rlcP->module_id, rlcP->rb_id, frame,rlcP->vr_ux,rlcP->vr_uh);
+                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n", rlcP->module_id, rlcP->rb_id, frame,rlcP->vr_ux,rlcP->vr_uh);
                 rlcP->timer_reordering_running = 0;
                 rlcP->timer_reordering         = 0;
             }
