@@ -954,12 +954,13 @@ void rlc_um_v9_3_0_test(void)
     pool_buffer_init();
 
     // tested OK
-    //rlc_um_v9_3_0_test_windows();
+    rlc_um_v9_3_0_test_reordering();
 
     rlc_um_v9_3_0_test_tx_rx();
 
     // tested OK
-    rlc_um_v9_3_0_test_reordering();
+    rlc_um_v9_3_0_test_windows();
+
 
     printf("rlc_um_v9_3_0_test: END OF TESTS\n");
     exit(0);
