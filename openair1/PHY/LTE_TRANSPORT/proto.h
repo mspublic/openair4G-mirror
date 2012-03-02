@@ -40,7 +40,6 @@
 #ifndef __LTE_TRANSPORT_PROTO__H__
 #define __LTE_TRANSPORT_PROTO__H__
 #include "PHY/defs.h"
-#include <math.h>
 
 // Functions below implement 36-211 and 36-212
 
@@ -567,30 +566,36 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 dlsch_id,
 			u8 eNB_id);
 
-/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
+/** \brief This function is the top-level entry point to dlsch demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
     - RE extraction (pilot, PBCH, synch. signals)
     - antenna combining (MRC, Alamouti, cycling)
     - LLR computation
-    @param phy_vars_ue Pointer to PHY variables
-    @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
+    @param lte_ue_common_vars Pointer to Common RX variable structure for UE
+    @param lte_ue_dlsch_vars Pointer to DLSCH signal variable structure for UE
+    @param frame_parms Pointer to frame descriptor
     @param eNB_id eNb index (Nid1) 0,1,2
     @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
+    @param dlsch_ue Pointer to DLSCH coding variable structure for UE
     @param subframe Subframe number
     @param symbol Symbol on which to act (within sub-frame)
     @param first_symbol_flag set to 1 on first DLSCH symbol
     @param dual_stream_UE Flag to indicate dual-stream interference cancellation
+    @param phy_measurements Pointer to UE PHY measurements procedure
     @param i_mod Modulation order of the interfering stream
 */
-s32 rx_pdsch(PHY_VARS_UE *phy_vars_ue,
-	     PDSCH_t type,
+s32 rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
+	     LTE_UE_PDSCH **lte_ue_pdsch_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
 	     u8 eNB_id,
 	     u8 eNB_id_i,
+	     LTE_UE_DLSCH_t **dlsch_ue,
 	     u8 subframe,
 	     u8 symbol,
 	     u8 first_symbol_flag,
 	     u8 dual_stream_UE,
+	     PHY_MEASUREMENTS *phy_measurements,
 	     u8 i_mod);
 
 s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
@@ -717,12 +722,16 @@ not employ the complexity reducing procedure based on RNTI.
 @param dci_alloc Pointer to DCI_ALLOC_t array to store results for DLSCH/ULSCH programming
 @param eNB_id eNB Index on which to act
 @param subframe Index of subframe
+@param si_rnti Value for SI-RNTI
+@param ra_rnti Value for RA-RNTI
 @returns bitmap of occupied CCE positions (i.e. those detected)
 */
 u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			   DCI_ALLOC_t *dci_alloc,
 			   s16 eNB_id,
-			   u8 subframe);
+			   u8 subframe,
+			   u16 si_rnti,
+			   u16 ra_rnti);
 
 
 u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
@@ -830,7 +839,7 @@ s32 generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 
 /*!
   \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).
-  @param frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
+  @params frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
 void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
 
 s32 compareints (const void * a, const void * b);
@@ -838,10 +847,10 @@ s32 compareints (const void * a, const void * b);
 
 void ulsch_modulation(mod_sym_t **txdataF,
 		      s16 amp,
-		      u32 frame,
 		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch);
+		      LTE_UE_ULSCH_t *ulsch,
+		      u8 cooperation_flag);
 
 
 void ulsch_extract_rbs_single(s32 **rxdataF,
@@ -852,7 +861,7 @@ void ulsch_extract_rbs_single(s32 **rxdataF,
 			      u8 Ns,
 			      LTE_DL_FRAME_PARMS *frame_parms);
 
-u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe);
+u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 u8 subframe2harq_pid_eNBrx(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
 s32 generate_ue_dlsch_params_from_dci(u8 subframe,
@@ -877,7 +886,6 @@ s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       u16 DL_pmi_single);
 
 s32 generate_eNB_ulsch_params_from_rar(u8 *rar_pdu,
-				       u32 frame,
 				       u8 subframe,
 				       LTE_eNB_ULSCH_t *ulsch,
 				       LTE_DL_FRAME_PARMS *frame_parms);
@@ -893,8 +901,13 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u8 eNB_id,
 				      u8 use_srs);
 
-s32 generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
-				      u8 eNB_id);
+s32 generate_ue_ulsch_params_from_rar(u8 *rar_pdu,
+				      u8 subframe,
+				      LTE_UE_ULSCH_t *ulsch,
+				      PHY_MEASUREMENTS *meas,
+				      LTE_DL_FRAME_PARMS *frame_parms,
+				      u8 eNB_id,
+				      s32 current_dlsch_cqi);
 
 int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
@@ -910,7 +923,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 #ifdef USER_MODE
 void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb);
 
-void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);
+void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
@@ -921,7 +934,6 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len);
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb, char* buffer, int len);
-
 
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
@@ -1025,37 +1037,15 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
 			u8 UE_index);
 
-void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
+void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 subframe,
 			s16 amp,
-			u8 sect_id,
-			u8 abstraction_flag);
+			LTE_eNB_ULSCH_t *ulsch_eNB,
+			mod_sym_t **txdataF);
 
-/* \brief  This routine demodulates the PHICH and updates PUSCH/ULSCH parameters.
-   @param phy_vars_ue Pointer to UE variables
-   @param subframe Subframe of received PDCCH/PHICH
-   @param eNB_id Index of eNB
-*/
-
-void rx_phich(PHY_VARS_UE *phy_vars_ue,
-	      u8 subframe,
-	      u8 eNB_id);
-
-
-/** \brief  This routine provides the relationship between a PHICH TXOp and its corresponding PUSCH subframe (Table 8.3.-1 from 36.213).
-   @param frame_parms Pointer to DL frame configuration parameters
-   @param subframe Subframe of received/transmitted PHICH
-   @returns subframe of PUSCH transmission
-*/
-u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
-
-/** \brief  This routine provides the relationship between a PHICH TXOp and its corresponding PUSCH frame (Table 8.3.-1 from 36.213).
-   @param frame_parms Pointer to DL frame configuration parameters
-   @param frame Frame of received/transmitted PHICH
-   @param subframe Subframe of received/transmitted PHICH
-   @returns frame of PUSCH transmission
-*/
-u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe);;
+void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNB,
+			 u8 subframe,
+			 LTE_eNB_ULSCH_t *ulsch_eNB);
 
 void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
@@ -1136,15 +1126,17 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 u8 subframe);
 
 
-s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
+s32 rx_pucch(LTE_eNB_COMMON *eNB_common_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     u8 ncs_cell[20][7],
 	     PUCCH_FMT_t fmt,
-	     u8 UE_id,
+	     PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
 	     u16 n1_pucch,
 	     u16 n2_pucch,
 	     u8 shortened_format,
 	     u8 *payload,
 	     u8 subframe,
-	     u8 pucch1_thres);
+	     s8 sigma2_dB);
 
 s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 UE_index,
@@ -1152,81 +1144,10 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 *payload,
 		   u8 subframe);
 
-
-/*!
-  \brief Check for PRACH TXop in subframe
-  @param frame_parms Pointer to LTE_DL_FRAME_PARMS
-  @param frame frame index to check
-  @param subframe subframe index to check
-  @returns 0 on success
-*/
-int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe);
-
-/*!
-  \brief Generate PRACH waveform
-  @param phy_vars_ue Pointer to ue top-level descriptor
-  @param eNB_id Index of destination eNB
-  @param subframe subframe index to operate on
-  @param index of preamble (0-63)
-  @param Nf System frame number
-  @returns 0 on success
-  
-*/
-s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u16 Nf);
-
-/*!
-  \brief Process PRACH waveform
-  @param phy_vars_eNB Pointer to eNB top-level descriptor
-  @param subframe subframe index to operate on
-  @param preamble_energy_list List of energies for each candidate preamble
-  @param preamble_delay_list List of delays for each candidate preamble
-  @param Nf System frame number
-  @param tdd_mapindex Index of PRACH resource in Table 5.7.1-4 (TDD)
-  @returns 0 on success
-  
-*/
-void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, u16 *preamble_delay_list, u16 Nf, u8 tdd_mapindex);
-
-/*!
-  \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
-  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
-  @returns 0-5 depending on number of available prach
-*/
-u8 get_num_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms);
-
-/*!
-  \brief Return the PRACH format as a function of the Configuration Index and Frame type.
-  @param prach_ConfigIndex PRACH Configuration Index
-  @param frame_type 0-FDD, 1-TDD
-  @returns 0-4 accordingly
-*/
-u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type);
-
-/*!
-  \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
-  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
-  @returns 0-5 depending on number of available prach
-*/
-u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
-
-/*!
-  \brief Compute DFT of PRACH ZC sequence.  Used for generation of prach in UE and reception of PRACH in eNB.
-  @param u Target root sequence index of prach
-  @param N_ZC Prime number (839,139)
-  @param Xu DFT output
-*/
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
-
-/*!
-  \brief Initialize multiplicative inverse tables for PRACH as well as roots-of-unity vectors.
-*/
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
-
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);
 //end ALU's algo
 
-u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe);
 
 
 /**@}*/

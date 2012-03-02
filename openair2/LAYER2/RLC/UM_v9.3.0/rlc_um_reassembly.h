@@ -31,13 +31,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
-*/
-/** @defgroup _rlc_um_receiver_impl_ RLC UM Receiver Implementation
-* @ingroup _rlc_um_impl_
-* @{
 */
 #    ifndef __RLC_UM_REASSEMBLY_PROTO_EXTERN_H__
 #        define __RLC_UM_REASSEMBLY_PROTO_EXTERN_H__
@@ -59,26 +57,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #        endif
 #        include "rlc_um_entity.h"
 //-----------------------------------------------------------------------------
-/*! \fn void rlc_um_clear_rx_sdu (rlc_um_entity_t *rlcP)
-* \brief    Erase the SDU in construction.
-* \param[in]  rlcP        RLC UM protocol instance pointer.
-*/
-protected_rlc_um_reassembly(void rlc_um_clear_rx_sdu (rlc_um_entity_t *rlcP));
-
-/*! \fn void rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
-* \brief    Reassembly lengthP bytes to the end of the SDU in construction.
-* \param[in]  srcP        Pointer on data to be reassemblied.
-* \param[in]  lengthP     Length to reassembly.
-* \param[in]  rlcP        RLC UM protocol instance pointer.
-* \param[in]  frame       Frame index.
-*/
-protected_rlc_um_reassembly(void     rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP, u32_t frame));
-
-/*! \fn void rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame)
-* \brief    Send SDU if any reassemblied to upper layer.
-* \param[in]  rlcP        RLC UM protocol instance pointer.
-* \param[in]  frame       Frame index.
-*/
-protected_rlc_um_reassembly(void     rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame,u8 eNB_flag));
-/** @} */
+protected_rlc_um_reassembly(void     rlc_um_send_sdu_minus_1_byte (rlc_um_entity_t *rlcP));
+protected_rlc_um_reassembly(void     rlc_um_clear_rx_sdu (rlc_um_entity_t *rlcP));
+protected_rlc_um_reassembly(void     rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP));
+protected_rlc_um_reassembly(void     rlc_um_send_sdu (rlc_um_entity_t *rlcP));
 #    endif

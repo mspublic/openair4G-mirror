@@ -31,10 +31,10 @@ void lte_sync_time_free(void);
 The algorithm uses a time domain correlation with a downsampled version of the received signal. 
 \param rxdata Received time domain data for all rx antennas
 \param frame_parms LTE DL frame parameter structure
-\param eNB_id return value with the eNb_id
+\param eNb_id return value with the eNb_id
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
-int lte_sync_time(int **rxdata, 
+int lte_sync_time(int **rxdata, ///rx data in time domain
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  int *eNB_id);
 
@@ -60,21 +60,22 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
 
 /*!
 \brief This function performs channel estimation including frequency and temporal interpolation
-\param phy_vars_ue Pointer to UE PHY variables
-\param eNB_id Index of target eNB
-\param eNB_offset Offset for interfering eNB (in terms cell ID mod 3)
+\param dl_ch_estimates pointer to structure that holds channel estimates (one slot)
+\param rxdataF pointer to received data in freq domain
+\param frame_parms pointer to LTE frame parameters
 \param Ns slot number (0..19)
 \param p antenna port 
 \param l symbol within slot
 \param symbol symbol within frame
 */
 int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
-			      u8 eNB_id,
 			      u8 eNB_offset,
-			      u8 Ns,
-			      u8 p,
-			      u8 l,
-			      u8 symbol);
+			      int **dl_ch_estimates,
+			      int **rxdataF,
+			      unsigned char Ns,
+			      unsigned char p,
+			      unsigned char l,
+			      unsigned char symbol);
 
 #ifdef EMOS
 int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS],
@@ -118,16 +119,9 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
-			 unsigned char abstraction_flag) __attribute__ ((force_align_arg_pointer));
+			 unsigned char abstraction_flag);
 
 void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id);
-
-/*! \brief Function to return the path-loss based on the UE cell-specific reference signal strength and transmission power of eNB
-@param Mod_id Module ID for UE
-@param eNB_index Index of eNB on which to act
-@returns Path loss in dB
-*/
-s16 get_PL(u8 Mod_id,u8 eNB_index);
 
 //! Automatic gain control
 void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,

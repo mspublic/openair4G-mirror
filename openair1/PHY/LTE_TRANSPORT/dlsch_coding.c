@@ -159,10 +159,11 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
 
 void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, u8 abstraction_flag) {
 
-  unsigned char Mdlharq;
+  unsigned char Kmimo, Mdlharq;
   unsigned char i,j,r;
   
   if (dlsch) {
+    Kmimo = dlsch->Kmimo;
     Mdlharq = dlsch->Mdlharq;
     dlsch->rnti = 0;
     dlsch->active = 0;
@@ -191,6 +192,7 @@ int dlsch_encoding(unsigned char *a,
 		   LTE_eNB_DLSCH_t *dlsch,
 		   u8 subframe) {
   
+  unsigned short offset;
   unsigned int G;
   unsigned int crc=1;
   unsigned short iind;
@@ -268,6 +270,7 @@ int dlsch_encoding(unsigned char *a,
       msg("mod_order %d\n",mod_order);
 #endif
       
+      offset=0;
       
 #ifdef DEBUG_DLSCH_CODING    
       msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
@@ -340,7 +343,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     memcpy(dlsch->harq_processes[harq_pid]->b,
 	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d\n", 
+    msg("[PHY] EMUL eNB %d dlsch_encoding_emul, tbs is %d\n", 
 	phy_vars_eNB->Mod_id,
 	dlsch->harq_processes[harq_pid]->TBS>>3);
 

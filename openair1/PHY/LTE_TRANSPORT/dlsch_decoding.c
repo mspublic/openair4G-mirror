@@ -128,9 +128,7 @@ u32  dlsch_decoding(short *dlsch_llr,
   short dummy_w[8][3*(6144+64)];
   u32 r,r_offset=0,Kr,Kr_bytes,err_flag=0;
   u8 crc_type;
-#ifdef DEBUG_DLSCH_DECODING
-  u16 i;
-#endif
+
   if (!dlsch_llr) {
     msg("dlsch_decoding.c: NULL dlsch_llr pointer\n");
     return(MAX_TURBO_ITERATIONS);
@@ -357,7 +355,7 @@ u32  dlsch_decoding(short *dlsch_llr,
   }
   // Reassembly of Transport block here
   offset = 0;
-  /*  
+  /*
   msg("harq_pid %d\n",harq_pid);
   msg("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
   msg("C %d\n",dlsch->harq_processes[harq_pid]->C);
@@ -369,24 +367,24 @@ u32  dlsch_decoding(short *dlsch_llr,
       Kr = dlsch->harq_processes[harq_pid]->Kplus;
 
     Kr_bytes = Kr>>3;
-    //    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
+
     if (r==0) {
       memcpy(dlsch->harq_processes[harq_pid]->b,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
-	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3)- ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3) - ((dlsch->harq_processes[harq_pid]->C>1)?3:0);
-      //            msg("copied %d bytes to b sequence (harq_pid %d)\n",
-      //      	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
-    //          msg("b[0] = %x,c[%d] = %x\n",
-    //  	  dlsch->harq_processes[harq_pid]->b[0],
-    //  	  dlsch->harq_processes[harq_pid]->F>>3,
-    //  	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
+	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+      offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3);
+      //      msg("copied %d bytes to b sequence (harq_pid %d)\n",
+      //	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
+    //      msg("b[0] = %x,c[%d] = %x\n",
+      //	  dlsch->harq_processes[harq_pid]->b[0],
+      //	  dlsch->harq_processes[harq_pid]->F>>3,
+      //	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
     }
     else {
       memcpy(dlsch->harq_processes[harq_pid]->b+offset,
-	     dlsch->harq_processes[harq_pid]->c[r],
-	     Kr_bytes- ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset += (Kr_bytes - ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
+	     dlsch->harq_processes[harq_pid]->c[0],
+	     Kr_bytes);
+      offset += Kr_bytes;
     }
   }
   
@@ -403,7 +401,7 @@ u32  dlsch_decoding(short *dlsch_llr,
 
 
 
-int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
+int dlsch_abstraction_EESM(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
 
   int index;
   double sinr_eff = 0;
@@ -413,15 +411,15 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
   for (offset = 0; offset <= 24; offset++) {
     if (rb_alloc[0] & (1<<offset)) {
       rb_count++;
-      sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[offset*2])))/beta_dlsch[mcs]);
+      sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[offset*2])))/beta1_dlsch[mcs]);
       //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
 
-      sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta_dlsch[mcs]);
+      sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta1_dlsch[mcs]);
       //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
     }
   }       
   //printf("sinr_eff1 = %f\n",sinr_eff);
-  sinr_eff =  -beta_dlsch[mcs] *log((sinr_eff)/(2*rb_count));
+  sinr_eff =  -beta2_dlsch[mcs] *log((sinr_eff)/(2*rb_count));
   sinr_eff = 10 * log10(sinr_eff);
   msg("sinr_eff2 = %f\n",sinr_eff);
 
@@ -433,7 +431,7 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
   }
   sinr_eff /= 10;
   msg("sinr_eff after rounding = %f\n",sinr_eff);
-  for (index = 0; index < 9; index++) {
+  for (index = 0; index < 16; index++) {
     if(index == 0) {
       if (sinr_eff < sinr_bler_map[mcs][0][index]) {
         bler = 1;
@@ -456,6 +454,312 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
 #endif
 }
 
+ int dlsch_abstraction_MIESM(double* sinr_dB,u8 TM, u32 rb_alloc[4], u8 mcs) {
+
+  int index;
+  double sinr_eff = 0;
+  double sinr_db1 = 0;
+  double sinr_db2 = 0;
+  double SI=0;
+  double RBIR=0;
+  int rb_count = 0;
+  int offset, M=0;
+  double bler = 0;
+  int start,middle,end;
+  TM = TM-1;
+  for (offset = 0; offset <= 24; offset++) {
+    if (rb_alloc[0] & (1<<offset)) {
+      rb_count++;
+     
+      //we need to do the table lookups here for the mutual information corresponding to the certain sinr_dB. 
+      
+      sinr_db1 = sinr_dB[offset*2];
+      sinr_db2 = sinr_dB[offset*2+1];
+
+      msg("sinr_db1=%f\n,sinr_db2=%f\n",sinr_db1,sinr_db2);
+
+      //rounding up for the table lookup
+      sinr_db1 *= 10;
+      sinr_db2 *= 10;
+
+      sinr_db1 = floor(sinr_db1);
+      sinr_db2 = floor(sinr_db2);
+
+      if ((int)sinr_db1%2) {
+	sinr_db1 += 1;
+      }
+      if ((int)sinr_db2%2) {
+	sinr_db2 += 1;
+      }
+
+      sinr_db1 /= 10;
+      sinr_db2 /= 10;
+      
+      if(mcs<10){
+	//for sinr_db1
+	for (index = 0; index < 162; index++) {
+	    if (sinr_db1 < MI_map_4qam[0][0]) {
+	      SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=2;
+	    break;
+	    }
+	     if (sinr_db1 > MI_map_4qam[0][161]) {
+	       SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
+	        M +=2;
+	    break;
+	    }
+	  
+	  if (sinr_db1 == MI_map_4qam[0][index]) {
+	    SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	     M +=2;
+	    break;
+	  }
+	}
+      
+      //for sinr_db2
+	for (index = 0; index < 162; index++) {
+	    if (sinr_db2 < MI_map_4qam[0][0]) {
+	      SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	       M +=2;
+	    break;
+	    }
+	     if (sinr_db2 > MI_map_4qam[0][161]) {
+	       SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
+	        M +=2;
+	    break;
+	    }
+	  
+	  if (sinr_db2 == MI_map_4qam[0][index]) {
+	    SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	     M +=2;
+	    break;
+	  }
+	}
+	
+      }
+      else if(mcs>9 && mcs<17)
+	{
+	  //for sinr_db1
+	  for (index = 0; index < 197; index++) {
+	    if (sinr_db1 < MI_map_16qam[0][0]) {
+	      SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	       M +=4;
+	      break;
+	    }
+	    if (sinr_db1 > MI_map_16qam[0][196]) {
+	      SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    
+	    if (sinr_db1 == MI_map_16qam[0][index]) {
+	      SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	    break;
+	  }
+	  }
+	  
+	  //for sinr_db2
+	  for (index = 0; index < 197; index++) {
+	    if (sinr_db2 < MI_map_16qam[0][0]) {
+	      SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    if (sinr_db2 > MI_map_16qam[0][196]) {
+	      SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    
+	    if (sinr_db2 == MI_map_16qam[0][index]) {
+	      SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	    break;
+	    }
+	  }
+	  
+	}
+      else if(mcs>16 && mcs<22)
+	{
+	  	//for sinr_db1
+	for (index = 0; index < 227; index++) {
+	    if (sinr_db1 < MI_map_64qam[0][0]) {
+	      SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=6;
+	    break;
+	    }
+	     if (sinr_db1 > MI_map_64qam[0][226]) {
+	       SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
+	       M +=6;
+	    break;
+	    }
+	  
+	     if (sinr_db1 == MI_map_64qam[0][index]) {
+	       SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	       M +=6;
+	       break;
+	     }
+	}
+	
+	//for sinr_db2
+	for (index = 0; index < 227; index++) {
+	  if (sinr_db2 < MI_map_64qam[0][0]) {
+	    SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	  if (sinr_db2 > MI_map_64qam[0][226]) {
+	    SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	  
+	  if (sinr_db2 == MI_map_64qam[0][index]) {
+	    SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	}
+	}
+    }
+  }
+
+  RBIR = SI/M;
+  
+  //Now RBIR->SINR_effective Mapping
+  //binary search method is performed here
+  if(mcs<10){
+    start = 0;
+    end = 161;
+    middle = end/2;
+    if (RBIR <= MI_map_4qam[2][start])
+      {
+      sinr_eff =  MI_map_4qam[0][start];
+      }
+    else
+      {
+      if (RBIR >= MI_map_4qam[2][end])
+	sinr_eff =  MI_map_4qam[0][end];
+      else
+	{//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_4qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	    start = middle;
+	  middle = (end-middle)/2;
+	}
+	}
+    for (end; end>start; end--){
+      if ((RBIR < MI_map_4qam[2][end]) && (RBIR >  MI_map_4qam[2][end-2])){
+      sinr_eff = MI_map_4qam[0][end-1];
+      break;
+      }
+    }
+      }
+    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs]; 
+  }
+
+
+  
+  else
+    if (mcs>9 && mcs<17)
+      {
+	
+	start = 0;
+	end = 196;
+	middle = end/2;
+	if (RBIR <= MI_map_16qam[2][start])
+	  {
+	  sinr_eff =  MI_map_16qam[0][start];
+	  }
+	else
+	  {
+	  if (RBIR >= MI_map_16qam[2][end])
+	    sinr_eff =  MI_map_16qam[0][end];
+	  else
+	    {
+	//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_16qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	  start = middle;
+	  middle = (end-middle)/2;
+	}
+	    }
+	for (end; end>start; end--){
+	  if ((RBIR < MI_map_16qam[2][end]) && (RBIR >  MI_map_16qam[2][end-2])){
+	    sinr_eff = MI_map_16qam[0][end-1];
+	    break;
+	  }
+	}
+      }
+	sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs];
+      } 
+    else
+      if (mcs>16)
+	{
+	  start = 0;
+	  end = 226;
+    middle = end/2;
+    if (RBIR <= MI_map_64qam[2][start])
+      {
+      sinr_eff =  MI_map_64qam[0][start];
+      }
+    else
+      {
+      if (RBIR >= MI_map_64qam[2][end])
+	sinr_eff =  MI_map_64qam[0][end];
+      else
+	{
+	//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_64qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	  start = middle;
+	  middle = (end-middle)/2;
+	}
+	}
+    for (end; end>start; end--){
+      if ((RBIR < MI_map_64qam[2][end]) && (RBIR >  MI_map_64qam[2][end-2])){
+	sinr_eff = MI_map_64qam[0][end-1];
+      break;
+      }
+    } 
+      }
+    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs]; 
+	}
+  printf("SINR_Eff = %e\n",sinr_eff);
+   for (index = 0; index < 16; index++) {
+    if(index == 0) {
+      if (sinr_eff < sinr_bler_map[mcs][0][index]) {
+        bler = 1;
+        break;
+      }
+    }
+    if (sinr_eff == sinr_bler_map[mcs][0][index]) {
+        bler = sinr_bler_map[mcs][1][index];
+    }
+  }
+#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
+   if (uniformrandom() < bler) {
+    msg("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(0);
+  }
+  else {
+    msg("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(1);
+  }
+#endif
+    
+ }
+
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
 			u8 dlsch_id,
@@ -464,21 +768,18 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_DLSCH_t *dlsch_ue;
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
-  u32 eNB_id2;
-#ifdef DEBUG_DLSCH_DECODING
-  u16 i;
-#endif
+  u32 eNB_id2,i;
 
   for (eNB_id2=0;eNB_id2<NB_eNB_INST;eNB_id2++) {
     if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
       break;
   }
   if (eNB_id2==NB_eNB_INST) {
-    LOG_E(PHY,"FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
+    msg("phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
     mac_xface->macphy_exit("");
   }
 
-  LOG_D(PHY,"UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
+  msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
 
   //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);
 
@@ -487,27 +788,16 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 0: // SI
     dlsch_ue = phy_vars_ue->dlsch_ue_SI[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_SI;
-    //    msg("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
+    msg("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
-#ifdef DEBUG_DLSCH_DECODING   
-    LOG_D(PHY,"SI Decoded\n");
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
       msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
     msg("\n");
-#endif
-    return(1);
     break;
   case 1: // RA
     dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_ra;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
-#ifdef DEBUG_DLSCH_DECODING   
-    LOG_D(PHY,"RA Decoded\n");
-    for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
-      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
-#endif
-    return(1);
     break;
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
@@ -521,8 +811,9 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     msg("\n");
 #endif
 
-    if (dlsch_abstraction(phy_vars_ue->sinr_dB, dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
-      // reset HARQ 
+    // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB, dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
+     if (dlsch_abstraction_MIESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[0], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1){
+    // reset HARQ 
       dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
       dlsch_ue->harq_processes[harq_pid]->round  = 0;
       dlsch_ue->harq_ack[subframe].ack = 1;
@@ -560,11 +851,11 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       memcpy(dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   default:
-    LOG_E(PHY,"dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
+    msg("dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
     return(1+MAX_TURBO_ITERATIONS);
   }
 
-  LOG_E(PHY,"[FATAL] dlsch_decoding.c: Should never exit here ...\n");
+  msg("[PHY][FATAL] dlsch_decoding.c: Should never exit here ...\n");
   return(0);
 }
 #endif

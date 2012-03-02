@@ -14,15 +14,15 @@ KERNEL_NAME=$(shell uname -r)
 
 export IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
 
-export IS_LINUX=$(shell if [ -d /usr/src/linux ] ; then  echo "1" ; else  echo "0" ; fi)
+export IS_LINUX=$(shell [ -f `/use/src/linux` ] && echo "1"  || echo "0";)
 
 ifeq ($(IS_LINUX), 1)
-export LINUX_KERNEL = linux
+LINUX_KERNEL = linux
 else
 ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
-export LINUX_KERNEL = linux-`uname -r`
+LINUX_KERNEL = linux-`uname -r`
 else
-export LINUX_KERNEL = linux-headers-`uname -r`
+LINUX_KERNEL = linux-headers-`uname -r`
 endif 
 endif
 

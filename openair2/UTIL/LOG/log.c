@@ -31,7 +31,8 @@
 * \author Navid Nikaein
 * \date 2011
 * \version 0.5
-* @ingroup util
+* \warning This component can be run only in user-space
+* @ingroup routing
 
 */
 
@@ -46,13 +47,11 @@
 
 #include "log.h"
 #include "log_vars.h"
-
-#ifdef USER_MODE
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#include <string.h>
-#include <time.h>
-#else
+#ifndef USER_MODE
+#include "PHY/defs.h"
+
 #    define FIFO_PRINTF_MAX_STRING_SIZE   1000
 #    define FIFO_PRINTF_NO              62
 #    define FIFO_PRINTF_SIZE            65536
@@ -60,25 +59,20 @@
 #endif
 
 // made static and not local to logRecord() for performance reasons
+static char g_buff_info [MAX_LOG_TOTAL];
+static char g_buff_infos[MAX_LOG_TOTAL];
 static char g_buff_tmp  [MAX_LOG_ITEM];
-static char g_buff_info [MAX_LOG_INFO];
-static char g_buff_total[MAX_LOG_TOTAL];
 
 
-static int gfd;
+static int fd;
 
 static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN};	/*!< \brief Optional start-format strings for highlighting */
 
 static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-static int bypass_log_hdr;
-
-//extern MAC_xface *mac_xface;
-
 void logInit (void) {
   
 #ifdef USER_MODE
-  int i;
   g_log = calloc(1, sizeof(log_t));
   memset(g_log, 0, sizeof(log_t));
 #else
@@ -89,130 +83,67 @@ void logInit (void) {
     g_log->log_component[LOG].level = LOG_INFO;
     g_log->log_component[LOG].flag =  LOG_MED;
     g_log->log_component[LOG].interval =  1; // in terms of ms or num frames
-    g_log->log_component[LOG].fd = 0;
-    g_log->log_component[LOG].filelog = 0;
-    g_log->log_component[LOG].filelog_name = "";
 
     g_log->log_component[PHY].name = "PHY";
     g_log->log_component[PHY].level = LOG_INFO;
     g_log->log_component[PHY].flag =  LOG_MED;
     g_log->log_component[PHY].interval =  1;
-    g_log->log_component[PHY].fd = 0;
-    g_log->log_component[PHY].filelog = 0;
-    g_log->log_component[PHY].filelog_name = "/tmp/phy.log";
-    
+ 
     g_log->log_component[MAC].name = "MAC";
     g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag =  LOG_MED;
     g_log->log_component[MAC].interval =  1;
-    g_log->log_component[MAC].fd = 0;
-    g_log->log_component[MAC].filelog = 1;
-    g_log->log_component[MAC].filelog_name = "/tmp/mac.log";
-    
+ 
     g_log->log_component[OPT].name = "OPT";
     g_log->log_component[OPT].level = LOG_INFO;
     g_log->log_component[OPT].flag = LOG_MED;
     g_log->log_component[OPT].interval =  1;
-    g_log->log_component[OPT].fd = 0;
-    g_log->log_component[OPT].filelog = 0;
-    g_log->log_component[OPT].filelog_name = "";
 
     g_log->log_component[RLC].name = "RLC";
     g_log->log_component[RLC].level = LOG_INFO;
     g_log->log_component[RLC].flag = LOG_MED;
     g_log->log_component[RLC].interval =  1;
-    g_log->log_component[RLC].fd = 0;
-    g_log->log_component[RLC].filelog = 0;
-    g_log->log_component[RLC].filelog_name = "/tmp/rlc.log";
-    
+
     g_log->log_component[PDCP].name = "PDCP";
     g_log->log_component[PDCP].level = LOG_INFO;
     g_log->log_component[PDCP].flag = LOG_MED;
     g_log->log_component[PDCP].interval =  1;
-    g_log->log_component[PDCP].fd = 0;
-    g_log->log_component[PDCP].filelog = 0;
-    g_log->log_component[PDCP].filelog_name = "/tmp/pdcp.log";
-    
+
     g_log->log_component[RRC].name = "RRC";
     g_log->log_component[RRC].level = LOG_TRACE;
     g_log->log_component[RRC].flag = LOG_MED;
     g_log->log_component[RRC].interval =  1;
-    g_log->log_component[RRC].fd = 0;
-    g_log->log_component[RRC].filelog = 0;
-    g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
-    
+
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
     g_log->log_component[EMU].flag =  LOG_MED; 
     g_log->log_component[EMU].interval =  1;
-    g_log->log_component[EMU].fd = 0;
-    g_log->log_component[EMU].filelog = 0;
-    g_log->log_component[EMU].filelog_name = "";
-    
+
     g_log->log_component[OMG].name = "OMG";
     g_log->log_component[OMG].level = LOG_INFO;
     g_log->log_component[OMG].flag =  LOG_MED;
     g_log->log_component[OMG].interval =  1;
-    g_log->log_component[OMG].fd = 0;
-    g_log->log_component[OMG].filelog = 0;
-    g_log->log_component[OMG].filelog_name = "";
-    
-     g_log->log_component[OTG].name = "OTG";
-    g_log->log_component[OTG].level = LOG_INFO;
-    g_log->log_component[OTG].flag =  LOG_MED;
-    g_log->log_component[OTG].interval =  1;
-    g_log->log_component[OTG].fd = 0;
-    g_log->log_component[OTG].filelog = 1;
-    g_log->log_component[OTG].filelog_name = "/tmp/otg.log";
-
+     
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
     g_log->log_component[OCG].flag =  LOG_MED;
     g_log->log_component[OCG].interval =  1;
-    g_log->log_component[OCG].fd = 0;
-    g_log->log_component[OCG].filelog = 0;
-    g_log->log_component[OCG].filelog_name = "";
-    
+
     g_log->log_component[PERF].name = "PERF";
     g_log->log_component[PERF].level = LOG_INFO;
     g_log->log_component[PERF].flag =  LOG_MED;
     g_log->log_component[PERF].interval =  1;
-    g_log->log_component[PERF].fd = 0;
-    g_log->log_component[PERF].filelog = 0;
-    g_log->log_component[PERF].filelog_name = "";
-    
-    g_log->log_component[OIP].name = "OIP";
-    g_log->log_component[OIP].level = LOG_INFO;
-    g_log->log_component[OIP].flag =  LOG_MED;
-    g_log->log_component[OIP].interval =  1;
-    g_log->log_component[OIP].fd = 0;
-    g_log->log_component[OIP].filelog = 0;
-    g_log->log_component[OIP].filelog_name = "";
-    
+
+    g_log->log_component[RB].name = "RB";
+    g_log->log_component[RB].level = LOG_INFO;
+    g_log->log_component[RB].flag =  LOG_MED;
+    g_log->log_component[RB].interval =  1;
+
     g_log->log_component[CLI].name = "CLI";
     g_log->log_component[CLI].level = LOG_INFO;
     g_log->log_component[CLI].flag =  LOG_MED;
     g_log->log_component[CLI].interval =  1;
-    g_log->log_component[CLI].fd = 0;
-    g_log->log_component[CLI].filelog =  0;
-    g_log->log_component[CLI].filelog_name = "";
-     
-    g_log->log_component[MSC].name = "MSC";
-    g_log->log_component[MSC].level = LOG_TRACE;
-    g_log->log_component[MSC].flag =  LOG_MED;
-    g_log->log_component[MSC].interval =  1;
-    g_log->log_component[MSC].fd = 0;
-    g_log->log_component[MSC].filelog =  1;
-    g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
  
-    g_log->log_component[OCM].name = "OCM";
-    g_log->log_component[OCM].level = LOG_TRACE;
-    g_log->log_component[OCM].flag =  LOG_MED;
-    g_log->log_component[OCM].interval =  1;
-    g_log->log_component[OCM].fd = 0;
-    g_log->log_component[OCM].filelog =  0;
-    g_log->log_component[OCM].filelog_name = "/tmp/ocm.log";
-       
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
@@ -221,14 +152,13 @@ void logInit (void) {
     g_log->level2string[LOG_NOTICE]        = "N"; // NOTICE
     g_log->level2string[LOG_INFO]          = "I"; //INFO
     g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
-    g_log->level2string[LOG_FILE]          = "F"; // file
     g_log->level2string[LOG_TRACE]         = "T"; // TRACE
 
     g_log->onlinelog = 1; //online log file
     g_log->syslog = 0; 
     g_log->filelog   = 0;
-    g_log->level  = LOG_TRACE;
-    g_log->flag   = LOG_LOW;
+    g_log->level  = LOG_DEBUG;
+    g_log->flag   = LOG_MED;
  
 #ifdef USER_MODE  
   g_log->config.remote_ip      = 0;
@@ -244,13 +174,9 @@ void logInit (void) {
     openlog(g_log->log_component[LOG].name, LOG_PID, g_log->config.facility);
   } 
   if (g_log->filelog) {
-    gfd = open(g_log->filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+    fd = open(g_log->filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   }
-  // could put a loop here to check for all comps
-  for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if (g_log->log_component[i].filelog) 
-      g_log->log_component[i].fd = open(g_log->log_component[i].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
-  }
+
 #else
   g_log->syslog = 0; 
   g_log->filelog   = 0;
@@ -267,27 +193,18 @@ void logRecord( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
-  int len, i;
+  int len;
   va_list args;
   log_component_t *c;
-#ifdef USER_MODE
-  struct timespec time_spec;
-  unsigned int time_now_ns;
-  unsigned int time_now_s;
-//  clock_gettime (CLOCK_REALTIME, &time_spec);
-  time_now_ns = (unsigned int) time_spec.tv_nsec;
-  //time_now_s = (unsigned int) time_spec.tv_sec;
-   //clock_t time_now = clock() / (CLOCKS_PER_SEC / 1000);// time in ms
-#endif
-
-  g_buff_total[0] = '\0';
+  
+  g_buff_infos[0] = '\0';
   c = &g_log->log_component[comp];
   
   // only log messages which are enabled and are below the global log level and component's level threshold
-  if ((c->level > g_log->level) || (level > c->level)){
-    //  || ((mac_xface->frame % c->interval) != 0)) { 
+   if ((c->level > g_log->level) || (level > c->level)|| (c->flag == LOG_NONE) || 
+      (((oai_emulation.info.frame % c->interval) != 0) && (oai_emulation.info.frame > oai_emulation.info.nb_ue_local * 10))) { 
     return;
-  }
+    }
    // adjust syslog level for TRACE messages
    if (g_log->syslog) {
      if (g_log->level > LOG_DEBUG) { 
@@ -296,87 +213,62 @@ void logRecord( const char *file, const char *func,
    }
 
   va_start(args, format);
-  len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
+  len=vsnprintf(g_buff_info, MAX_LOG_TOTAL, format, args);
   va_end(args);
 
- // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if ((level == LOG_FILE) ||  (c->flag == LOG_NONE) ){
-    bypass_log_hdr = 1;
-  }
-  else if (((level < LOG_TRACE) && (level >= LOG_EMERG)) ) {
-    bypass_log_hdr = 0;
-  }
-   
-  if (bypass_log_hdr == 0){ 
 
-#ifdef USER_MODE
-    if ( (g_log->flag & FLAG_TIME) || (c->flag & FLAG_TIME)  )  {
-      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%u]",
-		     time_now_ns);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
-    }
-#endif    
-    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
+ // Generate log info below the trace level  
+  if (level < LOG_TRACE) {
+    
+    if ( g_log->flag & FLAG_COLOR )  {
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
 		    log_level_highlight_start[g_log->level]);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
     }
     
-    if ( (g_log->flag & FLAG_COMP) || (c->flag & FLAG_COMP) ){
+    if ( g_log->flag & FLAG_COMP ){
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
 		    g_log->log_component[comp].name);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
     }
   
-    if ( (g_log->flag & FLAG_LEVEL) || (c->flag & FLAG_LEVEL) ){
+    if ( g_log->flag & FLAG_LEVEL ){
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
 		    g_log->level2string[level]);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
     }
     
-    if (  (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) )  {
+    if (  g_log->flag & FLAG_FUNCT )  {
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s] ",
 		    func);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
     }
     
-    if (  (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) )  {
+    if (  g_log->flag & FLAG_FILE_LINE )  {
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s:%d]",
 		    file,line);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
     }
     
-    if (  (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
+    if (  g_log->flag & FLAG_COLOR )  {
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s", 
 		    log_level_highlight_end[g_log->level]);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+      strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
     }
   }
-  // log trace and not reach a new line with 3 bytes
-  if ((level == LOG_TRACE) && (is_newline(g_buff_info,3) == 0 )){
-      bypass_log_hdr = 1;
-  }
-  else
-    bypass_log_hdr = 0;
-  
-  
-
-  strncat(g_buff_total, g_buff_info, MAX_LOG_TOTAL-1);
-  //  strncat(g_buff_total, "\n", MAX_LOG_TOTAL);
+  strncat(g_buff_infos, g_buff_info, MAX_LOG_TOTAL);
+  //  strncat(g_buff_infos, "\n", MAX_LOG_TOTAL);
 
 #ifdef USER_MODE
   // OAI printf compatibility 
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE)) 
-    printf("%s",g_buff_total);
+  if (g_log->onlinelog == 1) 
+    printf("%s",g_buff_infos);
 
   if (g_log->syslog) {
-    syslog(g_log->level, g_buff_total);
+    syslog(g_log->level, g_buff_infos);
   } 
   if (g_log->filelog) {
-    write(gfd, g_buff_total, strlen(g_buff_total));
-  } 
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-      write(g_log->log_component[comp].fd, g_buff_total, strlen(g_buff_total));
+    write(fd, g_buff_infos, strlen(g_buff_infos));
   }
 #else
   if (len > MAX_LOG_TOTAL) {
@@ -385,46 +277,18 @@ void logRecord( const char *file, const char *func,
   if (len <= 0) {
     return ;
   }
-  rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
+  rtf_put (FIFO_PRINTF_NO, g_buff_infos, len);
 #endif
 
-}
-int  set_log(int component, int level, int interval) {
-  
-  if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
-    if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
-      g_log->log_component[component].level = level;
-      switch (level) {
-      case LOG_TRACE: 
-	g_log->log_component[component].flag = LOG_MED ;
-	break;
-      case LOG_DEBUG:
-	g_log->log_component[component].flag = LOG_MED ;
-	break;
-      case LOG_INFO:
-	g_log->log_component[component].flag = LOG_LOW ;
-	break;
-      default:
-	g_log->log_component[component].flag = LOG_NONE ;
-	break;
-      }
-    }
-    if ((interval > 0) && (interval <= 0xFF)){
-      g_log->log_component[component].interval = interval;
-    }
-    return 0;
-  }
-  else
-    return -1;
 }
 
 int  set_comp_log(int component, int level, int flag, int interval) {
   
   if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
-    if ((flag == LOG_NONE) || (flag == LOG_LOW) || (flag == LOG_MED) || (flag == LOG_FULL) || (flag == LOG_HIGH) ) {
+    if ((flag == LOG_NONE) || (flag == LOG_LOW) || (flag == LOG_MED) || (flag == LOG_FULL)) {
       g_log->log_component[component].flag = flag; 
     }
-    if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
+    if ((level <= LOG_TRACE) && (component >= LOG_EMERG)){
       g_log->log_component[component].level = level;
     }
     if ((interval > 0) && (interval <= 0xFF)){
@@ -456,7 +320,8 @@ void set_glog_filelog(int enable) {
  * with string value NULL
  */
 /* map a string to an int. Takes a mapping array and a string as arg */
-int map_str_to_int(mapping *map, const char *str){
+int map_str_to_int(mapping *map, const char *str)
+{
     while (1) {
         if (map->name == NULL) {
             return(-1);
@@ -469,7 +334,8 @@ int map_str_to_int(mapping *map, const char *str){
 }
 
 /* map an int to a string. Takes a mapping array and a value */
-char *map_int_to_str(mapping *map, int val) {
+char *map_int_to_str(mapping *map, int val)
+{
     while (1) {
         if (map->name == NULL) {
             return NULL;
@@ -480,30 +346,18 @@ char *map_int_to_str(mapping *map, int val) {
         map++;
     }
 }
-int is_newline( char *str, int size){
-    int i;
-    for (  i = 0; i < size; i++ ) {
-      if ( str[i] == '\n' )
-	return 1;
-    }
-    /* if we get all the way to here, there must not have been a newline! */
-    return 0;
-}
-void logClean (void) {
-  int i;
+
+void logClean (void)
+{
 #ifndef USER_MODE
   rtf_destroy (FIFO_PRINTF_NO);
 #else
-  if (g_log->syslog) {
-    closelog();
-  } 
-  if (g_log->filelog) {
-    close(gfd);
-  }
-  for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if (g_log->log_component[i].filelog) 
-      close(g_log->log_component[i].fd);
-  }
+if (g_log->syslog) {
+  closelog();
+ } 
+ if (g_log->filelog) {
+  close(fd);
+ }
 #endif
 
 }
@@ -534,6 +388,7 @@ int test_log(){
   set_comp_log(LOG, LOG_INFO, FLAG_ONLINE);
   set_comp_log(MAC, LOG_WARNING, 0);
   
+  LOG_ENTER(MAC);
   LOG_I(LOG, "2 Starting OAI logs version %s Build date: %s on %s\n", 
 	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
   LOG_E(MAC, "2 emerge MAC\n");

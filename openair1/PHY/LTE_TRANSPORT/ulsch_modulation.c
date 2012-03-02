@@ -166,11 +166,6 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, u16 Msc_PUSCH, u8 Nsymb) {
     dft192(dft_in1,dft_out1,1);
     dft192(dft_in2,dft_out2,1);
     break;
-  case 216:
-    dft216(dft_in0,dft_out0,1);
-    dft216(dft_in1,dft_out1,1);
-    dft216(dft_in2,dft_out2,1);
-    break;
   case 240:
     dft240(dft_in0,dft_out0,1);
     dft240(dft_in1,dft_out1,1);
@@ -224,10 +219,10 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, u16 Msc_PUSCH, u8 Nsymb) {
 #endif
 void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
-		      u32 frame,
 		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch) {
+		      LTE_UE_ULSCH_t *ulsch,
+		      u8 cooperation_flag) {
 
 #ifdef IFFT_FPGA_UE
   u8 qam64_table_offset = 0;
@@ -243,7 +238,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
   //  u8 harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==0)?1:0)+frame,subframe);
+  u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
   u8 Q_m;
   mod_sym_t *txptr;
   u32 symbol_offset;
@@ -261,7 +256,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
     return;
   }
 
-  if (harq_pid > 7) {
+  if (harq_pid > 2) {
     msg("ulsch_modulation.c: Illegal harq_pid %d\n",harq_pid);
     return;
   }
@@ -324,7 +319,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   // Modulation
 
   Msymb = G/Q_m;
-  if(ulsch->cooperation_flag == 2)
+  if(cooperation_flag == 2)
     // For Distributed Alamouti Scheme in Collabrative Communication
     {
       for (i=0,j=Q_m;i<Msymb;i+=2,j+=2*Q_m) {
@@ -335,14 +330,14 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 #ifndef IFFT_FPGA_UE
 	  //UE1, -x1*
-	  ((s16*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
-	  ((s16*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  //      if (i<Msc_PUSCH)
 	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((s16*)&ulsch->d[i])[0],((s16*)&ulsch->d[i])[1]);
 
 	  // UE1, x0*
-	  ((s16*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  ((s16*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 1)? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 0)? (gain_lin_QPSK) : -gain_lin_QPSK;
 #else
 	  qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;// UE1, -x1*
 	  if (ulsch->b_tilde[j] == 0)
@@ -724,15 +719,13 @@ void ulsch_modulation(mod_sym_t **txdataF,
       }
     }
   }
-# else  // OFDMA_ULSCH=1 IFFT_FPGA=0
+# else
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
-    //    re_offset0++;
+    re_offset0++;
   }
   //  msg("re_offset0 %d\n",re_offset0);
-
-
   for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = re_offset0;
     symbol_offset = (u32)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
@@ -758,19 +751,18 @@ void ulsch_modulation(mod_sym_t **txdataF,
     }
   }
 #endif 
-# else  // OFDMA_ULSCH = 0
+# else
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
-    //    re_offset0++;
+    re_offset0++;
   }
   //    msg("re_offset0 %d\n",re_offset0);
-  //  printf("txdataF %p\n",&txdataF[0][0]);
   for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = re_offset0;
     symbol_offset = (u32)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
-    msg("ulsch_mod (OFDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    msg("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
@@ -782,7 +774,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       for (i=0;i<Msc_PUSCH;i++,j++) {
 
 #ifdef DEBUG_ULSCH_MODULATION
-	msg("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1],&txptr[re_offset]);
+	msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1]);
 #endif //DEBUG_ULSCH_MODULATION
 	txptr[re_offset++] = ulsch->z[j];
 

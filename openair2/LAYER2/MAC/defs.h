@@ -1,39 +1,9 @@
-/*******************************************************************************
+/*________________________LAYER2/MAC/defs.h________________________
 
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2010 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-/*! \file def.h
-* \brief MAC data structures, constant, and function prototype
-* \author Raymond Knopp, Navid Nikaein
-* \date 2011
-* \version 0.5
-* @ingroup _mac
-
-*/
+ Authors : Hicham Anouar, Raymond Knopp
+ Company : EURECOM
+ Emails  : anouar@eurecom.fr,  knopp@eurecom.fr
+________________________________________________________________*/
 
  
 #ifndef __LAYER2_MAC_DEFS_H__
@@ -58,7 +28,6 @@
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
 #include "TDD-Config.h"
-#include "RACH-ConfigCommon.h"
 
 //#ifdef PHY_EMUL
 //#include "SIMULATION/PHY_EMULATION/impl_defs.h"
@@ -73,10 +42,10 @@
 #define CCCH_PAYLOAD_SIZE_MAX 128    
 #define SCH_PAYLOAD_SIZE_MAX 1024
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
-#define BCCH 3  // SI 
-#define CCCH 0  // srb0
-#define DCCH 1  // srb1
-#define DCCH1 2 // srb2
+#define BCCH 3
+#define CCCH 0
+#define DCCH 1
+#define DCCH1 2
 #define DTCH  3 // DTCH + lcid < 11
 
 #ifdef USER_MODE
@@ -88,13 +57,6 @@
 #define MAX_NUM_CE 5
 
 #define NB_RA_PROC_MAX 4
-
-#define BSR_TABLE_SIZE 64
-
-typedef enum {
-  CONNECTION_OK=0,
-  CONNECTION_LOST
-} UE_L2_STATE_t;
 
 typedef struct {
   u8 RAPID:6;
@@ -124,19 +86,20 @@ typedef struct {
 #define sizeof_RAR_PDU 6
 
 typedef struct {
-  u8 LCID:5;  // octet 1 LSB
-  u8 E:1;
-  u8 R:2;     // octet 1 MSB
-  u8 L:7;     // octet 2 LSB
-  u8 F:1;     // octet 2 MSB
+  u16 LCID:5;  // octet 1 LSB
+  u16 E:1;
+  u16 R:2;     // octet 1 MSB
+  u16 L:7;     // octet 2 LSB
+  u16 F:1;     // octet 2 MSB
 } __attribute__((__packed__))SCH_SUBHEADER_SHORT;
 
 typedef struct {
-  u8 LCID:5;   // octet 1 LSB
-  u8 E:1;
-  u8 R:2;      // octet 1 MSB
-  u16 L:15;      // octet 3/2 LSB
-  u16 F:1;      // octet 3 MSB     
+  u32 LCID:5;   // octet 1 LSB
+  u32 E:1;
+  u32 R:2;      // octet 1 MSB
+  u32 L:15;      // octet 3/2 LSB
+  u32 F:1;      // octet 2 MSB     
+  u32 padding:8; 
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
  
 typedef struct {
@@ -279,17 +242,11 @@ typedef struct{
   /// UL DAI
   u8 DAI_ul;
 
-  /// UL Scheduling Request Received
-  u8 ul_SR;
-
   //Resource Block indication for each sub-band in MU-MIMO 
   u8 rballoc_sub[8][7];
 
 
   // Logical channel info for link with RLC
-  
-  /// UE BSR info for each logical channel
-  u8 bsr_info[MAX_NUM_LCID]; 
 
 } UE_TEMPLATE;
 
@@ -304,29 +261,25 @@ typedef struct {
   u8 RA_alloc_pdu1[(MAX_DCI_SIZE_BITS>>3)+1];
   /// DCI format for RA-Response (should be 1A)
   u8 RA_dci_fmt1;
-  /// Size of DCI for Msg4/ContRes (bytes)  
+  /// Size of DCI for RRCConnectionSetup/ContRes (bytes)  
   u8 RA_dci_size_bytes2;
-  /// Size of DCI for Msg4/ContRes (bits)  
+  /// Size of DCI for RRCConnectionSetup/ContRes (bits)  
   u8 RA_dci_size_bits2;
-  /// Actual DCI to transmit for Msg4/ContRes
+  /// Actual DCI to transmit for RRCConnectionSetup/ContRes
   u8 RA_alloc_pdu2[(MAX_DCI_SIZE_BITS>>3)+1];
-  /// DCI format for Msg4/ContRes (should be 1A)
+  /// DCI format for RRCConnectionSetup/ContRes (should be 1A)
   u8 RA_dci_fmt2;
   /// Flag to indicate the eNB should generate RAR.  This is triggered by detection of PRACH
   u8 generate_rar;
-  /// Flag to indicate the eNB should generate Msg4 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
-  u8 generate_Msg4;
-  /// Flag to indicate the eNB should generate the DCI for Msg4, after getting the SDU from RRC.
-  u8 generate_Msg4_dci;
-  /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
-  u8 wait_ack_Msg4;
+  /// Flag to indicate the eNB should generate RRCConnectionSetup upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
+  u8 generate_rrcconnsetup;
+  /// Flag to indicate the eNB should generate the DCI for RRCConnectionSetup, after getting the SDU from RRC.
+  u8 generate_rrcconnsetup_dci;
+  /// Flag to indicate that eNB is waiting for ACK that UE has received RRCConnectionSetup.
+  u8 wait_ack_rrcconnsetup;
   /// UE RNTI allocated during RAR
   u16 rnti;
-  /// RA RNTI allocated from received PRACH
-  u16 RA_rnti;
-  /// Received preamble_index
-  u8 preamble_index;
-  /// Received UE Contention Resolution Identifier 
+  /// Received UE Contention Resolution Identifier (RRCConnectionRequest)
   u8 cont_res_id[6];
   /// Timing offset indicated by PHY
   s16 timing_offset;
@@ -367,17 +320,24 @@ typedef struct{
   u8 bcch_active;
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
+
 }eNB_MAC_INST;
 
 typedef struct {
-  /// buffer status for each lcid
-  u8  BSR[MAX_NUM_LCID]; // should be more for mesh topology
-  /// keep the number of bytes in rlc buffer for each lcid
-  u16  BSR_bytes[MAX_NUM_LCID];
-  /// short bsr lcid
-  u8  BSR_short_lcid;
+  /// pointer to RRC PHY configuration 
+  struct PhysicalConfigDedicated *physicalConfigDedicated;
+  /// Pointer to RRC MAC configuration
+  MAC_MainConfig_t *macConfig;
+  /// Pointer to RRC Measurement gap configuration
+  MeasGapConfig_t  *measGapConfig;
+  /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
+  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
+  /// LCHAN buffer status
+  u8 buffer_status[MAX_NUM_LCID]; // should be more for mesh topology
+  /// number of BSR: unknown 0, short 1 or long > 1
+  u8 num_BSR;
   /// SR pending as defined in 36.321
-  u8  SR_pending;
+  u8 SR_pending;
   /// SR_COUNTER as defined in 36.321
   u16 SR_COUNTER;
   /// retxBSR-Timer, default value is sf2560
@@ -408,78 +368,21 @@ typedef struct {
 
 typedef struct{
   u16 Node_id;
-  /// pointer to RRC PHY configuration 
-  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
-  /// pointer to RRC PHY configuration 
-  struct PhysicalConfigDedicated *physicalConfigDedicated;
-  /// pointer to TDD Configuration (NULL for FDD)
-  TDD_Config_t *tdd_Config;
-  /// Pointer to RRC MAC configuration
-  MAC_MainConfig_t *macConfig;
-  /// Pointer to RRC Measurement gap configuration
-  MeasGapConfig_t  *measGapConfig;
-  /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
   /// Scheduling Information 
   UE_SCHEDULING_INFO scheduling_info;
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
   /// Incoming DLSCH pdu for PHY
   DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
-  //ULSCH_PDU ULSCH_pdu[NB_CNX_UE][2];
-  /// Random-access procedure flag
-  u8 RA_active;
-  /// Random-access window counter
-  s8 RA_window_cnt;
-  /// Random-access Msg3 size in bytes
-  u8 RA_Msg3_size;
-  /// Random-access prachMaskIndex
-  u8 RA_prachMaskIndex;
-  /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
-  u8 RA_usedGroupA;
-  /// Random-access Resources
-  PRACH_RESOURCES_t RA_prach_resources;
-  /// Random-access PREAMBLE_TRANSMISSION_COUNTER
-  u8 RA_PREAMBLE_TRANSMISSION_COUNTER;
-  /// Random-access backoff counter
-  s16 RA_backoff_cnt;
-  /// Random-access variable for window calculation (frame of last change in window counter)
-  u32 RA_tx_frame;
-  /// Random-access variable for window calculation (subframe of last change in window counter)
-  u8 RA_tx_subframe;
-  /// Random-access Group B maximum path-loss
-  /// Random-access variable for backoff (frame of last change in backoff counter)
-  u32 RA_backoff_frame;
-  /// Random-access variable for backoff (subframe of last change in backoff counter)
-  u8 RA_backoff_subframe;
-  /// Random-access Group B maximum path-loss
-  u16 RA_maxPL;
-  /// Random-access Contention Resolution Timer active flag
-  u8 RA_contention_resolution_timer_active;
-  /// Random-access Contention Resolution Timer count value
-  u8 RA_contention_resolution_cnt;
+  //ULSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
 }UE_MAC_INST;
 
 
 
 
 
-/** \brief RRC Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
-@param Mod_id Instance ID of eNB
-@param CH_flag Indicates if this is a eNB or UE configuration
-@param UE_id Index of UE if this is an eNB configuration
-@param eNB_id Index of eNB if this is a UE configuration
-@param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
-@param physcialConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
-@param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep existing configuration)
-@param logicalChannelIdentity Logical channel identity index of corresponding logical channel config 
-@param logicalChannelConfig Pointer to logical channel configuration
-@param measGapConfig Measurement Gap configuration for MAC (if NULL keep existing configuration)
-@param tdd_Config TDD Configuration from SIB1 (if NULL keep existing configuration)
-@param SIwindowsize SI Windowsize from SIB1 (if NULL keep existing configuration)
-@param SIperiod SI Period from SIB1 (if NULL keep existing configuration)
-*/
-int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 eNB_id, 
+
+int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
 		       MAC_MainConfig_t *mac_MainConfig,
@@ -490,155 +393,66 @@ int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 eNB_id,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);
 
-/** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
+/** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, RRCConnectionSetup or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For RRCConnectionSetup it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
 for the message.
 @param Mod_id Instance ID of eNB
-@param frame Frame index
 @param subframe Subframe number on which to act
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 *nprb,u8 *nCCE);
+void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
-@param frame Frame index
 @param subframe Subframe number on which to act
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,u8 *nCCE);
+void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE);
 
 /** \brief ULSCH Scheduling.
 @param Mod_id Instance ID of eNB
-@param frame Frame index
 @param subframe Subframe number on which to act
 @param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe,u8 *nCCE);
+void schedule_ulsch(u8 Mod_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
-@param Mod_id Instance of eNB
-@param frame Frame index
-@param subframe Index of subframe
-@param rballoc Bitmask for allowable subband allocations
-@param RA_scheduled RA was scheduled in this subframe
 */
-void fill_DLSCH_dci(u8 Mod_id,u32 frame,u8 subframe,u32 rballoc,u8 RA_scheduled);
+void fill_DLSCH_dci(u8 Mod_id,u8 subframe,u32 rballoc);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
 @param Mod_id Instance ID of eNB
-@param frame Frame index
 @param subframe Subframe on which to act
 @param nb_rb_used0 Number of PRB used by SI/RA
 @param nCCE_used Number of CCE used by SI/RA
 */
-void schedule_ue_spec(u8 Mod_id,u32 frame,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
+void schedule_ue_spec(u8 Mod_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
 
-/** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
-    @param Mod_id Module id of UE
-    @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
-*/
-s8 get_Po_NOMINAL_PUSCH(u8 Mod_id);
-
-/** \brief Function to compute DELTA_PREAMBLE from 36.321 (for RA power ramping procedure and Msg3 PUSCH power control policy) 
-    @param Mod_id Module id of UE
-    @returns DELTA_PREAMBLE
-*/
-s8 get_DELTA_PREAMBLE(u8 Mod_id);
-
-/** \brief Function for compute deltaP_rampup from 36.321 (for RA power ramping procedure and Msg3 PUSCH power control policy) 
-    @param Mod_id Module id of UE
-    @returns deltaP_rampup
-*/
-s8 get_deltaP_rampup(u8 Mod_id);
 
 //main.c
 
-void chbch_phy_sync_success(u8 Mod_id,u32 frame,u8 CH_index);
-
-void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 Free_ch_index);
-
+void chbch_phy_sync_success(u8 Mod_id,u8 CH_index);
+void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 int mac_top_init(void);
-
 char layer2_init_UE(u8 Mod_id);
-
 char layer2_init_eNB(u8 Mod_id, u8 Free_ch_index); 
-
 void mac_switch_node_function(u8 Mod_id);
-
 int mac_init_global_param(void);
-
 void mac_top_cleanup(void);
-
-void mac_UE_out_of_sync_ind(u8 Mod_id,u32 frame, u16 CH_index);
+void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
 
 // eNB functions
-/* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f 
-   and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. The resultant DCI_PDU is
-   ready after returning from this call.
-@param Mod_id Instance ID of eNB
-@param cooperation_flag Flag to indicated that this cell has cooperating nodes (i.e. that there are collaborative transport channels that
-can be scheduled.
-@param subframe Index of current subframe
-*/
-void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe); 
-
-/* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary numeber of times after eNB_dlsch_ulsch_scheduler
-in a given subframe.
-@param Mod_id Instance ID of eNB
-@param subframe Index of current subframe
-@returns Pointer to generated DCI for subframe
-*/
-DCI_PDU *get_dci_sdu(u8 Mod_id,u32 frame,u8 subframe);
-
-/* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
-@param Mod_id Instance ID of eNB
-@param preamble_index index of the received RA request
-@param timing_offset Offset in samples of the received PRACH w.r.t. eNB timing. This is used to 
-*/
-void initiate_ra_proc(u8 Mod_id,u32 frame, u16 preamble_index,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
-
-
-/* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the t-CRNTI.
-@param Mod_id Instance ID of eNB
-@param dlsch_buffer Pointer to DLSCH input buffer
-@param N_RB_UL Number of UL resource blocks
-@returns t_CRNTI
-*/
-u16  fill_rar(u8 Mod_id,u32 frame,
-	      u8 *dlsch_buffer,
-	      u16 N_RB_UL);
-
-/* \brief This function indicates the end of RA procedure and provides the l3msg received on ULSCH.
-@param Mod_id Instance ID of eNB
-@param rnti RNTI of UE transmitting l3msg
-@param l3msg Pointer to received l3msg
-*/
-void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti, u8 *l3msg);
-
-/* \brief Function to indicate a failed RA response.  It removes all temporary variables related to the initial connection of a UE
-@param Mod_id Instance ID of eNB
-@param preamble_index index of the received RA request.
-*/
-void cancel_ra_proc(u8 Mod_id,u32 frame, u16 preamble_index);
-
-/* \brief Function to indicate a received SDU on ULSCH.
-@param Mod_id Instance ID of eNB
-@param rnti RNTI of UE transmitting the SR
-@param sdu Pointer to received SDU
-*/
-void rx_sdu(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu);
-
-/* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
-@param Mod_id Instance ID of eNB
-@param rnti RNTI of UE transmitting the SR
-@param subframe Index of subframe where SR was received
-*/
-void SR_indication(u8 Mod_id,u32 frame,u16 rnti, u8 subframe);
-
-u8 *get_dlsch_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 TBindex);
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u8 subframe); 
+u16  fill_rar(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
+void terminate_ra_proc(u8 Mod_id,u16 UE_id, u8 *l3msg);
+void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id);
+void cancel_ra_proc(u8 Mod_id, u16 preamble_index);
+void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
+void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
+DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
+u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
 //added for ALU icic purpose
 u32 Get_Cell_SBMap(u8 Mod_id);
 void UpdateSBnumber(unsigned char Mod_id);
@@ -679,12 +493,6 @@ u8 schedule_next_dlue(u8 Mod_id, u8 subframe);
 */
 u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
 
-/* \fn u32 req_new_ulsch(u8 Mod_id)
-\brief check for a new transmission in any drb 
-@param Mod_id Instance id of UE in machine
-@returns 1 for new transmission, 0 for none
-*/
-u32 req_new_ulsch(u8 Mod_id);
 
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
@@ -693,37 +501,27 @@ u32 req_new_ulsch(u8 Mod_id);
 @param subframe subframe number
 @returns 0 for no SR, 1 for SR
 */
-u32 ue_get_SR(u8 Mod_id, u32 frame, u8 eNB_id,u16 rnti,u8 subframe);
+u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti,u8 subframe);
 
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
-void out_of_sync_ind(u8 Mod_id, u32 frame, u16);
+void out_of_sync_ind(u8 Mod_id,u16);
+void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
+void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
 
-void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
-
-
-void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
-
-void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
-
-/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
+void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH
+mode for a particular eNB index, this is assumed to be an RRCConnectionRequest message and MAC attempts to retrieves the CCCH
+message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not
+activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 
+36.321)
 @param Mod_id Index of UE instance
-@param New_Msg3 Flag to indicate this call is for a new Msg3
-@param subframe Index of subframe for PRACH transmission (0 ... 9)
-@returns A pointer to a PRACH_RESOURCES_t */
-PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame,u8 new_Msg3,u8 subframe);
+@param eNB_index Index of eNB from which to act
+ */
+u8* ue_get_rach(u8 Mod_id,u8 eNB_index);
 
-/* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and provides the timing advance and t-CRNTI.
-@param Mod_id Index of UE instance
-@param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
-@param t_crnti Pointer to PHY variable containing the T_CRNTI
-@param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of 
-random-access procedure
-@returns timing advance or 0xffff if preamble doesn't match
-*/
-u16 ue_process_rar(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
-
+u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
 
 /* \brief Generate header for UL-SCH.  This function parses the desired control elements and sdus and generates the header as described
 in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
@@ -776,48 +574,13 @@ void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
-/*! \fn  UE_L2_state_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index)
+/*! \fn  void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction)
    \brief UE scehdular where all the ue background tasks are done
 \param[in] Mod_id instance of the UE
 \param[in] subframe the subframe number
 \param[in] direction subframe direction
-\param[in] eNB_index instance of eNB
-@returns L2 state (CONNETION_OK or CONNECTION_LOST)
 */
-UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
-
-
-/*! \fn  u8 get_bsr_len (u8 Mod_id, u16 bufflen);
-\brief determine whether the bsr is short or long assuming that the MAC pdu is built 
-\param[in] Mod_id instance of the UE
-\param[in] bufflen size of phy transport block
-\param[out] bsr_len size of bsr control element 
-*/
-u8 get_bsr_len (u8 Mod_id, u16 buflen);
-
-/*! \fn  BSR_SHORT *  get_bsr_short(u8 Mod_id, u8 bsr_len)
-\brief get short bsr level
-\param[in] Mod_id instance of the UE
-\param[in] bsr_len indicator for no, short, or long bsr
-\param[out] bsr_s pointer to short bsr
-*/
-BSR_SHORT *get_bsr_short(u8 Mod_id, u8 bsr_len);
-
-/*! \fn  BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len)
-\brief get long bsr level
-\param[in] Mod_id instance of the UE
-\param[in] bsr_len indicator for no, short, or long bsr
-\param[out] bsr_l pointer to long bsr
-*/
-BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
-
-/*! \fn  void update_bsr(u8 Mod_id, u32 frame, u8 lcid)
-   \brief get the rlc stats and update the bsr level for each lcid 
-\param[in] Mod_id instance of the UE
-\param[in] frame Frame index
-\param[in] lcid logical channel identifier
-*/
-void update_bsr(u8 Mod_id, u32 frame, u8 lcid);
+void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
@@ -849,18 +612,6 @@ int get_ms_bucketsizeduration(u8 bucketsizeduration);
 \return the time in ms
 */
 int get_sf_retxBSRTimer(u8 retxBSR_Timer);
-
-/*! \brief Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
-\param[in] Mod_id Instance index of UE
-\param[in] eNB_id Index of eNB
-*/
-void Msg3_tx(u8 Mod_id,u32 frame,u8 eNB_id);
-
-void dl_phy_sync_success(unsigned char Mod_id,
-			 u32 frame,
-			 unsigned char eNB_index,
-			 u8 first_sync);
-
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
 

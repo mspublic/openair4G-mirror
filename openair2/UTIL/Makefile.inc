@@ -6,7 +6,6 @@ LOG_DIR=$(OPENAIR2_TOP)/UTIL/LOG
 OCG_DIR=$(OPENAIR2_TOP)/UTIL/OCG
 OPT_DIR=$(OPENAIR2_TOP)/UTIL/OPT
 OMG_DIR=$(OPENAIR2_TOP)/UTIL/OMG
-OTG_DIR=$(OPENAIR2_TOP)/UTIL/OTG
 CLI_DIR=$(OPENAIR2_TOP)/UTIL/CLI
 
 LIST_OBJ =  $(LIST_DIR)/list.o
@@ -37,22 +36,12 @@ OMG_OBJS +=  $(OMG_DIR)/rwalk.o
 OMG_OBJS +=  $(OMG_DIR)/hashtable.o
 OMG_OBJS +=  $(OMG_DIR)/mobility_parser.o
 OMG_OBJS +=  $(OMG_DIR)/trace.o
-OMG_OBJS +=  $(OMG_DIR)/sumo.o
-OMG_OBJS +=  $(OMG_DIR)/id_manager.o
-OMG_OBJS +=  $(OMG_DIR)/client_traci_OMG.o
-OMG_OBJS +=  $(OMG_DIR)/storage_traci_OMG.o
-OMG_OBJS +=  $(OMG_DIR)/socket_traci_OMG.o
-
-OTG_OBJS =  $(OTG_DIR)/otg_tx.o
-OTG_OBJS +=  $(OTG_DIR)/otg_rx.o
-
-MATH_OBJS  =  $(MATH_DIR)/oml.o
 
 CLI_OBJ  =  $(CLI_DIR)/cli_server.o
 CLI_OBJ  +=  $(CLI_DIR)/cli.o
 CLI_OBJ  +=  $(CLI_DIR)/cli_cmd.o
 
 
-UTIL_OBJ = $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(LOG_OBJS) $(OCG_OBJS) $(MATH_OBJS) $(OTG_OBJS) $(CLI_OBJ) $(OMG_OBJS) #-I$(OPT_DIR)
+UTIL_OBJ = $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(LOG_OBJS) $(OCG_OBJS)  $(OMG_OBJS) $(CLI_OBJ) #-I$(OPT_DIR)
 
-UTIL_incl = -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OMG_DIR) -I$(OTG_DIR) -I$(CLI_DIR)
+CFLAGS += -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OMG_DIR) -I$(CLI_DIR)

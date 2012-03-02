@@ -22,7 +22,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 				 double BW, 
 				 double ricean_factor, 
 				 double aoa, 
-				 double forgetting_factor,
+				 double forgetting_factor, 
 				 double max_Doppler, 
 				 s32 channel_offset, 
 				 double path_loss_dB,
@@ -150,7 +150,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				     u8 nb_rx, 
 				     SCM_t channel_model, 
 				     double BW, 
-				     double forgetting_factor,
+				     double forgetting_factor, 
 				     s32 channel_offset, 
 				     double path_loss_dB) {
 
@@ -205,28 +205,20 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
-
-    chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
     if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
       for (i = 0; i<6; i++) 
 	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
     }
-    else if (nb_tx==2 && nb_rx==1) {
-      for (i = 0; i<6; i++) 
-	chan_desc->R_sqrt[i] = (struct complex*) &R21_sqrt[i][0];
-    }
-    else if (nb_tx==1 && nb_rx==2) {
-      for (i = 0; i<6; i++) 
-	chan_desc->R_sqrt[i] = (struct complex*) &R12_sqrt[i][0];
-    }
     else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
       for (i = 0; i<6; i++) {
 	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
 	  chan_desc->R_sqrt[i][j].x = 1.0;
 	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
-	msg("correlation matrix not implemented for nb_tx==%d and nb_rx==%d, using identity\n", nb_tx, nb_rx);
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
     }
     break;
@@ -535,32 +527,6 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   0);
       break;
 
-  case AWGN:
-      nb_taps = 1;
-      Td = 0;
-      channel_length = 1;
-      ricean_factor = 0.0;
-      aoa = 0.0;
-      maxDoppler = 0;
-
-      chan_desc = new_channel_desc(nb_tx,
-				   nb_rx,
-				   nb_taps,
-				   channel_length,
-				   default_amp_lin,
-				   NULL,
-				   NULL,
-				   Td,
-				   BW,
-				   ricean_factor,
-				   aoa,
-				   forgetting_factor,
-				   maxDoppler,
-				   channel_offset, 
-				   path_loss_dB,
-				   0);
-      break;
-
   case Rice1_corr:
       nb_taps = 1;
       Td = 0;
@@ -748,31 +714,24 @@ int random_channel(channel_desc_t *desc) {
   
   for (aarx=0;aarx<desc->nb_rx;aarx++) {
     for (aatx=0;aatx<desc->nb_tx;aatx++) {
-      if (desc->channel_length == 1) {
-	desc->ch[aarx+(aatx*desc->nb_rx)][0].x = desc->a[0][aarx+(aatx*desc->nb_rx)].x;
-	desc->ch[aarx+(aatx*desc->nb_rx)][0].y = desc->a[0][aarx+(aatx*desc->nb_rx)].y;
-      }
-      else {
+      for (k=0;k<(int)desc->channel_length;k++) {
+	desc->ch[aarx+(aatx*desc->nb_rx)][k].x = 0.0;
+	desc->ch[aarx+(aatx*desc->nb_rx)][k].y = 0.0;
+	
+	for (l=0;l<desc->nb_taps;l++) {
+	  if ((k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
+	    s = 1.0;
+	  else
+	    s = sin(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET))/
+	      (M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET));
+	  desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
+	  desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
+	  //	  printf("l %d : desc->ch.x %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x);
 
-	for (k=0;k<(int)desc->channel_length;k++) {
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].x = 0.0;
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].y = 0.0;
-	  
-	  for (l=0;l<desc->nb_taps;l++) {
-	    if ((k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
-	      s = 1.0;
-	    else
-	      s = sin(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET))/
-		(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET));
-	    desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
-	    desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
-	    //	  printf("l %d : desc->ch.x %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x);
-	    
-	  } //nb_taps
+	} //nb_taps
 #ifdef DEBUG_CH
 	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
 #endif
-	}
       } //channel_length
     } //aatx
   } //aarx

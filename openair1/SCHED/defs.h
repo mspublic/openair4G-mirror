@@ -61,7 +61,6 @@ enum openair_SYNCH_STATUS {
 
 
 typedef struct {
-  u8 is_eNB;
   u8 mode;
   u8 synch_source;
   u32  slot_count;
@@ -101,8 +100,6 @@ typedef struct {
   u32  dlsch_transmission_mode;
   u32  ulsch_allocation_mode;
   u32  rx_total_gain_dB;
-  u32  hw_frame;
-  u32  get_frame_done;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE
@@ -213,13 +210,6 @@ void phy_procedures_eNB_S_RX(u8 last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstract
 */
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
-/*!
-  \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
-  @param Mod_id Index of eNB
-  @param subframe Subframe index
-  @returns Subframe type (DL,UL,S) 
-*/
-lte_subframe_t get_subframe_direction(u8 Mod_id, u8 subframe);
 
 /*!
   \brief Function to indicate PHICH transmission subframes.  Implements Table 9.1.2-1 for TDD.
@@ -230,61 +220,22 @@ lte_subframe_t get_subframe_direction(u8 Mod_id, u8 subframe);
 u32 is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
 /*!
-  \brief Function to compute timing of Msg3 transmission on UL-SCH (first UE transmission in RA procedure). This implements the timing in paragraph a) from Section 6.1.1 in 36.213 (p. 17 in version 8.6).  Used by eNB upon transmission of random-access response (RA_RNTI) to program corresponding ULSCH reception procedure.  Used by UE upon reception of random-access response (RA_RNTI) to program corresponding ULSCH transmission procedure.  This does not support the UL_delay field in RAR (always assumed to be 0).
+  \brief Function to compute timing of RRCConnRequest transmission on UL-SCH (first UE transmission in RA procedure). This implements the timing in paragraph a) from Section 6.1.1 in 36.213 (p. 17 in version 8.6).  Used by eNB upon transmission of random-access response (RA_RNTI) to program corresponding ULSCH reception procedure.  Used by UE upon reception of random-access response (RA_RNTI) to program corresponding ULSCH transmission procedure.  This does not support the UL_delay field in RAR (always assumed to be 0).
   @param frame_parms Pointer to DL frame parameter descriptor
   @param current_subframe Index of subframe where RA_RNTI was received 
   @param current_frame Index of frame where RA_RNTI was received
-  @param frame Frame index where Msg3 is to be transmitted (n+6 mod 10 for FDD, different for TDD)
-  @param subframe subframe index where Msg3 is to be transmitted (n, n+1 or n+2)
+  @param frame Frame index where RRCConnectionRequest is to be transmitted (n+6 mod 10 for FDD, different for TDD)
+  @param subframe subframe index where RRCConnectionRequest is to be transmitted (n, n+1 or n+2)
 */
-void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
-		    u8 current_subframe, 
-		    u32 current_frame,
-		    u32 *frame,
-		    u8 *subframe);
+void get_RRCConnReq_alloc(LTE_DL_FRAME_PARMS *frame_parms,
+			  u8 current_subframe, 
+			  u32 current_frame,
+			  u32 *frame,
+			  u8 *subframe);
+u8 get_RRCConnReq_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u8 current_subframe);
 
-/*!
-  \brief Function to compute timing of Msg3 retransmission on UL-SCH (first UE transmission in RA procedure). 
-  @param frame_parms Pointer to DL frame parameter descriptor
-  @param current_subframe Index of subframe where RA_RNTI was received 
-  @param current_frame Index of frame where RA_RNTI was received
-  @param frame Frame index where Msg3 is to be transmitted (n+6 mod 10 for FDD, different for TDD)
-  @param subframe subframe index where Msg3 is to be transmitted (n, n+1 or n+2)
-*/
-void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
-			u8 current_subframe, 
-			u32 current_frame,
-			u32 *frame,
-			u8 *subframe);
 
-/* \brief Get ULSCH harq_pid for Msg3 from RAR subframe.  This returns n+k mod 10 (k>6) and corresponds to the rule in Section 6.1.1 from 36.213
-   @param frame_parms Pointer to DL Frame Parameters
-   @param frame Frame index
-   @param current_subframe subframe of RAR transmission
-   @returns harq_pid (0 ... 7)
- */
-u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 current_subframe);
 
-/* \brief Get ULSCH harq_pid from PHICH subframe
-   @param frame_parms Pointer to DL Frame Parameters
-   @param subframe subframe of PHICH
-   @returns harq_pid (0 ... 7)
- */
-
-/** \brief Function to indicate failure of contention resolution or RA procedure.  It places the UE back in PRACH mode.
-    @param Mod_id Instance index of UE
-    @param eNB_index Index of eNB
- */
-void ra_failed(u8 Mod_id,u8 eNB_index);
-
-u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe);
-
-/* \brief Get PDSCH subframe (n+k) from PDCCH subframe n using relationship from Table 8-2 from 36.213
-   @param frame_parms Pointer to DL Frame Parameters
-   @param n subframe of PDCCH
-   @returns PDSCH subframe (0 ... 7) (note: this is n+k from Table 8-2)
- */
-u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n);
 
 //
 /*!
@@ -323,33 +274,6 @@ u8 ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe);
 */
 u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
-/*!
-  \brief Indicates the SR TXOp in current subframe for eNB and particular UE index.  Implements Table 10.1-5 from 36.213.
-  @param phy_vars_eNB Pointer to eNB variables
-  @param UE_id ID of UE which may be issuing the SR
-  @param subframe index of last subframe
-  @returns 1 if TXOp is active.
-*/
-u8 is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,u8 UE_id,u8 subframe);
-
-/*!
-  \brief Gives the UL subframe corresponding to a PDDCH order in subframe n
-  @param frame_parms Pointer to DL frame parameters
-  @param n subframe of PDCCH
-  @returns UL subframe corresponding to pdcch order
-*/
-u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n);
-
-/*!
-  \brief Gives the UL frame corresponding to a PDDCH order in subframe n
-  @param frame_parms Pointer to DL frame parameters
-  @param frame Frame of received PDCCH
-  @param n subframe of PDCCH
-  @returns UL frame corresponding to pdcch order
-*/
-u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n);
-
-
 u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1);
 
 
@@ -358,7 +282,7 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 
-void process_timing_advance(u8 Mod_id,u8 timing_advance);
+void process_timing_advance(u8 timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance);
 
 
@@ -425,33 +349,15 @@ void process_HARQ_feedback(u8 UE_id,
 */ 
 UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index);
 
-/** \brief This function implements the power control mechanism for PUCCH from 36.213.
-    @param phy_vars_ue PHY variables
-    @param subframe Index of subframe
-    @param eNB_id Index of eNB
-    @param pucch_fmt Format of PUCCH that is being transmitted
-    @returns Transmit power
- */
-s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t pucch_fmt);
-
-/** \brief This function implements the power control mechanism for PUCCH from 36.213.
-    @param phy_vars_ue PHY variables
-    @param subframe Index of subframe
-    @param eNB_id Index of eNB
-    @param j index of type of PUSCH (SPS, Normal, Msg3)
-    @returns Transmit power
- */
-void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j);
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti);
 int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);
 
 
-void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);
+void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
-u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n);
 
 #else
 #ifdef EMOS
@@ -462,7 +368,10 @@ void phy_procedures(u8 last_slot,u8 abstraction_flag);
 /**@}*/
 #endif //OPENAIR_LTE
 
-extern int slot_irq_handler(int irq, void *cookie);
+#ifndef OPENAIR_LTE
+u32 find_chbch(void);
+u32 find_mrbch(void);
+#endif
 
 #endif
 

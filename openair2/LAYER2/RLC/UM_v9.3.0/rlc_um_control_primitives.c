@@ -28,7 +28,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 *******************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_CONTROL_PRIMITIVES_C
-//#include "rtos_header.h"
+#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc_um.h"
@@ -36,30 +36,19 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "list.h"
 #include "rrm_config_structs.h"
 #include "LAYER2/MAC/extern.h"
-#include "UTIL/LOG/log.h"
 
 #include "rlc_um_control_primitives.h"
 //-----------------------------------------------------------------------------
-void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
+void config_req_rlc_um (rlc_um_entity_t *rlcP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)
 {
     //-----------------------------------------------------------------------------
-    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%d sn_field_length=%d is_mXch=%d --->][RLC_UM][MOD %02d][RB %02d]    \n",
-                frame,
-                ( eNB_flagP == 1) ? "eNB":"UE",
-                module_idP,
-                config_umP->timer_reordering,
-                config_umP->sn_field_length,
-                config_umP->is_mXch,
-                module_idP,
-                rb_idP);
     rlc_um_init(rlcP);
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-      rlc_um_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
-      rlc_um_configure(rlcP,
-		       frame,
-		       config_umP->timer_reordering,
-		       config_umP->sn_field_length,
-		       config_umP->is_mXch);
+        rlc_um_set_debug_infos(rlcP, module_idP, rb_idP, rb_typeP);
+        rlc_um_configure(rlcP,
+                     config_umP->timer_reordering,
+                     config_umP->sn_field_length,
+                     config_umP->is_mXch);
     }
 }
 //-----------------------------------------------------------------------------
@@ -128,6 +117,9 @@ rlc_um_reset_state_variables (rlc_um_entity_t *rlcP)
   rlcP->next_sdu_index = 0;
   rlcP->current_sdu_index = 0;
 
+  rlcP->last_reassemblied_sn = 0;
+  //rlcP->reassembly_missing_pdu_detected = 0;
+
   // TX SIDE
   rlcP->vt_us = 0;
   // RX SIDE
@@ -171,8 +163,7 @@ rlc_um_cleanup (rlc_um_entity_t *rlcP)
 
 //-----------------------------------------------------------------------------
 void rlc_um_configure(rlc_um_entity_t *rlcP,
-                      u32_t frame,
-		      u32_t timer_reorderingP,
+                      u32_t timer_reorderingP,
                       u32_t sn_field_lengthP,
                       u32_t is_mXchP)
 //-----------------------------------------------------------------------------
@@ -183,14 +174,14 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->um_window_size     = RLC_UM_WINDOW_SIZE_SN_10_BITS;
         rlcP->header_min_length_in_bytes = 2;
     } else if (sn_field_lengthP == 5) {
-        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] SN LENGTH 5 BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id);
+        msg ("[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] SN LENGTH 5 BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
         /*rlcP->sn_length          = 5;
         rlcP->sn_modulo          = RLC_UM_SN_5_BITS_MODULO;
         rlcP->um_window_size     = RLC_UM_WINDOW_SIZE_SN_5_BITS;
         rlcP->header_min_length_in_bytes = 1;*/
         return;
     } else {
-        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, sn_field_lengthP);
+        msg ("[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sn_field_lengthP);
         return;
     }
 
@@ -198,8 +189,7 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->um_window_size = 0;
     }
 
-    rlcP->last_reassemblied_sn  = rlcP->sn_modulo - 1;
-    rlcP->last_reassemblied_missing_sn  = rlcP->sn_modulo - 1;
+    rlcP->last_reassemblied_missing_sn = rlcP->sn_modulo - 1;
     rlcP->reassembly_missing_sn_detected = 0;
     // timers
     rlcP->timer_reordering         = 0;
@@ -211,10 +201,10 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
     rlc_um_reset_state_variables (rlcP);
 }
 //-----------------------------------------------------------------------------
-void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
+void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 //-----------------------------------------------------------------------------
 {
-    LOG_D(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
+    msg ("[FRAME %05d][RLC_UM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", mac_xface->frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
 
     rlcP->module_id = module_idP;
     rlcP->rb_id     = rb_idP;
@@ -223,5 +213,4 @@ void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, 
     } else {
         rlcP->is_data_plane = 0;
     }
-    rlcP->is_enb = eNB_flagP;
 }

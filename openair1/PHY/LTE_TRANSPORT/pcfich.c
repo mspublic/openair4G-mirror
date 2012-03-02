@@ -40,8 +40,8 @@
 #include "PHY/defs.h"
 #include "MAC_INTERFACE/extern.h"
 
-//u16 pcfich_reg[4];
-//u8 pcfich_first_reg_idx = 0;
+u16 pcfich_reg[4];
+u8 pcfich_first_reg_idx = 0;
 
 //#define DEBUG_PCFICH
 
@@ -49,31 +49,28 @@ void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 
   u16 kbar = 6 * (frame_parms->Nid_cell %(2*frame_parms->N_RB_DL));
   u16 first_reg;
-  u16 *pcfich_reg = frame_parms->pcfich_reg;
-  
+
   pcfich_reg[0] = kbar/6;
   first_reg = pcfich_reg[0];
 
-  frame_parms->pcfich_first_reg_idx=0;
-
   pcfich_reg[1] = ((kbar + (frame_parms->N_RB_DL>>1)*6)%(frame_parms->N_RB_DL*12))/6;
   if (pcfich_reg[1] < pcfich_reg[0]) {
-    frame_parms->pcfich_first_reg_idx = 1;
+    pcfich_first_reg_idx = 1;
     first_reg = pcfich_reg[1];
   }  
   pcfich_reg[2] = ((kbar + (frame_parms->N_RB_DL)*6)%(frame_parms->N_RB_DL*12))/6;
   if (pcfich_reg[2] < first_reg) {
-    frame_parms->pcfich_first_reg_idx = 2;
+    pcfich_first_reg_idx = 2;
     first_reg = pcfich_reg[2];
   }
   pcfich_reg[3] = ((kbar + ((3*frame_parms->N_RB_DL)>>1)*6)%(frame_parms->N_RB_DL*12))/6;
   if (pcfich_reg[3] < first_reg) {
-    frame_parms->pcfich_first_reg_idx = 3;
+    pcfich_first_reg_idx = 3;
     first_reg = pcfich_reg[3];
   }
   
 #ifdef DEBUG_PCFICH
-  msg("[PHY] pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
+  debug_msg("[PHY] pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
 #endif
 }
 
@@ -146,7 +143,6 @@ void generate_pcfich(u8 num_pdcch_symbols,
   u8 qpsk_table_offset = 0; 
   u8 qpsk_table_offset2 = 0;
 #endif
-  u16 *pcfich_reg = frame_parms->pcfich_reg;
 
 #ifdef DEBUG_PCFICH
   msg("[PHY] Generating PCFICH for %d PDCCH symbols, AMP %d\n",num_pdcch_symbols,amp);
@@ -292,27 +288,32 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
   u8 pcfich_quad;
   u8 i,j;
-  u16 reg_offset;
+  u16 m,reg_offset;
 
   s32 **rxdataF_comp = lte_ue_pdcch_vars->rxdataF_comp;
   s16 pcfich_d[32],*pcfich_d_ptr;
   s32 metric,old_metric=-16384;
   u8 num_pdcch_symbols=3;
-  u16 *pcfich_reg = frame_parms->pcfich_reg;
 
   // demapping
   // loop over 4 quadruplets and lookup REGs
-  //  m=0;
+  m=0;
   pcfich_d_ptr = pcfich_d;
 
   for (pcfich_quad=0;pcfich_quad<4;pcfich_quad++) {
     reg_offset = (pcfich_reg[pcfich_quad]*4);
 
-    //    if (frame_parms->mode1_flag==1) {  // SISO
+    if (frame_parms->mode1_flag==1) {  // SISO
       for (i=0;i<4;i++) {
-
-	  pcfich_d_ptr[0] = ((s16*)&rxdataF_comp[0][reg_offset+i])[0]; // RE component
-	  pcfich_d_ptr[1] = ((s16*)&rxdataF_comp[0][reg_offset+i])[1]; // IM component
+	//	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
+	//	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
+	//	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1]);
+	pcfich_d_ptr[0] = 0;
+	pcfich_d_ptr[1] = 0;
+	for (j=0;j<frame_parms->nb_antennas_rx;j++) {
+	  pcfich_d_ptr[0] += ((s16*)&rxdataF_comp[j][reg_offset+i])[0]; // RE component
+	  pcfich_d_ptr[1] += ((s16*)&rxdataF_comp[j][reg_offset+i])[1]; // IM component
+	} 
 	/*
 			printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
@@ -321,7 +322,6 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	*/
 	pcfich_d_ptr+=2;
       }
-      /*
     }
     else { // ALAMOUTI
       for (i=0;i<4;i+=2) {
@@ -343,11 +343,16 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 	}
-
+	/*	
+	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
+	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
+	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1],
+	       pcfich_d_ptr[0]);
+	*/
 	pcfich_d_ptr+=4;
 
       }
-*/
+    }
   }
 
   // pcfhich unscrambling

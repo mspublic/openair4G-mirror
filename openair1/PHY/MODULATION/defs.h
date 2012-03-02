@@ -33,7 +33,9 @@ void PHY_ofdm_mod(int *input,
 
 /*! 
 \brief This function implements the OFDM front end processor on reception (FEP)
-\param phy_vars_ue Pointer to PHY variables
+\param eNB_id eNB index on which to act
+\param frame_parms LTE DL Frame Parameters
+\param ue_common_vars LTE UE Common Vars
 \param l symbol within slot (0..6/7)
 \param Ns Slot number (0..19)
 \param sample_offset offset within rxdata (points to beginning of subframe)
@@ -58,12 +60,6 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 subframe);
 
 void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 subframe);
-
-void init_prach625(LTE_DL_FRAME_PARMS *frame_parms);
-
-void remove_625_Hz(PHY_VARS_eNB *phy_vars_eNB,s16 *prach);
-
-void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,s16 *prach);
 
 #endif
 /** @}*/

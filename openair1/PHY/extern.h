@@ -44,12 +44,10 @@ extern short primary_synch2[144];
 extern unsigned char primary_synch0_tab[72];
 extern unsigned char primary_synch1_tab[72];
 extern unsigned char primary_synch2_tab[72];
-extern s16 *primary_synch0_time;
-extern s16 *primary_synch1_time;
-extern s16 *primary_synch2_time;
-extern int *sync_corr_ue0;
-extern int *sync_corr_ue1;
-extern int *sync_corr_ue2;
+extern int *primary_synch0_time;
+extern int *primary_synch1_time;
+extern int *primary_synch2_time;
+extern int *sync_corr_ue;
 
 
 //extern short **txdataF_rep_tmp;
@@ -65,9 +63,20 @@ extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 #endif
 
-extern double sinr_bler_map[MCS_COUNT][2][9];
+extern double sinr_bler_map[MCS_COUNT][2][16];
 
-extern double beta_dlsch[MCS_COUNT];
+//for MU-MIMO abstraction using MIESM
+//this 2D arrarays contains SINR, MI and RBIR in rows 1, 2, and 3 respectively
+extern double MI_map_4qam[3][162];
+extern double MI_map_16qam[3][197];
+extern double MI_map_64qam[3][227];
+
+extern double beta1_dlsch_MI[6][MCS_COUNT];
+extern double beta2_dlsch_MI[6][MCS_COUNT];
+
+
+extern double beta1_dlsch[MCS_COUNT];
+extern double beta2_dlsch[MCS_COUNT];
 
 #endif /*__PHY_EXTERN_H__ */
  

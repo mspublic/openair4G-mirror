@@ -28,11 +28,12 @@
 *******************************************************************************/
 
 /*! \file log.h
-* \brief openair log generator (OLG) for
+* \brief log file for openair
 * \author Navid Nikaein
-* \date 2012
-* \version 0.5
-* @ingroup util
+* \date 2009
+* \version 0.3
+* \warning This component can be runned only in user-space
+* @ingroup routing
 
 */
 
@@ -62,23 +63,22 @@ extern "C" {
 #endif
 
 /** @defgroup _LOG LOG Generator
- * @{*/
-/* @}*/
+ * @{*/ 
+/* @}*/ 
 
 /** @defgroup _macro Macro Definition
  *  @ingroup _LOG
  *  @brief these macros are used in the code of LOG
  * @{*/
-/* @}*/
+/* @}*/ 
 
 /** @defgroup _max_length Maximum Length of LOG
  *  @ingroup _macro
  *  @brief the macros that describe the maximum length of LOG
  * @{*/
 #define MAX_LOG_ITEM 50 /*!< \brief the maximum length of a LOG item, what is LOG_ITEM ??? */
-#define MAX_LOG_INFO 1000 /*!< \brief the maximum length of a log */
-#define MAX_LOG_TOTAL 1500 /*!< \brief the maximum length of a log */
-/* @}*/
+#define MAX_LOG_TOTAL 1000 /*!< \brief the maximum length of a log */
+/* @}*/ 
 
 /** @defgroup _log_level Message levels defined by LOG
  *  @ingroup _macro
@@ -108,15 +108,12 @@ extern "C" {
 #ifndef LOG_DEBUG
 #	define	LOG_DEBUG	7	/*!< \brief debug-level messages */
 #endif
-#ifndef LOG_FILE
-#	define	LOG_FILE        8	/*!< \brief message sequence chart -level  */
-#endif
 #ifndef LOG_TRACE
-#	define	LOG_TRACE	9	/*!< \brief trace-level messages */
+#	define	LOG_TRACE	8	/*!< \brief debug-level messages */
 #endif
 
-#define NUM_LOG_LEVEL  10	/*!< \brief the number of message levels users have with LOG */
-/* @}*/
+#define NUM_LOG_LEVEL  9	/*!< \brief the number of message levels users have with LOG */
+/* @}*/ 
 
 
 /** @defgroup _logIt logIt function
@@ -128,7 +125,7 @@ extern "C" {
 #else
 #define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #endif
-/* @}*/
+/* @}*/ 
 
 
 /** @defgroup _debugging debugging macros
@@ -146,7 +143,6 @@ extern "C" {
 #define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
 #define LOG_I(c, x...) logIt(c, LOG_INFO, x)
 #define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
 #define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
 /*
 #else
@@ -161,7 +157,7 @@ extern "C" {
 #define LOG_T(c, x...) msg(x)
 #endif
 */
-/* @}*/
+/* @}*/ 
 
 
 /** @defgroup _useful_functions useful functions in LOG
@@ -204,13 +200,12 @@ extern "C" {
 #define FLAG_LEVEL     0x010
 #define FLAG_FUNCT     0x020
 #define FLAG_FILE_LINE 0x040
-#define FLAG_TIME      0x100
+#define FLAG_LOG_TRACE 0x100 
 
 #define LOG_NONE        0x00
-#define LOG_LOW         0x14
-#define LOG_MED         0x14
-#define LOG_HIGH        0x34
-#define LOG_FULL        0x175
+#define LOG_LOW         0x04
+#define LOG_MED         0x34
+#define LOG_FULL        0x74
 
 #define OAI_OK 0		/*!< \brief all ok */
 #define OAI_ERR 1		/*!< \brief generic error */
@@ -223,7 +218,7 @@ extern "C" {
 
 //static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PDCP, RRC, PERF,OIP, CLI, MSC, OCM, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PDCP, RRC, PERF,RB, CLI, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 
@@ -238,9 +233,6 @@ typedef struct  {
     int level;
     int flag;
     int interval;
-    int   fd;
-    int   filelog;
-    char* filelog_name;
 }log_component_t;
 
 typedef struct  {

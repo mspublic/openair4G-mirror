@@ -39,7 +39,6 @@
 void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u8 frame_type,
 		   u8 tdd_config,
-		   u8 tdd_config_S,
 		   u8 extended_prefix_flag, 
 		   u8 N_RB_DL,
 		   u16 Nid_cell,
@@ -60,7 +59,6 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
     PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
-    printf("PHY_vars_UE_g[%d] %p\n",UE_id,PHY_vars_UE_g[UE_id]);
   }// end navid
 
   //PHY_config = malloc(sizeof(PHY_CONFIG));
@@ -71,7 +69,6 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   *frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   (*frame_parms)->frame_type         = frame_type;
   (*frame_parms)->tdd_config         = tdd_config;
-  (*frame_parms)->tdd_config_S       = tdd_config_S;
   (*frame_parms)->N_RB_DL            = N_RB_DL;
   (*frame_parms)->N_RB_UL            = (*frame_parms)->N_RB_DL;
   (*frame_parms)->phich_config_common.phich_resource = oneSixth;
@@ -102,7 +99,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
-    phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id],0,0,abstraction_flag);
+    phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id],0,0,0);
 
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {
@@ -116,7 +113,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 	  PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]->rnti=0;
 	}
       }
-      PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i] = new_eNB_ulsch(8,abstraction_flag);
+      PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i] = new_eNB_ulsch(3,abstraction_flag);
       if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i]) {
 	msg("Can't get eNB ulsch structures\n");
 	exit(-1);
@@ -129,7 +126,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     }
 
     // ULSCH for RA
-    PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0] = new_eNB_ulsch(8,abstraction_flag);
+    PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0] = new_eNB_ulsch(3,abstraction_flag);
     if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0]) {
       msg("Can't get eNB ulsch structures\n");
       exit(-1);
@@ -178,7 +175,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       }
       
       
-      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
+      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(3,abstraction_flag);
       if (!PHY_vars_UE_g[UE_id]->ulsch_ue[i]) {
 	msg("Can't get ue ulsch structures\n");
 	exit(-1);

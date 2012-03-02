@@ -31,6 +31,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning

@@ -109,7 +109,8 @@ int main(int argc, char **argv) {
   unsigned char eNB_id = 0;
   u16 Nid_cell=0;
 
-  int n_frames=1;
+  u8 awgn_flag=0;
+   int n_frames=1;
   channel_desc_t *UE2eNB;
   u32 nsymb,tx_lev,tx_lev_dB;
   u8 extended_prefix_flag=0;
@@ -131,11 +132,6 @@ int main(int argc, char **argv) {
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
   u8 subframe=3;
   u8 pucch_payload,pucch_payload_rx;
-  double tx_gain=1.0;
-  s32 stat;
-  double stat_no_sig,stat_sig;
-  u8 N0=40;
-  u8 pucch1_thres=13;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -151,13 +147,13 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "haA:Cr:pf:g:i:j:n:s:S:t:x:y:z:N:F:T:")) != -1)
+  while ((c = getopt (argc, argv, "haA:Cr:pf:g:i:j:n:s:S:t:x:y:z:N:F:")) != -1)
     {
       switch (c)
 	{
 	case 'a':
 	  printf("Running AWGN simulation\n");
-	  channel_model = AWGN;
+	  awgn_flag = 1;
 	  ntrials=1;
 	  break;
 	case 'f':
@@ -277,10 +273,7 @@ int main(int argc, char **argv) {
 	  msg("Running Abstraction calibration for Bias removal\n");
 	  break;
 	case 'N':
-	  N0 = atoi(optarg);
-	  break;
-	case 'T':
-	  pucch1_thres = atoi(optarg);
+	  Nid_cell = atoi(optarg);
 	  break;
 	case 'R':
 	  N_RB_DL = atoi(optarg);
@@ -307,7 +300,7 @@ int main(int argc, char **argv) {
 	  printf("-z Number of RX antennas used in UE\n");
 	  printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
 	  printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
-	  printf("-N Noise variance in dB\n");
+	  printf("-N Nid_cell\n");
 	  printf("-R N_RB_DL\n");
 	  printf("-O oversampling factor (1,2,4,8,16)\n");
 	  printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
@@ -405,7 +398,7 @@ int main(int argc, char **argv) {
   PHY_vars_UE->lte_frame_parms.pucch_config_common.nRB_CQI          = 1;
   PHY_vars_UE->lte_frame_parms.pucch_config_common.nCS_AN           = 0;
 
-  pucch_payload = 0;
+  pucch_payload = 1;
 
   generate_pucch(PHY_vars_UE->lte_ue_common_vars.txdataF,
 		 frame_parms,
@@ -461,9 +454,6 @@ int main(int argc, char **argv) {
 			  &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
 			  nsymb,
 			  frame_parms);
-	apply_7_5_kHz(PHY_vars_UE,subframe<<1);
-	apply_7_5_kHz(PHY_vars_UE,1+(subframe<<1));
-
       }
       
       tx_lev += signal_energy(&txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
@@ -481,8 +471,22 @@ int main(int argc, char **argv) {
   
   for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
+      if (awgn_flag == 0) {
 	s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
 	s_im[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
+      }
+      else {
+	for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
+	  if (aa==0) {
+	    r_re[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
+	    r_im[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
+	  }
+	  else {
+	    r_re[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
+	    r_im[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
+	  }
+	}
+      }
     }
   }
 
@@ -499,20 +503,40 @@ int main(int argc, char **argv) {
     pucch1_missed=0;
     pucch1_false=0;
 
-    stat_no_sig = 0;
-    stat_sig = 0;
-
     for (trial=0; trial<n_frames; trial++) {
       
+      pucch_sinr=0.0;
+      if (abstraction_flag==1)
+	printf("*********************** trial %d ***************************\n",trial);
 
+      while (pucch_sinr>-2.0) {
 
-      multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-			2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-	       
-      sigma2_dB = N0;//10*log10((double)tx_lev) - SNR;
-      tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);
+	if (awgn_flag == 0) {	
+
+	  multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
+			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+	  /*	  
+	  if (abstraction_flag == 1) {
+	    freq_channel(UE2eNB,25);
+	    pucch_sinr = compute_pucch_sinr(UE2eNB,NULL,NULL,SNR,SNR+interf1,SNR+interf2,25);
+	    printf("total_sinr %f\n",compute_sinr(UE2eNB,UE2eNB1,UE2eNB2,SNR,SNR+interf1,SNR+interf2,25));
+	    printf("pucch_sinr %f => BLER %f\n",pucch_sinr,pucch_bler(pucch_sinr));
+	  }
+	  else {
+	    pucch_sinr = -3.0;
+	  }
+	  */
+	  pucch_sinr = -3.0;
+	  //	  exit(-1);
+	} // awgn_flag
+	else {
+	  pucch_sinr = -3.0;
+	}
+      }
+      
+      sigma2_dB = 10*log10((double)tx_lev) - SNR;
       if (n_frames==1)
-	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f,tx_gain %f (%f dB)\n",sigma2_dB,SNR,10*log10((double)tx_lev),tx_gain,20*log10(tx_gain));
+	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
       //AWGN
       sigma2 = pow(10,sigma2_dB/10);
       //	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
@@ -523,36 +547,15 @@ int main(int argc, char **argv) {
 	       10*log10(tx_lev));
       }
 
-      if (pucch_format != pucch_format1) {
-	pucch_tx++;
-	sig=1;
-      }
+      if ((pucch_format == pucch_format1) && ((taus()&1) == 0))
+	sig=0;
       else {
-	if (trial<(n_frames>>1)) {
-	  //	  printf("no sig =>");
-	  sig= 0;
-	}
-	else {
-	  sig=1;
-	  //	  printf("sig =>");
-	  pucch_tx++;
-	}
+	sig=1;
+	pucch_tx++;
       }
-
       //      sig = 1;
       for (n_trials=0;n_trials<ntrials;n_trials++) {
 	//printf("n_trial %d\n",n_trials);
-	// fill measurement symbol (19) with noise
-	for (i=0;i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
-	  for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
-
-	    ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	    ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i+1] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  }
-	}
-	lte_eNB_I0_measurements(PHY_vars_eNB,
-				0,
-				1);
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 	    if (n_trials==0) {
@@ -562,19 +565,16 @@ int main(int argc, char **argv) {
 
 
 	    if (sig==1) {
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (((tx_gain*r_re[aa][i]) +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (((tx_gain*r_im[aa][i]) + (iqim*r_re[aa][i]*tx_gain) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	    }
 	    else {
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) ((sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (.167*(sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 
 	    }
 	  }
 	}
-
-	remove_7_5_kHz(PHY_vars_eNB,subframe<<1);
-	remove_7_5_kHz(PHY_vars_eNB,1+(subframe<<1));
 
 	for (l=0;l<PHY_vars_eNB->lte_frame_parms.symbols_per_tti/2;l++) {
 	  
@@ -595,45 +595,38 @@ int main(int argc, char **argv) {
 
 
 	  }
-	
-	
-	//      if (sig == 1)
-	//	  printf("*");
-	PHY_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dB = N0;//(s8)(sigma2_dB-10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)));      
-	stat = rx_pucch(PHY_vars_eNB,
-			pucch_format,
-			0,
-			37, //n1_pucch,
-			0, //n2_pucch,
-			0, //shortened_format,
-			&pucch_payload_rx, //payload,
-			subframe,
-			pucch1_thres);
-	if (trial < (n_frames>>1)) {
-	  stat_no_sig += (2*(double)stat/n_frames);
-	  //	  printf("stat (no_sig) %f\n",stat_no_sig);
 	}
-	else {
-	  stat_sig += (2*(double)stat/n_frames);
-	  //	  printf("stat (sig) %f\n",stat_sig);
-	}
-	if (pucch_format==pucch_format1) {
-	  pucch1_missed = ((pucch_payload_rx == 0) && (sig==1)) ? (pucch1_missed+1) : pucch1_missed;
-	  pucch1_false  = ((pucch_payload_rx == 1) && (sig==0)) ? (pucch1_false+1) : pucch1_false;
-	  /*	
-		if ((pucch_payload_rx == 0) && (sig==1)) {
-		printf("EXIT\n");
-		exit(-1);
-		}*/
-	}
-	else {
-	  pucch1_false = (pucch_payload_rx != 0) ? (pucch1_false+1) : pucch1_false;
-	}
-	//      printf("sig %d\n",sig);
-      } // NSR
-    }
+
+      //      if (sig == 1)
+      //	  printf("*");
+      
+      rx_pucch(&PHY_vars_eNB->lte_eNB_common_vars,
+	       frame_parms,
+	       PHY_vars_eNB->ncs_cell,
+	       pucch_format,
+	       &pucch_config_dedicated,
+	       37, //n1_pucch,
+	       0, //n2_pucch,
+	       0, //shortened_format,
+	       &pucch_payload_rx, //payload,
+	       subframe,
+	       (s8)(sigma2_dB-10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)))); //subframe	       
+      if (pucch_format==pucch_format1) {
+	pucch1_missed = ((pucch_payload_rx == 0) && (sig==1)) ? (pucch1_missed+1) : pucch1_missed;
+	pucch1_false  = ((pucch_payload_rx == 1) && (sig==0)) ? (pucch1_false+1) : pucch1_false;
+	/*	
+	if ((pucch_payload_rx == 0) && (sig==1)) {
+	  printf("EXIT\n");
+	  exit(-1);
+	  }*/
+      }
+      else {
+	pucch1_false = (pucch_payload_rx != 1) ? (pucch1_false+1) : pucch1_false;
+      }
+      //      printf("sig %d\n",sig);
+    } // NSR
     if (pucch_format==pucch_format1)
-      printf("pucch_trials %d : pucch1_false %d,pucch1_missed %d, N0 %d dB, stat_no_sig %f dB, stat_sig %f dB\n",pucch_tx,pucch1_false,pucch1_missed,PHY_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dB,10*log10(stat_no_sig),10*log10(stat_sig));
+      printf("pucch_trials %d : pucch1_false %d,pucch1_missed %d\n",pucch_tx,pucch1_false,pucch1_missed);
     else if (pucch_format==pucch_format1a)
       printf("pucch_trials %d : pucch1a_errors %d\n",pucch_tx,pucch1_false);
     else if (pucch_format==pucch_format1b)

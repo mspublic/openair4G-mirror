@@ -57,7 +57,7 @@ typedef struct {
   ///additional delay of channel in samples. 
   s8 channel_offset; 
   ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
-  double forgetting_factor;
+  double forgetting_factor; 
   ///needs to be set to 1 for the first call, 0 otherwise.
   u8 first_run;
   /// initial phase for frequency offset simulation 
@@ -137,7 +137,6 @@ typedef enum {
   Rice1,
   Rice1_corr,
   Rice1_anticorr,
-  AWGN
 } SCM_t;
 
 /** 
@@ -166,7 +165,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				     u8 nb_rx, 
 				     SCM_t channel_model, 
 				     double BW, 
-				     double forgetting_factor,
+				     double forgetting_factor, 
 				     s32 channel_offset, 
 				     double path_loss_dB);
 
@@ -183,7 +182,7 @@ int random_channel(channel_desc_t *desc);
 		       double **tx_sig_im, 
 		       double **rx_sig_re,
 		       double **rx_sig_im,
-		       u32 length,
+		       u16 length,
 		       u8 keep_channel)
 
 \brief This function generates and applys a random frequency selective random channel model.
@@ -201,7 +200,7 @@ void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_im, 
 		       double **rx_sig_re,
 		       double **rx_sig_im,
-		       u32 length,
+		       u16 length,
 		       u8 keep_channel);
 /*
 \fn double compute_pbch_sinr(channel_desc_t *desc,

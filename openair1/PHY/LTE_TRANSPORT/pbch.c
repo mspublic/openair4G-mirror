@@ -75,7 +75,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
   int i, l;
 
-  u32  pbch_D,pbch_E;//,pbch_coded_bytes;
+  u32  pbch_D,pbch_D_bytes,pbch_E;//,pbch_coded_bytes;
   u8 pbch_a[PBCH_A>>3];
   u8 RCC;
 
@@ -88,6 +88,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
   u16 amask=0;
 
   pbch_D    = 16+PBCH_A;
+  pbch_D_bytes   = pbch_D>>3;
 
   pbch_E  = (frame_parms->Ncp==0) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
   //  pbch_E_bytes = pbch_coded_bits>>3;
@@ -191,7 +192,12 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 #endif
 
 
-   
+    // scrambling
+
+    pbch_scrambling(frame_parms,
+		    eNB_pbch->pbch_e,
+		    pbch_E);
+    
 #ifdef DEBUG_PBCH
 #ifdef USER_MODE
     if (frame_mod4==0) {
@@ -205,24 +211,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
     }
 #endif //USER_MODE
 #endif //DEBUG_PBCH
-    // scrambling
 
-    pbch_scrambling(frame_parms,
-		    eNB_pbch->pbch_e,
-		    pbch_E);
-#ifdef DEBUG_PBCH
-#ifdef USER_MODE
-    if (frame_mod4==0) {
-      write_output("pbch_e_s.m","pbch_e_s",
-		   eNB_pbch->pbch_e,
-		   pbch_E,
-		   1,
-		   4);
-      for (i=0;i<16;i++)
-	printf("e_s[%d] %d\n",i,eNB_pbch->pbch_e[i]);
-    }
-#endif //USER_MODE
-#endif //DEBUG_PBCH 
   } // frame_mod4==0
 
   // modulation and mapping (slot 1, symbols 0..3)
@@ -257,7 +246,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
     for (rb=0;rb<6;rb++) {
 
 #ifdef DEBUG_PBCH
-      msg("RB %d, jj %d, re_offset %d, symbol_offset %d, pilots %d, nushift %d\n",rb,jj,re_offset, symbol_offset, pilots,frame_parms->nushift);
+      msg("RB %d, jj %d, re_offset %d, symbol_offset %d, pilots %d\n",rb,jj,re_offset, symbol_offset, pilots);
 #endif
       allocate_REs_in_RB(txdataF,
 			 &jj,
@@ -302,7 +291,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNB,u8 *pbch_pdu) {
   
-  LOG_D(PHY,"[eNB %d] generate_pbch_emul \n",phy_vars_eNB->Mod_id);
+  msg("[PHY] EMUL UE generate_pbch_emul eNB %d\n",phy_vars_eNB->Mod_id);
   eNB_transport_info[phy_vars_eNB->Mod_id].cntl.pbch_flag=1;
   // Copy PBCH payload 
   eNB_transport_info[phy_vars_eNB->Mod_id].cntl.pbch_payload=*(u32 *)pbch_pdu;
@@ -320,20 +309,19 @@ u16 pbch_extract(int **rxdataF,
   u16 rb,nb_rb=6;
   u8 i,j,aarx,aatx;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
- 
+
   u32 nsymb = (frame_parms->Ncp==0) ? 7:6;
   u32 symbol_mod = symbol % nsymb;
 
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   int ch_offset = frame_parms->N_RB_DL*6-3*12;
-  int nushiftmod3 = frame_parms->nushift%3;
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-    /*
-    printf("extract_rbs (nushift %d): symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",frame_parms->nushift,symbol_mod,
-	   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
-	   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
-    */
+    
+    //printf("extract_rbs: symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",symbol_mod,
+    //   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
+    //   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
+
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
     rxF_ext    = &rxdataF_ext[aarx][symbol_mod*(6*12)];
 
@@ -345,10 +333,10 @@ u16 pbch_extract(int **rxdataF,
       if ((symbol_mod==0) || (symbol_mod==1)) {
 	j=0;
 	for (i=0;i<12;i++) {
-	  if ((i!=nushiftmod3) && 
-	      (i!=(nushiftmod3+3)) && 
-	      (i!=(nushiftmod3+6)) && 
-	      (i!=(nushiftmod3+9))) {
+	  if ((i!=frame_parms->nushift) && 
+	      (i!=(frame_parms->nushift+3)) && 
+	      (i!=(frame_parms->nushift+6)) && 
+	      (i!=(frame_parms->nushift+9))) {
 
 	    rxF_ext[j++]=rxF[i<<1];
 	  }
@@ -380,10 +368,10 @@ u16 pbch_extract(int **rxdataF,
 	else {
 	  j=0;
 	  for (i=0;i<12;i++) {
-	    if ((i!=nushiftmod3) && 
-		(i!=(nushiftmod3+3)) && 
-		(i!=(nushiftmod3+6)) && 
-		(i!=(nushiftmod3+9))){
+	    if ((i!=frame_parms->nushift) && 
+		(i!=(frame_parms->nushift+3)) && 
+		(i!=(frame_parms->nushift+6)) && 
+		(i!=(frame_parms->nushift+9))){
 	      //	      printf("PBCH extract i %d j %d => (%d,%d)\n",i,j,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
 	      dl_ch0_ext[j++]=dl_ch0[i];
 	    }
@@ -587,12 +575,12 @@ void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   reset = 1;
   // x1 is set in lte_gold_generic
   x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
-  //  msg("pbch_scrambling: Nid_cell = %d\n",x2);
+  //msg("pbch_scrambling: Nid_cell = %d\n",x2);
 
   for (i=0; i<length; i++) {
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
-      //      printf("lte_gold[%d]=%x\n",i,s);
+      //printf("lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
 
@@ -612,12 +600,12 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   reset = 1;
   // x1 is set in first call to lte_gold_generic
   x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
-  //  msg("pbch_unscrambling: Nid_cell = %d\n",x2);
+  //msg("pbch_unscrambling: Nid_cell = %d\n",x2);
 
   for (i=0; i<length; i++) {
     if (i%32==0) {
       s = lte_gold_generic(&x1, &x2, reset);
-      //      printf("lte_gold[%d]=%x\n",i,s);
+      //printf("lte_gold[%d]=%x\n",i,s);
       reset = 0;
     } 
     // take the quarter of the PBCH that corresponds to this frame
@@ -703,7 +691,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
   int symbol,i;
   u32 nsymb = (frame_parms->Ncp==0) ? 14:12;
-  u32  pbch_E;
+  u32  pbch_D,pbch_D_bytes,pbch_E;
   u8 pbch_a[8];
   u8 RCC;
 
@@ -712,7 +700,8 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   u16 crc;
 
 
-  //  pbch_D    = 16+PBCH_A;
+  pbch_D    = 16+PBCH_A;
+  pbch_D_bytes   = pbch_D>>3;
 
   pbch_E  = (frame_parms->Ncp==0) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
   pbch_e_rx = &lte_ue_pbch_vars->llr[frame_mod4*(pbch_E>>2)];
@@ -742,7 +731,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
     max_h = pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
 			       frame_parms,
 			       symbol);
-    log2_maxh = 3+(log2_approx(max_h)/2);
+    log2_maxh = 5+(log2_approx(max_h)/2);
     
 #ifdef DEBUG_PBCH
     msg("[PHY] PBCH log2_maxh = %d (%d)\n",log2_maxh,max_h);
@@ -798,12 +787,12 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   msg("[PBCH] doing unscrambling\n");
 #endif
 
-  
+
   pbch_unscrambling(frame_parms,
 		    pbch_e_rx,
 		    pbch_E,
 		    frame_mod4);
-  
+
 
 
   //un-rate matching
@@ -868,9 +857,9 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
 
   u8 pbch_error=0;
 
-  LOG_D(PHY,"EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d\n",eNB_id,pbch_phase);
+  msg("[PHY] EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d\n",eNB_id,pbch_phase);
 
-  if (pbch_phase == (phy_vars_ue->frame % 4)) {
+  if (pbch_phase == (mac_xface->frame % 4)) {
 
     // abtract pbch error here
     // pbch_error = pbch_abstraction();

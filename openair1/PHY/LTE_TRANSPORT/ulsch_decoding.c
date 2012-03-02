@@ -53,11 +53,8 @@
 #include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
 #endif
-
-#ifdef PHY_ABSTRACTION
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#endif
 //#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
@@ -195,7 +192,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   u8 crc_type;
   u8 *columnset;
   unsigned int sumKr=0;
-  unsigned int Qprime,L,G,Q_CQI,Q_RI,H,Hprime,Hpp,Cmux,Rmux_prime,O_RCC;
+  unsigned int Qprime,L,G,Q_CQI,Q_RI,Q_ACK,H,Hprime,Hpp,Cmux,Rmux,Rmux_prime,O_RCC;
   unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK=0,len_RI=0;
   u8 q_ACK[MAX_ACK_PAYLOAD],q_RI[MAX_RI_PAYLOAD];
   int metric,metric_new;
@@ -209,7 +206,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   x2 = ((u32)ulsch->rnti<<14) + ((u32)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   
   //  harq_pid = (ulsch->RRCConnRequest_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
-  harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->frame,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,subframe);
 
   if (harq_pid==255) {
     msg("ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
@@ -269,21 +266,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       Kr = ulsch->harq_processes[harq_pid]->Kplus;
     sumKr += Kr;
   }
-  if (sumKr==0) {
-    msg("[PHY][eNB %d] ulsch_decoding.c: FATAL sumKr is 0!\n",phy_vars_eNB->Mod_id);
-    msg("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): Ndi %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
-	frame_parms->Nid_cell,ulsch->rnti,x2,
-	ulsch->harq_processes[harq_pid]->Ndi,
-	ulsch->harq_processes[harq_pid]->rvidx,
-	ulsch->harq_processes[harq_pid]->mcs,
-	ulsch->O_RI,
-	ulsch->O_ACK,
-	G,
-	subframe);
-    mac_xface->macphy_exit("");
-    return(-1);
-  }
-    
   // Compute Q_ri
   Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_ri_times8;
 
@@ -314,7 +296,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       Qprime = 4*nb_rb * 12;
   }
 
-  //  Q_ACK = Qprime * Q_m;
+  Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
 #ifdef DEBUG_ULSCH_DECODING
   msg("ulsch_decoding.c: Qprime_ACK %d, Msc_initial %d, Nsymb_initial %d, sumKr %d\n",
@@ -359,11 +341,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   Hpp = Hprime + Qprime_RI;
   
   Cmux       = ulsch->Nsymb_pusch;
-  //  Rmux       = Hpp*Q_m/Cmux;
+  Rmux       = Hpp*Q_m/Cmux;
   Rmux_prime = Hpp/Cmux;
   
 #ifdef DEBUG_ULSCH_DECODING
-  msg("ulsch_decoding.c: G raw %d, Hpp %d, Cmux %d, Rmux_prime %d\n",G,Hpp,Cmux,Rmux_prime);
+  msg("ulsch_decoding.c: G raw %d, Hpp %d, Cmux %d, Rmux %d, Rmux_prime %d\n",G,Hpp,Cmux,Rmux,Rmux_prime);
 #endif
   // Clear "tag" interleaving matrix to allow for CQI/DATA identification
   memset(ytag,0,Cmux*Rmux_prime);
@@ -958,7 +940,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					harq_pid&3);
+					harq_pid);
     
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    
@@ -1010,7 +992,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   u8 UE_id;
   u16 rnti;
-  u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
+  u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,subframe);
   
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
 #ifdef DEBUG_PHY

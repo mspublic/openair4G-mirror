@@ -21,14 +21,10 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
   //  printf("nsymb %d\n",nsymb);
   for (i=0;i<2*nsymb/frame_parms->symbols_per_tti;i++) {
     //    printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),
-    //    	   txdata+(i*(frame_parms->samples_per_tti>>1)));
+    //	   txdata+(i*(frame_parms->samples_per_tti>>1)));
     
     PHY_ofdm_mod(txdataF+(i*NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti>>1),        // input
-#ifdef BIT8_TX
-		 txdata+(i*frame_parms->samples_per_tti>>2),         // output
-#else
 		 txdata+(i*frame_parms->samples_per_tti>>1),         // output
-#endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
 		 1,                 // number of symbols
 		 frame_parms->nb_prefix_samples0,               // number of prefix samples
@@ -39,11 +35,7 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
     
 
     PHY_ofdm_mod(txdataF+NUMBER_OF_OFDM_CARRIERS+(i*NUMBER_OF_OFDM_CARRIERS*(frame_parms->symbols_per_tti>>1)),        // input
-#ifdef BIT8_TX
-		 txdata+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0>>1)+(i*(frame_parms->samples_per_tti>>2)),         // output
-#else
 		 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
-#endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
 		 6,                 // number of symbols
 		 frame_parms->nb_prefix_samples,               // number of prefix samples
@@ -68,12 +60,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   unsigned short i,j;
   short k;
-#ifdef BIT8_TX
-  volatile short *output_ptr=(short*)0;
-#else
-  volatile int *output_ptr=(int*)0;
-#endif
-  int *temp_ptr=(int*)0;
+  int *output_ptr=(int*)0,*temp_ptr=(int*)0;
 
 
 #ifdef DEBUG_OFDM_MOD
@@ -95,38 +82,19 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 	log2fftsize/2,     // normalized FFT (i.e. 1/sqrt(N) multiplicative factor)
 	0);
 
-    
-    //memset(temp,0,1<<log2fftsize);
-    /*
-#ifdef DEBUG_OFDM_MOD
-    for (j=0;j<(1<<log2fftsize);j++) {
-      msg("twiddle_ifft(%d) = (%d, %d)\n", j, twiddle_ifft[2*j], twiddle_ifft[2*j+1]);
-    }
-#endif
-    */
-
     // Copy to frame buffer with Cyclic Extension
     // Note:  will have to adjust for synchronization offset!
     
     switch (etype) {
     case CYCLIC_PREFIX:
-#ifdef BIT8_TX
-      output_ptr = &(((short*)output)[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)]);
-#else
       output_ptr = &output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)];
-#endif
       temp_ptr = (int *)temp;
       
 
       //      msg("Doing cyclic prefix method\n");
 
       for (j=0;j<((1<<log2fftsize)) ; j++) {
-#ifdef BIT8_TX
-	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
-	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
-#else
 	output_ptr[j] = temp_ptr[2*j];
-#endif
       }
 
       for (k=-1;k>=-nb_prefix_samples;k--) {
@@ -137,23 +105,14 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case CYCLIC_SUFFIX:
 
 
-#ifdef BIT8_TX
-      output_ptr = &(((short*)output)[(i<<log2fftsize)+ (i*nb_prefix_samples)]);
-#else
       output_ptr = &output[(i<<log2fftsize)+ (i*nb_prefix_samples)];
-#endif
 
       temp_ptr = (int *)temp;
       
       //      msg("Doing cyclic suffix method\n");
 
       for (j=0;j<(1<<log2fftsize) ; j++) {
-#ifdef BIT8_TX
-	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
-	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
-#else
 	output_ptr[j] = temp_ptr[2*j];
-#endif
       }
       
       
@@ -169,21 +128,12 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case NONE:
 
       //      msg("NO EXTENSION!\n");
-#ifdef BIT8_TX
-      output_ptr = &(((short*)output)[(i<<log2fftsize)]);
-#else
       output_ptr = &output[(i<<log2fftsize)];
-#endif
+
       temp_ptr = (int *)temp;
       
       for (j=0;j<(1<<log2fftsize) ; j++) {
-#ifdef BIT8_TX
-	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
-	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
-#else
 	output_ptr[j] = temp_ptr[2*j];
-#endif
-
       }
 
       break;

@@ -35,7 +35,7 @@ oarf_set_rx_gain(70,70,0,0);
 
 sleep(2)
 
-step = 128;
+size = 128;
 tcxo_freq = 128;
 
 f_off_min = 1e6;
@@ -43,29 +43,23 @@ tcxo_freq_min = 256;
 
 do 
 
-  step = step/2;
+  size = size/2;
   tcxo_freq
   oarf_set_tcxo_dac(tcxo_freq);
   sleep(2);
   s=oarf_get_frame(freqband);   %oarf_get_frame
-  nb_rx = size(s,2);
 
   % find the DC component
   m = mean(s);
 
   s_phase = unwrap(angle(s(10000:4:length(s),1).'));
+  s_phase2 = unwrap(angle(s(10000:4:length(s),2).'));
   s_phase = s_phase - s_phase(1,1);
-  f_off = mean(s_phase(2:length(s_phase))*fs/4./(1:(length(s_phase)-1))/2/pi)
-  plot(1:length(s_phase),s_phase,'r');
+  s_phase2 = s_phase2 - s_phase2(1,1);
 
-  if (nb_rx>1)
-    s_phase2 = unwrap(angle(s(10000:4:length(s),2).'));
-    s_phase2 = s_phase2 - s_phase2(1,1);
-    f_off2 = mean(s_phase2(2:length(s_phase2))*fs/4./(1:(length(s_phase2)-1))/2/pi)
-    hold on
-    plot(1:length(s_phase2),s_phase2,'g');
-    hold off
-  end
+  f_off = mean(s_phase(2:length(s_phase))*fs/4./(1:(length(s_phase)-1))/2/pi)
+  f_off2 = mean(s_phase2(2:length(s_phase2))*fs/4./(1:(length(s_phase2)-1))/2/pi)
+  plot(1:length(s_phase),s_phase,'r',1:length(s_phase2),s_phase2,'g');
 
   
   if (abs(f_off) < f_off_min)
@@ -74,16 +68,16 @@ do
   end
 
   if ((f_off) > 0)
-    tcxo_freq = tcxo_freq + step;
+    tcxo_freq = tcxo_freq + size;
   else
-    tcxo_freq = tcxo_freq - step;
+    tcxo_freq = tcxo_freq - size;
   endif
 
 
-until (step < 1)
+until (size < 1)
 
 write_tcxo
 
-%gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF');         %  deactivate output
+gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF');         %  deactivate output
 
 

@@ -28,11 +28,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 *******************************************************************************/
 #define RLC_AM_MODULE
 #define RLC_AM_SEGMENT_HOLES_C
-//#include "rtos_header.h"
+#include "rtos_header.h"
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/extern.h"
-#include "UTIL/LOG/log.h"
 #define TRACE_RLC_AM_HOLE
 
 //-----------------------------------------------------------------------------
@@ -66,13 +65,13 @@ void rlc_am_shift_up_holes (rlc_am_entity_t *rlcP, u16_t snP, int indexP)
     assert(rlcP->pdu_retrans_buffer[snP].num_holes < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
 }
 //-----------------------------------------------------------------------------
-void rlc_am_remove_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_startP, u16_t so_stopP)
+void rlc_am_remove_hole (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_t so_stopP)
 //-----------------------------------------------------------------------------
 {
     int i;
 #ifdef TRACE_RLC_AM_HOLE
-    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  so_startP %05d so_stopP %05d rlcP->pdu_retrans_buffer[snP].nack_so_start %05d rlcP->pdu_retrans_buffer[snP].nack_so_stop %05d\n",
-             frame,rlcP->module_id, rlcP->rb_id, snP, so_startP, so_stopP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop);
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  so_startP %05d so_stopP %05d rlcP->pdu_retrans_buffer[snP].nack_so_start %05d rlcP->pdu_retrans_buffer[snP].nack_so_stop %05d\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, so_startP, so_stopP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop);
 #endif
     assert(so_startP <= so_stopP);
 
@@ -80,8 +79,8 @@ void rlc_am_remove_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so
         assert(so_startP == rlcP->pdu_retrans_buffer[snP].nack_so_start);
         assert(so_stopP  <= rlcP->pdu_retrans_buffer[snP].nack_so_stop);
 #ifdef TRACE_RLC_AM_HOLE
-        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  MODIFIED nack_so_start %05d->%05d\n",
-             frame,rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, so_stopP+1);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  MODIFIED nack_so_start %05d->%05d\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, so_stopP+1);
 #endif
         rlcP->pdu_retrans_buffer[snP].nack_so_start = so_stopP+1;
         if (rlcP->pdu_retrans_buffer[snP].nack_so_start >= rlcP->pdu_retrans_buffer[snP].nack_so_stop) {
@@ -105,7 +104,7 @@ void rlc_am_remove_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so
                         rlcP->pdu_retrans_buffer[snP].nack_so_stop  = rlcP->pdu_retrans_buffer[snP].hole_so_stop[rlcP->pdu_retrans_buffer[snP].num_holes - 1];
                     }
 #ifdef TRACE_RLC_AM_HOLE
-                    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  NOW nack_so_start %05d nack_so_stop %05d num holes %d\n", frame,rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop, rlcP->pdu_retrans_buffer[snP].num_holes);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  NOW nack_so_start %05d nack_so_stop %05d num holes %d\n", mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop, rlcP->pdu_retrans_buffer[snP].num_holes);
 #endif
                     return;
                 }
@@ -133,32 +132,32 @@ void rlc_am_remove_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so
         }
     }
 #ifdef TRACE_RLC_AM_HOLE
-    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  NOW nack_so_start %05d nack_so_stop %05d num holes %d\n", frame,rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop, rlcP->pdu_retrans_buffer[snP].num_holes);
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  NOW nack_so_start %05d nack_so_stop %05d num holes %d\n", mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop, rlcP->pdu_retrans_buffer[snP].num_holes);
 #endif
     assert(rlcP->pdu_retrans_buffer[snP].nack_so_start < rlcP->pdu_retrans_buffer[snP].payload_size);
 }
 //-----------------------------------------------------------------------------
-void rlc_am_get_next_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, int* so_startP, int* so_stopP)
+void rlc_am_get_next_hole (rlc_am_entity_t *rlcP, u16_t snP, int* so_startP, int* so_stopP)
 //-----------------------------------------------------------------------------
 {
     if (rlcP->pdu_retrans_buffer[snP].num_holes == 0) {
         *so_startP = rlcP->pdu_retrans_buffer[snP].nack_so_start;
         *so_stopP  = rlcP->pdu_retrans_buffer[snP].nack_so_stop;
 #ifdef TRACE_RLC_AM_HOLE
-        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] rlc_am_get_next_hole(SN %04d) %05d->%05d (NUM HOLES == 0)\n",
-             frame,rlcP->module_id, rlcP->rb_id, snP, *so_startP, *so_stopP);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] rlc_am_get_next_hole(SN %04d) %05d->%05d (NUM HOLES == 0)\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, *so_startP, *so_stopP);
 #endif
     } else {
         *so_startP = rlcP->pdu_retrans_buffer[snP].hole_so_start[0];
         *so_stopP  = rlcP->pdu_retrans_buffer[snP].hole_so_stop[0];
 #ifdef TRACE_RLC_AM_HOLE
-        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] rlc_am_get_next_hole(SN %04d) %05d->%05d (NUM HOLES == %d)\n",
-             frame,rlcP->module_id, rlcP->rb_id, snP, *so_startP, *so_stopP, rlcP->pdu_retrans_buffer[snP].num_holes);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] rlc_am_get_next_hole(SN %04d) %05d->%05d (NUM HOLES == %d)\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, *so_startP, *so_stopP, rlcP->pdu_retrans_buffer[snP].num_holes);
 #endif
     }
 }
 //-----------------------------------------------------------------------------
-void rlc_am_add_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_startP, u16_t so_stopP)
+void rlc_am_add_hole (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_t so_stopP)
 //-----------------------------------------------------------------------------
 {
     int i, hole_index;
@@ -174,8 +173,8 @@ void rlc_am_add_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_st
         rlcP->pdu_retrans_buffer[snP].nack_so_start = so_startP;
         rlcP->pdu_retrans_buffer[snP].nack_so_stop  = so_stopP;
 #ifdef TRACE_RLC_AM_HOLE
-        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] SN %04d GLOBAL NACK 0->%05d\n",
-             frame,rlcP->module_id, rlcP->rb_id, snP, so_stopP);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] SN %04d GLOBAL NACK 0->%05d\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, so_stopP);
 #endif
         assert(rlcP->pdu_retrans_buffer[snP].nack_so_start < rlcP->pdu_retrans_buffer[snP].payload_size);
         return;
@@ -194,8 +193,8 @@ void rlc_am_add_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_st
         rlcP->pdu_retrans_buffer[snP].nack_so_start = so_startP;
         rlcP->pdu_retrans_buffer[snP].nack_so_stop  = so_stopP;
 #ifdef TRACE_RLC_AM_HOLE
-        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] FIRST HOLE SN %04d GLOBAL NACK %05d->%05d\n",
-             frame,rlcP->module_id, rlcP->rb_id, snP, so_startP, so_stopP);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] FIRST HOLE SN %04d GLOBAL NACK %05d->%05d\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, so_startP, so_stopP);
 #endif
         assert(rlcP->pdu_retrans_buffer[snP].nack_so_start < rlcP->pdu_retrans_buffer[snP].payload_size);
         return;
@@ -221,8 +220,8 @@ void rlc_am_add_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_st
             }
             rlcP->pdu_retrans_buffer[snP].num_holes += 1;
 #ifdef TRACE_RLC_AM_HOLE
-        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] INSERT %d th HOLE SN %04d GLOBAL NACK %05d->%05d\n",
-             frame,rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer[snP].num_holes, snP, so_startP, so_stopP);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] INSERT %d th HOLE SN %04d GLOBAL NACK %05d->%05d\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer[snP].num_holes, snP, so_startP, so_stopP);
 #endif
             assert(rlcP->pdu_retrans_buffer[snP].nack_so_start < rlcP->pdu_retrans_buffer[snP].payload_size);
             assert(rlcP->pdu_retrans_buffer[snP].num_holes < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
@@ -240,8 +239,8 @@ void rlc_am_add_hole (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_st
         // update nack "window" vars nack_so_start, nack_so_stop
         rlcP->pdu_retrans_buffer[snP].nack_so_stop = so_stopP;
 #ifdef TRACE_RLC_AM_HOLE
-        LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] INSERT THE %d th LAST HOLE SN %04d GLOBAL NACK %05d->%05d\n",
-             frame,rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer[snP].num_holes, snP, so_startP, so_stopP);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] INSERT THE %d th LAST HOLE SN %04d GLOBAL NACK %05d->%05d\n",
+             mac_xface->frame,rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer[snP].num_holes, snP, so_startP, so_stopP);
 #endif
     } else {
         assert(1==2);

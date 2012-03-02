@@ -123,13 +123,8 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
   
 }
 
-void do_DL_sig(double **r_re0,double **r_im0,
-	       double **r_re,double **r_im,
-	       double **s_re,double **s_im,
-	       channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],
-	       node_desc_t *enb_data[NUMBER_OF_eNB_MAX],
-	       node_desc_t *ue_data[NUMBER_OF_UE_MAX], 
-	       u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],
+node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX], u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   s32 att_eNB_id=-1;
   s32 **txdata,**rxdata;
@@ -138,18 +133,17 @@ void do_DL_sig(double **r_re0,double **r_im0,
   double tx_pwr, rx_pwr;
   s32 rx_pwr2;
   u32 i,aa;
-  u32 slot_offset,slot_offset_meas;
+  u32 slot_offset;
 
   double min_path_loss=-200;
 
-  u8 hold_channel=0;
-  u8 aatx,aarx;
+  u8 hold_channel;
 
   if (next_slot==0)
     hold_channel = 0;
   else
     hold_channel = 1;
-
+    
   if (abstraction_flag != 0) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 
@@ -168,7 +162,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	if (find_ue(PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id])>=0) {
 	  // UE with UE_id is connected to eNb with eNB_id
 	  att_eNB_id=eNB_id;
-	  LOG_I(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
+	  printf("[SIM][DL] ue with UE id %d attached to Enb id %d\n",UE_id,eNB_id);
 	}
       }
 
@@ -178,26 +172,22 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  if (min_path_loss<eNB2UE[eNB_id][UE_id]->path_loss_dB) {
 	    min_path_loss = eNB2UE[eNB_id][UE_id]->path_loss_dB;
 	    att_eNB_id=eNB_id;
-	    LOG_I(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
+	    printf("[SIM][DL] ue with UE id %d attached to Enb id %d\n",UE_id,eNB_id);
 	  }
 	}
       }
 
       if (att_eNB_id<0) {
-	LOG_E(OCM,"Cannot find eNB for UE %d, return\n",UE_id);
-	return; //exit(-1);
+	printf("[SIM][DL] Cannot find eNB for UE %d, Exiting.\n",UE_id);
+	exit(-1);
       }
 
-      rx_pwr = signal_energy_fp2(eNB2UE[att_eNB_id][UE_id]->ch[0],
-				 eNB2UE[att_eNB_id][UE_id]->channel_length)*eNB2UE[att_eNB_id][UE_id]->channel_length;
-      LOG_D(OCM,"Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
+      rx_pwr = signal_energy_fp2(eNB2UE[att_eNB_id][UE_id]->ch[0],eNB2UE[att_eNB_id][UE_id]->channel_length)*eNB2UE[att_eNB_id][UE_id]->channel_length;
+      printf("[SIM][DL] Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
 	     eNB_id,UE_id,
-	     PHY_vars_eNB_g[att_eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower,
-	     //	     enb_data[att_eNB_id]->tx_power_dBm,
-	     
+	     enb_data[att_eNB_id]->tx_power_dBm,
 	     eNB2UE[att_eNB_id][UE_id]->path_loss_dB);
-      //LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",att_eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
-       LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
+      printf("[SIM][DL] Channel eNB %d => UE %d : gain %f dB (%f)\n",att_eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
 
     
       // calculate the SNR for the attached eNB
@@ -215,9 +205,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
       channel_desc_t *desc1;
       s32 **dl_channel_est = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0];
       s16 nb_samples=301;
-      //      double scale = pow(10.0,(enb_data[att_eNB_id]->tx_power_dBm + eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
-      double scale = pow(10.0,(PHY_vars_eNB_g[att_eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower+eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
-      //      printf("[CHANNEL_SIM] scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
+      double scale = pow(10.0,(enb_data[att_eNB_id]->tx_power_dBm + eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
+      printf("[CHANNEL_SIM] scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
       desc1 = eNB2UE[att_eNB_id][UE_id];
       freq_channel(desc1,frame_parms->N_RB_DL,nb_samples);
       //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
@@ -267,55 +256,41 @@ void do_DL_sig(double **r_re0,double **r_im0,
       }
 
       for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-	//	if (((double)PHY_vars_UE_g[UE_id]->tx_power_dBm + 
-	//	     eNB2UE[eNB_id][UE_id]->path_loss_dB) <= -107.0)
-	//	  break;
 	frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
 	txdata = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0];
 	slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
-	slot_offset_meas = ((next_slot&1)==0) ? slot_offset : (slot_offset-(frame_parms->samples_per_tti>>1));
+      
 	tx_pwr = dac_fixed_gain(s_re,
 				s_im,
 				txdata,
 				slot_offset,
 				frame_parms->nb_antennas_tx,
 				frame_parms->samples_per_tti>>1,
-				slot_offset_meas,
-				frame_parms->ofdm_symbol_size,
 				14,
-				//				enb_data[eNB_id]->tx_power_dBm); 
-				PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
+				enb_data[eNB_id]->tx_power_dBm); 
 #ifdef DEBUG_SIM
-	LOG_D(OCM,"eNB %d: tx_pwr %f dBm, for slot %d (subframe %d)\n",
-	       eNB_id,
-	       10*log10(tx_pwr),
-	       next_slot,
-	       next_slot>>1);
+	printf("[SIM][DL] eNB %d: tx_pwr %f dB for slot %d (subframe %d)\n",eNB_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
+
 	//eNB2UE[eNB_id][UE_id]->path_loss_dB = 0;
 	multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,hold_channel);
-#ifdef DEBUG_SIM	  
-	rx_pwr = signal_energy_fp2(eNB2UE[eNB_id][UE_id]->ch[0],
-				   eNB2UE[eNB_id][UE_id]->channel_length)*eNB2UE[eNB_id][UE_id]->channel_length;
-	LOG_D(OCM,"Channel eNB %d => UE %d : Channel gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
-#endif
 	
-	
+	rx_pwr = signal_energy_fp2(eNB2UE[eNB_id][UE_id]->ch[0],eNB2UE[eNB_id][UE_id]->channel_length)*eNB2UE[eNB_id][UE_id]->channel_length;
 #ifdef DEBUG_SIM
-	//	for (i=0;i<eNB2UE[eNB_id][UE_id]->channel_length;i++)
-	//	  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
+	//		for (i=0;i<eNB2UE[eNB_id][UE_id]->channel_length;i++)
+	//		  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
 
 	printf("[SIM][DL] Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
 	       eNB_id,UE_id,
-	       (double)PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower,
-	       //	       enb_data[eNB_id]->tx_power_dBm,
+	       enb_data[eNB_id]->tx_power_dBm,
 	       eNB2UE[eNB_id][UE_id]->path_loss_dB);
+	printf("[SIM][DL] Channel eNB %d => UE %d : Channel gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
 
 #endif
+	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM      
-	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,512,0);
-	printf("[SIM][DL] UE %d : rx_pwr %f dBm for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
+	printf("[SIM][DL] UE %d : rx_pwr %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif      
 	
 	if (eNB2UE[eNB_id][UE_id]->first_run == 1)
@@ -354,11 +329,9 @@ void do_DL_sig(double **r_re0,double **r_im0,
 		     1e3/eNB2UE[eNB_id][UE_id]->BW,  // sampling time (ns)
 		     (double)PHY_vars_UE_g[UE_id]->rx_total_gain_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 		     
-	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,512,0);
+	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
-	printf("[SIM][DL] UE %d : ADC in (eNB %d) %f dB for slot %d (subframe %d)\n",
-	       UE_id,eNB_id,
-	       10*log10(rx_pwr),next_slot,next_slot>>1);  
+	printf("[SIM][DL] UE %d : ADC in (eNB %d) %f dB for slot %d (subframe %d)\n",UE_id,eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif    	
 	for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
 	  for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
@@ -369,7 +342,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	}
 	
       }      
-      rx_pwr = signal_energy_fp(r_re,r_im,frame_parms->nb_antennas_rx,512,0);
+      rx_pwr = signal_energy_fp(r_re,r_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
       printf("[SIM][DL] UE %d : ADC in %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif    
@@ -386,7 +359,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  frame_parms->samples_per_tti>>1,
 	  12);
       
-      rx_pwr2 = signal_energy(rxdata[0]+slot_offset,512);
+      rx_pwr2 = signal_energy(rxdata[0]+slot_offset,frame_parms->samples_per_tti>>1);
 #ifdef DEBUG_SIM    
       printf("[SIM][DL] UE %d : rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d), writing to %p\n",UE_id, 10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1,rxdata);  
 #endif
@@ -404,15 +377,14 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   double tx_pwr, rx_pwr;
   s32 rx_pwr2;
   u32 i;
-  u32 slot_offset,slot_offset_meas;
+  u32 slot_offset;
 
-  u8 hold_channel=1;
-  u8 aatx,aarx;
+  u8 hold_channel;
 
-  if (next_slot==4) {
+  if (next_slot==4)
     hold_channel = 0;
-  }
-
+  else
+    hold_channel = 1;
 
   if (abstraction_flag!=0) {
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
@@ -424,11 +396,9 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   }
   else { //abstraction
 
-    /*
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
       do_OFDM_mod(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF,PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdata,next_slot,&PHY_vars_UE_g[UE_id]->lte_frame_parms);
     }
-    */
 
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       // Clear RX signal for eNB = eNB_id
@@ -441,104 +411,100 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       
       // Compute RX signal for eNB = eNB_id
       for (UE_id=0;UE_id<NB_UE_INST;UE_id++){
-
+	
 	txdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdata;
 	frame_parms = &PHY_vars_UE_g[UE_id]->lte_frame_parms;
 	slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
-	slot_offset_meas = ((next_slot&1)==0) ? slot_offset : (slot_offset-(frame_parms->samples_per_tti>>1));
-
-	if (((double)PHY_vars_UE_g[UE_id]->tx_power_dBm + 	
-	     UE2eNB[UE_id][eNB_id]->path_loss_dB) <= -125.0) {
-	  
-	  // don't simulate a UE that is 
-	}
-	else {
-	  
-	  tx_pwr = dac_fixed_gain(s_re,
-				  s_im,
-				  txdata,
-				  slot_offset,
-				  frame_parms->nb_antennas_tx,
-				  frame_parms->samples_per_tti>>1,
-				  slot_offset_meas,
-				  frame_parms->ofdm_symbol_size,
-				  14,
-				  PHY_vars_UE_g[UE_id]->tx_power_dBm);
-	  //				ue_data[UE_id]->tx_power_dBm); 
+	tx_pwr = dac_fixed_gain(s_re,
+				s_im,
+				txdata,
+				slot_offset,
+				frame_parms->nb_antennas_tx,
+				frame_parms->samples_per_tti>>1,
+				14,
+				ue_data[UE_id]->tx_power_dBm); 
 #ifdef DEBUG_SIM
-	  printf("[SIM][UL] UE %d tx_pwr %f dBm for slot %d (subframe %d, slot_offset %d, slot_offset_meas %d)\n",UE_id,10*log10(tx_pwr),next_slot,next_slot>>1,slot_offset,slot_offset_meas);
+	printf("[SIM][UL] UE %d tx_pwr %f dB for slot %d (subframe %d)\n",UE_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
-	  
-	  
-	  rx_pwr = signal_energy_fp(s_re,s_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
+	
+	
+	rx_pwr = signal_energy_fp(s_re,s_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
-	  printf("[SIM][UL] UE %d rx_pwr %f dBm for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
+	printf("[SIM][UL] UE %d tx_pwr %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif
-	  
-	  multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
-			    frame_parms->samples_per_tti>>1,hold_channel);
+	/*
+	u8 aarx,aatx,k;
+	for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
+	for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
+	for (k=0;k<UE2eNB[1][0]->channel_length;k++)
+	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
+	*/ 
 
-#ifdef DEBUG_SIM	  
-	  rx_pwr = signal_energy_fp2(UE2eNB[UE_id][eNB_id]->ch[0],
-				     UE2eNB[UE_id][eNB_id]->channel_length)*UE2eNB[UE_id][eNB_id]->channel_length;
-	  printf("[SIM][UL] slot %d Channel UE %d => eNB %d : %f dB (hold %d)\n",next_slot,UE_id,eNB_id,10*log10(rx_pwr),hold_channel);  
+	//UE2eNB[UE_id][eNB_id]->path_loss_dB = 0;
+	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
+			  frame_parms->samples_per_tti>>1,hold_channel);
+	/*
+	for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
+	for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
+	for (k=0;k<UE2eNB[1][0]->channel_length;k++)
+	printf("AMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
+	*/
+
+	rx_pwr = signal_energy_fp2(UE2eNB[UE_id][eNB_id]->ch[0],UE2eNB[UE_id][eNB_id]->channel_length);
+#ifdef DEBUG_SIM
+	printf("[SIM][UL] Channel UE %d => eNB %d : %f dB\n",UE_id,eNB_id,10*log10(rx_pwr));  
 #endif
-	  
+	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
-	  rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
-	  printf("[SIM][UL] eNB %d : eNB out %f dB (%f) for slot %d (subframe %d), sptti %d\n",
-		 eNB_id,10*log10(rx_pwr),rx_pwr,next_slot,next_slot>>1,frame_parms->samples_per_tti);  
+	printf("[SIM][UL] eNB %d : eNB out %f dB for slot %d (subframe %d), sptti %d\n",eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1,frame_parms->samples_per_tti);  
 #endif
-	  
-	  
-	  if (UE2eNB[UE_id][eNB_id]->first_run == 1)
-	    UE2eNB[UE_id][eNB_id]->first_run = 0;
-	  
-	  
-	  
-	  for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-	    for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
-	      r_re[aa][i]+=r_re0[aa][i]; 
-	      r_im[aa][i]+=r_im0[aa][i]; 
-	    }
-	  }
-	}
-      } //UE_id
+	if (UE2eNB[UE_id][eNB_id]->first_run == 1)
+	  UE2eNB[UE_id][eNB_id]->first_run = 0;
       
 	// RF model
 	/*
-	  rf_rx(r_re0,
-	  r_im0,
-	  NULL,
-	  NULL,
-	  0,
-	  frame_parms->nb_antennas_rx,
-	  frame_parms->samples_per_tti>>1,
-	  1e3/UE2eNB[UE_id][eNB_id]->BW,  // sampling time (ns) 
-	  0.0,               // freq offset (Hz) (-20kHz..20kHz)
-	  0.0,               // drift (Hz) NOT YET IMPLEMENTED
-	  enb_data[eNB_id]->rx_noise_level,                // noise_figure NOT YET IMPLEMENTED
-	  (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
-	  200.0,               // IP3_dBm (dBm)
-	  &UE2eNB[UE_id][eNB_id]->ip,               // initial phase
-	  30.0e3,            // pn_cutoff (kHz)
-	  -500.0,            // pn_amp (dBc) default: 50
-	  0.0,               // IQ imbalance (dB),
-	  0.0);              // IQ phase imbalance (rad)
+	rf_rx(r_re0,
+	      r_im0,
+	      NULL,
+	      NULL,
+	      0,
+	      frame_parms->nb_antennas_rx,
+	      frame_parms->samples_per_tti>>1,
+	      1e3/UE2eNB[UE_id][eNB_id]->BW,  // sampling time (ns) 
+	      0.0,               // freq offset (Hz) (-20kHz..20kHz)
+	      0.0,               // drift (Hz) NOT YET IMPLEMENTED
+	      enb_data[eNB_id]->rx_noise_level,                // noise_figure NOT YET IMPLEMENTED
+	      (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
+	      200.0,               // IP3_dBm (dBm)
+	      &UE2eNB[UE_id][eNB_id]->ip,               // initial phase
+	      30.0e3,            // pn_cutoff (kHz)
+	      -500.0,            // pn_amp (dBc) default: 50
+	      0.0,               // IQ imbalance (dB),
+	      0.0);              // IQ phase imbalance (rad)
 	*/
-      
-      rf_rx_simple(r_re,
-		   r_im,
-		   frame_parms->nb_antennas_rx,
-		   frame_parms->samples_per_tti>>1,
-		   1e3/UE2eNB[0][eNB_id]->BW,  // sampling time (ns) 
-		   (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 
-      rx_pwr = signal_energy_fp(r_re,r_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
+	rf_rx_simple(r_re0,
+		     r_im0,
+		     frame_parms->nb_antennas_rx,
+		     frame_parms->samples_per_tti>>1,
+		     1e3/UE2eNB[UE_id][eNB_id]->BW,  // sampling time (ns) 
+		     (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
+
+
+	for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
+	  for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	    r_re[aa][i]+=r_re0[aa][i]; 
+	    r_im[aa][i]+=r_im0[aa][i]; 
+	    
+	  }
+	}
+	rx_pwr = signal_energy_fp(r_re,r_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
-      printf("[SIM][UL] rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
+	printf("[SIM][UL] rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif
-      
+      } //UE_id
+    
+
       rxdata = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0];
       slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
       
@@ -592,3 +558,66 @@ void init_channel_vars(LTE_DL_FRAME_PARMS *frame_parms, double ***s_re,double **
   
 }
 
+/* 
+void init_channel_descriptors(channel_desc_t **eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],
+			      channel_desc_t **UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],
+			      u8 nb_taps,
+			      u8 channel_length,
+			      double *amps,
+			      double Td,
+			      double BW,
+			      double ricean_factor,
+			      double aoa,
+			      double forgetting_factor,
+			      double maxDoppler,
+			      double snr_dB) {
+  u8 eNB_id,UE_id;
+
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+#ifdef DEBUG_SIM
+      printf("[SIM] Initializing channel from eNB %d to UE %d\n",eNB_id,UE_id);
+#endif
+      (*eNB2UE)[eNB_id][UE_id] = new_channel_desc(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+						  PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						  nb_taps,
+						  channel_length,
+						  amps,
+						  NULL,
+						  NULL,
+						  Td,
+						  BW,
+						  ricean_factor,
+						  aoa,
+						  forgetting_factor,
+						  maxDoppler,
+						  0,
+						  0);
+      
+      (*eNB2UE)[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
+
+      (*UE2eNB)[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
+						PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
+						nb_taps,
+						channel_length,
+						amps,
+						NULL,
+						NULL,
+						Td,
+						BW,
+						ricean_factor,
+						aoa,
+						forgetting_factor,
+						maxDoppler,
+						0,
+						0);
+      
+      (*UE2eNB)[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;// - 20;
+#ifdef DEBUG_SIM
+      printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,(*eNB2UE)[eNB_id][UE_id]->path_loss_dB);
+      printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,(*UE2eNB)[UE_id][eNB_id]->path_loss_dB);
+#endif
+    }
+  }
+}
+*/

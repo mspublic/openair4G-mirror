@@ -4,10 +4,11 @@
 #include "defs.h"
 #include "PHY/defs.h"
 #include "filt96_32.h"
-//#define DEBUG_CH 
+//#define DEBUG_CH
 int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
-			      u8 eNB_id,
 			      u8 eNB_offset,
+			      int **dl_ch_estimates,
+			      int **rxdataF,
 			      unsigned char Ns,
 			      unsigned char p,
 			      unsigned char l,
@@ -26,8 +27,6 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   u16 Nid_cell = phy_vars_ue->lte_frame_parms.Nid_cell;
   u8 Nid1 = Nid_cell/3,Nid2=Nid_cell%3;
   u8 nushift;
-  int **dl_ch_estimates=phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[(eNB_id+eNB_offset)%3];
-  int **rxdataF=phy_vars_ue->lte_ue_common_vars.rxdataF;
 
   // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
   Nid2 = (Nid2+eNB_offset)%3;
@@ -52,6 +51,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   symbol_offset = phy_vars_ue->lte_frame_parms.ofdm_symbol_size*symbol;
 
   k = (nu + nushift)%6;
+  if (k > 6)
+    k -=6;
   
 #ifdef DEBUG_CH
   printf("Channel Estimation : ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d\n",ch_offset,phy_vars_ue->lte_frame_parms.ofdm_symbol_size,phy_vars_ue->lte_frame_parms.Ncp,l,Ns,k);

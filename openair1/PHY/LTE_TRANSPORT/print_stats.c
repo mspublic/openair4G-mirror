@@ -53,7 +53,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 
   len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
   len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
-		 phy_vars_ue->frame,
+		 mac_xface->frame,
 		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[0],
 		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
 		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
@@ -192,7 +192,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
   for (eNB=0;eNB<number_of_cards;eNB++) {
     len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
 		   eNB,number_of_cards,
-		   phy_vars_eNB->frame,
+		   mac_xface->frame,
 		   phy_vars_eNB->rx_total_gain_eNB_dB,
 		   phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_tot_dBm,
 		   phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_dB[0],
@@ -206,8 +206,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
     len += sprintf(&buffer[len],"\n[eNB PROC] PERFORMANCE PARAMETERS\n");
     /*
     len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH Bitrate for the System %dkbps\n",((phy_vars_eNB->eNB_UE_stats[0].dlsch_bitrate + phy_vars_eNB->eNB_UE_stats[1].dlsch_bitrate)/1000));
-    len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",((phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/1000),phy_vars_eNB->frame+1);
-    len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/((phy_vars_eNB->frame+1)*10));
+    len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",((phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/1000),mac_xface->frame+1);
+    len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/((mac_xface->frame+1)*10));
     */
 
     for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
@@ -222,15 +222,15 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 #else
       phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
       phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits +  phy_vars_eNB->total_transmitted_bits;
-      phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
+      phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].average_throughput + phy_vars_eNB->total_system_throughput;
       success = success + ((phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[0]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[1]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[2]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[3]) - (phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[0]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[1]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[2]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[3]));
 #endif
     }
 
-    len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH Bitrate for the System %dkbps\n",(phy_vars_eNB->total_dlsch_bitrate/1000));
-    len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",(phy_vars_eNB->total_transmitted_bits/1000),phy_vars_eNB->frame+1);
-    len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->total_system_throughput)/((phy_vars_eNB->frame+1)*10));
-    len += sprintf(&buffer[len],"[eNB PROC] Total Successful DLSCH Transmissions %d in %dframe(s)\n",success,phy_vars_eNB->frame+1);
+    len += sprintf(&buffer[len],"[eNB PROC] Instantaneous DLSCH Bitrate for the System %dkbps\n",(phy_vars_eNB->total_dlsch_bitrate/1000));
+    len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",(phy_vars_eNB->total_transmitted_bits/1000),mac_xface->frame+1);
+    len += sprintf(&buffer[len],"[eNB PROC] Average DLSCH Throughput for the System %dKbps\n",(phy_vars_eNB->total_system_throughput)/((mac_xface->frame+1)*10));
+    len += sprintf(&buffer[len],"[eNB PROC] Total Successful DLSCH Transmissions %d in %dframe(s)\n",success,mac_xface->frame+1);
     if(phy_vars_eNB->transmission_mode[0] == 5){
 
     len += sprintf(&buffer[len],"[eNB PROC] For TM5:FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->FULL_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);

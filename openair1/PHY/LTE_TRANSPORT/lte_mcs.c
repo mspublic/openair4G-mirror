@@ -108,36 +108,27 @@ u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subf
 
   nsymb = (frame_parms->Ncp==0) ? 14 : 12;
 
-  //      printf("adjust_G2 : symbol %d, subframe %d\n",symbol,subframe);
-  if ((subframe!=0) && (subframe!=5) && (subframe!=6))  // if not PBCH/SSS or SSS
+  //    printf("adjust_G_tdd2 : symbol %d, subframe %d\n",symbol,subframe);
+  if ((subframe!=0) && (subframe!=5))  // if not PBCH/SSS or SSS
     return(0);
 
-  //first half of slot and TDD (no adjustments in first slot except for subframe 6 - PSS)
-  if ((symbol<(nsymb>>1))&&
-      (frame_parms->frame_type == 1)&&
-      (subframe!=6))
+  //first half of slot
+  if (symbol<(nsymb>>1))
     return(0);
 
   // after PBCH
   if (frame_parms->frame_type==1) { //TDD 
-    if ((symbol>((nsymb>>1)+3)) && 
-	(symbol!=(nsymb-1)))  ///SSS
+    if ((symbol>((nsymb>>1)+3)) && (symbol!=(nsymb-1)))
       return(0);
 
-    if ((subframe==5) && (symbol!=(nsymb-1))) ///SSS
-      return(0);
-    if ((subframe==6) && (symbol!=2)) /// PSS
+    if ((subframe==5) && (symbol!=(nsymb-1)))
       return(0);
   }
   else {  // FDD
-    if ((symbol>((nsymb>>1)+3)) || 
-	(symbol<((nsymb>>1)-2))) 
+    if ((symbol>((nsymb>>1)+3)) && (symbol!=(nsymb-1)) && (symbol!=(nsymb-2)))
       return(0);
 
-    if ((subframe==5) && (symbol!=((nsymb>>1)-1))&& (symbol!=((nsymb>>1)-2)))
-      return(0);
-    
-    if (subframe==6)
+    if ((subframe==5) && (symbol!=(nsymb-1))&& (symbol!=(nsymb-1)))
       return(0);
   }
 
@@ -189,8 +180,8 @@ u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subf
       }
     }
   }
-  //    printf("re_pbch_sss %d\n",re_pbch_sss);
-  return(re_pbch_sss);
+  //  printf("re_pbch_sss %d\n",re_pbch_sss);
+  return(((frame_parms->frame_type==0) ? 2 : 1) * re_pbch_sss);
 }
 
 u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe) {
@@ -198,7 +189,7 @@ u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
   u16 rb,re_pbch_sss=0;
   u8 rb_alloc_ind;
 
-  if ((subframe!=0) && (subframe!=5) && (subframe!=6))  // if not PBCH/SSS/PSS or SSS/PSS
+  if ((subframe!=0) && (subframe!=5))  // if not PBCH/SSS or SSS
     return(0);
 
 
@@ -221,7 +212,7 @@ u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
       
       if (rb_alloc_ind==1) {
 	if ((rb==(frame_parms->N_RB_DL>>1)-3) || 
-	    (rb==((frame_parms->N_RB_DL>>1)+3))) {  //rb taken by PBCH/SSS
+	    (rb==((frame_parms->N_RB_DL>>1)+3))) {
 	  re_pbch_sss += 6;
 	}
 	else
@@ -250,7 +241,7 @@ u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
       }
     }
   }
-  //    printf("re_pbch_sss %d\n",re_pbch_sss);
+  //  printf("re_pbch_sss %d\n",re_pbch_sss);
   if (subframe==0) {  //PBCH+SSS+PSS
     if (frame_parms->frame_type == 1) { // TDD
       if (frame_parms->mode1_flag==0)
@@ -271,15 +262,11 @@ u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
 	//SISO so PBCH 3+(5/6) symbols, PSS+SSS 2symbols REs => (35/6)*re_pbch_sss for normal CP,  
 	// 2+10/6 symbols, SSS+PSS 2 symbols => (34/6)*re_pbch_sss for ext. CP
 	return((-frame_parms->Ncp+35)*re_pbch_sss * mod_order/6);
- 
+
     }
   }
-  else if (subframe == 5)  // SSS+PSS for FDD, SSS for TDD
+  else  // SSS+PSS
     return(((frame_parms->frame_type==0)?2:1)*re_pbch_sss * 1 * mod_order);
-  else if ((subframe == 6)&&(frame_parms->frame_type == 1)) // PSS for TDD
-    return(re_pbch_sss * 1 * mod_order);
-
-  return(0);
 }
 
 u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe) {

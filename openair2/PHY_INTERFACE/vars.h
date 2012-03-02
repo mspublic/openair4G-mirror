@@ -10,6 +10,7 @@
 #endif
 
 
+unsigned int frame;
 unsigned int mac_debug;
 
 //MAC_xface *mac_xface;

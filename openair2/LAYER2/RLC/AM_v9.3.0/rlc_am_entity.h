@@ -31,15 +31,12 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
 * \note The rlc_am_entity_t structure store protocol variables, statistic variables, allocation variables, buffers and other miscellaneous variables.
 * \bug
 * \warning
 */
-/** @defgroup _rlc_am_internal_impl_ RLC AM Layer Internal Reference Implementation
-* @ingroup _rlc_am_impl_
-* @{
-*/
-
 #    ifndef __RLC_AM_ENTITY_H__
 #        define __RLC_AM_ENTITY_H__
 //-----------------------------------------------------------------------------
@@ -58,7 +55,6 @@ typedef struct rlc_am_entity {
   module_id_t     module_id;                          /*!< \brief Virtualization index for this protocol instance, means handset or eNB index. */
   u16_t           rb_id;                              /*!< \brief Radio bearer identifier, for statistics and trace purpose. */
   boolean_t       is_data_plane;                      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
-  boolean_t       is_enb;                             /*!< \brief To know if the RLC belongs to a eNB or UE. */
 
   signed int      sdu_buffer_occupancy;               /*!< \brief Number of bytes of unsegmented SDUs. */
   signed int      retransmission_buffer_occupancy;    /*!< \brief Number of bytes of PDUs in retransmission buffer waiting for a ACK. */
@@ -174,5 +170,4 @@ typedef struct rlc_am_entity {
   u8_t              location;                                /*!< \brief EnodeB / UE. */
 
 } rlc_am_entity_t;
-/** @} */
 #    endif

@@ -14,7 +14,7 @@ OPENAIR3 = $(OPENAIR3_DIR)
 
 CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
 
-LFLAGS = -lm -lblas -lxml2 -lrt
+LFLAGS = -lm -lblas
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)"  "4.4.3"
@@ -23,11 +23,8 @@ endif
 ifeq "$(GCCVERSION)" "4.5.2"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
-ifeq "$(GCCVERSION)" "4.6.1"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
 
-CFLAGS += -DOPENAIR_LTE #-DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE
+CFLAGS += -DOPENAIR_LTE #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE
 #CFLAGS += -DTBS_FIX
 CFLAGS += -DCELLULAR
 
@@ -70,58 +67,35 @@ ifdef PERFECT_CE
 CFLAGS += -DPERFECT_CE
 endif
 
-ifdef BIT8_TX
-CFLAGS += -DBIT8_TX
-endif
-
-CFLAGS += -DNO_RRM -DOPENAIR1 #-DOPENAIR2 #-DPHY_ABSTRACTION
+CFLAGS += -DNO_RRM -DOPENAIR2 #-DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
-ifdef ENABLE_FXP
-CFLAGS += -DENABLE_FXP # Fxp only
-else
- ifdef ENABLE_FLP
- CFLAGS += -DENABLE_FLP # dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() are flp (independently)	
- else
-  ifdef ENABLE_FULL_FLP
-  CFLAGS += -DENABLE_FULL_FLP # Flp inside of rx_pdsch() (dlsch_detection_mrc(), dual_stream_correlation(), channel_compensation_prec(), qam16_qam16_mu_mimo() and dlsch_16qam_16qam_llr)
-  else
-  CFLAGS += -DENABLE_FXP # Fxp only by default
-  endif
- endif
-endif
-
-ifdef COMPARE_FLP_AND_FXP
-CFLAGS += -DCOMPARE_FLP_AND_FXP
-endif
 
 include $(TOP_DIR)/PHY/Makefile.inc
-#SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
-include $(TOP_DIR)/SCHED/Makefile.inc
+SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
+#include $(TOP_DIR)/SCHED/Makefile.inc
 include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
-CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) $(UTIL_incl)
-# EXTRA_CFLAGS = 
+CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3)
+EXTRA_CFLAGS = 
 
 #STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
 #LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 LAYER2_OBJ = $(OPENAIR2_DIR)/LAYER2/MAC/lte_transport_init.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) $(LOG_OBJS) #$(ASN1_MSG_OBJS) 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) #$(ASN1_MSG_OBJS) 
 #OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)  
 
 ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
 endif
 
-OBJ += openair_hw.o
-
-all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim
+all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
@@ -158,10 +132,6 @@ prachsim : $(OBJ) prachsim.c
 ulsim : $(OBJ) ulsim.c #ulsim_form.c
 	@echo "Compiling [ulsim.c]"
 	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm  -lblas
-
-syncsim : $(OBJ) syncsim.c
-	@echo "Compiling syncsim.c"
-	@$(CC) syncsim.c  -o syncsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
 
 clean :
 	rm -f $(OBJ)

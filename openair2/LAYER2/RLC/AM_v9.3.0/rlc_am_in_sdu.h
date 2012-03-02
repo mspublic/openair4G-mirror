@@ -31,13 +31,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
-*/
-/** @defgroup _rlc_am_internal_input_sdu_impl_ RLC AM Input SDU buffer Internal Reference Implementation
-* @ingroup _rlc_am_internal_impl_
-* @{
 */
 #    ifndef __RLC_AM_IN_SDU_H__
 #        define __RLC_AM_IN_SDU_H__
@@ -57,30 +55,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #                define public_rlc_am_in_sdu(x)     extern x
 #            endif
 #        endif
-/*! \fn void rlc_am_free_in_sdu (rlc_am_entity_t *rlcP, u32_t frame, unsigned int index_in_bufferP)
-* \brief    Free a higher layer SDU stored in input_sdus[] buffer.
-* \param[in]  rlcP                      RLC AM protocol instance pointer.
-* \param[in]  frame                     Frame index.
-* \param[in]  index_in_bufferP          Position index of the SDU.
-* \note Update also the RLC AM instance variables nb_sdu, current_sdu_index, nb_sdu_no_segmented.
-*/
-protected_rlc_am_in_sdu(void rlc_am_free_in_sdu      (rlc_am_entity_t *rlcP, u32_t frame, unsigned int index_in_bufferP);)
-
-
-/*! \fn void rlc_am_free_in_sdu_data (rlc_am_entity_t *rlcP, unsigned int index_in_bufferP)
-* \brief    Free a higher layer SDU data part, the SDU is stored in input_sdus[] buffer.
-* \param[in]  rlcP                      RLC AM protocol instance pointer.
-* \param[in]  index_in_bufferP          Position index of the SDU.
-* \note This procedure is called when the SDU segmentation is done for this SDU. Update also the RLC AM instance variable nb_sdu_no_segmented.
-*/
+protected_rlc_am_in_sdu(void rlc_am_free_in_sdu      (rlc_am_entity_t *rlcP, unsigned int index_in_bufferP);)
 protected_rlc_am_in_sdu(void rlc_am_free_in_sdu_data (rlc_am_entity_t *rlcP, unsigned int index_in_bufferP);)
-
-
-/*! \fn signed int rlc_am_in_sdu_is_empty(rlc_am_entity_t *rlcP)
-* \brief    Indicates if the input SDU buffer for incoming higher layer SDUs is empty or not.
-* \param[in]  rlcP                      RLC AM protocol instance pointer.
-* \return 1 if the buffer is empty, else 0.
-*/
 protected_rlc_am_in_sdu(signed int rlc_am_in_sdu_is_empty(rlc_am_entity_t *rlcP);)
-/** @} */
+
 #    endif

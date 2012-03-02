@@ -59,10 +59,8 @@
 
 //#define IDROMEL_NEMO 1
 
-#ifdef USER_MODE
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#endif
 
 #ifdef NAS_NETLINK
 
@@ -102,14 +100,10 @@ pdcp_fifo_flush_sdus ()
 
   while ((sdu) && (cont)) {
 
-#ifdef USER_MODE
-    // asjust the instance id when passing sdu to IP
-    ((pdcp_data_ind_header_t *)(sdu->data))->inst = (((pdcp_data_ind_header_t *)(sdu->data))->inst >= NB_eNB_INST) ?
+    // asjust the instance id when passing sdu to IP 
+    ((pdcp_data_ind_header_t *)(sdu->data))->inst = (((pdcp_data_ind_header_t *)(sdu->data))->inst >= NB_eNB_INST) ? 
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - NB_eNB_INST +oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local :// UE
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - oai_emulation.info.first_ue_local; // ENB
-#else
-    ((pdcp_data_ind_header_t *)(sdu->data))->inst = 0;
-#endif
 
 #ifdef PDCP_DEBUG
 	  msg("[PDCP][INFO] PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
@@ -139,7 +133,7 @@ pdcp_fifo_flush_sdus ()
       nas_nlh->nlmsg_len = pdcp_output_header_bytes_to_write;
 #endif //LINUX
 #endif //NAS_NETLINK
-
+  
       bytes_wrote = pdcp_output_header_bytes_to_write;
 #endif //USER_MODE
 
@@ -173,7 +167,7 @@ pdcp_fifo_flush_sdus ()
 	    break;
 	  }
 #endif // LINUX
-#endif //NAS_NETLINK
+#endif //NAS_NETLINK	  
 	  bytes_wrote= pdcp_output_sdu_bytes_to_write;
 #endif // USER_MODE
 
@@ -186,10 +180,10 @@ pdcp_fifo_flush_sdus ()
 #endif //PDCP_DEBUG
           if (bytes_wrote > 0) {
             pdcp_output_sdu_bytes_to_write -= bytes_wrote;
-
+	    
             if (!pdcp_output_sdu_bytes_to_write) { // OK finish with this SDU
 	      // msg("rb sent a sdu qos_sap %d\n",sapiP);
-
+	      
               list_remove_head (&pdcp_sdu_list);
               free_mem_block (sdu);
               cont = 1;
@@ -238,7 +232,7 @@ pdcp_fifo_flush_sdus ()
 
            rt_pend_linux_srq (pdcp_2_nas_irq);
       } else {
-        msg ("[PDCP] TTI %d: ERROR IF IP STACK WANTED : NOTIF PACKET(S) pdcp_2_nas_irq not initialized : %d\n",
+        msg ("[PDCP] TTI %d: ERROR IF IP STACK WANTED : NOTIF PACKET(S) pdcp_2_nas_irq not initialized : %d\n", 
 	     Mac_rlc_xface->frame,
 	     pdcp_2_nas_irq);
       }
@@ -266,8 +260,8 @@ pdcp_fifo_read_input_sdus_remaining_bytes ()
   if (pdcp_input_sdu_remaining_size_to_read > 0) {
 
     // printk("[PDCP][INFO] read_input_sdus pdcp_input_sdu_remaining_size_to_read = %d \n", pdcp_input_sdu_remaining_size_to_read);
-    bytes_read = rtf_get (NAS2PDCP_FIFO,
-			  &(pdcp_input_sdu_buffer[pdcp_input_sdu_size_read]),
+    bytes_read = rtf_get (NAS2PDCP_FIFO, 
+			  &(pdcp_input_sdu_buffer[pdcp_input_sdu_size_read]), 
 			  pdcp_input_sdu_remaining_size_to_read);
 
     //printk("[PDCP][INFO] read fifo returned %d \n", bytes_read);
@@ -282,9 +276,9 @@ pdcp_fifo_read_input_sdus_remaining_bytes ()
         return 0;
       } else {
 #ifdef PDCP_DEBUG
-	msg("[PDCP][INFO]  TTI %d: IP->RADIO RECEIVED COMPLETE SDU size %d inst %d rb %d\n",
+	msg("[PDCP][INFO]  TTI %d: IP->RADIO RECEIVED COMPLETE SDU size %d inst %d rb %d\n", 
 	    Mac_rlc_xface->frame,
-	    pdcp_input_sdu_size_read,
+	    pdcp_input_sdu_size_read, 
 	    pdcp_input_header.inst,
 	    pdcp_input_header.rb_id);
 #endif //PDCP_DEBUG
@@ -292,9 +286,9 @@ pdcp_fifo_read_input_sdus_remaining_bytes ()
 #ifdef IDROMEL_NEMO
 	pdcp_read_header.inst = 0;
 #endif
-        pdcp_data_req (pdcp_input_header.inst,
-		       pdcp_input_header.rb_id,
-		       pdcp_input_header.data_size,
+        pdcp_data_req (pdcp_input_header.inst, 
+		       pdcp_input_header.rb_id, 
+		       pdcp_input_header.data_size, 
 		       pdcp_input_sdu_buffer);
 
         // not necessary
@@ -344,17 +338,17 @@ pdcp_fifo_read_input_sdus ()
 
         if (pdcp_input_index_header == sizeof (pdcp_data_req_header_t)) {
 #ifdef PDCP_DEBUG
-	  msg("[PDCP] TTI %d IP->RADIO READ HEADER sdu size %d\n",
+	  msg("[PDCP] TTI %d IP->RADIO READ HEADER sdu size %d\n", 
 	      Mac_rlc_xface->frame,
 	      pdcp_input_header.data_size);
 #endif //PDCP_DEBUG
           pdcp_input_index_header = 0;
 	  if(pdcp_input_header.data_size<0){
 	    msg("[PDCP][FATAL ERROR] READ_FIFO: DATA_SIZE %d < 0\n",pdcp_input_header.data_size);
-
+	    
 	    mac_xface->macphy_exit("");
 	    return 0;
-	  }
+	  }   
 	  pdcp_input_sdu_remaining_size_to_read = pdcp_input_header.data_size;
           pdcp_input_sdu_size_read     = 0;
           // we know the size of the sdu, so read the sdu;
@@ -393,9 +387,9 @@ pdcp_fifo_read_input_sdus ()
 #else
       len = -1;
 #endif
-
+  
       if (len<0) {
-	//		printf("[PDCP][NETLINK %d] nothing in pdcp NAS socket\n", nas_sock_fd);
+	//	printf("[PDCP][NETLINK %d] nothing in pdcp NAS socket\n", nas_sock_fd);
        }
       else {
 #ifdef PDCP_DEBUG
@@ -428,8 +422,8 @@ pdcp_fifo_read_input_sdus ()
       len = recvmsg(nas_sock_fd, &nas_msg, 0);
 #else
       len = -1;
-#endif //LINUX
-
+#endif //LINUX      
+      
       if (len<0) {
 	// nothing in pdcp NAS socket
       }
@@ -448,25 +442,25 @@ pdcp_fifo_read_input_sdus ()
 #ifdef IDROMEL_NEMO
 	pdcp_read_header.inst = 0;
 #endif
-	pdcp_read_header.inst = (pdcp_read_header.inst >= oai_emulation.info.nb_enb_local) ?
+	pdcp_read_header.inst = (pdcp_read_header.inst >= oai_emulation.info.nb_enb_local) ? 
 	  pdcp_read_header.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
 	  pdcp_read_header.inst +  oai_emulation.info.first_enb_local;
 
 #ifdef PDCP_DEBUG
 	printf("[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
-	       Mac_rlc_xface->frame,
+	       Mac_rlc_xface->frame, 
 	       pdcp_read_header.inst,
 	       len,
 	       nas_nlh->nlmsg_len-sizeof(struct nlmsghdr),
 	       pdcp_read_header.rb_id);
 #endif PDCP_DEBUG
-
+	  
 	pdcp_data_req(pdcp_read_header.inst,
 		      pdcp_read_header.rb_id,
 		      pdcp_read_header.data_size,
 		      pdcp_read_payload);
       }
-
+      
     }
 }
 #endif

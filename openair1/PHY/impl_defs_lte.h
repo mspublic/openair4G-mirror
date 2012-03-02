@@ -58,10 +58,6 @@
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 
 #define SSS_AMP 1148
-
-#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
-
-
 typedef enum {
   normal=0,
   extended=1
@@ -325,17 +321,17 @@ typedef struct {
   /// Power parameter for RRCConnectionRequest
   s8 deltaPreambleMsg3;
   /// deltaF-PUCCH-Format1, see 36.213 (5.1.2)
-  long deltaF_PUCCH_Format1;
+  deltaF_PUCCH_t deltaF_PUCCH_Format1;
   /// deltaF-PUCCH-Format1a, see 36.213 (5.1.2)
-  long deltaF_PUCCH_Format1a;
+  deltaF_PUCCH_t deltaF_PUCCH_Format1a;
   /// deltaF-PUCCH-Format1b, see 36.213 (5.1.2)
-  long deltaF_PUCCH_Format1b;
+  deltaF_PUCCH_t deltaF_PUCCH_Format1b;
   /// deltaF-PUCCH-Format2, see 36.213 (5.1.2)
-  long deltaF_PUCCH_Format2;
+  deltaF_PUCCH_t deltaF_PUCCH_Format2;
   /// deltaF-PUCCH-Format2a, see 36.213 (5.1.2)
-  long deltaF_PUCCH_Format2a;
+  deltaF_PUCCH_t deltaF_PUCCH_Format2a;
   /// deltaF-PUCCH-Format2b, see 36.213 (5.1.2)
-  long deltaF_PUCCH_Format2b;
+  deltaF_PUCCH_t deltaF_PUCCH_Format2b;
 } UL_POWER_CONTROL_CONFIG_COMMON;
 
 typedef union {
@@ -414,11 +410,7 @@ typedef struct {
   /// TDD S-subframe configuration (0-9)
   u8 tdd_config_S;
   /// Frequency index of CBMIMO1 card
-  u8 freq_idx;
-  /// Frequency for ExpressMIMO/LIME
-  u32 carrier_freq;
-  /// RX gain for ExpressMIMO/LIME
-  u32 rxgain;
+  u8 freq_idx;               
   /// Turns on second TX of CBMIMO1 card
   u8 dual_tx;                
 /// flag to indicate SISO transmission
@@ -467,12 +459,7 @@ typedef struct {
   u8 SIwindowsize;
   /// Period of SI windows used for repetition of one SI message (in frames)
   u16 SIPeriod;
-  /// REGs assigned to PCFICH
-  u16 pcfich_reg[4];
-  /// Index of first REG assigned to PCFICH
-  u8 pcfich_first_reg_idx;
-  /// REGs assigned to PHICH
-  u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
+
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
@@ -496,9 +483,7 @@ typedef struct{
   ///holds the transmit data in the frequency domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   mod_sym_t **txdataF[3];    
   ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
-  s32 **rxdata[3];
-  ///holds the last subframe of received data in time domain after removal of 7.5kHz frequency offset
-  s32 **rxdata_7_5kHz[3];
+  s32 **rxdata[3];           
   ///holds the received data in the frequency domain
   s32 **rxdataF[3];          
   /// holds output of the sync correlator
@@ -606,36 +591,6 @@ typedef struct {
 } LTE_UE_PDSCH;
 
 typedef struct {
-  /// Received frequency-domain signal after extraction
-  s32 **rxdataF_ext;
-  /// Received frequency-domain signal after extraction and channel compensation
-  double **rxdataF_comp;
-  /// Downlink channel estimates extracted in PRBS
-  s32 **dl_ch_estimates_ext;
-  /// Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS
-  double **dl_ch_rho_ext;
-  /// Downlink PMIs extracted in PRBS and grouped in subbands
-  u8 *pmi_ext;
-  /// Magnitude of Downlink Channel (16QAM level/First 64QAM level)
-  double **dl_ch_mag;
-  /// Magnitude of Downlink Channel (2nd 64QAM level)
-  double **dl_ch_magb;
-  /// Cross-correlation of two eNB signals
-  double **rho;
-  /// never used... always send dl_ch_rho_ext instead...
-  double **rho_i;  
-  /// Pointers to llr vectors (2 TBs)
-  s16 *llr[2];
-  /// \f$\log_2(\max|H_i|^2)\f$
-  u8 log2_maxh;
-  /// Pointers to llr vectors (128-bit alignment)
-  s16 **llr128;  
-  //u32 *rb_alloc;
-  //u8 Qm[2];
-  //MIMO_mode_t mimo_mode;
-} LTE_UE_PDSCH_FLP;
-
-typedef struct {
   /// pointers to extracted PDCCH symbols in frequency-domain
   s32 **rxdataF_ext;
   /// pointers to extracted and compensated PDCCH symbols in frequency-domain
@@ -708,21 +663,6 @@ typedef struct {
   s16 *prachF;
   s16 *rxsigF[4];
 } LTE_eNB_PRACH;
-
-typedef struct {
-  /// Preamble index for PRACH (0-63)
-  u8 ra_PreambleIndex;
-  /// RACH MaskIndex
-  u8 ra_RACH_MaskIndex;
-  /// Target received power at eNB (-120 ... -82 dBm)
-  s8 ra_PREAMBLE_RECEIVED_TARGET_POWER;
-  /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
-  u8 ra_TDD_map_index;
-  /// Corresponding RA-RNTI for UL-grant
-  u16 ra_RNTI;
-  /// Pointer to Msg3 payload for UL-grant
-  u8 *Msg3;
-} PRACH_RESOURCES_t;
 
 typedef struct {
   /// Downlink Power offset field

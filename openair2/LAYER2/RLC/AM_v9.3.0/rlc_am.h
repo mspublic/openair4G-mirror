@@ -31,6 +31,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \author GAUTHIER Lionel
 * \date 2010-2011
 * \version
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
 * \note
 * \bug
 * \warning
@@ -83,32 +85,30 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //#        include "rlc_am_very_simple_test.h"
 #endif
 
+typedef volatile struct {
+	u16_t max_retx_threshold;
+	u16_t poll_pdu;
+	u16_t poll_byte;
+	u32_t t_poll_retransmit;
+	u32_t t_reordering;
+	u32_t t_status_prohibit;
+} rlc_am_info_t;
 
 
-/*! \fn void     rlc_am_release (rlc_am_entity_t *rlcP)
-* \brief    Empty function, TO DO.
-* \param[in]  rlcP                      RLC AM protocol instance pointer.
-*/
 public_rlc_am(void     rlc_am_release (rlc_am_entity_t *rlcP);)
 
-/** @addtogroup _rlc_am_init_impl_
-* @{
-*/
 
-/*! \fn void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
-* \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission. After this configuration the RLC AM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state
+/*! \fn void config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
+* \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission. After this configuration the RLC AM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state.
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
-* \param[in]  frame                     Frame index.
-* \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0)
 * \param[in]  module_idP                Virtualized module identifier.
 * \param[in]  config_amP                Configuration parameters for RLC UM instance.
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
-public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP);)
-/** @} */
+public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP);)
 
-/*! \fn void     rlc_am_stat_req     (rlc_am_entity_t *rlcP, unsigned int* tx_pdcp_sdu,unsigned int* tx_pdcp_sdu_discarded,unsigned int* tx_retransmit_pdu_unblock,unsigned int* tx_retransmit_pdu_by_status,unsigned int* tx_retransmit_pdu,unsigned int* tx_data_pdu,unsigned int* tx_control_pdu,unsigned int* rx_sdu,unsigned int* rx_error_pdu,unsigned int* rx_data_pdu,unsigned int* rx_data_pdu_out_of_window,unsigned int* rx_control_pdu)
+/*! \fn void     rlc_am_stat_req     (struct rlc_am_entity_t *rlcP, unsigned int* tx_pdcp_sdu, unsigned int* tx_pdcp_sdu_discarded, unsigned int* tx_data_pdu, unsigned int* rx_sdu, unsigned int* rx_error_pdu, unsigned int* rx_data_pdu, unsigned int* rx_data_pdu_out_of_window)
 * \brief    Request TX and RX statistics of a RLC UM protocol instance.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[out] tx_pdcp_sdu               Number of transmitted SDUs coming from upper layers.
@@ -125,19 +125,18 @@ public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8
 * \param[out] rx_control_pdu            Number of control PDUs received.
 */
 public_rlc_am(void     rlc_am_stat_req     (rlc_am_entity_t *rlcP,
-					    u32_t frame,
-					    unsigned int* tx_pdcp_sdu,
-					    unsigned int* tx_pdcp_sdu_discarded,
-					    unsigned int* tx_retransmit_pdu_unblock,
-					    unsigned int* tx_retransmit_pdu_by_status,
-					    unsigned int* tx_retransmit_pdu,
-					    unsigned int* tx_data_pdu,
-					    unsigned int* tx_control_pdu,
-					    unsigned int* rx_sdu,
-					    unsigned int* rx_error_pdu,
-					    unsigned int* rx_data_pdu,
-					    unsigned int* rx_data_pdu_out_of_window,
-					    unsigned int* rx_control_pdu);)
+                              unsigned int* tx_pdcp_sdu,
+                              unsigned int* tx_pdcp_sdu_discarded,
+                              unsigned int* tx_retransmit_pdu_unblock,
+                              unsigned int* tx_retransmit_pdu_by_status,
+                              unsigned int* tx_retransmit_pdu,
+                              unsigned int* tx_data_pdu,
+                              unsigned int* tx_control_pdu,
+                              unsigned int* rx_sdu,
+                              unsigned int* rx_error_pdu,
+                              unsigned int* rx_data_pdu,
+                              unsigned int* rx_data_pdu_out_of_window,
+                              unsigned int* rx_control_pdu);)
 
 /*! \fn void     rlc_am_get_pdus (void *rlcP)
 * \brief    Request the segmentation of SDUs based on status previously sent by MAC.
@@ -145,48 +144,40 @@ public_rlc_am(void     rlc_am_stat_req     (rlc_am_entity_t *rlcP,
 */
 private_rlc_am(   void     rlc_am_get_pdus (void *argP);)
 
-/*! \fn void rlc_am_rx (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indication)
+/*! \fn void rlc_am_rx (void *rlc, struct mac_data_ind)
 * \brief    Process the received PDUs from lower layer.
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
-* \param[in]  frame                     Frame index.
-* \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0).
 * \param[in]  data_indication           PDUs from MAC.
 */
-protected_rlc_am( void     rlc_am_rx (void *, u32_t frame, struct mac_data_ind);)
+protected_rlc_am( void     rlc_am_rx (void *, struct mac_data_ind);)
 
-/*! \fn struct mac_status_resp rlc_am_mac_status_indication (void *rlcP, u32_t frame,u16_t tbs_sizeP, struct mac_status_ind tx_statusP)
+/*! \fn struct mac_status_resp rlc_am_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind tx_statusP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission.
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
-* \param[in]  frame                     Frame index.
 * \param[in]  tbs_sizeP                 Number of bytes requested by MAC for next transmission.
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-public_rlc_am(    struct mac_status_resp rlc_am_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
+public_rlc_am(    struct mac_status_resp rlc_am_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
 
-/*! \fn struct mac_data_req rlc_am_mac_data_request (void *rlcP, u32_t frame)
+/*! \fn struct mac_data_req rlc_am_mac_data_request (void *rlcP)
 * \brief    Gives PDUs to lower layer MAC.
 * \param[in]  rlcP                      RLC AM protocol instance pointer.
-* \param[in]  frame                     Frame index.
 * \return     A PDU of the previously requested number of bytes, and the updated maximum number of bytes that can be served by RLC instance to MAC for next RLC transmission.
 */
-public_rlc_am(    struct mac_data_req rlc_am_mac_data_request (void *rlcP, u32_t frame);)
+public_rlc_am(    struct mac_data_req rlc_am_mac_data_request (void *rlcP);)
 
-/*! \fn void     rlc_am_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP)
+/*! \fn void     rlc_am_mac_data_indication (void *rlcP, struct mac_data_ind data_indP)
 * \brief    Receive PDUs from lower layer MAC.
 * \param[in]  rlcP             RLC UM protocol instance pointer.
-* \param[in]  frame            Frame index.
-* \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0).
 * \param[in]  data_indP        PDUs from MAC.
 */
-public_rlc_am(    void     rlc_am_mac_data_indication (void *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP);)
+public_rlc_am(    void     rlc_am_mac_data_indication (void *rlcP, struct mac_data_ind data_indP);)
 
-/*! \fn void     rlc_am_data_req (void *rlcP, u32_t frame, mem_block_t *sduP)
+/*! \fn void     rlc_am_data_req (void *rlcP, mem_block_t *sduP)
 * \brief    Interface with higher layers, buffer higher layer SDUS for transmission.
 * \param[in]  rlcP             RLC AM protocol instance pointer.
-* \param[in]  frame            Frame index.
 * \param[in]  sduP             SDU. (A struct rlc_am_data_req is mapped on sduP->data.)
 */
-public_rlc_am(    void     rlc_am_data_req (void *rlcP, u32_t frame, mem_block_t *sduP);)
-/** @} */
+public_rlc_am(    void     rlc_am_data_req (void *rlcP, mem_block_t *sduP);)
 #    endif

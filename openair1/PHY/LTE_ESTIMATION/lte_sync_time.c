@@ -11,9 +11,6 @@
 #include "SCHED/extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
-#ifdef USER_MODE
-#include <math.h>
-#endif
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
@@ -23,60 +20,34 @@
 #endif
 //#define DEBUG_PHY
 
-int* sync_corr_ue0 = NULL;
-int* sync_corr_ue1 = NULL;
-int* sync_corr_ue2 = NULL;
+int* sync_corr_ue = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
 short syncF_tmp[2048*2] __attribute__((aligned(16)));
-
-
+//short sync1F_tmp[256*2] __attribute__((aligned(16)));
+//short sync2F_tmp[256*2] __attribute__((aligned(16)));
 
 int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *common_vars
 
   int i,k;
   //unsigned short ds = frame_parms->log2_symbol_size - 7;
-
-  sync_corr_ue0 = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
-  sync_corr_ue1 = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
-  sync_corr_ue2 = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
-  if (sync_corr_ue0) {
+  
+  sync_corr_ue = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
+  if (sync_corr_ue) {
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue0);
+    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue);
 #endif
     //common_vars->sync_corr = sync_corr;
   }
   else {
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue0 not allocated\n");
-    return(-1);
-  }
-
-  if (sync_corr_ue1) {
-#ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue1);
-#endif
-    //common_vars->sync_corr = sync_corr;
-  }
-  else {
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue1 not allocated\n");
-    return(-1);
-  }
-
-  if (sync_corr_ue2) {
-#ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue2);
-#endif
-    //common_vars->sync_corr = sync_corr;
-  }
-  else {
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue2 not allocated\n");
+    msg("[openair][LTE_PHY][SYNC] sync_corr_ue not allocated\n");
     return(-1);
   }
 
   //  primary_synch0_time = (int *)malloc16((frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
-  primary_synch0_time = (s16 *)malloc16((frame_parms->ofdm_symbol_size)*sizeof(s16)*2);
+  primary_synch0_time = (int *)malloc16((frame_parms->ofdm_symbol_size)*sizeof(int));
   if (primary_synch0_time) {
     //    bzero(primary_synch0_time,(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
-    bzero(primary_synch0_time,(frame_parms->ofdm_symbol_size)*sizeof(s16)*2);
+    bzero(primary_synch0_time,(frame_parms->ofdm_symbol_size)*sizeof(int));
 #ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][SYNC] primary_synch0_time allocated at %p\n", primary_synch0_time);
 #endif
@@ -87,10 +58,10 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
   }
 
   //  primary_synch1_time = (int *)malloc16((frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
-  primary_synch1_time = (s16 *)malloc16((frame_parms->ofdm_symbol_size)*sizeof(s16)*2);
+  primary_synch1_time = (int *)malloc16((frame_parms->ofdm_symbol_size)*sizeof(int));
   if (primary_synch1_time) {
     //    bzero(primary_synch1_time,(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
-    bzero(primary_synch1_time,(frame_parms->ofdm_symbol_size)*sizeof(s16)*2);
+    bzero(primary_synch1_time,(frame_parms->ofdm_symbol_size)*sizeof(int));
 #ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][SYNC] primary_synch1_time allocated at %p\n", primary_synch1_time);
 #endif
@@ -101,10 +72,10 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
   }
 
   //  primary_synch2_time = (int *)malloc16((frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
-  primary_synch2_time = (s16 *)malloc16((frame_parms->ofdm_symbol_size)*sizeof(s16)*2);
+  primary_synch2_time = (int *)malloc16((frame_parms->ofdm_symbol_size)*sizeof(int));
   if (primary_synch2_time) {
     //    bzero(primary_synch2_time,(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
-    bzero(primary_synch2_time,(frame_parms->ofdm_symbol_size)*sizeof(s16)*2);
+    bzero(primary_synch2_time,(frame_parms->ofdm_symbol_size)*sizeof(int));
 #ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][SYNC] primary_synch2_time allocated at %p\n", primary_synch2_time);
 #endif
@@ -132,12 +103,12 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
       frame_parms->twiddle_ifft,    /// complex twiddle factors
       frame_parms->rev,             /// bit reversed permutation vector
       frame_parms->log2_symbol_size,/// log2(FFT_SIZE)
-      (frame_parms->log2_symbol_size/2),
+      frame_parms->log2_symbol_size/2,
       0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
 
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
-    ((s32*)primary_synch0_time)[i] = sync_tmp[2*i];
+    primary_synch0_time[i] = sync_tmp[2*i];
 
   k=frame_parms->ofdm_symbol_size-36;
   for (i=0; i<72; i++) {
@@ -159,7 +130,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
       0) ;                           /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
-    ((s32*)primary_synch1_time)[i] = sync_tmp[2*i];
+    primary_synch1_time[i] = sync_tmp[2*i];
 
   k=frame_parms->ofdm_symbol_size-36;
   for (i=0; i<72; i++) {
@@ -181,10 +152,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
       0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
-    ((s32*)primary_synch2_time)[i] = sync_tmp[2*i];
-
-
-
+    primary_synch2_time[i] = sync_tmp[2*i];
 
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
@@ -193,24 +161,17 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
   write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
 #endif
 #endif
+
+
   return (1);
 }
-
 
 void lte_sync_time_free(void) {
 
 #ifdef USER_MODE
-  if (sync_corr_ue0) {
-    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue0);
-    free(sync_corr_ue0);
-  }
-  if (sync_corr_ue1) {
-    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue1);
-    free(sync_corr_ue1);
-  }
-  if (sync_corr_ue2) {
-    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue2);
-    free(sync_corr_ue2);
+  if (sync_corr_ue) {
+    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue);
+    free(sync_corr_ue);
   }
   if (primary_synch0_time) {
     msg("Freeing primary_sync0_time ...\n");
@@ -225,9 +186,7 @@ void lte_sync_time_free(void) {
     free(primary_synch2_time);
   }
 #endif
-  sync_corr_ue0 = NULL;
-  sync_corr_ue1 = NULL;
-  sync_corr_ue2 = NULL;
+  sync_corr_ue = NULL;
 
 }
 
@@ -248,19 +207,10 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   int sync_out[3] = {0,0,0},sync_out2[3] = {0,0,0};
   int tmp[3] = {0,0,0};
   int length =   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti>>1;
-  s16 foff;
 
   //msg("[SYNC TIME] Calling sync_time.\n");
-  if (sync_corr_ue0 == NULL) {
-    msg("[SYNC TIME] sync_corr_ue0 not yet allocated! Exiting.\n");
-    return(-1);
-  }
-  if (sync_corr_ue1 == NULL) {
-    msg("[SYNC TIME] sync_corr_ue1 not yet allocated! Exiting.\n");
-    return(-1);
-  }
-  if (sync_corr_ue2 == NULL) {
-    msg("[SYNC TIME] sync_corr_ue2 not yet allocated! Exiting.\n");
+  if (sync_corr_ue == NULL) {
+    msg("[SYNC TIME] sync_corr_ue not yet allocated! Exiting.\n");
     return(-1);
   }
 
@@ -280,12 +230,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     }
 #endif
 
-    sync_corr_ue0[n] = 0;
-    sync_corr_ue0[n+length] = 0;
-    sync_corr_ue1[n] = 0;
-    sync_corr_ue1[n+length] = 0;
-    sync_corr_ue2[n] = 0;
-    sync_corr_ue2[n+length] = 0;
+    sync_corr_ue[n] = 0;
+    sync_corr_ue[n+length] = 0;
     for (s=0;s<3;s++) {
       sync_out[s]=0;
       sync_out2[s]=0;
@@ -295,28 +241,23 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
-	
+	//	result = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
 	result  = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
 	result2 = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, 15);
-
-	((short*)sync_corr_ue0)[2*n] += ((short*) &result)[0];
-	((short*)sync_corr_ue0)[2*n+1] += ((short*) &result)[1];
-	((short*)sync_corr_ue0)[2*(length+n)] += ((short*) &result2)[0];
-	((short*)sync_corr_ue0)[(2*(length+n))+1] += ((short*) &result2)[1];
+	((short*)sync_corr_ue)[2*n] += ((short*) &result)[0];
+	((short*)sync_corr_ue)[2*n+1] += ((short*) &result)[1];
+	((short*)sync_corr_ue)[2*(length+n)] += ((short*) &result2)[0];
+	((short*)sync_corr_ue)[2*(length+n+1)] += ((short*) &result2)[1];
 	((short*)sync_out)[0] += ((short*) &result)[0];
 	((short*)sync_out)[1] += ((short*) &result)[1];
 	((short*)sync_out2)[0] += ((short*) &result2)[0];
 	((short*)sync_out2)[1] += ((short*) &result2)[1];
       }
-            
+
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
+	//	result = dot_product((short*)primary_synch1_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
 	result = dot_product((short*)primary_synch1_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
 	result2 = dot_product((short*)primary_synch1_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, 15);
-	((short*)sync_corr_ue1)[2*n] += ((short*) &result)[0];
-	((short*)sync_corr_ue1)[2*n+1] += ((short*) &result)[1];
-	((short*)sync_corr_ue1)[2*(length+n)] += ((short*) &result2)[0];
-	((short*)sync_corr_ue1)[(2*(length+n))+1] += ((short*) &result2)[1];
-
 	((short*)sync_out)[2] += ((short*) &result)[0];
 	((short*)sync_out)[3] += ((short*) &result)[1];
 	((short*)sync_out2)[2] += ((short*) &result2)[0];
@@ -324,57 +265,68 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
       }
 
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
-
+	//	result = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
 	result = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
 	result2 = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, 15);
-	((short*)sync_corr_ue2)[2*n] += ((short*) &result)[0];
-	((short*)sync_corr_ue2)[2*n+1] += ((short*) &result)[1];
-	((short*)sync_corr_ue2)[2*(length+n)] += ((short*) &result2)[0];
-	((short*)sync_corr_ue2)[(2*(length+n))+1] += ((short*) &result2)[1];
 	((short*)sync_out)[4] += ((short*) &result)[0];
 	((short*)sync_out)[5] += ((short*) &result)[1];
 	((short*)sync_out2)[4] += ((short*) &result2)[0];
 	((short*)sync_out2)[5] += ((short*) &result2)[1];
       }
-      
+
+      //      if (n==0)
+      //	msg("[SYNC TIME] sync_corr[%d] = %d+%dj\n",n,((short*) sync_corr)[2*n],((short*) sync_corr)[2*n+1]);
+
+      /*
+      sync_corr[n] = 0;
+      for (m=0; m<frame_parms->ofdm_symbol_size; m++) {
+	for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
+	// sync_corr[n] += conj(primary_synch0_time[m])*rxdata[0][n+m];
+	//if (n==0)
+	//  msg("[SYNC TIME] Ant %d, sync[%d]=%d+%dj, rx[%d]=%d+%dj\n", ar, m, primary_synch0_time[2*m], primary_synch0_time[2*m+1], 
+	//      n+m, ((short*)rxdata[ar])[2*(1<<ds)*(n+m)], ((short*)rxdata[ar])[2*(1<<ds)*(n+m)+1]); 
+	  temp_re = (short)(((int)((short*)primary_synch0_time)[2*m] *(int)((short*)rxdata[ar])[2*(n+m)] +
+			    (int)((short*)primary_synch0_time)[2*m+1]*(int)((short*)rxdata[ar])[2*(n+m)+1]) >> 15);
+	  temp_im = (short)(((int)((short*)primary_synch0_time)[2*m] *(int)((short*)rxdata[ar])[2*(n+m)+1] - 
+			    (int)((short*)primary_synch0_time)[2*m+1]*(int)((short*)rxdata[ar])[2*(n+m)]) >> 15);
+	((short*)sync_corr)[2*n] += temp_re;
+	((short*)sync_corr)[2*n+1] += temp_im;
+	}
+      }
+      */
+
+      //      if (n==0)
+      //	msg("[SYNC TIME] sync_corr[%d] = %d+%dj\n",n,((short*) sync_corr)[2*n],((short*) sync_corr)[2*n+1]);
+
     }
     // calculate the absolute value of sync_corr[n]
-
-    sync_corr_ue0[n] = abs32(sync_corr_ue0[n]);
-    sync_corr_ue0[n+length] = abs32(sync_corr_ue0[n+length]);
-    sync_corr_ue1[n] = abs32(sync_corr_ue1[n]);
-    sync_corr_ue1[n+length] = abs32(sync_corr_ue1[n+length]);
-    sync_corr_ue2[n] = abs32(sync_corr_ue2[n]);
-    sync_corr_ue2[n+length] = abs32(sync_corr_ue2[n+length]);
+    //    sync_corr[n] = ((int)((short*)sync_corr)[2*n])*((int)((short*)sync_corr)[2*n])
+    //      +((int)((short*)sync_corr)[2*n+1])*((int)((short*)sync_corr)[2*n+1]);
+    sync_corr_ue[n] = abs32(sync_corr_ue[n]);
+    sync_corr_ue[n+length] = abs32(sync_corr_ue[n+length]);
 
     for (s=0;s<3;s++) {
+      //      sync_out[s] = abs32(sync_out[s]);
       tmp[s] = (abs32(sync_out[s])>>1) + (abs32(sync_out2[s])>>1);
       if (tmp[s]>peak_val) {
 	peak_val = tmp[s];
 	peak_pos = n;
 	sync_source = s;
-	/*
-	printf("s %d: n %d sync_out %d, sync_out2  %d (sync_corr %d,%d), (%d,%d) (%d,%d)\n",s,n,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue0[n],
-	       sync_corr_ue0[n+length],((s16*)&sync_out[s])[0],((s16*)&sync_out[s])[1],((s16*)&sync_out2[s])[0],((s16*)&sync_out2[s])[1]);
-	*/
-      } 
+	//	printf("s %d: sync_out %d, sync_out2  %d (sync_corr %d,%d)\n",s,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue[n],sync_corr_ue[n+length]);
+
+      }
     }
   }
 
   *eNB_id = sync_source;
-  
+
 #ifdef DEBUG_PHY
-  msg("[PHY][UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d\n",
-      sync_source,peak_pos,peak_val);
+  msg("[PHY][UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
 
-  
 #ifdef USER_MODE
-  write_output("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
-  write_output("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);
-  write_output("sync_corr2_ue.m","synccorr2",sync_corr_ue2,2*length,1,2);
+  write_output("sync_corr_ue.m","synccorr",sync_corr_ue,2*length,1,2);
 #endif
 #endif
-
 
   return(peak_pos);
 

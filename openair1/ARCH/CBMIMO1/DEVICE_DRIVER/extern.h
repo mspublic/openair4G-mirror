@@ -16,8 +16,7 @@
 
 
 extern struct pci_dev *pdev[4];
-extern void __iomem *bar[4];
-
+extern unsigned long bar[4],iobar[4],bar_len[4];
 
 extern char card,master_id;
 
@@ -27,7 +26,6 @@ extern unsigned short eedata[];
 
 extern unsigned int openair_irq;
 
-extern u32 openair_irq_enabled;
 
 //extern dma_addr_t dummy_dma_ptr;
 
@@ -37,10 +35,6 @@ extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern unsigned int mbox;
 
 extern PCI_interface_t *pci_interface[4];
-extern exmimo_pci_interface_bot *exmimo_pci_bot;
-extern exmimo_pci_interface_t *exmimo_pci_interface;
-
-extern unsigned int vid,did;
 
 extern unsigned short NODE_ID[1];
 #endif

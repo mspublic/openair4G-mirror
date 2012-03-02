@@ -165,7 +165,7 @@ u32 ulsch_encoding(u8 *a,
 		   u8 control_only_flag,
 		   u8 Nbundled) {
   
-  //  u16 offset;
+  u16 offset;
   u32 crc=1;
   u16 iind;
   u16 A;
@@ -176,7 +176,7 @@ u32 ulsch_encoding(u8 *a,
   u32 sumKr=0;
   u32 Qprime,L,G,Q_CQI=0,Q_RI=0,Q_ACK=0,H=0,Hprime=0,Hpp=0,Cmux=0,Rmux=0,Rmux_prime=0;
   u32 Qprime_ACK=0,Qprime_CQI=0,Qprime_RI=0,len_ACK=0,len_RI=0;
-  //  u32 E;
+  u32 E;
   u8 ack_parity;
   u32 i,q,j,iprime;
   u16 o_RCC;
@@ -188,7 +188,7 @@ u32 ulsch_encoding(u8 *a,
     return(-1);
   }
 
-  if (harq_pid > 7) {
+  if (harq_pid > 2) {
     msg("ulsch_coding.c: Illegal harq_pid %d\n",harq_pid);
     return(-1);
   }
@@ -225,7 +225,6 @@ u32 ulsch_encoding(u8 *a,
     A=ulsch->harq_processes[harq_pid]->TBS;
     Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
-    ulsch->harq_processes[harq_pid]->control_only = 0;
     
 #ifdef DEBUG_ULSCH_CODING
   msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d\n",
@@ -305,7 +304,7 @@ u32 ulsch_encoding(u8 *a,
 	msg("Qm %d\n",Q_m);
 #endif
 	
-	//	offset=0;
+	offset=0;
 	
 	
 #ifdef DEBUG_ULSCH_CODING    
@@ -348,10 +347,9 @@ u32 ulsch_encoding(u8 *a,
     }
   }
   else { // This is a control-only PUSCH, set sumKr to O_CQI-MIN
-    ulsch->harq_processes[harq_pid]->control_only = 1;
+
     sumKr = ulsch->O_CQI_MIN;
   }
-  ulsch->harq_processes[harq_pid]->sumKr = sumKr;
   // Compute Q_ri (p. 23 36-212)
 
   Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_ri_times8;
@@ -486,10 +484,10 @@ u32 ulsch_encoding(u8 *a,
 				      &ulsch->o_d[96], 
 				      ulsch->o_w);
 
-    lte_rate_matching_cc(o_RCC,
-			 Q_CQI,
-			 ulsch->o_w,
-			 ulsch->q);
+    E = lte_rate_matching_cc(o_RCC,
+			     Q_CQI,
+			     ulsch->o_w,
+			     ulsch->q);
     
   }
 
@@ -722,7 +720,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
 
-  LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
+  msg("[PHY] EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
 
 
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
@@ -747,7 +745,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u8 *)ulsch->o;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
-  //msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
+  msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
   return(0);
   
 }

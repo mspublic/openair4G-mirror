@@ -169,7 +169,7 @@ rtheap_t rt_heap;
 unsigned int sync_slot_cnt=0;
 unsigned int sync_getting_frame = 0;
 
-//static int hw_frame = 0;
+static int hw_frame = 0;
 static int intr_cnt = 0;
 
 int intr_in = 0;
@@ -183,10 +183,8 @@ void openair1_restart(void) {
     openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
   //  openair_daq_vars.tx_test=0;
   openair_daq_vars.sync_state = 0;
-  if (openair_daq_vars.is_eNB==0)
-    PHY_vars_eNB_g[0]->frame = 0;
-  else
-    PHY_vars_UE_g[0]->frame = 0; 
+  mac_xface->frame = 0;
+
   /*
   if ((mac_xface->is_cluster_head) && (mac_xface->is_primary_cluster_head)) {
     openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
@@ -209,17 +207,17 @@ void openair_sync(void) {
   int status;
   int length;
   int ret;
-  //  static unsigned char clear=1, clear2=1;
-  //  int Nsymb, sync_pos, sync_pos_slot;
-  //  int Ns;
-  // int l;
-  //  int rx_power;
-  //  unsigned int adac_cnt;
-  //  int pbch_decoded = 0;
-  //  int frame_mod4,pbch_tx_ant;
-  //  u8  dummy;
+  static unsigned char clear=1, clear2=1;
+  int Nsymb, sync_pos, sync_pos_slot;
+  int Ns;
+  int l;
+  int rx_power;
+  unsigned int adac_cnt;
+  int pbch_decoded = 0;
+  int frame_mod4,pbch_tx_ant;
+  u8  dummy;
 
-  //  RTIME time;
+  RTIME time;
 
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
@@ -277,7 +275,6 @@ void openair_sync(void) {
     sync_slot_cnt++;
   }     //(openair_daq_vars.one_shot_get_frame == 0)  
 
-#ifdef OPENAIR1
   if ((openair_daq_vars.do_synch==1) && (openair_daq_vars.node_configured == 3)) {// the node has been cofigured as a UE and we do sync
 
     if (sync_getting_frame == 0) {
@@ -309,7 +306,6 @@ void openair_sync(void) {
 
       msg("[openair][SCHED][SYNCH] starting sync\n");
 
-      
       if (initial_sync(PHY_vars_UE_g[0]) == 0) {
 		
 	if (openair_daq_vars.node_running == 1) {
@@ -356,7 +352,6 @@ void openair_sync(void) {
     }
     sync_slot_cnt++;
   }
-#endif
 }
 
 
@@ -400,16 +395,18 @@ static void * openair_thread(void *param) {
   
   printk("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
-  if (openair_daq_vars.is_eNB == 1) {
+  if (mac_xface->is_primary_cluster_head == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
+  }
+  else if (mac_xface->is_secondary_cluster_head == 1) {
+    msg("[openair][SCHED][openair_thread] Configuring openair_thread for secondary clusterhead\n");
   }
   else {
     msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
   }
   
-#ifdef OPENAIR1
+
   lte_sync_time_init(frame_parms);
-#endif
 
   openair_daq_vars.sync_state=0;
 
@@ -473,13 +470,11 @@ static void * openair_thread(void *param) {
       rt_time_in = rt_get_time_ns();
 
 #ifdef DEBUG_PHY
-      //debug_msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
+      debug_msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
 #endif
 
-#ifdef OPENAIR1
-      if (openair_daq_vars.is_eNB==1) {
+      if (mac_xface->is_cluster_head) {
 	if (PHY_vars_eNB_g && PHY_vars_eNB_g[0]) {
-	  PHY_vars_eNB_g[0]->frame = openair_daq_vars.hw_frame;
 	  phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[0],0);
 #ifndef IFFT_FPGA
 	  slot_offset_F = (next_slot)*
@@ -490,30 +485,25 @@ static void * openair_thread(void *param) {
 
 	  for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++) {
 	    if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1) {
-	      
 	      /*
-	      if ((openair_daq_vars.hw_frame%100) == 0)
-		msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_offset_F %d, slot_offset %d, input %p, output %p, samples_per_tti %d\n", 
-		    openair_daq_vars.hw_frame, 
-		    slot_offset_F,
-		    slot_offset,
-		    &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
-		    &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
-		    PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti);
-	      */
-	      /*
-	      for (i=0;i<6;i++) {
-		memset(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F+i*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size],0,PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size*sizeof(int));
-		((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i*512+75)*2]=1024;
+	      debug_msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_offset_F %d, slot_offset %d, input %p, output %p, samples_per_tti %d\n", 
+			mac_xface->frame, 
+			slot_offset_F,
+			slot_offset,
+			&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+			&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+			PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti);
+	      if (((mac_xface->frame%1000)==0) && ((next_slot>>1)==5) && (aa==0)) {
+		for (i=2560;i<3072;i++)
+		  debug_msg("%d:(%d,%d), ",i,((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2],
+			    ((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2+1]);
+		debug_msg("\n");
 	      }
 	      */
-	      /*	      
-	      for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size;i++)
-		((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2]=i;
-	      */
 	      /*
-	      for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti>>1;i++)
-		((char*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa]))[(slot_offset+i)*2] = (char) 0; //(i/30);
+	      for (i=0;i<6;i+=2)
+		memset(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F+i*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size],0,PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size*sizeof(int));
+		//((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i*512+150)*2]=1024;
 	      */
 
 	      PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],        // input
@@ -528,25 +518,6 @@ static void * openair_thread(void *param) {
 			   PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,  // IFFT twiddle factors
 			   PHY_vars_eNB_g[0]->lte_frame_parms.rev,           // bit-reversal permutation
 			   CYCLIC_PREFIX);
-
-	      if (((openair_daq_vars.hw_frame%1000)==0) && (next_slot==0) && (aa==0)) {
-		/*
-		for (i=0;i<511;i++) {
-		  msg("twiddle_ifft(%d) = (%d, %d)\n", i, 
-		      PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft[4*i], 
-		      PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft[4*i+1]);
-		}
-		*/
-		for (i=0;i<512;i++)
-		  msg("X(%d)=(%d,%d), ",i,((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2],
-			    ((short*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa]))[(slot_offset_F+i)*2+1]);
-		msg("\n");
-		for (i=0;i<640;i++)
-		  msg("x(%d)=(%d,%d), ",i,((char*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa]))[(slot_offset+i)*2],
-			    ((char*)(PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa]))[(slot_offset+i)*2+1]);
-		msg("\n");
-		//exit_openair=1;
-	      }
 
 	    }
 	    else {
@@ -595,7 +566,7 @@ static void * openair_thread(void *param) {
 	  }
 #endif
       }
-#endif //OPENAIR1
+
 
       time_out = openair_get_mbox();
       rt_time_out = rt_get_time_ns();
@@ -611,8 +582,8 @@ static void * openair_thread(void *param) {
 		rt_time_in,rt_time_out,rt_diff);
       */
       if (rt_diff > 500000) 
-	msg("[SCHED][OPENAIR_THREAD] last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, time_in %llu, time_out %llu, diff %llu\n", 
-	    last_slot,
+	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, time_in %llu, time_out %llu, diff %llu\n", 
+	    mac_xface->frame, last_slot,
 	    time_in,time_out,diff,
 	    rt_time_in,rt_time_out,rt_diff);
       
@@ -628,7 +599,7 @@ static void * openair_thread(void *param) {
 
     else {   // synchronization and get frame
 
-      if ((openair_daq_vars.hw_frame%100==0) && (openair_daq_vars.slot_count==0) && (openair_daq_vars.mode != openair_SYNCHED))
+      if ((hw_frame%100==0) && (openair_daq_vars.slot_count==0) && (openair_daq_vars.mode != openair_SYNCHED))
 	openair_daq_vars.do_synch=1;
 
       openair_sync();
@@ -674,210 +645,161 @@ static void * openair_thread(void *param) {
 
 
 
-int slot_irq_handler(int irq, void *cookie) {
+static int slot_irq_handler(int irq, void *cookie) {
 
-  unsigned int adac_cnt;
+  unsigned int adac_cnt,val;
   unsigned short irqval;
   LTE_DL_FRAME_PARMS *frame_parms=lte_frame_parms_g;
   int rc;
   RTIME             tv;
   struct timespec   ts;
-  u32 irqcmd;
 
   intr_in = 1;
-
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
     // check interrupt status register
     pci_read_config_word(pdev[0],6 , &irqval);
-    
+
     if ((irqval&8) != 0)  {
+      adac_cnt = (*(unsigned int *)mbox);
+      intr_cnt++;
 
-      //msg("got interrupt for CBMIMO1, intr_cnt=%d, node_configured=%d\n",intr_cnt,openair_daq_vars.node_configured);
+      openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
+      //openair_daq_vars.slot_count=adac_cnt>>3;
+      if (openair_daq_vars.slot_count==0)
+      	mac_xface->frame++;
 
+      //if ((adac_cnt>>3) == 0)
+      if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
+	hw_frame++;
+	
+      if ((intr_cnt%2000) < 20) {
+	tv = rt_get_time_ns();
+      	msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d, MAC Frame %d\n",
+	    tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,hw_frame,mac_xface->frame);
+      }
+
+      openair_daq_vars.last_adac_cnt=adac_cnt;
+
+      /*
+      if ((hw_frame %100) == 0)
+	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, MAC Frame %d (interrupt cnt %d)\n",hw_frame,mac_xface->frame,intr_cnt);
+      */
+    
       // RESET PCI IRQ
       openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK|FROM_GRLIB_PCI_IRQ_ACK);
       openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
-	
-      if (openair_daq_vars.node_configured > 0) {
-	
-	adac_cnt = (*(unsigned int *)mbox);
-	
-	//openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
-	openair_daq_vars.slot_count=adac_cnt>>3;
+     
+      
+      tv = rt_get_time();
+      count2timespec(tv, &ts);
+      ts.tv_nsec += 100000;
 
-	//if ((adac_cnt>>3) == 0)
-	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
-	  openair_daq_vars.hw_frame++;
-	
-	if (((openair_daq_vars.hw_frame %100) == 0) && (openair_daq_vars.hw_frame>0)) {
-	  tv = rt_get_time_ns();
-	  msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d, slot %d\n",
-	      tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,openair_daq_vars.hw_frame,openair_daq_vars.slot_count);
+      if (exit_openair==0) { 
+	// Schedule openair_thread
+
+	//first lock the mutex that protects the counter that indicates if PHY is still busy 
+	//rc = pthread_mutex_lock (&openair_mutex); // lock before accessing shared resource
+	rc = pthread_mutex_timedlock (&openair_mutex,&ts); // lock before accessing shared resource
+	if (rc==ETIMEDOUT) {
+	  msg("[SCHED][slot_irq_handler] pthread_mutex_timedlock timed out, exiting\n");
+	  //exit_openair = 1;
 	}
-	
-	openair_daq_vars.last_adac_cnt=adac_cnt;
-	
-	/*
-	  if ((openair_daq_vars.hw_frame %100) == 0)
-	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, interrupt cnt %d\n",openair_daq_vars.hw_frame,intr_cnt);
-	*/
-	
-	
-	tv = rt_get_time();
-	count2timespec(tv, &ts);
-	ts.tv_nsec += 100000;
-	
-	if (exit_openair==0) { 
-	  // Schedule openair_thread
+	else if (rc != 0) {
+	  msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_lock, exiting\n");
+	  //exit_openair = 1;
+	}
+	else {
+	  // we locked the mutex successfully, so now we can check its value
+	  //msg("[SCHED][slot_irq_handler] Locked openair_mutex, instance_cnt=%d\n",openair_daq_vars.instance_cnt);
 	  
-	  //first lock the mutex that protects the counter that indicates if PHY is still busy 
-	  //rc = pthread_mutex_lock (&openair_mutex); // lock before accessing shared resource
-	  rc = pthread_mutex_timedlock (&openair_mutex,&ts); // lock before accessing shared resource
-	  if (rc==ETIMEDOUT) {
-	    msg("[SCHED][slot_irq_handler] pthread_mutex_timedlock timed out, exiting\n");
-	    //exit_openair = 1;
-	  }
-	  else if (rc != 0) {
-	    msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_lock, exiting\n");
-	    //exit_openair = 1;
-	  }
-	  else {
-	    // we locked the mutex successfully, so now we can check its value
-	    //msg("[SCHED][slot_irq_handler] Locked openair_mutex, instance_cnt=%d\n",openair_daq_vars.instance_cnt);
-	    
-	    if (openair_daq_vars.instance_cnt == 0)   {// PHY is still busy
-	      msg("[SCHED][slot_irq_handler] ERROR slot interrupt while processing, instance_cnt=%d\n",
-		  openair_daq_vars.instance_cnt);
-	      
-	      // unlock the mutex
-	      if (pthread_mutex_unlock (&openair_mutex) != 0) {
-		msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
-		//exit_openair=1;
-	      }
-	    }
-	    else { // schedule L2/L1H TX thread
-	      openair_daq_vars.instance_cnt++; //now it should be 0
-	      
-	      // Signal MAC_PHY Scheduler
-	      /*
-	      if ((openair_daq_vars.is_eNB==1) && 
-		  (PHY_vars_eNB_g[0]->frame<100))
-		msg("[SCHED][slot_irq_handler] Signaling eNB MACPHY scheduler for slot %d\n",openair_daq_vars.slot_count);
-	      else if ((openair_daq_vars.is_eNB==0) && 
-		       (PHY_vars_UE_g[0]->frame<100))
-		msg("[SCHED][slot_irq_handler] Signaling UE MACPHY scheduler for slot %d\n",openair_daq_vars.slot_count);
-	      */
+	  if (openair_daq_vars.instance_cnt == 0)   {// PHY is still busy
+	    msg("[SCHED][slot_irq_handler] ERROR slot interrupt while processing, instance_cnt=%d, frame=%d\n",
+		openair_daq_vars.instance_cnt,mac_xface->frame);
 
-	      // unlock the mutex
-	      if (pthread_mutex_unlock (&openair_mutex) != 0) {
-		msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
-		//exit_openair=1;
-	      }
-	      
-	      if (pthread_cond_signal(&openair_cond) != 0) {
-		msg("[SCHED][slot_irq_handler] ERROR pthread_cond_signal\n");// schedule L2/L1H TX thread
-		//exit_openair = 1;
-	      }
-	      
+	    // unlock the mutex
+	    if (pthread_mutex_unlock (&openair_mutex) != 0) {
+	      msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
+	      //exit_openair=1;
 	    }
+	  }
+	  else { // schedule L2/L1H TX thread
+	    openair_daq_vars.instance_cnt++; //now it should be 0
+	    
+	    // Signal MAC_PHY Scheduler
+	    // msg("[SCHED][slot_irq_handler] Signaling MACPHY scheduler\n");
+	    
+	    // unlock the mutex
+	    if (pthread_mutex_unlock (&openair_mutex) != 0) {
+	      msg("[SCHED][slot_irq_handler] ERROR pthread_mutex_unlock\n");
+	      //exit_openair=1;
+	    }
+
+	    if (pthread_cond_signal(&openair_cond) != 0) {
+	      msg("[SCHED][slot_irq_handler] ERROR pthread_cond_signal\n");// schedule L2/L1H TX thread
+	      //exit_openair = 1;
+	    }
+
 	  }
 	}
-      } // node_configured > 0
+      }
+
       rt_ack_irq(irq);
-      rt_unmask_irq(irq);
-      rt_enable_irq(irq);
       intr_in = 0;
       return IRQ_HANDLED;
       
-    } 
-    else {  // CBMIMO is not source of interrupt
-      
+    }
+    else {
+
       rt_pend_linux_irq(irq);
       intr_in = 0;
       return IRQ_NONE;
     }
-       
-    // CBMIMO1 is not activated yet (no interrupts!)
+  }
+
+  else { //EXPRESS MIMO
+    // RESET PCI IRQ
     rt_pend_linux_irq(irq);
     intr_in = 0;
     return IRQ_NONE;
-  }
-  else { //EXPRESS MIMO
-    
-    //    msg("Got Exmimo PCIe interrupt ...\n");
-
-    irqval = ioread32(bar[0]);
-
-     
-    if ((irqval&0x80) != 0) {
-      // clear PCIE interrupt bit (bit 7 of register 0x0)
-      iowrite32(irqval&0xffffff7f,bar[0]);
-      irqcmd = ioread32(bar[0]+0x4);
-
-   
-      if (irqcmd == SLOT_INTERRUPT) {
-	//	process_slot_interrupt();
-      }
-      else if (irqcmd == PCI_PRINTK) {
-	//	msg("Got PCIe interrupt for printk ...\n");
-	pci_fifo_printk();
-	
-      }
-      else if (irqcmd == GET_FRAME_DONE) {
-	msg("Got PCIe interrupt for GET_FRAME_DONE ...\n");
-	openair_daq_vars.get_frame_done=1;
-      }
-      rt_ack_irq(irq);
-      rt_unmask_irq(irq);
-      rt_enable_irq(irq);
-      intr_in = 0;
-      return IRQ_HANDLED;
-    }
-    else {
-      // RESET PCI IRQ
-      rt_pend_linux_irq(irq);
-      intr_in = 0;
-      return IRQ_NONE;
-    }
   }
 
 }
 
 
-
+u32 openair_irq_enabled=0;
 
 s32 openair_sched_init(void) {
-
-
+  
   int error_code;
-
   int* tmp;
   
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
   
+  mac_xface->frame = 0;
   
   openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
   
   openair_daq_vars.last_adac_cnt=-1;            
   
-  exit_openair=0;
+  
   
   pthread_mutex_init(&openair_mutex,NULL);
   
   pthread_cond_init(&openair_cond,NULL);
   
-  /*
-  if (openair_daq_vars.is_eNB==1){
+  
+  if (mac_xface->is_primary_cluster_head == 1) {
     printk("[openair][SCHED][init] Configuring primary clusterhead\n");
-    PHY_vars_eNB_g[0]->frame=0;
+  }
+  else if (mac_xface->is_secondary_cluster_head == 1) {
+    printk("[openair][SCHED][init] Configuring secondary clusterhead\n");
   }
   else {
-    PHY_vars_UE_g[0]->frame=0;
     printk("[openair][SCHED][init] Configuring regular node\n");
   }
-  */
+
   openair_daq_vars.mode = openair_NOT_SYNCHED;
   
 #ifdef EMOS
@@ -912,7 +834,20 @@ s32 openair_sched_init(void) {
 
   // Create interrupt service routine for PCI 
    
+  printk("[OPENAIR][SCHED][INIT] Trying to get IRQ %d\n",pdev[0]->irq);
+  if (rt_request_irq(pdev[0]->irq,
+		     slot_irq_handler,
+		     NULL,0) == 0) {
+    rt_enable_irq(pdev[0]->irq);
+    openair_irq_enabled=1;
+    printk("[OPENAIR][SCHED][INIT] Got IRQ %d\n",pdev[0]->irq);
 
+  }
+  else {
+    printk("[OPENAIR][SCHED][INIT] Cannot get IRQ %d for HW\n",pdev[0]->irq);
+    return(-1);
+    openair_irq_enabled=0;
+  }
   
   
 
@@ -936,9 +871,8 @@ s32 openair_sched_init(void) {
 
 void openair_sched_cleanup() {
 
-#ifdef EMOS
   int error_code;
-#endif
+
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;
 
@@ -966,7 +900,7 @@ void openair_sched_exit(char *str) {
   u8 i;
 
   msg("%s\n",str);
-  msg("[OPENAIR][SCHED] openair_sched_exit() called, preparing to exit ...\n");
+  msg("[OPENAIR][SCHED] Frame %d: openair_sched_exit() called, preparing to exit ...\n",mac_xface->frame);
   
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;

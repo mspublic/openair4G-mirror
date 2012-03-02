@@ -16,7 +16,9 @@ ________________________________________________________________*/
 #endif
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
-
+#ifndef CELLULAR
+//#include "L3_rrc_defs.h"
+#endif
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
@@ -73,12 +75,6 @@ result could be based on an event-driven measurement report.
 
 #define RRC_RACH_ASS_REQ 0
 #define MAC_RACH_BW_REQ 1
-
-typedef enum {
-  RRC_OK=0,
-  RRC_ConnSetup_failed,
-  RRC_PHY_RESYNCH
-} RRC_status_t;
 
 
 /*! MAC/PHY Measurement Structure*/
@@ -311,10 +307,6 @@ typedef struct {
 
 #ifndef OPENAIR2_IN
 
-#ifndef CELLULAR
-//#include "L3_rrc_defs.h"
-#endif
-
 typedef struct{   //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
@@ -326,9 +318,9 @@ typedef struct{   //RRC_INTERFACE_FUNCTIONS
   void (*openair_rrc_top_init)(void); 
   char (*openair_rrc_eNB_init)(u8 ); 
   char (*openair_rrc_UE_init)(u8, u8); 
-  RRC_status_t (*rrc_rx_tx)(u8,u32,u8,u8); 
-  u8 (*mac_rrc_data_ind)(u8,u32,unsigned short,char *,unsigned short,u8 eNB_flag, u8 eNB_index);
-  u8 (*mac_rrc_data_req)(u8,u32,unsigned short,u8,char *,u8 eNB_flag, u8 eNB_index);
+  void (*rrc_rx_tx)(u8 ); 
+  u8 (*mac_rrc_data_ind)(u8,unsigned short,char *,unsigned short,u8 eNB_flag, u8 eNB_index);
+  u8 (*mac_rrc_data_req)(u8,unsigned short,u8,char *,u8 eNB_flag, u8 eNB_index);
   void (*mac_rrc_meas_ind)(u8,MAC_MEAS_REQ_ENTRY*);
   void  (*def_meas_ind)(u8, u8);
   void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*);
@@ -345,7 +337,7 @@ typedef struct{
   void (*macphy_exit)(const char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
   unsigned short (*mac_config_req)(u8,u8,MAC_CONFIG_REQ*);
   MAC_MEAS_REQ_ENTRY* (*mac_meas_req)(u8 ,  MAC_MEAS_REQ*);
-  void (*mac_out_of_sync_ind)(u8,u32,unsigned short);
+  void (*mac_out_of_sync_ind)(u8,unsigned short);
   //u8 (*mac_rrc_data_ind)(u8,unsigned short,char *,u8);
   //u8 (*mac_rrc_data_req)( u8, unsigned short, u8,char *);
   //void (*mac_switch_node_function)(u8);
@@ -374,8 +366,8 @@ typedef struct{
   //rlc_op_status_t rrc_rlc_config_req   (module_id_t, rb_id_t, rb_type_t, rlc_info_t );
   //rlc_op_status_t rrc_rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
   //void   rrc_rlc_register_rrc ( void(*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , mem_block_t*),void(*rrc_data_conf) (module_id_t , rb_id_t , mui_t) );
-  void (*mrbch_phy_sync_failure) (u8 Mod_id, u32 frame, u8 Free_ch_index);
-  void (*dl_phy_sync_success) (u8 Mod_id, u32 frame, u8 eNB_index);
+  void (*mrbch_phy_sync_failure) (u8 Mod_id, u8 Free_ch_index);
+  void (*chbch_phy_sync_success) (u8 Mod_id, u8 eNB_index);
 }MAC_RLC_XFACE;
 
 

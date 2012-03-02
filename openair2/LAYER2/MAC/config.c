@@ -20,16 +20,15 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       u16 *SIperiod) {
   
   if (eNB_flag==0) {
-    LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_id,eNB_index);
-    UE_mac_inst[Mod_id].tdd_Config = tdd_Config;
+    LOG_I(MAC,"[CONFIG][UE %d] Frame %d: Configuring MAC/PHY from eNB %d\n",Mod_id,mac_xface->frame,eNB_index);
   }else {
     if (physicalConfigDedicated == NULL){
-      LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY\n",Mod_id);
-    } else{
-      LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY for UE %d (%x)\n",Mod_id,UE_id,find_UE_RNTI(Mod_id,UE_id));
-    }
+      LOG_I(MAC,"[CONFIG][eNB %d] Frame %d: Configuring MAC/PHY\n",Mod_id,mac_xface->frame);
+   } else{
+      LOG_I(MAC,"[CONFIG][eNB %d] Frame %d: Configuring MAC/PHY for UE %d (%x)\n",Mod_id,mac_xface->frame,UE_id,find_UE_RNTI(Mod_id,UE_id));
   }
-  
+}
+
   if ((tdd_Config!=NULL)||
       (SIwindowsize!=NULL)||
       (SIperiod!=NULL)){
@@ -63,35 +62,27 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       
       
       LOG_I(MAC,"[CONFIG]pusch_config_common.cyclicShift  = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift); 
-      
       mac_xface->phy_config_sib2_eNB(Mod_id,radioResourceConfigCommon);
     }
-    else {
-      UE_mac_inst[Mod_id].radioResourceConfigCommon = radioResourceConfigCommon;
+    else
       mac_xface->phy_config_sib2_ue(Mod_id,eNB_index,radioResourceConfigCommon);
-    }
+
   }
   
   if (logicalChannelConfig!= NULL) {
     if (eNB_flag==0){
-      LOG_I(MAC,"[CONFIG][UE %d] Applying RRC logicalChannelConfig from eNB%d\n",Mod_id,eNB_index);
-      UE_mac_inst[Mod_id].logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
+      UE_mac_inst[Mod_id].scheduling_info.logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
       UE_mac_inst[Mod_id].scheduling_info.Bj[logicalChannelIdentity]=0; // initilize the bucket for this lcid
-      if (logicalChannelConfig->ul_SpecificParameters)
-	UE_mac_inst[Mod_id].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
-	  logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
-      else {
-	LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_id,logicalChannelIdentity);
-	mac_xface->macphy_exit("");
-      }
+      UE_mac_inst[Mod_id].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
+	logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size 
     } 
   }
 
   if (mac_MainConfig != NULL){
     if (eNB_flag==0){
       LOG_I(MAC,"[CONFIG][UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_id,eNB_index);
-      UE_mac_inst[Mod_id].macConfig=mac_MainConfig;
-      UE_mac_inst[Mod_id].measGapConfig=measGapConfig;
+      UE_mac_inst[Mod_id].scheduling_info.macConfig=mac_MainConfig;
+      UE_mac_inst[Mod_id].scheduling_info.measGapConfig=measGapConfig;
       
       if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer)
 	UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (u16) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
@@ -104,12 +95,12 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (u16) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
 
       UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = (u16) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
-#ifdef Rel10   
+   
       if (mac_MainConfig->sr_ProhibitTimer_r9) 
 	UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (u16) *mac_MainConfig->sr_ProhibitTimer_r9;
       else
 	UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (u16) 0;
-#endif
+
       UE_mac_inst[Mod_id].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer);
       UE_mac_inst[Mod_id].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer);
       
@@ -118,12 +109,13 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 
     }
   }
+  
   if (physicalConfigDedicated != NULL) {
-    if (eNB_flag==1){
+    if (eNB_flag==1)
       mac_xface->phy_config_dedicated_eNB(Mod_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
-    }else{
+    else{
       mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
-      UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
+      UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }
   }
   return(0);
