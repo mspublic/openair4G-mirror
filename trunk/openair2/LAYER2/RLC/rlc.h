@@ -414,4 +414,27 @@ public_rlc(int rlc_module_init(void);)
 #ifndef USER_MODE
 #define assert(x) ((x)?msg("rlc assertion fails\n"):0)
 #endif
+
+
+#define RLC_FG_COLOR_BLACK            "\e[0;30m"
+#define RLC_FG_COLOR_RED              "\e[0;31m"
+#define RLC_FG_COLOR_GREEN            "\e[0;32m"
+#define RLC_FG_COLOR_ORANGE           "\e[0;33m"
+#define RLC_FG_COLOR_BLUE             "\e[0;34m"
+#define RLC_FG_COLOR_MAGENTA          "\e[0;35m"
+#define RLC_FG_COLOR_CYAN             "\e[0;36m"
+#define RLC_FG_COLOR_GRAY_BLACK       "\e[0;37m"
+#define RLC_FG_COLOR_DEFAULT          "\e[0;39m"
+#define RLC_FG_BRIGHT_COLOR_DARK_GRAY "\e[1;30m"
+#define RLC_FG_BRIGHT_COLOR_RED       "\e[1;31m"
+#define RLC_FG_BRIGHT_COLOR_GREEN     "\e[1;32m"
+#define RLC_FG_BRIGHT_COLOR_YELLOW    "\e[1;33m"
+#define RLC_FG_BRIGHT_COLOR_BLUE      "\e[1;34m"
+#define RLC_FG_BRIGHT_COLOR_MAGENTA   "\e[1;35m"
+#define RLC_FG_BRIGHT_COLOR_CYAN      "\e[1;36m"
+#define RLC_FG_BRIGHT_COLOR_WHITE     "\e[1;37m"
+#define RLC_FG_BRIGHT_COLOR_DEFAULT   "\e[0;39m"
+#define RLC_REVERSE_VIDEO             "\e[7m"
+#define RLC_NORMAL_VIDEO              "\e[27m"
+
 #endif
