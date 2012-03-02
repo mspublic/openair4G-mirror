@@ -71,6 +71,12 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
+# ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
+# make cleanasn1
+#make all Rel10=1
+ifdef  Rel10
+CFLAGS += -DRel10
+endif
 
 ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX
