@@ -67,7 +67,7 @@ for test = 1:n_tests
   r.tests(test).tbs_hop2 = dlmread(f, ' ', [test_row+8+n_pdu*3 0 test_row+8+n_pdu*4-1 n_harq-1]);
   r.tests(test).n_rb_hop1 = dlmread(f, ' ', [test_row+8+n_pdu*4 0 test_row+8+n_pdu*5-1 n_harq-1]);
   r.tests(test).n_rb_hop2 = dlmread(f, ' ', [test_row+8+n_pdu*5 0 test_row+8+n_pdu*6-1 n_harq-1]);
-  r.tests(test).n_transmissions = dlmread(f, ' ', [test_row+8+n_pdu*6 0 test_row+8+n_pdu*6+n_harq-1 n_harq-1])';
+  r.tests(test).n_transmissions = dlmread(f, ' ', [test_row+8+n_pdu*6 0 test_row+8+n_pdu*6+n_harq-1 n_harq-1]);
   r.tests(test).relay_activity = dlmread(f, ' ', [test_row+8+n_pdu*6+n_harq 0 test_row+8+n_pdu*6+n_harq 2^n_relays-1]);
   test_row = test_row + 8 + n_pdu*6+n_harq+1;
 end
