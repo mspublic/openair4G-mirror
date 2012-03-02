@@ -154,7 +154,7 @@ void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, u8_t eNB_flag, me
                 rlc_am_send_sdu(rlcP,frame,eNB_flag); // may be not necessary
                 //rlcP->reassembly_missing_sn_detected = 0;
                 break;
-            case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+            case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef TRACE_RLC_AM_RX_DECODE
                 LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU NO E_LI FI=10 (01)\n", frame, rlcP->module_id, rlcP->rb_id);
 #endif
@@ -217,7 +217,7 @@ void rlc_am_reassemble_pdu(rlc_am_entity_t* rlcP, u32_t frame, u8_t eNB_flag, me
                 }
                 //rlcP->reassembly_missing_sn_detected = 0;
                 break;
-            case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+            case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef TRACE_RLC_AM_RX_DECODE
                 LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][REASSEMBLY PDU] TRY REASSEMBLY PDU FI=10 (01) Li=", frame, rlcP->module_id, rlcP->rb_id);
                 for (i=0; i < pdu_info->num_li; i++) {
