@@ -181,7 +181,7 @@ rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct m
 #ifdef DEBUG_RLC_UM_RX
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame);
 #endif
+            free_mem_block (tb);
         }
-        free_mem_block (tb);
     }                           // end while
 }

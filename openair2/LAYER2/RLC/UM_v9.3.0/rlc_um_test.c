@@ -48,10 +48,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "LAYER2/MAC/extern.h"
 
 
-#define TEST1
-#define TEST2
-#define TEST3
-#define TEST4
+//#define TEST1
+//#define TEST2
+//#define TEST3
+//#define TEST4
 #define TEST5
 
 #define INCREMENT_FRAME_YES 1
@@ -141,6 +141,7 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, uns
     }
 
 
+    LOG_T(componentP, "------+-------------------------------------------------|\n");
     LOG_T(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
     LOG_T(componentP, "------+-------------------------------------------------|\n");
     for (octet_index = 0; octet_index < sizeP; octet_index++) {
@@ -331,7 +332,10 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
         *tx_packetsP = *tx_packetsP + 1;
         if (*drop_countP == 0) {
             tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
+            memset(tb_dst->data, 0, sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
             if (tb_dst != NULL) {
+                printf("[RLC-LOOP] Testing tb_dst (1)\n");
+                check_free_mem_block(tb_dst);
                 tb_dst->next = NULL;
                 ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
                 ((struct mac_tb_ind *) (tb_dst->data))->data_ptr         = &tb_dst->data[sizeof (mac_rlc_max_rx_header_size_t)];
@@ -344,6 +348,8 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
 
                 list_add_tail_eurecom(tb_dst, &data_indP->data);
                 data_indP->no_tb  += 1;
+                printf("[RLC-LOOP] Testing tb_dst (2)\n");
+                check_free_mem_block(tb_dst);
             } else {
                printf("Out of memory error\n");
                exit(-1);
@@ -353,6 +359,11 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
             *drop_countP = *drop_countP - 1;
             *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
         }
+
+
+        printf("[RLC-LOOP] Testing tb_src\n");
+        check_free_mem_block(tb_src);
+
         free_mem_block(tb_src);
         if (data_indP->no_tb > 0) {
             printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);
@@ -944,8 +955,11 @@ void rlc_um_v9_3_0_test(void)
 
     // tested OK
     //rlc_um_v9_3_0_test_windows();
-    rlc_um_v9_3_0_test_reordering();
+
     rlc_um_v9_3_0_test_tx_rx();
+
+    // tested OK
+    rlc_um_v9_3_0_test_reordering();
 
     printf("rlc_um_v9_3_0_test: END OF TESTS\n");
     exit(0);

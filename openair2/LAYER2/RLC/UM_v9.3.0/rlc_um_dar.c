@@ -158,12 +158,6 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
     if (end_snP < 0)   end_snP   = end_snP   + rlcP->sn_modulo;
     if (start_snP < 0) start_snP = start_snP + rlcP->sn_modulo;
 
-    /*if ( rlc_um_in_window(rlcP, frame, end_snP, rlcP->last_reassemblied_sn, rlcP->vr_uh) >= 0) {
-        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY UP TO PDU SN=%03d NOT DONE SINCE last_reassemblied_sn %03d > REQUESTED BOUND REASSEMBLY\n",
-              rlcP->module_id, rlcP->rb_id, frame, end_snP, rlcP->last_reassemblied_sn);
-        return;
-    }*/
-
     LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY FROM PDU SN=%03d+1  TO  PDU SN=%03d   SN Length = %d bits\n",
           rlcP->module_id,
           rlcP->rb_id,
@@ -186,7 +180,6 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                       rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->last_reassemblied_sn);
                 rlc_um_clear_rx_sdu(rlcP);
             }
-
             rlcP->last_reassemblied_sn = sn;
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, frame, sn);
             tb_ind = (struct mac_tb_ind *)(pdu_mem->data);
@@ -213,6 +206,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                         rlc_um_reassembly (data, size, rlcP,frame);
                         rlc_um_send_sdu(rlcP,frame,eNB_flag);
                         rlcP->reassembly_missing_sn_detected = 0;
+
                         break;
                     case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
                         LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=10 (01)\n", rlcP->module_id, rlcP->rb_id, frame);
@@ -365,18 +359,11 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
             free_mem_block(rlcP->dar_buffer[sn]);
             rlcP->dar_buffer[sn] = NULL;
         } else {
-            //if (rlc_um_in_reordering_window(rlcP, frame, sn) == 0) {
-                //LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRIED REASSEMBLY, MISSING PDU SN=%03d IN REORDERING WINDOW DETECTED, WAIT t-Reordering\n", rlcP->module_id, rlcP->rb_id, frame, sn);
-                // Wait t-Reordering time-out
-                //continue_reassembly = 0;
-                //return;
-            //} else {
-                rlcP->last_reassemblied_missing_sn = sn;
-                LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN %04d detected][RLC_UM][MOD %02d][RB %02d]\n",
+            rlcP->last_reassemblied_missing_sn = sn;
+            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN %04d detected][RLC_UM][MOD %02d][RB %02d]\n",
                                       frame, rlcP->module_id,rlcP->rb_id, sn, rlcP->module_id,rlcP->rb_id);
-                rlcP->reassembly_missing_sn_detected = 1;
-                rlc_um_clear_rx_sdu(rlcP);
-            //}
+            rlcP->reassembly_missing_sn_detected = 1;
+            rlc_um_clear_rx_sdu(rlcP);
         }
         sn = (sn + 1) % rlcP->sn_modulo;
         if ((sn == rlcP->vr_uh) || (sn == end_snP)){
@@ -384,6 +371,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
         }
     }
     LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRIED REASSEMBLY VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux,rlcP->vr_uh);
+
 }
 //-----------------------------------------------------------------------------
 void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag) {
@@ -577,6 +565,9 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     signed int sn = ((pduP->b1 & 0x00000003) << 8) + pduP->b2;
     signed int in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_uh - rlcP->um_window_size, sn, rlcP->vr_ur);
 
+    //rlc_util_print_hex_octets(RLC, pdu_memP->data, tb_sizeP + 32);
+
+
     #ifdef DEBUG_DISPLAY_NVIDIA
     i =  rlc_um_get_pdu_infos(frame,pduP, tb_sizeP, &pdu_info);    msg("\n==================================================================================================================\n");
     //if (rlcP->module_id )
@@ -640,6 +631,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
             return;
         }
         // 2 lines to avoid memory leaks
+        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU SN %03d REMOVE OLD PDU BEFORE STORING NEW PDU\n", rlcP->module_id, rlcP->rb_id, frame, sn);
         mem_block_t *pdu = rlc_um_remove_pdu_from_dar_buffer(rlcP, sn);
         free_mem_block(pdu);
     }
