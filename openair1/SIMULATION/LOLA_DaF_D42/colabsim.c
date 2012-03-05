@@ -33,6 +33,7 @@ const bool true = 1;
 
 #define BW 7.68
 #define N_RB 25
+#define RBG_SIZE 2
 #define NID_CELL 0
 #define MAX_RELAYS 8
 #define MAX_HARQ_ROUNDS 4
@@ -43,7 +44,7 @@ const u8 n_rxantenna_ch = 1;
 const u8 n_txantenna_mr = 1;
 const u8 n_rxantenna_mr = 1;
 const u8 oversampling = 1;
-const u16 rb_alloc = 0x1fff;
+//const u16 rb_alloc = 0x1fff;
 const u8 subframe_hop1 = 4;
 const u8 subframe_hop2 = 7;
 const u8 n_avail_pdcch_symbols = 3;
@@ -63,12 +64,17 @@ typedef struct {
   bool debug_print;
   int verbose;
   analysis_t analysis;
+  int range;
+  double step;
   strategy_t strategy;
   int n_relays;
   int n_pdu;
   int n_harq;
   int mcs_hop1;
   int mcs_hop2;
+  int n_rb_hop1;
+  int n_rb_hop2;
+  bool autorb;
   SCM_t channel_model;
   double snr_hop1[MAX_RELAYS];
   double snr_hop2[MAX_RELAYS];
@@ -174,8 +180,9 @@ void setup_snrs_single(double** snrs, int* n_tests, double* snr_hop1, double* sn
 void setup_snrs_sweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
 void setup_snrs_bsweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
 void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmission_mode);
-void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs);
-void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs);
+u16 rballoc_type0(int n_rb, int rbg_size);
+void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb);
+void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb);
 void alloc_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti);
 void free_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays);
 void alloc_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti);
@@ -280,10 +287,10 @@ int main(int argc, char **argv) {
     setup_snrs_single(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays);
     break;
   case analysis_sweep:
-    setup_snrs_sweep(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, 1.0, -10, 10);
+    setup_snrs_sweep(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, args.step, -args.range, args.range);
     break;
   case analysis_bsweep:
-    setup_snrs_bsweep(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, 1.0, -10, 10);
+    setup_snrs_bsweep(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, args.step, -args.range, args.range);
     break;
   }
 
@@ -338,7 +345,7 @@ int main(int argc, char **argv) {
 
   // Create broadcast DCI and generate transport channel parameters,
   // in order to determine hop 1 transfer block size and number of coded bits
-  setup_broadcast_dci(&dci_hop1, context.rnti_hop1, 0, args.mcs_hop1);
+  setup_broadcast_dci(&dci_hop1, context.rnti_hop1, 0, args.mcs_hop1, args.n_rb_hop1);
   generate_eNB_dlsch_params_from_dci(subframe_hop1, dci_hop1.dci_pdu, 
       context.rnti_hop1, format1, context.phy_vars_ch_src->dlsch_eNB[0], frame_parms, 
       SI_RNTI, RA_RNTI, P_RNTI,
@@ -352,7 +359,7 @@ int main(int argc, char **argv) {
   // Create distributed DCI and generate transport channel parameters,
   // in order to determine hop 2 transfer block size and number of coded bits
   context.harq_pid_hop2 = subframe2harq_pid(frame_parms, 0, subframe_hop2);
-  setup_distributed_dci(&dci_hop2, context.rnti_hop2, 0, args.mcs_hop2);
+  setup_distributed_dci(&dci_hop2, context.rnti_hop2, 0, args.mcs_hop2, args.n_rb_hop2);
   generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context.rnti_hop2, (subframe_hop2+6)%10,
       format0, context.phy_vars_mr[0], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
   context.tbs_hop2 = context.phy_vars_mr[0]->ulsch_ue[0]->harq_processes[context.harq_pid_hop2]->TBS;
@@ -480,6 +487,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
   // Temporary variables
   int n_re_hop1;
   int n_re_hop2;
+  int n_active_relays;
   u8 n_used_pdcch_symbols;
   u32 tx_energy;
   double awgn_stddev;
@@ -536,10 +544,10 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       // Fill results
       results->mcs_hop1[pdu][round_hop1] = context->mcs_hop1;
       results->tbs_hop1[pdu][round_hop1] = context->tbs_hop1;
-      results->n_rb_hop1[pdu][round_hop1] = N_RB;
+      results->n_rb_hop1[pdu][round_hop1] = args->n_rb_hop1;
 
       // Create first hop DCI
-      setup_broadcast_dci(&dci_hop1, context->rnti_hop1, round_hop1, context->mcs_hop1);
+      setup_broadcast_dci(&dci_hop1, context->rnti_hop1, round_hop1, context->mcs_hop1, args->n_rb_hop1);
       if(args->verbose > 1)
         dump_dci(frame_parms, &dci_hop1);
 
@@ -592,7 +600,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
       // Transmit over channel
       for(k = 0; k < args->n_relays; k++) {
-        awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(N_RB*12))/pow(10.0, ((double)context->snr_hop1[k])/10.0)/2.0);
+        awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop1*12))/pow(10.0, ((double)context->snr_hop1[k])/10.0)/2.0);
         transmit_subframe(context->channels_hop1[k],
             phy_vars_ch_src->lte_eNB_common_vars.txdata[0],
             frame_parms, context->subframe_hop1, frame_parms->symbols_per_tti+1, 1.0, false);
@@ -706,7 +714,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       // Fill results
       results->mcs_hop2[pdu][round_hop2] = context->mcs_hop2;
       results->tbs_hop2[pdu][round_hop2] = context->tbs_hop2;
-      results->n_rb_hop2[pdu][round_hop2] = N_RB;
+      results->n_rb_hop2[pdu][round_hop2] = args->n_rb_hop2;
       l = 0;
       for(k = 0; k < args->n_relays; k++)
         if(decoded_at_mr[k])
@@ -716,7 +724,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       results->relay_activity[l]++;
 
       // create second hop dci
-      setup_distributed_dci(&dci_hop2, context->rnti_hop2, round_hop2, context->mcs_hop2);
+      setup_distributed_dci(&dci_hop2, context->rnti_hop2, round_hop2, context->mcs_hop2, args->n_rb_hop2);
       if(args->verbose > 1)
         dump_dci(frame_parms, &dci_hop2);
 
@@ -725,6 +733,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
       // Clear eNB receive vector
       memset(phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0], 0, FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+
+      // Determine how many relays are active for this transmission, split the total power between them
+      n_active_relays = 0;
+      for(k = 0; k < args->n_relays; k++)
+        if(decoded_at_mr[k])
+          n_active_relays++;
 
       // transmit from all active relays
       accumulate_at_rx = false;
@@ -749,7 +763,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         }
 
         // Generate uplink reference signal
-        generate_drs_pusch(phy_vars_mr[k], 0, AMP, context->subframe_hop2, 0, N_RB);
+        generate_drs_pusch(phy_vars_mr[k], 0, AMP, context->subframe_hop2, 0, args->n_rb_hop2);
   
         // Encode ULSCH data
         if(ulsch_encoding(context->mr_buffer[k], frame_parms, phy_vars_mr[k]->ulsch_ue[0],
@@ -777,10 +791,10 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
         // Transmit over channel
         // Redo this in a more intuitive manner:
-        awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(N_RB*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
+        awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
         transmit_subframe(context->channels_hop2[k],
             phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
-            context->subframe_hop2, frame_parms->symbols_per_tti, 256.0/awgn_stddev, accumulate_at_rx);
+            context->subframe_hop2, frame_parms->symbols_per_tti, 256.0/sqrt((double)n_active_relays)/awgn_stddev, accumulate_at_rx);
         accumulate_at_rx = true;
       }
 
@@ -889,7 +903,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
     // Activate MRs that decoded during this frame
     for(k = 0; k < args->n_relays; k++)
       if(activate_mr[k]) {
-        setup_distributed_dci(&dci_hop2, context->rnti_hop2, 0, context->mcs_hop2);
+        setup_distributed_dci(&dci_hop2, context->rnti_hop2, 0, context->mcs_hop2, args->n_rb_hop2);
 
         // Generate transport channel parameters
         generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, (context->subframe_hop2+6)%10, 
@@ -972,7 +986,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           results->n_transmissions[rounds_hop1][rounds_hop2]++;
 
         if(!block_valid(context->input_buffer, phy_vars_ch_dest->ulsch_eNB[0]->harq_processes[context->harq_pid_hop2]->b,
-              context->input_buffer_length)) {
+              context->tbs_col/8)) {
           printf("MAC PDU %d decoded successfully, but contained errors\n", pdu);
         }
       }
@@ -1015,6 +1029,11 @@ int parse_args(int argc, char** argv, args_t* args)
     {"sweep", no_argument, NULL, 262},
     {"bsweep", no_argument, NULL, 263},
     {"strategy", required_argument, NULL, 264},
+    {"rb1", required_argument, NULL, 265},
+    {"rb2", required_argument, NULL, 266},
+    {"autorb", no_argument, NULL, 267},
+    {"range", required_argument, NULL, 268},
+    {"step", required_argument, NULL, 269},
     {NULL, 0, NULL, 0}};
 
   args->n_relays = 2;
@@ -1025,10 +1044,15 @@ int parse_args(int argc, char** argv, args_t* args)
   args->n_harq = 4;
   args->mcs_hop1 = 0;
   args->mcs_hop2 = 0;
-  args->channel_model = Rayleigh8;
+  args->n_rb_hop1 = N_RB;
+  args->n_rb_hop2 = N_RB;
+  args->autorb = false;
+  args->channel_model = AWGN;
   args->results_fn = 0;
   args->analysis = analysis_single;
   args->strategy = strategy_wait_all;
+  args->range = 10.0;
+  args->step = 1.0;
 
   for(k = 0; k < args->n_relays; k++)
     args->snr_hop1[k] = 10.0;
@@ -1108,6 +1132,29 @@ int parse_args(int argc, char** argv, args_t* args)
           return 1;
       }
       break;
+    case 265: // --rb1
+      args->n_rb_hop1 = atoi(optarg);
+      if(args->n_rb_hop1 <= 0 || args->n_rb_hop1 > N_RB)
+        return 1;
+      break;
+    case 266: // --rb2
+      args->n_rb_hop2 = atoi(optarg);
+      if(args->n_rb_hop2 <= 0 || args->n_rb_hop2 > N_RB)
+        return 1;
+      break;
+    case 267: // --autorb
+      args->autorb = true;
+      break;
+    case 268: // --range
+      args->range = atof(optarg);
+      if(args->range <= 0.0)
+        return 1;
+      break;
+    case 269: // --step
+      args->step = atof(optarg);
+      if(args->step <= 0.0)
+        return 1;
+      break;
     default:
       return 1;
     }
@@ -1138,7 +1185,8 @@ bool parse_snr(const char* str, double* snr, int n)
 
 int parse_channel_model(const char* str, SCM_t* model)
 {
-  if(strcmp(str, "A") == 0) *model = SCM_A;
+  if(strcmp(str, "0") == 0) *model = AWGN;
+  else if(strcmp(str, "A") == 0) *model = SCM_A;
   else if(strcmp(str, "B") == 0) *model = SCM_B;
   else if(strcmp(str, "C") == 0) *model = SCM_C;
   else if(strcmp(str, "D") == 0) *model = SCM_D;
@@ -1166,8 +1214,8 @@ void print_usage(const char* prog)
   printf("  -r FILE    : write results to FILE\n");
   printf("  -n NUM     : simulate NUM MAC PDUs [1]\n");
   printf("  -H NUM     : do NUM HARQ rounds in each hop [4]\n");
-  printf("     note: the hop 1 RVs are 0,0,1,1,2,2,3,3,0,0,..., the hop 2 RV is always 0\n");
-  printf("  -C CHANNEL : set the channel model, use -C help for available models [Rayleigh8]\n");
+  printf("     note: the hop 1 RVs are 0,0,1,1,2,2,3,3,0,0,..., the hop 2 RVs are 0,2,3,1,...\n");
+  printf("  -C CHANNEL : set the channel model, use -C help for available models [AWGN]\n");
   printf("  --strategy X : set the HARQ strategy to X [1]\n");
   printf("     1: decode at all relays before starting hop 2\n");
   printf("     2: start hop 2 when at least one relay has decoded\n");
@@ -1181,14 +1229,20 @@ void print_usage(const char* prog)
   printf("\n");
   printf("    Analysis setup (only one may be specified):\n");
   printf("  --single : single point analysis [default]\n");
-  printf("  --sweep  : sweep snr of first relay of both hops [-10..+10]\n");
-  printf("  --bsweep : sweep first relay of hop 1 [-10..+10], first relay of hop 2 [+10..-10]\n");
-  printf("      note: the swept range is relative to the specified SNR\n");
+  printf("  --sweep  : sweep snr of first relay of both hops [-RANGE*STEP..+RANGE*STEP]\n");
+  printf("  --bsweep : sweep first relay of hop 1 [-RANGE*STEP..+RANGE*STEP],\n");
+  printf("             sweep first relay of hop 2 [+RANGE*STEP..-RANGE*STEP]\n");
+  printf("  --range RANGE : set sweep range [10]\n");
+  printf("  --step STEP   : set sweep step size [1.0]\n");
+  printf("      note: the swept range is relative to SNR specified with --snr* options\n");
   printf("\n");
-  printf("    Modulation and coding options:\n");
+  printf("    Link and resource parameters:\n");
   printf("  -m MCS     : set mcs for both hops to MCS [0]\n");
   printf("  --mcs1 MCS : set mcs for hop 1 to MCS\n");
   printf("  --mcs2 MCS : set mcs for hop 2 to MCS\n");
+  printf("  --rb1 NUM  : set number of resource blocks for hop 1 [%d]\n", N_RB);
+  printf("  --rb2 NUM  : set number of resource blocks for hop 2 [%d]\n", N_RB);
+  //printf("  --autorb   : adjust the hop bandwidths to have similar TBS\n");
   printf("\n");
   printf("    Definition of results:\n");
   printf("  BLER is the fraction of MAC PDUs that are not successfully delivered from CH1 to CH2\n");
@@ -1201,6 +1255,7 @@ void print_usage(const char* prog)
 void print_channel_usage()
 {
   printf("Available channel models:\n");
+  printf("  0: AWGN\n");
   printf("  A: SCM-A\n");
   printf("  B: SCM-B\n");
   printf("  C: SCM-C\n");
@@ -1364,7 +1419,17 @@ void free_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE**
   //free_eNB_ulsch(phy_vars_ch->ulsch_eNB[0]);
 }
 
-void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs)
+u16 rballoc_type0(int n_rb, int rbg_size)
+{
+  int rb = 0;
+  int k;
+
+  for(k = 0; k < n_rb; k += rbg_size)
+    rb = (rb << 1) + 1;
+  return rb;
+}
+
+void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb)
 {
   DCI1_5MHz_TDD_t* dci_data = (DCI1_5MHz_TDD_t*) dci->dci_pdu;
 
@@ -1376,7 +1441,7 @@ void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs)
   dci_data->ndi = (harq_round == 0 ? 1 : 0);
   dci_data->harq_pid = 0;
   dci_data->mcs = mcs;
-  dci_data->rballoc = rb_alloc;
+  dci_data->rballoc = rballoc_type0(n_rb, RBG_SIZE);
   dci_data->rah = 0;
 
   dci->dci_length = sizeof_DCI1_5MHz_TDD_t;
@@ -1385,7 +1450,7 @@ void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs)
   dci->format = format1;
 }
 
-void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs)
+void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb)
 {
   DCI0_5MHz_TDD_1_6_t* dci_data = (DCI0_5MHz_TDD_1_6_t*) dci->dci_pdu;
 
@@ -1415,7 +1480,7 @@ void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs)
         break;
     }
   }
-  dci_data->rballoc = computeRIV(N_RB,0,N_RB);
+  dci_data->rballoc = computeRIV(N_RB,0,n_rb);
   dci_data->hopping = 0;
   dci_data->type = 0;
 
