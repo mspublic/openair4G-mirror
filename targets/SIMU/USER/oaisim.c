@@ -31,7 +31,6 @@
 #include "SCHED/vars.h"
 
 
-
 #ifdef XFORMS
 #include <forms.h>
 #include "MUMIMO_form.h"
@@ -169,7 +168,6 @@ help (void) {
 
 
 
-
 #ifdef XFORMS
 void do_forms_MUMIMO (FD_MUMIMO * form,
 		      unsigned int frames, 
@@ -277,8 +275,8 @@ void do_forms_MUMIMO (FD_MUMIMO * form,
     fl_replace_chart_value(form->piechart,3,FMU,"",FL_BLUE);
     fl_replace_chart_value(form->piechart,4,NO,"",FL_WHITE);
   }
-  fl_set_xyplot_xbounds(form->plot_avg,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form->plot_avg,0,1000);
+  //fl_set_xyplot_xbounds(form->plot_avg,0,oai_emulation.info.n_frames+1);
+  //fl_set_xyplot_ybounds(form->plot_avg,0,1000);
   fl_set_xyplot_ytics(form->plot_avg,8,10);
   fl_set_object_color(form->plot_avg,FL_BLACK,FL_YELLOW);
   fl_replace_xyplot_point(form->plot_avg,frames,frames+1,avg_d);
@@ -287,8 +285,8 @@ void do_forms_MUMIMO (FD_MUMIMO * form,
 
 
   
-  fl_set_xyplot_xbounds(form->plot_instant,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form->plot_instant,0,1000);
+  //fl_set_xyplot_xbounds(form->plot_instant,0,oai_emulation.info.n_frames+1);
+  //fl_set_xyplot_ybounds(form->plot_instant,0,1000);
   fl_set_xyplot_ytics(form->plot_instant,10,10);
 
   
@@ -650,8 +648,10 @@ main (int argc, char **argv)
   lte_subframe_t direction;
   //unsigned int subband[7] = {0,1,0,1,1,0,1};
   float xdata[10000], ydata[10000];
-  int points;
+  int points,xlimit=0;
   double overall_avg_throughput=0,avg_throughput=0,instant_throughput=0;
+
+
 
 
 #ifdef XFORMS
@@ -692,6 +692,8 @@ main (int argc, char **argv)
     int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
     double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
     double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
+
+
 
    // get command-line options
   while ((c = getopt (argc, argv, "haePToFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:"))
@@ -1072,23 +1074,28 @@ main (int argc, char **argv)
   fl_add_chart_value(form_MUMIMO->piechart,0,"",FL_WHITE);
   //fl_clear_chart(form_MUMIMO->piechart);
   }
-  for(points = 0; points < oai_emulation.info.n_frames;points++){
+  if (oai_emulation.info.n_frames > 5000)
+    xlimit = 5000;
+  else
+    xlimit = oai_emulation.info.n_frames;
+  for(points = 0; points < xlimit;points++){
     xdata[points] = points+1;
     ydata[points] = 0;
-  }
-  fl_set_xyplot_xbounds(form_MUMIMO->plot_avg,0,oai_emulation.info.n_frames+1);
-  fl_set_xyplot_ybounds(form_MUMIMO->plot_avg,0,1000);
-  fl_set_xyplot_data(form_MUMIMO->plot_avg,xdata,ydata,oai_emulation.info.n_frames,"Average System Throughput in Kbps","Number of Frames","Throughput");
+    }
 
-  fl_add_xyplot_overlay(form_MUMIMO->plot_avg,1,xdata,ydata,1,FL_CYAN);
-  fl_set_xyplot_overlay_type(form_MUMIMO->plot_avg,1,FL_POINTS_XYPLOT);
+    fl_set_xyplot_xbounds(form_MUMIMO->plot_avg,0,xlimit+1);
+    fl_set_xyplot_ybounds(form_MUMIMO->plot_avg,0,1000);
+    fl_set_xyplot_data(form_MUMIMO->plot_avg,xdata,ydata,xlimit,"Average System Throughput in Kbps","Number of Frames","Throughput");
+
+    fl_add_xyplot_overlay(form_MUMIMO->plot_avg,1,xdata,ydata,1,FL_CYAN);
+    fl_set_xyplot_overlay_type(form_MUMIMO->plot_avg,1,FL_POINTS_XYPLOT);
 
   
 
-  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant,0,oai_emulation.info.n_frames+1);
+  fl_set_xyplot_xbounds(form_MUMIMO->plot_instant,0,xlimit+1);
   fl_set_xyplot_ybounds(form_MUMIMO->plot_instant,0,1000);
   fl_set_object_color(form_MUMIMO->plot_instant,FL_BLACK,FL_ORANGE);
-  fl_set_xyplot_data(form_MUMIMO->plot_instant,xdata,ydata,oai_emulation.info.n_frames,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
+  fl_set_xyplot_data(form_MUMIMO->plot_instant,xdata,ydata,xlimit,"Instantaneous System Throughput in Kbps","Number of Frames","Throughput");
 
   fl_add_xyplot_overlay(form_MUMIMO->plot_instant,2,xdata,ydata,1,FL_RED);
   fl_add_xyplot_overlay(form_MUMIMO->plot_instant,3,xdata,ydata,1,FL_GREEN);
@@ -1387,6 +1394,7 @@ main (int argc, char **argv)
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     }
+
 
 #ifdef XFORMS
     overall_avg_throughput = 0;
