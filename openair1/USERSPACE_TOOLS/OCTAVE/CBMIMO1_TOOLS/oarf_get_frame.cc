@@ -143,9 +143,11 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   ioctl(openair_fd,openair_GET_BIGPHYSTOP,(void *)&bigphys_top);
   
   if (dummy_tx_rx_vars.TX_DMA_BUFFER[0]==NULL) {
-    printf("pci_buffers not allocated\n");
+    error(FCNNAME);
+    error("pci_buffers not allocated\n");
     close(openair_fd);
-    exit(-1);
+    return octave_value_list();
+    //exit(-1);
   }
   
   printf("BIGPHYS top 0x%x\n",bigphys_top);
@@ -162,8 +164,10 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   if (mem_base != -1)
     msg("MEM base= %p\n",(void*) mem_base);
   else {
-    msg("Could not map physical memory\n");
-    exit(-1);
+    error(FCNNAME);
+    error("Could not map physical memory\n");
+    return octave_value_list();
+    //exit(-1);
   }
 
   for (i=0;i<frame_parms->nb_antennas_rx;i++)
