@@ -804,7 +804,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         // Transmit over channel
         // Redo this in a more intuitive manner:
         //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
-        tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop1[k])/20.0)/((double)n_active_relays);
+        tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop1[k])/20.0)/sqrt((double)n_active_relays);
         //printf("hop 2: E=%d, ampl=%f, awgn=%f\n", tx_energy, tx_ampl, awgn_stddev);
         transmit_subframe(context->channels_hop2[k],
             phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
