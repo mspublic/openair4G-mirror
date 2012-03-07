@@ -193,7 +193,7 @@ void free_channel_vars(channel_vars_t v);
 sh_channel_t* alloc_sh_channel(channel_vars_t* cvars, SCM_t channel_model, int n_txantennas, int n_rxantennas);
 void free_sh_channel(sh_channel_t* c);
 void transmit_subframe(sh_channel_t* channel, s32** src, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb, double ampl, bool accumulate);
-void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb, double awgn_stddev);
+void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb, double stddev);
 void ofdm_fep(PHY_VARS_UE* phy_vars_mr, u8 subframe);
 int rx_dlsch_symbol(PHY_VARS_UE* phy_vars, u8 subframe, u8 symbol, u8 first_symbol);
 u32 get_ulsch_G(LTE_UE_ULSCH_t *ulsch, u8 harq_pid);
@@ -490,8 +490,10 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
   int n_active_relays;
   u8 n_used_pdcch_symbols;
   u32 tx_energy;
-  double awgn_stddev;
+  //double awgn_stddev;
+  double tx_ampl;
   double raw_ber;
+  double awgn_stddev;
   bool accumulate_at_rx;
   int i;
   int k;
@@ -594,16 +596,20 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           phy_vars_ch_src->lte_eNB_common_vars.txdata[0],
           frame_parms, context->subframe_hop1, frame_parms->symbols_per_tti+1);
 
-      // Compute transmitter signal energy
+      // Compute transmitter signal energy ( E{abs(X)^2} )
       tx_energy = signal_energy(&phy_vars_ch_src->lte_eNB_common_vars.txdata[0][0]
           [context->subframe_hop1*frame_parms->samples_per_tti], frame_parms->samples_per_tti);
 
       // Transmit over channel
       for(k = 0; k < args->n_relays; k++) {
-        awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop1*12))/pow(10.0, ((double)context->snr_hop1[k])/10.0)/2.0);
+        //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop1*12))/pow(10.0, ((double)context->snr_hop1[k])/10.0)/2.0);
+        awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop1[k])/20.0);
+        tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop1[k])/20.0);
+        //printf("hop 1: E=%d, ampl=%f, awgn=%f\n", tx_energy, tx_ampl, awgn_stddev);
+
         transmit_subframe(context->channels_hop1[k],
             phy_vars_ch_src->lte_eNB_common_vars.txdata[0],
-            frame_parms, context->subframe_hop1, frame_parms->symbols_per_tti+1, 1.0, false);
+            frame_parms, context->subframe_hop1, frame_parms->symbols_per_tti+1, tx_ampl, false);
         deliver_subframe(context->channels_hop1[k],
             phy_vars_mr[k]->lte_ue_common_vars.rxdata,
             frame_parms, context->subframe_hop1, frame_parms->symbols_per_tti+1, awgn_stddev);
@@ -716,7 +722,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       results->tbs_hop2[pdu][round_hop2] = context->tbs_hop2;
       results->n_rb_hop2[pdu][round_hop2] = args->n_rb_hop2;
       l = 0;
-      for(k = 0; k < args->n_relays; k++)
+      for(k = args->n_relays-1; k >= 0; k--)
         if(decoded_at_mr[k])
           l = (l << 1) + 1;
         else
@@ -739,6 +745,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       for(k = 0; k < args->n_relays; k++)
         if(decoded_at_mr[k])
           n_active_relays++;
+
+      // Normalization of received signal, fix this..
+      tx_energy = 300.0e3;
+      awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop1[0])/20.0);
+      for(k = 1; k < args->n_relays; k++)
+        awgn_stddev = min(sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop1[k])/20.0), awgn_stddev);
 
       // transmit from all active relays
       accumulate_at_rx = false;
@@ -791,17 +803,20 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
         // Transmit over channel
         // Redo this in a more intuitive manner:
-        awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
+        //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
+        tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop1[k])/20.0)/((double)n_active_relays);
+        //printf("hop 2: E=%d, ampl=%f, awgn=%f\n", tx_energy, tx_ampl, awgn_stddev);
         transmit_subframe(context->channels_hop2[k],
             phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
-            context->subframe_hop2, frame_parms->symbols_per_tti, 256.0/sqrt((double)n_active_relays)/awgn_stddev, accumulate_at_rx);
+            //context->subframe_hop2, frame_parms->symbols_per_tti, 256.0/sqrt((double)n_active_relays)/awgn_stddev, accumulate_at_rx);
+            context->subframe_hop2, frame_parms->symbols_per_tti, tx_ampl, accumulate_at_rx);
         accumulate_at_rx = true;
       }
 
       // This is ugly. Fix it.
       deliver_subframe(context->channels_hop2[0],
           phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0], frame_parms,
-          context->subframe_hop2, frame_parms->symbols_per_tti, 256.0);
+          context->subframe_hop2, frame_parms->symbols_per_tti, awgn_stddev);
 
       results->n_harq_tries_hop2[round_hop2]++;
 
@@ -809,10 +824,10 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       for (i=0;i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
         ((short*) &phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0]
          [(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i] = 
-          (short) ((256.0*gaussdouble(0.0,1.0)));
+          (short) ((awgn_stddev*0.707*gaussdouble(0.0,1.0)));
         ((short*) &phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0][0]
          [(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size])[2*i+1] = 
-          (short) ((256.0*gaussdouble(0.0,1.0)));
+          (short) ((awgn_stddev*0.707*gaussdouble(0.0,1.0)));
       }
 
       // Generate eNB transport channel parameters
@@ -1563,6 +1578,15 @@ void transmit_subframe(sh_channel_t* channel, s32** src, LTE_DL_FRAME_PARMS* fra
   for(k = 0; k < nsamples; k++) {
     channel->cvars->s_re[0][k] = (double)((s16*)src[0])[2*subframe*frame_parms->samples_per_tti + (k<<1)];
     channel->cvars->s_im[0][k] = (double)((s16*)src[0])[2*subframe*frame_parms->samples_per_tti + (k<<1) + 1];
+    /*
+    if(accumulate) {
+      channel->cvars->r_re_t[0][k] = channel->cvars->s_re[0][k];
+      channel->cvars->r_im_t[0][k] = channel->cvars->s_im[0][k];
+    } else {
+      channel->cvars->r_re[0][k] = channel->cvars->s_re[0][k];
+      channel->cvars->r_im[0][k] = channel->cvars->s_im[0][k];
+    }
+    */
     //channel->cvars->s_re[1][k] = 0;
     //channel->cvars->s_im[1][k] = 0;
   }
@@ -1584,7 +1608,7 @@ void transmit_subframe(sh_channel_t* channel, s32** src, LTE_DL_FRAME_PARMS* fra
 }
 
 void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* frame_parms,
-    u8 subframe, u8 nsymb, double awgn_stddev)
+    u8 subframe, u8 nsymb, double stddev)
 {
   int k;
   int symbols_per_slot = (frame_parms->Ncp == 0 ? 7 : 6);
@@ -1600,9 +1624,9 @@ void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* fram
 
   for(k = 0; k < nsamples; k++) {
     ((s16*)dst[0])[2*subframe*frame_parms->samples_per_tti + (k<<1)] = 
-      (s16) (channel->cvars->r_re[0][k] + awgn_stddev*gaussdouble(0.0, 1.0));
+      (s16) (channel->cvars->r_re[0][k] + stddev*0.707*gaussdouble(0.0, 1.0));
     ((s16*)dst[0])[2*subframe*frame_parms->samples_per_tti + (k<<1) + 1] = 
-      (s16) (channel->cvars->r_im[0][k] + awgn_stddev*gaussdouble(0.0, 1.0));
+      (s16) (channel->cvars->r_im[0][k] + stddev*0.707*gaussdouble(0.0, 1.0));
   }
 }
 
