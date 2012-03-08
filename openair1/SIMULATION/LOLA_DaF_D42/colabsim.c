@@ -594,7 +594,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       // OFDM modulation
       ofdm_modulation(phy_vars_ch_src->lte_eNB_common_vars.txdataF[0],
           phy_vars_ch_src->lte_eNB_common_vars.txdata[0],
-          frame_parms, context->subframe_hop1, frame_parms->symbols_per_tti+1);
+          frame_parms, context->subframe_hop1, frame_parms->symbols_per_tti/2*3);
 
       // Compute transmitter signal energy ( E{abs(X)^2} )
       tx_energy = signal_energy(&phy_vars_ch_src->lte_eNB_common_vars.txdata[0][0]
@@ -748,9 +748,9 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
       // Normalization of received signal, fix this..
       tx_energy = 300.0e3;
-      awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop1[0])/20.0);
+      awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[0])/20.0);
       for(k = 1; k < args->n_relays; k++)
-        awgn_stddev = min(sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop1[k])/20.0), awgn_stddev);
+        awgn_stddev = min(sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[k])/20.0), awgn_stddev);
 
       // transmit from all active relays
       accumulate_at_rx = false;
@@ -804,7 +804,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         // Transmit over channel
         // Redo this in a more intuitive manner:
         //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
-        tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop1[k])/20.0)/sqrt((double)n_active_relays);
+        tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop2[k])/20.0)/sqrt((double)n_active_relays);
         //printf("hop 2: E=%d, ampl=%f, awgn=%f\n", tx_energy, tx_ampl, awgn_stddev);
         transmit_subframe(context->channels_hop2[k],
             phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
