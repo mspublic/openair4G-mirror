@@ -310,7 +310,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      
      pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
      
-//     PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[subframe%2].sr;// UE_transport_info[ue_id].cntl.sr;
+     PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[subframe%2].sr;// UE_transport_info[ue_id].cntl.sr;
      
      //if (PHY_vars_UE_g[ue_id]->sr) LOG_I(EMU,"SR is %d \n", PHY_vars_UE_g[ue_id]->sr);
      
