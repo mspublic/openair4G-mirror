@@ -112,7 +112,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_FEP
       msg("Frequency offset estimation\n");
 #endif   
-      if ((Ns == 0) & (l==(4-frame_parms->Ncp))) 
+      if ((l == 0) || (l==(4-frame_parms->Ncp))) 
 	lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
 			    frame_parms,
 			    l,
