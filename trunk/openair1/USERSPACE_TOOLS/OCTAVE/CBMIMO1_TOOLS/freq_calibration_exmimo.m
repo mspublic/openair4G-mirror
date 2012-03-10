@@ -11,7 +11,7 @@ cables_loss_dB = 6;    % we need to account for the power loss between the signa
 dual_tx = 0;
 tdd = 1;
 
-fc = 1907600e3;   % this has to be the same as in the config file
+fc = 1912600e3;   % this has to be the same as in the config file
 fs = 7680e3;
 %fs = 6500e3;
 fref = fc+fs/4;

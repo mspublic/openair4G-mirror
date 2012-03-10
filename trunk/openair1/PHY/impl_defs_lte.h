@@ -416,9 +416,9 @@ typedef struct {
   /// Frequency index of CBMIMO1 card
   u8 freq_idx;
   /// Frequency for ExpressMIMO/LIME
-  u32 carrier_freq;
+  u32 carrier_freq[4];
   /// RX gain for ExpressMIMO/LIME
-  u32 rxgain;
+  u32 rxgain[4];
   /// Turns on second TX of CBMIMO1 card
   u8 dual_tx;                
 /// flag to indicate SISO transmission

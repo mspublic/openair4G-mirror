@@ -153,6 +153,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   printf("BIGPHYS top 0x%x\n",bigphys_top);
   printf("RX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[0]);
   printf("TX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[0]);
+  printf("RX_DMA_BUFFER[1] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[1]);
+  printf("TX_DMA_BUFFER[1] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[1]);
 
   mem_base = (unsigned int)mmap(0,
 				BIGPHYS_NUMPAGES*4096,
@@ -185,6 +187,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
       dx(i,aa)=Complex( rx_sig[aa][i*2], rx_sig[aa][i*2+1] );
 
   close(openair_fd);
+
+  munmap((void*)mem_base, BIGPHYS_NUMPAGES*4096);
 
   //close(rx_sig_fifo_fd);
   //close(rf_cntl_fifo_fd);

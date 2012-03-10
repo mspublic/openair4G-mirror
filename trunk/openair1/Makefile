@@ -12,7 +12,7 @@ export OPENAIR1=1
 endif
 
 ifndef OPENAIR2
-export OPENAIR2=1
+export OPENAIR2=0
 endif
 
 ifndef EMOS
@@ -70,45 +70,36 @@ openair0:
 	mknod /dev/openair0 c 127 0
 	chmod a+rw /dev/openair0
 
-# By default, we set 'updatefirmware' option of make to be void
-# (if the user specify option updatefirmware=1, this will take precedence
-# over the default value)
-updatefirmware=0
 install_oai_user:
 	make fifos
 	insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko
 
+updatefw:
+	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 
+
 boot_exmimo:
 	rmmod openair_rf
 	make install_oai_user
-	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f /homes/knopp/Devel/openair/trunk/openair0/express-mimo/software/sdr/main -s 0x43fffff0 
-	rmmod openair_rf
-	make install_oai_user
-		
-reboot_exmimo:
-	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f /homes/knopp/Devel/openair/trunk/openair0/express-mimo/software/sdr/main -s 0x43fffff0 -b
-	rmmod openair_rf
-	make install_oai_user
-	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f /homes/knopp/Devel/openair/trunk/openair0/express-mimo/software/sdr/main -s 0x43fffff0 
+	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 
 	rmmod openair_rf
 	make install_oai_user
 
-install_cbmimo1_softmodem:
+reboot_exmimo:
+	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 -b
+	rmmod openair_rf
+	make install_oai_user
+	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 
+	rmmod openair_rf
+	make install_oai_user
+
+install_softmodem:
 	make fifos
 ifeq ($(OPENAIR2),1)
 	insmod ../openair2/RRC/LITE/MESSAGES/asn1_msg_kern.ko
 endif
 	insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko ; \
 
-install_cbmimo1_softmodem1:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_layer1.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_layer1.ko ; \
-	fi
-
-remove_cbmimo1:
+remove:
 	rmmod openair_rf
 ifeq ($(OPENAIR2),1)
 	rmmod asn1_msg_kern
@@ -118,9 +109,9 @@ test:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) test RTAI=1 CBMIMO1=1)	
 	(cd ../openair2/RRC/LITE/MESSAGES && $(MAKE) test)
 
-clean: clean_cbmimo1 clean_asn1
+clean: clean_l1 clean_asn1
 
-clean_cbmimo1:
+clean_l1:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) clean RTAI=1 CBMIMO1=1)
 
 clean_asn1:

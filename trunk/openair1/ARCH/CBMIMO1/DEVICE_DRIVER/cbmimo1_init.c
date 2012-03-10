@@ -177,14 +177,23 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
     
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       exmimo_pci_interface->rf.adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
+      printk("exmimo_pci_interface->rf.adc_head[%d] = %x\n",i,exmimo_pci_interface->rf.adc_head[i]);
     }
     for (i=0;i<NB_ANTENNAS_TX;i++){
       exmimo_pci_interface->rf.dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
     }
 
-    //    printk("Freq %d, Gain %d\n",frame_parms->carrier_freq,frame_parms->rxgain);
-    exmimo_pci_interface->rf.rf_freq_rx0          = frame_parms->carrier_freq;
-    exmimo_pci_interface->rf.rx_gain00            = frame_parms->rxgain;
+    printk("Freq %d,%d,%d,%d, Gain %d,%d,%d,%d\n",
+	   frame_parms->carrier_freq[0],frame_parms->carrier_freq[1],frame_parms->carrier_freq[2],frame_parms->carrier_freq[3],
+	   frame_parms->rxgain[0],frame_parms->rxgain[1],frame_parms->rxgain[2],frame_parms->rxgain[3]);
+    exmimo_pci_interface->rf.rf_freq_rx0          = frame_parms->carrier_freq[0];
+    exmimo_pci_interface->rf.rx_gain00            = frame_parms->rxgain[0];
+    exmimo_pci_interface->rf.rf_freq_rx1          = frame_parms->carrier_freq[1];
+    exmimo_pci_interface->rf.rx_gain10            = frame_parms->rxgain[1];
+    exmimo_pci_interface->rf.rf_freq_rx2          = frame_parms->carrier_freq[2];
+    exmimo_pci_interface->rf.rx_gain20            = frame_parms->rxgain[2];
+    exmimo_pci_interface->rf.rf_freq_rx3          = frame_parms->carrier_freq[3];
+    exmimo_pci_interface->rf.rx_gain30            = frame_parms->rxgain[3];
   }
 #endif // RTAI_ENABLED
     

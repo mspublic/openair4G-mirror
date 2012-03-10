@@ -198,7 +198,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[openair][IOCTL] NODE ALREADY CONFIGURED Triggering reset of OAI firmware\n",openair_daq_vars.node_configured);
 
       if (vid == XILINX_VENDOR) {  // This is ExpressMIMO
-	//	exmimo_firmware_init();
+	//exmimo_firmware_init();
 	//openair_dma(0,EXMIMO_PCIE_INIT);
 	ret = setup_regs(0,frame_parms);
 	/*
@@ -217,7 +217,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	ret = setup_regs(i,frame_parms);
 	if (vid != XILINX_VENDOR)
 	  pci_interface[i]->freq_offset = 0;
-	//	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	//openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 	
       }
       */
@@ -920,7 +920,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   
   case openair_GET_BUFFER:
 
-    //    printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
+    printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
@@ -963,6 +963,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.get_frame_done = 0;
       setup_regs(0,frame_parms);
       get_frame_cnt=0;
+      printk("calling openair_dma(0,EXMIMO_GET_FRAME);\n");
       openair_dma(0,EXMIMO_GET_FRAME);
       
       while ((get_frame_cnt<30) &&
