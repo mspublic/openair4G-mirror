@@ -68,7 +68,7 @@ extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 extern DCI1_5MHz_TDD_t           DLSCH_alloc_pdu;
 extern DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
-
+extern DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
 #endif //DEF_H
 
