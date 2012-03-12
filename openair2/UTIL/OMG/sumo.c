@@ -89,7 +89,8 @@ int start_sumo_generator(omg_global_param omg_param_list) {
 
   targetTime = 1;
   
-  handshake(omg_param_list.sumo_host,omg_param_list.sumo_port);
+// switch on error to return to OAI
+  int error = handshake(omg_param_list.sumo_host,omg_param_list.sumo_port);
   
   init(omg_param_list.sumo_end - omg_param_list.sumo_start);
   
