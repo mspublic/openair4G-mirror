@@ -44,7 +44,7 @@
 #include <errno.h>
 
 #include "oml.h"
-
+#include"UTIL/LOG/log.h"
 
 #define rng_func  0 // macro to point to the data structure
 #define MAX_NUM   1000  //to define

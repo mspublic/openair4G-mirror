@@ -66,6 +66,10 @@ void init_omg_global_params(void){ //if we want to re initialize all
   }
 }
 
+// maybe remplace  'start_OMG(omg_global_param omg_param_list)
+// of course, add 'stop_OMG(), which calls recursively 
+// stop_XX_generator();
+//
 void init_mobility_generator(omg_global_param omg_param_list) {
   switch (omg_param_list.mobility_type) {
 

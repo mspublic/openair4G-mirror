@@ -46,7 +46,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
+//typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
 
 
 inline unsigned int taus(unsigned int comp);

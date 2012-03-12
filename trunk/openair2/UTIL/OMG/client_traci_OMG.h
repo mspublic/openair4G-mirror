@@ -85,7 +85,7 @@ extern descLen;
  * \brief Talks to SUMO by establishing connection
  * \param Accepts host name and port number
  */
-void handshake(char *,int);
+int handshake(char *,int);
 
 /**
  * \fn extractCommandStatus(storage *, unsigned char , char *)

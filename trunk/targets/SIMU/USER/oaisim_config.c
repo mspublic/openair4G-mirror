@@ -369,7 +369,7 @@ int ocg_config_topo() {
 	omg_param_list.max_sleep = (oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_sleep_ms == 0) ? 0.1 : oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_sleep_ms;
 
 	omg_param_list.mobility_file = (char*) malloc(256);
-	sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")); // default trace-driven mobility file
+	sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/TRACE/example_trace.tr",getenv("OPENAIR2_DIR")); // default trace-driven mobility file
 
 	if (omg_param_list.nodes >0 ) 
 	  init_mobility_generator(omg_param_list);

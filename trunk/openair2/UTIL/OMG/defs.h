@@ -115,15 +115,15 @@ typedef struct omg_global_param{
 	int mobility_type; /*!< The chosen mobility model for the nodes in question. It should be one of the types inumarated as #mobility_types*/
 	int nodes_type; /*!< The type of the nodes in question. It should be one of the types inumarated as #node_types */
   	int seed; /*!< The seed used to generate the random positions*/
-	char* mobility_file; /*!< The mobility file name containing the mobility traces used by the TRACE model */
-        char* sumo_command; /*!< The command to start SUMO; Either 'sumo' or 'sumo-gui' in case a GUI would be required; see SUMO for further details */
-        char* sumo_config; /*!< The configuration file for SUMO; it must be a '.cfg' file located in ./SUMO/Scenarios folder */
+	char* mobility_file; /*!< The mobility file name containing the mobility traces used by the TRACE model; DEFAULT: TRACE/example_trace.tr */
+        char* sumo_command; /*!< The command to start SUMO; Either 'sumo' or 'sumo-gui' in case a GUI would be required; see SUMO for further details; DEFAULT: sumo */
+        char* sumo_config; /*!< The configuration file for SUMO; it must be a '.cfg' file located in ./SUMO/Scenarios folder DEFAULT: SUMO/Scenarios/scen.sumo.cfg */
 	int sumo_start; /*!< The time at which SUMO should start; Default: 0s */
-        int sumo_end; /*!< The time at which SUMO should stop; It shold be greater or equal to OAI */
-        int sumo_step; /*!< The simulation step of SUMO, in ms. it is 1000ms by default (i.e. SUMO updates its mobility every second) */
-        char* sumo_host; /*!< The IP host address where SUMO will be run. */
-        int sumo_port; /*!< The port number attached to SUMO on the host */
-}omg_global_param; 
+        int sumo_end; /*!< The time at which SUMO should stop; It shold be greater or equal to OAI Default: END OF EMULATION */
+        int sumo_step; /*!< The simulation step of SUMO, in ms. it is 1000ms by default (i.e. SUMO updates its mobility every second); DEFAULT: 1000ms (1s) */
+        char* sumo_host; /*!< The IP host address where SUMO will be run. DEFAULT: localhost */
+        int sumo_port; /*!< The port number attached to SUMO on the host DEFAULT: TBC */
+}omg_global_param;  
 
 /*!A string List structure */
 struct string_list_struct {

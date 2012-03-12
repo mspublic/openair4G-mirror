@@ -45,7 +45,7 @@
 #include "client_traci_OMG.h"
 #include "TraCIConstants.h"
 
-void handshake(char *hoststr,int portno){
+int handshake(char *hoststr,int portno){
     
    check_endianness(); // check endianness
    int i;
@@ -57,10 +57,11 @@ void handshake(char *hoststr,int portno){
         }
         else {
               LOG_N(OMG, " SUMO now connected to OMG on host address %c and port %n .\n", hoststr, portno);
-           return;
+ 	      return 0;  
 	}
    }
     LOG_E(OMG, " SUMO unreachable...giving up...\n");
+    return -1;
 }
 
 void init(int max_sim_time) {
