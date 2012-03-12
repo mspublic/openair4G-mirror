@@ -38,96 +38,67 @@
 * \warning
 */
 
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "otg_defs.h"
-//#include "../../../openair1/PHY/CODING/defs.h" // for CRC computing 
-#include "otg_vars.h"
-#include "UTIL/LOG/log.h"
-int check_packet(char *packet){
+#include"otg_rx.h"
+
+// Check if the packet is well received or not and extract data
+int check_packet( int src, int dst, int ctime){
 	
 	int status_ok=0;
+	packet_t* packet_rx = (packet_t*)buffer_tx;
+	set_ctime(ctime);
 
-//No need to check the CRC
-/*
-	char *pch;
-	char *pch2;
-	char *tmp_pkts;
-	char *crc_string;
-	char *crc_rx_string;
-	unsigned int crc_rx=0;
+
+
+//  Free the received packet if it is well received
+
+	if (NULL != packet_rx){
+
+		
+		if (packet_rx->otg_hdr->seq_num==otg_info->rx_num_pkt[src][dst]+1){
+			LOG_T(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, num_pkts RX=%d \n",src,dst, packet_rx->otg_hdr->seq_num, otg_info->rx_num_pkt[src][dst]+1);
+			status_ok=1;
+		if (packet_rx->header!=NULL)
+			LOG_I(OTG,"RX NFO ::  Header :%s \n", packet_rx->header);
+		if (packet_rx->payload!=NULL)
+			LOG_I(OTG,"RX INFO ::  Payload :%s \n", packet_rx->payload);
+		LOG_I(OTG,"RX INFO ::  flow id :%d \n", packet_rx->otg_hdr->flow_id);
+		LOG_I(OTG,"RX INFO :: header type: %d \n", packet_rx->otg_hdr->hdr_type);
+		LOG_I(OTG,"RX INFO :: time: %d \n", packet_rx->otg_hdr->time);
+		LOG_I(OTG,"RX INFO :: Sequence NB: %d \n", packet_rx->otg_hdr->seq_num);
+
+			// Compute STAT
+		otg_info->rx_num_pkt[src][dst]+=1;
+		LOG_I(OTG,"PACKET SIZE (RX):  time(%d), otg header(%d), header (%d), payload (%d), Total (%d) \n", ctime, sizeof(otg_hdr_t), strlen(packet_rx->header), strlen(packet_rx->payload),( sizeof(otg_hdr_t) + strlen(packet_rx->header) + strlen(packet_rx->payload)));
+		otg_info->rx_num_bytes[src][dst]+= sizeof(otg_hdr_t) +  strlen(packet_rx->header) + strlen(packet_rx->payload) ;
+
+//printf("time_diff current=%d, previous=%d \n", get_ctime() , packet_rx->otg_hdr->time);
+		otg_info->rx_pkt_owd[src][dst]= get_ctime() - packet_rx->otg_hdr->time ;
 	
-	int pos;
+	
+		LOG_I(OTG,"RX INFO :: RTT (one way) ms: %d \n", otg_info->rx_pkt_owd[src][dst]);
+	
+		if ((otg_info->rx_pkt_owd[src][dst] > otg_info->rx_owd_max[src][dst]) || (otg_info->rx_owd_min[src][dst]==0))
+				otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
 
+		if  ((otg_info->rx_pkt_owd[src][dst] < otg_info->rx_owd_min[src][dst]) || (otg_info->rx_owd_min[src][dst]==0)) 
+				otg_info->rx_owd_min[src][dst]=otg_info->rx_pkt_owd[src][dst];
 
-// CRC RX computation 
+		LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
+			
+		//free the packet 
+		packet_rx=NULL;  					
+		free(packet_rx);
+		LOG_I(OTG,"RX Free packet\n");
+		}
 
-	pch=strstr(packet, END_OTG_HEADER);
-	tmp_pkts=(char*)malloc((strlen(pch))*sizeof(char*));
-	sprintf(tmp_pkts,"%s",(pch+strlen(END_OTG_HEADER)));
-	//printf ("STRING OBTAINED=%s\n",tmp_pkts);
+		else
+			LOG_W(OTG,"check_packet :: (i=%d,j=%d) ERROR: packet seq_num TX=%d, num_pkts RX=%d \n",src, dst, packet_rx->otg_hdr->seq_num, otg_info->rx_num_pkt[src][dst]+1);
 
-	crc_rx= crc_gen(tmp_pkts, CRC_FLAG);
-	printf("CRC RX=%u\n", crc_rx);
-
-	crc_rx_string=(char*)malloc(20*sizeof(char*));
-	sprintf(crc_rx_string,"%u",crc_rx);
-
-// CRC CX regeneration
-
-	pch2=strstr(packet, OTG_CTRL_FLAG);
-
-	//printf ("found at %d\n",pch2-packet+1);
-	crc_string=(char*)malloc((pch2-packet)*sizeof(char*));
-	strncpy(crc_string, packet, pch2-packet);
-
-	printf("CRC TX=%s\n",crc_string); //(int)atol(crc_string)
-	printf("CRC size %d \n", strlen(crc_string));
-
-	// COMPARE CRC
- 
-	// overflow condition occuring with crc values higher than 999999999. atoi function returns 2147483647
-
-	 if ((strcmp(crc_string,crc_rx_string)==0)){ //
-		printf("CRC check OK!\n");
-		 status_ok=1;
 	}
 	else 
-		printf("CRC error!\n");
+	LOG_W(OTG,"check_packet :: ERROR: NO_PACKETS RECEIVED\n");
+
 	
-
-	if (NULL != tmp_pkts){
-		tmp_pkts=NULL;  					
-		free(tmp_pkts);
-	}
-
-	if (NULL != pch){
-		pch=NULL;  					
-		free(pch);
-	}
-	if (NULL != pch2){
-		pch2=NULL;  					
-		free(pch2);
-	}
-	if (NULL != crc_rx_string){
-		crc_rx_string=NULL;  					
-		free(crc_rx_string);
-	}
-
-*/
-	// Free the received packet
-
-	if (NULL != packet){
-
-	LOG_D(OTG,"Received packet=%s\n",packet);
-	status_ok=1;
-		packet=NULL;  					
-		free(packet);
-	}
-
-	printf("OTG RX Free packet\n");
 
 	return(status_ok);
 
