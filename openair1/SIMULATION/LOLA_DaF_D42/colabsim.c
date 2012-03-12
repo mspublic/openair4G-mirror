@@ -1075,7 +1075,7 @@ int parse_args(int argc, char** argv, args_t* args)
     args->snr_hop2[k] = 10.0;
 
   snr_set = false;
-  while((c = getopt_long(argc, argv, "hovn:m:r:H:C:", long_options, NULL)) != -1) {
+  while((c = getopt_long(argc, argv, "hovN:n:m:r:H:C:", long_options, NULL)) != -1) {
     switch(c) {
     case 'h':
       return 1;
@@ -1085,8 +1085,15 @@ int parse_args(int argc, char** argv, args_t* args)
     case 'v':
       args->verbose++;
       break;
+    case 'N':
+      args->n_relays = atoi(optarg);
+      if(args->n_relays <= 0)
+        return 1;
+      break;
     case 'n':
       args->n_pdu = atoi(optarg);
+      if(args->n_pdu <= 0)
+        return 1;
       break;
     case 'H':
       args->n_harq = atoi(optarg);
@@ -1227,6 +1234,7 @@ void print_usage(const char* prog)
   printf("  -v         : increase verbosity level [0]\n");
   printf("  -o         : output MATLAB signal files (implies -n 1) [no]\n");
   printf("  -r FILE    : write results to FILE\n");
+  printf("  -N NRELAYS : simulate using NRELAYS relays [2]\n");
   printf("  -n NUM     : simulate NUM MAC PDUs [1]\n");
   printf("  -H NUM     : do NUM HARQ rounds in each hop [4]\n");
   printf("     note: the hop 1 RVs are 0,0,1,1,2,2,3,3,0,0,..., the hop 2 RVs are 0,2,3,1,...\n");
