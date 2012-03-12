@@ -44,7 +44,9 @@ OMG_OBJS +=  $(OMG_DIR)/storage_traci_OMG.o
 OMG_OBJS +=  $(OMG_DIR)/socket_traci_OMG.o
 
 OTG_OBJS =  $(OTG_DIR)/otg_tx.o
+OTG_OBJS +=  $(OTG_DIR)/otg.o
 OTG_OBJS +=  $(OTG_DIR)/otg_rx.o
+OTG_OBJS +=  $(OTG_DIR)/otg_kpi.o
 
 MATH_OBJS  =  $(MATH_DIR)/oml.o
 
