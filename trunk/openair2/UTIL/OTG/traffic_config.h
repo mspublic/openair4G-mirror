@@ -1,26 +1,22 @@
-//#include "../../../openair1/PHY/impl_defs.h"
 
-
-
-
-#define MAX_NUM_NODE_TYPES 2 // enb/ch and ue/mr
-#define MAX_NUM_TRAFFIC_STATE 3 // enb/ch and ue/mr
-#define MAX_NUM_NODES  2// 12 total number of nodes in the emulation scneario, we may use grouping to aggregate nodes, at rlc this could be rb id
-//#define MAX_NUM_NODES NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX
  
 //IDT DISTRIBUTION PARAMETERS
-#define IDT_DIST POISSON
-#define IDT_MIN 2 // unit second
+#define IDT_DIST GAUSSIAN
+#define IDT_MIN 2 
 #define IDT_MAX 10
 #define IDT_STD_DEV 1
 #define IDT_LAMBDA 3
 
+//TRANSPORT PROTOCOL
+#define TRANS_PROTO TCP
+#define IP_V IPV4
+
 //DATA PACKET SIZE DISTRIBUTION PARAMETERS
-#define PKTS_SIZE_DIST UNIFORM  //unit packet per second 
+#define PKTS_SIZE_DIST POISSON   
 #define PKTS_SIZE_MIN 17
-#define PKTS_SIZE_MAX 1024
-#define PKTS_SIZE_STD_DEV 1
-#define PKTS_SIZE_LAMBDA 6
+#define PKTS_SIZE_MAX 1500
+#define PKTS_SIZE_STD_DEV 30
+#define PKTS_SIZE_LAMBDA 500
 
 //SOCKET MODE
 #define DST_PORT 1234;

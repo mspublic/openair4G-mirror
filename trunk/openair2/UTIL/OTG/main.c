@@ -44,109 +44,384 @@
 #include <stdlib.h>
 
 #include "otg_tx.h"
-#include "otg_tx_socket.h"
 #include "otg_rx.h"
+#include "otg_kpi.h"
+#include "otg.h"
+#include "otg_tx_socket.h"
 #include "otg_vars.h"
 #include "otg_config.h"
+#include "traffic_config.h"
+
+#include "../MATH/oml.h"
+
+#define STANDALONE 
+
+#ifdef STANDALONE
+	#define LOG_G(c, x...) printf(x)
+	#define LOG_A(c, x...) printf(x)
+	#define LOG_C(c, x...) printf(x)
+	#define LOG_E(c, x...) printf(x)
+	#define LOG_W(c, x...) printf(x)
+	#define LOG_N(c, x...) printf(x)
+	#define LOG_I(c, x...) printf(x)
+	#define LOG_D(c, x...) printf(x)
+	#define LOG_F(c, x...) printf(x)  
+	#define LOG_T(c, x...) printf(x)
+#else
+	#include "/UTIL/LOG/log.h"
+#endif 
 
 
-#define STANDALONE 1 
+int SIMU_TIME=1200000;  
+int simu_time=0, duration=0, seed=0, simu_mode=0;
 
-int main (){
 
-	int i, j, k, l, rx_otg=0,cmpt_pkts=0, size, test =1;
-	double idt;
-	char *packet;
-	char *payload;
-	char *ctl_otg_header;
-	int mode_socket=0;  // to switch between socket and below IP mode
+// init OTG with config parameters
 
-	init_all_otg();
+void init_config_otg(char *protocol, char *ip_version) {
 
-	init_config_otg();
+int i, j, k;
 
-	init_seeds(g_otg->seed);
+	if (simu_time>0) 
+		SIMU_TIME=simu_time;
+
+printf("OTG :: INIT CONFIG\n");
+
+	if (seed>0)
+		g_otg->seed=seed;
+	else
+		g_otg->seed=ceil(uniform_rng()*67534);
+
+printf("duration %d, seeds %d \n", duration, g_otg->seed);
+
+
+	for (i=0; i<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); i++){
+
+
+
+		if (duration>0)
+				g_otg->duration[i]=duration;
+		else
+			g_otg->duration[i]=10000;
 
 	
+		g_otg->dst_port[i]=DST_PORT;
+		g_otg->dst_ip[i]=(char*)malloc(100*sizeof(char*));
+		g_otg->dst_ip[i]=DST_IP;
+		g_otg->dst_ip[i]=DST_IP;  
 
-	do { // generate a tick in second 
-	
-		otg_info->emu_time+=1; // in ms  
-	
-		for (i=0; i<MAX_NUM_NODES; i++){
+//config ip version
+		//printf("vvversion %s %s\n", ip_version, protocol);
 
-			otg_info->seq_num[i]=0;
+	if (ip_version !=NULL){
+		if ((strcmp(ip_version,"IP4")==0) ||(strcmp(ip_version,"ip4")==0))
+			g_otg->ip_v[i]=IPV4;
+		else if ((strcmp(ip_version,"IP6")==0) ||(strcmp(ip_version,"ip6")==0))
+			g_otg->ip_v[i]=IPV6;
+	}
+	else	
+		g_otg->ip_v[i]=77;
 
-	 		for (j=0; j<MAX_NUM_NODES; j++){
+
+//config transport protocol version
+	if (protocol!=NULL){
+		if ((strcmp(protocol,"TCP")==0) ||(strcmp(protocol,"tcp")==0))
+			g_otg->trans_proto[i]=TCP;
+		else if ((strcmp(protocol,"UDP")==0) ||(strcmp(protocol,"udp")==0))
+			g_otg->trans_proto[i]=UDP;
+	}
+	else 
+		g_otg->trans_proto[i]=77;
+
+			for (j=0; j<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); j++){
+				g_otg->application_type[i][j]=OPENARENA;
 				for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
-
-				
-					otg_info->seq_num[i]+=1;
-					
-				
-					printf("SEQUENCE NUMBER PKTS=%d\n", otg_info->seq_num[i]);	
-
-if (mode_socket==0){
-
-	printf("===============CX==============\n");
-	printf("\n");
-	printf("===============START==============\n");	
-	printf("\n");			
-					
-					packet=packet_gen(i, j, k);
-					cmpt_pkts+=1;
-	printf("\n");			
-	printf("===============END================\n");	
-		
-	printf("\n");
-	printf("\n");	
-
-
-	printf("===============RX==============\n");
-	printf("\n");
-	printf("===============START==============\n");	
-	printf("\n");
-
-	rx_otg+=check_packet(packet);
-
-	printf("\n");
-	printf("===============END================\n");	
-	printf("\n");
-	printf("\n");
-}
-else{
-
-printf("other mode = socket\n");
-cmpt_pkts+=1;
-socket_packet_send(i, j, k);
-
-}
-
-
+					LOG_I(OTG,"INIT CONFIG Source =%d, Destination =%d,State =%d \n",i, j, k);
+					g_otg->idt_dist[i][j][k]=IDT_DIST;
+					g_otg->idt_min[i][j][k]=IDT_MIN;
+					g_otg->idt_max[i][j][k]=IDT_MAX;
+					g_otg->idt_std_dev[i][j][k]=IDT_STD_DEV;
+					g_otg->idt_lambda[i][j][k]=IDT_LAMBDA;
+					g_otg->size_dist[i][j][k]=PKTS_SIZE_DIST;
+					g_otg->size_min[i][j][k]=PKTS_SIZE_MIN;
+					g_otg->size_max[i][j][k]=PKTS_SIZE_MAX;
+					g_otg->size_std_dev[i][j][k]=PKTS_SIZE_STD_DEV;
+					g_otg->size_lambda[i][j][k]=PKTS_SIZE_LAMBDA;		
 				}
+
+			}
+
+
+		}
+		
+		
+	
+}
+
+
+
+int main_below_ip()
+{
+int i, j, k, l, rtt_owd ,rx_otg=0, simu_time=0, ctime=0, nb_round=0;
+float p;
+packet_t *packet;
+int packet_val=1;
+
+printf(" max enb %d, max ue %d \n", NUMBER_OF_eNB_MAX, NUMBER_OF_UE_MAX);
+
+do {
+
+nb_round=nb_round+1;
+		for (i=0; i<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); i++){
+			
+	 		for (j=0; j<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); j++){
+
+				for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
+					LOG_I(OTG,"OTG emulation src=%d, dst=%d, state=%d \n", i, j, k);	
+				
+
+
+					ctime=0; // set the ctime to 0   
+					do { 
+				//	ctime+=1;
+				//	simu_time+=1;
+					if (simu_time> SIMU_TIME){
+
+						otg_info->ctime=SIMU_TIME;
+						return(0);
+						}
+					LOG_I(OTG,"val :: ctime=%d\n", ctime);  
+											
+						//packet=packet_gen(i, j, k, ctime);
+						packet_val=packet_gen(i, j, k, ctime);
+												
+					if (packet_val>0){
+						if ((ceil(g_otg->duration[i]*uniform_rng()))==ctime)  {
+							printf("sss DROP PACKET (i=%d,j=%d) seq num=%d\n",i, j, otg_info->seq_num[i][j]);
+							//packet=NULL;
+							packet_val=0;
+							otg_info->seq_num[i][j]-=1;
+
+						}
+						else  {
+							printf("sss SEND PACKET (i=%d,j=%d) seq num=%d\n",i, j, otg_info->seq_num[i][j]);
+							
+								rtt_owd=ceil(uniform_rng()*8.56);
+	 							LOG_I(OTG,"one way delay= %d , (src=%d, dst=%d, state=%d)\n", rtt_owd, i, j, k);
+								ctime+=rtt_owd; 
+								otg_info->rx_pkt_owd[i][j]=rtt_owd;
+								//otg_info->ctime+=rtt_owd; 
+								simu_time+=rtt_owd;
+								//rx_otg+=check_packet(i, j, ctime, packet);
+
+								rx_otg+=check_packet(i, j, ctime);
+								//Do not increase the ctime and simu_time with the one way delay.
+								ctime-=rtt_owd;
+								simu_time-=rtt_owd;
+
+
+								LOG_I(OTG,"PKTS INFO:: (src=%d, dst=%d, state=%d),NB PKTS=%d  ,sequence NB=%d,  RTT (one way)ms= %d \n ",i, j, k, otg_info->tx_num_pkt[i][j], otg_info->seq_num[i][j], otg_info->rx_pkt_owd[i][j]);
+						}
+					}
+						else
+							printf("sss (i=%d,j=%d) seq num=%d, val %d, ctime %d, prb %lf\n",i, j, otg_info->seq_num[i][j], packet_val, ctime,(ceil(g_otg->duration[i]*uniform_rng())));
+						
+						LOG_I(OTG,"Time:: ctime=%d, duration=%d, simu_time=%d, max=%d, (src=%d, dst=%d, state=%d) \n", ctime,  g_otg->duration[i],simu_time, SIMU_TIME, i, j,k);
+						ctime+=1;
+						simu_time+=1;
+					}
+					while (ctime<=g_otg->duration[i]) ;
+				}
+
+
+
+				if  (otg_info->tx_num_pkt[i][j]>otg_info->rx_num_pkt[i][j])
+					LOG_I(OTG,"STAT: (LOSS):: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX = %d, seq NUM=%d\n ",i, j, otg_info->tx_num_pkt[i][j], otg_info->rx_num_pkt[i][j],otg_info->seq_num[i][j] );
+				else
+					LOG_I(OTG,"STAT: :: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d, seq NUM=%d \n ",i, j, otg_info->tx_num_pkt[i][j], otg_info->rx_num_pkt[i][j], otg_info->seq_num[i][j]);
+
+
+	//			printf("ERROR SEQ (end) (i=%d,j=%d), %d , pkt %d \n", i, j , otg_info->seq_num[i][j],  otg_info->tx_num_pkt[i][j]);	
+
 			}
 		}
-	g_otg->duration[0]--;
+
+ 
+
+}while (simu_time<=SIMU_TIME);
+
+}
+
+
+
+
+void config_traffic_type(char *traffic)
+{
+Application application;
+int i,j;
+	if (strcmp(traffic, "CBR")==0)
+		application=CBR;
+
+	else if (strcmp(traffic, "OPENARENA")==0)
+		application=OPENARENA;
+		
+	else if (strcmp(traffic, "BICYCLE_RACE")==0)
+		application=BICYCLE_RACE;
+
+	else if (strcmp(traffic, "AUTO_PILOT")==0)
+		application=AUTO_PILOT;
+
+	else if (strcmp(traffic, "TEAM_FORTRESS")==0)
+		application=TEAM_FORTRESS;
+
+	else	
+		application=NO_PREDEFINED_TRAFFIC;
+
+printf("Config Application: %d \n", application);
+
+	for (i=0; i<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); i++){
+			
+	 	for (j=0; j<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); j++){
+
+			g_otg->application_type[i][j] =application;
+
+		}
 	}
-	while (g_otg->duration[0]!=0);
+
+}
 
 
 
+cunstom_config(simu_time, duration)
+{ int i;
+
+//--config introduced Global simulation time for each node
+if (simu_time>0)
+	SIMU_TIME=simu_time;
+
+//--config introduced duartion for each node
+if (duration>0)
+	for (i=0; i<NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++){
+					g_otg->duration[i] = duration;
+	}
+}
 
 
-/*LOG_I(OTG, "this is a test %d \n", test);
-LOG_W(OTG, "this is a test %d \n", test);
-LOG_E(OTG, "this is a test %d \n", test);
-LOG_D(OTG, "this is a test %d \n", test);
-*/
+
+int main (int argc, char **argv){
+
+
+int i,j, tx;
+	
+char *protocol=NULL;
+char *ip_version=NULL;
+char *traffic=NULL;
+
+
+
+ 
+	init_all_otg();
+	otg_info->ctime=0;
+	LOG_I(OTG,"Emulation time %d \n ", otg_info->ctime);
+	//g_otg->num_nodes=NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; 
+	LOG_I(OTG,"OTG emulation number of nodes= %d \n", g_otg->num_nodes);
+
+
+
+for (i = 1; i <argc ; i ++){
+	if ('-' == argv[i][0]) {
+	
+		if(('h' == argv[i][1]) || ('H' == argv[i][1])) {
+			printf("Help OTG: \n./otg [-M [s (socket mode)] [b (Below IP)]] [-T (Simu Time)] [-d (duration per node)] [-s (seed)] [-P (protocol: TCP or UDP)] [-I (ip version: IP4 or IP6)] -A [(application: CBR, AUTO_PILOT, BICYCLE_RACE, OPENARENA, TEAM_FORTRESS)]\n");
+			return(0);
+		
+		}
+ 
+		else if ('M' == argv[i][1]) {
+				if (strcmp("s",argv[i+1])==0){
+					printf("Above IP: SOCKET MODE \n");
+					simu_mode=1;
+				}
+				else if (strcmp("b",argv[i+1])==0) {
+					printf("Below IP: IPC/RPC MODE\n");
+					simu_mode=0;
+				}
+			
+		}
+
+		else if ('T' == argv[i][1]) {
+			simu_time=atoi(argv[i+1]);
+			printf("simu_time=%d\n", simu_time);
+		}
+
+
+		else if ('d' == argv[i][1]) {
+			duration=atoi(argv[i+1]);
+			printf("duration node=%d\n", duration);
+		}
+
+		else if ('s' == argv[i][1]) {
+			seed=atoi(argv[i+1]);
+			printf("seed=%d\n", seed);
+		}
+
+
+		else if ('P' == argv[i][1]) {
+			protocol=argv[i+1];
+				if ((strcmp(argv[i+1],"TCP")==0) || (strcmp(argv[i+1],"UDP")==0) || (strcmp(argv[i+1],"tcp")==0) || (strcmp(argv[i+1],"udp")==0))
+				{ 				
+					protocol=argv[i+1];
+					printf("Protocol=%s\n", protocol);
+				}
+		}
+
+		else if ('I' == argv[i][1]) {
+				if ((strcmp(argv[i+1],"IP4")==0) || (strcmp(argv[i+1],"IP6")==0) || (strcmp(argv[i+1],"ip4")==0) || (strcmp(argv[i+1],"ip6")==0))
+				{ 
+					ip_version=argv[i+1];
+					printf("IP version=%s\n", ip_version);
+				}
+
+
+		}
+
+		else if ('A' == argv[i][1]) {
+			if ((strcmp(argv[i+1],"CBR")==0) || (strcmp(argv[i+1],"AUTO_PILOT")==0) || (strcmp(argv[i+1],"BICYCLE_RACE")==0) || (strcmp(argv[i+1],"OPENARENA")==0) || (strcmp(argv[i+1],"TEAM_FORTRESS")==0))
+     			traffic=argv[i+1];
+			config_traffic_type(traffic);
+
+		}
+
+
+	}
+
+
+	
+}
+
+
+
+	if (traffic!=NULL)
+		init_predef_otg();
+	else
+		init_config_otg(protocol, ip_version);
+
+
+	init_seeds(g_otg->seed);	
+	cunstom_config(simu_time, duration);
+
+
+
+if (simu_mode==0){
+	tx=main_below_ip();
+}
+
+// Compute KPI after the end of the simu
+kpi_gen();
 
 free_addr_otg();
 
-if (cmpt_pkts==rx_otg)
-printf("--------Packet check OK --------\n");
 
-printf("cmpt pkts =%d\n",cmpt_pkts);
-printf("cmpt RX =%d\n",rx_otg);
 
 return 0;
 
