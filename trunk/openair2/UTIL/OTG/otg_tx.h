@@ -57,7 +57,6 @@
 
 
 
-
 /*! \fn int time_dist(int src, int dst, int state)
 * \brief compute Inter Departure Time, in ms
 * \param[in] Source, destination, state
