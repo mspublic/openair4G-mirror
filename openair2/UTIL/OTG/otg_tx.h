@@ -53,28 +53,9 @@
 #include "otg_defs.h"
 #include "otg_config.h"
 #include "otg.h"
-#include "otg_config.h"
-
 #include "../MATH/oml.h"
 
 
-
-#ifndef __LOG_H__
-	#define LOG_G(c, x...) printf(x)
-	#define LOG_A(c, x...) printf(x)
-	#define LOG_C(c, x...) printf(x)
-	#define LOG_E(c, x...) printf(x)
-	#define LOG_W(c, x...) printf(x)
-	#define LOG_N(c, x...) printf(x)
-	#define LOG_I(c, x...) printf(x)
-	#define LOG_D(c, x...) printf(x)
-	#define LOG_F(c, x...) printf(x)  
-	#define LOG_T(c, x...) printf(x)
-	#include "otg_vars.h"
-#else
-	#include "../UTIL/LOG/log.h"
-	#include "otg_externs.h"
-#endif 
 
 
 /*! \fn int time_dist(int src, int dst, int state)

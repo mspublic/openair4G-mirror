@@ -51,22 +51,6 @@
 #include "otg_defs.h"
 #include "otg_config.h"
 
-#ifndef __LOG_H__
-	#define LOG_G(c, x...) printf(x)
-	#define LOG_A(c, x...) printf(x)
-	#define LOG_C(c, x...) printf(x)
-	#define LOG_E(c, x...) printf(x)
-	#define LOG_W(c, x...) printf(x)
-	#define LOG_N(c, x...) printf(x)
-	#define LOG_I(c, x...) printf(x)
-	#define LOG_D(c, x...) printf(x)
-	#define LOG_F(c, x...) printf(x)  
-	#define LOG_T(c, x...) printf(x)
-	#include "otg_vars.h"
-#else
-	#include "../UTIL/LOG/log.h"
-	#include "otg_externs.h"
-#endif 
 
 /*! \fn int check_packet(int src, int dst, int ctime);
 * \brief check if the packet is well received and do measurements: one way delay, throughput,etc. 
