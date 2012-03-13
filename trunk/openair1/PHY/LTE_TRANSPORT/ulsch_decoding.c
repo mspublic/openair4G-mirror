@@ -127,7 +127,6 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
   unsigned char Mdlharq;
   unsigned char i;
 
-  ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     Mdlharq = ulsch->Mdlharq;
     ulsch->rnti = 0;
