@@ -273,7 +273,7 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 
   LOG_D(RRC,"[UE %d] Frame %d OUT OF SYNC FROM CH %d\n ",Mod_id,frame,eNB_index);
 
-  if ((UE_rrc_inst[Mod_id].Info[eNB_index].T310_active=1) &&
+  if ((UE_rrc_inst[Mod_id].Info[eNB_index].T310_active==1) &&
       (UE_rrc_inst[Mod_id].Info[eNB_index].T310_cnt==1) ) {
       
       
