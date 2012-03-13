@@ -40,8 +40,7 @@
 
 
 #include "otg_tx.h"
- 
- 
+#include "otg_externs.h" 
 
 
 
