@@ -396,7 +396,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  break;
 	}
 	// fill in the rest of the ALAMOUTI precoding
-	if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) {
+	if (is_not_pilot(pilots,re + 1,frame_parms->nushift,use2ndpilots)==1) {
 	  ((s16 *)&txdataF[0][tti_offset+1])[0] += -((s16 *)&txdataF[1][tti_offset])[0]; //x1
 	  ((s16 *)&txdataF[0][tti_offset+1])[1] += ((s16 *)&txdataF[1][tti_offset])[1];
 	  ((s16 *)&txdataF[1][tti_offset+1])[0] += ((s16 *)&txdataF[0][tti_offset])[0];  //x0*
