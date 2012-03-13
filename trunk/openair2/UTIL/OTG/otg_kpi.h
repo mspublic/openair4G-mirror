@@ -63,10 +63,8 @@
 	#define LOG_D(c, x...) printf(x)
 	#define LOG_F(c, x...) printf(x)  
 	#define LOG_T(c, x...) printf(x)
-	#include "otg_vars.h"
 #else
 	#include "/UTIL/LOG/log.h"
-	#include "otg_externs.h"
 #endif 
 
 
