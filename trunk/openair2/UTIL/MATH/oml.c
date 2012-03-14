@@ -44,45 +44,30 @@
 #include <errno.h>
 
 #include "oml.h"
-#include"UTIL/LOG/log.h"
-
-#define rng_func  0 // macro to point to the data structure
-#define MAX_NUM   1000  //to define
-#define OML_TEST 0
 
 
 static int x, y, z;
 
 
 void init_seeds(int seed){
-
+	
+	LOG_I(OTG,"seeds:%d\n", seed);	
 	srand(seed*0xa2e489f2);
 	// Random number between 1 and 30000 is created
 	x = (( rand() % 30000) + 1);
 	y = (( rand() % 30000) + 1);
 	z = (( rand() % 30000) + 1);
-	printf ("Initial seeds: x = %d, y = %d, z = %d,\n", x,y,z);
-
+	LOG_I(OTG,"Initial seeds: x = %d, y = %d, z = %d,\n", x,y,z);
+	set_taus_seed(seed);
+		
 }
 
 double uniform_rng() {		
-		double random;
+	double random;
 
-	switch (rng_func) {
-	case '0' :
-		random = wichman_hill();
-        	//printf ("Uniform random number using wichman_hill= %lf\n", random);
-        	return random;
-	case '1' :
-		random = ((double)taus(OTG)/(double)0xffffffff);
-		//printf ("Uniform random number using Taus= %lf\n", random);
-		return random;
-	default:
-		random = (double) (rand())/(RAND_MAX);
-		//printf ("Uniform random number using rand= %lf\n", random);
-		return random;
-	return;
-	}
+	random = wichman_hill();
+        LOG_I(OTG,"Uniform random number using wichman_hill= %lf\n", random);
+return random;
 }
 
 
@@ -117,12 +102,12 @@ double wichman_hill() {
 
 // Uniform Distribution using the Uniform_Random_Number_Generator
 
-double uniform_dist(double min, double max) {
-	printf ("OTG :: MIN = %lf\n", min);
-	printf ("OTG :: MAX = %lf\n", max);
+double uniform_dist(int min, int max) {
+	LOG_I(OTG,"OTG :: MIN = %d\n", min);
+	LOG_I(OTG,"OTG :: MAX = %d\n", max);
 	double uniform_rn;
-        uniform_rn = (max - min) * uniform_rng(rng_func) + min;
-        printf ("OTG :: Uniform Random Nb = %lf\n", uniform_rn);	
+        uniform_rn = (max - min) * uniform_rng() + min;
+        LOG_I(OTG,"OTG :: Uniform Random Nb = %lf\n", uniform_rn);	
 	return uniform_rn;
 }
 
@@ -131,7 +116,7 @@ double uniform_dist(double min, double max) {
 double gaussian_dist(double mean, double std_dev) {
 	double x_rand1,x_rand2, w, gaussian_rn_1, gaussian_rn_2;
 
-printf ("OTG :: Gaussian mean= %lf and std deviation= %lf \n", mean, std_dev);
+	LOG_I(OTG,"OTG :: Gaussian mean= %lf and std deviation= %lf \n", mean, std_dev);
 	do {
 		do {
 			x_rand1 = 2.0 * uniform_rng() - 1;
@@ -142,7 +127,7 @@ printf ("OTG :: Gaussian mean= %lf and std deviation= %lf \n", mean, std_dev);
 		gaussian_rn_1 = (std_dev * (x_rand1 * w)) + mean;
 		gaussian_rn_2 = (std_dev * (x_rand2 * w)) + mean;
 	} while (gaussian_rn_1 <= 0);
-	printf ("OTG :: Gaussian Random Nb= %lf\n", gaussian_rn_1);
+	LOG_I(OTG,"OTG :: Gaussian Random Nb= %lf\n", gaussian_rn_1);
 		
 	return gaussian_rn_1;
 
@@ -155,7 +140,7 @@ double exponential_dist(double lambda)
 
 	double exponential_rn;
 
-printf ("OTG :: Exponential lambda= %lf\n", lambda);
+LOG_I(OTG,"OTG :: Exponential lambda= %lf\n", lambda);
 
 	if (log(uniform_rng()) > 0)
 		exponential_rn = log(uniform_rng()) / lambda;
@@ -174,7 +159,7 @@ double poisson_dist(double lambda)
 	p = 1;
 	L = exp(-lambda);
 
-printf ("OTG :: Poisson lambda= %lf\n", lambda);
+	LOG_I(OTG,"OTG :: Poisson lambda= %lf\n", lambda);
 
 	do {
 		u = uniform_rng();
@@ -182,26 +167,81 @@ printf ("OTG :: Poisson lambda= %lf\n", lambda);
 		k += 1;
 	} while (p > L);
 	poisson_rn = k - 1;
-	printf ("OTG :: Poisson Random Nb = %lf \n", poisson_rn);
+	LOG_I(OTG,"OTG :: Poisson Random Nb = %lf \n", poisson_rn);
 	return poisson_rn;  
 
 }
 
-/*
-#ifdef OML_TEST
-
-// main --> test part  
-
-int main (){
-
-double unidorm_data;
-
-	init_seeds(100);	
-	unidorm_data=uniform_rng();
 
 
-return 0;
+
+double weibull_dist(double scale, double shape)
+{
+	double weibull_rn;
+
+	if ((scale<=0)||(shape<=0)){
+		LOG_I(OTG,"scale=%.2f or shape%.2f <0 , new values: sale=3, shape=4 \n", scale,shape);
+		scale=3;
+		shape=4;
+	}
+
+	weibull_rn=scale * pow(-log(1-uniform_rng()), 1/shape);	
+	return weibull_rn; 
 
 }
-#endif
-*/
+
+double pareto_dist(double scale, double shape)
+{
+double pareto_rn;
+	if ((scale<=0)||(shape<=0)){
+		LOG_I(OTG,"scale=%.2f or shape%.2f <0 , new values: sale=3, shape=4 \n", scale,shape);
+		scale=3;
+		shape=4;
+	}
+
+	pareto_rn=scale * pow(1/(1-uniform_rng()), 1/shape);	
+	return pareto_rn; 
+}
+
+double gamma_dist(double scale, double shape)
+{
+
+double gamma_rn, mult_var=1;
+int i, shape_int;
+
+shape_int=ceil(shape);
+	if ((scale<=0)||(shape_int<=0)){
+		LOG_I(OTG,"scale=%.2f or shape%.2f <0 , new values: sale=0.5, shape=25 \n", scale,shape);
+		scale=0.5;
+		shape=25;
+	}
+	
+	for(i=1;i<=shape_int;i++)
+	{ mult_var=mult_var*uniform_rng();
+	//LOG_I(OTG,"mult_var %lf \n",mult_var);
+	}
+
+	gamma_rn= (-1/scale)*log(mult_var);	
+	return gamma_rn;
+
+}
+
+double cauchy_dist(double scale, double shape)
+{
+double cauchy_rn;
+	if ((scale<=0)||(shape<=0)){
+		LOG_I(OTG,"scale=%.2f or shape%.2f <0 , new values: sale=2, shape=10 \n", scale,shape);
+		scale=2;
+		shape=10;
+	}
+
+
+	cauchy_rn= scale*tan(PI*(uniform_rng()-0.5)) + shape;
+
+	return cauchy_rn;
+
+}
+
+
+
+
