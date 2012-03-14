@@ -42,11 +42,31 @@
 #ifndef __OML_H__
 #define __OML_H__
 
-// include Part
+#ifndef __LOG_H__
+	#define LOG_G(c, x...) printf(x)
+	#define LOG_A(c, x...) printf(x)
+	#define LOG_C(c, x...) printf(x)
+	#define LOG_E(c, x...) printf(x)
+	#define LOG_W(c, x...) printf(x)
+	#define LOG_N(c, x...) printf(x)
+	#define LOG_I(c, x...) printf(x)
+	#define LOG_D(c, x...) printf(x)
+	#define LOG_F(c, x...) printf(x)  
+	#define LOG_T(c, x...) printf(x)
+
+typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
+#else
+	#include "../UTIL/LOG/log.h"
+#endif
+
+
+
 #include <math.h>
 #include <stdlib.h>
 
-//typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
+#define PI 3.14159265
+
+void set_taus_seed(unsigned int seed_type);
 
 
 inline unsigned int taus(unsigned int comp);
@@ -90,7 +110,7 @@ double uniform_rng();
 * @ingroup  _oml
 */
 
-double uniform_dist(double min, double max);
+double uniform_dist(int min, int max);
 
 /*! \fn double gaussian_dist(double mean, double std_dev);
 * \brief 
@@ -113,7 +133,7 @@ double gaussian_dist(double mean, double std_dev);
 double exponential_dist(double lambda);
 
 /*! \fn double poisson_dist(double lambda);
-* \brief 
+* \brief generates random numbers for the poisson distribution
 * \param[in] lambda used for poisson distrib configuration
 * \param[out] poisson random number
 * \note 
@@ -121,5 +141,41 @@ double exponential_dist(double lambda);
 */
 double poisson_dist(double lambda);
 
+/*! \fn double weibull_dist(double scale, double shape);
+* \brief generates random numbers for the Weibull distribution with scale parameter, and shape parameter. 
+* \param[in] scale parameter, and shape parameter.
+* \param[out] weibull random number
+* \note 
+* @ingroup  _oml
+*/
+double weibull_dist(double scale, double shape);
 
-#endif 
+/*! \fn double pareto_dist(double scale, double shape);
+* \brief enerates random numbers for the pareto distribution with scale parameter, and shape parameter. 
+* \param[in] scale parameter, and shape parameter.
+* \param[out] pareto random number
+* \note 
+* @ingroup  _oml
+*/
+double pareto_dist(double scale, double shape);
+
+/*! \fn double gamma_dist(double scale, double shape);
+* \brief generates random numbers for the gamma distribution with scale parameter, and shape parameter. 
+* \param[in] scale parameter, and shape parameter.
+* \param[out] gamma random number
+* \note 
+* @ingroup  _oml
+*/
+double gamma_dist(double scale, double shape);
+
+/*! \fn double cauchy_dist(double scale, double shape);
+* \brief generates random numbers for the cauchy distribution with scale parameter, and shape parameter. 
+* \param[in] scale parameter, and shape parameter.
+* \param[out] cauchy random number
+* \note 
+* @ingroup  _oml
+*/
+double cauchy_dist(double scale, double shape);
+
+#endif
+ 
