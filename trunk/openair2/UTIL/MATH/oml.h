@@ -42,27 +42,10 @@
 #ifndef __OML_H__
 #define __OML_H__
 
-#ifndef __LOG_H__
-	#define LOG_G(c, x...) printf(x)
-	#define LOG_A(c, x...) printf(x)
-	#define LOG_C(c, x...) printf(x)
-	#define LOG_E(c, x...) printf(x)
-	#define LOG_W(c, x...) printf(x)
-	#define LOG_N(c, x...) printf(x)
-	#define LOG_I(c, x...) printf(x)
-	#define LOG_D(c, x...) printf(x)
-	#define LOG_F(c, x...) printf(x)  
-	#define LOG_T(c, x...) printf(x)
-
-typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
-#else
-	#include "../UTIL/LOG/log.h"
-#endif
-
-
 
 #include <math.h>
 #include <stdlib.h>
+#include  "../OTG/otg.h"
 
 #define PI 3.14159265
 
