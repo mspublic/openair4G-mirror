@@ -19,7 +19,7 @@ awgn_path = strcat(userdir, '/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Ideal');
 
 transmission_mode = 1;
 
-abstraction_mode = 1;
+abstraction_mode = 0;
 
 save_output = 1;
 
