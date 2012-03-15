@@ -110,7 +110,7 @@ unsigned int dtaus(unsigned int comp, unsigned int a, unsigned b){
   
   return (int) (((double)taus(comp)/(double)0xffffffff)* (double)(b-a) + (double)a);
 }
-
+/*
 #ifdef STANDALONE
 main() {
 
@@ -129,3 +129,5 @@ main() {
   
 }
 #endif 
+
+*/
