@@ -43,12 +43,6 @@
 #	define __OTG_CONFIG_H__
 
 
-
-#ifdef STANDALONE 
-	#define  NUMBER_OF_eNB_MAX 3  
-	#define  NUMBER_OF_UE_MAX 3   
-#endif
-
 /*!\brief It indicates that: the payload and the transport header (not otg header) are copied from static strings (HEADER_STRING and PAYLOAD_STRING) */
 #define STRING_STATIC 1
 
