@@ -76,6 +76,7 @@ typedef struct {
   int n_rb_hop2;
   bool autorb;
   SCM_t channel_model;
+  double channel_correlation;
   double snr_hop1[MAX_RELAYS];
   double snr_hop2[MAX_RELAYS];
   const char* results_fn;
@@ -190,7 +191,7 @@ void free_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE**
 void ofdm_modulation(mod_sym_t** tx_f, s32** tx_t, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb);
 channel_vars_t alloc_channel_vars(LTE_DL_FRAME_PARMS* frame_parms);
 void free_channel_vars(channel_vars_t v);
-sh_channel_t* alloc_sh_channel(channel_vars_t* cvars, SCM_t channel_model, int n_txantennas, int n_rxantennas);
+sh_channel_t* alloc_sh_channel(channel_vars_t* cvars, SCM_t channel_model, int n_txantennas, int n_rxantennas, double channel_correlation);
 void free_sh_channel(sh_channel_t* c);
 void transmit_subframe(sh_channel_t* channel, s32** src, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb, double ampl, bool accumulate);
 void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb, double stddev);
@@ -339,8 +340,8 @@ int main(int argc, char **argv) {
   // Setup channel structures
   channel_vars = alloc_channel_vars(frame_parms);
   for(k = 0; k < args.n_relays; k++) {
-    context.channels_hop1[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_ch, n_rxantenna_mr);
-    context.channels_hop2[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_mr, n_rxantenna_ch);
+    context.channels_hop1[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_ch, n_rxantenna_mr, args.channel_correlation);
+    context.channels_hop2[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_mr, n_rxantenna_ch, args.channel_correlation);
   }
 
   // Create broadcast DCI and generate transport channel parameters,
@@ -1049,6 +1050,7 @@ int parse_args(int argc, char** argv, args_t* args)
     {"autorb", no_argument, NULL, 267},
     {"range", required_argument, NULL, 268},
     {"step", required_argument, NULL, 269},
+    {"corr", required_argument, NULL, 270},
     {NULL, 0, NULL, 0}};
 
   args->n_relays = 2;
@@ -1063,6 +1065,7 @@ int parse_args(int argc, char** argv, args_t* args)
   args->n_rb_hop2 = N_RB;
   args->autorb = false;
   args->channel_model = AWGN;
+  args->channel_correlation = 0.0;
   args->results_fn = 0;
   args->analysis = analysis_single;
   args->strategy = strategy_wait_all;
@@ -1177,6 +1180,11 @@ int parse_args(int argc, char** argv, args_t* args)
       if(args->step <= 0.0)
         return 1;
       break;
+    case 270: // --corr
+      args->channel_correlation = atof(optarg);
+      if(args->channel_correlation < 0.0 || args->channel_correlation > 1.0)
+        return 1;
+      break;
     default:
       return 1;
     }
@@ -1239,6 +1247,7 @@ void print_usage(const char* prog)
   printf("  -H NUM     : do NUM HARQ rounds in each hop [4]\n");
   printf("     note: the hop 1 RVs are 0,0,1,1,2,2,3,3,0,0,..., the hop 2 RVs are 0,2,3,1,...\n");
   printf("  -C CHANNEL : set the channel model, use -C help for available models [AWGN]\n");
+  printf("  --corr CORR : set channel realization correlation (0.0 .. 1.0) [0.0]\n");
   printf("  --strategy X : set the HARQ strategy to X [1]\n");
   printf("     1: decode at all relays before starting hop 2\n");
   printf("     2: start hop 2 when at least one relay has decoded\n");
@@ -1553,12 +1562,13 @@ void free_channel_vars(channel_vars_t v)
   free(v.r_im_t[0]);
 }
 
-sh_channel_t* alloc_sh_channel(channel_vars_t* cvars, SCM_t channel_model, int n_txantennas, int n_rxantennas)
+sh_channel_t* alloc_sh_channel(channel_vars_t* cvars, SCM_t channel_model, int n_txantennas, int n_rxantennas,
+    double channel_correlation)
 {
   sh_channel_t* ch = malloc(sizeof(sh_channel_t));
 
   ch->cvars = cvars;
-  ch->channel = new_channel_desc_scm(n_txantennas, n_rxantennas, channel_model, BW, 0.0, 0, 0.0);
+  ch->channel = new_channel_desc_scm(n_txantennas, n_rxantennas, channel_model, BW, channel_correlation, 0, 0.0);
 
   return ch;
 }
