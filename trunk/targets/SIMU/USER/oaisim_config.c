@@ -10,8 +10,8 @@
 #include "OCG_extern.h"
 #include "UTIL/OMG/omg.h"
 #include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
 #include "UTIL/OTG/otg.h"
+#include "UTIL/OTG/otg_vars.h"
 
 
 mapping log_level_names[] =
@@ -271,9 +271,7 @@ void oaisim_config() {
     ocg_config_app(); // packet generator 
 }
   ocg_config_emu(); // packet generator 
-
-
-  
+     
 }
 
 int olg_config() {
