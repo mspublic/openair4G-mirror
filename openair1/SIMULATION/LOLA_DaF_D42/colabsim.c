@@ -805,7 +805,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         // Redo this in a more intuitive manner:
         //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
         tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop2[k])/20.0)/sqrt((double)n_active_relays);
-        //printf("hop 2: E=%d, ampl=%f, awgn=%f\n", tx_energy, tx_ampl, awgn_stddev);
+	//	printf("hop 2: E=%d, ampl=%f, awgn=%f (accum %d)\n", tx_energy, tx_ampl, awgn_stddev,(unsigned char)accumulate_at_rx);
         transmit_subframe(context->channels_hop2[k],
             phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
             //context->subframe_hop2, frame_parms->symbols_per_tti, 256.0/sqrt((double)n_active_relays)/awgn_stddev, accumulate_at_rx);
@@ -872,7 +872,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       if(args->debug_output) {
         for(k = 0; k < args->n_relays; k++) {
           snprintf(fnbuf, 80, "hop2_r%d_mr%d_txdataFv.m", round_hop2, k);
-          snprintf(varbuf, 80, "hop2_r%d_mr%d_txdataF", round_hop2, k);
+          snprintf(varbuf, 80, "hop2_r%d_mr%d_txdataF", round_hop2, k); 
           write_output(fnbuf, varbuf, phy_vars_mr[k]->lte_ue_common_vars.txdataF[0],
               FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX, 1, 1);
           snprintf(fnbuf, 80, "hop2_r%d_mr%d_txdatav.m", round_hop2, k);
@@ -1609,9 +1609,10 @@ void transmit_subframe(sh_channel_t* channel, s32** src, LTE_DL_FRAME_PARMS* fra
   } else {
     multipath_channel(channel->channel, channel->cvars->s_re, channel->cvars->s_im,
         channel->cvars->r_re, channel->cvars->r_im, nsamples, 0);
-    for(k = 0; k < nsamples; k++)
+    for(k = 0; k < nsamples; k++) {
       channel->cvars->r_re[0][k] *= ampl;
       channel->cvars->r_im[0][k] *= ampl;
+    }
   }
 }
 
@@ -1623,6 +1624,7 @@ void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* fram
   int nsamples = 0;
 
   for(k = 0; k < nsymb; k++) {
+    //    printf("deliver_subframe symbol k %d\n",k);
     if(k % symbols_per_slot == 0)
       nsamples += frame_parms->nb_prefix_samples0;
     else
