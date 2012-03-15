@@ -986,16 +986,16 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     if (r==0) {
       memcpy(ulsch->harq_processes[harq_pid]->b,
 	     &ulsch->harq_processes[harq_pid]->c[0][(ulsch->harq_processes[harq_pid]->F>>3)],
-	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
-      offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3);
+	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+      offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0);
       //            msg("copied %d bytes to b sequence\n",
       //      	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
     }
     else {
       memcpy(ulsch->harq_processes[harq_pid]->b+offset,
-	     ulsch->harq_processes[harq_pid]->c[0],
-	     Kr_bytes);
-      offset += Kr_bytes;
+	     ulsch->harq_processes[harq_pid]->c[r],
+	     Kr_bytes - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+      offset += (Kr_bytes- ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
     }
   }
   
