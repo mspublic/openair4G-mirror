@@ -48,10 +48,10 @@
     legend(s2,s3, 'Location',  'SouthWest');
     
     if(save_out)
-        saveas(h_fig,fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.eps')),'epsc2');
-        saveas(h_fig,fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.fig')),'fig');
-        saveas(h_fig,fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.jpg')),'jpg');
-        
+        print(fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.eps')),'-dDEVICE','epsc2');
+        print(fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.fig')),'-dDEVICE','fig');
+        print(fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.jpg')),'-dDEVICE','jpg');
+      
         fprintf(fid,'\\begin{figure}[htbp]\n');
         fprintf(fid,'\\centering\n');
         fprintf(fid,'\\includegraphics[scale=0.4]{%s}\n',fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.eps')));
@@ -110,9 +110,9 @@
     legend(s2,s3, 'Location',  'SouthWest');
     
     if(save_out)
-        saveas(h_fig,fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.eps')),'epsc2');
-        saveas(h_fig,fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.fig')),'fig');
-        saveas(h_fig,fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.jpg')),'jpg');
+        print(fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.eps')),'-dDEVICE','epsc2');
+        print(fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.fig')),'-dDEVICE','fig');
+        print(fullfile(pathname,strcat(ss, '_mcs', num2str(mcs(m)),'.jpg')),'-dDEVICE','jpg');
         
         fprintf(fid,'\\begin{figure}[htbp]\n');
         fprintf(fid,'\\centering\n');

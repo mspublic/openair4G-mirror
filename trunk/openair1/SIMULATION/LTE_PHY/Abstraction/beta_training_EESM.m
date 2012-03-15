@@ -32,7 +32,7 @@ echo off;
 %***************************************************************************************
 % Input Parameters used for the training of adjustment Factors (betas)
 %***************************************************************************************
-mcs = [9];
+mcs = [0];
 % An array which hold the number of LTE MCS which is to be calibrated for
 % abstraction
 
@@ -40,7 +40,7 @@ s2=[];
 s3=[];
 % String arrays used for printing in plots
 
-tx_mode=1; 
+tx_mode=5; 
 %1--> SISO, 2 --> Alamouti, 5 --> MU-MIMO ,6 --> TX Beamforming
 % tells which transmission mode is to be abstracted.
 
@@ -54,7 +54,7 @@ modu=4;
 % Modulation used.
 
 p=50;
-save_out=1;
+save_out=0;
 %***************************************************************************************
 % Main Execution Loop starts from here:
 %***************************************************************************************
@@ -71,7 +71,7 @@ for m=1:1:length(mcs)
 %***************************************************************************************    
 %Reference AWGN Curves
 %***************************************************************************************
-    data = dlmread(sprintf('../BLER_SIMULATIONS/AWGN_SISO_Winter_School/awgn_bler_tx1_mcs%d.csv',mcs(m)),';',1,0);
+    data = dlmread(sprintf('../awgn_bler_tx1_mcs%d.csv',mcs(m)),';',1,0);
     snr = data(:,1);
     ble = data(:,5)./data(:,6); % round 1
         
@@ -81,10 +81,10 @@ for m=1:1:length(mcs)
    snr = snr(ble<0.99);
    snr = snr(blerr>0.001); 
 
-    %snr_interp = snr(1):0.001:snr(end);
-    %bler_interp = interp1(snr,bler,snr_interp,'linear');
-    %snr = snr_interp;
-    %bler = bler_interp;
+    snr_interp = snr(1):0.001:snr(end);
+    bler_interp = interp1(snr,bler,snr_interp,'linear');
+    snr = snr_interp;
+    bler = bler_interp;
    
 %***************************************************************************************
 % Data Extraction on Sub carrier basis data file saved using dlsim and reference
@@ -128,9 +128,9 @@ for m=1:1:length(mcs)
             snr_tmp = 10.^(data_all(:,1)/10);
             snr_tmp = repmat(snr_tmp,1,50);
             
-            alpha = abs(ch1_tmp + q1.*ch2_tmp);
-            seta = ((abs(ch1_tmp + q2.*ch2_tmp)));
-            
+          alpha =sqrt(1/2)*abs(ch1_tmp + q1.*ch2_tmp);
+            seta = sqrt(1/2)*((abs(ch1_tmp + q2.*ch2_tmp)));
+   
             if (abs_mode==2 )
                 SINR_p = 10*log10(snr_tmp.*(alpha.^2));%-10*log10(2);
             else
@@ -162,9 +162,12 @@ for m=1:1:length(mcs)
 %***************************************************************************************
 % for optmimized betas calculation using fminsearch
 %***************************************************************************************
-    beta_out=ones(1,2);
+%keyboard()
+    beta_out=[1.6962 0.7522];
+%beta_out=[1.8112 1.0771];
+%beta_out = zeros(1,2);
     %[opt_beta(mcs(m)), MSE] = fminsearch(@delta_BLER_1,opt_beta_new(mcs(m)))
-    [beta_out, MSE] = fminsearch(@delta_BLER_1,[1 1])
+    %[beta_out, MSE] = fminsearch(@delta_BLER_1,[1 1])
 
 %***************************************************************************************
 % Calculation of Effective SINR based on optimized beta values
@@ -172,18 +175,18 @@ for m=1:1:length(mcs)
     
     if(abs_mode==0) %MIESM Mapping
         
-        eval(['load ' 'siso_MI_abs_' num2str(modu) 'Qam.mat'])
+        eval(['load ' '/root/DEVEL/trunk/openair1/SIMULATION/LTE_PHY/Abstraction/siso_MI_abs_' num2str(modu) 'Qam.mat'])
         
         [xize y]= size(SINR_p);
         RBIR = [];
         for t=1:1:xize
             s = SINR_p(t,:);
-            %s(s<-10)=-10;
-            %s(s>49)=49;
+            s(s<-10)=-10;
+            s(s>49)=49;
              eval(['SI_p = interp1(newSNR,newC_siso_' num2str(modu) 'QAM,s, ''linear'' , ''extrap'');']);
-             RBIR(t) = mean(SI_p/beta_out(1));
+             RBIR(t) = (sum(SI_p/beta_out(1))/Pm);
         end
-         SINR_eff = interp1(newC_siso_4QAM, newSNR, RBIR,'linear');
+         SINR_eff = interp1(newRBIR, newSNR, RBIR,'linear');
          SINR_eff = SINR_eff .* beta_out(2); 
          
         
@@ -243,34 +246,35 @@ for m=1:1:length(mcs)
 %***************************************************************************************
 % BLER Plot w.r.t Mean Effective SINR
 %***************************************************************************************
-h_fig = figure;
-avg_SINR_p = mean(SINR_p');
-semilogy(avg_SINR_p,BLER_meas,plot_style{m+1})
-xlim([-8 15])
-ylim([1e-3 1])
-s = strcat('LTE TM1 Average Abstraction MCS ', num2str(mcs(m)));
-    title(s);
-    ylabel 'BLER'
-    xlabel 'SINR_{average}'
-    hold on
-    grid on
-    semilogy(snr,bler,'m-x');
+%figure;
+%avg_SINR_p = mean(SINR_p');
+%hist(avg_SINR_p)
+%figure;
+%grid on
+%semilogy(avg_SINR_p,BLER_meas,plot_style{m+1})
+%xlim([-8 15])
+%ylim([1e-3 1])
+%s = strcat('LTE TM1 Avergae Abstraction MCS ', num2str(mcs(m)));
+%    title(s);
+%    ylabel 'BLER'
+%    xlabel 'SINR_{average}'
+%    s2 = strcat('BLER_{meas} MCS ', num2str(mcs(m)));
 
-    s2 = strcat('BLER_{meas} MCS ', num2str(mcs(m)));
-   s3 = strcat('BLER_{AWGN} MCS ', num2str(mcs(m)));
-    legend(s2, s3, 'Location',  'Best');
+%    legend(s2, 'Location',  'Best');
  
 %***************************************************************************************
 % BLER Plot w.r.t Effective SINR
 %***************************************************************************************
-    h_fig = figure;
+  %  figure;
+  %  hist(SINR_eff)
+    figure;
     semilogy(SINR_eff,BLER_meas,plot_style{m+1})
     hold on
     grid on
-    semilogy(snr,bler,'m-x');
-    xlim([-8 15])
+    semilogy(snr,bler,'m-');
+    xlim([-20 15])
     ylim([1e-3 1])
-    s = strcat('LTE TM1 EESM MCS ', num2str(mcs(m)), ',beta1= ',num2str(Optimum_beta1(mcs(m)+1)),',beta2= ',num2str(Optimum_beta2(mcs(m)+1)), ', MSE= ',num2str(MSE_final(mcs(m)+1)));
+    s = strcat('LTE TM5 MIESM MCS ', num2str(mcs(m)), ',beta1= ',num2str(Optimum_beta1(mcs(m)+1)),',beta2= ',num2str(Optimum_beta2(mcs(m)+1)), ', MSE= ',num2str(MSE_final(mcs(m)+1)));
     title(s);
     ylabel 'BLER'
     xlabel 'SINR_{effective}'

@@ -84,6 +84,7 @@ else %when beta2=beta1=beta
             eval(['SI_p = interp1(newSNR,newC_siso_' num2str(modu) 'QAM,s, ''linear'' , ''extrap'');']);
             RBIR(t) = (sum(SI_p/beta)/Pm);
         end
+
         SINR_eff = interp1(newRBIR, newSNR, RBIR,'linear');
         SINR_eff = SINR_eff * beta;
         
@@ -123,7 +124,7 @@ else %when beta2=beta1=beta
             RBIR(t) = (sum(SI_p/beta)/Pm);
             
         end
-        
+       
         SINR_eff = interp1(newRBIR, newSNR, RBIR,'linear','extrap');
         SINR_eff = SINR_eff .* beta;
         %SINR_eff = 10*log10((10.^(SINR_eff/10)) * beta(2));
