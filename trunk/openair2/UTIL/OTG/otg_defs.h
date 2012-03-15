@@ -42,14 +42,12 @@
 #	define __OTG_DEFS_H__
 
 
-
-#ifndef __BYPASS_SESSION_LAYER_DEFS_H__
+#if STANDALONE==1
 #	define NUMBER_OF_eNB_MAX 3
 #	define NUMBER_OF_UE_MAX 3
-
 #else
-	#include "../../../openair1/SIMULATION/ETH_TRANSPORT/defs.h" /* \brief To define the NUMBER_OF_eNB_MAX and NUMBER_OF_UE_MAX */
-#endif
+	#include "../../../openair1/PHY/impl_defs_top.h" /* \brief To define the NUMBER_OF_eNB_MAX and NUMBER_OF_UE_MAX */
+#endif	
 
 
 
@@ -104,8 +102,8 @@ typedef enum {
 */
 
 typedef enum { 
-	NO_PROTO=-1,
-	UDP=0,
+	NO_PROTO=0,
+	UDP=1,
 	TCP,
 }trans_proto;
 
@@ -117,8 +115,8 @@ typedef enum {
 *
 */
 typedef enum { 	
-	NO_IP=-1,
-	IPV4=0,
+	NO_IP=0,
+	IPV4=1,
 	IPV6, 
 }ip_v;
 

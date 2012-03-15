@@ -54,22 +54,6 @@
 
 #include "../MATH/oml.h"
 
-#define STANDALONE 
-
-#ifdef STANDALONE
-	#define LOG_G(c, x...) printf(x)
-	#define LOG_A(c, x...) printf(x)
-	#define LOG_C(c, x...) printf(x)
-	#define LOG_E(c, x...) printf(x)
-	#define LOG_W(c, x...) printf(x)
-	#define LOG_N(c, x...) printf(x)
-	#define LOG_I(c, x...) printf(x)
-	#define LOG_D(c, x...) printf(x)
-	#define LOG_F(c, x...) printf(x)  
-	#define LOG_T(c, x...) printf(x)
-#else
-	#include "/UTIL/LOG/log.h"
-#endif 
 
 
 int SIMU_TIME=1200000;  
@@ -323,7 +307,7 @@ char *traffic=NULL;
 	init_all_otg();
 	otg_info->ctime=0;
 	LOG_I(OTG,"Emulation time %d \n ", otg_info->ctime);
-	//g_otg->num_nodes=NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; 
+	g_otg->num_nodes=NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; 
 	LOG_I(OTG,"OTG emulation number of nodes= %d \n", g_otg->num_nodes);
 
 
@@ -362,7 +346,7 @@ for (i = 1; i <argc ; i ++){
 
 		else if ('s' == argv[i][1]) {
 			seed=atoi(argv[i+1]);
-			printf("seed=%d\n", seed);
+			printf("seed val =%d\n", seed);
 		}
 
 

@@ -107,7 +107,8 @@ int rx_total_pkts=0;
 int min_owd=0;
 int max_owd=0;
 
-#ifndef __LOG_H__	
+
+#if STANDALONE==1	
  	FILE *file;
 	file = fopen("log_OTG.txt", "w"); 
 #endif
@@ -122,17 +123,18 @@ int max_owd=0;
 				rx_loss_rate_pkts(i, j);
 
 
-	//LOG_I(OTG,"PRINT: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j, otg_info->tx_num_pkt[i][j], otg_info->rx_num_pkt[i][j]);
+	LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j, otg_info->tx_num_pkt[i][j], otg_info->rx_num_pkt[i][j]);
 
 
 	if (otg_info->tx_throughput[i][j]>0) {
 
-					if (otg_info->tx_throughput[i][j]>otg_info->rx_goodput[i][j])
-						LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %.3lf (Kbytes/sec), loss rate(percentage)= %.3lf pkts\n ",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j], (otg_info->rx_loss_rate[i][j]*100));
-					else
-						LOG_I(OTG,"KPI: :: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %.3lf (Kbytes/sec), loss rate(percentage)= %d pkts\n ",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j],0);
+					if (otg_info->tx_throughput[i][j]==otg_info->rx_goodput[i][j]){
+LOG_I(OTG,"KPI:  (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %.3lf (Kbytes/sec), loss rate(percentage)= %d",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j],0);
+}
 
-
+					else if (otg_info->tx_throughput[i][j]>otg_info->rx_goodput[i][j]){
+LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %.3lf (Kbytes/sec), loss rate(percentage)= %.3lf pkts\n ",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j], (otg_info->rx_loss_rate[i][j]*100)); }
+					
 	tx_total_bytes+=otg_info->tx_num_bytes[i][j];
 	tx_total_pkts+=otg_info->tx_num_pkt[i][j];
 
@@ -146,7 +148,7 @@ int max_owd=0;
 
 
 
-	#ifndef __LOG_H__
+	#if STANDALONE==1
 
 		fprintf(file,"----------------------------------------------------------\n");	
 		fprintf(file,"Total Time= %d \n", otg_info->ctime);
@@ -162,16 +164,16 @@ int max_owd=0;
 			fprintf(file,"Loss rate(percentage)= %lf pkts \n", (otg_info->rx_loss_rate[i][j]*100));
 	 
 	#else
-		LOG_F(OTG,"----------------------------------------------------------\n");
-		LOG_F(OTG,"Total Time= %d \n", otg_info->ctime);
-		LOG_F(OTG,"From eNB= %d \n", i);
-		LOG_F(OTG,"To UE= %d \n", j);
-		LOG_F(OTG,"Total packets(TX)= %d \n", otg_info->tx_num_pkt[i][j]);
-		LOG_F(OTG,"Total bytes(TX)= %d \n", otg_info->tx_num_bytes[i][j]);
-		LOG_F(OTG,"RTT MIN (one way)ms= %d \n", otg_info->rx_owd_min[i][j]);
-		LOG_F(OTG,"RTT MAX (one way)ms= %d \n", otg_info->rx_owd_max[i][j]);
-		LOG_F(OTG,"TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput[i][j]);
-		LOG_F(OTG,"RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput[i][j]);
+		LOG_T(OTG,"----------------------------------------------------------\n");
+		LOG_T(OTG,"Total Time= %d \n", otg_info->ctime);
+		LOG_T(OTG,"From eNB= %d \n", i);
+		LOG_T(OTG,"To UE= %d \n", j);
+		LOG_T(OTG,"Total packets(TX)= %d \n", otg_info->tx_num_pkt[i][j]);
+		LOG_T(OTG,"Total bytes(TX)= %d \n", otg_info->tx_num_bytes[i][j]);
+		LOG_T(OTG,"RTT MIN (one way)ms= %d \n", otg_info->rx_owd_min[i][j]);
+		LOG_T(OTG,"RTT MAX (one way)ms= %d \n", otg_info->rx_owd_max[i][j]);
+		LOG_T(OTG,"TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput[i][j]);
+		LOG_T(OTG,"RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput[i][j]);
 		if (otg_info->rx_loss_rate[i][j]>0)
 			LOG_T(OTG,"Loss rate(percentage)= %lf pkts \n", (otg_info->rx_loss_rate[i][j]*100));
 
@@ -186,7 +188,7 @@ int max_owd=0;
 
 
 
-	#ifndef __LOG_H__
+	#if STANDALONE==1
 		fprintf (file,"**************** TOTAL RESULTS ******************\n");
 		fprintf(file,"Total Time= %d \n", otg_info->ctime);
 		fprintf(file,"Total packets(TX)= %d \n", tx_total_pkts);
@@ -210,6 +212,10 @@ int max_owd=0;
 		LOG_T(OTG,"TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes/otg_info->ctime);
 		LOG_T(OTG,"RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes/otg_info->ctime);
 	#endif
+
+
+
+
 }
 
 

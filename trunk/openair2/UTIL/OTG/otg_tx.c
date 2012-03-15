@@ -39,8 +39,7 @@
 */
 
 
-#include "otg_tx.h"
-#include "otg_externs.h" 
+#include "otg_tx.h" 
 
 
 
@@ -130,11 +129,6 @@ return(size);
 void init_predef_otg() {
 int i;
 int j;
-
-
-
-
-g_otg->num_nodes= NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX;
 
 
 LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
@@ -346,8 +340,9 @@ int packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = fr
 	packet_t *packet=NULL;
 	HEADER_TYPE header_type;
 	
-	
+
 	set_ctime(ctime);	
+	LOG_I(OTG,"num_nodes_tx:: %d , seed:: %d \n", g_otg->num_nodes, g_otg->seed);
 
 	LOG_I(OTG,"NODE_INFO (Source= %d, Destination= %d,State= %d) ctime %d \n", src, dst, state, otg_info->ctime);
 
