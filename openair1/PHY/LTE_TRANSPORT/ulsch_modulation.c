@@ -375,16 +375,18 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 	  //UE1,-x1*
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
+
 	  if (ulsch->b_tilde[j] == 1)
 	    qam16_table_offset_re+=2;
 
 	  if (ulsch->b_tilde[j+1] == 1)
-	    qam16_table_offset_re+=1;
-      
-      
-	  qam16_table_offset_im = 0;
-	  if (ulsch->b_tilde[j+2] == 1)
 	    qam16_table_offset_im+=2;
+      
+      
+
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam16_table_offset_re+=1;
 
 	  if (ulsch->b_tilde[j+3] == 1)
 	    qam16_table_offset_im+=1;
@@ -395,21 +397,24 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 	  //UE1,x0*
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
+
 	  if (ulsch->b_tilde[j-4] == 1)
 	    qam16_table_offset_re+=2;
 
 	  if (ulsch->b_tilde[j-3] == 1)
-	    qam16_table_offset_re+=1;
-      
-      
-	  qam16_table_offset_im = 0;
-	  if (ulsch->b_tilde[j-2] == 1)
 	    qam16_table_offset_im+=2;
+      
+      
+	  if (ulsch->b_tilde[j-2] == 1)
+	    qam16_table_offset_re+=1;
 
 	  if (ulsch->b_tilde[j-1] == 1)
 	    qam16_table_offset_im+=1;
 
       
+	  //	  ((s16*)&ulsch->d[i+1])[0]=-(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  //	  ((s16*)&ulsch->d[i+1])[1]=(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
 	  ((s16*)&ulsch->d[i+1])[0]=(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
 	  ((s16*)&ulsch->d[i+1])[1]=-(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
 
@@ -459,21 +464,23 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 	  //UE1,-x1*FPGA_UE
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+
 	  if (ulsch->b_tilde[j] == 1)
 	    qam64_table_offset_re+=4;
       
 	  if (ulsch->b_tilde[j+1] == 1)
-	    qam64_table_offset_re+=2;
-      
-	  if (ulsch->b_tilde[j+2] == 1)
-	    qam64_table_offset_re+=1;
-      
-	  qam64_table_offset_im = 0;
-	  if (ulsch->b_tilde[j+3] == 1)
 	    qam64_table_offset_im+=4;
       
-	  if (ulsch->b_tilde[j+4] == 1)
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam64_table_offset_re+=2;
+      
+
+	  if (ulsch->b_tilde[j+3] == 1)
 	    qam64_table_offset_im+=2;
+      
+	  if (ulsch->b_tilde[j+4] == 1)
+	    qam64_table_offset_re+=1;
       
 	  if (ulsch->b_tilde[j+5] == 1)
 	    qam64_table_offset_im+=1;
@@ -484,21 +491,23 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 	  //UE1,x0*
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+
 	  if (ulsch->b_tilde[j-6] == 1)
 	    qam64_table_offset_re+=4;
       
 	  if (ulsch->b_tilde[j-5] == 1)
-	    qam64_table_offset_re+=2;
-      
-	  if (ulsch->b_tilde[j-4] == 1)
-	    qam64_table_offset_re+=1;
-      
-	  qam64_table_offset_im = 0;
-	  if (ulsch->b_tilde[j-3] == 1)
 	    qam64_table_offset_im+=4;
       
-	  if (ulsch->b_tilde[j-2] == 1)
+	  if (ulsch->b_tilde[j-4] == 1)
+	    qam64_table_offset_re+=2;
+      
+
+	  if (ulsch->b_tilde[j-3] == 1)
 	    qam64_table_offset_im+=2;
+      
+	  if (ulsch->b_tilde[j-2] == 1)
+	    qam64_table_offset_re+=1;
       
 	  if (ulsch->b_tilde[j-1] == 1)
 	    qam64_table_offset_im+=1;
