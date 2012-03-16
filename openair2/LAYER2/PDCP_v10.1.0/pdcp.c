@@ -45,7 +45,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "pdcp_primitives.h"
 #include "UTIL/LOG/log.h"
-
+#include <inttypes.h>
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
 
@@ -323,7 +323,6 @@ pdcp_run (u32_t frame,u8 eNB_flag)
   #endif
 #endif
   unsigned int diff, i, k, j;
-
   if ((frame % 128) == 0) { 
     for (i=0; i < NB_UE_INST; i++) {
       for (j=0; j < NB_CNX_CH; j++) {
@@ -346,8 +345,16 @@ pdcp_run (u32_t frame,u8 eNB_flag)
   // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus(frame,eNB_flag);
   if ( eNB_flag == 0){
+
+/*
     LOG_I(OTG, "TEST Calling OTG %d\n", frame);
-	//check_packet(packet_gen(0, 1, 0));    //set_emu_time(frame);
+	set_ctime(frame); 
+//OTG 
+	int pkts_gen=packet_gen(0,0,0, frame);
+	int pkts_check;	
+	if (pkts_gen>0)
+	pkts_check=check_packet(0,0, frame);  
+*/
   }
 }
 
