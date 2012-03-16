@@ -131,14 +131,37 @@ void rrc_rg_init (u8 Mod_id){
 }
 
 /*------------------------------------------------------------------------------*/
+// Dummy function - to keep compatibility with RRC LITE
+char rrc_rg_uelite_init(u8 Mod_id, unsigned char eNB_index){
+/*------------------------------------------------------------------------------*/
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] Called rrc_rg_ue_init - Dummy function - to keep compatibility with RRC LITE\n\n");
+  //#endif
+  return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+// Dummy function - to keep compatibility with RRC LITE
+void rrc_rg_toplite_init(void){
+/*-----------------------------------------------------------------------------*/
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] Called rrc_rg_top_init - Dummy function - to keep compatibility with RRC LITE\n\n");
+  //#endif
+
+}
+
+/*------------------------------------------------------------------------------*/
 //Entry function for RRC init - Copied from RRC MESH (MW 09/09/2008)
 int rrc_init_global_param(void){
-  /*------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------*/
   //  Nb_mod=0;
 #ifdef USER_MODE
   Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-#endif //USRE_MODE
+#endif //USER_MODE
+
+  Rrc_xface->openair_rrc_top_init = rrc_rg_toplite_init;
   Rrc_xface->openair_rrc_eNB_init = rrc_rg_init;
+  Rrc_xface->openair_rrc_UE_init = rrc_rg_uelite_init;
   Rrc_xface->mac_rrc_data_ind = mac_rrc_data_ind;
   Rrc_xface->mac_rrc_data_req = mac_rrc_data_req;
   Rrc_xface->rrc_data_indP    = rlcrrc_data_ind;
@@ -146,6 +169,7 @@ int rrc_init_global_param(void){
   Rrc_xface->mac_rrc_meas_ind = mac_rrc_meas_ind;
   Rrc_xface->def_meas_ind     = rrc_L2_def_meas_ind_rx;
   Mac_rlc_xface->mac_out_of_sync_ind = mac_out_of_sync_ind;
+  Rrc_xface->get_rrc_status= rrc_L2_get_rrc_status;
   printk("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind %p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
   if(Mac_rlc_xface==NULL || Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
     return -1;

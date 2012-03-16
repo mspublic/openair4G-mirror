@@ -18,13 +18,15 @@ void rrc_L2_mac_meas_ind_rx (void);
 void rrc_L2_def_meas_ind_rx (unsigned char Mod_id, unsigned char Idx2);
 void rrc_L2_sync_ind_rx (void);
 void rrc_L2_out_sync_ind_rx (void);
+int rrc_L2_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index);
 
 #ifdef NODE_MT
 //rrc_ue_init.c
 void rrc_ue_init (u8 Mod_id);
 
 //rrc_ue_main.c
-void rrc_ue_main_scheduler (u8 Mod_id);
+//void rrc_ue_main_scheduler (u8 Mod_id);
+int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index);
 #endif
 
 #ifdef NODE_RG
@@ -32,7 +34,8 @@ void rrc_ue_main_scheduler (u8 Mod_id);
 void rrc_rg_init (u8 Mod_id);
 
 //rrc_rg_main.c
-void rrc_rg_main_scheduler (u8 Mod_id);
+//void rrc_rg_main_scheduler (u8 Mod_id);
+int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index);
 #endif
 
 #endif
