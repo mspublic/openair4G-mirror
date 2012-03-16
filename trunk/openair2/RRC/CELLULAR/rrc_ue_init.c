@@ -130,6 +130,27 @@ void rrc_ue_init (u8 Mod_id){
 }
 
 /*------------------------------------------------------------------------------*/
+// Dummy function - to keep compatibility with RRC LITE
+char rrc_ue_rglite_init(u8 Mod_id, unsigned char eNB_index){
+/*------------------------------------------------------------------------------*/
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] Called rrc_ue_rglite_init - Dummy function - to keep compatibility with RRC LITE\n\n");
+  //#endif
+  return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+// Dummy function - to keep compatibility with RRC LITE
+void rrc_ue_toplite_init(void){
+/*-----------------------------------------------------------------------------*/
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] Called rrc_ue_toplite_init - Dummy function - to keep compatibility with RRC LITE\n\n");
+  //#endif
+
+}
+
+
+/*------------------------------------------------------------------------------*/
 //Entry function for RRC init - Copied from RRC MESH (MW 09/09/2008)
 int rrc_init_global_param(void){
   /*------------------------------------------------------------------------------*/
@@ -137,6 +158,10 @@ int rrc_init_global_param(void){
 #ifdef USER_MODE
   Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
 #endif //USER_MODE
+
+
+  Rrc_xface->openair_rrc_top_init = rrc_ue_toplite_init;
+  Rrc_xface->openair_rrc_eNB_init = rrc_ue_rglite_init;
   Rrc_xface->openair_rrc_UE_init = rrc_ue_init;
   Rrc_xface->mac_rrc_data_ind = mac_rrc_data_ind;
   Rrc_xface->mac_rrc_data_req = mac_rrc_data_req;
