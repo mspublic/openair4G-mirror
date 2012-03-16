@@ -62,7 +62,7 @@ int idt=0;
 		idt =  ceil((poisson_dist(g_otg->idt_lambda[src][dst][state])));
 	else if (g_otg->idt_dist[src][dst][state] == FIXED)
 		idt = ceil((g_otg->idt_min[src][dst][state])); //IDT_TH *
-/*	else if (g_otg->idt_dist[src][dst][state] == WEIBULL)
+	else if (g_otg->idt_dist[src][dst][state] == WEIBULL)
 		idt =ceil(weibull_dist(g_otg->idt_scale[src][dst][state],g_otg->idt_shape[src][dst][state] ));
 	else if (g_otg->idt_dist[src][dst][state] == PARETO)
 		idt =ceil(pareto_dist(g_otg->idt_scale[src][dst][state],g_otg->idt_shape[src][dst][state] ));
@@ -70,7 +70,7 @@ int idt=0;
 		idt =ceil(gamma_dist(g_otg->idt_scale[src][dst][state],g_otg->idt_shape[src][dst][state] ));
 	else if (g_otg->idt_dist[src][dst][state] == CAUCHY)
 		idt =ceil(cauchy_dist(g_otg->idt_scale[src][dst][state],g_otg->idt_shape[src][dst][state] ));
-*/	LOG_I(OTG,"IDT :: Inter Departure Time Distribution= %d , val= %d\n", g_otg->idt_dist[src][dst][state],idt);
+	LOG_I(OTG,"IDT :: Inter Departure Time Distribution= %d , val= %d\n", g_otg->idt_dist[src][dst][state],idt);
 return idt;
 }
 
@@ -94,7 +94,7 @@ LOG_I(OTG,"Size Distribution idx= %d \n", g_otg->size_dist[src][dst][state]);
 		size =ceil(poisson_dist(g_otg->size_lambda[src][dst][state]));
 	else if (g_otg->size_dist[src][dst][state] == FIXED)
 		size=ceil(g_otg->size_min[src][dst][state]);
-/*	else if (g_otg->size_dist[src][dst][state] == WEIBULL)
+	else if (g_otg->size_dist[src][dst][state] == WEIBULL)
 		size =ceil(weibull_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
 	else if (g_otg->size_dist[src][dst][state] == PARETO)
 		size =ceil(pareto_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
@@ -102,7 +102,7 @@ LOG_I(OTG,"Size Distribution idx= %d \n", g_otg->size_dist[src][dst][state]);
 		size =ceil(gamma_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
 	else if (g_otg->size_dist[src][dst][state] == CAUCHY)
 		size =ceil(cauchy_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
-*/
+
 	//Case when size overfill min and max values	
 	size=adjust_size(size);
 	LOG_I(OTG,"Packet :: Size=%d  Distribution= %d \n", size, g_otg->size_dist[src][dst][state]);
