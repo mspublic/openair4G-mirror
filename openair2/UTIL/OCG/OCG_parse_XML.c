@@ -29,7 +29,7 @@
 
 /*! \file OCG_parse_XML.c
 * \brief Parse the content of the XML configuration file
-* \author Lusheng Wang  & Navid Nikaein
+* \author Lusheng Wang  & Navid Nikaein  & Aymen Hafsaoui
 * \date 2011
 * \version 0.1
 * \company Eurecom
@@ -139,13 +139,17 @@ static int ip_version_;
 static int idt_dist_;
 static int idt_min_ms_;
 static int idt_max_ms_;
-static int idt_standard_deviation_;
-static int idt_lambda_;
+static double idt_standard_deviation_;
+static double idt_lambda_;
+static double idt_scale_;
+static double idt_shape_;
 static int size_dist_;
 static int size_min_byte_;
 static int size_max_byte_;
-static int size_standard_deviation_;
-static int size_lambda_;
+static double size_standard_deviation_;
+static double size_lambda_;
+static double size_scale_;
+static double size_shape_;
 static int stream_;
 static int destination_port_;
 
@@ -165,6 +169,7 @@ static int rrc_;
 static int emu_;
 static int omg_;
 static int otg_;
+
 static int log_emu_;
 static int debug_;
 static int info_;
@@ -369,6 +374,10 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		idt_standard_deviation_ = 1;
 	} else if (!xmlStrcmp(name, "IDT_LAMBDA")) {
 		idt_lambda_ = 1;
+	} else if (!xmlStrcmp(name, "IDT_SCALE")) { 
+		idt_scale_ = 1;
+	} else if (!xmlStrcmp(name, "IDT_SHAPE")) { 
+		idt_shape_ = 1;
 	} else if (!xmlStrcmp(name, "SIZE_DIST")) {
 		size_dist_ = 1;
 	} else if (!xmlStrcmp(name, "SIZE_MIN_byte")) {
@@ -379,6 +388,10 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		size_standard_deviation_ = 1;
 	} else if (!xmlStrcmp(name, "SIZE_LAMBDA")) {
 		size_lambda_ = 1;
+	} else if (!xmlStrcmp(name, "SIZE_SCALE")) { 
+		size_scale_ = 1;
+	} else if (!xmlStrcmp(name, "SIZE_SHAPE")) { 
+		size_shape_ = 1; 
 	} else if (!xmlStrcmp(name, "STREAM")) {
 		stream_ = 1;
 	} else if (!xmlStrcmp(name, "DESTINATION_PORT")) {
@@ -622,6 +635,10 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		idt_standard_deviation_ = 0;
 	} else if (!xmlStrcmp(name, "IDT_LAMBDA")) {
 		idt_lambda_ = 0;
+	} else if (!xmlStrcmp(name, "IDT_SCALE")) { 
+		idt_scale_ = 0;
+	} else if (!xmlStrcmp(name, "IDT_SHAPE")) { 
+		idt_shape_ = 0;
 	} else if (!xmlStrcmp(name, "SIZE_DIST")) {
 		size_dist_ = 0;
 	} else if (!xmlStrcmp(name, "SIZE_MIN_byte")) {
@@ -632,6 +649,10 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		size_standard_deviation_ = 0;
 	} else if (!xmlStrcmp(name, "SIZE_LAMBDA")) {
 		size_lambda_ = 0;
+	} else if (!xmlStrcmp(name, "SIZE_SCALE")) { 
+		size_scale_ = 0;
+	} else if (!xmlStrcmp(name, "SIZE_SHAPE")) { 
+		size_shape_ = 0; 
 	} else if (!xmlStrcmp(name, "STREAM")) {
 		stream_ = 0;
 	} else if (!xmlStrcmp(name, "DESTINATION_PORT")) {
@@ -893,7 +914,11 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 				} else if (idt_standard_deviation_) {
 					oai_emulation.application_config.customized_traffic.idt_standard_deviation[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
 				} else if (idt_lambda_) {
-					oai_emulation.application_config.customized_traffic.idt_lambda[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+					oai_emulation.application_config.customized_traffic.idt_lambda[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+				} else if (idt_scale_) { 
+					oai_emulation.application_config.customized_traffic.idt_scale[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+				} else if (idt_shape_) { 
+					oai_emulation.application_config.customized_traffic.idt_shape[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
 				} else if (size_dist_) {
 					oai_emulation.application_config.customized_traffic.size_dist[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (size_min_byte_) {
@@ -901,9 +926,13 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 				} else if (size_max_byte_) {
 					oai_emulation.application_config.customized_traffic.size_max_byte[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
 				} else if (size_standard_deviation_) {
-					oai_emulation.application_config.customized_traffic.size_standard_deviation[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+					oai_emulation.application_config.customized_traffic.size_standard_deviation[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
 				} else if (size_lambda_) {
-					oai_emulation.application_config.customized_traffic.size_lambda[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
+					oai_emulation.application_config.customized_traffic.size_lambda[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+				} else if (size_scale_) { 
+					oai_emulation.application_config.customized_traffic.size_scale[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+				} else if (size_shape_) { 
+					oai_emulation.application_config.customized_traffic.size_shape[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
 				} else if (stream_) {
 					oai_emulation.application_config.customized_traffic.stream[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
 				} else if (destination_port_) {
