@@ -338,7 +338,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     u8 symbol,
 		     u8 first_symbol_flag,
 		     u16 nb_rb,
-		     u16 pbch_pss_sss_adjust);
+		     u16 pbch_pss_sss_adjust,
+		     short **llr_save);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     s32 **rxdataF_comp,

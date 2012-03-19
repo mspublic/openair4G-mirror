@@ -6230,17 +6230,20 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned char symbol,
 		     u8 first_symbol_flag,
 		     unsigned short nb_rb,
-		     u16 pbch_pss_sss_adjust) {
+		     u16 pbch_pss_sss_adjust,
+		     short **llr_save) {
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag,*ch_magb;
   int j=0,i,len,len2;
   unsigned char symbol_mod,len_mod4;
-  static short *llr;
+  short *llr;
   s16 *llr2;
 
   if (first_symbol_flag==1)
     llr = dlsch_llr;
+  else
+    llr = *llr_save;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -6300,6 +6303,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 
+  *llr_save = llr;
   _mm_empty();
   _m_empty();
 
@@ -10826,7 +10830,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
 			lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
 			symbol,first_symbol_flag,nb_rb,
-			adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,6,subframe,symbol));
+			adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,6,subframe,symbol),
+			lte_ue_pdsch_vars[eNB_id]->llr128);
       else if (i_mod == 2)
 	{
 	  msg("rx_dlsch.c : IC receiver only implemented for 16QAM-16QAM\n");
