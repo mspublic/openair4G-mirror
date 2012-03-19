@@ -10137,12 +10137,12 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 	avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
 	avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
 	if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
-	  avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
-
 	  dl_ch128+=2;	
 	}
-	else 
+	else {
+	  avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
 	  dl_ch128+=3;	
+	}
 	/*
 	  if (rb==0) {
 	  print_shorts("dl_ch128",&dl_ch128[0]);
