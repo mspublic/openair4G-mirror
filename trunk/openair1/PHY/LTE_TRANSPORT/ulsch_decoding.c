@@ -58,6 +58,7 @@
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #endif
+
 //#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
@@ -127,6 +128,7 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
   unsigned char Mdlharq;
   unsigned char i;
 
+  ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     Mdlharq = ulsch->Mdlharq;
     ulsch->rnti = 0;
@@ -940,7 +942,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     else 
       crc_type = CRC24_B;
 
-    /*        
+    /*            
     msg("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       if ((ulsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
@@ -963,7 +965,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 #ifdef DEBUG_ULSCH_DECODING    
       msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
 #endif
+      /*
+      for (i=0;i<Kr_bytes;i++)
+	printf("segment %d : byte %d => %d\n",r,i,ulsch->harq_processes[harq_pid]->c[r][i]);
       return(ret);
+      */
     }
 #ifdef DEBUG_ULSCH_DECODING    
     else
