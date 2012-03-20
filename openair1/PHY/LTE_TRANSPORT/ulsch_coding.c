@@ -228,12 +228,13 @@ u32 ulsch_encoding(u8 *a,
     ulsch->harq_processes[harq_pid]->control_only = 0;
     
 #ifdef DEBUG_ULSCH_CODING
-  msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d\n",
-	 ulsch->harq_processes[harq_pid]->TBS,
-	 Q_m,
-	 ulsch->harq_processes[harq_pid]->mcs,
-	 harq_pid,
-	 ulsch->harq_processes[harq_pid]->Ndi);
+  msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d, RV %d\n",
+      ulsch->harq_processes[harq_pid]->TBS,
+      Q_m,
+      ulsch->harq_processes[harq_pid]->mcs,
+      harq_pid,
+      ulsch->harq_processes[harq_pid]->Ndi,
+      ulsch->harq_processes[harq_pid]->rvidx);
 
   for (i=0;i<ulsch->O_ACK;i++)
     msg("ulsch_coding: O_ACK[%d] %d\n",i,ulsch->o_ACK[i]);

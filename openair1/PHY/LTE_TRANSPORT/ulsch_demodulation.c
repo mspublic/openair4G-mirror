@@ -1135,8 +1135,8 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
   u32 l,i;
   s32 avgs;
   u8 log2_maxh=0,aarx;
-
  
+  
   s32 avgs_0,avgs_1;
   u32 log2_maxh_0=0,log2_maxh_1=0;
   
@@ -1223,7 +1223,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 	avgs_0 = cmax(avgs_0,avgU_0[(aarx<<1)]);
   
-      log2_maxh_0 = (log2_approx(avgs_0)/2)+ log2_approx(frame_parms->nb_antennas_rx-1);
+      log2_maxh_0 = (log2_approx(avgs_0)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+3;
 #ifdef DEBUG_ULSCH
       msg("[ULSCH] log2_maxh_0 = %d (%d,%d)\n",log2_maxh_0,avgU_0[0],avgs_0);
 #endif
@@ -1240,11 +1240,11 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 	avgs_1 = cmax(avgs_1,avgU_1[(aarx<<1)]);
   
-      log2_maxh_1 = 4+(log2_approx(avgs_1)/2);
+      log2_maxh_1 = (log2_approx(avgs_1)/2) + log2_approx(frame_parms->nb_antennas_rx-1)+3;
 #ifdef DEBUG_ULSCH
       msg("[ULSCH] log2_maxh_1 = %d (%d,%d)\n",log2_maxh_1,avgU_1[0],avgs_1);
 #endif
-      log2_maxh = max(log2_maxh_0,log2_maxh_1)+ log2_approx(frame_parms->nb_antennas_rx-1);
+      log2_maxh = max(log2_maxh_0,log2_maxh_1);
     }
   else
     {
@@ -1261,7 +1261,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	avgs = cmax(avgs,avgU[(aarx<<1)]);
   
       //      log2_maxh = 4+(log2_approx(avgs)/2);
-      log2_maxh = 6+(log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1);
+      log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+3;
 #ifdef DEBUG_ULSCH
       msg("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
 #endif
