@@ -308,16 +308,45 @@ int main(int argc, char **argv) {
   // Setup PHY structures
   setup_frame_params(frame_parms, 1);
   context.phy_vars_ch_src->lte_frame_parms = *frame_parms;
+  context.phy_vars_ch_src->frame=1;
   phy_init_lte_eNB(context.phy_vars_ch_src, 0, 0, 0);
   for(k = 0; k < args.n_relays; k++) {
     context.phy_vars_mr[k]->lte_frame_parms = *frame_parms;
+    context.phy_vars_mr[k]->frame=1;
     lte_gold(frame_parms, context.phy_vars_mr[k]->lte_gold_table[0], 0);
     lte_gold(frame_parms, context.phy_vars_mr[k]->lte_gold_table[1], 1);
     lte_gold(frame_parms, context.phy_vars_mr[k]->lte_gold_table[2], 2);
+
     phy_init_lte_ue(context.phy_vars_mr[k], 0);
+    context.phy_vars_mr[k]->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
+    context.phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
+    context.phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
+    context.phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
+
+    context.phy_vars_mr[k]->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+    context.phy_vars_mr[k]->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+    context.phy_vars_mr[k]->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+    msg("Init UL hopping UE\n");
+    init_ul_hopping(&context.phy_vars_mr[k]->lte_frame_parms);
+
   }
+    
   context.phy_vars_ch_dest->lte_frame_parms = *frame_parms;
+  context.phy_vars_ch_dest->frame = 1;
   phy_init_lte_eNB(context.phy_vars_ch_dest, 0, 2, 0);
+
+  context.phy_vars_ch_dest->transmission_mode[0] = 2;
+  context.phy_vars_ch_dest->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
+  context.phy_vars_ch_dest->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+  context.phy_vars_ch_dest->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+  context.phy_vars_ch_dest->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+  context.phy_vars_ch_dest->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
+  context.phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
+  context.phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
+  context.phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
+
+  msg("Init UL hopping eNB\n");
+  init_ul_hopping(&context.phy_vars_ch_dest->lte_frame_parms);
 
   context.frame_parms = frame_parms;
   context.rnti_hop1 = 0x1515;
@@ -343,7 +372,6 @@ int main(int argc, char **argv) {
     context.channels_hop1[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_ch, n_rxantenna_mr, args.channel_correlation);
     context.channels_hop2[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_mr, n_rxantenna_ch, args.channel_correlation);
   }
-
   // Create broadcast DCI and generate transport channel parameters,
   // in order to determine hop 1 transfer block size and number of coded bits
   setup_broadcast_dci(&dci_hop1, context.rnti_hop1, 0, args.mcs_hop1, args.n_rb_hop1);
@@ -361,8 +389,9 @@ int main(int argc, char **argv) {
   // in order to determine hop 2 transfer block size and number of coded bits
   context.harq_pid_hop2 = subframe2harq_pid(frame_parms, 0, subframe_hop2);
   setup_distributed_dci(&dci_hop2, context.rnti_hop2, 0, args.mcs_hop2, args.n_rb_hop2);
-  generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context.rnti_hop2, (subframe_hop2+6)%10,
-      format0, context.phy_vars_mr[0], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
+  generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context.rnti_hop2, 
+				    ul_subframe2pdcch_alloc_subframe(frame_parms,subframe_hop2),//(subframe_hop2+6)%10, 
+				    format0, context.phy_vars_mr[0], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
   context.tbs_hop2 = context.phy_vars_mr[0]->ulsch_ue[0]->harq_processes[context.harq_pid_hop2]->TBS;
   context.n_coded_bits_hop2 = get_ulsch_G(context.phy_vars_mr[0]->ulsch_ue[0], context.harq_pid_hop2);
 
@@ -749,12 +778,15 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
       // Normalization of received signal, fix this..
       tx_energy = 300.0e3;
-      awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[0])/20.0);
-      for(k = 1; k < args->n_relays; k++)
-        awgn_stddev = min(sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[k])/20.0), awgn_stddev);
+      //      awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[0])/20.0);
+      awgn_stddev = pow(10,.05*40);
 
+      //      for(k = 1; k < args->n_relays; k++)
+      //        awgn_stddev = min(sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[k])/20.0), awgn_stddev);
+      //      printf("hop2 awgn_stddev %f\n",10*log10(awgn_stddev));
       // transmit from all active relays
       accumulate_at_rx = false;
+
       for(k = 0; k < args->n_relays; k++) {
         if(!decoded_at_mr[k])
           continue;
@@ -764,21 +796,23 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
             FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 
         // Generate transport channel parameters
-        generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, (context->subframe_hop2+6)%10, 
-            format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
+        generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, 
+					  ul_subframe2pdcch_alloc_subframe(&phy_vars_mr[k]->lte_frame_parms,context->subframe_hop2),//(context->subframe_hop2+6)%10, 
+					  format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
 
         // Set relay role in Alamouti coding (this could be done better)
         if(relay_role[k] == RELAY_ROLE_STANDARD) {
           phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
         }
         else {
-          phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
+          phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;//2;
         }
 
         // Generate uplink reference signal
         generate_drs_pusch(phy_vars_mr[k], 0, AMP, context->subframe_hop2, 0, args->n_rb_hop2);
   
         // Encode ULSCH data
+	//	printf("transmit_one_pdu 1 : ulsch_encoding mr %d\n",k);
         if(ulsch_encoding(context->mr_buffer[k], frame_parms, phy_vars_mr[k]->ulsch_ue[0],
               context->harq_pid_hop2, 1, 0, 1) == -1) {
           printf("ulsch_encoding failed\n");
@@ -832,8 +866,9 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       }
 
       // Generate eNB transport channel parameters
-      generate_eNB_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, (context->subframe_hop2+6)%10, 
-          format0, 0, phy_vars_ch_dest, SI_RNTI, RA_RNTI, P_RNTI, 0);
+      generate_eNB_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, 
+					 ul_subframe2pdcch_alloc_subframe(&phy_vars_ch_dest->lte_frame_parms,context->subframe_hop2),//(context->subframe_hop2+6)%10, 
+					 format0, 0, phy_vars_ch_dest, SI_RNTI, RA_RNTI, P_RNTI, 0);
 
       // Front end processing at destination CH
       for(l = 0; l < frame_parms->symbols_per_tti>>1; l++)
@@ -842,7 +877,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         slot_fep_ul(frame_parms, &phy_vars_ch_dest->lte_eNB_common_vars, l, 2*context->subframe_hop2+1, 0, 0);
 
       // Receive ULSCH data
-      rx_ulsch(phy_vars_ch_dest, context->subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 2);
+      rx_ulsch(phy_vars_ch_dest, context->subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 0);//2);
 
       // Compute uncoded bit error rate
       k = 0;
@@ -922,8 +957,9 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         setup_distributed_dci(&dci_hop2, context->rnti_hop2, 0, context->mcs_hop2, args->n_rb_hop2);
 
         // Generate transport channel parameters
-        generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, (context->subframe_hop2+6)%10, 
-            format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
+        generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, 
+					  ul_subframe2pdcch_alloc_subframe(&phy_vars_mr[k]->lte_frame_parms,context->subframe_hop2),//(context->subframe_hop2+6)%10, 
+					  format0, phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
 
         // Set relay role in Alamouti coding (this could be done better)
         if(relay_role[k] == RELAY_ROLE_STANDARD) {
@@ -934,6 +970,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         }
 
         // Encode ULSCH data
+	//	printf("transmit one pdu 2 : ulsch_encoding mr %d\n",k);
         if(ulsch_encoding(context->mr_buffer[k], frame_parms, phy_vars_mr[k]->ulsch_ue[0],
               context->harq_pid_hop2, 1, 0, 1) == -1) {
           printf("ulsch_encoding failed\n");
@@ -1374,7 +1411,7 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   frame_parms->nushift = 0;
   frame_parms->frame_type = 1; // TDD frames
   // TODO: TDD config 1 needs changes to subframe2harq_pid
-  frame_parms->tdd_config = 2; // TDD frame type 1
+  frame_parms->tdd_config = 1; // TDD frame type 1
   frame_parms->mode1_flag = (transmission_mode == 1 ? 1 : 0);
   frame_parms->nb_antennas_tx = n_txantenna_ch;
   frame_parms->nb_antennas_rx = n_rxantenna_mr;
@@ -1427,7 +1464,7 @@ void alloc_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE*
   int l;
 
   for(k = 0; k < n_relays; k++) {
-    phy_vars_mr[k]->ulsch_ue[0] = new_ue_ulsch(3, 0);
+    phy_vars_mr[k]->ulsch_ue[0] = new_ue_ulsch(8, 0);
     phy_vars_mr[k]->ulsch_ue[0]->o_ACK[0] = 0;
     phy_vars_mr[k]->ulsch_ue[0]->o_ACK[1] = 0;
     phy_vars_mr[k]->ulsch_ue[0]->o_ACK[2] = 0;
@@ -1438,7 +1475,7 @@ void alloc_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE*
         phy_vars_mr[k]->ulsch_ue[0]->harq_processes[l]->B = 0;
       }
   }
-  phy_vars_ch->ulsch_eNB[0] = new_eNB_ulsch(3, 0);
+  phy_vars_ch->ulsch_eNB[0] = new_eNB_ulsch(8, 0);
 }
 
 void free_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays)
@@ -1502,10 +1539,12 @@ void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, 
         dci_data->mcs = mcs;
         break;
       case 1:
-        dci_data->mcs = 30;
+	//        dci_data->mcs = 30;
+        dci_data->mcs = mcs;
         break;
       case 2:
-        dci_data->mcs = 31;
+	//        dci_data->mcs = 31;
+	dci_data->mcs = 29;
         break;
       case 3:
         dci_data->mcs = 29;
@@ -1741,11 +1780,12 @@ double compute_ber_soft(u8* ref, s16* rec, int n)
   int k;
   int e = 0;
 
-  for(k = 0; k < n; k++)
+  for(k = 0; k < n; k++) {
     if((ref[k]==1) != (rec[k]<0)) {
       //      printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
       e++;
     }
+  }
 
   return (double)e / (double)n;
 }
