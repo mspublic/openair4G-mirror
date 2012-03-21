@@ -39,7 +39,7 @@
 */
 
 #include "otg_rx.h"
-
+#include"otg_externs.h"
 // Check if the packet is well received or not and extract data
 int check_packet( int src, int dst, int ctime){
 	

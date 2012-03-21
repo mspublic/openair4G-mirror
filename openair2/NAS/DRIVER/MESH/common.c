@@ -45,8 +45,8 @@
 #include "rtai_fifos.h"
 #endif
 
-#define NAS_DEBUG_RECEIVE 1
-#define NAS_DEBUG_SEND 1
+//#define NAS_DEBUG_RECEIVE 1
+//#define NAS_DEBUG_SEND 1
 //#define NAS_DEBUG_CLASS 1
 //#define NAS_ADDRESS_FIX 1
 

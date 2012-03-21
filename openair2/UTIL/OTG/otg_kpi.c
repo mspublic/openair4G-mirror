@@ -42,7 +42,7 @@
 
 
 #include"otg_kpi.h"
-
+#include"otg_externs.h"
 
 
 void tx_throughput(int src, int dst){
