@@ -213,8 +213,10 @@ void get_beta_map() {
     }
   }
 
-  for (mcs = 5; mcs < MCS_COUNT; mcs++) {
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs);
+  for (mcs = 5; mcs < MCS_COUNT; mcs++) { 
+    // sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs); // navid 
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Real/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
+
     fp = fopen(file_path,"r");
     if (fp == NULL) {
       printf("ERROR: Unable to open the file %s\n", file_path);

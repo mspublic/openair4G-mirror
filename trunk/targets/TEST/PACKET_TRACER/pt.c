@@ -284,11 +284,12 @@ u8 attach_ue0(char *sdu) {
   UE_rrc_inst[0].Info[0].State = RRC_SI_RECEIVED;
   rrc_ue_generate_RRCConnectionRequest(0,131,0);
 
-  Size = Rrc_xface->mac_rrc_data_req(0,
-				     131,
-				     CCCH,1,
-				     &sdu[sizeof(SCH_SUBHEADER_SHORT)],0,
-				     0);
+  //  Size = Rrc_xface->mac_rrc_data_req(0, 
+  Size = mac_rrc_data_req(0,
+			  131,
+			  CCCH,1,
+			  &sdu[sizeof(SCH_SUBHEADER_SHORT)],0,
+			  0);
   Size16 = (u16)Size;
 
   generate_ulsch_header((u8 *)sdu,  // mac header
@@ -311,7 +312,8 @@ u8 attach_ue1(char *sdu) {
   mac_rrc_lite_data_ind(0,131,0,UE_rrc_inst[0].Srb0[0].Tx_buffer.Payload,
 			UE_rrc_inst[0].Srb0[0].Tx_buffer.payload_size,1,0);
 
-  return(Rrc_xface->mac_rrc_data_req(0,
+  //  return(Rrc_xface->mac_rrc_data_req(0,
+  return(mac_rrc_data_req(0,
 				     132,
 				     0,1,
 				     sdu,
