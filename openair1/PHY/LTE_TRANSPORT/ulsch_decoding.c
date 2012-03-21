@@ -58,7 +58,6 @@
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #endif
-
 //#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
@@ -942,7 +941,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     else 
       crc_type = CRC24_B;
 
-    /*            
+    /*        
     msg("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       if ((ulsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
@@ -959,17 +958,13 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					harq_pid&3);
+					harq_pid);
     
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    
       msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
 #endif
-      /*
-      for (i=0;i<Kr_bytes;i++)
-	printf("segment %d : byte %d => %d\n",r,i,ulsch->harq_processes[harq_pid]->c[r][i]);
       return(ret);
-      */
     }
 #ifdef DEBUG_ULSCH_DECODING    
     else
@@ -992,16 +987,16 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     if (r==0) {
       memcpy(ulsch->harq_processes[harq_pid]->b,
 	     &ulsch->harq_processes[harq_pid]->c[0][(ulsch->harq_processes[harq_pid]->F>>3)],
-	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0);
+	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
+      offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3);
       //            msg("copied %d bytes to b sequence\n",
       //      	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
     }
     else {
       memcpy(ulsch->harq_processes[harq_pid]->b+offset,
-	     ulsch->harq_processes[harq_pid]->c[r],
-	     Kr_bytes - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset += (Kr_bytes- ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+	     ulsch->harq_processes[harq_pid]->c[0],
+	     Kr_bytes);
+      offset += Kr_bytes;
     }
   }
   
@@ -1015,7 +1010,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   u8 UE_id;
   u16 rnti;
-  u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
+  u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,subframe);
   
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
 #ifdef DEBUG_PHY

@@ -45,7 +45,7 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
     //-----------------------------------------------------------------------------
     LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%d sn_field_length=%d is_mXch=%d --->][RLC_UM][MOD %02d][RB %02d]    \n",
                 frame,
-                ( eNB_flagP == 1) ? "eNB":"UE",
+                ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
                 module_idP,
                 config_umP->timer_reordering,
                 config_umP->sn_field_length,
@@ -128,6 +128,9 @@ rlc_um_reset_state_variables (rlc_um_entity_t *rlcP)
   rlcP->next_sdu_index = 0;
   rlcP->current_sdu_index = 0;
 
+  rlcP->last_reassemblied_sn = 0;
+  //rlcP->reassembly_missing_pdu_detected = 0;
+
   // TX SIDE
   rlcP->vt_us = 0;
   // RX SIDE
@@ -198,8 +201,7 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->um_window_size = 0;
     }
 
-    rlcP->last_reassemblied_sn  = rlcP->sn_modulo - 1;
-    rlcP->last_reassemblied_missing_sn  = rlcP->sn_modulo - 1;
+    rlcP->last_reassemblied_missing_sn = rlcP->sn_modulo - 1;
     rlcP->reassembly_missing_sn_detected = 0;
     // timers
     rlcP->timer_reordering         = 0;

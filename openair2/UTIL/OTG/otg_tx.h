@@ -38,98 +38,142 @@
 * \warning
 */
 
-#ifndef __OTG_TX_H__
-#	define __OTG_TX_H__
-
-
-
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include <errno.h>
 #include <unistd.h>
-
+#include <time.h>
+#include <math.h>
 
 #include "otg_defs.h"
 #include "otg_config.h"
-#include "otg.h"
-#include "../MATH/oml.h"
+#include "otg_rx.h"
+
+//#ifndef STANDALONE
+//#include "../UTIL/LOG/log.h"
+//#else
+//#include "../LOG/log.h"
+//#endif
 
 
 
-/*! \fn int time_dist(int src, int dst, int state)
-* \brief compute Inter Departure Time, in ms
-* \param[in] Source, destination, state
-* \param[out] Inter Departure Time 
+
+
+void init_all_otg();
+
+/*! \fn void init_config_otg();
+* \brief set initial values (test)
+* \param[in] 
+* \param[out] 
 * \note 
 * @ingroup  _otg
 */
-int time_dist(int src, int dst, int state);
 
-/*! \fn int size_dist(int src, int dst, int state)
-* \brief compute the payload size, in bytes 
-* \param[in] Source, node_dst, state
-* \param[out] size of the payload, in bytes
+void init_config_otg();
+
+/*! \fn double time_dist(int src, int dst, int state);
+* \brief compute idt
+* \param[in] node_src, node_dst, state
+* \param[out] idt
 * \note 
 * @ingroup  _otg
 */
+
+double time_dist(int src, int dst, int state);
+
+/*! \fn size_dist(int src, int dst, int state);
+* \brief compute size 
+* \param[in] node_src, node_dst, state
+* \param[out] size
+* \note 
+* @ingroup  _otg
+*/
+
 int size_dist(int src, int dst, int state);
 
-/*! \fn char *random_string(int size, ALPHABET data_type, char *data_string)
+/*! \fn char *random_string(int size);
 * \brief return a random string[size]
-* \param[in] size  of the string to generate, data : numeric or letters + numeric, a static string used to generate the output  random string 
-* \param[out] string of a random char
+* \param[in] size 
+* \param[out] string
 * \note 
 * @ingroup  _otg
 */
-char *random_string(int size, ALPHABET data_type, char *data_string);
 
-/*! \fn int packet_gen(int src, int dst, int state, int ctime)
-* \brief return int= 1 if the packet is generated: OTG header + header + payload, else 0
-* \param[in] source, 
-* \param[out] packet_t: the generated packet: otg_header + header + payload
+char *random_string(int size, ALPHABET data_type);
+
+/*! \fn char *packet_gen(int src, int dst, int state);
+* \brief return the generated packet
+* \param[in] src + dst + state
+* \param[out] string : packet
 * \note 
 * @ingroup  _otg
 */
-int packet_gen(int src, int dst, int state, int ctime);
 
+char *packet_gen(int src, int dst, int state);
+
+
+/*! \fn void free_addr_otg();
+* \brief free src and dst address
+* \param[in] 
+* \param[out]
+* \note 
+* @ingroup  _otg
+*/
+
+void free_addr_otg();
 
 /*! \fn char *header_gen(int ip_v, int trans_proto);
 * \brief generate IP (v4/v6) + transport header(TCP/UDP) 
 * \param[in] int : ip version + transp proto  
-* \param[out] the payload corresponding to ip version and transport protocol
+* \param[out] char * packet
 * \note 
 * @ingroup  _otg
 */
+
 char *header_gen(int ip_v, int trans_proto);
 
 /*! \fn char *payload_pkts(int payload_size);
-* \brief generate the payload
+* \brief generate payload
 * \param[in] int : payload size  
 * \param[out] char * payload
 * \note 
 * @ingroup  _otg
 */
+
 char *payload_pkts(int payload_size);
 
+/*! \fn double get_emu_time (void);
+* \brief get emulation time
+* \param[in]   
+* \param[out] 
+* \note 
+* @ingroup  _otg
+*/
 
-/*! \fn char *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type);
-* \brief generate OTG header 
-* \param[in]  simulation time, header_type (to know the transport/ip version in the RX) and the packet sequence number  
+double get_emu_time (void);
+
+/*! \fn unsigned int crc_gen(char *packet,  CRC crc);
+* \brief generate a CRC from a packet 
+* \param[in]  chart *packet + CRC 
+* \param[out] crc
+* \note 
+* @ingroup  _otg
+*/
+unsigned int crc_gen(char *packet,  CRC crc);
+
+
+/*! \fn char *otg_header_gen( char* flag, int time, int seq_num);
+* \brief generate a OTG header 
+* \param[in]  chart *flag , int simulation time, int packet sequence number  
 * \param[out] otg header
 * \note 
 * @ingroup  _otg
 */
-otg_hdr_t *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type);
+char *otg_header_gen( char* flag, int time, int seq_num);
 
-
-/*! \fn int adjust_size(int size);
-* \brief adjuste the generated packet size when size<min or size>max   
-* \param[in]  size  
-* \param[out] modified size in case
-* \note 
-* @ingroup  _otg
-*/
-int adjust_size(int size);
-
-#endif

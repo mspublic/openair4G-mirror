@@ -1,40 +1,14 @@
-/*******************************************************************************
+/*________________________L2_interface.c________________________
 
-  Eurecom OpenAirInterface 2
-  Copyright(c) 1999 - 2010 Eurecom
+ Authors : Hicham Anouar
+ Company : EURECOM
+ Emails  : anouar@eurecom.fr
+________________________________________________________________*/
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
 
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
 
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
 
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
-/*! \file l2_interface.c
-* \brief layer 2 interface 
-* \author Raymond Knopp 
-* \date 2011
-* \version 1.0 
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr 
-*/ 
 //#include "openair_types.h"
 //#include "openair_defs.h"
 //#include "openair_proto.h"
@@ -60,7 +34,7 @@ u32 mui=0;
 
 s8 mac_rrc_lite_data_req( u8 Mod_id,
 			  u32 frame,
-			  u16 Srb_id,
+			  u16 Srb_id, 
 			  u8 Nb_tb,
 			  char *Buffer,
 			  u8 eNB_flag,
@@ -72,24 +46,19 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
   u8 Sdu_size=0;
 
 #ifdef DEBUG_RRC
-  int i;
-  LOG_T(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_id,Srb_id);
+  msg("[RRC] Mod_id=%d: mac_rrc_data_req to SRB ID=%d\n",Mod_id,Srb_id);
 #endif
 
   if( eNB_flag == 1){
 
     if((Srb_id & RAB_OFFSET) == BCCH){
       if(eNB_rrc_inst[Mod_id].SI.Active==0) return 0;
-
+      
       // All even frames transmit SIB in SF 5
-      if (eNB_rrc_inst[Mod_id].sizeof_SIB1 == 255) {
-	LOG_E(RRC,"[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_id);
-	mac_xface->macphy_exit("");
-      }
-      if ((frame%2) == 0) {
+      if ((Mac_rlc_xface->frame%2) == 0) {
 	memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].SIB1,eNB_rrc_inst[Mod_id].sizeof_SIB1);
 #ifdef DEBUG_RRC
-	LOG_D(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_id,frame);
+	msg("[RRC][eNB%d] Frame %d : BCCH request => SIB 1\n",Mod_id,Rrc_xface->Frame_index);
 	for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_SIB1;i++)
 	  msg("%x.",Buffer[i]);
 	msg("\n");
@@ -100,43 +69,48 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
       else if ((frame%8) == 1){
 	memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].SIB23,eNB_rrc_inst[Mod_id].sizeof_SIB23);
 #ifdef DEBUG_RRC
-	LOG_D(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_id,frame);
+	msg("[RRC][eNB%d] Frame %d : BCCH request => SIB 2-3\n",Mod_id,Frame);
 	for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_SIB23;i++)
 	  msg("%x.",Buffer[i]);
 	msg("\n");
+
 #endif
 	return(eNB_rrc_inst[Mod_id].sizeof_SIB23);
       }
       else
 	return(0);
     }
-
-
+	
+    
     if( (Srb_id & RAB_OFFSET ) == CCCH){
-      LOG_D(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_id,frame, Srb_id);
+      msg("[RRC][eNB%d] CCCH request (Srb_id %d)\n",Mod_id,Srb_id);
 
       if(eNB_rrc_inst[Mod_id].Srb0.Active==0) {
-	LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_id);
+	msg("[RRC][eNB%d] CCCH Not active\n",Mod_id);
 	return -1;
       }
       Srb_info=&eNB_rrc_inst[Mod_id].Srb0;
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.payload_size>0){//Fill buffer
-	LOG_D(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_id,Srb_info,Srb_info->Tx_buffer.payload_size,Buffer,Srb_info->Tx_buffer.Payload);
+	msg("[RRC][eNB%d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_id,Srb_info,Srb_info->Tx_buffer.payload_size,Buffer,Srb_info->Tx_buffer.Payload);
 	memcpy(Buffer,Srb_info->Tx_buffer.Payload,Srb_info->Tx_buffer.payload_size);
 	Sdu_size = Srb_info->Tx_buffer.payload_size;
 	Srb_info->Tx_buffer.payload_size=0;
       }
-
+      
       return (Sdu_size);
     }
+  
+    
+  
   }
+  
 
   else{   //This is an UE
 #ifdef DEBUG_RRC
-    LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_id,frame,Srb_id);
-    LOG_D(RRC,"[UE %d] Frame %d Buffer status %d,\n",Mod_id,frame, UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size);
+    msg("[RRC][UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_id,frame,Srb_id);
+    msg("[RRC][UE %d] Frame %d Buffer status %d,\n",Mod_id,frame, UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size);
 #endif
     if( (UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size);
@@ -155,7 +129,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 }
 
 //--------------------------------------------------------------------------------------------//
-s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_len,u8 eNB_flag,u8 eNB_index ){
+s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_len,u8 eNB_flag,u8 eNB_index ){ 
   //------------------------------------------------------------------------------------------//
 
   SRB_INFO *Srb_info;
@@ -163,9 +137,9 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 
 #ifdef DEBUG_RRC
   if (Srb_id == BCCH)
-    msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index);
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index); 
   else
-    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index);
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
 #endif
 
   if(eNB_flag == 0){
@@ -173,16 +147,13 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
     //msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
 
     if(Srb_id == BCCH){
-
-      decode_BCCH_DLSCH_Message(Mod_id,frame,eNB_index,Sdu,Sdu_len);
-      /*
       if ((frame %2) == 0) {
 	if (UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 0) {
-	  LOG_D(RRC,"[UE %d] Frame %d : Received SIB1 from eNB %d (%d bytes)\n",Mod_id,frame,eNB_index,Sdu_len);
+	  msg("[RRC][UE %d] Frame %d : Received SIB1 from eNB %d (%d bytes)\n",Mod_id,frame,eNB_index,Sdu_len);
 	  if (UE_rrc_inst[Mod_id].SIB1[eNB_index])
 	    memcpy(UE_rrc_inst[Mod_id].SIB1[eNB_index],&Sdu[0],Sdu_len);
 	  else {
-	    LOG_E(RRC,"[FATAL ERROR] SIB1 buffer for eNB %d not allocated, exiting ...\n",eNB_index);
+	    msg("[RRC][FATAL ERROR] SIB1 buffer for eNB %d not allocated, exiting ...\n",eNB_index);
 	    mac_xface->macphy_exit("");
 	    return(-1);
 	  }
@@ -191,37 +162,36 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	}
       }
       else {
-	if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
+	if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) && 
 	    (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
 	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
-	  LOG_D(RRC,"[UE %d] Frame %d : Received SI (%d bytes), in window %d (SIperiod %d, SIwindowsize %d)\n",Mod_id,frame,Sdu_len,si_window,UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod,UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize);
+	  msg("[RRC][UE %d] Frame %d : Received SI (%d bytes), in window %d (SIperiod %d, SIwindowsize %d)\n",Mod_id,frame,Sdu_len,si_window,UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod,UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize);
 	  memcpy(UE_rrc_inst[Mod_id].SI[eNB_index],&Sdu[0],Sdu_len);
 	  if (decode_SI(Mod_id,frame,eNB_index,si_window)==0) {
-	    LOG_D(RRC,"[UE %d] Frame %d :Decoded SI successfully\n",Mod_id,frame);
+	    msg("[RRC][UE %d] Frame %d :Decoded SI successfully\n",Mod_id,frame);
 	    UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
 	  }
-	  }
 
+	}
+      } 
 
-    
-	  }
-
-
+       
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
 	if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE) {
-	  LOG_I(RRC,"[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
+	  msg("[RRC][UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
 	  UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_SI_RECEIVED;
 	}
+	// After SI is received, prepare RRCConnectionRequest
+	rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
       }
-      */
-    }
+    }   
 
 
     if((Srb_id & RAB_OFFSET) == CCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[eNB_index];
-
       
+      //      msg("[RRC] RX_CCeNB_DATA %d bytes: ",Sdu_len);
       if (Sdu_len>0) {
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
 	Srb_info->Rx_buffer.payload_size = Sdu_len;
@@ -238,7 +208,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
  }
 
   return(0);
-
+  
 }
 
 //-------------------------------------------------------------------------------------------//
@@ -247,7 +217,7 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 }
 
 //------------------------------------------------------------------------------------------------------------------//
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
+void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
@@ -255,13 +225,13 @@ void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu
 
   LOG_D(RRC,"RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
       DCCH_index,UE_index,sdu_size);
-  if (eNB_flag ==1)
+  if(Mac_rlc_xface->Is_cluster_head[Mod_id]==1)
     rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
     rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,frame,DCCH_index,Buffer,UE_index);
-
-}
-
+  
+} 
+ 
 
 /*-------------------------------------------------------------------------------------------*/
 void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
@@ -272,15 +242,30 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 //  rlc_infoP.rlc_mode=RLC_UM;
 
   LOG_D(RRC,"[UE %d] Frame %d OUT OF SYNC FROM CH %d\n ",Mod_id,frame,eNB_index);
-
-  if ((UE_rrc_inst[Mod_id].Info[eNB_index].T310_active==1) &&
-      (UE_rrc_inst[Mod_id].Info[eNB_index].T310_cnt==1) ) {
-      
-      
-  }
   
+  UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
+  UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;	
+  UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;	
+  UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
+  
+  UE_rrc_inst[Mod_id].Srb0[eNB_index].Rx_buffer.payload_size=0;
+  UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
+  
+  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Rx_buffer.payload_size=0;
+  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=0;
 
-}
+  if(UE_rrc_inst[Mod_id].Srb2[eNB_index].Active==1){
+    msg("[RRC Inst %d] eNB_index %d, Remove RB %d\n ",Mod_id,eNB_index,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
+    Mac_rlc_xface->rrc_rlc_config_req(Mod_id+NB_eNB_INST,ACTION_REMOVE,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
+    UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
+    UE_rrc_inst[Mod_id].Srb2[eNB_index].Status=IDLE;
+    UE_rrc_inst[Mod_id].Srb2[eNB_index].Next_check_frame=0;
+
+
+  }
+
+
+} 
 
 /*
 u8 get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index){

@@ -203,14 +203,14 @@
 ///Third Amplitude for QAM64 (\f$ 2^{15} \times 1/\sqrt{42}\f$)
 #define QAM64_n3 5056
 
-/// First Amplitude for QAM16 for TM5 (\f$ 2^{15} \times 2/sqrt(20)\f$)
+/// First Amplitude for QAM16 for TM5 Receiver (\f$ 2^{15} \times 1/sqrt(5)\f$)
 #define QAM16_TM5_n1 14654
 /// Second Amplitude for QAM16 for TM5 Receiver (\f$ 2^{15} \times 1/\sqrt{20}\f$)
 #define QAM16_TM5_n2 7327
 
-///First Amplitude for QAM64 (\f$ 2^{15} \times 4/\sqrt{84}\f$)
+///First Amplitude for QAM64 for TM5 Receiver (\f$ 2^{15} \times 2/\sqrt{21}\f$)
 #define QAM64_TM5_n1 14301
-///Second Amplitude for QAM64 (\f$ 2^{15} \times 2/\sqrt{84}\f$)
+///Second Amplitude for QAM64 for TM5 Receiver (\f$ 2^{15} \times 1/\sqrt{21}\f$)
 #define QAM64_TM5_n2 7150
 ///Third Amplitude for QAM64 for TM5 Receiver (\f$ 2^{15} \times 1/\sqrt{84}\f$)
 #define QAM64_TM5_n3 3575
@@ -296,17 +296,20 @@ enum MODE {
 
 /// Data structure for transmission.
 typedef struct {
-  /// RAW TX sample buffer
-  char *TX_DMA_BUFFER[2];
+  // RAW TX sample buffer
+  mod_sym_t *TX_DMA_BUFFER[2];
+  /*
+  // Total transmit gain
+  unsigned int tx_total_gain_dB;
+  */
 } TX_VARS ;  
+
 
 /// Data structure for reception.
 typedef struct {
-  /// RAW TX sample buffer
-  char *TX_DMA_BUFFER[2];
-  /// RAW RX sample buffer
-  int *RX_DMA_BUFFER[2];
-} TX_RX_VARS;
+  int *RX_DMA_BUFFER;
+} RX_VARS;
+
 
 /// Measurement Variables
 #ifndef OPENAIR_LTE

@@ -108,8 +108,8 @@ extern "C" {
 #ifndef LOG_DEBUG
 #	define	LOG_DEBUG	7	/*!< \brief debug-level messages */
 #endif
-#ifndef LOG_FILE
-#	define	LOG_FILE        8	/*!< \brief message sequence chart -level  */
+#ifndef LOG_MSC
+#	define	LOG_MSC	        8	/*!< \brief message sequence chart -level  */
 #endif
 #ifndef LOG_TRACE
 #	define	LOG_TRACE	9	/*!< \brief trace-level messages */
@@ -146,7 +146,7 @@ extern "C" {
 #define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
 #define LOG_I(c, x...) logIt(c, LOG_INFO, x)
 #define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
+#define LOG_M(c, x...) logIt(c, LOG_MSC, x)  // specifc log for the MSC chart
 #define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
 /*
 #else
@@ -207,7 +207,7 @@ extern "C" {
 #define FLAG_TIME      0x100
 
 #define LOG_NONE        0x00
-#define LOG_LOW         0x14
+#define LOG_LOW         0x04
 #define LOG_MED         0x14
 #define LOG_HIGH        0x34
 #define LOG_FULL        0x175
@@ -223,7 +223,7 @@ extern "C" {
 
 //static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PDCP, RRC, PERF,OIP, CLI, MSC, OCM, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PDCP, RRC, PERF,RB, CLI, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 

@@ -53,8 +53,8 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
       input_node_list = input_node_list->next;
     }
     else {
-      LOG_E(OCM, "extract_position: Null pointer!!!\n");
-      //exit(-1);
+      printf("extract_position: Null pointer!!!\n");
+      exit(-1);
     }
   }
 }
@@ -145,7 +145,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
   //for (aarx=0; aarx<eNB2UE->nb_rx; aarx++)
     *N0 = thermal_noise + ue_data->rx_noise_level;//? all the element have the same noise level?????
       
-    LOG_D(OCM,"Path loss %lf, noise %lf, signal %lf, snr %lf\n", 
+  printf("[CHANNEL_SIM] path loss %lf, noise %lf, signal %lf, snr %lf\n", 
 	 eNB2UE->path_loss_dB, 
 	 thermal_noise + ue_data->rx_noise_level,
 	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB,
@@ -156,8 +156,8 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
       sinr_dB[count] = enb_data->tx_power_dBm 
 	+ eNB2UE->path_loss_dB
 	- (thermal_noise + ue_data->rx_noise_level)  
-	+ 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
-		      + pow(eNB2UE->chF[0][count].y, 2));
+	+ 10 * log10 (creal(eNB2UE->chF[0][count])*creal(eNB2UE->chF[0][count]) +
+		      cimag(eNB2UE->chF[0][count])*cimag(eNB2UE->chF[0][count]));
       //printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
     } 
 }//function ends
@@ -179,8 +179,8 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
     sir = enb_data->tx_power_dBm 
       + eNB2UE->path_loss_dB
       - (thermal_noise + ue_data->rx_noise_level)  
-      + 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
-		    + pow(eNB2UE->chF[0][count].y, 2));
+      + 10 * log10 (creal(eNB2UE->chF[0][count])*creal(eNB2UE->chF[0][count]) + 
+		    cimag(eNB2UE->chF[0][count])*cimag(eNB2UE->chF[0][count]));
     if (sir > 0)
       sinr_dB[count] -= sir;
     //printf("*****sinr% lf \n",sinr_dB[count]);
@@ -213,10 +213,8 @@ void get_beta_map() {
     }
   }
 
-  for (mcs = 5; mcs < MCS_COUNT; mcs++) { 
-    // sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs); // navid 
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Real/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
-
+  for (mcs = 5; mcs < MCS_COUNT; mcs++) {
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
       printf("ERROR: Unable to open the file %s\n", file_path);
@@ -235,9 +233,9 @@ void get_beta_map() {
       }
       fclose(fp);
     }
-    LOG_D(OCM," Print the table for mcs %d\n",mcs);
+    printf("\n table for mcs %d\n",mcs);
     for (table_len = 0; table_len < 9; table_len++)
-      msg("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+      printf("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
   free(file_path);
 }

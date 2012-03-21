@@ -68,22 +68,6 @@ typedef struct {
 #define PDCP_CONTROL_PDU_INTERSPERSED_ROHC_FEEDBACK_HEADER_SIZE 1
 
 /*
- * 6.2.6 PDCP Control PDU for PDCP status report
- */
-typedef struct {
-  u8 dc;
-  u8 pdu_type; // PDU type (see 6.3.8)
-  u16 first_missing_sn; // First missing PDCP SN
-  unsigned char* window_bitmap; // Ack/Nack information coded as a bitmap
-  u16 window_bitmap_size;
-} pdcp_control_pdu_for_pdcp_status_report;
-/*
- * Following symbolic constant is the size of FIXED part of this PDU
- * so bitmap size should be added to find total header size
- */
-#define PDCP_CONTROL_PDU_STATUS_REPORT_HEADER_SIZE 2
-
-/*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *
@@ -108,19 +92,7 @@ u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer);
  * @param pdu_buffer PDCP PDU buffer
  * @return TRUE on success, FALSE otherwise
  */
-BOOL pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_buffer, \
+BOOL pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer(unsigned char* pdu_buffer, \
      pdcp_user_plane_data_pdu_header_with_long_sn* pdu);
-
-/*
- * Fills the incoming status report header with given value of bitmap 
- * and 'first missing pdu' sequence number
- *
- * @param FMS First Missing PDCP SN
- * @param bitmap Received/Missing sequence number bitmap
- * @param pdu A status report header
- * @return TRUE on success, FALSE otherwise
- */
-BOOL pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_buffer, \
-     u8 bitmap[512], pdcp_control_pdu_for_pdcp_status_report* pdu);
 
 #endif

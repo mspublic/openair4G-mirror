@@ -39,7 +39,6 @@
 */
 #include "PHY/defs.h"
 #include "extern.h"
-#include "UTIL/LOG/log.h"
 
 unsigned short msrsb_6_40[8][4] = {{36,12,4,4},
 				   {32,16,8,4},
@@ -243,7 +242,7 @@ s32 generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 
 int generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,u8 subframe) {
 
-  LOG_D(PHY,"[UE] generate_srs_tx_emul for subframe %d\n",subframe);
+  msg("[PHY][UE EMUL] generate_srs_tx_emul for subframe %d\n",subframe);
   return(0); 
 }
 

@@ -50,7 +50,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
-#    include "UTIL/LOG/log.h"
 #    include "mem_block.h"
 #    include "PHY/defs.h"
 //-----------------------------------------------------------------------------
@@ -147,7 +146,7 @@ typedef struct {
 
 
 
-protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , u32_t, u8_t, rb_id_t , sdu_size_t , char* );)
+protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , u32_t, rb_id_t , sdu_size_t , char* );)
 protected_rlc(void            (*rlc_rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t );)
 
 /*! \struct  rlc_pointer_t
@@ -166,8 +165,6 @@ typedef struct rlc_t {
     rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];     /*!< \brief RLC AM protocol instances. */
     rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];     /*!< \brief RLC UM protocol instances. */
     rlc_tm_entity_t      m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
-    char                 m_mscgen_trace[260];
-    unsigned char        m_mscgen_trace_length;
 }rlc_t;
 
 // RK-LG was protected, public for debug
@@ -244,12 +241,12 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, u8_t ,
 */
 public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 
-/*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
+/*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
 * \param[in]  rrc_data_indP       Pointer on RRC data indicate function.
 * \param[in]  rrc_data_confP      Pointer on RRC data confirm callback function.
 */
-public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , u32_t, u8_t, rb_id_t , sdu_size_t , char*),
+public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , u32_t, rb_id_t , sdu_size_t , char*),
                 void (*rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t) );)
 
 //-----------------------------------------------------------------------------
@@ -304,17 +301,6 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, c
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------
-/*
- * Prints incoming byte stream in hexadecimal and readable form
- *
- * @param componentP Component identifier, see macros defined in UTIL/LOG/log.h
- * @param dataP      Pointer to data buffer to be displayed
- * @param sizeP      Number of octets in data buffer
- */
-public_rlc(void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, unsigned long sizeP);)
-
-
-
 /*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
 * \brief    Interface with higher layers, map request to the RLC corresponding to the radio bearer.
 * \param[in]  module_idP       Virtualized module identifier.
@@ -414,27 +400,4 @@ public_rlc(int rlc_module_init(void);)
 #ifndef USER_MODE
 #define assert(x) ((x)?msg("rlc assertion fails\n"):0)
 #endif
-
-
-#define RLC_FG_COLOR_BLACK            "\e[0;30m"
-#define RLC_FG_COLOR_RED              "\e[0;31m"
-#define RLC_FG_COLOR_GREEN            "\e[0;32m"
-#define RLC_FG_COLOR_ORANGE           "\e[0;33m"
-#define RLC_FG_COLOR_BLUE             "\e[0;34m"
-#define RLC_FG_COLOR_MAGENTA          "\e[0;35m"
-#define RLC_FG_COLOR_CYAN             "\e[0;36m"
-#define RLC_FG_COLOR_GRAY_BLACK       "\e[0;37m"
-#define RLC_FG_COLOR_DEFAULT          "\e[0;39m"
-#define RLC_FG_BRIGHT_COLOR_DARK_GRAY "\e[1;30m"
-#define RLC_FG_BRIGHT_COLOR_RED       "\e[1;31m"
-#define RLC_FG_BRIGHT_COLOR_GREEN     "\e[1;32m"
-#define RLC_FG_BRIGHT_COLOR_YELLOW    "\e[1;33m"
-#define RLC_FG_BRIGHT_COLOR_BLUE      "\e[1;34m"
-#define RLC_FG_BRIGHT_COLOR_MAGENTA   "\e[1;35m"
-#define RLC_FG_BRIGHT_COLOR_CYAN      "\e[1;36m"
-#define RLC_FG_BRIGHT_COLOR_WHITE     "\e[1;37m"
-#define RLC_FG_BRIGHT_COLOR_DEFAULT   "\e[0;39m"
-#define RLC_REVERSE_VIDEO             "\e[7m"
-#define RLC_NORMAL_VIDEO              "\e[27m"
-
 #endif

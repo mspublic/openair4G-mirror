@@ -29,8 +29,6 @@ extern int transmission_mode_rrc; //fixme
 #include "from_grlib_softregs.h"
 #include "cbmimo1_pci.h"
 
-extern int rx_sig_fifo;
-
 void set_taus_seed(void);
 
 int dummy_cnt = 0;
@@ -65,15 +63,15 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
   unsigned long phys,pos;
   unsigned long start = (unsigned long)vma->vm_start; 
   unsigned long size = (unsigned long)(vma->vm_end-vma->vm_start); 
-  int i;
 
-  
+
+  /*
   printk("[openair][MMAP]  called (%x,%x,%x) prot %x\n", 
 	 vma->vm_start, 
 	 vma->vm_end, 
 	 size,
 	 vma->vm_page_prot);
-  
+  */
 
 #ifdef BIGPHYSAREA  
   
@@ -87,12 +85,13 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
 	   (unsigned int)size);
     return -EINVAL;
   }
+  /* start off at the PCI BAR0 */
 
 
   pos = (unsigned long) bigphys_ptr;
   phys = virt_to_phys((void *)pos);
   
-  printk("[openair][MMAP]  WILL START MAPPING AT %p (%p) \n", (void*)pos,virt_to_phys(pos));
+  //  printk("[openair][MMAP]  WILL START MAPPING AT %p (%p) \n", (void*)pos,virt_to_phys(pos));
   
   /* loop through all the physical pages in the buffer */ 
   /* Remember this won't work for vmalloc()d memory ! */
@@ -107,16 +106,38 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
     return -EAGAIN;
   }
 
+  //  for (i=0;i<16;i++)
+  //    printk("[openair][MMAP] rxsig %d = %x\n",i,RX_DMA_BUFFER[0][i]);
+
+
   /*
-  for (i=0;i<16;i++)
-    printk("[openair][MMAP] rxsig %d = %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
+  while (size > 0) {
+    
+
+    
+    printk("[openair][MMAP] Mapping phys %x,virt %x\n",phys,start);
+
+
+    if (remap_pfn_range(vma, 
+			start, 
+			phys>>PAGE_SHIFT, 
+			PAGE_SIZE, 
+			vma->vm_page_prot)) {
+      
+      printk("[openair][MMAP] ERROR EAGAIN\n");
+      return -EAGAIN;
+    }
+    
+    start+=PAGE_SIZE;
+    pos+=PAGE_SIZE;
+    
+    if (size > PAGE_SIZE)
+      size-=PAGE_SIZE;
+    else {
+      size = 0;
+    }
+    }
   */
-
-  for (i=0;i<16;i++)
-    ((unsigned int*)RX_DMA_BUFFER[0][0])[i] = i;
-
-  for (i=0;i<16;i++)
-    ((unsigned int*)TX_DMA_BUFFER[0][0])[i] = i;
 
 
 #endif //BIGPHYSAREA
@@ -159,7 +180,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   unsigned int ioctl_ack_cnt = 0;
 
   TX_VARS dummy_tx_vars;
-  TX_RX_VARS dummy_tx_rx_vars;
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
   unsigned short node_id;
 
@@ -167,12 +187,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   u8 size;
   unsigned int *fw_block;
 
-  unsigned int get_frame_cnt=0;
-
   scale = &scale_mem;
-  /*
+
   printk("[openair][IOCTL] In ioctl(), ioctl = %x (%x,%x)\n",cmd,openair_START_1ARY_CLUSTERHEAD,openair_START_NODE);
-  */
+  
   switch(cmd) {
     
 
@@ -190,53 +208,29 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     set_taus_seed();
     
 #ifdef RTAI_ENABLED
-    copy_from_user((void*)frame_parms,arg_ptr,sizeof(LTE_DL_FRAME_PARMS));
-    dump_frame_parms(frame_parms);
-    printk("[openair][IOCTL] Allocating frame_parms\n");
-
+    
     if (openair_daq_vars.node_configured > 0) {
-      printk("[openair][IOCTL] NODE ALREADY CONFIGURED Triggering reset of OAI firmware\n",openair_daq_vars.node_configured);
-
-      if (vid == XILINX_VENDOR) {  // This is ExpressMIMO
-	//exmimo_firmware_init();
-	//openair_dma(0,EXMIMO_PCIE_INIT);
-	ret = setup_regs(0,frame_parms);
-	/*
-	pci_dma_sync_single_for_device(pdev[0], 
-				    exmimo_pci_interface,
-				    1024, 
-				    PCI_DMA_TODEVICE);
-	*/
-	udelay(10000);
-	//printk("freq: %d gain: %d\n",exmimo_pci_interface->rf.rf_freq_rx0,exmimo_pci_interface->rf.rx_gain00);
-	openair_dma(0,EXMIMO_CONFIG);
-      }
-      /*
-      udelay(10000);
-      for (i=0;i<number_of_cards;i++) { 
-	ret = setup_regs(i,frame_parms);
-	if (vid != XILINX_VENDOR)
-	  pci_interface[i]->freq_offset = 0;
-	//openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-	
-      }
-      */
+      printk("[openair][IOCTL] NODE ALREADY CONFIGURED (%d), DYNAMIC RECONFIGURATION NOT SUPPORTED YET!!!!!!!\n",openair_daq_vars.node_configured);
     }
     else {
-
-      ret = phy_init_top(frame_parms);
-      msg("[openair][IOCTL] phy_init_top done: %d\n",ret);
+      copy_from_user((void*)frame_parms,arg_ptr,sizeof(LTE_DL_FRAME_PARMS));
+      dump_frame_parms(frame_parms);
+      printk("[openair][IOCTL] Allocating frame_parms\n");
+      
+#ifdef OPENAIR_LTE
+      openair_daq_vars.node_configured = phy_init_top(frame_parms);
+      msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
       
       frame_parms->twiddle_fft      = twiddle_fft;
       frame_parms->twiddle_ifft     = twiddle_ifft;
       frame_parms->rev              = rev;
-
-      printk("twiddle_ifft=%p,rev=%p\n",twiddle_ifft,rev);
-#ifdef OPENAIR1      
+      
       phy_init_lte_top(frame_parms);
-      msg("[openair][IOCTL] phy_init_lte_top done: %d\n",ret);
+      msg("[openair][IOCTL] phy_init_lte_top done: %d\n",openair_daq_vars.node_configured);
+#else
+      openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
 #endif
-      if (ret < 0) {
+      if (openair_daq_vars.node_configured < 0) {
 	printk("[openair][IOCTL] Error in configuring PHY\n");
 	break;
       }
@@ -252,7 +246,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  printk("[openair][IOCTL] MAC Configuration successful\n");
 #endif	
       }
-
 #ifndef NOCARD_TEST
       // Initialize FPGA PCI registers
       
@@ -289,10 +282,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.ue_ul_nb_rb = 4;
       openair_daq_vars.ulsch_allocation_mode = 0;
 
-      openair_daq_vars.is_eNB = 0;
-      openair_daq_vars.hw_frame = 0;
-
       //mac_xface->slots_per_frame = SLOTS_PER_FRAME;
+      openair_daq_vars.is_eNB = 0;
       //mac_xface->is_primary_cluster_head = 0;
       //mac_xface->is_secondary_cluster_head = 0;
       //mac_xface->cluster_head_index = 0;
@@ -306,19 +297,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	//	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 	
       }
-
-      if (vid == XILINX_VENDOR) {
-	openair_dma(0,EXMIMO_CONFIG);
-	udelay(10000);
-      }
+      
       // usleep(10);
       ret = openair_sched_init();
       if (ret != 0)
 	printk("[openair][IOCTL] Error in starting scheduler\n");
       else
 	printk("[openair][IOCTL] Scheduler started\n");
-
-      openair_daq_vars.node_configured = 1;
 
       // add Layer 1 stats in /proc/openair	
       add_openair1_stats();
@@ -329,7 +314,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif // RTAI_ENABLED
     break;
 
-#ifdef OPENAIR1
     //----------------------
   case openair_START_1ARY_CLUSTERHEAD:
     //----------------------
@@ -345,6 +329,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if ( (openair_daq_vars.node_configured > 0) && 
 	 (openair_daq_vars.node_running == 0)) {
 
+#ifdef OPENAIR_LTE
       if (openair_daq_vars.node_configured==1) {
 
 	// allocate memory for PHY
@@ -423,6 +408,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	}
 
 	//init_transport_channels(openair_daq_vars.dlsch_transmission_mode);
+
+#endif
 
 	openair_daq_vars.node_configured = 5;
 	msg("[openair][IOCTL] phy_init_lte_eNB done: %d\n",openair_daq_vars.node_configured);
@@ -528,7 +515,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #endif // RTAI_ENABLED
     break;
-#endif //OPENAIR1
 
     /*
     //----------------------
@@ -578,7 +564,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     break;
     */
 
-#ifdef OPENAIR1
     //----------------------
   case openair_START_NODE:
     //----------------------
@@ -595,6 +580,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if ( (openair_daq_vars.node_configured > 0) && 
 	 (openair_daq_vars.node_running == 0)) {
 
+#ifdef OPENAIR_LTE
       if (openair_daq_vars.node_configured == 1) {
 
 	// allocate memory for PHY
@@ -625,7 +611,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	PHY_vars_UE_g[0]->Mod_id = 0;
 	// this is only for visualization in the scope
-	PHY_vars_UE_g[0]->lte_ue_common_vars.sync_corr = sync_corr_ue0;
+	PHY_vars_UE_g[0]->lte_ue_common_vars.sync_corr = sync_corr_ue;
 
   
 	// allocate dlsch structures
@@ -675,6 +661,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.node_configured = 3;
 	msg("[openair][IOCTL] phy_init_lte_ue done: %d\n",openair_daq_vars.node_configured);
 
+#endif 
 
 #ifdef OPENAIR2	
 	//NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
@@ -751,13 +738,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.rx_total_gain_dB = MIN_RF_GAIN;
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
       openair_set_rx_gain_cal_openair(0,PHY_vars_UE_g[0]->rx_total_gain_dB);
-      /*
+      
       msg("[openair][IOCTL] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",
 	  RX_DMA_BUFFER[0],
 	  PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],
 	  RX_DMA_BUFFER[1],
 	  PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[1]);
-      */
+
 #ifdef DLSCH_THREAD
       ret = init_dlsch_threads();
       if (ret != 0)
@@ -793,7 +780,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     }
 #endif // RTAI_ENABLED
     break;
-#endif
 
     /*
     //----------------------
@@ -856,11 +842,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.node_running = 0;
 #ifndef NOCARD_TEST
 
-      /*
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
 	bzero((void*) TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
       udelay(1000);
-      */
+
 
       openair_daq_vars.node_id = NODE;
 #ifdef OPENAIR_LTE
@@ -893,14 +878,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       udelay(1000);
  #endif // NOCARD_TEST
-      /*
-      if (vid == XILINX_VENDOR) {
+      if (vid == XILINX_VENDOR) { 
 	printk("ADC0 (%p) :",(unsigned int *)RX_DMA_BUFFER[0][0]);
 	for (i=0;i<128;i++) {
 	  printk("%x.",((unsigned int *)RX_DMA_BUFFER[0][0])[i]);
 	}
       }
-      printk("\n");*/
+      printk("\n");
     }
     else {
       printk("[openair][STOP][ERROR] Cannot stop, radio is not configured ...\n");
@@ -926,67 +910,34 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #else
     openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
-    //    printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
+    printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
 
     //openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME; //this puts the node into RX mode only for TDD, its ignored in FDD mode
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
-
-    
-    if (vid != XILINX_VENDOR) {
-
 #ifdef RTAI_ENABLED
-      if (openair_daq_vars.node_configured > 0) {
-	
-	openair_daq_vars.node_id = NODE;      
-	
-	for (i=0;i<number_of_cards;i++)
-	  ret = setup_regs(i,frame_parms);
+    if (openair_daq_vars.node_configured > 0) {
 
-	
-	openair_daq_vars.one_shot_get_frame=1;
-	
-      }
-      else {
-	printk("[openair][GET_BUFFER][ERROR]  Radio not configured\n");
-	return -1;
-      }
+      openair_daq_vars.node_id = NODE;      
       
-#else
-      
-      
-#endif // RTAI_ENABLED
+      for (i=0;i<number_of_cards;i++)
+	ret = setup_regs(i,frame_parms);
+
+      openair_daq_vars.one_shot_get_frame=1;
+
     }
     else {
-
-      openair_daq_vars.get_frame_done = 0;
-      setup_regs(0,frame_parms);
-      get_frame_cnt=0;
-      printk("calling openair_dma(0,EXMIMO_GET_FRAME);\n");
-      openair_dma(0,EXMIMO_GET_FRAME);
-      
-      while ((get_frame_cnt<30) &&
-	     (openair_daq_vars.get_frame_done == 0)) {
-	udelay(1000);
-	get_frame_cnt++;
-      }
-      if (get_frame_cnt==30)
-	printk("Get frame error\n");
-
-      pci_dma_sync_single_for_cpu(pdev[0], 
-				  exmimo_pci_interface->rf.adc_head[0],
-				  76800*4, 
-				  PCI_DMA_FROMDEVICE);
-      /*
-      printk("RX_DMA_BUFFER[0][0] 0x%x\n",RX_DMA_BUFFER[0][0]);
-      for (i=0;i<76800;i+=1024)
-	printk("rx_buffer %d => %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
-      */
-      
+      printk("[openair][GET_BUFFER][ERROR]  Radio not configured\n");
+      return -1;
     }
+
+#else
+
+
+#endif // RTAI_ENABLED
     break;
-    
+
     //----------------------
 
   case openair_GET_CONFIG:
@@ -1020,14 +971,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[openair][IOCTL]  ... for eNB (%d bytes)\n",sizeof(PHY_VARS_eNB));
       copy_to_user((char *)arg,PHY_vars_eNB_g[0],sizeof(PHY_VARS_eNB));
     }
-    else {
-      printk("[openair][IOCTL] neither UE or eNb configured, sending TX_RX_VARS\n");
-      dummy_tx_rx_vars.TX_DMA_BUFFER[0] = (char*) TX_DMA_BUFFER[0][0];
-      dummy_tx_rx_vars.TX_DMA_BUFFER[1] = (char*) TX_DMA_BUFFER[0][1];
-      dummy_tx_rx_vars.RX_DMA_BUFFER[0] = (int*) RX_DMA_BUFFER[0][0];
-      dummy_tx_rx_vars.RX_DMA_BUFFER[1] = (int*) RX_DMA_BUFFER[0][1];
-      copy_to_user((char *)arg,&dummy_tx_rx_vars,sizeof(TX_RX_VARS));
-    }
+    else 
+      printk("[openair][IOCTL] neither UE or eNb configured yet (%d)\n",openair_daq_vars.node_configured);
 #endif // RTAI_ENABLED
 #endif // PC_TARGET
     break;
@@ -1080,7 +1025,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.tx_test=1;
 
-    /*
 #ifdef BIT8_TX
     for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES<<1;i+=8) {
       ((char*) (TX_DMA_BUFFER[0][0]))[i] = 127;
@@ -1093,19 +1037,16 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       ((char*) (TX_DMA_BUFFER[0][0]))[i+7] = -127;
     }
 #endif
-    */
 
     for (i=0;i<number_of_cards;i++) {
       ret = setup_regs(i,frame_parms);
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       udelay(1000);
-      /*
 #ifdef BIT8_TX
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 #else
-      */
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GEN_FS4);
-      /* #endif */
+#endif
     }
 
     break;
@@ -1202,49 +1143,34 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.tx_test=1;
     ret = setup_regs(0,frame_parms);
 
-    /*
-      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-      
-      bzero((void*)TX_DMA_BUFFER[0][0],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-      bzero((void*)TX_DMA_BUFFER[0][1],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-      copy_from_user((unsigned char*)&dummy_tx_vars,
-		     (unsigned char*)arg,
-		     sizeof(TX_VARS));
-      
-      copy_from_user((unsigned char*)TX_DMA_BUFFER[0][0],
-		     (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[0],
-		     FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-      copy_from_user((unsigned char*)TX_DMA_BUFFER[0][1],
-		     (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[1],
-		     FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-      
-      printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0][0],(void *)arg,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-      
-      for (i=0;i<128;i++) {
-	printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][0])[i]);
-	printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][1])[i]);
-      }
-      
-      
+    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 
-      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
-    }
-    else {
-
-    }
-    */
-
+    bzero((void*)TX_DMA_BUFFER[0][0],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    bzero((void*)TX_DMA_BUFFER[0][1],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    copy_from_user((unsigned char*)&dummy_tx_vars,
+		   (unsigned char*)arg,
+		   sizeof(TX_VARS));
+        
+    copy_from_user((unsigned char*)TX_DMA_BUFFER[0][0],
+		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[0],
+		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    copy_from_user((unsigned char*)TX_DMA_BUFFER[0][1],
+		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[1],
+		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    
+    printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0][0],(void *)arg,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    
     for (i=0;i<128;i++) {
       printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][0])[i]);
       printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][1])[i]);
     }
+    
 
-    if (vid != XILINX_VENDOR) {
-      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
-    }
-    else {
-      openair_dma(0,EXMIMO_TX_FRAME);
-    }
+
+    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+		
+
+
     break;
 
   case openair_START_TX_SIG_NO_OFFSET:
@@ -1492,10 +1418,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	openair_dma(0,EXMIMO_START_EXEC);
 
-	udelay(1000);
-
-	exmimo_firmware_init();
-
       }
     break;
           
@@ -1510,29 +1432,28 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       }
       else {
 	printk("[openair][IOCTL] ok asked Leon to reboot.\n");
-	openair_dma(0,EXMIMO_REBOOT);
       }
       break;
 	
-    case UPDATE_FIRMWARE_TEST_GOK:
-      if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
-	/* No loop, just a single test (the polling loop should better be placed in user-space code). */
-	openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-	rmb();
-	if (tmp & FROM_GRLIB_BOOT_GOK)
-	  return 0;
-	else
-	  return -1;
-      }
-      else {
-	printk("[openair][IOCTL] TEST_GOK command doesn't work with ExpressMIMO, check User-space call!!!!\n");
-      }
-      break;
-      
-    default:
-      return -1;
-      break;
-      
+      case UPDATE_FIRMWARE_TEST_GOK:
+	if (vid != XILINX_VENDOR) {  // This is CBMIMO1     
+	  /* No loop, just a single test (the polling loop should better be placed in user-space code). */
+	  openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+	  rmb();
+	  if (tmp & FROM_GRLIB_BOOT_GOK)
+	    return 0;
+	  else
+	    return -1;
+	}
+	else {
+	  printk("[openair][IOCTL] TEST_GOK command doesn't work with ExpressMIMO, check User-space call!!!!\n");
+	}
+	break;
+	
+      default:
+	return -1;
+	break;
+	
     }
     break;
   

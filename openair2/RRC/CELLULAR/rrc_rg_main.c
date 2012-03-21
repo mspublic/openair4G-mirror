@@ -76,8 +76,7 @@ void rrc_ue_write_FIFO (mem_block * p){
 
 //-----------------------------------------------------------------------------
 // entry point for rrc-ue process
-//void rrc_rg_main_scheduler (u8 Mod_id){
-int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
+void rrc_rg_main_scheduler (u8 Mod_id){
 //-----------------------------------------------------------------------------
   mem_block *p;
   int Message_Id;
@@ -154,6 +153,5 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   //check if report of measure needed in UE
   rrc_ue_sync_measures (protocol_ms->rrc.current_SFN, &Message_Id);
 */
- return 0;
 }
 

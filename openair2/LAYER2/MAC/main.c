@@ -1,39 +1,10 @@
-/*******************************************************************************
 
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2010 Eurecom
+/*________________________mac_main.c________________________
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-/*! \file main.c
-* \brief top init of Layer 2
-* \author Raymond Knopp and Navid Nikaein
-* \date 2011
-* \version 0.5
-* @ingroup _mac
-
-*/
+ Authors : Hicham Anouar, Raymond Knopp
+ Company : EURECOM
+ Emails  : anouar@eurecom.fr,  knopp@eurecom.fr
+________________________________________________________________*/
 
 #ifdef USER_MODE
 #include "LAYER2/register.h"
@@ -60,7 +31,6 @@
 #include "LAYER2/PDCP/pdcp.h"
 #include "RRC/LITE/defs.h"
 #include "UTIL/LOG/log.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif //PHY_EMUL
@@ -73,21 +43,12 @@
 
 
 /***********************************************************************/
-void dl_phy_sync_success(unsigned char Mod_id,
-			 u32 frame,
-			 unsigned char eNB_index,
-			 u8 first_sync){  //init as MR
+void dl_phy_sync_success(unsigned char Mod_id,u32 frame,unsigned char eNB_index){  //init as MR
 /***********************************************************************/
   // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
-  if (first_sync==1) {
-    if( (layer2_init_UE(Mod_id)==-1) ||
-	(openair_rrc_ue_init(Mod_id,eNB_index)==-1) ) {
-      //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
-    }
-  }
-  else {
-    // mac_in_sync(Mod_id,eNB_index);
-  }
+  if( (layer2_init_UE(Mod_id)==-1) ||
+      (Rrc_xface->openair_rrc_UE_init(Mod_id,eNB_index)==-1) )
+    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
 
 }
 
@@ -95,9 +56,9 @@ void dl_phy_sync_success(unsigned char Mod_id,
 void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH
   /***********************************************************************/
   LOG_I(MAC,"FRAME %d: Node %d, NO PHY SYNC to master\n",frame,Mod_id);
-  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_eNB_init(Mod_id)==-1)){
-    //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
-    }
+  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id)==-1))
+    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
+
 }
 
 /***********************************************************************/
@@ -124,7 +85,7 @@ char layer2_init_UE(unsigned char Mod_id){
 void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 /***********************************************************************/
 
-//  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id, frame, eNB_index);
+  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id, frame, eNB_index);
 }
 
 
@@ -135,7 +96,7 @@ int mac_top_init(){
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
 
-  LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d\n",NB_INST);
+  LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
@@ -158,15 +119,15 @@ int mac_top_init(){
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;//0: MR, 1: CH, 2: not CH neither MR
 #endif
 
-    //    Mac_rlc_xface->Node_id[Mod_id]=NODE_ID[Mod_id];
+    Mac_rlc_xface->Node_id[Mod_id]=NODE_ID[Mod_id];
   }
-  //  Mac_rlc_xface->frame=Mac_rlc_xface->frame;
+  Mac_rlc_xface->frame=Mac_rlc_xface->frame;
 
 
   if (Is_rrc_registered == 1){
     LOG_I(MAC,"[MAIN] calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
-    openair_rrc_top_init();
+    Rrc_xface->openair_rrc_top_init();
 #endif
   }
     else {
@@ -260,26 +221,25 @@ int mac_init_global_param(){
   //  mac_xface->macphy_data_ind=macphy_data_ind;
   mac_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   mac_xface->dl_phy_sync_success=dl_phy_sync_success;
-  mac_xface->out_of_sync_ind=mac_out_of_sync_ind;
-
-  //  Mac_rlc_xface->macphy_exit=  mac_xface->macphy_exit;
-  //  Mac_rlc_xface->frame = 0;
+  Mac_rlc_xface->macphy_exit=  mac_xface->macphy_exit;
+  Mac_rlc_xface->frame = 0;
   //  Mac_rlc_xface->mac_config_req=mac_config_req;
   //  Mac_rlc_xface->mac_meas_req=mac_meas_req;
-  //  Mac_rlc_xface->rrc_rlc_config_req=rrc_rlc_config_req;
-  //  Mac_rlc_xface->rrc_rlc_data_req=rrc_rlc_data_req;
-  //  Mac_rlc_xface->rrc_rlc_register_rrc=rrc_rlc_register_rrc;
+  Mac_rlc_xface->rrc_rlc_config_req=rrc_rlc_config_req;
+  Mac_rlc_xface->rrc_rlc_data_req=rrc_rlc_data_req;
+  Mac_rlc_xface->rrc_rlc_register_rrc=rrc_rlc_register_rrc;
 
-  //  Mac_rlc_xface->rrc_mac_config_req=rrc_mac_config_req;
+  Mac_rlc_xface->rrc_mac_config_req=rrc_mac_config_req;
 
-  //  LOG_I(MAC,"[MAIN] INIT_GLOBAL_PARAM: Mac_rlc_xface=%p,rrc_rlc_register_rrc =%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc);
+  LOG_I(MAC,"[MAIN] INIT_GLOBAL_PARAM: Mac_rlc_xface=%p,rrc_rlc_register_rrc =%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc);
 
-  //  Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
-  //  Mac_rlc_xface->mac_rlc_data_ind=mac_rlc_data_ind;
-  //  Mac_rlc_xface->mac_rlc_status_ind=mac_rlc_status_ind;
-  //  Mac_rlc_xface->pdcp_data_req=pdcp_data_req;
-  //  Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
-  //  Mac_rlc_xface->dl_phy_sync_success=dl_phy_sync_success;
+  Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
+  Mac_rlc_xface->mac_rlc_data_ind=mac_rlc_data_ind;
+  Mac_rlc_xface->mac_rlc_status_ind=mac_rlc_status_ind;
+  Mac_rlc_xface->pdcp_run=pdcp_run;
+  Mac_rlc_xface->pdcp_data_req=pdcp_data_req;
+  Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
+  Mac_rlc_xface->dl_phy_sync_success=dl_phy_sync_success;
 
   LOG_I(MAC,"[MAIN] RLC interface setup and init\n");
   rrc_init_global_param();
@@ -289,7 +249,7 @@ int mac_init_global_param(){
 #else
   pdcp_module_init ();
 #endif
-
+  mac_xface->out_of_sync_ind=mac_UE_out_of_sync_ind;
   LOG_I(MAC,"[MAIN] Init Global Param Done\n");
 
   return 0;

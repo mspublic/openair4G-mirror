@@ -101,8 +101,6 @@ typedef struct {
   u32  dlsch_transmission_mode;
   u32  ulsch_allocation_mode;
   u32  rx_total_gain_dB;
-  u32  hw_frame;
-  u32  get_frame_done;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE
@@ -332,24 +330,6 @@ u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 */
 u8 is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,u8 UE_id,u8 subframe);
 
-/*!
-  \brief Gives the UL subframe corresponding to a PDDCH order in subframe n
-  @param frame_parms Pointer to DL frame parameters
-  @param n subframe of PDCCH
-  @returns UL subframe corresponding to pdcch order
-*/
-u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n);
-
-/*!
-  \brief Gives the UL frame corresponding to a PDDCH order in subframe n
-  @param frame_parms Pointer to DL frame parameters
-  @param frame Frame of received PDCCH
-  @param n subframe of PDCCH
-  @returns UL frame corresponding to pdcch order
-*/
-u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n);
-
-
 u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1);
 
 
@@ -447,11 +427,10 @@ LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti);
 int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);
 
 
-void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);
+void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
-u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n);
 
 #else
 #ifdef EMOS

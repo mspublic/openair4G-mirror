@@ -70,7 +70,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \param[in]  pdu_infoP           Structure containing extracted informations from PDU.
 * \return     0 if no error was encountered during the parsing of the PDU, else -1;
 */
-protected_rlc_um_dar(  signed int rlc_um_get_pdu_infos(u32_t frame, rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP));
+private_rlc_um_dar(  signed int rlc_um_get_pdu_infos(u32_t frame, rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP));
 
 /*! \fn int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP)
 * \brief    Reset protocol variables and state variables to initial values.
@@ -83,15 +83,14 @@ protected_rlc_um_dar(  signed int rlc_um_get_pdu_infos(u32_t frame, rlc_um_pdu_s
 */
 private_rlc_um_dar(  int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP));
 
-/*! \fn void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int start_snP, signed int end_snP)
+/*! \fn void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int snP)
 * \brief    Try reassembly PDUs from DAR buffer, starting at sequence number snP.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  frame       Frame index.
 * \param[in]  eNB_flag    Flag to indicate eNB (1) or UE (0).
-* \param[in]  start_snP   First PDU to be reassemblied if possible.
-* \param[in]  end_snP     Last excluded highest sequence number of PDU to be reassemblied.
+* \param[in]  snP         Sequence number.
 */
-private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int start_snP, signed int end_snP));
+private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int snP));
 
 /*! \fn void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag)
 * \brief    Check if t-Reordering expires and take the appropriate actions as described in 3GPP specifications.

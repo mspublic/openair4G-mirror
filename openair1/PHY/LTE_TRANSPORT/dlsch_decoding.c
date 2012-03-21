@@ -128,9 +128,7 @@ u32  dlsch_decoding(short *dlsch_llr,
   short dummy_w[8][3*(6144+64)];
   u32 r,r_offset=0,Kr,Kr_bytes,err_flag=0;
   u8 crc_type;
-#ifdef DEBUG_DLSCH_DECODING
-  u16 i;
-#endif
+
   if (!dlsch_llr) {
     msg("dlsch_decoding.c: NULL dlsch_llr pointer\n");
     return(MAX_TURBO_ITERATIONS);
@@ -357,7 +355,7 @@ u32  dlsch_decoding(short *dlsch_llr,
   }
   // Reassembly of Transport block here
   offset = 0;
-  /*  
+  /*
   msg("harq_pid %d\n",harq_pid);
   msg("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
   msg("C %d\n",dlsch->harq_processes[harq_pid]->C);
@@ -369,24 +367,24 @@ u32  dlsch_decoding(short *dlsch_llr,
       Kr = dlsch->harq_processes[harq_pid]->Kplus;
 
     Kr_bytes = Kr>>3;
-    //    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
+
     if (r==0) {
       memcpy(dlsch->harq_processes[harq_pid]->b,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
-	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3)- ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3) - ((dlsch->harq_processes[harq_pid]->C>1)?3:0);
-      //            msg("copied %d bytes to b sequence (harq_pid %d)\n",
-      //      	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
-    //          msg("b[0] = %x,c[%d] = %x\n",
-    //  	  dlsch->harq_processes[harq_pid]->b[0],
-    //  	  dlsch->harq_processes[harq_pid]->F>>3,
-    //  	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
+	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+      offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3);
+      //      msg("copied %d bytes to b sequence (harq_pid %d)\n",
+      //	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
+    //      msg("b[0] = %x,c[%d] = %x\n",
+      //	  dlsch->harq_processes[harq_pid]->b[0],
+      //	  dlsch->harq_processes[harq_pid]->F>>3,
+      //	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
     }
     else {
       memcpy(dlsch->harq_processes[harq_pid]->b+offset,
-	     dlsch->harq_processes[harq_pid]->c[r],
-	     Kr_bytes- ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset += (Kr_bytes - ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
+	     dlsch->harq_processes[harq_pid]->c[0],
+	     Kr_bytes);
+      offset += Kr_bytes;
     }
   }
   
@@ -465,20 +463,17 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
   u32 eNB_id2;
-#ifdef DEBUG_DLSCH_DECODING
-  u16 i;
-#endif
 
   for (eNB_id2=0;eNB_id2<NB_eNB_INST;eNB_id2++) {
     if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
       break;
   }
   if (eNB_id2==NB_eNB_INST) {
-    LOG_E(PHY,"FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
+    msg("phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
     mac_xface->macphy_exit("");
   }
 
-  LOG_D(PHY,"UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
+  msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
 
   //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);
 
@@ -489,24 +484,16 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_SI;
     //    msg("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
-#ifdef DEBUG_DLSCH_DECODING   
-    LOG_D(PHY,"SI Decoded\n");
+    /*
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
       msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
-#endif
+      msg("\n");*/
     return(1);
     break;
   case 1: // RA
     dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_ra;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
-#ifdef DEBUG_DLSCH_DECODING   
-    LOG_D(PHY,"RA Decoded\n");
-    for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
-      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
-#endif
     return(1);
     break;
   case 2: // TB0
@@ -560,11 +547,11 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       memcpy(dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   default:
-    LOG_E(PHY,"dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
+    msg("dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
     return(1+MAX_TURBO_ITERATIONS);
   }
 
-  LOG_E(PHY,"[FATAL] dlsch_decoding.c: Should never exit here ...\n");
+  msg("[PHY][FATAL] dlsch_decoding.c: Should never exit here ...\n");
   return(0);
 }
 #endif

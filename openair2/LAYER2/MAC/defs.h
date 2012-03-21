@@ -124,19 +124,20 @@ typedef struct {
 #define sizeof_RAR_PDU 6
 
 typedef struct {
-  u8 LCID:5;  // octet 1 LSB
-  u8 E:1;
-  u8 R:2;     // octet 1 MSB
-  u8 L:7;     // octet 2 LSB
-  u8 F:1;     // octet 2 MSB
+  u16 LCID:5;  // octet 1 LSB
+  u16 E:1;
+  u16 R:2;     // octet 1 MSB
+  u16 L:7;     // octet 2 LSB
+  u16 F:1;     // octet 2 MSB
 } __attribute__((__packed__))SCH_SUBHEADER_SHORT;
 
 typedef struct {
-  u8 LCID:5;   // octet 1 LSB
-  u8 E:1;
-  u8 R:2;      // octet 1 MSB
-  u16 L:15;      // octet 3/2 LSB
-  u16 F:1;      // octet 3 MSB     
+  u32 LCID:5;   // octet 1 LSB
+  u32 E:1;
+  u32 R:2;      // octet 1 MSB
+  u32 L:15;      // octet 3/2 LSB
+  u32 F:1;      // octet 2 MSB     
+  u32 padding:8; 
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
  
 typedef struct {
@@ -304,22 +305,22 @@ typedef struct {
   u8 RA_alloc_pdu1[(MAX_DCI_SIZE_BITS>>3)+1];
   /// DCI format for RA-Response (should be 1A)
   u8 RA_dci_fmt1;
-  /// Size of DCI for Msg4/ContRes (bytes)  
+  /// Size of DCI for Msg3/ContRes (bytes)  
   u8 RA_dci_size_bytes2;
-  /// Size of DCI for Msg4/ContRes (bits)  
+  /// Size of DCI for Msg3/ContRes (bits)  
   u8 RA_dci_size_bits2;
-  /// Actual DCI to transmit for Msg4/ContRes
+  /// Actual DCI to transmit for Msg3/ContRes
   u8 RA_alloc_pdu2[(MAX_DCI_SIZE_BITS>>3)+1];
-  /// DCI format for Msg4/ContRes (should be 1A)
+  /// DCI format for Msg3/ContRes (should be 1A)
   u8 RA_dci_fmt2;
   /// Flag to indicate the eNB should generate RAR.  This is triggered by detection of PRACH
   u8 generate_rar;
-  /// Flag to indicate the eNB should generate Msg4 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
-  u8 generate_Msg4;
-  /// Flag to indicate the eNB should generate the DCI for Msg4, after getting the SDU from RRC.
-  u8 generate_Msg4_dci;
+  /// Flag to indicate the eNB should generate Msg3 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
+  u8 generate_Msg3;
+  /// Flag to indicate the eNB should generate the DCI for Msg3, after getting the SDU from RRC.
+  u8 generate_Msg3_dci;
   /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
-  u8 wait_ack_Msg4;
+  u8 wait_ack_Msg3;
   /// UE RNTI allocated during RAR
   u16 rnti;
   /// RA RNTI allocated from received PRACH
@@ -373,11 +374,13 @@ typedef struct {
   /// buffer status for each lcid
   u8  BSR[MAX_NUM_LCID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcid
-  u16  BSR_bytes[MAX_NUM_LCID];
+  u8  BSR_bytes[MAX_NUM_LCID];
   /// short bsr lcid
   u8  BSR_short_lcid;
   /// SR pending as defined in 36.321
   u8  SR_pending;
+  /// new transmission flag for each DRB used for SR
+  u8  new_transmission_flag[MAX_NUM_RB];
   /// SR_COUNTER as defined in 36.321
   u16 SR_COUNTER;
   /// retxBSR-Timer, default value is sf2560
@@ -703,7 +706,7 @@ void out_of_sync_ind(u8 Mod_id, u32 frame, u16);
 void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 
-void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
+void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u8 CH_index);
 
 void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
@@ -855,11 +858,6 @@ int get_sf_retxBSRTimer(u8 retxBSR_Timer);
 \param[in] eNB_id Index of eNB
 */
 void Msg3_tx(u8 Mod_id,u32 frame,u8 eNB_id);
-
-void dl_phy_sync_success(unsigned char Mod_id,
-			 u32 frame,
-			 unsigned char eNB_index,
-			 u8 first_sync);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

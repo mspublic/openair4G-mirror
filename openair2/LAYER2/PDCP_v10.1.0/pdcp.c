@@ -45,7 +45,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "pdcp_primitives.h"
 #include "UTIL/LOG/log.h"
-#include <inttypes.h>
+
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
 
@@ -125,7 +125,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     /*
      * Fill PDU buffer with the struct's fields
      */
-    if (pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
+    if (pdcp_fill_pdcp_user_plane_data_pdu_header_with_long_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
       LOG_W(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
       return FALSE;
     }
@@ -199,7 +199,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer, pdcp_t* pdcp_test_entity, list_t* test_list)
 #else
-BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+  BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer)
 #endif
 {
@@ -242,17 +242,10 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
   } else {
     LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
-    /*
-     * XXX Till we implement in-sequence delivery and duplicate discarding 
-     * mechanism all out-of-order packets will be delivered to RRC/IP
-     */
-#if 0
     LOG_D(PDCP, "Ignoring PDU...\n");
     free_mem_block(sdu_buffer);
+
     return FALSE;
-#else
-    LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
-#endif
   }
 
   new_sdu = get_free_mem_block(sdu_buffer_size + sizeof (pdcp_data_ind_header_t));
@@ -294,11 +287,10 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 
     /*
      * Update PDCP statistics
-     * XXX Following two actions are identical, is there a merge error?
      */
-    if (eNB_flag == 1) {
-      Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH]++;
-      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size;
+    if (eNB_flag==1) {
+      Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]++;
+      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_id & RAB_OFFSET)-DTCH]+=sdu_buffer_size;
     } else {
       Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH]++;
       Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size; 
@@ -323,6 +315,7 @@ pdcp_run (u32_t frame,u8 eNB_flag)
   #endif
 #endif
   unsigned int diff, i, k, j;
+
   if ((frame % 128) == 0) { 
     for (i=0; i < NB_UE_INST; i++) {
       for (j=0; j < NB_CNX_CH; j++) {
@@ -344,17 +337,9 @@ pdcp_run (u32_t frame,u8 eNB_flag)
 
   // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus(frame,eNB_flag);
-  if ( eNB_flag == 0){
-
-/*
-    LOG_I(OTG, "TEST Calling OTG %d\n", frame);
-	set_ctime(frame); 
-//OTG 
-	int pkts_gen=packet_gen(0,0,0, frame);
-	int pkts_check;	
-	if (pkts_gen>0)
-	pkts_check=check_packet(0,0, frame);  
-*/
+  if ( eNB_flag == 1){
+    //set_emu_time(frame);
+    //otg_rx(otg_tx(frame, x,y,z));
   }
 }
 
@@ -377,7 +362,6 @@ pdcp_config_req (module_id_t module_id, rb_id_t rab_id)
    * XXX Sequence number size shouldn't be hardcoded! This is temporary!
    */
   pdcp_array[module_id][rab_id].seq_num_size = 12;
-  pdcp_array[module_id][rab_id].first_missing_pdu = -1;
 
   LOG_I(PDCP, "PDCP entity of module %d, radio bearer %d configured\n", module_id, rab_id);
 }
@@ -458,23 +442,10 @@ pdcp_layer_init ()
   pdcp_output_sdu_bytes_to_write=0;
   pdcp_output_header_bytes_to_write=0;
   pdcp_input_sdu_remaining_size_to_read=0;
-  /*
-   * Initialize PDCP entities (see pdcp_t at pdcp.h)
-   */
-  // set RB for eNB
-  for (i=0;i  < NB_eNB_INST; i++) 
-    for (j=NB_eNB_INST; j < NB_eNB_INST+NB_UE_INST; j++ ) 
-      pdcp_config_req(i, (j-1) * MAX_NUM_RB + DTCH  ); // default DRB
-  
-  // set RB for UE
-  for (i=NB_eNB_INST;i<NB_eNB_INST+NB_UE_INST; i++) 
-    for (j=0;j<NB_eNB_INST; j++) 
-      pdcp_config_req(i, j * MAX_NUM_RB + DTCH ); // default DRB
-  
-  
-  for (i=0;i<NB_UE_INST;i++) { // ue
-    for (k=0;k<NB_eNB_INST;k++) { // enb
-      for(j=0;j<NB_RAB_MAX;j++) {//rb
+
+  for (i=0;i<NB_UE_INST;i++) {
+    for (k=0;k<NB_CNX_CH;k++) {
+      for(j=0;j<NB_RAB_MAX;j++) {
         Pdcp_stats_tx[i][k][j]=0;
         Pdcp_stats_tx_bytes[i][k][j]=0;
         Pdcp_stats_tx_bytes_last[i][k][j]=0;
@@ -484,6 +455,11 @@ pdcp_layer_init ()
         Pdcp_stats_rx_bytes[i][k][j]=0;
         Pdcp_stats_rx_bytes_last[i][k][j]=0;
         Pdcp_stats_rx_rate[i][k][j]=0;
+
+	/*
+	 * Initialize PDCP entities (see pdcp_t at pdcp.h)
+	 */
+        pdcp_config_req(i+k, j);
       }
     }
   }

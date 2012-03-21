@@ -46,7 +46,6 @@
 #include <malloc.h>
 #include <string.h>
 #include <math.h>
-//#include <complex.h>
 #define msg printf   
 //use msg in the real-time thread context
 #define msg_nrt printf   
@@ -136,6 +135,8 @@
 
 #define NUM_DCI_MAX 32
 
+
+
 /// Top-level PHY Data Structure for eNB 
 typedef struct
 {
@@ -161,14 +162,8 @@ typedef struct
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
 
-  
-  s16 X_u[64][2*839];
-
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
-
-  /// Indicator set to 0 after first SR
-  u8 first_sr[NUMBER_OF_UE_MAX];
 
   unsigned int max_peak_val; 
   int max_eNB_id, max_sync_pos;
@@ -227,23 +222,19 @@ typedef struct
 
   // Pointers for active physicalConfigDedicated to be applied in current subframe
   struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
-
   
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
 
 
   ///check for Total Transmissions
-  unsigned int check_for_total_transmissions;
+  u16 check_for_total_transmissions;
 
   ///check for MU-MIMO Transmissions
-  unsigned int check_for_MUMIMO_transmissions;
+  u16 check_for_MUMIMO_transmissions;
 
   ///check for SU-MIMO Transmissions
-  unsigned int check_for_SUMIMO_transmissions;
-
-  ///check for FULL MU-MIMO Transmissions
-  unsigned int  FULL_MUMIMO_transmissions;
+  u16 check_for_SUMIMO_transmissions;
 
   /// Counter for total bitrate, bits and throughput in downlink
   unsigned int total_dlsch_bitrate;
@@ -268,7 +259,6 @@ typedef struct
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_eNB_MAX+1];
-  LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_eNB_MAX];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_eNB_MAX];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_eNB_MAX];
@@ -280,7 +270,7 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_eNB_MAX][2];
   LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_eNB_MAX];
-  u8               sr[10];
+  u8               sr;
   u8               pucch_payload[22];
 
   UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
@@ -288,8 +278,6 @@ typedef struct
   /// cell-specific reference symbols
   unsigned int lte_gold_table[3][20][2][14];
 
-
-  s16 X_u[64][2*839];
 
   char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
 
@@ -316,7 +304,6 @@ typedef struct
   int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
   u8               generate_prach;
-  u8               prach_cnt;
   u8               prach_PreambleIndex;
   //  u8               prach_timer;
   int              rx_offset; // Timing offset

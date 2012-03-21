@@ -40,7 +40,6 @@
 #ifndef __LTE_TRANSPORT_PROTO__H__
 #define __LTE_TRANSPORT_PROTO__H__
 #include "PHY/defs.h"
-#include <math.h>
 
 // Functions below implement 36-211 and 36-212
 
@@ -338,8 +337,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     u8 symbol,
 		     u8 first_symbol_flag,
 		     u16 nb_rb,
-		     u16 pbch_pss_sss_adjust,
-		     short **llr_save);
+		     u16 pbch_pss_sss_adjust);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     s32 **rxdataF_comp,
@@ -842,7 +840,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      u32 frame,
 		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch);
+		      LTE_UE_ULSCH_t *ulsch,
+		      u8 cooperation_flag);
 
 
 void ulsch_extract_rbs_single(s32 **rxdataF,
@@ -911,7 +910,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 #ifdef USER_MODE
 void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb);
 
-void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);
+void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
@@ -922,7 +921,6 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len);
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb, char* buffer, int len);
-
 
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
@@ -1046,17 +1044,9 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
 /** \brief  This routine provides the relationship between a PHICH TXOp and its corresponding PUSCH subframe (Table 8.3.-1 from 36.213).
    @param frame_parms Pointer to DL frame configuration parameters
    @param subframe Subframe of received/transmitted PHICH
-   @returns subframe of PUSCH transmission
 */
 u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
-/** \brief  This routine provides the relationship between a PHICH TXOp and its corresponding PUSCH frame (Table 8.3.-1 from 36.213).
-   @param frame_parms Pointer to DL frame configuration parameters
-   @param frame Frame of received/transmitted PHICH
-   @param subframe Subframe of received/transmitted PHICH
-   @returns frame of PUSCH transmission
-*/
-u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe);;
 
 void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
@@ -1196,38 +1186,16 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 u8 get_num_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms);
 
 /*!
-  \brief Return the PRACH format as a function of the Configuration Index and Frame type.
-  @param prach_ConfigIndex PRACH Configuration Index
-  @param frame_type 0-FDD, 1-TDD
-  @returns 0-4 accordingly
-*/
-u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type);
-
-/*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
   @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
   @returns 0-5 depending on number of available prach
 */
 u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 
-/*!
-  \brief Compute DFT of PRACH ZC sequence.  Used for generation of prach in UE and reception of PRACH in eNB.
-  @param u Target root sequence index of prach
-  @param N_ZC Prime number (839,139)
-  @param Xu DFT output
-*/
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
-
-/*!
-  \brief Initialize multiplicative inverse tables for PRACH as well as roots-of-unity vectors.
-*/
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
-
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);
 //end ALU's algo
 
-u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe);
 
 
 /**@}*/

@@ -89,7 +89,7 @@ typedef struct
     void (*ue_decode_si)(u8 Mod_id,u32 frame, u8 CH_index, void *pdu, u16 len);
 
     /// Send a received DLSCH sdu to MAC
-    void (*ue_send_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
+    void (*ue_send_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u8 CH_index);
 
     /// Retrieve ULSCH sdu from MAC
     void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
@@ -104,7 +104,7 @@ typedef struct
     u32 (*ue_get_SR)(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti,u8 subframe);
 
     /// Indicate synchronization with valid PBCH
-    void (*dl_phy_sync_success) (u8 Mod_id,u32 frame, u8 CH_index,u8 first_sync);
+    void (*dl_phy_sync_success) (u8 Mod_id,u32 frame, u8 CH_index);
 
     /// Only calls the PDCP for now
     UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u32 frame,u8 subframe, lte_subframe_t direction,u8 eNB_id);

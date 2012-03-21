@@ -145,28 +145,26 @@ struct DCI1_5MHz_TDD {
 typedef struct DCI1_5MHz_TDD DCI1_5MHz_TDD_t;
 #define sizeof_DCI1_5MHz_TDD_t 30
 
-/// DCI Format Type 1 (5 MHz, FDD, 27 bits)
+/// DCI Format Type 1 (5 MHz, FDD, 28 bits)
 struct DCI1_5MHz_FDD {
-  /// dummy bits (not transmitted)
-  u32 dummy:5;
-  /// Power Control
-  u32 TPC:2;
-  /// Redundancy version
-  u32 rv:2;
-  /// New Data Indicator
-  u32 ndi:1;
-  /// HARQ Process
-  u32 harq_pid:3;
-  /// Modulation and Coding Scheme and Redundancy Version
-  u32 mcs:5;
-  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
-  u32 rballoc:13;
   /// Resource Allocation Header
   u32 rah:1;
+  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+  u32 rballoc:13;
+  /// Modulation and Coding Scheme and Redundancy Version
+  u32 mcs:5;
+  /// HARQ Process
+  u32 harq_pid:3;
+  /// New Data Indicator
+  u32 ndi:1;
+  /// Redundancy version
+  u32 rv:2;
+  /// Power Control
+  u32 TPC:2;
 } __attribute__ ((__packed__));
 
 typedef struct DCI1_5MHz_FDD DCI1_5MHz_FDD_t;
-#define sizeof_DCI1_5MHz_FDD_t 27
+#define sizeof_DCI1_5MHz_FDD_t 28
 
 /// RA Procedure PDSCH (FDD), 13 bits
 struct RA_PDSCH_FDD {
@@ -230,28 +228,20 @@ struct PDSCH_TDD {
 typedef struct PDSCH_TDD PDSCH_TDD_t;
 #define sizeof_PDSCH_TDD_t 16
 
-
+/// DCI Format Type 1A (5 MHz, FDD, 25 bits)
 struct DCI1A_5MHz_FDD {
-  /// padding
-  u32 padding:7;
-  /// Downlink Assignment Index
-  u32 srs_req:1;
-  /// Power Control
-  u32 TPC:2;
-  /// Redundancy version
-  u32 rv:2;
-  /// New Data Indicator
-  u32 ndi:1;
-  /// HARQ Process
-  u32 harq_pid:3;
-  /// Modulation and Coding Scheme and Redundancy Version
-  u32 mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
-  u32 rballoc:9;
-  /// Localized/Distributed VRB
-  u32 vrb_type:1;
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
-  u32 type:1;
+  unsigned char type:1;
+  /// Localized/Distributed VRB
+  unsigned char vrb_type:1;
+  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+  unsigned short rballoc:9;
+  union {
+    RA_PDSCH_FDD_t ra_pdsch;
+    PDSCH_FDD_t pdsch;
+  } pdu;
+  /// Padding to remove size ambiguity (24 bits -> 25 bits)
+  unsigned char padding:1;
 } __attribute__ ((__packed__));
 
 typedef struct DCI1A_5MHz_FDD DCI1A_5MHz_FDD_t;
@@ -260,9 +250,7 @@ typedef struct DCI1A_5MHz_FDD DCI1A_5MHz_FDD_t;
 /// DCI Format Type 1A (5 MHz, TDD, frame 1-6, 27 bits)
 struct DCI1A_5MHz_TDD_1_6 {
   /// padding
-  u32 padding:4;
-  /// SRS request bit
-  u32 srs_req:1;
+  u32 padding:5;
   /// Downlink Assignment Index
   u32 dai:2;
   /// Power Control
@@ -509,7 +497,7 @@ struct DCI1E_5MHz_2A_M10PRB_TDD {
   u8 dl_power_off:1;
 } __attribute__ ((__packed__));
 typedef struct DCI1E_5MHz_2A_M10PRB_TDD DCI1E_5MHz_2A_M10PRB_TDD_t;
-#define sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t 34
+#define sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t 43
 
 
 /// DCI Format Type 2 (5 MHz, TDD, 2 Antenna Ports, less than 10 PRBs, 41 bits)

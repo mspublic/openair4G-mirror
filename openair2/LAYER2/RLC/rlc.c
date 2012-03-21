@@ -39,44 +39,6 @@ extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, r
 #define DEBUG_RLC_DATA_REQ 1
 
 //-----------------------------------------------------------------------------
-void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, unsigned long sizeP)
-//-----------------------------------------------------------------------------
-{
-  unsigned long octet_index = 0;
-
-  if (dataP == NULL) {
-    return;
-  }
-
-
-  LOG_D(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
-  LOG_D(componentP, "------+-------------------------------------------------|\n");
-  for (octet_index = 0; octet_index < sizeP; octet_index++) {
-    if ((octet_index % 16) == 0){
-      if (octet_index != 0) {
-          LOG_T(componentP, " |\n");
-      }
-      LOG_T(componentP, " %04d |", octet_index);
-    }
-    /*
-     * Print every single octet in hexadecimal form
-     */
-    LOG_T(componentP, " %02x", dataP[octet_index]);
-    /*
-     * Align newline and pipes according to the octets in groups of 2
-     */
-  }
-
-  /*
-   * Append enough spaces and put final pipe
-   */
-  unsigned char index;
-  for (index = octet_index; index < 16; ++index)
-    LOG_T(componentP, "   ");
-  LOG_T(componentP, " |\n");
-}
-
-//-----------------------------------------------------------------------------
 rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 				  u32_t frame,
 				  rb_id_t        rb_idP,
@@ -206,12 +168,8 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
           if (sduP != NULL) {
               if (sdu_sizeP > 0) {
-                  LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_req:\n",
-                                 frame, module_idP, rb_idP);
-                  rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
-
 #ifdef DEBUG_RLC_DATA_REQ
-                  LOG_D(RLC,"RLC_TYPE : %d ",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
+                  msg("RLC_TYPE : %d\n",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
 #endif
                   switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                     case RLC_NONE:
@@ -235,8 +193,6 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                           ((struct rlc_am_data_req *) (new_sdu->data))->mui  = muiP;
                           ((struct rlc_am_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_am_data_req_alloc);
                     	  free_mem_block(sduP);
-                          LOG_D(RLC, "%s\n",RLC_FG_BRIGHT_COLOR_RED);
-
                           if (rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
                               LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_AM_DATA_REQ/%d Bytes --->][RLC_AM][MOD %02d][RB %02d]\n",
                                  frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
@@ -249,7 +205,6 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                                      frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
                               }
                           }
-                          LOG_D(RLC, "%s\n",RLC_FG_COLOR_DEFAULT);
                           rlc_am_data_req(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, new_sdu);
                           return RLC_OP_STATUS_OK;
                         } else {
@@ -269,7 +224,6 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                           ((struct rlc_um_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
                           free_mem_block(sduP);
 
-                          LOG_D(RLC, "%s\n",RLC_FG_BRIGHT_COLOR_RED);
                           if (rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
                               LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_UM_DATA_REQ/%d Bytes --->][RLC_UM][MOD %02d][RB %02d]\n",
                                  frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
@@ -282,7 +236,6 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                                      frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
                               }
                           }
-                          LOG_D(RLC, "%s\n",RLC_FG_COLOR_DEFAULT);
                           rlc_um_data_req(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, new_sdu);
 
                           //free_mem_block(new_sdu);
@@ -303,7 +256,6 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                           ((struct rlc_tm_data_req *) (new_sdu->data))->data_size = sdu_sizeP;
                           ((struct rlc_tm_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_tm_data_req_alloc);
                           free_mem_block(sduP);
-                          LOG_D(RLC, "%s\n",RLC_FG_BRIGHT_COLOR_RED);
                           if (rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
                               LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_TM_DATA_REQ/%d Bytes --->][RLC_TM][MOD %02d][RB %02d]\n",
                                  frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
@@ -316,7 +268,6 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                                      frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
                               }
                           }
-                          LOG_D(RLC, "%s\n",RLC_FG_COLOR_DEFAULT);
                           rlc_tm_data_req(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], new_sdu);
                           return RLC_OP_STATUS_OK;
                         } else {
@@ -356,10 +307,6 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
 //-----------------------------------------------------------------------------
 void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP) {
 //-----------------------------------------------------------------------------
-    LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_ind:\n", frame, module_idP, rb_idP);
-    rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
-    check_mem_area();
-
     if ((is_data_planeP)) {
 #ifdef DEBUG_RLC_PDCP_INTERFACE
       msg("[RLC] TTI %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
@@ -368,7 +315,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
 	  sdu_sizeP,
           rb_idP);
 #endif //DEBUG_RLC_PDCP_INTERFACE
-      /*switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
+      switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
          case RLC_AM:
              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][PDCP][MOD %02d][RB %02d]\n",frame, module_idP,rb_idP,sdu_sizeP, module_idP,rb_idP);
              break;
@@ -378,7 +325,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
          case RLC_TM:
              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][PDCP][MOD %02d][RB %02d]\n",frame, module_idP,rb_idP,sdu_sizeP, module_idP,rb_idP);
              break;
-      }*/
+      }
       pdcp_data_ind (module_idP, frame, eNB_flag, rb_idP, sdu_sizeP, sduP);
     } else {
         if (rlc_rrc_data_ind != NULL) {
@@ -389,7 +336,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
 	    sdu_sizeP,
             rb_idP);
 #endif //DEBUG_RLC_PDCP_INTERFACE
-        /*switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
+        switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
             case RLC_AM:
                 LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                 break;
@@ -399,9 +346,9 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
             case RLC_TM:
                 LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                 break;
-        }*/
+        }
 	  // msg("[RLC] RRC DATA IND\n");
-            rlc_rrc_data_ind(module_idP , frame, eNB_flag, rb_idP , sdu_sizeP , sduP->data);
+            rlc_rrc_data_ind(module_idP , frame, rb_idP , sdu_sizeP , sduP->data);
 	  //msg("[RLC] Freeing SDU\n");
             free_mem_block(sduP);
         }
@@ -412,7 +359,6 @@ void rlc_data_conf     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_i
 //-----------------------------------------------------------------------------
     if (!(is_data_planeP)) {
         if (rlc_rrc_data_conf != NULL) {
-            LOG_D(RLC, "%s\n",RLC_FG_BRIGHT_COLOR_RED);
             switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                 case RLC_AM:
                     LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
@@ -424,7 +370,6 @@ void rlc_data_conf     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_i
                     LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
                     break;
             }
-            LOG_D(RLC, "%s\n",RLC_FG_COLOR_DEFAULT);
             rlc_rrc_data_conf (module_idP , rb_idP , muiP, statusP);
         }
     }

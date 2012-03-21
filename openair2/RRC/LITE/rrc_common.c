@@ -20,7 +20,7 @@ extern UE_MAC_INST *UE_mac_inst;
 
 
 /*------------------------------------------------------------------------------*/
-void openair_rrc_on(u8 Mod_id,u8 eNB_flag){//configure  BCCH & CCCH Logical Channels and associated rrc_buffers,
+void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and associated rrc_buffers,
   //configure associated SRBs
   /*------------------------------------------------------------------------------*/
 
@@ -29,7 +29,7 @@ void openair_rrc_on(u8 Mod_id,u8 eNB_flag){//configure  BCCH & CCCH Logical Chan
   msg("OPENAIR RRC IN....\n");
 
 
-  if( eNB_flag == 1){
+  if( Mac_rlc_xface->Is_cluster_head[Mod_id] == 1){
 
 
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].SI,BCCH,1);
@@ -48,9 +48,9 @@ void openair_rrc_on(u8 Mod_id,u8 eNB_flag){//configure  BCCH & CCCH Logical Chan
 
   else{
 
-    for(i=0;i<NB_eNB_INST;i++){
+    for(i=0;i<NB_SIG_CNX_UE;i++){
 
-      LOG_D(RRC, "[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
+      msg("[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
       UE_rrc_inst[Mod_id].Srb0[i].Srb_id = CCCH;
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -69,35 +69,32 @@ int rrc_init_global_param(void){
 
 
   //#ifdef USER_MODE
-  //  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
+  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
   //#endif //USRE_MODE
 
-  //  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
-  //  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;
-  //  Rrc_xface->openair_rrc_UE_init  = openair_rrc_ue_init;
-  //  Rrc_xface->mac_rrc_data_ind     = mac_rrc_data_ind;
-  //Rrc_xface->mac_rrc_data_req     = mac_rrc_data_req;
-  // Rrc_xface->rrc_data_indP        = (void *)rlcrrc_data_ind;
-  //  Rrc_xface->rrc_rx_tx            = rrc_rx_tx;
-  //  Rrc_xface->mac_rrc_meas_ind     = mac_rrc_meas_ind;
-  //  Rrc_xface->get_rrc_status       = get_rrc_status;
+  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
+  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;
+  Rrc_xface->openair_rrc_UE_init  = openair_rrc_ue_init;
+  Rrc_xface->mac_rrc_data_ind     = mac_rrc_data_ind;
+  Rrc_xface->mac_rrc_data_req     = mac_rrc_data_req;
+  Rrc_xface->rrc_data_indP        = (void *)rlcrrc_data_ind;
+  Rrc_xface->rrc_rx_tx            = rrc_rx_tx;
+  Rrc_xface->mac_rrc_meas_ind     = mac_rrc_meas_ind;
+  Rrc_xface->get_rrc_status       = get_rrc_status;
 
   //Rrc_xface->rrc_get_status = ...
 
-  //  Mac_rlc_xface->mac_out_of_sync_ind=mac_out_of_sync_ind;
+  Mac_rlc_xface->mac_out_of_sync_ind=mac_out_of_sync_ind;
 
 #ifndef NO_RRM
-  //  Rrc_xface->fn_rrc=fn_rrc;
+  Rrc_xface->fn_rrc=fn_rrc;
 #endif
-  //  LOG_D(RRC, "[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
-  /*
-  if((Mac_rlc_xface==NULL) || (Mac_rlc_xface->rrc_rlc_register_rrc==NULL) ||
-     (rlcrrc_data_ind==NULL)) {
-    LOG_E(RRC,"Data structured is not initialized \n");
+  msg("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
+
+  if(Mac_rlc_xface==NULL ||
+     Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
     return -1;
-  }
-  */
-  rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
+  Mac_rlc_xface->rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
 
 
   DCCH_LCHAN_DESC.transport_block_size=4;
@@ -142,7 +139,7 @@ int L3_xface_init(void){
 #ifdef USER_MODE
 
   int sock ;
-  LOG_D(RRC, "[L3_XFACE] init de l'interface \n");
+  msg("[RRC][L3_XFACE] init de l'interface \n");
 
   if(open_socket(&S_rrc, RRC_RRM_SOCK_PATH, RRM_RRC_SOCK_PATH,0)==-1)
     return (-1);
@@ -200,16 +197,16 @@ void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
 
-  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
-  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d\n",NB_INST);
+  msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
+  msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d\n",NB_INST);
 
   UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
   memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
-  LOG_D(RRC,"ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
+  msg("ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
 
   eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
   memset(eNB_rrc_inst,0,NB_eNB_INST*sizeof(eNB_RRC_INST));
-  LOG_D(RRC,"ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
+  msg("ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
 
 #ifndef NO_RRM
 #ifndef USER_MODE
@@ -234,61 +231,21 @@ int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
 }
 
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
-u16 T310[8] = {100,200,300,400,600,1000,1500,2000};
 
-rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
-
-  if (UE_rrc_inst[Mod_id].Info[eNB_index].State!=RRC_CONNECTED) {
-    UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
-    UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
-    UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
-    UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
-    
-    UE_rrc_inst[Mod_id].Srb0[eNB_index].Rx_buffer.payload_size=0;
-    UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
-    
-    UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Rx_buffer.payload_size=0;
-    UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=0;
-    
-    if(UE_rrc_inst[Mod_id].Srb2[eNB_index].Active==1){
-      msg("[RRC Inst %d] eNB_index %d, Remove RB %d\n ",Mod_id,eNB_index,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
-      rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
-      UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
-      UE_rrc_inst[Mod_id].Srb2[eNB_index].Status=IDLE;
-      UE_rrc_inst[Mod_id].Srb2[eNB_index].Next_check_frame=0;
-    }
-  }
-  else {  // Restablishment procedure
-
-  }
-}
-    
 RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
-      
+
   if(eNB_flag == 0) {
     // check timers
-    
+
     if (UE_rrc_inst[Mod_id].Info[index].T300_active) {
       if ((UE_rrc_inst[Mod_id].Info[index].T300_cnt % 10) == 0)
-	LOG_D(RRC,"[UE %d][RAPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
+	LOG_D(RRC,"[UE %d][RARPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
 	      UE_rrc_inst[Mod_id].Info[index].T300_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T300_cnt == T300[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t300]) {
 	UE_rrc_inst[Mod_id].Info[index].T300_active = 0;
 	return(RRC_ConnSetup_failed);
       }
       UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
-    }
-    
-    if (UE_rrc_inst[Mod_id].Info[index].T310_active) {
-      if ((UE_rrc_inst[Mod_id].Info[index].T310_cnt % 10) == 0)
-	LOG_D(RRC,"[UE %d] Frame %d T310 Count %d ms\n",Mod_id,frame,
-	      UE_rrc_inst[Mod_id].Info[index].T310_cnt);
-      if (UE_rrc_inst[Mod_id].Info[index].T310_cnt == T310[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t310]) {
-	UE_rrc_inst[Mod_id].Info[index].T310_active = 0;
-	rrc_t310_expiration(frame,Mod_id,index);
-	return(RRC_PHY_RESYNCH);
-      }
-      UE_rrc_inst[Mod_id].Info[index].T310_cnt++;
     }
   }
 

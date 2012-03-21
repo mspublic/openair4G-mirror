@@ -52,8 +52,7 @@
 u8 is_not_pilot(u8 pilots, u8 re, u8 nushift, u8 use2ndpilots) {
 
   u8 offset = (pilots==2)?3:0;
-  int nushiftmod3 = nushift%3;
- 
+
   if (pilots==0)
     return(1);
 
@@ -62,7 +61,7 @@ u8 is_not_pilot(u8 pilots, u8 re, u8 nushift, u8 use2ndpilots) {
       return(1);
   }
   else { // 2 antenna pilots
-    if ((re!=nushiftmod3) && (re!=nushiftmod3+6) && (re!=nushiftmod3+3) && (re!=nushiftmod3+9))
+    if ((re!=nushift) && (re!=nushift+6) && (re!=nushift+3) && (re!=nushift+9))
       return(1);
   }
   return(0);
@@ -396,7 +395,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  break;
 	}
 	// fill in the rest of the ALAMOUTI precoding
-	if (is_not_pilot(pilots,re + 1,frame_parms->nushift,use2ndpilots)==1) {
+	if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) {
 	  ((s16 *)&txdataF[0][tti_offset+1])[0] += -((s16 *)&txdataF[1][tti_offset])[0]; //x1
 	  ((s16 *)&txdataF[0][tti_offset+1])[1] += ((s16 *)&txdataF[1][tti_offset])[1];
 	  ((s16 *)&txdataF[1][tti_offset+1])[0] += ((s16 *)&txdataF[0][tti_offset])[0];  //x0*
@@ -1190,7 +1189,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	    //PSS TDD
 	    if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
 	      skip_half=1;
-	    else if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
+	    else if ((subframe_offset==1) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
 	      skip_half=2;
 	  }
 	  else {

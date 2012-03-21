@@ -40,7 +40,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 
 #define DEBUG_RLC_UM_RX_DECODE
 //#define DEBUG_RLC_UM_RX
-//#define DEBUG_DISPLAY_NVIDIA
+#define DEBUG_DISPLAY_NVIDIA
 //-----------------------------------------------------------------------------
 signed int rlc_um_get_pdu_infos(u32_t frame,rlc_um_pdu_sn_10_t* headerP, s16_t total_sizeP, rlc_um_pdu_info_t* pdu_infoP)
 //-----------------------------------------------------------------------------
@@ -139,7 +139,7 @@ int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, un
     return 0;
 }
 //-----------------------------------------------------------------------------
-void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int start_snP, signed int end_snP) {
+void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int snP) {
 //-----------------------------------------------------------------------------
     mem_block_t        *pdu_mem;
     struct mac_tb_ind  *tb_ind;
@@ -155,31 +155,14 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
     int i;
     int reassembly_start_index;
 
-    if (end_snP < 0)   end_snP   = end_snP   + rlcP->sn_modulo;
-    if (start_snP < 0) start_snP = start_snP + rlcP->sn_modulo;
+    if (snP < 0) snP = snP + rlcP->sn_modulo;
 
-    LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY FROM PDU SN=%03d+1  TO  PDU SN=%03d   SN Length = %d bits\n",
-          rlcP->module_id,
-          rlcP->rb_id,
-          frame,
-          rlcP->last_reassemblied_sn,
-          end_snP,
-          rlcP->sn_length);
-
+    LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY FROM PDU SN=%03d+1  TO  PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->last_reassemblied_sn, snP);
     continue_reassembly = 1;
-    //sn = (rlcP->last_reassemblied_sn + 1) % rlcP->sn_modulo;
-    sn = start_snP;
-
-    //check_mem_area();
+    sn = (rlcP->last_reassemblied_sn + 1) % rlcP->sn_modulo;
 
     while (continue_reassembly) {
         if ((pdu_mem = rlcP->dar_buffer[sn])) {
-
-            if ((rlcP->last_reassemblied_sn+1)%rlcP->sn_modulo != sn) {
-                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] CLEARING OUTPUT SDU BECAUSE NEW SN (%03d) TO REASSEMBLY NOT CONTIGUOUS WITH LAST REASSEMBLIED SN (%03d)\n",
-                      rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->last_reassemblied_sn);
-                rlc_um_clear_rx_sdu(rlcP);
-            }
             rlcP->last_reassemblied_sn = sn;
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, frame, sn);
             tb_ind = (struct mac_tb_ind *)(pdu_mem->data);
@@ -201,18 +184,15 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                     case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
                         LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=11 (00)\n", rlcP->module_id, rlcP->rb_id, frame);
                         // one complete SDU
-                        //LGrlc_um_send_sdu(rlcP,frame,eNB_flag); // may be not necessary
-                        rlc_um_clear_rx_sdu(rlcP);
+                        rlc_um_send_sdu(rlcP,frame,eNB_flag); // may be not necessary
                         rlc_um_reassembly (data, size, rlcP,frame);
-                        rlc_um_send_sdu(rlcP,frame,eNB_flag);
+                        rlc_um_send_sdu(rlcP,frame,eNB_flag); // may be not necessary
                         rlcP->reassembly_missing_sn_detected = 0;
-
                         break;
-                    case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+                    case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
                         LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=10 (01)\n", rlcP->module_id, rlcP->rb_id, frame);
                         // one beginning segment of SDU in PDU
-                        //LG rlc_um_send_sdu(rlcP,frame,eNB_flag); // may be not necessary
-                        rlc_um_clear_rx_sdu(rlcP);
+                        rlc_um_send_sdu(rlcP,frame,eNB_flag); // may be not necessary
                         rlc_um_reassembly (data, size, rlcP,frame);
                         rlcP->reassembly_missing_sn_detected = 0;
                         break;
@@ -231,14 +211,11 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                             // one whole segment of SDU in PDU
                             rlc_um_reassembly (data, size, rlcP,frame);
                         } else {
-                            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=00 (11) MISSING SN DETECTED\n", rlcP->module_id, rlcP->rb_id, frame);
-                            //LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
-                            //      frame, rlcP->module_id,rlcP->rb_id, rlcP->module_id,rlcP->rb_id);
                             rlcP->reassembly_missing_sn_detected = 1; // not necessary but for readability of the code
                         }
 
                         break;
-                    default:
+		default:
                     LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY SHOULD NOT GO HERE\n", rlcP->module_id, rlcP->rb_id, frame);
 #ifdef USER_MODE
                     assert(0 != 0);
@@ -250,12 +227,11 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                         case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
                             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=11 (00) Li=", rlcP->module_id, rlcP->rb_id, frame);
                             for (i=0; i < num_li; i++) {
-                                LOG_D(RLC, "%d ",li_array[i]);
+                                msg("%d ",li_array[i]);
                             }
-                            LOG_D(RLC, " remaining size %d\n",size);
+                            msg(" remaining size %d\n",size);
                             // N complete SDUs
-                            //LGrlc_um_send_sdu(rlcP,frame,eNB_flag);
-                            rlc_um_clear_rx_sdu(rlcP);
+                            rlc_um_send_sdu(rlcP,frame,eNB_flag);
 
                             for (i = 0; i < num_li; i++) {
                                 rlc_um_reassembly (data, li_array[i], rlcP,frame);
@@ -269,15 +245,14 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                             }
                             rlcP->reassembly_missing_sn_detected = 0;
                             break;
-                        case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+                        case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
                             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=10 (01) Li=", rlcP->module_id, rlcP->rb_id, frame);
                             for (i=0; i < num_li; i++) {
-                                LOG_D(RLC, "%d ",li_array[i]);
+                                msg("%d ",li_array[i]);
                             }
-                            LOG_D(RLC, " remaining size %d\n",size);
+                            msg(" remaining size %d\n",size);
                             // N complete SDUs + one segment of SDU in PDU
-                            //LG rlc_um_send_sdu(rlcP,frame,eNB_flag);
-                            rlc_um_clear_rx_sdu(rlcP);
+                            rlc_um_send_sdu(rlcP,frame,eNB_flag);
                             for (i = 0; i < num_li; i++) {
                                 rlc_um_reassembly (data, li_array[i], rlcP,frame);
                                 rlc_um_send_sdu(rlcP,frame,eNB_flag);
@@ -292,9 +267,9 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                         case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
                             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=01 (10) Li=", rlcP->module_id, rlcP->rb_id, frame);
                             for (i=0; i < num_li; i++) {
-                                LOG_D(RLC, "%d ",li_array[i]);
+                                msg("%d ",li_array[i]);
                             }
-                            LOG_D(RLC, " remaining size %d\n",size);
+                            msg(" remaining size %d\n",size);
                             if (rlcP->reassembly_missing_sn_detected) {
                                 reassembly_start_index = 1;
                                 data = &data[li_array[0]];
@@ -318,9 +293,9 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                         case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
                             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=00 (11) Li=", rlcP->module_id, rlcP->rb_id, frame);
                             for (i=0; i < num_li; i++) {
-                                LOG_D(RLC, "%d ",li_array[i]);
+                                msg("%d ",li_array[i]);
                             }
-                            LOG_D(RLC, " remaining size %d\n",size);
+                            msg(" remaining size %d\n",size);
                             if (rlcP->reassembly_missing_sn_detected) {
                                 LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] DISCARD FIRST LI %d", rlcP->module_id, rlcP->rb_id, frame, li_array[0]);
                                 reassembly_start_index = 1;
@@ -340,44 +315,37 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                             } else {
                                 LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] SHOULD NOT GO HERE\n", rlcP->module_id, rlcP->rb_id, frame, li_array[0]);
 #ifdef USER_MODE
-                                assert (5!=5);
+			      assert (5!=5);
 #endif
                             }
                             rlcP->reassembly_missing_sn_detected = 0;
                             break;
 #ifdef USER_MODE
                         default:
-                            assert(1 != 1);
+			  assert(1 != 1);
 #endif
-                            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
-                                  frame, rlcP->module_id,rlcP->rb_id, rlcP->module_id,rlcP->rb_id);
-                            rlcP->reassembly_missing_sn_detected = 1;
+			  rlcP->reassembly_missing_sn_detected = 1;
                     }
                 }
             }
-            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] REMOVE PDU FROM DAR BUFFER  SN=%03d\n", rlcP->module_id, rlcP->rb_id, frame, sn);
             free_mem_block(rlcP->dar_buffer[sn]);
             rlcP->dar_buffer[sn] = NULL;
         } else {
             rlcP->last_reassemblied_missing_sn = sn;
-            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN %04d detected][RLC_UM][MOD %02d][RB %02d]\n",
-                                      frame, rlcP->module_id,rlcP->rb_id, sn, rlcP->module_id,rlcP->rb_id);
             rlcP->reassembly_missing_sn_detected = 1;
             rlc_um_clear_rx_sdu(rlcP);
         }
         sn = (sn + 1) % rlcP->sn_modulo;
-        if ((sn == rlcP->vr_uh) || (sn == end_snP)){
+        if ((sn == rlcP->vr_uh) || (sn == snP)){
             continue_reassembly = 0;
         }
     }
     LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRIED REASSEMBLY VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux,rlcP->vr_uh);
-
 }
 //-----------------------------------------------------------------------------
 void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag) {
 //-----------------------------------------------------------------------------
     signed int in_window;
-    u16_t      old_vr_ur;
     if ((rlcP->timer_reordering_running)) {
         if ((rlcP->timer_reordering  + rlcP->timer_reordering_init)   == frame) {
             // 5.1.2.2.4   Actions when t-Reordering expires
@@ -387,40 +355,27 @@ void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_
             //  -if VR(UH) > VR(UR):
             //      -start t-Reordering;
             //      -set VR(UX) to VR(UH).
-            LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- t-Reordering Timed-out --->][RLC_UM][MOD %02d][RB %02d]\n",
-                  frame,
-                  rlcP->module_id,
-                  rlcP->rb_id,
-                  rlcP->module_id,
-                  rlcP->rb_id);
-            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d]*****************************************************\n", rlcP->module_id, rlcP->rb_id, frame);
+            LOG_D(RLC, "\n\n[RLC_UM][MOD %d][RB %d][FRAME %05d]*****************************************************\n", rlcP->module_id, rlcP->rb_id, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d]*    T I M E  -  O U T                              *\n", rlcP->module_id, rlcP->rb_id, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d]*****************************************************\n", rlcP->module_id, rlcP->rb_id, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TIMER t-Reordering expiration\n", rlcP->module_id, rlcP->rb_id, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] timer_reordering=%d frame=%d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->timer_reordering, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] set VR(UR)=%03d to", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur);
-
-            old_vr_ur   = rlcP->vr_ur;
-
             rlcP->vr_ur = rlcP->vr_ux;
             while (rlc_um_get_pdu_from_dar_buffer(rlcP, rlcP->vr_ur)) {
                 rlcP->vr_ur = (rlcP->vr_ur+1)%rlcP->sn_modulo;
+                msg (".");
             }
-            LOG_D(RLC, " %d", rlcP->vr_ur);
-            LOG_D(RLC, "\n");
+            msg (" %d\n", rlcP->vr_ur);
 
-            rlc_um_try_reassembly(rlcP,frame,eNB_flag,old_vr_ur, rlcP->vr_ur);
+            rlc_um_try_reassembly(rlcP,frame,eNB_flag,rlcP->vr_ur);
 
             in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_ur,  rlcP->vr_uh,  rlcP->vr_uh);
             if (in_window == 2) {
                 rlcP->timer_reordering_running = 1;
-                rlcP->timer_reordering         = frame;
+                rlcP->timer_reordering         = rlcP->timer_reordering_init;
                 rlcP->vr_ux = rlcP->vr_uh;
                 LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] restarting t-Reordering set VR(UX) to %d (VR(UH)>VR(UR))\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ux);
-            } else {
-                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] STOP t-Reordering VR(UX) = %03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ux);
-                rlcP->timer_reordering_running = 0;
-                rlcP->timer_reordering         = 0;
             }
         }
     }
@@ -431,7 +386,6 @@ rlc_um_remove_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP)
 {
 //-----------------------------------------------------------------------------
     mem_block_t * pdu     = rlcP->dar_buffer[snP];
-    LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] REMOVE PDU FROM DAR BUFFER  SN=%03d\n", rlcP->module_id, rlcP->rb_id, -1, snP);
     rlcP->dar_buffer[snP] = NULL;
     return pdu;
 }
@@ -440,6 +394,7 @@ inline mem_block_t *
 rlc_um_get_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP)
 {
 //-----------------------------------------------------------------------------
+
     return rlcP->dar_buffer[snP];
 }
 //-----------------------------------------------------------------------------
@@ -447,6 +402,7 @@ inline void
 rlc_um_store_pdu_in_dar_buffer(rlc_um_entity_t *rlcP, u32_t frame, mem_block_t *pduP, u16_t snP)
 {
 //-----------------------------------------------------------------------------
+
     LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] STORE PDU IN DAR BUFFER  SN=%03d  VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, snP, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
     rlcP->dar_buffer[snP] = pduP;
 }
@@ -565,55 +521,47 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     signed int sn = ((pduP->b1 & 0x00000003) << 8) + pduP->b2;
     signed int in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_uh - rlcP->um_window_size, sn, rlcP->vr_ur);
 
-    //rlc_util_print_hex_octets(RLC, pdu_memP->data, tb_sizeP + 32);
-
-
     #ifdef DEBUG_DISPLAY_NVIDIA
     i =  rlc_um_get_pdu_infos(frame,pduP, tb_sizeP, &pdu_info);    msg("\n==================================================================================================================\n");
     //if (rlcP->module_id )
     direction = 'U';
     if (rlcP->is_data_plane) {
-        LOG_D(RLC, "   %d %02d:%02d:%02d.%d <----D-----  %cL DRB%d  LC%d  U1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
+        msg("   %d %02d:%02d:%02d.%d <----D-----  %cL DRB%d  LC%d  U1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
     } else {
-        LOG_D(RLC, "%d %02d:%02d:%02d.%d <----D-----  %cL SRB%d  LC%d  U1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
+        msg("%d %02d:%02d:%02d.%d <----D-----  %cL SRB%d  LC%d  U1      ", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id, 999);
     }
     if (pdu_info.e) {
-        LOG_D(RLC, "L");
+        msg("L");
     }
     if (pdu_info.fi < 3) {
-        LOG_D(RLC, "F");
+        msg("F");
     }
-    LOG_D(RLC, "      SN%d\n",pdu_info.sn);
-    LOG_D(RLC, "==================================================================================================================\n");
-    LOG_D(RLC, "Number of PDU: 1, total size: %d bytes\n\n", pdu_info.payload_size + pdu_info.header_size);
-    LOG_D(RLC, "#%d %02d:%02d:%02d.%d: PDU  1 of   1,  %cL  LC%d, AM\n\n", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id);
-    LOG_D(RLC, "    Data UM (%d bytes):\n", pdu_info.payload_size + pdu_info.header_size);
-    LOG_D(RLC, "      ");
+    msg("      SN%d\n",pdu_info.sn);
+    msg("==================================================================================================================\n");
+    msg("Number of PDU: 1, total size: %d bytes\n\n", pdu_info.payload_size + pdu_info.header_size);
+    msg("#%d %02d:%02d:%02d.%d: PDU  1 of   1,  %cL  LC%d, AM\n\n", g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds, direction, rlcP->rb_id);
+    msg("    Data UM (%d bytes):\n", pdu_info.payload_size + pdu_info.header_size);
+    msg("      ");
     for (i = 0; i < pdu_info.header_size; i++) {
-        LOG_D(RLC, "%02X ", first_byte[i]);
+        msg("%02X ", first_byte[i]);
     }
-    LOG_D(RLC, "\n\n");
-    LOG_D(RLC, "      %02X %02X: SN = %04d\t\t, FI=%c%c, E=%s\n", first_byte[0], first_byte[1], pdu_info.sn, (pdu_info.fi & 0x02) ? ']' : '[', (pdu_info.fi & 0x01) ? '[' : ']', (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
+    msg("\n\n");
+    msg("      %02X %02X: SN = %04d\t\t, FI=%c%c, E=%s\n", first_byte[0], first_byte[1], pdu_info.sn, (pdu_info.fi & 0x02) ? ']' : '[', (pdu_info.fi & 0x01) ? '[' : ']', (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
     if (pdu_info.e) {
         unsigned int offset = 2;
 
         for (i = offset; i < pdu_info.header_size; i++) {
             if ((i % 2) == 0) {
-                LOG_D(RLC, "      %02X %1X : LI = %04d bytes\t\t\t, E=%s\n", first_byte[i], first_byte[i] >> 4,  pdu_info.li_list[i-offset],  (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
+                msg("      %02X %1X : LI = %04d bytes\t\t\t, E=%s\n", first_byte[i], first_byte[i] >> 4,  pdu_info.li_list[i-offset],  (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
             } else {
-                LOG_D(RLC, "       %1X %02X: LI = %04d bytes\t\t\t, E=%s\n", first_byte[i] >> 4, first_byte[i],  pdu_info.li_list[i-offset],  (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
+                msg("       %1X %02X: LI = %04d bytes\t\t\t, E=%s\n", first_byte[i] >> 4, first_byte[i],  pdu_info.li_list[i-offset],  (pdu_info.e == 1) ? "LI(1)" : "DATA(0)");
             }
         }
     }
-    LOG_D(RLC, "      Data filtered (%d bytes)\n", pdu_info.hidden_size);
+    msg("      Data filtered (%d bytes)\n", pdu_info.hidden_size);
     #endif
 
-    // rlc_um_in_window() returns -2 if lower_bound  > sn
-    // rlc_um_in_window() returns -1 if higher_bound < sn
-    // rlc_um_in_window() returns  0 if lower_bound  < sn < higher_bound
-    // rlc_um_in_window() returns  1 if lower_bound  == sn
-    // rlc_um_in_window() returns  2 if higher_bound == sn
-    // rlc_um_in_window() returns  3 if higher_bound == sn == lower_bound
+
     if ((in_window == 1) || (in_window == 0)){
         LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  VR(UH) – UM_Window_Size) <= SN %d < VR(UR) -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame, sn);
         //discard the PDU
@@ -622,7 +570,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
         return;
     }
     if ((rlc_um_get_pdu_from_dar_buffer(rlcP, sn))) {
-        in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_ur, sn, rlcP->vr_uh);
+      in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_ur, sn, rlcP->vr_uh);
         if (in_window == 0){
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  VR(UR) < SN %d < VR(UH) and RECEIVED BEFORE-> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame, sn);
             //discard the PDU
@@ -630,10 +578,6 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
             pdu_memP = NULL;
             return;
         }
-        // 2 lines to avoid memory leaks
-        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU SN %03d REMOVE OLD PDU BEFORE STORING NEW PDU\n", rlcP->module_id, rlcP->rb_id, frame, sn);
-        mem_block_t *pdu = rlc_um_remove_pdu_from_dar_buffer(rlcP, sn);
-        free_mem_block(pdu);
     }
     rlc_um_store_pdu_in_dar_buffer(rlcP, frame, pdu_memP, sn);
 
@@ -648,20 +592,16 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     //      -if VR(UR) falls outside of the reordering window:
     //          -set VR(UR) to (VR(UH) – UM_Window_Size);
     if (rlc_um_in_reordering_window(rlcP, frame, sn) < 0) {
-        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->vr_uh, rlcP->um_window_size);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->vr_uh, rlcP->um_window_size);
         rlcP->vr_uh = (sn + 1) % rlcP->sn_modulo;
 
-        if (rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ur) != 0) {
+        rlc_um_try_reassembly(rlcP, frame, eNB_flag, rlcP->vr_uh);
+
+        if (rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ur) < 0) {
             in_window = rlcP->vr_uh - rlcP->um_window_size;
             if (in_window < 0) {
                 in_window = in_window + rlcP->sn_modulo;
             }
-
-            rlc_um_try_reassembly(rlcP, frame, eNB_flag, rlcP->vr_ur, in_window);
-        }
-
-
-        if (rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ur) < 0) {
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR) %d OUTSIDE REORDERING WINDOW SET TO VR(UH) – UM_Window_Size = %d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, in_window);
             rlcP->vr_ur = in_window;
         }
@@ -673,12 +613,12 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     //          remove RLC headers when doing so and deliver the reassembled RLC
     //          SDUs to upper layer in ascending order of the RLC SN if not
     //          delivered before;
-    if ((sn == rlcP->vr_ur) && rlc_um_get_pdu_from_dar_buffer(rlcP, rlcP->vr_ur)) {
+    if (rlc_um_get_pdu_from_dar_buffer(rlcP, rlcP->vr_ur)) {
         //sn_tmp = rlcP->vr_ur;
         do {
             rlcP->vr_ur = (rlcP->vr_ur+1) % rlcP->sn_modulo;
         } while (rlc_um_get_pdu_from_dar_buffer(rlcP, rlcP->vr_ur) && (rlcP->vr_ur != rlcP->vr_uh));
-        rlc_um_try_reassembly(rlcP, frame, eNB_flag, sn, rlcP->vr_ur);
+        rlc_um_try_reassembly(rlcP, frame, eNB_flag, rlcP->vr_ur);
     }
 
     // -if t-Reordering is running:
@@ -688,9 +628,9 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     //          -stop and reset t-Reordering;
     if (rlcP->timer_reordering_running) {
         if (rlcP->vr_uh != rlcP->vr_ux) {
-            in_window = rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ux);
+	  in_window = rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ux);
             if (in_window < 0) {
-                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n", rlcP->module_id, rlcP->rb_id, frame,rlcP->vr_ux,rlcP->vr_uh);
+            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n", rlcP->module_id, rlcP->rb_id, frame,rlcP->vr_ux,rlcP->vr_uh);
                 rlcP->timer_reordering_running = 0;
                 rlcP->timer_reordering         = 0;
             }
@@ -713,9 +653,10 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
       in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_ur,  rlcP->vr_uh,  rlcP->vr_uh);
         if (in_window == 2) {
             rlcP->timer_reordering_running = 1;
-            rlcP->timer_reordering         = frame;
+            rlcP->timer_reordering         = rlcP->timer_reordering_init;
             rlcP->vr_ux = rlcP->vr_uh;
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RESTART t-Reordering set VR(UX) to VR(UH) =%d\n", rlcP->module_id, rlcP->rb_id, frame,rlcP->vr_ux);
         }
     }
+    rlc_um_check_timer_dar_time_out(rlcP,frame,eNB_flag);
 }

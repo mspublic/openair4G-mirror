@@ -64,9 +64,8 @@ mapping mob_type[] =
 {
     {"STATIC", STATIC},
     {"RWP", RWP},
-    {"RWALK", RWALK},
-    {"TRACE", TRACE},
-    {"SUMO", SUMO},    
+	 {"RWALK", RWALK},
+	 {"TRACE", TRACE},
     {NULL, -1}
 };
 #endif
@@ -74,12 +73,6 @@ NodePtr create_node(void) {
 	NodePtr ptr;
 	ptr = malloc(sizeof(node_struct));
 	return ptr;
-}
-
-void delete_node(NodePtr node) {
-  free(node->mob);
-  node->mob = NULL;
-  free(node);
 }
 
 double randomGen(double a, double b){
@@ -125,7 +118,7 @@ void display_node_list(Node_list Node_Vector){
       LOG_D(OMG, "Empty Node_list\n");
     }	
     while (tmp != NULL){
-  	 LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
+  	 LOG_I(OMG," [%s] [%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
 		map_int_to_str(mob_type, tmp->node->generator),
 		map_int_to_str(nodes_type, tmp->node->type),  
 		tmp->node->ID,
@@ -140,7 +133,7 @@ void display_node_list(Node_list Node_Vector){
 }
 
 void display_node_position(int ID, int generator, int type, int mobile, double X, double Y){
-  LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
+  LOG_I(OMG," [%s] [%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
 		map_int_to_str(mob_type, generator),
 		map_int_to_str(nodes_type, type),  
 		ID,
@@ -163,12 +156,6 @@ Node_list filter(Node_list Vector, int node_type){
   return tmp2;
 }
 
-void delete_node_entry(Node_list entry) {
-	NodePtr node = entry->node;
-	delete_node(node);
-        entry->node = NULL;
-        free(entry);
-}
 
 Node_list remove_node(Node_list list, int nID, int node_type){
   
@@ -195,7 +182,7 @@ Node_list remove_node(Node_list list, int nID, int node_type){
     else{
       found = 0; // true                value found
       if (current == list) {
-	list = current->next;
+	list = current->next  ;
 	LOG_D(OMG,"Element to remove is found at beginning\n");
       }    
       
@@ -203,103 +190,11 @@ Node_list remove_node(Node_list list, int nID, int node_type){
 	previous->next = current->next;
 	
       }
-      delete_node_entry(current); // freeing memory
-      current = NULL;
       
     }
     return list;
   }
 }
-
-int length(char* s)
-{
-	int count = 0;
-	while(s[count] != '\0'){
-		++count;
-	}
-	return count;
-}
-
-NodePtr find_node(Node_list list, int nID, int node_type){
-  
-  int found;
-  Node_list  current;
- 
-  if (list == NULL){  
-    return NULL;
-  } 
-  else{                             //start search
-    current = list;
-    while ((current != NULL) && ((current->node->ID != nID) || (current->node->type != node_type ))){
-      current = current->next;
-    }
-    //holds: current = NULL or  type != node_type or.., but not both
-    if (current ==NULL) { 
-      found= 1  ;
-      LOG_D(OMG," Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
-      return NULL;
-    }              //value not found
-    else{
-      return current->node;
-    }
-    return NULL;
-  }
-}
-
-Node_list clear_node_list(Node_list list) {
-  Node_list  tmp;
-
-  if (list == NULL){  
-    return NULL;
-  } 
-  else{
-     while (list->next !=NULL) {
-       tmp = list;
-       list = list->next;
-       delete_node_entry(tmp); 
-     }
-     delete_node_entry(list); // clearing the last one
-  }
-  return NULL;
-}
-
-Node_list reset_node_list(Node_list list) {
-  Node_list  tmp;
-
-  if (list == NULL){  
-    return NULL;
-  } 
-  else{
-     while (list->next !=NULL) {
-       tmp = list;
-       list = list->next;
-       tmp->node = NULL;
-       free(tmp);
-     }
-     list->node = NULL; // clearing the last one
-  }
-  return list;
-}
-
-String_list clear_String_list(String_list list) {
-   String_list  tmp;
-
-   if (list == NULL){  
-    return NULL;
-   } 
-   else{
-     while (list->next !=NULL) {
-       tmp = list;
-       list = list->next;
-       free(tmp->string);
-       tmp->string = NULL;
-       free(tmp);
-     }
-     list->string = NULL; // clearing the last one
-  }
-  return list;
-}
-
 
 
 

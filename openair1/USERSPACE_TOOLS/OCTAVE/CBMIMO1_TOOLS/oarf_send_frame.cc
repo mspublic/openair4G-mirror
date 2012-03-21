@@ -16,7 +16,8 @@ extern "C" {
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/impl_defs_lte.h"
-#include "ARCH/COMMON/defs.h"
+  //#include "PHY/TOOLS/defs.h"
+  //#include "PHY/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 }
 #include "PHY/vars.h"
@@ -68,11 +69,8 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
   LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
 
   TX_VARS *TX_vars = (TX_VARS*) malloc(sizeof(TX_VARS));
-  TX_RX_VARS dummy_tx_rx_vars;
 
-  unsigned int bigphys_top;
-  unsigned int mem_base;
-
+  //PHY_vars = (PHY_VARS *)malloc(sizeof(PHY_VARS));
   if ((openair_fd = open("/dev/openair0", O_RDWR,0)) <0)
   {
     error(FCNNAME);
@@ -98,39 +96,8 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 
   ioctl(openair_fd,openair_STOP,(void*)&dummy);
 
-  // version using mmap
-  ioctl(openair_fd,openair_GET_VARS,(void* )&dummy_tx_rx_vars);
-  ioctl(openair_fd,openair_GET_BIGPHYSTOP,(void *)&bigphys_top);
-  
-  if (dummy_tx_rx_vars.TX_DMA_BUFFER[0]==NULL) {
-    printf("pci_buffers not allocated\n");
-    close(openair_fd);
-    exit(-1);
-  }
-  
-  printf("BIGPHYS top 0x%x\n",bigphys_top);
-  printf("RX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[0]);
-  printf("TX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[0]);
-
-  mem_base = (unsigned int)mmap(0,
-				BIGPHYS_NUMPAGES*4096,
-				PROT_READ,
-				MAP_PRIVATE,
-				openair_fd,
-				0);
-
-  if (mem_base != -1)
-    msg("MEM base= %p\n",(void*) mem_base);
-  else {
-    msg("Could not map physical memory\n");
-    exit(-1);
-  }
-
-
-
   for (aa=0;aa<NB_ANTENNAS_TX;aa++) {
-    //TX_vars->TX_DMA_BUFFER[aa] = (char*) malloc(2*76800);
-    TX_vars->TX_DMA_BUFFER[aa] = (char *)(mem_base + (unsigned int)dummy_tx_rx_vars.TX_DMA_BUFFER[aa]-bigphys_top);
+    TX_vars->TX_DMA_BUFFER[aa] = (char*) malloc(2*76800);
 
     for (i=0;i<76800;i++) {
       if (i<64)
@@ -145,12 +112,9 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 
   close(openair_fd);
 
-  /*
   for (aa=0;aa<NB_ANTENNAS_TX;aa++)
     free(TX_vars->TX_DMA_BUFFER[aa]);
-  */
 
-  free(TX_vars);
   free(frame_parms);
 
   return octave_value (dx);

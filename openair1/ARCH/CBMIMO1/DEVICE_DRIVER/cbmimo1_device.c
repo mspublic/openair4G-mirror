@@ -23,8 +23,8 @@
 #include "LAYER2/MAC/vars.h"
 #ifdef OPENAIR2
 #include "RRC/LITE/vars.h"
-#endif
 #include "UTIL/LOG/log.h"
+#endif
 
 #include "from_grlib_softconfig.h"
 #include "from_grlib_softregs.h"
@@ -97,7 +97,7 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
 		 rt_task, 
          (unsigned int)regs->ip, 
          (unsigned int)regs->ip - (unsigned int) &bigphys_malloc, 
-         openair_daq_vars.hw_frame,
+         (openair_daq_vars.is_eNB==1)?PHY_vars_eNB_g[0]->frame:PHY_vars_UE_g[0]->frame, 
          openair_daq_vars.slot_count);
 
   if (PHY_vars_eNB_g!=NULL)
@@ -115,8 +115,12 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
 
 
 
-
-static int __init openair_init_module( void ) {
+#ifdef KERNEL2_6 
+static int __init openair_init_module( void ) 
+#else 
+  int init_module( void ) 
+#endif //KERNEL2_6
+{
   //-----------------------------------------------------------------------------
   int res = 0;
   // unsigned long i;
@@ -326,22 +330,19 @@ static int __init openair_init_module( void ) {
     bigphys_current = bigphys_ptr;
     memset(bigphys_ptr,0,BIGPHYS_NUMPAGES*PAGE_SIZE);
   }
-  printk("[OPENAIR][INIT_MODULE][INIT] bigphys_ptr =%p ,bigphys_current =%p\n",bigphys_ptr,bigphys_current);
 #endif //BIGPHYSAREA
 
   if (vid == XILINX_VENDOR)  // This is ExpressMIMO
     exmimo_firmware_init();
 
 
+
 #ifdef RTAI_ENABLED
+
   rt_set_oneshot_mode();
+
   start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
 #endif //RTAI_ENABLED
-
-  openair_daq_vars.mac_registered  = 0;
-  openair_daq_vars.node_configured = 0;
-  openair_daq_vars.node_running    = 0;
-  printk("[OPENAIR][INIT_MODULE][INIT] openair_daq_vars set\n");
 
   printk("[OPENAIR][SCHED][INIT] Trying to get IRQ %d\n",pdev[0]->irq);
   if (rt_request_irq(pdev[0]->irq,
@@ -358,6 +359,12 @@ static int __init openair_init_module( void ) {
     openair_irq_enabled=0;
   }
 
+  openair_daq_vars.mac_registered  = 0;
+  openair_daq_vars.node_configured = 0;
+  openair_daq_vars.node_running    = 0;
+
+  printk("[OPENAIR][INIT_MODULE][INIT] openair_daq_vars set\n");
+  printk("[OPENAIR][INIT_MODULE][INIT] bigphys_ptr =%p ,bigphys_current =%p\n",bigphys_ptr,bigphys_current);
 
   mac_xface = malloc16(sizeof(MAC_xface));
   if (mac_xface) {
@@ -396,9 +403,9 @@ static int __init openair_init_module( void ) {
  		
   fifo_printf_init();
 
-  //#ifdef OPENAIR2
+#ifdef OPENAIR2
   logInit();
-  //#endif
+#endif
 
   printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);
 
@@ -417,7 +424,12 @@ static int __init openair_init_module( void ) {
 }
 
   
-static void __exit openair_cleanup_module(void) {
+#ifdef KERNEL2_6 
+static void __exit openair_cleanup_module(void)
+#else 
+  void cleanup_module(void)
+#endif //KERNEL2_6
+{
   printk("[openair][CLEANUP MODULE]\n");
 
   if (vid == XILINX_VENDOR)
@@ -431,9 +443,9 @@ static void __exit openair_cleanup_module(void) {
   if (vid == XILINX_VENDOR)
    pci_printk_fifo_clean_up();
 
-  //#ifdef OPENAIR2
+#ifdef OPENAIR2
   logClean();
-  //#endif
+#endif
 
   
 }
@@ -471,12 +483,6 @@ static void  openair_cleanup(void) {
     if (bar[i])
       iounmap((void *)bar[i]);
   }
-
-  // unregister interrupt
-  printk("[openair][CLEANUP] disabling interrupt\n");
-  rt_disable_irq(pdev[0]->irq);
-  rt_release_irq(pdev[0]->irq);
-  openair_irq_enabled=0;
 
 
 #ifdef BIGPHYSAREA

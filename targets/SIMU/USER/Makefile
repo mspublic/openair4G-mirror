@@ -28,7 +28,7 @@ endif
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DPUCCH #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE  
-CFLAGS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -DPHY_ABSTRACTION #-DRLC_UM_TEST_TRAFFIC=1  
+CFLAGS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -DPHY_ABSTRACTION
 
 ifndef OPENAIR2
 OPENAIR2=1
@@ -49,7 +49,6 @@ cygwin=1
 OCG_FLAG = 0
 endif
 
-
 ifdef XFORMS
 CFLAGS += -DXFORMS
 endif
@@ -69,13 +68,6 @@ endif
 
 ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
-endif
-
-# ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
-# make cleanasn1
-#make all Rel10=1
-ifdef  Rel10
-CFLAGS += -DRel10
 endif
 
 ifdef NAS_NETLINK
@@ -99,7 +91,9 @@ endif
 
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
-
+ifdef TRAFFIC_TM5
+CFLAGS += -DRLC_UM_TEST_TRAFFIC=1 -DFULL_BUFFER=1
+endif
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
@@ -169,11 +163,9 @@ ifeq ($(rrc_cellular_UE),1)
 endif
 
 nasmesh_fix:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 nasmesh_nl:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink.ko)	
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 rb_tool:
