@@ -118,6 +118,7 @@ int lte_segmentation(unsigned char *input_buffer,
 
       while (k<((Kr - L)>>3)) {
 	output_buffers[r][k] = input_buffer[s];
+	//	printf("encoding segment %d : byte %d => %d\n",r,k,input_buffer[s]);
 	k++;
 	s++;
       }

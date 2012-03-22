@@ -566,7 +566,7 @@ typedef struct {
   /// hold the channel estimates in frequency domain
   s32 **dl_ch_estimates[3];  
   /// hold the channel estimates in time domain (used for tracking)
-  s32 **dl_ch_estimates_time;
+  s32 **dl_ch_estimates_time[3];
   /// holds output of the sync correlator  
   s32 *sync_corr;         
   /// estimated frequency offset (in radians) for all subcarriers
@@ -737,7 +737,8 @@ typedef enum {
   NOT_SYNCHED=0,
   PRACH=1,
   RA_RESPONSE=2,
-  PUSCH=3
+  PUSCH=3,
+  RESYNCH=4
 } UE_MODE_t;
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;

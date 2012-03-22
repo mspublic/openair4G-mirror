@@ -16,7 +16,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
 
   int pilot[2][200] __attribute__((aligned(16)));
-  unsigned char nu,aarx;
+  unsigned char nu,aarx,aa;
   unsigned short k;
   unsigned int rb,pilot_cnt;
   short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2,*fl,*f2l2,*fr,*f2r2,*f2_dc,*f_dc;
@@ -605,7 +605,21 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       } // pilot spacing 3 symbols (1/3,2/3 combination)
     }
 #endif
+
+
     
+  }
+
+  // do ifft of channel estimate
+  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
+    if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[(eNB_id+eNB_offset)%3][aa])
+      fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[(eNB_id+eNB_offset)%3][aa][LTE_CE_OFFSET],
+	  (short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[(eNB_id+eNB_offset)%3][aa],
+	  phy_vars_ue->lte_frame_parms.twiddle_ifft,
+	  phy_vars_ue->lte_frame_parms.rev,
+	  phy_vars_ue->lte_frame_parms.log2_symbol_size,
+	  phy_vars_ue->lte_frame_parms.log2_symbol_size/2,
+	  0);
   }
   return(0); 
 }

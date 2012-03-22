@@ -309,40 +309,6 @@ typedef struct {
 } TX_RX_VARS;
 
 /// Measurement Variables
-#ifndef OPENAIR_LTE
-
-typedef struct
-{
-  unsigned short rx_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
-  short          rx_avg_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX];              //! estimated avg received signal power (dB)
-  unsigned short n0_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
-  short		 rx_rssi_dBm[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated rssi (dBm)
-  int            rx_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
-  int            rx_spatial_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][2][2];// estimated received spatial signal power (linear)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][2][2];// estimated received spatial signal power (linea  int            n0_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
-  unsigned int   chbch_search_count;
-  unsigned int   chbch_detection_count[4];
-  unsigned int   mrbch_search_count; 
-  unsigned int   mrbch_detection_count;
-#ifdef EMOS
-  //  unsigned char  Meas_flag;      	 //! This is used as a signal to start recording in multiuser mode
-  unsigned int   frame_tx[2];            //! This is used to set the file index of the measurement file at the terminal
-  int            crc_status[2]; 	 //! crc status of the CHBCH
-#endif //EMOS
-} PHY_MEASUREMENTS;
-
-/// Physical Resource Descriptor
-typedef struct {
-  unsigned char  Time_alloc;      /*!<\brief Time allocation vector of DL-SACH reservation*/
-  unsigned short Freq_alloc;      /*!< \brief Frequency allocation vector of DL-SACH reservation*/
-  unsigned short Ifreq_alloc;     /*!< \brief Frequency allocation vector of interference (DL-SACH)*/
-  unsigned char  Antenna_alloc;   /*!< \brief Antenna allocation vector of DL-SACH reservation*/ 
-  unsigned char  Coding_fmt;      /*!< \brief Coding format for this PDU*/
-} __attribute__((__packed__)) PHY_RESOURCES;
-
-
-#else //OPENAIR_LTE
-
 #define NUMBER_OF_eNB_MAX 3
 #define NUMBER_OF_UE_MAX 8
 #define NUMBER_OF_SUBBANDS 7
@@ -353,6 +319,10 @@ typedef struct
   //unsigned short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
   //unsigned short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
 
+  // RRC measurements
+  int rssi;
+  int rsrq[3];
+  int rsrp[3];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];                        
@@ -471,84 +441,6 @@ typedef struct
   int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][25];           
 
 } PHY_MEASUREMENTS_eNB;
-#endif //OPENAIR_LTE
-
-#ifndef OPENAIR_LTE
-/// Physical Resource Descriptor
-typedef struct {
-  unsigned char  Time_alloc;      /*!<\brief Time allocation vector of DL-SACH reservation*/
-  unsigned int   Freq_alloc[2];   /*!< \brief Frequency allocation vector of DL-SACH reservation*/
-  unsigned short Ifreq_alloc;     /*!< \brief Frequency allocation vector of interference (DL-SACH)*/
-  unsigned char  Antenna_alloc;   /*!< \brief Antenna allocation vector of DL-SACH reservation*/ 
-  unsigned char  Coding_fmt;      /*!< \brief Coding format for this PDU*/
-} __attribute__((__packed__)) PHY_RESOURCES;
-
-
-#define PHY_RESOURCES_SIZE sizeof(PHY_RESOURCES)
-
-/// Static Configuration Structure
-typedef struct {
-  PHY_FRAMING         PHY_framing;       /*!<\brief TTI Configuration*/
-  PHY_CHBCH           PHY_chbch[8];      /*!<\brief CHBCH Configuration*/
-  PHY_MRBCH           PHY_mrbch;         /*!<\brief MRBCH Configuration*/
-  PHY_CHSCH           PHY_chsch[8];      /*!<\brief CHSCH Configuration (up to 8)*/
-  PHY_SCH             PHY_sch[8];        /*!<\brief SCH Configuration (up to 8)*/
-  PHY_SACH            PHY_sach;          /*!<\brief SACH configuration*/
-  int                 total_no_chsch;    /*!<\brief Number of CHSCH*/
-  int                 total_no_chbch;    /*!<\brief Number of CHBCH*/
-  int                 total_no_sch;      /*!<\brief Number of SCH*/
-  int                 dual_tx;           /// 1 for two tx antennas, 0 for 1 tx antenna
-  int                 tdd;		 /// 1 for TDD, 0 for FDD
-} PHY_CONFIG;
-
-
-/// Top-level PHY Data Structure  
-typedef struct
-{
-  /*
-  /// ACQ Mailbox for harware synch
-  unsigned int *mbox;                
-  /// Total RX gain
-  unsigned int rx_total_gain_dB;
-  /// Total RX gain
-  unsigned int rx_total_gain_eNB_dB;
-  /// Timing offset (UE)
-  int rx_offset;
-  /// TX/RX switch position in symbols (for TDD)
-  //unsigned int tx_rx_switch_point;   --> only in openair_daq_vars
-  */
-  /// TX variables indexed by antenna
-  TX_VARS tx_vars[NB_ANTENNAS_TX];      
-  /// RX variables indexed by antenna
-  RX_VARS rx_vars[NB_ANTENNAS_RX];      
-  /// CHSCH variables (up to 8)
-  CHSCH_data          chsch_data[8];   
-  /// SCH variables (up to 8)
-  SCH_data            sch_data[8];     
-  /// CHBCH variables (up to 8)
-  Transport_data      chbch_data[8];   
-  /// MRBCH variables (up to 8)
-  Transport_data      mrbch_data[8];   
-  /// SACH variables (up to 8)
-  Transport_data      sach_data[NUMBER_OF_SACH];  
-  /// SACCH variables (up to 8)
-  Transport_data      sacch_data[NUMBER_OF_SACH];
-  /// Diagnostics for SACH Metering
-  SACH_DIAGNOSTICS   Sach_diagnostics[NB_CNX_CH][1+NB_RAB_MAX];
-} PHY_VARS;
-#endif
-
-
-
-#ifdef NOCARD_TEST
-// This structure is used for the emulation mode of the MODEM to 
-// pass synchronization information to a user-space process via RT-FIFOS
-typedef struct{
-  unsigned int frame;
-  unsigned int rx_offset;
-  unsigned int rx_gain;
-} RF_CNTL_PACKET;
-#endif //NOCARD_TEST
 
 #define MCS_COUNT 23
 
