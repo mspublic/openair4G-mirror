@@ -88,6 +88,8 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
       k = (nu + nushift)%6;
       //      printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, Nid2 %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,Nid2,nushift,eNB_offset,k);
       for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
+	if (phy_vars_ue->lte_ue_common_vars.rxdataF == NULL) // navid: temporary fix for null pointer 
+	  return;
 	rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1];
 
 	off  = (phy_vars_ue->lte_frame_parms.first_carrier_offset+k)<<2;
