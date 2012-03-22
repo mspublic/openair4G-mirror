@@ -77,21 +77,15 @@ typedef struct{
   u8 SIStatus;
   u8 SIwindowsize;
   u16 SIperiod;
-  u8 CH_id;
   unsigned short UE_index;
-  unsigned int Rach_tx_cnt;
-  unsigned int Nb_bcch_wait;
-  unsigned int Nb_bcch_miss;
-  u8 Nb_rach_res; 
-  u8 Rach_time_alloc;
-  unsigned short Rach_freq_alloc;
-  //  L2_ID CH_mac_id;
-  u8 T300_active;
-  u8 T300_cnt;
-  u8 T304_active;
-  u8 T304_cnt;
-  u8 T310_active;
-  u8 T310_cnt;
+  u32 T300_active;
+  u32 T300_cnt;
+  u32 T304_active;
+  u32 T304_cnt;
+  u32 T310_active;
+  u32 T310_cnt;
+  u32 N310_cnt;
+  u32 N311_cnt;
 }UE_RRC_INFO;
 
 typedef struct{

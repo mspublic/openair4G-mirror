@@ -791,6 +791,9 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
     LOG_D(MAC,"RRCConnectionSetup failed, returning to IDLE state\n");
     return(CONNECTION_LOST);
     break;
+  case RRC_PHY_RESYNCH:
+    LOG_D(MAC,"RRC Loss of synch, returning PHY_RESYNCH\n");
+    return(PHY_RESYNCH);
   default:
     break;
   }

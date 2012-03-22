@@ -93,7 +93,8 @@
 
 typedef enum {
   CONNECTION_OK=0,
-  CONNECTION_LOST
+  CONNECTION_LOST,
+  PHY_RESYNCH
 } UE_L2_STATE_t;
 
 typedef struct {
@@ -782,7 +783,7 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 \param[in] subframe the subframe number
 \param[in] direction subframe direction
 \param[in] eNB_index instance of eNB
-@returns L2 state (CONNETION_OK or CONNECTION_LOST)
+@returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
 */
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 
