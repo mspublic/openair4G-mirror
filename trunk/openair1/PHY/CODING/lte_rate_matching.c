@@ -527,7 +527,7 @@ int lte_rate_matching_turbo_rx(u32 RTC,
   ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
 
 #ifdef RM_DEBUG
-  printf("lte_rate_matching_turbo_rx: Clear %d, Ncb %d, Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",clear,Ncb,3*(RTC<<5),rvidx, G, Qm,Nl,r);
+  printf("lte_rate_matching_turbo_rx: Clear %d, E %d, Ncb %d, Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",clear,E,Ncb,3*(RTC<<5),rvidx, G, Qm,Nl,r);
 #endif
 
   if (clear==1)

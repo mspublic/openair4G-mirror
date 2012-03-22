@@ -648,35 +648,37 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
       }
   }
     
-    
-  ue_common_vars->dl_ch_estimates_time = (int **)malloc16(8*sizeof(int*));
-  if (ue_common_vars->dl_ch_estimates_time) {
+  for (eNB_id=0;eNB_id<3;eNB_id++) {
+    ue_common_vars->dl_ch_estimates_time[eNB_id] = (int **)malloc16(8*sizeof(int*));
+    if (ue_common_vars->dl_ch_estimates_time[eNB_id]) {
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time allocated at %p\n",
-	ue_common_vars->dl_ch_estimates_time);
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time[%d] allocated at %p\n",eNB_id,
+	  ue_common_vars->dl_ch_estimates_time[eNB_id]);
 #endif
-  }
-  else {
-    msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time not allocated_time\n");
-    return(-1);
-  }
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time not allocated_time\n");
+      return(-1);
+    }
   
-  for (i=0; i<frame_parms->nb_antennas_rx; i++)
-    for (j=0; j<4; j++) {//frame_parms->nb_antennas_tx; j++) {
-      ue_common_vars->dl_ch_estimates_time[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
-      if (ue_common_vars->dl_ch_estimates_time[(j<<1)+i]) {
+  
+    for (i=0; i<frame_parms->nb_antennas_rx; i++)
+      for (j=0; j<4; j++) {//frame_parms->nb_antennas_tx; j++) {
+	ue_common_vars->dl_ch_estimates_time[eNB_id][(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	if (ue_common_vars->dl_ch_estimates_time[eNB_id][(j<<1)+i]) {
 #ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time[%d] allocated at %p\n",i,
-	    ue_common_vars->dl_ch_estimates_time[(j<<1)+i]);
+	  msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time[%d] allocated at %p\n",i,
+	      ue_common_vars->dl_ch_estimates_time[eNB_id][(j<<1)+i]);
 #endif
-	
-	memset(ue_common_vars->dl_ch_estimates_time[(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
-      }
-      else {
-	msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time[%d] not allocated\n",i);
-	return(-1);
-      }
-    }    
+	  
+	  memset(ue_common_vars->dl_ch_estimates_time[eNB_id][(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	}
+	else {
+	  msg("[openair][LTE_PHY][INIT] ue_common_vars->dl_ch_estimates_time[%d] not allocated\n",i);
+	  return(-1);
+	}
+      }    
+  }
     
   //  lte_ue_pdsch_vars = (LTE_UE_PDSCH **)malloc16(3*sizeof(LTE_UE_PDSCH*));
   //  lte_ue_pbch_vars = (LTE_UE_PBCH **)malloc16(3*sizeof(LTE_UE_PBCH*));

@@ -52,7 +52,7 @@
 //#endif
 
 
-//#define DEBUG_PHY_PROC 1
+#define DEBUG_PHY_PROC 1
 
 #define PUCCH 1
 
@@ -1060,24 +1060,30 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 			  0,
 			  1);
     }
-    /*
+
 #ifdef DEBUG_PHY_PROC    
     if (last_slot == 0) {
 	
-      debug_LOG_D(PHY,"[UE  %d] frame %d, slot %d, freq_offset_filt = %d \n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
+      LOG_D(PHY,"[UE  %d] frame %d, slot %d, freq_offset_filt = %d \n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
 	
-      debug_LOG_D(PHY,"[UE  %d] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
+      LOG_D(PHY,"[UE  %d] frame %d, slot %d, RX RSSI (%d,%d,%d) dBm, digital (%d, %d)(%d,%d)(%d,%d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,
 		phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
+		phy_vars_ue->PHY_measurements.rx_rssi_dBm[1] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
+		phy_vars_ue->PHY_measurements.rx_rssi_dBm[2] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
 		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
 		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][0],
+		phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][1],
+		phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][0],
+		phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][1],
 		phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
 		phy_vars_ue->PHY_measurements.wideband_cqi[0][1],		  
 		phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],
 		phy_vars_ue->PHY_measurements.rx_power_avg[0],
 		phy_vars_ue->rx_total_gain_dB);
       
-      debug_LOG_D(PHY,"[UE  %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
+      LOG_D(PHY,"[UE  %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,
 		phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		phy_vars_ue->PHY_measurements.n0_power_dB[0],
@@ -1087,11 +1093,14 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 		phy_vars_ue->PHY_measurements.n0_power_avg_dB,
 		phy_vars_ue->PHY_measurements.n0_power_avg);
     }
-    #endif*/
+#endif
   }
   
+  if (l==(4-frame_parms->Ncp)) {
+    ue_rrc_measurements(phy_vars_ue,
+			last_slot);
+  }  
 
-  
   if ((last_slot==1) && (l==(4-frame_parms->Ncp))) {
     
     // AGC
@@ -1180,6 +1189,54 @@ void phy_procedures_emos_UE_RX(u8 last_slot,u8 eNB_id) {
 }
 #endif
 
+
+void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
+
+  u8 last_slot;
+
+    LOG_D(PHY,"[UE  %d] frame %d, slot %d, restarting PHY!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame);
+    //   first_run = 1;
+
+    if (abstraction_flag ==0 ) {
+      openair_daq_vars.mode = openair_NOT_SYNCHED;
+      phy_vars_ue->UE_mode[eNB_id] = NOT_SYNCHED;
+      openair_daq_vars.sync_state=0;
+    }else {
+      phy_vars_ue->UE_mode[eNB_id] = PRACH;
+    }
+#ifdef CBMIMO1
+    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+#endif //CBMIMO1
+    phy_vars_ue->frame = -1;
+    openair_daq_vars.synch_wait_cnt=0;
+    openair_daq_vars.sched_cnt=-1;
+    openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+    
+    
+    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
+    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors=0;
+    
+    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors = 0;
+    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_missed = 0;
+    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false  = 0;    
+    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received = 0;    
+    
+    phy_vars_ue->dlsch_errors[eNB_id] = 0;
+    phy_vars_ue->dlsch_errors_last[eNB_id] = 0;
+    phy_vars_ue->dlsch_received[eNB_id] = 0;
+    phy_vars_ue->dlsch_received_last[eNB_id] = 0;
+    phy_vars_ue->dlsch_fer[eNB_id] = 0;
+    phy_vars_ue->dlsch_SI_received[eNB_id] = 0;
+    phy_vars_ue->dlsch_ra_received[eNB_id] = 0;
+    phy_vars_ue->dlsch_SI_errors[eNB_id] = 0;
+    phy_vars_ue->dlsch_ra_errors[eNB_id] = 0;
+    //phy_vars_ue->total_TBS[eNB_id] = 0;
+    //phy_vars_ue->total_TBS_last[eNB_id] = 0;
+    //phy_vars_ue->bitrate[eNB_id] = 0;
+    //phy_vars_ue->total_received_bits[eNB_id] = 0;
+}
+
+
 void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 abstraction_flag) {
 
   int pbch_tx_ant=0;
@@ -1229,6 +1286,8 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     frame_tx += ((int)(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1]&0xfc));
     frame_tx += pbch_phase;
 
+    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id,
+				   phy_vars_ue->UE_mode[eNB_id]==NOT_SYNCHED ? 1 : 0);
 #ifdef EMOS
     emos_dump_UE.frame_tx = frame_tx;
     //emos_dump_UE.mimo_mode = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1];
@@ -1294,56 +1353,17 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_fer = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors - phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_last;
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_last = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors;
   }
-  /*
+  
 #ifdef DEBUG_PHY_PROC  
-  debug_LOG_D(PHY,"[UE  %d] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
+  LOG_D(PHY,"[UE  %d] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
 	    phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, 
 	    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors, 
 	    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq);
 #endif 
-  */
-  if (phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq>20) {
-    LOG_D(PHY,"[UE  %d] frame %d, slot %d, PBCH consecutive errors > 20, going out of sync!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
-    first_run = 1;
+  
 
-    if (abstraction_flag ==0 ) {
-      openair_daq_vars.mode = openair_NOT_SYNCHED;
-      phy_vars_ue->UE_mode[eNB_id] = NOT_SYNCHED;
-      openair_daq_vars.sync_state=0;
-    }else {
-      phy_vars_ue->UE_mode[eNB_id] = PRACH;
-    }
-#ifdef CBMIMO1
-    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-#endif //CBMIMO1
-    phy_vars_ue->frame = -1;
-    openair_daq_vars.synch_wait_cnt=0;
-    openair_daq_vars.sched_cnt=-1;
-    openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
-    
-    
-    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
-    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors=0;
-    
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors = 0;
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_missed = 0;
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false  = 0;    
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received = 0;    
-    
-    phy_vars_ue->dlsch_errors[eNB_id] = 0;
-    phy_vars_ue->dlsch_errors_last[eNB_id] = 0;
-    phy_vars_ue->dlsch_received[eNB_id] = 0;
-    phy_vars_ue->dlsch_received_last[eNB_id] = 0;
-    phy_vars_ue->dlsch_fer[eNB_id] = 0;
-    phy_vars_ue->dlsch_SI_received[eNB_id] = 0;
-    phy_vars_ue->dlsch_ra_received[eNB_id] = 0;
-    phy_vars_ue->dlsch_SI_errors[eNB_id] = 0;
-    phy_vars_ue->dlsch_ra_errors[eNB_id] = 0;
-    //phy_vars_ue->total_TBS[eNB_id] = 0;
-    //phy_vars_ue->total_TBS_last[eNB_id] = 0;
-    //phy_vars_ue->bitrate[eNB_id] = 0;
-    //phy_vars_ue->total_received_bits[eNB_id] = 0;
-  }
+ 
+  
   
 }
 
@@ -1723,7 +1743,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	       );
     }
 
-    lte_ue_measurement_procedures(last_slot,l,phy_vars_ue,eNB_id,abstraction_flag);
+    if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_DL)
+      lte_ue_measurement_procedures(last_slot,l,phy_vars_ue,eNB_id,abstraction_flag);
 
 
     if ((last_slot==1) && (l==4-phy_vars_ue->lte_frame_parms.Ncp)) {
@@ -2367,8 +2388,16 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 				  eNB_id);
     if (ret == CONNECTION_LOST) {
       LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",phy_vars_ue->Mod_id,
-	    phy_vars_ue->frame,next_slot>>1)
+	    phy_vars_ue->frame,next_slot>>1);
       phy_vars_ue->UE_mode[eNB_id] = PRACH;
+      exit(-1);
+    }
+    else if (ret == PHY_RESYNCH) {
+      LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, trying to resynch\n",
+	    phy_vars_ue->Mod_id,
+	    phy_vars_ue->frame,next_slot>>1);
+      phy_vars_ue->UE_mode[eNB_id] = RESYNCH;
+      exit(-1);
     }
   }
   if (last_slot == 19)

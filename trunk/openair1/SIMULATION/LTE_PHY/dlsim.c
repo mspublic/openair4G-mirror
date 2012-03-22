@@ -204,7 +204,7 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
-  fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
+//  fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
 
   // DLSCH I/Q
   j=0;
@@ -223,8 +223,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
-  fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
+  //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
+  //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
 
   // DLSCH I/Q
   j=0;
