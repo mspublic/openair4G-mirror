@@ -234,14 +234,15 @@ int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
 }
 
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
-u16 T310[8] = {100,200,300,400,600,1000,1500,2000};
+u16 T310[8] = {0,50,100,200,500,1000,2000};
+u16 N310[8] = {1,2,3,4,6,8,10,20};
+u16 N311[8] = {1,2,3,4,6,8,10,20};
 
 rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
 
   if (UE_rrc_inst[Mod_id].Info[eNB_index].State!=RRC_CONNECTED) {
+    LOG_D(RRC,"Timer 310 expired, going to RRC_IDLE\n");
     UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
-    UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
-    UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
     UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
     
     UE_rrc_inst[Mod_id].Srb0[eNB_index].Rx_buffer.payload_size=0;
@@ -259,7 +260,7 @@ rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
     }
   }
   else {  // Restablishment procedure
-
+    LOG_D(RRC,"Timer 310 expired, trying RRCRestablishment ...\n");    
   }
 }
     
@@ -268,18 +269,30 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   if(eNB_flag == 0) {
     // check timers
     
-    if (UE_rrc_inst[Mod_id].Info[index].T300_active) {
+    if (UE_rrc_inst[Mod_id].Info[index].T300_active==1) {
       if ((UE_rrc_inst[Mod_id].Info[index].T300_cnt % 10) == 0)
 	LOG_D(RRC,"[UE %d][RAPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
 	      UE_rrc_inst[Mod_id].Info[index].T300_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T300_cnt == T300[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t300]) {
 	UE_rrc_inst[Mod_id].Info[index].T300_active = 0;
+	// ALLOW CCCH to be used
+	UE_rrc_inst[Mod_id].Srb0[index].Tx_buffer.payload_size=0;
+	rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,index);
 	return(RRC_ConnSetup_failed);
       }
       UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
     }
+    if (UE_rrc_inst[Mod_id].sib2[index])
+      if (UE_rrc_inst[Mod_id].Info[index].N310_cnt==N310[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n310]) {
+	UE_rrc_inst[Mod_id].Info[index].T310_active=1;
+      }
     
-    if (UE_rrc_inst[Mod_id].Info[index].T310_active) {
+    if (UE_rrc_inst[Mod_id].Info[index].T310_active==1) {
+      if (UE_rrc_inst[Mod_id].Info[index].N311_cnt ==
+	  N311[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n311]) {
+	UE_rrc_inst[Mod_id].Info[index].T310_active=0;
+	UE_rrc_inst[Mod_id].Info[index].N311_cnt=0;	
+      }
       if ((UE_rrc_inst[Mod_id].Info[index].T310_cnt % 10) == 0)
 	LOG_D(RRC,"[UE %d] Frame %d T310 Count %d ms\n",Mod_id,frame,
 	      UE_rrc_inst[Mod_id].Info[index].T310_cnt);

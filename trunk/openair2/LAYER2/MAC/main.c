@@ -86,7 +86,7 @@ void dl_phy_sync_success(unsigned char Mod_id,
     }
   }
   else {
-    // mac_in_sync(Mod_id,eNB_index);
+    mac_in_sync_ind(Mod_id,frame,eNB_index);
   }
 
 }

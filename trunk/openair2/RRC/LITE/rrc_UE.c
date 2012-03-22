@@ -104,8 +104,6 @@ char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
   UE_rrc_inst[Mod_id].Info[eNB_index].T300_active = 0;
   UE_rrc_inst[Mod_id].Info[eNB_index].T304_active = 0;
   UE_rrc_inst[Mod_id].Info[eNB_index].T310_active = 0;
-  UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
-  UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
   UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
   UE_rrc_inst[Mod_id].Srb0[eNB_index].Active=0;
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Active=0;
