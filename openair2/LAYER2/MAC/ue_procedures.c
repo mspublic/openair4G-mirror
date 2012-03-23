@@ -114,24 +114,23 @@ unsigned char *parse_header(unsigned char *mac_header,
   while (not_done==1) {
 
     if (((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E == 0) {
-      printf("E=0\n");
+      //      printf("E=0\n");
       not_done = 0;
     }
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
     if (lcid < UE_CONT_RES) {
-      printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
+      //printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
       if (not_done==0) {
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
       }
       else {
-	if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
-	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
-	  mac_header_ptr += 2;
-	}
-	else {
+	if (((SCH_SUBHEADER_LONG *)mac_header_ptr)->F == 1) {
 	  length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
 	  mac_header_ptr += 3;
+	}  else {	//if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
+	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
+	  mac_header_ptr += 2;
 	}
       }
 #ifdef DEBUG_HEADER_PARSING
@@ -324,7 +323,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 		       NULL);
     }
     else if (rx_lcids[i] == DTCH) {
-      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d, RRC message (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
+      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
       mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
 		       0,
