@@ -45,7 +45,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
-
+#include <string.h>
 #include "omg.h"
 
 // sortation of bytes forwards or backwards?------------------

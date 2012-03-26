@@ -169,13 +169,13 @@ Pair move_trace_node(NodePtr node, double cur_time) {
 	Exnode* next_loc=NULL;
 	next_loc=get_next_position(table,node->ID);
 
+	if (next_loc==NULL) return NULL; //Option 1 : no job, I am done returning null indicating no job anymore
+
 	if ((next_loc->time - cur_time) >= eps){ // this is for broken mobility description where node has to begin trip at some later time from same current position
 		reset_visit_status(table,next_loc->time,node->ID);
 		float sleep_duration=(next_loc->time-cur_time-eps);
 		return sleep_trace_node(node,cur_time,sleep_duration); // correct this send the duration of sleep
 	}
-
-	if (next_loc==NULL) return NULL; //Option 1 : no job, I am done returning null indicating no job anymore
 	
 	//if (next_loc==NULL) return sleep_trace_node(node, cur_time,999);// Option 2: I am done, no more discription available, i am sleeping long
 	//	else{ //remember to enable "}" at the end

@@ -107,7 +107,7 @@ void init_mobility_generator(omg_global_param omg_param_list) {
 
   case SUMO: 
     start_sumo_generator(omg_param_list);
-    LOG_D(OMG," --------OMG will interface with SUMO for mobility generation-------- \n");
+    //LOG_D(OMG," --------OMG will interface with SUMO for mobility generation-------- \n");
     break;
   
   default:
@@ -116,11 +116,13 @@ void init_mobility_generator(omg_global_param omg_param_list) {
 }
 
 void update_nodes(double cur_time){
-LOG_D(OMG, "UPDATE NODES" );
+printf("UPDATE NODES" );
+//LOG_D(OMG, "UPDATE NODES" );
 int i = 0;
 for (i=(STATIC+1); i<MAX_NUM_MOB_TYPES; i++){ 
       if (Node_Vector[i] != NULL){
-        LOG_D(OMG, " Mob model to update is: %d \n ", i); 
+       printf(" Mob model to update is: %d \n ", i);
+       //LOG_D(OMG, " Mob model to update is: %d \n ", i); 
         update_node_vector(i, cur_time);
       }
     }
@@ -141,11 +143,13 @@ void update_node_vector(int mobility_type, double cur_time){
     update_trace_nodes(cur_time);
     break;     
   case SUMO:  
+    printf("in SUMO case \n");
     update_sumo_nodes(cur_time);
     break;
 
   default:
-    LOG_N(OMG, "STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
+    printf("STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
+    //LOG_N(OMG, "STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
   }
 }
 
@@ -170,7 +174,8 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
       Vector = Node_Vector[TRACE];
       break;   
     case SUMO:
-      LOG_D(OMG,"getting positions from SUMO\n");
+     // LOG_D(OMG,"getting positions from SUMO\n");
+      printf("getting positions from SUMO\n");
       Vector = get_sumo_positions_updated(cur_time);
      // Vector = Node_Vector[SUMO];
       break;
@@ -385,7 +390,7 @@ void usage(void){
 		"\n\t-j: assign minimum duration of journey (min_journey_time)"\
 		"\n\t-S: assign maximum speed "\
 		"\n\t-s: assign minimum speed"\
-		"\n\t-g: choose generator (SATIC: 0x00, RWP: 0x01 or RWALK 0x02)\n"\
+		"\n\t-g: choose generator (STATIC: 0x00, RWP: 0x01, RWALK: 0x02, TRACE: 0x03 or SUMO: 0x04)\n"\
 		"\n\t-e: choose seed \n"\
 	);	
 	exit(0);
@@ -487,7 +492,7 @@ int main(int argc, char *argv[]) {
 	NodePtr my_node = NULL;
  	int my_ID = 0;
         double emu_info_time;
-
+	omg_param_list.nodes = 200;
 	omg_param_list.min_X = 0;
 	omg_param_list.max_X = 100;
 	omg_param_list.min_Y = 0;
@@ -500,21 +505,77 @@ int main(int argc, char *argv[]) {
 	omg_param_list.max_azimuth = 360; 
 	omg_param_list.min_sleep = 0.1;
 	omg_param_list.max_sleep = 5.0;
+	omg_param_list.mobility_file = "TRACE/example_trace.tr"; 
+        omg_param_list.sumo_command = "sumo-gui"; 
+        omg_param_list.sumo_config = "SUMO/SCENARIOS/traci.scen.sumo.cfg"; 
+	omg_param_list.sumo_start = 0.0; 
+        omg_param_list.sumo_end = 200.0; 
+        omg_param_list.sumo_step = 1.0; 
+        omg_param_list.sumo_host = "localhost"; 
+        omg_param_list.sumo_port = 8890; 
 	
-	get_options(argc, argv);
-	if(omg_param_list.max_X == 0.0 || omg_param_list.max_Y == 0.0  ) {
+        get_options(argc, argv);
+
+        if(omg_param_list.max_X == 0.0 || omg_param_list.max_Y == 0.0  ) {
 		usage();
 		exit(1);
 	}
 
-       // init_omg_global_params(); //initialization de Node_Vector et Job_Vector
+        init_omg_global_params(); //initialization de Node_Vector et Job_Vector
 
-        //omg_param_list.mobility_type = STATIC;
-	//omg_param_list.nodes_type = eNB;
-	//init_mobility_generator(omg_param_list); // initial positions + sleep  /// need to indicate time of initialization
+//char sumo_line[300];
+
+//printf("TEST %s \n", sumo_line);
+
+//  sprintf(sumo_line, "%s -c %s  -b %d -e %d --remote-port %d --step-length %d -v ",omg_param_list.sumo_command, omg_param_list.sumo_config, omg_param_list.sumo_start, omg_param_list.sumo_end, omg_param_list.sumo_port, omg_param_list.sumo_step);
+  
+//printf("%s \n",sumo_line);
+
+//pid_t pid;
+//pid_t cpid;
+ // char *sumo_arg[] = { omg_param_list.sumo_command, sumo_line, NULL };
+//char *sumo_arg[] = { "ls -la", NULL };
+//  char *sumo_env[] = { NULL };
+
+//printf("%s \n",omg_param_list.sumo_command);
+
+  //execve("ls -la",sumo_arg, sumo_env);
+
+  //execve(omg_param_list.sumo_command, sumo_arg, sumo_env);
+  //exec(omg_param_list.sumo_command);
+// if ( (pid = fork()) == 0)
+//  {
+    // Start SUMO in the child process
+   //execve(omg_param_list.sumo_command, sumo_arg, sumo_env);// starts SUMO in a child proces
+//        system("sumo-gui");
+        
+   //childs addresss space
+//  }
+//printf("%d \n",pid);
+//pid++;
+//pid++;
+//printf("%d \n",pid);
+//printf("%d \n",cpid);
+
+
+//char kill_line[300];
+
+//printf("TEST %s \n", sumo_line);
+
+//sprintf(kill_line, "kill(%d)",cpid);
+  
+//printf("%s \n",kill_line);
+
+//system(kill_line); 
+
+
+        omg_param_list.mobility_type = SUMO;
+	omg_param_list.nodes_type = UE;
+	init_mobility_generator(omg_param_list); // initial positions + sleep  /// need to indicate time of initialization
 		//LOG_I(OMG, "*****DISPLAY NODE LIST********\n"); 
 		//display_node_list(Node_Vector[0]);
-		/*LOG_T(OMG, "********DISPLAY JOB LIST********\n"); 
+		
+                /*LOG_T(OMG, "********DISPLAY JOB LIST********\n"); 
 		display_job_list(Job_Vector);
 		Job_Vector = quick_sort (Job_Vector);
 		LOG_T(OMG, "**********DISPLAY JOB LIST AFTER SORTING**********\n"); 
@@ -554,23 +615,30 @@ int main(int argc, char *argv[]) {
 
 	/////////////// to call by OCG
  	
-	 // for (emu_info_time = 1.0 ; emu_info_time <= 10.0; emu_info_time+=1.0/100){
-				  
-	//double emu_info.time += 1.0/100; // emu time in ms
-	  // for (i=(STATIC+1); i<MAX_NUM_MOB_TYPES; i++){ //
-	  //     if (Node_Vector[i] != NULL){
-	//	  LOG_D(OMG, " mob model  %d \n ", i); 
-	  //        update_nodes(i ,emu_info_time);
+ for (emu_info_time = 1.0 ; emu_info_time <= 200.0; emu_info_time+=1.0){
+	printf("updating node positions\n");
+        update_nodes(emu_info_time*1000);  
+  	//double emu_info.time += 1.0/100; // emu time in ms
+	/*   for (i=(STATIC+1); i<MAX_NUM_MOB_TYPES; i++){ //
+	       if (Node_Vector[i] != NULL){
+		  LOG_D(OMG, " mob model  %d \n ", i); 
+	          update_nodes(i ,emu_info_time);
 	       }
-	      //else {LOG_D( "nodes are STATIC\n"); }
-	    }		
-	  }
+	      else {LOG_D( "nodes are STATIC\n"); }
+	    }*/
+          printf(" **********asking for positions in SUMO **********\n ");
+          Current_positions = get_current_positions(SUMO, UE, emu_info_time*1000); // type: enb, ue, all	
+         if(Current_positions !=NULL) {
+           printf(" **********Current_positions**********\n ");
+            display_node_list(Current_positions);
+         }	
+  }
 	
 	/*LOG_D(OMG, " **********DISPLAY JOB LIST**********\n "); 
         display_job_list(Job_Vector);
 	emu_info_time = 10.0;*/
 
-	//Current_positions = get_current_positions(RWP, emu_info_time); // type: enb, ue, all 
+	//Current_positions = get_current_positions(SUMO, emu_info_time); // type: enb, ue, all 
 	//LOG_D(OMG, " **********Current_positions**********\n "); 
 	//display_node_list(Current_positions);
 	//if (Current_positions == NULL)

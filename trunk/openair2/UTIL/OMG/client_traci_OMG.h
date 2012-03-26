@@ -43,7 +43,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include "omg.h" 
 
 //#include "TraCIConstants.h"
@@ -138,6 +138,11 @@ void init(int max_sim_time);
  * \brief process the subscription values sent by SUMO at each SUMO time step
  */
 void processSubscriptions(void);
+
+void GetSpeed(NodePtr node, char * sumo_id);
+
+void GetPosition(NodePtr node, char * sumo_id);
+
 
 #endif 
 
