@@ -172,7 +172,7 @@ char * readString(){
 
                 int i=0;
 		int len = readInt();
-                 printf("string length %d \n",len);
+                 //printf("string length %d \n",len);
 		descLen = len;
                 char *tmp = (char *)malloc(sizeof(char) * (len));
                 char *ret = tmp;
@@ -207,17 +207,17 @@ String_list readStringList(String_list vector){
    descLen = len;
    String_list entry = NULL;
    
-   printf("Reading stringList...number of items %d\n",len);
+  // printf("Reading stringList...number of items %d\n",len);
    for (i; i < len; i++) {
       if (vector->string == NULL) {
          char *tmp = readString();
-         printf("node ID %s\n",tmp);
+         //printf("node ID %s\n",tmp);
          vector->string = tmp;//readString();
       }
       else {
         entry = (String_list)malloc(sizeof(String_list));
         char *tmp = readString();
-         printf("node ID %s\n",tmp);
+         //printf("node ID %s\n",tmp);
         entry->string = tmp;//readString();
         //entry->string = readString();
         entry->next = NULL;

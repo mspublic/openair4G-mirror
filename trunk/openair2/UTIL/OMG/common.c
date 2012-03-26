@@ -117,6 +117,43 @@ Node_list add_entry(NodePtr node, Node_list Node_Vector){
     }
 }
 
+Node_list remove_node_entry(NodePtr node, Node_list Node_Vector){
+  Node_list  list = Node_Vector;
+  Node_list tmp, toRemove;
+  if (list == NULL){  
+    //printf("Node_list is NULL\n");
+    return NULL;
+  }
+  if(list->node->ID == node->ID) {
+    // TODO delete the entry
+    toRemove = list;
+    printf("removed entry for node %d \n",list->node->ID);
+    if(list->next ==NULL) {
+    	Node_Vector = NULL;
+        return NULL;
+    }
+    else {
+      Node_Vector = list->next;
+    }
+  } 
+  else{
+     while (list->next !=NULL) {
+       tmp = list;
+       if(list->next->node->ID == node->ID) {
+          toRemove = tmp; // TODO delete the entry
+          tmp = list->next->next;
+          if(tmp !=NULL) {
+             list->next = tmp;
+          }
+          else{
+             list->next = NULL; 
+          }
+       }
+     }
+  }
+  return Node_Vector;
+}
+
 
 // display list of nodes
 void display_node_list(Node_list Node_Vector){
@@ -242,20 +279,23 @@ NodePtr find_node(Node_list list, int nID, int node_type){
   Node_list  current;
  
   if (list == NULL){  
+    printf(" Node_LIST for nodeID %d is NULL \n ",nID);
     return NULL;
   } 
   else{                             //start search
     current = list;
-    while ((current != NULL) && ((current->node->ID != nID) || (current->node->type != node_type ))){
+    while ((current != NULL) && ((current->node->ID != nID) || (current->node->generator != node_type ))){
       current = current->next;
     }
     //holds: current = NULL or  type != node_type or.., but not both
     if (current ==NULL) { 
       found= 1  ;
-      LOG_D(OMG," Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
-      return NULL;
+      //LOG_D(OMG," Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
+       printf(" Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
+       return NULL;
     }              //value not found
     else{
+      //printf(" found a node for nodeID %d  \n ",nID);
       return current->node;
     }
     return NULL;
@@ -281,8 +321,9 @@ Node_list clear_node_list(Node_list list) {
 
 Node_list reset_node_list(Node_list list) {
   Node_list  tmp;
-
+  Node_list last = list;
   if (list == NULL){  
+    //printf("Node_list is NULL\n");
     return NULL;
   } 
   else{
@@ -290,11 +331,13 @@ Node_list reset_node_list(Node_list list) {
        tmp = list;
        list = list->next;
        tmp->node = NULL;
-       free(tmp);
+       //free(tmp);
      }
      list->node = NULL; // clearing the last one
+     //free(last);
   }
-  return list;
+ // list = NULL;
+  return list; //NULL; // JHNOTE: should clear the last memory
 }
 
 String_list clear_String_list(String_list list) {
