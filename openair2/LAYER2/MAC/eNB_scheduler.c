@@ -642,10 +642,11 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
     //msg("MAC num sdu %d len sdu %d\n",num_sdus, sdu_lengths[i]);
     if (first_element>0) {
       mac_header_ptr->E = 1;
-      //msg("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+      /*msg("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+      */
       mac_header_ptr+=last_size;
       //msg("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
     }
