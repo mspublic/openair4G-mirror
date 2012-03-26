@@ -157,7 +157,7 @@ int extractCommandStatus(storage *s, unsigned char commandId, char * description
 	}
 
 	// validate the the message response from SUMO
-	int storageLength_ = storageLength(s);
+	//int storageLength_ = storageLength(s);
 
 	// tracker currently points to the begining of the recieved data in the linked list        
         tracker = s;
@@ -166,8 +166,10 @@ int extractCommandStatus(storage *s, unsigned char commandId, char * description
 	int commandLength = readUnsignedByte();
         
 	// CommandID needs to fit
-        unsigned char rcvdCommandId ;
-	if (rcvdCommandId = (readChar() != commandId))
+        int rcvdCommandId = readUnsignedByte();
+	printf("received command %d",rcvdCommandId);
+	//if (rcvdCommandId = ((int)readUnsignedByte() != (int)commandId))
+        if (rcvdCommandId != (int)commandId)
 	{
                 printf("%d",rcvdCommandId);
                 //LOG_E(OMG, " Server answered to command\n");
@@ -260,6 +262,7 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
     	// send request message
     	sendExact(storageLength(storageStart));
     	// receive answer message
+        //receiveExact();
     	if (extractCommandStatus(receiveExact(), CMD_GET_VEHICLE_VARIABLE, description)){//<---RESPONSE_GET_VEHICLE_VARIABLE
 	
     	// validate result state
@@ -272,9 +275,14 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
             return;
 	}
 
-	int res = readUnsignedByte();
-	int Length = readInt();
+	//int res = readUnsignedByte();
+        int length = readUnsignedByte();
+        if(length ==0)
+	  length = readInt();
        	int cmdId =readUnsignedByte();
+        
+        printf(" CMD is %d\n",cmdId);
+
         if (cmdId != (CMD_GET_VEHICLE_VARIABLE+0x10)) {
 		//LOG_E(OMG, " Wrong response recieved\n");
                  printf(" Wrong response recieved\n");
@@ -284,7 +292,16 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
 	char* rs = readString();
 
         int valueDataType = readUnsignedByte();
-     
+        if (valueDataType == POSITION_2D) {
+	  printf("expecting POSITION INFO\n");
+        }
+        else if (valueDataType == TYPE_DOUBLE) {
+          printf("expecting DOUBLE INFO\n");
+        }
+        else {
+          printf("expecting OTHER INFO\n");
+        }
+        	//printf( " Double value: %f",doublev);
         //readAndReportTypeDependent(inMsg, valueDataType);
     
 	/*if (valueDataType == TYPE_DOUBLE) {
@@ -389,6 +406,8 @@ void GetPosition(NodePtr node, char * sumo_id)
     commandGetVehicleVariable(sumo_id, VAR_POSITION);
     double x_double = readDouble();
     double y_double = readDouble();
+    printf("Node %d has position X: %f and Y: %f \n",node->ID, x_double, y_double);
+
     node->X_pos = x_double;
     node->Y_pos = y_double;
 }

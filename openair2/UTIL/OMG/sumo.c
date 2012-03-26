@@ -139,7 +139,8 @@ sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_
     node->ID = n_id; // this is OAI ID, not SUMO
     node->type = omg_param_list.nodes_type; // UE eNB...
     node->generator = omg_param_list.mobility_type; // SUMO
-    
+    node->mob = mobility;
+
     Node_Vector[SUMO] = (Node_list) add_entry(node, Node_Vector[SUMO]);     
   }
   
@@ -201,11 +202,19 @@ void update_IDs() {
          // LOG_I(OMG, "Reached the Maximum of OAI nodes to be mapped to SUMO\n");
         return;  // stopping mapping as the maximum of OAI nodes has been reached;
       }
+      
+     Map_list tmp =  id_manager->map_oai2sumo;
+     char *sumo_id = get_sumo_entry(0, tmp);
+  
+     if(sumo_id !=NULL) {
+          printf(" 3: ACTIVATE and MAP: OAI ID is: %d and SUMO ID is %s \n",0, sumo_id);  
+      } 
     }
   }
   while (tmp_departed->next != NULL) {
     printf("2 main is not null \n");
-    char tmp_string [strlen(tmp_departed->string)];
+    //char tmp_string [strlen(tmp_departed->string)];
+    char * tmp_string = malloc(sizeof(strlen(tmp_departed->string)));
     strcpy(tmp_string, tmp_departed->string);
     //char *tmp_string = tmp_departed->string;
     int OAI_ID = get_oaiID_by_SUMO(tmp_string, id_manager);
@@ -245,21 +254,22 @@ bool desactivate_and_unmap(char *sumo_id) {
 
 bool activate_and_map(char *sumo_id) {
   MapPtr map = create_map();
-  MapPtr map2 = create_map();
 
   NodePtr active_node = get_first_inactive_OAI_node(Node_Vector[SUMO], SUMO);
   if(active_node != NULL) {  // found an inactive OAI node; will be mapped to SUMO
     active_node->mobile = 1; // now node is active in SUMO
  
-    char * copy_sumo_id = malloc(sizeof((int)strlen(sumo_id)));
-    copy_sumo_id = strcpy( copy_sumo_id, sumo_id);
+   
+
+    //char * copy_sumo_id = malloc(sizeof((int)strlen(sumo_id)));
+    //copy_sumo_id = strcpy( copy_sumo_id, sumo_id);
 		
-    copy_sumo_id = sumo_id;
+    //copy_sumo_id = sumo_id;
     map->oai_id = active_node->ID;
-    map->sumo_id = sumo_id;//sumo_id;
+    map->sumo_id = malloc(sizeof((int)strlen(sumo_id)));
+    strcpy(map->sumo_id, sumo_id);
+    // map->sumo_id = sumo_id;//sumo_id;
      
-    map2->oai_id = active_node->ID;
-    map2->sumo_id = copy_sumo_id;//sumo_id;	
     
     printf("added a mapping between oai ID:  %d and SUMO ID: %s \n",map->oai_id, map->sumo_id); 
     id_manager->map_sumo2oai = add_map_entry(map, id_manager->map_sumo2oai);
@@ -269,8 +279,8 @@ bool activate_and_map(char *sumo_id) {
     if (id_manager->map_oai2sumo == NULL) {
        printf("uninitialized oai2sumo map\n");
     }
-    id_manager->map_oai2sumo = add_map_entry(map2, id_manager->map_oai2sumo); //map_sumo2oai
-	printf("added a new oai2sumo entry\n");
+    id_manager->map_oai2sumo = add_map_entry(map, id_manager->map_oai2sumo); //map_sumo2oai
+    printf("added a new oai2sumo entry\n");
 
      Map_list tmp =  id_manager->map_oai2sumo;
      char *sumo_id = get_sumo_entry(active_node->ID, tmp);
@@ -278,6 +288,7 @@ bool activate_and_map(char *sumo_id) {
      if(sumo_id !=NULL) {
           printf(" ACTIVATE and MAP: OAI ID is: %d and SUMO ID is %s \n",active_node->ID, sumo_id);  
       }   
+
   return true;
   }
   else {
