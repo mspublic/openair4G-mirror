@@ -109,7 +109,7 @@ unsigned char readChar(){
        // if (tracker!=NULL)
 //	{
         	unsigned char hd = tracker->item;
-        	        
+        	// printf("char: %d \n",(int)hd);        
         	tracker = tracker->next;
                	return hd;
 	//}else
@@ -172,12 +172,19 @@ char * readString(){
 
                 int i=0;
 		int len = readInt();
+                 printf("string length %d \n",len);
 		descLen = len;
                 char *tmp = (char *)malloc(sizeof(char) * (len));
-		for (i; i < len; i++)
-			*tmp++ = (char) readChar();
-                        
-		return tmp;
+                char *ret = tmp;
+               //char tmp [len];
+		for (i; i < len; i++) {    
+		        //char test = (char) readChar();
+                        //printf(" printing char %c \n",test);
+ 	                //*tmp++ = test;
+                        //tmp[i] = test;  
+                       *tmp++ = (char) readChar();
+		}
+		return ret;
 
 }
 
@@ -199,14 +206,20 @@ String_list readStringList(String_list vector){
    int len = readInt();
    descLen = len;
    String_list entry = NULL;
-
+   
+   printf("Reading stringList...number of items %d\n",len);
    for (i; i < len; i++) {
-      if (vector->string == NULL)
-         vector->string = readString();
-         
+      if (vector->string == NULL) {
+         char *tmp = readString();
+         printf("node ID %s\n",tmp);
+         vector->string = tmp;//readString();
+      }
       else {
         entry = (String_list)malloc(sizeof(String_list));
-        entry->string = readString();
+        char *tmp = readString();
+         printf("node ID %s\n",tmp);
+        entry->string = tmp;//readString();
+        //entry->string = readString();
         entry->next = NULL;
 
         if(vector !=NULL) {

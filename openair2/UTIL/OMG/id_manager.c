@@ -38,7 +38,8 @@
 * \warning
 */
 
-#include <id_manager.h>
+#include "id_manager.h"
+#include <stdio.h>
 #include <string.h>
 
 MapPtr create_map(void) {
@@ -50,22 +51,26 @@ MapPtr create_map(void) {
 IDManagerPtr create_IDManager(void) {
 	IDManagerPtr ptr;
 	ptr = malloc(sizeof(id_manager_struct));
+        ptr->map_oai2sumo = NULL;
+        ptr->map_sumo2oai = NULL;
 	return ptr;
 }
-
 
 Map_list add_map_entry(MapPtr map, Map_list Map_Vector){
     Map_list entry = malloc(sizeof(map_list_struct));
     entry->map = map;
     entry->next = NULL;
     if (Map_Vector == NULL) {
+         printf("Map-vector is NULL, assigning a new entry\n");
         return entry;
     }
     else {
         Map_list tmp = Map_Vector;
         while (tmp->next != NULL){
+           printf("getting the tail...\n");
             tmp = tmp->next;
         }
+        printf("got it...adding entry...\n");
         tmp->next = entry;
 	
         return Map_Vector;
@@ -100,11 +105,14 @@ char* get_SumoID_by_OAI(int oai_id, IDManagerPtr ID_manager) {
 }
 
 int get_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager) {
-  if(ID_manager->map_sumo2oai == NULL)
-    return -1;
+  if(ID_manager->map_sumo2oai == NULL) {
+     printf("ID_Manager: get_oaiID_by_SUMO: uninitialized map\n");
+     return -1;
+}
 
   else {
-    return get_oai_entry(sumo_id, ID_manager->map_sumo2oai);
+      printf("ID_Manager: get_oaiID_by_SUMO: OAI_entry is: %d \n", get_oai_entry(sumo_id, ID_manager->map_sumo2oai));
+     return get_oai_entry(sumo_id, ID_manager->map_sumo2oai);
   } 
 }
 
@@ -119,13 +127,27 @@ int remove_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager) {
 
 char* get_sumo_entry(int oai_id, Map_list Map_Vector) {
     Map_list tmp = Map_Vector;
-    if (tmp->map->oai_id = oai_id)
-      return tmp->map->sumo_id;
+    
+    if(Map_Vector == NULL) {
+       printf("bug here..should not be NULL");
+    }
+     
+    if(Map_Vector->map == NULL) {
+       printf("bug here..map should have been initialized");
+    } 
+    
+    if (tmp->map->oai_id == oai_id) {
+       printf("got it...at the head and value is %s \n",tmp->map->sumo_id);
+       return tmp->map->sumo_id;
+    }
     else {
+      printf("here...\n");
       while (tmp->next != NULL){
             tmp = tmp->next;
-            if (tmp->map->oai_id = oai_id)
-      		return tmp->map->sumo_id; 
+            if (tmp->map->oai_id == oai_id) {
+      		printf("got it...in main value is %s \n",tmp->map->sumo_id);
+                return tmp->map->sumo_id; 
+	    }
       }
     }
     return NULL;

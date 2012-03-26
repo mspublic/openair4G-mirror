@@ -54,9 +54,10 @@ int connection_(char *hoststr,int portno){
 	
 	
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-             LOG_E(OMG, " Socket Error\n");
+            // LOG_E(OMG, " Socket Error\n");
             
         }
+printf("Socket Created\n");
 	server_addr.sin_family = AF_INET;     
         server_addr.sin_port = htons(portno);   
         server_addr.sin_addr = *((struct in_addr *)host->h_addr);
@@ -65,10 +66,11 @@ int connection_(char *hoststr,int portno){
         if (connect(sock, (struct sockaddr *)&server_addr,
                     sizeof(struct sockaddr)) < 0) 
         {
-            LOG_E(OMG, " Connection Error\n");
+            printf("Connection Failed\n");  
+            return -1;//LOG_E(OMG, " Connection Error\n");
             
         }  
-	        //printf("Finshed connecting\n");  
+	        printf("Finshed connecting\n");  
         return 1;
 }
 

@@ -78,7 +78,9 @@ void display_job_list(Job_list Job_Vector){
    else{
         //LOG_D(OMG, "first_Job_time in Job_Vector %f\n", Job_Vector->pair->a);
      while (tmp != NULL){
-     LOG_D(OMG, "node %d \ttime %.2f\n", tmp->pair->b->ID, tmp->pair->a);
+     	if ((tmp->pair != NULL))
+     		LOG_D(OMG, "node %d \ttime %.2f\n", tmp->pair->b->ID, tmp->pair->a);
+
         tmp = tmp->next;
 
     }

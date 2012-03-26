@@ -45,7 +45,7 @@
 #include "omg.h"
 
 #define frand() ((double) rand() / (RAND_MAX+1))
-#ifndef STANDALONE
+//#ifndef STANDALONE
 mapping nodes_type[] =
 {
     {"eNB", eNB},
@@ -69,7 +69,7 @@ mapping mob_type[] =
     {"SUMO", SUMO},    
     {NULL, -1}
 };
-#endif
+//#endif
 NodePtr create_node(void) {
 	NodePtr ptr;
 	ptr = malloc(sizeof(node_struct));
@@ -122,10 +122,18 @@ Node_list add_entry(NodePtr node, Node_list Node_Vector){
 void display_node_list(Node_list Node_Vector){
     Node_list tmp = Node_Vector;
     if (tmp == NULL){
-      LOG_D(OMG, "Empty Node_list\n");
+      printf("Empty Node_list\n");
+      //LOG_D(OMG, "Empty Node_list\n");
     }	
     while (tmp != NULL){
-  	 LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
+  	 /*LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
+		map_int_to_str(mob_type, tmp->node->generator),
+		map_int_to_str(nodes_type, tmp->node->type),  
+		tmp->node->ID,
+		map_int_to_str(nodes_status, tmp->node->mobile), 
+		tmp->node->X_pos,
+		tmp->node->Y_pos );*/
+         printf("[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
 		map_int_to_str(mob_type, tmp->node->generator),
 		map_int_to_str(nodes_type, tmp->node->type),  
 		tmp->node->ID,
@@ -140,7 +148,15 @@ void display_node_list(Node_list Node_Vector){
 }
 
 void display_node_position(int ID, int generator, int type, int mobile, double X, double Y){
-  LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
+ /* LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
+		map_int_to_str(mob_type, generator),
+		map_int_to_str(nodes_type, type),  
+		ID,
+		map_int_to_str(nodes_status, mobile),
+		X,
+		Y
+	);*/
+ printf("[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
 		map_int_to_str(mob_type, generator),
 		map_int_to_str(nodes_type, type),  
 		ID,
