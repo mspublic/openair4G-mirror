@@ -434,7 +434,7 @@ int main(int argc, char **argv) {
   int s,Kr,Kr_bytes;
 
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate,saving_bler=1;
-  double snr_step=1,input_snr_step=1, snr_int=20;
+  double snr_step=1,input_snr_step=1, snr_int=30;
 
   LTE_DL_FRAME_PARMS *frame_parms;
   double **s_re,**s_im,**r_re,**r_im;
@@ -690,8 +690,7 @@ int main(int argc, char **argv) {
       printf("-o Sample offset for receiver\n");
       printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
       printf("-f step size of SNR, default value is 1.\n");
-      printf("-t Delay spread for multipath channel\n");
-      printf("-r Ricean factor (dB, 0 dB = Rayleigh, 100 dB = almost AWGN)\n");
+      printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6 for the moment)\n");
@@ -1359,11 +1358,11 @@ int main(int argc, char **argv) {
 	    if(saving_bler==0)
 	    if (trials==0 && round==0) {
 	      // calculate freq domain representation to compute SINR
-	      freq_channel(eNB2UE, 25,51);
+	      freq_channel(eNB2UE, NB_RB,12*NB_RB + 1);
 	      // snr=pow(10.0,.1*SNR);
 	      fprintf(csv_fd,"%f,",SNR);
 	      
-	      for (u=0;u<50;u++){
+	      for (u=0;u<12*NB_RB;u++){
 		for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
 		  for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
 		    // abs_channel = (eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x + eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y);
@@ -1466,7 +1465,7 @@ int main(int argc, char **argv) {
 #ifdef PERFECT_CE
 	      if (awgn_flag==0) {
 		// fill in perfect channel estimates
-		freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,301);
+		freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
 		//write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
 		//write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
 		for(k=0;k<NUMBER_OF_eNB_MAX;k++) {
