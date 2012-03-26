@@ -115,6 +115,27 @@ void init_mobility_generator(omg_global_param omg_param_list) {
   }
 }
 
+void stop_mobility_generator(int mobility_type) {
+  switch (mobility_type) {
+
+  case STATIC: 
+  case RWP: 
+  case RWALK: 
+  case TRACE:
+      //LOG_D(OMG," --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
+      printf(" --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
+  break; 
+
+  case SUMO: 
+    stop_sumo_generator();
+    //LOG_D(OMG," --------OMG will interface with SUMO for mobility generation-------- \n");
+    break;
+  
+  default:
+    LOG_N(OMG, "Unsupported generator %d \n", omg_param_list.mobility_type);
+  }
+}
+
 void update_nodes(double cur_time){
 printf("UPDATE NODES" );
 //LOG_D(OMG, "UPDATE NODES" );
@@ -143,7 +164,7 @@ void update_node_vector(int mobility_type, double cur_time){
     update_trace_nodes(cur_time);
     break;     
   case SUMO:  
-    printf("in SUMO case \n");
+   // printf("in SUMO case \n");
     update_sumo_nodes(cur_time);
     break;
 
@@ -175,7 +196,7 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
       break;   
     case SUMO:
      // LOG_D(OMG,"getting positions from SUMO\n");
-      printf("getting positions from SUMO\n");
+      //printf("getting positions from SUMO\n");
       Vector = get_sumo_positions_updated(cur_time);
      // Vector = Node_Vector[SUMO];
       break;
@@ -616,7 +637,7 @@ int main(int argc, char *argv[]) {
 	/////////////// to call by OCG
  	
  for (emu_info_time = 1.0 ; emu_info_time <= 200.0; emu_info_time+=1.0){
-	printf("updating node positions\n");
+	//printf("updating node positions\n");
         update_nodes(emu_info_time*1000);  
   	//double emu_info.time += 1.0/100; // emu time in ms
 	/*   for (i=(STATIC+1); i<MAX_NUM_MOB_TYPES; i++){ //
@@ -629,10 +650,12 @@ int main(int argc, char *argv[]) {
           printf(" **********asking for positions in SUMO **********\n ");
           Current_positions = get_current_positions(SUMO, UE, emu_info_time*1000); // type: enb, ue, all	
          if(Current_positions !=NULL) {
-           printf(" **********Current_positions**********\n ");
+           printf(" **********Current_positions at time %f**********\n ",emu_info_time);
             display_node_list(Current_positions);
+           printf(" **********DONE**********\n ");
          }	
   }
+  stop_mobility_generator(omg_param_list.mobility_type);
 	
 	/*LOG_D(OMG, " **********DISPLAY JOB LIST**********\n "); 
         display_job_list(Job_Vector);

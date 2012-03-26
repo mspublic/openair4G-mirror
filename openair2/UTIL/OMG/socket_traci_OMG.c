@@ -57,7 +57,7 @@ int connection_(char *hoststr,int portno){
             // LOG_E(OMG, " Socket Error\n");
             
         }
-printf("Socket Created\n");
+         printf("Socket Created\n");
 	server_addr.sin_family = AF_INET;     
         server_addr.sin_port = htons(portno);   
         server_addr.sin_addr = *((struct in_addr *)host->h_addr);
@@ -157,7 +157,7 @@ storage * receiveExact(){
 
 
 void close_connection(){
-
+        printf("closing the socket \n");
         close(sock);
 }
 

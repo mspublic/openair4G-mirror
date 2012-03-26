@@ -45,6 +45,7 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <signal.h>
 
 #include "sumo.h"
 
@@ -65,13 +66,14 @@ sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_
 //  char *sumo_arg[] = { NULL, sumo_line, NULL };
 //  char *sumo_env[] = { NULL };
 
- // if ( (pid = fork()) == 0)
- // {
+  if ( (pid = fork()) == 0)
+  {
     // Start SUMO in the child process
    //execve(omg_param_list.sumo_command, sumo_arg, sumo_env);// starts SUMO in a child process
- //  system(sumo_line);
+  
+    system(sumo_line);
    //childs addresss space
- // }
+  }
  
   //still in the parent process
  
@@ -166,7 +168,7 @@ void update_IDs() {
   if(tmp_arrived->string !=NULL) {
    
     char *tmp_string = tmp_arrived->string;
-     printf("1 head is not null and value is: %s\n",tmp_string);
+     //printf("1 head is not null and value is: %s\n",tmp_string);
     if(!desactivate_and_unmap(tmp_string)) {
       printf("Could not locate the OAI node ID %s \n", tmp_string);
       //LOG_I(OMG, "Could not locate the OAI node ID %s \n", tmp_string);
@@ -174,7 +176,7 @@ void update_IDs() {
     
   }
   while (tmp_arrived->next != NULL) {
-    printf("1 main is not null \n");
+    //printf("1 main is not null \n");
     char *tmp_string = tmp_arrived->string;
     if(!desactivate_and_unmap(tmp_string)) {
        printf("Could not locate the OAI node\n");
@@ -190,10 +192,11 @@ void update_IDs() {
   }
 
   if(tmp_departed->string !=NULL) {
-    printf("2 head is not null \n");
-    char tmp_string [strlen(tmp_departed->string)];     
+    //printf("2 head is not null \n");
+    //char tmp_string [strlen(tmp_departed->string)];
+    char * tmp_string = malloc(sizeof(strlen(tmp_departed->string)));     
     strcpy(tmp_string, tmp_departed->string);
-    printf("2 head is not null and value is: %s\n",tmp_string);
+    //printf("2 head is not null and value is: %s\n",tmp_string);
     //char *tmp_string = tmp_departed->string);
     int OAI_ID = get_oaiID_by_SUMO(tmp_string, id_manager);
     if (OAI_ID ==-1) {
@@ -203,16 +206,10 @@ void update_IDs() {
         return;  // stopping mapping as the maximum of OAI nodes has been reached;
       }
       
-     Map_list tmp =  id_manager->map_oai2sumo;
-     char *sumo_id = get_sumo_entry(0, tmp);
-  
-     if(sumo_id !=NULL) {
-          printf(" 3: ACTIVATE and MAP: OAI ID is: %d and SUMO ID is %s \n",0, sumo_id);  
-      } 
     }
   }
   while (tmp_departed->next != NULL) {
-    printf("2 main is not null \n");
+    //printf("2 main is not null \n");
     //char tmp_string [strlen(tmp_departed->string)];
     char * tmp_string = malloc(sizeof(strlen(tmp_departed->string)));
     strcpy(tmp_string, tmp_departed->string);
@@ -228,37 +225,44 @@ void update_IDs() {
     tmp_departed = tmp_departed->next;
   }
 
-   Map_list tmp =  id_manager->map_oai2sumo;
-     char *sumo_id = get_sumo_entry(0, tmp);
-  
-     if(sumo_id !=NULL) {
-          printf(" 2: ACTIVATE and MAP: OAI ID is: %d and SUMO ID is %s \n",0, sumo_id);  
-      } 
   departed = clear_String_list(departed);
 }
 
 bool desactivate_and_unmap(char *sumo_id) {
-  int OAI_ID = remove_oaiID_by_SUMO(sumo_id, id_manager);
+  printf("desactivating node %s \n",sumo_id);	
+  int OAI_ID = get_oaiID_by_SUMO(sumo_id, id_manager);
+  remove_oaiID_by_SUMO(sumo_id, id_manager);
   if (OAI_ID !=-1) {
       NodePtr node = find_node(Node_Vector[SUMO], OAI_ID, SUMO);
-      node->mobile = 0; // this node is now inactive;
-      return true;
+      if(node !=NULL) {
+          //if(strcmp(sumo_id, "0") == 0) {
+    	  //printf("OAI ID is %d \n",OAI_ID);	
+         // exit(-1);
+        //}
+        node->mobile = 0; // this node is now inactive;
+        active_nodes = remove_node_entry(node, active_nodes);
+        return true;
+      }
+      
   }
-  else {
-      printf("Could not desactive an OAI node, as the SUMO-OAI mapping could not be found for the SUMO node ID %s \n", sumo_id);
-     // LOG_D(OMG, "Could not desactive an OAI node, as the SUMO-OAI mapping could not be found for the SUMO node ID %s \n", sumo_id); 
-      return false;
-  }
+
+
+  //else {
+  printf("Could not desactive an OAI node, as the SUMO-OAI mapping could not be found for the SUMO node ID %s \n", sumo_id);
+  // LOG_D(OMG, "Could not desactive an OAI node, as the SUMO-OAI mapping could not be found for the SUMO node ID %s \n", sumo_id); 
+  return false;
+ // }
 }
 
 
 bool activate_and_map(char *sumo_id) {
   MapPtr map = create_map();
-
+  printf("activating node %s \n",sumo_id);	
   NodePtr active_node = get_first_inactive_OAI_node(Node_Vector[SUMO], SUMO);
   if(active_node != NULL) {  // found an inactive OAI node; will be mapped to SUMO
     active_node->mobile = 1; // now node is active in SUMO
- 
+
+    active_nodes = add_entry(active_node, active_nodes);
    
 
     //char * copy_sumo_id = malloc(sizeof((int)strlen(sumo_id)));
@@ -271,23 +275,24 @@ bool activate_and_map(char *sumo_id) {
     // map->sumo_id = sumo_id;//sumo_id;
      
     
-    printf("added a mapping between oai ID:  %d and SUMO ID: %s \n",map->oai_id, map->sumo_id); 
+    //printf("added a mapping between oai ID:  %d and SUMO ID: %s \n",map->oai_id, map->sumo_id); 
     id_manager->map_sumo2oai = add_map_entry(map, id_manager->map_sumo2oai);
 
     
-    printf("added a new sumo2oai entry\n");
+    //printf("added a new sumo2oai entry\n");
     if (id_manager->map_oai2sumo == NULL) {
-       printf("uninitialized oai2sumo map\n");
+      // printf("uninitialized oai2sumo map\n");
     }
     id_manager->map_oai2sumo = add_map_entry(map, id_manager->map_oai2sumo); //map_sumo2oai
-    printf("added a new oai2sumo entry\n");
+    //printf("added a new oai2sumo entry\n");
 
-     Map_list tmp =  id_manager->map_oai2sumo;
+     /*Map_list tmp =  id_manager->map_oai2sumo;
      char *sumo_id = get_sumo_entry(active_node->ID, tmp);
   
+     
      if(sumo_id !=NULL) {
           printf(" ACTIVATE and MAP: OAI ID is: %d and SUMO ID is %s \n",active_node->ID, sumo_id);  
-      }   
+      }  */ 
 
   return true;
   }
@@ -314,15 +319,16 @@ void update_sumo_nodes(double cur_time) {
 void update_sumo_positions(NodePtr node){
 
   //LOG_D(OMG, "--------GET SUMO Mobility for a single node--------\n");
-  printf("--------GET SUMO Mobility for a single node--------\n");
+  //printf("--------GET SUMO Mobility for a single node--------\n");
   //vehicleVar* next_loc = NULL;
   
   //char *sumo_id = get_SumoID_by_OAI(node->ID, id_manager);  
   Map_list tmp =  id_manager->map_oai2sumo;
+  //Map_list tmp =  id_manager->map_sumo2oai;
   char *sumo_id = get_sumo_entry(node->ID, tmp);
   
-  if(sumo_id !=NULL) {   
-    printf(" OAI ID is: %d and SUMO ID is %s \n",node->ID, sumo_id);    
+  if(sumo_id !=NULL) {  
+      //printf(" OAI ID is: %d and SUMO ID is %s \n",node->ID, sumo_id);    
     GetPosition(node, sumo_id);
     GetSpeed(node, sumo_id);
   }
@@ -336,25 +342,25 @@ void update_sumo_positions(NodePtr node){
 Node_list get_sumo_positions_updated(double cur_time) {
   
   //LOG_D(OMG, "--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
-  printf("--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
- // reset_node_list(active_nodes);
+  //printf("--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
+  //reset_node_list(active_nodes);
 
   if (Node_Vector[SUMO] != NULL){
     Node_list tmp = Node_Vector[SUMO];
     while (tmp != NULL){
-      printf("Non NULL node in Node_Vector...is node ID: %d it active? with mobility %d\n", tmp->node->ID, tmp->node->mobile);
+      //printf("Non NULL node in Node_Vector...is node ID: %d it active? with mobility %d\n", tmp->node->ID, tmp->node->mobile);
       if ((tmp->node->generator == SUMO) && (tmp->node->mobile == 1)) {  // OAI node MUST be active
         //LOG_T(OMG, "found an active node with id %d \n", tmp->node->ID);
 	//LOG_D(OMG, "Old Positions \n");		
-	printf("Old Positions \n");
-        display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
-        
+	//printf("Old Positions \n");
+        //display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+
         update_sumo_positions(tmp->node);
 	
-        printf("New Positions \n");
+        //printf("New Positions \n");
         //LOG_D(OMG, "New Positions \n");		
-	display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
-	active_nodes = add_entry(tmp->node, active_nodes);
+	//display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+	//active_nodes = add_entry(tmp->node, active_nodes);
       }
       tmp = tmp->next;
     }
@@ -378,9 +384,9 @@ NodePtr get_first_inactive_OAI_node(Node_list list, int node_type) {
 }
 
 bool stop_sumo_generator() {
-
+  printf(" --------Destructor for SUMO: closing the TraCI socket and killing SUMO ---- \n");
   commandClose(); // closing the connection with SUMO via TraCI
   close_connection(); // closing the socket connection
-  kill(pid); // killing SUMO in case it could not close by itself
+  kill(pid,SIGKILL); // killing SUMO in case it could not close by itself
   return true;
 }

@@ -187,6 +187,12 @@ void init_omg_global_params(void);
  */
 void init_mobility_generator(omg_global_param omg_param_list);
 
+/**
+ * \fn void stop_mobility_generator(int mobility_type)
+ * \brief Call the destructor for the respective mobility type.
+ * \param int mobility_type to stop and call destructor
+ */
+void stop_mobility_generator(int mobility_type);
 
 /**
  * \fn void update_nodes(double cur_time)

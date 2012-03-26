@@ -103,12 +103,12 @@ void init(int max_sim_time) {
 
 void processSubscriptions() {
    int noSubscriptions = readInt();
-   printf(" number subscription: %d....\n",noSubscriptions);
+  // printf(" number subscription: %d....\n",noSubscriptions);
    String_list tmp_departed = departed;
    String_list tmp_arrived = arrived;
    int s;
    for (s = 0; s<noSubscriptions; ++s) {
-      printf(" processing Subscriptions....\n");
+      //printf(" processing Subscriptions....\n");
       int respStart = readInt();
       //int extLength = readUnsignedByte();
       int respLength = readUnsignedByte();
@@ -117,7 +117,7 @@ void processSubscriptions() {
 
       //int respLength = readUnsignedByte();
       int cmdId = readUnsignedByte();
-      printf(" subscription ID: %d....\n",cmdId);
+      //printf(" subscription ID: %d....\n",cmdId);
       if (cmdId<0xe0||cmdId>0xef) {  // only responses to subscription to supported types (vehicles, TLC, polygones...) are accepted
          //LOG_W(OMG, " Invalide Subscription response: %d\n",cmdId);
          printf(" Invalide Subscription response: %d\n",cmdId);
@@ -125,20 +125,20 @@ void processSubscriptions() {
       }
       char *objID = readString();
       int varNo = readUnsignedByte();
-      printf(" number of variables: %d....\n",varNo);
+      //printf(" number of variables: %d....\n",varNo);
       int i;
       for (i=0; i<varNo; ++i) {
           int varID = readUnsignedByte();
-           printf(" variable ID is: %d....\n",varID);
+           //printf(" variable ID is: %d....\n",varID);
           bool ok = readUnsignedByte()==RTYPE_OK;
           int valueDataType = readUnsignedByte();
           if (ok&&cmdId==CMD_SUBSCRIBE_SIM_VARIABLE+0x10&&varID==VAR_DEPARTED_VEHICLES_IDS) {
-               printf(" cars departed....\n");
+              // printf(" cars departed....\n");
                tmp_departed = readStringList(tmp_departed);
                continue;
            }
            if (ok&&cmdId==CMD_SUBSCRIBE_SIM_VARIABLE+0x10&&varID==VAR_ARRIVED_VEHICLES_IDS) {
-               printf(" cars arrived....\n");
+               //printf(" cars arrived....\n");
                tmp_arrived = readStringList(tmp_arrived);
                continue;
            }
@@ -167,19 +167,20 @@ int extractCommandStatus(storage *s, unsigned char commandId, char * description
         
 	// CommandID needs to fit
         int rcvdCommandId = readUnsignedByte();
-	printf("received command %d",rcvdCommandId);
+	//printf("received command %d",rcvdCommandId);
 	//if (rcvdCommandId = ((int)readUnsignedByte() != (int)commandId))
         if (rcvdCommandId != (int)commandId)
 	{
-                printf("%d",rcvdCommandId);
+                //printf("%d",rcvdCommandId);
                 //LOG_E(OMG, " Server answered to command\n");
-		printf(" Server answered to command\n");
+		//printf(" Server answered to command\n");
 	}
-	printf(" Server answered to command with command %d , was expecting command %d \n", rcvdCommandId, commandId);
+	//printf(" Server answered to command with command %d , was expecting command %d \n", rcvdCommandId, commandId);
 	// Get result and description
 	unsigned char result = readUnsignedByte();
 	if (result != RTYPE_OK)
 	{       
+                
                 printf(" Server returned error\n");
                 //error(" Server returned error ");
 		return success=0;
@@ -187,7 +188,7 @@ int extractCommandStatus(storage *s, unsigned char commandId, char * description
 	}
 	
 	if (result == RTYPE_OK) {
-		 printf(" Server returned success\n");
+		// printf(" Server returned success\n");
                 //printf ("Success");
 		success=1;
         }
@@ -225,7 +226,7 @@ void commandSimulationStep(double time)
   	if (arrived == NULL) 
     		arrived = (String_list)malloc(sizeof(String_list));  // departed MUST point to HEAD
         
-	printf("updated sumo and gotten new cars \n");
+	//printf("updated sumo and gotten new cars \n");
         processSubscriptions();
 
 }  
@@ -238,6 +239,7 @@ void commandClose()
     	writeUnsignedByte(CMD_CLOSE);
 	  	
 	// send request message
+        printf("closing the socket... \n");
         sendExact(storageLength(storageStart));
         extractCommandStatus(receiveExact(), CMD_CLOSE, description);
 
@@ -257,7 +259,6 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
     	writeUnsignedByte(varID);
     	// object id
     	writeString(vehID);
-
 
     	// send request message
     	sendExact(storageLength(storageStart));
@@ -281,7 +282,7 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
 	  length = readInt();
        	int cmdId =readUnsignedByte();
         
-        printf(" CMD is %d\n",cmdId);
+        //printf(" CMD is %d\n",cmdId);
 
         if (cmdId != (CMD_GET_VEHICLE_VARIABLE+0x10)) {
 		//LOG_E(OMG, " Wrong response recieved\n");
@@ -292,7 +293,7 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
 	char* rs = readString();
 
         int valueDataType = readUnsignedByte();
-        if (valueDataType == POSITION_2D) {
+        /*if (valueDataType == POSITION_2D) {
 	  printf("expecting POSITION INFO\n");
         }
         else if (valueDataType == TYPE_DOUBLE) {
@@ -300,7 +301,7 @@ void commandGetVehicleVariable(char *vehID, int varID)// malloc for vehID and va
         }
         else {
           printf("expecting OTHER INFO\n");
-        }
+        }*/
         	//printf( " Double value: %f",doublev);
         //readAndReportTypeDependent(inMsg, valueDataType);
     
@@ -406,7 +407,7 @@ void GetPosition(NodePtr node, char * sumo_id)
     commandGetVehicleVariable(sumo_id, VAR_POSITION);
     double x_double = readDouble();
     double y_double = readDouble();
-    printf("Node %d has position X: %f and Y: %f \n",node->ID, x_double, y_double);
+    //printf("Node %d has position X: %f and Y: %f \n",node->ID, x_double, y_double);
 
     node->X_pos = x_double;
     node->Y_pos = y_double;
