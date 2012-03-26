@@ -19,6 +19,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#include "UTIL/OMG/omg_constants.h"
 //#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -724,6 +725,26 @@ main (int argc, char **argv)
       break;
     case 'U':
       oai_emulation.info.omg_model_ue = atoi (optarg);
+      switch (oai_emulation.info.omg_model_ue){
+        
+      case STATIC:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
+        break;
+      case RWP:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
+        break;
+      case RWALK:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWALK";
+        break;
+      case TRACE:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "TRACE";
+        break;
+      case SUMO:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "SUMO";
+        break;
+      default:
+        LOG_N(OMG, "Unsupported generator %d \n", oai_emulation.info.omg_model_ue);
+      }
       break;
     case 'T':
       oai_emulation.info.otg_enabled = 1;
