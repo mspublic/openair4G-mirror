@@ -45,6 +45,15 @@
 //typedef char bool;
 #include <stdbool.h>
 
+#ifdef STANDALONE
+typedef struct {
+    char *name;	/*!< \brief string name of item */
+    int value;	/*!< \brief integer value of mapping */
+} mapping;
+int  map_str_to_int(mapping *map, const char *str);
+char *map_int_to_str(mapping *map, int val);
+#endif
+
 /*!A sructure that includes all the characteristic mobility elements of a node  */
 typedef struct mobility_struct {
 	double X_from; /*!< The X coordinate of the previous location of the node */
