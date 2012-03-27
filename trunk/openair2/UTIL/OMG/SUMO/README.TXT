@@ -10,9 +10,12 @@ Notes:
 
     or alternatively chechout from the following SUMO svn
        
-       svn co https://sumo.svn.sourceforge.net/svnroot/sumo sumo 
+       svn co https://sumo.svn.sourceforge.net/svnroot/sumo/trunk/sumo sumo 
 
-     and follow the installation instructions
+       (among the other required packages for SUMO, you also need the following tools for SUMO compilation. Please use the following command to install: 
+       sudo apt-get install build-essential autoconf buildtool)
+
+     and follow the installation instructions at http://sumo.sourceforge.net/doc/current/docs/userdoc/Installing.html
 
   - OMG will look for the SUMO and SUMO-GUI exectuable from this SUMO folder.
 

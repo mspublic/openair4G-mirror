@@ -43,11 +43,21 @@
 #include "omg_constants.h"
 #include "defs.h"
 #include "omg_vars.h"
-#ifndef STANDALONE
-#include "UTIL/LOG/log.h"
+#if STANDALONE
+	#define LOG_G(c, x...) printf(x)
+	#define LOG_A(c, x...) printf(x)
+	#define LOG_C(c, x...) printf(x)
+	#define LOG_E(c, x...) printf(x)
+	#define LOG_W(c, x...) printf(x)
+	#define LOG_N(c, x...) printf(x)
+	#define LOG_I(c, x...) printf(x)
+	#define LOG_D(c, x...) printf(x)
+	#define LOG_F(c, x...) printf(x)  
+	#define LOG_T(c, x...) printf(x)
+
 #else
-#include "../LOG/log.h"
-#endif
+	#include "UTIL/LOG/log.h"
+#endif 
 
 /** @defgroup _omg OpenAir Mobility Generation (OMG)
 The area of vehicular ad hoc networks (\b VANETs) is a fast evolving research area. Attracting a lot the attention of researchers, it is likely to become the most relevant form of mobile ad hoc networks in the soon coming years. Because VANETs usually comprise a great number of cars, a real world test is a very costly and time consuming operation. Therefore, most VANET research is carried out using simulations thanks to abstractions or mobility models.\n

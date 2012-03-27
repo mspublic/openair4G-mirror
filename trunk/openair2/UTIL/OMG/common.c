@@ -378,6 +378,38 @@ String_list clear_String_list(String_list list) {
   return list;
 }
 
+#ifdef STANDALONE
+/*
+ * for the two functions below, the passed array must have a final entry
+ * with string value NULL
+ */
+/* map a string to an int. Takes a mapping array and a string as arg */
+int map_str_to_int(mapping *map, const char *str){
+    while (1) {
+        if (map->name == NULL) {
+            return(-1);
+        }
+        if (!strcmp(map->name, str)) {
+            return(map->value);
+        }
+        map++;
+    }
+}
+
+/* map an int to a string. Takes a mapping array and a value */
+char *map_int_to_str(mapping *map, int val) {
+    while (1) {
+        if (map->name == NULL) {
+            return NULL;
+        }
+        if (map->value == val) {
+            return map->name;
+        }
+        map++;
+    }
+}
+
+#endif
 
 
 
