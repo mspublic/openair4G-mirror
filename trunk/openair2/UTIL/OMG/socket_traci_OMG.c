@@ -54,10 +54,13 @@ int connection_(char *hoststr,int portno){
 	
 	
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-            // LOG_E(OMG, " Socket Error\n");
-            
+             #ifdef STANDALONE 
+   		 printf(" Socket Error\n");
+            #else
+                 LOG_D(OMG, " Socket Error\n");
+ 	     #endif	
         }
-         printf("Socket Created\n");
+         
 	server_addr.sin_family = AF_INET;     
         server_addr.sin_port = htons(portno);   
         server_addr.sin_addr = *((struct in_addr *)host->h_addr);
@@ -66,11 +69,16 @@ int connection_(char *hoststr,int portno){
         if (connect(sock, (struct sockaddr *)&server_addr,
                     sizeof(struct sockaddr)) < 0) 
         {
-            printf("Connection Failed\n");  
-            return -1;//LOG_E(OMG, " Connection Error\n");
+              #ifdef STANDALONE 
+   		  printf("Connection Failed\n"); 
+              #else
+                 LOG_E(OMG, " Connection Error\n");
+ 	     #endif
+              
+            return -1;
             
         }  
-	        printf("Finshed connecting\n");  
+	       
         return 1;
 }
 
@@ -97,8 +105,14 @@ void sendExact(int cmdLength){
 		if (numbytes == n)
 			break;
 		
-                if (n<0)
-                         LOG_E(OMG, " ERROR writing to socket\n");
+                if (n<0) {
+                    #ifdef STANDALONE 
+   		       printf(" ERROR writing to socket\n");
+                    #else
+                        LOG_E(OMG, " ERROR writing to socket\n");
+ 	            #endif	
+                        
+                }
 		
                 numbytes -= n;
                 buf +=n;
@@ -119,8 +133,13 @@ storage * receiveExact(){
 	{
 	        readThisTime = recv( sock, (char*)(bufLength + bytesRead), 4-bytesRead, 0 );
 
-		if( readThisTime <= 0 )
-			LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
+		if( readThisTime <= 0 ) {
+                        #ifdef STANDALONE 
+   		       printf(" tcpip::Socket::receive() @ recv\n");
+                    #else
+                        LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
+ 	            #endif
+		}
 
 		bytesRead += readThisTime;
         }
@@ -145,8 +164,13 @@ storage * receiveExact(){
 	{
 		readThisTime = recv( sock, (char*)(buf + bytesRead), NN-bytesRead, 0 );
 		
-                if( readThisTime <= 0 )
-			LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
+                if( readThisTime <= 0 ) {
+                    #ifdef STANDALONE 
+   		       printf(" tcpip::Socket::receive() @ recv\n");
+                    #else
+                       LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
+ 	            #endif
+                }
 
 		bytesRead += readThisTime;
 	}
@@ -157,7 +181,11 @@ storage * receiveExact(){
 
 
 void close_connection(){
-        printf("closing the socket \n");
+        #ifdef STANDALONE 
+   		  printf("closing the socket \n");
+        #else
+                 LOG_E(OMG, "closing the socket \n");
+        #endif
         close(sock);
 }
 

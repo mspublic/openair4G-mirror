@@ -54,19 +54,6 @@
 
 int targetTime;
 
-/**
- * Structure to hold vehicle parameters 
- */
-typedef struct vehicleVar{
-	double x;
-	double y;
-	double speed;
-	
-
-}vehicleVar;
-
-vehicleVar* vehicle;
-
 char *description;
 
 String_list departed;  // string list of all vehicles appearing in SUMO at the current time step
@@ -116,12 +103,6 @@ void commandGetVehicleVariable(char *vehID, int varID);
 
 
 /**
- * \fn get_pos_speed()
- * \brief Called by move_sumo_node() in sumo.c to get the pos and speed
- */
-vehicleVar* get_pos_speed();
-
-/**
  * \fn get_num_sumo_nodes()
  * \brief Return the total number of nodes to be simulated in SUMO
  */
@@ -139,8 +120,20 @@ void init(int max_sim_time);
  */
 void processSubscriptions(void);
 
+/**
+ * \fn void GetSpeed(NodePtr node, char * sumo_id);
+ * \brief ask SUMO to return the speed for the indicated vehicle ID
+ * \param NodePtr node the pointer to the OAISim node
+ * \param char *sumo_id the SUMO ID of the target node
+ */
 void GetSpeed(NodePtr node, char * sumo_id);
 
+/**
+ * \fn void Position(NodePtr node, char * sumo_id);
+ * \brief ask SUMO to return the position (X,Y) for the indicated vehicle ID
+ * \param NodePtr node the pointer to the OAISim node
+ * \param char *sumo_id the SUMO ID of the target node
+ */
 void GetPosition(NodePtr node, char * sumo_id);
 
 
