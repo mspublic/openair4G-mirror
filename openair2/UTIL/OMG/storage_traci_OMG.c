@@ -168,23 +168,19 @@ void writeUnsignedByte(int value){
 		writeChar( ((unsigned char)value));
 }
 
+// JNNOTE: had to change the behavior here, as tmp was always pointing at the end of the String and not at the beginning: accordingly, all strings where always '0'
 char * readString(){
 
                 int i=0;
 		int len = readInt();
-                 //printf("string length %d \n",len);
+
 		descLen = len;
                 char *tmp = (char *)malloc(sizeof(char) * (len));
-                char *ret = tmp;
-               //char tmp [len];
+                char *ret = tmp; // JHNOTE: added a pointer pointing at the head of the String
 		for (i; i < len; i++) {    
-		        //char test = (char) readChar();
-                        //printf(" printing char %c \n",test);
- 	                //*tmp++ = test;
-                        //tmp[i] = test;  
                        *tmp++ = (char) readChar();
 		}
-		return ret;
+		return ret; // the head is returned
 
 }
 
@@ -207,19 +203,16 @@ String_list readStringList(String_list vector){
    descLen = len;
    String_list entry = NULL;
    
-  // printf("Reading stringList...number of items %d\n",len);
    for (i; i < len; i++) {
       if (vector->string == NULL) {
          char *tmp = readString();
-         //printf("node ID %s\n",tmp);
          vector->string = tmp;//readString();
       }
       else {
         entry = (String_list)malloc(sizeof(String_list));
         char *tmp = readString();
-         //printf("node ID %s\n",tmp);
+        
         entry->string = tmp;//readString();
-        //entry->string = readString();
         entry->next = NULL;
 
         if(vector !=NULL) {
@@ -426,10 +419,7 @@ storage* writePacket (unsigned char* packet, int length){
 		recvpacket =temp_;
        		 } 
         }
-	/*
-	while(recvpacketStart!=NULL){
-	printf("haha %d\n",recvpacketStart->item);
-	recvpacketStart = recvpacketStart->next;}*/
+	
         return recvpacketStart;
 
 }

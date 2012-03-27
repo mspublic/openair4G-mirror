@@ -121,7 +121,6 @@ Node_list remove_node_entry(NodePtr node, Node_list Node_Vector){
   Node_list  list = Node_Vector;
   Node_list tmp, toRemove;
   if (list == NULL){  
-    //printf("Node_list is NULL\n");
     return NULL;
   }
   if(list->node->ID == node->ID) {
@@ -159,24 +158,32 @@ Node_list remove_node_entry(NodePtr node, Node_list Node_Vector){
 void display_node_list(Node_list Node_Vector){
     Node_list tmp = Node_Vector;
     if (tmp == NULL){
-      printf("Empty Node_list\n");
-      //LOG_D(OMG, "Empty Node_list\n");
+      #ifdef STANDALONE  
+        printf("Empty Node_list\n");
+      #else
+        LOG_D(OMG, "Empty Node_list\n");
+      #endif
     }	
     while (tmp != NULL){
-  	 /*LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
-		map_int_to_str(mob_type, tmp->node->generator),
-		map_int_to_str(nodes_type, tmp->node->type),  
-		tmp->node->ID,
-		map_int_to_str(nodes_status, tmp->node->mobile), 
-		tmp->node->X_pos,
-		tmp->node->Y_pos );*/
-         printf("[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
+         
+  	 
+        #ifdef STANDALONE  
+          printf("[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
 		map_int_to_str(mob_type, tmp->node->generator),
 		map_int_to_str(nodes_type, tmp->node->type),  
 		tmp->node->ID,
 		map_int_to_str(nodes_status, tmp->node->mobile), 
 		tmp->node->X_pos,
 		tmp->node->Y_pos );
+        #else
+          LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
+		map_int_to_str(mob_type, tmp->node->generator),
+		map_int_to_str(nodes_type, tmp->node->type),  
+		tmp->node->ID,
+		map_int_to_str(nodes_status, tmp->node->mobile), 
+		tmp->node->X_pos,
+		tmp->node->Y_pos );
+	#endif
 
     //LOG_I(OMG, "node number %d\tstatus(fix/mobile) %d\tX_pos %.2f\tY_pos %.2f\tnode_type(eNB, UE)%d\t", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos, tmp->node->type);
       //LOG_D(OMG, "mob->X_from %.3f\tmob->Y_from %.3f\tmob->X_to %.3f\tmob->Y_to %.3f\t", tmp->node->mob->X_from,tmp->node->mob->Y_from, tmp->node->mob->X_to, tmp->node->mob->Y_to );
@@ -185,14 +192,8 @@ void display_node_list(Node_list Node_Vector){
 }
 
 void display_node_position(int ID, int generator, int type, int mobile, double X, double Y){
- /* LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
-		map_int_to_str(mob_type, generator),
-		map_int_to_str(nodes_type, type),  
-		ID,
-		map_int_to_str(nodes_status, mobile),
-		X,
-		Y
-	);*/
+ 
+ #ifdef STANDALONE
  printf("[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
 		map_int_to_str(mob_type, generator),
 		map_int_to_str(nodes_type, type),  
@@ -201,6 +202,16 @@ void display_node_position(int ID, int generator, int type, int mobile, double X
 		X,
 		Y
 	);
+  #else
+  LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
+		map_int_to_str(mob_type, generator),
+		map_int_to_str(nodes_type, type),  
+		ID,
+		map_int_to_str(nodes_status, mobile),
+		X,
+		Y
+	);
+   #endif
 }
 
 Node_list filter(Node_list Vector, int node_type){
@@ -242,14 +253,18 @@ Node_list remove_node(Node_list list, int nID, int node_type){
     //holds: current = NULL or  type != node_type or.., but not both
     if (current ==NULL) { 
       found= 1  ;
+      #ifndef STANDALONE
       LOG_E(OMG," Element to remove is not found\n "); 
+      #endif
       return NULL;
     }              //value not found
     else{
       found = 0; // true                value found
       if (current == list) {
 	list = current->next;
+       #ifndef STANDALONE
 	LOG_D(OMG,"Element to remove is found at beginning\n");
+       #endif
       }    
       
       else {
@@ -284,14 +299,17 @@ NodePtr find_node(Node_list list, int nID, int node_type){
   } 
   else{                             //start search
     current = list;
-    while ((current != NULL) && ((current->node->ID != nID) || (current->node->generator != node_type ))){
+    while ((current != NULL) && ((current->node->ID != nID) || (current->node->type != node_type ))){
       current = current->next;
     }
     //holds: current = NULL or  type != node_type or.., but not both
     if (current ==NULL) { 
       found= 1  ;
-      //LOG_D(OMG," Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
-       printf(" Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
+       #ifdef STANDALONE
+         printf(" Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
+       #else
+         LOG_D(OMG," Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
+       #endif
        return NULL;
     }              //value not found
     else{
@@ -319,6 +337,7 @@ Node_list clear_node_list(Node_list list) {
   return NULL;
 }
 
+// TODO rewrite this part...not working correctly
 Node_list reset_node_list(Node_list list) {
   Node_list  tmp;
   Node_list last = list;
@@ -333,13 +352,13 @@ Node_list reset_node_list(Node_list list) {
        tmp->node = NULL;
        //free(tmp);
      }
-     list->node = NULL; // clearing the last one
+     list->node = NULL; // clearing the last one | JHNOTE: dangerous here: the pointer is not NULL, but node is...that leads to segfault...
      //free(last);
   }
- // list = NULL;
-  return list; //NULL; // JHNOTE: should clear the last memory
+  return list;
 }
 
+// TODO rewrite this part...not working correctly
 String_list clear_String_list(String_list list) {
    String_list  tmp;
 
@@ -354,7 +373,7 @@ String_list clear_String_list(String_list list) {
        tmp->string = NULL;
        free(tmp);
      }
-     list->string = NULL; // clearing the last one
+     list->string = NULL; // clearing the last one | JHNOTE: dangerous here: the pointer is not NULL, but node is...that leads to segfault...
   }
   return list;
 }
