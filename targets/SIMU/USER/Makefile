@@ -38,6 +38,10 @@ ifndef OPENAIR_EMU
 export OPENAIR_EMU=1
 endif
 
+ifdef TRAFFIC_TM5
+CFLAGS += -DRLC_UM_TEST_TRAFFIC=1 #-DFULL_BUFFER=1
+endif
+
 # activate OCG and libxml only under linux
 ifeq ($(linux),1) 
 CFLAGS += -I/usr/include/libxml2 -L/usr/local/lib -I/usr/include/atlas -L/usr/X11R6/lib 
