@@ -1,0 +1,7 @@
+Mobile IPv6 for Linux core implementation team is Ville Nuorvala
+<vnuorval@tcs.hut.fi> and Antti J. Tuominen <anttit@tcs.hut.fi>.
+
+The core team has in the past included Jaakko Laine and Henrik
+Petander.  Code has been contributed by several individuals.  See
+THANKS for listing.  See libnetlink/README for information regarding
+libnetlink.

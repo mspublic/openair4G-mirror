@@ -1,0 +1,45 @@
+==================================================================
+Proxy Mobile IPv6 - Changelog
+==================================================================
+Changes in 0.4.1 (13 Dec 2011):
+  *Added Handoff Indicator Option (RFC5213), Access Technology Type Option(RFC5213), 
+   Mobile Node Identifier Option (RFC 4283) for RFC 5213 PBU/PBA messages.
+  *Correction of P and A flag in PBU message (bad endianess issue).
+  *Correction and use of automatic padding for options alignment.
+  *Removed command line options for PMIP protocol, let only UMIP options, because
+   the number of configuration parameters is rather high, so it is preferable to
+   use the configuration files.
+  *Updated man pages for pmip6d and pmip6d.conf.
+  *removed HomeNetworkPrefix and OurAddress entries in LMA and MAG configuration files.
+
+Changes in 0.4 (21 Nov 2011):
+  *Now the configuration is inside only one configuration file, for each entity.
+   A python script automaticaly parse the configuration file and take the appropriate
+   decision for configuring the testbed, there should be no need for modifying this script.
+  *Removed hardcoded syslog parse string, now they are located in the configuration files.
+  *Now PBU lifetime is smaller (40 seconds instead of 1000 seconds), now the restart
+   of this timer works.
+  *Now timestamp option is OK in PBU/PBA, but we will improve the processing in next release (windowing).
+  *Now sequence numbering of PBU/PBA messages is checked.
+  *Added miscellaneous parameters in configuration files, some will be processed in future
+   release (RFC5213EnableMAGLocalRouting), RFC5213TimestampBasedApproachInUse should be always
+   set to enabled, RFC5213MobileNodeGeneratedTimestampInUse should be always set to disabled.
+  *Added traces in case of critical section problems.
+  *Added correct type values (RFC 5213) for PBU/PBA message options.
+  *Corrected bug of BCE update in LMA: the tunnel was always deleted.
+  *Corrected bugs in handlers.
+  *Renamed eth_address2hw_address,  hw_address2eth_address to EUI64_to_EUI48, EUI48_to_EUI64
+  *Reinforced the test procedure for checking the presence of a mobile on a MAG.
+  *Warning, there are some known memory leaks, they will be fixed in next release.
+
+Changes in 0.3 (10 Juin 2011):
+  * 
+	
+Changes in 0.2 (17 May 2011):
+  * Update of README.first, INSTALL, INSTALL.kernel files for the UBUNTU 10.04 LTS version
+  * Add of the "Simple_experimentation" directory which contains the drawing and the shell script files to achieve a 1 LMA + 2 MAGs testbed.
+  * Update of the /etc/match content file format
+
+Changes in 0.1 (23 Oct 2010):
+  * First release
+
