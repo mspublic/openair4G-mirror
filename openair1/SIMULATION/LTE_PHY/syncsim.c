@@ -1,9 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sched.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+
+#ifdef RTAI_ENABLED
+#include <rtai_mbx.h>
+#include <rtai_msg.h>
+#endif
 
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
@@ -287,7 +296,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   phy_init_lte_ue(PHY_vars_UE[1],0);
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE[1]->lte_gold_table[i],i);    
-  PHY_vars_UE[0]->Mod_id = 1;
+  PHY_vars_UE[1]->Mod_id = 1;
   
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
   
@@ -329,7 +338,7 @@ int main(int argc, char **argv) {
   unsigned char pbch_pdu[6];
   FILE *output_fd=NULL;
   u8 write_output_file=0;
-  int trial, n_trials, ntrials=1, n_errors,n_errors2,n_alamouti;
+  int trial, n_errors=0,n_errors2=0,n_alamouti=0;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
   unsigned char eNb_id = 0;
   u16 Nid_cell=0;
@@ -383,6 +392,13 @@ int main(int argc, char **argv) {
 
   int rx_offset_mod;
 
+#ifdef RTAI_ENABLED
+  int period;
+  RTIME expected;
+  RT_TASK *task;
+#define PERIOD (500000*20*100)
+#endif
+
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
   
@@ -402,7 +418,6 @@ int main(int argc, char **argv) {
 	case 'a':
 	  printf("Running AWGN simulation\n");
 	  awgn_flag = 1;
-	  ntrials=1;
 	  break;
 	case 'f':
 	  output_fd = fopen(optarg,"w");
@@ -506,6 +521,7 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	  break;
+	  /*
 	case 'A':
 	  abstraction_flag=1;
 	  ntrials=10000;
@@ -516,6 +532,7 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	  break;
+	  */
 	case 'D':
 	  frame_type=0;
 	  msg("Running in FDD\n");
@@ -580,7 +597,7 @@ int main(int argc, char **argv) {
 	  printf("-N Nid_cell\n");
 	  printf("-R N_RB_DL\n");
 	  printf("-O oversampling factor (1,2,4,8,16)\n");
-	  printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
+	  //printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
 	  printf("-f Output filename (.txt format) for Pe/SNR results\n");
 	  printf("-F Input filename (.txt format) for RX conformance testing\n");
 	  printf("-Y just generate tx frame and send it to hardware\n");
@@ -593,6 +610,22 @@ int main(int argc, char **argv) {
 	  break;
 	}
     }
+
+#ifdef RTAI_ENABLED
+  if (!(task = rt_task_init_schmod(nam2num("SYNCSIM"), 0, 0, 0, SCHED_FIFO, 0xF))) {
+    printf("CANNOT INIT MASTER TASK\n");
+    exit(1);
+  }
+  
+  rt_set_oneshot_mode();
+  
+  period = start_rt_timer(nano2count(PERIOD));
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  rt_make_hard_real_time();
+  rt_task_make_periodic(task, expected = rt_get_time() + 10*period, period);
+#endif
 
 #ifdef XFORMS
   if (do_forms==1) {
@@ -1205,21 +1238,23 @@ int main(int argc, char **argv) {
   }
 
   if (oai_hw_output==0) {
+
     for (SNR=snr0;SNR<snr1;SNR+=.2) {
-      
       
       n_errors = 0;
       n_errors2 = 0;
       n_alamouti = 0;
+
       for (trial=0; trial<n_frames; trial++) {
-	pbch_sinr=0.0;
-	if (abstraction_flag==1)
-	  printf("*********************** trial %d ***************************\n",trial);
-	
-	while (pbch_sinr>-2.0) {
+
+#ifdef RTAI_ENABLED
+	ret = rt_task_wait_period();
+	printf("rt_task_wait_period() returns %d, time %llu\n",ret, rt_get_time());
+#endif  
+
+	if (oai_hw_input == 0) {
 	  
 	  if (awgn_flag == 0) {	
-	    
 	    
 	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 			      FRAME_LENGTH_COMPLEX_SAMPLES,0);//LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
@@ -1232,94 +1267,75 @@ int main(int argc, char **argv) {
 	      multipath_channel(eNB2UE2,s_re2,s_im2,r_re2,r_im2,
 				LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 	    
-	    if (abstraction_flag == 1) {
-	      freq_channel(eNB2UE,25,51);
-	      if (interf1>-20) 
-		freq_channel(eNB2UE1,25,51);
-	      if (interf2>-20) 
-		freq_channel(eNB2UE2,25,51);
-	      pbch_sinr = compute_pbch_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25);
-	      printf("total_sinr %f\n",compute_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25));
-	      printf("pbch_sinr %f => BLER %f\n",pbch_sinr,pbch_bler(pbch_sinr));
-	    }
-	    else {
-	      pbch_sinr = -3.0;
-	    }
-	    //	  exit(-1);
 	  } // awgn_flag
-	  else {
-	    pbch_sinr = -3.0;
-	  }
-	}
 	
-	sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)) - SNR;
-	if (n_frames==1)
-	  printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
-	//AWGN
-	sigma2 = pow(10,sigma2_dB/10);
+	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)) - SNR;
+	  if (n_frames==1)
+	    printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
+
+	  //AWGN
+	  sigma2 = pow(10,sigma2_dB/10);
         
-	/*    
+	  /*    
 	      if (n_frames==1) {
 	      printf("rx_level data symbol %f, tx_lev %f\n",
 	      10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0)),
 	      10*log10(tx_lev));
 	      }
-	*/
-	
-	for (n_trials=0;n_trials<ntrials;n_trials++) {
-	  
-	  if (oai_hw_input==0) {
-	    iout = 0;//taus()%(FRAME_LENGTH_COMPLEX_SAMPLES>>2);
-	    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) { //nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
-	      for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
-		if (n_trials==0) {
-		  r_re[aa][i] += (pow(10.0,.05*interf1)*r_re1[aa][i] + pow(10.0,.05*interf2)*r_re2[aa][i]);
-		  r_im[aa][i] += (pow(10.0,.05*interf1)*r_im1[aa][i] + pow(10.0,.05*interf2)*r_im2[aa][i]);
-		}
-		
-		((short*) PHY_vars_UE[0]->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-		((short*) PHY_vars_UE[0]->lte_ue_common_vars.rxdata[aa])[(2*i)+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	      }
-	      iout++;
-	      if (iout==FRAME_LENGTH_COMPLEX_SAMPLES)
-		iout=0;
-	    }    
-	  }
-	  else {
-	    fc=0;
-	    ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
-	    //	    sleep(1);   
-	  }
-	  /*
-	    if (n_trials==0) {
-	    printf("rx_level data symbol %f\n",
-	    10*log10(signal_energy(PHY_vars_UE->lte_ue_common_vars.rxdata[0],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
-	    }
 	  */
-	  //	printf("Calling initial_sync\n");
+	
+	  iout = 0;//taus()%(FRAME_LENGTH_COMPLEX_SAMPLES>>2);
+	  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) { //nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
+	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+	      r_re[aa][i] += (pow(10.0,.05*interf1)*r_re1[aa][i] + pow(10.0,.05*interf2)*r_re2[aa][i]);
+	      r_im[aa][i] += (pow(10.0,.05*interf1)*r_im1[aa][i] + pow(10.0,.05*interf2)*r_im2[aa][i]);
+	      
+	      ((short*) PHY_vars_UE[0]->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) PHY_vars_UE[0]->lte_ue_common_vars.rxdata[aa])[(2*i)+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	    }
+	    iout++;
+	    if (iout==FRAME_LENGTH_COMPLEX_SAMPLES)
+	      iout=0;
+	  }    
+	}
+	else {
+	  fc=0;
+	  ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
+	  //	    sleep(1);   
+	}
+
+	//	printf("Calling initial_sync\n");
+	
+	if (initial_sync(PHY_vars_UE[0])==0) {
+	  printf("Synchronized to %s %s prefix Cell with id %d\n",
+		 (PHY_vars_UE[0]->lte_frame_parms.frame_type == 0) ? "FDD\0" : "TDD\0",
+		 (PHY_vars_UE[0]->lte_frame_parms.Ncp == 0) ? "Normal\0" : "Extended\0",
+		 PHY_vars_UE[0]->lte_frame_parms.Nid_cell);
 	  
+	  if (subframe*PHY_vars_UE[0]->lte_frame_parms.samples_per_tti+PHY_vars_UE[0]->rx_offset>
+	      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_UE[0]->lte_frame_parms.samples_per_tti)
+	    rx_offset_mod = PHY_vars_UE[0]->rx_offset - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_UE[0]->lte_frame_parms.samples_per_tti;
+	  else
+	    rx_offset_mod = PHY_vars_UE[0]->rx_offset;
+	  
+	  if (N_carriers==2) {
+	    PHY_vars_UE[1]->lte_frame_parms = PHY_vars_UE[0]->lte_frame_parms;
+	    for (i=0;i<3;i++)
+	      lte_gold(&PHY_vars_UE[1]->lte_frame_parms,PHY_vars_UE[1]->lte_gold_table[i],i);    
+	    generate_pcfich_reg_mapping(&PHY_vars_UE[1]->lte_frame_parms);
+	    generate_phich_reg_mapping(&PHY_vars_UE[1]->lte_frame_parms);
+	  }
+	  
+	  /*
+	  // overwrite some values until source is sure
+	  PHY_vars_UE[UE_idx]->lte_frame_parms.N_RB_DL=N_RB_DL;
+	  PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_duration=0;
+	  PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_resource = oneSixth;
+	  generate_pcfich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
+	  generate_phich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
+	  */
+
 	  for (UE_idx=0;UE_idx<N_carriers;UE_idx++) { // loop over 2 carriers here
-	  if (initial_sync(PHY_vars_UE[UE_idx])==0) {
-	    printf("Synchronized to %s %s prefix Cell with id %d\n",
-		   (PHY_vars_UE[UE_idx]->lte_frame_parms.frame_type == 0) ? "FDD\0" : "TDD\0",
-		   (PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp == 0) ? "Normal\0" : "Extended\0",
-		   PHY_vars_UE[UE_idx]->lte_frame_parms.Nid_cell);
-
-	    if (subframe*PHY_vars_UE[UE_idx]->lte_frame_parms.samples_per_tti+PHY_vars_UE[UE_idx]->rx_offset>
-		LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_UE[UE_idx]->lte_frame_parms.samples_per_tti)
-	      rx_offset_mod = PHY_vars_UE[UE_idx]->rx_offset - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_UE[UE_idx]->lte_frame_parms.samples_per_tti;
-	    else
-	      rx_offset_mod = PHY_vars_UE[UE_idx]->rx_offset;
-
-	    /*
-	    // overwrite some values until source is sure
-	    PHY_vars_UE[UE_idx]->lte_frame_parms.N_RB_DL=N_RB_DL;
-	    PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_duration=0;
-	    PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_resource = oneSixth;
-	    generate_pcfich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
-	    generate_phich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
-	    */
-
 	    // Do DCI
 	    for (l=0;l<(1+((PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp==0)?4:3));l++) {
 	      slot_fep(PHY_vars_UE[UE_idx],
@@ -1328,7 +1344,7 @@ int main(int argc, char **argv) {
 		       rx_offset_mod,
 		       0);
 	    }
-
+	    
 
 	    PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars[0]->crnti = n_rnti;
 	    
@@ -1494,14 +1510,14 @@ int main(int argc, char **argv) {
 	    else
 	      printf("DLSCH not decoded!\n");
 	    }
-	  }
-	  else {
-	    if (PHY_vars_UE[UE_idx]->lte_frame_parms.Nid_cell !=  Nid_cell)
-	      n_errors2++;
-	    else
-	      n_errors++;
-	  }
 	  } //UE_idx
+	} //if sync
+	else {
+	  if (PHY_vars_UE[0]->lte_frame_parms.Nid_cell !=  Nid_cell)
+	    n_errors2++;
+	  else
+	    n_errors++;
+	}
 	  
  	  
 #ifdef XFORMS
@@ -1538,28 +1554,8 @@ int main(int argc, char **argv) {
 	  }
 #endif
 	  
-	  
-	  
-	} //noise trials
-	if (abstraction_flag==1) {
-	  printf("SNR %f : n_errors = %d/%d, n_alamouti %d\n", SNR,n_errors,ntrials,n_alamouti);
-	  if (write_output_file==1)
-	    fprintf(output_fd,"%f %f %e %e\n",SNR,pbch_sinr,(double)n_errors/ntrials,pbch_bler(pbch_sinr));
-	}
-	n_errors=0;
-	if ((abstraction_flag==0) && (n_errors2>1000) && (trial>5000))
-	  break;
-      } // trials
-      if (abstraction_flag==0) {
-	printf("SNR %f : PSS/SSS errors %d/%d (Perror %e) PBCH errors = %d/%d (BLER %e), n_alamouti %d\n", 
-	       SNR,
-	       n_errors2,ntrials*(1+trial),(double)n_errors2/(ntrials*(1+trial)),
-	       n_errors,(ntrials*(1+trial)-n_errors2),(double)n_errors/(ntrials*(1+trial)-n_errors2),
-	       n_alamouti);
-	if (write_output_file==1)
-	  fprintf(output_fd,"%f %e\n",SNR,(double)n_errors2/(ntrials*(1+trial)));
-      }
-    } // NSR
+	} // trials
+    } // SNR
     
     if (n_frames==1) {
       
@@ -1595,6 +1591,11 @@ int main(int argc, char **argv) {
     ioctl(openair_fd,openair_SET_TX_GAIN,(void *)&temp[0]);
     ioctl(openair_fd,openair_START_TX_SIG,(void *)NULL);
   }
+
+#ifdef RTAI_ENABLED
+  rt_make_soft_real_time();
+  rt_task_delete(task);
+#endif
 
 #ifdef XFORMS
 
