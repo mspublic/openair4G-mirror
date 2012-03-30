@@ -14,7 +14,11 @@ OPENAIR3 = $(OPENAIR3_DIR)
 
 CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
 
-LFLAGS = -lm -lblas -lxml2 -lrt
+LFLAGS = -lm -lblas -lxml2 -lrt 
+
+ifdef GPIB
+LFLAGS += -lgpib
+endif
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)"  "4.4.3"
@@ -96,6 +100,11 @@ ifdef COMPARE_FLP_AND_FXP
 CFLAGS += -DCOMPARE_FLP_AND_FXP
 endif
 
+ifdef RTAI
+CFLAGS += -DRTAI_ENABLED  -D__IN_RTAI__ $(shell rtai-config --lxrt-cflags)
+LFLAGS += $(shell rtai-config --lxrt-ldflags) -llxrt
+endif
+
 include $(TOP_DIR)/PHY/Makefile.inc
 SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o #$(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
 #include $(TOP_DIR)/SCHED/Makefile.inc
@@ -112,7 +121,7 @@ CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) $(UTIL_incl)
 #LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 #LAYER2_OBJ = $(OPENAIR2_DIR)/LAYER2/MAC/lte_transport_init.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) $(LOG_OBJS) #$(ASN1_MSG_OBJS) 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) $(LOG_OBJS) LTE_Configuration.o
 #OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)  
 
 ifdef XFORMS
@@ -171,6 +180,9 @@ cleanall : clean
 	rm -f dlsim pbchsim pdcchsim ulsim pucchsim 
 	rm -f *.exe*
 
-showcflags :
+showflags :
 	@echo $(CFLAGS)
+	@echo $(LFLAGS)
 
+run: syncsim
+	rtai-load --verbose
