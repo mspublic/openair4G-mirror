@@ -779,7 +779,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       // Normalization of received signal, fix this..
       tx_energy = 300.0e3;
       //      awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[0])/20.0);
-      awgn_stddev = pow(10,.05*40);
+      awgn_stddev = pow(10,.05*60);
 
       //      for(k = 1; k < args->n_relays; k++)
       //        awgn_stddev = min(sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop2[k])/20.0), awgn_stddev);
@@ -805,7 +805,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
         }
         else {
-          phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;//2;
+          phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
         }
 
         // Generate uplink reference signal
@@ -840,9 +840,9 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         // Redo this in a more intuitive manner:
         //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
         tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop2[k])/20.0)/sqrt((double)n_active_relays);
-	//	printf("hop 2: E=%d, ampl=%f, awgn=%f (accum %d)\n", tx_energy, tx_ampl, awgn_stddev,(unsigned char)accumulate_at_rx);
+	//	printf("hop 2 (%d): E=%d, ampl=%f, awgn=%f (accum %d)\n", k,tx_energy, tx_ampl, awgn_stddev,(unsigned char)accumulate_at_rx);
         transmit_subframe(context->channels_hop2[k],
-            phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
+			  phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
             //context->subframe_hop2, frame_parms->symbols_per_tti, 256.0/sqrt((double)n_active_relays)/awgn_stddev, accumulate_at_rx);
             context->subframe_hop2, frame_parms->symbols_per_tti, tx_ampl, accumulate_at_rx);
         accumulate_at_rx = true;
@@ -877,7 +877,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         slot_fep_ul(frame_parms, &phy_vars_ch_dest->lte_eNB_common_vars, l, 2*context->subframe_hop2+1, 0, 0);
 
       // Receive ULSCH data
-      rx_ulsch(phy_vars_ch_dest, context->subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 0);//2);
+      rx_ulsch(phy_vars_ch_dest, context->subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 2);
 
       // Compute uncoded bit error rate
       k = 0;
