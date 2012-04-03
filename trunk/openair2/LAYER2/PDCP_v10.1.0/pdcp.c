@@ -346,15 +346,20 @@ pdcp_run (u32_t frame,u8 eNB_flag)
   pdcp_fifo_flush_sdus(frame,eNB_flag);
   if ( eNB_flag == 0){
 
-/*
+
     LOG_I(OTG, "TEST Calling OTG %d\n", frame);
 	set_ctime(frame); 
 //OTG 
-	int pkts_gen=packet_gen(0,0,0, frame);
-	int pkts_check;	
-	if (pkts_gen>0)
-	pkts_check=check_packet(0,0, frame);  
+/*
+char *rx_packet_out;
+rx_packet_out=check_packet(0, 1, frame, packet_gen(0, 1, 0, frame));
+
+	if (rx_packet_out!=NULL){ 
+		rx_packet_out=NULL;  					
+		free(rx_packet_out);
+	}
 */
+
   }
 }
 
