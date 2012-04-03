@@ -40,9 +40,9 @@
 
 
 #include "otg_tx.h" 
-#include "otg_vars.h"
 
 
+packet_t *packet=NULL;
 
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
@@ -331,13 +331,13 @@ char *random_string(int size, ALPHABET data_type, char *data_string) {
 
 
 
-int packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = frame cnt
+char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = frame cnt
 
 	//double idt;
 	int size;
 	char *header=NULL;
 	otg_hdr_t * otg_hdr=NULL;
-	packet_t *packet=NULL;
+	
 	HEADER_TYPE header_type;
 	
 
@@ -351,9 +351,9 @@ int packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = fr
 
 	LOG_I(OTG,"Transmission info: idt=%d, simulation time=%d \n", otg_info->idt[src][dst], ctime); 
 	// do not generate packet for this pair of src, dst : no app type and/or idt are defined	
-	if ((g_otg->application_type[src][dst] == 0) && (g_otg->idt_dist[src][dst][0] == 0)){
+	if ((g_otg->application_type[src][dst] == 0) && (g_otg->idt_dist[src][dst][0] == 0)){ //???? to fix 
         	LOG_I(OTG,"Do not generate packet for this pair of src=%d, dst =%d: no app type and/or idt are defined\n", src, dst); 
-		return 0;	 
+		return NULL;	 
 	}
 
 //pre-config for the standalone
@@ -371,7 +371,7 @@ int packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = fr
 		}
 		else {
 		   LOG_I(OTG,"It is not the time to transmit (ctime= %d, previous time=%d, packet idt=%d),  node( %d,%d) \n", ctime,otg_info->ptime[src][dst][state], otg_info->idt[src][dst], src, dst);  
-		   return 0; // do not generate the packet, and keep the idt
+		   return NULL; // do not generate the packet, and keep the idt
 			}
 
 	
@@ -383,94 +383,121 @@ int packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = fr
 
  	packet= malloc(sizeof(*packet));
 
+	LOG_I(OTG,"Payload size=%d\n",size);
+	int header_size=header_size_gen(src);
+	LOG_I(OTG,"Header size=%d\n",header_size);
+	int otg_header_size= OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+ sizeof(packet->payload_size) + sizeof(packet->seq_num)+ sizeof(packet->header_size);
+
+
+
+LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%d \n", otg_header_size, header_size, size);
+
+// Adapt PAYLOAD and HEADER size: include OTG header in PAYLOAD and HEADER 
+	if (otg_header_size<header_size){
+		header_size-=otg_header_size;
+		LOG_I(OTG,"packet_gen :: adapt (after) packet size : header=%d, payload=%d \n", header_size, size);
+	}
+	else if ((otg_header_size+1)<(header_size + size)){	
+		
+		size= size + header_size -(otg_header_size + 1) ;
+		header_size=1;
+		LOG_I(OTG,"packet_gen :: adapt (after) packet size : header=%d, payload=%d \n", header_size, size);
+	}
+	else
+ 		LOG_I(OTG,"packet_gen :: adapt (after) packet size : header=%d, payload=%d \n", header_size, size);
+//
 
 	LOG_I(OTG,"==============STEP 1: OTG PAYLOAD OK============== \n");		
-	LOG_I(OTG,"Payload size=%d\n",size);	  
+		  
 	packet->payload=payload_pkts(size);
 	LOG_I(OTG,"packet_gen :: payload= (%d, %s) \n", size, packet->payload);
 	
 	
 	printf("==============STEP 2: OTG protocol HEADER OK============== \n");	
-	packet->header=header_gen(g_otg->ip_v[src], g_otg->trans_proto[src]);
+	packet->header=header_gen(header_size);
 	LOG_I(OTG,"packet_gen :: protocol HEADER= (%d, %s) \n", strlen(packet->header),packet->header);
+
+	int payload_size=strlen(packet->header);
+	packet->header_size=&payload_size;
 	
-	if ((g_otg->ip_v[src]==TCP) && (g_otg->trans_proto[src]==IPV4))
-		header_type=TCP_IPV4;
-	else if ((g_otg->ip_v[src]==UDP) && (g_otg->trans_proto[src]==IPV4))
-	header_type=UDP_IPV4;
-	else if ((g_otg->ip_v[src]==TCP) && (g_otg->trans_proto[src]==IPV6))
-	header_type=TCP_IPV6;
-	else if ((g_otg->ip_v[src]==UDP) && (g_otg->trans_proto[src]==IPV6))
-	header_type=UDP_IPV6;
- 
+
+
 	otg_info->header_type[src][dst]=header_type;
 
 	otg_info->seq_num[src][dst]+=1;
 	
+	int flow_id=1;
 	LOG_I(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
-	otg_hdr=otg_header_gen(otg_info->ctime,  otg_info->seq_num[src][dst], header_type);
+	otg_header_gen(flow_id, otg_info->ctime,  otg_info->seq_num[src][dst], size);
 
-    	packet->otg_hdr= (otg_hdr_t*)otg_hdr;
+    	
 
 
 
 
 	LOG_I(OTG,"==============STEP 4: PACKET OK============= \n");	
 
-	LOG_I(OTG,"PACKET SIZE (TX): time(%d)otg header(%d), header (%d), payload (%d), Total (%d) \n", ctime, sizeof(otg_hdr_t), strlen(packet->header), strlen(packet->payload),( sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload)));
+	LOG_I(OTG,"PACKET SIZE (TX): time(%d)otg header(%d), header (%d), payload (%d), Total (%d) \n", ctime, otg_header_size, strlen(packet->header), strlen(packet->payload),( otg_header_size + strlen(packet->header) + strlen(packet->payload)));
 
 
-	otg_info->tx_num_bytes[src][dst]+= sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload) ; 
+	otg_info->tx_num_bytes[src][dst]+= otg_header_size + strlen(packet->header) + strlen(packet->payload) ; 
 	otg_info->tx_num_pkt[src][dst]+=1;
 
-// Serialization
-	memcpy(&buffer_tx, packet,  sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload));
+	// Serialization
+	char *buffer_tx=NULL;
 
+	buffer_tx= (char*)malloc( otg_header_size + strlen(packet->header) + strlen(packet->payload));
 
-	if (NULL != otg_hdr){
-		otg_hdr=NULL;
-		free(otg_hdr);
-	}
+	memcpy(buffer_tx,packet->flag,  OTG_FLAG_SIZE);
+	memcpy(buffer_tx + OTG_FLAG_SIZE,packet->flow_id, sizeof(packet->flow_id));
+	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id),packet->time, sizeof(packet->time));
+	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time),packet->payload_size, sizeof(packet->payload_size));
+	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+sizeof(packet->payload_size) ,packet->seq_num, sizeof(packet->seq_num));
+	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+sizeof(packet->payload_size)+sizeof(packet->seq_num),packet->header_size, sizeof(packet->header_size));
+	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+sizeof(packet->payload_size)+sizeof(packet->seq_num)+sizeof(packet->header_size),packet->header, strlen(packet->header));
+	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+sizeof(packet->payload_size)+sizeof(packet->seq_num)+sizeof(packet->header_size)+ strlen(packet->header),packet->payload, strlen(packet->payload));
 
 
 	if (NULL != packet){
 			packet=NULL;  					
 			free(packet);
-			LOG_I(OTG,"RX Free packet\n");
+			LOG_I(OTG,"Free packet\n");
 	}
 
-	//return packet;
-	return 1;
+	return buffer_tx;
 }
 
 
+int header_size_gen(int src){
 
-char *header_gen(int ip_v, int trans_proto){
+int size_header=0;
 
-	int hdr_size=0;
-	char *hdr=NULL;
-
-	if (ip_v==0) { 
-		hdr_size=HDR_IP_v4_MIN;
+	if (g_otg->ip_v[src]==0) { 
+		size_header+=HDR_IP_v4_MIN;
 	}
-	else if  (ip_v==1){	
-		hdr_size=HDR_IP_v6;
+	else if  (g_otg->ip_v[src]==1){	
+		size_header+=HDR_IP_v6;
 	}
 	
-	if (trans_proto==0){	
- 		hdr_size=hdr_size + HDR_UDP ;
+	if (g_otg->trans_proto[src]==0){	
+ 		size_header+= HDR_UDP ;
 	}	
-	else if (trans_proto==1){
-		hdr_size=hdr_size + HDR_TCP;
+	else if (g_otg->trans_proto[src]==1){
+		size_header+= HDR_TCP;
 	}
 
-		if (hdr_size> sizeof(otg_hdr_t))
-			hdr_size-=sizeof(otg_hdr_t);
-		else if (hdr_size<= sizeof(otg_hdr_t))
-			LOG_E(OTG,"header_gen :: ERROR: header size (%d) < OTG header size (%d)\n", hdr_size, sizeof(otg_hdr_t));
-		 
+return size_header;
 
-	hdr=(char*)malloc(hdr_size*sizeof(char*));
+}
+
+
+char *header_gen(int hdr_size){
+
+
+	char *hdr=NULL;
+
+
+	hdr=(char*)malloc(hdr_size*sizeof(char));
 	hdr=random_string(hdr_size,NUM, HEADER_STRING);
 
 return(hdr);
@@ -481,27 +508,33 @@ return(hdr);
 char *payload_pkts(int payload_size){
 	
 	char *payload=NULL;	
-	payload=(char*)malloc(payload_size*sizeof(char*));
+	payload=(char*)malloc(payload_size*sizeof(char));
 	payload=random_string(payload_size,NUM_LETTER, PAYLOAD_STRING);
 	return (payload);
 
 }
 
 
+void otg_header_gen(int flow_id, int time, int seq_num, int payload_size){
 
-otg_hdr_t *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type){
+
+packet->flag=OTG_FLAG;
+packet->flow_id=&flow_id; // we manage only one flow	
+packet->time=&time;
+packet->payload_size=&payload_size;
+packet->seq_num=&seq_num; 
 
 
-	otg_hdr->flow_id=1; // we manage only one flow	
-	otg_hdr->time=time; 		
-	otg_hdr->seq_num=seq_num; 	  
-	otg_hdr->hdr_type=header_type; 
-	
+printf( "HEADER_ TX: FLAG %s\n", packet->flag);
+printf( "HEADER_ TX: FLOW ID %i\n", *packet->flow_id);
+printf( "HEADER_ TX: TIME %i\n", *packet->time);
+printf( "HEADER_ TX: NUM SEQUENCE %i\n", *packet->seq_num);
+//printf( "HEADER_ TX: HEADER SIZE %i\n", *packet->header_size);
+printf( "HEADER_ TX: PAYLOAD SIZE %i\n", *packet->payload_size);
 
-return otg_hdr; 
+
 
 }
-
 
 
 

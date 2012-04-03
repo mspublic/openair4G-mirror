@@ -41,7 +41,7 @@
 
 #include "otg.h"
 
-
+ 
 
 // Defining initial and default values of OTG structures 
 

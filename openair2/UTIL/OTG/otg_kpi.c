@@ -122,18 +122,17 @@ int max_owd=0;
 				rx_goodput(i, j);
 				rx_loss_rate_pkts(i, j);
 
-
-	LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j, otg_info->tx_num_pkt[i][j], otg_info->rx_num_pkt[i][j]);
+LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j,  otg_info->tx_num_pkt[i][j],  otg_info->rx_num_pkt[i][j]);
 
 
 	if (otg_info->tx_throughput[i][j]>0) {
 
 					if (otg_info->tx_throughput[i][j]==otg_info->rx_goodput[i][j]){
-LOG_I(OTG,"KPI:  (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %.3lf (Kbytes/sec), loss rate(percentage)= %d",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j],0);
+LOG_I(OTG,"KPI:  (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %lf(Kbytes/sec), RX goodput= %lf (Kbytes/sec), loss rate(percentage)= %d\n",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j],0);
 }
 
 					else if (otg_info->tx_throughput[i][j]>otg_info->rx_goodput[i][j]){
-LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %.3lf (Kbytes/sec), loss rate(percentage)= %.3lf pkts\n ",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j], (otg_info->rx_loss_rate[i][j]*100)); }
+LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %lf (Kbytes/sec), loss rate(percentage)= %lf pkts\n ",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j], (otg_info->rx_loss_rate[i][j]*100)); }
 					
 	tx_total_bytes+=otg_info->tx_num_bytes[i][j];
 	tx_total_pkts+=otg_info->tx_num_pkt[i][j];
@@ -146,7 +145,7 @@ LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one
 	if ((max_owd<otg_info->rx_owd_max[i][j]) || (max_owd==0))
 		max_owd=otg_info->rx_owd_max[i][j];
 
-
+	LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j,  otg_info->tx_num_pkt[i][j],  otg_info->rx_num_pkt[i][j]);
 
 	#if STANDALONE==1
 
@@ -160,9 +159,10 @@ LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one
 		fprintf(file,"RTT MAX (one way)ms= %d \n", otg_info->rx_owd_max[i][j]);
 		fprintf(file,"TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput[i][j]);
 		fprintf(file,"RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput[i][j]);
-		if (otg_info->rx_loss_rate[i][j]>0)
+		if (otg_info->rx_loss_rate[i][j]>0){
 			fprintf(file,"Loss rate(percentage)= %lf pkts \n", (otg_info->rx_loss_rate[i][j]*100));
-	 
+	 		fprintf(file,"NB Lost  packets=%d \n", otg_info->nb_loss_pkts[i][j]);
+		}
 	#else
 		LOG_T(OTG,"----------------------------------------------------------\n");
 		LOG_T(OTG,"Total Time= %d \n", otg_info->ctime);
@@ -174,8 +174,10 @@ LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one
 		LOG_T(OTG,"RTT MAX (one way)ms= %d \n", otg_info->rx_owd_max[i][j]);
 		LOG_T(OTG,"TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput[i][j]);
 		LOG_T(OTG,"RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput[i][j]);
-		if (otg_info->rx_loss_rate[i][j]>0)
+		if (otg_info->rx_loss_rate[i][j]>0){
 			LOG_T(OTG,"Loss rate(percentage)= %lf pkts \n", (otg_info->rx_loss_rate[i][j]*100));
+			LOG_T(OTG,"NB Lost  packets= %d \n", otg_info->nb_loss_pkts[i][j]);
+		}
 
 	#endif 
 

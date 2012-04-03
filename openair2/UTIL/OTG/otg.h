@@ -62,8 +62,8 @@
 	#define LOG_D(c, x...) printf(x)
 	#define LOG_F(c, x...) printf(x)  
 	#define LOG_T(c, x...) printf(x)
-typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
-#include "otg_vars.h"
+	typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
+	#include "otg_vars.h"
 #else
 	#include "../UTIL/LOG/log.h"
 	#include "otg_externs.h"
