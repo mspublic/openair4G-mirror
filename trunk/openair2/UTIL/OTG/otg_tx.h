@@ -91,17 +91,17 @@ char *random_string(int size, ALPHABET data_type, char *data_string);
 * \note 
 * @ingroup  _otg
 */
-int packet_gen(int src, int dst, int state, int ctime);
+char *packet_gen(int src, int dst, int state, int ctime);
 
 
-/*! \fn char *header_gen(int ip_v, int trans_proto);
+/*! \fn char *header_gen(int  hdr_size);
 * \brief generate IP (v4/v6) + transport header(TCP/UDP) 
-* \param[in] int : ip version + transp proto  
+* \param[in] int : size 
 * \param[out] the payload corresponding to ip version and transport protocol
 * \note 
 * @ingroup  _otg
 */
-char *header_gen(int ip_v, int trans_proto);
+char *header_gen(int hdr_size);
 
 /*! \fn char *payload_pkts(int payload_size);
 * \brief generate the payload
@@ -113,14 +113,14 @@ char *header_gen(int ip_v, int trans_proto);
 char *payload_pkts(int payload_size);
 
 
-/*! \fn char *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type);
+/*! \fn void otg_header_gen(int time, int seq_num, HEADER_TYPE header_type,int payload_size);
 * \brief generate OTG header 
-* \param[in]  simulation time, header_type (to know the transport/ip version in the RX) and the packet sequence number  
+* \param[in]  simulation time, header_size (to know the transport/ip version in the RX) and, packet sequence number and the payload_size  
 * \param[out] otg header
 * \note 
 * @ingroup  _otg
 */
-otg_hdr_t *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type);
+void otg_header_gen(int flow_id, int time, int seq_num, int payload_size);
 
 
 /*! \fn int adjust_size(int size);
@@ -132,4 +132,13 @@ otg_hdr_t *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type);
 */
 int adjust_size(int size);
 
+
+/*! \fn int header_size_genint src();
+* \brief return the header size corresponding to ip version and transport protocol  
+* \param[in]  the sender (src)
+* \param[out] size of packet header 
+* \note 
+* @ingroup  _otg
+*/
+int header_size_gen(int src);
 #endif

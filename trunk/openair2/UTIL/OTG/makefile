@@ -12,7 +12,7 @@ help:
 	@echo ' "make otg" to compile OTG'
 	
 otg: ${OBJ_OTG} 
-	${CC}  -pg -O3 ${OBJ_OTG} -D STANDALONE=1 -lm -o otg 
+	${CC}  -g -O3 ${OBJ_OTG} -D STANDALONE=1 -lm -o otg 
 
 clean: 
 	@rm otg
