@@ -49,7 +49,7 @@
 
 
 #include "otg_defs.h"
-
+#include "otg_config.h"
 
 #if STANDALONE==1
 	#define LOG_G(c, x...) printf(x)

@@ -56,11 +56,11 @@ void init_all_otg()  {
  	memset(g_otg, 0, sizeof(otg_t));		
 
 	//set otg infos to 0
- 	otg_info = calloc(1, sizeof(otg_info_t));
-	if (otg_info == NULL)
+ 	otg_hdr_info = calloc(1, sizeof(otg_hdr_info_t));
+	if (otg_hdr_info == NULL)
    	/* Memory could not be allocated */
    		printf("Couldn't allocate memory\n");
- 	memset(otg_info, 0, sizeof(otg_info_t));
+ 	memset(otg_hdr_info, 0, sizeof(otg_hdr_info_t));
 
 
 	//set otg header to 0
@@ -69,6 +69,8 @@ void init_all_otg()  {
    	/* Memory could not be allocated */
    		printf("Couldn't allocate memory\n");
  	memset(otg_hdr, 0, sizeof(otg_hdr_t));
+
+	printf("init done\n");
 
 }
 
