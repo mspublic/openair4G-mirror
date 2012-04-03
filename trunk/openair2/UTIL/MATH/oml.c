@@ -65,39 +65,16 @@ void init_seeds(int seed){
 double uniform_rng() {		
 	double random;
 
-	random = wichman_hill();
-        LOG_I(OTG,"Uniform random number using wichman_hill= %lf\n", random);
+	//random = wichman_hill();  // wichman hill
+	random = (double)taus(OTG)/((double)0xffffffff);
+
+LOG_I(OTG,"Uniform taus random number= %lf\n", random);
 return random;
 }
 
 
 
 
-double wichman_hill() {
-
-		double temp, random;
-		int modx = x % 177;
-		int mody = y % 176;
-		int modz = z % 178;
-	
-	//First  Generator	
-	x = (171 * modx) - (2 * modx);
-	if (x < 0) 
-	x += 30269;
-	//Second  Generator
-	y = (172 * mody) - (35 * mody);
-	if (y < 0) 
-	y += 30307;
-	//Third Generator
-	z = (170 * modz) - (63 * modz);
-	if (z < 0) 
-	z += 30323;
-	temp = (x / 30269.0) + (y / 30307.0) + (z / 30323.0);
-        //printf ("temp %lf\n", temp);
-	random = temp - (int)temp;
-
-	return random;
-}
 
 
 // Uniform Distribution using the Uniform_Random_Number_Generator
@@ -254,5 +231,32 @@ LOG_I(OTG,"Cauchy :: scale=%.2f, shape=%.2f \n", scale,shape);
 }
 
 
+
+
+double wichman_hill() { // not used
+
+		double temp, random;
+		int modx = x % 177;
+		int mody = y % 176;
+		int modz = z % 178;
+	
+	//First  Generator	
+	x = (171 * modx) - (2 * modx);
+	if (x < 0) 
+	x += 30269;
+	//Second  Generator
+	y = (172 * mody) - (35 * mody);
+	if (y < 0) 
+	y += 30307;
+	//Third Generator
+	z = (170 * modz) - (63 * modz);
+	if (z < 0) 
+	z += 30323;
+	temp = (x / 30269.0) + (y / 30307.0) + (z / 30323.0);
+        //printf ("temp %lf\n", temp);
+	random = temp - (int)temp;
+
+	return random;
+}
 
 
