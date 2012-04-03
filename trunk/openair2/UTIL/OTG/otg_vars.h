@@ -44,8 +44,9 @@
 
 /*!< \brief main log variables */
 otg_t *g_otg; /*!< \brief  global params */
-otg_info_t *otg_info; /*!< \brief  info otg */
+otg_hdr_info_t *otg_hdr_info; /*!< \brief  info otg */
 otg_hdr_t *otg_hdr; /*!< \brief  otg header */
+otg_info_t *otg_info;
 
 //int ptime; /*!< \brief ptime is uses to compute the local simulation time */
 

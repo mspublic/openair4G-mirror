@@ -50,10 +50,8 @@
 #include <unistd.h>
 
 
-#include "otg_defs.h"
-#include "otg_config.h"
 #include "otg.h"
-#include "otg_externs.h"
+
 #include "../MATH/oml.h"
 
 

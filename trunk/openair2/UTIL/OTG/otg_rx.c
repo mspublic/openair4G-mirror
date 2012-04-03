@@ -49,13 +49,13 @@ char *check_packet( int src, int dst, int ctime, char *buffer_tx){
 	
 	int status_ok=0;
 	packet_t* packet_rx;
-
+/*
 if (buffer_tx!=NULL) {
 
-	packet_rx= malloc(sizeof(*packet_rx));
+	//packet_rx= malloc(sizeof(*packet_rx));
 
-	packet_rx->flag= (char*)malloc(OTG_FLAG_SIZE);
-	memcpy(packet_rx->flag,  buffer_tx, OTG_FLAG_SIZE);
+	//packet_rx->flag= (char*)malloc(OTG_FLAG_SIZE);
+	//memcpy(packet_rx->flag,  buffer_tx, OTG_FLAG_SIZE);
 
 
 	set_ctime(ctime);
@@ -181,7 +181,7 @@ else {
 	LOG_W(OTG,"check_packet :: ERROR: NO_PACKETS RECEIVED\n");
 	return("fffff"); //The case when no packet is received
 	}
-
+*/
 }
 
 

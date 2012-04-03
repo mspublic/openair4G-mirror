@@ -46,7 +46,7 @@
 #	define NUMBER_OF_eNB_MAX 3
 #	define NUMBER_OF_UE_MAX 3
 #else
-	#include "../../../openair1/PHY/impl_defs_top.h" /* \brief To define the NUMBER_OF_eNB_MAX and NUMBER_OF_UE_MAX */
+	#include "PHY/impl_defs_top.h" /* \brief To define the NUMBER_OF_eNB_MAX and NUMBER_OF_UE_MAX */
 #endif	
 
 
@@ -208,14 +208,19 @@ typedef struct {
 */
 typedef struct{
 
-	int flow_id:16; 	/*!< \brief It identify the flow ID (we can have source and destination with several flows)  */
-	int time:16; 		/*!< \brief simulation time at the tx, this is ctime */
-	int payload_size:16;	/*!< \brief the size of the payload to transmit */
-	int seq_num:16; 	/*!< \brief Sequence Number, counter of data packets between tx and rx */  
-	int hdr_type:16; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
+	int flow_id; 	/*!< \brief It identify the flow ID (we can have source and destination with several flows)  */
+	int time; 		/*!< \brief simulation time at the tx, this is ctime */
+	int seq_num; 	/*!< \brief Sequence Number, counter of data packets between tx and rx */  
+	int hdr_type; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
+	//int payload_size;	/*!< \brief the size of the payload to transmit */
+	//int header_size; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 }__attribute__((__packed__)) otg_hdr_t;
 
-
+typedef struct{
+	int flag;
+	unsigned int size;
+}__attribute__((__packed__)) otg_hdr_info_t;
+ 
 
 /**
 * \struct packet_t
@@ -225,14 +230,9 @@ typedef struct{
 *
 */
 
+
 typedef struct{
-	//otg_hdr_t*  otg_hdr; 	/*!< \brief OTG header  */
-	char* flag ; 
-	int* flow_id; 		/*!< \brief It identify the flow ID (we can have source and destination with several flows)  */
-	int* time; 		/*!< \brief simulation time at the tx, this is ctime */
-	int* payload_size;	/*!< \brief the size of the payload to transmit */
-	int* seq_num; 		/*!< \brief Sequence Number, counter of data packets between tx and rx */  
-	int* header_size; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
+//	otg_hdr_t*  otg_hdr; 	/*!< \brief OTG header  */
 	char* header ; 		/*!< \brief  Header */
 	char* payload; 		/*!< \brief  Payload*/  
 }__attribute__((__packed__)) packet_t;

@@ -40,6 +40,7 @@
 
 
 #include "otg_tx.h" 
+#include "otg_vars.h"
 
 
 packet_t *packet=NULL;
@@ -335,10 +336,14 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
 
 	//double idt;
 	int size;
+	int flow_id=1;
 	char *header=NULL;
 	otg_hdr_t * otg_hdr=NULL;
-	
+	char *buffer_tx=NULL;
 	HEADER_TYPE header_type;
+	otg_hdr_t *otg_hdr_p;
+	otg_hdr_info_t *otg_hdr_info_p;
+	unsigned int  byte_tx_count=0; 
 	
 
 	set_ctime(ctime);	
@@ -386,14 +391,14 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
 	LOG_I(OTG,"Payload size=%d\n",size);
 	int header_size=header_size_gen(src);
 	LOG_I(OTG,"Header size=%d\n",header_size);
-	int otg_header_size= OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+ sizeof(packet->payload_size) + sizeof(packet->seq_num)+ sizeof(packet->header_size);
+	//int otg_header_size= OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+ sizeof(packet->payload_size) + sizeof(packet->seq_num)+ sizeof(packet->header_size);
 
 
 
-LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%d \n", otg_header_size, header_size, size);
+//LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%d \n", otg_header_size, header_size, size);
 
 // Adapt PAYLOAD and HEADER size: include OTG header in PAYLOAD and HEADER 
-	if (otg_header_size<header_size){
+/*	if (otg_header_size<header_size){
 		header_size-=otg_header_size;
 		LOG_I(OTG,"packet_gen :: adapt (after) packet size : header=%d, payload=%d \n", header_size, size);
 	}
@@ -405,6 +410,7 @@ LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%
 	}
 	else
  		LOG_I(OTG,"packet_gen :: adapt (after) packet size : header=%d, payload=%d \n", header_size, size);
+*/
 //
 
 	LOG_I(OTG,"==============STEP 1: OTG PAYLOAD OK============== \n");		
@@ -418,7 +424,7 @@ LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%
 	LOG_I(OTG,"packet_gen :: protocol HEADER= (%d, %s) \n", strlen(packet->header),packet->header);
 
 	int payload_size=strlen(packet->header);
-	packet->header_size=&payload_size;
+	//packet->header_size=&payload_size;
 	
 
 
@@ -426,9 +432,9 @@ LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%
 
 	otg_info->seq_num[src][dst]+=1;
 	
-	int flow_id=1;
+	
 	LOG_I(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
-	otg_header_gen(flow_id, otg_info->ctime,  otg_info->seq_num[src][dst], size);
+	//otg_header_gen(flow_id, otg_info->ctime,  otg_info->seq_num[src][dst], size);
 
     	
 
@@ -437,17 +443,36 @@ LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%
 
 	LOG_I(OTG,"==============STEP 4: PACKET OK============= \n");	
 
-	LOG_I(OTG,"PACKET SIZE (TX): time(%d)otg header(%d), header (%d), payload (%d), Total (%d) \n", ctime, otg_header_size, strlen(packet->header), strlen(packet->payload),( otg_header_size + strlen(packet->header) + strlen(packet->payload)));
+	//LOG_I(OTG,"PACKET SIZE (TX): time(%d)otg header(%d), header (%d), payload (%d), Total (%d) \n", ctime, otg_header_size, strlen(packet->header), strlen(packet->payload),( otg_header_size + strlen(packet->header) + strlen(packet->payload)));
 
 
-	otg_info->tx_num_bytes[src][dst]+= otg_header_size + strlen(packet->header) + strlen(packet->payload) ; 
+	otg_info->tx_num_bytes[src][dst]+= sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload) ; 
 	otg_info->tx_num_pkt[src][dst]+=1;
 
+//printf("otg_hdr_info size %d \n",sizeof(otg_hdr_t) );
+
 	// Serialization
-	char *buffer_tx=NULL;
+	
 
-	buffer_tx= (char*)malloc( otg_header_size + strlen(packet->header) + strlen(packet->payload));
+	buffer_tx= (char*)malloc(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload));
+	otg_hdr_info_p = (otg_hdr_info_t *) buffer_tx[byte_tx_count];
+	
 
+	otg_hdr_info_p->size= sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload);
+	otg_hdr_info_p->flag=11;
+	byte_tx_count = sizeof(otg_hdr_info_t);
+	otg_hdr_p = (otg_hdr_t *) buffer_tx[byte_tx_count];
+	otg_hdr_p->flow_id =flow_id;
+	otg_hdr_p->time =otg_info->ctime;
+	otg_hdr_p->seq_num =otg_info->seq_num[src][dst];
+
+	byte_tx_count += sizeof(otg_hdr_t);
+	memcpy(buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
+	byte_tx_count += strlen(packet->header);	
+	memcpy(buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
+
+
+/*
 	memcpy(buffer_tx,packet->flag,  OTG_FLAG_SIZE);
 	memcpy(buffer_tx + OTG_FLAG_SIZE,packet->flow_id, sizeof(packet->flow_id));
 	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id),packet->time, sizeof(packet->time));
@@ -456,7 +481,21 @@ LOG_I(OTG,"packet_gen :: adapt (before) OTG header size=%d, header=%d, payload=%
 	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+sizeof(packet->payload_size)+sizeof(packet->seq_num),packet->header_size, sizeof(packet->header_size));
 	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+sizeof(packet->payload_size)+sizeof(packet->seq_num)+sizeof(packet->header_size),packet->header, strlen(packet->header));
 	memcpy(buffer_tx + OTG_FLAG_SIZE + sizeof(packet->flow_id) + sizeof(packet->time)+sizeof(packet->payload_size)+sizeof(packet->seq_num)+sizeof(packet->header_size)+ strlen(packet->header),packet->payload, strlen(packet->payload));
+*/
 
+
+	if (NULL != otg_hdr_info_p){
+			free(otg_hdr_info_p);
+			otg_hdr_info_p=NULL;  					
+			
+			LOG_I(OTG,"Free OTG otg_hdr_info\n");
+	}
+
+	if (NULL != otg_hdr_p){
+			free(otg_hdr_p);
+			otg_hdr=NULL;  								
+			LOG_I(OTG,"Free OTG header\n");
+	}
 
 	if (NULL != packet){
 			packet=NULL;  					
@@ -517,7 +556,7 @@ char *payload_pkts(int payload_size){
 
 void otg_header_gen(int flow_id, int time, int seq_num, int payload_size){
 
-
+/*
 packet->flag=OTG_FLAG;
 packet->flow_id=&flow_id; // we manage only one flow	
 packet->time=&time;
@@ -532,7 +571,7 @@ printf( "HEADER_ TX: NUM SEQUENCE %i\n", *packet->seq_num);
 //printf( "HEADER_ TX: HEADER SIZE %i\n", *packet->header_size);
 printf( "HEADER_ TX: PAYLOAD SIZE %i\n", *packet->payload_size);
 
-
+*/
 
 }
 

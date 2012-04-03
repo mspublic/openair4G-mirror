@@ -46,9 +46,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "otg.h"
-#include "otg_externs.h"
-#include "otg_defs.h"
-#include "otg_config.h"
+#include "otg_externs.h" // not needed, you should compute kpi from the pkt header
+
+
 
 
 /*! \fn void tx_throughput( int src, int dst)
