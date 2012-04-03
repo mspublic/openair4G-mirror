@@ -80,6 +80,11 @@ endif
 #make all Rel10=1
 ifdef  Rel10
 CFLAGS += -DRel10
+ $(shell ln -s $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ;rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated; 	rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; )
+endif
+
+ifdef  Rel8
+ $(shell ln -s $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ;rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated; 	rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ;)
 endif
 
 ifdef NAS_NETLINK

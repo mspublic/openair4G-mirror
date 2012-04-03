@@ -706,10 +706,11 @@ int ocg_config_emu(){
 	  oai_emulation.info.cli_start_ue[0]);
   }
   
-  /* : TODO
-     LOG_I(OCG, "OPT output file directory = %s\n", oai_emulation.info.output_path);
-     Init_OPT(0,"outfile.dump","127.0.0.1",1234); // Init_OPT(2, oai_emulation.info.output_path, NULL, 0);*/
-  
+  //bin/LOG_I(OCG, "OPT output file directory = %s\n", oai_emulation.info.output_path);
+    if (oai_emulation.info.opt_enabled){
+      LOG_I(OPT, " initiated  ");
+      Init_OPT(0,"outfile.dump","127.0.0.1",1234); // Init_OPT(2, oai_emulation.info.output_path, NULL, 0);*/
+    }
   
   return 1;  
 

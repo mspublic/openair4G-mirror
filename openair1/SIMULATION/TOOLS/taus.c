@@ -8,7 +8,7 @@
 #include <rtai_sched.h>
 #define time(x) (unsigned int)(rt_get_time_ns())
 #endif
-
+#include<stdlib.h>
 unsigned int s0, s1, s2, b;
 
 //----------------------------------------------
@@ -29,6 +29,9 @@ inline unsigned int taus() {
 }
 
 void set_taus_seed(unsigned int seed_init) {
+
+  struct drand48_data buffer;
+  unsigned int result = 0;
   
   if (seed_init == 0) {
     s0 = (unsigned int)time(NULL); 
@@ -36,9 +39,17 @@ void set_taus_seed(unsigned int seed_init) {
     s2 = (unsigned int)time(NULL); 
   }
   else {
-    s0 = (unsigned int)0x1e23d852;
-    s1 = (unsigned int)0x81f38a1c;
-    s2 = (unsigned int)0xfe1a133e;
+    //  s0 = (unsigned int)0x1e23d852;
+    // s1 = (unsigned int)0x81f38a1c;
+    // s2 = (unsigned int)0xfe1a133e;
+    /* Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
+    srand48_r((long int)seed_init, &buffer);
+    mrand48_r(&buffer, (long int *)&result);
+    s0 = result;
+    mrand48_r(&buffer, (long int *)&result);
+    s1 = result;
+    mrand48_r(&buffer, (long int *)&result);
+    s2 = result;
   }
 }
 

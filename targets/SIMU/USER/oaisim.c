@@ -548,7 +548,7 @@ main (int argc, char **argv)
   double snr_dB, sinr_dB,snr_direction,sinr_direction;
   u8 set_snr=0,set_sinr=0;
   u8 ue_connection_test=0;
-
+  u8 set_seed=0;
   u8 cooperation_flag;		// for cooperative communication
   u8 target_dl_mcs = 4;
   u8 target_ul_mcs = 2;
@@ -754,6 +754,7 @@ main (int argc, char **argv)
       oai_emulation.info.opt_enabled = 1;
       break;
     case 'E':
+      set_seed = 1;
       oai_emulation.info.seed = atoi (optarg);
       break;
     case 'I':
@@ -847,7 +848,13 @@ main (int argc, char **argv)
   LOG_T(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, awgn_flag %d\n",
   	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,awgn_flag);
   
-
+  if(set_seed){
+    randominit (oai_emulation.info.seed);
+    set_taus_seed (oai_emulation.info.seed);
+  } else {
+    randominit (0);
+    set_taus_seed (0);
+  }
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   //printf ("Nid_cell %d\n", frame_parms->Nid_cell);
@@ -919,9 +926,6 @@ main (int argc, char **argv)
     }
   }
 
-  randominit (0);
-  set_taus_seed (0);
-
   number_of_cards = 1;
 
   openair_daq_vars.rx_rf_mode = 1;
@@ -978,13 +982,12 @@ main (int argc, char **argv)
 
 #ifdef OPENAIR2
   l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
-
   for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
       mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);	//UE_id%NB_eNB_INST);
-  }
+      }
 #endif
 
 
@@ -1374,6 +1377,8 @@ main (int argc, char **argv)
     fclose (UE_stats[UE_id]);
   fclose (eNB_stats);
 #endif
+ // stop OMG
+ stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
 
  destroyMat(ShaF,map1, map2);
  if (oai_emulation.info.cli_enabled)
