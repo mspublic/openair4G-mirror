@@ -347,8 +347,6 @@ pdcp_run (u32_t frame,u8 eNB_flag)
   if ( eNB_flag == 0){
 
 
-    LOG_I(OTG, "TEST Calling OTG %d\n", frame);
-	set_ctime(frame); 
 //OTG 
 /*
 char *rx_packet_out;
