@@ -39,8 +39,9 @@
 */
 
 
-#include "otg.h"
 
+#include "otg.h"
+#include "otg_vars.h"
  
 
 // Defining initial and default values of OTG structures 
