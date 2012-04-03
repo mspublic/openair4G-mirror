@@ -94,7 +94,7 @@ void init_SI_UE(u8 Mod_id,u8 eNB_index) {
 }
 
 /*------------------------------------------------------------------------------*/
-char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
+char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
   /*-----------------------------------------------------------------------------*/
 
   LOG_D(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",Mod_id,eNB_index);

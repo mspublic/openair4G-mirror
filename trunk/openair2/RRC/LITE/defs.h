@@ -218,8 +218,8 @@ typedef struct{
 int rrc_init_global_param(void);
 int L3_xface_init(void);
 void openair_rrc_top_init(void);
-char openair_rrc_eNB_init(u8 Mod_id);
-char openair_rrc_ue_init(u8 Mod_id,u8 CH_IDX);
+char openair_rrc_lite_eNB_init(u8 Mod_id);
+char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag);
 
@@ -455,7 +455,7 @@ int decode_SIB1(u8 Mod_id,u8 CH_index);
 
 int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
-int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
+int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
 
 #endif
 

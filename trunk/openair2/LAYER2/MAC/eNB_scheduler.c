@@ -44,7 +44,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
-
+#include "UTIL/OPT/opt.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
@@ -56,7 +56,7 @@
 
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 0
-//#define DEBUG_PACKET_TRACE 0
+#define DEBUG_PACKET_TRACE 1
 
 //#define ICIC 0
 
@@ -1019,12 +1019,10 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	//ULSCH_dci1 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[1].ULSCH_DCI[harq_pid];
 
 	//msg("FAIL\n");
-	status = get_rrc_status(Mod_id,1,next_ue);
+	status = mac_get_rrc_status(Mod_id,1,next_ue);
 	//status0 = Rrc_xface->get_rrc_status(Mod_id,1,0);
 	//status1 = Rrc_xface->get_rrc_status(Mod_id,1,1);
-
-	/*
-	       if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
+	/* if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
 	       ULSCH_dci->cqi_req = 0;
 	       else
 	       ULSCH_dci->cqi_req = 1;
