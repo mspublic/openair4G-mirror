@@ -144,7 +144,8 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   // Measurements
   //rrc_ue_meas_loop();   // for test only
 */
-  protocol_bs->rrc.current_SFN = Mac_rlc_xface->frame;
+//  protocol_bs->rrc.current_SFN = Mac_rlc_xface->frame;
+  protocol_bs->rrc.current_SFN = frame;
 //  if (protocol_ms->rrc.current_SFN % 50 == 0) {
 #ifdef DEBUG_RRC_DETAILS
     msg ("\n[RRC][MSG_TEST] System Measurement Time : %d\n", protocol_bs->rrc.current_SFN);
