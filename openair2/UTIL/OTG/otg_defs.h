@@ -127,8 +127,8 @@ typedef enum {
 *
 */
 typedef enum {  
-	NUM_LETTER=0,
-	NUM, 
+	STATIC_STRING=0,
+	RANDOM_STRING, 
 }ALPHABET;
 
 
