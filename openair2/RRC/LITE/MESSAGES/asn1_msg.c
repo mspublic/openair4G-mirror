@@ -513,7 +513,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep=RACH_ConfigCommon__powerRampingParameters__powerRampingStep_dB2;
 
 
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_116;
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_108;
 
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax=RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
 
@@ -568,9 +568,9 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // uplinkPowerControlCommon
 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -114;
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -108;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha=UplinkPowerControlCommon__alpha_al1;
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -114;
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -108;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1=DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b=DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
 
@@ -1224,13 +1224,22 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   struct LogicalChannelConfig *DRB_lchan_config;
   struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
   DRB_ToAddModList_t *DRB_list;
-
+  MeasObjectToAddModList_t *MeasObj_list;
+  MeasObjectToAddMod_t *MeasObj;
+  ReportConfigToAddModList_t *ReportConfig_list;
+  ReportConfigToAddMod_t *ReportConfig;
+  MeasIdToAddModList_t *MeasId_list;
+  MeasIdToAddMod_t *MeasId;
+  
   long *logicalchannelgroup,*logicalchannelgroup_drb;
 
   DL_DCCH_Message_t dl_dcch_msg;
 
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
   long *lcid;
+
+  RSRP_Range_t *rsrp;
+  struct MeasConfig__speedStatePars *Sparams;
 
   //  int i;
 
@@ -1366,7 +1375,43 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 #ifdef Rel10
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_RA_ConfigList_rlola = NULL;
 #endif
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
+
+  // Configure MeasObject
+  /*
+  MeasObj          = CALLOC(1,sizeof(*MeasObj));
+  ReportConfig     = CALLOC(1,sizeof(*ReportConfig));
+  MeasId           = CALLOC(1,sizeof(*MeasId));
+  MeasObj_list      = CALLOC(1,sizeof(*MeasObjToAddModList));
+  ReportConfig_list = CALLOC(1,sizeof(*ReportConfigToAddModList));
+  MeasId_list       = CALLOC(1,sizeof(*MeasIdToAddModList));
+
+  MeasObj->measObjectId           = 0;
+  MeasObj->present                = MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
+  MeasObj->choice.measObjectEUTRA.carrierFreq = ;
+  MeasObj->choice.measObjectEUTRA.allowedMeasBandwidth = ;
+  MeasObj->choice.measObjectEUTRA.presenceAntennaPort1 = ;
+  MeasObj->choice.measObjectEUTRA.carrierFreq = ;
+
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->  
+  rsrp=CALLOC(1,sizeof(RSRP_Range_t));
+  *rsrp=20;
+  
+
+  Sparams = CALLOC(1,sizeof(*Sparams));
+  Sparams->present=MeasConfig__speedStatePars_PR_setup;
+  Sparams->choice.setup.timeToTrigger_SF.sf_High=SpeedStateScaleFactors__sf_Medium_oDot75;
+  Sparams->choice.setup.timeToTrigger_SF.sf_Medium=SpeedStateScaleFactors__sf_High_oDot5;
+  Sparams->choice.setup.mobilityStateParameters.n_CellChangeHigh=10;
+  Sparams->choice.setup.mobilityStateParameters.n_CellChangeMedium=5;
+  Sparams->choice.setup.mobilityStateParameters.t_Evaluation=MobilityStateParameters__t_Evaluation_s60;
+  Sparams->choice.setup.mobilityStateParameters.t_HystNormal=MobilityStateParameters__t_HystNormal_s120;
+  
+  speedStatePars=Sparams;
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure=rsrp;
+  */
+
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
@@ -1482,6 +1527,99 @@ uint8_t do_MCCHMessage(uint8_t *buffer) {
 
 }
 #endif
+
+uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,int rsrq_s,int rsrp_t,int rsrq_t) {
+
+
+  asn_enc_rval_t enc_rval;
+
+  UL_DCCH_Message_t ul_dcch_msg;
+
+  MeasurementReport_t	 *measurementReport;
+
+  ul_dcch_msg.message.present                     = UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present           = UL_DCCH_MessageType__c1_PR_measurementReport;
+  measurementReport            = &ul_dcch_msg.message.choice.c1.choice.measurementReport;
+
+  measurementReport->criticalExtensions.present=MeasurementReport__criticalExtensions_PR_c1;
+  measurementReport->criticalExtensions.choice.c1.present=MeasurementReport__criticalExtensions__c1_PR_measurementReport_r8;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension=CALLOC(1,sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension));
+
+
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId=measid;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrpResult=rsrp_s;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrqResult=rsrq_s;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells=CALLOC(1,sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells));
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->present=MeasResults__measResultNeighCells_PR_measResultListEUTRA;
+
+  MeasResultListEUTRA_t	 *measResultListEUTRA2;
+  measResultListEUTRA2 = CALLOC(1,sizeof(*measResultListEUTRA2));
+
+  struct MeasResultEUTRA *measresulteutra2;
+  measresulteutra2 = CALLOC(1,sizeof(*measresulteutra2));
+  measresulteutra2->physCellId=phy_id;//1;
+
+  struct MeasResultEUTRA__cgi_Info *measresult_cgi2;
+  measresult_cgi2 = CALLOC(1,sizeof(*measresult_cgi2));
+
+
+  memset(&measresult_cgi2->cellGlobalId.plmn_Identity,0,sizeof(measresult_cgi2->cellGlobalId.plmn_Identity));
+
+  measresult_cgi2->cellGlobalId.plmn_Identity.mcc=CALLOC(1,sizeof(measresult_cgi2->cellGlobalId.plmn_Identity.mcc));
+
+  asn_set_empty(&measresult_cgi2->cellGlobalId.plmn_Identity.mcc->list);//.size=0;
+
+    MCC_MNC_Digit_t dummy;
+    dummy=2;ASN_SEQUENCE_ADD(&measresult_cgi2->cellGlobalId.plmn_Identity.mcc->list,&dummy);
+    dummy=6;ASN_SEQUENCE_ADD(&measresult_cgi2->cellGlobalId.plmn_Identity.mcc->list,&dummy);
+    dummy=2;ASN_SEQUENCE_ADD(&measresult_cgi2->cellGlobalId.plmn_Identity.mcc->list,&dummy);
+
+    measresult_cgi2->cellGlobalId.plmn_Identity.mnc.list.size=0;
+    measresult_cgi2->cellGlobalId.plmn_Identity.mnc.list.count=0;
+    dummy=8;ASN_SEQUENCE_ADD(&measresult_cgi2->cellGlobalId.plmn_Identity.mnc.list,&dummy);
+    dummy=0;ASN_SEQUENCE_ADD(&measresult_cgi2->cellGlobalId.plmn_Identity.mnc.list,&dummy);
+
+
+    measresult_cgi2->cellGlobalId.cellIdentity.buf=MALLOC(8);
+    measresult_cgi2->cellGlobalId.cellIdentity.buf[0]=0x01;
+    measresult_cgi2->cellGlobalId.cellIdentity.buf[1]=0x48;
+    measresult_cgi2->cellGlobalId.cellIdentity.buf[2]=0x0f;
+    measresult_cgi2->cellGlobalId.cellIdentity.buf[3]=0x03;
+    measresult_cgi2->cellGlobalId.cellIdentity.size=4;
+    measresult_cgi2->cellGlobalId.cellIdentity.bits_unused=4;
+
+    measresult_cgi2->trackingAreaCode.buf = MALLOC(2);
+    measresult_cgi2->trackingAreaCode.buf[0]=0x00;
+    measresult_cgi2->trackingAreaCode.buf[1]=0x10;
+    measresult_cgi2->trackingAreaCode.size=2;
+    measresult_cgi2->trackingAreaCode.bits_unused=0;
+
+
+    measresulteutra2->cgi_Info=measresult_cgi2;
+    struct MeasResultEUTRA__measResult meas2;
+    int rsrp_va=10;
+    meas2.rsrpResult=&rsrp_t;
+    		//&rsrp_va;
+    meas2.rsrqResult=&rsrq_t;
+
+    measresulteutra2->measResult=meas2;
+
+    ASN_SEQUENCE_ADD(&measResultListEUTRA2->list,measresulteutra2);
+
+    measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
+
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+				   (void*)&ul_dcch_msg,
+				   buffer,
+				   100);
+
+#ifdef USER_MODE
+  printf("Measurement Report Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
+  return((enc_rval.encoded+7)/8);
+}
 
 #ifndef USER_MODE
 int init_module(void)

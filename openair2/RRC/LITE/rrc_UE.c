@@ -45,12 +45,15 @@
 #include "UTIL/LOG/log.h"
 #include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
+#include "RRCConnectionReconfiguration.h"
 #include "UL-CCCH-Message.h"
 #include "DL-CCCH-Message.h"
 #include "UL-DCCH-Message.h"
 #include "DL-DCCH-Message.h"
 #include "BCCH-DL-SCH-Message.h"
+#include "MeasConfig.h"
 #include "MeasGapConfig.h"
+#include "MeasObjectEUTRA.h"
 #include "TDD-Config.h"
 #ifdef PHY_ABSTRACTION
 #include "UTIL/OCG/OCG.h"
@@ -196,6 +199,17 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
   rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
 }
 
+
+void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index) {
+
+  u8 buffer[32], size;
+
+  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
+
+  size = do_MeasurementReport(buffer,1,0,3,4,5,6);
+
+  Mac_rlc_xface->rrc_rlc_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer);
+}
 
 /*------------------------------------------------------------------------------*/
 int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
@@ -383,7 +397,91 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 }
 
 
-void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig){
+void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig){
+
+  // This is the procedure described in 36.331 Section 5.5.2.1
+  int i;
+  long ind;
+  MeasObjectToAddMod_t *measObj;
+  MeasObjectEUTRA_t *measObjd;
+
+  if (measConfig->measObjectToRemoveList != NULL) {
+    for (i=0;i<measConfig->measObjectToRemoveList->list.count;i++) {
+      ind   = *measConfig->measObjectToRemoveList->list.array[i];
+      free(UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind]);
+    }
+  }
+  if (measConfig->measObjectToAddModList != NULL) {
+    for (i=0;i<measConfig->measObjectToAddModList->list.count;i++) {
+      measObj = measConfig->measObjectToAddModList->list.array[i];
+      ind   = measConfig->measObjectToAddModList->list.array[i]->measObjectId;
+      if (UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind]) {
+	memcpy((char*)UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind],
+	       (char*)measObj,
+	       sizeof(MeasObjectToAddMod_t));
+      }
+      else {
+	if (measObj->measObject.present == MeasObjectToAddMod__measObject_PR_measObjectEUTRA) {
+	  measObjd = &UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind]->measObject.choice.measObjectEUTRA;
+	  measObjd->carrierFreq = measObj->measObject.choice.measObjectEUTRA.carrierFreq;
+	  measObjd->allowedMeasBandwidth = measObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth;
+	  measObjd->presenceAntennaPort1 = measObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1;
+	  measObjd->neighCellConfig      = measObj->measObject.choice.measObjectEUTRA.neighCellConfig;
+
+	}
+      }
+    }
+  }
+  if (measConfig->reportConfigToRemoveList != NULL) {
+    for (i=0;i<measConfig->reportConfigToRemoveList->list.count;i++) {
+      ind   = *measConfig->reportConfigToRemoveList->list.array[i];
+      free(UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind]);
+    }
+  }
+  if (measConfig->reportConfigToAddModList != NULL) {
+    for (i=0;i<measConfig->reportConfigToAddModList->list.count;i++) {
+      ind   = measConfig->reportConfigToAddModList->list.array[i]->reportConfigId;
+      if (UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind]) {
+	memcpy((char*)UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind],
+	       (char*)measConfig->reportConfigToAddModList->list.array[i],
+	       sizeof(ReportConfigToAddMod_t));
+      }
+      else {
+	UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind] = measConfig->reportConfigToAddModList->list.array[i];
+      }
+    }
+  }
+
+  if (measConfig->quantityConfig != NULL) {
+    if (UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]) {
+      memcpy((char*)UE_rrc_inst[Mod_id].QuantityConfig[eNB_index],(char*)measConfig->quantityConfig,
+	     sizeof(QuantityConfig_t));
+    }
+    else {
+      UE_rrc_inst[Mod_id].QuantityConfig[eNB_index] = measConfig->quantityConfig;
+    }
+  }
+
+  if (measConfig->measIdToRemoveList != NULL) {
+    for (i=0;i<measConfig->measIdToRemoveList->list.count;i++) {
+      ind   = *measConfig->measIdToRemoveList->list.array[i];
+      free(UE_rrc_inst[Mod_id].MeasId[eNB_index][ind]);
+    }
+  }
+
+  if (measConfig->measIdToAddModList != NULL) {
+    for (i=0;i<measConfig->measIdToAddModList->list.count;i++) {
+      ind   = measConfig->measIdToAddModList->list.array[i]->measId;
+      if (UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind]) {
+	memcpy((char*)UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind],
+	       (char*)measConfig->measIdToAddModList->list.array[i],
+	       sizeof(MeasIdToAddMod_t));
+      }
+      else {
+	UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind] = measConfig->measIdToAddModList->list.array[i];
+      }
+    }
+  }
 
   if (measConfig->measGapConfig !=NULL) {
     if (UE_rrc_inst[Mod_id].measGapConfig[eNB_index]) {
@@ -394,6 +492,11 @@ void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig){
       UE_rrc_inst[Mod_id].measGapConfig[eNB_index] = measConfig->measGapConfig;
     }
   }
+
+  if (measConfig->s_Measure != NULL) {
+    UE_rrc_inst[Mod_id].s_measure = *measConfig->s_Measure;
+  }
+
 }
 
 
@@ -567,6 +670,12 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
+      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo) {
+	// LOG_HO("Mobility Control Information is present");
+	rrc_ue_process_mobilityControlInfo(Mod_id,eNB_index,
+					   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo);
+	
+      }
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
 	rrc_ue_process_measConfig(Mod_id,eNB_index,
 				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
@@ -578,6 +687,11 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
       }
     } // c1 present
   } // critical extensions present
+}
+
+void	rrc_ue_process_mobilityControlInfo(u8 Mod_id,u8 eNB_index,struct MobilityControlInfo *mobilityControlInfo) {
+
+
 }
 
 /*------------------------------------------------------------------------------------------*/
