@@ -65,6 +65,9 @@ typedef enum  {
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n) 
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s ) 
 
+#define MAX_MEAS_OBJ 3
+#define MAX_MEAS_CONFIG 3
+#define MAX_MEAS_ID 3
 
 #define PAYLOAD_SIZE_MAX 1024
 
@@ -208,6 +211,11 @@ typedef struct{
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
+  struct MeasObjectToAddMod       *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
+  struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
+  struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
+  struct MeasIdToAddMod           *MeasId[NB_CNX_UE][MAX_MEAS_ID];
+  RSRP_Range_t                    s_measure;
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
   struct SPS_Config               *sps_Config[NB_CNX_UE];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
