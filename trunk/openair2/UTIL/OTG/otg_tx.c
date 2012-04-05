@@ -44,7 +44,7 @@
 
 //may be put in vars
 packet_t *packet=NULL;
-int type_header;
+int type_header=0;
 otg_hdr_t *otg_hdr_p;
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
@@ -399,10 +399,10 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
 	LOG_I(OTG,"Payload size=%d\n",size);	  
 	packet->payload=payload_pkts(size);
 	LOG_I(OTG,"packet_gen :: payload= (%d, %s) \n", size, packet->payload);
-	LOG_I(OTG,"==============STEP 1: OTG PAYLOAD OK============== \n");		
+	LOG_D(OTG,"==============STEP 1: OTG PAYLOAD OK============== \n");		
 	packet->header=header_gen(header_size_gen(src));
 	LOG_I(OTG,"packet_gen :: protocol HEADER= (%d, %s) \n", strlen(packet->header),packet->header);
-	LOG_I(OTG,"==============STEP 2: OTG protocol HEADER OK============== \n");
+	LOG_D(OTG,"==============STEP 2: OTG protocol HEADER OK============== \n");
 
 	hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
 
@@ -427,12 +427,12 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
 	otg_header_gen(flow_id, ctime, otg_info->seq_num[src][dst],type_header, strlen(packet->header) + strlen(packet->payload));
 	byte_tx_count += sizeof(otg_hdr_t);
 
-	LOG_I(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
+	LOG_D(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
 
 	memcpy(&buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
 	byte_tx_count += strlen(packet->header);	
 	memcpy(&buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
-	LOG_I(OTG,"==============STEP 4: PACKET OK============= \n");
+	LOG_D(OTG,"==============STEP 4: PACKET OK============= \n");
 
 	//LOG_I(OTG,"BUFFER TX: %s \n", buffer_tx);
 
@@ -445,22 +445,16 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
 	//end stats
 
 
+	if (NULL != packet){
+		free(packet);  					
+		LOG_D(OTG,"Free packet\n");
+	}
+
+
+
 return buffer_tx;
 
-	if (NULL != otg_hdr_info_p){
-			free(otg_hdr_info_p); 					
-			LOG_I(OTG,"Free OTG otg_hdr_info\n");
-	}
-
-	if (NULL != otg_hdr_p){ 
-			free(otg_hdr_p); 								
-			LOG_I(OTG,"Free OTG header\n");
-	}
-
-	if (NULL != packet){
-			free(packet);  					
-			LOG_I(OTG,"Free packet\n");
-	}
+	
 
 }
 
@@ -468,32 +462,28 @@ return buffer_tx;
 int header_size_gen(int src){
 
 int size_header=0;
+type_header=0;
 
-	if (g_otg->ip_v[src]==0) { 
+	if (g_otg->ip_v[src]==1) { 
 		size_header+=HDR_IP_v4_MIN;
+		type_header+=0;
 	}
-	else if  (g_otg->ip_v[src]==1){	
+	else if  (g_otg->ip_v[src]==2){	
 		size_header+=HDR_IP_v6;
+		type_header+=2;
+		
 	}
 	
-	if (g_otg->trans_proto[src]==0){	
+	if (g_otg->trans_proto[src]==1){	
  		size_header+= HDR_UDP ;
+		type_header+=1;
 	}	
-	else if (g_otg->trans_proto[src]==1){
+	else if (g_otg->trans_proto[src]==2){
 		size_header+= HDR_TCP;
+		type_header+=2;
 	}
 
-	if (size_header==HDR_IP_v4_MIN+HDR_UDP)
-		type_header=UDP_IPV4;
-	else if (size_header==HDR_IP_v4_MIN+HDR_TCP)
-		type_header=TCP_IPV4;
-	else if (size_header==HDR_IP_v6+HDR_UDP)
-		type_header=UDP_IPV6;
-	else if (size_header==HDR_IP_v6+HDR_TCP)
-		type_header=TCP_IPV6;
-	else 
-		type_header=NO_HEADER;
-
+//LOG_I(OTG,"version_ %d, %d \n", type_header, size_header);
 
 return size_header;
 

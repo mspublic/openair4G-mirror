@@ -142,10 +142,10 @@ typedef enum {
 
 typedef enum { 
 NO_HEADER=0,
-TCP_IPV4,
 UDP_IPV4,
-TCP_IPV6,
+TCP_IPV4,
 UDP_IPV6,
+TCP_IPV6,
 }HEADER_TYPE; 
 
 

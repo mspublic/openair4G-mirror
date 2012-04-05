@@ -57,114 +57,119 @@ char *check_packet( int src, int dst, int ctime, char *buffer_tx){
 
 
 
-if (buffer_tx!=NULL) {
+if (buffer_tx!=NULL) { // 1st check : buffer_tx
 
 
 	otg_hdr_info_rx = (otg_hdr_info_t *) (&buffer_tx[bytes_read]);
  	bytes_read += sizeof (otg_hdr_info_t);
 
-	LOG_I(OTG,"HDR OTG INFO: SIZE %d\n", otg_hdr_info_rx->size);
-	LOG_I(OTG,"HDR OTG INFO: FLAG %s\n", otg_hdr_info_rx->flag);
-
-	otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
-
-	LOG_I(OTG,"HDR OTG: SIZE= HEADER + PAYLOAD %d\n", otg_hdr_rx->pkts_size);
-	LOG_I(OTG,"HDR OTG: FLOW ID %d\n", otg_hdr_rx->flow_id);
-	LOG_I(OTG,"HDR OTG: TX TIME %d\n", otg_hdr_rx->time);
-	LOG_I(OTG,"HDR OTG: SEQ NUM %d\n", otg_hdr_rx->seq_num);
-	LOG_I(OTG,"HDR OTG: HEADER TYPE %d\n", otg_hdr_rx->hdr_type);
 
 
-	bytes_read += sizeof (otg_hdr_t);
-	message= (char *) (&buffer_tx[bytes_read]);
-	LOG_I(OTG,"HDR OTG MESSAGE= HEADER + PAYLOAD %s\n", message);
+	if (strcmp(otg_hdr_info_rx->flag,OTG_FLAG)==0){ //2nd check : OTG FLAG
+
+		LOG_I(OTG,"HDR OTG INFO: SIZE %d\n", otg_hdr_info_rx->size);
+		LOG_I(OTG,"HDR OTG INFO: FLAG %s\n", otg_hdr_info_rx->flag);
+
+		otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
+
+		LOG_I(OTG,"HDR OTG: SIZE= HEADER + PAYLOAD %d\n", otg_hdr_rx->pkts_size);
+		LOG_I(OTG,"HDR OTG: FLOW ID %d\n", otg_hdr_rx->flow_id);
+		LOG_I(OTG,"HDR OTG: TX TIME %d\n", otg_hdr_rx->time);
+		LOG_I(OTG,"HDR OTG: SEQ NUM %d\n", otg_hdr_rx->seq_num);
+		LOG_I(OTG,"HDR OTG: HEADER TYPE %d\n", otg_hdr_rx->hdr_type);
 
 
-	set_ctime(ctime);
+		bytes_read += sizeof (otg_hdr_t);
+		message= (char *) (&buffer_tx[bytes_read]);
+		LOG_I(OTG,"HDR OTG MESSAGE= HEADER + PAYLOAD %s\n", message);
 
-	hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
 
-	if ((strcmp(otg_hdr_info_rx->flag,OTG_FLAG)==0) && (otg_hdr_info_rx->size==(hdr_size+ strlen(message)))){
+		set_ctime(ctime);
 
-		LOG_I(OTG,"check_packet :: FLAG OTG OK !!!! \n");
+		hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); //add if for the flag and  
+
+
+		if ((otg_hdr_info_rx->size==(hdr_size+ strlen(message)))){ //3rd check: received data  	
+
+			LOG_I(OTG,"check_packet :: FLAG OTG OK !!!! \n");
 
 			
-		if ((otg_hdr_rx->seq_num)==otg_info->seq_num_rx[src][dst]+1) {
-			LOG_T(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
-			otg_info->seq_num_rx[src][dst]+=1;
+			if ((otg_hdr_rx->seq_num)==otg_info->seq_num_rx[src][dst]+1) {
+				LOG_T(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
+				otg_info->seq_num_rx[src][dst]+=1;
 			}
-		else if ((otg_hdr_rx->seq_num)> otg_info->seq_num_rx[src][dst]+1){ // out of sequence packet:  previous packet lost 
-			LOG_T(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
-			otg_info->nb_loss_pkts[src][dst]+=((otg_hdr_rx->seq_num)-(otg_info->seq_num_rx[src][dst]+1));
-			otg_info->seq_num_rx[src][dst]=otg_hdr_rx->seq_num;
+			else if ((otg_hdr_rx->seq_num)> otg_info->seq_num_rx[src][dst]+1){ // out of sequence packet:  previous packet lost 
+				LOG_T(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
+				otg_info->nb_loss_pkts[src][dst]+=((otg_hdr_rx->seq_num)-(otg_info->seq_num_rx[src][dst]+1));
+				otg_info->seq_num_rx[src][dst]=otg_hdr_rx->seq_num;
 			
 
 
 			} 
-		else if ((otg_hdr_rx->seq_num)< otg_info->seq_num_rx[src][dst]+1){ //the received packet arrived late 
-			otg_info->nb_loss_pkts[src][dst]-=1;
-			LOG_T(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
-		}
+			else if ((otg_hdr_rx->seq_num)< otg_info->seq_num_rx[src][dst]+1){ //the received packet arrived late 
+				otg_info->nb_loss_pkts[src][dst]-=1;
+				LOG_T(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
+			}
 
 
-		LOG_I(OTG,"RX NFO ::  Header + Payload :%s \n", message);
-		LOG_I(OTG,"RX INFO ::  flow id :%d \n", otg_hdr_rx->flow_id);
-		LOG_I(OTG,"RX INFO :: time: %d \n", otg_hdr_rx->time);
-		LOG_I(OTG,"RX INFO :: Sequence NB: %d \n", otg_hdr_rx->seq_num);
+			LOG_I(OTG,"RX NFO ::  Header + Payload :%s \n", message);
+			LOG_I(OTG,"RX INFO ::  flow id :%d \n", otg_hdr_rx->flow_id);
+			LOG_I(OTG,"RX INFO :: time: %d \n", otg_hdr_rx->time);
+			LOG_I(OTG,"RX INFO :: Sequence NB: %d \n", otg_hdr_rx->seq_num);
 
-			// Compute STAT
-		otg_info->rx_num_pkt[src][dst]+=1;
-		
+				// Compute STAT
+			otg_info->rx_num_pkt[src][dst]+=1;
+			LOG_I(OTG,"PACKET SIZE (RX):  time(%d), otg header(%d), header + payload (%d), Total (%d)\n", ctime, hdr_size , strlen(message), otg_hdr_info_rx->size);
 
-	LOG_I(OTG,"PACKET SIZE (RX):  time(%d), otg header(%d), header + payload (%d), Total (%d)\n", ctime, hdr_size , strlen(message), otg_hdr_info_rx->size);
-
-		otg_info->rx_num_bytes[src][dst]+=   otg_hdr_info_rx->size;
-		otg_info->rx_pkt_owd[src][dst]= get_ctime() - otg_hdr_rx->time ;
-		LOG_I(OTG,"RX INFO :: RTT (one way) ms: %d \n", otg_info->rx_pkt_owd[src][dst]);
+			otg_info->rx_num_bytes[src][dst]+=   otg_hdr_info_rx->size;
+			otg_info->rx_pkt_owd[src][dst]= get_ctime() - otg_hdr_rx->time ;
+			LOG_I(OTG,"RX INFO :: RTT (one way) ms: %d \n", otg_info->rx_pkt_owd[src][dst]);
 	
-
-		if (otg_info->rx_owd_max[src][dst]==0){
+			if (otg_info->rx_owd_max[src][dst]==0){
 				otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
 				otg_info->rx_owd_min[src][dst]=otg_info->rx_pkt_owd[src][dst];
-		}
-		else {
+			}
+			else {
 				otg_info->rx_owd_max[src][dst]=MAX(otg_info->rx_owd_max[src][dst],otg_info->rx_pkt_owd[src][dst] );
 				otg_info->rx_owd_min[src][dst]=MIN(otg_info->rx_owd_min[src][dst],otg_info->rx_pkt_owd[src][dst] );
-		}
-
-
-
-		LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
+			}
+			LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
 		
 			// end STAT
 
 
+			//Free pointers
+			if (buffer_tx!=NULL){   					
+			free(buffer_tx);
+			LOG_I(OTG,"RX :: Free buffer_tx\n");
+			}
 
-		return(NULL);
-	}
-	else
-		LOG_W(OTG,"check_packet	:: ERROR: FORWARD DATA \n");
+			return(NULL);
+			}// end 3rd check: received data
+			else{
+				LOG_W(OTG,"check_packet	::  ERROR: SIZE: FORWARD DATA \n");	
+				return(buffer_tx);
+			}
 
-	return(buffer_tx);
+
+
+
+		}  // end 2nd check : OTG FLAG
+		else {
+			LOG_W(OTG,"check_packet :: ERROR: FLAG: FORWARD DATA\n"); //The received flag is not OTG
+			return(buffer_tx);
+		}
+
 
 }
 
-else {
+else { // end 1st check : buffer_tx
 	LOG_W(OTG,"check_packet :: ERROR: NO_PACKETS RECEIVED\n"); //The case when no packet is received
 	return(NULL); 
-	}
-
-
-//Free pointers
-if (otg_hdr_info_rx!=NULL){   					
-	free(otg_hdr_info_rx);
-	LOG_I(OTG,"RX :: Free otg_hdr_info_rx\n");
 }
 
-if (otg_hdr_rx!=NULL){ 					
-	free(otg_hdr_rx);
-	LOG_I(OTG,"RX :: otg_hdr_rx\n");
-	}
+
+
 }
 
 

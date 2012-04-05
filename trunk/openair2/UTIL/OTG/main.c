@@ -193,8 +193,6 @@ nb_round=nb_round+1;
 								ctime+=rtt_owd; 
 								otg_info->rx_pkt_owd[i][j]=rtt_owd; 
 								simu_time+=rtt_owd;
-
-
 								
 								rx_packet_out=check_packet(i, j, ctime, packet);
 								if (rx_packet_out==NULL)
