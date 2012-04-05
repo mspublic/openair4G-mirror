@@ -52,20 +52,13 @@ static int x, y, z;
 void init_seeds(int seed){
 	
 	LOG_I(OTG,"seeds:%d\n", seed);	
-	srand(seed*0xa2e489f2);
-	// Random number between 1 and 30000 is created
-	x = (( rand() % 30000) + 1);
-	y = (( rand() % 30000) + 1);
-	z = (( rand() % 30000) + 1);
-	LOG_I(OTG,"Initial seeds: x = %d, y = %d, z = %d,\n", x,y,z);
 	set_taus_seed(seed);
+	LOG_I(OTG,"set taus seed OK !!");
 		
 }
 
 double uniform_rng() {		
 	double random;
-
-	//random = wichman_hill();  // wichman hill
 	random = (double)taus(OTG)/((double)0xffffffff);
 
 LOG_I(OTG,"Uniform taus random number= %lf\n", random);
@@ -91,7 +84,7 @@ double uniform_dist(int min, int max) {
 // Gaussian Distribution using Box-Muller Transformation
 
 double gaussian_dist(double mean, double std_dev) {
-	double x_rand1,x_rand2, w, gaussian_rn_1, gaussian_rn_2;
+	double x_rand1,x_rand2, w, gaussian_rn_1;
 
 	LOG_I(OTG,"Gaussian mean= %lf and std deviation= %lf \n", mean, std_dev);
 	do {
@@ -102,7 +95,6 @@ double gaussian_dist(double mean, double std_dev) {
 		} while (w >= 1.0);	
 		w = sqrt((-2.0 * log(w)) / w);	
 		gaussian_rn_1 = (std_dev * (x_rand1 * w)) + mean;
-		gaussian_rn_2 = (std_dev * (x_rand2 * w)) + mean;
 	} while (gaussian_rn_1 <= 0);
 	LOG_I(OTG,"Gaussian Random Nb= %lf\n", gaussian_rn_1);
 		
@@ -123,7 +115,7 @@ LOG_I(OTG,"Exponential lambda= %lf\n", lambda);
 		exponential_rn = log(uniform_rng()) / lambda;
 	else
 		exponential_rn = -log(uniform_rng()) / lambda;
-	printf ("Exponential Random Nb = %lf \n", exponential_rn);
+	LOG_I(OTG,"Exponential Random Nb = %lf \n", exponential_rn);
 	return exponential_rn;
 }
 
@@ -253,7 +245,6 @@ double wichman_hill() { // not used
 	if (z < 0) 
 	z += 30323;
 	temp = (x / 30269.0) + (y / 30307.0) + (z / 30323.0);
-        //printf ("temp %lf\n", temp);
 	random = temp - (int)temp;
 
 	return random;

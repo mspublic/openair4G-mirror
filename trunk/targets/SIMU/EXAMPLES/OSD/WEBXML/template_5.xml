@@ -65,27 +65,31 @@
 	<APPLICATION_CONFIG>
 		<PREDEFINED_TRAFFIC>
 			<SOURCE_ID>0</SOURCE_ID>					
-			<APPLICATION_TYPE>gaming_OA</APPLICATION_TYPE> <!-- OPTIONS: openarena, cbr, M2M_sensor, random, full_buffer -->
+			<APPLICATION_TYPE>cbr</APPLICATION_TYPE> <!-- OPTIONS: cbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
 			<DESTINATION_ID>1</DESTINATION_ID>
 		</PREDEFINED_TRAFFIC>
 
 		<CUSTOMIZED_TRAFFIC>
-			<SOURCE_ID>2</SOURCE_ID>		<!-- <SOURCE_ID> 1:100 </SOURCE_ID> -->
+			<SOURCE_ID>0</SOURCE_ID>		<!-- <SOURCE_ID> 1:100 </SOURCE_ID> -->
 			<TRANSPORT_PROTOCOL>udp</TRANSPORT_PROTOCOL> <!-- OPTIONS: tcp (default), udp -->
 			<IP_VERSION>ipv6</IP_VERSION> <!-- OPTIONS: ipv4 (default), ipv6 -->
 			<DESTINATION_ID>0</DESTINATION_ID>
 
-			<IDT_DIST>uniform</IDT_DIST> <!-- OPTIONS: no_transmission (default), uniform, poission, gaussian, exponential -->
-			<IDT_MIN_ms>100</IDT_MIN_ms>
-			<IDT_MAX_ms>1000</IDT_MAX_ms>
-			<IDT_STANDARD_DEVIATION>1</IDT_STANDARD_DEVIATION>
-			<IDT_LAMBDA>7</IDT_LAMBDA>
+			<IDT_DIST>poisson</IDT_DIST> <!-- OPTIONS: no_transmission (default), uniform, poission, gaussian, exponential -->
+			<IDT_MIN_ms>3</IDT_MIN_ms>
+			<IDT_MAX_ms>10</IDT_MAX_ms>
+			<IDT_STANDARD_DEVIATION>4.5</IDT_STANDARD_DEVIATION>
+			<IDT_LAMBDA>7.3</IDT_LAMBDA>
+			<IDT_SCALE>30</IDT_SCALE>
+			<IDT_SHAPE>15</IDT_SHAPE>
 
-			<SIZE_DIST>gaussian</SIZE_DIST>
-			<SIZE_MIN_byte>200</SIZE_MIN_byte>
+			<SIZE_DIST>exponential</SIZE_DIST>
+			<SIZE_MIN_byte>300</SIZE_MIN_byte>
 			<SIZE_MAX_byte>500</SIZE_MAX_byte>
-			<SIZE_STANDARD_DEVIATION>5</SIZE_STANDARD_DEVIATION>
-			<SIZE_LAMBDA>4</SIZE_LAMBDA>
+			<SIZE_STANDARD_DEVIATION>5.3</SIZE_STANDARD_DEVIATION>
+			<SIZE_LAMBDA>2.2</SIZE_LAMBDA>
+			<SIZE_SCALE>0.5</SIZE_SCALE>
+			<SIZE_SHAPE>30</SIZE_SHAPE>
 
 
 			<DESTINATION_PORT>8080</DESTINATION_PORT>

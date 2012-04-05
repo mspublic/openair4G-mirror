@@ -112,14 +112,14 @@ char *header_gen(int hdr_size);
 char *payload_pkts(int payload_size);
 
 
-/*! \fn void otg_header_gen(int time, int seq_num, HEADER_TYPE header_type,int payload_size);
+/*! \fn void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int size);
 * \brief generate OTG header 
-* \param[in]  simulation time, header_size (to know the transport/ip version in the RX) and, packet sequence number and the payload_size  
+* \param[in]  flow id, simulation time, , sequence number, header type (to know the transport/ip version in the RX) and, size: payload + header  
 * \param[out] otg header
 * \note 
 * @ingroup  _otg
 */
-void otg_header_gen(int flow_id, int time, int seq_num, int payload_size);
+void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int size);
 
 
 /*! \fn int adjust_size(int size);

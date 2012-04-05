@@ -48,7 +48,8 @@
 #include <string.h>
 
 #include "otg.h"
-//#include "otg_externs.h"
+
+
 
 
 

@@ -350,14 +350,14 @@ pdcp_run (u32_t frame,u8 eNB_flag)
 //OTG 
 /*
 char *rx_packet_out;
-rx_packet_out=check_packet(0, 1, frame, packet_gen(0, 1, 0, frame));
+rx_packet_out=check_packet(0, 0, frame, packet_gen(0, 0, 0, frame));
 
 	if (rx_packet_out!=NULL){ 
 		rx_packet_out=NULL;  					
 		free(rx_packet_out);
 	}
-*/
 
+*/
   }
 }
 

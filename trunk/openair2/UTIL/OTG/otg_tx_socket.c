@@ -39,7 +39,7 @@
 */
 
 #include"otg_tx_socket.h"
-
+#include "otg_vars.h"
 
 
 #ifdef WIN32 /* si vous êtes sous Windows */

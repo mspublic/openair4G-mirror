@@ -442,7 +442,7 @@ else if (simu_mode==1)
 // Compute KPI after the end of the simu
 kpi_gen();
 
-free_addr_otg();
+free_otg();
 
 
 

@@ -44,6 +44,8 @@
 
 //may be put in vars
 packet_t *packet=NULL;
+int type_header;
+otg_hdr_t *otg_hdr_p;
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
 
@@ -93,47 +95,48 @@ int idt=0;
 
 
 int size_dist(int src, int dst, int state) {
-int size;
+int size_data;
 	
 
 LOG_I(OTG,"Size Distribution idx= %d \n", g_otg->size_dist[src][dst][state]);
 
+
  switch  (g_otg->size_dist[src][dst][state]) {
  case UNIFORM : 
-   size = ceil(uniform_dist(g_otg->size_min[src][dst][state], g_otg->size_max[src][dst][state]));
+   size_data = ceil(uniform_dist(g_otg->size_min[src][dst][state], g_otg->size_max[src][dst][state]));
    break;
  case GAUSSIAN :
-   size = ceil(gaussian_dist((g_otg->size_max[src][dst][state] + g_otg->size_min[src][dst][state])/2 , g_otg->size_std_dev[src][dst][state]));
+   size_data = ceil(gaussian_dist((g_otg->size_max[src][dst][state] + g_otg->size_min[src][dst][state])/2 , g_otg->size_std_dev[src][dst][state]));
    break;
  case EXPONENTIAL : 
-   size= ceil(exponential_dist(g_otg->size_lambda[src][dst][state])); //SIZE_COEF * 
+  size_data= ceil(exponential_dist(g_otg->size_lambda[src][dst][state])); //SIZE_COEF * 
    break;
  case POISSON :
-   size =ceil(poisson_dist(g_otg->size_lambda[src][dst][state]));
+   size_data =ceil(poisson_dist(g_otg->size_lambda[src][dst][state]));
    break;
  case FIXED :
-   size=ceil(g_otg->size_min[src][dst][state]);
+   size_data=ceil(g_otg->size_min[src][dst][state]);
    break;
  case WEIBULL :
-   size =ceil(weibull_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+   size_data =ceil(weibull_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
    break;
  case PARETO :
-   size =ceil(pareto_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+   size_data =ceil(pareto_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
    break;
  case GAMMA :
-   size =ceil(gamma_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+   size_data =ceil(gamma_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
    break;
  case CAUCHY :
-   size =ceil(cauchy_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+   size_data =ceil(cauchy_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
    break;
  deafult:
    LOG_E(OTG, "PKT Size Distribution unknown \n");
  }
  //Case when size overfill min and max values	
- size=adjust_size(size);
- LOG_I(OTG,"Packet :: Size=%d  Distribution= %d \n", size, g_otg->size_dist[src][dst][state]);
+ size_data=adjust_size(size_data);
+ LOG_I(OTG,"Packet :: Size=%d  Distribution= %d \n", size_data, g_otg->size_dist[src][dst][state]);
  
- return size;
+ return size_data;
 }
 
 int adjust_size(int size){
@@ -155,6 +158,7 @@ int i;
 int j;
 
 LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
+
 
  for (i=0; i<g_otg->num_nodes; i++){ // src 
    for (j=0; j<g_otg->num_nodes; j++){ // dst
@@ -317,6 +321,7 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
 
 // Generate a random string[size]
 char *random_string(int size, ALPHABET data_type, char *data_string) {
+
   char *data=NULL;
   int i, pos;
   
@@ -332,8 +337,7 @@ char *random_string(int size, ALPHABET data_type, char *data_string) {
       data[i]=data_string[pos];
     }
     break;
-  }
-#endif 
+  } 
   LOG_I(OTG," random_string :: Generated string= %s\n", data);
   return data;
 }
@@ -343,6 +347,7 @@ char *random_string(int size, ALPHABET data_type, char *data_string) {
 
 char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = frame cnt
 
+
   //double idt;
   int size;
   int flow_id=1;
@@ -350,11 +355,11 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
   otg_hdr_t * otg_hdr=NULL;
   char *buffer_tx=NULL;
   HEADER_TYPE header_type;
-  otg_hdr_t *otg_hdr_p;
   otg_hdr_info_t *otg_hdr_info_p;
   unsigned int  byte_tx_count=0; 
   int header_size;
   int payload_size;
+  int hdr_size;
   
   set_ctime(ctime);	
   //LOG_I(OTG,"num_nodes_tx:: %d , seed:: %d \n", g_otg->num_nodes, g_otg->seed);
@@ -375,7 +380,7 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
   if (ctime==0)
     otg_info->idt[src][dst]=0; //for the standalone mode: the emulation is run several times, we need to initialise the idt to 0 when ctime=0
   //end pre-config
-#enif 
+#endif 
   if ((otg_info->idt[src][dst]==(ctime-otg_info->ptime[src][dst][state])) || (otg_info->idt[src][dst]==0)) {
     
     LOG_I(OTG,"Time To Transmit (Source= %d, Destination= %d,State= %d) , (IDT= %d ,simu time= %d, previous packet time= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst][state]); 
@@ -387,67 +392,76 @@ char *packet_gen(int src, int dst, int state, int ctime){ // when pdcp, ctime = 
     return NULL; // do not generate the packet, and keep the idt
   }
   
-  size=size_dist(src, dst, state);	
-  header_size=header_size_gen(src);
-  LOG_I(OTG,"Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d hdr size %d \n",
-	src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size, header_size);
-  
-  packet= malloc(sizeof(packet_t));
-  LOG_D(OTG,"==============STEP 1: OTG PAYLOAD OK============== \n");		
-		  
-  packet->payload=payload_pkts(size);
-  LOG_I(OTG,"packet_gen :: payload= (%d, %s) \n", size, packet->payload);
-  
-  LOG_D(OTG,"==============STEP 2: OTG protocol HEADER OK============== \n");	
-  packet->header=header_gen(header_size);
-  LOG_D(OTG,"packet_gen :: protocol HEADER= (%d, %s) \n", strlen(packet->header),packet->header);
+	size=size_dist(src, dst, state);	
+	LOG_I(OTG,"Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n",
+	src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
+ 	packet= malloc(sizeof(*packet));
+	LOG_I(OTG,"Payload size=%d\n",size);	  
+	packet->payload=payload_pkts(size);
+	LOG_I(OTG,"packet_gen :: payload= (%d, %s) \n", size, packet->payload);
+	LOG_I(OTG,"==============STEP 1: OTG PAYLOAD OK============== \n");		
+	packet->header=header_gen(header_size_gen(src));
+	LOG_I(OTG,"packet_gen :: protocol HEADER= (%d, %s) \n", strlen(packet->header),packet->header);
+	LOG_I(OTG,"==============STEP 2: OTG protocol HEADER OK============== \n");
 
-  //payload_size=strlen(packet->header);
-  otg_info->header_type[src][dst]=header_type; // fix me ????
-  otg_info->seq_num[src][dst]+=1;
+	hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
 
-  // LOG_D(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
-  //otg_header_gen(flow_id, otg_info->ctime,  otg_info->seq_num[src][dst], size);
-  //LOG_D(OTG,"==============STEP 4: PACKET OK============= \n");	
 
-  //LOG_I(OTG,"PACKET SIZE (TX): time(%d)otg header(%d), header (%d), payload (%d), Total (%d) \n", ctime, otg_header_size, strlen(packet->header), strlen(packet->payload),( otg_header_size + strlen(packet->header) + strlen(packet->payload)));
+	otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(packet->header) + strlen(packet->payload) ; 
+	otg_info->tx_num_pkt[src][dst]+=1;
+	
 
-  otg_info->tx_num_bytes[src][dst]+= sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload) ; 
-  otg_info->tx_num_pkt[src][dst]+=1;
+	// Serialization
+	
 
-  // Serialization
-  buffer_tx= (char*)malloc(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload));
-  otg_hdr_info_p = (otg_hdr_info_t *) buffer_tx[byte_tx_count];
-  
-  otg_hdr_info_p->size= sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload);
-  otg_hdr_info_p->flag=11;
-  byte_tx_count = sizeof(otg_hdr_info_t);
-  otg_hdr_p = (otg_hdr_t *) buffer_tx[byte_tx_count];
-  otg_hdr_p->flow_id =flow_id;
-  otg_hdr_p->time =otg_info->ctime;
-  otg_hdr_p->seq_num =otg_info->seq_num[src][dst];
-  
-  byte_tx_count += sizeof(otg_hdr_t);
-  memcpy(buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
-  byte_tx_count += strlen(packet->header);	
-  memcpy(buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
-  
-  if (NULL != otg_hdr_info_p){
-    free(otg_hdr_info_p);
-    otg_hdr_info_p=NULL;  					
-    LOG_D(OTG,"Free OTG otg_hdr_info\n");
-  }
-  if (NULL != otg_hdr_p){
-    free(otg_hdr_p);
-    otg_hdr=NULL;  								
-    LOG_D(OTG,"Free OTG header\n");
-  }
-  if (NULL != packet){
-    free(packet);
-    packet=NULL;  					
-    LOG_D(OTG,"Free packet\n");
-  }
-  return buffer_tx;
+	buffer_tx= (char*)malloc(hdr_size + strlen(packet->header) + strlen(packet->payload));
+	otg_hdr_info_p = (otg_hdr_info_t *) (&buffer_tx[byte_tx_count]);
+
+
+	otg_hdr_info_p->size= hdr_size + strlen(packet->header) + strlen(packet->payload);
+	otg_hdr_info_p->flag=OTG_FLAG;
+	
+	byte_tx_count = sizeof(otg_hdr_info_t);
+	otg_hdr_p = (otg_hdr_t *) (&buffer_tx[byte_tx_count]);
+
+	otg_header_gen(flow_id, ctime, otg_info->seq_num[src][dst],type_header, strlen(packet->header) + strlen(packet->payload));
+	byte_tx_count += sizeof(otg_hdr_t);
+
+	LOG_I(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
+
+	memcpy(&buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
+	byte_tx_count += strlen(packet->header);	
+	memcpy(&buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
+	LOG_I(OTG,"==============STEP 4: PACKET OK============= \n");
+
+	//LOG_I(OTG,"BUFFER TX: %s \n", buffer_tx);
+
+	LOG_I(OTG,"PACKET SIZE (TX):  time(%d), otg header(%d), header + payload (%d), Total (%d)\n", ctime, hdr_size , strlen(packet->header) + strlen(packet->payload), otg_hdr_info_p->size);
+
+
+	//add stats
+	otg_info->header_type[src][dst]=type_header;
+	otg_info->seq_num[src][dst]+=1;
+	//end stats
+
+
+return buffer_tx;
+
+	if (NULL != otg_hdr_info_p){
+			free(otg_hdr_info_p); 					
+			LOG_I(OTG,"Free OTG otg_hdr_info\n");
+	}
+
+	if (NULL != otg_hdr_p){ 
+			free(otg_hdr_p); 								
+			LOG_I(OTG,"Free OTG header\n");
+	}
+
+	if (NULL != packet){
+			free(packet);  					
+			LOG_I(OTG,"Free packet\n");
+	}
+
 }
 
 
@@ -469,6 +483,18 @@ int size_header=0;
 		size_header+= HDR_TCP;
 	}
 
+	if (size_header==HDR_IP_v4_MIN+HDR_UDP)
+		type_header=UDP_IPV4;
+	else if (size_header==HDR_IP_v4_MIN+HDR_TCP)
+		type_header=TCP_IPV4;
+	else if (size_header==HDR_IP_v6+HDR_UDP)
+		type_header=UDP_IPV6;
+	else if (size_header==HDR_IP_v6+HDR_TCP)
+		type_header=TCP_IPV6;
+	else 
+		type_header=NO_HEADER;
+
+
 return size_header;
 
 }
@@ -479,6 +505,10 @@ char *header_gen(int hdr_size){
 
 	char *hdr=NULL;
 
+	if (hdr_size>(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t)))
+		hdr_size-=(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t));
+	else
+		LOG_W(OTG,"OTG Header not included inside packet header (OTG header:%d, Header%d)\n", hdr_size, sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) );
 
 	hdr=(char*)malloc(hdr_size*sizeof(char));
 	// if (generate_static_string)
@@ -499,24 +529,21 @@ char *payload_pkts(int payload_size){
 }
 
 
-void otg_header_gen(int flow_id, int time, int seq_num, int payload_size){
-
-/*
-packet->flag=OTG_FLAG;
-packet->flow_id=&flow_id; // we manage only one flow	
-packet->time=&time;
-packet->payload_size=&payload_size;
-packet->seq_num=&seq_num; 
+void otg_header_gen(int flow_id, int ctime, int seq_num, int hdr_type, int size){
 
 
-printf( "HEADER_ TX: FLAG %s\n", packet->flag);
-printf( "HEADER_ TX: FLOW ID %i\n", *packet->flow_id);
-printf( "HEADER_ TX: TIME %i\n", *packet->time);
-printf( "HEADER_ TX: NUM SEQUENCE %i\n", *packet->seq_num);
-//printf( "HEADER_ TX: HEADER SIZE %i\n", *packet->header_size);
-printf( "HEADER_ TX: PAYLOAD SIZE %i\n", *packet->payload_size);
+	otg_hdr_p->flow_id =flow_id;
+	otg_hdr_p->time =ctime;
+	otg_hdr_p->seq_num =seq_num;
+	otg_hdr_p->hdr_type=hdr_type;
+	otg_hdr_p->pkts_size = size;
 
-*/
+LOG_I(OTG, " otg_hdr: HDR TYPE %i\n",otg_hdr_p->hdr_type);
+LOG_I(OTG, " otg_hdr: FLOW ID %i\n", otg_hdr_p->flow_id);
+LOG_I(OTG, " otg_hdr: TIME %i\n", otg_hdr_p->time);
+LOG_I(OTG, " otg_hdr: NUM SEQUENCE %i\n", otg_hdr_p->seq_num);
+LOG_I(OTG, " otg_hdr: SIZE (PAYLOAD + HEADER) %i\n", otg_hdr_p->pkts_size);
+
 
 }
 
