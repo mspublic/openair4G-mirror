@@ -141,7 +141,8 @@ typedef enum {
 */
 
 typedef enum { 
-TCP_IPV4=0,
+NO_HEADER=0,
+TCP_IPV4,
 UDP_IPV4,
 TCP_IPV6,
 UDP_IPV6,
@@ -199,25 +200,19 @@ typedef struct {
 }otg_t; 
 
 
-/**
-* \struct otg_hdr_t
-*
-* \brief otg_hdr_t corresponds to the added OTG control header to check the received packet at the server side
-*
-*
-*/
 typedef struct{
 
 	int flow_id; 	/*!< \brief It identify the flow ID (we can have source and destination with several flows)  */
 	int time; 		/*!< \brief simulation time at the tx, this is ctime */
 	int seq_num; 	/*!< \brief Sequence Number, counter of data packets between tx and rx */  
 	int hdr_type; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
+	int pkts_size ;		/*!< \brief the size of payload + header */
 	//int payload_size;	/*!< \brief the size of the payload to transmit */
 	//int header_size; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 }__attribute__((__packed__)) otg_hdr_t;
 
 typedef struct{
-	int flag;
+	char *flag;
 	unsigned int size;
 }__attribute__((__packed__)) otg_hdr_info_t;
  
@@ -232,7 +227,6 @@ typedef struct{
 
 
 typedef struct{
-//	otg_hdr_t*  otg_hdr; 	/*!< \brief OTG header  */
 	char* header ; 		/*!< \brief  Header */
 	char* payload; 		/*!< \brief  Payload*/  
 }__attribute__((__packed__)) packet_t;

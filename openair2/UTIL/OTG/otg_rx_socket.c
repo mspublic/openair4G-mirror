@@ -73,7 +73,7 @@
 
 #include "otg_config.h"
 #include "otg_rx_socket.h"
-
+#include "otg_vars.h"
 
 
 

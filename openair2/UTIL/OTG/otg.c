@@ -52,32 +52,27 @@ void init_all_otg()  {
  	g_otg = calloc(1, sizeof(otg_t));
 	if (g_otg == NULL)
    	/* Memory could not be allocated */
-   		printf("Couldn't allocate memory\n");
+   		LOG_E(OTG,"Couldn't allocate memory for otg_t\n");
  	memset(g_otg, 0, sizeof(otg_t));		
 
+
 	//set otg infos to 0
- 	otg_hdr_info = calloc(1, sizeof(otg_hdr_info_t));
-	if (otg_hdr_info == NULL)
+ 	otg_info = calloc(1, sizeof(otg_info_t));
+	if (otg_info == NULL)
    	/* Memory could not be allocated */
-   		printf("Couldn't allocate memory\n");
- 	memset(otg_hdr_info, 0, sizeof(otg_hdr_info_t));
+   		LOG_E(OTG,"Couldn't allocate memory for otg_info_t\n");
+ 	memset(otg_info, 0, sizeof(otg_info_t));
 
 
-	//set otg header to 0
- 	otg_hdr = calloc(1, sizeof(otg_hdr_t));
-	if (otg_hdr == NULL)
-   	/* Memory could not be allocated */
-   		printf("Couldn't allocate memory\n");
- 	memset(otg_hdr, 0, sizeof(otg_hdr_t));
 
-	printf("init done\n");
+	LOG_I(OTG,"init done: init_all_otg\n");
 
 }
 
 // set the simulation time
 void set_ctime(int ctime){
 	otg_info->ctime=ctime;
-	printf("ctime :: val =%d \n",otg_info->ctime);
+	LOG_I(OTG,"ctime :: val =%d \n",otg_info->ctime);
 }
 
 
@@ -88,32 +83,21 @@ int get_ctime(void){
 }
 
 
-void free_addr_otg(){
-int i, j, k; 
+void free_otg(){
+int i; 
 for (i=0; i<g_otg->num_nodes; i++){
 	if (NULL != g_otg->dst_ip[i]){
-		g_otg->dst_ip[i]=NULL;
 		free(g_otg->dst_ip[i]);
 		}
-	}
+}
 
-	if (NULL !=g_otg){
-		g_otg=NULL;
-		free(g_otg);
-	}
+if (NULL !=g_otg){
+	free(g_otg);
+}
 
-
-	if (NULL !=otg_info){
-		otg_info=NULL;
-		free(otg_info);
-	}
-
-
-	if (NULL !=otg_hdr){
-		otg_hdr=NULL;
-		free(otg_hdr);
-	}
-
+if (NULL !=otg_info){
+	free(otg_info);
+}
 
 
 }
