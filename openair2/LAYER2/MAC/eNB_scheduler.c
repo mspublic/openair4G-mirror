@@ -4076,7 +4076,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   pdcp_run(frame, 1);
 #ifdef CELLULAR
-  Rrc_xface->rrc_rx_tx(Mod_id, frame, 0, 0);
+  rrc_rx_tx(Mod_id, frame, 0, 0);
 #endif
 
 #ifdef ICIC
