@@ -53,14 +53,6 @@ LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC;
 void rrc_rg_init (u8 Mod_id){
 //-----------------------------------------------------------------------------
 //  int i;
-
-/*
-  init_uniform ();
-#ifdef BYPASS_L1
-  init_up (&trch_tx_L1H, NULL);
-  init_list (&trch_rx_L1H, NULL);
-#endif
-*/
   printk("[RRC CELL][INIT] Init BS function start\n");
   pool_buffer_init();
 
@@ -141,20 +133,14 @@ char rrc_rg_uelite_init(u8 Mod_id, unsigned char eNB_index){
 }
 
 /*------------------------------------------------------------------------------*/
-// Dummy function - to keep compatibility with RRC LITE
-void rrc_rg_toplite_init(void){
-/*-----------------------------------------------------------------------------*/
-  //#ifdef DEBUG_RRC_STATE
-   msg ("\n[RRC CELL] Called rrc_rg_top_init - Dummy function - to keep compatibility with RRC LITE\n\n");
-  //#endif
-
-}
-
-/*------------------------------------------------------------------------------*/
 //Entry function for RRC init - Copied from RRC MESH (MW 09/09/2008)
 int rrc_init_global_param(void){
 /*------------------------------------------------------------------------------*/
   //  Nb_mod=0;
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] Called rrc_init_global_param - Begin \n\n");
+  //#endif
+/*
 #ifdef USER_MODE
   Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
 #endif //USER_MODE
@@ -173,8 +159,17 @@ int rrc_init_global_param(void){
   printk("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind %p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
   if(Mac_rlc_xface==NULL || Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
     return -1;
+  if(Mac_rlc_xface==NULL || Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
+    return -1;
   Mac_rlc_xface->rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
-  
+*/
+  printk("[RRC]INIT_GLOBAL_PARAM: rrc_rlc_register_rrc %p,rlcrrc_data_ind %p\n",rrc_rlc_register_rrc,rlcrrc_data_ind);
+  if( rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
+    return -1;
+
+  rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
+
+
   BCCH_LCHAN_DESC.transport_block_size=BCCH_PAYLOAD_SIZE_MAX;
   BCCH_LCHAN_DESC.max_transport_blocks=15;//MAX 16 (4bits for Seq_id)
 
@@ -224,6 +219,9 @@ int rrc_init_global_param(void){
 void rrc_rg_init_mac_config(void){
 /*------------------------------------------------------------------------------*/
   MAC_CONFIG_REQ Mac_config_req;
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] Called rrc_rg_init_mac_config - Begin \n\n");
+  //#endif
 
   // Configure BCCH
   //  Mac_config_req.Lchan_type = BCCH;
