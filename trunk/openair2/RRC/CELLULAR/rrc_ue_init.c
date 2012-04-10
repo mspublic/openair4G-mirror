@@ -53,14 +53,6 @@ EXPORT_SYMBOL(nas_IMEI);
 void rrc_ue_init (u8 Mod_id){
 //-----------------------------------------------------------------------------
 //  int i;
-
-/*
-  init_uniform ();
-#ifdef BYPASS_L1
-  init_up (&trch_tx_L1H, NULL);
-  init_list (&trch_rx_L1H, NULL);
-#endif
-*/
   printk("[RRC CELL][INIT] Init UE function start\n");
   pool_buffer_init();
 
@@ -139,22 +131,16 @@ char rrc_ue_rglite_init(u8 Mod_id, unsigned char eNB_index){
   return 0;
 }
 
-/*------------------------------------------------------------------------------*/
-// Dummy function - to keep compatibility with RRC LITE
-void rrc_ue_toplite_init(void){
-/*-----------------------------------------------------------------------------*/
-  //#ifdef DEBUG_RRC_STATE
-   msg ("\n[RRC CELL] Called rrc_ue_toplite_init - Dummy function - to keep compatibility with RRC LITE\n\n");
-  //#endif
-
-}
-
 
 /*------------------------------------------------------------------------------*/
 //Entry function for RRC init - Copied from RRC MESH (MW 09/09/2008)
 int rrc_init_global_param(void){
   /*------------------------------------------------------------------------------*/
   //  Nb_mod=0;
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] Called rrc_init_global_param - Begin \n\n");
+  //#endif
+ /*
 #ifdef USER_MODE
   Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
 #endif //USER_MODE
@@ -170,10 +156,15 @@ int rrc_init_global_param(void){
   Rrc_xface->mac_rrc_meas_ind = mac_rrc_meas_ind;
   Rrc_xface->def_meas_ind     = rrc_L2_def_meas_ind_rx;
   Mac_rlc_xface->mac_out_of_sync_ind = mac_out_of_sync_ind;
-  printk("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind %p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
   if(Mac_rlc_xface==NULL || Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
     return -1;
+  printk("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind %p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
   Mac_rlc_xface->rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
+*/
+  printk("[RRC]INIT_GLOBAL_PARAM: rrc_rlc_register_rrc %p,rlcrrc_data_ind %p\n",rrc_rlc_register_rrc,rlcrrc_data_ind);
+  if( rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
+    return -1;
+  rrc_rlc_register_rrc(rlcrrc_data_ind ,NULL); //register with rlc
 
 //   BCCH_LCHAN_DESC.transport_block_size=30;//+CH_BCCH_HEADER_SIZE;
 //   BCCH_LCHAN_DESC.max_transport_blocks=15;//MAX 16 (4bits for Seq_id)
