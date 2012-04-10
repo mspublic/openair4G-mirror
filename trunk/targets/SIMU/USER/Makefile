@@ -191,6 +191,13 @@ rb_tool:
 nasmesh_install:
 	(sudo rmmod nasmesh)
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
+
+nas_sim_mt_cellular:
+	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make nasmt_sim CELLULAR=1 NO_RRM=1)
+
+nas_sim_rg_cellular:
+	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make nasrg_sim MASTER=1 CELLULAR=1 NO_RRM=1)
+
 clean:
 	rm -f oaisim
 	rm -f $(OBJ)
@@ -209,6 +216,11 @@ cleanl2:
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
+
+cleancell:
+	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
+	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.o
+	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
 
 print:
 	@echo $(cygwin)
