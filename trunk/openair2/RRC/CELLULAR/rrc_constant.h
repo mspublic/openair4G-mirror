@@ -2,8 +2,8 @@
                           rrc_constant.h  -  description
                              -------------------
     begin             : Someday 2001
-    copyright         : (C) 2001, 2008 by Eurecom
-	  created by			  : Lionel.Gauthier@eurecom.fr	
+    copyright         : (C) 2001, 2010 by Eurecom
+    created by        : Lionel.Gauthier@eurecom.fr	
     modified by       : Michelle.Wetterwald@eurecom.fr
  **************************************************************************
   RRC protocol constants
@@ -12,45 +12,54 @@
 #define __RRC_CONSTANT_H__
 
 /* ***Debug flags*** */
-#define DEBUG_RRC_DETAILS
-
 #define DEBUG_RRC_STATE
+//#define DEBUG_RRC_DETAILS
+
 //#define DEBUG_RRC_BROADCAST_NAS
 //#ifndef DEBUG_RRC_BROADCAST
 //#define DEBUG_RRC_BROADCAST
+//#define DEBUG_RRC_BROADCAST_DETAILS
 //#endif
+//#define DEBUG_RRC_RRM_INTF
+
+//#define DEBUG_RRC_TEMP_OPENAIR
 
 #define DEBUG_NAS_CONTROL_SIMU
+//#define DEBUG_NAS_MEAS_SIMU
 
 // Measurement Control Message
-//#define DEBUG_RRC_MEASURE_CONTROL
+#define DEBUG_RRC_MEASURE_CONTROL
 // Measurement Report Message
-#ifdef NODE_RG
-//#define DEBUG_RRC_MEASURE_REPORT
-//#define DEBUG_RRC_FORWARD_MT_MEASURE_REPORT
-#endif
+#define DEBUG_RRC_MEASURE_REPORT_MAIN
+// #ifdef NODE_RG
+// #define DEBUG_RRC_MEASURE_REPORT
+// #define DEBUG_RRC_FORWARD_MT_MEASURE_REPORT
+// #endif
 
 //FLAGS DEFINED FOR MBMS DEFINITION
 //#define ALLOW_MBMS_ACCESS_INFO
 #define ALLOW_MBMS_PROTOCOL  //Activate or deactivate the MBMS Protocol
 
-//#define MBMS_TEST_MODE	//Used in stand-alone mode (MBMS simulator)
+//#define MBMS_TEST_MODE	//Used in stand-alone mode (MBMS standalone simulator)
 #define MBMS_INTEGRATION_MODE	//Used in platform mode - simulation or realtime mode
 
 /* *** Debug flags for MBMS *** */
 #define DEBUG_RRC_MBMS_BASIC      //basic level of trace for MBMS operation
 //#define DEBUG_RRC_MBMS            //1st level of trace for MBMS operation
 //#define DEBUG_RRC_MBMS_DETAIL   //2nd level of trace for MBMS operation
-//#define DEBUG_UE_MBMS_FSM       //??
-//#define DEBUG_UE_MBMS_FSM_TEST  //??
-//#define DEBUG_RRC_MBMS_MSG_CONTENT  // content fo received/sent message buffer
-//#define DEBUG_RRC_MBMS_SFN  // MBMS frame counter
-//#define DEBUG_RRC_MBMS_STATUS  // current status of services in UE
+#define DEBUG_UE_MBMS_FSM       //??
+#define DEBUG_UE_MBMS_FSM_TEST  //??
+#define DEBUG_RRC_MBMS_MSG_CONTENT  // content fo received/sent message buffer
+#define DEBUG_RRC_MBMS_SFN  // MBMS frame counter
+#define DEBUG_RRC_MBMS_STATUS  // current status of services in UE
 
 #ifdef MBMS_INTEGRATION_MODE
 #undef MBMS_TEST_MODE
 #endif
 /* ***End Debug flags*** */
+
+// will be a variable when virtualisation
+#define RRC_MODULE_INST_ID 0
 
 //max number of UE per BS
 // Warning : This must be coordinated with the number of FIFOs in the RG (rrc_sap.h)
@@ -65,7 +74,8 @@
 #define RATIO_RSSI0 100
 #define SHIFT_RSSI0 110
 //#define NB_ANTENNAS 2   // A Revoir
-// #define numANTENNAS   NB_ANTENNAS
+// NB_ANTENNAS is set in the Makefile
+#define numANTENNAS   NB_ANTENNAS_RX
 
 #ifdef NODE_RG
 #define RRC_RG_MAX_RB   maxRB*maxUsers
@@ -120,7 +130,6 @@
 #define RB_RELEASE_FAILURE      23 //UE
 #define CELL_UPDATE             25 //UE
 #define CELL_UPDATE_CONFIRM     26 //RG
-//HNN : Added on 04/06 for UE Capability Information
 #define UE_CAPABILITY_INFO      27 //UE
 #define UE_CAPABILITY_INFO_CONF 28 //RG
 
@@ -155,12 +164,29 @@
 #define  RRC_CONNECTION_RELEASE_EVENT           0x08
 #define  RRC_CONNECTION_LOSS_EVENT              0x10
 
-// RADIO BEARERS
+// SIGNALLING RADIO BEARERS - OPENAIR
+#ifdef NODE_RG
+#define RRC_SRB_OFFSET 8
+#endif
+#ifdef NODE_MT
+#define RRC_SRB_OFFSET 0
+#endif
+
+#define RRC_LTE_DCCH_ID  2+RRC_SRB_OFFSET  // for openair scheduling
+#define RRC_LCHAN_SRB0_ID  4+RRC_SRB_OFFSET  // traffic on CCCH
+#define RRC_LCHAN_SRB1_ID  5+RRC_SRB_OFFSET  // any traffic on DCCH using RLC-UM
+#define RRC_LCHAN_SRB2_ID  6+RRC_SRB_OFFSET  // AS traffic using RLC-AM
+#define RRC_LCHAN_SRB3_ID  7+RRC_SRB_OFFSET  // high priority NAS traffic using RLC-AM
+#define RRC_LCHAN_SRB4_ID  8+RRC_SRB_OFFSET  // low  priority NAS traffic using RLC-AM
+
+#define RRC_BCCH_ID 64  // Broadcast
 #define RRC_SRB0_ID  0  // traffic on CCCH
 #define RRC_SRB1_ID  1  // any traffic on DCCH using RLC-UM
 #define RRC_SRB2_ID  2  // AS traffic using RLC-AM
 #define RRC_SRB3_ID  3  // high priority NAS traffic using RLC-AM
 #define RRC_SRB4_ID  4  // low  priority NAS traffic using RLC-AM
+#define RRC_MCCH_ID  5  // MBMS Control
+
 
 // RB ESTABLISHMENT
 #define RB_STARTED  1
@@ -168,6 +194,11 @@
 //For PDCP
 #define RRC_RB_NO_USE_PDCP           0
 #define RRC_RB_USE_PDCP              1
+
+//Interface with RLC- Request or not confirmation
+// (cf rlc.h)
+#define RRC_RLC_CONFIRM_YES 1
+#define RRC_RLC_CONFIRM_NO  0
 
 // PROTOCOL ALLOC
 #define RRC_PROTOCOL_ENTITY_FREE         0x00
@@ -184,12 +215,28 @@
 
 // extension to 25.331
 #define maxCCTrCH_rg                32
+#define maxRB                       32
+#define maxTS                       15
 
-/*HNN : Added 04/06 for UE Capability Information messages */
-#define ACCESS_STRATUM_RELEASE_INDICATOR_DEFAULT  ACCESS_STRATUM_RELEASE_INDICATOR_REL_6 //The real value is defined in rrc_msg_constant.h
+
+//The real value is defined in rrc_msg_constant.h
+#define ACCESS_STRATUM_RELEASE_INDICATOR_DEFAULT  ACCESS_STRATUM_RELEASE_INDICATOR_REL_6 
 #define EURECOM_KERNEL_RELEASE_INDICATOR_DEFAULT  EURECOM_KERNEL_RELEASE_INDICATOR_REL_26
 
 ////25.331
 #define maxCCTrCH                    8
+
+// Values from RHODOS26 - Temp to be removed
+#define JRRM_SLOTS_PER_FRAME 15L
+#define RRC_FRAME_DURATION 320*64/(6.5*1000)  // in ms - from Florian
+
+//Other RRM interface values
+#define RRC_CONNECTED_TO_RRM 0xCC
+
+#ifdef USER_MODE
+#define RPC_CONNECTION_REQUEST_TIME_OUT  2000   // in  ms
+#else
+#define RPC_CONNECTION_REQUEST_TIME_OUT  5000   // in ms
+#endif
 
 #endif
