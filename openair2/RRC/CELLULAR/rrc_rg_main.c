@@ -1,160 +1,118 @@
 /***************************************************************************
-                          rrc_ue_main.c  -
+                          rrc_rg_main.c  -
                           -------------------
     begin                : Tue Jan 15 2002
-    copyright            : (C) 2002, 2008 by Eurecom
+    copyright            : (C) 2002, 2010 by Eurecom
     created by           : michelle.wetterwald@eurecom.fr
  **************************************************************************
-		This file contains the main function of the RRC module
+  This file contains the main function of the RRC module
  ***************************************************************************/
-//#include "rtos_header.h"
-//#include "platform.h"
-//#include "protocol_vars_extern.h"
-//#include "print.h"
-//-----------------------------------------------------------------------------
 /********************
-//OpenAir definitions
+// OpenAir definitions
  ********************/
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/MEM/mem_block.h"
-//-----------------------------------------------------------------------------
+
 /********************
 // RRC definitions
  ********************/
 #include "rrc_rg_vars.h"
+
 //#include "rrc_sap.h"
-/*
-#include "rrc_messages.h"
-#include "rrc_proto_extern.h"
-#include "rrc_fsm_proto_extern.h"
-#include "rrc_rrm_proto.h"
-#include "rrc_bch_proto_extern.h"
-#include "rrc_mbms_proto.h"
-#include "rrc_control_proto.h"
+//#include "rrc_messages.h"
+//-----------------------------------------------------------------------------
+#include "rrc_proto_int.h"
+//#include "rrc_proto_fsm.h"
+//#include "rrc_proto_intf.h"
+#include "rrc_proto_bch.h"
+#include "rrc_proto_mbms.h"
 
-#include "umts_timer_proto_extern.h"
-*/
+//#include "umts_timer_proto_extern.h"
 
 //-----------------------------------------------------------------------------
-// This function sends data from RRC to the NAS
-void rrc_ue_write_FIFO (mem_block * p){
-//-----------------------------------------------------------------------------
-/*  int             count = 0;
-  int             xmit_length;
-//  int message_type;
-  char           *xmit_ptr;
-
-  // transmit the primitive
-
-  xmit_length = ((struct nas_ue_if_element *) p->data)->prim_length;
-  xmit_ptr = (char *) &((struct nas_ue_if_element *) p->data)->nasUePrimitive;
-  count = rtf_put (((struct nas_ue_if_element *) p->data)->xmit_fifo, xmit_ptr, xmit_length);
-
-  if (count == xmit_length) {
-#ifdef DEBUG_RRC_STATE
-    //msg ("[RRC_UE][NAS] NAS primitive sent successfully, length %d \n", count);
-    //msg("\n[RRC_UE][NAS] on FIFO, %d \n", ((struct nas_ue_if_element *) p->data)->xmit_fifo);
-#endif
-    protocol_ms->rrc.NASMessageToXmit = p->next;        //Dequeue next message if any
-    free_mem_block (p);
-#ifndef USER_MODE
-    if ((&protocol_ms->rb_dispatch)->ip_rx_irq > 0) {   //Temp - later a specific control irq
-      rt_pend_linux_srq ((&protocol_ms->rb_dispatch)->ip_rx_irq);
-    } else {
-#ifdef DEBUG_RRC_STATE
-      msg ("[RRC_UE] ERROR IF IP STACK WANTED NOTIF PACKET(S) ip_rx_irq not initialized\n");
-#endif
-    }
-#endif
-  } else {
-#ifdef DEBUG_RRC_STATE
-    msg ("[RRC_UE][NAS] transmission on FIFO failed, %d bytes sent\n", count);
-#endif
-  }
-*/
-}
-
-//-----------------------------------------------------------------------------
-// entry point for rrc-ue process
+// entry point for RRC-RG process
 //void rrc_rg_main_scheduler (u8 Mod_id){
 int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 //-----------------------------------------------------------------------------
-  mem_block *p;
-  int Message_Id;
+  mem_block_t *p;
+  int i;
 
-/*
-#ifdef ALLOW_MBMS_PROTOCOL
-    //HNN: ATTENTION: This must be the first event of RRC process.
-    //     Used to find the beginning of the modification period.
-    rrc_ue_mbms_scheduling_check();
-#endif
-
-  if (rrc_release_all_ressources) {
-#ifdef DEBUG_RRC_STATE
-    msg ("[RRC_UE]rrc_ue_rxtx : release_radio_resources() \n");
-#endif
-    mac_remove_all ();
-    rb_remove_all ();
-    // Set RRM Functions to remove RBs, TrChs, CCTrChs
-    // Put UE in Cell-BCH mode
-#ifndef BYPASS_L1
-    CPHY_release_UE_resources ();
-#endif
-    // BYPASS_L1
-    rrc_release_all_ressources = 0;
-  }
-  // check L1
-  rrc_ue_L1_check ();
-
-#ifndef BYPASS_L1
-  if (protocol_ms->rrc.protocol_state == RRC_UE_IDLE) {
-    if ((frame % 800) == 0)
-      msg ("[RRC][IDLE] frame %d \n", frame);
-  }
-
-  if (protocol_ms->rrc.protocol_state != RRC_UE_IDLE) {
-    rrc_ue_tick += 1;
-    if ((frame % 800) == 0) {
-      msg ("[RRC][KEEP-CX-ALIVE] TICK %d, at frame %d \n", rrc_ue_tick, frame);
-    }
-  }
-#endif
-
-  // check if there is some message to transmit to NAS and do it
-  if ((p = protocol_ms->rrc.NASMessageToXmit) != NULL) {
-    rrc_ue_write_FIFO (p);
-  } else {
-    if (protocol_ms->rrc.ue_broadcast_counter % 500 == 2) {
-      RRC_UE_O_NAS_MEASUREMENT_IND ();
-      rrc_ue_write_FIFO (protocol_ms->rrc.NASMessageToXmit);
-    }
-    // modulo to improve stability
-    protocol_ms->rrc.ue_broadcast_counter = (protocol_ms->rrc.ue_broadcast_counter++) % 1000000000;
-  }
-
-  // time out for SIB14 - cf RG
-  if (protocol_ms->rrc.ue_broadcast_counter % (protocol_ms->rrc.ue_bch_blocks.SIB14_timeout_value) == 2) {
-    protocol_ms->rrc.ue_bch_blocks.SIB14_timeout = TRUE;
-  }
-  // Wait for message in DC FIFO
-  rrc_ue_read_DCin_FIFO ();
-
-  // check for a time-out event
-  umts_timer_check_time_out (&protocol_ms->rrc.rrc_timers, protocol_ms->frame_tick_milliseconds);
-  // Measurements
-  //rrc_ue_meas_loop();   // for test only
-*/
-//  protocol_bs->rrc.current_SFN = Mac_rlc_xface->frame;
   protocol_bs->rrc.current_SFN = frame;
-//  if (protocol_ms->rrc.current_SFN % 50 == 0) {
-#ifdef DEBUG_RRC_DETAILS
-    msg ("\n[RRC][MSG_TEST] System Measurement Time : %d\n", protocol_bs->rrc.current_SFN);
-#endif
-//  }
-/*
-  //check if report of measure needed in UE
-  rrc_ue_sync_measures (protocol_ms->rrc.current_SFN, &Message_Id);
-*/
- return 0;
+  //  if (protocol_bs->rrc.current_SFN % 50 == 0) {
+  #ifdef DEBUG_RRC_DETAILS
+  if (protocol_bs->rrc.current_SFN % 5 == 0) {
+     msg ("\n\n[RRC][MSG_TEST] System Time : %d\n", protocol_bs->rrc.current_SFN);
+  }
+  #endif
+
+  // check RRM interface is connected - otherwise, wait for connection
+  if (rrc_rrm_main_proc() == RRC_CONNECTED_TO_RRM) {
+/*  }else{
+  } 
+ */     //msg ("\n\n[RRC][TIME_TEST] System Time : %d, RRC Time : %d\n", Mac_rlc_xface->frame, protocol_bs->rrc.current_SFN);
+
+      #ifdef ALLOW_MBMS_PROTOCOL
+      //ATTENTION: This must be the first event of RRC process.
+      #ifdef DEBUG_RRC_MBMS_SFN
+        //msg("[RRC][DEBUG_RRC_MBMS_SFN] 1 - ACTIVITY   frame %d\n",Mac_rlc_xface->frame);
+      #endif
+      rrc_rg_mbms_scheduling_check();
+      //rrc_rg_mbms_scenario_check();
+      #endif
+
+      // check L1
+      rrc_rg_L1_check ();
+
+      // check if there is some message to transmit to NAS and do it (one at a time)
+      if ((p = protocol_bs->rrc.NASMessageToXmit) != NULL)
+        rrc_rg_write_FIFO (p);
+
+      // Check time-out for SIB14
+      // Temp - 256 = Exp time factor (8) * SIB14_Rep (32)
+      if (protocol_bs->rrc.rg_broadcast_counter % (protocol_bs->rrc.rg_bch_blocks.SIB14_timeout) == 2) {
+        rrc_fill_sib14 ();
+        rrc_init_sib14 ();
+      }
+      protocol_bs->rrc.rg_broadcast_counter++;
+
+      // Read any message in DC FIFO -- To be improved: read only used FIFOs
+      for (i = 0; i < maxUsers; i++) {
+        rrc_rg_read_DCin_FIFO (i);
+        if (protocol_bs->rrc.Mobile_List[i].conn_complete_timer)
+          rrc_rg_temp_checkConnection(i);
+      }
+
+      // Read any message in GC FIFO
+      rrc_rg_read_GC_FIFO ();
+
+      // Read any message in NT FIFO
+      rrc_rg_read_NT_FIFO ();
+
+      // Measurements
+      //i = rrc_rg_meas_loop();  // for test only
+      //check if report of measure needed in RG
+      if (protocol_bs->rrc.current_SFN % 800 == 0) {
+        #ifdef DEBUG_RRC_DETAILS
+        msg ("\n[RRC_MEAS] System Measurement Time : %d\n", protocol_bs->rrc.current_SFN);
+        #endif
+      }
+      if (protocol_bs->rrc.current_SFN > 0)
+        rrc_rg_sync_measures (Mac_rlc_xface->frame);
+      //
+      #ifdef ALLOW_MBMS_PROTOCOL
+        rrc_rg_mbms_MCCH_tx();
+        // ATTENTION: This must be the last line of RRC process
+        rrc_rg_mbms_end_modification_period_check();
+      #endif
+
+      //TEST RLC communication
+      //rrc_rg_test_lchannels();
+
+      // TODO TO BE REMOVED TEMP -- stop the loop 
+      if (protocol_bs->rrc.current_SFN > 10000)
+      exit(1);
+
+      return 0;
+  }
 }
 

@@ -1,7 +1,7 @@
 /*********************************************************************
                           rrc_platform_types.h  -  description
                              -------------------
-    copyright            : (C) 2005, 2008 by Eurecom
+    copyright            : (C) 2005, 2010 by Eurecom
     email                : Michelle.Wetterwald@eurecom.fr
  *********************************************************************
   Define parameters types common to RRC_UE and RRC_RG
