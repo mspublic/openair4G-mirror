@@ -91,7 +91,7 @@
 #define E_REL_RB 7
 
 // UE States
-#define IDLE      RRC_UE_IDLE                //0x01
+#define RRC_CELL_IDLE  RRC_UE_IDLE           //0x01
 #define CONNECTED RRC_UE_CONNECTED           //0x02
 #define CELL_FACH RRC_UE_CONNECTED_CELL_FACH //0x06
 #define CELL_DCH  RRC_UE_CONNECTED_CELL_DCH  //0x0A
