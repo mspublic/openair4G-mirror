@@ -121,6 +121,20 @@ typedef enum {
 }ip_v;
 
 /**
+* \enum ip_v
+*
+*\brief ip_v presents the used IP version to generate the packet 
+*
+*/
+typedef enum { 	
+  //	MIN_NUM_STATE,
+	ON_STATE=0,
+	OFF_STATE,
+	ACTIVE_STATE,
+	MAX_NUM_STATE,
+}TRAFFIC_STATE;
+
+/**
 * \enum ALPHABET
 *
 *\brief ALPHABET Alphabet type to generate random string 
@@ -184,9 +198,9 @@ typedef struct {
 	double size_shape[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; 	/*!\brief shape :parameter for Pareto, Gamma, Weibull and Cauchy distribution*/
 
 	// info for state-based traffic gen
-	int num_state; /*!\brief Number of states */
-	int state_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; /*!\brief States distribution */ 
-	int state_prob[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; /*!\brief State probablity: prob to move from one state to the other one */
+	int num_state [NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Number of states for source node*/
+  //	int state_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; /*!\brief States distribution */ 
+	double state_prob[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; /*!\brief State probablity: prob to move from one state to the other one */
 	
 	// num stream for each src
 	// int stream [NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; // this requires multi thread for parallel stream for a givcen src	
@@ -202,17 +216,18 @@ typedef struct {
 
 typedef struct{
 
-	int flow_id; 	/*!< \brief It identify the flow ID (we can have source and destination with several flows)  */
-	int time; 		/*!< \brief simulation time at the tx, this is ctime */
-	int seq_num; 	/*!< \brief Sequence Number, counter of data packets between tx and rx */  
-	int hdr_type; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
-	int pkts_size ;		/*!< \brief the size of payload + header */
+	unsigned char flow_id; 	/*!< \brief It identify the flow ID (we can have source and destination with several flows)  */
+	unsigned int time; 		/*!< \brief simulation time at the tx, this is ctime */
+	unsigned int seq_num; 	/*!< \brief Sequence Number, counter of data packets between tx and rx */  
+	unsigned char state; 	/*!< \brief state of node : on, off, or active */
+	unsigned char hdr_type; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
+	unsigned short pkts_size ;		/*!< \brief the size of payload + header */
 	//int payload_size;	/*!< \brief the size of the payload to transmit */
 	//int header_size; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 }__attribute__((__packed__)) otg_hdr_t;
 
 typedef struct{
-	char *flag;
+	unsigned int flag;
 	unsigned int size;
 }__attribute__((__packed__)) otg_hdr_info_t;
  
@@ -243,10 +258,11 @@ typedef struct{
 typedef struct{
 /*!< \brief  info part: */ 
 	int ctime; 						/*!< \brief Simulation time in ms*/							
-	int ptime[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; /*!< \brief time of last sent data (time in ms)*/		
+	int ptime[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!< \brief time of last sent data (time in ms)*/		
 	int seq_num[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief the sequence number of the sender  */
 	int seq_num_rx[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief the sequence number of the receiver` */
 	int idt[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];			/*!< \brief  Inter Departure Time in ms*/
+	int state[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];			                /*!< \brief  current state of src node */
 	int header_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Define the type of header: Transport layer + IP version*/
 			
 /*!< \brief Statics part: vars updated at each iteration of otg_tx */

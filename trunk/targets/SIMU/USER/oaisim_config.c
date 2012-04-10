@@ -287,7 +287,7 @@ int olg_config() {
   set_log(PDCP, LOG_TRACE, 1);  
   set_log(RRC,  LOG_DEBUG, 1);  
   set_log(OCM,  LOG_INFO, 20);  
-  set_log(OTG,  LOG_DEBUG, 1);  
+  set_log(OTG,  LOG_INFO, 1);  
   // set_comp_log(MAC, LOG_TRACE, LOG_FULL,1);
   
     LOG_T(LOG,"global log level is set to %d \n", oai_emulation.info.g_log_level );
@@ -476,7 +476,7 @@ if (oai_emulation.info.ocg_ok) {
 			g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
 		}
 	
-	init_predef_otg();
+	init_predef_traffic();
 
 	}
 

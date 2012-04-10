@@ -44,6 +44,8 @@
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
 #include "pdcp_primitives.h"
+#include "OCG.h"
+#include "OCG_extern.h"
 #include "UTIL/LOG/log.h"
 #include <inttypes.h>
 #define PDCP_DATA_REQ_DEBUG 1
@@ -212,6 +214,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   list_t* sdu_list = &pdcp_sdu_list;
 #endif
   mem_block_t *new_sdu = NULL;
+  int src_id, dst_id; // otg param
 
   LOG_I(PDCP, "Data indication notification for PDCP entity with module ID %d and radio bearer ID %d\n", module_id, rab_id);
 
@@ -254,7 +257,14 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
 #endif
   }
-
+#ifdef USER_MODE
+  src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + 1 :  ((rab_id - DTCH) / MAX_NUM_RB);
+  dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;  
+  LOG_I(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rab_id, src_id, dst_id);
+  if (otg_rx_pkt(src_id, dst_id,frame,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], 
+		 sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) // fix me for -1
+    return TRUE;
+#endif
   new_sdu = get_free_mem_block(sdu_buffer_size + sizeof (pdcp_data_ind_header_t));
 
   if (new_sdu) {
@@ -312,8 +322,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 
 //-----------------------------------------------------------------------------
 void
-pdcp_run (u32_t frame,u8 eNB_flag)
-{
+pdcp_run (u32_t frame,u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 //-----------------------------------------------------------------------------
 
 #ifndef NAS_NETLINK
@@ -323,6 +332,11 @@ pdcp_run (u32_t frame,u8 eNB_flag)
   #endif
 #endif
   unsigned int diff, i, k, j;
+  char *otg_pkt=NULL;
+  int src_id, module_id; // src for otg
+  int dst_id, rab_id; // dst for otg
+  int pkt_size=0;
+  /*
   if ((frame % 128) == 0) { 
     for (i=0; i < NB_UE_INST; i++) {
       for (j=0; j < NB_CNX_CH; j++) {
@@ -338,27 +352,53 @@ pdcp_run (u32_t frame,u8 eNB_flag)
       }
     }
   }
-
+  */
+ #ifdef USER_MODE 
+  if (oai_emulation.info.otg_enabled || oai_emulation.info.ocg_enabled ){
+    module_id = (eNB_flag == 1) ?  eNB_index : /*NB_eNB_INST +*/ UE_index ;
+    //rab_id    = (eNB_flag == 1) ? eNB_index * MAX_NUM_RB + DTCH : (NB_eNB_INST + UE_index -1 ) * MAX_NUM_RB + DTCH ;
+    if (eNB_flag == 1) { // search for DL traffic 
+      for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
+	otg_pkt=packet_gen(module_id, dst_id, frame, &pkt_size);
+	if (otg_pkt != NULL) {
+	  rab_id = (/*NB_eNB_INST +*/ dst_id -1 ) * MAX_NUM_RB + DTCH;
+	  pdcp_data_req(module_id, frame, eNB_flag, rab_id, pkt_size, otg_pkt);
+	  LOG_I(OTG,"[eNB %d] send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
+	  free(otg_pkt);
+	}
+      }
+    }
+    else {
+      src_id = module_id+NB_eNB_INST;
+      dst_id = eNB_index;
+      otg_pkt=packet_gen(src_id, dst_id, frame, &pkt_size);
+      if (otg_pkt != NULL){
+	rab_id= eNB_index * MAX_NUM_RB + DTCH;
+	pdcp_data_req(src_id, frame, eNB_flag, rab_id, pkt_size, otg_pkt);
+	LOG_I(OTG,"[UE %d] send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", UE_index, src_id, rab_id, src_id, dst_id, pkt_size);
+	free(otg_pkt);
+      }
+    }
+  }
+#endif  
   // NAS -> PDCP traffic
   pdcp_fifo_read_input_sdus(frame,eNB_flag);
 
   // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus(frame,eNB_flag);
-  if ( eNB_flag == 0){
-
-
+ 
 //OTG 
 /*
-char *rx_packet_out;
-rx_packet_out=check_packet(0, 0, frame, packet_gen(0, 0, 0, frame));
-
-	if (rx_packet_out!=NULL){ 
-		rx_packet_out=NULL;  					
-		free(rx_packet_out);
-	}
-
-*/
+  if ( eNB_flag == 0){
+    char *rx_packet_out;
+    rx_packet_out=check_packet(0, 0, frame, packet_gen(0, 0, 0, frame));
+    if (rx_packet_out!=NULL){ 
+      rx_packet_out=NULL;  					
+      free(rx_packet_out);
+    }
   }
+*/
+ 
 }
 
 //-----------------------------------------------------------------------------

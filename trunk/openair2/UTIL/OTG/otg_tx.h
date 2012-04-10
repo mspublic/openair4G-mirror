@@ -52,7 +52,7 @@
 
 #include "otg.h"
 
-#include "../MATH/oml.h"
+#include "UTIL/MATH/oml.h"
 
 
 
@@ -85,12 +85,13 @@ char *random_string(int size, ALPHABET data_type, char *data_string);
 
 /*! \fn int packet_gen(int src, int dst, int state, int ctime)
 * \brief return int= 1 if the packet is generated: OTG header + header + payload, else 0
-* \param[in] source, 
+* \param[in] src source identity 
+* \param[in] dst destination id 
 * \param[out] packet_t: the generated packet: otg_header + header + payload
 * \note 
 * @ingroup  _otg
 */
-char *packet_gen(int src, int dst, int state, int ctime);
+char *packet_gen(int src, int dst, int ctime, int *pkt_size);
 
 
 /*! \fn char *header_gen(int  hdr_size);
@@ -119,7 +120,7 @@ char *payload_pkts(int payload_size);
 * \note 
 * @ingroup  _otg
 */
-void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int size);
+void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int state, int size);
 
 
 /*! \fn int adjust_size(int size);
@@ -140,4 +141,6 @@ int adjust_size(int size);
 * @ingroup  _otg
 */
 int header_size_gen(int src);
+
+void init_predef_traffic();
 #endif
