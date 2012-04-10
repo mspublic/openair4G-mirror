@@ -123,7 +123,7 @@ void stop_mobility_generator(int mobility_type) {
   case RWALK: 
   case TRACE:
       //LOG_D(OMG," --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
-      printf(" --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
+    LOG_D(OMG," --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
   break; 
 
   case SUMO: 
@@ -137,12 +137,11 @@ void stop_mobility_generator(int mobility_type) {
 }
 
 void update_nodes(double cur_time){
-printf("UPDATE NODES" );
 //LOG_D(OMG, "UPDATE NODES" );
 int i = 0;
 for (i=(STATIC+1); i<MAX_NUM_MOB_TYPES; i++){ 
       if (Node_Vector[i] != NULL){
-       printf(" Mob model to update is: %d \n ", i);
+	//printf(" Mob model to update is: %d \n ", i);
        //LOG_D(OMG, " Mob model to update is: %d \n ", i); 
         update_node_vector(i, cur_time);
       }
@@ -169,8 +168,8 @@ void update_node_vector(int mobility_type, double cur_time){
     break;
 
   default:
-    printf("STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
-    //LOG_N(OMG, "STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
+    //printf("STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
+    LOG_N(OMG, "STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
   }
 }
 
