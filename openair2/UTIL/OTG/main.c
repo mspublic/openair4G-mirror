@@ -419,7 +419,7 @@ for (i = 1; i <argc ; i ++){
 
 
 	if (traffic!=NULL)
-		init_predef_otg();
+		init_predef_traffic();
 	else
 		init_config_otg(protocol, ip_version);
 

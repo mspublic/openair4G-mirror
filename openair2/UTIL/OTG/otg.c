@@ -72,7 +72,6 @@ void init_all_otg()  {
 // set the simulation time
 void set_ctime(int ctime){
 	otg_info->ctime=ctime;
-	LOG_I(OTG,"ctime :: val =%d \n",otg_info->ctime);
 }
 
 
