@@ -155,7 +155,6 @@ char *random_string(int size, ALPHABET data_type, char *data_string) {
 
   char *data=NULL;
   int i, pos;
-  
   data=(char*)malloc(size*sizeof(char*));
   switch (data_type){
   case STATIC_STRING:
@@ -267,42 +266,43 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(packet->header) + strlen(packet->payload) ; 
   otg_info->tx_num_pkt[src][dst]+=1;
 	
-
-	// Serialization
-	buffer_size = hdr_size + strlen(packet->header) + strlen(packet->payload);
-	buffer_tx= (char*)malloc(buffer_size);
-	otg_hdr_info_p = (otg_hdr_info_t *) (&buffer_tx[byte_tx_count]);
-	otg_hdr_info_p->size = buffer_size;
-	otg_hdr_info_p->flag = 0xffff;
-	byte_tx_count = sizeof(otg_hdr_info_t);
-	otg_hdr_p = (otg_hdr_t *) (&buffer_tx[byte_tx_count]);
-	otg_header_gen(flow_id, ctime, otg_info->seq_num[src][dst],type_header, state, strlen(packet->header) + strlen(packet->payload));
-	byte_tx_count += sizeof(otg_hdr_t);
-	//LOG_D(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
-
-	memcpy(&buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
-	byte_tx_count += strlen(packet->header);	
-	memcpy(&buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
-	//LOG_D(OTG,"==============STEP 4: PACKET OK============= \n");
-
-	LOG_I(OTG,"PACKET SIZE (TX):  time(%d), otg header(%d), header + payload (%d), Total %d\n", ctime, hdr_size , strlen(packet->header) + strlen(packet->payload), buffer_size);
-
-
-	//add stats
-	otg_info->header_type[src][dst]=type_header;
-	otg_info->seq_num[src][dst]+=1;
-	//end stats
+  
+  // Serialization
+  buffer_size = hdr_size + strlen(packet->header) + strlen(packet->payload);
+  buffer_tx= (char*)malloc(buffer_size);
+  otg_hdr_info_p = (otg_hdr_info_t *) (&buffer_tx[byte_tx_count]);
+  otg_hdr_info_p->size = buffer_size;
+  otg_hdr_info_p->flag = 0xffff;
+  byte_tx_count = sizeof(otg_hdr_info_t);
+  otg_hdr_p = (otg_hdr_t *) (&buffer_tx[byte_tx_count]);
+  otg_header_gen(flow_id, ctime, otg_info->seq_num[src][dst],type_header, state, strlen(packet->header) + strlen(packet->payload));
+  byte_tx_count += sizeof(otg_hdr_t);
+  //LOG_D(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
+  
+  memcpy(&buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
+  byte_tx_count += strlen(packet->header);	
+  memcpy(&buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
+  //LOG_D(OTG,"==============STEP 4: PACKET OK============= \n");
+  
+  LOG_I(OTG,"PACKET SIZE (TX):  time(%d), otg header(%d), header + payload (%d), Total %d\n", ctime, hdr_size , strlen(packet->header) + strlen(packet->payload), buffer_size);
 
 
-	if (NULL != packet)
-	  //free(packet);  									
-	if (NULL != packet->payload)
-	  // free(packet->payload);
-	if (NULL != packet->header)	
-	  //free(packet->header);
-	  *pkt_size = buffer_size;
-
-	return buffer_tx;
+  //add stats
+  otg_info->header_type[src][dst]=type_header;
+  otg_info->seq_num[src][dst]+=1;
+  //end stats
+  
+  /* 
+  if (NULL != packet)
+    //free(packet);  									
+    if (NULL != packet->payload)
+      // free(packet->payload);
+      if (NULL != packet->header)	
+	//free(packet->header);
+	*/  
+  *pkt_size = buffer_size;
+  
+  return buffer_tx;
 
 }
 
