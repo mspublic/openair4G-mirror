@@ -1180,7 +1180,7 @@ main (int argc, char **argv)
 	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
 	      exit(-1);
 	    }
-	    if ((frame>0) && (last_slot == (SLOTS_PER_FRAME-2))) {
+	    if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
