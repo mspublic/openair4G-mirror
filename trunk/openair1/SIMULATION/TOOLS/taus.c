@@ -1,10 +1,7 @@
-
 #ifndef RTAI_ENABLED
 #include <time.h>
-#include<stdlib.h>
+#include <stdlib.h>
 #else
-#include <asm/io.h>
-#include <asm/rtai.h>
 #include <rtai.h>
 #include <rtai_sched.h>
 #define time(x) (unsigned int)(rt_get_time_ns())
@@ -31,18 +28,22 @@ inline unsigned int taus() {
 
 void set_taus_seed(unsigned int seed_init) {
 
+#ifdef USER_MODE
   struct drand48_data buffer;
   unsigned int result = 0;
-  
+#endif
+
   if (seed_init == 0) {
     s0 = (unsigned int)time(NULL); 
     s1 = (unsigned int)time(NULL); 
     s2 = (unsigned int)time(NULL); 
   }
   else {
-    //  s0 = (unsigned int)0x1e23d852;
-    // s1 = (unsigned int)0x81f38a1c;
-    // s2 = (unsigned int)0xfe1a133e;
+#ifndef USER_MODE
+    s0 = (unsigned int)0x1e23d852;
+    s1 = (unsigned int)0x81f38a1c;
+    s2 = (unsigned int)0xfe1a133e;
+#else
     /* Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);
     mrand48_r(&buffer, (long int *)&result);
@@ -51,6 +52,7 @@ void set_taus_seed(unsigned int seed_init) {
     s1 = result;
     mrand48_r(&buffer, (long int *)&result);
     s2 = result;
+#endif
   }
 }
 

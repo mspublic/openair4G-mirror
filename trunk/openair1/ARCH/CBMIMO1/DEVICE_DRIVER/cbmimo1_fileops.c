@@ -39,6 +39,8 @@ int dummy_cnt = 0;
 extern int bigphys_ptr;
 #endif
 
+SEM* oai_semaphore;
+CND* oai_condition;
 
 //-----------------------------------------------------------------------------
 int openair_device_open (struct inode *inode,struct file *filp) {
@@ -1030,6 +1032,21 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     }
 #endif // RTAI_ENABLED
 #endif // PC_TARGET
+    break;
+
+  case openair_START_LXRT:
+
+    // get condition and semaphore variables by name
+    oai_semaphore = rt_get_adr("OAI_SEM");
+    oai_condition = rt_get_adr("OAI_CON");
+
+    // init instance count and copy its pointer to userspace
+    openair_daq_vars.instance_cnt = -1;
+    copy_to_user((char *)arg,&openair_daq_vars.instance_cnt,sizeof(s32*));
+
+    // enable the interrupts
+
+
     break;
 
   case openair_SET_TX_GAIN:
