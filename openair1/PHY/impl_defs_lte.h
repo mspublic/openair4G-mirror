@@ -47,6 +47,7 @@
 //#include "defs.h"
 
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
+#define LTE_SLOTS_PER_FRAME  20
 #define LTE_CE_FILTER_LENGTH 5
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1) 
@@ -409,9 +410,9 @@ typedef struct {
   u8 nushift;                
 /// Frame type (0 FDD, 1 TDD)
   u8 frame_type;
-  /// TDD subframe assignment (0-7) (default = 3)             
+  /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   u8 tdd_config;
-  /// TDD S-subframe configuration (0-9)
+  /// TDD S-subframe configuration (0-9) 
   u8 tdd_config_S;
   /// Frequency index of CBMIMO1 card
   u8 freq_idx;
