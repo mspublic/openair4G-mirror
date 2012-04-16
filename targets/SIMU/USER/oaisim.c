@@ -20,6 +20,7 @@
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OMG/omg_constants.h"
+
 //#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -42,12 +43,12 @@
 #include "UTIL/OCG/OCG_extern.h"
 #include "cor_SF_sim.h"
 
-//ALU
+//#ifdef PROC
 #include "../PROC/interface.h"
 #include "../PROC/channel_sim_proc.h"
 #include "../PROC/Tsync.h"
 #include "../PROC/Process.h"
-
+//#endif
 
 #define RF
 
@@ -527,6 +528,59 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
 
 #endif //XFORMS
 
+int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data){
+  int i,j;
+  omv_data.end=0;
+  //omv_data.total_num_nodes = NB_UE_INST + NB_eNB_INST;
+  for (i=0;i<NB_eNB_INST;i++) {
+    if (enb_node_list != NULL) {
+      omv_data.geo[i].x = enb_node_list->node->X_pos;
+      omv_data.geo[i].y = enb_node_list->node->Y_pos;
+      omv_data.geo[i].z = 1.0;
+      omv_data.geo[i].mobility_type = oai_emulation.info.omg_model_enb;
+      omv_data.geo[i].node_type = 0; //eNB
+      enb_node_list = enb_node_list->next;
+      omv_data.geo[i].Neighbors=0;
+      for (j=NB_eNB_INST; j< NB_UE_INST + NB_eNB_INST ; j++){
+	if (is_UE_active(i,j - NB_eNB_INST ) == 1) {
+	  omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors]=  j; 
+	  omv_data.geo[i].Neighbors++; 
+	  LOG_I(OMG,"[eNB %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i,j-NB_eNB_INST, is_UE_active(i,j-NB_eNB_INST), 
+	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
+	} 
+      } 
+    }
+  }
+  for (i=NB_eNB_INST;i<NB_UE_INST+NB_eNB_INST;i++) {
+    if (ue_node_list != NULL) {
+      omv_data.geo[i].x = ue_node_list->node->X_pos;
+      omv_data.geo[i].y = ue_node_list->node->Y_pos;
+      omv_data.geo[i].z = 1.0;
+      omv_data.geo[i].mobility_type = oai_emulation.info.omg_model_ue;
+      omv_data.geo[i].node_type = 1; //UE
+      ue_node_list = ue_node_list->next;
+      omv_data.geo[i].Neighbors=0;
+      for (j=0; j< NB_eNB_INST ; j++){
+	if (is_UE_active(j,i-NB_eNB_INST) == 1) {
+	  omv_data.geo[i].Neighbor[ omv_data.geo[i].Neighbors]=j; 	
+	  omv_data.geo[i].Neighbors++; 
+	  LOG_I(OMG,"[UE %d][eNB %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_eNB_INST,j, is_UE_active(j,i-NB_eNB_INST), 
+	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
+	} 
+      }
+    }
+  }
+ 
+  if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
+   perror( "write omv failed" );
+  return 1;
+}
+
+void omv_end (int pfd, Data_Flow_Unit omv_data) {
+  omv_data.end=1;
+  if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
+    perror( "write omv failed" );
+}
 
 int
 main (int argc, char **argv)
@@ -566,7 +620,20 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
-  u8 awgn_flag = 0;
+  // omv related info
+  //pid_t omv_pid;
+  char full_name[200];
+  int pfd[2]; // fd for omv : fixme: this could be a local var
+  char fdstr[10];
+  char frames[10];
+  char num_enb[10];
+  char num_ue[10];
+  //area_x, area_y and area_z for omv
+  char x_area[20];
+  char y_area[20];  
+  char z_area[20];
+
+ u8 awgn_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
   FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
@@ -588,12 +655,11 @@ main (int argc, char **argv)
   // Added for PHY abstraction
   Node_list ue_node_list = NULL;
   Node_list enb_node_list = NULL;
- 
-  //ALU
+  Data_Flow_Unit omv_data ;
+//ALU
     int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
     double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
     double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
-
   //default parameters
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -605,7 +671,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePoFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
+  while ((c = getopt (argc, argv, "haePoFvIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
 	 != -1) {
 
     switch (c) {
@@ -774,6 +840,9 @@ main (int argc, char **argv)
      node_id = wgt+atoi(optarg);
      port+=atoi(optarg);
      break;
+    case 'v':
+      oai_emulation.info.omv_enabled = 1;
+      break;
     default:
       help ();
       exit (-1);
@@ -792,7 +861,7 @@ main (int argc, char **argv)
     LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
     exit (-1);
   }
-	
+      
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
   abstraction_flag = 1;
@@ -833,6 +902,37 @@ main (int argc, char **argv)
 
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
+
+  if (oai_emulation.info.omv_enabled == 1) {
+    
+    if(pipe(pfd) == -1)
+      perror("pipe error \n");
+    
+    sprintf(full_name, "%s/UTIL/OMV/OMV",getenv("OPENAIR2_DIR"));
+    LOG_I(EMU,"Stating the OMV path %s pfd[0] %d pfd[1] %d \n", full_name, pfd[0],pfd[1]);
+      
+      switch(fork()) {
+      case -1 :
+	perror("fork failed \n");
+	break;
+      case 0 : /* child is going to be the omv, it is the reader */
+	if(close(pfd[1]) == -1 ) /* we close the write desc. */
+	  perror("close on write\n" );
+	sprintf(fdstr, "%d", pfd[0] );
+	sprintf(num_enb, "%d", NB_eNB_INST);
+	sprintf(num_ue, "%d", NB_UE_INST);
+	sprintf(x_area, "%f", oai_emulation.topology_config.area.x_km );
+	sprintf(y_area, "%f", oai_emulation.topology_config.area.y_km );
+	sprintf(z_area, "%f", 200.0 );
+	sprintf(frames, "%d", oai_emulation.info.n_frames);
+	/* execl is used to launch the visualisor */
+	execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, NULL );
+	perror( "execl" );
+      }
+    //parent
+    if(close( pfd[0] ) == -1 ) /* we close the write desc. */
+      perror("close on read\n" );
+  }
 
 #ifndef NAS_NETLINK
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
@@ -1042,7 +1142,14 @@ main (int argc, char **argv)
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
 
-    // update the position of all the nodes (eNB/CH, and UE/MR) every frame 
+    if (oai_emulation.info.omv_enabled == 1){
+      omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
+    }
+    // update the position of all the nodes (eNB/CH, and UE/MR) every frame
+/*
+do it here
+
+*/
     if (((int)oai_emulation.info.time % 10) == 0 ) {
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
@@ -1325,7 +1432,7 @@ main (int argc, char **argv)
     // calibrate at the end of each frame if there is some time  left
     if((sleep_time_us > 0)&& (ethernet_flag ==0)){
       LOG_I(EMU,"Adjust average frame duration, sleep for %d us\n",sleep_time_us);
-      usleep(sleep_time_us);
+      // usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
   }	//end of frame
@@ -1379,7 +1486,7 @@ main (int argc, char **argv)
 #endif
  // stop OMG
  stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
-
+ omv_end(pfd[1],omv_data);
  destroyMat(ShaF,map1, map2);
  if (oai_emulation.info.cli_enabled)
    cli_server_cleanup();

@@ -98,7 +98,7 @@ endif
 #then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
 # you could also use the script "grpof2dot.py gmon.txt" for visual diagrams 
 #ifdef GPROF
-CFLAGS += -pg
+#CFLAGS += -pg
 #endif
 
 #require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)

@@ -539,6 +539,7 @@ typedef struct {
 	unsigned char ocm_enabled;
 	unsigned char opt_enabled;
 	unsigned char otg_enabled;
+        unsigned char omv_enabled;
 	unsigned char otg_traffic;
         unsigned char omg_model_enb;
 	unsigned char omg_model_ue;
