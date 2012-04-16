@@ -654,6 +654,7 @@ void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_DLSCH_STATUS status);
 s8 find_UE_id(u8 Mod_id,u16 rnti) ;
 s16 find_UE_RNTI(u8 Mod_id, u8 UE_id);
 s8 find_active_UEs(u8 Mod_id);
+u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id );
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);

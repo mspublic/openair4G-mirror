@@ -297,7 +297,12 @@ s16 find_UE_RNTI(unsigned char Mod_id, unsigned char UE_id) {
   return (eNB_mac_inst[Mod_id].UE_template[UE_id].rnti);
 
 }
-
+u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id ){
+  if (eNB_mac_inst[Mod_id].UE_template[UE_id].rnti !=0 )
+    return 1;
+  else
+    return 0 ;
+}
 s8 find_active_UEs(unsigned char Mod_id){
 
   unsigned char UE_id;

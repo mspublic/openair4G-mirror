@@ -211,6 +211,7 @@ void init_oai_emulation() {
   oai_emulation.info.otg_enabled=0;// flag T
   oai_emulation.info.opt_enabled=0; // P flag
   oai_emulation.info.cli_enabled=0;// I flag
+  oai_emulation.info.omv_enabled =0;
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
