@@ -241,7 +241,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   LOG_D(OTG,"INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n", src, dst, g_otg->application_type[src][dst], g_otg->idt_dist[src][dst][state], g_otg->size_dist[src][dst][state]);
   
   LOG_D(OTG,"Time To Transmit (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
-  if ((otg_info->idt[src][dst]==(ctime-otg_info->ptime[src][dst])) || (otg_info->idt[src][dst]==0)) {
+  if ((otg_info->idt[src][dst]<=(ctime-otg_info->ptime[src][dst])) || (otg_info->idt[src][dst]==0)) {
     otg_info->ptime[src][dst]=ctime;	
     otg_info->idt[src][dst]=time_dist(src, dst, state); // update the idt for the next otg_tx
   }
@@ -250,8 +250,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   }
   
   size=size_dist(src, dst, state);	
-  LOG_I(OTG,"Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n",
-	src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
+  // LOG_I(OTG,"Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n", src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
   packet= malloc(sizeof(*packet));
   //LOG_I(OTG,"Payload size=%d\n",size);	  
   packet->payload=payload_pkts(size);
@@ -284,7 +283,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   memcpy(&buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
   //LOG_D(OTG,"==============STEP 4: PACKET OK============= \n");
   
-  LOG_I(OTG,"PACKET SIZE (TX):  time(%d), otg header(%d), header + payload (%d), Total %d\n", ctime, hdr_size , strlen(packet->header) + strlen(packet->payload), buffer_size);
+  LOG_I(OTG,"PACKET SIZE (TX):  time(%d), Seq num (%d), Total size (%d)\n", ctime, otg_info->seq_num[src][dst], buffer_size);
 
 
   //add stats
@@ -351,7 +350,9 @@ char *header_gen(int hdr_size){
   hdr=(char*)malloc(hdr_size*sizeof(char));
   // if (generate_static_string)
   hdr=random_string(hdr_size,STATIC_STRING, HEADER_STRING);
+  //hdr=random_string(hdr_size,RANDOM_STRING, HEADER_STRING);
   
+
 return(hdr);
 
 }
@@ -362,6 +363,7 @@ char *payload_pkts(int payload_size){
 	char *payload=NULL;	
 	payload=(char*)malloc(payload_size*sizeof(char));
 	payload=random_string(payload_size, STATIC_STRING, PAYLOAD_STRING);
+	//payload=random_string(payload_size, RANDOM_STRING, PAYLOAD_STRING);
 	return (payload);
 
 }
@@ -396,39 +398,72 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
      LOG_D(OTG,"OTG_CONFIG node (src=%d,dst=%d)\n",  i,j);
      
      switch  (g_otg->application_type[i][j]) {
-     case  CBR : 
-       g_otg->trans_proto[i] = 0;
-       g_otg->ip_v[i] = 0;
+     case  SCBR : 
+       g_otg->trans_proto[i] = 1;
+       g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = FIXED;
        g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  10;
-       g_otg->idt_min[i][j][1] =  10;
-       g_otg->idt_max[i][j][0] =  10;
-       g_otg->idt_max[i][j][1] =  10;
-       g_otg->idt_std_dev[i][j][0] = 0;
-       g_otg->idt_std_dev[i][j][1] = 0;
-       g_otg->idt_lambda[i][j][0] = 0;
-       g_otg->idt_lambda[i][j][1] = 0;
+       g_otg->idt_min[i][j][0] =  500;
+       g_otg->idt_min[i][j][1] =  500;
+       g_otg->idt_max[i][j][0] =  500;
+       g_otg->idt_max[i][j][1] =  500;
        g_otg->size_dist[i][j][0] = FIXED;
        g_otg->size_dist[i][j][1] = FIXED;
-       LOG_I(OTG,"OTG_CONFIG CBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
        g_otg->size_min[i][j][0] =  50;
        g_otg->size_min[i][j][1] =  50;
        g_otg->size_max[i][j][0] =  50;
        g_otg->size_max[i][j][1] =  50;
-       g_otg->size_std_dev[i][j][0] = 0;
-       g_otg->size_std_dev[i][j][1] = 0;
-       g_otg->size_lambda[i][j][0] = 0;
-       g_otg->size_lambda[i][j][1] = 0;
+       LOG_I(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
 #ifdef STANDALONE
        g_otg->dst_port[i] = 0;
        g_otg->duration[i] = 1000;
-       
 #endif 
        break;
+     case MCBR :
+       g_otg->trans_proto[i] = 1;
+       g_otg->ip_v[i] = 1;
+       g_otg->idt_dist[i][j][0] = FIXED;
+       g_otg->idt_dist[i][j][1] = FIXED;
+       g_otg->idt_min[i][j][0] =  5;
+       g_otg->idt_min[i][j][1] =  5;
+       g_otg->idt_max[i][j][0] =  5;
+       g_otg->idt_max[i][j][1] =  5;
+       g_otg->size_dist[i][j][0] = FIXED;
+       g_otg->size_dist[i][j][1] = FIXED;
+       g_otg->size_min[i][j][0] =  512;
+       g_otg->size_min[i][j][1] =  512;
+       g_otg->size_max[i][j][0] =  512;
+       g_otg->size_max[i][j][1] =  512;
+       LOG_I(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
+#ifdef STANDALONE
+       g_otg->dst_port[i] = 0;
+       g_otg->duration[i] = 1000;
+#endif 
+       break;
+     case BCBR :
+       g_otg->trans_proto[i] = 1;
+       g_otg->ip_v[i] = 1;
+       g_otg->idt_dist[i][j][0] = FIXED;
+       g_otg->idt_dist[i][j][1] = FIXED;
+       g_otg->idt_min[i][j][0] =  5;
+       g_otg->idt_min[i][j][1] =  5;
+       g_otg->idt_max[i][j][0] =  5;
+       g_otg->idt_max[i][j][1] =  5;
+       g_otg->size_dist[i][j][0] = FIXED;
+       g_otg->size_dist[i][j][1] = FIXED;
+       g_otg->size_min[i][j][0] =  1024;
+       g_otg->size_min[i][j][1] =  1024;
+       g_otg->size_max[i][j][0] =  1024;
+       g_otg->size_max[i][j][1] =  1024;
+       LOG_I(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
+#ifdef STANDALONE
+       g_otg->dst_port[i] = 0;
+       g_otg->duration[i] = 1000;
+#endif  
+       break;
      case AUTO_PILOT : 
-       g_otg->trans_proto[i] = 0;
-       g_otg->ip_v[i] = 0;
+       g_otg->trans_proto[i] = 2;
+       g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = UNIFORM;
        g_otg->idt_dist[i][j][1] = EXPONENTIAL;
        printf("OTG_CONFIG M2M_AP, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
@@ -456,8 +491,8 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
 #endif 
        break;
      case BICYCLE_RACE :  
-       g_otg->trans_proto[i] = 0;
-       g_otg->ip_v[i] = 0;
+       g_otg->trans_proto[i] = 2;
+       g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = UNIFORM;
        g_otg->idt_dist[i][j][1] = EXPONENTIAL;
        LOG_I(OTG,"OTG_CONFIG M2M_BR, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
@@ -485,8 +520,8 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
 #endif 
        break;
      case OPENARENA : 
-       g_otg->trans_proto[i] = 0;
-       g_otg->ip_v[i] = 0;
+       g_otg->trans_proto[i] = 2;
+       g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = UNIFORM;
        g_otg->idt_dist[i][j][1] = UNIFORM;
        LOG_I(OTG,"OTG_CONFIG GAMING_OA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
@@ -514,8 +549,8 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
 #endif 
        break;  
      case TEAM_FORTRESS : 
-       g_otg->trans_proto[i] = 0;
-       g_otg->ip_v[i] = 0;
+       g_otg->trans_proto[i] = 2;
+       g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = UNIFORM;
        g_otg->idt_dist[i][j][1] = UNIFORM;
        LOG_I(OTG,"OTG_CONFIG GAMING_TF, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);

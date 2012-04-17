@@ -1042,7 +1042,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
       rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
 
       if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE) {
-	msg("[RRC][UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
+	LOG_I(RRC,"[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
 	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_SI_RECEIVED;
       }
       break;

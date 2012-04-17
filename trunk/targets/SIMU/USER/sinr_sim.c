@@ -219,7 +219,7 @@ void get_beta_map() {
 
     fp = fopen(file_path,"r");
     if (fp == NULL) {
-      printf("ERROR: Unable to open the file %s\n", file_path);
+      LOG_E(OCM,"ERROR: Unable to open the file %s\n", file_path);
       exit(-1);
     }
     else {
@@ -237,7 +237,7 @@ void get_beta_map() {
     }
     LOG_D(OCM," Print the table for mcs %d\n",mcs);
     for (table_len = 0; table_len < 9; table_len++)
-      msg("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
   free(file_path);
 }

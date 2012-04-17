@@ -1423,7 +1423,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
   //#ifdef USER_MODE
-  msg("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   // for (i=0;i<30;i++)
   //    msg("%x.",buffer[i]);
   // msg("\n");

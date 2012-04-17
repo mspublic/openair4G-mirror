@@ -79,7 +79,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   mem_block_t* pdcp_pdu = NULL;
   u16 pdcp_pdu_size = sdu_buffer_size + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 
-  LOG_I(PDCP, "Data request notification for PDCP entity with module ID %d and radio bearer ID %d\n", module_id, rab_id);
+  LOG_I(PDCP, "Data request notification for PDCP entity with module ID %d and radio bearer ID %d pdu size %d\n", module_id, rab_id,pdcp_pdu_size);
 
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "Handed SDU is of size 0! Ignoring...\n");
@@ -214,9 +214,9 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   list_t* sdu_list = &pdcp_sdu_list;
 #endif
   mem_block_t *new_sdu = NULL;
-  int src_id, dst_id; // otg param
-
-  LOG_I(PDCP, "Data indication notification for PDCP entity with module ID %d and radio bearer ID %d\n", module_id, rab_id);
+  int src_id, dst_id,ctime; // otg param
+  
+  LOG_I(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rab_id, sdu_buffer_size);
 
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
@@ -258,12 +258,15 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 #endif
   }
 #ifdef USER_MODE
+  if (oai_emulation.info.otg_enabled ==1 ){
   src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + 1 :  ((rab_id - DTCH) / MAX_NUM_RB);
   dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;  
+  ctime = frame *10; // avg current simulation time in ms : we may get the exact time through OCG?
   LOG_I(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rab_id, src_id, dst_id);
-  if (otg_rx_pkt(src_id, dst_id,frame,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], 
-		 sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) // fix me for -1
+  if (otg_rx_pkt(src_id, dst_id,ctime,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], 
+		 sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) 
     return TRUE;
+  }
 #endif
   new_sdu = get_free_mem_block(sdu_buffer_size + sizeof (pdcp_data_ind_header_t));
 
@@ -322,7 +325,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 
 //-----------------------------------------------------------------------------
 void
-pdcp_run (u32_t frame,u8 eNB_flag, u8 UE_index, u8 eNB_index) {
+pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 //-----------------------------------------------------------------------------
 
 #ifndef NAS_NETLINK
@@ -336,6 +339,7 @@ pdcp_run (u32_t frame,u8 eNB_flag, u8 UE_index, u8 eNB_index) {
   int src_id, module_id; // src for otg
   int dst_id, rab_id; // dst for otg
   int pkt_size=0;
+  unsigned int ctime=0;
   /*
   if ((frame % 128) == 0) { 
     for (i=0; i < NB_UE_INST; i++) {
@@ -354,12 +358,13 @@ pdcp_run (u32_t frame,u8 eNB_flag, u8 UE_index, u8 eNB_index) {
   }
   */
  #ifdef USER_MODE 
-  if (oai_emulation.info.otg_enabled || oai_emulation.info.ocg_enabled ){
+  if (oai_emulation.info.otg_enabled ==1 ){
     module_id = (eNB_flag == 1) ?  eNB_index : /*NB_eNB_INST +*/ UE_index ;
     //rab_id    = (eNB_flag == 1) ? eNB_index * MAX_NUM_RB + DTCH : (NB_eNB_INST + UE_index -1 ) * MAX_NUM_RB + DTCH ;
+    ctime = frame * 10; // current simulation time in ms
     if (eNB_flag == 1) { // search for DL traffic 
       for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
-	otg_pkt=packet_gen(module_id, dst_id, frame, &pkt_size);
+	otg_pkt=packet_gen(module_id, dst_id, ctime, &pkt_size);
 	if (otg_pkt != NULL) {
 	  rab_id = (/*NB_eNB_INST +*/ dst_id -1 ) * MAX_NUM_RB + DTCH;
 	  pdcp_data_req(module_id, frame, eNB_flag, rab_id, pkt_size, otg_pkt);
@@ -371,7 +376,7 @@ pdcp_run (u32_t frame,u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     else {
       src_id = module_id+NB_eNB_INST;
       dst_id = eNB_index;
-      otg_pkt=packet_gen(src_id, dst_id, frame, &pkt_size);
+      otg_pkt=packet_gen(src_id, dst_id, ctime, &pkt_size);
       if (otg_pkt != NULL){
 	rab_id= eNB_index * MAX_NUM_RB + DTCH;
 	pdcp_data_req(src_id, frame, eNB_flag, rab_id, pkt_size, otg_pkt);
@@ -507,7 +512,7 @@ pdcp_layer_init ()
   // set RB for eNB
   for (i=0;i  < NB_eNB_INST; i++) 
     for (j=NB_eNB_INST; j < NB_eNB_INST+NB_UE_INST; j++ ) 
-      pdcp_config_req(i, (j-1) * MAX_NUM_RB + DTCH  ); // default DRB
+      pdcp_config_req(i, (j-NB_eNB_INST) * MAX_NUM_RB + DTCH  ); // default DRB
   
   // set RB for UE
   for (i=NB_eNB_INST;i<NB_eNB_INST+NB_UE_INST; i++) 

@@ -1,9 +1,41 @@
-/*________________________openair_rrc_main.c________________________
+/*******************************************************************************
 
-  Authors : Hicham Anouar, Raymond Knopp
-  Company : EURECOM
-  Emails  : knopp@eurecom.fr
-  ________________________________________________________________*/
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2010 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file rrc_common.c
+* \brief rrc common procedures for eNB and UE
+* \author Raymond Knopp and Navid Nikaein
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
+*/ 
+
 
 #include "defs.h"
 #include "extern.h"
@@ -17,53 +49,29 @@
 extern eNB_MAC_INST *eNB_mac_inst;
 extern UE_MAC_INST *UE_mac_inst;
 
-
-
-/*------------------------------------------------------------------------------*/
-void openair_rrc_on(u8 Mod_id,u8 eNB_flag){//configure  BCCH & CCCH Logical Channels and associated rrc_buffers,
-  //configure associated SRBs
-  /*------------------------------------------------------------------------------*/
-
+//configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
+void openair_rrc_on(u8 Mod_id,u8 eNB_flag){
   unsigned short i;
 
-  msg("OPENAIR RRC IN....\n");
-
-
   if( eNB_flag == 1){
-
+    LOG_I(RRC,"[eNB %d] OPENAIR RRC IN....\n", Mod_id);
 
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].SI,BCCH,1);
-
     eNB_rrc_inst[Mod_id].SI.Active=1;
-
-
-
-
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].Srb0,CCCH,1);
-
     eNB_rrc_inst[Mod_id].Srb0.Active=1;
-
-
-  }
-
-  else{
-
+  } else{
+    LOG_I(RRC,"[UE %d] OPENAIR RRC IN....\n", Mod_id);
     for(i=0;i<NB_eNB_INST;i++){
-
       LOG_D(RRC, "[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
       UE_rrc_inst[Mod_id].Srb0[i].Srb_id = CCCH;
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       rrc_config_buffer(&UE_rrc_inst[Mod_id].Srb0[i],CCCH,1);
-
       UE_rrc_inst[Mod_id].Srb0[i].Active=1;
-
     }
   }
-
-
 }
-
 
 int rrc_init_global_param(void){
 

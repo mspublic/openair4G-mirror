@@ -872,10 +872,10 @@ main (int argc, char **argv)
     sinr_dB = snr_dB - 20;
 
   // setup ntedevice interface (netlink socket)
-#ifdef NAS_NETLINK  
+  //#ifdef NAS_NETLINK  
   LOG_I(EMU,"[INIT] Starting NAS netlink interface\n");
   ret = netlink_init ();
-#endif
+  //#endif
 
   if (ethernet_flag == 1) {
     oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
@@ -910,7 +910,7 @@ main (int argc, char **argv)
     
     sprintf(full_name, "%s/UTIL/OMV/OMV",getenv("OPENAIR2_DIR"));
     LOG_I(EMU,"Stating the OMV path %s pfd[0] %d pfd[1] %d \n", full_name, pfd[0],pfd[1]);
-      
+    
       switch(fork()) {
       case -1 :
 	perror("fork failed \n");
@@ -921,13 +921,13 @@ main (int argc, char **argv)
 	sprintf(fdstr, "%d", pfd[0] );
 	sprintf(num_enb, "%d", NB_eNB_INST);
 	sprintf(num_ue, "%d", NB_UE_INST);
-	sprintf(x_area, "%f", oai_emulation.topology_config.area.x_km );
-	sprintf(y_area, "%f", oai_emulation.topology_config.area.y_km );
+	sprintf(x_area, "%f", oai_emulation.topology_config.area.x_m );
+	sprintf(y_area, "%f", oai_emulation.topology_config.area.y_m );
 	sprintf(z_area, "%f", 200.0 );
 	sprintf(frames, "%d", oai_emulation.info.n_frames);
 	/* execl is used to launch the visualisor */
 	execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, NULL );
-	perror( "execl" );
+	perror( "error in execl the OMV" );
       }
     //parent
     if(close( pfd[0] ) == -1 ) /* we close the write desc. */
@@ -974,15 +974,15 @@ main (int argc, char **argv)
   } 
 
   // init SF map here!!!
-  map1 =(int)oai_emulation.topology_config.area.x_km;
-  map2 =(int)oai_emulation.topology_config.area.y_km;
+  map1 =(int)oai_emulation.topology_config.area.x_m;
+  map2 =(int)oai_emulation.topology_config.area.y_m;
   //ShaF = createMat(map1,map2); -> memory is allocated within init_SF, shadow fading
   ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
 
   // size of area to generate shadow fading map
   LOG_D(EMU,"Simulation area x=%f, y=%f\n",
-	 oai_emulation.topology_config.area.x_km,
-	 oai_emulation.topology_config.area.y_km);
+	 oai_emulation.topology_config.area.x_m,
+	 oai_emulation.topology_config.area.y_m);
  
   
   if (abstraction_flag == 0 && Process_Flag==0 && Channel_Flag==0)
@@ -1141,8 +1141,8 @@ main (int argc, char **argv)
 
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
-
-    if (oai_emulation.info.omv_enabled == 1){
+    // check if pipe is still open
+    if ((oai_emulation.info.omv_enabled == 1) ){
       omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
     }
     // update the position of all the nodes (eNB/CH, and UE/MR) every frame
@@ -1220,7 +1220,7 @@ do it here
 	    eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	  }
-	  LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
+	  LOG_D(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
 		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
 	  //	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
 	}

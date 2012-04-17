@@ -2053,7 +2053,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 
 #ifdef DEBUG_PHY_PROC
-	    LOG_I(PHY,"[UE  %d] Frame %d, subframe %d, received SI for TBS %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
+	    LOG_D(PHY,"[UE  %d] Frame %d, subframe %d, received SI for TBS %d\n",
+		  phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS>>3);
 #endif
 

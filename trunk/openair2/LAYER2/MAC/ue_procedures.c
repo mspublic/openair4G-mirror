@@ -92,7 +92,7 @@ void ue_init_mac(){
     UE_mac_inst[i].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[i].scheduling_info.retxBSR_Timer);
 
     for (j=0; j < MAX_NUM_LCID; j++){
-      LOG_I(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
+      LOG_D(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
       UE_mac_inst[i].scheduling_info.Bj[j]=-1;
       UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
     }
@@ -340,8 +340,8 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
   int i;
-
-  LOG_T(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
+  
+  //LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
   mac_rrc_data_ind(Mod_id,
 		   frame,
@@ -776,7 +776,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   
   //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
-  if (subframe%2 == 0)
+  if (subframe%5 == 0)
     pdcp_run(frame, 0, Mod_id, 0);  
 
 #ifdef CELLULAR

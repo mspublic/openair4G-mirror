@@ -87,9 +87,9 @@ ifdef  Rel8
  $(shell ln -s $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ;rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated; 	rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ;)
 endif
 
-ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
+ifdef NAS_NETLINK
 CFLAGS += -DDEBUG_OMG
 else
 NAS_FLAG=0
@@ -97,9 +97,9 @@ endif
 # after the execution, a profiling output "gmon.out" will be created, 
 #then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
 # you could also use the script "grpof2dot.py gmon.txt" for visual diagrams 
-#ifdef GPROF
+ifdef GPROF
 #CFLAGS += -pg
-#endif
+endif
 
 #require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)
 ifdef ADDCONF
@@ -153,6 +153,8 @@ endif
 
 all: oaisim
 
+userclean: cleanall oaisim
+
 printvars:
 	@echo LINUX variable is $(linux)
 	@echo CYGWIN variable is $(cygwin)
@@ -161,6 +163,9 @@ printvars:
 	@echo OAI Config generator is $(OCG_FLAG)	
 	@echo OAI NETLINK FLAG is $(NAS_FLAG)
 	@echo SSE3 proc is $(SSE3PROC)
+	@echo L2 objs are $(L2_OBJS)
+	@echo eNB_flag is $(eNB_flag)
+	@echo UE_flag is $(UE_flag)
 
 $(OBJ): %.o : %.c
 	@echo Compiling $<
@@ -197,6 +202,8 @@ nas_sim_mt_cellular:
 
 nas_sim_rg_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make nasrg_sim MASTER=1 CELLULAR=1 NO_RRM=1)
+
+cleanall: clean cleanasn1
 
 clean:
 	rm -f oaisim

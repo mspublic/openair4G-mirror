@@ -168,7 +168,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	if (find_ue(PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id])>=0) {
 	  // UE with UE_id is connected to eNb with eNB_id
 	  att_eNB_id=eNB_id;
-	  LOG_I(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
+	  LOG_D(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
 	}
       }
 
@@ -178,7 +178,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  if (min_path_loss<eNB2UE[eNB_id][UE_id]->path_loss_dB) {
 	    min_path_loss = eNB2UE[eNB_id][UE_id]->path_loss_dB;
 	    att_eNB_id=eNB_id;
-	    LOG_I(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
+	    LOG_D(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
 	  }
 	}
       }
@@ -197,7 +197,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	     
 	     eNB2UE[att_eNB_id][UE_id]->path_loss_dB);
       //LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",att_eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
-       LOG_I(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
+       LOG_D(OCM,"Channel eNB %d => UE %d : gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
 
     
       // calculate the SNR for the attached eNB
@@ -306,7 +306,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	//	for (i=0;i<eNB2UE[eNB_id][UE_id]->channel_length;i++)
 	//	  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
 
-	printf("[SIM][DL] Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
+	LOG_D(OCM,"[SIM][DL] Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
 	       eNB_id,UE_id,
 	       (double)PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower,
 	       //	       enb_data[eNB_id]->tx_power_dBm,
@@ -324,7 +324,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	
 	// RF model
 #ifdef DEBUG_SIM
-	printf("[SIM][DL] UE %d : rx_gain %d dB for slot %d (subframe %d)\n",UE_id,PHY_vars_UE_g[UE_id]->rx_total_gain_dB,next_slot,next_slot>>1);      
+	LOG_D(OCM,"[SIM][DL] UE %d : rx_gain %d dB for slot %d (subframe %d)\n",UE_id,PHY_vars_UE_g[UE_id]->rx_total_gain_dB,next_slot,next_slot>>1);      
 #endif
 	/*
 	rf_rx(r_re0,
@@ -388,7 +388,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
       
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,512);
 #ifdef DEBUG_SIM    
-      printf("[SIM][DL] UE %d : rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d), writing to %p\n",UE_id, 10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1,rxdata);  
+      LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d), writing to %p\n",UE_id, 10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1,rxdata);  
 #endif
     }
   } // UE_index loop
