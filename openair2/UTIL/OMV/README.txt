@@ -1,6 +1,6 @@
 OMV: openair mobility visualisor
 To compile: 
-1. install the required package: apt-get install qt-creator or go to http://qt.nokia.com/downloads to download the SDK 
+1. install the required package: apt-get install qtcreator or go to http://qt.nokia.com/downloads to download the SDK 
    and install manually  
 2. to generate the .pro used to setup the make files, run: qmake -project QT+=opengl
 3. to generate the Makefile: qmake-qt4

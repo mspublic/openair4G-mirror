@@ -1380,7 +1380,9 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
  
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     eNB_prach_vars->rxsigF[i] = (s16*)malloc16(frame_parms->ofdm_symbol_size*12*2*2);
+#ifdef DEBUG_PHY
     msg("prach_vars->rxsigF[%d] = %p\n",i,eNB_prach_vars->rxsigF[i]);
+#endif
     //    memset(eNB_prach_vars->rxsigF[i],0,frame_parms->ofdm_symbol_size*12*2*2);
   }
 

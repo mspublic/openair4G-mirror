@@ -126,7 +126,7 @@ Node_list remove_node_entry(NodePtr node, Node_list Node_Vector){
   if(list->node->ID == node->ID) {
     // TODO delete the entry
     toRemove = list;
-    printf("removed entry for node %d \n",list->node->ID);
+    LOG_D(OMG,"removed entry for node %d \n",list->node->ID);
     if(list->next ==NULL) {
     	Node_Vector = NULL;
         return NULL;
@@ -165,25 +165,13 @@ void display_node_list(Node_list Node_Vector){
       #endif
     }	
     while (tmp != NULL){
-         
-  	 
-        #ifdef STANDALONE  
-          printf("[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
-		map_int_to_str(mob_type, tmp->node->generator),
-		map_int_to_str(nodes_type, tmp->node->type),  
-		tmp->node->ID,
-		map_int_to_str(nodes_status, tmp->node->mobile), 
-		tmp->node->X_pos,
-		tmp->node->Y_pos );
-        #else
-          LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
-		map_int_to_str(mob_type, tmp->node->generator),
-		map_int_to_str(nodes_type, tmp->node->type),  
-		tmp->node->ID,
-		map_int_to_str(nodes_status, tmp->node->mobile), 
-		tmp->node->X_pos,
-		tmp->node->Y_pos );
-	#endif
+      LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
+	    map_int_to_str(mob_type, tmp->node->generator),
+	    map_int_to_str(nodes_type, tmp->node->type),  
+	    tmp->node->ID,
+	    map_int_to_str(nodes_status, tmp->node->mobile), 
+	    tmp->node->X_pos,
+	    tmp->node->Y_pos );
 
     //LOG_I(OMG, "node number %d\tstatus(fix/mobile) %d\tX_pos %.2f\tY_pos %.2f\tnode_type(eNB, UE)%d\t", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos, tmp->node->type);
       //LOG_D(OMG, "mob->X_from %.3f\tmob->Y_from %.3f\tmob->X_to %.3f\tmob->Y_to %.3f\t", tmp->node->mob->X_from,tmp->node->mob->Y_from, tmp->node->mob->X_to, tmp->node->mob->Y_to );
@@ -192,26 +180,14 @@ void display_node_list(Node_list Node_Vector){
 }
 
 void display_node_position(int ID, int generator, int type, int mobile, double X, double Y){
- 
- #ifdef STANDALONE
- printf("[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
-		map_int_to_str(mob_type, generator),
-		map_int_to_str(nodes_type, type),  
-		ID,
-		map_int_to_str(nodes_status, mobile),
-		X,
-		Y
-	);
-  #else
   LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
-		map_int_to_str(mob_type, generator),
-		map_int_to_str(nodes_type, type),  
-		ID,
-		map_int_to_str(nodes_status, mobile),
-		X,
-		Y
+	map_int_to_str(mob_type, generator),
+	map_int_to_str(nodes_type, type),  
+	ID,
+	map_int_to_str(nodes_status, mobile),
+	X,
+	Y
 	);
-   #endif
 }
 
 Node_list filter(Node_list Vector, int node_type){
@@ -253,18 +229,14 @@ Node_list remove_node(Node_list list, int nID, int node_type){
     //holds: current = NULL or  type != node_type or.., but not both
     if (current ==NULL) { 
       found= 1  ;
-      #ifndef STANDALONE
       LOG_E(OMG," Element to remove is not found\n "); 
-      #endif
       return NULL;
     }              //value not found
     else{
       found = 0; // true                value found
       if (current == list) {
 	list = current->next;
-       #ifndef STANDALONE
 	LOG_D(OMG,"Element to remove is found at beginning\n");
-       #endif
       }    
       
       else {
@@ -279,8 +251,7 @@ Node_list remove_node(Node_list list, int nID, int node_type){
   }
 }
 
-int length(char* s)
-{
+int length(char* s){
 	int count = 0;
 	while(s[count] != '\0'){
 		++count;
@@ -305,12 +276,8 @@ NodePtr find_node(Node_list list, int nID, int node_type){
     //holds: current = NULL or  type != node_type or.., but not both
     if (current ==NULL) { 
       found= 1  ;
-       #ifdef STANDALONE
-         printf(" Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
-       #else
-         LOG_D(OMG," Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
-       #endif
-       return NULL;
+      LOG_D(OMG," Element to find in Node_Vector with ID: %d could not be found\n ",nID); 
+      return NULL;
     }              //value not found
     else{
       //printf(" found a node for nodeID %d  \n ",nID);

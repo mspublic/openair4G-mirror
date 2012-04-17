@@ -103,7 +103,7 @@ void lte_param_init(unsigned char N_tx,
   LTE_DL_FRAME_PARMS *lte_frame_parms;
 
 
-  printf("Start lte_param_init\n");
+  LOG_I(PHY,"Start lte_param_init\n");
   PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
   PHY_vars_eNB_g[0] = malloc(sizeof(PHY_VARS_eNB));
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
@@ -154,17 +154,17 @@ void lte_param_init(unsigned char N_tx,
     for (j=0;j<2;j++) {
       PHY_vars_eNB_g[0]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,0);
       if (!PHY_vars_eNB_g[0]->dlsch_eNB[i][j]) {
-	msg("Can't get eNb dlsch structures\n");
+	LOG_E(PHY,"Can't get eNb dlsch structures\n");
 	exit(-1);
       }
       else {
-	msg("dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[0]->dlsch_eNB[i][j]);
+	LOG_D(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[0]->dlsch_eNB[i][j]);
 	PHY_vars_eNB_g[0]->dlsch_eNB[i][j]->rnti=i+1;
       }
     }
     PHY_vars_eNB_g[0]->ulsch_eNB[1+i] = new_eNB_ulsch(3,0);
     if (!PHY_vars_eNB_g[0]->ulsch_eNB[1+i]) {
-      msg("Can't get eNb ulsch structures\n");
+      LOG_E(PHY,"Can't get eNb ulsch structures\n");
       exit(-1);
     }
     
@@ -173,14 +173,14 @@ void lte_param_init(unsigned char N_tx,
   // ULSCH for RA
   PHY_vars_eNB_g[0]->ulsch_eNB[0] = new_eNB_ulsch(3,0);
   if (!PHY_vars_eNB_g[0]->ulsch_eNB[0]) {
-    msg("Can't get eNb ulsch structures\n");
+    LOG_E(PHY,"Can't get eNb ulsch structures\n");
     exit(-1);
   }
   
   PHY_vars_eNB_g[0]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,0);
-  printf("eNB %d : SI %p\n",0,PHY_vars_eNB_g[0]->dlsch_eNB_SI);
+  LOG_D(PHY,"[eNB %d] : SI %p\n",0,PHY_vars_eNB_g[0]->dlsch_eNB_SI);
   PHY_vars_eNB_g[0]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,0);
-  printf("eNB %d : RA %p\n",0,PHY_vars_eNB_g[0]->dlsch_eNB_ra);
+  LOG_D(PHY,"[eNB %d] : RA %p\n",0,PHY_vars_eNB_g[0]->dlsch_eNB_ra);
   
   PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB=150;
 
@@ -191,7 +191,7 @@ void lte_param_init(unsigned char N_tx,
 
   phy_init_lte_top(lte_frame_parms);
 
-  printf("Done lte_param_init, txdataF %p\n",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0]);
+  LOG_I(PHY,"Done lte_param_init, txdataF %p\n",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0]);
 
 
 }

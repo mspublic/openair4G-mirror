@@ -247,18 +247,18 @@ void get_rwp_positions_updated(double cur_time){
     while (tmp != NULL){
       if (tmp->pair->b->generator == RWP){
         if (tmp->pair->b->mobile == 0){ //node is sleeping
-          LOG_T(OMG, "node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
-          LOG_T(OMG, "nothing to do\n");
-        } 
+          LOG_D(OMG, "node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+	} 
         else if (tmp->pair->b->mobile == 1){ //node is moving
-          LOG_T(OMG, "Node_number %d\n", tmp->pair->b->ID);
-          LOG_T(OMG, "destination not yet reached\tfrom (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n", tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+	  LOG_D(OMG, "destination not yet reached for node %d from (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n",  
+		tmp->pair->b->ID, tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, 
+		tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
 
           double len = sqrtf(pow(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to,2)+pow(tmp->pair->b->mob->Y_from - tmp->pair->b->mob->Y_to,2));
           double dx = fabs(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to) / len;
 				  
           double dy = fabs(tmp->pair->b->mob->Y_from - tmp->pair->b->mob->Y_to) / len;
-          LOG_D(OMG, "len %f\tdx %f\tdy %f\n", len, dx, dy);
+          //LOG_D(OMG, "len %f\tdx %f\tdy %f\n", len, dx, dy);
           if (tmp->pair->b->mob->X_from < tmp->pair->b->mob->X_to ){
             X_now = tmp->pair->b->mob->X_from + (dx * (tmp->pair->b->mob->speed * (cur_time - tmp->pair->b->mob->start_journey) ) );
           }
@@ -273,13 +273,12 @@ void get_rwp_positions_updated(double cur_time){
             Y_now = tmp->pair->b->mob->Y_from - (dy * (tmp->pair->b->mob->speed * (cur_time - tmp->pair->b->mob->start_journey)));
           }
  
-          LOG_D(OMG, "X_now %f\tY_now %f\n", X_now, Y_now);
           tmp->pair->b->X_pos = (double) ((int) (X_now*100))/ 100;
           tmp->pair->b->Y_pos = (double) ((int) (Y_now*100))/ 100;
           //tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
           //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
 	  //tmp->pair->b->mob->start_journey = cur_time;
-          LOG_I(OMG, "Updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+          LOG_D(OMG, "Updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
         }	
         else{
           LOG_E(OMG, "Update_generator: unsupported node state - mobile : %d \n", tmp->pair->b->mobile);

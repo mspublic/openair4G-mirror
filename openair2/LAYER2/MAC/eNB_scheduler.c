@@ -56,7 +56,7 @@
 
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 0
-#define DEBUG_PACKET_TRACE 1
+//#define DEBUG_PACKET_TRACE 1
 
 //#define ICIC 0
 
@@ -4079,7 +4079,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   DCI_pdu->Num_ue_spec_dci = 0;
   eNB_mac_inst[Mod_id].bcch_active = 0;
 
-  if (subframe%2 == 0)
+  if (subframe%5 == 0)
     pdcp_run(frame, 1, 0, Mod_id);
 
 #ifdef CELLULAR

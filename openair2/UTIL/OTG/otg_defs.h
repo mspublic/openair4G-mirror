@@ -62,7 +62,9 @@
 */
 typedef enum {
 	NO_PREDEFINED_TRAFFIC =0,
-	CBR,
+	SCBR,
+	MCBR,
+	BCBR,
 	AUTO_PILOT,
 	BICYCLE_RACE,
 	OPENARENA,
@@ -171,8 +173,7 @@ TCP_IPV6,
 */
 typedef struct {
 	int application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  /*!\brief It identify the application of the simulated traffic, could be cbr, m2m, gaming,etc*/ 
-	
-/*!\header info */
+ /*!\header info */
 	int trans_proto[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Transport Protocol*/
 	int ip_v[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Ip version */
 	//int header_compression; 				/*!\brief Specify if header compression is used or not */
