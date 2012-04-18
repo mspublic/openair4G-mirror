@@ -45,57 +45,53 @@ extern int x_area;
 extern int y_area;
 extern int z_area;
 extern int node_number;
+extern int nb_enb;
 
 OpenGLWidget::OpenGLWidget()
-{/*
-    glEnable(GL_TEXTURE_2D);
-    QImage t;
-    QImage b;
-    
-    if ( !b.load( "red.png" ) )
-    {
-      b = QImage( 16, 16, 32 );
-      b.fill( Qt::green.rgb() );
-    }
-    
-    t = QGLWidget::convertToGLFormat( b );
-    glGenTextures( 1, &textures[0] );
-    glBindTexture( GL_TEXTURE_2D, textures[0] );
-    glTexImage2D( GL_TEXTURE_2D, 0, 3, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );    
-*/
+{
     geo[0].x = -1;
-    draw_connections = true;
-    
+    draw_connections = true;   
 }
 
 void OpenGLWidget::paintGL()
 {
 
   glClearColor(0,0,0,0);
-  //glClearColor(255,255,255,0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
-  //gluPerspective(70,(double)600/440,1,5000);
   gluOrtho2D(0,640,0,480); 
 
-/*
-  glMatrixMode( GL_MODELVIEW );
-  glLoadIdentity();
-
-  gluLookAt(camera[0], camera[1], camera[2], camera[3], camera[4], camera[5],camera[6],camera[7],camera[8]);
-*/
   glTranslated(20,20,0);
   drawGrid();
-  drawNodes();
 
   if (draw_connections)
     drawConnections();
 
+  drawNodes();
 }
+
+void OpenGLWidget::loadTexture(){
+    QImage b;
+    
+    glEnable(GL_TEXTURE_2D);
+    if ( !b.load( "Blog.bmp" ) )
+    {
+      b = QImage( 16, 16, QImage::Format_RGB32 );
+      b.fill( Qt::green );
+    }
+   // textures[0] = bindTexture(QPixmap("Blog.bmp"), GL_TEXTURE_2D);
+
+    b_station = QGLWidget::convertToGLFormat( b );
+    glGenTextures( 1, &textures[0] );
+    glBindTexture( GL_TEXTURE_2D, textures[0] );
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0,0 , b_station.width(), b_station.height(),  GL_RGB, GL_UNSIGNED_BYTE, b_station.bits() ); 
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+}
+
+
 
 void OpenGLWidget::drawNewPosition(){
     updateGL();
@@ -106,7 +102,9 @@ void OpenGLWidget::setDrawConnections(int draw){
     updateGL();
 }
 
-OpenGLWidget::~OpenGLWidget(){}
+OpenGLWidget::~OpenGLWidget(){
+    glDeleteTextures(1, textures);
+}
 
 void OpenGLWidget::drawConnections(){
 
@@ -122,7 +120,7 @@ void OpenGLWidget::drawConnections(){
 	      	glColor3d(255,255,255);
            
                 //choose it according to the number of displayed nodes
-                glLineWidth(1.2);
+                glLineWidth(0.7);
                 glBegin(GL_LINES);
                     glVertex2d((int)(((float)geo[i].x/(float)x_area)*600),(int)(((float)geo[i].y/(float)y_area)*440));
                     glVertex2d((int)(((float)geo[j].x/(float)x_area)*600),(int)(((float)geo[j].y/(float)y_area)*440));
@@ -134,52 +132,39 @@ void OpenGLWidget::drawConnections(){
 
 }
 
-void OpenGLWidget::drawSquare(int half_side){
-    glBegin(GL_QUADS);
-      glVertex2d(-half_side,-half_side);
-      glVertex2d(-half_side, half_side);
-      glVertex2d( half_side, half_side);
-      glVertex2d( half_side,-half_side);
-    glEnd();
-}
-
 void OpenGLWidget::drawNodes(){
 
-    /*GLUquadric* params;
-    params = gluNewQuadric();
-    gluQuadricDrawStyle(params,GLU_FILL);*/
-
     if (geo[0].x != -1){
-        
-	if (geo[0].node_type == 0)
-	    glColor3d(255,255,255);
-	else
-	    glColor3d(0,255,0);
 
         glTranslated((int)(((float)geo[0].x/(float)x_area)*600), (int)(((float)geo[0].y/(float)y_area)*440),0);
         //gluSphere(params,50,25,25);
-	drawSquare(5);
-
+	
+	if (geo[0].node_type == 0){
+	    glColor3d(150,0,150);
+	    drawBaseStation();
+	}else{
+	    glColor3d(0,255,100);	
+	    drawSquare(0);
+	}
+	
         for (int i=1; i<node_number; i++){
 
-	    if (geo[i].node_type == 0)
-	        glColor3d(255,255,255);
-	    else
-	        glColor3d(0,255,0);
-
-            glTranslated((int)(((float)geo[i].x/(float)x_area)*600) - (int)(((float)geo[i-1].x/(float)x_area)*600),
+	    glTranslated((int)(((float)geo[i].x/(float)x_area)*600) - (int)(((float)geo[i-1].x/(float)x_area)*600),
 			(int)(((float)geo[i].y/(float)y_area)*440) - (int)(((float)geo[i-1].y/(float)y_area)*440),0);
-            //gluSphere(params,50,25,25);
-	    drawSquare(5);
+
+	    if (geo[i].node_type == 0){
+	        glColor3d(150,0,150);
+	        drawBaseStation();
+	    }else{
+	        glColor3d(0,255,100);	
+	        drawSquare(i - nb_enb);
+	    }
+
         }
 
         glTranslated(-(int)(((float)geo[node_number - 1].x/(float)x_area)*600),-(int)(((float)geo[node_number - 1].y/y_area)*440),0);
     }
-    //gluDeleteQuadric(params);
 }
-
-// To be ket for the moment until knowing the best position of the camera. 
-// allows to see if all the area is displayed
 
 void OpenGLWidget::drawGrid(){
     glColor3d(0,0,255);
@@ -200,4 +185,125 @@ void OpenGLWidget::drawGrid(){
      }
 
     glEnd();
+}
+
+void OpenGLWidget::drawSquare(int digit){
+    glBegin(GL_QUADS);
+	glVertex2d(-6,-6);
+	glVertex2d(-6, 6);
+	glVertex2d( 6, 6);
+	glVertex2d( 6,-6);
+    glEnd();
+
+    //draw the digit
+    glColor3d(255,0,0);
+    glBegin(GL_LINES);
+     switch (digit){
+       	case 0:
+	glVertex2d(-3,4);
+	glVertex2d(3,4);
+	glVertex2d(-3,-4);
+	glVertex2d(3,-4);
+	glVertex2d(3,-4);
+	glVertex2d(3,4);
+	glVertex2d(-3,-4);
+	glVertex2d(-3,4);
+	break;
+	
+	case 1:
+	glVertex2d(3,4);
+	glVertex2d(3,-4);
+	break;
+
+	case 2:
+	glVertex2d(-3,4);
+	glVertex2d(3,4);
+	glVertex2d(3,4);
+	glVertex2d(3,0);	
+	glVertex2d(-3,0);
+	glVertex2d(3,0);
+	glVertex2d(-3,-4);
+	glVertex2d(-3,0);
+	glVertex2d(-3,-4);
+	glVertex2d(3,-4);
+	break;
+
+	case 3:
+	glVertex2d(3,4);
+	glVertex2d(3,-4);
+	glVertex2d(-3,4);
+	glVertex2d(3,4);
+	glVertex2d(3,0);	
+	glVertex2d(-3,0);
+	glVertex2d(-3,-4);
+	glVertex2d(3,-4);
+	break;
+
+	case 4:
+	glVertex2d(3,-4);
+	glVertex2d(3,4);
+	glVertex2d(-3,4);
+	glVertex2d(-3,0);
+	glVertex2d(-3,0);
+	glVertex2d(3,0);
+	break;
+
+	case 5:
+	glVertex2d(-3,4);
+	glVertex2d(3,4);
+	glVertex2d(-3,4);
+	glVertex2d(-3,0);	
+	glVertex2d(-3,0);
+	glVertex2d(3,0);
+	glVertex2d(3,-4);
+	glVertex2d(3,0);
+	glVertex2d(-3,-4);
+	glVertex2d(3,-4);
+	break;
+
+	case 6:
+	glVertex2d(-3,4);
+	glVertex2d(3,4);
+	glVertex2d(-3,4);
+	glVertex2d(-3,-4);	
+	glVertex2d(-3,0);
+	glVertex2d(3,0);
+	glVertex2d(3,-4);
+	glVertex2d(3,0);
+	glVertex2d(-3,-4);
+	glVertex2d(3,-4);
+	break;
+
+	case 7:
+	glVertex2d(3,4);
+	glVertex2d(3,-4);
+	glVertex2d(-3,4);
+	glVertex2d(3,4);
+	break;
+     }
+    glEnd();
+}
+
+void OpenGLWidget::drawBaseStation(){
+    glLineWidth(2.0);
+    glBegin(GL_LINES);
+	glVertex2d(-6,0);
+	glVertex2d(6,0);
+
+	glVertex2d(-6,0);
+	glVertex2d(-6,5);
+
+	glVertex2d(6,0);
+	glVertex2d(6,5);
+
+	glVertex2d(0,0);
+	glVertex2d(-6,-12);
+
+	glVertex2d(0,0);
+	glVertex2d(6,-12);
+
+	glVertex2d(0,5);
+	glVertex2d(0,-12);
+    glEnd();
+
 }
