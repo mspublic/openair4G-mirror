@@ -53,8 +53,10 @@ class OpenGLWidget : public QGLWidget
         OpenGLWidget();
         void drawGrid();
         void drawNodes();
+	void loadTexture();
         void drawConnections();
-	void drawSquare(int side);
+	void drawSquare(int digit);
+	void drawBaseStation();
         void setDrawConnections(int draw);
         ~OpenGLWidget();
 
@@ -65,8 +67,9 @@ class OpenGLWidget : public QGLWidget
         void drawNewPosition();
 
     private:
-        int textures[9];
+        GLuint textures[9];
         bool draw_connections;
+	QImage b_station;
 };
 
 #endif // OPENGLWIDGET_H
