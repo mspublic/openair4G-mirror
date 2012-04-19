@@ -1,7 +1,11 @@
-#ifndef RTAI_ENABLED
+#ifdef USER_MODE
 #include <time.h>
 #include <stdlib.h>
 #else
+#include <asm/io.h>
+#include <asm/rtai.h>
+#endif
+#ifdef RTAI_ENABLED
 #include <rtai.h>
 #include <rtai_sched.h>
 #define time(x) (unsigned int)(rt_get_time_ns())
