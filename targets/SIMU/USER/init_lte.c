@@ -60,12 +60,12 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
     PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
-  }
+  }// end navid
 
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  LOG_I(PHY,"init lte parms: Nid_cell %d\n",Nid_cell);
+  printf("init lte parms: Nid_cell %d\n",Nid_cell);
 
   *frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   (*frame_parms)->frame_type         = frame_type;
@@ -107,17 +107,17 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       for (j=0;j<2;j++) {
 	PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,abstraction_flag);
 	if (!PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]) {
-	  LOG_E(PHY,"Can't get eNB dlsch structures\n");
+	  msg("Can't get eNB dlsch structures\n");
 	  exit(-1);
 	}
 	else {
-	  LOG_D(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]);
+	  msg("dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]);
 	  PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]->rnti=0;
 	}
       }
       PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i] = new_eNB_ulsch(8,abstraction_flag);
       if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i]) {
-	LOG_E(PHY,"Can't get eNB ulsch structures\n");
+	msg("Can't get eNB ulsch structures\n");
 	exit(-1);
       }
 
@@ -130,14 +130,14 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     // ULSCH for RA
     PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0] = new_eNB_ulsch(8,abstraction_flag);
     if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0]) {
-      LOG_E(PHY,"Can't get eNB ulsch structures\n");
+      msg("Can't get eNB ulsch structures\n");
       exit(-1);
     }
 
     PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,abstraction_flag);
-    LOG_D(PHY,"[eNB %d] : SI %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI);
+    printf("eNB %d : SI %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI);
     PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
-    LOG_D(PHY,"[eNB %d] : RA %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra);
+    printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra);
 
     PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB=150;
 
@@ -169,17 +169,17 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       for (j=0;j<2;j++) {
 	PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
 	if (!PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]) {
-	  LOG_E(PHY,"Can't get ue dlsch structures\n");
+	  msg("Can't get ue dlsch structures\n");
 	  exit(-1);
 	}
 	else
-	  LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]);//navid
+	  msg("dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]);//navid
       }
       
       
       PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
       if (!PHY_vars_UE_g[UE_id]->ulsch_ue[i]) {
-	LOG_E(PHY,"Can't get ue ulsch structures\n");
+	msg("Can't get ue ulsch structures\n");
 	exit(-1);
       }
       

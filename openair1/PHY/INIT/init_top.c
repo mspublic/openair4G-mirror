@@ -3,11 +3,6 @@
 #define __NO_VERSION__
 #endif
  
-#include "defs.h"
-#include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-
 #ifdef CBMIMO1
 #include "ARCH/COMMON/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
@@ -18,6 +13,11 @@
 //#include "pci_commands.h"
 #endif //CBMIMO1
 
+#include "defs.h"
+#include "PHY/extern.h"
+#include "MAC_INTERFACE/extern.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+
 /*!
 * @addtogroup _PHY_STRUCTURES_
 * Memory Initializaion and Cleanup for LTE MODEM.
@@ -25,8 +25,7 @@
 \section _Memory_init_ Memory Initialization for LTE MODEM
 Blah Blah
 */
-
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 /*
 #ifndef USER_MODE
@@ -218,16 +217,27 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 
 int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
 
+
+
   // bzero((void *)PHY_vars,sizeof(PHY_VARS));
-  LOG_I(PHY,"[INIT] OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
-  LOG_I(PHY,"[INIT] FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
-  LOG_I(PHY,"[INIT] NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
-  LOG_I(PHY,"[INIT] Initializing FFT engine using %d point fft (%d, %p)\n",NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev );
+
+
+  msg("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
+  msg("[openair][PHY][INIT]FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
+  msg("[openair][PHY][INIT]NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
+  
+
+    
 
 #ifndef USER_MODE
   init_signal_buffers(frame_parms);
 #endif
-   
+  
+#ifdef DEBUG_PHY    
+  msg("[openair][PHY][INIT] Initializing FFT engine\n");
+  msg("[openair][PHY][INIT] Using %d point fft (%d, %p)\n",NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev );
+#endif
+  
 #ifndef EXPRESSMIMO_TARGET
   // Initialize fft variables
   init_fft(NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev);   // TX/RX
@@ -245,8 +255,10 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
   twiddle_fft_half = (short*)malloc16(4095*4*2);
   twiddle_ifft_half = (short*)malloc16(4095*4*2);
 
-  LOG_I(PHY,"[INIT] twiddle_fft= %p, twiddle_ifft=%p, twiddle_fft_times4=%p,twiddle_ifft_times4=%p\n",
+#ifdef DEBUG_PHY    
+  msg("[openair][PHY][INIT] twiddle_fft= %p, twiddle_ifft=%p, twiddle_fft_times4=%p,twiddle_ifft_times4=%p\n",
 	 (void *)twiddle_fft,(void *)twiddle_ifft,(void *)twiddle_fft_times4,(void *)twiddle_ifft_times4);
+#endif
 
   switch (NUMBER_OF_OFDM_CARRIERS) {
 	  
@@ -313,7 +325,7 @@ void phy_cleanup(void) {
   // stop PHY_thread
 
 
-  LOG_I(PHY,"[INIT] cleanup\n");
+  msg("[openair][PHY][INIT] cleanup\n");
 
   
 #ifndef USER_MODE

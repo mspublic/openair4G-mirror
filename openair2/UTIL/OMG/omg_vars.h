@@ -56,4 +56,5 @@ omg_global_param omg_param_list;
 //double m_time;
 
 
+
 #endif /*  __OMG_VARS_H__ */

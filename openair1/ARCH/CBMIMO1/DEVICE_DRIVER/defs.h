@@ -40,7 +40,6 @@
 #include <rtai_posix.h>
 #include <rtai_fifos.h>
 #include <rtai_math.h>
-#include <rtai_sem.h>
 #endif //RTAI_ENABLED
 
 #ifdef BIGPHYSAREA

@@ -652,16 +652,16 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	
 	switch (phy_vars_eNB->lte_frame_parms.phich_config_common.phich_resource) {
 	case oneSixth:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (0<<2);
+	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (0<<3);
 	  break;
 	case half:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (1<<2);
+	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (1<<3);
 	  break;
 	case one:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (2<<2);
+	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (2<<3);
 	  break;
 	case two:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (3<<2);
+	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (3<<3);
 	  break;
 	default:
 	  break;
@@ -1670,7 +1670,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       preamble_energy_list[preamble_max],
       preamble_delay_list[preamble_max]);
   */
-  if (preamble_energy_list[preamble_max] > 60) {
+  if (preamble_energy_list[preamble_max] > 70) {
     UE_id = find_next_ue_index(phy_vars_eNB);
     if (UE_id>=0) {
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max];
@@ -1715,13 +1715,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     remove_7_5_kHz(phy_vars_eNB,last_slot);
   }
   // check if we have to detect PRACH first
-  if ((last_slot&1)==1){
-    //    printf("Checking PRACH for eNB %d, subframe %d\n",phy_vars_eNB->Mod_id,last_slot>>1);
+  if ((last_slot&1)==1)
     if (is_prach_subframe(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,last_slot>>1)>0) {
-      //      printf("Running prach procedures\n");
       prach_procedures(phy_vars_eNB,last_slot>>1,abstraction_flag);
     }
-  }
+
   if (abstraction_flag == 0) {
     for (l=0;l<phy_vars_eNB->lte_frame_parms.symbols_per_tti/2;l++) {
       
@@ -2021,13 +2019,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
 	    remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
 #ifdef OPENAIR2
-	    mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
+	    mac_xface->cancel_ra_proc(0,
 				      phy_vars_eNB->frame,
 				      0);
 #endif
-	    phy_vars_eNB->ulsch_eNB[(u32)i]->Msg3_active = 0;
-	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 0;
-
 	    /*
 #ifdef USER_MODE
 	    if (abstraction_flag == 0)
@@ -2073,7 +2068,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
 	  remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
 #ifdef OPENAIR2
-	  mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
+	  mac_xface->cancel_ra_proc(0,
 				    phy_vars_eNB->frame,
 				    0);
 #endif

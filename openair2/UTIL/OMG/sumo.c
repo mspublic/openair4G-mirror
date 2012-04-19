@@ -45,7 +45,6 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
-#include <signal.h>
 
 #include "sumo.h"
 
@@ -54,17 +53,36 @@
 
 int start_sumo_generator(omg_global_param omg_param_list) {
 
+  
+  pid_t pid;
+
   char sumo_line[300];
+ // char filename [300];
 
-// sprintf(sumo_line, "%s -c %s  -b %d -e %d --remote-port %d --step-length %d -v ",omg_param_list.sumo_command, omg_param_list.sumo_config, omg_param_list.sumo_start, omg_param_list.sumo_end, omg_param_list.sumo_port, omg_param_list.sumo_step);
+  /*strcat( sumo_line, " -c " );          
+  strcat( sumo_line, omg_param_list.sumo_config );     
+  strcat( sumo_line, " -b " );
+  sprintf(filename, "%s%d", base, number); 
+  strcat( sumo_line, omg_param_list.sumo_start);     
+  strcat( sumo_line, " -e " ); 
+  strcat( sumo_line, omg_param_list.sumo_end);     
+  strcat( sumo_line, " --remote-port " ); 
+  strcat( sumo_line, omg_param_list.sumo_port);     
+  strcat( sumo_line, " --step-length " ); 
+  strcat( sumo_line, omg_param_list.sumo_step);     
+  strcat( sumo_line, " -v " ); 
+  strcat( sumo_line, "\0" );*/
 
-sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_config);
+  sprintf(sumo_line, " -c %s  -b %d -e %d --remote-port %d --step-length %d -v ",omg_param_list.sumo_config, omg_param_list.sumo_start, omg_param_list.sumo_end, omg_param_list.sumo_port, omg_param_list.sumo_step);
+  //char *sumo_line = " -c " +   omg_param_list.sumo_config + " -b " omg_param_list.sumo_start + " -e " + omg_param_list.sumo_end + " --remote-port "+ omg_param_list.sumo_port + " --step-length " + omg_param_list.sumo_step + " -v ";
+  
+  char *sumo_arg[] = { NULL, sumo_line, NULL };
+  char *sumo_env[] = { NULL };
 
-  printf("%s\n",sumo_line);
   if ( (pid = fork()) == 0)
   {
     // Start SUMO in the child process
-    system(sumo_line);
+   execve(omg_param_list.sumo_command, sumo_arg, sumo_env);// starts SUMO in a child process
    //childs addresss space
   }
  
@@ -74,14 +92,11 @@ sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_
 
   targetTime = 1;
   
-// switch on error to return to OAI
-  int error = handshake(omg_param_list.sumo_host,omg_param_list.sumo_port);
+  handshake(omg_param_list.sumo_host,omg_param_list.sumo_port);
   
   init(omg_param_list.sumo_end - omg_param_list.sumo_start);
   
-  int max_node_SUMO = 200; //commandGetMaxSUMONodesVariable(); TODO method not implemented in TraCI server..must find another solution 
-
- // printf("received Number of nodes %d\n", max_node_SUMO);
+  int max_node_SUMO = commandGetMaxSUMONodesVariable();
 
   // create the OAI/SUMO ID manager
   id_manager = create_IDManager();
@@ -94,54 +109,27 @@ sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_
   departed  = NULL;
   arrived = NULL;
 
-  last_update_time = 0.0;
-
   // just check for faulty values
   if (omg_param_list.nodes <= 0){
-    #ifdef STANDALONE 
-      printf("Number of nodes has not been set\n");
-    #else
-      LOG_W(OMG, "Number of nodes has not been set\n");
-    #endif
+    LOG_W(OMG, "Number of nodes has not been set\n");
     return(-1);
   }
-  #ifdef STANDALONE 
-  printf("Number of OAI-equipped nodes in SUMO has been set to %d\n", omg_param_list.nodes);
-  printf("Number of SUMO simulated nodes has been set to %d\n", max_node_SUMO);
-  #else 
-    LOG_I(OMG, "Number of OAI-equipped nodes in SUMO has been set to %d\n", omg_param_list.nodes);
-    LOG_I(OMG, "Number of SUMO simulated nodes has been set to %d\n", max_node_SUMO);
-  #endif
+
+  LOG_I(OMG, "Number of OAI-equipped nodes in SUMO has been set to %d\n", omg_param_list.nodes);
+  LOG_I(OMG, "Number of SUMO simulated nodes has been set to %d\n", max_node_SUMO);
   // check and match number of nodes in mobility file provided
   if (omg_param_list.nodes > max_node_SUMO){
-    #ifdef STANDALONE 
-      printf("Not all OAI nodes will be moving according to SUMO.\n");
-    #else
-      LOG_I(OMG, "Not all OAI nodes will be moving according to SUMO.\n");
-    #endif
+    LOG_I(OMG, "Not all OAI nodes will be moving according to SUMO.\n");
   }
   else {
-    #ifdef STANDALONE 
-      printf("OAI nodes will be mapped to a subset of SUMO nodes\n");
-    #else
-      LOG_I(OMG, "OAI nodes will be mapped to a subset of SUMO nodes\n");
-    #endif
+    LOG_I(OMG, "OAI nodes will be mapped to a subset of SUMO nodes\n");
   }
 
   if (omg_param_list.nodes_type == eNB) {
-    #ifdef STANDALONE 
-     printf("Node type has been set to eNB\n");
-    #else 
-     LOG_I(OMG, "Node type has been set to eNB\n");
-    #endif
+    LOG_I(OMG, "Node type has been set to eNB\n");
   } 
   else if (omg_param_list.nodes_type == UE) {
-    
-     #ifdef STANDALONE 
-       printf("Node type has been set to UE\n");
-     #else 
-       LOG_I(OMG, "Node type has been set to UE\n");
-     #endif
+    LOG_I(OMG, "Node type has been set to UE\n");
   }
   
   int n_id = 0;
@@ -153,8 +141,7 @@ sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_
     node->ID = n_id; // this is OAI ID, not SUMO
     node->type = omg_param_list.nodes_type; // UE eNB...
     node->generator = omg_param_list.mobility_type; // SUMO
-    node->mob = mobility;
-
+    
     Node_Vector[SUMO] = (Node_list) add_entry(node, Node_Vector[SUMO]);     
   }
   
@@ -164,161 +151,96 @@ sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_
 }
 
 void update_IDs() {
-  #ifdef STANDALONE 
-  printf("Updating the ID mapping between SUMO and OAI\n");
-  #else
-    LOG_D(OMG, "Updating the ID mapping between SUMO and OAI\n"); 
-  #endif 
+
+  LOG_D(OMG, "Updating the ID mapping between SUMO and OAI\n"); 
+
   String_list tmp_arrived, tmp_departed;
-  
-  if(arrived == NULL) {
-     //printf("arrived vehicles is NULL \n"); 
-     return;
-  }
 
   tmp_arrived = arrived;
   tmp_departed = departed;
 
   if(tmp_arrived->string !=NULL) {
     char *tmp_string = tmp_arrived->string;
-     
     if(!desactivate_and_unmap(tmp_string)) {
-      printf("Could not locate the OAI node ID %s \n", tmp_string);
-      //LOG_I(OMG, "Could not locate the OAI node ID %s \n", tmp_string);
+      LOG_I(OMG, "Could not locate the OAI node ID %s \n", tmp_string);
     }
     
   }
   while (tmp_arrived->next != NULL) {
     char *tmp_string = tmp_arrived->string;
     if(!desactivate_and_unmap(tmp_string)) {
-       //printf("Could not locate the OAI node\n");
-      // LOG_I(OMG, "Could not locate the OAI node\n");
+      LOG_I(OMG, "Could not locate the OAI node\n");
     }
     tmp_arrived = tmp_arrived->next;  
   }
   arrived = clear_String_list(arrived);
 
-  if(departed == NULL) {
-     //printf("departed vehicles is NULL \n"); 
-     return;
-  }
-
   if(tmp_departed->string !=NULL) {
-    char * tmp_string = malloc(sizeof(strlen(tmp_departed->string)));     
+    char tmp_string [strlen(tmp_departed->string)];
     strcpy(tmp_string, tmp_departed->string);
-    //printf("2 head is not null and value is: %s\n",tmp_string);
+    //char *tmp_string = tmp_departed->string);
     int OAI_ID = get_oaiID_by_SUMO(tmp_string, id_manager);
-    if (OAI_ID ==-1) {
+    if (OAI_ID !=-1) {
       if (!activate_and_map(tmp_string)) {
-	 // printf("Reached the Maximum of OAI nodes to be mapped to SUMO\n");
-         // LOG_I(OMG, "Reached the Maximum of OAI nodes to be mapped to SUMO\n");
+	LOG_I(OMG, "Reached the Maximum of OAI nodes to be mapped to SUMO\n");
         return;  // stopping mapping as the maximum of OAI nodes has been reached;
       }
-      
     }
   }
   while (tmp_departed->next != NULL) {
-    //printf("2 main is not null \n");
-    //char tmp_string [strlen(tmp_departed->string)];
-    char * tmp_string = malloc(sizeof(strlen(tmp_departed->string)));
+    char tmp_string [strlen(tmp_departed->string)];
     strcpy(tmp_string, tmp_departed->string);
     //char *tmp_string = tmp_departed->string;
     int OAI_ID = get_oaiID_by_SUMO(tmp_string, id_manager);
-    if (OAI_ID ==-1) {
+    if (OAI_ID !=-1) {
       if (!activate_and_map(tmp_string)) {
-        //printf("Reached the Maximum of OAI nodes to be mapped to SUMO\n");
-        //LOG_I(OMG, "Reached the Maximum of OAI nodes to be mapped to SUMO\n");
+        LOG_I(OMG, "Reached the Maximum of OAI nodes to be mapped to SUMO\n");
         return;  // stopping mapping as the maximum of OAI nodes has been reached;
       }  
     }
     tmp_departed = tmp_departed->next;
   }
-
   departed = clear_String_list(departed);
 }
 
 bool desactivate_and_unmap(char *sumo_id) {
-  #ifdef STANDALONE 
-    printf("desactivating node %s \n",sumo_id);
-  #else
-    LOG_D(OMG, "desactivating node %s \n",sumo_id);
-  #endif	
-  int OAI_ID = get_oaiID_by_SUMO(sumo_id, id_manager);
-  remove_oaiID_by_SUMO(sumo_id, id_manager);
+  int OAI_ID = remove_oaiID_by_SUMO(sumo_id, id_manager);
   if (OAI_ID !=-1) {
-      //TODO generalize to UE and eNB (must change the method)
-      NodePtr node = find_node(Node_Vector[SUMO], OAI_ID, UE);
-      if (node == NULL) 
-         node = find_node(Node_Vector[SUMO], OAI_ID, eNB);
-
-      if(node !=NULL) {
-        node->mobile = 0; // this node is now inactive;
-        active_nodes = remove_node_entry(node, active_nodes);
-        return true;
-      }
-      
+      NodePtr node = find_node(Node_Vector[SUMO], OAI_ID, SUMO);
+      node->mobile = 0; // this node is now inactive;
+      return true;
   }
-
-   #ifdef STANDALONE  
-    printf("Could not desactive an OAI node, as the SUMO-OAI mapping could not be found for the SUMO node ID %s \n", sumo_id);
-   #else
-     LOG_D(OMG, "Could not desactive an OAI node, as the SUMO-OAI mapping could not be found for the SUMO node ID %s \n", sumo_id); 
-   #endif
-
-   return false;
+  else {
+      LOG_D(OMG, "Could not desactive an OAI node, as the SUMO-OAI mapping could not be found for the SUMO node ID %s \n", sumo_id); 
+      return false;
+  }
 }
 
 
 bool activate_and_map(char *sumo_id) {
   MapPtr map = create_map();
-  #ifdef STANDALONE 
-    printf("activating node %s \n",sumo_id);
-  #else
-    LOG_D(OMG, "activating node %s \n",sumo_id);
-  #endif		
+
   NodePtr active_node = get_first_inactive_OAI_node(Node_Vector[SUMO], SUMO);
   if(active_node != NULL) {  // found an inactive OAI node; will be mapped to SUMO
     active_node->mobile = 1; // now node is active in SUMO
-
-    active_nodes = add_entry(active_node, active_nodes);
-   
+ 
     map->oai_id = active_node->ID;
-    map->sumo_id = malloc(sizeof((int)strlen(sumo_id)));
-    strcpy(map->sumo_id, sumo_id);
+    map->sumo_id = sumo_id;
      
-     #ifdef STANDALONE  
-      printf("added a mapping between oai ID:  %d and SUMO ID: %s \n",map->oai_id, map->sumo_id); 
-     #else
-       LOG_D(OMG, "added a mapping between oai ID:  %d and SUMO ID: %s \n",map->oai_id, map->sumo_id); 
-     #endif
-    
-   // TODO fusion the two lists...leads to data inconsistency
     id_manager->map_sumo2oai = add_map_entry(map, id_manager->map_sumo2oai);
-  
-    id_manager->map_oai2sumo = add_map_entry(map, id_manager->map_oai2sumo); //map_sumo2oai
-
+    id_manager->map_oai2sumo = add_map_entry(map, id_manager->map_oai2sumo);
   return true;
-
   }
-
   else {
-     #ifdef STANDALONE  
-      printf("All OAI Nodes are already active in SUMO; cannot control this SUMO node in OAI\n");
-     #else
-      LOG_D(OMG, "All OAI Nodes are already active in SUMO; cannot control this SUMO node in OAI\n"); 
-     #endif
+    LOG_D(OMG, "All OAI Nodes are already active in SUMO; cannot control this SUMO node in OAI\n"); 
     return false;
   }
 }  
 
 
 void update_sumo_nodes(double cur_time) {
-   if((cur_time - last_update_time) < MIN_SUMO_STEP)   // the min time interval for SUMO must be 100ms or more
-      return;
 	
-   last_update_time = cur_time;  // keeps track of the last update time to get the update interval
-
-   commandSimulationStep(1.0);// Advance the SUMO simulation by cur_time units
+   commandSimulationStep(cur_time);// Advance the SUMO simulation by cur_time units
 
    update_IDs();  // both are in the  traCI client
 
@@ -326,47 +248,34 @@ void update_sumo_nodes(double cur_time) {
 
 void update_sumo_positions(NodePtr node){
 
+  LOG_D(OMG, "--------GET SUMO Mobility for a single node--------\n");
   
- 
-   #ifdef STANDALONE  
-    printf("--------GET SUMO Mobility for a single node--------\n");
-   #else
-    LOG_D(OMG, "--------GET SUMO Mobility for a single node--------\n");
-   #endif
+  vehicleVar* next_loc = NULL;
   
-  Map_list tmp =  id_manager->map_oai2sumo;
-  char *sumo_id = get_sumo_entry(node->ID, tmp);
+  next_loc = get_pos_speed(node->ID, 2);// number 2 reprsents getVehicleVariable should be called twice for speed and loc
   
-  if(sumo_id !=NULL) {  
-     //printf(" OAI ID is: %d and SUMO ID is %s \n",node->ID, sumo_id);    
-    GetPosition(node, sumo_id);
-    GetSpeed(node, sumo_id);
-  }
+  node->X_pos = next_loc->x;
+  node->Y_pos = next_loc->y;
+  node->mob->speed = next_loc->speed;
 }
 
 Node_list get_sumo_positions_updated(double cur_time) {
   
- 
-   #ifdef STANDALONE  
-     printf("--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
-   #else
-     LOG_D(OMG, "--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
-   #endif
- 
+  LOG_D(OMG, "--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
+
+  reset_node_list(active_nodes);
+
   if (Node_Vector[SUMO] != NULL){
     Node_list tmp = Node_Vector[SUMO];
     while (tmp != NULL){
-      if ((tmp->node->generator == SUMO) && (tmp->node->mobile == 1)) {  // OAI node MUST be active
-        //LOG_T(OMG, "found an active node with id %d \n", tmp->node->ID);
-	//LOG_D(OMG, "Old Positions \n");		
-	//printf("Old Positions \n");
-        //display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
-
-        update_sumo_positions(tmp->node);
-	
-        //printf("New Positions \n");
-        //LOG_D(OMG, "New Positions \n");		
-	//display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+      if ((tmp->node->type == SUMO) && (tmp->node->mobile == 1)) {  // OAI node MUST be active
+        LOG_T(OMG, "found an active node with id %d \n", tmp->node->ID);
+	LOG_D(OMG, "Old Positions \n");		
+	display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+        update_sumo_positions(tmp->node);     
+	LOG_D(OMG, "Old Positions \n");		
+	display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+	active_nodes = add_entry(tmp->node, active_nodes);
       }
       tmp = tmp->next;
     }
@@ -387,16 +296,4 @@ NodePtr get_first_inactive_OAI_node(Node_list list, int node_type) {
     }
   }
   return NULL;  // all nodes are active already..reached the maximum number of OAI nodes 
-}
-
-bool stop_sumo_generator() {
-  #ifdef STANDALONE  
-    printf(" --------Destructor for SUMO: closing the TraCI socket and killing SUMO ---- \n");
-  #else
-     LOG_I(OMG, " --------Destructor for SUMO: closing the TraCI socket and killing SUMO ---- \n");
-  #endif
-  commandClose(); // closing the connection with SUMO via TraCI
-  close_connection(); // closing the socket connection
-  kill(pid,SIGKILL); // killing SUMO in case it could not close by itself
-  return true;
 }

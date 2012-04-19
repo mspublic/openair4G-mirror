@@ -153,7 +153,7 @@ extern pthread_cond_t dlsch_cond[8];
 
 #ifdef CBMIMO1
 #define NUMBER_OF_CHUNKS_PER_SLOT NUMBER_OF_OFDM_SYMBOLS_PER_SLOT
-#define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * LTE_SLOTS_PER_FRAME)
+#define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * SLOTS_PER_FRAME)
 #define SYNCH_WAIT_TIME 4000  // number of symbols between SYNCH retries
 #define SYNCH_WAIT_TIME_RUNNING 100  // number of symbols between SYNCH retries
 #define DRIFT_OFFSET 300
@@ -460,11 +460,11 @@ static void * openair_thread(void *param) {
 	msg("[SCHED][openair_thread] ERROR unlocking openair_mutex\n");	
     }
 
-    next_slot = (openair_daq_vars.slot_count + 1 ) % LTE_SLOTS_PER_FRAME;
+    next_slot = (openair_daq_vars.slot_count + 1 ) % SLOTS_PER_FRAME;
     if (openair_daq_vars.slot_count==0) 
-      last_slot = LTE_SLOTS_PER_FRAME-1;
+      last_slot = SLOTS_PER_FRAME-1;
     else
-      last_slot = (openair_daq_vars.slot_count - 1 ) % LTE_SLOTS_PER_FRAME; 
+      last_slot = (openair_daq_vars.slot_count - 1 ) % SLOTS_PER_FRAME; 
 
     //msg("[SCHED][Thread] Mode = %d (openair_NOT_SYNCHED=%d), slot_count = %d, instance_cnt = %d\n",openair_daq_vars.mode,openair_NOT_SYNCHED,openair_daq_vars.slot_count,openair_daq_vars.instance_cnt);
 
@@ -553,7 +553,7 @@ static void * openair_thread(void *param) {
 	      msg("[SCHED][OPENAIR_THREAD] Normal prefix not implemented yet!!!\n");
 	    }
 	  }
-#endif //IFFT_FPGA
+#endif
 	}
       }
       else {
@@ -593,7 +593,7 @@ static void * openair_thread(void *param) {
 	      msg("[SCHED][OPENAIR_THREAD] Normal prefix not implemented yet!!!\n");
 	    }
 	  }
-#endif //IFFT_FPGA
+#endif
       }
 #endif //OPENAIR1
 
@@ -628,13 +628,9 @@ static void * openair_thread(void *param) {
 
     else {   // synchronization and get frame
 
-      if ((openair_daq_vars.hw_frame%100==0)
-	  && (openair_daq_vars.slot_count==0) 
-	  && (openair_daq_vars.mode != openair_SYNCHED)) {
-	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d: calling openair_sync\n",
-	    openair_daq_vars.hw_frame,openair_daq_vars.slot_count);
+      if ((openair_daq_vars.hw_frame%100==0) && (openair_daq_vars.slot_count==0) && (openair_daq_vars.mode != openair_SYNCHED))
 	openair_daq_vars.do_synch=1;
-      }
+
       openair_sync();
 
     }
@@ -689,7 +685,10 @@ int slot_irq_handler(int irq, void *cookie) {
   u32 irqcmd;
 
   intr_in = 1;
+
   intr_cnt++;
+  if (intr_cnt%2000 == 0)
+    msg("Interrupt cnt %d\n",intr_cnt);
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
@@ -708,12 +707,11 @@ int slot_irq_handler(int irq, void *cookie) {
 	
 	adac_cnt = (*(unsigned int *)mbox);
 	
-	openair_daq_vars.slot_count=intr_cnt % LTE_SLOTS_PER_FRAME;
-	//openair_daq_vars.slot_count=adac_cnt>>3;
+	//openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
+	openair_daq_vars.slot_count=adac_cnt>>3;
 
 	//if ((adac_cnt>>3) == 0)
-	//if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
-	if (openair_daq_vars.slot_count==0)
+	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
 	  openair_daq_vars.hw_frame++;
 	
 	if (((openair_daq_vars.hw_frame %100) == 0) && (openair_daq_vars.hw_frame>0)) {
@@ -829,10 +827,6 @@ int slot_irq_handler(int irq, void *cookie) {
 	//	msg("Got PCIe interrupt for printk ...\n");
 	pci_fifo_printk();
 	
-      }
-      else if (irqcmd == GET_FRAME_DONE) {
-	msg("Got PCIe interrupt for GET_FRAME_DONE ...\n");
-	openair_daq_vars.get_frame_done=1;
       }
       rt_ack_irq(irq);
       rt_unmask_irq(irq);

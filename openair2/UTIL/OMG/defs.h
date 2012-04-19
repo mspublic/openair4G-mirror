@@ -45,15 +45,6 @@
 //typedef char bool;
 #include <stdbool.h>
 
-#ifdef STANDALONE
-typedef struct {
-    char *name;	/*!< \brief string name of item */
-    int value;	/*!< \brief integer value of mapping */
-} mapping;
-int  map_str_to_int(mapping *map, const char *str);
-char *map_int_to_str(mapping *map, int val);
-#endif
-
 /*!A sructure that includes all the characteristic mobility elements of a node  */
 typedef struct mobility_struct {
 	double X_from; /*!< The X coordinate of the previous location of the node */
@@ -124,15 +115,15 @@ typedef struct omg_global_param{
 	int mobility_type; /*!< The chosen mobility model for the nodes in question. It should be one of the types inumarated as #mobility_types*/
 	int nodes_type; /*!< The type of the nodes in question. It should be one of the types inumarated as #node_types */
   	int seed; /*!< The seed used to generate the random positions*/
-	char* mobility_file; /*!< The mobility file name containing the mobility traces used by the TRACE model; DEFAULT: TRACE/example_trace.tr */
-        char* sumo_command; /*!< The command to start SUMO; Either 'sumo' or 'sumo-gui' in case a GUI would be required; see SUMO for further details; DEFAULT: sumo */
-        char* sumo_config; /*!< The configuration file for SUMO; it must be a '.cfg' file located in ./SUMO/Scenarios folder DEFAULT: SUMO/Scenarios/scen.sumo.cfg */
+	char* mobility_file; /*!< The mobility file name containing the mobility traces used by the TRACE model */
+        char* sumo_command; /*!< The command to start SUMO; Either 'sumo' or 'sumo-gui' in case a GUI would be required; see SUMO for further details */
+        char* sumo_config; /*!< The configuration file for SUMO; it must be a '.cfg' file located in ./SUMO/Scenarios folder */
 	int sumo_start; /*!< The time at which SUMO should start; Default: 0s */
-        int sumo_end; /*!< The time at which SUMO should stop; It shold be greater or equal to OAI Default: END OF EMULATION */
-        int sumo_step; /*!< The simulation step of SUMO, in ms. it is 1000ms by default (i.e. SUMO updates its mobility every second); DEFAULT: 1000ms (1s) */
-        char* sumo_host; /*!< The IP host address where SUMO will be run. DEFAULT: localhost */
-        int sumo_port; /*!< The port number attached to SUMO on the host DEFAULT: TBC */
-}omg_global_param;  
+        int sumo_end; /*!< The time at which SUMO should stop; It shold be greater or equal to OAI */
+        int sumo_step; /*!< The simulation step of SUMO, in ms. it is 1000ms by default (i.e. SUMO updates its mobility every second) */
+        char* sumo_host; /*!< The IP host address where SUMO will be run. */
+        int sumo_port; /*!< The port number attached to SUMO on the host */
+}omg_global_param; 
 
 /*!A string List structure */
 struct string_list_struct {
@@ -172,15 +163,6 @@ NodePtr get_node_position(int node_type, int nID);
  */
 Node_list add_entry(NodePtr node, Node_list Node_Vector);
 
-/**
- * \fn Node_list remove_node_entry(NodePtr node, Node_list Node_Vector)
- * \brief Remove the Node sructure to the specified Node_Vector. 
- *     Note: the entry will be removed, but the Node will not be deleted.
- * \param node a pointer to the node that should be deleted to the Node_Vector 
- * \param Node_Vector a pointer of type Node_list that represents the Node_Vector storing all the nodes of the specified mobility type
- * \return the Node_list to which a new entry is removed
- */
-Node_list remove_node_entry(NodePtr node, Node_list Node_Vector);
 
 /**
  * \fn void display_node_list(Node_list Node_Vector)

@@ -38,29 +38,15 @@
 * \warning
 */
 
-
-#ifndef __OTG_RX_H__
-#	define __OTG_RX_H__
-
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "otg.h"
-
-
-
-
-
-/*! \fn char *check_packet(int src, int dst, int ctime);
-* \brief check if the packet is well received and do measurements: one way delay, throughput,etc. 
-* \param[in] the source, the destination, time of the emulation
-* \param[out] return NULL is the packet is well received,  else the packet to forward
+/*! \fn int check_packet(char *packet);
+* \brief check if the packet is well received 
+* \param[in] char *packet
+* \param[out] 
 * \note 
 * @ingroup  _otg
 */
-int otg_rx_pkt_packet(int src, int dst, int ctime, char *packet, unsigned int size);
 
- short int fn(unsigned int a);
-#endif
+int check_packet(char *packet);
+
+
+

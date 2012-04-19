@@ -8,7 +8,7 @@
 #include "PHY/TOOLS/defs.h"
 #include "defs.h"
 #include "scm_corrmat.h"
-#include "UTIL/LOG/log.h"
+
 //#define DEBUG_CH
 
 channel_desc_t *new_channel_desc(u8 nb_tx,
@@ -32,7 +32,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   u16 i,j;
   double delta_tau;
 
-  LOG_I(OCM,"[CHANNEL] Getting new channel descriptor, nb_tx %d, nb_rx %d, nb_taps %d, channel_length %d\n",
+  msg("[CHANNEL] Getting new channel descriptor, nb_tx %d, nb_rx %d, nb_taps %d, channel_length %d\n",
       nb_tx,nb_rx,nb_taps,channel_length);
 
   chan_desc->nb_tx          = nb_tx;
@@ -40,7 +40,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->nb_taps        = nb_taps;
   chan_desc->channel_length = channel_length;
   chan_desc->amps           = amps;
-  LOG_D(OCM,"[CHANNEL] Doing delays ...\n");
+  msg("[CHANNEL] Doing delays ...\n");
   if (delays==NULL) {
     chan_desc->delays = (double*) malloc(nb_taps*sizeof(double));
     delta_tau = Td/nb_taps;
@@ -64,7 +64,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
   chan_desc->a              = (struct complex**) malloc(nb_taps*sizeof(struct complex*));
 
-  LOG_D(OCM,"[CHANNEL] Filling ch \n");
+  msg("[CHANNEL] Filling ch \n");
 
   for (i = 0; i<nb_tx*nb_rx; i++) 
     chan_desc->ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex)); 
@@ -72,13 +72,13 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   for (i = 0; i<nb_tx*nb_rx; i++) 
     chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex));  // allocate for up to 100 RBs, 12 samples per RB
 
-  LOG_D(OCM,"[CHANNEL] Filling a (nb_taps %d)\n",nb_taps);
+  msg("[CHANNEL] Filling a (nb_taps %d)\n",nb_taps);
   for (i = 0; i<nb_taps; i++) {
-    LOG_D(OCM,"tap %d (%p,%d)\n",i,&chan_desc->a[i],nb_tx*nb_rx * sizeof(struct complex));
+    msg("tap %d (%p,%d)\n",i,&chan_desc->a[i],nb_tx*nb_rx * sizeof(struct complex));
     chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
   }
 
-  LOG_D(OCM,"[CHANNEL] Doing R_sqrt ...\n");
+  msg("[CHANNEL] Doing R_sqrt ...\n");
   if (R_sqrt == NULL) {
     chan_desc->R_sqrt         = (struct complex**) malloc(nb_taps*sizeof(struct complex*));
     for (i = 0; i<nb_taps; i++) {
@@ -95,13 +95,13 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 
   for (i = 0; i<nb_taps; i++) {
     for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-      LOG_D(OCM,"Rsqrt[%d][%d] %f %f\n",i,j,chan_desc->R_sqrt[i][j].x,chan_desc->R_sqrt[i][j].y);
+      printf("Rsqrt[%d][%d] %f %f\n",i,j,chan_desc->R_sqrt[i][j].x,chan_desc->R_sqrt[i][j].y);
     }
   }
 
-  LOG_D(OCM,"[CHANNEL] RF %f\n",chan_desc->ricean_factor);
+  printf("[CHANNEL] RF %f\n",chan_desc->ricean_factor);
   for (i=0;i<chan_desc->nb_taps;i++)
-    LOG_D(OCM,"[CHANNEL] tap %d: amp %f, delay %f\n",i,chan_desc->amps[i],chan_desc->delays[i]);
+    printf("[CHANNEL] tap %d: amp %f, delay %f\n",i,chan_desc->amps[i],chan_desc->delays[i]);
 
   return(chan_desc);
 }
@@ -169,15 +169,15 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   chan_desc->first_run      = 1;
   chan_desc->ip             = 0.0;
 
-  LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
+  printf("\nChannel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
 
   switch (channel_model) {
   case SCM_A:
-    LOG_W(OCM,"channel model not yet supported\n");
+    msg("channel model not yet supported\n");
     free(chan_desc);
     return(NULL);
   case SCM_B:
-    LOG_W(OCM,"channel model not yet supported\n");
+    msg("channel model not yet supported\n");
     free(chan_desc);
     return(NULL);
   case SCM_C:
@@ -205,33 +205,25 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
-
-    chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
     if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
       for (i = 0; i<6; i++) 
 	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
     }
-    else if (nb_tx==2 && nb_rx==1) {
-      for (i = 0; i<6; i++) 
-	chan_desc->R_sqrt[i] = (struct complex*) &R21_sqrt[i][0];
-    }
-    else if (nb_tx==1 && nb_rx==2) {
-      for (i = 0; i<6; i++) 
-	chan_desc->R_sqrt[i] = (struct complex*) &R12_sqrt[i][0];
-    }
     else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
       for (i = 0; i<6; i++) {
 	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
 	  chan_desc->R_sqrt[i][j].x = 1.0;
 	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
-	LOG_W(OCM,"correlation matrix not implemented for nb_tx==%d and nb_rx==%d, using identity\n", nb_tx, nb_rx);
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
     }
     break;
   case SCM_D:
-    LOG_W(OCM,"channel model not yet supported\n");
+    msg("channel model not yet supported\n");
     free(chan_desc);
     return(NULL);
   case EPA:
@@ -272,7 +264,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 	  chan_desc->R_sqrt[i][j].x = 1.0;
 	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
-	LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
     }
     break;
@@ -314,7 +306,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 	  chan_desc->R_sqrt[i][j].x = 1.0;
 	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
-	LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
     }
     break;
@@ -356,7 +348,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 	  chan_desc->R_sqrt[i][j].x = 1.0;
 	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
-	LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
     }
     break;
@@ -632,13 +624,13 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       break;
 
   default:
-    LOG_W(OCM,"channel model not yet supported\n");
+    msg("channel model not yet supported\n");
     free(chan_desc);
     return(NULL);
   }
-  LOG_D(OCM,"[CHANNEL] RF %f\n",chan_desc->ricean_factor);
+  printf("[CHANNEL] RF %f\n",chan_desc->ricean_factor);
   for (i=0;i<chan_desc->nb_taps;i++)
-    LOG_D(OCM,"[CHANNEL] tap %d: amp %f, delay %f\n",i,chan_desc->amps[i],chan_desc->delays[i]);
+    printf("[CHANNEL] tap %d: amp %f, delay %f\n",i,chan_desc->amps[i],chan_desc->delays[i]);
 
   return(chan_desc);
 }

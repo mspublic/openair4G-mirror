@@ -106,16 +106,6 @@ void mac_sync_ind(u8 Mod_id,u8 Status){
 }
 
 /********************************************************************************************************************/
-void mac_in_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
-/********************************************************************************************************************/
-#ifdef CELLULAR
-  rrc_L2_sync_ind_rx();
-#else
-  rrc_lite_in_sync_ind(Mod_id,frame,eNB_index);
-#endif
-}
-
-/********************************************************************************************************************/
 void mac_out_of_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
@@ -125,32 +115,3 @@ void mac_out_of_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
 #endif //CELLULAR
 }
 
-/********************************************************************************************************************/
-int mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index) {
-/********************************************************************************************************************/
-#ifdef CELLULAR
-  return (rrc_L2_get_rrc_status(Mod_id,eNB_flag,index));
-#else 
-  mac_get_rrc_lite_status(Mod_id, eNB_flag, index);
-#endif //CELLULAR
-}
-
-/********************************************************************************************************************/
-char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
-/********************************************************************************************************************/
-#ifdef CELLULAR
-  return (rrc_L2_ue_init(Mod_id,eNB_index));
-#else 
-  openair_rrc_lite_ue_init(Mod_id, eNB_index);
-#endif //CELLULAR
-}
-
-/********************************************************************************************************************/
-char openair_rrc_eNB_init(u8 Mod_id){
-/********************************************************************************************************************/
-#ifdef CELLULAR
- return( rrc_L2_eNB_init(Mod_id));
-#else 
-  openair_rrc_lite_eNB_init(Mod_id);
-#endif //CELLULAR
-}

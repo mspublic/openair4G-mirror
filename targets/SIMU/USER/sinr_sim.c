@@ -213,13 +213,11 @@ void get_beta_map() {
     }
   }
 
-  for (mcs = 5; mcs < MCS_COUNT; mcs++) { 
-    // sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs); // navid 
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Real/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
-
+  for (mcs = 5; mcs < MCS_COUNT; mcs++) {
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
-      LOG_E(OCM,"ERROR: Unable to open the file %s\n", file_path);
+      printf("ERROR: Unable to open the file %s\n", file_path);
       exit(-1);
     }
     else {
@@ -237,7 +235,7 @@ void get_beta_map() {
     }
     LOG_D(OCM," Print the table for mcs %d\n",mcs);
     for (table_len = 0; table_len < 9; table_len++)
-      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+      msg("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
   free(file_path);
 }

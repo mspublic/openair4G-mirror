@@ -36,10 +36,10 @@ static bool any_bad_argument(const octave_value_list &args)
 {
   octave_value v,w;
 
-  if (args.length()!=4)
+  if (args.length()!=3)
   {
     error(FCNNAME);
-    error("syntax: oarf_config(freqband,tdd,dual_tx,tdd_config)");
+    error("syntax: oarf_config(freqband,tdd,dual_tx)");
     return true;
   }
 
@@ -47,7 +47,7 @@ static bool any_bad_argument(const octave_value_list &args)
   if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() > 6.0))
   {
     error(FCNNAME);
-    error("freqband must be 0-5");
+      error("freqband must be 0-5");
     return true;
   }
 
@@ -65,12 +65,6 @@ static bool any_bad_argument(const octave_value_list &args)
       return true;
   }
 
-  if ((!args(3).is_real_scalar()) || (args(3).scalar_value()<0.0) || (args(3).scalar_value()>255.0))
-  {
-      error(FCNNAME);
-      error("dual_tx must be 0-9, 254=RX only or 255=TX only.");
-      return true;
-  }
   return false;
 }
 
@@ -87,12 +81,11 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   if (any_bad_argument(args))
        return octave_value_list();
        
-  const uint freq = args(0).int_value();  
+  const int freq = args(0).int_value();  
   //const std::string configfile = args(1).string_value();
   //const std::string scenariofile = args(2).string_value();
   const int tdd = args(1).int_value();
   const int dual_tx = args(2).int_value();  
-  const int tdd_config = args(3).int_value();
 
   octave_value returnvalue;
   int openair_fd;
@@ -136,7 +129,7 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
   frame_parms->mode1_flag         = 1; //default == SISO
-  frame_parms->tdd_config         = tdd_config;
+  frame_parms->tdd_config         = 3;
   frame_parms->dual_tx            = dual_tx;
   frame_parms->frame_type         = tdd;
   frame_parms->freq_idx           = freq;

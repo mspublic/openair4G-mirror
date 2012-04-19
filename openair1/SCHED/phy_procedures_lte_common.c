@@ -482,7 +482,7 @@ lte_subframe_t get_subframe_direction(u8 Mod_id,u8 subframe) {
 
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
 
-  //LOG_D(PHY,"phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
+  msg("phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
   return(subframe2harq_pid(frame_parms,
 			   phich_frame2_pusch_frame(frame_parms,frame,subframe),
 			   phich_subframe2_pusch_subframe(frame_parms,subframe)));
@@ -519,6 +519,43 @@ unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
   return(0);
 }
 
+u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n){
+
+    if ((frame_parms->frame_type == 1) && 
+	(frame_parms->tdd_config == 1) &&
+	((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+      return((n+6)%10);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     ((n==0)||(n==1)||(n==5)||(n==6)))  
+      return((n+7)%10);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     (n==9)) // tdd_config 6 SF 9
+      return((n+5)%10);
+    else
+      return((n+4)%10);
+
+}
+
+u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n){
+
+    if ((frame_parms->frame_type == 1) && 
+	(frame_parms->tdd_config == 1) &&
+	((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+      return(frame + (n==1 ? 0 : 1));
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     ((n==0)||(n==1)||(n==5)||(n==6)))  
+      return(frame + (n>=5 ? 1 : 0));
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     (n==9)) // tdd_config 6 SF 9
+      return(frame+1);
+    else
+      return(frame+(n>=6 ? 1 : 0));
+
+}
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
   s8 UE_id;

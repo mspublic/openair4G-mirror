@@ -93,8 +93,7 @@
 
 typedef enum {
   CONNECTION_OK=0,
-  CONNECTION_LOST,
-  PHY_RESYNCH
+  CONNECTION_LOST
 } UE_L2_STATE_t;
 
 typedef struct {
@@ -654,7 +653,6 @@ void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_DLSCH_STATUS status);
 s8 find_UE_id(u8 Mod_id,u16 rnti) ;
 s16 find_UE_RNTI(u8 Mod_id, u8 UE_id);
 s8 find_active_UEs(u8 Mod_id);
-u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id );
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
@@ -784,7 +782,7 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 \param[in] subframe the subframe number
 \param[in] direction subframe direction
 \param[in] eNB_index instance of eNB
-@returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
+@returns L2 state (CONNETION_OK or CONNECTION_LOST)
 */
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 
@@ -857,11 +855,6 @@ int get_sf_retxBSRTimer(u8 retxBSR_Timer);
 \param[in] eNB_id Index of eNB
 */
 void Msg3_tx(u8 Mod_id,u32 frame,u8 eNB_id);
-
-void dl_phy_sync_success(unsigned char Mod_id,
-			 u32 frame,
-			 unsigned char eNB_index,
-			 u8 first_sync);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

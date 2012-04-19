@@ -65,9 +65,6 @@ typedef enum  {
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n) 
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s ) 
 
-#define MAX_MEAS_OBJ 3
-#define MAX_MEAS_CONFIG 3
-#define MAX_MEAS_ID 3
 
 #define PAYLOAD_SIZE_MAX 1024
 
@@ -80,15 +77,21 @@ typedef struct{
   u8 SIStatus;
   u8 SIwindowsize;
   u16 SIperiod;
+  u8 CH_id;
   unsigned short UE_index;
-  u32 T300_active;
-  u32 T300_cnt;
-  u32 T304_active;
-  u32 T304_cnt;
-  u32 T310_active;
-  u32 T310_cnt;
-  u32 N310_cnt;
-  u32 N311_cnt;
+  unsigned int Rach_tx_cnt;
+  unsigned int Nb_bcch_wait;
+  unsigned int Nb_bcch_miss;
+  u8 Nb_rach_res; 
+  u8 Rach_time_alloc;
+  unsigned short Rach_freq_alloc;
+  //  L2_ID CH_mac_id;
+  u8 T300_active;
+  u8 T300_cnt;
+  u8 T304_active;
+  u8 T304_cnt;
+  u8 T310_active;
+  u8 T310_cnt;
 }UE_RRC_INFO;
 
 typedef struct{
@@ -211,11 +214,6 @@ typedef struct{
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
-  struct MeasObjectToAddMod       *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
-  struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
-  struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
-  struct MeasIdToAddMod           *MeasId[NB_CNX_UE][MAX_MEAS_ID];
-  RSRP_Range_t                    s_measure;
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
   struct SPS_Config               *sps_Config[NB_CNX_UE];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
@@ -226,8 +224,8 @@ typedef struct{
 int rrc_init_global_param(void);
 int L3_xface_init(void);
 void openair_rrc_top_init(void);
-char openair_rrc_lite_eNB_init(u8 Mod_id);
-char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
+char openair_rrc_eNB_init(u8 Mod_id);
+char openair_rrc_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag);
 
@@ -266,20 +264,7 @@ void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u32 frame, u8 CH_index);
     \param Mod_id Instance ID of UE
     \param frame Frame index
     \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u32 frame,u8 CH_index);\
-
-/** \brief process the received rrcConnectionReconfiguration message at UE 
-    \param Mod_id Instance ID of UE
-    \param frame Frame index
-    \param *rrcConnectionReconfiguration pointer to the sturcture
-    \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,u8 eNB_index);
-
-/** \brief Generates/Encodes RRCConnectionReconfigurationComplete  message at UE 
-    \param Mod_id Instance ID of UE
-    \param frame Frame index
-    \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, u8 eNB_index);
+void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u32 frame,u8 CH_index);
 
 /** \brief Establish SRB1 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param Mod_id Instance ID of UE
@@ -351,12 +336,6 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_inde
    \param UE_index Index of UE transmitting the messages
    \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
-
-/**\brief Generate/decode the RRCConnectionReconfiguration at eNB
-   \param Mod_id Instance ID for eNB/CH
-   \param frame Frame index
-   \param UE_index Index of UE transmitting the messages*/
-void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_index);
 
 
 //L2_interface.c
@@ -463,7 +442,7 @@ int decode_SIB1(u8 Mod_id,u8 CH_index);
 
 int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
-int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
+int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
 
 #endif
 

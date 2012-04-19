@@ -90,7 +90,6 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_FEP
       msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
-
       lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
 				Ns,
 				aa,
@@ -106,7 +105,6 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				aa,
 				l,
 				symbol);
-      
 #endif
 
       // do frequency offset estimation here!
@@ -114,7 +112,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_FEP
       msg("Frequency offset estimation\n");
 #endif   
-      if ((l == 0) || (l==(4-frame_parms->Ncp))) 
+      if ((Ns == 0) & (l==(4-frame_parms->Ncp))) 
 	lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
 			    frame_parms,
 			    l,

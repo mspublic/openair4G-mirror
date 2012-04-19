@@ -168,7 +168,6 @@ u16 prach_root_sequence_map4[138] = {  1,138,2,137,3,136,4,135,5,134,6,133,7,132
 
 u16 du[838];
 
-#ifdef USER_MODE
 void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 
   FILE *fd;
@@ -187,7 +186,6 @@ void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
   fclose(fd);
 
 }
-#endif
 
 // This function finds the
 void fill_du(u8 prach_fmt) {
@@ -436,7 +434,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     preamble_shift *= NCS;
     
     // This is the offset in the root sequence table (5.7.2-4 from 36.211)
-    //    preamble_offset += rootSequenceIndex;
+    preamble_offset += rootSequenceIndex;
   }
   else { // This is the high-speed case
 #ifdef PRACH_DEBUG
@@ -446,7 +444,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     preamble_index0=preamble_index;
     // set preamble_offset to initial rootSequenceIndex and look if we need more root sequences for this
     // preamble index and find the corresponding cyclic shift
-    preamble_offset = 0;//rootSequenceIndex;
+    preamble_offset = rootSequenceIndex;
     while (not_found == 1) {
       if ( (du[rootSequenceIndex]<(N_ZC/3)) && (du[rootSequenceIndex]>NCS) ) {
 	n_shift_ra     = du[rootSequenceIndex]/NCS;
@@ -751,14 +749,14 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	preamble_shift += NCS;
       
       // This is the offset in the root sequence table (5.7.2-4 from 36.211)
-      //      preamble_offset += rootSequenceIndex;
+      preamble_offset += rootSequenceIndex;
     }
     else { // This is the high-speed case
       not_found=1;
       preamble_index0=preamble_index;
       // set preamble_offset to initial rootSequenceIndex and look if we need more root sequences for this
       // preamble index and find the corresponding cyclic shift
-      preamble_offset = 0;//rootSequenceIndex;
+      preamble_offset = rootSequenceIndex;
       while (not_found == 1) {
 	if ( (du[rootSequenceIndex]<(N_ZC/3)) && (du[rootSequenceIndex]>NCS) ) {
 	  n_shift_ra     = du[rootSequenceIndex]/NCS;
@@ -977,10 +975,8 @@ void compute_prach_seq(unsigned int u,unsigned int N_ZC, u32 *X_u) {
   init_prach_tables(N_ZC);
 
   inv_u = ZC_inv[u];
-  //  printf("u %d, inv_u %d\n",u,inv_u);
-  for (k=0;k<N_ZC;k++) {
+
+  for (k=0;k<N_ZC;k++)
     X_u[k] = ((u32*)ru)[(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC];
-    //    printf("X_u[%d] (%d) : %d,%d\n",k,(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[k])[0],((s16*)&X_u[k])[1]);
-  }
 
 }

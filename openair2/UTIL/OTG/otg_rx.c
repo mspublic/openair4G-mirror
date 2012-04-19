@@ -38,102 +38,101 @@
 * \warning
 */
 
-#include "otg_rx.h"
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "otg_defs.h"
+//#include "../../../openair1/PHY/CODING/defs.h" // for CRC computing 
 #include "otg_vars.h"
+#include "UTIL/LOG/log.h"
+int check_packet(char *packet){
+	
+	int status_ok=0;
 
-#define MAX(x,y) ((x)>(y)?(x):(y))
-#define MIN(x,y) ((x)<(y)?(x):(y))
+//No need to check the CRC
+/*
+	char *pch;
+	char *pch2;
+	char *tmp_pkts;
+	char *crc_string;
+	char *crc_rx_string;
+	unsigned int crc_rx=0;
+	
+	int pos;
 
-// Check if the packet is well received or not and extract data
-int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size){
-  
-  int bytes_read=0;
-  otg_hdr_info_t * otg_hdr_info_rx;
-  otg_hdr_t * otg_hdr_rx;
-  int is_size_ok=0;
-  // char * message; 
-  //int hdr_size;
-  
-  if (buffer_tx!=NULL) { // 1st check : buffer_tx
-    
-    otg_hdr_info_rx = (otg_hdr_info_t *) (&buffer_tx[bytes_read]);
-    bytes_read += sizeof (otg_hdr_info_t);
-    
-    //LOG_D(OTG,"[SRC %d][DST %d] RX pkt with size (hdr %d, pdcp %d)\n", src, dst, otg_hdr_info_rx->size, size);
-   
-    if ( otg_hdr_info_rx->flag == 0xffff  ) { //2nd check : OTG FLAG
-      is_size_ok= 0;
-      if (( otg_hdr_info_rx->size ) == size ) {
-	 is_size_ok= 1;
-	otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
-	LOG_I(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
-	/*
-	  LOG_I(OTG,"HDR OTG: SIZE= HEADER + PAYLOAD %d\n", otg_hdr_rx->pkts_size);
-	  LOG_I(OTG,"HDR OTG: FLOW ID %d\n", otg_hdr_rx->flow_id);
-	  LOG_I(OTG,"HDR OTG: TX TIME %d\n", otg_hdr_rx->time);
-	  LOG_I(OTG,"HDR OTG: SEQ NUM %d\n", otg_hdr_rx->seq_num);
-	  LOG_I(OTG,"HDR OTG: HEADER TYPE %d\n", otg_hdr_rx->hdr_type);
-	*/      
-	bytes_read += sizeof (otg_hdr_t);
-	//      message= (char *) (&buffer_tx[bytes_read]);
-	
-	set_ctime(ctime);
-	
-	//hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); //add if for the flag and  
-	
-	if ((otg_hdr_rx->seq_num)==otg_info->seq_num_rx[src][dst]+1) {
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
-	  otg_info->seq_num_rx[src][dst]+=1;
+
+// CRC RX computation 
+
+	pch=strstr(packet, END_OTG_HEADER);
+	tmp_pkts=(char*)malloc((strlen(pch))*sizeof(char*));
+	sprintf(tmp_pkts,"%s",(pch+strlen(END_OTG_HEADER)));
+	//printf ("STRING OBTAINED=%s\n",tmp_pkts);
+
+	crc_rx= crc_gen(tmp_pkts, CRC_FLAG);
+	printf("CRC RX=%u\n", crc_rx);
+
+	crc_rx_string=(char*)malloc(20*sizeof(char*));
+	sprintf(crc_rx_string,"%u",crc_rx);
+
+// CRC CX regeneration
+
+	pch2=strstr(packet, OTG_CTRL_FLAG);
+
+	//printf ("found at %d\n",pch2-packet+1);
+	crc_string=(char*)malloc((pch2-packet)*sizeof(char*));
+	strncpy(crc_string, packet, pch2-packet);
+
+	printf("CRC TX=%s\n",crc_string); //(int)atol(crc_string)
+	printf("CRC size %d \n", strlen(crc_string));
+
+	// COMPARE CRC
+ 
+	// overflow condition occuring with crc values higher than 999999999. atoi function returns 2147483647
+
+	 if ((strcmp(crc_string,crc_rx_string)==0)){ //
+		printf("CRC check OK!\n");
+		 status_ok=1;
 	}
-	else if ((otg_hdr_rx->seq_num)> otg_info->seq_num_rx[src][dst]+1){ // out of sequence packet:  previous packet lost 
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
-	  otg_info->nb_loss_pkts[src][dst]+=((otg_hdr_rx->seq_num)-(otg_info->seq_num_rx[src][dst]+1));
-	  otg_info->seq_num_rx[src][dst]=otg_hdr_rx->seq_num;
-	} 
-	else if ((otg_hdr_rx->seq_num)< otg_info->seq_num_rx[src][dst]+1){ //the received packet arrived late 
-	  otg_info->nb_loss_pkts[src][dst]-=1;
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, otg_info->seq_num_rx[src][dst]+1);
+	else 
+		printf("CRC error!\n");
+	
+
+	if (NULL != tmp_pkts){
+		tmp_pkts=NULL;  					
+		free(tmp_pkts);
 	}
-	// Compute STAT
-	otg_info->rx_num_pkt[src][dst]+=1;
-	//LOG_I(OTG,"PACKET SIZE (RX):  time(%d), otg header(%d), header + payload (%d), Total (%d)\n", ctime, hdr_size , strlen(message), otg_hdr_info_rx->size);
-	
-	otg_info->rx_num_bytes[src][dst]+=   otg_hdr_info_rx->size;
-	otg_info->rx_pkt_owd[src][dst]= get_ctime() - otg_hdr_rx->time ;
-	LOG_I(OTG,"RX INFO :: RTT (one way) ms: %d \n", otg_info->rx_pkt_owd[src][dst]);
-	
-	if (otg_info->rx_owd_max[src][dst]==0){
-	  otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
-	  otg_info->rx_owd_min[src][dst]=otg_info->rx_pkt_owd[src][dst];
+
+	if (NULL != pch){
+		pch=NULL;  					
+		free(pch);
 	}
-	else {
-	  otg_info->rx_owd_max[src][dst]=MAX(otg_info->rx_owd_max[src][dst],otg_info->rx_pkt_owd[src][dst] );
-	  otg_info->rx_owd_min[src][dst]=MIN(otg_info->rx_owd_min[src][dst],otg_info->rx_pkt_owd[src][dst] );
+	if (NULL != pch2){
+		pch2=NULL;  					
+		free(pch2);
 	}
-	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
-	
-      // end STAT
-	
-      
-      //Free pointers
-      /*			if (buffer_tx!=NULL){   					
-				free(buffer_tx);
-				LOG_I(OTG,"RX :: Free buffer_tx\n");
-				}*/
-      }
-      if (is_size_ok == 0) {
-	LOG_I(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size mis-matche (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
-      }
-      return(0);
-    }// end 3rd check: received data
-    else{
-      LOG_I(OTG," Not an OTG pkt, forward to upper layer \n");	
-      return(1);
-    }
-    
-  }
-  return(0);
+	if (NULL != crc_rx_string){
+		crc_rx_string=NULL;  					
+		free(crc_rx_string);
+	}
+
+*/
+	// Free the received packet
+
+	if (NULL != packet){
+
+	LOG_D(OTG,"Received packet=%s\n",packet);
+	status_ok=1;
+		packet=NULL;  					
+		free(packet);
+	}
+
+	printf("OTG RX Free packet\n");
+
+	return(status_ok);
+
 }
+
 
 
 

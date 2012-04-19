@@ -124,7 +124,6 @@ int free_multipath_channel(channel_desc_t *channel) {
 }
 */
 
-//#define DEBUG_CH
 void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_re, 
 		       double **tx_sig_im, 

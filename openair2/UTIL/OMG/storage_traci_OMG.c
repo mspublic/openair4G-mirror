@@ -106,21 +106,18 @@ void rearange(){
         }
 
 unsigned char readChar(){
-       // if (tracker!=NULL)
-//	{
+        if (tracker!=NULL)
+	{
         	unsigned char hd = tracker->item;
-        	// printf("char: %d \n",(int)hd);        
+        	        
         	tracker = tracker->next;
                	return hd;
-	//}else
-//	{
- //       LOG_E(OMG, " Storage::readChar():  Tracker is NULL \n");
- //       unsigned char *error = NULL;
- //       return error;  // 
-//	}
+	}else
+	{
+	//printf("Tracker is null\n");
+	}
 
-        
-}
+        }
 
 void writeChar(unsigned char value){
                 storage *temp;
@@ -168,19 +165,16 @@ void writeUnsignedByte(int value){
 		writeChar( ((unsigned char)value));
 }
 
-// JNNOTE: had to change the behavior here, as tmp was always pointing at the end of the String and not at the beginning: accordingly, all strings where always '0'
 char * readString(){
 
                 int i=0;
 		int len = readInt();
-
 		descLen = len;
                 char *tmp = (char *)malloc(sizeof(char) * (len));
-                char *ret = tmp; // JHNOTE: added a pointer pointing at the head of the String
-		for (i; i < len; i++) {    
-                       *tmp++ = (char) readChar();
-		}
-		return ret; // the head is returned
+		for (i; i < len; i++)
+			*tmp++ = (char) readChar();
+                        
+		return tmp;
 
 }
 
@@ -202,17 +196,14 @@ String_list readStringList(String_list vector){
    int len = readInt();
    descLen = len;
    String_list entry = NULL;
-   
+
    for (i; i < len; i++) {
-      if (vector->string == NULL) {
-         char *tmp = readString();
-         vector->string = tmp;//readString();
-      }
+      if (vector->string == NULL)
+         vector->string = readString();
+         
       else {
         entry = (String_list)malloc(sizeof(String_list));
-        char *tmp = readString();
-        
-        entry->string = tmp;//readString();
+        entry->string = readString();
         entry->next = NULL;
 
         if(vector !=NULL) {
@@ -419,7 +410,10 @@ storage* writePacket (unsigned char* packet, int length){
 		recvpacket =temp_;
        		 } 
         }
-	
+	/*
+	while(recvpacketStart!=NULL){
+	printf("haha %d\n",recvpacketStart->item);
+	recvpacketStart = recvpacketStart->next;}*/
         return recvpacketStart;
 
 }

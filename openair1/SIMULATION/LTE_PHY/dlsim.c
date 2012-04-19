@@ -204,7 +204,7 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
-//  fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
+  fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
 
   // DLSCH I/Q
   j=0;
@@ -223,8 +223,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot,I,Q,j,"","","");
-  //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
-  //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
+  fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
+  fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
 
   // DLSCH I/Q
   j=0;
@@ -433,8 +433,8 @@ int main(int argc, char **argv) {
 
   int s,Kr,Kr_bytes;
 
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate,saving_bler=1;
-  double snr_step=1,input_snr_step=1, snr_int=30;
+  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate;
+  double snr_step=1, snr_int=20;
 
   LTE_DL_FRAME_PARMS *frame_parms;
   double **s_re,**s_im,**r_re,**r_im;
@@ -567,7 +567,7 @@ int main(int argc, char **argv) {
 	exit(-1);
 	break;
       case 'f':
-	input_snr_step= atof(optarg);
+	snr_step= atof(optarg);
 	break;
       case 'M':
 	abstx= atof(optarg);
@@ -690,7 +690,8 @@ int main(int argc, char **argv) {
       printf("-o Sample offset for receiver\n");
       printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
       printf("-f step size of SNR, default value is 1.\n");
-      printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
+      printf("-t Delay spread for multipath channel\n");
+      printf("-r Ricean factor (dB, 0 dB = Rayleigh, 100 dB = almost AWGN)\n");
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6 for the moment)\n");
@@ -766,13 +767,13 @@ int main(int argc, char **argv) {
   
    if(abstx){
    // CSV file 
-    sprintf(csv_fname,"dataout_tx%d_u2%d_mcs%d_chan%d_nsimus%d.m",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
+    sprintf(csv_fname,"dataout_tx%d_u2=%d_mcs%d_chan%d_nsimus%d.m",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
    csv_fd = fopen(csv_fname,"w");
    fprintf(csv_fd,"data_all%d=[",mcs);
     }
  
  //sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d.tex",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
- sprintf(tikz_fname, "second_bler_tx%d_u2%d_mcs%d_chan%d_nsimus%d",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
+ sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
  tikz_fd = fopen(tikz_fname,"w");
  //fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
  switch (mcs)
@@ -1049,13 +1050,11 @@ int main(int argc, char **argv) {
       }
     }
   }
-  snr_step = input_snr_step;
+  
   for (ch_realization=0;ch_realization<n_ch_rlz;ch_realization++){
     if(abstx){
       printf("**********************Channel Realization Index = %d **************************\n", ch_realization);
-      saving_bler=1;
     }
-    
     for (SNR=snr0;SNR<snr1;SNR+=snr_step) {
       errs[0]=0;
       errs[1]=0;
@@ -1355,14 +1354,13 @@ int main(int argc, char **argv) {
 	  }
 	  
 	  if(abstx){
-	    if(saving_bler==0)
 	    if (trials==0 && round==0) {
 	      // calculate freq domain representation to compute SINR
-	      freq_channel(eNB2UE, NB_RB,12*NB_RB + 1);
+	      freq_channel(eNB2UE, 25,51);
 	      // snr=pow(10.0,.1*SNR);
 	      fprintf(csv_fd,"%f,",SNR);
 	      
-	      for (u=0;u<12*NB_RB;u++){
+	      for (u=0;u<50;u++){
 		for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
 		  for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
 		    // abs_channel = (eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x + eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y);
@@ -1465,7 +1463,7 @@ int main(int argc, char **argv) {
 #ifdef PERFECT_CE
 	      if (awgn_flag==0) {
 		// fill in perfect channel estimates
-		freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+		freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,301);
 		//write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
 		//write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
 		for(k=0;k<NUMBER_OF_eNB_MAX;k++) {
@@ -1658,7 +1656,7 @@ int main(int argc, char **argv) {
 			}
 #endif
 #ifdef ENABLE_FULL_FLP
-		      // printf("Full flp release used\n");
+		      printf("Full flp release used\n");
 		      if (rx_pdsch_full_flp(PHY_vars_UE,
 					    PDSCH,
 					    eNB_id,
@@ -1699,7 +1697,7 @@ int main(int argc, char **argv) {
 			  }
 #endif
 #ifdef ENABLE_FULL_FLP
-			// printf("Full flp release used\n");
+		      printf("Full flp release used\n");
 		      if (rx_pdsch_full_flp(PHY_vars_UE,
 					    PDSCH,
 					    eNB_id,
@@ -1740,7 +1738,7 @@ int main(int argc, char **argv) {
 			  }
 #endif
 #ifdef ENABLE_FULL_FLP
-			// printf("Full flp release used\n");
+		      printf("Full flp release used\n");
 		      if (rx_pdsch_full_flp(PHY_vars_UE,
 					    PDSCH,
 					    eNB_id,
@@ -1808,7 +1806,6 @@ int main(int argc, char **argv) {
 	  //saving PMI incase of Transmission Mode > 5
 
 	  if(abstx){
-	    if(saving_bler==0)
 	    if (trials==0 && round==0 && transmission_mode>=5){
 	      for (iii=0; iii<NB_RB; iii++){
 		//fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[iii]));
@@ -1819,7 +1816,7 @@ int main(int argc, char **argv) {
 	  }
 	
 		// calculate uncoded BLER
-	  /* uncoded_ber=0;
+	  uncoded_ber=0;
 	  for (i=0;i<coded_bits_per_codeword;i++) 
 	    if (PHY_vars_eNB->dlsch_eNB[0][0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i]<0)) {
 	      uncoded_ber_bit[i] = 1;
@@ -1830,7 +1827,6 @@ int main(int argc, char **argv) {
 
 	  uncoded_ber/=coded_bits_per_codeword;
 	  avg_ber += uncoded_ber;
-	  */
 	  //write_output("uncoded_ber_bit.m","uncoded_ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
 	 
 	  /*
@@ -1957,7 +1953,7 @@ int main(int argc, char **argv) {
 	}  //round
 	//      printf("\n");
 
-	if ((errs[0]>=n_frames/10) && (trials>(n_frames/2)))
+	if ((errs[0]>=100) && (trials>(n_frames/2)))
 	  break;
       
 	//len = chbch_stats_read(stats_buffer,NULL,0,4096);
@@ -1969,7 +1965,7 @@ int main(int argc, char **argv) {
 	     (double)tx_lev_dB+10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)),
 	     sigma2_dB);
     
-      printf("Errors (%d/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e), dci_errors %d/%d, Pe = %e => effective rate %f (%f), normalized delay %f (%f)\n",
+      printf("Errors (%d/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e), dci_errors %d/%d, Pe = %e => effective rate %f (%f), normalized delay %f (%f), uncoded_ber %f\n",
 	     errs[0],
 	     round_trials[0],
 	     errs[1],
@@ -1988,10 +1984,10 @@ int main(int argc, char **argv) {
 	     rate*((double)(round_trials[0]-dci_errors)/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3])),
 	     rate,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
-	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
+	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]),
+	     avg_ber/round_trials[0]);
     
-      
-      fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+      fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f\n",
 	      SNR,
 	      mcs,
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
@@ -2004,29 +2000,17 @@ int main(int argc, char **argv) {
 	      round_trials[2],
 	      errs[3],
 	      round_trials[3],
-	      dci_errors);
+	      dci_errors,
+	      avg_ber/round_trials[0]);
 
       fprintf(tikz_fd,"(%f,%f)", SNR, (float)errs[0]/round_trials[0]);
     
       if(abstx){ //ABSTRACTION         
-	blerr= (double)errs[1]/(round_trials[1]);
-	if (blerr>.1)
-	  snr_step = 1.5;
-	else snr_step = input_snr_step;
-	
-	blerr = (double)errs[0]/(round_trials[0]);
-	
-	if(saving_bler==0)
-	   fprintf(csv_fd,"%e;\n",blerr);
-
-	if(blerr<1)
-	  saving_bler = 0;
-	else saving_bler =1;
-
-	 
+	blerr= (double)errs[0]/(round_trials[0]);
+	fprintf(csv_fd,"%e;\n",blerr);
       } //ABStraction
-      
-      if (((double)errs[0]/(round_trials[0]))<1e-2) 
+    
+      if (((double)errs[0]/(round_trials[0]))<1e-3) 
 	break;
     }// SNR
   

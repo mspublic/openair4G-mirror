@@ -58,7 +58,6 @@
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #endif
-
 //#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
@@ -942,7 +941,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     else 
       crc_type = CRC24_B;
 
-    /*            
+    /*        
     msg("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       if ((ulsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
@@ -965,11 +964,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 #ifdef DEBUG_ULSCH_DECODING    
       msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
 #endif
-      /*
-      for (i=0;i<Kr_bytes;i++)
-	printf("segment %d : byte %d => %d\n",r,i,ulsch->harq_processes[harq_pid]->c[r][i]);
       return(ret);
-      */
     }
 #ifdef DEBUG_ULSCH_DECODING    
     else
@@ -992,16 +987,16 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     if (r==0) {
       memcpy(ulsch->harq_processes[harq_pid]->b,
 	     &ulsch->harq_processes[harq_pid]->c[0][(ulsch->harq_processes[harq_pid]->F>>3)],
-	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0);
+	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
+      offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3);
       //            msg("copied %d bytes to b sequence\n",
       //      	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
     }
     else {
       memcpy(ulsch->harq_processes[harq_pid]->b+offset,
-	     ulsch->harq_processes[harq_pid]->c[r],
-	     Kr_bytes - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset += (Kr_bytes- ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+	     ulsch->harq_processes[harq_pid]->c[0],
+	     Kr_bytes);
+      offset += Kr_bytes;
     }
   }
   
