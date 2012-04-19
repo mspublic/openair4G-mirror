@@ -65,6 +65,7 @@ __m128i zero,tmp_result;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_
 
 //#define DEBUG_PHY
 
+NOCYGWIN_STATIC __m64 SQRT_2 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_10 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_2 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 TWO_OVER_SQRT_10 __attribute__((aligned(16))); 
@@ -104,7 +105,7 @@ void print_bytes(char *s,__m128i *x) {
 
   char *tempb = (char *)x;
 
-  printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,
+  msg("%s  : %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,
          tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7],
          tempb[8],tempb[9],tempb[10],tempb[11],tempb[12],tempb[13],tempb[14],tempb[15]
          );
@@ -115,7 +116,7 @@ void print_shorts(char *s,__m128i *x) {
 
   short *tempb = (short *)x;
 
-  printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d\n",s,
+  msg("%s  : %d,%d,%d,%d,%d,%d,%d,%d\n",s,
          tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7]
          );
 
@@ -125,7 +126,7 @@ void print_shorts2(char *s,__m64 *x) {
 
   short *tempb = (short *)x;
 
-  printf("%s  : %d,%d,%d,%d\n",s,
+  msg("%s  : %d,%d,%d,%d\n",s,
          tempb[0],tempb[1],tempb[2],tempb[3]);
 
 }
@@ -134,7 +135,7 @@ void print_ints(char *s,__m128i *x) {
 
   int *tempb = (int *)x;
 
-  printf("%s  : %d,%d,%d,%d\n",s,
+  msg("%s  : %d,%d,%d,%d\n",s,
          tempb[0],tempb[1],tempb[2],tempb[3]
          );
 
@@ -142,16 +143,15 @@ void print_ints(char *s,__m128i *x) {
 */
 #endif
 
-/*
 void print_shorts2(char *s,__m64 *x) {
 
   short *tempb = (short *)x;
 
-  printf("%s  : %d,%d,%d,%d\n",s,
+  /*
+  msg("%s  : %d,%d,%d,%d\n",s,
          tempb[0],tempb[1],tempb[2],tempb[3]);
-
+  */
 }
-*/
 
 void interference_abs_pi16(__m64 *psi ,__m64 *int_ch_mag, __m64 *int_mag, __m64 *ONE_OVER_SQRT_10, __m64 *THREE_OVER_SQRT_10) {
 
@@ -170,7 +170,7 @@ void interference_abs_pi16(__m64 *psi ,__m64 *int_ch_mag, __m64 *int_mag, __m64 
   int_mag= (__m64 *) int_mag_temp;
 
 
-  //printf("%s  : %d,%d,%d,%d\n",s, tempb[0],tempb[1],tempb[2],tempb[3]);
+  //msg("%s  : %d,%d,%d,%d\n",s, tempb[0],tempb[1],tempb[2],tempb[3]);
 }
 
 double I_flp(double in1, double in2)
@@ -1023,7 +1023,7 @@ void qam64_qam64_mu_mimo(short *stream0_in,
   ((short*)&SQRT_42_OVER_TWO)[3] = 26545;
 
 #ifdef COMPLEXITY_MEASUREMENT
-  printf("length=%d\n", length);
+  msg("length=%d\n", length);
 #endif
   for (i=0; i<length>>1; i+=2)
     {// In one iteration, we deal with 4 complex samples or 8 real samples
@@ -2748,18 +2748,18 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
 	 *(stream0_out++) = ((short *)&y2i)[j];
 	 
 #ifdef DEBUG_LLR
-	 printf("stream0_out[0]=%d\n", *(stream0_out-6));
-	 printf("stream0_out[1]=%d\n", *(stream0_out-5));
-	 printf("stream0_out[2]=%d\n", *(stream0_out-4));
-	 printf("stream0_out[3]=%d\n", *(stream0_out-3));
-	 printf("stream0_out[4]=%d\n", *(stream0_out-2));
-	 printf("stream0_out[5]=%d\n", *(stream0_out-1));
+	 msg("stream0_out[0]=%d\n", *(stream0_out-6));
+	 msg("stream0_out[1]=%d\n", *(stream0_out-5));
+	 msg("stream0_out[2]=%d\n", *(stream0_out-4));
+	 msg("stream0_out[3]=%d\n", *(stream0_out-3));
+	 msg("stream0_out[4]=%d\n", *(stream0_out-2));
+	 msg("stream0_out[5]=%d\n", *(stream0_out-1));
 #endif
        }
     }
   
 #ifdef COMPLEXITY_MEASUREMENT
-  printf("Measured cx (per RE) in qam64_qam64 function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
+  msg("Measured cx (per RE) in qam64_qam64 function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
 #endif
   _mm_empty();
   _m_empty();
@@ -3044,7 +3044,7 @@ void qam16_qam16_mu_mimo(short *stream0_in,
   ((short*)&NINE_OVER_FOUR_SQRT_10)[3] = 23315; 
 
 #ifdef COMPLEXITY_MEASUREMENT
-  printf("length=%d\n", length);
+  msg("length=%d\n", length);
 #endif
   for (i=0;i<length>>1;i+=2) {// In one iteration, we deal with 4 complex samples or 8 real samples
 
@@ -3309,6 +3309,23 @@ void qam16_qam16_mu_mimo(short *stream0_in,
 #ifdef DEBUG_LLR
      print_shorts2("ch_mag_int:",&ch_mag_int); 
 #endif
+
+     // With the MU scheme, dl_power_off=0 => input is 2/sqrt(10)*||h1||^2/sqrt(2) while 2/sqrt(10)*||h1||^2 was considered
+     ((short*)&SQRT_2)[0] = 23170; // round(sqrt(2)*2^15)=46340>1, round(sqrt(2)*2^14)=23170
+     ((short*)&SQRT_2)[1] = 23170;
+     ((short*)&SQRT_2)[2] = 23170;
+     ((short*)&SQRT_2)[3] = 23170;
+     
+     // print_shorts2("ch_mag_des:", &ch_mag_des);
+     ch_mag_des = _mm_mulhi_pi16(ch_mag_des, SQRT_2);
+     ch_mag_des = _mm_slli_pi16(ch_mag_des, 2);
+     // print_shorts2("ch_mag_des*sqrt(2):", &ch_mag_des);
+
+     // print_shorts2("ch_mag_int:", &ch_mag_int);
+     ch_mag_int = _mm_mulhi_pi16(ch_mag_int, SQRT_2);
+     ch_mag_int = _mm_slli_pi16(ch_mag_int, 2);
+     // print_shorts2("ch_mag_int*sqrt(2):", &ch_mag_int);
+
     y0r_over_sqrt10  = _mm_mulhi_pi16(y0r,ONE_OVER_SQRT_10);
     y0i_over_sqrt10  = _mm_mulhi_pi16(y0i,ONE_OVER_SQRT_10);
     y0r_over_sqrt10 = _mm_slli_pi16(y0r_over_sqrt10,1);
@@ -3860,7 +3877,7 @@ void qam16_qam16_mu_mimo(short *stream0_in,
   }
 
 #ifdef COMPLEXITY_MEASUREMENT
-  printf("Measured cx (per RE) in qam16_qam16 function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
+  msg("Measured cx (per RE) in qam16_qam16 function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
 #endif
   _mm_empty();
   _m_empty();
@@ -3887,7 +3904,6 @@ void qam16_qam16_mu_mimo_flp(short *stream0_in,
 			     int length
 			     )
 {
-  
   // __m64 *rho01_64      = (__m64 *)rho01; // short type format is 2 bytes whereas __m64 is aligned on 8-byte boundaries
   // __m64 *stream0_64_in = (__m64 *)stream0_in;
   // __m64 *stream1_64_in = (__m64 *)stream1_in;
@@ -3907,7 +3923,15 @@ void qam16_qam16_mu_mimo_flp(short *stream0_in,
   print_shorts2("ch_mag_64_i[i]:",ch_mag_64_i);
   print_shorts2("ch_mag_64_i[i+1]:",ch_mag_64_i+1);
 #endif
-
+  
+  /*
+  msg("\nstream0[i] (h1'*y)=[%d,%d,%d,%d]\n", stream0_in[0], stream0_in[1], stream0_in[2], stream0_in[3]);
+  msg("stream1[i] (h2'*y)=[%d,%d,%d,%d]\n", stream1_in[0], stream1_in[1], stream1_in[2], stream1_in[3]);
+  msg("ch_mag[i] (2*||h1||^2/sqrt(10))=  [%d,%d,%d,%d]\n", ch_mag[0], ch_mag[1], ch_mag[2], ch_mag[3]);
+  msg("ch_mag_i[i] (2*||h2||^2/sqrt(10))=[%d,%d,%d,%d]\n", ch_mag_i[0], ch_mag_i[1], ch_mag_i[2], ch_mag_i[3]);
+  msg("rho[i] (h1'*h2)=[%d,%d,%d,%d]\n\n", rho01[0], rho01[1], rho01[2], rho01[3]);
+  */
+  
   int i,j;
   double rho_re[4];
   double rho_im[4];
@@ -4030,17 +4054,17 @@ void qam16_qam16_mu_mimo_flp(short *stream0_in,
       two_h2_square_over_sqrt_10[3] = *(ch_mag_i+4*i+6)/32768.0;
      
 #ifdef DEBUG_LLR
-      printf("rho_re=[%f,%f,%f,%f]\n", rho_re[0], rho_re[1], rho_re[2], rho_re[3]);
-      printf("rho_im=[%f,%f,%f,%f]\n", rho_im[0], rho_im[1], rho_im[2], rho_im[3]);
+      msg("rho_re=[%f,%f,%f,%f]\n", rho_re[0], rho_re[1], rho_re[2], rho_re[3]);
+      msg("rho_im=[%f,%f,%f,%f]\n", rho_im[0], rho_im[1], rho_im[2], rho_im[3]);
 
-      printf("y0_re=[%f,%f,%f,%f]\n", y0_re[0], y0_re[1], y0_re[2], y0_re[3]);
-      printf("y0_im=[%f,%f,%f,%f]\n", y0_im[0], y0_im[1], y0_im[2], y0_im[3]);
+      msg("y0_re=[%f,%f,%f,%f]\n", y0_re[0], y0_re[1], y0_re[2], y0_re[3]);
+      msg("y0_im=[%f,%f,%f,%f]\n", y0_im[0], y0_im[1], y0_im[2], y0_im[3]);
 
-      printf("y1_re=[%f,%f,%f,%f]\n", y1_re[0], y1_re[1], y1_re[2], y1_re[3]);
-      printf("y1_im=[%f,%f,%f,%f]\n", y1_im[0], y1_im[1], y1_im[2], y1_im[3]);
+      msg("y1_re=[%f,%f,%f,%f]\n", y1_re[0], y1_re[1], y1_re[2], y1_re[3]);
+      msg("y1_im=[%f,%f,%f,%f]\n", y1_im[0], y1_im[1], y1_im[2], y1_im[3]);
 
-      printf("two_h1_square_over_sqrt_10=[%f,%f,%f,%f]\n", two_h1_square_over_sqrt_10[0], two_h1_square_over_sqrt_10[1], two_h1_square_over_sqrt_10[2], two_h1_square_over_sqrt_10[3]);
-      printf("two_h2_square_over_sqrt_10=[%f,%f,%f,%f]\n", two_h2_square_over_sqrt_10[0], two_h2_square_over_sqrt_10[1], two_h2_square_over_sqrt_10[2], two_h2_square_over_sqrt_10[3]);
+      msg("two_h1_square_over_sqrt_10=[%f,%f,%f,%f]\n", two_h1_square_over_sqrt_10[0], two_h1_square_over_sqrt_10[1], two_h1_square_over_sqrt_10[2], two_h1_square_over_sqrt_10[3]);
+      msg("two_h2_square_over_sqrt_10=[%f,%f,%f,%f]\n", two_h2_square_over_sqrt_10[0], two_h2_square_over_sqrt_10[1], two_h2_square_over_sqrt_10[2], two_h2_square_over_sqrt_10[3]);
 #endif
        
       // psi_r and psi_i calculation
@@ -4064,39 +4088,39 @@ psi_r_m3_m1[j] = fabs(-3/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_re[j]);psi
 psi_r_m3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_im[j]);
 	}
 #ifdef DEBUG_LLR
-      printf("psi_r_p1_p1=[%f,%f,%f,%f]\n", psi_r_p1_p1[0], psi_r_p1_p1[1], psi_r_p1_p1[2], psi_r_p1_p1[3]);
-      printf("psi_r_p1_p3=[%f,%f,%f,%f]\n", psi_r_p1_p3[0], psi_r_p1_p3[1], psi_r_p1_p3[2], psi_r_p1_p3[3]);
-      printf("psi_r_p1_m1=[%f,%f,%f,%f]\n", psi_r_p1_m1[0], psi_r_p1_m1[1], psi_r_p1_m1[2], psi_r_p1_m1[3]);
-      printf("psi_r_p1_m3=[%f,%f,%f,%f]\n", psi_r_p1_m3[0], psi_r_p1_m3[1], psi_r_p1_m3[2], psi_r_p1_m3[3]);
-      printf("psi_r_p3_p1=[%f,%f,%f,%f]\n", psi_r_p3_p1[0], psi_r_p3_p1[1], psi_r_p3_p1[2], psi_r_p3_p1[3]);
-      printf("psi_r_p3_p3=[%f,%f,%f,%f]\n", psi_r_p3_p3[0], psi_r_p3_p3[1], psi_r_p3_p3[2], psi_r_p3_p3[3]);
-      printf("psi_r_p3_m1=[%f,%f,%f,%f]\n", psi_r_p3_m1[0], psi_r_p3_m1[1], psi_r_p3_m1[2], psi_r_p3_m1[3]);
-      printf("psi_r_p3_m3=[%f,%f,%f,%f]\n", psi_r_p3_m3[0], psi_r_p3_m3[1], psi_r_p3_m3[2], psi_r_p3_m3[3]);
-      printf("psi_r_m1_p1=[%f,%f,%f,%f]\n", psi_r_m1_p1[0], psi_r_m1_p1[1], psi_r_m1_p1[2], psi_r_m1_p1[3]);
-      printf("psi_r_m1_p3=[%f,%f,%f,%f]\n", psi_r_m1_p3[0], psi_r_m1_p3[1], psi_r_m1_p3[2], psi_r_m1_p3[3]);
-      printf("psi_r_m1_m1=[%f,%f,%f,%f]\n", psi_r_m1_m1[0], psi_r_m1_m1[1], psi_r_m1_m1[2], psi_r_m1_m1[3]);
-      printf("psi_r_m1_m3=[%f,%f,%f,%f]\n", psi_r_m1_m3[0], psi_r_m1_m3[1], psi_r_m1_m3[2], psi_r_m1_m3[3]);
-      printf("psi_r_m3_p1=[%f,%f,%f,%f]\n", psi_r_m3_p1[0], psi_r_m3_p1[1], psi_r_m3_p1[2], psi_r_m3_p1[3]);
-      printf("psi_r_m3_p3=[%f,%f,%f,%f]\n", psi_r_m3_p3[0], psi_r_m3_p3[1], psi_r_m3_p3[2], psi_r_m3_p3[3]);
-      printf("psi_r_m3_m1=[%f,%f,%f,%f]\n", psi_r_m3_m1[0], psi_r_m3_m1[1], psi_r_m3_m1[2], psi_r_m3_m1[3]);
-      printf("psi_r_m3_m3=[%f,%f,%f,%f]\n", psi_r_m3_m3[0], psi_r_m3_m3[1], psi_r_m3_m3[2], psi_r_m3_m3[3]);
+      msg("psi_r_p1_p1=[%f,%f,%f,%f]\n", psi_r_p1_p1[0], psi_r_p1_p1[1], psi_r_p1_p1[2], psi_r_p1_p1[3]);
+      msg("psi_r_p1_p3=[%f,%f,%f,%f]\n", psi_r_p1_p3[0], psi_r_p1_p3[1], psi_r_p1_p3[2], psi_r_p1_p3[3]);
+      msg("psi_r_p1_m1=[%f,%f,%f,%f]\n", psi_r_p1_m1[0], psi_r_p1_m1[1], psi_r_p1_m1[2], psi_r_p1_m1[3]);
+      msg("psi_r_p1_m3=[%f,%f,%f,%f]\n", psi_r_p1_m3[0], psi_r_p1_m3[1], psi_r_p1_m3[2], psi_r_p1_m3[3]);
+      msg("psi_r_p3_p1=[%f,%f,%f,%f]\n", psi_r_p3_p1[0], psi_r_p3_p1[1], psi_r_p3_p1[2], psi_r_p3_p1[3]);
+      msg("psi_r_p3_p3=[%f,%f,%f,%f]\n", psi_r_p3_p3[0], psi_r_p3_p3[1], psi_r_p3_p3[2], psi_r_p3_p3[3]);
+      msg("psi_r_p3_m1=[%f,%f,%f,%f]\n", psi_r_p3_m1[0], psi_r_p3_m1[1], psi_r_p3_m1[2], psi_r_p3_m1[3]);
+      msg("psi_r_p3_m3=[%f,%f,%f,%f]\n", psi_r_p3_m3[0], psi_r_p3_m3[1], psi_r_p3_m3[2], psi_r_p3_m3[3]);
+      msg("psi_r_m1_p1=[%f,%f,%f,%f]\n", psi_r_m1_p1[0], psi_r_m1_p1[1], psi_r_m1_p1[2], psi_r_m1_p1[3]);
+      msg("psi_r_m1_p3=[%f,%f,%f,%f]\n", psi_r_m1_p3[0], psi_r_m1_p3[1], psi_r_m1_p3[2], psi_r_m1_p3[3]);
+      msg("psi_r_m1_m1=[%f,%f,%f,%f]\n", psi_r_m1_m1[0], psi_r_m1_m1[1], psi_r_m1_m1[2], psi_r_m1_m1[3]);
+      msg("psi_r_m1_m3=[%f,%f,%f,%f]\n", psi_r_m1_m3[0], psi_r_m1_m3[1], psi_r_m1_m3[2], psi_r_m1_m3[3]);
+      msg("psi_r_m3_p1=[%f,%f,%f,%f]\n", psi_r_m3_p1[0], psi_r_m3_p1[1], psi_r_m3_p1[2], psi_r_m3_p1[3]);
+      msg("psi_r_m3_p3=[%f,%f,%f,%f]\n", psi_r_m3_p3[0], psi_r_m3_p3[1], psi_r_m3_p3[2], psi_r_m3_p3[3]);
+      msg("psi_r_m3_m1=[%f,%f,%f,%f]\n", psi_r_m3_m1[0], psi_r_m3_m1[1], psi_r_m3_m1[2], psi_r_m3_m1[3]);
+      msg("psi_r_m3_m3=[%f,%f,%f,%f]\n", psi_r_m3_m3[0], psi_r_m3_m3[1], psi_r_m3_m3[2], psi_r_m3_m3[3]);
       
-      printf("psi_i_p1_p1=[%f,%f,%f,%f]\n", psi_i_p1_p1[0], psi_i_p1_p1[1], psi_i_p1_p1[2], psi_i_p1_p1[3]);
-      printf("psi_i_p1_p3=[%f,%f,%f,%f]\n", psi_i_p1_p3[0], psi_i_p1_p3[1], psi_i_p1_p3[2], psi_i_p1_p3[3]);
-      printf("psi_i_p1_m1=[%f,%f,%f,%f]\n", psi_i_p1_m1[0], psi_i_p1_m1[1], psi_i_p1_m1[2], psi_i_p1_m1[3]);
-      printf("psi_i_p1_m3=[%f,%f,%f,%f]\n", psi_i_p1_m3[0], psi_i_p1_m3[1], psi_i_p1_m3[2], psi_i_p1_m3[3]);
-      printf("psi_i_p3_p1=[%f,%f,%f,%f]\n", psi_i_p3_p1[0], psi_i_p3_p1[1], psi_i_p3_p1[2], psi_i_p3_p1[3]);
-      printf("psi_i_p3_p3=[%f,%f,%f,%f]\n", psi_i_p3_p3[0], psi_i_p3_p3[1], psi_i_p3_p3[2], psi_i_p3_p3[3]);
-      printf("psi_i_p3_m1=[%f,%f,%f,%f]\n", psi_i_p3_m1[0], psi_i_p3_m1[1], psi_i_p3_m1[2], psi_i_p3_m1[3]);
-      printf("psi_i_p3_m3=[%f,%f,%f,%f]\n", psi_i_p3_m3[0], psi_i_p3_m3[1], psi_i_p3_m3[2], psi_i_p3_m3[3]);
-      printf("psi_i_m1_p1=[%f,%f,%f,%f]\n", psi_i_m1_p1[0], psi_i_m1_p1[1], psi_i_m1_p1[2], psi_i_m1_p1[3]);
-      printf("psi_i_m1_p3=[%f,%f,%f,%f]\n", psi_i_m1_p3[0], psi_i_m1_p3[1], psi_i_m1_p3[2], psi_i_m1_p3[3]);
-      printf("psi_i_m1_m1=[%f,%f,%f,%f]\n", psi_i_m1_m1[0], psi_i_m1_m1[1], psi_i_m1_m1[2], psi_i_m1_m1[3]);
-      printf("psi_i_m1_m3=[%f,%f,%f,%f]\n", psi_i_m1_m3[0], psi_i_m1_m3[1], psi_i_m1_m3[2], psi_i_m1_m3[3]);
-      printf("psi_i_m3_p1=[%f,%f,%f,%f]\n", psi_i_m3_p1[0], psi_i_m3_p1[1], psi_i_m3_p1[2], psi_i_m3_p1[3]);
-      printf("psi_i_m3_p3=[%f,%f,%f,%f]\n", psi_i_m3_p3[0], psi_i_m3_p3[1], psi_i_m3_p3[2], psi_i_m3_p3[3]);
-      printf("psi_i_m3_m1=[%f,%f,%f,%f]\n", psi_i_m3_m1[0], psi_i_m3_m1[1], psi_i_m3_m1[2], psi_i_m3_m1[3]);
-      printf("psi_i_m3_m3=[%f,%f,%f,%f]\n", psi_i_m3_m3[0], psi_i_m3_m3[1], psi_i_m3_m3[2], psi_i_m3_m3[3]);
+      msg("psi_i_p1_p1=[%f,%f,%f,%f]\n", psi_i_p1_p1[0], psi_i_p1_p1[1], psi_i_p1_p1[2], psi_i_p1_p1[3]);
+      msg("psi_i_p1_p3=[%f,%f,%f,%f]\n", psi_i_p1_p3[0], psi_i_p1_p3[1], psi_i_p1_p3[2], psi_i_p1_p3[3]);
+      msg("psi_i_p1_m1=[%f,%f,%f,%f]\n", psi_i_p1_m1[0], psi_i_p1_m1[1], psi_i_p1_m1[2], psi_i_p1_m1[3]);
+      msg("psi_i_p1_m3=[%f,%f,%f,%f]\n", psi_i_p1_m3[0], psi_i_p1_m3[1], psi_i_p1_m3[2], psi_i_p1_m3[3]);
+      msg("psi_i_p3_p1=[%f,%f,%f,%f]\n", psi_i_p3_p1[0], psi_i_p3_p1[1], psi_i_p3_p1[2], psi_i_p3_p1[3]);
+      msg("psi_i_p3_p3=[%f,%f,%f,%f]\n", psi_i_p3_p3[0], psi_i_p3_p3[1], psi_i_p3_p3[2], psi_i_p3_p3[3]);
+      msg("psi_i_p3_m1=[%f,%f,%f,%f]\n", psi_i_p3_m1[0], psi_i_p3_m1[1], psi_i_p3_m1[2], psi_i_p3_m1[3]);
+      msg("psi_i_p3_m3=[%f,%f,%f,%f]\n", psi_i_p3_m3[0], psi_i_p3_m3[1], psi_i_p3_m3[2], psi_i_p3_m3[3]);
+      msg("psi_i_m1_p1=[%f,%f,%f,%f]\n", psi_i_m1_p1[0], psi_i_m1_p1[1], psi_i_m1_p1[2], psi_i_m1_p1[3]);
+      msg("psi_i_m1_p3=[%f,%f,%f,%f]\n", psi_i_m1_p3[0], psi_i_m1_p3[1], psi_i_m1_p3[2], psi_i_m1_p3[3]);
+      msg("psi_i_m1_m1=[%f,%f,%f,%f]\n", psi_i_m1_m1[0], psi_i_m1_m1[1], psi_i_m1_m1[2], psi_i_m1_m1[3]);
+      msg("psi_i_m1_m3=[%f,%f,%f,%f]\n", psi_i_m1_m3[0], psi_i_m1_m3[1], psi_i_m1_m3[2], psi_i_m1_m3[3]);
+      msg("psi_i_m3_p1=[%f,%f,%f,%f]\n", psi_i_m3_p1[0], psi_i_m3_p1[1], psi_i_m3_p1[2], psi_i_m3_p1[3]);
+      msg("psi_i_m3_p3=[%f,%f,%f,%f]\n", psi_i_m3_p3[0], psi_i_m3_p3[1], psi_i_m3_p3[2], psi_i_m3_p3[3]);
+      msg("psi_i_m3_m1=[%f,%f,%f,%f]\n", psi_i_m3_m1[0], psi_i_m3_m1[1], psi_i_m3_m1[2], psi_i_m3_m1[3]);
+      msg("psi_i_m3_m3=[%f,%f,%f,%f]\n", psi_i_m3_m3[0], psi_i_m3_m3[1], psi_i_m3_m3[2], psi_i_m3_m3[3]);
 #endif    
       
       for (j=0; j<4; j++)
@@ -4143,39 +4167,39 @@ psi_r_m3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi
 	  a_i_m3_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m3_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
 	}      
 #ifdef DEBUG_LLR
-      printf("a_r_p1_p1=[%f,%f,%f,%f]\n", a_r_p1_p1[0], a_r_p1_p1[1], a_r_p1_p1[2], a_r_p1_p1[3]);
-      printf("a_r_p1_p3=[%f,%f,%f,%f]\n", a_r_p1_p3[0], a_r_p1_p3[1], a_r_p1_p3[2], a_r_p1_p3[3]);
-      printf("a_r_p1_m1=[%f,%f,%f,%f]\n", a_r_p1_m1[0], a_r_p1_m1[1], a_r_p1_m1[2], a_r_p1_m1[3]);
-      printf("a_r_p1_m3=[%f,%f,%f,%f]\n", a_r_p1_m3[0], a_r_p1_m3[1], a_r_p1_m3[2], a_r_p1_m3[3]);
-      printf("a_r_p3_p1=[%f,%f,%f,%f]\n", a_r_p3_p1[0], a_r_p3_p1[1], a_r_p3_p1[2], a_r_p3_p1[3]);
-      printf("a_r_p3_p3=[%f,%f,%f,%f]\n", a_r_p3_p3[0], a_r_p3_p3[1], a_r_p3_p3[2], a_r_p3_p3[3]);
-      printf("a_r_p3_m1=[%f,%f,%f,%f]\n", a_r_p3_m1[0], a_r_p3_m1[1], a_r_p3_m1[2], a_r_p3_m1[3]);
-      printf("a_r_p3_m3=[%f,%f,%f,%f]\n", a_r_p3_m3[0], a_r_p3_m3[1], a_r_p3_m3[2], a_r_p3_m3[3]);
-      printf("a_r_m1_p1=[%f,%f,%f,%f]\n", a_r_m1_p1[0], a_r_m1_p1[1], a_r_m1_p1[2], a_r_m1_p1[3]);
-      printf("a_r_m1_p3=[%f,%f,%f,%f]\n", a_r_m1_p3[0], a_r_m1_p3[1], a_r_m1_p3[2], a_r_m1_p3[3]);
-      printf("a_r_m1_m1=[%f,%f,%f,%f]\n", a_r_m1_m1[0], a_r_m1_m1[1], a_r_m1_m1[2], a_r_m1_m1[3]);
-      printf("a_r_m1_m3=[%f,%f,%f,%f]\n", a_r_m1_m3[0], a_r_m1_m3[1], a_r_m1_m3[2], a_r_m1_m3[3]);
-      printf("a_r_m3_p1=[%f,%f,%f,%f]\n", a_r_m3_p1[0], a_r_m3_p1[1], a_r_m3_p1[2], a_r_m3_p1[3]);
-      printf("a_r_m3_p3=[%f,%f,%f,%f]\n", a_r_m3_p3[0], a_r_m3_p3[1], a_r_m3_p3[2], a_r_m3_p3[3]);
-      printf("a_r_m3_m1=[%f,%f,%f,%f]\n", a_r_m3_m1[0], a_r_m3_m1[1], a_r_m3_m1[2], a_r_m3_m1[3]);
-      printf("a_r_m3_m3=[%f,%f,%f,%f]\n", a_r_m3_m3[0], a_r_m3_m3[1], a_r_m3_m3[2], a_r_m3_m3[3]);
+      msg("a_r_p1_p1=[%f,%f,%f,%f]\n", a_r_p1_p1[0], a_r_p1_p1[1], a_r_p1_p1[2], a_r_p1_p1[3]);
+      msg("a_r_p1_p3=[%f,%f,%f,%f]\n", a_r_p1_p3[0], a_r_p1_p3[1], a_r_p1_p3[2], a_r_p1_p3[3]);
+      msg("a_r_p1_m1=[%f,%f,%f,%f]\n", a_r_p1_m1[0], a_r_p1_m1[1], a_r_p1_m1[2], a_r_p1_m1[3]);
+      msg("a_r_p1_m3=[%f,%f,%f,%f]\n", a_r_p1_m3[0], a_r_p1_m3[1], a_r_p1_m3[2], a_r_p1_m3[3]);
+      msg("a_r_p3_p1=[%f,%f,%f,%f]\n", a_r_p3_p1[0], a_r_p3_p1[1], a_r_p3_p1[2], a_r_p3_p1[3]);
+      msg("a_r_p3_p3=[%f,%f,%f,%f]\n", a_r_p3_p3[0], a_r_p3_p3[1], a_r_p3_p3[2], a_r_p3_p3[3]);
+      msg("a_r_p3_m1=[%f,%f,%f,%f]\n", a_r_p3_m1[0], a_r_p3_m1[1], a_r_p3_m1[2], a_r_p3_m1[3]);
+      msg("a_r_p3_m3=[%f,%f,%f,%f]\n", a_r_p3_m3[0], a_r_p3_m3[1], a_r_p3_m3[2], a_r_p3_m3[3]);
+      msg("a_r_m1_p1=[%f,%f,%f,%f]\n", a_r_m1_p1[0], a_r_m1_p1[1], a_r_m1_p1[2], a_r_m1_p1[3]);
+      msg("a_r_m1_p3=[%f,%f,%f,%f]\n", a_r_m1_p3[0], a_r_m1_p3[1], a_r_m1_p3[2], a_r_m1_p3[3]);
+      msg("a_r_m1_m1=[%f,%f,%f,%f]\n", a_r_m1_m1[0], a_r_m1_m1[1], a_r_m1_m1[2], a_r_m1_m1[3]);
+      msg("a_r_m1_m3=[%f,%f,%f,%f]\n", a_r_m1_m3[0], a_r_m1_m3[1], a_r_m1_m3[2], a_r_m1_m3[3]);
+      msg("a_r_m3_p1=[%f,%f,%f,%f]\n", a_r_m3_p1[0], a_r_m3_p1[1], a_r_m3_p1[2], a_r_m3_p1[3]);
+      msg("a_r_m3_p3=[%f,%f,%f,%f]\n", a_r_m3_p3[0], a_r_m3_p3[1], a_r_m3_p3[2], a_r_m3_p3[3]);
+      msg("a_r_m3_m1=[%f,%f,%f,%f]\n", a_r_m3_m1[0], a_r_m3_m1[1], a_r_m3_m1[2], a_r_m3_m1[3]);
+      msg("a_r_m3_m3=[%f,%f,%f,%f]\n", a_r_m3_m3[0], a_r_m3_m3[1], a_r_m3_m3[2], a_r_m3_m3[3]);
       
-      printf("a_i_p1_p1=[%f,%f,%f,%f]\n", a_i_p1_p1[0], a_i_p1_p1[1], a_i_p1_p1[2], a_i_p1_p1[3]);
-      printf("a_i_p1_p3=[%f,%f,%f,%f]\n", a_i_p1_p3[0], a_i_p1_p3[1], a_i_p1_p3[2], a_i_p1_p3[3]);
-      printf("a_i_p1_m1=[%f,%f,%f,%f]\n", a_i_p1_m1[0], a_i_p1_m1[1], a_i_p1_m1[2], a_i_p1_m1[3]);
-      printf("a_i_p1_m3=[%f,%f,%f,%f]\n", a_i_p1_m3[0], a_i_p1_m3[1], a_i_p1_m3[2], a_i_p1_m3[3]);
-      printf("a_i_p3_p1=[%f,%f,%f,%f]\n", a_i_p3_p1[0], a_i_p3_p1[1], a_i_p3_p1[2], a_i_p3_p1[3]);
-      printf("a_i_p3_p3=[%f,%f,%f,%f]\n", a_i_p3_p3[0], a_i_p3_p3[1], a_i_p3_p3[2], a_i_p3_p3[3]);
-      printf("a_i_p3_m1=[%f,%f,%f,%f]\n", a_i_p3_m1[0], a_i_p3_m1[1], a_i_p3_m1[2], a_i_p3_m1[3]);
-      printf("a_i_p3_m3=[%f,%f,%f,%f]\n", a_i_p3_m3[0], a_i_p3_m3[1], a_i_p3_m3[2], a_i_p3_m3[3]);
-      printf("a_i_m1_p1=[%f,%f,%f,%f]\n", a_i_m1_p1[0], a_i_m1_p1[1], a_i_m1_p1[2], a_i_m1_p1[3]);
-      printf("a_i_m1_p3=[%f,%f,%f,%f]\n", a_i_m1_p3[0], a_i_m1_p3[1], a_i_m1_p3[2], a_i_m1_p3[3]);
-      printf("a_i_m1_m1=[%f,%f,%f,%f]\n", a_i_m1_m1[0], a_i_m1_m1[1], a_i_m1_m1[2], a_i_m1_m1[3]);
-      printf("a_i_m1_m3=[%f,%f,%f,%f]\n", a_i_m1_m3[0], a_i_m1_m3[1], a_i_m1_m3[2], a_i_m1_m3[3]);
-      printf("a_i_m3_p1=[%f,%f,%f,%f]\n", a_i_m3_p1[0], a_i_m3_p1[1], a_i_m3_p1[2], a_i_m3_p1[3]);
-      printf("a_i_m3_p3=[%f,%f,%f,%f]\n", a_i_m3_p3[0], a_i_m3_p3[1], a_i_m3_p3[2], a_i_m3_p3[3]);
-      printf("a_i_m3_m1=[%f,%f,%f,%f]\n", a_i_m3_m1[0], a_i_m3_m1[1], a_i_m3_m1[2], a_i_m3_m1[3]);
-      printf("a_i_m3_m3=[%f,%f,%f,%f]\n", a_i_m3_m3[0], a_i_m3_m3[1], a_i_m3_m3[2], a_i_m3_m3[3]);
+      msg("a_i_p1_p1=[%f,%f,%f,%f]\n", a_i_p1_p1[0], a_i_p1_p1[1], a_i_p1_p1[2], a_i_p1_p1[3]);
+      msg("a_i_p1_p3=[%f,%f,%f,%f]\n", a_i_p1_p3[0], a_i_p1_p3[1], a_i_p1_p3[2], a_i_p1_p3[3]);
+      msg("a_i_p1_m1=[%f,%f,%f,%f]\n", a_i_p1_m1[0], a_i_p1_m1[1], a_i_p1_m1[2], a_i_p1_m1[3]);
+      msg("a_i_p1_m3=[%f,%f,%f,%f]\n", a_i_p1_m3[0], a_i_p1_m3[1], a_i_p1_m3[2], a_i_p1_m3[3]);
+      msg("a_i_p3_p1=[%f,%f,%f,%f]\n", a_i_p3_p1[0], a_i_p3_p1[1], a_i_p3_p1[2], a_i_p3_p1[3]);
+      msg("a_i_p3_p3=[%f,%f,%f,%f]\n", a_i_p3_p3[0], a_i_p3_p3[1], a_i_p3_p3[2], a_i_p3_p3[3]);
+      msg("a_i_p3_m1=[%f,%f,%f,%f]\n", a_i_p3_m1[0], a_i_p3_m1[1], a_i_p3_m1[2], a_i_p3_m1[3]);
+      msg("a_i_p3_m3=[%f,%f,%f,%f]\n", a_i_p3_m3[0], a_i_p3_m3[1], a_i_p3_m3[2], a_i_p3_m3[3]);
+      msg("a_i_m1_p1=[%f,%f,%f,%f]\n", a_i_m1_p1[0], a_i_m1_p1[1], a_i_m1_p1[2], a_i_m1_p1[3]);
+      msg("a_i_m1_p3=[%f,%f,%f,%f]\n", a_i_m1_p3[0], a_i_m1_p3[1], a_i_m1_p3[2], a_i_m1_p3[3]);
+      msg("a_i_m1_m1=[%f,%f,%f,%f]\n", a_i_m1_m1[0], a_i_m1_m1[1], a_i_m1_m1[2], a_i_m1_m1[3]);
+      msg("a_i_m1_m3=[%f,%f,%f,%f]\n", a_i_m1_m3[0], a_i_m1_m3[1], a_i_m1_m3[2], a_i_m1_m3[3]);
+      msg("a_i_m3_p1=[%f,%f,%f,%f]\n", a_i_m3_p1[0], a_i_m3_p1[1], a_i_m3_p1[2], a_i_m3_p1[3]);
+      msg("a_i_m3_p3=[%f,%f,%f,%f]\n", a_i_m3_p3[0], a_i_m3_p3[1], a_i_m3_p3[2], a_i_m3_p3[3]);
+      msg("a_i_m3_m1=[%f,%f,%f,%f]\n", a_i_m3_m1[0], a_i_m3_m1[1], a_i_m3_m1[2], a_i_m3_m1[3]);
+      msg("a_i_m3_m3=[%f,%f,%f,%f]\n", a_i_m3_m3[0], a_i_m3_m3[1], a_i_m3_m3[2], a_i_m3_m3[3]);
 #endif   
 
       for (j=0; j<4; j++)
@@ -4198,7 +4222,7 @@ psi_r_m3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi
 	  psi_a_m3_m3[j] = 1/sqrt(2)*(fabs(psi_r_m3_m3[j])*a_r_m3_m3[j] + fabs(psi_i_m3_m3[j])*a_i_m3_m3[j]);
 	}
 #ifdef DEBUG_LLR
-      printf("psi_a_p1_p1[0]=%f\n", psi_a_p1_p1[0]);
+      msg("psi_a_p1_p1[0]=%f\n", psi_a_p1_p1[0]);
 #endif  
       
       for (j=0; j<4; j++)
@@ -4221,7 +4245,7 @@ psi_r_m3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi
 	  a_sq_m3_m3[j] = 1/2.0*(a_r_m3_m3[j]*a_r_m3_m3[j] + a_i_m3_m3[j]*a_i_m3_m3[j])*ch_mag_int[j]*sqrt(10)/2;
 	}
 #ifdef DEBUG_LLR
-      printf("a_sq_p1_p1[0]=%f\n", a_sq_p1_p1[0]);
+      msg("a_sq_p1_p1[0]=%f\n", a_sq_p1_p1[0]);
 #endif  
       
       // Computing Metrics
@@ -4245,22 +4269,22 @@ bit_met_m3_m1[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt
 bit_met_m3_m3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt(2) - 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m3_m3[j] - a_sq_m3_m3[j];
 	}
 #ifdef DEBUG_LLR
-      printf("bit_met_p1_p1[0]=%f\n", bit_met_p1_p1[0]);
-      printf("bit_met_p1_p3[0]=%f\n", bit_met_p1_p3[0]);
-      printf("bit_met_p1_m1[0]=%f\n", bit_met_p1_m1[0]);
-      printf("bit_met_p1_m3[0]=%f\n", bit_met_p1_m3[0]);
-      printf("bit_met_p3_p1[0]=%f\n", bit_met_p3_p1[0]);
-      printf("bit_met_p3_p3[0]=%f\n", bit_met_p3_p3[0]);
-      printf("bit_met_p3_m1[0]=%f\n", bit_met_p3_m1[0]);
-      printf("bit_met_p3_m3[0]=%f\n", bit_met_p3_m3[0]);
-      printf("bit_met_m1_p1[0]=%f\n", bit_met_m1_p1[0]);
-      printf("bit_met_m1_p3[0]=%f\n", bit_met_m1_p3[0]);
-      printf("bit_met_m1_m1[0]=%f\n", bit_met_m1_m1[0]);
-      printf("bit_met_m1_m3[0]=%f\n", bit_met_m1_m3[0]);
-      printf("bit_met_m3_p1[0]=%f\n", bit_met_m3_p1[0]);
-      printf("bit_met_m3_p3[0]=%f\n", bit_met_m3_p3[0]);
-      printf("bit_met_m3_m1[0]=%f\n", bit_met_m3_m1[0]);
-      printf("bit_met_m3_m3[0]=%f\n", bit_met_m3_m3[0]);
+      msg("bit_met_p1_p1[0]=%f\n", bit_met_p1_p1[0]);
+      msg("bit_met_p1_p3[0]=%f\n", bit_met_p1_p3[0]);
+      msg("bit_met_p1_m1[0]=%f\n", bit_met_p1_m1[0]);
+      msg("bit_met_p1_m3[0]=%f\n", bit_met_p1_m3[0]);
+      msg("bit_met_p3_p1[0]=%f\n", bit_met_p3_p1[0]);
+      msg("bit_met_p3_p3[0]=%f\n", bit_met_p3_p3[0]);
+      msg("bit_met_p3_m1[0]=%f\n", bit_met_p3_m1[0]);
+      msg("bit_met_p3_m3[0]=%f\n", bit_met_p3_m3[0]);
+      msg("bit_met_m1_p1[0]=%f\n", bit_met_m1_p1[0]);
+      msg("bit_met_m1_p3[0]=%f\n", bit_met_m1_p3[0]);
+      msg("bit_met_m1_m1[0]=%f\n", bit_met_m1_m1[0]);
+      msg("bit_met_m1_m3[0]=%f\n", bit_met_m1_m3[0]);
+      msg("bit_met_m3_p1[0]=%f\n", bit_met_m3_p1[0]);
+      msg("bit_met_m3_p3[0]=%f\n", bit_met_m3_p3[0]);
+      msg("bit_met_m3_m1[0]=%f\n", bit_met_m3_m1[0]);
+      msg("bit_met_m3_m3[0]=%f\n", bit_met_m3_m3[0]);
 #endif  
       
       for (j=0; j<4; j++)
@@ -4286,10 +4310,10 @@ bit_met_m3_m3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt
 	  llr_y1i[j] = logmax_num_re0 - logmax_den_re0;
 	}
 #ifdef DEBUG_LLR
-      printf("llr_y0r=[%f,%f,%f,%f]\n", llr_y0r[0], llr_y0r[1], llr_y0r[2], llr_y0r[3]);
-      printf("llr_y0i=[%f,%f,%f,%f]\n", llr_y0i[0], llr_y0i[1], llr_y0i[2], llr_y0i[3]);
-      printf("llr_y1r=[%f,%f,%f,%f]\n", llr_y1r[0], llr_y1r[1], llr_y1r[2], llr_y1r[3]);
-      printf("llr_y1i=[%f,%f,%f,%f]\n", llr_y1i[0], llr_y1i[1], llr_y1i[2], llr_y1i[3]);
+      msg("llr_y0r=[%f,%f,%f,%f]\n", llr_y0r[0], llr_y0r[1], llr_y0r[2], llr_y0r[3]);
+      msg("llr_y0i=[%f,%f,%f,%f]\n", llr_y0i[0], llr_y0i[1], llr_y0i[2], llr_y0i[3]);
+      msg("llr_y1r=[%f,%f,%f,%f]\n", llr_y1r[0], llr_y1r[1], llr_y1r[2], llr_y1r[3]);
+      msg("llr_y1i=[%f,%f,%f,%f]\n", llr_y1i[0], llr_y1i[1], llr_y1i[2], llr_y1i[3]);
 #endif
       
       // Stream out
@@ -4314,333 +4338,622 @@ bit_met_m3_m3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt
       *(stream0_out+15) = -(short)(floor(llr_y1i[3]*32768.0));
       
 #ifdef DEBUG_LLR   
-      printf("*(stream0_out+0): %d\n", *(stream0_out+0));
-      printf("*(stream0_out+1): %d\n", *(stream0_out+1));
-      printf("*(stream0_out+2): %d\n", *(stream0_out+2));
-      printf("*(stream0_out+3): %d\n", *(stream0_out+3));
+      msg("*(stream0_out+0): %d\n", *(stream0_out+0));
+      msg("*(stream0_out+1): %d\n", *(stream0_out+1));
+      msg("*(stream0_out+2): %d\n", *(stream0_out+2));
+      msg("*(stream0_out+3): %d\n", *(stream0_out+3));
       
-      printf("*(stream0_out+4): %d\n", *(stream0_out+4));
-      printf("*(stream0_out+5): %d\n", *(stream0_out+5));
-      printf("*(stream0_out+6): %d\n", *(stream0_out+6));
-      printf("*(stream0_out+7): %d\n", *(stream0_out+7));
+      msg("*(stream0_out+4): %d\n", *(stream0_out+4));
+      msg("*(stream0_out+5): %d\n", *(stream0_out+5));
+      msg("*(stream0_out+6): %d\n", *(stream0_out+6));
+      msg("*(stream0_out+7): %d\n", *(stream0_out+7));
       
-      printf("*(stream0_out+8): %d\n", *(stream0_out+8));
-      printf("*(stream0_out+9): %d\n", *(stream0_out+9));
-      printf("*(stream0_out+10):%d\n", *(stream0_out+10));
-      printf("*(stream0_out+11):%d\n", *(stream0_out+11));
+      msg("*(stream0_out+8): %d\n", *(stream0_out+8));
+      msg("*(stream0_out+9): %d\n", *(stream0_out+9));
+      msg("*(stream0_out+10):%d\n", *(stream0_out+10));
+      msg("*(stream0_out+11):%d\n", *(stream0_out+11));
       
-      printf("*(stream0_out+12):%d\n", *(stream0_out+12));
-      printf("*(stream0_out+13):%d\n", *(stream0_out+13));
-      printf("*(stream0_out+14):%d\n", *(stream0_out+14));
-      printf("*(stream0_out+15):%d\n", *(stream0_out+15));
+      msg("*(stream0_out+12):%d\n", *(stream0_out+12));
+      msg("*(stream0_out+13):%d\n", *(stream0_out+13));
+      msg("*(stream0_out+14):%d\n", *(stream0_out+14));
+      msg("*(stream0_out+15):%d\n", *(stream0_out+15));
 #endif
 
-     stream0_out += 16;
+      /*
+      msg("llr[i]=[%d,%d,%d,%d]\n", stream0_out[0], stream0_out[1], stream0_out[2], stream0_out[3]);
+      */
+      
+      stream0_out += 16;
       
       _mm_empty();
       _m_empty();
     }
 }
 
-void qam16_qam16_mu_mimo_full_flp(double *stream0_in, // from rxdataF_comp
-				  double *stream1_in,
-				  double *ch_mag,
-				  double *ch_mag_i,
-				  short *stream0_out, // Back to Flp format
-				  double *rho01,
-				  int length)
+/* 
+   2012.02.22, Sebastien Aubert
+   Input: 
+   stream0_in:  MF filter for 1st stream, i.e., y1=h1'*y
+   stream1_in:  MF filter for 2nd stream, i.e., y2=h2'*y
+   ch_mag:      2*||h1||^2/sqrt(10), [Re1 Im1 Re2 Im2] s.t. Im1=Re1, Im2=Re2, etc
+   ch_mag_i:    2*||h2||^2/sqrt(10), [Re1 Im1 Re2 Im2] s.t. Im1=Re1, Im2=Re2, etc
+   rho01:       Channel cross correlation, i.e., h1'*h2
+   
+   Output:
+   stream0_out: output LLRs for 1st stream (U2 is interference), symbol-wise optimal ML detector, floating point version
+*/
+void qam16_qam16_mu_mimo_mld_flp(short *stream0_in,
+				 short *stream1_in,
+				 short *ch_mag,
+				 short *ch_mag_i,
+				 short *stream0_out,
+				 short *rho01,
+				 int length
+				 )
 {
-  int i,j;
-  double rho_re[4];
-  double rho_im[4];
-  double y0_re[4];
-  double y0_im[4];
-  double y1_re[4];
-  double y1_im[4];
-  double two_h1_square_over_sqrt_10[4];
-  double two_h2_square_over_sqrt_10[4];
-
-  double psi_r_p1_p1[4]; double psi_i_p1_p1[4];
-  double psi_r_p1_p3[4]; double psi_i_p1_p3[4];
-  double psi_r_p1_m1[4]; double psi_i_p1_m1[4];
-  double psi_r_p1_m3[4]; double psi_i_p1_m3[4];
-  double psi_r_p3_p1[4]; double psi_i_p3_p1[4];
-  double psi_r_p3_p3[4]; double psi_i_p3_p3[4];
-  double psi_r_p3_m1[4]; double psi_i_p3_m1[4];
-  double psi_r_p3_m3[4]; double psi_i_p3_m3[4];
-  double psi_r_m1_p1[4]; double psi_i_m1_p1[4];
-  double psi_r_m1_p3[4]; double psi_i_m1_p3[4];
-  double psi_r_m1_m1[4]; double psi_i_m1_m1[4];
-  double psi_r_m1_m3[4]; double psi_i_m1_m3[4];
-  double psi_r_m3_p1[4]; double psi_i_m3_p1[4];
-  double psi_r_m3_p3[4]; double psi_i_m3_p3[4];
-  double psi_r_m3_m1[4]; double psi_i_m3_m1[4];
-  double psi_r_m3_m3[4]; double psi_i_m3_m3[4];
-
-  double a_r_p1_p1[4]; double a_i_p1_p1[4];
-  double a_r_p1_p3[4]; double a_i_p1_p3[4];
-  double a_r_p1_m1[4]; double a_i_p1_m1[4];
-  double a_r_p1_m3[4]; double a_i_p1_m3[4];
-  double a_r_p3_p1[4]; double a_i_p3_p1[4];
-  double a_r_p3_p3[4]; double a_i_p3_p3[4];
-  double a_r_p3_m1[4]; double a_i_p3_m1[4];
-  double a_r_p3_m3[4]; double a_i_p3_m3[4];
-  double a_r_m1_p1[4]; double a_i_m1_p1[4];
-  double a_r_m1_p3[4]; double a_i_m1_p3[4];
-  double a_r_m1_m1[4]; double a_i_m1_m1[4];
-  double a_r_m1_m3[4]; double a_i_m1_m3[4];
-  double a_r_m3_p1[4]; double a_i_m3_p1[4];
-  double a_r_m3_p3[4]; double a_i_m3_p3[4];
-  double a_r_m3_m1[4]; double a_i_m3_m1[4];
-  double a_r_m3_m3[4]; double a_i_m3_m3[4];
-
-  double ch_mag_des[4];
-  double ch_mag_int[4];
+  /*
+  msg("\nstream0[i] (h1'*y)=[%d,%d,%d,%d]\n", stream0_in[0], stream0_in[1], stream0_in[2], stream0_in[3]);
+  msg("stream1[i] (h2'*y)=[%d,%d,%d,%d]\n", stream1_in[0], stream1_in[1], stream1_in[2], stream1_in[3]);
+  msg("ch_mag[i] (2*||h1||^2/sqrt(10))=  [%d,%d,%d,%d]\n", ch_mag[0], ch_mag[1], ch_mag[2], ch_mag[3]);
+  msg("ch_mag_i[i] (2*||h2||^2/sqrt(10))=[%d,%d,%d,%d]\n", ch_mag_i[0], ch_mag_i[1], ch_mag_i[2], ch_mag_i[3]);
+  msg("rho[i] (h1'*h2)=[%d,%d,%d,%d]\n\n", rho01[0], rho01[1], rho01[2], rho01[3]);
+  */
   
-  double psi_a_p1_p1[4]; double psi_a_p1_p3[4];
-  double psi_a_p1_m1[4]; double psi_a_p1_m3[4];
-  double psi_a_p3_p1[4]; double psi_a_p3_p3[4];
-  double psi_a_p3_m1[4]; double psi_a_p3_m3[4];
-  double psi_a_m1_p1[4]; double psi_a_m1_p3[4];
-  double psi_a_m1_m1[4]; double psi_a_m1_m3[4];
-  double psi_a_m3_p1[4]; double psi_a_m3_p3[4];
-  double psi_a_m3_m1[4]; double psi_a_m3_m3[4];
+  int i, j, iLLR, k, l;
 
-  double a_sq_p1_p1[4]; double a_sq_p1_p3[4];
-  double a_sq_p1_m1[4]; double a_sq_p1_m3[4];
-  double a_sq_p3_p1[4]; double a_sq_p3_p3[4];
-  double a_sq_p3_m1[4]; double a_sq_p3_m3[4];
-  double a_sq_m1_p1[4]; double a_sq_m1_p3[4];
-  double a_sq_m1_m1[4]; double a_sq_m1_m3[4];
-  double a_sq_m3_p1[4]; double a_sq_m3_p3[4];
-  double a_sq_m3_m1[4]; double a_sq_m3_m3[4];
+  double rho_re, rho_im;
+  /*double two_h1_square_over_sqrt_10, two_h2_square_over_sqrt_10;*/
+  double /*ch_mag_des,*/ ch_mag_int;
+  double h1_square, h2_square;
+  
+  double term_y1r, term_y1i, term_y2r, term_y2i;
+  double term_2_y1r_x1r, term_2_y1i_x1i;  
+  double psi_r, psi_i;
+  double term_absx2r, term_absx2i;
+  double term_2_psir_x2r, term_2_psii_x2i;
 
-  double bit_met_p1_p1[4]; double bit_met_p1_p3[4];
-  double bit_met_p1_m1[4]; double bit_met_p1_m3[4];
-  double bit_met_p3_p1[4]; double bit_met_p3_p3[4];
-  double bit_met_p3_m1[4]; double bit_met_p3_m3[4];
-  double bit_met_m1_p1[4]; double bit_met_m1_p3[4];
-  double bit_met_m1_m1[4]; double bit_met_m1_m3[4];
-  double bit_met_m3_p1[4]; double bit_met_m3_p3[4];
-  double bit_met_m3_m1[4]; double bit_met_m3_m3[4];
-
-  double logmax_num_re0 = 0.0;
-  double logmax_den_re0 = 0.0;
-
-  double llr_y0r[4];
-  double llr_y0i[4];
-  double llr_y1r[4];
-  double llr_y1i[4];
-
-  for (i=0; i<length>>1; i+=2)
-    {// In one iteration, we deal with 4 complex samples or 8 real samples
-      rho_re[0] = *(rho01+4*i+0);
-      rho_im[0] = *(rho01+4*i+1);
-      rho_re[1] = *(rho01+4*i+2);
-      rho_im[1] = *(rho01+4*i+3);
-      rho_re[2] = *(rho01+4*i+4);
-      rho_im[2] = *(rho01+4*i+5);
-      rho_re[3] = *(rho01+4*i+6);
-      rho_im[3] = *(rho01+4*i+7);
-     
-      y0_re[0] = *(stream0_in+4*i+0);
-      y0_im[0] = *(stream0_in+4*i+1);
-      y0_re[1] = *(stream0_in+4*i+2);
-      y0_im[1] = *(stream0_in+4*i+3);
-      y0_re[2] = *(stream0_in+4*i+4);
-      y0_im[2] = *(stream0_in+4*i+5);
-      y0_re[3] = *(stream0_in+4*i+6);
-      y0_im[3] = *(stream0_in+4*i+7);
-
-      y1_re[0] = *(stream1_in+4*i+0);
-      y1_im[0] = *(stream1_in+4*i+1);
-      y1_re[1] = *(stream1_in+4*i+2);
-      y1_im[1] = *(stream1_in+4*i+3);
-      y1_re[2] = *(stream1_in+4*i+4);
-      y1_im[2] = *(stream1_in+4*i+5);
-      y1_re[3] = *(stream1_in+4*i+6);
-      y1_im[3] = *(stream1_in+4*i+7);
-
-      two_h1_square_over_sqrt_10[0] = *(ch_mag+4*i+0);
-      two_h1_square_over_sqrt_10[1] = *(ch_mag+4*i+2);
-      two_h1_square_over_sqrt_10[2] = *(ch_mag+4*i+4);
-      two_h1_square_over_sqrt_10[3] = *(ch_mag+4*i+6);
-
-      two_h2_square_over_sqrt_10[0] = *(ch_mag_i+4*i+0);
-      two_h2_square_over_sqrt_10[1] = *(ch_mag_i+4*i+2);
-      two_h2_square_over_sqrt_10[2] = *(ch_mag_i+4*i+4);
-      two_h2_square_over_sqrt_10[3] = *(ch_mag_i+4*i+6);
-            
-      // psi_r and psi_i calculation
-      for (j=0; j<4; j++)
-	{
-psi_r_p1_p1[j] = fabs(+1/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p1_p1[j] = fabs(+1/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_p1_p3[j] = fabs(+1/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p1_p3[j] = fabs(+3/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_p1_m1[j] = fabs(+1/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p1_m1[j] = fabs(-1/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_p1_m3[j] = fabs(+1/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p1_m3[j] = fabs(-3/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_p3_p1[j] = fabs(+3/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p3_p1[j] = fabs(+1/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_p3_p3[j] = fabs(+3/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p3_p3[j] = fabs(+3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_p3_m1[j] = fabs(+3/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p3_m1[j] = fabs(-1/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_p3_m3[j] = fabs(+3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_p3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m1_p1[j] = fabs(-1/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m1_p1[j] = fabs(+1/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m1_p3[j] = fabs(-1/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m1_p3[j] = fabs(+3/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m1_m1[j] = fabs(-1/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m1_m1[j] = fabs(-1/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m1_m3[j] = fabs(-1/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m1_m3[j] = fabs(-3/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m3_p1[j] = fabs(-3/sqrt(20)*rho_re[j]+1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m3_p1[j] = fabs(+1/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m3_p3[j] = fabs(-3/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m3_p3[j] = fabs(+3/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m3_m1[j] = fabs(-3/sqrt(20)*rho_re[j]-1/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m3_m1[j] = fabs(-1/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_im[j]);
-psi_r_m3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]-3/sqrt(20)*rho_im[j] - y1_re[j]);psi_i_m3_m3[j] = fabs(-3/sqrt(20)*rho_re[j]+3/sqrt(20)*rho_im[j] - y1_im[j]);
-	}
-      for (j=0; j<4; j++)
-	{
-	  ch_mag_des[j] = two_h1_square_over_sqrt_10[j];      
-	  ch_mag_int[j] = two_h2_square_over_sqrt_10[j];
-	}
-
-      // Detection of interference term
-      for (j=0; j<4; j++)
-	{
-	  a_r_p1_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p1_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_p1_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p1_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_p1_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p1_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_p1_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p1_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_p3_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p3_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_p3_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p3_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_p3_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p3_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_p3_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_p3_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m1_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m1_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m1_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m1_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m1_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m1_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m1_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m1_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m3_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m3_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m3_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m3_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m3_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m3_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_r_m3_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_r_m3_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
+  double x1r, x1i, x2r, x2i;
+  double sigma1 = 1.0/sqrt(2);
+  double sigma2 = 1.0/sqrt(2);
+  double d = 0.0;
+  double dmax_bIs0 = 0.0;
+  double dmax_bIs1 = 0.0;
+  double llr[4];
+  
+  char mask = 0;
+  double scaledConstellation[32] = { 1.0/sqrt(10),  1.0/sqrt(10),  1.0/sqrt(10),  3.0/sqrt(10),  3.0/sqrt(10),  1.0/sqrt(10),  3.0/sqrt(10),  3.0/sqrt(10),
+				     1.0/sqrt(10), -1.0/sqrt(10),  1.0/sqrt(10), -3.0/sqrt(10),  3.0/sqrt(10), -1.0/sqrt(10),  3.0/sqrt(10), -3.0/sqrt(10),
+				    -1.0/sqrt(10),  1.0/sqrt(10), -1.0/sqrt(10),  3.0/sqrt(10), -3.0/sqrt(10),  1.0/sqrt(10), -3.0/sqrt(10),  3.0/sqrt(10),
+				    -1.0/sqrt(10), -1.0/sqrt(10), -1.0/sqrt(10), -3.0/sqrt(10), -3.0/sqrt(10), -1.0/sqrt(10), -3.0/sqrt(10), -3.0/sqrt(10)};
+  
+  for (i=0; i<length; i++)
+    {// In one iteration, we deal with 1 complex samples (2 real ones)
+      /*
+      // From mldsd matlab script (Sebastien Aubert, 01.09.2009)
+      int nR = 2;
+      int nT = 2;
+      int nBits = 4;
+      int K = nR*nBits;
+      int nHyp = 256;
+      double TINY = 0.01;      
+      */
+      int symbolMapping[256];
+      for (j=0; j<256; j++)
+	symbolMapping[j] = j;
+      
+      // From OpenAirInterfaceDebug.m (Sebastien Aubert, 2011.11.16)
+      term_y1r = *(stream0_in+2*i)/32768.0;
+      term_y1i = *(stream0_in+2*i+1)/32768.0;
+      
+      term_y2r = *(stream1_in+2*i)/32768.0;
+      term_y2i = *(stream1_in+2*i+1)/32768.0;
+      
+      rho_re = *(rho01+2*i)/32768.0;	  
+      rho_im = *(rho01+2*i+1)/32768.0;
+      
+      h1_square = *(ch_mag+2*i)/32768.0/2.0*sqrt(10);
+      h2_square = *(ch_mag_i+2*i)/32768.0/2.0*sqrt(10);
 	  
-	  a_i_p1_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p1_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_p1_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p1_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_p1_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p1_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_p1_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p1_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_p3_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p3_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_p3_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p3_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_p3_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p3_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_p3_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_p3_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m1_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m1_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m1_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m1_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m1_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m1_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m1_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m1_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m3_p1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m3_p1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m3_p3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m3_p3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m3_m1[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m3_m1[j]), 1/sqrt(2)*ch_mag_int[j])));
-	  a_i_m3_m3[j] = 1/sqrt(10)*(2+pow(-1, I_flp(fabs(psi_i_m3_m3[j]), 1/sqrt(2)*ch_mag_int[j])));
-	}      
+      ch_mag_int = *(ch_mag_i+2*i)/32768.0;
+      
+      mask = 8;	  
+      for (iLLR=0; iLLR<4; iLLR++)
+	{
+	  dmax_bIs0 = -1.0E10; // -Inf
+	  dmax_bIs1 = -1.0E10; // -Inf
+	  
+	  for (k=0; k<16; k++)
+	    {
+	      x1r = sigma1*scaledConstellation[2*k];
+	      x1i = sigma1*scaledConstellation[2*k+1];
+	      
+	      term_2_y1r_x1r = 2*term_y1r*x1r;
+	      term_2_y1i_x1i = 2*term_y1i*x1i;
+	      
+	      psi_r = rho_re*x1r + rho_im*x1i - term_y2r;
+	      psi_i = rho_re*x1i - rho_im*x1r - term_y2i;
+	      
+	      for (l=0; l<16; l++)
+		{
+		  x2r = sigma2*scaledConstellation[2*l];
+		  x2i = sigma2*scaledConstellation[2*l+1];
+		  
+		  term_absx2r = x2r;
+		  term_absx2i = x2i;
+		  
+		  term_2_psir_x2r = 2*fabs(psi_r)*term_absx2r;
+		  term_2_psii_x2i = 2*fabs(psi_i)*term_absx2i;
+		  		  
+		  d = - h1_square*x1r*x1r
+		      - h1_square*x1i*x1i
+		      + term_2_y1r_x1r
+		      + term_2_y1i_x1i
+		      + term_2_psir_x2r
+		      - h2_square*x2r*x2r
+		      + term_2_psii_x2i
+		      - h2_square*x2i*x2i;
+		  
+		  //msg("x1=%f+k%f, x2=%f+k%f, h1_square*x1r*x1r=%f, h1_square*x1i*x1i=%f, term_2_y1r_x1r=%f, term_2_y1i_x1i=%f, term_2_psir_x2r=%f, h2_square*x2r*x2r=%f, term_2_psii_x2i=%f, h2_square*x2i*x2i=%f\nd=%f\n", x1r, x1i, x2r, x2i, h1_square*x1r*x1r, h1_square*x1i*x1i, term_2_y1r_x1r, term_2_y1i_x1i, term_2_psir_x2r, h2_square*x2r*x2r, term_2_psii_x2i, h2_square*x2i*x2i, d);
 
-      for (j=0; j<4; j++)
-	{
-	  psi_a_p1_p1[j] = 1/sqrt(2)*(fabs(psi_r_p1_p1[j])*a_r_p1_p1[j] + fabs(psi_i_p1_p1[j])*a_i_p1_p1[j]);
-	  psi_a_p1_p3[j] = 1/sqrt(2)*(fabs(psi_r_p1_p3[j])*a_r_p1_p3[j] + fabs(psi_i_p1_p3[j])*a_i_p1_p3[j]);
-	  psi_a_p1_m1[j] = 1/sqrt(2)*(fabs(psi_r_p1_m1[j])*a_r_p1_m1[j] + fabs(psi_i_p1_m1[j])*a_i_p1_m1[j]);
-	  psi_a_p1_m3[j] = 1/sqrt(2)*(fabs(psi_r_p1_m3[j])*a_r_p1_m3[j] + fabs(psi_i_p1_m3[j])*a_i_p1_m3[j]);
-	  psi_a_p3_p1[j] = 1/sqrt(2)*(fabs(psi_r_p3_p1[j])*a_r_p3_p1[j] + fabs(psi_i_p3_p1[j])*a_i_p3_p1[j]);
-	  psi_a_p3_p3[j] = 1/sqrt(2)*(fabs(psi_r_p3_p3[j])*a_r_p3_p3[j] + fabs(psi_i_p3_p3[j])*a_i_p3_p3[j]);
-	  psi_a_p3_m1[j] = 1/sqrt(2)*(fabs(psi_r_p3_m1[j])*a_r_p3_m1[j] + fabs(psi_i_p3_m1[j])*a_i_p3_m1[j]);
-	  psi_a_p3_m3[j] = 1/sqrt(2)*(fabs(psi_r_p3_m3[j])*a_r_p3_m3[j] + fabs(psi_i_p3_m3[j])*a_i_p3_m3[j]);
-	  psi_a_m1_p1[j] = 1/sqrt(2)*(fabs(psi_r_m1_p1[j])*a_r_m1_p1[j] + fabs(psi_i_m1_p1[j])*a_i_m1_p1[j]);
-	  psi_a_m1_p3[j] = 1/sqrt(2)*(fabs(psi_r_m1_p3[j])*a_r_m1_p3[j] + fabs(psi_i_m1_p3[j])*a_i_m1_p3[j]);
-	  psi_a_m1_m1[j] = 1/sqrt(2)*(fabs(psi_r_m1_m1[j])*a_r_m1_m1[j] + fabs(psi_i_m1_m1[j])*a_i_m1_m1[j]);
-	  psi_a_m1_m3[j] = 1/sqrt(2)*(fabs(psi_r_m1_m3[j])*a_r_m1_m3[j] + fabs(psi_i_m1_m3[j])*a_i_m1_m3[j]);
-	  psi_a_m3_p1[j] = 1/sqrt(2)*(fabs(psi_r_m3_p1[j])*a_r_m3_p1[j] + fabs(psi_i_m3_p1[j])*a_i_m3_p1[j]);
-	  psi_a_m3_p3[j] = 1/sqrt(2)*(fabs(psi_r_m3_p3[j])*a_r_m3_p3[j] + fabs(psi_i_m3_p3[j])*a_i_m3_p3[j]);
-	  psi_a_m3_m1[j] = 1/sqrt(2)*(fabs(psi_r_m3_m1[j])*a_r_m3_m1[j] + fabs(psi_i_m3_m1[j])*a_i_m3_m1[j]);
-	  psi_a_m3_m3[j] = 1/sqrt(2)*(fabs(psi_r_m3_m3[j])*a_r_m3_m3[j] + fabs(psi_i_m3_m3[j])*a_i_m3_m3[j]);
-	}
-      
-      for (j=0; j<4; j++)
-	{
-	  a_sq_p1_p1[j] = 1/2.0*(a_r_p1_p1[j]*a_r_p1_p1[j] + a_i_p1_p1[j]*a_i_p1_p1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_p1_p3[j] = 1/2.0*(a_r_p1_p3[j]*a_r_p1_p3[j] + a_i_p1_p3[j]*a_i_p1_p3[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_p1_m1[j] = 1/2.0*(a_r_p1_m1[j]*a_r_p1_m1[j] + a_i_p1_m1[j]*a_i_p1_m1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_p1_m3[j] = 1/2.0*(a_r_p1_m3[j]*a_r_p1_m3[j] + a_i_p1_m3[j]*a_i_p1_m3[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_p3_p1[j] = 1/2.0*(a_r_p3_p1[j]*a_r_p3_p1[j] + a_i_p3_p1[j]*a_i_p3_p1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_p3_p3[j] = 1/2.0*(a_r_p3_p3[j]*a_r_p3_p3[j] + a_i_p3_p3[j]*a_i_p3_p3[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_p3_m1[j] = 1/2.0*(a_r_p3_m1[j]*a_r_p3_m1[j] + a_i_p3_m1[j]*a_i_p3_m1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_p3_m3[j] = 1/2.0*(a_r_p3_m3[j]*a_r_p3_m3[j] + a_i_p3_m3[j]*a_i_p3_m3[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m1_p1[j] = 1/2.0*(a_r_m1_p1[j]*a_r_m1_p1[j] + a_i_m1_p1[j]*a_i_m1_p1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m1_p3[j] = 1/2.0*(a_r_m1_p3[j]*a_r_m1_p3[j] + a_i_m1_p3[j]*a_i_m1_p3[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m1_m1[j] = 1/2.0*(a_r_m1_m1[j]*a_r_m1_m1[j] + a_i_m1_m1[j]*a_i_m1_m1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m1_m3[j] = 1/2.0*(a_r_m1_m3[j]*a_r_m1_m3[j] + a_i_m1_m3[j]*a_i_m1_m3[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m3_p1[j] = 1/2.0*(a_r_m3_p1[j]*a_r_m3_p1[j] + a_i_m3_p1[j]*a_i_m3_p1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m3_p3[j] = 1/2.0*(a_r_m3_p3[j]*a_r_m3_p3[j] + a_i_m3_p3[j]*a_i_m3_p3[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m3_m1[j] = 1/2.0*(a_r_m3_m1[j]*a_r_m3_m1[j] + a_i_m3_m1[j]*a_i_m3_m1[j])*ch_mag_int[j]*sqrt(10)/2;
-	  a_sq_m3_m3[j] = 1/2.0*(a_r_m3_m3[j]*a_r_m3_m3[j] + a_i_m3_m3[j]*a_i_m3_m3[j])*ch_mag_int[j]*sqrt(10)/2;
-	}
-      
-      // Computing Metrics
-      for (j=0; j<4; j++)
-	{
-bit_met_p1_p1[j] = -1/10.0*ch_mag_des[j]*sqrt(10)/2 + 2/sqrt(10)*y0_re[j]*1/sqrt(2) + 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p1_p1[j] - a_sq_p1_p1[j];
-bit_met_p1_p3[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 + 2/sqrt(10)*y0_re[j]*1/sqrt(2) + 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p1_p3[j] - a_sq_p1_p3[j];
-bit_met_p1_m1[j] = -1/10.0*ch_mag_des[j]*sqrt(10)/2 + 2/sqrt(10)*y0_re[j]*1/sqrt(2) - 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p1_m1[j] - a_sq_p1_m1[j];
-bit_met_p1_m3[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 + 2/sqrt(10)*y0_re[j]*1/sqrt(2) - 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p1_m3[j] - a_sq_p1_m3[j];
-bit_met_p3_p1[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 + 6/sqrt(10)*y0_re[j]*1/sqrt(2) + 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p3_p1[j] - a_sq_p3_p1[j];
-bit_met_p3_p3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 + 6/sqrt(10)*y0_re[j]*1/sqrt(2) + 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p3_p3[j] - a_sq_p3_p3[j];
-bit_met_p3_m1[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 + 6/sqrt(10)*y0_re[j]*1/sqrt(2) - 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p3_m1[j] - a_sq_p3_m1[j];
-bit_met_p3_m3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 + 6/sqrt(10)*y0_re[j]*1/sqrt(2) - 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_p3_m3[j] - a_sq_p3_m3[j];
-bit_met_m1_p1[j] = -1/10.0*ch_mag_des[j]*sqrt(10)/2 - 2/sqrt(10)*y0_re[j]*1/sqrt(2) + 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m1_p1[j] - a_sq_m1_p1[j];
-bit_met_m1_p3[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 - 2/sqrt(10)*y0_re[j]*1/sqrt(2) + 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m1_p3[j] - a_sq_m1_p3[j];
-bit_met_m1_m1[j] = -1/10.0*ch_mag_des[j]*sqrt(10)/2 - 2/sqrt(10)*y0_re[j]*1/sqrt(2) - 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m1_m1[j] - a_sq_m1_m1[j];
-bit_met_m1_m3[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 - 2/sqrt(10)*y0_re[j]*1/sqrt(2) - 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m1_m3[j] - a_sq_m1_m3[j];
-bit_met_m3_p1[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt(2) + 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m3_p1[j] - a_sq_m3_p1[j];
-bit_met_m3_p3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt(2) + 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m3_p3[j] - a_sq_m3_p3[j];
-bit_met_m3_m1[j] =  -1/2.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt(2) - 2/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m3_m1[j] - a_sq_m3_m1[j];
-bit_met_m3_m3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt(2) - 6/sqrt(10)*y0_im[j]*1/sqrt(2) + 2*psi_a_m3_m3[j] - a_sq_m3_m3[j];
-	}
-      
-      for (j=0; j<4; j++)
-	{      
-	  // Detection for y0r i.e. 1st bit 
-	  logmax_num_re0 = max(max(max(max(max(max(max(bit_met_m1_p1[j], bit_met_m1_p3[j]), bit_met_m1_m1[j]), bit_met_m1_m3[j]), bit_met_m3_p1[j]), bit_met_m3_p3[j]), bit_met_m3_m1[j]), bit_met_m3_m3[j]);
-	  logmax_den_re0 = max(max(max(max(max(max(max(bit_met_p1_p1[j], bit_met_p1_p3[j]), bit_met_p1_m1[j]), bit_met_p1_m3[j]), bit_met_p3_p1[j]), bit_met_p3_p3[j]), bit_met_p3_m1[j]), bit_met_p3_m3[j]);
-	  llr_y0r[j] = logmax_num_re0 - logmax_den_re0;
-      
-	  // Detection for y0i i.e. second bit
-	  logmax_num_re0 = max(max(max(max(max(max(max(bit_met_p1_m1[j], bit_met_p3_m1[j]), bit_met_m1_m1[j]), bit_met_m3_m1[j]), bit_met_p1_m3[j]), bit_met_p3_m3[j]), bit_met_m1_m3[j]), bit_met_m3_m3[j]);
-	  logmax_den_re0 = max(max(max(max(max(max(max(bit_met_p1_p1[j], bit_met_p3_p1[j]), bit_met_m1_p1[j]), bit_met_m3_p1[j]), bit_met_p1_p3[j]), bit_met_p3_p3[j]), bit_met_m1_p3[j]), bit_met_m3_p3[j]);
-	  llr_y0i[j] = logmax_num_re0 - logmax_den_re0;
-	  
-	  // Detection for y1r i.e.  third bit
-	  logmax_num_re0 = max(max(max(max(max(max(max(bit_met_m3_p1[j], bit_met_m3_p3[j]), bit_met_m3_m1[j]), bit_met_m3_m3[j]), bit_met_p3_p1[j]), bit_met_p3_p3[j]), bit_met_p3_m1[j]), bit_met_p3_m3[j]);
-	  logmax_den_re0 = max(max(max(max(max(max(max(bit_met_m1_p1[j], bit_met_m1_p3[j]), bit_met_m1_m1[j]), bit_met_m1_m3[j]), bit_met_p1_p1[j]), bit_met_p1_p3[j]), bit_met_p1_m1[j]), bit_met_p1_m3[j]);
-	  llr_y1r[j] = logmax_num_re0 - logmax_den_re0;
-	  
-	  // Detection for y1i i.e.  fourth bit
-	  logmax_num_re0 = max(max(max(max(max(max(max(bit_met_p1_m3[j], bit_met_p3_m3[j]), bit_met_m1_m3[j]), bit_met_m3_m3[j]), bit_met_p1_p3[j]), bit_met_p3_p3[j]), bit_met_m1_p3[j]), bit_met_m3_p3[j]);
-	  logmax_den_re0 = max(max(max(max(max(max(max(bit_met_p1_m1[j], bit_met_p3_m1[j]), bit_met_m1_m1[j]), bit_met_m3_m1[j]), bit_met_p1_p1[j]), bit_met_p3_p1[j]), bit_met_m1_p1[j]), bit_met_m3_p1[j]);
-	  llr_y1i[j] = logmax_num_re0 - logmax_den_re0;
-	}
+		  if ( (symbolMapping[k] & mask)==0 ) // Current bit is 0
+		    {
+		      if (d > dmax_bIs0)
+			dmax_bIs0 = d;
+		    }
+		  else // Current bit is 1
+		    {
+		      if (d > dmax_bIs1)
+			dmax_bIs1 = d;
+		    }
+		}
+	    }
+	  llr[iLLR] = dmax_bIs1 - dmax_bIs0;
+	  mask = mask>>1;
+	} // End iLLR
       
       // Stream out
-      *(stream0_out+0)  = -(short)(floor(llr_y0r[0]*32768.0));
-      *(stream0_out+1)  = -(short)(floor(llr_y0i[0]*32768.0)); 
-      *(stream0_out+2)  = -(short)(floor(llr_y1r[0]*32768.0));
-      *(stream0_out+3)  = -(short)(floor(llr_y1i[0]*32768.0));
+      *(stream0_out+0)  = (short)(floor(-llr[0]*32768.0));
+      *(stream0_out+1)  = (short)(floor(-llr[1]*32768.0)); 
+      *(stream0_out+2)  = (short)(floor(-llr[2]*32768.0));
+      *(stream0_out+3)  = (short)(floor(-llr[3]*32768.0));
+     
+      /*
+	msg("llr[i]=[%d,%d,%d,%d]\n", stream0_out[0], stream0_out[1], stream0_out[2], stream0_out[3]);
+      */
       
-      *(stream0_out+4)  = -(short)(floor(llr_y0r[1]*32768.0));
-      *(stream0_out+5)  = -(short)(floor(llr_y0i[1]*32768.0)); 
-      *(stream0_out+6)  = -(short)(floor(llr_y1r[1]*32768.0));
-      *(stream0_out+7)  = -(short)(floor(llr_y1i[1]*32768.0));
+      stream0_out += 4;
+    }
+}
+
+// Complex elements processing for brute-force MLD
+typedef struct dcomplex
+{
+  double re, im;
+} dcomplex;
+
+dcomplex complex_create(double a_re, double a_im)
+{
+  dcomplex c;
+  
+  c.re = a_re;
+  c.im = a_im;
+
+  return c;
+}
+
+double complex_real(dcomplex c)
+{
+  return c.re;
+}
+
+double complex_imag(dcomplex c)
+{
+  return c.im;
+}
+
+dcomplex complex_mul(dcomplex a, dcomplex b)
+{
+  dcomplex res;
+  
+  res.re = complex_real(a)*complex_real(b) - complex_imag(a)*complex_imag(b);
+  res.im = complex_real(a)*complex_imag(b) + complex_imag(a)*complex_real(b);
+  
+  return res;
+}
+
+dcomplex complex_add(dcomplex a, dcomplex b)
+{
+  dcomplex res;
+  
+  res.re = complex_real(a) + complex_real(b);
+  res.im = complex_imag(a) + complex_imag(b);
+  
+  return res;
+}
+
+dcomplex complex_sub(dcomplex a, dcomplex b)
+{
+  dcomplex res;
+  
+  res.re = complex_real(a) - complex_real(b);
+  res.im = complex_imag(a) - complex_imag(b);
+  
+  return res;
+}
+
+dcomplex complex_transpose(dcomplex a)
+{
+  dcomplex res;
+  
+  res.re = complex_real(a);
+  res.im = -complex_imag(a);
+
+  return res;
+}
+
+double complex_norm(dcomplex a)
+{
+  return complex_real(complex_mul(complex_transpose(a), a));
+}
+
+double argmin_metric(double y1_re,
+		     double y1_im,
+		     double y2_re,
+		     double y2_im,
+		     double h11_re,
+		     double h11_im,
+		     double h12_re,
+		     double h12_im,
+		     double h21_re,
+		     double h21_im,
+		     double h22_re,
+		     double h22_im,
+		     double x1_re,
+		     double x1_im,
+		     double x2_re,
+		     double x2_im)
+{
+  dcomplex y1  = complex_create(y1_re, y1_im);
+  dcomplex y2  = complex_create(y2_re, y2_im);
+  dcomplex h11 = complex_create(h11_re, h11_im);
+  dcomplex h12 = complex_create(h12_re, h12_im);
+  dcomplex h21 = complex_create(h21_re, h21_im);
+  dcomplex h22 = complex_create(h22_re, h22_im);
+  dcomplex x1  = complex_create(x1_re, x1_im);
+  dcomplex x2  = complex_create(x2_re, x2_im);
+  
+  double d = 0.0;
+  
+  d += complex_norm(complex_sub(complex_sub(y1, complex_mul(h11, x1)), complex_mul(h12, x2)));
+  d += complex_norm(complex_sub(complex_sub(y2, complex_mul(h21, x1)), complex_mul(h22, x2)));
+  
+  return d;
+}
+
+void llrFxp2Fxp_1byte(short *llr_2bytes,
+		      short *llr_1byte,
+		      int length)
+{
+  int i;  
+  double max_llr_abs = 0.0;
+  
+  // Find max absolute value over all the LLRs values
+  for (i=0; i<length; i++)
+    {
+      if (fabs((double)llr_2bytes[i])>max_llr_abs)
+	max_llr_abs = fabs((double)llr_2bytes[i]);
+    }
+  
+  // Data that feed the turbo decoder are stored on 1 byte (-2^7:2^7-1 => min=-2^7 OR max=2^7-1) => Set LLRs dynamic to 1 byte
+  for (i=0; i<length; i++)
+    llr_1byte[i] = (short)(floor((double)llr_2bytes[i]/max_llr_abs*127.0));
+}
+
+/* 
+   2012.03.16, Sebastien Aubert
+   Input: 
+   y:  Received data
+   h1: Channel link for 1st stream
+   h2: Channel link for 2nd stream
+   
+   Output:
+   llr: output LLRs for 1st stream (U2 is interference), symbol-wise optimal ML detector, floating point version
+*/
+void qam16_qam16_mu_mimo_bruteforce_mld(short *y1,
+					short *y2,
+					short *h11,
+					short *h21,
+					short *h12,
+					short *h22,
+					short *llr,
+					int length)
+{ 
+  /*
+  msg("y1=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(y1), *(y1+1), *(y1+2), *(y1+3), *(y1+4), *(y1+5), *(y1+6), *(y1+7));
+  msg("y2=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(y2), *(y2+1), *(y2+2), *(y2+3), *(y2+4), *(y2+5), *(y2+6), *(y2+7));
+  msg("h1_0=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h1_0), *(h1_0+1), *(h1_0+2), *(h1_0+3), *(h1_0+4), *(h1_0+5), *(h1_0+6), *(h1_0+7));
+  msg("h1_1=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h1_1), *(h1_1+1), *(h1_1+2), *(h1_1+3), *(h1_1+4), *(h1_1+5), *(h1_1+6), *(h1_1+7));
+  msg("h2_0=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h2_0), *(h2_0+1), *(h2_0+2), *(h2_0+3), *(h2_0+4), *(h2_0+5), *(h2_0+6), *(h2_0+7));
+  msg("h2_1=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h2_1), *(h2_1+1), *(h2_1+2), *(h2_1+3), *(h2_1+4), *(h2_1+5), *(h2_1+6), *(h2_1+7));
+  */
+  
+  int i, j, iLLR, k, l;
+  
+  double y1_re, y1_im, y2_re, y2_im;
+  double h11_re, h11_im, h12_re, h12_im, h21_re, h21_im, h22_re, h22_im;
+  double x1r, x1i, x2r, x2i;
+  double sigma1 = 1.0/sqrt(2);
+  double sigma2 = 1.0/sqrt(2);
+  double d = 0.0;
+  double dmax_bIs0 = 0.0;
+  double dmax_bIs1 = 0.0;
+  double llr_temp[4];
+  
+  char mask = 0;
+  double scaledConstellation[32] = { 1.0/sqrt(10),  1.0/sqrt(10),  1.0/sqrt(10),  3.0/sqrt(10),  3.0/sqrt(10),  1.0/sqrt(10),  3.0/sqrt(10),  3.0/sqrt(10),
+				     1.0/sqrt(10), -1.0/sqrt(10),  1.0/sqrt(10), -3.0/sqrt(10),  3.0/sqrt(10), -1.0/sqrt(10),  3.0/sqrt(10), -3.0/sqrt(10),
+				    -1.0/sqrt(10),  1.0/sqrt(10), -1.0/sqrt(10),  3.0/sqrt(10), -3.0/sqrt(10),  1.0/sqrt(10), -3.0/sqrt(10),  3.0/sqrt(10),
+				    -1.0/sqrt(10), -1.0/sqrt(10), -1.0/sqrt(10), -3.0/sqrt(10), -3.0/sqrt(10), -1.0/sqrt(10), -3.0/sqrt(10), -3.0/sqrt(10)};
+  
+  int symbolMapping[16];
+  for (j=0; j<16; j++)
+    symbolMapping[j] = j;
+
+  for (i=0; i<length; i++)
+    {// In one iteration, we deal with 1 complex samples (2 real ones)
+      y1_re = *(y1+2*i)/32767.0;
+      y1_im = *(y1+2*i+1)/32767.0;
+	
+      y2_re = *(y2+2*i)/32767.0;
+      y2_im = *(y2+2*i+1)/32767.0;
       
-      *(stream0_out+8)  = -(short)(floor(llr_y0r[2]*32768.0));
-      *(stream0_out+9)  = -(short)(floor(llr_y0i[2]*32768.0)); 
-      *(stream0_out+10) = -(short)(floor(llr_y1r[2]*32768.0));
-      *(stream0_out+11) = -(short)(floor(llr_y1i[2]*32768.0));
+      h11_re = *(h11+2*i)/32767.0;
+      h11_im = *(h11+2*i+1)/32767.0;
       
-      *(stream0_out+12) = -(short)(floor(llr_y0r[3]*32768.0));
-      *(stream0_out+13) = -(short)(floor(llr_y0i[3]*32768.0)); 
-      *(stream0_out+14) = -(short)(floor(llr_y1r[3]*32768.0));
-      *(stream0_out+15) = -(short)(floor(llr_y1i[3]*32768.0));
+      h21_re = *(h21+2*i)/32767.0;
+      h21_im = *(h21+2*i+1)/32767.0;
       
-     stream0_out += 16;
+      h12_re = *(h12+2*i)/32767.0;
+      h12_im = *(h12+2*i+1)/32767.0;
+      
+      h22_re = *(h22+2*i)/32767.0;
+      h22_im = *(h22+2*i+1)/32767.0;
+      
+      mask = 8;	  
+      for (iLLR=0; iLLR<4; iLLR++)
+	{
+	  dmax_bIs0 = +1.0E10; // +Inf
+	  dmax_bIs1 = +1.0E10; // +Inf
+	  
+	  for (k=0; k<16; k++)
+	    {
+	      x1r = sigma1*scaledConstellation[2*k];
+	      x1i = sigma1*scaledConstellation[2*k+1];
+	      	      
+	      for (l=0; l<16; l++)
+		{
+		  x2r = sigma2*scaledConstellation[2*l];
+		  x2i = sigma2*scaledConstellation[2*l+1];
+		  
+		  d = argmin_metric(y1_re,
+				    y1_im,      
+				    y2_re,
+				    y2_im,
+				    h11_re,
+				    h11_im,
+      				    h12_re,
+				    h12_im,
+				    h21_re,
+				    h21_im,
+				    h22_re,
+				    h22_im,
+				    x1r,
+				    x1i,
+				    x2r,
+				    x2i);
+		  
+		  // msg("y1_re=%f,y1_im=%f,y2_re=%f,y2_im=%f,\nh11_re=%f,h11_im=%f,h12_re=%f,h12_im=%f,h21_re=%f,h21_im=%f,h22_re=%f,h22_im=%f,\nx1r=%f,x1i=%f,x2r=%f,x2i=%f\n", y1_re, y1_im, y2_re, y2_im, h11_re, h11_im, h12_re, h12_im, h21_re, h21_im, h22_re, h22_im, x1r, x1i, x2r, x2i);
+		  // msg("d=%f\n", d);
+	  
+		  if ( (symbolMapping[k] & mask)==0 ) // Current bit is 0
+		    {
+		      if (d < dmax_bIs0)
+			dmax_bIs0 = d;
+		    }
+		  else // Current bit is 1
+		    {
+		      if (d < dmax_bIs1)
+			dmax_bIs1 = d;
+		    }
+		}
+	    }
+	  llr_temp[iLLR] = dmax_bIs0 - dmax_bIs1; // Force LLR to be clipped for high SNR values?
+	  mask = mask>>1;
+	} // End iLLR
+      
+      // Stream out
+      *(llr+0)  = (short)(floor(-llr_temp[0]*32767.0));
+      *(llr+1)  = (short)(floor(-llr_temp[1]*32767.0)); 
+      *(llr+2)  = (short)(floor(-llr_temp[2]*32767.0));
+      *(llr+3)  = (short)(floor(-llr_temp[3]*32767.0));
+
+      /**(llr+0)  = (short)(max(min(*(llr+0), 127), -128)); // LLRs fed to Turbo Decoder while stored on 1 byte
+      *(llr+1)  = (short)(max(min(*(llr+1), 127), -128));
+      *(llr+2)  = (short)(max(min(*(llr+2), 127), -128));
+      *(llr+3)  = (short)(max(min(*(llr+3), 127), -128));*/
+
+      // msg("llr=[%d,%d,%d,%d]\n", *(llr), *(llr+1), *(llr+2), *(llr+3));
+      
+      llr += 4;
+    }
+}
+
+/* 
+   2012.03.14, Sebastien Aubert
+   Input: 
+   stream0_in:  MF filter for 1st stream, i.e., y1=h1'*y
+   stream1_in:  MF filter for 2nd stream, i.e., y2=h2'*y
+   ch_mag:      4*||h1||^2/sqrt(42), [Re1 Im1 Re2 Im2] s.t. Im1=Re1, Im2=Re2, etc
+   ch_mag_i:    ?*||h2||^2/sqrt(42), [Re1 Im1 Re2 Im2] s.t. Im1=Re1, Im2=Re2, etc
+   rho01:       Channel cross correlation, i.e., h1'*h2
+   
+   Output:
+   stream0_out: output LLRs for 1st stream (U2 is interference), symbol-wise optimal ML detector, floating point version
+*/
+void qam64_qam64_mu_mimo_mld_flp(short *stream0_in,
+				 short *stream1_in,
+				 short *ch_mag,
+				 short *ch_mag_i,
+				 short *stream0_out,
+				 short *rho01,
+				 int length
+				 )
+{
+  int i, j, iLLR, k, l;
+
+  double rho_re, rho_im;
+  /*double two_h1_square_over_sqrt_10, two_h2_square_over_sqrt_10;*/
+  double /*ch_mag_des,*/ ch_mag_int;
+  double h1_square, h2_square;
+  
+  double term_y1r, term_y1i, term_y2r, term_y2i;
+  double term_2_y1r_x1r, term_2_y1i_x1i;  
+  double psi_r, psi_i;
+  double term_absx2r, term_absx2i;
+  double term_2_psir_x2r, term_2_psii_x2i;
+
+  double x1r, x1i, x2r, x2i;
+  double sigma1 = 1.0/sqrt(2);
+  double sigma2 = 1.0/sqrt(2);
+  double d = 0.0;
+  double dmax_bIs0 = 0.0;
+  double dmax_bIs1 = 0.0;
+  double llr[6];
+  
+  char mask = 0;
+  double scaledConstellation[128] = {+3.0/sqrt(42), +3.0/sqrt(42), +3.0/sqrt(42), +1.0/sqrt(42), +1.0/sqrt(42), +3.0/sqrt(42), +1.0/sqrt(42), +1.0/sqrt(42),
+				     +3.0/sqrt(42), +5.0/sqrt(42), +3.0/sqrt(42), +7.0/sqrt(42), +1.0/sqrt(42), +5.0/sqrt(42), +1.0/sqrt(42), +7.0/sqrt(42),
+				     +5.0/sqrt(42), +3.0/sqrt(42), +5.0/sqrt(42), +1.0/sqrt(42), +7.0/sqrt(42), +3.0/sqrt(42), +7.0/sqrt(42), +1.0/sqrt(42),
+				     +5.0/sqrt(42), +5.0/sqrt(42), +5.0/sqrt(42), +7.0/sqrt(42), +7.0/sqrt(42), +5.0/sqrt(42), +7.0/sqrt(42), +7.0/sqrt(42),
+				     +3.0/sqrt(42), -3.0/sqrt(42), +3.0/sqrt(42), -1.0/sqrt(42), +1.0/sqrt(42), -3.0/sqrt(42), +1.0/sqrt(42), -1.0/sqrt(42),
+				     +3.0/sqrt(42), -5.0/sqrt(42), +3.0/sqrt(42), -7.0/sqrt(42), +1.0/sqrt(42), -5.0/sqrt(42), +1.0/sqrt(42), -7.0/sqrt(42),
+				     +5.0/sqrt(42), -3.0/sqrt(42), +5.0/sqrt(42), -1.0/sqrt(42), +7.0/sqrt(42), -3.0/sqrt(42), +7.0/sqrt(42), -1.0/sqrt(42),
+				     +5.0/sqrt(42), -5.0/sqrt(42), +5.0/sqrt(42), -7.0/sqrt(42), +7.0/sqrt(42), -5.0/sqrt(42), +7.0/sqrt(42), -7.0/sqrt(42),
+				     -3.0/sqrt(42), +3.0/sqrt(42), -3.0/sqrt(42), +1.0/sqrt(42), -1.0/sqrt(42), +3.0/sqrt(42), -1.0/sqrt(42), +1.0/sqrt(42),
+				     -3.0/sqrt(42), +5.0/sqrt(42), -3.0/sqrt(42), +7.0/sqrt(42), -1.0/sqrt(42), +5.0/sqrt(42), -1.0/sqrt(42), +7.0/sqrt(42),
+				     -5.0/sqrt(42), +3.0/sqrt(42), -5.0/sqrt(42), +1.0/sqrt(42), -7.0/sqrt(42), +3.0/sqrt(42), -7.0/sqrt(42), +1.0/sqrt(42),
+				     -5.0/sqrt(42), +5.0/sqrt(42), -5.0/sqrt(42), +7.0/sqrt(42), -7.0/sqrt(42), +5.0/sqrt(42), -7.0/sqrt(42), +7.0/sqrt(42),
+				     -3.0/sqrt(42), -3.0/sqrt(42), -3.0/sqrt(42), -1.0/sqrt(42), -1.0/sqrt(42), -3.0/sqrt(42), -1.0/sqrt(42), -1.0/sqrt(42),
+				     -3.0/sqrt(42), -5.0/sqrt(42), -3.0/sqrt(42), -7.0/sqrt(42), -1.0/sqrt(42), -5.0/sqrt(42), -1.0/sqrt(42), -7.0/sqrt(42),
+				     -5.0/sqrt(42), -3.0/sqrt(42), -5.0/sqrt(42), -1.0/sqrt(42), -7.0/sqrt(42), -3.0/sqrt(42), -7.0/sqrt(42), -1.0/sqrt(42),
+				     -5.0/sqrt(42), -5.0/sqrt(42), -5.0/sqrt(42), -7.0/sqrt(42), -7.0/sqrt(42), -5.0/sqrt(42), -7.0/sqrt(42), -7.0/sqrt(42)};
+ 
+    for (i=0; i<length; i++)
+    {// In one iteration, we deal with 1 complex samples (2 real ones)
+      /*
+      // From mldsd matlab script (Sebastien Aubert, 01.09.2009)
+      int nR = 2;
+      int nT = 2;
+      int nBits = 4;
+      int K = nR*nBits;
+      int nHyp = 256;
+      double TINY = 0.01;      
+      */
+      int symbolMapping[64]; // 64 possible symbols for x1
+      for (j=0; j<64; j++)
+	symbolMapping[j] = j;
+      
+      // From OpenAirInterfaceDebug64qam.m (Sebastien Aubert, 2011.12.01)
+      term_y1r = *(stream0_in+2*i)/32768.0;
+      term_y1i = *(stream0_in+2*i+1)/32768.0;
+      
+      term_y2r = *(stream1_in+2*i)/32768.0;
+      term_y2i = *(stream1_in+2*i+1)/32768.0;
+      
+      rho_re = *(rho01+2*i)/32768.0;	  
+      rho_im = *(rho01+2*i+1)/32768.0;
+      
+      h1_square = *(ch_mag+2*i)/32768.0/4.0*sqrt(42);
+      h2_square = *(ch_mag_i+2*i)/32768.0/4.0*sqrt(42);
+	  
+      ch_mag_int = *(ch_mag_i+2*i)/32768.0;
+      
+      /*
+      msg("stream0=[%d,%d]\n", *(stream0_in+2*i), *(stream0_in+2*i+1));
+      msg("stream1=[%d,%d]\n", *(stream1_in+2*i), *(stream1_in+2*i+1));
+      msg("rho=[%d,%d]\n", *(rho01+2*i), *(rho01+2*i+1));
+      msg("ch_mag=[%d,%d]\n", *(ch_mag+2*i), *(ch_mag+2*i+1));
+      msg("ch_mag_i=[%d,%d]\n", *(ch_mag_i+2*i), *(ch_mag_i+2*i+1));
+      */
+
+      mask = 32; // 2^(6-1)
+      for (iLLR=0; iLLR<6; iLLR++)
+	{
+	  dmax_bIs0 = -1.0E10; // -Inf
+	  dmax_bIs1 = -1.0E10; // -Inf
+	  
+	  for (k=0; k<64; k++)
+	    {
+	      x1r = sigma1*scaledConstellation[2*k];
+	      x1i = sigma1*scaledConstellation[2*k+1];
+	      
+	      term_2_y1r_x1r = 2.0*term_y1r*x1r;
+	      term_2_y1i_x1i = 2.0*term_y1i*x1i;
+	      
+	      psi_r = rho_re*x1r + rho_im*x1i - term_y2r;
+	      psi_i = rho_re*x1i - rho_im*x1r - term_y2i;
+	      
+	      for (l=0; l<64; l++)
+		{
+		  x2r = sigma2*scaledConstellation[2*l];
+		  x2i = sigma2*scaledConstellation[2*l+1];
+		  
+		  term_absx2r = x2r;
+		  term_absx2i = x2i;
+		  
+		  term_2_psir_x2r = 2.0*fabs(psi_r)*term_absx2r;
+		  term_2_psii_x2i = 2.0*fabs(psi_i)*term_absx2i;
+		  
+		  d = - h1_square*x1r*x1r
+		      - h1_square*x1i*x1i
+		      + term_2_y1r_x1r
+		      + term_2_y1i_x1i
+		      + term_2_psir_x2r
+		      - h2_square*x2r*x2r
+		      + term_2_psii_x2i
+		      - h2_square*x2i*x2i;
+		  
+		  // msg("x1=%f+j%f, x2=%f+j%f, h1_square*x1r*x1r=%f, h1_square*x1i*x1i=%f, term_2_y1r_x1r=%f, term_2_y1i_x1i=%f, term_2_psir_x2r=%f, h2_square*x2r*x2r=%f, term_2_psii_x2i=%f, h2_square*x2i*x2i=%f\nd=%f\n", x1r, x1i, x2r, x2i, h1_square*x1r*x1r, h1_square*x1i*x1i, term_2_y1r_x1r, term_2_y1i_x1i, term_2_psir_x2r, h2_square*x2r*x2r, term_2_psii_x2i, h2_square*x2i*x2i, d);
+		  
+		  if ( (symbolMapping[k] & mask)==0 ) // Current bit is 0
+		    {
+		      if (d > dmax_bIs0)
+			dmax_bIs0 = d;
+		    }
+		  else // Current bit is 1
+		    {
+		      if (d > dmax_bIs1)
+			dmax_bIs1 = d;
+		    }
+		}
+	    }
+	  llr[iLLR] = dmax_bIs1 - dmax_bIs0;
+	  mask = mask>>1;
+	} // End iLLR
+      
+      // Stream out
+      *(stream0_out+0)  = -(short)(floor(llr[0]*32768.0)); //  Try (short)(-...), induces quantization noise
+      *(stream0_out+1)  = -(short)(floor(llr[1]*32768.0)); 
+      *(stream0_out+2)  = -(short)(floor(llr[2]*32768.0));
+      *(stream0_out+3)  = -(short)(floor(llr[3]*32768.0));
+      *(stream0_out+4)  = -(short)(floor(llr[4]*32768.0));
+      *(stream0_out+5)  = -(short)(floor(llr[5]*32768.0));
+     
+      /*
+	msg("llr[i]=[%d,%d,%d,%d,%d,%d]\n", stream0_out[0], stream0_out[1], stream0_out[2], stream0_out[3], stream0_out[4], stream0_out[5]);
+      */
+      
+      stream0_out += 6;
     }
 }
 
@@ -4717,7 +5030,7 @@ void qam16_qam16(short *stream0_in, // MF outputs for first stream, i.e. y_{1}
 
   for (i=0;i<length>>1;i+=2) {// In one iteration, we deal with 4 complex samples or 8 real samples
 
-    /*printf("*************i %d********************\n",i);*/
+    /*msg("*************i %d********************\n",i);*/
 #ifdef COMPLEXITY_MEASUREMENT
     // Matching filter and cross-correlation cx considered here
     cnt_add = cnt_add+2*2+(2-1); // h1'*y
@@ -5549,7 +5862,7 @@ interference_abs_pi16(&psi_i_m3_m3 ,&ch_mag_int, &a_i_m3_m3 ,&ONE_OVER_SQRT_10, 
   print_shorts2("stream0_64_out[i+1]:",stream0_64_out+1);*/
   
 #ifdef COMPLEXITY_MEASUREMENT
-  printf("Measured cx (per RE) in qam16_qam16 function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
+  msg("Measured cx (per RE) in qam16_qam16 function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
 #endif
   _mm_empty();
   _m_empty();
@@ -5891,7 +6204,7 @@ void qpsk_qpsk_prec(short *stream0_in,
   int i;
   
 #ifdef COMPLEXITY_MEASUREMENT
-  printf("length=%d\n", length);
+  msg("length=%d\n", length);
 #endif
   for (i=0;i<length>>1;i+=2) {
 #ifdef COMPLEXITY_MEASUREMENT
@@ -5924,12 +6237,23 @@ void qpsk_qpsk_prec(short *stream0_in,
      
     rho_rpi = _mm_adds_pi16(xmm2,xmm3);
     rho_rmi = _mm_subs_pi16(xmm2,xmm3);
+
+    // Divide by 4
+    /*rho_rpi = _mm_srai_pi16(rho_rpi, 2);
+    rho_rmi = _mm_srai_pi16(rho_rmi, 2);
+
+    // Divide by sqrt(2)
+    rho_rpi = _mm_mulhi_pi16(rho_rpi, ONE_OVER_SQRT_2);
+    rho_rmi = _mm_mulhi_pi16(rho_rmi, ONE_OVER_SQRT_2);
+    rho_rpi = _mm_slli_pi16(rho_rpi, 1);
+    rho_rmi = _mm_slli_pi16(rho_rmi, 1);*/
+    
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+2;
 #endif
     
     rho_rpi = _mm_srai_pi16(rho_rpi,2);
-    rho_rmi = _mm_srai_pi16(rho_rmi,2);
+      rho_rmi = _mm_srai_pi16(rho_rmi,2);
     /*print_shorts2("rho_rpi:",&rho_rpi);
       print_shorts2("rho_rmi:",&rho_rmi);*/
 
@@ -6071,7 +6395,7 @@ void qpsk_qpsk_prec(short *stream0_in,
   */
     
 #ifdef COMPLEXITY_MEASUREMENT
-  printf("Measured cx (per RE) in qpsk_qpsk_prec function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
+  msg("Measured cx (per RE) in qpsk_qpsk_prec function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
 #endif
   _mm_empty();
   _m_empty();
@@ -6114,7 +6438,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   else {
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
-  //  printf("qpsk llr for symbol %d (len %d,pos %d,nb_rb %d), llr offset %d\n",symbol,len,(symbol*frame_parms->N_RB_DL*12),nb_rb,llr32-(u32*)dlsch_llr);
+  //  msg("qpsk llr for symbol %d (len %d,pos %d,nb_rb %d), llr offset %d\n",symbol,len,(symbol*frame_parms->N_RB_DL*12),nb_rb,llr32-(u32*)dlsch_llr);
 
   for (i=0;i<len;i++) {
     *llr32 = *rxF;
@@ -6147,7 +6471,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   int i,len;
   unsigned char symbol_mod,len_mod4=0;
   u32 *llr32;
-//  printf("dlsch_rx.c: dlsch_16qam_llr: symbol %d\n",symbol);
+//  msg("dlsch_rx.c: dlsch_16qam_llr: symbol %d\n",symbol);
 
   if (first_symbol_flag==1) {
     llr32 = (u32*)dlsch_llr;
@@ -6176,11 +6500,11 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   else
     *llr32p += (len<<2);
 
-  //    printf("16qam llr symbol %d : len %d, pbch_pss_sss_adjust %d\n",symbol,len,pbch_pss_sss_adjust);
+  //    msg("16qam llr symbol %d : len %d, pbch_pss_sss_adjust %d\n",symbol,len,pbch_pss_sss_adjust);
   len_mod4 = len&3;
   len>>=2;  // length in quad words (4 REs)
   len+=(len_mod4==0 ? 0 : 1);
-  //    printf("16qam llr symbol %d : len %d (%d) => %p\n",symbol,len,len_mod4,(*llr32p));
+  //    msg("16qam llr symbol %d : len %d (%d) => %p\n",symbol,len,len_mod4,(*llr32p));
   
   for (i=0;i<len;i++) {
 
@@ -6247,7 +6571,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_mag =(__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
   ch_magb =(__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
 
-//  printf("symbol %d (%d) pbch_pss_sss_adjust %d => len %d\n",symbol,(int)(llr-dlsch_llr),pbch_pss_sss_adjust,len);
+//  msg("symbol %d (%d) pbch_pss_sss_adjust %d => len %d\n",symbol,(int)(llr-dlsch_llr),pbch_pss_sss_adjust,len);
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->mode1_flag==0)
@@ -6262,11 +6586,11 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   llr2=llr;
   llr+=(len*6);
 
-  //  printf("16qam llr symbol %d : len %d\n",symbol,len);
+  //  msg("16qam llr symbol %d : len %d\n",symbol,len);
   len_mod4 =len&3;
   len2=len>>2;  // length in quad words (4 REs)
   len2+=(len_mod4?0:1);
-  //  printf("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
+  //  msg("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
 
   for (i=0;i<len;i++) {
 
@@ -6286,12 +6610,12 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
       llr2[5] = ((short *)&mmtmpD2)[j+1];
       
 #ifdef DEBUG_LLR
-      printf("llr[0]=%d\n", llr[0]);
-      printf("llr[1]=%d\n", llr[1]);
-      printf("llr[2]=%d\n", llr[2]);
-      printf("llr[3]=%d\n", llr[3]);
-      printf("llr[4]=%d\n", llr[4]);
-      printf("llr[5]=%d\n", llr[5]);
+      msg("llr[0]=%d\n", llr[0]);
+      msg("llr[1]=%d\n", llr[1]);
+      msg("llr[2]=%d\n", llr[2]);
+      msg("llr[3]=%d\n", llr[3]);
+      msg("llr[4]=%d\n", llr[4]);
+      msg("llr[5]=%d\n", llr[5]);
 #endif
       
       llr2+=6;
@@ -6322,7 +6646,7 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i *llr128;
   int len;
   u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-  //    printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
+  //    msg("dlsch_qpsk_qpsk: symbol %d\n",symbol);
   
   if (first_symbol_flag == 1) {
     llr128 = (__m128i*)dlsch_llr;
@@ -6364,17 +6688,17 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-			int **rxdataF_comp,
-			int **rxdataF_comp_i,
-			int **dl_ch_mag,	//|h_1|^2*(2/sqrt{10})
-			int **dl_ch_mag_i,	//|h_2|^2*(2/sqrt{10})
-			int **rho_i,
-			short *dlsch_llr,
-			unsigned char symbol,
-			unsigned char first_symbol_flag,  //first symbol has different structure due to more pilots
-			unsigned short nb_rb,
-			u16 pbch_pss_sss_adjust,
-			short **llr16p) {
+			  int **rxdataF_comp,
+			  int **rxdataF_comp_i,
+			  int **dl_ch_mag,	//|h_1|^2*(2/sqrt{10})*1/sqrt(2) //if MU-MIMO
+			  int **dl_ch_mag_i,	//|h_2|^2*(2/sqrt{10})*1/sqrt(2) //if MU-MIMO
+			  int **rho_i,
+			  short *dlsch_llr,
+			  unsigned char symbol,
+			  unsigned char first_symbol_flag,  //first symbol has different structure due to more pilots
+			  unsigned short nb_rb,
+		  u16 pbch_pss_sss_adjust,
+			  short **llr16p) {
 
   //#define ENABLE_FXP
   //#define ENABLE_FLP
@@ -6387,7 +6711,7 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   s16 *llr16;
   int len;
   u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-  //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
+  //  msg("dlsch_qpsk_qpsk: symbol %d\n",symbol);
   
   if (first_symbol_flag == 1) {
     llr16 = (s16*)dlsch_llr;
@@ -6415,8 +6739,8 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     // symbol has no pilots
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
-  //printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
-  
+  //msg("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
+		      
 #ifdef ENABLE_FXP
   qam16_qam16_mu_mimo((short *)rxF,
 		      (short *)rxF_i,
@@ -6425,9 +6749,84 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		      (short *)llr16,
 		      (short *)rho,
 		      len);
+
+  // msg("llr16=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(llr16), *(llr16+1), *(llr16+2), *(llr16+3), *(llr16+4), *(llr16+5), *(llr16+6), *(llr16+7));
 #endif
+
+  // Comparison between Fxp and Flp
+  /*
+  // Store reference streams for the sake of comparison
+  int i;
+  int lte_ue_pdsch_vars__ch_mag[2][300];
+  int lte_ue_pdsch_vars__ch_mag_i[2][300];
+  int lte_ue_pdsch_vars__rxF[2][300];
+  int lte_ue_pdsch_vars__rxF_i[2][300];
+  int lte_ue_pdsch_vars__rho[2][300];
+  int lte_ue_pdsch_vars__llr[300];
+
   
-#ifdef ENABLE_FLP
+  for (i=0; i<300; i++)
+    {
+      lte_ue_pdsch_vars__ch_mag[0][i] = dl_ch_mag[0][i];
+      //lte_ue_pdsch_vars__ch_mag[1][i] = dl_ch_mag[1][i];
+      
+      lte_ue_pdsch_vars__ch_mag_i[0][i] = dl_ch_mag_i[0][i];
+      //
+      
+      lte_ue_pdsch_vars__rxF[0][i] = rxdataF_comp[0][i];
+      //
+      
+      lte_ue_pdsch_vars__rxF_i[0][i] = rxdataF_comp_i[0][i];
+      //
+      
+      lte_ue_pdsch_vars__rho[0][i] = rho_i[0][i];
+      //
+    }
+  
+  msg("dl_ch_mag[eNB_id]=[");
+  for (i=0; i<300; i++)
+    msg("%d,", *((short *)&(dl_ch_mag[0][i])));
+  msg("]\n");
+  
+  qam16_qam16_mu_mimo((short *)rxF,
+		      (short *)rxF_i,
+		      (short *)ch_mag,
+		      (short *)ch_mag_i,
+		      (short *)llr16,
+		      (short *)rho,
+		      len);
+  
+  for (i=0; i<300; i++)
+    lte_ue_pdsch_vars__llr[i] = llr16[i];
+  
+  msg("llr16 Fxp=[");
+  for (i=0; i<300; i++)
+    msg("%d,", llr16[i]);
+  msg("]\n");
+
+  for (i=0; i<300; i++)
+    {
+      dl_ch_mag[0][i] = lte_ue_pdsch_vars__ch_mag[0][i];
+      //dl_ch_mag[1][i] = lte_ue_pdsch_vars__ch_mag[1][i];
+
+      dl_ch_mag_i[0][i] = lte_ue_pdsch_vars__ch_mag_i[0][i];
+      //
+      
+      rxdataF_comp[0][i] = lte_ue_pdsch_vars__rxF[0][i];
+      //
+      
+      rxdataF_comp_i[0][i] = lte_ue_pdsch_vars__rxF_i[0][i];
+      //
+      
+      rho_i[0][i] = lte_ue_pdsch_vars__rho[0][i];
+      //
+    }
+  
+  msg("dl_ch_mag[eNB_id]=[");
+  for (i=0; i<300; i++)
+    msg("%d,", *((short *)&(dl_ch_mag[0][i])));
+  msg("]\n");
+  
   qam16_qam16_mu_mimo_flp((short *)rxF,
 			  (short *)rxF_i,
 			  (short *)ch_mag,
@@ -6435,6 +6834,59 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			  (short *)llr16,
 			  (short *)rho,
 			  len);
+  
+  msg("llr16 Flp=[");
+  for (i=0; i<300; i++)
+    msg("%d,", llr16[i]);
+  msg("]\n");
+
+  int sum = 0;
+  double ratio = 0;
+  int diff[300];
+  double diff_percent[300];
+  for (i=0; i<300; i++)
+    {
+      sum += fabs(lte_ue_pdsch_vars__llr[i] - llr16[i]);
+      ratio += fabs((double)lte_ue_pdsch_vars__llr[i] - (double)llr16[i])/fabs((double)lte_ue_pdsch_vars__llr[i]);
+      diff[i] = fabs(lte_ue_pdsch_vars__llr[i] - llr16[i]);
+      diff_percent[i] = fabs((double)lte_ue_pdsch_vars__llr[i] - (double)llr16[i])/fabs((double)lte_ue_pdsch_vars__llr[i]);
+    }
+
+  msg("diff=[");
+  for (i=0; i<300; i++)
+    msg("%d,", diff[i]);
+  msg("]\n");
+
+  msg("diff_percent=[");
+  for (i=0; i<300; i++)
+    msg("%f,", diff_percent[i]);
+  msg("]\n");
+  
+  if (sum == 0)
+    msg("\nLLR Fxp = LLR Flp, OK!\n");
+  else
+    msg("\nLLR Fxp = LLR Flp, NOK!!, sum=%d, ratio=%f\n", sum, ratio);
+  */
+  
+#ifdef ENABLE_FLP
+#ifdef ENABLE_MLD
+  // Reference ML Detector
+  qam16_qam16_mu_mimo_mld_flp((short *)rxF,
+			      (short *)rxF_i,
+			      (short *)ch_mag,
+			      (short *)ch_mag_i,
+			      (short *)llr16,
+			      (short *)rho,
+			      len);
+#else
+  qam16_qam16_mu_mimo_flp((short *)rxF,
+			  (short *)rxF_i,
+			  (short *)ch_mag,
+			  (short *)ch_mag_i,
+			  (short *)llr16,
+			  (short *)rho,
+			  len);
+#endif
 #endif
   
   /*qam16_qam16((short *)rxF,
@@ -6451,74 +6903,87 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
-int dlsch_16qam_16qam_llr_full_flp(LTE_DL_FRAME_PARMS *frame_parms,
-				   double **rxdataF_comp,
-				   double **rxdataF_comp_i,
-				   double **dl_ch_mag,   //|h_1|^2*(2/sqrt{10})
-				   double **dl_ch_mag_i, //|h_2|^2*(2/sqrt{10})
-				   double **rho_i,
-				   short *dlsch_llr,
-				   unsigned char symbol,
-				   unsigned char first_symbol_flag,  //first symbol has different structure due to more pilots
-				   unsigned short nb_rb,
-				   u16 pbch_pss_sss_adjust,
-				   short **llr16p)
-{  
-  double *rxF     = (double *)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  double *rxF_i   = (double*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  double *ch_mag  = (double*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  double *ch_mag_i= (double*)&dl_ch_mag_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  double *rho     = (double*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  s16 *llr16;
+int dlsch_16qam_16qam_mld_llr(LTE_DL_FRAME_PARMS *frame_parms,
+			      int **y,
+			      int **h1,
+			      int **h2,
+			      short *dlsch_llr,
+			      unsigned char symbol,
+			      unsigned char first_symbol_flag,  //first symbol has different structure due to more pilots
+			      unsigned short nb_rb,
+			      u16 pbch_pss_sss_adjust,
+			      short **llr16p)
+{
   int len;
   u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-  //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
-  
-  if (first_symbol_flag == 1) {
+
+  //      [htilde_11 htilde_12]                              [h11]        [h12]
+  // Hp = [htilde_21 htilde_22] = [htilde_1 htilde_2], w/ h1=[h21] and h2=[h22]
+  s16 *y1_temp = (s16*)&y[0][(symbol*frame_parms->N_RB_DL*12)];
+  s16 *y2_temp = (s16*)&y[1][(symbol*frame_parms->N_RB_DL*12)];
+  s16 *h11     = (s16*)&h1[0][(symbol_mod*frame_parms->N_RB_DL*12)];
+  s16 *h21     = (s16*)&h1[1][(symbol_mod*frame_parms->N_RB_DL*12)];
+  s16 *h12     = (s16*)&h2[0][(symbol_mod*frame_parms->N_RB_DL*12)];
+  s16 *h22     = (s16*)&h2[1][(symbol_mod*frame_parms->N_RB_DL*12)];
+
+  s16 *llr16;
+    
+  if (first_symbol_flag == 1)
     llr16 = (s16*)dlsch_llr;
-  }
-  else {
+  else
     llr16 = (s16*)(*llr16p);
-  }
-
-  if (!llr16) {
-    msg("dlsch_16qam_16qam_llr: llr is null, symbol %d\n",symbol);
-    return -1;
-  }
-
-  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
-      // in 2 antenna ports we have 8 REs per symbol per RB
-      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
-    else
-      // for 1 antenna port we have 10 REs per symbol per RB 
-      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
-  }
-  else {
+  
+  if (!llr16)
+    {
+      msg("dlsch_16qam_16qam_llr: llr is null, symbol %d\n",symbol);
+      return -1;
+    }
+  
+  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp)))
+    {
+      // if symbol has pilots
+      if (frame_parms->mode1_flag==0)
+	// in 2 antenna ports we have 8 REs per symbol per RB
+	len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
+      else
+	// for 1 antenna port we have 10 REs per symbol per RB 
+	len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
+    }
+  else
     // symbol has no pilots
     len = (nb_rb*12) - pbch_pss_sss_adjust;
-  }
-  //printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
+  
+  // Reference ML Detector
+  /*
+  msg("y1_temp=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(y1_temp), *(y1_temp+1), *(y1_temp+2), *(y1_temp+3), *(y1_temp+4), *(y1_temp+5), *(y1_temp+6), *(y1_temp+7));
+  msg("y2_temp=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(y2_temp), *(y2_temp+1), *(y2_temp+2), *(y2_temp+3), *(y2_temp+4), *(y2_temp+5), *(y2_temp+6), *(y2_temp+7));
+  msg("h1_0=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h1_0), *(h1_0+1), *(h1_0+2), *(h1_0+3), *(h1_0+4), *(h1_0+5), *(h1_0+6), *(h1_0+7));
+  msg("h1_1=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h1_1), *(h1_1+1), *(h1_1+2), *(h1_1+3), *(h1_1+4), *(h1_1+5), *(h1_1+6), *(h1_1+7));
+  msg("h2_0=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h2_0), *(h2_0+1), *(h2_0+2), *(h2_0+3), *(h2_0+4), *(h2_0+5), *(h2_0+6), *(h2_0+7));
+  msg("h2_1=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(h2_1), *(h2_1+1), *(h2_1+2), *(h2_1+3), *(h2_1+4), *(h2_1+5), *(h2_1+6), *(h2_1+7));
+  */
 
-  qam16_qam16_mu_mimo_full_flp((double *)rxF,
-			       (double *)rxF_i,
-			       (double *)ch_mag,
-			       (double *)ch_mag_i,
-			       (short *)llr16,
-			       (double *)rho,
-			       len);
+  qam16_qam16_mu_mimo_bruteforce_mld((short *)y1_temp,
+				     (short *)y2_temp,
+				     (short *)h11,
+				     (short *)h21,
+				     (short *)h12,
+				     (short *)h22,
+				     (short *)llr16,
+				     len);
+  
+  // msg("llr16=[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(llr16), *(llr16+1), *(llr16+2), *(llr16+3), *(llr16+4), *(llr16+5), *(llr16+6), *(llr16+7));
   
   llr16 += (len<<2);
   *llr16p = (short *)llr16;
-
+  
   return(0);
 }
 
 int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			int **rxdataF_comp,
 			int **rxdataF_comp_i,
-			int **dl_ch_mag,	//|h_1|^2*(2/sqrt{42}), to check
+			int **dl_ch_mag,	//|h_1|^2*(4/sqrt{42}), to check
 			int **dl_ch_mag_i,	//|h_2|^2*(2/sqrt{42}), to check
 			int **rho_i,
 			short *dlsch_llr,
@@ -6536,7 +7001,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   s16 *llr16;
   int len;
   u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-  //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
+  //  msg("dlsch_qpsk_qpsk: symbol %d\n",symbol);
 
   if (first_symbol_flag == 1)
     {
@@ -6565,7 +7030,17 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     // symbol has no pilots
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
-
+#ifdef ENABLE_FLP
+  // Done with Brute-force MLD only
+  qam64_qam64_mu_mimo_mld_flp((short *)rxF,
+			      (short *)rxF_i,
+			      (short *)ch_mag,
+			      (short *)ch_mag_i,
+			      (short *)llr16,
+			      (short *)rho,
+			      len);
+  
+#else
   qam64_qam64_mu_mimo((short *)rxF,
 		      (short *)rxF_i,
 		      (short *)ch_mag,
@@ -6573,7 +7048,8 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		      (short *)llr16,
 		      (short *)rho,
 		      len);
-
+#endif
+  
   llr16 += (6*len);
   *llr16p = (short *)llr16;
 
@@ -6642,7 +7118,7 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
   u8 pilots = ((symbol_mod==0)||(symbol_mod==(4-frame_parms->Ncp))) ? 1 : 0;
 
 
-  //    printf("Doing alamouti!\n");
+  //    msg("Doing alamouti!\n");
   rxF0     = (short*)&rxdataF_comp[0][jj];  //tx antenna 0  h0*y
   rxF1     = (short*)&rxdataF_comp[2][jj];  //tx antenna 1  h1*y
   ch_mag0 = (__m128i *)&dl_ch_mag[0][jj];
@@ -6706,7 +7182,7 @@ void dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char rb,re;
   int jj=1+(symbol*frame_parms->N_RB_DL*12);
 
-  //  printf("Doing antcyc rx\n");
+  //  msg("Doing antcyc rx\n");
   for (rb=0;rb<nb_rb;rb++) {
 
     for (re=0;re<12;re+=2) {
@@ -6776,115 +7252,6 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   _mm_empty();
   _m_empty();
 
-}
-
-void dlsch_detection_mrc_full_flp(LTE_DL_FRAME_PARMS *frame_parms,
-				  double **rxdataF_comp,
-				  double **rxdataF_comp_i,
-				  double **rho,
-				  double **rho_i,
-				  double **dl_ch_mag,
-				  double **dl_ch_magb,
-				  unsigned char symbol,
-				  unsigned short nb_rb,
-				  unsigned char dual_stream_UE)
-{
-  unsigned char aatx;
-  int i, j;
-  
-  //__m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*dl_ch_mag128_0,*dl_ch_mag128_1,*dl_ch_mag128_0b,*dl_ch_mag128_1b,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
-  
-  double *p_rxdata_comp0, *p_rxdata_comp1, *p_rxdata_comp_i0, *p_rxdata_comp_i1, *p_rho0, *p_rho1, *p_rho_i0, *p_rho_i1, *p_dl_ch_mag0, *p_dl_ch_mag1, *p_dl_ch_magb0, *p_dl_ch_magb1;
-
-  if (frame_parms->nb_antennas_rx>1)
-    {
-      for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
-	{
-	  //rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
-	  //rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
-	  //dl_ch_mag128_0      = (__m128i *)&dl_ch_mag[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
-	  //dl_ch_mag128_1      = (__m128i *)&dl_ch_mag[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
-	  //dl_ch_mag128_0b     = (__m128i *)&dl_ch_magb[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
-	  //dl_ch_mag128_1b     = (__m128i *)&dl_ch_magb[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
-	  
-	  p_rxdata_comp0 = (double *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-	  p_rxdata_comp1 = (double *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-	  p_dl_ch_mag0   = (double *)&dl_ch_mag[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-	  p_dl_ch_mag1   = (double *)&dl_ch_mag[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-	  p_dl_ch_magb0  = (double *)&dl_ch_magb[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-	  p_dl_ch_magb1  = (double *)&dl_ch_magb[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-
-	  // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
-	  for (i=0;i<nb_rb*3;i++)
-	    {
-	      // rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
-	      // dl_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0[i],1),_mm_srai_epi16(dl_ch_mag128_1[i],1));
-	      // dl_ch_mag128_0b[i]   = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0b[i],1),_mm_srai_epi16(dl_ch_mag128_1b[i],1));
-	    
-	      for (j=0; j<8; j++)
-		{
-		  *(p_rxdata_comp0+j) = *(p_rxdata_comp0+j) + *(p_rxdata_comp1+j);
-		  *(p_dl_ch_mag0+j)   = *(p_dl_ch_mag0+j)   + *(p_dl_ch_mag1+j);
-		  *(p_dl_ch_magb0+j)  = *(p_dl_ch_magb0+j)  + *(p_dl_ch_magb1+j);
-		}
-	      p_rxdata_comp0 = p_rxdata_comp0 +8;
-	      p_rxdata_comp1 = p_rxdata_comp1 +8;
-	      p_dl_ch_mag0   = p_dl_ch_mag0   +8;
-	      p_dl_ch_mag1   = p_dl_ch_mag1   +8;
-	      p_dl_ch_magb0  = p_dl_ch_magb0  +8;
-	      p_dl_ch_magb1  = p_dl_ch_magb1  +8;
-	    }
-	}
-  
-      if (rho)
-	{
-	  // rho128_0 = (__m128i *) &rho[0][symbol*frame_parms->N_RB_DL*12];
-	  // rho128_1 = (__m128i *) &rho[1][symbol*frame_parms->N_RB_DL*12];
-	  
-	  p_rho0 = (double *) &rho[0][symbol*frame_parms->N_RB_DL*12];
-	  p_rho1 = (double *) &rho[1][symbol*frame_parms->N_RB_DL*12];
-	  for (i=0;i<nb_rb*3;i++) 
-	    {
-	      // rho128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_0[i],1),_mm_srai_epi16(rho128_1[i],1));
-	    
-	      for (j=0; j<8; j++)
-		{
-		  *(p_rho0+j) = *(p_rho0+j) + *(p_rho1+j);
-		}
-	      p_rho0 = p_rho0 +8;
-	      p_rho1 = p_rho1 +8;
-	    }
-	}
-      
-      if (dual_stream_UE == 1)
-	{
-	  // rho128_i0 = (__m128i *) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
-	  // rho128_i1 = (__m128i *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
-	  // rxdataF_comp128_i0   = (__m128i *)&rxdataF_comp_i[0][symbol*frame_parms->N_RB_DL*12];  
-	  // rxdataF_comp128_i1   = (__m128i *)&rxdataF_comp_i[1][symbol*frame_parms->N_RB_DL*12];  
-	  
-	  p_rho_i0           = (double *) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
-	  p_rho_i1           = (double *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
-	  p_rxdata_comp_i0   = (double *)&rxdataF_comp_i[0][symbol*frame_parms->N_RB_DL*12];  
-	  p_rxdata_comp_i1   = (double *)&rxdataF_comp_i[1][symbol*frame_parms->N_RB_DL*12];  
-	  
-	  for (i=0;i<nb_rb*3;i++)
-	    {
-	      // rxdataF_comp128_i0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_i0[i],1),_mm_srai_epi16(rxdataF_comp128_i1[i],1));
-	      // rho128_i0[i]          = _mm_adds_epi16(_mm_srai_epi16(rho128_i0[i],1),_mm_srai_epi16(rho128_i1[i],1));
-	      
-	      for (j=0; j<8; j++)
-		{
-		  *(p_rxdata_comp_i0+j) = *(p_rxdata_comp_i0+j) + *(p_rxdata_comp_i1+j);
-		  *(p_rho_i0+j) = *(p_rho_i0+j) + *(p_rho_i1+j);
-		}
-	      p_rxdata_comp_i0 = p_rxdata_comp_i0 +8;
-	      p_rxdata_comp_i1 = p_rxdata_comp_i1 +8;
-	      p_rho_i0         = p_rho_i0 +8;	      
-	      p_rho_i1         = p_rho_i1 +8;	      
-	    }
-	}
-    }
 }
 
 unsigned short dlsch_extract_rbs_single(int **rxdataF,
@@ -6958,14 +7325,14 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  *pmi_ext = (pmi>>((rb>>2)<<1))&3;
 	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
 	  /*	  
-	    printf("rb %d\n",rb);
+	    msg("rb %d\n",rb);
 	    for (i=0;i<12;i++)
-	    printf("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
-	    printf("\n");
+	    msg("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
+	    msg("\n");
 	  */
 	  for (i=0;i<12;i++) {
 	    rxF_ext[i]=rxF[i<<1];
-	    //	      printf("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
+	    //	      msg("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
 	    //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
 	  }
 	  nb_rb++;
@@ -6978,7 +7345,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
       }
     else {  // Odd number of RBs
       for (rb=0;rb<frame_parms->N_RB_DL>>1;rb++) {
-	//	printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
+	//	msg("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
 	skip_half=0;
 	if (rb < 32)
 	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
@@ -7046,13 +7413,13 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 
 	if (rb_alloc_ind==1) {
 	  /*	  	  
-		 printf("rb %d\n",rb);
+		 msg("rb %d\n",rb);
 		 for (i=0;i<12;i++)
-		 printf("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
-		 printf("\n");
+		 msg("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
+		 msg("\n");
 	  */
 	  if (pilots==0) {
-	    //	    	    printf("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
+	    //	    	    msg("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
 	    if (skip_half==1) {
 	      memcpy(dl_ch0_ext,dl_ch0,6*sizeof(int));
 	      for (i=0;i<6;i++)
@@ -7076,13 +7443,13 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    }
 	  }
 	  else {
-	    //	    	    printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
+	    //	    	    msg("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
 	    j=0;
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
 		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  		  msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		}
 	      }
@@ -7093,7 +7460,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	      for (i=0;i<6;i++) {
 		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[(i+6)<<1];
-		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  		  msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i+6];
 		}
 	      }
@@ -7105,7 +7472,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 		if ((i!=(frame_parms->nushift+poffset)) &&
 		    (i!=(frame_parms->nushift+poffset+6))) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  		  msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		  
 		}
@@ -7157,8 +7524,8 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  rb_alloc_ind = 0;
 	}
       }
-      //	printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);      
-      //      printf("DC rb %d (%p)\n",rb,rxF);
+      //	msg("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);      
+      //      msg("DC rb %d (%p)\n",rb,rxF);
       if (rb_alloc_ind==1) {
 	if (pilots==0) {
 	  for (i=0;i<6;i++) {
@@ -7179,7 +7546,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    if (i!=(frame_parms->nushift+poffset)) {
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      rxF_ext[j++]=rxF[i<<1];
-	      //	           	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	      //	           	      msg("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
 	    }
 	  }
 	  rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
@@ -7187,7 +7554,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    if (i!=(frame_parms->nushift+6+poffset)) {
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      rxF_ext[j++]=rxF[(1+i-6)<<1];
-	      //	            	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	      //	            	      msg("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
 	    }
 	  }
 	  dl_ch0_ext+=10;
@@ -7202,8 +7569,8 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
       rb++;
       
       for (;rb<frame_parms->N_RB_DL;rb++) {
-	//	printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);	
-	//	printf("rb %d (%p)\n",rb,rxF);
+	//	msg("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);	
+	//	msg("rb %d (%p)\n",rb,rxF);
 	skip_half=0;
 	if (rb < 32)
 	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
@@ -7263,13 +7630,13 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	
 	if (rb_alloc_ind==1) {
 	  /*
-  	    printf("rb %d\n",rb);
+  	    msg("rb %d\n",rb);
 	    for (i=0;i<12;i++)
-	    printf("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
-	    printf("\n");
+	    msg("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
+	    msg("\n");
 	  */
 	  if (pilots==0) {
-	    //	    	    printf("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
+	    //	    	    msg("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
 	    if (skip_half==1) {
 	      memcpy(dl_ch0_ext,dl_ch0,6*sizeof(int));
 	      for (i=0;i<6;i++)
@@ -7295,13 +7662,13 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    }
 	  }
 	  else {
-	    //	    	    printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
+	    //	    	    msg("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
 	    j=0;
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
 		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		}
 	      }
@@ -7312,7 +7679,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	      for (i=0;i<6;i++) {
 		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[(i+6)<<1];
-		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i+6];
 		}
 	      }
@@ -7324,7 +7691,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 		if ((i!=(frame_parms->nushift+poffset)) &&
 		    (i!=(frame_parms->nushift+poffset+6))) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		}
 	      }
@@ -7365,7 +7732,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
   unsigned char *pmi_loc;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  //  printf("extract_rbs: symbol_mod %d\n",symbol_mod);
+  //  msg("extract_rbs: symbol_mod %d\n",symbol_mod);
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
     pilots=1;
@@ -7408,7 +7775,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 
 
 	  *pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	  //	  printf("rb %d: sb %d : pmi %d\n",rb,rb>>2,*pmi_loc);
+	  //	  msg("rb %d: sb %d : pmi %d\n",rb,rb>>2,*pmi_loc);
 
 	  pmi_loc++;
 
@@ -7418,14 +7785,14 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
 	    memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
 	    /*
-	      printf("rb %d\n",rb);
+	      msg("rb %d\n",rb);
 	      for (i=0;i<12;i++)
-	      printf("(%d %d)",((short *)dl_ch)[i<<1],((short*)dl_ch)[1+(i<<1)]);
-	      printf("\n");*/
+	      msg("(%d %d)",((short *)dl_ch)[i<<1],((short*)dl_ch)[1+(i<<1)]);
+	      msg("\n");*/
 	    
 	    for (i=0;i<12;i++) {
 	      rxF_ext[i]=rxF[i<<1];
-	      //	      printf("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
+	      //	      msg("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
 	      //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
 	    }
 	    nb_rb++;
@@ -7441,7 +7808,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 		  (i!=frame_parms->nushift+6) &&
 		  (i!=frame_parms->nushift+9)) {
 		rxF_ext[j]=rxF[i<<1];
-		//	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		//	      msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		dl_ch0_ext[j]=dl_ch0[i];
 		dl_ch1_ext[j++]=dl_ch1[i];
 	      }
@@ -7472,7 +7839,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	
 	if (rb_alloc_ind==1) {
 	  *pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	  //printf("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
+	  //msg("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
 
 	  pmi_loc++;
 	  if (pilots==0) {
@@ -7493,12 +7860,12 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 		  (i!=frame_parms->nushift+6) &&
 		  (i!=frame_parms->nushift+9)) {
 		rxF_ext[j]=rxF[i<<1];
-		//			      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		//			      msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 
 		dl_ch0_ext[j]  =dl_ch0[i];
 		dl_ch1_ext[j++]=dl_ch1[i];
 
-		//			      printf("extract rb %d, re %d => ch0 (%d,%d) ch1 (%d,%d)\n",rb,i,
+		//			      msg("extract rb %d, re %d => ch0 (%d,%d) ch1 (%d,%d)\n",rb,i,
 		//				     *(short *)&dl_ch0_ext[j-1],*(1+(short*)&dl_ch0_ext[j-1]),
 		//				     *(short *)&dl_ch1_ext[j-1],*(1+(short*)&dl_ch1_ext[j-1]));
 	      }
@@ -7529,7 +7896,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
       if (rb_alloc_ind==1) {
 
 	*pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	//	printf("rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
+	//	msg("rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
 	pmi_loc++;
 
 	if (pilots==0) {
@@ -7557,8 +7924,8 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      dl_ch1_ext[j]=dl_ch1[i];
 	      rxF_ext[j++]=rxF[i<<1];
-	      //	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
-	      //	      printf("extract rb %d, re %d => ch0 (%d,%d) ch1 (%d,%d)\n",rb,i,
+	      //	      msg("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	      //	      msg("extract rb %d, re %d => ch0 (%d,%d) ch1 (%d,%d)\n",rb,i,
 	      //		     *(short *)&dl_ch0_ext[j-1],*(1+(short*)&dl_ch0_ext[j-1]),
 	      //		     *(short *)&dl_ch1_ext[j-1],*(1+(short*)&dl_ch1_ext[j-1]));
 	    }
@@ -7570,7 +7937,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      dl_ch1_ext[j]=dl_ch1[i];
 	      rxF_ext[j++]=rxF[(1+i-6)<<1];
-	      //	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	      //	      msg("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
 	    }
 	  }
 	  nb_rb++;
@@ -7619,7 +7986,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	if (rb_alloc_ind==1) {
 
 	  *pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	  //	  printf("rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
+	  //	  msg("rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
 
 	  pmi_loc++;
 
@@ -7641,10 +8008,10 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 		  (i!=frame_parms->nushift+6) &&
 		  (i!=frame_parms->nushift+9)) {
 		rxF_ext[j]=rxF[i<<1];
-		//		printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		//		msg("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		dl_ch0_ext[j]=dl_ch0[i];
 		dl_ch1_ext[j++]=dl_ch1[i];
-		//			      printf("extract rb %d, re %d => ch0 (%d,%d) ch1 (%d,%d)\n",rb,i,
+		//			      msg("extract rb %d, re %d => ch0 (%d,%d) ch1 (%d,%d)\n",rb,i,
 		//				     *(short *)&dl_ch0_ext[j-1],*(1+(short*)&dl_ch0_ext[j-1]),
 		//				     *(short *)&dl_ch1_ext[j-1],*(1+(short*)&dl_ch1_ext[j-1]));
 	      }
@@ -7680,7 +8047,7 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i *dl_ch128,*dl_ch128i,*dl_ch_rho128;
   unsigned char aarx,symbol_mod,pilots=0;
 
-  //    printf("dlsch_dual_stream_correlation: symbol %d\n",symbol);
+  //    msg("dlsch_dual_stream_correlation: symbol %d\n",symbol);
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -8045,177 +8412,6 @@ void dlsch_dual_stream_correlation_flp(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
-void dlsch_dual_stream_correlation_full_flp(LTE_DL_FRAME_PARMS *frame_parms,
-					    unsigned char symbol,
-					    unsigned short nb_rb,
-					    int **dl_ch_estimates_ext,
-					    int **dl_ch_estimates_ext_i,
-					    double **dl_ch_rho_ext,
-					    unsigned char output_shift)
-{
-  unsigned short rb;
-  unsigned char aarx,symbol_mod,pilots=0;
-  int i;
-  
-  short *p_dl_ch/*input*/, *p_dl_chi/*input*/;
-  double *p_dl_ch_rho/*output*/;
-  double dl_ch_temp[24], dl_chi_temp[24], dl_ch_rho_temp[24];
-  double /*temp0_16bits[8],*/ temp1_16bits[8]/*, temp2_16bits[8], temp3_16bits[8]*/; // Correspond to 8*16 bits
-  double temp0_32bits[4], temp1_32bits[4], temp2_32bits[4], temp3_32bits[4]; // Correspond to 4*32 bits
-  
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
-    pilots=1;
-  
-  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-    {
-      p_dl_ch      = (short *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-      p_dl_chi     = (short *)&dl_ch_estimates_ext_i[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-      
-      p_dl_ch_rho  = (double *)&dl_ch_rho_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      // pointers are first casted to short for 16-bits format reading/writing
-      
-      for (rb=0;rb<nb_rb;rb++)
-	{
-	  for (i=0; i<16; i++)
-	    {
-	      dl_ch_temp[i]   = *(p_dl_ch+i)/pow(2, 15);
-	      dl_chi_temp[i]  = *(p_dl_chi+i)/pow(2, 15);
-	    }
-	  if (pilots==0)
-	    {
-	      for (i=16; i<24; i++)
-		{
-		  dl_ch_temp[i]  = *(p_dl_ch+i)/pow(2, 15);
-		  dl_chi_temp[i] = *(p_dl_chi+i)/pow(2, 15);
-		}
-	    }
-
-	  // multiply by conjugated channel
-	  for (i=0; i<8>>1; i++)
-	    temp0_32bits[i] = dl_ch_temp[2*i]*dl_chi_temp[2*i] + dl_ch_temp[2*i+1]*dl_chi_temp[2*i+1];
-	  
-	  temp1_16bits[0] = -dl_ch_temp[1]; // shuffle low
-	  temp1_16bits[1] =  dl_ch_temp[0]; // + conjugate
-	  temp1_16bits[2] = -dl_ch_temp[3];
-	  temp1_16bits[3] =  dl_ch_temp[2];
-	  temp1_16bits[4] = -dl_ch_temp[4+1]; // shuffle high
-	  temp1_16bits[5] =  dl_ch_temp[4+0];
-	  temp1_16bits[6] = -dl_ch_temp[4+3];
-	  temp1_16bits[7] =  dl_ch_temp[4+2];
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp1_32bits[i] = temp1_16bits[2*i]*dl_chi_temp[2*i] + temp1_16bits[2*i+1]*dl_chi_temp[2*i+1];
-	  
-	  temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	  temp2_32bits[1] = temp1_32bits[0];
-	  temp2_32bits[2] = temp0_32bits[1];
-	  temp2_32bits[3] = temp1_32bits[1];
-	  
-	  temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	  temp3_32bits[1] = temp1_32bits[2];
-	  temp3_32bits[2] = temp0_32bits[3];
-	  temp3_32bits[3] = temp1_32bits[3];
-	  
-	  for (i=0; i<8>>1; i++)
-	    {
-	      dl_ch_rho_temp[i]   = temp2_32bits[i];
-	      dl_ch_rho_temp[4+i] = temp3_32bits[i];
-	    }	      
-	  
-	  // multiply by conjugated channel
-	  for (i=0; i<8>>1; i++)
-	    temp0_32bits[i] = dl_ch_temp[8+2*i]*dl_chi_temp[8+2*i] + dl_ch_temp[8+2*i+1]*dl_chi_temp[8+2*i+1];
-	  
-	  temp1_16bits[0] = -dl_ch_temp[8+1]; // shuffle low
-	  temp1_16bits[1] =  dl_ch_temp[8+0]; // + conjugate
-	  temp1_16bits[2] = -dl_ch_temp[8+3];
-	  temp1_16bits[3] =  dl_ch_temp[8+2];
-	  temp1_16bits[4] = -dl_ch_temp[8+4+1]; // shuffle high
-	  temp1_16bits[5] =  dl_ch_temp[8+4+0];
-	  temp1_16bits[6] = -dl_ch_temp[8+4+3];
-	  temp1_16bits[7] =  dl_ch_temp[8+4+2];
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp1_32bits[i] = temp1_16bits[2*i]*dl_chi_temp[8+2*i] + temp1_16bits[2*i+1]*dl_chi_temp[8+2*i+1];
-	  
-	  temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	  temp2_32bits[1] = temp1_32bits[0];
-	  temp2_32bits[2] = temp0_32bits[1];
-	  temp2_32bits[3] = temp1_32bits[1];
-	  
-	  temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	  temp3_32bits[1] = temp1_32bits[2];
-	  temp3_32bits[2] = temp0_32bits[3];
-	  temp3_32bits[3] = temp1_32bits[3];
-	  
-	  for (i=0; i<8>>1; i++)
-	    {
-	      dl_ch_rho_temp[8+i]   = temp2_32bits[i];
-	      dl_ch_rho_temp[8+4+i] = temp3_32bits[i];
-	    }	      
-	  if (pilots==0)
-	    {  
-	      // multiply by conjugated channel
-	      for (i=0; i<8>>1; i++)
-		temp0_32bits[i] = dl_ch_temp[16+2*i]*dl_chi_temp[16+2*i] + dl_ch_temp[16+2*i+1]*dl_chi_temp[16+2*i+1];
-	      
-	      temp1_16bits[0] = -dl_ch_temp[16+1]; // shuffle low
-	      temp1_16bits[1] =  dl_ch_temp[16+0]; // + conjugate
-	      temp1_16bits[2] = -dl_ch_temp[16+3];
-	      temp1_16bits[3] =  dl_ch_temp[16+2];
-	      temp1_16bits[4] = -dl_ch_temp[16+4+1]; // shuffle high
-	      temp1_16bits[5] =  dl_ch_temp[16+4+0];
-	      temp1_16bits[6] = -dl_ch_temp[16+4+3];
-	      temp1_16bits[7] =  dl_ch_temp[16+4+2];
-	      
-	      for (i=0; i<8>>1; i++)
-		temp1_32bits[i] = temp1_16bits[2*i]*dl_chi_temp[16+2*i] + temp1_16bits[2*i+1]*dl_chi_temp[16+2*i+1];
-	      
-	      temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	      temp2_32bits[1] = temp1_32bits[0];
-	      temp2_32bits[2] = temp0_32bits[1];
-	      temp2_32bits[3] = temp1_32bits[1];
-	      
-	      temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	      temp3_32bits[1] = temp1_32bits[2];
-	      temp3_32bits[2] = temp0_32bits[3];
-	      temp3_32bits[3] = temp1_32bits[3];
-	      
-	      for (i=0; i<8>>1; i++)
-		{
-		  dl_ch_rho_temp[16+i]   = temp2_32bits[i];
-		  dl_ch_rho_temp[16+4+i] = temp3_32bits[i];
-		}	      		  
-	      
-	      for (i=0; i<24; i++)
-		{
-		  // Should be casted to int
-		  *(p_dl_ch+i)     = (short)floor(dl_ch_temp[i]*pow(2, output_shift));
-		  *(p_dl_chi+i)    = (short)floor(dl_chi_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_rho+i) = (double) dl_ch_rho_temp[i];
-		}
-	      p_dl_ch     = p_dl_ch+24;
-	      p_dl_chi    = p_dl_chi+24;
-	      p_dl_ch_rho = p_dl_ch_rho+24;
-	    }
-	  else
-	    {      
-	      for (i=0; i<16; i++)
-		{
-		  *(p_dl_ch+i)     = (short)floor(dl_ch_temp[i]*pow(2, output_shift));
-		  *(p_dl_chi+i)    = (short)floor(dl_chi_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_rho+i) = (double) dl_ch_rho_temp[i];
-		}
-	      p_dl_ch     = p_dl_ch+16;
-	      p_dl_chi    = p_dl_chi+16;
-	      p_dl_ch_rho = p_dl_ch_rho+16;
-	    }
-	}	
-    }
-}
-
 __m128i QAM_amp128,QAM_amp128b;
 
 void dlsch_channel_compensation(int **rxdataF_ext,
@@ -8262,7 +8458,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
     }
     
-    //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
+    //    msg("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
 
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
@@ -8531,7 +8727,7 @@ void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
 void prec2A_flp(unsigned char pmi, double *ch0, double *ch1) {
   int i;
   double ch1_temp[8];
-  //printf("pmi:%d\n", pmi);
+  //msg("pmi:%d\n", pmi);
   switch (pmi)
     {
     case 0 : // +1 +1
@@ -8543,7 +8739,7 @@ void prec2A_flp(unsigned char pmi, double *ch0, double *ch1) {
 	 ch0[i] = ch0[i]-ch1[i]; // Sub Re and Im independently
       break;
     case 2 : // +1 +j
-      //printf("ch0_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch0[0], ch0[1], ch0[2], ch0[3], ch0[4], ch0[5], ch0[6], ch0[7]); 
+      //msg("ch0_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch0[0], ch0[1], ch0[2], ch0[3], ch0[4], ch0[5], ch0[6], ch0[7]); 
       
       ch1_temp[0] =  ch1[1]; // shuffle low
       ch1_temp[1] = -ch1[0]; // + conjugate
@@ -8553,17 +8749,17 @@ void prec2A_flp(unsigned char pmi, double *ch0, double *ch1) {
       ch1_temp[5] = -ch1[4+0];
       ch1_temp[6] =  ch1[4+3];
       ch1_temp[7] = -ch1[4+2];
-      //printf("ch1_temp_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch1_temp[0], ch1_temp[1], ch1_temp[2], ch1_temp[3], ch1_temp[4], ch1_temp[5], ch1_temp[6], ch1_temp[7]); 
+      //msg("ch1_temp_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch1_temp[0], ch1_temp[1], ch1_temp[2], ch1_temp[3], ch1_temp[4], ch1_temp[5], ch1_temp[6], ch1_temp[7]); 
       for (i=0; i<8; i++)
 	 ch1[i] = ch1_temp[i];
 
-      //printf("ch1_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch1[0], ch1[1], ch1[2], ch1[3], ch1[4], ch1[5], ch1[6], ch1[7]); 
+      //msg("ch1_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch1[0], ch1[1], ch1[2], ch1[3], ch1[4], ch1[5], ch1[6], ch1[7]); 
       
       for (i=0; i<8; i++)
 	 ch0[i] = ch0[i]-ch1[i];
       
-      //printf("ch0_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch0[0], ch0[1], ch0[2], ch0[3], ch0[4], ch0[5], ch0[6], ch0[7]); 
-      //printf("-\n");
+      //msg("ch0_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", ch0[0], ch0[1], ch0[2], ch0[3], ch0[4], ch0[5], ch0[6], ch0[7]); 
+      //msg("-\n");
       break;   // +1 -j
     case 3 :
       ch1_temp[0] =  ch1[1]; // shuffle low
@@ -8620,7 +8816,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
   zero = _mm_xor_si128(zero,zero);
 #endif
 
-  //printf("comp prec: symbol %d, pilots %d\n",symbol, pilots);
+  //msg("comp prec: symbol %d, pilots %d\n",symbol, pilots);
 
   if (dl_power_off==1) {
     if (mod_order == 4) {
@@ -8653,12 +8849,11 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
     dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128   = (__m128i *)&rxdataF_comp[aarx][symbol*frame_parms->N_RB_DL*12];
-
-
+    
     for (rb=0;rb<nb_rb;rb++) {
       // combine TX channels using precoder from pmi
 #ifdef DEBUG_DLSCH_DEMOD
-      printf("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
+      msg("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
 #endif
 	
       //print_shorts("ch0(0):",&dl_ch128_0[0]);
@@ -8815,7 +9010,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 
   phy_measurements->precoded_cqi_dB[eNB_id][0] = dB_fixed2(precoded_signal_strength,phy_measurements->n0_power_tot);
 	
-  //printf("eNB_id %d, symbol %d: precoded CQI %d dB\n",eNB_id,symbol,
+  //msg("eNB_id %d, symbol %d: precoded CQI %d dB\n",eNB_id,symbol,
   //	 phy_measurements->precoded_cqi_dB[eNB_id][0]);
 
   _mm_empty();
@@ -8868,7 +9063,7 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 #endif
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  // printf("symbol_mod=%d\n", symbol_mod);
+  // msg("symbol_mod=%d\n", symbol_mod);
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
     pilots=1;
@@ -8971,17 +9166,17 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 #endif
 
 #ifdef DEBUG_DL_CH_FLP
-	  printf("p_dl_ch_0 flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
-	  printf("dl_ch_0_temp_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[0]*pow(2, output_shift), dl_ch_0_temp[1]*pow(2, output_shift), dl_ch_0_temp[2]*pow(2, output_shift), dl_ch_0_temp[3]*pow(2, output_shift), dl_ch_0_temp[4]*pow(2, output_shift), dl_ch_0_temp[5]*pow(2, output_shift), dl_ch_0_temp[6]*pow(2, output_shift), dl_ch_0_temp[7]*pow(2, output_shift));
+	  msg("p_dl_ch_0 flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
+	  msg("dl_ch_0_temp_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[0]*pow(2, output_shift), dl_ch_0_temp[1]*pow(2, output_shift), dl_ch_0_temp[2]*pow(2, output_shift), dl_ch_0_temp[3]*pow(2, output_shift), dl_ch_0_temp[4]*pow(2, output_shift), dl_ch_0_temp[5]*pow(2, output_shift), dl_ch_0_temp[6]*pow(2, output_shift), dl_ch_0_temp[7]*pow(2, output_shift));
 	  print_128bits_by_16bits("dl_ch128_0_fxp_16bits", &dl_ch128_0[0]);
 
-	  printf("dl_ch_1_temp_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_1_temp[0]*pow(2, output_shift), dl_ch_1_temp[1]*pow(2, output_shift), dl_ch_1_temp[2]*pow(2, output_shift), dl_ch_1_temp[3]*pow(2, output_shift), dl_ch_1_temp[4]*pow(2, output_shift), dl_ch_1_temp[5]*pow(2, output_shift), dl_ch_1_temp[6]*pow(2, output_shift), dl_ch_1_temp[7]*pow(2, output_shift));
+	  msg("dl_ch_1_temp_flp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_1_temp[0]*pow(2, output_shift), dl_ch_1_temp[1]*pow(2, output_shift), dl_ch_1_temp[2]*pow(2, output_shift), dl_ch_1_temp[3]*pow(2, output_shift), dl_ch_1_temp[4]*pow(2, output_shift), dl_ch_1_temp[5]*pow(2, output_shift), dl_ch_1_temp[6]*pow(2, output_shift), dl_ch_1_temp[7]*pow(2, output_shift));
 	  print_128bits_by_16bits("dl_ch128_1_fxp_16bits", &dl_ch128_1[0]);
 #endif
       
 	  // combine TX channels using precoder from pmi
 #ifdef DEBUG_DLSCH_DEMOD
-	  printf("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
+	  msg("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
 #endif
 	  
 #ifdef ENABLE_FXP
@@ -8995,6 +9190,7 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	  
 	  // Flp
 #ifdef ENABLE_FLP
+	  // msg("pmi_ext[rb]=%d\n", pmi_ext[rb]);
 	  prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[0], &dl_ch_1_temp[0]);
 	  prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[8], &dl_ch_1_temp[8]);
 	  if (pilots==0)
@@ -9002,17 +9198,17 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 #endif
 	  
 #ifdef DEBUG_DL_CH_FLP
-	  printf("pmi_ext[rb]=%d\n", pmi_ext[rb]);
-	  printf("dl_ch0_flp after prec2A: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[0]*pow(2, output_shift), dl_ch_0_temp[1]*pow(2, output_shift), dl_ch_0_temp[2]*pow(2, output_shift), dl_ch_0_temp[3]*pow(2, output_shift), dl_ch_0_temp[4]*pow(2, output_shift), dl_ch_0_temp[5]*pow(2, output_shift), dl_ch_0_temp[6]*pow(2, output_shift), dl_ch_0_temp[7]*pow(2, output_shift));
+	  msg("pmi_ext[rb]=%d\n", pmi_ext[rb]);
+	  msg("dl_ch0_flp after prec2A: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[0]*pow(2, output_shift), dl_ch_0_temp[1]*pow(2, output_shift), dl_ch_0_temp[2]*pow(2, output_shift), dl_ch_0_temp[3]*pow(2, output_shift), dl_ch_0_temp[4]*pow(2, output_shift), dl_ch_0_temp[5]*pow(2, output_shift), dl_ch_0_temp[6]*pow(2, output_shift), dl_ch_0_temp[7]*pow(2, output_shift));
 	  print_128bits_by_16bits("dl_ch128_0_fxp_16bits", &dl_ch128_0[0]);
-	  printf("dl_ch0_flp after prec2A: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[8]*pow(2, output_shift), dl_ch_0_temp[9]*pow(2, output_shift), dl_ch_0_temp[10]*pow(2, output_shift), dl_ch_0_temp[11]*pow(2, output_shift), dl_ch_0_temp[12]*pow(2, output_shift), dl_ch_0_temp[13]*pow(2, output_shift), dl_ch_0_temp[14]*pow(2, output_shift), dl_ch_0_temp[15]*pow(2, output_shift));
+	  msg("dl_ch0_flp after prec2A: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[8]*pow(2, output_shift), dl_ch_0_temp[9]*pow(2, output_shift), dl_ch_0_temp[10]*pow(2, output_shift), dl_ch_0_temp[11]*pow(2, output_shift), dl_ch_0_temp[12]*pow(2, output_shift), dl_ch_0_temp[13]*pow(2, output_shift), dl_ch_0_temp[14]*pow(2, output_shift), dl_ch_0_temp[15]*pow(2, output_shift));
 	  print_128bits_by_16bits("dl_ch128_0_fxp_16bits", &dl_ch128_0[1]);
 	  if (pilots==0)
 	    {
-	      printf("dl_ch0_flp after prec2A: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[16]*pow(2, output_shift), dl_ch_0_temp[17]*pow(2, output_shift), dl_ch_0_temp[18]*pow(2, output_shift), dl_ch_0_temp[19]*pow(2, output_shift), dl_ch_0_temp[20]*pow(2, output_shift), dl_ch_0_temp[21]*pow(2, output_shift), dl_ch_0_temp[22]*pow(2, output_shift), dl_ch_0_temp[23]*pow(2, output_shift));
+	      msg("dl_ch0_flp after prec2A: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0_temp[16]*pow(2, output_shift), dl_ch_0_temp[17]*pow(2, output_shift), dl_ch_0_temp[18]*pow(2, output_shift), dl_ch_0_temp[19]*pow(2, output_shift), dl_ch_0_temp[20]*pow(2, output_shift), dl_ch_0_temp[21]*pow(2, output_shift), l_ch_0_temp[22]*pow(2, output_shift), dl_ch_0_temp[23]*pow(2, output_shift));
 	      print_128bits_by_16bits("dl_ch128_0_fxp_16bits", &dl_ch128_0[2]);
 	    }
-	  printf("\n");
+	  msg("\n");
 #endif	  
 	  
 	  if (mod_order>2)
@@ -9047,9 +9243,9 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 
 #ifdef DEBUG_DL_CH_FLP
 	      //print_128bits_by_16bits("mmtmpD0", &mmtmpD0);
-	      //printf("temp0_16bits: [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp0_16bits[0]*pow(2, output_shift), temp0_16bits[1]*pow(2, output_shift), temp0_16bits[2]*pow(2, output_shift), temp0_16bits[3]*pow(2, output_shift), temp0_16bits[4]*pow(2, output_shift), temp0_16bits[5]*pow(2, output_shift), temp0_16bits[6]*pow(2, output_shift), temp0_16bits[7]*pow(2, output_shift));
+	      //msg("temp0_16bits: [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp0_16bits[0]*pow(2, output_shift), temp0_16bits[1]*pow(2, output_shift), temp0_16bits[2]*pow(2, output_shift), temp0_16bits[3]*pow(2, output_shift), temp0_16bits[4]*pow(2, output_shift), temp0_16bits[5]*pow(2, output_shift), temp0_16bits[6]*pow(2, output_shift), temp0_16bits[7]*pow(2, output_shift));
 	      //print_128bits_by_32bits("mmtmpD1", &mmtmpD1);
-	      //printf("temp1_32bits: [%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift));
+	      //msg("temp1_32bits: [%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift));
 #endif
 	
 #ifdef ENABLE_FXP
@@ -9058,7 +9254,7 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      //print_128bits_by_16bits("dl_ch_mag128[0]", &dl_ch_mag128[0]);
 	      dl_ch_mag128b[0] = dl_ch_mag128[0];
 	      //print_128bits_by_16bits("dl_ch_mag128b[0]", &dl_ch_mag128b[0]);
-	      //printf("QAM_amp=%f\n", QAM_amp);
+	      //msg("QAM_amp=%f\n", QAM_amp);
 	      //print_128bits_by_16bits("QAM_amp128", &QAM_amp128);
 	      dl_ch_mag128[0] = _mm_mulhi_epi16(dl_ch_mag128[0],QAM_amp128);
 	      dl_ch_mag128[0] = _mm_slli_epi16(dl_ch_mag128[0],1); // Large loss here compared to Flp, might be an incorrect shifting
@@ -9093,9 +9289,9 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      
 #ifdef DEBUG_DL_CH_FLP
 	      //print_128bits_by_16bits("dl_ch_mag128[0] in #ifdef", &dl_ch_mag128[0]);
-	      //printf("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[0]*pow(2, output_shift), dl_ch_mag_temp[1]*pow(2, output_shift), dl_ch_mag_temp[2]*pow(2, output_shift), dl_ch_mag_temp[3]*pow(2, output_shift), dl_ch_mag_temp[4]*pow(2, output_shift), dl_ch_mag_temp[5]*pow(2, output_shift), dl_ch_mag_temp[6]*pow(2, output_shift), dl_ch_mag_temp[7]*pow(2, output_shift));
+	      //msg("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[0]*pow(2, output_shift), dl_ch_mag_temp[1]*pow(2, output_shift), dl_ch_mag_temp[2]*pow(2, output_shift), dl_ch_mag_temp[3]*pow(2, output_shift), dl_ch_mag_temp[4]*pow(2, output_shift), dl_ch_mag_temp[5]*pow(2, output_shift), dl_ch_mag_temp[6]*pow(2, output_shift), dl_ch_mag_temp[7]*pow(2, output_shift));
 	      //print_128bits_by_16bits("dl_ch_mag128b[0] in #ifdef", &dl_ch_mag128b[0]);
-	      //printf("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[0]*pow(2, output_shift), dl_ch_magb_temp[1]*pow(2, output_shift), dl_ch_magb_temp[2]*pow(2, output_shift), dl_ch_magb_temp[3]*pow(2, output_shift), dl_ch_magb_temp[4]*pow(2, output_shift), dl_ch_magb_temp[5]*pow(2, output_shift), dl_ch_magb_temp[6]*pow(2, output_shift), dl_ch_magb_temp[7]*pow(2, output_shift));
+	      //msg("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[0]*pow(2, output_shift), dl_ch_magb_temp[1]*pow(2, output_shift), dl_ch_magb_temp[2]*pow(2, output_shift), dl_ch_magb_temp[3]*pow(2, output_shift), dl_ch_magb_temp[4]*pow(2, output_shift), dl_ch_magb_temp[5]*pow(2, output_shift), dl_ch_magb_temp[6]*pow(2, output_shift), dl_ch_magb_temp[7]*pow(2, output_shift));
 #endif      
 	      
 	      if (pilots==0)
@@ -9181,23 +9377,23 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	    }
 #ifdef DEBUG_DL_CH_FLP
 	  print_128bits_by_16bits("dl_ch_mag128[0]", &dl_ch_mag128[0]);
-	  printf("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[0]*pow(2, output_shift), dl_ch_mag_temp[1]*pow(2, output_shift), dl_ch_mag_temp[2]*pow(2, output_shift), dl_ch_mag_temp[3]*pow(2, output_shift), dl_ch_mag_temp[4]*pow(2, output_shift), dl_ch_mag_temp[5]*pow(2, output_shift), dl_ch_mag_temp[6]*pow(2, output_shift), dl_ch_mag_temp[7]*pow(2, output_shift));
+	  msg("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[0]*pow(2, output_shift), dl_ch_mag_temp[1]*pow(2, output_shift), dl_ch_mag_temp[2]*pow(2, output_shift), dl_ch_mag_temp[3]*pow(2, output_shift), dl_ch_mag_temp[4]*pow(2, output_shift), dl_ch_mag_temp[5]*pow(2, output_shift), dl_ch_mag_temp[6]*pow(2, output_shift), dl_ch_mag_temp[7]*pow(2, output_shift));
 	  print_128bits_by_16bits("dl_ch_mag128b[0]", &dl_ch_mag128b[0]);
-	  printf("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[0]*pow(2, output_shift), dl_ch_magb_temp[1]*pow(2, output_shift), dl_ch_magb_temp[2]*pow(2, output_shift), dl_ch_magb_temp[3]*pow(2, output_shift), dl_ch_magb_temp[4]*pow(2, output_shift), dl_ch_magb_temp[5]*pow(2, output_shift), dl_ch_magb_temp[6]*pow(2, output_shift), dl_ch_magb_temp[7]*pow(2, output_shift));
+	  msg("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[0]*pow(2, output_shift), dl_ch_magb_temp[1]*pow(2, output_shift), dl_ch_magb_temp[2]*pow(2, output_shift), dl_ch_magb_temp[3]*pow(2, output_shift), dl_ch_magb_temp[4]*pow(2, output_shift), dl_ch_magb_temp[5]*pow(2, output_shift), dl_ch_magb_temp[6]*pow(2, output_shift), dl_ch_magb_temp[7]*pow(2, output_shift));
 	  
 	  print_128bits_by_16bits("dl_ch_mag128[1]", &dl_ch_mag128[1]);
-	  printf("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[8]*pow(2, output_shift), dl_ch_mag_temp[9]*pow(2, output_shift), dl_ch_mag_temp[10]*pow(2, output_shift), dl_ch_mag_temp[11]*pow(2, output_shift), dl_ch_mag_temp[12]*pow(2, output_shift), dl_ch_mag_temp[13]*pow(2, output_shift), dl_ch_mag_temp[14]*pow(2, output_shift), dl_ch_mag_temp[15]*pow(2, output_shift));
+	  msg("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[8]*pow(2, output_shift), dl_ch_mag_temp[9]*pow(2, output_shift), dl_ch_mag_temp[10]*pow(2, output_shift), dl_ch_mag_temp[11]*pow(2, output_shift), dl_ch_mag_temp[12]*pow(2, output_shift), dl_ch_mag_temp[13]*pow(2, output_shift), dl_ch_mag_temp[14]*pow(2, output_shift), dl_ch_mag_temp[15]*pow(2, output_shift));
 	  print_128bits_by_16bits("dl_ch_mag128b[1]", &dl_ch_mag128b[1]);
-	  printf("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[8]*pow(2, output_shift), dl_ch_magb_temp[9]*pow(2, output_shift), dl_ch_magb_temp[10]*pow(2, output_shift), dl_ch_magb_temp[11]*pow(2, output_shift), dl_ch_magb_temp[12]*pow(2, output_shift), dl_ch_magb_temp[13]*pow(2, output_shift), dl_ch_magb_temp[14]*pow(2, output_shift), dl_ch_magb_temp[15]*pow(2, output_shift));
+	  msg("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[8]*pow(2, output_shift), dl_ch_magb_temp[9]*pow(2, output_shift), dl_ch_magb_temp[10]*pow(2, output_shift), dl_ch_magb_temp[11]*pow(2, output_shift), dl_ch_magb_temp[12]*pow(2, output_shift), dl_ch_magb_temp[13]*pow(2, output_shift), dl_ch_magb_temp[14]*pow(2, output_shift), dl_ch_magb_temp[15]*pow(2, output_shift));
 	  
 	  if (pilots==0)
 	    {
 	      print_128bits_by_16bits("dl_ch_mag128[2]", &dl_ch_mag128[2]);
-	      printf("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[16]*pow(2, output_shift), dl_ch_mag_temp[17]*pow(2, output_shift), dl_ch_mag_temp[18]*pow(2, output_shift), dl_ch_mag_temp[19]*pow(2, output_shift), dl_ch_mag_temp[20]*pow(2, output_shift), dl_ch_mag_temp[21]*pow(2, output_shift), dl_ch_mag_temp[22]*pow(2, output_shift), dl_ch_mag_temp[23]*pow(2, output_shift));
+	      msg("dl_ch_mag_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_mag_temp[16]*pow(2, output_shift), dl_ch_mag_temp[17]*pow(2, output_shift), dl_ch_mag_temp[18]*pow(2, output_shift), dl_ch_mag_temp[19]*pow(2, output_shift), dl_ch_mag_temp[20]*pow(2, output_shift), dl_ch_mag_temp[21]*pow(2, output_shift), dl_ch_mag_temp[22]*pow(2, output_shift), dl_ch_mag_temp[23]*pow(2, output_shift));
 	      print_128bits_by_16bits("dl_ch_mag128b[2]", &dl_ch_mag128b[2]);
-	      printf("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[16]*pow(2, output_shift), dl_ch_magb_temp[17]*pow(2, output_shift), dl_ch_magb_temp[18]*pow(2, output_shift), dl_ch_magb_temp[19]*pow(2, output_shift), dl_ch_magb_temp[20]*pow(2, output_shift), dl_ch_magb_temp[21]*pow(2, output_shift), dl_ch_magb_temp[22]*pow(2, output_shift), dl_ch_magb_temp[23]*pow(2, output_shift));
+	      msg("dl_ch_magb_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_magb_temp[16]*pow(2, output_shift), dl_ch_magb_temp[17]*pow(2, output_shift), dl_ch_magb_temp[18]*pow(2, output_shift), dl_ch_magb_temp[19]*pow(2, output_shift), dl_ch_magb_temp[20]*pow(2, output_shift), dl_ch_magb_temp[21]*pow(2, output_shift), dl_ch_magb_temp[22]*pow(2, output_shift), dl_ch_magb_temp[23]*pow(2, output_shift));
 	    }
-	  printf("\n");
+	  msg("\n");
 #endif
 	  
 #ifdef ENABLE_FXP
@@ -9244,8 +9440,8 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	  //print_128bits_by_16bits("rxdataF_comp128[1]", &rxdataF_comp128[1]);
 	  
 	  // Flp
-	  //printf("dl_ch_0[1]: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0[8]*pow(2, output_shift), dl_ch_0[9]*pow(2, output_shift), dl_ch_0[10]*pow(2, output_shift), dl_ch_0[11]*pow(2, output_shift), dl_ch_0[12]*pow(2, output_shift), dl_ch_0[13]*pow(2, output_shift), dl_ch_0[14]*pow(2, output_shift), dl_ch_0[15]*pow(2, output_shift));
-	  //printf("rxdataF_temp[1]: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_temp[8]*pow(2, output_shift), rxdataF_temp[9]*pow(2, output_shift), rxdataF_temp[10]*pow(2, output_shift), rxdataF_temp[11]*pow(2, output_shift), rxdataF_temp[12]*pow(2, output_shift), rxdataF_temp[13]*pow(2, output_shift), rxdataF_temp[14]*pow(2, output_shift), rxdataF_temp[15]*pow(2, output_shift));
+	  //msg("dl_ch_0[1]: [%f,%f,%f,%f,%f,%f,%f,%f]\n", dl_ch_0[8]*pow(2, output_shift), dl_ch_0[9]*pow(2, output_shift), dl_ch_0[10]*pow(2, output_shift), dl_ch_0[11]*pow(2, output_shift), dl_ch_0[12]*pow(2, output_shift), dl_ch_0[13]*pow(2, output_shift), dl_ch_0[14]*pow(2, output_shift), dl_ch_0[15]*pow(2, output_shift));
+	  //msg("rxdataF_temp[1]: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_temp[8]*pow(2, output_shift), rxdataF_temp[9]*pow(2, output_shift), rxdataF_temp[10]*pow(2, output_shift), rxdataF_temp[11]*pow(2, output_shift), rxdataF_temp[12]*pow(2, output_shift), rxdataF_temp[13]*pow(2, output_shift), rxdataF_temp[14]*pow(2, output_shift), rxdataF_temp[15]*pow(2, output_shift));
 #ifdef ENABLE_FLP
 	  for (i=0; i<8>>1; i++)
 	    temp0_32bits[i] = dl_ch_0_temp[2*i]*rxdataF_temp[2*i] + dl_ch_0_temp[2*i+1]*rxdataF_temp[2*i+1];
@@ -9281,7 +9477,7 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	  for (i=0; i<8>>1; i++)
 	    temp0_32bits[i] = dl_ch_0_temp[8+2*i]*rxdataF_temp[8+2*i] + dl_ch_0_temp[8+2*i+1]*rxdataF_temp[8+2*i+1];
 	  
-	  //printf("temp0_32bits [%f,%f,%f,%f]\n", temp0_32bits[0]*1073741824.0, temp0_32bits[1]*1073741824.0, temp0_32bits[2]*1073741824.0, temp0_32bits[3]*1073741824.0);
+	  //msg("temp0_32bits [%f,%f,%f,%f]\n", temp0_32bits[0]*1073741824.0, temp0_32bits[1]*1073741824.0, temp0_32bits[2]*1073741824.0, temp0_32bits[3]*1073741824.0);
 	  
 	  temp1_16bits[0] = -dl_ch_0_temp[8+1]; // shuffle low
 	  temp1_16bits[1] =  dl_ch_0_temp[8+0]; // + conjugate
@@ -9295,10 +9491,10 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	  for (i=0; i<8>>1; i++)
 	    temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[8+2*i] + temp1_16bits[2*i+1]*rxdataF_temp[8+2*i+1];
 	  
-	  //printf("temp1_32bits [%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift));
+	  //msg("temp1_32bits [%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift));
 
-	  //printf("temp0_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp0_32bits[0]*pow(2, output_shift), temp0_32bits[1]*pow(2, output_shift), temp0_32bits[2]*pow(2, output_shift), temp0_32bits[3]*pow(2, output_shift), temp0_32bits[4]*pow(2, output_shift), temp0_32bits[5]*pow(2, output_shift), temp0_32bits[6]*pow(2, output_shift), temp0_32bits[7]*pow(2, output_shift));
-	  //printf("temp1_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift), temp1_32bits[4]*pow(2, output_shift), temp1_32bits[5]*pow(2, output_shift), temp1_32bits[6]*pow(2, output_shift), temp1_32bits[7]*pow(2, output_shift));
+	  //msg("temp0_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp0_32bits[0]*pow(2, output_shift), temp0_32bits[1]*pow(2, output_shift), temp0_32bits[2]*pow(2, output_shift), temp0_32bits[3]*pow(2, output_shift), temp0_32bits[4]*pow(2, output_shift), temp0_32bits[5]*pow(2, output_shift), temp0_32bits[6]*pow(2, output_shift), temp0_32bits[7]*pow(2, output_shift));
+	  //msg("temp1_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift), temp1_32bits[4]*pow(2, output_shift), temp1_32bits[5]*pow(2, output_shift), temp1_32bits[6]*pow(2, output_shift), temp1_32bits[7]*pow(2, output_shift));
 	  
 	  temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
 	  temp2_32bits[1] = temp1_32bits[0];
@@ -9310,8 +9506,8 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	  temp3_32bits[2] = temp0_32bits[3];
 	  temp3_32bits[3] = temp1_32bits[3];
 	  
-	  //printf("temp2_32bits [%f,%f,%f,%f]\n", temp2_32bits[0]*1073741824.0, temp2_32bits[1]*1073741824.0, temp2_32bits[2]*1073741824.0, temp2_32bits[3]*1073741824.0);
-	  //printf("temp3_32bits [%f,%f,%f,%f]\n", temp3_32bits[0]*1073741824.0, temp3_32bits[1]*1073741824.0, temp3_32bits[2]*1073741824.0, temp3_32bits[3]*1073741824.0);
+	  //msg("temp2_32bits [%f,%f,%f,%f]\n", temp2_32bits[0]*1073741824.0, temp2_32bits[1]*1073741824.0, temp2_32bits[2]*1073741824.0, temp2_32bits[3]*1073741824.0);
+	  //msg("temp3_32bits [%f,%f,%f,%f]\n", temp3_32bits[0]*1073741824.0, temp3_32bits[1]*1073741824.0, temp3_32bits[2]*1073741824.0, temp3_32bits[3]*1073741824.0);
 	  
 	  for (i=0; i<8>>1; i++)
 	    {
@@ -9320,8 +9516,8 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	    }
 #endif
 	  
-	  //printf("rxdataF_comp_temp[0] [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[0]*pow(2, output_shift), rxdataF_comp_temp[1]*pow(2, output_shift), rxdataF_comp_temp[2]*pow(2, output_shift), rxdataF_comp_temp[3]*pow(2, output_shift), rxdataF_comp_temp[4]*pow(2, output_shift), rxdataF_comp_temp[5]*pow(2, output_shift), rxdataF_comp_temp[6]*pow(2, output_shift), rxdataF_comp_temp[7]*pow(2, output_shift));
-	  //printf("rxdataF_comp_temp[1]: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[8]*pow(2, output_shift), rxdataF_comp_temp[9]*pow(2, output_shift), rxdataF_comp_temp[10]*pow(2, output_shift), rxdataF_comp_temp[11]*pow(2, output_shift), rxdataF_comp_temp[12]*pow(2, output_shift), rxdataF_comp_temp[13]*pow(2, output_shift), rxdataF_comp_temp[14]*pow(2, output_shift), rxdataF_comp_temp[15]*pow(2, output_shift));
+	  //msg("rxdataF_comp_temp[0] [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[0]*pow(2, output_shift), rxdataF_comp_temp[1]*pow(2, output_shift), rxdataF_comp_temp[2]*pow(2, output_shift), rxdataF_comp_temp[3]*pow(2, output_shift), rxdataF_comp_temp[4]*pow(2, output_shift), rxdataF_comp_temp[5]*pow(2, output_shift), rxdataF_comp_temp[6]*pow(2, output_shift), rxdataF_comp_temp[7]*pow(2, output_shift));
+	  //msg("rxdataF_comp_temp[1]: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[8]*pow(2, output_shift), rxdataF_comp_temp[9]*pow(2, output_shift), rxdataF_comp_temp[10]*pow(2, output_shift), rxdataF_comp_temp[11]*pow(2, output_shift), rxdataF_comp_temp[12]*pow(2, output_shift), rxdataF_comp_temp[13]*pow(2, output_shift), rxdataF_comp_temp[14]*pow(2, output_shift), rxdataF_comp_temp[15]*pow(2, output_shift));
 	  if (pilots==0)
 	    {
 #ifdef ENABLE_FXP
@@ -9345,7 +9541,7 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      for (i=0; i<8>>1; i++)
 		temp0_32bits[i] = dl_ch_0_temp[16+2*i]*rxdataF_temp[16+2*i] + dl_ch_0_temp[16+2*i+1]*rxdataF_temp[16+2*i+1];
 	  
-	      //printf("temp0_32bits [%f,%f,%f,%f]\n", temp0_32bits[0]*1073741824.0, temp0_32bits[1]*1073741824.0, temp0_32bits[2]*1073741824.0, temp0_32bits[3]*1073741824.0);
+	      //msg("temp0_32bits [%f,%f,%f,%f]\n", temp0_32bits[0]*1073741824.0, temp0_32bits[1]*1073741824.0, temp0_32bits[2]*1073741824.0, temp0_32bits[3]*1073741824.0);
 	      
 	      temp1_16bits[0] = -dl_ch_0_temp[16+1]; // shuffle low
 	      temp1_16bits[1] =  dl_ch_0_temp[16+0]; // + conjugate
@@ -9359,10 +9555,10 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      for (i=0; i<8>>1; i++)
 		temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[16+2*i] + temp1_16bits[2*i+1]*rxdataF_temp[16+2*i+1];
 	  
-	      //printf("temp1_32bits [%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift));
+	      //msg("temp1_32bits [%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift));
 	      
-	      //printf("temp0_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp0_32bits[0]*pow(2, output_shift), temp0_32bits[1]*pow(2, output_shift), temp0_32bits[2]*pow(2, output_shift), temp0_32bits[3]*pow(2, output_shift), temp0_32bits[4]*pow(2, output_shift), temp0_32bits[5]*pow(2, output_shift), temp0_32bits[6]*pow(2, output_shift), temp0_32bits[7]*pow(2, output_shift));
-	      //printf("temp1_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift), temp1_32bits[4]*pow(2, output_shift), temp1_32bits[5]*pow(2, output_shift), temp1_32bits[6]*pow(2, output_shift), temp1_32bits[7]*pow(2, output_shift));
+	      //msg("temp0_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp0_32bits[0]*pow(2, output_shift), temp0_32bits[1]*pow(2, output_shift), temp0_32bits[2]*pow(2, output_shift), temp0_32bits[3]*pow(2, output_shift), temp0_32bits[4]*pow(2, output_shift), temp0_32bits[5]*pow(2, output_shift), temp0_32bits[6]*pow(2, output_shift), temp0_32bits[7]*pow(2, output_shift));
+	      //msg("temp1_32bits [%f,%f,%f,%f,%f,%f,%f,%f]\n", temp1_32bits[0]*pow(2, output_shift), temp1_32bits[1]*pow(2, output_shift), temp1_32bits[2]*pow(2, output_shift), temp1_32bits[3]*pow(2, output_shift), temp1_32bits[4]*pow(2, output_shift), temp1_32bits[5]*pow(2, output_shift), temp1_32bits[6]*pow(2, output_shift), temp1_32bits[7]*pow(2, output_shift));
 	      
 	      temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
 	      temp2_32bits[1] = temp1_32bits[0];
@@ -9374,8 +9570,8 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      temp3_32bits[2] = temp0_32bits[3];
 	      temp3_32bits[3] = temp1_32bits[3];
 	  
-	      //printf("temp2_32bits [%f,%f,%f,%f]\n", temp2_32bits[0]*1073741824.0, temp2_32bits[1]*1073741824.0, temp2_32bits[2]*1073741824.0, temp2_32bits[3]*1073741824.0);
-	      //printf("temp3_32bits [%f,%f,%f,%f]\n", temp3_32bits[0]*1073741824.0, temp3_32bits[1]*1073741824.0, temp3_32bits[2]*1073741824.0, temp3_32bits[3]*1073741824.0);
+	      //msg("temp2_32bits [%f,%f,%f,%f]\n", temp2_32bits[0]*1073741824.0, temp2_32bits[1]*1073741824.0, temp2_32bits[2]*1073741824.0, temp2_32bits[3]*1073741824.0);
+	      //msg("temp3_32bits [%f,%f,%f,%f]\n", temp3_32bits[0]*1073741824.0, temp3_32bits[1]*1073741824.0, temp3_32bits[2]*1073741824.0, temp3_32bits[3]*1073741824.0);
 	      
 	      for (i=0; i<8>>1; i++)
 		{
@@ -9386,14 +9582,14 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	 
 #ifdef DEBUG_DL_CH_FLP
 	      // print_128bits_by_16bits("rxdataF_comp128[0]", &rxdataF_comp128[0]);
-	      // printf("rxdataF_comp_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[0]*pow(2, output_shift), rxdataF_comp_temp[1]*pow(2, output_shift), rxdataF_comp_temp[2]*pow(2, output_shift), rxdataF_comp_temp[3]*pow(2, output_shift), rxdataF_comp_temp[4]*pow(2, output_shift), rxdataF_comp_temp[5]*pow(2, output_shift), rxdataF_comp_temp[6]*pow(2, output_shift), rxdataF_comp_temp[7]*pow(2, output_shift));
+	      // msg("rxdataF_comp_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[0]*pow(2, output_shift), rxdataF_comp_temp[1]*pow(2, output_shift), rxdataF_comp_temp[2]*pow(2, output_shift), rxdataF_comp_temp[3]*pow(2, output_shift), rxdataF_comp_temp[4]*pow(2, output_shift), rxdataF_comp_temp[5]*pow(2, output_shift), rxdataF_comp_temp[6]*pow(2, output_shift), rxdataF_comp_temp[7]*pow(2, output_shift));
 	  
 	      // print_128bits_by_16bits("rxdataF_comp128[1]", &rxdataF_comp128[1]);
-	      // printf("rxdataF_comp_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[8]*pow(2, output_shift), rxdataF_comp_temp[9]*pow(2, output_shift), rxdataF_comp_temp[10]*pow(2, output_shift), rxdataF_comp_temp[11]*pow(2, output_shift), rxdataF_comp_temp[12]*pow(2, output_shift), rxdataF_comp_temp[13]*pow(2, output_shift), rxdataF_comp_temp[14]*pow(2, output_shift), rxdataF_comp_temp[15]*pow(2, output_shift));
+	      // msg("rxdataF_comp_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[8]*pow(2, output_shift), rxdataF_comp_temp[9]*pow(2, output_shift), rxdataF_comp_temp[10]*pow(2, output_shift), rxdataF_comp_temp[11]*pow(2, output_shift), rxdataF_comp_temp[12]*pow(2, output_shift), rxdataF_comp_temp[13]*pow(2, output_shift), rxdataF_comp_temp[14]*pow(2, output_shift), rxdataF_comp_temp[15]*pow(2, output_shift));
 	      if (pilots==0)
 		{
 		  // print_128bits_by_16bits("rxdataF_comp128[2]", &rxdataF_comp128[2]);
-		  // printf("rxdataF_comp_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[16]*pow(2, output_shift), rxdataF_comp_temp[17]*pow(2, output_shift), rxdataF_comp_temp[18]*pow(2, output_shift), rxdataF_comp_temp[19]*pow(2, output_shift), rxdataF_comp_temp[20]*pow(2, output_shift), rxdataF_comp_temp[21]*pow(2, output_shift), rxdataF_comp_temp[22]*pow(2, output_shift), rxdataF_comp_temp[23]*pow(2, output_shift));
+		  // msg("rxdataF_comp_temp: [%f,%f,%f,%f,%f,%f,%f,%f]\n", rxdataF_comp_temp[16]*pow(2, output_shift), rxdataF_comp_temp[17]*pow(2, output_shift), rxdataF_comp_temp[18]*pow(2, output_shift), rxdataF_comp_temp[19]*pow(2, output_shift), rxdataF_comp_temp[20]*pow(2, output_shift), rxdataF_comp_temp[21]*pow(2, output_shift), rxdataF_comp_temp[22]*pow(2, output_shift), rxdataF_comp_temp[23]*pow(2, output_shift));
 		}
 #endif
 	      
@@ -9411,9 +9607,9 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      for (i=0; i<24; i++)
 		{
 #ifdef ENABLE_FLP_LOG2MAXH
-		  // printf("log2_maxh_flp=%f, rxdataF_comp_temp[i]=%f, fabs().=%f\n", log2_maxh_flp, rxdataF_comp_temp[i], fabs(rxdataF_comp_temp[i]));
+		  // msg("log2_maxh_flp=%f, rxdataF_comp_temp[i]=%f, fabs().=%f\n", log2_maxh_flp, rxdataF_comp_temp[i], fabs(rxdataF_comp_temp[i]));
 		  log2_maxh_flp = max(log2_maxh_flp, fabs(rxdataF_comp_temp[i])); // max over both the real and imag parts (max output normalized to 1)
-		  // printf("log2_maxh_flp=%f\n", log2_maxh_flp);
+		  // msg("log2_maxh_flp=%f\n", log2_maxh_flp);
 #else	  
 		  // Should be casted to int
 		  *(p_dl_ch_0+i)      = (short)floor(dl_ch_0_temp[i]*pow(2, output_shift));
@@ -9425,20 +9621,20 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 #endif
 		}
 	      
-	      //printf("dl_ch0_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
-	      //printf("dl_ch1_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_1+0), *(p_dl_ch_1+1), *(p_dl_ch_1+2), *(p_dl_ch_1+3), *(p_dl_ch_1+4), *(p_dl_ch_1+5), *(p_dl_ch_1+6), *(p_dl_ch_1+7));
-	      /*printf("dl_ch_mag_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_mag+0), *(p_dl_ch_mag+1), *(p_dl_ch_mag+2), *(p_dl_ch_mag+3), *(p_dl_ch_mag+4), *(p_dl_ch_mag+5), *(p_dl_ch_mag+6), *(p_dl_ch_mag+7));
-	      printf("dl_ch_magb_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_magb+0), *(p_dl_ch_magb+1), *(p_dl_ch_magb+2), *(p_dl_ch_magb+3), *(p_dl_ch_magb+4), *(p_dl_ch_magb+5), *(p_dl_ch_magb+6), *(p_dl_ch_magb+7));
-	      printf("rxdataF: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF+0), *(p_rxdataF+1), *(p_rxdataF+2), *(p_rxdataF+3), *(p_rxdataF+4), *(p_rxdataF+5), *(p_rxdataF+6), *(p_rxdataF+7));
-	      printf("rxdataF_comp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF_comp+0), *(p_rxdataF_comp+1), *(p_rxdataF_comp+2), *(p_rxdataF_comp+3), *(p_rxdataF_comp+4), *(p_rxdataF_comp+5), *(p_rxdataF_comp+6), *(p_rxdataF_comp+7));*/
+	      //msg("dl_ch0_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
+	      //msg("dl_ch1_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_1+0), *(p_dl_ch_1+1), *(p_dl_ch_1+2), *(p_dl_ch_1+3), *(p_dl_ch_1+4), *(p_dl_ch_1+5), *(p_dl_ch_1+6), *(p_dl_ch_1+7));
+	      /*msg("dl_ch_mag_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_mag+0), *(p_dl_ch_mag+1), *(p_dl_ch_mag+2), *(p_dl_ch_mag+3), *(p_dl_ch_mag+4), *(p_dl_ch_mag+5), *(p_dl_ch_mag+6), *(p_dl_ch_mag+7));
+	      msg("dl_ch_magb_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_magb+0), *(p_dl_ch_magb+1), *(p_dl_ch_magb+2), *(p_dl_ch_magb+3), *(p_dl_ch_magb+4), *(p_dl_ch_magb+5), *(p_dl_ch_magb+6), *(p_dl_ch_magb+7));
+	      msg("rxdataF: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF+0), *(p_rxdataF+1), *(p_rxdataF+2), *(p_rxdataF+3), *(p_rxdataF+4), *(p_rxdataF+5), *(p_rxdataF+6), *(p_rxdataF+7));
+	      msg("rxdataF_comp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF_comp+0), *(p_rxdataF_comp+1), *(p_rxdataF_comp+2), *(p_rxdataF_comp+3), *(p_rxdataF_comp+4), *(p_rxdataF_comp+5), *(p_rxdataF_comp+6), *(p_rxdataF_comp+7));*/
 #endif
 	      
 #ifdef ENABLE_FXP
 #ifdef DEBUG_DL_CH_FLP	      
 	      if (*(p_dl_ch_0+0) != *((short *)(&dl_ch128_0[aarx])+0))
-		printf("\nERROR: %d != %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
+		msg("\nERROR: %d != %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
 	      else
-		printf("%d == %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
+		msg("%d == %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
 #endif	      
 	      dl_ch128_0+=3;
 	      dl_ch128_1+=3;
@@ -9472,9 +9668,9 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      for (i=0; i<16; i++)
 		{
 #ifdef ENABLE_FLP_LOG2MAXH
-		  // printf("log2_maxh_flp=%f, rxdataF_comp_temp[i]=%f, fabs().=%f\n", log2_maxh_flp, rxdataF_comp_temp[i], fabs(rxdataF_comp_temp[i]));
+		  // msg("log2_maxh_flp=%f, rxdataF_comp_temp[i]=%f, fabs().=%f\n", log2_maxh_flp, rxdataF_comp_temp[i], fabs(rxdataF_comp_temp[i]));
 		  log2_maxh_flp = max(log2_maxh_flp, fabs(rxdataF_comp_temp[i])); // max over both the real and imag parts (max output normalized to 1)
-		  // printf("log2_maxh_flp=%f\n", log2_maxh_flp);
+		  // msg("log2_maxh_flp=%f\n", log2_maxh_flp);
 #else	  
 		  *(p_dl_ch_0+i)      = (short)floor(dl_ch_0_temp[i]*pow(2, output_shift));
 		  *(p_dl_ch_1+i)      = (short)floor(dl_ch_1_temp[i]*pow(2, output_shift));
@@ -9485,20 +9681,20 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 #endif		  
 		}
 	      
-	      //printf("dl_ch0_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
-	      //printf("dl_ch1_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_1+0), *(p_dl_ch_1+1), *(p_dl_ch_1+2), *(p_dl_ch_1+3), *(p_dl_ch_1+4), *(p_dl_ch_1+5), *(p_dl_ch_1+6), *(p_dl_ch_1+7));
-	      /*printf("dl_ch_mag_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_mag+0), *(p_dl_ch_mag+1), *(p_dl_ch_mag+2), *(p_dl_ch_mag+3), *(p_dl_ch_mag+4), *(p_dl_ch_mag+5), *(p_dl_ch_mag+6), *(p_dl_ch_mag+7));
-	      printf("dl_ch_magb_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_magb+0), *(p_dl_ch_magb+1), *(p_dl_ch_magb+2), *(p_dl_ch_magb+3), *(p_dl_ch_magb+4), *(p_dl_ch_magb+5), *(p_dl_ch_magb+6), *(p_dl_ch_magb+7));
-	      printf("rxdataF: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF+0), *(p_rxdataF+1), *(p_rxdataF+2), *(p_rxdataF+3), *(p_rxdataF+4), *(p_rxdataF+5), *(p_rxdataF+6), *(p_rxdataF+7));
-	      printf("rxdataF_comp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF_comp+0), *(p_rxdataF_comp+1), *(p_rxdataF_comp+2), *(p_rxdataF_comp+3), *(p_rxdataF_comp+4), *(p_rxdataF_comp+5), *(p_rxdataF_comp+6), *(p_rxdataF_comp+7));*/
+	      //msg("dl_ch0_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
+	      //msg("dl_ch1_flp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_1+0), *(p_dl_ch_1+1), *(p_dl_ch_1+2), *(p_dl_ch_1+3), *(p_dl_ch_1+4), *(p_dl_ch_1+5), *(p_dl_ch_1+6), *(p_dl_ch_1+7));
+	      /*msg("dl_ch_mag_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_mag+0), *(p_dl_ch_mag+1), *(p_dl_ch_mag+2), *(p_dl_ch_mag+3), *(p_dl_ch_mag+4), *(p_dl_ch_mag+5), *(p_dl_ch_mag+6), *(p_dl_ch_mag+7));
+	      msg("dl_ch_magb_temp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_magb+0), *(p_dl_ch_magb+1), *(p_dl_ch_magb+2), *(p_dl_ch_magb+3), *(p_dl_ch_magb+4), *(p_dl_ch_magb+5), *(p_dl_ch_magb+6), *(p_dl_ch_magb+7));
+	      msg("rxdataF: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF+0), *(p_rxdataF+1), *(p_rxdataF+2), *(p_rxdataF+3), *(p_rxdataF+4), *(p_rxdataF+5), *(p_rxdataF+6), *(p_rxdataF+7));
+	      msg("rxdataF_comp: [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_rxdataF_comp+0), *(p_rxdataF_comp+1), *(p_rxdataF_comp+2), *(p_rxdataF_comp+3), *(p_rxdataF_comp+4), *(p_rxdataF_comp+5), *(p_rxdataF_comp+6), *(p_rxdataF_comp+7));*/
 #endif
 	      
 #ifdef ENABLE_FXP
 #ifdef DEBUG_DL_CH_FLP	      
 	      if (*(p_dl_ch_0+0) != *((short *)(&dl_ch128_0[aarx])+0))
-		printf("\nERROR: %d != %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
+		msg("\nERROR: %d != %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
 	      else
-		printf("%d == %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
+		msg("%d == %d; aarx=%d; rb=%d; pilots=%d\n\n", *(p_dl_ch_0+0), *((short *)(&dl_ch128_0[aarx])+0), aarx, rb, pilots);
 #endif	      
 	      dl_ch128_0+=2;
 	      dl_ch128_1+=2;
@@ -9522,17 +9718,17 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
       
       precoded_signal_strength += ((signal_energy_nodc(&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*Nre],
 						       (nb_rb*Nre))*rx_power_correction) - (phy_measurements->n0_power[aarx]));
-      //printf("precoded_signal_strength=%d\n", precoded_signal_strength);
+      //msg("precoded_signal_strength=%d\n", precoded_signal_strength);
     } // rx_antennas
           
 #ifdef DEBUG_DL_CH_FLP	      
 #ifdef ENABLE_FXP	      
-  printf("dl_ch128_0[0] fxp [%d,%d,%d,%d,%d,%d,%d,%d]\n", *((short *)(&dl_ch128_0[0])+0), *((short *)(&dl_ch128_0[0])+1), *((short *)(&dl_ch128_0[0])+2), *((short *)(&dl_ch128_0[0])+3), *((short *)(&dl_ch128_0[0])+4), *((short *)(&dl_ch128_0[0])+5), *((short *)(&dl_ch128_0[0])+6), *((short *)(&dl_ch128_0[0])+7));
-  printf("dl_ch128_0[1] fxp:[%d,%d,%d,%d,%d,%d,%d,%d]\n", *((short *)(&dl_ch128_0[1])+0), *((short *)(&dl_ch128_0[1])+1), *((short *)(&dl_ch128_0[1])+2), *((short *)(&dl_ch128_0[1])+3), *((short *)(&dl_ch128_0[1])+4), *((short *)(&dl_ch128_0[1])+5), *((short *)(&dl_ch128_0[1])+6), *((short *)(&dl_ch128_0[1])+7));
+  msg("dl_ch128_0[0] fxp [%d,%d,%d,%d,%d,%d,%d,%d]\n", *((short *)(&dl_ch128_0[0])+0), *((short *)(&dl_ch128_0[0])+1), *((short *)(&dl_ch128_0[0])+2), *((short *)(&dl_ch128_0[0])+3), *((short *)(&dl_ch128_0[0])+4), *((short *)(&dl_ch128_0[0])+5), *((short *)(&dl_ch128_0[0])+6), *((short *)(&dl_ch128_0[0])+7));
+  msg("dl_ch128_0[1] fxp:[%d,%d,%d,%d,%d,%d,%d,%d]\n", *((short *)(&dl_ch128_0[1])+0), *((short *)(&dl_ch128_0[1])+1), *((short *)(&dl_ch128_0[1])+2), *((short *)(&dl_ch128_0[1])+3), *((short *)(&dl_ch128_0[1])+4), *((short *)(&dl_ch128_0[1])+5), *((short *)(&dl_ch128_0[1])+6), *((short *)(&dl_ch128_0[1])+7));
 #endif
 #ifdef ENABLE_FLP	      
-  printf("p_dl_ch_0   flp [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
-  printf("p_dl_ch_0+8 flp:[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+8), *(p_dl_ch_0+9), *(p_dl_ch_0+10), *(p_dl_ch_0+11), *(p_dl_ch_0+12), *(p_dl_ch_0+13), *(p_dl_ch_0+14), *(p_dl_ch_0+15));
+  msg("p_dl_ch_0   flp [%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+0), *(p_dl_ch_0+1), *(p_dl_ch_0+2), *(p_dl_ch_0+3), *(p_dl_ch_0+4), *(p_dl_ch_0+5), *(p_dl_ch_0+6), *(p_dl_ch_0+7));
+  msg("p_dl_ch_0+8 flp:[%d,%d,%d,%d,%d,%d,%d,%d]\n", *(p_dl_ch_0+8), *(p_dl_ch_0+9), *(p_dl_ch_0+10), *(p_dl_ch_0+11), *(p_dl_ch_0+12), *(p_dl_ch_0+13), *(p_dl_ch_0+14), *(p_dl_ch_0+15));
 #endif
 #endif
   
@@ -9748,9 +9944,9 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      *(p_rxdataF+i)      = (short)floor(rxdataF_temp[i]*pow(2, 15-floor(log(log2_maxh_flp)/log(2))));
 	      *(p_rxdataF_comp+i) = (short)floor(rxdataF_comp_temp[i]*pow(2, 15-floor(log(log2_maxh_flp)/log(2))));
 	      
-	      printf("rxdataF_comp_temp[i]=%f, log2_maxh_flp=%f, *(p_rxdataF_comp+i)=%d\n", rxdataF_comp_temp[i], log2_maxh_flp, *(p_rxdataF_comp+i));
+	      // msg("rxdataF_comp_temp[i]=%f, log2_maxh_flp=%f, *(p_rxdataF_comp+i)=%d\n", rxdataF_comp_temp[i], log2_maxh_flp, *(p_rxdataF_comp+i));
 	      if ((*(p_rxdataF_comp+i) < -32768) || (*(p_rxdataF_comp+i)>32767))
-		printf("ERROR\n");
+		msg("ERROR\n");
 	    }
 	  p_dl_ch_0      = p_dl_ch_0+24;
 	  p_dl_ch_1      = p_dl_ch_1+24;
@@ -9770,9 +9966,9 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 	      *(p_rxdataF+i)      = (short)floor(rxdataF_temp[i]*pow(2, 15-floor(log(log2_maxh_flp)/log(2))));
 	      *(p_rxdataF_comp+i) = (short)floor(rxdataF_comp_temp[i]*pow(2, 15-floor(log(log2_maxh_flp)/log(2))));
 	      
-	      printf("rxdataF_comp_temp[i]=%f, log2_maxh_flp=%f, *(p_rxdataF_comp+i)=%d\n", rxdataF_comp_temp[i], log2_maxh_flp, *(p_rxdataF_comp+i));
+	      // msg("rxdataF_comp_temp[i]=%f, log2_maxh_flp=%f, *(p_rxdataF_comp+i)=%d\n", rxdataF_comp_temp[i], log2_maxh_flp, *(p_rxdataF_comp+i));
 	      if ((*(p_rxdataF_comp+i) < -32768) || (*(p_rxdataF_comp+i)>32767))
-		printf("ERROR\n");
+		msg("ERROR\n");
 	    }
 	  p_dl_ch_0      = p_dl_ch_0+16;
 	  p_dl_ch_1      = p_dl_ch_1+16;
@@ -9790,325 +9986,6 @@ void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
   _m_empty(); 
 #endif
 } 
-
-void dlsch_channel_compensation_prec_full_flp(int **rxdataF_ext,
-					      int **dl_ch_estimates_ext,
-					      double **dl_ch_mag, // Used in the sequel with an Flp format
-					      double **dl_ch_magb,
-					      double **rxdataF_comp,
-					      unsigned char *pmi_ext,
-					      LTE_DL_FRAME_PARMS *frame_parms,
-					      PHY_MEASUREMENTS *phy_measurements,
-					      int eNB_id,
-					      unsigned char symbol,
-					      u8 first_symbol_flag,
-					      unsigned char mod_order,
-					      unsigned short nb_rb,
-					      unsigned char output_shift,
-					      unsigned char dl_power_off)
-{  
-  
-  unsigned short rb,Nre;
-  unsigned char aarx=0,symbol_mod,pilots=0;
-  int precoded_signal_strength=0,rx_power_correction;
-  int i;
-  double QAM_amp, QAM_ampb;
-  short *p_dl_ch_0/*input*/, *p_dl_ch_1/*input*/, *p_rxdataF/*input*/;
-  double *p_dl_ch_magb/*output*/, *p_dl_ch_mag/*output*/, *p_rxdataF_comp/*output*/;
-
-  double dl_ch_0_temp[24], dl_ch_1_temp[24], dl_ch_mag_temp[24], dl_ch_magb_temp[24], rxdataF_temp[24], rxdataF_comp_temp[24];
-  double temp0_16bits[8], temp1_16bits[8]/*, temp2_16bits[8], temp3_16bits[8]*/; // Correspond to 8*16 bits
-  double temp0_32bits[4], temp1_32bits[4], temp2_32bits[4], temp3_32bits[4]; // Correspond to 4*32 bits
-
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  // printf("symbol_mod=%d\n", symbol_mod);
-
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
-    pilots=1;
-
-  if ( (frame_parms->ofdm_symbol_size == 128) ||
-       (frame_parms->ofdm_symbol_size == 512) )
-    rx_power_correction = 2;
-  else
-    rx_power_correction = 1;
-
-  if (dl_power_off==1) { /* IA receiver */
-    if (mod_order == 4)
-      {
-	QAM_amp = 2.0/sqrt(10);
-	QAM_ampb = 0.0; // Un-initialized (while used) for 16-QAM
-      }
-    else if (mod_order == 6)
-      {
-	QAM_amp  = 4.0/sqrt(42);
-	QAM_ampb = 2.0/sqrt(42);
-      }
-  }
-  else { /* Non-IA receiver */
-    if (mod_order == 4)
-      {
-	QAM_amp = 2.0/sqrt(10)/sqrt(2);
-	QAM_ampb = 0.0;
-      }
-    else if (mod_order == 6)
-      {
-	QAM_amp  = 4.0/sqrt(42)/sqrt(2);
-	QAM_ampb = 2.0/sqrt(42)/sqrt(2);
-      }
-  }
-  
-  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-    {
-      p_dl_ch_0 = (short *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-      p_dl_ch_1 = (short *)&dl_ch_estimates_ext[2+aarx][symbol_mod*frame_parms->N_RB_DL*12];
-      
-      p_dl_ch_mag  = (double *)&dl_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
-      p_dl_ch_magb = (double *)&dl_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
-      
-      p_rxdataF      = (short *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      p_rxdataF_comp = (double *)&rxdataF_comp[aarx][symbol*frame_parms->N_RB_DL*12];
-      // pointers are first casted to short for 16-bits format reading/writing
-
-      for (rb=0;rb<nb_rb;rb++)
-	{
-	  for (i=0; i<16; i++)
-	    {
-	      dl_ch_0_temp[i] = *(p_dl_ch_0+i)/pow(2, 15);
-	      dl_ch_1_temp[i] = *(p_dl_ch_1+i)/pow(2, 15);
-	      rxdataF_temp[i] = *(p_rxdataF+i)/pow(2, 15);
-	    }
-	  if (pilots==0)
-	    {
-	      for (i=16; i<24; i++)
-		{
-		  dl_ch_0_temp[i] = *(p_dl_ch_0+i)/pow(2, 15);
-		  dl_ch_1_temp[i] = *(p_dl_ch_1+i)/pow(2, 15);
-		  rxdataF_temp[i] = *(p_rxdataF+i)/pow(2, 15);
-		}
-	    }
-
-	  // combine TX channels using precoder from pmi
-	  prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[0], &dl_ch_1_temp[0]);
-	  prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[8], &dl_ch_1_temp[8]);
-	  if (pilots==0)
-	    prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[16], &dl_ch_1_temp[16]);
-
-	  if (mod_order>2)
-	    {
-	      // get channel amplitude if not QPSK
-	      for (i=0; i<8>>1; i++)
-		{
-		  temp0_32bits[i] = dl_ch_0_temp[2*i]*dl_ch_0_temp[2*i]     + dl_ch_0_temp[2*i+1]*dl_ch_0_temp[2*i+1];
-		  temp1_32bits[i] = dl_ch_0_temp[8+2*i]*dl_ch_0_temp[8+2*i] + dl_ch_0_temp[8+2*i+1]*dl_ch_0_temp[8+2*i+1];
-		}
-	      
-	      for (i=0; i<8>>1; i++)
-		{
-		  temp0_16bits[i]   = temp0_32bits[i];
-		  temp0_16bits[4+i] = temp1_32bits[i];
-		}
-	      for (i=0; i<8>>1; i++)
-		{
-		  dl_ch_mag_temp[2*i]     = temp0_16bits[i]; // unpacklo
-		  dl_ch_mag_temp[2*i+1]   = temp0_16bits[i];
-		  dl_ch_mag_temp[8+2*i]   = temp0_16bits[4+i]; // unpachhi
-		  dl_ch_mag_temp[8+2*i+1] = temp0_16bits[4+i];
-		  
-		  dl_ch_magb_temp[2*i]     = dl_ch_mag_temp[2*i];
-		  dl_ch_magb_temp[2*i+1]   = dl_ch_mag_temp[2*i+1];
-		  dl_ch_magb_temp[8+2*i]   = dl_ch_mag_temp[8+2*i];
-		  dl_ch_magb_temp[8+2*i+1] = dl_ch_mag_temp[8+2*i+1];
-		  
-		  dl_ch_mag_temp[2*i]     = dl_ch_mag_temp[2*i]*QAM_amp;
-		  dl_ch_mag_temp[2*i+1]   = dl_ch_mag_temp[2*i+1]*QAM_amp;
-		  dl_ch_mag_temp[8+2*i]   = dl_ch_mag_temp[8+2*i]*QAM_amp;
-		  dl_ch_mag_temp[8+2*i+1] = dl_ch_mag_temp[8+2*i+1]*QAM_amp;
-		}
-
-	      if (pilots==0)
-		{
-		  for (i=0; i<8>>1; i++)
-		    temp0_32bits[i] = dl_ch_0_temp[16+2*i]*dl_ch_0_temp[16+2*i] + dl_ch_0_temp[16+2*i+1]*dl_ch_0_temp[16+2*i+1];
-		  
-		  for (i=0; i<8>>1; i++)
-		    {
-		      temp1_16bits[i]   = temp0_32bits[i];
-		      temp1_16bits[4+i] = temp0_32bits[i];
-		    }
-		  for (i=0; i<8>>1; i++)
-		    {
-		      dl_ch_mag_temp[16+2*i]   = temp1_16bits[i]; // unpacklo
-		      dl_ch_mag_temp[16+2*i+1] = temp1_16bits[i];
-		      
-		      dl_ch_magb_temp[16+2*i]   = dl_ch_mag_temp[16+2*i];
-		      dl_ch_magb_temp[16+2*i+1] = dl_ch_mag_temp[16+2*i+1];
-		      
-		      dl_ch_mag_temp[16+2*i]   = dl_ch_mag_temp[16+2*i]*QAM_amp;
-		      dl_ch_mag_temp[16+2*i+1] = dl_ch_mag_temp[16+2*i+1]*QAM_amp;
-		    }
-		}
-	      
-	      for (i=0; i<8>>1; i++)
-		{
-		  dl_ch_magb_temp[2*i]   = dl_ch_magb_temp[2*i]*QAM_ampb;
-		  dl_ch_magb_temp[2*i+1] = dl_ch_magb_temp[2*i+1]*QAM_ampb;
-		  
-		  dl_ch_magb_temp[8+2*i]   = dl_ch_magb_temp[8+2*i]*QAM_ampb;
-		  dl_ch_magb_temp[8+2*i+1] = dl_ch_magb_temp[8+2*i+1]*QAM_ampb;
-		}
-	      
-	      if (pilots==0)
-		{
-		  for (i=0; i<8>>1; i++)
-		    {
-		      dl_ch_magb_temp[16+2*i]   = dl_ch_magb_temp[16+2*i]*QAM_ampb;
-		      dl_ch_magb_temp[16+2*i+1] = dl_ch_magb_temp[16+2*i+1]*QAM_ampb;
-		    }
-		}
-	    }
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp0_32bits[i] = dl_ch_0_temp[2*i]*rxdataF_temp[2*i] + dl_ch_0_temp[2*i+1]*rxdataF_temp[2*i+1];
-	  
-	  temp1_16bits[0] = -dl_ch_0_temp[1]; // shuffle low
-	  temp1_16bits[1] =  dl_ch_0_temp[0]; // + conjugate
-	  temp1_16bits[2] = -dl_ch_0_temp[3];
-	  temp1_16bits[3] =  dl_ch_0_temp[2];
-	  temp1_16bits[4] = -dl_ch_0_temp[4+1]; // shuffle high
-	  temp1_16bits[5] =  dl_ch_0_temp[4+0];
-	  temp1_16bits[6] = -dl_ch_0_temp[4+3];
-	  temp1_16bits[7] =  dl_ch_0_temp[4+2];
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[2*i] + temp1_16bits[2*i+1]*rxdataF_temp[2*i+1];
-	  
-	  temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	  temp2_32bits[1] = temp1_32bits[0];
-	  temp2_32bits[2] = temp0_32bits[1];
-	  temp2_32bits[3] = temp1_32bits[1];
-	  
-	  temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	  temp3_32bits[1] = temp1_32bits[2];
-	  temp3_32bits[2] = temp0_32bits[3];
-	  temp3_32bits[3] = temp1_32bits[3];
-	  
-	  for (i=0; i<8>>1; i++)
-	    {
-	      rxdataF_comp_temp[i]   = temp2_32bits[i];
-	      rxdataF_comp_temp[4+i] = temp3_32bits[i];
-	    }
-	 
-	  for (i=0; i<8>>1; i++)
-	    temp0_32bits[i] = dl_ch_0_temp[8+2*i]*rxdataF_temp[8+2*i] + dl_ch_0_temp[8+2*i+1]*rxdataF_temp[8+2*i+1];
-	  
-	  temp1_16bits[0] = -dl_ch_0_temp[8+1]; // shuffle low
-	  temp1_16bits[1] =  dl_ch_0_temp[8+0]; // + conjugate
-	  temp1_16bits[2] = -dl_ch_0_temp[8+3];
-	  temp1_16bits[3] =  dl_ch_0_temp[8+2];
-	  temp1_16bits[4] = -dl_ch_0_temp[8+4+1]; // shuffle high
-	  temp1_16bits[5] =  dl_ch_0_temp[8+4+0];
-	  temp1_16bits[6] = -dl_ch_0_temp[8+4+3];
-	  temp1_16bits[7] =  dl_ch_0_temp[8+4+2];
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[8+2*i] + temp1_16bits[2*i+1]*rxdataF_temp[8+2*i+1];
-	  	  
-	  temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	  temp2_32bits[1] = temp1_32bits[0];
-	  temp2_32bits[2] = temp0_32bits[1];
-	  temp2_32bits[3] = temp1_32bits[1];
-	  
-	  temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	  temp3_32bits[1] = temp1_32bits[2];
-	  temp3_32bits[2] = temp0_32bits[3];
-	  temp3_32bits[3] = temp1_32bits[3];
-	  	  
-	  for (i=0; i<8>>1; i++)
-	    {
-	      rxdataF_comp_temp[8+i]   = temp2_32bits[i];
-	      rxdataF_comp_temp[8+4+i] = temp3_32bits[i];
-	    }
-
-	  if (pilots==0)
-	    {
-	      for (i=0; i<8>>1; i++)
-		temp0_32bits[i] = dl_ch_0_temp[16+2*i]*rxdataF_temp[16+2*i] + dl_ch_0_temp[16+2*i+1]*rxdataF_temp[16+2*i+1];
-	  
-	      temp1_16bits[0] = -dl_ch_0_temp[16+1]; // shuffle low
-	      temp1_16bits[1] =  dl_ch_0_temp[16+0]; // + conjugate
-	      temp1_16bits[2] = -dl_ch_0_temp[16+3];
-	      temp1_16bits[3] =  dl_ch_0_temp[16+2];
-	      temp1_16bits[4] = -dl_ch_0_temp[16+4+1]; // shuffle high
-	      temp1_16bits[5] =  dl_ch_0_temp[16+4+0];
-	      temp1_16bits[6] = -dl_ch_0_temp[16+4+3];
-	      temp1_16bits[7] =  dl_ch_0_temp[16+4+2];
-	  
-	      for (i=0; i<8>>1; i++)
-		temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[16+2*i] + temp1_16bits[2*i+1]*rxdataF_temp[16+2*i+1];
-	  
-	      temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	      temp2_32bits[1] = temp1_32bits[0];
-	      temp2_32bits[2] = temp0_32bits[1];
-	      temp2_32bits[3] = temp1_32bits[1];
-	      
-	      temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	      temp3_32bits[1] = temp1_32bits[2];
-	      temp3_32bits[2] = temp0_32bits[3];
-	      temp3_32bits[3] = temp1_32bits[3];
-	  
-	      for (i=0; i<8>>1; i++)
-		{
-		  rxdataF_comp_temp[16+i]   = temp2_32bits[i];
-		  rxdataF_comp_temp[16+4+i] = temp3_32bits[i];
-		}
-	 
-	      for (i=0; i<24; i++)
-		{
-		  // Should be casted to int
-		  *(p_dl_ch_0+i)      = (short)floor(dl_ch_0_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_1+i)      = (short)floor(dl_ch_1_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_mag+i)    = (double) dl_ch_mag_temp[i];
-		  *(p_dl_ch_magb+i )  = (double) dl_ch_magb_temp[i];
-		  *(p_rxdataF+i)      = (short)floor(rxdataF_temp[i]*pow(2, output_shift));
-		  *(p_rxdataF_comp+i) = (double) rxdataF_comp_temp[i];
-		}
-	      
-	      p_dl_ch_0      = p_dl_ch_0+24;
-	      p_dl_ch_1      = p_dl_ch_1+24;
-	      p_dl_ch_mag    = p_dl_ch_mag+24;
-	      p_dl_ch_magb   = p_dl_ch_magb+24;
-	      p_rxdataF      = p_rxdataF+24;
-	      p_rxdataF_comp = p_rxdataF_comp+24;
-	    }
-	  else
-	    {
-	      for (i=0; i<16; i++)
-		{
-		  *(p_dl_ch_0+i)      = (short)floor(dl_ch_0_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_1+i)      = (short)floor(dl_ch_1_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_mag+i)    = (double) dl_ch_mag_temp[i];
-		  *(p_dl_ch_magb+i )  = (double) dl_ch_magb_temp[i];
-		  *(p_rxdataF+i)      = (short)floor(rxdataF_temp[i]*pow(2, output_shift));
-		  *(p_rxdataF_comp+i) = (double) rxdataF_comp_temp[i];
-		}
-	      
-	      p_dl_ch_0      = p_dl_ch_0+16;
-	      p_dl_ch_1      = p_dl_ch_1+16;
-	      p_dl_ch_mag    = p_dl_ch_mag+16;
-	      p_dl_ch_magb   = p_dl_ch_magb+16;
-	      p_rxdataF      = p_rxdataF+16;
-	      p_rxdataF_comp = p_rxdataF_comp+16;
-	    } 
-	}
-      Nre = (pilots==0) ? 12 : 8;
-      
-      precoded_signal_strength += ((signal_energy_nodc(&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*Nre],
-						       (nb_rb*Nre))*rx_power_correction) - (phy_measurements->n0_power[aarx]));
-      //printf("precoded_signal_strength=%d\n", precoded_signal_strength);
-    } // rx_antennas
-            
-  phy_measurements->precoded_cqi_dB[eNB_id][0] = dB_fixed2(precoded_signal_strength,phy_measurements->n0_power_tot);
-}
     
 __m128i avg128D;
 
@@ -10132,7 +10009,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*frame_parms->N_RB_DL*12];
 
       for (rb=0;rb<nb_rb;rb++) {
-	//	printf("rb %d : ",rb);
+	//	msg("rb %d : ",rb);
 	//	print_shorts("ch",&dl_ch128[0]);
 	avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
 	avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
@@ -10164,7 +10041,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 			     ((int*)&avg128D)[2] + 
 			     ((int*)&avg128D)[3])/(nb_rb*nre);
 
-      //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+      // msg("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
   _mm_empty();
   _m_empty();
@@ -10193,10 +10070,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   //#define ENABLE_FLP
   
 #ifdef ENABLE_FXP
-  //  printf("rx_pdsch, Full Fxp version\n");
+  //  msg("rx_pdsch, Full Fxp version\n");
 #endif
 #ifdef ENABLE_FLP
-  //  printf("rx_pdsch, Flp WITHIN dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() only\n");
+  //  msg("rx_pdsch, Flp WITHIN dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() only\n");
 #endif
 
   unsigned short nb_rb;
@@ -10255,7 +10132,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     msg("dlsch_demodulation.c: Null lte_frame_parms\n");
     return(-1);
   }
-  //  printf("rx_dlsch : eNB_id %d, eNB_id_i %d, dual_stream_flag %d\n",eNB_id,eNB_id_i,dual_stream_flag); 
+  //  msg("rx_dlsch : eNB_id %d, eNB_id_i %d, dual_stream_flag %d\n",eNB_id,eNB_id_i,dual_stream_flag); 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   /*
@@ -10342,13 +10219,12 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 					 frame_parms);
     }
   } //else n_tx>1
-  
-  //  printf("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
+
+  //  msg("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
   if (nb_rb==0) {
     msg("dlsch_modulation.c: nb_rb=0\n");
     return(-1);
   }
-  
   
   if (first_symbol_flag==1) {
     dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -10453,7 +10329,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
   }
   else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding
-    //    printf("Channel compensation for precoding\n");
+    //    msg("Channel compensation for precoding\n");
     if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_eNB_MAX)) {
 #ifdef COMPARE_FLP_AND_FXP
       // Store reference streams for the sake of comparison
@@ -10467,43 +10343,85 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars__eNB_id__dl_ch_estimates_ext[1][i] = lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i];
 	}
       
-      printf("pilots=%d, symbol=%d, frame_parms->N_RB_DL=%d\n", pilots, symbol, frame_parms->N_RB_DL);
-      printf("dl_ch_0_ext before flp in if=[");
+      //msg("pilots=%d, symbol=%d, frame_parms->N_RB_DL=%d\n", pilots, symbol, frame_parms->N_RB_DL);
+      msg("dl_ch_0_ext before flp in if=[");
       int index = 300;
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_1_ext before flp in if=[");
+      msg("dl_ch_1_ext before flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 #endif
 
 #ifdef ENABLE_FLP
-      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, first_symbol_flag, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
+/*       int i; */
+/*       msg("dl_ch_0 before flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0])+i), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+
+/*       msg("dl_ch_1 before flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0]+i)), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+
+/*       msg("pmi=%d\n", *(lte_ue_pdsch_vars[eNB_id]->pmi_ext)); */
+
+      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
+					  lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+					  lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, 
+					  lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+					  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+					  lte_ue_pdsch_vars[eNB_id]->pmi_ext,
+					  frame_parms,
+					  phy_measurements,
+					  eNB_id, 
+					  symbol,
+					  first_symbol_flag,
+					  get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
+					  nb_rb,
+					  lte_ue_pdsch_vars[eNB_id]->log2_maxh,
+					  dlsch_ue[0]->dl_power_off);
+      
+/*       msg("dl_ch_0 after flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0])+i), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+
+/*       msg("dl_ch_1 after flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0])+i), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+
+/*       msg("dl_ch_mag flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i)), i); */
+/*       msg("]\n"); */
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP
-      printf("dl_ch_estimates_ext flp in if=[");
+      msg("dl_ch_estimates_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_ext flp in if=[");
+      msg("rxdataF_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_mag flp in if=[");
+      msg("dl_ch_mag flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_comp flp in if=[");
+      msg("rxdataF_comp flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
       
       for (i=0; i<index; i++)
 	{
@@ -10511,43 +10429,180 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i]  = lte_ue_pdsch_vars__eNB_id__dl_ch_estimates_ext[1][i];
 	}
 
-      printf("dl_ch_0 before fxp in if=[");
+      msg("dl_ch_0 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_1 before fxp in if=[");
+      msg("dl_ch_1 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 #endif
       
 #ifdef ENABLE_FXP
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, first_symbol_flag, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
+      /*
+      int i;
+      int index = 8;
+      msg("dl_ch_0 before fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+
+      msg("dl_ch_1 before fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+
+      msg("rxdataF_ext fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+      */
+      
+      /*
+      int i;
+      msg("h1 forall=[");
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0]))+i), i);
+	}
+      msg("]\n");
+      
+      msg("h2 forall=[");
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0]))+i), i);
+	}
+      msg("]\n");
+      */
+
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
+				      lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+				      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+				      lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+				      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+				      lte_ue_pdsch_vars[eNB_id]->pmi_ext,
+				      frame_parms,
+				      phy_measurements,
+				      eNB_id,
+				      symbol,
+				      first_symbol_flag,
+				      get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
+				      nb_rb,
+				      lte_ue_pdsch_vars[eNB_id]->log2_maxh,
+				      dlsch_ue[0]->dl_power_off);
+      
+      /*
+      msg("h1*p1 forall=[");
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0]))+i), i);
+	}
+      msg("]\n");
+
+      msg("h2*p1 forall=[");
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0]))+i), i);
+	}
+      msg("]\n");
+      */
+
+      /*
+      msg("dl_ch_0 after fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d, symbol=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0], symbol);
+
+      msg("dl_ch_1 after fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d, symbol=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0], symbol);
+
+      msg("dl_ch_mag fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d, output_shift=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0], lte_ue_pdsch_vars[eNB_id]->log2_maxh);	  
+
+      msg("dl_ch_magb fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_magb[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d, output_shift=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0], lte_ue_pdsch_vars[eNB_id]->log2_maxh);	  
+
+      msg("rxdataF_comp fxp=[");
+      for (i=0; i<index; i++)
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d, output_shift=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0], lte_ue_pdsch_vars[eNB_id]->log2_maxh);	  
+      */
+
+      //msg("dl_ch_0 after fxp forall=[");
+      //for (i=1800; i<8400; i++) // 1 symbol coded with 1 int = 2 shorts, pointer casted to short thus 900 symbols = 1800 shorts
+      //  msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0]))+i), i); // 3 1st symbol unused => 900 values
+      //msg("]\n");
+      
+      /*
+      int i;
+      msg("dl_ch_0 fxp forall=[");
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0]))+i), i);
+	}
+      msg("]\n");
+
+      msg("dl_ch_mag fxp forall (symbol=%d)=[", symbol);
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0]))+i), i);
+	}
+      msg("]\n");
+      
+      msg("dl_ch_magb fxp forall (symbol=%d)=[", symbol);
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_magb[0][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_magb[0][0]))+i), i);
+	}
+      msg("]\n");
+      
+      msg("h1'*y fxp forall (symbol=%d)=[", symbol);
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0]))+i), i);
+	}
+      msg("]\n");
+      */
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP
-      printf("dl_ch_estimates_ext fxp in if=[");
+      msg("dl_ch_estimates_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_ext fxp in if=[");
+      msg("rxdataF_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch_mag fxp in if=[");
+      msg("dl_ch_mag fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("rxdataF_comp fxp in if=[");
+      msg("rxdataF_comp fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("---\n");
+      msg("---\n");
 #endif
 
       // if interference source is MU interference, assume opposite precoder was used at eNB
@@ -10569,54 +10624,68 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  break;
 	}
 	//	if (rb==0)
-	//	  printf("pmi %d, pmi_i %d\n",lte_ue_pdsch_vars[eNB_id]->pmi_ext[rb],lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[rb]);
+	//	  msg("pmi %d, pmi_i %d\n",lte_ue_pdsch_vars[eNB_id]->pmi_ext[rb],lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[rb]);
 	
       }
 
       // apply opposite precoder to calculate interfering stream
-      #ifdef COMPARE_FLP_AND_FXP
-      //printf("----------channel_compensation_prec\n");
+#ifdef COMPARE_FLP_AND_FXP
+      //msg("----------channel_compensation_prec\n");
       for (i=0; i<300; i++)
 	{
 	  lte_ue_pdsch_vars__eNB_id_i__dl_ch_estimates_ext[0][i] = lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12+i];
 	  lte_ue_pdsch_vars__eNB_id_i__dl_ch_estimates_ext[1][i] = lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i];
 	}
-
-      printf("dl_ch0 before flp in if=[");
+      
+      msg("dl_ch0 before flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 
-      printf("dl_ch1 before flp in if=[");
+      msg("dl_ch1 before flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 #endif
       
 #ifdef ENABLE_FLP
-      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, first_symbol_flag, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
+      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
+					  lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+					  lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+					  lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb,
+					  lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+					  lte_ue_pdsch_vars[eNB_id_i]->pmi_ext,
+					  frame_parms, 
+					  phy_measurements,
+					  eNB_id_i,
+					  symbol,
+					  first_symbol_flag,
+					  i_mod,
+					  nb_rb,
+					  lte_ue_pdsch_vars[eNB_id]->log2_maxh,
+					  dlsch_ue[0]->dl_power_off);
 #endif
 
 #ifdef COMPARE_FLP_AND_FXP
-      printf("dl_ch_estimates_ext flp in if=[");
+      msg("dl_ch_estimates_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
       
-      printf("rxdataF_ext flp in if=[");
+      msg("rxdataF_ext flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("dl_ch_mag flp in if=[");
+      msg("dl_ch_mag flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("rxdataF_comp flp in if=[");
+      msg("rxdataF_comp flp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
      
       // For testing only
       for (i=0; i<300; i++)
@@ -10625,43 +10694,57 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12+i]  = lte_ue_pdsch_vars__eNB_id_i__dl_ch_estimates_ext[1][i];
 	}
       
-      printf("dl_ch_0 before fxp in if=[");
+      msg("dl_ch_0 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("dl_ch_1 before fxp in if=[");
+      msg("dl_ch_1 before fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 #endif
 
 #ifdef ENABLE_FXP      
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, first_symbol_flag, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
+				      lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+				      lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+				      lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb,
+				      lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+				      lte_ue_pdsch_vars[eNB_id_i]->pmi_ext,
+				      frame_parms,
+				      phy_measurements,
+				      eNB_id_i,
+				      symbol,
+				      first_symbol_flag,
+				      i_mod,
+				      nb_rb,
+				      lte_ue_pdsch_vars[eNB_id]->log2_maxh,
+				      dlsch_ue[0]->dl_power_off);
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP      
-      printf("dl_ch_estimates_ext fxp in if=[");
+      msg("dl_ch_estimates_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("rxdataF_ext fxp in if=[");
+      msg("rxdataF_ext fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("dl_ch_mag fxp in if=[");
+      msg("dl_ch_mag fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("rxdataF_comp fxp in if=[");
+      msg("rxdataF_comp fxp in if=[");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-      printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+      msg("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 
-      printf("------------\n");
+      msg("------------\n");
 #endif
   
 #ifdef DEBUG_PHY
@@ -10672,81 +10755,184 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif  
 
       // compute correlation between precoded channel and channel precoded with opposite PMI
-#ifdef ENABLE_FLP
-      dlsch_dual_stream_correlation_flp(frame_parms, symbol, nb_rb, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext, lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+#ifdef ENABLE_FLP  
+      dlsch_dual_stream_correlation_flp(frame_parms,
+					symbol,
+					nb_rb,
+					lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+					lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+					lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+					lte_ue_pdsch_vars[eNB_id]->log2_maxh);
 #endif
 
-#ifdef COMPARE_FLP_AND_FXP      
-      printf("dl_ch flp = [");
+#ifdef COMPARE_FLP_AND_FXP
+      msg("dl_ch flp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 
-      printf("dl_chi flp = [");
+      msg("dl_chi flp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 
-      printf("dl_ch_rho flp = [");
+      msg("dl_ch_rho flp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 #endif
 
 #ifdef ENABLE_FXP
-      dlsch_dual_stream_correlation(frame_parms, symbol, nb_rb, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext, lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+      dlsch_dual_stream_correlation(frame_parms,
+				    symbol,
+				    nb_rb,
+				    lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+				    lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+				    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+				    lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+      /*
+      msg("rho fxp forall (symbol=%d)=[", symbol);
+      for (i=0; i<8400; i++)
+	{
+	  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0]))+i) != 0)
+	    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0]))+i), i);
+	}
+      msg("]\n");
+      */
 #endif
 
 #ifdef COMPARE_FLP_AND_FXP      
-      printf("dl_ch fxp  [");
+      msg("dl_ch fxp  [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
       
-      printf("dl_chi fxp = [");
+      msg("dl_chi fxp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 
-      printf("dl_ch_rho fxp = [");
+      msg("dl_ch_rho fxp = [");
       for (i=0; i<index; i++)
-	printf("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
-      printf("\n");
+	msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+      msg("\n");
 #endif       
     }
-    else {
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
-				      lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-				      lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
-				      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-				      lte_ue_pdsch_vars[eNB_id]->pmi_ext,
-				      frame_parms,
-				      phy_measurements,
-				      eNB_id,
-				      symbol,
-				      first_symbol_flag,
-				      get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
-				      nb_rb,
-				      lte_ue_pdsch_vars[eNB_id]->log2_maxh,
-				      dlsch_ue[0]->dl_power_off);
+    else
+      {
+	dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
+					lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+					lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+					lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+					lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+					lte_ue_pdsch_vars[eNB_id]->pmi_ext,
+					frame_parms,
+					phy_measurements,
+					eNB_id,
+					symbol,
+					first_symbol_flag,
+					get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
+					nb_rb,
+					lte_ue_pdsch_vars[eNB_id]->log2_maxh,
+					0);
     }
   }
 
-  //  printf("MRC\n");
+  //  msg("MRC\n");
   if (frame_parms->nb_antennas_rx > 1)
-    dlsch_detection_mrc(frame_parms,
-			lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			lte_ue_pdsch_vars[eNB_id]->rho,
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
-			symbol,
-			nb_rb,
-			dual_stream_flag); 
+    {
+#ifdef ENABLE_BRUTEFORCE_MLD
+#else
+      /* int i; */
+/*       msg("dl_ch_0[0] after flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0])+i), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+      
+/*       msg("dl_ch_0[1] after flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0])+i), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+      
+/*       msg("dl_ch_1[0] after flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0])+i), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+      
+/*       msg("dl_ch_1[1] after flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0])+i), i); // 3 1st symbol unused => 900 values */
+/*       msg("]\n"); */
+      
+/*       msg("dl_ch_mag[0] flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i)), i); */
+/*       msg("]\n");   */
+      
+/*       msg("dl_ch_mag[1] flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[1][0])+i)), i); */
+/*       msg("]\n");  */ 
 
-  //  printf("Combining");
+      dlsch_detection_mrc(frame_parms,
+			  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+			  lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+			  lte_ue_pdsch_vars[eNB_id]->rho,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+			  symbol,
+			  nb_rb,
+			  dual_stream_flag); 
+      
+/*       msg("output_shift=%d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh); */
+
+/*       msg("dl_ch_mag[0] flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i)), i); */
+/*       msg("]\n");   */
+      
+/*       msg("dl_ch_mag[1] flp forall=["); */
+/*       for (i=1800; i<1808/\*4200*\/; i++) */
+/* 	msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[1][0])+i)), i); */
+/*       msg("]\n");   */
+
+  /*
+  int i;
+  if (symbol==13)
+    {						
+      msg("output_shift=%d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+      
+      msg("h1'y fxp (fxp)=[");
+      for (i=0; i<8400; i++)
+	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+      msg("]\n");
+      
+      msg("h2'y fxp (fxp)=[");
+      for (i=0; i<8400; i++)
+	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+      msg("]\n");
+      
+      msg("mag fxp (fxp)=[");
+      for (i=0; i<8400; i++)
+	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+      msg("]\n");
+      
+      msg("magb fxp (fxp)=[");
+      for (i=0; i<8400; i++)
+	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_magb[0][0])+i), i);
+      msg("]\n");
+      
+      msg("rho fxp (fxp)=[");
+      for (i=0; i<8400; i++)
+	msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+      msg("]\n");
+    }
+  */
+#endif
+    }
+  
+  //  msg("Combining");
   // Single-layer transmission formats
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {
     if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO) ||
@@ -10762,26 +10948,150 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       return (-1);
     }
 
-    //    printf("LLR");
+    //    msg("LLR");
 
     switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs)) {
     case 2 : 
       if (dual_stream_flag == 0)
-	dlsch_qpsk_llr(frame_parms,
-		       lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-		       lte_ue_pdsch_vars[eNB_id]->llr[0],
-		       symbol,first_symbol_flag,nb_rb,
-		       adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-		       lte_ue_pdsch_vars[eNB_id]->llr128);
+	{
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("(h1*p2)'*y1 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("(h2*p2)'*y2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("2/sqrt(10)||h1||^2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("2/sqrt(10)||h2||^2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("rho fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+	  
+	  dlsch_qpsk_llr(frame_parms,
+			 lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+			 lte_ue_pdsch_vars[eNB_id]->llr[0],
+			 symbol,first_symbol_flag,nb_rb,
+			 adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
+			 lte_ue_pdsch_vars[eNB_id]->llr128);
+	  
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("llr fxp forall qpsk_llr() (symbol=%d)=[", symbol);
+	      for (i=0; i<(300*8+200*3)*2; i++)
+		{
+		  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i) != 0)
+		    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i), i);
+		}
+	      msg("]\n");
+	    }
+	  */
+	}
       else if (i_mod == 2) 
-	dlsch_qpsk_qpsk_llr(frame_parms,
-			    lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			    lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			    lte_ue_pdsch_vars[eNB_id]->llr[0],
-			    symbol,first_symbol_flag,nb_rb,
-			    adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-			    lte_ue_pdsch_vars[eNB_id]->llr128);
+	{
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("(h1*p2)'*y1 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("(h2*p2)'*y2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("2/sqrt(10)||h1||^2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("2/sqrt(10)||h2||^2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("rho fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+
+	  dlsch_qpsk_qpsk_llr(frame_parms,
+			      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+			      lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+			      lte_ue_pdsch_vars[eNB_id]->llr[0],
+			      symbol,first_symbol_flag,nb_rb,
+			      adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
+			      lte_ue_pdsch_vars[eNB_id]->llr128);
+
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("llr fxp forall qpsk_qpsk_llr() (symbol=%d)=[", symbol);
+	      for (i=0; i<(300*8+200*3)*2; i++)
+		{
+		  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i) != 0)
+		    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i), i);
+		}
+	      msg("]\n");
+       	    }
+	  */
+	}
       else {
 	msg("rx_dlsch.c : IC receiver only implemented for 4QAM-4QAM\n");
 	return(-1);
@@ -10790,29 +11100,339 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       break;
     case 4 :
       if (dual_stream_flag == 0)
-	dlsch_16qam_llr(frame_parms,
-			lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			lte_ue_pdsch_vars[eNB_id]->llr[0],
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			symbol,first_symbol_flag,nb_rb,
-			adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,4,subframe,symbol),
-			lte_ue_pdsch_vars[eNB_id]->llr128);
+	{
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("y1 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("(h1*p2)'*y1 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("2/sqrt(10)||h1||^2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+
+	  dlsch_16qam_llr(frame_parms,
+			  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+			  lte_ue_pdsch_vars[eNB_id]->llr[0],
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+			  symbol,first_symbol_flag,nb_rb,
+			  adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,4,subframe,symbol),
+			  lte_ue_pdsch_vars[eNB_id]->llr128);
+
+	  /*
+	  int i;
+	  if (symbol==13)
+	    {
+	      msg("llr fxp 16qam_llr() forall (symbol=%d)=[", symbol);
+	      for (i=0; i<(300*8+200*3)*4; i++)
+		{
+		  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i) != 0)
+		    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i), i);
+		}
+	      msg("]\n");
+	    }
+	  */
+	}
       else if (i_mod == 2)
 	{
 	  msg("rx_dlsch.c : IC receiver only implemented for 16QAM-16QAM\n");
 	  return(-1);
 	}
       else if (i_mod == 4)
-	dlsch_16qam_16qam_llr(frame_parms,
-			      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			      lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			      lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			      lte_ue_pdsch_vars[eNB_id]->llr[0],
-			      symbol,first_symbol_flag,nb_rb,
-			      adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-			      lte_ue_pdsch_vars[eNB_id]->llr128);
+	{
+	  /*
+	  int i;
+	  int index = 8; // Up to 300
+	  msg("rxdataF_comp[eNB_id] before dlsch_16qam_16qam_llr full flp (flp)=[");
+	  for (i=0; i<index; i++)
+	    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+	  msg("]\n");
+	  
+	  msg("rxdataF_comp[eNB_id_i] before dlsch_16qam_16qam_llr full flp (flp)=[");
+	  for (i=0; i<index; i++)
+	    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
+	  msg("]\n");
+	  
+	  msg("dl_ch_mag[eNB_id] before dlsch_16qam_16qam_llr full flp (flp)=[");
+	  for (i=0; i<index; i++)
+	    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+	  msg("]\n");
+	  
+	  msg("dl_ch_mag[eNB_id_i] before dlsch_16qam_16qam_llr full flp (flp)=[");
+	  for (i=0; i<index; i++)
+	    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
+	  msg("]\n");
+	  
+	  msg("dl_ch_rho_ext[eNB_id] before dlsch_16qam_16qam_llr full flp (flp)=[");
+	  for (i=0; i<index; i++)
+	    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
+	  msg("]\n");
+	  */
+	  
+	  /*
+	  int i;
+	  if (symbol==13)
+	    {
+	      msg("h1'y fxp (fxp)=[");
+	      for (i=0; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("h2'y fxp (fxp)=[");
+	      for (i=0; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+
+	      msg("2/sqrt(10)*||h1||^2 fxp (fxp)=[");
+	      for (i=0; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+
+	      msg("2/sqrt(10)*||h2||^2 fxp (fxp)=[");
+	      for (i=0; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+
+	      msg("rho fxp (fxp)=[");
+	      for (i=0; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+	  
+#ifdef ENABLE_BRUTEFORCE_MLD
+	  /* if (symbol==13) */
+/* 	    { */
+/* 	      int i; */
+/* 	      msg("dl_ch_0 after flp forall=["); */
+/* 	      for (i=1800; i<1808/\*4200*\/; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0])+i), i); // 3 1st symbol unused => 900 values */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("dl_ch_1 after flp forall=["); */
+/* 	      for (i=1800; i<1808/\*4200*\/; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0]+i)), i); // 3 1st symbol unused => 900 values */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("pmi=%d\n", *(lte_ue_pdsch_vars[eNB_id]->pmi_ext)); */
+	      
+/* 	      msg("y[0] fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=8396; i<8400; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("y[1] fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[1][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=8396; i<8400; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[1][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p1)[0]=h11 fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p1)[1]=h21 fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p1)[2]=??? fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p1)[3]=??? fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p2)[0]=h12 fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p2)[1]=h22 fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[1][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[1][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p2)[2]=??? fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[2][0])+i), i); */
+/* 	      msg("]\n"); */
+	      
+/* 	      msg("(H*p2)[3]=??? fxp (fxp)=["); */
+/* 	      for (i=1800; i<1804; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[3][0])+i), i); */
+/* 	      msg(" ... "); */
+/* 	      for (i=4196; i<4201; i++) */
+/* 		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[3][0])+i), i); */
+/* 	      msg("]\n"); */
+/* 	    } */	      
+	     
+	  dlsch_16qam_16qam_mld_llr(frame_parms,
+				    lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,           // y = [y1; y2]
+				    lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,   // H*p1 vector
+				    lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, // H*p2 vector
+				    lte_ue_pdsch_vars[eNB_id]->llr[0],                // llr
+				    symbol,first_symbol_flag,nb_rb,
+				    adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
+				    lte_ue_pdsch_vars[eNB_id]->llr128);
+	  
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("llr=[");
+	      for (i=0; i<8; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->llr[0][0])+i), i);
+	      msg(" ... ");
+	      for (i=11992; i<12000; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->llr[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+#else
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("y1 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("(h1*p2)'*y1 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("(h2*p2)'*y2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("2/sqrt(10)||h1||^2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("2/sqrt(10)||h2||^2 fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("rho fxp (fxp)=[");
+	      for (i=1800; i<1804; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=8396; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+
+	  dlsch_16qam_16qam_llr(frame_parms,
+				lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+				lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+				lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+				lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+				lte_ue_pdsch_vars[eNB_id]->llr[0],
+				symbol,first_symbol_flag,nb_rb,
+				adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
+				lte_ue_pdsch_vars[eNB_id]->llr128);
+
+	  /*	  
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("llr=[");
+	      for (i=0; i<8; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->llr[0][0])+i), i);
+	      msg(" ... ");	      
+	      for (i=11992; i<12000; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->llr[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+#endif
+	  /*
+	  if (symbol==13)
+	    {
+	      int i;
+	      msg("llr fxp forall 16qam_16qam_llr() (symbol=%d)=[", symbol);
+	      for (i=0; i<(300*8+200*3)*4; i++)
+		{
+		  if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i) != 0)
+		    msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i), i);
+		}
+	      msg("]\n");
+       	    }
+	  */
+	}
       else {
 	msg("rx_dlsch.c : IC receiver only implemented for 16QAM-16QAM\n");
 	return(-1);
@@ -10839,6 +11459,37 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	}
       else
 	{
+	  /*
+	  int i;
+	  if (symbol==13)
+	    {
+	      msg("h1'y fxp (fxp)=[");
+	      for (i=1800; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+	      
+	      msg("h2'y fxp (fxp)=[");
+	      for (i=1800; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp[0][0])+i), i);
+	      msg("]\n");
+
+	      msg("4/sqrt(42)*||h1||^2 fxp (fxp)=[");
+	      for (i=1800; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+
+	      msg("4/sqrt(42)*||h2||^2 fxp (fxp)=[");
+	      for (i=1800; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag[0][0])+i), i);
+	      msg("]\n");
+
+	      msg("rho fxp (fxp)=[");
+	      for (i=1800; i<8400; i++)
+		msg("%d(%d),", *(((short *)&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0])+i), i);
+	      msg("]\n");
+	    }
+	  */
+
 	  dlsch_64qam_64qam_llr(frame_parms,
 				lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
 				lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
@@ -10849,6 +11500,19 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				symbol,first_symbol_flag,nb_rb,
 				adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
 				lte_ue_pdsch_vars[eNB_id]->llr128);
+
+	  /*
+	if (symbol==13)
+	  {
+	    msg("llr 64x64 forall (symbol=%d)=[", symbol);
+	    for (i=0; i<(300*8+200*3)*6; i++)
+	      {
+		if (*(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i) != 0)
+		  msg("%d(%d),", *(((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][0]))+i), i);
+	      }
+	    msg("]\n");
+	  }
+	  */
 	}
       break;
     default:
@@ -10862,482 +11526,28 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       return(-1);
   }
   
-  return(0);    
-}
+  /*
+  msg("\nlte_ue_pdsch_vars inputs\n");
+  int i;
+  msg("dl_ch_estimates[eNB_id] (h1)=  [");
+  for (i=0; i<8; i++)
+    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+  msg("]\n");
+  msg("dl_ch_estimates[eNB_id_i] (h2)=[");
+  for (i=0; i<8; i++)
+    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+  msg("]\n");
+  msg("rxdataF (y)=[");
+  for (i=0; i<8; i++)
+    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+  msg("]\n");
 
-int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
-		      PDSCH_t type,
-		      unsigned char eNB_id,
-		      unsigned char eNB_id_i, //if this == NUMBER_OF_eNB_MAX, we assume MU interference
-		      u8 subframe,
-		      unsigned char symbol,
-		      unsigned char first_symbol_flag,
-		      unsigned char dual_stream_flag,
-		      unsigned char i_mod)
-{  
-  LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars;
-  LTE_UE_PDSCH_FLP **lte_ue_pdsch_vars_flp;
-  LTE_DL_FRAME_PARMS *frame_parms    = &phy_vars_ue->lte_frame_parms;
-  PHY_MEASUREMENTS *phy_measurements = &phy_vars_ue->PHY_measurements;
-  LTE_UE_DLSCH_t   **dlsch_ue;
-
-  unsigned short nb_rb;
-
-  unsigned char aatx,aarx,symbol_mod;
-  int avgs, rb;
-
-  unsigned char harq_pid0;
-
-  switch (type)
-    {
-    case SI_PDSCH:
-      msg("SI_PDSCH\n");
-      // lte_ue_pdsch_vars_flp = &phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id];
-      // dlsch_ue              = &phy_vars_ue->dlsch_ue_SI[eNB_id];
-      break;
-    case RA_PDSCH:
-      msg("RA_PDSCH\n");
-      // lte_ue_pdsch_vars_flp = &phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id];
-      // dlsch_ue              = &phy_vars_ue->dlsch_ue_ra[eNB_id];
-      break;
-    case PDSCH:
-      msg("PDSCH\n");
-      lte_ue_pdsch_vars_flp = &phy_vars_ue->lte_ue_pdsch_vars_flp[eNB_id];
-      dlsch_ue              = phy_vars_ue->dlsch_ue[eNB_id];
-      break;
-    case PMCH:
-      msg("PMCH\n");
-      // msg("[PHY][UE %d][FATAL] Frame %d subframe %d: PMCH not supported yet\n",phy_vars_ue->frame,subframe,type);
-      // mac_xface->macphy_exit("");
-      // return(-1);
-      break;
-    default:
-      msg("default\n");
-      // msg("[PHY][UE %d][FATAL] Frame %d subframe %d: Unknown PDSCH format %d\n",phy_vars_ue->frame,subframe,type);
-      // mac_xface->macphy_exit("");
-      // return(-1);
-      break;
-    }
-  
-  if (eNB_id > 2)
-    {
-      msg("dlsch_demodulation.c: Illegal eNB_id %d\n",eNB_id);
-      return(-1);
-    }
-
-  if (!lte_ue_common_vars)
-    {
-      msg("dlsch_demodulation.c: Null lte_ue_common_vars\n");
-      return(-1);
-    }
-
-  if (!dlsch_ue[0])
-    {
-      msg("dlsch_demodulation.c: Null dlsch_ue pointer\n");
-      return(-1);
-    }
-  
-  if (!lte_ue_pdsch_vars_flp)
-    {
-      msg("dlsch_demodulation.c: Null lte_ue_pdsch_vars_flp pointer\n");
-      return(-1);
-    }
-  
-  if (!frame_parms)
-    {
-      msg("dlsch_demodulation.c: Null lte_frame_parms\n");
-      return(-1);
-    }
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  harq_pid0 = dlsch_ue[0]->current_harq_pid;
-
-  if (frame_parms->nb_antennas_tx>1)
-    {
-      msg("dlsch_extract_rbs_dual, step 0.\n");
-      nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-      			     lte_ue_common_vars->dl_ch_estimates[eNB_id],
-      			     lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_ext,
-      			     lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-      			     dlsch_ue[0]->pmi_alloc,
-      			     lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext,
-      			     dlsch_ue[0]->rb_alloc,
-      			     symbol,
-      			     frame_parms);
-      
-      if (dual_stream_flag==1)
-	{
-	  if (eNB_id_i!=NUMBER_OF_eNB_MAX)
-	    {
-	      msg("dlsch_extract_rbs_dual, step 1.\n");
-	      //nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-	      //			     lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
-	      //			     lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_ext,
-	      //			     lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,
-	      //			     dlsch_ue[0]->pmi_alloc,
-	      //			     lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext,
-	      //			     dlsch_ue[0]->rb_alloc,
-	      //			     symbol,
-	      //			     frame_parms);
-	    }
-	  else
-	    {
-	      msg("dlsch_extract_rbs_dual, step 2.\n");
-	      nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-	      			     lte_ue_common_vars->dl_ch_estimates[eNB_id],
-	      			     lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_ext,
-	      			     lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,
-	      			     dlsch_ue[0]->pmi_alloc,
-	      			     lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext,
-	      			     dlsch_ue[0]->rb_alloc,
-	      			     symbol,
-	      			     frame_parms);
-	    }
-	}
-    } // if n_tx>1
-  else
-    { 
-      msg("dlsch_extract_rbs_single, step 0.\n");
-      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-				       lte_ue_common_vars->dl_ch_estimates[eNB_id],
-				       lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_ext,
-				       lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-				       dlsch_ue[0]->pmi_alloc,
-				       lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext,
-				       dlsch_ue[0]->rb_alloc,
-				       symbol,
-				       subframe,
-				       frame_parms);
-      
-      if (dual_stream_flag==1)
-	{
-	  if (eNB_id_i!=NUMBER_OF_eNB_MAX)
-	    {
-	      msg("dlsch_extract_rbs_single, step 1.\n");
-	      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-					       lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
-					       lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_ext,
-					       lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,    
-					       dlsch_ue[0]->pmi_alloc,
-					       lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext,
-					       dlsch_ue[0]->rb_alloc,
-					       symbol,
-					       subframe,
-					       frame_parms);
-	    }
-	  else
-	    {
-	      msg("dlsch_extract_rbs_single, step 2.\n");
-	      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-					       lte_ue_common_vars->dl_ch_estimates[eNB_id],
-					       lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_ext,
-					       lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,    
-					       dlsch_ue[0]->pmi_alloc,
-					       lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext,
-					       dlsch_ue[0]->rb_alloc,
-					       symbol,
-					       subframe,
-					       frame_parms);
-	    }
-	}
-    } //else n_tx>1
-  
-  if (nb_rb==0) 
-    {
-      msg("dlsch_modulation.c: nb_rb=0\n");
-      return(-1);
-    }
-  
-  if (first_symbol_flag==1)
-    {
-      msg("dlsch_channel_level, step 0.\n");
-      //dlsch_channel_level(lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-      //		  frame_parms,
-      //		  avg,
-      //		  symbol_mod,
-      //		  nb_rb);
-      
-      lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh = 15; // Used in flp release (but for Fxp ins/outs only)
-    }
-  aatx = frame_parms->nb_antennas_tx;
-  aarx = frame_parms->nb_antennas_rx;
-  
-  if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<UNIFORM_PRECODING11)
-    {// no precoding
-      msg("dlsch_channel_compensation, step 0.\n");
-      // dlsch_channel_compensation(lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_ext,
-      //		 lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-      //			 lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag,
-      //			 lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_magb,
-      //			 lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,
-      //			 (aatx>1) ? lte_ue_pdsch_vars_flp[eNB_id]->rho : NULL,
-      //			 frame_parms,
-      //			 symbol,
-      //			 first_symbol_flag,
-      //			 get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
-      //			 nb_rb,
-      //			 lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh,
-      //			 phy_measurements); // log2_maxh+I0_shift
-    
-      if ((dual_stream_flag==1) && (eNB_id_i!=NUMBER_OF_eNB_MAX))
-	{
-	  // get MF output for interfering stream
-	  msg("dlsch_channel_compensation, step 2.\n");
-	  // dlsch_channel_compensation(lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_ext,
-	  //		     lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,
-	  //		     lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_mag,
-	  //		     lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_magb,
-	  //		     lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_comp,
-	  //		     (aatx>1) ? lte_ue_pdsch_vars_flp[eNB_id_i]->rho : NULL,
-	  //		     frame_parms,
-	  //		     symbol,
-	  //		     first_symbol_flag,
-	  //		     i_mod,
-	  //		     nb_rb,
-	  //		     lte_ue_pdsch_vars_flp[eNB_id_i]->log2_maxh,
-	  //		     phy_measurements); // log2_maxh+I0_shift
-	  
-	  // compute correlation between signal and interference channels
-	  // dlsch_dual_stream_correlation(frame_parms,
-	  // 				symbol,
-	  //			nb_rb,
-	  //			lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-	  //			lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,
-	  //			lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext,
-	  //			lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh);
-	}
-    }
-  else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1)
-    {// single-layer precoding
-      //    msg("Channel compensation for precoding\n");
-      if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_eNB_MAX))
-	{
-	  msg("dlsch_channel_compensation_prec_full_flp, step 0.\n");
-	  dlsch_channel_compensation_prec_full_flp(lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_ext,
-						   lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-						   lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag,
-						   lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_magb,
-						   lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,
-						   lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext,
-						   frame_parms,
-						   phy_measurements,
-						   eNB_id,
-						   symbol,
-						   first_symbol_flag,
-						   get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
-						   nb_rb,
-						   lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh,
-						   1);
-	  
-	  int i;
-	  msg("dl_ch_estimates_ext after full flp (fxp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%d,", *((short *)&(lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("], pmi=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[0]);
-	  	  
-	  msg("dl_ch_estimates_ext after full flp (fxp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%d,", *((short *)&(lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("], pmi=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[0]);
-	  
-	  msg("rxdataF_ext after full flp (fxp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%d,", *((short *)&(lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("], pmi=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[0]);
-	  
-	  msg("dl_ch_mag after full flp (flp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%f,", *((double *)&(lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("], pmi=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[0]);
-	  
-	  msg("rxdataF_comp after full flp (flp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%f,", *((double *)&(lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("], pmi=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[0]);
-	  
-	  // if interference source is MU interference, assume opposite precoder was used at eNB
-	  // calculate opposite PMI
-	  for (rb=0;rb<nb_rb;rb++)
-	    {
-	      // msg("lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[rb]=%d, rb=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[rb], rb);
-	      switch(lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[rb])
-		{
-		case 0:
-		  lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext[rb]=1;
-		  break;
-		case 1:
-		  lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext[rb]=0;
-		  break;
-		case 2:
-		  lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext[rb]=3;
-		  break;
-		case 3:
-		  lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext[rb]=2;
-		  break;
-		}
-	    }
-	  
-	  // apply opposite precoder to calculate interfering stream
-	  msg("dlsch_channel_compensation_prec_flp, step 1.\n");
-	  dlsch_channel_compensation_prec_full_flp(lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_ext,
-	  				   lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,
-	  				   lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_mag,
-	  				   lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_magb,
-	  				   lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_comp,
-	  				   lte_ue_pdsch_vars_flp[eNB_id_i]->pmi_ext,
-	  				   frame_parms,
-	  				   phy_measurements,
-	  				   eNB_id_i,
-	  				   symbol,
-	  				   first_symbol_flag,
-	  				   i_mod,
-	  				   nb_rb,
-	  				   lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh,
-	  				   1);
-
-	  msg("dl_ch_mag after full flp (flp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%f,", *((double *)&(lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("], pmi=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[0]);
-	  
-	  msg("rxdataF_comp after full flp (flp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%f,", *((double *)&(lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("], pmi=%d\n", lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext[0]);
-	  
-	  // compute correlation between precoded channel and channel precoded with opposite PMI
-	  dlsch_dual_stream_correlation_full_flp(frame_parms,
-	  				 symbol,
-	  				 nb_rb,
-	  				 lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-	  				 lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_estimates_ext,
-	  				 lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext,
-	  				 lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh);
-
-	  msg("dl_ch_rho_ext after full flp (flp)=[");
-	  for (i=0; i<300; i++)
-	    msg("%f,", *((double *)&(lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("]\n");
-	}
-      else
-	{
-	  msg("dlsch_channel_compensation_prec, step 3.\n");
-	  // dlsch_channel_compensation_prec(lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_ext,
-	  //			  lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext,
-	  //			  lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag,
-	  //			  lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_magb,
-	  //			  lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,
-	  //			  lte_ue_pdsch_vars_flp[eNB_id]->pmi_ext,
-	  //			  frame_parms,
-	  //			  phy_measurements,
-	  //			  eNB_id,
-	  //			  symbol,
-	  //			  first_symbol_flag,
-	  //			  get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
-	  //			  nb_rb,
-	  //			  lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh,
-	  //			  dlsch_ue[0]->dl_power_off);
-	}
-    }
-  
-  //  msg("MRC\n");
-  if (frame_parms->nb_antennas_rx > 1)
-    {
-      msg("dlsch_detection_mrc, step 0.\n");
-      // dlsch_detection_mrc(frame_parms,
-      //	  lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,
-      //		  lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_comp,
-      //		  lte_ue_pdsch_vars_flp[eNB_id]->rho,
-      //		  lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext,
-      //		  lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag,
-      //		  lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_magb,
-      //		  symbol,
-      //		  nb_rb,
-      //		  dual_stream_flag);
-    }
-  //  msg("Combining");
-  // Single-layer transmission formats
-  if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1)
-    {
-      if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO) ||
-	  ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode >= UNIFORM_PRECODING11) &&
-	   (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode <= PUSCH_PRECODING0)))
-	{}//dlsch_siso(frame_parms,lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_comp,symbol,nb_rb);
-      else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ALAMOUTI)
-	{
-	  msg("Alamouti\n");
-	  //dlsch_alamouti(frame_parms,lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag,lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_magb,symbol,nb_rb);
-	}
-      else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ANTCYCLING)
-	{
-	  msg("antcyc\n");
-	  //dlsch_antcyc(frame_parms,lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag,lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_magb,symbol,nb_rb);
-	}
-      else
-	{
-	  msg("dlsch_rx: Unknown MIMO mode\n");
-	  return (-1);
-	}
-      
-      //    msg("LLR");
-      
-      switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs))
-	{
-	case 2 : 
-	  msg("rx_dlsch.c : flp-based (IC) receiver not implemented yet for 4QAM(4-QAM)\n");
-	  return(-1);
-	  break;
-	case 4 :
-	  if (dual_stream_flag == 0)
-	    {
-	      msg("rx_dlsch.c : flp-based receiver not implemented yet for 16-QAM\n");
-	      return(-1);
-	    }
-	  else if (i_mod == 2)
-	    {
-	      msg("rx_dlsch.c : IC receiver only implemented for 16QAM-16QAM\n");
-	      return(-1);
-	    }
-	  else if (i_mod == 4)
-	    {
-	      msg("dlsch_16qam_16qam_llr_full_flp, step 0.\n");
-	      dlsch_16qam_16qam_llr_full_flp(frame_parms,
-					     lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_comp,
-					     lte_ue_pdsch_vars_flp[eNB_id_i]->rxdataF_comp,
-					     lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_mag,
-					     lte_ue_pdsch_vars_flp[eNB_id_i]->dl_ch_mag,
-					     lte_ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext,
-					     lte_ue_pdsch_vars_flp[eNB_id]->llr[0],
-					     symbol,first_symbol_flag,nb_rb,
-					     adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-					     lte_ue_pdsch_vars_flp[eNB_id]->llr128);
-
-	  msg("llr[0] after full flp (flp)=[");
-	  int i;
-	  for (i=0; i<300; i++)
-	    msg("%d,", *((short *)&(lte_ue_pdsch_vars_flp[eNB_id]->llr[0][symbol*frame_parms->N_RB_DL*12])+i));
-	  msg("]\n");
-	    }
-	  else
-	    {
-	      msg("rx_dlsch.c : IC receiver only implemented for 16QAM-16QAM\n");
-	      return(-1);
-	    }
-	  break;
-	case 6 :
-	  msg("rx_dlsch.c : flp-based (IC) receiver not implemented yet for 64QAM(64-QAM)\n");
-	  return(-1);
-	  break;
-	default:
-	  msg("rx_dlsch.c : Unknown mod_order!!!!\n");
-	  return(-1);
-	  break;
-	}
-    } // single-layer transmission
-  else 
-    {
-      msg("rx_dlsch.c : Dualstream not yet implemented\n");
-      return(-1);
-    }
+  msg("lte_ue_pdsch_vars output\n");
+  msg("llr=[");
+  for (i=0; i<8; i++)
+    msg("%d,", *((short *)&(lte_ue_pdsch_vars[eNB_id]->llr[0][(symbol%7)*frame_parms->N_RB_DL*12])+i));
+  msg("]\n\n");
+  */
   
   return(0);    
 }
@@ -11349,6 +11559,7 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
   unsigned int nsymb = (phy_vars_ue->lte_frame_parms.Ncp == 0) ? 14 : 12;
   char fname[32],vname[32];
 
+#if defined ENABLE_FXP || ENABLE_FLP
   sprintf(fname,"dlsch%d_rxF_ext0.m",eNB_id);
   sprintf(vname,"dl%d_rxF_ext0",eNB_id);
   write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0],300*nsymb,1,1);
@@ -11373,6 +11584,7 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
   sprintf(fname,"dlsch%d_mag2.m",eNB_id);
   sprintf(vname,"dl%d_mag2",eNB_id);
   write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,300*nsymb,1,1);
+#endif
 }
 
 #endif

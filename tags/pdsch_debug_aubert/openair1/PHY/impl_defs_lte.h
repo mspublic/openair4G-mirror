@@ -626,10 +626,12 @@ typedef struct {
   double **rho_i;  
   /// Pointers to llr vectors (2 TBs)
   s16 *llr[2];
+  float *llr_flp[2];
   /// \f$\log_2(\max|H_i|^2)\f$
   u8 log2_maxh;
   /// Pointers to llr vectors (128-bit alignment)
-  s16 **llr128;  
+  s16 **llr128;
+  float **llr128_flp;
   //u32 *rb_alloc;
   //u8 Qm[2];
   //MIMO_mode_t mimo_mode;

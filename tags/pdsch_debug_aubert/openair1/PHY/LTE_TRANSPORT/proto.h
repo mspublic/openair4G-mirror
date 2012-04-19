@@ -593,6 +593,16 @@ s32 rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	     u8 dual_stream_UE,
 	     u8 i_mod);
 
+s32 rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
+		      PDSCH_t type,
+		      u8 eNB_id,
+		      u8 eNB_id_i,
+		      u8 subframe,
+		      u8 symbol,
+		      u8 first_symbol_flag,
+		      u8 dual_stream_UE,
+		      u8 i_mod);
+
 s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,

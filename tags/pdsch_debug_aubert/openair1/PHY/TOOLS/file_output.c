@@ -77,6 +77,12 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
 	fprintf(fp,"%g + j*(%g)\n",((double *)data)[i], ((double *)data)[i+1]);
       }
       break;
+
+    case 9: // complex float
+      for (i=0;i<length<<1;i+=2*dec) {
+	fprintf(fp,"%g + j*(%g)\n",((float *)data)[i], ((float *)data)[i+1]);
+      }
+      break;
        
     }
 

@@ -1822,26 +1822,27 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 #else //DLSCH_THREAD
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
-	  if (abstraction_flag == 0) {
-	    dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
-			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-			       phy_vars_ue->dlsch_ue[0][0],
-			       get_G(&phy_vars_ue->lte_frame_parms,
-				     phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
-				     phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
-				     get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
-				     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
-			       phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
-			       0,
-			       ((((last_slot>>1)==0) ? 9 : ((last_slot>>1))-1))<<1);
-
-	    ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
-				 &phy_vars_ue->lte_frame_parms,
-				 phy_vars_ue->dlsch_ue[eNB_id][0],
-				 (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
-				 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
-	  }
-
+	  if (abstraction_flag == 0)
+	    {
+	      dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
+				 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+				 phy_vars_ue->dlsch_ue[0][0],
+				 get_G(&phy_vars_ue->lte_frame_parms,
+				       phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
+				       phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
+				       get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
+				       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
+				 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
+				 0,
+				 ((((last_slot>>1)==0) ? 9 : ((last_slot>>1))-1))<<1);
+	      
+	      ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
+				   &phy_vars_ue->lte_frame_parms,
+				   phy_vars_ue->dlsch_ue[eNB_id][0],
+				   (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
+				   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
+	    }
+	  
 	  else {
 	    LOG_D(PHY,"Calling dlsch_decoding_emul ...\n");
 #ifdef PHY_ABSTRACTION
