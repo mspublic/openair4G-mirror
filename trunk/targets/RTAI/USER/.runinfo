@@ -1,0 +1,1 @@
+condtest:lxrt+sem+mbx+msg:!./condtest ;sleep 1;popall:control_c
