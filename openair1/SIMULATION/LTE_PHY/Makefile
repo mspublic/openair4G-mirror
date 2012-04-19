@@ -83,6 +83,12 @@ CFLAGS += -DENABLE_FXP # Fxp only
 else
  ifdef ENABLE_FLP
  CFLAGS += -DENABLE_FLP # dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() are flp (independently)	
+  ifdef ENABLE_MLD
+  CFLAGS += -DENABLE_MLD # Exists for Flp only
+  endif
+  ifdef ENABLE_BRUTEFORCE_MLD
+  CFLAGS += -DENABLE_BRUTEFORCE_MLD # Exists for Flp only
+  endif
  else
   ifdef ENABLE_FULL_FLP
   CFLAGS += -DENABLE_FULL_FLP # Flp inside of rx_pdsch() (dlsch_detection_mrc(), dual_stream_correlation(), channel_compensation_prec(), qam16_qam16_mu_mimo() and dlsch_16qam_16qam_llr)
@@ -94,6 +100,14 @@ endif
 
 ifdef COMPARE_FLP_AND_FXP
 CFLAGS += -DCOMPARE_FLP_AND_FXP
+endif
+
+ifdef TEST_MODE
+CFLAGS += -DTEST_MODE # Always the same input mode, Random input by default
+endif
+
+ifdef LLR_FLP
+CFLAGS += -DLLR_FLP # LLRs are computed in a Flp format first THEN converted to Fxp
 endif
 
 include $(TOP_DIR)/PHY/Makefile.inc
