@@ -4,7 +4,7 @@
   <EMULATION_CONFIG>
     <EMULATION_TIME_ms>500</EMULATION_TIME_ms>
     <LOG>  <!-- set the global log level -->
-      <LEVEL>info</LEVEL>
+      <LEVEL>debug</LEVEL>
     </LOG>
   </EMULATION_CONFIG>
   <PROFILE>EMU-TEST</PROFILE>

@@ -525,6 +525,8 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
   typedef struct
   {
     int enabled;
+    unsigned int start_time;
+    unsigned int end_time;
   } Packet_Trace;
 
   typedef struct
