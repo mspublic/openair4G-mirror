@@ -1,7 +1,7 @@
 CFLAGS = $(shell rtai-config --lxrt-cflags)
 LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt
 
-CFLAGS += -D__IN_RTAI__ 
+CFLAGS += -D__IN_RTAI__ -Wall
 
 all: condtest
 

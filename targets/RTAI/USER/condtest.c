@@ -13,8 +13,8 @@
 #include <rtai_sem.h>
 #include <rtai_msg.h>
 
-#define PERIOD 100000
-#define THRESHOLD 10
+#define PERIOD 100000000
+#define THRESHOLD 1
 
 static SEM *mutex;
 static CND *cond;
@@ -22,35 +22,54 @@ static CND *cond;
 static int thread0;
 static int thread1;
 
-static int instance_cnt=0;
+static int instance_cnt=-1; //0 means worker is busy, -1 means its free
 
 static void *fun0(void *arg)
 {
     RT_TASK *task;
-    int done1=0, cnt1;
+    int done1=0, cnt1=0;
     RTIME right_now;
+    int ret;
 
     task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
     mlockall(MCL_CURRENT | MCL_FUTURE);
-    //set_periodic_mode();
 
-    //rt_make_hard_real_time();
-    // makes task hard real time (default: soft)
-    // uncomment the next line when developing : develop in soft real time mode 
-    right_now = rt_get_time() + 10*PERIOD;
-    rt_task_make_periodic(task, right_now, PERIOD);
-
-    
-    //void rt_sem_init(SEM *sem, int value)   
+    rt_make_hard_real_time();
 
     while (cnt1 < THRESHOLD)
-	 {
-		rt_sem_wait(mutex);
-		rt_cond_wait(cond, mutex); 
-    		rt_printk("Hello World!\n");
-		instance_cnt++;
-		cnt1++;
-		rt_sem_signal(mutex);
+      {
+	   rt_sem_wait(mutex);
+	   rt_printk("fun0: Hello World %d, instance_cnt %d!\n",cnt1,instance_cnt);
+	   while (instance_cnt<0) { 
+	     ret = rt_cond_wait(cond, mutex);
+	     if (ret != 0) {
+	       rt_printk("error in rt_cond_wait, code %d\n",ret);
+	       switch(ret) {
+	       case RTE_PERM:
+		 rt_printk("error RTE_PERM %d\n",ret);
+		 break;
+	       case RTE_UNBLKD:
+		 rt_printk("error RTE_UNBLKD %d\n",ret);
+		 break;
+	       case RTE_OBJREM:
+		 rt_printk("error RTE_OBJREM %d\n",ret);
+		 break;
+	       default:
+		 rt_printk("unknown error code %d\n",ret);
+		 break;
+	       }
+	       break;
+	     }
+           }
+	   rt_sem_signal(mutex);
+
+	   // do some work here
+	   cnt1++;
+		
+	   rt_sem_wait(mutex);
+	   instance_cnt--; 
+	   rt_sem_signal(mutex);
+	   
 	}
     // makes task soft real time
     rt_make_soft_real_time();
@@ -82,20 +101,37 @@ int main(void)
     rt_task_make_periodic(task, now, PERIOD);
 
     printf("Init mutex and cond.\n");
-    mutex = rt_typed_sem_init(nam2num("MUTEX"), 0, BIN_SEM);
+    mutex = rt_sem_init(nam2num("MUTEX"), 1);
+    if (mutex==0)
+      printf("Error init mutex\n");
+
     cond = rt_cond_init(nam2num("CONDITION"));
+    if (cond==0)
+      printf("Error init cond\n");
+
+    thread0 = rt_thread_create(fun0, NULL, 10000);
+    //thread1 = rt_thread_create(fun1, NULL, 20000);
+
+    //rt_sleep(PERIOD);
 
     while (cnt < THRESHOLD)
          {
                 rt_task_wait_period();
-		rt_sem_wait(mutex);
-		thread0 = rt_thread_create(fun0, NULL, 10000);
-    		//thread1 = rt_thread_create(fun1, NULL, 20000);
+		rt_printk("main: Hello World %d!\n",cnt);
+		rt_sem_wait(mutex); //now the mutex should have value 0
+		if (instance_cnt==0) {
+		  rt_sem_signal(mutex); //now the mutex should have vaule 1
+		  rt_printk("worker thread busy!\n");
+		}
+		else {
+		  instance_cnt++;
+		  rt_cond_signal(cond);
+		  rt_sem_signal(mutex); //now the mutex should have vaule 1
+		  rt_printk("signaling worker thread to start!\n");
+		}
+		cnt++;
+	 }
 
-                rt_printk("Hello World!\n");
-		rt_sem_signal(mutex);
-		rt_cond_signal(cond);
-        }
     // wait for end of program
     printf("TYPE <ENTER> TO TERMINATE\n");
     getchar();
