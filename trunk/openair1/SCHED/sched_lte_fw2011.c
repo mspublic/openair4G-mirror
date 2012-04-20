@@ -691,6 +691,9 @@ int slot_irq_handler(int irq, void *cookie) {
   intr_in = 1;
   intr_cnt++;
 
+  if (oai_semaphore)
+    rt_sem_signal(oai_semaphore);
+
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
     // check interrupt status register

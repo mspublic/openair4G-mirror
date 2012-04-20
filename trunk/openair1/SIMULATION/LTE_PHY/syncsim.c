@@ -40,6 +40,7 @@
 
 
 #include "OCG_vars.h"
+#include "openair_hw.h"
 
 #define BW 5.0
 
@@ -48,12 +49,6 @@ PHY_VARS_eNB *PHY_vars_eNB,*PHY_vars_eNB1,*PHY_vars_eNB2;
 PHY_VARS_UE *PHY_vars_UE[2];
 
 #define DLSCH_RB_ALLOC 0x1fff // igore DC component,RB13
-
-extern int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
-			uint32_t carrier_freq[4],
-			uint32_t rx_gain[4]);
-void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms, int carrier);
-void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_parms);
 
 #ifdef XFORMS
 void do_forms2(FD_lte_scope *form, 
@@ -396,7 +391,7 @@ int main(int argc, char **argv) {
   int period;
   RTIME expected;
   RT_TASK *task;
-#define PERIOD (500000*20*100)
+#define PERIOD 1000000000
 #endif
 
   number_of_cards = 1;
@@ -617,7 +612,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
   
-  rt_set_oneshot_mode();
+  rt_set_periodic_mode();
   
   period = start_rt_timer(nano2count(PERIOD));
 
@@ -657,16 +652,22 @@ int main(int argc, char **argv) {
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
   frame_parms = &PHY_vars_eNB->lte_frame_parms;
+  frame_parms->dual_tx      = 0;
+  frame_parms->freq_idx     = 0;
+  for (i=0;i<4;i++) {
+    frame_parms->carrier_freq[i] = carrier_freq[i];
+    frame_parms->rxgain[i]       = rxgain[i];
+  }
 
   if (oai_hw_input == 1) {
-    openair_fd=setup_oai_hw(frame_parms,carrier_freq,rxgain);
+    openair_fd=setup_oai_hw(frame_parms);
     setup_ue_buffers(PHY_vars_UE[0],frame_parms,0);
     if (N_carriers==2)
       setup_ue_buffers(PHY_vars_UE[1],frame_parms,1);
   }
 
   if (oai_hw_output == 1) {
-    openair_fd=setup_oai_hw(frame_parms,carrier_freq,rxgain);
+    openair_fd=setup_oai_hw(frame_parms);
     setup_eNB_buffers(PHY_vars_eNB,frame_parms);
   }
 
@@ -1305,8 +1306,12 @@ int main(int argc, char **argv) {
 	}
 
 	//	printf("Calling initial_sync\n");
-	
-	if (initial_sync(PHY_vars_UE[0])==0) {
+	PHY_vars_UE[0]->rx_offset = 0;
+	PHY_vars_UE[0]->lte_frame_parms.frame_type = 1;
+	PHY_vars_UE[0]->lte_frame_parms.Ncp = 0;
+	PHY_vars_UE[0]->lte_frame_parms.Nid_cell = 0;
+	//if (initial_sync(PHY_vars_UE[0])==0) {
+	if (1) {
 	  printf("Synchronized to %s %s prefix Cell with id %d\n",
 		 (PHY_vars_UE[0]->lte_frame_parms.frame_type == 0) ? "FDD\0" : "TDD\0",
 		 (PHY_vars_UE[0]->lte_frame_parms.Ncp == 0) ? "Normal\0" : "Extended\0",
@@ -1326,14 +1331,12 @@ int main(int argc, char **argv) {
 	    generate_phich_reg_mapping(&PHY_vars_UE[1]->lte_frame_parms);
 	  }
 	  
-	  /*
 	  // overwrite some values until source is sure
 	  PHY_vars_UE[UE_idx]->lte_frame_parms.N_RB_DL=N_RB_DL;
 	  PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_duration=0;
 	  PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_resource = oneSixth;
 	  generate_pcfich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
 	  generate_phich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
-	  */
 
 	  for (UE_idx=0;UE_idx<N_carriers;UE_idx++) { // loop over 2 carriers here
 	    // Do DCI
