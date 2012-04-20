@@ -1,1 +1,1 @@
-condtest:lxrt+sem+mbx+msg+smi:!./condtest ;sleep 1;popall:control_c
+synctest:lxrt+sem+mbx+msg+smi:!./synctest ;sleep 1;popall:control_c

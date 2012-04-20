@@ -147,6 +147,7 @@ endif
 
 # Init
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
+openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/lte_parms.o
 
 # Tools
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/memory_routines.o

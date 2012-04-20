@@ -11,6 +11,7 @@
 #endif
 
 #include "cbmimo1_pci.h"
+#include "defs.h"
 
 
 
@@ -47,4 +48,9 @@ unsigned short NODE_ID[1];
 
 char number_of_cards;
 
+#ifdef RTAI_ENABLED
+s32 *inst_cnt_ptr = NULL;
+SEM* oai_semaphore = NULL;
+CND* oai_condition = NULL;
+#endif
 

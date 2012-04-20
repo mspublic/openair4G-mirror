@@ -39,9 +39,6 @@ int dummy_cnt = 0;
 extern int bigphys_ptr;
 #endif
 
-SEM* oai_semaphore;
-CND* oai_condition;
-
 //-----------------------------------------------------------------------------
 int openair_device_open (struct inode *inode,struct file *filp) {
   //-----------------------------------------------------------------------------
@@ -1037,15 +1034,31 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_START_LXRT:
 
     // get condition and semaphore variables by name
-    oai_semaphore = rt_get_adr("OAI_SEM");
-    oai_condition = rt_get_adr("OAI_CON");
+
+    //oai_semapthore = rt_sem_init(nam2num("MUTEX"), 1);
+    oai_semaphore = rt_get_adr(nam2num("MUTEX"));
+    if (oai_semaphore==0)
+      printk("Error init mutex\n");
+
+    //oai_condition = rt_cond_init(nam2num("CONDITION"));
+    oai_condition = rt_get_adr(nam2num("CONDITION"));
+    if (oai_condition==0)
+      printk("Error init cond\n");
+
+
+    inst_cnt_ptr = malloc16(sizeof(s32));
+    *inst_cnt_ptr = -1;
+
+    printk("[openair][IOCTL] openair_START_LXRT, oai_semaphore=%p, oai_condition=%p, inst_cnt_ptr = %p\n",oai_semaphore,oai_condition,inst_cnt_ptr);
 
     // init instance count and copy its pointer to userspace
-    openair_daq_vars.instance_cnt = -1;
-    copy_to_user((char *)arg,&openair_daq_vars.instance_cnt,sizeof(s32*));
+    copy_to_user((char *)arg,&inst_cnt_ptr,sizeof(s32*));
 
     // enable the interrupts
-
+    /*
+    for (i=0;i<number_of_cards;i++)
+      openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    */
 
     break;
 
