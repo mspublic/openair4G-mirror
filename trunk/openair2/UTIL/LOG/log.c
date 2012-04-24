@@ -239,7 +239,7 @@ void logInit (void) {
   }
   // could put a loop here to check for all comps
   for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if (g_log->log_component[i].filelog) 
+    if (g_log->log_component[i].filelog == 1 ) 
       g_log->log_component[i].fd = open(g_log->log_component[i].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   }
 #else
@@ -274,8 +274,9 @@ void logRecord( const char *file, const char *func,
   g_buff_total[0] = '\0';
   c = &g_log->log_component[comp];
   
+  // do not apply filtering for LOG_F
   // only log messages which are enabled and are below the global log level and component's level threshold
-   if ((c->level > g_log->level) || (level > c->level) || (level > g_log->level)){
+  if ( (level != LOG_FILE) && ( (c->level > g_log->level) || (level > c->level) || (level > g_log->level)) ){
     //  || ((mac_xface->frame % c->interval) != 0)) { 
     return;
    }
