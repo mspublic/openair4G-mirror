@@ -545,7 +545,7 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
 	if (is_UE_active(i,j - NB_eNB_INST ) == 1) {
 	  omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors]=  j; 
 	  omv_data.geo[i].Neighbors++; 
-	  LOG_I(OMG,"[eNB %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i,j-NB_eNB_INST, is_UE_active(i,j-NB_eNB_INST), 
+	  LOG_D(OMG,"[eNB %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i,j-NB_eNB_INST, is_UE_active(i,j-NB_eNB_INST), 
 	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
 	} 
       } 
@@ -564,7 +564,7 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
 	if (is_UE_active(j,i-NB_eNB_INST) == 1) {
 	  omv_data.geo[i].Neighbor[ omv_data.geo[i].Neighbors]=j; 	
 	  omv_data.geo[i].Neighbors++; 
-	  LOG_I(OMG,"[UE %d][eNB %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_eNB_INST,j, is_UE_active(j,i-NB_eNB_INST), 
+	  LOG_D(OMG,"[UE %d][eNB %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_eNB_INST,j, is_UE_active(j,i-NB_eNB_INST), 
 	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
 	} 
       }
@@ -1136,42 +1136,42 @@ main (int argc, char **argv)
 	sinr_direction=1;
       }
     }
-    oai_emulation.info.frame = frame; 
-    update_nodes(oai_emulation.info.time);  
-
+      
+    oai_emulation.info.frame = frame;   
+    oai_emulation.info.time += 0.01; // emu time in s, each frame lasts for 10 ms 
+    // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
+    if ( (oai_emulation.info.n_frames_flag == 0) || (oai_emulation.info.n_frames >= 0xffff) ){ 
+      frame %=(oai_emulation.info.n_frames-1);
+    } 
+    
+    if ((frame % 10) == 0 ) { // call OMG every 1s 
+      update_nodes(oai_emulation.info.time); 
+      display_node_list(enb_node_list);
+      display_node_list(ue_node_list);
+      if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
+	for(UE_id=oai_emulation.info.first_ue_local; UE_id<(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);UE_id++){
+	  new_omg_model = randomGen(STATIC,RWALK); 
+	  LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
+	  // reset the mobility model for a specific node
+	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time);
+	}
+      }
+      if (oai_emulation.info.omg_model_enb >= MAX_NUM_MOB_TYPES) {	// mix mobility model
+	for (eNB_id = oai_emulation.info.first_enb_local; eNB_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local); eNB_id++) {
+	  new_omg_model = randomGen (STATIC, RWALK);
+	  LOG_D (OMG,"[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
+	  // reset the mobility model for a specific node
+	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time);
+	}
+      }
+    }
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
     // check if pipe is still open
     if ((oai_emulation.info.omv_enabled == 1) ){
       omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
     }
-    // update the position of all the nodes (eNB/CH, and UE/MR) every frame
-/*
-do it here
-
-*/
-    if (((int)oai_emulation.info.time % 10) == 0 ) {
-      display_node_list(enb_node_list);
-      display_node_list(ue_node_list);
-      if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
-	for(UE_id=oai_emulation.info.first_ue_local; UE_id<(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);UE_id++){
-	  new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
-	  LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
-	  // reset the mobility model for a specific node
-	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time);
-	}
-      }
-
-      if (oai_emulation.info.omg_model_enb >= MAX_NUM_MOB_TYPES) {	// mix mobility model
-	for (eNB_id = oai_emulation.info.first_enb_local; eNB_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local); eNB_id++) {
-	  new_omg_model = randomGen (STATIC, MAX_NUM_MOB_TYPES);
-	  LOG_D (OMG, "[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
-	  // reset the mobility model for a specific node
-	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time);
-	}
-      }
-    }
-
+    
 #ifdef DEBUG_OMG
     if ((((int) oai_emulation.info.time) % 100) == 0) {
       for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++) {
@@ -1179,16 +1179,6 @@ do it here
       }
     }
 #endif 
-   
-    if (oai_emulation.info.n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
-      frame %=(oai_emulation.info.n_frames-1);
-      // set the emulation time based on 1ms subframe number
-      oai_emulation.info.time += 0.01; // emu time in s 
-    }
-    else { // user set the number of frames for the emulation
-      // let the time go faster to see the effect of mobility
-      oai_emulation.info.time += 0.1; 
-    } 
 
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
@@ -1486,7 +1476,9 @@ do it here
 #endif
  // stop OMG
  stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
- omv_end(pfd[1],omv_data);
+  if ((oai_emulation.info.omv_enabled == 1) ){
+    omv_end(pfd[1],omv_data);
+  }
  destroyMat(ShaF,map1, map2);
  if (oai_emulation.info.cli_enabled)
    cli_server_cleanup();

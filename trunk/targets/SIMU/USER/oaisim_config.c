@@ -124,8 +124,8 @@ void init_oai_emulation() {
 	oai_emulation.environment_system_config.system_frequency_GHz = 1.9;
 
 
-	oai_emulation.topology_config.area.x_m = 5000;
-	oai_emulation.topology_config.area.y_m = 5000;
+	oai_emulation.topology_config.area.x_m = 500;
+	oai_emulation.topology_config.area.y_m = 500;
 	oai_emulation.topology_config.network_type.selected_option = "homogeneous";
 	oai_emulation.topology_config.cell_type.selected_option = "macrocell";
 	oai_emulation.topology_config.relay.number_of_relays = 0;
@@ -201,7 +201,7 @@ void init_oai_emulation() {
 	oai_emulation.emulation_config.layer.otg = 0;
 	oai_emulation.emulation_config.layer.emu = 1;
 
-	oai_emulation.emulation_config.log_emu.level = "info";
+	oai_emulation.emulation_config.log_emu.level = "debug";
 	oai_emulation.emulation_config.log_emu.verbosity = "low";
 	oai_emulation.emulation_config.log_emu.interval = 1;
 	oai_emulation.emulation_config.packet_trace.enabled = 0;
@@ -307,7 +307,8 @@ int olg_config() {
   // component, log level, log interval
   for (comp = PHY; comp < MAX_LOG_COMPONENTS ; comp++)
     set_comp_log(comp,  oai_emulation.info.g_log_level, oai_emulation.info.g_log_verbosity, oai_emulation.emulation_config.log_emu.interval);
-  
+  // if perf eval then reset the otg log level
+  set_comp_log(OTG,  LOG_FILE, oai_emulation.info.g_log_verbosity, oai_emulation.emulation_config.log_emu.interval);  
   /*
   set_log(OCG,  LOG_DEBUG, 1);  
   set_log(EMU,  LOG_INFO,  20);
