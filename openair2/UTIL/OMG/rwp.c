@@ -57,16 +57,16 @@ int start_rwp_generator(omg_global_param omg_param_list) {
   MobilityPtr mobility = NULL;
   
   if (omg_param_list.nodes <= 0){
-    LOG_W(OMG, "Number of nodes has not been set\n");
+    LOG_W(OMG,"[RWP] Number of nodes has not been set\n");
     return(-1);
   }
 
 	if (omg_param_list.nodes_type == eNB) {
-		LOG_I(OMG, "Node type has been set to eNB\n");
+		LOG_I(OMG,"[RWP] Node type has been set to eNB\n");
 	} else if (omg_param_list.nodes_type == UE) {
-		LOG_I(OMG, "Node type has been set to UE\n");
+		LOG_I(OMG, "[RWP] Node type has been set to UE\n");
 	}
- 	LOG_I(OMG, "Number of random waypoint nodes has been set to %d\n", omg_param_list.nodes);
+ 	LOG_I(OMG, "[RWP] Number of random waypoint nodes has been set to %d\n", omg_param_list.nodes);
   
   for (n_id = 0; n_id< omg_param_list.nodes; n_id++) {
     
@@ -87,7 +87,7 @@ int start_rwp_generator(omg_global_param omg_param_list) {
     Job_Vector_len ++;
 
     if (Job_Vector == NULL)
-      LOG_E(OMG, "Job Vector is NULL\n");
+      LOG_E(OMG, "[RWP] Job Vector is NULL\n");
     // else
     // LOG_T(OMG, "\nJob_Vector_Rwp->pair->b->ID %d\n", Job_Vector_Rwp->pair->b->ID);*/
   }
@@ -107,8 +107,7 @@ void place_rwp_node(NodePtr node) {
 	node->mob->speed = 0.0;
 	node->mob->journey_time = 0.0;
 
-	LOG_D(OMG, "--------INITIALIZE RWP NODE-------- \n ");
-  	LOG_I(OMG, "Initial position of node ID: %d type: %d (X = %.2f, Y = %.2f) speed = 0.0\n ", node->ID, node->type, node->X_pos, node->Y_pos);   
+  	LOG_I(OMG, "[RWP] Initial position of node ID: %d type: %d (X = %.2f, Y = %.2f) speed = 0.0\n ", node->ID, node->type, node->X_pos, node->Y_pos);   
 	Node_Vector[RWP] = (Node_list) add_entry(node, Node_Vector[RWP]);
    Node_Vector_len[RWP]++;
 	//Initial_Node_Vector_len[RWP]++;
@@ -125,11 +124,11 @@ Pair sleep_rwp_node(NodePtr node, double cur_time){
 	Pair pair = malloc(sizeof(Pair)) ;
 	
 	node->mob->sleep_duration = (double) ((int) (randomGen(omg_param_list.min_sleep, omg_param_list.max_sleep)*100))/ 100;
-	LOG_D(OMG, "node: %d \tsleep duration : %.2f\n",node->ID, node->mob->sleep_duration);
+	LOG_D(OMG, "[RWP] node: %d \tsleep duration : %.2f\n",node->ID, node->mob->sleep_duration);
 
 	node->mob->start_journey = cur_time;
 	pair->a = node->mob->start_journey + node->mob->sleep_duration; //when to wake up
-	LOG_D(OMG, "to wake up at time: cur_time + sleep_duration : %.2f\n", pair->a);
+	LOG_D(OMG, "[RWP] wake up at time: cur_time + sleep_duration : %.2f\n", pair->a);
 	pair->b = node;
 
 	return pair;
@@ -139,34 +138,33 @@ Pair sleep_rwp_node(NodePtr node, double cur_time){
 Pair move_rwp_node(NodePtr node, double cur_time) {
 	
 	Pair pair = malloc(sizeof(Pair));
-	LOG_D(OMG, "MOVE RWP NODE\n");
-	LOG_D(OMG, "node: %d\n",node->ID );
+	LOG_D(OMG, "[RWP] move node: %d\n",node->ID );
 	node->mob->X_from = node->X_pos;
 	node->mob->Y_from = node->Y_pos;
-	LOG_I(OMG, "Current Position: (%.2f, %.2f)\n", node->mob->X_from, node->mob->Y_from);
+	LOG_D(OMG, "[RWP] Current Position: (%.2f, %.2f)\n", node->mob->X_from, node->mob->Y_from);
 
 	node->mobile = 0;
 	double X_next = (double) ((int)(randomGen(omg_param_list.min_X,omg_param_list.max_X)*100))/ 100;
 	node->mob->X_to = X_next;
 	double Y_next = (double) ((int)(randomGen(omg_param_list.min_Y,omg_param_list.max_Y)*100))/ 100;
 	node->mob->Y_to = Y_next;
-	LOG_I(OMG, "destination: (%.2f, %.2f)\n", node->mob->X_to, node->mob->Y_to);
+	LOG_D(OMG, "[RWP] destination: (%.2f, %.2f)\n", node->mob->X_to, node->mob->Y_to);
 
 	double speed_next = (double) ((int)(randomGen(omg_param_list.min_speed, omg_param_list.max_speed)*100))/ 100;
 	node->mob->speed = speed_next;
-    	LOG_D(OMG, "speed_next %.2f\n", speed_next); //m/s
+    	LOG_D(OMG, "[RWP] speed_next %.2f\n", speed_next); //m/s
 	double distance = (double) ((int)(sqrtf(pow(node->mob->X_from - X_next, 2) + pow(node->mob->Y_from - Y_next, 2))*100))/ 100;
-	LOG_D(OMG, "distance %.2f\n", distance); //m
+	LOG_D(OMG, "[RWP] distance %.2f\n", distance); //m
 
 	double journeyTime_next =  (double) ((int)(distance/speed_next*100))/ 100;   //duration to get to dest
 	////node->mob->journey_time = journeyTime_next;
 	node->mobile = 1;
-    	LOG_D(OMG, "mob->journey_time_next %.2f\n",journeyTime_next );
+    	LOG_D(OMG, "[RWP] mob->journey_time_next %.2f\n",journeyTime_next );
 	
 	node->mob->start_journey = cur_time;
-   	LOG_D(OMG, "start_journey %.2f\n", node->mob->start_journey );
+   	LOG_D(OMG, "[RWP] start_journey %.2f\n", node->mob->start_journey );
 	pair->a = node->mob->start_journey + journeyTime_next;      //when to reach the destination
-	LOG_D(OMG, "when to reach the destination: pair->a= start journey + journey_time next =%.2f\n", pair->a);
+	LOG_D(OMG, "[RWP] reaching the destination at time : start journey + journey_time next =%.2f\n", pair->a);
 
 	pair->b = node;
 	return pair;
@@ -175,22 +173,19 @@ Pair move_rwp_node(NodePtr node, double cur_time) {
 
 
 void update_rwp_nodes(double cur_time) {
-   LOG_D(OMG, "--------UPDATE--------\n");
-   Job_list tmp = Job_Vector;
+  Job_list tmp = Job_Vector;
    int done = 0; //
    while ((tmp != NULL) && (done == 0)){
      //  if 	(tmp->pair == NULL){LOG_E(OMG, "UPDATE RWP : tmp->pair ==NULL\n" );}
      //  if 	(tmp->pair != NULL){LOG_E(OMG, "UPDATE RWP : tmp->pair !=NULL\n" );}
-     LOG_D(OMG, "cur_time %f\n", cur_time );
-     LOG_D(OMG, "tmp->pair->a  %f\n", tmp->pair->a  );
-     
+     LOG_D(OMG, "[RWP] cur_time %f reaching the destination at %f\n", cur_time, tmp->pair->a  );
+          
      if((tmp->pair !=NULL) && ( (double)tmp->pair->a >= cur_time - eps) && ( (double)tmp->pair->a <= cur_time + eps) ) { 
        if (tmp->pair->b->generator == RWP){
-	 LOG_D(OMG, " (first_job_time) %.2f == %.2f (cur_time) \n ",tmp->pair->a, cur_time );
-	 LOG_D(OMG, " UPDATE RWP \n ");
+	 LOG_D(OMG, "[RWP](first_job_time) %.2f == %.2f (cur_time) \n ",tmp->pair->a, cur_time );
 	 NodePtr my_node = (NodePtr)tmp->pair->b;
 	 if(my_node->mobile == 1) {
-	   LOG_D(OMG, " stop node and let it sleep \n" );
+	   LOG_D(OMG, "[RWP] node %d goes to sleep\n", my_node->ID);
 	   my_node->mobile = 0;
 	   Pair pair = malloc(sizeof(Pair));
 	   pair = sleep_rwp_node(my_node, cur_time);
@@ -198,7 +193,7 @@ void update_rwp_nodes(double cur_time) {
 	   tmp = tmp->next;
 	 }
 	 else if (my_node->mobile ==0) {
-	   LOG_D(OMG, " node %d slept enough...let's move again \n",  my_node->ID);
+	   LOG_D(OMG, "[RWP] node %d starts to move again \n",  my_node->ID);
 	   my_node->mobile = 1;
 	   Pair pair = malloc(sizeof(Pair));
 	   pair = move_rwp_node(my_node, cur_time);
@@ -206,24 +201,23 @@ void update_rwp_nodes(double cur_time) {
 	   tmp = tmp->next;
 	 }
 	 else{
-	   LOG_E(OMG, "update_generator: unsupported node state - mobile : %d \n", my_node->mobile);
+	   LOG_E(OMG,"[RWP] update_generator: unsupported node state - mobile : %d \n", my_node->mobile);
 	   exit(-1);
 	 }
        }
        else {
-	 LOG_D(OMG, " (first_job_time) %.2f == %.2f(cur_time) but (generator=%d) != (RWP=%d)\n ",tmp->pair->a, cur_time, tmp->pair->b->generator, RWP );
+	 LOG_D(OMG, "[RWP](first_job_time) %.2f == %.2f(cur_time) but (generator=%d) != (RWP=%d)\n ",tmp->pair->a, cur_time, tmp->pair->b->generator, RWP );
 	 tmp = tmp->next;
        }
      }
      else if ( (tmp->pair != NULL) && (cur_time < tmp->pair->a ) ){  //&& (tmp->pair->b->generator == RWP)
-       LOG_D(OMG, "%.2f < %.2f \n",cur_time, tmp->pair->a);
-       LOG_D(OMG, "Nothing to do\n");
+       LOG_D(OMG, "[RWP] Nothing to do as current time %.2f is less than the time to reach the destination %.2f \n",cur_time, tmp->pair->a);
        done = 1;  //quit the loop
      }
      else {
-       LOG_E(OMG, "%.2f > %.2f\n", cur_time,tmp->pair->a   );   //LOG_D(OMG, " (generator=%d) != (RWP=%d) \n", tmp->pair->b->generator,  RWP );
+       LOG_E(OMG,"[RWP] current time %.2f is %f greater than the time to reach the destination %.2f\n", cur_time, eps, tmp->pair->a );   
        done = 1;  //quit the loop
-       exit(-1);
+       // exit(-1);
      }	
  }
    //sorting the new entries
@@ -242,15 +236,15 @@ void get_rwp_positions_updated(double cur_time){
   
   Pair my_pair = Job_Vector->pair;
   if ( (my_pair !=NULL) && (cur_time <= my_pair->a )){
-    LOG_D(OMG, "%.2f <= %.2f\n ",cur_time, my_pair->a);
+    LOG_D(OMG, "[RWP] current time %.2f <= time when reaching the destination %.2f\n ",cur_time, my_pair->a);
     Job_list tmp = Job_Vector;
     while (tmp != NULL){
       if (tmp->pair->b->generator == RWP){
         if (tmp->pair->b->mobile == 0){ //node is sleeping
-          LOG_D(OMG, "node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+          LOG_D(OMG, "[RWP] node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
 	} 
         else if (tmp->pair->b->mobile == 1){ //node is moving
-	  LOG_D(OMG, "destination not yet reached for node %d from (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n",  
+	  LOG_D(OMG, "[RWP] destination not yet reached for node %d from (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n",  
 		tmp->pair->b->ID, tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, 
 		tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
 
@@ -278,10 +272,10 @@ void get_rwp_positions_updated(double cur_time){
           //tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
           //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
 	  //tmp->pair->b->mob->start_journey = cur_time;
-          LOG_D(OMG, "Updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+          LOG_D(OMG, "[RWP] Updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
         }	
         else{
-          LOG_E(OMG, "Update_generator: unsupported node state - mobile : %d \n", tmp->pair->b->mobile);
+          LOG_E(OMG, "[RWP] Update_generator: unsupported node state - mobile : %d \n", tmp->pair->b->mobile);
           return; 
 	}
       }

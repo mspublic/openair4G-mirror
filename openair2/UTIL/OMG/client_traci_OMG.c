@@ -65,7 +65,7 @@ int handshake(char *hoststr,int portno){
         #ifdef STANDALONE  
   	  printf(" SUMO now connected to OMG on host address\n");
         #else
-          LOG_N(OMG, " SUMO now connected to OMG on host address %c and port %n .\n", hoststr, portno);
+          LOG_N(OMG, " SUMO now connected to OMG on host address %s and port %i .\n", hoststr, portno);
 	#endif
  	      return 0;  
 	}
