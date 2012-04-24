@@ -149,7 +149,7 @@ void logInit (void) {
     g_log->log_component[OMG].filelog_name = "";
     
     g_log->log_component[OTG].name = "OTG";
-    g_log->log_component[OTG].level = LOG_INFO;
+    g_log->log_component[OTG].level = LOG_FILE;
     g_log->log_component[OTG].flag =  LOG_MED;
     g_log->log_component[OTG].interval =  1;
     g_log->log_component[OTG].fd = 0;
