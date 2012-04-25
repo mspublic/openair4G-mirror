@@ -236,7 +236,8 @@ void init_oai_emulation() {
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
   oai_emulation.info.otg_enabled=0;// T flag
   oai_emulation.info.frame = 0; // frame counter of emulation 
-  oai_emulation.info.time = 0; // time of emulation 
+  oai_emulation.info.time_s = 0; // time of emulation  
+  oai_emulation.info.time_ms = 0; // time of emulation 
   oai_emulation.info.seed = time(NULL); // time-based random seed , , included in ocg report
 
   oai_emulation.info.cli_num_enb= NUMBER_OF_eNB_MAX;
@@ -761,5 +762,4 @@ int ocg_config_emu(){
   return 1;  
 
 }
-
 

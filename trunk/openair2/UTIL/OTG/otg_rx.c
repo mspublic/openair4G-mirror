@@ -64,7 +64,7 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
       if (( otg_hdr_info_rx->size ) == size ) {*/
 	 is_size_ok= 1;
 	otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
-	LOG_I(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
+	LOG_I(OTG,"[SRC %d][DST %d] RX pkt at time %d: seq number %d size (hdr %d, pdcp %d) \n", src, dst,ctime, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
 	/*
 	  LOG_I(OTG,"HDR OTG: SIZE= HEADER + PAYLOAD %d\n", otg_hdr_rx->pkts_size);
 	  LOG_I(OTG,"HDR OTG: FLOW ID %d\n", otg_hdr_rx->flow_id);
