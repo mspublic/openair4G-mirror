@@ -1138,14 +1138,14 @@ main (int argc, char **argv)
     }
       
     oai_emulation.info.frame = frame;   
-    oai_emulation.info.time += 0.01; // emu time in s, each frame lasts for 10 ms 
+    oai_emulation.info.time_s += 0.01; // emu time in s, each frame lasts for 10 ms 
     // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
     if ( (oai_emulation.info.n_frames_flag == 0) || (oai_emulation.info.n_frames >= 0xffff) ){ 
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
     if ((frame % 10) == 0 ) { // call OMG every 1s 
-      update_nodes(oai_emulation.info.time); 
+      update_nodes(oai_emulation.info.time_s); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
       if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
@@ -1153,7 +1153,7 @@ main (int argc, char **argv)
 	  new_omg_model = randomGen(STATIC,RWALK); 
 	  LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time);
+	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time_s);
 	}
       }
       if (oai_emulation.info.omg_model_enb >= MAX_NUM_MOB_TYPES) {	// mix mobility model
@@ -1161,19 +1161,19 @@ main (int argc, char **argv)
 	  new_omg_model = randomGen (STATIC, RWALK);
 	  LOG_D (OMG,"[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time);
+	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time_s);
 	}
       }
     }
-    enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
-    ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
+    enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time_s);
+    ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time_s);
     // check if pipe is still open
     if ((oai_emulation.info.omv_enabled == 1) ){
       omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
     }
     
 #ifdef DEBUG_OMG
-    if ((((int) oai_emulation.info.time) % 100) == 0) {
+    if ((((int) oai_emulation.info.time_s) % 100) == 0) {
       for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++) {
 	get_node_position (UE, UE_id);
       }
@@ -1223,6 +1223,8 @@ main (int argc, char **argv)
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
+      
+      oai_emulation.info.time_ms = frame * 10 + (next_slot>>1) ;
       
       direction = subframe_select(frame_parms,next_slot>>1);
 #ifdef PROC      

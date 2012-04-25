@@ -246,17 +246,14 @@ printf("INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n"
 
 //  LOG_D(OTG,"INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n", src, dst, g_otg->application_type[src][dst], g_otg->idt_dist[src][dst][state], g_otg->size_dist[src][dst][state]);
   
-  if ((otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) > otg_info->idt[src][dst] ) )) {
+  if ((otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) >= otg_info->idt[src][dst] ) )) {
   printf("Time To Transmit (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
   LOG_D(OTG,"Time To Transmit (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
     otg_info->ptime[src][dst]=ctime;	
     otg_info->idt[src][dst]=time_dist(src, dst, state); // update the idt for the next otg_tx
-  }
-  else {
-  //check if there is background traffic to generate
-    background_gen(src, dst, ctime);
-    if(background_data!=NULL){
-	//background_size=otg_info->size_background[src][dst] + sizeof(otg_hdr_info_t);
+  }  //check if there is background traffic to generate
+  else if ( (background_gen(src, dst, ctime)) != NULL) {
+    //background_size=otg_info->size_background[src][dst] + sizeof(otg_hdr_info_t);
 		
 	packet= malloc(sizeof(*packet));
 	packet->header=header_gen(header_size_gen(src)); //???? to modify to random
@@ -286,7 +283,7 @@ printf("INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n"
 	return buffer_tx;
 
     }
-    else
+  else  
     return NULL; // do not generate the packet, and keep the idt
 
   }
@@ -451,7 +448,7 @@ printf("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->
        g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = FIXED;
        g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  10;
+       g_otg->idt_min[i][j][0] =  100; 
        g_otg->idt_min[i][j][1] =  10;
        g_otg->idt_max[i][j][0] =  10;
        g_otg->idt_max[i][j][1] =  10;
@@ -472,7 +469,7 @@ printf("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->
        g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = FIXED;
        g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  10;
+       g_otg->idt_min[i][j][0] =  100;
        g_otg->idt_min[i][j][1] =  10;
        g_otg->idt_max[i][j][0] =  10;
        g_otg->idt_max[i][j][1] =  10;
@@ -493,7 +490,7 @@ printf("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->
        g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = FIXED;
        g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  10;
+       g_otg->idt_min[i][j][0] =  100;
        g_otg->idt_min[i][j][1] =  10;
        g_otg->idt_max[i][j][0] =  10;
        g_otg->idt_max[i][j][1] =  10;
