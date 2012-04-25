@@ -142,5 +142,27 @@ int adjust_size(int size);
 */
 int header_size_gen(int src);
 
+
+/*! \fn void init_predef_traffic();
+* \brief initialise OTG with predifined value for pre-configured traffic: cbr, openarena,etc. 
+* \param[in]  
+* \param[out] 
+* \note 
+* @ingroup  _otg
+*/
 void init_predef_traffic();
+
+
+
+/*! \fn void background_gen(int src, int dst, int ctime);
+* \brief manage idt and packet size for the backgrounf traffic. 
+* \param[in] src
+* \param[in] dst
+* \param[in] ctime
+* \param[out] 
+* \note 
+* @ingroup  _otg
+*/
+void background_gen(int src, int dst, int ctime);
+
 #endif
