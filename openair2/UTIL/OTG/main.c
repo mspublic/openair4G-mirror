@@ -324,7 +324,7 @@ if (duration>0)
 }
 
 
-
+/*
 int main (int argc, char **argv){
 
 
@@ -447,4 +447,38 @@ free_otg();
 return 0;
 
 }
+
+*/
+
+
+int main(void) {
+
+int i, min=40, max=1500, std_dev=100;
+int n;
+
+for(i=1; i<=100000; i++)
+{
+
+init_seeds(i);
+n = uniform_dist(min, max);
+//n = ceil(gaussian_dist((min + max)/2 , std_dev));
+//n = ceil(exponential_dist(0.05));
+//n =ceil(poisson_dist(4));
+//n =ceil(weibull_dist(0,0));
+//n =ceil(pareto_dist(16,4));
+//n =ceil(gamma_dist(0.5,25));
+//n =ceil(cauchy_dist(1,10));
+
+/*if ((n<min) || (n>max))
+ printf("number=%d out of range \n", n);
+ else 
+  {printf("gen_nb=%d \n", n);
+// printf("ceil gen_nb=%lf \n", ceil(n));
+   }
+}*/
+
+printf("%d\n", n);
+
+return 0;
+    }
 

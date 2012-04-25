@@ -62,5 +62,4 @@
 */
 int otg_rx_pkt_packet(int src, int dst, int ctime, char *packet, unsigned int size);
 
- short int fn(unsigned int a);
 #endif

@@ -85,7 +85,6 @@ void init_seeds(int seed);
 * \note 
 * @ingroup  _oml
 */
-
 double wichman_hill() ;
 
 /*! \fn double uniform_rng();
@@ -95,32 +94,31 @@ double wichman_hill() ;
 * \note 
 * @ingroup  _oml
 */
-
 double uniform_rng();
 
 /*! \fn double uniform_dist(double min, double max);
 * \brief 
-* \param[in] lambda and standard deviation used for uniform distrib configuration
+* \param[in] double min 
+* \param[in] double max
 * \param[out] uniform number
 * \note 
 * @ingroup  _oml
 */
-
 double uniform_dist(int min, int max);
 
 /*! \fn double gaussian_dist(double mean, double std_dev);
 * \brief 
-* \param[in] lambda and standard deviation used for gaussian distrib configuration
+* \param[in] double mean
+* \param[in] double standard deviation 
 * \param[out] exponential gaussian number
 * \note 
 * @ingroup  _oml
 */
-
 double gaussian_dist(double mean, double std_dev);
 
 /*! \fn double exponential_dist(double lambda);
 * \brief 
-* \param[in] lambda used for exponential distrib configuration
+* \param[in] double lambda 
 * \param[out] exponential random number
 * \note 
 * @ingroup  _oml
@@ -148,7 +146,8 @@ double weibull_dist(double scale, double shape);
 
 /*! \fn double pareto_dist(double scale, double shape);
 * \brief enerates random numbers for the pareto distribution with scale parameter, and shape parameter. 
-* \param[in] scale parameter, and shape parameter.
+* \param[in] double scale 
+* \param[in] double shape
 * \param[out] pareto random number
 * \note Formula (http://www.xycoon.com/par_random.htm)
 * @ingroup  _oml
@@ -157,7 +156,8 @@ double pareto_dist(double scale, double shape);
 
 /*! \fn double gamma_dist(double scale, double shape);
 * \brief generates random numbers for the gamma distribution with scale parameter, and shape parameter. 
-* \param[in] scale parameter, and shape parameter.
+* \param[in] double scale 
+* \param[in] double shape
 * \param[out] gamma random number
 * \note  Formula (http://www.xycoon.com/gamma_random.htm)
 * @ingroup  _oml
@@ -166,12 +166,25 @@ double gamma_dist(double scale, double shape);
 
 /*! \fn double cauchy_dist(double scale, double shape);
 * \brief generates random numbers for the cauchy distribution with scale parameter, and shape parameter. 
-* \param[in] scale parameter, and shape parameter.
+* \param[in] double scale 
+* \param[in] double shape
 * \param[out] cauchy random number
-* \note Formula(http://www.xycoon.com/cauchy2p_random.htm)
+* \note Formula(http://www.xycoon.com/nor_relationships3.htm)
 * @ingroup  _oml
 */
 double cauchy_dist(double scale, double shape);
+
+
+/*! \fn double double lognormal_dist(double mean, double std_dev)
+* \brief generates random numbers for the log normal distribution with mean parameter and standard deviation parameter. 
+* \param[in] double mean 
+* \param[in] double std_dev
+* \param[out] lognormal random number
+* \note Formula(http://www.xycoon.com/nor_relationships3.htm)
+* @ingroup  _oml
+*/
+double lognormal_dist(double mean, double std_dev);
+
 
 #endif
  

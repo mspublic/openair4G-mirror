@@ -24,8 +24,8 @@
   <APPLICATION_CONFIG>
     <PREDEFINED_TRAFFIC>
       <SOURCE_ID>0</SOURCE_ID>					
-      <APPLICATION_TYPE>random</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
-      <DESTINATION_ID>1:3</DESTINATION_ID>
+      <APPLICATION_TYPE>gaming_OA</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
+      <DESTINATION_ID>3</DESTINATION_ID>
     </PREDEFINED_TRAFFIC>
         <CUSTOMIZED_TRAFFIC>
       <SOURCE_ID>1:3</SOURCE_ID>		<!-- <SOURCE_ID> 1:100 </SOURCE_ID> -->
