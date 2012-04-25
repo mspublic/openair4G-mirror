@@ -158,6 +158,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   init_ncs_cell(lte_frame_parms,PHY_vars_eNB_g[Mod_id]->ncs_cell);
 
+  init_ul_hopping(lte_frame_parms);
 
 }
 
@@ -239,6 +240,8 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
 
   // PUCCH
   init_ncs_cell(lte_frame_parms,PHY_vars_UE_g[Mod_id]->ncs_cell);
+
+  init_ul_hopping(lte_frame_parms);
 
 }
 
