@@ -409,6 +409,7 @@ int main(int argc, char **argv) {
   fl_show_form (form_dl->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 #endif
 
+  logInit();
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
   
