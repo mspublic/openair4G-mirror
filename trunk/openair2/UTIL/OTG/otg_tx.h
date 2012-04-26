@@ -163,6 +163,6 @@ void init_predef_traffic();
 * \note 
 * @ingroup  _otg
 */
-void background_gen(int src, int dst, int ctime);
+char * background_gen(int src, int dst, int ctime);
 
 #endif

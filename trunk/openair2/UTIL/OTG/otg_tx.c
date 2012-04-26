@@ -286,10 +286,9 @@ printf("INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n"
   else  
     return NULL; // do not generate the packet, and keep the idt
 
-  }
   
   size=size_dist(src, dst, state); 
-	printf("Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n", src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
+printf("Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n", src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
   // LOG_I(OTG,"Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n", src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
   packet= malloc(sizeof(*packet));
   //LOG_I(OTG,"Payload size=%d\n",size);	  
@@ -630,8 +629,7 @@ printf("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->
 }
 
 
-void background_gen(int src, int dst, int ctime)
-{ 
+char* background_gen(int src, int dst, int ctime) { 
 
   background_data=NULL;
 
@@ -661,7 +659,7 @@ if (((ctime-otg_info->ptime_background) >  otg_info->idt_background[src][dst])  
     LOG_I(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d )\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
   background_data=NULL;
   }
-
+ return background_data;
 }
 
 
