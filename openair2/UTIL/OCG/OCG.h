@@ -606,7 +606,8 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     // emu related 
     unsigned int seed;
     unsigned int frame;
-    double time;
+    double time_s;
+    double time_ms;
     unsigned int g_log_level;
     unsigned int g_log_verbosity;
     // phy related params
