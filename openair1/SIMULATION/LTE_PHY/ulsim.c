@@ -170,6 +170,8 @@ int main(int argc, char **argv) {
   u8 N0=40;
   double tx_gain=1.0;
 
+  logInit();
+
   while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:")) != -1) {
     switch (c) {
     case 'a':

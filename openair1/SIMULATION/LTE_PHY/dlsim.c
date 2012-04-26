@@ -519,6 +519,8 @@ int main(int argc, char **argv) {
 
   signal(SIGSEGV, handler); 
 
+  logInit();
+
   // default parameters
   mcs = 0;
   n_frames = 1000;
