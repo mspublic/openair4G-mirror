@@ -30,6 +30,7 @@ extern int transmission_mode_rrc; //fixme
 #include "cbmimo1_pci.h"
 
 extern int rx_sig_fifo;
+extern int intr_cnt2;
 
 void set_taus_seed(void);
 
@@ -1035,21 +1036,22 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     // get condition and semaphore variables by name
 
-    //oai_semapthore = rt_sem_init(nam2num("MUTEX"), 1);
+    //rt_sem_init(&oai_semaphore, 1);
+    //rt_register(nam2num("MUTEX"),&oai_semaphore,IS_SEM, 0);
     oai_semaphore = rt_get_adr(nam2num("MUTEX"));
     if (oai_semaphore==0)
       printk("Error init mutex\n");
 
-    //oai_condition = rt_cond_init(nam2num("CONDITION"));
-    oai_condition = rt_get_adr(nam2num("CONDITION"));
-    if (oai_condition==0)
-      printk("Error init cond\n");
-
+    lxrt_task = rt_get_adr(nam2num("TASK0"));
+    if (lxrt_task==0)
+      printk("Error init lxrt_task\n");
 
     inst_cnt_ptr = malloc16(sizeof(s32));
     *inst_cnt_ptr = -1;
 
-    printk("[openair][IOCTL] openair_START_LXRT, oai_semaphore=%p, oai_condition=%p, inst_cnt_ptr = %p\n",oai_semaphore,oai_condition,inst_cnt_ptr);
+    intr_cnt2=0;
+
+    printk("[openair][IOCTL] openair_START_LXRT, oai_semaphore=%p, lxrt_task=%p, inst_cnt_ptr = %p\n",oai_semaphore,lxrt_task,inst_cnt_ptr);
 
     // init instance count and copy its pointer to userspace
     copy_to_user((char *)arg,&inst_cnt_ptr,sizeof(s32*));

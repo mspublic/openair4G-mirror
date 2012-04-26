@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sched.h>
-
+#include <signal.h>
 
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>
@@ -32,60 +32,73 @@ int instance_cnt_ptr_kern,*instance_cnt_ptr_user;
 extern unsigned int bigphys_top;
 extern unsigned int mem_base;
 
+int oai_exit = 0;
+
+void handler(int sig) {
+  void *array[10];
+  size_t size;
+
+  oai_exit=1;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, 2);
+  exit(1);
+}
+
 static void *fun0(void *arg)
 {
     RT_TASK *task;
     int done1=0, cnt1=0;
     RTIME right_now;
     int ret;
+    unsigned int msg;
 
     task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
     mlockall(MCL_CURRENT | MCL_FUTURE);
 
+    rt_printk("fun0: task %p\n",task);
+
     rt_make_hard_real_time();
 
-    while (cnt1 < THRESHOLD)
-      {
-	   rt_sem_wait(mutex);
-	   rt_printk("fun0: Hello World %d, instance_cnt %d!\n",cnt1,instance_cnt);
-	   while (instance_cnt<0) { 
-	     ret = rt_cond_wait(cond, mutex);
-	     if (ret != 0) {
-	       rt_printk("error in rt_cond_wait, code %d\n",ret);
-	       switch(ret) {
-	       case RTE_PERM:
-		 rt_printk("error RTE_PERM %d\n",ret);
-		 break;
-	       case RTE_UNBLKD:
-		 rt_printk("error RTE_UNBLKD %d\n",ret);
-		 break;
-	       case RTE_OBJREM:
-		 rt_printk("error RTE_OBJREM %d\n",ret);
-		 break;
-	       default:
-		 rt_printk("unknown error code %d\n",ret);
-		 break;
-	       }
-	       break;
-	     }
-           }
-	   rt_sem_signal(mutex);
-
-	   // do some work here
-	   cnt1++;
-		
-	   rt_sem_wait(mutex);
-	   instance_cnt--; 
-	   rt_sem_signal(mutex);
-	   
-	}
-    // makes task soft real time
+    while (!oai_exit)  {
+      rt_sem_wait(mutex);
+      if ((cnt1%2000)<10) 
+	rt_printk("fun0: Hello World %d, instance_cnt %d!\n",cnt1,*instance_cnt_ptr_user);
+      while (*instance_cnt_ptr_user<0) {
+	rt_sem_signal(mutex);
+	rt_receive(0,&msg);
+	rt_sem_wait(mutex);
+	if ((cnt1%2000)<10) 
+	  rt_printk("fun0: instance_cnt %d, msg %d!\n",*instance_cnt_ptr_user,msg);
+      }
+      
+      rt_sem_signal(mutex);
+      
+      // pretend to do some work here
+      if ((cnt1%2000)==0) 
+	rt_sleep(PERIOD);
+      
+      if ((cnt1%2000)<10) 
+	rt_printk("fun0: doing very hard work\n");
+      cnt1++;
+      
+      rt_sem_wait(mutex);
+      (*instance_cnt_ptr_user)--; 
+      //rt_printk("fun0: instance_cnt %d!\n",*instance_cnt_ptr_user);
+      rt_sem_signal(mutex);
+      
+    }
+    rt_printk("fun0: finished, ran %d times.\n",cnt1);
+    
     rt_make_soft_real_time();
 
-    printf("Back to soft RT\n");
     // clean task
     rt_task_delete(task);
-    printf("Task deleted. returning\n");
+    rt_printk("Task deleted. returning\n");
     return 0;
 }
 
@@ -94,12 +107,14 @@ int main(void)
 {
     RT_TASK *task;
     RTIME now,last,diff;
-    int i,cnt=0;
+    int i,cnt=0,ret=0;
 
     int openair_fd;
     LTE_DL_FRAME_PARMS *frame_parms;
     u32 carrier_freq[4]={1907600000,1907600000,1907600000,1907600000};
     u32 rxgain[4]={30,30,30,30};
+
+    signal(SIGSEGV, handler); 
 
     frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
     frame_parms->N_RB_DL            = 25;
@@ -138,8 +153,8 @@ int main(void)
     //rt_task_make_periodic(task, now, PERIOD);
 
     printf("Init mutex and cond.\n");
-    //mutex = rt_get_adr(nam2num("MUTEX"), 1);
-    mutex = rt_sem_init(nam2num("MUTEX"), 0);
+    //mutex = rt_get_adr(nam2num("MUTEX"));
+    mutex = rt_sem_init(nam2num("MUTEX"), 1);
     if (mutex==0)
       printf("Error init mutex\n");
 
@@ -150,41 +165,27 @@ int main(void)
 
     printf("mutex=%p, cond=%p\n",mutex,cond);
 
-    ioctl(openair_fd,openair_START_LXRT,&instance_cnt_ptr_kern);
-    instance_cnt_ptr_user = (unsigned int*) (instance_cnt_ptr_kern -bigphys_top+mem_base);
-    printf("instance_cnt_ptr_kern %p, instance_cnt_ptr_user %p, *instance_cnt_ptr_user %d\n", instance_cnt_ptr_kern, instance_cnt_ptr_user,*instance_cnt_ptr_user);
-
-    //thread0 = rt_thread_create(fun0, NULL, 10000);
+    instance_cnt_ptr_user = &instance_cnt;
+    thread0 = rt_thread_create(fun0, NULL, 10000);
     //thread1 = rt_thread_create(fun1, NULL, 20000);
 
-    //rt_sleep(PERIOD);
+    printf("thread created\n");
 
-    while (cnt < THRESHOLD)
-      {
-	//rt_task_wait_period();
-	rt_sem_wait(mutex); //now the mutex should have value 0
-	last = now;
-	now = rt_get_time_ns();
-	diff = now-last;
-	rt_printk("main: Hello World! count %d, time now %llu, last %llu, diff %llu\n",cnt,now,last,diff);
-		/*
-		if (*instance_cnt_ptr_user==0) {
-		  rt_sem_signal(mutex); //now the mutex should have vaule 1
-		  rt_printk("worker thread busy!\n");
-		}
-		else {
-		  *instance_cnt_ptr_user++;
-		  rt_cond_signal(cond);
-		  rt_sem_signal(mutex); //now the mutex should have vaule 1
-		  rt_printk("signaling worker thread to start!\n");
-		}
-		*/
-	cnt++;
-      }
+    rt_sleep(PERIOD);
+
+    printf("Sending ioctl\n");
+    ioctl(openair_fd,openair_START_LXRT,&instance_cnt_ptr_kern);
+    instance_cnt_ptr_user = (unsigned int*) (instance_cnt_ptr_kern -bigphys_top+mem_base);
+    *instance_cnt_ptr_user = -1;
+    printf("instance_cnt_ptr_kern %p, instance_cnt_ptr_user %p, *instance_cnt_ptr_user %d\n", instance_cnt_ptr_kern, instance_cnt_ptr_user,*instance_cnt_ptr_user);
 
     // wait for end of program
     printf("TYPE <ENTER> TO TERMINATE\n");
     getchar();
+
+    // stop thread
+    oai_exit=1;
+    rt_sleep(PERIOD);
 
     // cleanup
     stop_rt_timer();

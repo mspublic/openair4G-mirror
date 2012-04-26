@@ -171,6 +171,7 @@ unsigned int sync_getting_frame = 0;
 
 //static int hw_frame = 0;
 static int intr_cnt = 0;
+int intr_cnt2 = 0;
 
 int intr_in = 0;
 
@@ -687,12 +688,33 @@ int slot_irq_handler(int irq, void *cookie) {
   RTIME             tv;
   struct timespec   ts;
   u32 irqcmd;
+  static int busy=0;
 
   intr_in = 1;
   intr_cnt++;
 
-  if (oai_semaphore)
-    rt_sem_signal(oai_semaphore);
+  if (oai_semaphore && inst_cnt_ptr && lxrt_task) {
+    rt_sem_wait(oai_semaphore);
+    //if ((intr_cnt2%2000)<10) rt_printk("intr_cnt %d, inst_cnt_ptr %p, inst_cnt %d\n",intr_cnt,inst_cnt_ptr,*inst_cnt_ptr);
+    if (*inst_cnt_ptr==0) {
+      rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
+      if (busy==0) { 
+	rt_printk("intr_cnt %d, worker thread busy!\n", intr_cnt);
+	busy = 1;
+      } //else no need to repeat this message
+    }
+    else {
+      (*inst_cnt_ptr)++;
+      //rt_printk("*inst_cnt_ptr %d\n",*inst_cnt_ptr);
+      rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
+      rt_send_if(lxrt_task,intr_cnt);
+      if (busy==1) {
+	rt_printk("intr_cnt %d, resuming worker thread!\n", intr_cnt);
+	busy = 0;
+      } //else no need to repeat this message
+    }
+    intr_cnt2++;
+  }
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
