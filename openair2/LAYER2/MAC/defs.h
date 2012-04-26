@@ -91,6 +91,9 @@
 
 #define BSR_TABLE_SIZE 64
 
+// Carrier Aggregation
+#define MAX_NUM_CC 5
+
 typedef enum {
   CONNECTION_OK=0,
   CONNECTION_LOST

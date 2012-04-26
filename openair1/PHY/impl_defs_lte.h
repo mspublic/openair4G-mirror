@@ -207,6 +207,13 @@ typedef struct {
    PA_t p_a;
 } PDSCH_CONFIG_DEDICATED;
 
+/// SCell PHY configuration Dedicated r10 - Sandip
+typedef struct {
+	/// Antenna info from r10
+	//PhysicalConfigDedicated__antennaInfo_r10 *antennaInfo_r10;
+
+} PHY_CONFIG_DEDICATED_SCELL;
+
 /// SoundingRS-UL-ConfigCommon Information Element from 36.331 RRC spec
 typedef struct {
   /// enabled flag=1 means SRS is enabled

@@ -42,6 +42,11 @@ ________________________________________________________________*/
 #include "rrc_rrm_interface.h"
 #endif
 
+#ifdef Rel10
+#define MAX_NUM_CCs 5
+#define MAX_U8 0xFF
+#endif
+
 /** @defgroup _rrc_impl_ RRC Layer Reference Implementation
  * @ingroup _ref_implementation_
  * @{
@@ -151,7 +156,18 @@ typedef struct{
 u32 Next_check_frame;
 }SRB_INFO_TABLE_ENTRY;
 
+/*
+typedef enum  {
+  false=0,
+  true
+} logMeasAvailable_r10_t;
+*/
 
+//Structure to hold non-Critical extensions to rel10 RRC Reconfig complete parameters received from UE
+typedef struct {
+	long* logMeasAvailable_r10[4];
+	long* rlf_InfoAvailable_r10[4];
+} RRCConnectionReconfigurationComplete_v1020_IEs;
 
 
 typedef struct{
@@ -178,9 +194,13 @@ typedef struct{
   struct DRB_ToAddMod             *DRB_config[NB_CNX_eNB][8];
   u8                               DRB_active[NB_CNX_eNB][8];
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_eNB];
+#ifdef Rel10
+  SCellToAddMod_r10_t	  		  *sCell_config[NB_CNX_eNB][MAX_NUM_CCs-1];
+#endif
   struct SPS_Config               *sps_Config[NB_CNX_eNB];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_eNB];
   MeasGapConfig_t                 *measGapConfig[NB_CNX_eNB];
+  RRCConnectionReconfigurationComplete_v1020_IEs_t *rrcRel10IEs[NB_CNX_eNB];
 }eNB_RRC_INST;
 
 
@@ -215,6 +235,9 @@ typedef struct{
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
+#ifdef Rel10
+  SCellToAddMod_r10_t	  		  *sCell_config[NB_CNX_UE][MAX_NUM_CCs-1];
+#endif
   struct SPS_Config               *sps_Config[NB_CNX_UE];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
   MeasGapConfig_t                 *measGapConfig[NB_CNX_UE];
@@ -356,6 +379,16 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
    \param UE_index Index of UE transmitting the messages*/
 void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_index);
 
+/**\brief Find free SCell index for adding a new CC during RRCConnectionReconfiguration at eNB
+   \param Mod_id Instance ID for eNB/CH
+   \param UE_index Index of UE transmitting the messages
+   \param eNB_flag Whether to check eNB/UE database*/
+uint8_t rrc_find_free_SCell_index(u8 Mod_id, u16 index, u8 eNB_flag);
+
+/**\brief Find free SCell index for adding a new CC during RRCConnectionReconfiguration at eNB
+   \param Mod_id Instance ID for eNB/CH
+   \param UE_index Index of UE transmitting the messages*/
+SCellToAddMod_r10_t* getSCellConfig(u8 Mod_id, u16 UE_index);
 
 //L2_interface.c
 s8 mac_rrc_lite_data_req( u8 Mod_id, u32 frame, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
@@ -448,7 +481,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 					uint8_t Transaction_id,
 					struct SRB_ToAddMod **SRB2_config,
 					struct DRB_ToAddMod **DRB_config,
-					struct PhysicalConfigDedicated  **physicalConfigDedicated);
+					struct PhysicalConfigDedicated  **physicalConfigDedicated,
+					SCellToAddMod_r10_t **sCell_config);
 
 /**
 \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)

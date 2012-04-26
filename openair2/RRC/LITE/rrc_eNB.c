@@ -455,23 +455,29 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
   u8 buffer[100];
   u8 size;
+  uint8_t sCellIndexToAdd = (uint8_t)MAX_U8;
+  sCellIndexToAdd = rrc_find_free_SCell_index(Mod_id, UE_index, 1);
 
-
-
-  size = do_RRCConnectionReconfiguration(buffer,
+  // Note: In the current implementation, it is not possible to add/release
+  // more than 1 SCell at a time
+  if (sCellIndexToAdd != (uint8_t)MAX_U8) {
+	  size = do_RRCConnectionReconfiguration(buffer,
 					 UE_index,
 					 0,
 					 &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
 					 &eNB_rrc_inst[Mod_id].DRB_config[UE_index][0],
-					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
+					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+					 &eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd]);
 
-  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
+	  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
 
-  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
-                                     frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
-  rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
-
-
+	  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+										 frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
+	  rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  }
+  else {
+	  LOG_E(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration failed: No free SCell resources! (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
+  }
 
 }
 
@@ -481,8 +487,6 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_inde
   LOG_I(RRC,"[eNB %d][RAPROC] Frame %d : Logical Channel UL-DCCH, processing RRCConnectionSetupComplete from UE %d\n",Mod_id,frame,UE_index);
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
-
-
 
   rrc_eNB_generate_RRCConnectionReconfiguration(Mod_id,frame,UE_index);
 
@@ -494,6 +498,13 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   int oip_ifup=0;
   // Loop through DRBs and establish if necessary
   for (i=0;i<8;i++) { // num max DRB (11-3-8)
+
+	/* Rel 10 optional parameters - not sure what to do with these */
+	if(rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension != NULL) {
+		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->logMeasAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->logMeasAvailable_r10;
+		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->rlf_InfoAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->rlf_InfoAvailable_r10;
+	}
+
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
       LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",
 	    Mod_id,frame, UE_index,
@@ -569,6 +580,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
     }
   }
 }
+
 
 void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 

@@ -773,7 +773,7 @@ main (int argc, char **argv)
   map1 =(int)oai_emulation.topology_config.area.x_km;
   map2 =(int)oai_emulation.topology_config.area.y_km;
   //ShaF = createMat(map1,map2); -> memory is allocated within init_SF, shadow fading
-  ShaF = init_SF(map1,map2,DECOR_DIST,SF_VAR);
+  ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
 
   // size of area to generate shadow fading map
   LOG_D(EMU,"Simulation area x=%f, y=%f\n",
