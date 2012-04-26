@@ -55,6 +55,9 @@ int errno;
 #define msg printf
 #endif
 
+#include <SCellToAddMod-r10.h>
+#include <RadioResourceConfigCommonSCell-r10.h>
+#include <RadioResourceConfigDedicatedSCell-r10.h>
 
 int transmission_mode_rrc;//
 
@@ -882,8 +885,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   asn_enc_rval_t enc_rval;
   uint8_t ecause=0;
 
-
-
   long *logicalchannelgroup;
 
   struct SRB_ToAddMod *SRB1_config2,*SRB2_config2;
@@ -1210,7 +1211,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB2_config,
 			      struct DRB_ToAddMod **DRB_config,
-			      struct PhysicalConfigDedicated  **physicalConfigDedicated) {
+			      struct PhysicalConfigDedicated  **physicalConfigDedicated,
+			      SCellToAddMod_r10_t **sCell_config) {
 
   asn_enc_rval_t enc_rval;
   struct SRB_ToAddMod *SRB2_config2;
@@ -1230,16 +1232,118 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   DL_DCCH_Message_t dl_dcch_msg;
 
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
+
   long *lcid;
 
   //  int i;
+  // Sandip: reactivate this code if you want to init using the nested pointer method
+
+  SCellToAddModList_r10_t *sCellToAddList;
+  sCellToAddList = CALLOC(1,sizeof(*sCellToAddList));
+#ifdef Rel10
+  if (sCell_config != NULL) {
+
+	  SCellToAddMod_r10_t *sCell1_config_ptr;
+	  sCell1_config_ptr = CALLOC(1,sizeof(SCellToAddMod_r10_t));
+	  *sCell_config = sCell1_config_ptr;
+
+	  //Check all initialized values
+	  //sCell1_config_ptr->sCellIndex_r10 = init_val;
+	  sCell1_config_ptr->cellIdentification_r10 = CALLOC(1,sizeof(*sCell1_config_ptr->cellIdentification_r10));
+	  //sCell1_config_ptr->cellIdentification_r10->physCellId_r10 = init_val;
+	  //sCell1_config_ptr->cellIdentification_r10->dl_CarrierFreq_r10 = init_val;
+
+	  struct RadioResourceConfigDedicatedSCell_r10 *radioResourceConfigDedicatedSCell;
+	  radioResourceConfigDedicatedSCell = CALLOC(1,sizeof(*radioResourceConfigDedicatedSCell));
+
+	  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
+	  physicalConfigDedicatedSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10));
+
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10));
+
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10));
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->crossCarrierSchedulingConfig_r10 = NULL; //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->crossCarrierSchedulingConfig_r10));
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->pdsch_ConfigDedicated_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->pdsch_ConfigDedicated_r10));
+
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_r10 = NULL, //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_v1020 = NULL; //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_v1020));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicatedAperiodic_r10 = NULL; //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicatedAperiodic_r10));
+
+	  //antennaInfo_r10 (non-UL)
+	  //physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->transmissionMode_r10 = init_val;
+	  //physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->codebookSubsetRestriction_r10 = NULL;
+	  //physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->ue_TransmitAntennaSelection.present = init_val;
+	  //physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->ue_TransmitAntennaSelection.choice = init_val;
+
+	  //pdsch_ConfigDedicated_r10
+	  //physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->pdsch_ConfigDedicated_r10->p_a = init_val;
+
+	  //antennaInfoUL_r10 (UL)
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->transmissionModeUL_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->transmissionModeUL_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->fourAntennaPortActivated_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->fourAntennaPortActivated_r10));
+	  //*(physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->transmissionModeUL_r10) = init_val;
+	  //*(physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->fourAntennaPortActivated_r10) = init_val;
+
+	  //PUSCH_ConfigDedicatedSCell_r10
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->groupHoppingDisabled_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->groupHoppingDisabled_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->dmrs_WithOCC_Activated_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->dmrs_WithOCC_Activated_r10));
+
+	  //uplinkPowerControlDedicatedSCell_r10
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->p0_UE_PUSCH_r10 = init_val;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->deltaMCS_Enabled_r10 = init_val;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->accumulationEnabled_r10 = 0 or 1;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pSRS_Offset_r10 = init_val;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pSRS_OffsetAp_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pSRS_OffsetAp_r10));
+	  //*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pSRS_OffsetAp_r10 = init_val;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->filterCoefficient_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->filterCoefficient_r10));
+	  //*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->filterCoefficient_r10 = init_val;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pathlossReferenceLinking_r10 = init_val;
+
+	  //cqi_ReportModeAperiodic_r10
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportModeAperiodic_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportModeAperiodic_r10));
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportModeAperiodic_r10 = init_val;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->nomPDSCH_RS_EPRE_Offset_r10 = init_val;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10));
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10->present = init_val;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10->choice = init_val;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->pmi_RI_Report_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->pmi_RI_Report_r10));
+	  //*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->pmi_RI_Report_r10 = init_val;
+
+	  radioResourceConfigDedicatedSCell->physicalConfigDedicatedSCell_r10 = physicalConfigDedicatedSCell_r10;
+	  sCell1_config_ptr->radioResourceConfigDedicatedSCell_r10 = radioResourceConfigDedicatedSCell;
+	  sCell1_config_ptr->radioResourceConfigDedicatedSCell_r10 = NULL; //Check this!!
+
+	  ASN_SEQUENCE_ADD(&sCellToAddList->list,sCell1_config_ptr);
+  }
+  else {
+	  msg("RRCConnectionReconfiguration SCell addition failed: Not enough SCell resources");
+  }
+#endif
 
   memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
 
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
   rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
-
+#ifdef Rel10
+  if (sCell_config != NULL) {
+	  //physicalConfigDedicatedSCell1	= rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->SCellToAddMod_r10_t.radioResourceConfigDedicatedSCell_r10.physicalConfigDedicatedSCell_r10;
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension));
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->lateNonCriticalExtension = NULL;
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension = CALLOC(1,sizeof(RRCConnectionReconfiguration_v920_IEs_t));
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension = CALLOC(1,sizeof(RRCConnectionReconfiguration_v1020_IEs_t));
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = sCellToAddList;
+	  /*
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = CALLOC(1,sizeof(SCellToAddModList_r10_t));
+	  memcpy((void *)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10, (void *)sCellToAddList, sizeof(SCellToAddModList_r10_t));
+  	  */
+  }
+#endif
   // RRCConnectionReconfiguration
   // Configure SRB2
 
@@ -1363,9 +1467,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config->retxBSR_Timer =  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config->ttiBundling=0;
   */
-#ifdef Rel10
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_RA_ConfigList_rlola = NULL;
-#endif
+
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
@@ -1387,6 +1489,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 
   FREEMEM(SRB_list);
   FREEMEM(DRB_list);
+  FREEMEM(sCellToAddList);
 
   return((enc_rval.encoded+7)/8);
 }

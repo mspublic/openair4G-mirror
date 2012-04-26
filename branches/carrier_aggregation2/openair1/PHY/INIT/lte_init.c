@@ -430,7 +430,13 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 	}
 	msg("------------------------------------------------------------\n");
 
-      }
+    }
+
+    if (physicalConfigDedicated->antennaInfoUL_r10) {
+    	//phy_vars_ue->phy_config_dedicated_scell_r10[0].antennaInfo_r10 = physicalConfigDedicated->antennaInfo_r10;
+    	msg("SCELL: received RRCReconfigReq with SCELL info: antennaInfo_r10->choice.explicitValue_r10 %d\n",physicalConfigDedicated->antennaInfo_r10->choice.explicitValue_r10);
+    	msg("\n");
+    }
 
     }
     else {

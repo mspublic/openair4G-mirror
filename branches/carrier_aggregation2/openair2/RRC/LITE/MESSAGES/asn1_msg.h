@@ -101,7 +101,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB2_config,
 			      struct DRB_ToAddMod **DRB_config,
-			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
+			      struct PhysicalConfigDedicated  **physicalConfigDedicated,
+			      SCellToAddMod_r10_t **sCell_config);
 
 /**
 \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)

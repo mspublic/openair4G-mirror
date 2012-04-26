@@ -68,6 +68,9 @@ extern UE_MAC_INST *UE_mac_inst;
 #ifdef BIGPHYSAREA
 extern void *bigphys_malloc(int);
 #endif
+#ifdef Rel10
+#include <SCellToAddMod-r10.h>
+#endif
 
 extern inline unsigned int taus(void);
 
@@ -398,6 +401,47 @@ void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig){
   }
 }
 
+SCellIndex_r10_t locate_sCell_index(u8 Mod_id,u8 eNB_index,SCellIndex_r10_t sCell_index) {
+	u8 i;
+	for (i=0;(i<MAX_NUM_CCs-1) && (UE_rrc_inst[Mod_id].sCell_config[eNB_index][i] != NULL);i++) {
+		if (UE_rrc_inst[Mod_id].sCell_config[eNB_index][i]->sCellIndex_r10 == sCell_index)
+			return ((SCellIndex_r10_t)i);
+	}
+	return(rrc_find_free_SCell_index(Mod_id,eNB_index,0));
+}
+
+void	rrc_ue_process_sCellAdd(u8 Mod_id,u8 eNB_index,SCellToAddMod_r10_t *sCellToAdd){
+	if (sCellToAdd != NULL) {
+		if (sCellToAdd->sCellIndex_r10)
+			UE_rrc_inst[Mod_id].sCell_config[eNB_index][locate_sCell_index(Mod_id, eNB_index, sCellToAdd->sCellIndex_r10)] = sCellToAdd;
+	}
+	/*// This is how you could implement multiple SCell being added/deleted at a time
+	u8 cnt;
+	if (sCellList->list !=NULL) {
+	    for (cnt=0;cnt<sCellList->list.count;cnt++) {
+	    	sCellIndex = sCellList->list.array[cnt]->sCellIndex_r10;
+	    }
+	}
+	*/
+}
+
+
+void	rrc_ue_process_sCellRelease(u8 Mod_id,u8 eNB_index,SCellToReleaseList_r10_t *sCellList) {
+
+/*
+  if (measConfig->measGapConfig !=NULL) {
+    if (UE_rrc_inst[Mod_id].measGapConfig[eNB_index]) {
+      memcpy((char*)UE_rrc_inst[Mod_id].measGapConfig[eNB_index],(char*)measConfig->measGapConfig,
+	     sizeof(MeasGapConfig_t));
+    }
+    else {
+      UE_rrc_inst[Mod_id].measGapConfig[eNB_index] = measConfig->measGapConfig;
+    }
+  }
+  */
+}
+
+
 
 void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_index,
 						    RadioResourceConfigDedicated_t *radioResourceConfigDedicated) {
@@ -439,6 +483,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
       UE_rrc_inst[Mod_id].sps_Config[eNB_index] = radioResourceConfigDedicated->sps_Config;
     }
   }
+
   // Establish SRBs if present
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
@@ -573,6 +618,17 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
 	rrc_ue_process_measConfig(Mod_id,eNB_index,
 				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
       }
+      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->list.array[0]) {
+	// Note: Addition of only 1 SCell at a time is possible in the current implementation. More ambitious ppl are welcome
+    // to extend the implementation for multiple SCell addition!
+    rrc_ue_process_sCellAdd(Mod_id,eNB_index,
+			rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->list.array[0]);
+      }
+      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToReleaseList_r10->list.array[0]) {
+	// Same restriction applied to Scell release also
+    rrc_ue_process_sCellRelease(Mod_id,eNB_index,
+			rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToReleaseList_r10->list.array[0]);
+      }
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
 	rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
 						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
@@ -661,6 +717,11 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 #ifndef NO_RRM
     send_msg(&S_rrc,msg_rrc_end_scan_req(Mod_id,eNB_index));
 #endif
+}
+
+SCellToAddMod_r10_t* getSCellConfig(u8 Mod_id, u16 UE_index) {
+	SCellToAddMod_r10_t* sCell_config;
+
 }
 
 const char siWindowLength[7][5] = {"1ms\0","2ms\0","5ms\0","10ms\0","15ms\0","20ms\0","40ms\0"};

@@ -15,6 +15,7 @@ ________________________________________________________________*/
 
 eNB_RRC_INST *eNB_rrc_inst;
 UE_RRC_INST *UE_rrc_inst;
+
 //RRC_XFACE *Rrc_xface;
 #ifndef USER_MODE
 //MAC_RLC_XFACE *Mac_rlc_xface;

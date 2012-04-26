@@ -120,6 +120,10 @@
 #ifdef EXPRESSMIMO_TARGET
 #define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
 #endif //EXPRESSMiMO_TARGET
+
+#ifdef Rel10
+#define MAX_NUM_CCs 5
+#endif
  
 
 #include "spec_defs_top.h"
@@ -369,6 +373,8 @@ typedef struct
   /// Transmission mode per eNB
   u8 transmission_mode[NUMBER_OF_eNB_MAX];
 
+  /// SCell PHY configuration Dedicated r10
+  //PHY_CONFIG_DEDICATED_SCELL phy_config_dedicated_scell_r10[MAX_NUM_CCs-1];
 
 } PHY_VARS_UE;
 

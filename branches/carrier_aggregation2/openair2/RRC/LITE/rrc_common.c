@@ -14,10 +14,13 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "UTIL/LOG/log.h"
 #define DEBUG_RRC 1
+
+#ifdef Rel10
+#include <SCellToAddMod-r10.h>
+#endif
+
 extern eNB_MAC_INST *eNB_mac_inst;
 extern UE_MAC_INST *UE_mac_inst;
-
-
 
 /*------------------------------------------------------------------------------*/
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag){//configure  BCCH & CCCH Logical Channels and associated rrc_buffers,
@@ -194,6 +197,21 @@ void rrc_config_buffer(SRB_INFO *Srb_info, u8 Lchan_type, u8 Role){
   Srb_info->Tx_buffer.payload_size = 0;
 }
 
+uint8_t rrc_find_free_SCell_index(u8 Mod_id, u16 index, u8 eNB_flag) {
+	u8 cnt;
+	for(cnt=0;cnt<MAX_NUM_CCs-1;cnt++){
+		if (eNB_flag) {
+			if (eNB_rrc_inst[Mod_id].sCell_config[index][cnt] == NULL) // if free Scell index in ENB
+			return cnt;
+		}
+		else {
+			if (UE_rrc_inst[Mod_id].sCell_config[index][cnt] == NULL) // if free Scell index in UE
+			return cnt;
+		}
+	}
+	LOG_E(RRC,"[eNB %d], Generate RRCConnectionReconfiguration - findFreeSCellIndex: No free SCell index for UE id %d\n",Mod_id,index);
+	return((uint8_t)MAX_U8);
+}
 
 /*------------------------------------------------------------------------------*/
 void openair_rrc_top_init(void){
