@@ -394,6 +394,8 @@ int main(int argc, char **argv) {
 #define PERIOD 1000000000
 #endif
 
+  logInit();
+
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
   
@@ -1310,8 +1312,8 @@ int main(int argc, char **argv) {
 	PHY_vars_UE[0]->lte_frame_parms.frame_type = 1;
 	PHY_vars_UE[0]->lte_frame_parms.Ncp = 0;
 	PHY_vars_UE[0]->lte_frame_parms.Nid_cell = 0;
-	//if (initial_sync(PHY_vars_UE[0])==0) {
-	if (1) {
+	if (initial_sync(PHY_vars_UE[0])==0) {
+	  //if (1) {
 	  printf("Synchronized to %s %s prefix Cell with id %d\n",
 		 (PHY_vars_UE[0]->lte_frame_parms.frame_type == 0) ? "FDD\0" : "TDD\0",
 		 (PHY_vars_UE[0]->lte_frame_parms.Ncp == 0) ? "Normal\0" : "Extended\0",
@@ -1323,6 +1325,13 @@ int main(int argc, char **argv) {
 	  else
 	    rx_offset_mod = PHY_vars_UE[0]->rx_offset;
 	  
+	  // overwrite some values until source is sure
+	  PHY_vars_UE[0]->lte_frame_parms.N_RB_DL=N_RB_DL;
+	  PHY_vars_UE[0]->lte_frame_parms.phich_config_common.phich_duration=0;
+	  PHY_vars_UE[0]->lte_frame_parms.phich_config_common.phich_resource = oneSixth;
+	  generate_pcfich_reg_mapping(&PHY_vars_UE[0]->lte_frame_parms);
+	  generate_phich_reg_mapping(&PHY_vars_UE[0]->lte_frame_parms);
+
 	  if (N_carriers==2) {
 	    PHY_vars_UE[1]->lte_frame_parms = PHY_vars_UE[0]->lte_frame_parms;
 	    for (i=0;i<3;i++)
@@ -1331,13 +1340,6 @@ int main(int argc, char **argv) {
 	    generate_phich_reg_mapping(&PHY_vars_UE[1]->lte_frame_parms);
 	  }
 	  
-	  // overwrite some values until source is sure
-	  PHY_vars_UE[UE_idx]->lte_frame_parms.N_RB_DL=N_RB_DL;
-	  PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_duration=0;
-	  PHY_vars_UE[UE_idx]->lte_frame_parms.phich_config_common.phich_resource = oneSixth;
-	  generate_pcfich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
-	  generate_phich_reg_mapping(&PHY_vars_UE[UE_idx]->lte_frame_parms);
-
 	  for (UE_idx=0;UE_idx<N_carriers;UE_idx++) { // loop over 2 carriers here
 	    // Do DCI
 	    for (l=0;l<(1+((PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp==0)?4:3));l++) {
