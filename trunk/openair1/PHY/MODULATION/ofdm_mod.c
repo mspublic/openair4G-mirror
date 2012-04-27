@@ -17,17 +17,14 @@ static short temp[2048*4] __attribute__((aligned(16)));
 
 void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *frame_parms) {
 
-  u8 i;
-  //  printf("nsymb %d\n",nsymb);
-  for (i=0;i<2*nsymb/frame_parms->symbols_per_tti;i++) {
-    //    printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),
-    //    	   txdata+(i*(frame_parms->samples_per_tti>>1)));
+  //    printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),
+  //    	   txdata+(i*(frame_parms->samples_per_tti>>1)));
     
-    PHY_ofdm_mod(txdataF+(i*NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti>>1),        // input
+    PHY_ofdm_mod(txdataF,        // input
 #ifdef BIT8_TX
-		 txdata+(i*frame_parms->samples_per_tti>>2),         // output
+		 txdata,         // output
 #else
-		 txdata+(i*frame_parms->samples_per_tti>>1),         // output
+		 txdata,         // output
 #endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
 		 1,                 // number of symbols
@@ -38,11 +35,11 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
     //    printf("slot i %d (txdata offset %d)\n",i,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*frame_parms->samples_per_tti>>1));
     
 
-    PHY_ofdm_mod(txdataF+NUMBER_OF_OFDM_CARRIERS+(i*NUMBER_OF_OFDM_CARRIERS*(frame_parms->symbols_per_tti>>1)),        // input
+    PHY_ofdm_mod(txdataF+NUMBER_OF_OFDM_CARRIERS,        // input
 #ifdef BIT8_TX
-		 txdata+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0>>1)+(i*(frame_parms->samples_per_tti>>2)),         // output
+		 txdata+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0>>1),         // output
 #else
-		 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
+		 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
 #endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
 		 6,                 // number of symbols
@@ -50,9 +47,7 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 frame_parms->rev,           // bit-reversal permutation
 		 CYCLIC_PREFIX);
-    
 
-  }
 }
 
 void PHY_ofdm_mod(int *input,                       /// pointer to complex input

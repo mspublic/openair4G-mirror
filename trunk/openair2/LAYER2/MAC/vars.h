@@ -32,6 +32,7 @@ MAC_RLC_XFACE *Mac_rlc_xface;
 eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
 eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
 
+/*
 #ifndef USER_MODE
 RRC_XFACE *Rrc_xface;
 MAC_xface *mac_xface;
@@ -39,6 +40,7 @@ MAC_xface *mac_xface;
 #include "PHY_INTERFACE/extern.h"
 #include "RRC/LITE/extern.h"
 #endif
+*/
 
 u8 Is_rrc_registered;
 
