@@ -53,9 +53,13 @@
 
 #ifndef __SSE3__
 __m128i zero;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over_sqrt_10;
-#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
+//#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
+#define _mm_abs_epi16(xmmx) _mm_add_epi16(_mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx))),_mm_srli_epi16(_mm_cmpgt_epi16(zero,(xmmx)),15))
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
 #endif
+
+#define _mm_max_epi32(xmmx,xmmy,res) tmp_sign128=_mm_cmpgt_epi32(xmmx,xmmy),tmp_result128=_mm_and_si128(xmmx,tmp_sign128),tmp_sign128=_mm_xor_si128(_mm_set_epi32(0xFFFFFFF,0xFFFFFFF,0xFFFFFFF,0xFFFFFFF),tmp_sign128),tmp_sign128=_mm_and_si128(xmmy,tmp_sign128), res=_mm_or_si128(tmp_result128,tmp_sign128)
+                                                                                             
 
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
@@ -65,12 +69,23 @@ __m128i zero;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over
 
 //#define DEBUG_PHY
 
+NOCYGWIN_STATIC __m128i tmp_sign128 __attribute__((aligned(16)));
+NOCYGWIN_STATIC __m128i tmp_result128 __attribute__((aligned(16)));
+
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_10 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_2 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 TWO_OVER_SQRT_10 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 THREE_OVER_SQRT_10 __attribute__((aligned(16))); 
 
-#define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; res=_mm_xor_si64(x,sign);   //negate negativesg
+NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_20 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 ONE_OVER_2_SQRT_20 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 SQRT_5_OVER_4 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 SQRT_5_NINE_OVER_SQRT_20 __attribute__((aligned(16))); 
+
+
+#define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; tmp_result=_mm_xor_si64(x,sign); tmp_result2=_mm_srli_pi16(sign,15); res=_mm_adds_pi16(tmp_result2,tmp_result);  //negate negativesg
+
+//#define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; res=_mm_xor_si64(x,sign);   //negate negativesg
 #define mag_int_pi16(psi,mag_h2,res,sign)     sign=_mm_cmpgt_pi16(psi,mag_h2) ; res=_mm_xor_si64(x,sign);   //calculate magnitude of interference
 
 //#define int_abs_pi16(psi,int_ch_mag_scaled,a,zero)     abs_pi16(a,zero,abs_a,sign); tmp_result=_mm_cmpgt_pi16(abs_a,int_ch_mag_scaled); abs_pi16(tmp_result,zero,tmp_result_abs,sign); tmp_over_sqrt_10=_mm_mulhi_pi16(tmp_result_abs,ONE_OVER_SQRT_10); tmp_sum_2_over_sqrt_10=_mm_adds_epi16(tmp_over_sqrt_10,TWO_OVER_SQRT_10); tmp_sign=_mm_cmpeq_pi16(tmp_sum_2_over_sqrt_10,TWO_OVER_SQRT_10); tmp_sign_1_over_sqrt_10=_mm_mulhi_pi16(tmp_sign,ONE_OVER_SQRT_10); a=_mm_adds_epi16(tmp_sum_2_over_sqrt_10,tmp_sign_1_over_sqrt_10); //Calculates absolute value of interference
@@ -2985,8 +3000,9 @@ void qam16_qam16_mu_mimo(short *stream0_in,
   __m64 *stream0_64_in = (__m64 *)stream0_in;
   __m64 *stream1_64_in = (__m64 *)stream1_in;
   __m64 *stream0_64_out= (__m64 *)stream0_out;
-  __m64 *ch_mag_64        = (__m64 *)ch_mag;
+  __m64 *ch_mag_64        = (__m64 *)ch_mag; // = sqrt(2/10)|h|^2
   __m64 *ch_mag_64_i      = (__m64 *)ch_mag_i;
+
 
 #ifdef DEBUG_LLR
   print_shorts2("rho01_64[i]:",rho01_64);
@@ -3043,6 +3059,24 @@ void qam16_qam16_mu_mimo(short *stream0_in,
   ((short*)&NINE_OVER_FOUR_SQRT_10)[2] = 23315;
   ((short*)&NINE_OVER_FOUR_SQRT_10)[3] = 23315; 
 
+
+  ((short*)&ONE_OVER_2_SQRT_20)[0] = 3663;
+  ((short*)&ONE_OVER_2_SQRT_20)[1] = 3663; 
+  ((short*)&ONE_OVER_2_SQRT_20)[2] = 3663;
+  ((short*)&ONE_OVER_2_SQRT_20)[3] = 3663; 
+
+  ((short*)&SQRT_5_OVER_4)[0] = 18317; // Q1.15 !!
+  ((short*)&SQRT_5_OVER_4)[1] = 18317;
+  ((short*)&SQRT_5_OVER_4)[2] = 18317;
+  ((short*)&SQRT_5_OVER_4)[3] = 18317;
+
+  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[0] = 16486; // Q2.13 !!
+  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[1] = 16486; // Q2.13 !!
+  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[2] = 16486; // Q2.13 !!
+  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[3] = 16486; // Q2.13 !!
+
+
+
 #ifdef COMPLEXITY_MEASUREMENT
   printf("length=%d\n", length);
 #endif
@@ -3060,122 +3094,101 @@ void qam16_qam16_mu_mimo(short *stream0_in,
     // STREAM 0
     xmm0 = rho01_64[i];
     xmm1 = rho01_64[i+1];
-    /* short type format is 2 bytes whereas __m64 format is 8 bytes: [Re1 Im1 Re2 Im2 Re3 Im3 Re4 Im4]
-                                                                      \__ __/ \__ __/ \__ __/ \__ __/
-								         .       .       .       .
-								       short   short   short   short
-     */
-    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));13*16^1+8*16^0=216
-    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    // [Re1 Im1 Re2 Im2] becomes [Re1 Re2 Im1 Im2]
-   
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8); //_MM_SHUFFLE(0,2,1,3));
     xmm2 = _mm_unpacklo_pi32(xmm0,xmm1); // All reals. 4 real samples
-#ifdef DEBUG_LLR
-    print_shorts2("rho_real:",&xmm2);
-#endif
     xmm3 = _mm_unpackhi_pi32(xmm0,xmm1); // All imaginarys. 4 imaginary samples
-#ifdef DEBUG_LLR
-    print_shorts2("rho_imag:",&xmm3);
-#endif
+    rho_rpi = _mm_adds_pi16(xmm2,xmm3); // rho = Re(rho) + Im(rho)
+    rho_rmi = _mm_subs_pi16(xmm2,xmm3); // rho* = Re(rho) - Im(rho)
 
-    rho_rpi = _mm_adds_pi16(xmm2,xmm3);   //real + imag
-    rho_rmi = _mm_subs_pi16(xmm2,xmm3);   //real - imag
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+2;
     cnt_mul = cnt_mul+0;
 #endif
+
+    // Compute the different rhos
     rho_rpi_1_1 = _mm_mulhi_pi16(rho_rpi,ONE_OVER_SQRT_10);
     rho_rmi_1_1 = _mm_mulhi_pi16(rho_rmi,ONE_OVER_SQRT_10);
     rho_rpi_1_1 = _mm_slli_pi16(rho_rpi_1_1,1);
     rho_rmi_1_1 = _mm_slli_pi16(rho_rmi_1_1,1);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+0;
     cnt_mul = cnt_mul+2;
 #endif
+
     rho_rpi_3_3 = _mm_mulhi_pi16(rho_rpi,THREE_OVER_SQRT_10);
     rho_rmi_3_3 = _mm_mulhi_pi16(rho_rmi,THREE_OVER_SQRT_10);
     rho_rpi_3_3 = _mm_slli_pi16(rho_rpi_3_3,1);
     rho_rmi_3_3 = _mm_slli_pi16(rho_rmi_3_3,1);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+0;
     cnt_mul = cnt_mul+2;
 #endif
+
     xmm4=_mm_mulhi_pi16(xmm2,ONE_OVER_SQRT_10); //  reals
     xmm5=_mm_mulhi_pi16(xmm3,THREE_OVER_SQRT_10); //  imaginarys
     xmm4 = _mm_slli_pi16(xmm4,1);
     xmm5 = _mm_slli_pi16(xmm5,1);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+0;
     cnt_mul = cnt_mul+2;
 #endif
+
     rho_rpi_1_3 = _mm_adds_pi16(xmm4,xmm5);
     rho_rmi_1_3 = _mm_subs_pi16(xmm4,xmm5);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+2;
     cnt_mul = cnt_mul+0;
 #endif
+
     xmm6=_mm_mulhi_pi16(xmm2,THREE_OVER_SQRT_10); //  reals
     xmm6 = _mm_slli_pi16(xmm6,1);
     xmm7=_mm_mulhi_pi16(xmm3,ONE_OVER_SQRT_10); //  imaginarys
     xmm7 = _mm_slli_pi16(xmm7,1);
     rho_rpi_3_1 = _mm_adds_pi16(xmm6,xmm7);
     rho_rmi_3_1 = _mm_subs_pi16(xmm6,xmm7);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+2;
     cnt_mul = cnt_mul+2;
 #endif
 
-    rho_rpi_1_1 = _mm_mulhi_pi16(rho_rpi_1_1,ONE_OVER_SQRT_2);
-    rho_rpi_1_3 = _mm_mulhi_pi16(rho_rpi_1_3,ONE_OVER_SQRT_2);
-    rho_rpi_3_1 = _mm_mulhi_pi16(rho_rpi_3_1,ONE_OVER_SQRT_2);
-    rho_rpi_3_3 = _mm_mulhi_pi16(rho_rpi_3_3,ONE_OVER_SQRT_2);
-    rho_rmi_1_1 = _mm_mulhi_pi16(rho_rmi_1_1,ONE_OVER_SQRT_2);
-    rho_rmi_1_3 = _mm_mulhi_pi16(rho_rmi_1_3,ONE_OVER_SQRT_2);
-    rho_rmi_3_1 = _mm_mulhi_pi16(rho_rmi_3_1,ONE_OVER_SQRT_2);
-    rho_rmi_3_3 = _mm_mulhi_pi16(rho_rmi_3_3,ONE_OVER_SQRT_2); 
-    rho_rpi_1_1 = _mm_slli_pi16(rho_rpi_1_1,1);
-    rho_rpi_1_3 = _mm_slli_pi16(rho_rpi_1_3,1);
-    rho_rpi_3_1 = _mm_slli_pi16(rho_rpi_3_1,1);
-    rho_rpi_3_3 = _mm_slli_pi16(rho_rpi_3_3,1);
-    rho_rmi_1_1 = _mm_slli_pi16(rho_rmi_1_1,1);
-    rho_rmi_1_3 = _mm_slli_pi16(rho_rmi_1_3,1);
-    rho_rmi_3_1 = _mm_slli_pi16(rho_rmi_3_1,1);
-    rho_rmi_3_3 = _mm_slli_pi16(rho_rmi_3_3,1);
-
-#ifdef DEBUG_LLR
-    print_shorts2("rho_rpi_1_1:",&rho_rpi_1_1);
-    print_shorts2("rho_rpi_1_3:",&rho_rpi_1_3);
-    print_shorts2("rho_rpi_3_1:",&rho_rpi_3_1);
-    print_shorts2("rho_rpi_3_3:",&rho_rpi_3_3);
-    print_shorts2("rho_rmi_1_1:",&rho_rmi_1_1);
-    print_shorts2("rho_rmi_1_3:",&rho_rmi_1_3);
-    print_shorts2("rho_rmi_3_1:",&rho_rmi_3_1);
-    print_shorts2("rho_rmi_3_3:",&rho_rmi_3_3);
-#endif
+    // Divide by 2
+    rho_rpi_1_1 = _mm_srai_pi16(rho_rpi_1_1,1); // = [ Re(rho)+ Im(rho)]/sqrt(10)/(2)
+    rho_rpi_1_3 = _mm_srai_pi16(rho_rpi_1_3,1); // = [ Re(rho)+3Im(rho)]/sqrt(10)/(2)
+    rho_rpi_3_1 = _mm_srai_pi16(rho_rpi_3_1,1); // = [3Re(rho)+ Im(rho)]/sqrt(10)/(2)
+    rho_rpi_3_3 = _mm_srai_pi16(rho_rpi_3_3,1); // = [3Re(rho)+3Im(rho)]/sqrt(10)/(2)
+    rho_rmi_1_1 = _mm_srai_pi16(rho_rmi_1_1,1); // = [ Re(rho)- Im(rho)]/sqrt(10)/(2)
+    rho_rmi_1_3 = _mm_srai_pi16(rho_rmi_1_3,1); // = [ Re(rho)-3Im(rho)]/sqrt(10)/(2)
+    rho_rmi_3_1 = _mm_srai_pi16(rho_rmi_3_1,1); // = [3Re(rho)- Im(rho)]/sqrt(10)/(2)
+    rho_rmi_3_3 = _mm_srai_pi16(rho_rmi_3_3,1); // = [3Re(rho)-3Im(rho)]/sqrt(10)/(2)
 
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+0;
    cnt_mul = cnt_mul+8;
 #endif
-    xmm0 = stream1_64_in[i];
-    xmm1 = stream1_64_in[i+1];
-           
-    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    y1r  = _mm_unpacklo_pi32(xmm0,xmm1);
-    y1i  = _mm_unpackhi_pi32(xmm0,xmm1);
-#ifdef DEBUG_LLR
-    print_shorts2("y1r:",&y1r);
-    print_shorts2("y1i:",&y1i);
-#endif
 
-    xmm0 = _mm_xor_si64(xmm0,xmm0);   // ZERO
-    xmm2 = _mm_subs_pi16(rho_rpi_1_1,y1r);// saturation is observed at 32767 here
-    abs_pi16(xmm2,xmm0,psi_r_p1_p1,xmm1);
+    // Rearrange interfering MF output
+    xmm0 = stream1_64_in[i];
+    xmm1 = stream1_64_in[i+1];           
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    y1r  = _mm_unpacklo_pi32(xmm0,xmm1); // = [y1r(1),y1r(2),y1r(3),y1r(4)]
+    y1i  = _mm_unpackhi_pi32(xmm0,xmm1); // = [y1i(1),y1i(2),y1i(3),y1i(4)]
+
+    xmm0 = _mm_xor_si64(xmm0,xmm0); // ZERO
+    xmm2 = _mm_subs_pi16(rho_rpi_1_1,y1r); // saturation is observed at 32767 here
+    abs_pi16(xmm2,xmm0,psi_r_p1_p1,xmm1); // = [ Re(rho)+ Im(rho)]/sqrt(10)/sqrt(2) - y1r
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+1;
     cnt_mul = cnt_mul+0;
 #endif
+
     xmm2= _mm_subs_pi16(rho_rmi_1_1,y1r);
     abs_pi16(xmm2,xmm0,psi_r_p1_m1,xmm1);
     xmm2= _mm_subs_pi16(rho_rmi_1_1,y1i);
@@ -3238,90 +3251,50 @@ void qam16_qam16_mu_mimo(short *stream0_in,
     abs_pi16(xmm2,xmm0,psi_i_m3_m1,xmm1);
     xmm2= _mm_adds_pi16(y1i,rho_rmi_3_3);
     abs_pi16(xmm2,xmm0,psi_i_m3_m3,xmm1);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+32;
     cnt_mul = cnt_mul+0;
 #endif
 
-#ifdef DEBUG_LLR
-    print_shorts2("psi_r_p1_p1:", &psi_r_p1_p1);
-    print_shorts2("psi_r_p1_p3:", &psi_r_p1_p3);
-    print_shorts2("psi_r_p3_p1:", &psi_r_p3_p1);
-    print_shorts2("psi_r_p3_p3:", &psi_r_p3_p3);
-    print_shorts2("psi_r_m1_p1:", &psi_r_m1_p1);
-    print_shorts2("psi_r_m1_p3:", &psi_r_m1_p3);
-    print_shorts2("psi_r_m3_p1:", &psi_r_m3_p1);
-    print_shorts2("psi_r_m3_p3:", &psi_r_m3_p3);
-    print_shorts2("psi_r_p1_m1:", &psi_r_p1_m1);
-    print_shorts2("psi_r_p1_m3:", &psi_r_p1_m3);
-    print_shorts2("psi_r_p3_m1:", &psi_r_p3_m1);
-    print_shorts2("psi_r_p3_m3:", &psi_r_p3_m3);
-    print_shorts2("psi_r_m1_m1:", &psi_r_m1_m1);
-    print_shorts2("psi_r_m1_m3:", &psi_r_m1_m3);
-    print_shorts2("psi_r_m3_m1:", &psi_r_m3_m1);
-    print_shorts2("psi_r_m3_m3:", &psi_r_m3_m3);
-
-    print_shorts2("psi_i_p1_p1:", &psi_i_p1_p1);
-    print_shorts2("psi_i_p1_p3:", &psi_i_p1_p3);
-    print_shorts2("psi_i_p3_p1:", &psi_i_p3_p1);
-    print_shorts2("psi_i_p3_p3:", &psi_i_p3_p3);
-    print_shorts2("psi_i_m1_p1:", &psi_i_m1_p1);
-    print_shorts2("psi_i_m1_p3:", &psi_i_m1_p3);
-    print_shorts2("psi_i_m3_p1:", &psi_i_m3_p1);
-    print_shorts2("psi_i_m3_p3:", &psi_i_m3_p3);
-    print_shorts2("psi_i_p1_m1:", &psi_i_p1_m1);
-    print_shorts2("psi_i_p1_m3:", &psi_i_p1_m3);
-    print_shorts2("psi_i_p3_m1:", &psi_i_p3_m1);
-    print_shorts2("psi_i_p3_m3:", &psi_i_p3_m3);
-    print_shorts2("psi_i_m1_m1:", &psi_i_m1_m1);
-    print_shorts2("psi_i_m1_m3:", &psi_i_m1_m3);
-    print_shorts2("psi_i_m3_m1:", &psi_i_m3_m1);
-    print_shorts2("psi_i_m3_m3:", &psi_i_m3_m3);
-#endif
-
+    // Rearrange desired MF output
     xmm0 = stream0_64_in[i];
     xmm1 = stream0_64_in[i+1];
-    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    y0r  = _mm_unpacklo_pi32(xmm0,xmm1);
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    y0r  = _mm_unpacklo_pi32(xmm0,xmm1); // = [y0r(1),y0r(2),y0r(3),y0r(4)]
     y0i  = _mm_unpackhi_pi32(xmm0,xmm1);
     
-#ifdef DEBUG_LLR
-    print_shorts2(" y0r:",& y0r);  
-    print_shorts2(" y0i:",& y0i);   
-#endif
-    // In one iteration, we are dealing with 4 complex samples so we need 4 channel magnitudes for these complex samples. Channel magnitudes are repeated once so we need to rearrange them
+    // Rearrange desired channel magnitudes
+    xmm2=ch_mag_64[i]; // = [|h|^2(1),|h|^2(1),|h|^2(2),|h|^2(2)]*(2/sqrt(10))
+    xmm3=ch_mag_64[i+1]; // = [|h|^2(3),|h|^2(3),|h|^2(4),|h|^2(4)]*(2/sqrt(10))
+    xmm2 = _mm_shuffle_pi16(xmm2,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm3 = _mm_shuffle_pi16(xmm3,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    ch_mag_des = _mm_unpacklo_pi32(xmm2,xmm3); // = [|h|^2(1),|h|^2(2),|h|^2(3),|h|^2(4)]*(2/sqrt(10))
 
-    xmm2=ch_mag_64[i]; // Out of 4 samples, first two samples are same and last two samples are same
-    xmm3=ch_mag_64[i+1]; // Out of 4 samples, first two samples are same and last two samples are same
-    xmm2 = _mm_shuffle_pi16(xmm2,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    xmm3 = _mm_shuffle_pi16(xmm3,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    ch_mag_des  = _mm_unpacklo_pi32(xmm2,xmm3);
-#ifdef DEBUG_LLR
-    print_shorts2("ch_mag_des:",&ch_mag_des);
-#endif
-    // Shouldn't be rm in part?
-    xmm2=ch_mag_64_i[i];   // Out of 4 samples, first two samples are same and last two samples are same
-    xmm3=ch_mag_64_i[i+1]; // Out of 4 samples, first two samples are same and last two samples are same
-    xmm2 = _mm_shuffle_pi16(xmm2,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    xmm3 = _mm_shuffle_pi16(xmm3,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    ch_mag_int  = _mm_unpacklo_pi32(xmm2,xmm3);
-#ifdef DEBUG_LLR
-     print_shorts2("ch_mag_int:",&ch_mag_int); 
-#endif
-    y0r_over_sqrt10  = _mm_mulhi_pi16(y0r,ONE_OVER_SQRT_10);
-    y0i_over_sqrt10  = _mm_mulhi_pi16(y0i,ONE_OVER_SQRT_10);
-    y0r_over_sqrt10 = _mm_slli_pi16(y0r_over_sqrt10,1);
+    // Rearrange interfering channel magnitudes
+    xmm2=ch_mag_64_i[i];   
+    xmm3=ch_mag_64_i[i+1]; 
+    xmm2 = _mm_shuffle_pi16(xmm2,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm3 = _mm_shuffle_pi16(xmm3,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    ch_mag_int  = _mm_unpacklo_pi32(xmm2,xmm3); 
+
+    // Scale MF output of desired signal
+    y0r_over_sqrt10 = _mm_mulhi_pi16(y0r,ONE_OVER_SQRT_10);
+    y0i_over_sqrt10 = _mm_mulhi_pi16(y0i,ONE_OVER_SQRT_10);
+    y0r_over_sqrt10 = _mm_slli_pi16(y0r_over_sqrt10,1); // Added by SW
     y0i_over_sqrt10 = _mm_slli_pi16(y0i_over_sqrt10,1);
-    y0r_three_over_sqrt10  = _mm_mulhi_pi16(y0r,THREE_OVER_SQRT_10);
-    y0i_three_over_sqrt10  = _mm_mulhi_pi16(y0i,THREE_OVER_SQRT_10);
+    y0r_three_over_sqrt10 = _mm_mulhi_pi16(y0r,THREE_OVER_SQRT_10);
+    y0i_three_over_sqrt10 = _mm_mulhi_pi16(y0i,THREE_OVER_SQRT_10);
     y0r_three_over_sqrt10 = _mm_slli_pi16(y0r_three_over_sqrt10,1);
     y0i_three_over_sqrt10 = _mm_slli_pi16(y0i_three_over_sqrt10,1);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+0;
     cnt_mul = cnt_mul+4;
 #endif
 
+    // Compute possible combination of required terms
     y0_p_1_1 = _mm_adds_pi16(y0r_over_sqrt10,y0i_over_sqrt10);
     y0_m_1_1 = _mm_subs_pi16(y0r_over_sqrt10,y0i_over_sqrt10);  
     
@@ -3333,66 +3306,27 @@ void qam16_qam16_mu_mimo(short *stream0_in,
       
     y0_p_3_3 = _mm_adds_pi16(y0r_three_over_sqrt10,y0i_three_over_sqrt10);
     y0_m_3_3 = _mm_subs_pi16(y0r_three_over_sqrt10,y0i_three_over_sqrt10);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+8;
     cnt_mul = cnt_mul+0;
-#endif
-
-     y0_p_1_1= _mm_mulhi_pi16(y0_p_1_1, ONE_OVER_SQRT_2);
-     y0_p_1_3= _mm_mulhi_pi16(y0_p_1_3, ONE_OVER_SQRT_2);
-     y0_p_3_1= _mm_mulhi_pi16(y0_p_3_1, ONE_OVER_SQRT_2);
-     y0_p_3_3= _mm_mulhi_pi16(y0_p_3_3, ONE_OVER_SQRT_2);
-     y0_m_1_1= _mm_mulhi_pi16(y0_m_1_1, ONE_OVER_SQRT_2);
-     y0_m_1_3= _mm_mulhi_pi16(y0_m_1_3, ONE_OVER_SQRT_2);
-     y0_m_3_1= _mm_mulhi_pi16(y0_m_3_1, ONE_OVER_SQRT_2);
-     y0_m_3_3= _mm_mulhi_pi16(y0_m_3_3, ONE_OVER_SQRT_2);
-     y0_p_1_1 = _mm_slli_pi16(y0_p_1_1,1);
-     y0_p_1_3 = _mm_slli_pi16(y0_p_1_3,1);
-     y0_p_3_1 = _mm_slli_pi16(y0_p_3_1,1);
-     y0_p_3_3 = _mm_slli_pi16(y0_p_3_3,1);
-     y0_m_1_1 = _mm_slli_pi16(y0_m_1_1,1);
-     y0_m_1_3 = _mm_slli_pi16(y0_m_1_3,1);
-     y0_m_3_1 = _mm_slli_pi16(y0_m_3_1,1);
-     y0_m_3_3 = _mm_slli_pi16(y0_m_3_3,1);
-
-     // Factor 2 in the reference formula
-     y0_p_1_1 = _mm_slli_pi16(y0_p_1_1,1);
-     y0_p_1_3 = _mm_slli_pi16(y0_p_1_3,1);
-     y0_p_3_1 = _mm_slli_pi16(y0_p_3_1,1);
-     y0_p_3_3 = _mm_slli_pi16(y0_p_3_3,1);
-     y0_m_1_1 = _mm_slli_pi16(y0_m_1_1,1);
-     y0_m_1_3 = _mm_slli_pi16(y0_m_1_3,1);
-     y0_m_3_1 = _mm_slli_pi16(y0_m_3_1,1);
-     y0_m_3_3 = _mm_slli_pi16(y0_m_3_3,1);
-
-#ifdef DEBUG_LLR
-     print_shorts2("y0_p_1_1:",&y0_p_1_1);
-     print_shorts2("y0_p_1_3:",&y0_p_1_3);
-     print_shorts2("y0_p_3_1:",&y0_p_3_1);
-     print_shorts2("y0_p_3_3:",&y0_p_3_3);
-     print_shorts2("y0_m_1_1:",&y0_m_1_1);
-     print_shorts2("y0_m_1_3:",&y0_m_1_3);
-     print_shorts2("y0_m_3_1:",&y0_m_3_1);
-     print_shorts2("y0_m_3_3:",&y0_m_3_3);
 #endif
 
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+0;
    cnt_mul = cnt_mul+8;
 #endif
-   /* End */
 
-   // Detection of interference term
-   /* Added by Seb */
-
+   
    ch_mag_int_with_sigma2 = _mm_mulhi_pi16(ch_mag_int, ONE_OVER_SQRT_2);
    ch_mag_int_with_sigma2 = _mm_slli_pi16(ch_mag_int_with_sigma2, 1);
+   
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+0;
    cnt_mul = cnt_mul+1;
 #endif
-   /* End */
 
+   // Compute optimal interfering symbol
    interference_abs_pi16(&psi_r_p1_p1 ,&ch_mag_int_with_sigma2,&a_r_p1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
    interference_abs_pi16(&psi_i_p1_p1 ,&ch_mag_int_with_sigma2,&a_i_p1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
    interference_abs_pi16(&psi_r_p1_p3 ,&ch_mag_int_with_sigma2,&a_r_p1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
@@ -3425,6 +3359,7 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    interference_abs_pi16(&psi_i_m3_m1 ,&ch_mag_int_with_sigma2,&a_i_m3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
    interference_abs_pi16(&psi_r_m3_m3 ,&ch_mag_int_with_sigma2,&a_r_m3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
    interference_abs_pi16(&psi_i_m3_m3 ,&ch_mag_int_with_sigma2,&a_i_m3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+32;
    cnt_mul = cnt_mul+0;
@@ -3447,284 +3382,219 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    prodsum_psi_a_pi16(psi_r_m1_m3,a_r_m1_m3,psi_i_m1_m3,a_i_m1_m3,psi_a_m1_m3);
    prodsum_psi_a_pi16(psi_r_m3_m1,a_r_m3_m1,psi_i_m3_m1,a_i_m3_m1,psi_a_m3_m1);
    prodsum_psi_a_pi16(psi_r_m3_m3,a_r_m3_m3,psi_i_m3_m3,a_i_m3_m3,psi_a_m3_m3);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+16;
    cnt_mul = cnt_mul+32;
 #endif
 
-   /* Added by Seb */
-   psi_a_p1_p1 = _mm_mulhi_pi16(psi_a_p1_p1, ONE_OVER_SQRT_2);
-   psi_a_p1_p1 = _mm_slli_pi16(psi_a_p1_p1, 1);
-   psi_a_p1_p3 = _mm_mulhi_pi16(psi_a_p1_p3, ONE_OVER_SQRT_2);
-   psi_a_p1_p3 = _mm_slli_pi16(psi_a_p1_p3, 1);
-   psi_a_p3_p1 = _mm_mulhi_pi16(psi_a_p3_p1, ONE_OVER_SQRT_2);
-   psi_a_p3_p1 = _mm_slli_pi16(psi_a_p3_p1, 1);
-   psi_a_p3_p3 = _mm_mulhi_pi16(psi_a_p3_p3, ONE_OVER_SQRT_2);
-   psi_a_p3_p3 = _mm_slli_pi16(psi_a_p3_p3, 1);
-   psi_a_p1_m1 = _mm_mulhi_pi16(psi_a_p1_m1, ONE_OVER_SQRT_2);
-   psi_a_p1_m1 = _mm_slli_pi16(psi_a_p1_m1, 1);
-   psi_a_p1_m3 = _mm_mulhi_pi16(psi_a_p1_m3, ONE_OVER_SQRT_2);
-   psi_a_p1_m3 = _mm_slli_pi16(psi_a_p1_m3, 1);
-   psi_a_p3_m1 = _mm_mulhi_pi16(psi_a_p3_m1, ONE_OVER_SQRT_2);
-   psi_a_p3_m1 = _mm_slli_pi16(psi_a_p3_m1, 1);
-   psi_a_p3_m3 = _mm_mulhi_pi16(psi_a_p3_m3, ONE_OVER_SQRT_2);
-   psi_a_p3_m3 = _mm_slli_pi16(psi_a_p3_m3, 1);
-   psi_a_m1_p1 = _mm_mulhi_pi16(psi_a_m1_p1, ONE_OVER_SQRT_2);
-   psi_a_m1_p1 = _mm_slli_pi16(psi_a_m1_p1, 1);
-   psi_a_m1_p3 = _mm_mulhi_pi16(psi_a_m1_p3, ONE_OVER_SQRT_2);
-   psi_a_m1_p3 = _mm_slli_pi16(psi_a_m1_p3, 1);
-   psi_a_m3_p1 = _mm_mulhi_pi16(psi_a_m3_p1, ONE_OVER_SQRT_2);
-   psi_a_m3_p1 = _mm_slli_pi16(psi_a_m3_p1, 1);
-   psi_a_m3_p3 = _mm_mulhi_pi16(psi_a_m3_p3, ONE_OVER_SQRT_2);
-   psi_a_m3_p3 = _mm_slli_pi16(psi_a_m3_p3, 1);
-   psi_a_m1_m1 = _mm_mulhi_pi16(psi_a_m1_m1, ONE_OVER_SQRT_2);
-   psi_a_m1_m1 = _mm_slli_pi16(psi_a_m1_m1, 1);
-   psi_a_m1_m3 = _mm_mulhi_pi16(psi_a_m1_m3, ONE_OVER_SQRT_2);
-   psi_a_m1_m3 = _mm_slli_pi16(psi_a_m1_m3, 1);
-   psi_a_m3_m1 = _mm_mulhi_pi16(psi_a_m3_m1, ONE_OVER_SQRT_2);
-   psi_a_m3_m1 = _mm_slli_pi16(psi_a_m3_m1, 1);
-   psi_a_m3_m3 = _mm_mulhi_pi16(psi_a_m3_m3, ONE_OVER_SQRT_2);
-   psi_a_m3_m3 = _mm_slli_pi16(psi_a_m3_m3, 1);
-
-   // Difference of ratio of 2 compared to Rizwan's reference code
-   psi_a_p1_p1 = _mm_slli_pi16(psi_a_p1_p1, 1);
-   psi_a_p1_p3 = _mm_slli_pi16(psi_a_p1_p3, 1);
-   psi_a_p3_p1 = _mm_slli_pi16(psi_a_p3_p1, 1);
-   psi_a_p3_p3 = _mm_slli_pi16(psi_a_p3_p3, 1);
-   psi_a_p1_m1 = _mm_slli_pi16(psi_a_p1_m1, 1);
-   psi_a_p1_m3 = _mm_slli_pi16(psi_a_p1_m3, 1);
-   psi_a_p3_m1 = _mm_slli_pi16(psi_a_p3_m1, 1);
-   psi_a_p3_m3 = _mm_slli_pi16(psi_a_p3_m3, 1);
-   psi_a_m1_p1 = _mm_slli_pi16(psi_a_m1_p1, 1);
-   psi_a_m1_p3 = _mm_slli_pi16(psi_a_m1_p3, 1);
-   psi_a_m3_p1 = _mm_slli_pi16(psi_a_m3_p1, 1);
-   psi_a_m3_p3 = _mm_slli_pi16(psi_a_m3_p3, 1);
-   psi_a_m1_m1 = _mm_slli_pi16(psi_a_m1_m1, 1);
-   psi_a_m1_m3 = _mm_slli_pi16(psi_a_m1_m3, 1);
-   psi_a_m3_m1 = _mm_slli_pi16(psi_a_m3_m1, 1);
-   psi_a_m3_m3 = _mm_slli_pi16(psi_a_m3_m3, 1);
-
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+0;
    cnt_mul = cnt_mul+8;
 #endif
-   /* End */
 
    // Calculation of a group of two terms in the bit metric involving squares of interference
    ch_mag_int_over_20= _mm_mulhi_pi16(ch_mag_int,ONE_OVER_FOUR_SQRT_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+1;
    cnt_mul = cnt_mul+0;
 #endif
+   
+   square_a_pi16(a_r_p1_p1,a_i_p1_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_p1);
+   square_a_pi16(a_r_p1_p3,a_i_p1_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_p3);
+   square_a_pi16(a_r_p3_p1,a_i_p3_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_p1);
+   square_a_pi16(a_r_p3_p3,a_i_p3_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_p3);
+   square_a_pi16(a_r_p1_m1,a_i_p1_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_m1);
+   square_a_pi16(a_r_p1_m3,a_i_p1_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_m3);
+   square_a_pi16(a_r_p3_m1,a_i_p3_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_m1);
+   square_a_pi16(a_r_p3_m3,a_i_p3_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_m3);
+   square_a_pi16(a_r_m1_p1,a_i_m1_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_p1);
+   square_a_pi16(a_r_m1_p3,a_i_m1_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_p3);
+   square_a_pi16(a_r_m3_p1,a_i_m3_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_p1);
+   square_a_pi16(a_r_m3_p3,a_i_m3_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_p3);
+   square_a_pi16(a_r_m1_m1,a_i_m1_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_m1);
+   square_a_pi16(a_r_m1_m3,a_i_m1_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_m3);
+   square_a_pi16(a_r_m3_m1,a_i_m3_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_m1);
+   square_a_pi16(a_r_m3_m3,a_i_m3_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_m3);   
 
-   square_a_pi16(a_r_p1_p1,a_i_p1_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_p1);
-   square_a_pi16(a_r_p1_p3,a_i_p1_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_p3);
-   square_a_pi16(a_r_p3_p1,a_i_p3_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_p1);
-   square_a_pi16(a_r_p3_p3,a_i_p3_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_p3);
-   square_a_pi16(a_r_p1_m1,a_i_p1_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_m1);
-   square_a_pi16(a_r_p1_m3,a_i_p1_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_m3);
-   square_a_pi16(a_r_p3_m1,a_i_p3_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_m1);
-   square_a_pi16(a_r_p3_m3,a_i_p3_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_m3);
-   square_a_pi16(a_r_m1_p1,a_i_m1_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_p1);
-   square_a_pi16(a_r_m1_p3,a_i_m1_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_p3);
-   square_a_pi16(a_r_m3_p1,a_i_m3_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_p1);
-   square_a_pi16(a_r_m3_p3,a_i_m3_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_p3);
-   square_a_pi16(a_r_m1_m1,a_i_m1_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_m1);
-   square_a_pi16(a_r_m1_m3,a_i_m1_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_m3);
-   square_a_pi16(a_r_m3_m1,a_i_m3_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_m1);
-   square_a_pi16(a_r_m3_m3,a_i_m3_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_m3);
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+16;
    cnt_mul = cnt_mul+6*16;
 #endif
 
-// Computing different multiples of channel norms
-   ch_mag_over_10=_mm_mulhi_pi16(ch_mag_des,ONE_OVER_TWO_SQRT_10);
-   ch_mag_over_2=_mm_mulhi_pi16(ch_mag_des,SQRT_10_OVER_FOUR);
+   // Computing different multiples of channel norms
+   ch_mag_over_10=_mm_mulhi_pi16(ch_mag_des,ONE_OVER_2_SQRT_20);
+   ch_mag_over_10=_mm_slli_pi16(ch_mag_over_10,1);
+   ch_mag_over_2=_mm_mulhi_pi16(ch_mag_des,SQRT_5_OVER_4);
    ch_mag_over_2=_mm_slli_pi16(ch_mag_over_2,1);
-   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des,NINE_OVER_FOUR_SQRT_10);
-   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,1);//
-   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,1);// To multiply by 2
-   xmm0 = _mm_xor_si64(xmm0,xmm0);   // ZERO
-   abs_pi16(ch_mag_9_over_10,xmm0,ch_mag_9_over_10,xmm1);// Due to logical shift, number might become negative
+   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des,SQRT_5_NINE_OVER_SQRT_20);
+   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,2);
+
+   /*
+   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des,NINE_OVER_SQRT_20);
+   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,3);
+   ch_mag_9_over_10=_mm_srai_pi16(ch_mag_9_over_10,1);*/
+   
+   /*
+   ch_mag_over_10=_mm_mulhi_pi16(ch_mag_des,ONE_OVER_SQRT_20);
+   ch_mag_over_10=_mm_slli_pi16(ch_mag_over_10,1);
+   ch_mag_over_2=_mm_mulhi_pi16(ch_mag_des,SQRT_5_OVER_2);
+   ch_mag_over_2=_mm_slli_pi16(ch_mag_over_2,2);
+   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des,NINE_OVER_SQRT_20);
+   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,3);*/
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
 #endif
-// Computing Metrics
+
+   // Computing Metrics
    xmm0 = _mm_subs_pi16(psi_a_p1_p1,a_sq_p1_p1);
    xmm1 = _mm_adds_pi16(xmm0,y0_p_1_1);
    bit_met_p1_p1= _mm_subs_pi16(xmm1,ch_mag_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+2;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p1_p1:",&bit_met_p1_p1);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_p1_p3,a_sq_p1_p3);
    xmm1 = _mm_adds_pi16(xmm0,y0_p_1_3);
    bit_met_p1_p3= _mm_subs_pi16(xmm1,ch_mag_over_2);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p1_p3:",&bit_met_p1_p3);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_p1_m1,a_sq_p1_m1);
    xmm1 = _mm_adds_pi16(xmm0,y0_m_1_1);
    bit_met_p1_m1= _mm_subs_pi16(xmm1,ch_mag_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p1_m1:",&bit_met_p1_m1);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_p1_m3,a_sq_p1_m3);
    xmm1 = _mm_adds_pi16(xmm0,y0_m_1_3);
    bit_met_p1_m3= _mm_subs_pi16(xmm1,ch_mag_over_2);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p1_m3:",&bit_met_p1_m3);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_p3_p1,a_sq_p3_p1);
    xmm1 = _mm_adds_pi16(xmm0,y0_p_3_1);
    bit_met_p3_p1= _mm_subs_pi16(xmm1,ch_mag_over_2);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p3_p1:",&bit_met_p3_p1);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_p3_p3,a_sq_p3_p3);
    xmm1 = _mm_adds_pi16(xmm0,y0_p_3_3);
    bit_met_p3_p3= _mm_subs_pi16(xmm1,ch_mag_9_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p3_p3:",&bit_met_p3_p3);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_p3_m1,a_sq_p3_m1);
    xmm1 = _mm_adds_pi16(xmm0,y0_m_3_1);
    bit_met_p3_m1= _mm_subs_pi16(xmm1,ch_mag_over_2);
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p3_m1:",&bit_met_p3_m1);
+
+#ifdef COMPLEXITY_MEASUREMENT
+   cnt_add = cnt_add+3;
+   cnt_mul = cnt_mul+0;
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_p3_m3,a_sq_p3_m3);
    xmm1 = _mm_adds_pi16(xmm0,y0_m_3_3);
    bit_met_p3_m3= _mm_subs_pi16(xmm1,ch_mag_9_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_p3_m3:",&bit_met_p3_m3);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m1_p1,a_sq_m1_p1);
    xmm1 = _mm_subs_pi16(xmm0,y0_m_1_1);
    bit_met_m1_p1= _mm_subs_pi16(xmm1,ch_mag_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m1_p1:",&bit_met_m1_p1);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m1_p3,a_sq_m1_p3);
    xmm1 = _mm_subs_pi16(xmm0,y0_m_1_3);
    bit_met_m1_p3= _mm_subs_pi16(xmm1,ch_mag_over_2);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m1_p3:",&bit_met_m1_p3);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m1_m1,a_sq_m1_m1);
    xmm1 = _mm_subs_pi16(xmm0,y0_p_1_1);
    bit_met_m1_m1= _mm_subs_pi16(xmm1,ch_mag_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m1_m1:",&bit_met_m1_m1);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m1_m3,a_sq_m1_m3);
    xmm1 = _mm_subs_pi16(xmm0,y0_p_1_3);
    bit_met_m1_m3= _mm_subs_pi16(xmm1,ch_mag_over_2);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m1_m3:",&bit_met_m1_m3);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m3_p1,a_sq_m3_p1);
    xmm1 = _mm_subs_pi16(xmm0,y0_m_3_1);
    bit_met_m3_p1= _mm_subs_pi16(xmm1,ch_mag_over_2);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m3_p1:",&bit_met_m3_p1);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m3_p3,a_sq_m3_p3);
    xmm1 = _mm_subs_pi16(xmm0,y0_m_3_3);
    bit_met_m3_p3= _mm_subs_pi16(xmm1,ch_mag_9_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m3_p3:",&bit_met_m3_p3);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m3_m1,a_sq_m3_m1);
    xmm1 = _mm_subs_pi16(xmm0,y0_p_3_1);
    bit_met_m3_m1= _mm_subs_pi16(xmm1,ch_mag_over_2);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m3_m1:",&bit_met_m3_m1);
 #endif
 
    xmm0 = _mm_subs_pi16(psi_a_m3_m3,a_sq_m3_m3);
    xmm1 = _mm_subs_pi16(xmm0,y0_p_3_3);
    bit_met_m3_m3= _mm_subs_pi16(xmm1,ch_mag_9_over_10);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
    cnt_mul = cnt_mul+0;
 #endif
-#ifdef DEBUG_LLR
-   print_shorts2("bit_met_m3_m3:",&bit_met_m3_m3);
-#endif
 
-// Detection for y0r i.e.  Ist bit
+   // LLR of the first bit
    xmm0=_mm_max_pi16(bit_met_m1_p1,bit_met_m1_p3);
    xmm1=_mm_max_pi16(bit_met_m1_m1,bit_met_m1_m3);
    xmm2=_mm_max_pi16(bit_met_m3_p1,bit_met_m3_p3);
@@ -3741,16 +3611,16 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    xmm5=_mm_max_pi16(xmm2,xmm3);
    logmax_den_re0=_mm_max_pi16(xmm4,xmm5);
    /*y0r = _mm_subs_pi16(logmax_num_re0,logmax_den_re0);*/
+   // LLR of first bit [L1(1), L1(2), L1(3), L1(4)]
    y0r = _mm_subs_pi16(logmax_den_re0,logmax_num_re0);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+15;
    cnt_mul = cnt_mul+0;
 #endif
-#ifdef DEBUG_LLR
-   print_shorts2("y0r:",&y0r);
-#endif
 
-// Detection for y1r i.e.  second bit
+   // LLR of the second bit
+   // Bit = 1
    xmm0=_mm_max_pi16(bit_met_p1_m1,bit_met_p3_m1);
    xmm1=_mm_max_pi16(bit_met_m1_m1,bit_met_m3_m1);
    xmm2=_mm_max_pi16(bit_met_p1_m3,bit_met_p3_m3);
@@ -3758,7 +3628,8 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    xmm4=_mm_max_pi16(xmm0,xmm1);
    xmm5=_mm_max_pi16(xmm2,xmm3);
    logmax_num_re1=_mm_max_pi16(xmm4,xmm5);
-
+   
+   // Bit = 0
    xmm0=_mm_max_pi16(bit_met_p1_p1,bit_met_p3_p1);
    xmm1=_mm_max_pi16(bit_met_m1_p1,bit_met_m3_p1);
    xmm2=_mm_max_pi16(bit_met_p1_p3,bit_met_p3_p3);
@@ -3767,16 +3638,16 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    xmm5=_mm_max_pi16(xmm2,xmm3);
    logmax_den_re1=_mm_max_pi16(xmm4,xmm5);
    /*y1r = _mm_subs_pi16(logmax_num_re1,logmax_den_re1);*/
+   // LLR of second bit [L2(1), L2(2), L2(3), L2(4)]
    y1r = _mm_subs_pi16(logmax_den_re1,logmax_num_re1);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+15;
    cnt_mul = cnt_mul+0;
 #endif
-#ifdef DEBUG_LLR
-   print_shorts2("y1r:",&y1r);
-#endif
 
-// Detection for y0i i.e.  third bit
+   // LLR of the third bit
+   // Bit = 1
    xmm0=_mm_max_pi16(bit_met_m3_p1,bit_met_m3_p3);
    xmm1=_mm_max_pi16(bit_met_m3_m1,bit_met_m3_m3);
    xmm2=_mm_max_pi16(bit_met_p3_p1,bit_met_p3_p3);
@@ -3785,6 +3656,7 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    xmm5=_mm_max_pi16(xmm2,xmm3);
    logmax_num_im0=_mm_max_pi16(xmm4,xmm5);
 
+   // Bit = 0
    xmm0=_mm_max_pi16(bit_met_m1_p1,bit_met_m1_p3);
    xmm1=_mm_max_pi16(bit_met_m1_m1,bit_met_m1_m3);
    xmm2=_mm_max_pi16(bit_met_p1_p1,bit_met_p1_p3);
@@ -3793,16 +3665,16 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    xmm5=_mm_max_pi16(xmm2,xmm3);
    logmax_den_im0=_mm_max_pi16(xmm4,xmm5);
    /*y0i = _mm_subs_pi16(logmax_num_im0,logmax_den_im0);*/
+   // LLR of third bit [L3(1), L3(2), L3(3), L3(4)]
    y0i = _mm_subs_pi16(logmax_den_im0,logmax_num_im0);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+15;
    cnt_mul = cnt_mul+0;
 #endif
-#ifdef DEBUG_LLR
-   print_shorts2("y0i:",&y0i);
-#endif
 
-// Detection for y1i i.e.  fourth bit
+   // LLR of the fourth bit
+   // Bit = 1
    xmm0=_mm_max_pi16(bit_met_p1_m3,bit_met_p3_m3);
    xmm1=_mm_max_pi16(bit_met_m1_m3,bit_met_m3_m3);
    xmm2=_mm_max_pi16(bit_met_p1_p3,bit_met_p3_p3);
@@ -3811,6 +3683,7 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    xmm5=_mm_max_pi16(xmm2,xmm3);
    logmax_num_im1=_mm_max_pi16(xmm4,xmm5);
 
+   // Bit = 0
    xmm0=_mm_max_pi16(bit_met_p1_m1,bit_met_p3_m1);
    xmm1=_mm_max_pi16(bit_met_m1_m1,bit_met_m3_m1);
    xmm2=_mm_max_pi16(bit_met_p1_p1,bit_met_p3_p1);
@@ -3819,26 +3692,19 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    xmm5=_mm_max_pi16(xmm2,xmm3);
    logmax_den_im1=_mm_max_pi16(xmm4,xmm5);
    /*y1i = _mm_subs_pi16(logmax_num_im1,logmax_den_im1);*/
+   // LLR of fourth bit [L4(1), L4(2), L4(3), L4(4)]
    y1i = _mm_subs_pi16(logmax_den_im1,logmax_num_im1);
+
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+15;
    cnt_mul = cnt_mul+0;
 #endif
-#ifdef DEBUG_LLR
-   print_shorts2("y1i:",&y1i);
-#endif
 
-#ifdef DEBUG_LLR
-   print_shorts2("y0r:",&y0r);
-   print_shorts2("y0i:",&y0i);
-   print_shorts2("y1r:",&y1r);
-   print_shorts2("y1i:",&y1i);
-#endif
-
-   xmm0 = _mm_unpacklo_pi16(y0r,y0i);// y0r has first bit LLRs of 4 complex samples
-   xmm1 = _mm_unpackhi_pi16(y0r,y0i);
-   xmm2 = _mm_unpacklo_pi16(y1r,y1i);
-   xmm3 = _mm_unpackhi_pi16(y1r,y1i);
+   // Pack LLRs in output
+   xmm0 = _mm_unpacklo_pi16(y0r,y0i); // = [L1(1), L3(1), L1(2), L3(2)]
+   xmm1 = _mm_unpackhi_pi16(y0r,y0i); // = [L1(3), L3(3), L1(4), L3(4)]
+   xmm2 = _mm_unpacklo_pi16(y1r,y1i); // = [L2(1), L4(1), L2(2), L4(2)]
+   xmm3 = _mm_unpackhi_pi16(y1r,y1i); // = [L2(3), L4(3), L2(4), L4(4)]
 
    /*stream0_64_out[2*i+0] = _mm_unpacklo_pi32(xmm0,xmm2);
    stream0_64_out[2*i+1] = _mm_unpackhi_pi32(xmm0,xmm2);
@@ -3851,12 +3717,6 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    stream0_64_out[2*i+3] = _mm_unpackhi_pi16(xmm1,xmm3);
    /*end*/
 
-#ifdef DEBUG_LLR
-   print_shorts2("stream0_64_out[2*i+0]:",&stream0_64_out[2*i+0]);
-   print_shorts2("stream0_64_out[2*i+1]:",&stream0_64_out[2*i+1]);
-   print_shorts2("stream0_64_out[2*i+2]:",&stream0_64_out[2*i+2]);
-   print_shorts2("stream0_64_out[2*i+3]:",&stream0_64_out[2*i+3]);
-#endif
   }
 
 #ifdef COMPLEXITY_MEASUREMENT
@@ -3864,6 +3724,7 @@ void qam16_qam16_mu_mimo(short *stream0_in,
 #endif
   _mm_empty();
   _m_empty();
+
 }
 
 /* 
@@ -5877,7 +5738,18 @@ void qpsk_qpsk_prec(short *stream0_in,
 		    short *rho01,
 		    int length
 		    ) {
-  
+
+    /* This function computes the LLRs of stream 0 (s_1) in presence of the interfering stream 1 (s_2) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
+
+Parameters:
+stream0_in = Matched filter output y1' = (h1*g1)*y1, not normalized by \sqrt{2}
+stream1_in = Matched filter output y2' = (h1*g2)*y1, not normalized by \sqrt{2}
+stream0_out = 
+rho01 = Correlation between the two effective channels \rho_{12} = (h1*g1)*(h1*g2), not normalized by 2
+length = number of resource elements
+     */
+
+
 #ifdef COMPLEXITY_MEASUREMENT
   short cnt_add = 0; // counter of real additions
   short cnt_mul = 0;
@@ -5888,7 +5760,7 @@ void qpsk_qpsk_prec(short *stream0_in,
   __m64 *stream1_64_in = (__m64 *)stream1_in;
   __m64 *stream0_64_out = (__m64 *)stream0_out;
 
-  int i;
+  int i,ll;
   
 #ifdef COMPLEXITY_MEASUREMENT
   printf("length=%d\n", length);
@@ -5904,175 +5776,165 @@ void qpsk_qpsk_prec(short *stream0_in,
     cnt_mul = cnt_mul+4*2;       // h2'*h1
 #endif
 
-    // STREAM 0
-
-
+    // compute \rho/4 and \rho*/4
     xmm0 = rho01_64[i];
     xmm1 = rho01_64[i+1];
     
-    //        print_shorts2("rho01_0:",&xmm0);
-    //        print_shorts2("rho01_1:",&xmm1);    
-    
-      // put (rho_r + rho_i)/4 in rho_rpi
-      // put (rho_r - rho_i)/4 in rho_rmi
-       
-    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));    
+    // store [Re(rho) + Im(rho)]/4 in rho_rpi
+    // store [Re(rho) - Im(rho)]/4 in rho_rmi       
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8); // _MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8); // _MM_SHUFFLE(0,2,1,3));    
         
     xmm2 = _mm_unpacklo_pi32(xmm0,xmm1);
     xmm3 = _mm_unpackhi_pi32(xmm0,xmm1);
      
-    rho_rpi = _mm_adds_pi16(xmm2,xmm3);
-    rho_rmi = _mm_subs_pi16(xmm2,xmm3);
+    rho_rpi = _mm_adds_pi16(xmm2,xmm3); // rho = Re(rho) + Im(rho)
+    rho_rmi = _mm_subs_pi16(xmm2,xmm3); // rho*= Re(rho) - Im(rho)
+
+    // divide by 4
+    rho_rpi = _mm_srai_pi16(rho_rpi,2);
+    rho_rmi = _mm_srai_pi16(rho_rmi,2);
+
+    // divide by sqrt(2)
+    rho_rpi = _mm_mulhi_pi16(rho_rpi,ONE_OVER_SQRT_2);
+    rho_rmi = _mm_mulhi_pi16(rho_rmi,ONE_OVER_SQRT_2);
+    rho_rpi = _mm_slli_pi16(rho_rpi,1);
+    rho_rmi = _mm_slli_pi16(rho_rmi,1);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+2;
 #endif
     
-    rho_rpi = _mm_srai_pi16(rho_rpi,2);
-    rho_rmi = _mm_srai_pi16(rho_rmi,2);
-    /*print_shorts2("rho_rpi:",&rho_rpi);
-      print_shorts2("rho_rmi:",&rho_rmi);*/
+    // Compute LLR for first bit of stream 0
 
-    //        print_shorts2("rho_rpi/4:",&rho_rpi);
-    //        print_shorts2("rho_rmi/4:",&rho_rmi);    
-
+    // Compute real and imaginary parts of MF output for stream 0
     xmm0 = stream0_64_in[i];
     xmm1 = stream0_64_in[i+1];
 
-    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8); //_MM_SHUFFLE(0,2,1,3));
     
-    y0r  = _mm_unpacklo_pi32(xmm0,xmm1);
-    y0r_over2  = _mm_srai_pi16(y0r,1);
-    y0i  = _mm_unpackhi_pi32(xmm0,xmm1);
-    y0i_over2  = _mm_srai_pi16(y0i,1);
-    /*print_shorts2("y0r_over2:",&y0r_over2);
-      print_shorts2("y0i_over2:",&y0i_over2);*/
+    y0r  = _mm_unpacklo_pi32(xmm0,xmm1); // = [y0r(1),y0r(2),y0r(3),y0r(4)]
+    y0r_over2  = _mm_srai_pi16(y0r,1);   // divide by 2                    
+    y0i  = _mm_unpackhi_pi32(xmm0,xmm1); // = [y0i(1),y0i(2),y0i(3),y0i(4)]
+    y0i_over2  = _mm_srai_pi16(y0i,1);   // divide by 2
 
+    // Compute real and imaginary parts of MF output for stream 1
     xmm0 = stream1_64_in[i];
     xmm1 = stream1_64_in[i+1];
     
     xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));
     xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    y1r  = _mm_unpacklo_pi32(xmm0,xmm1);
-    y1r_over2  = _mm_srai_pi16(y1r,1);
-    y1i  = _mm_unpackhi_pi32(xmm0,xmm1);
-    y1i_over2  = _mm_srai_pi16(y1i,1);
-    /*print_shorts2("y1r_over2:",&y1r_over2);
-    print_shorts2("y1i_over2:",&y1i_over2);*/
 
-    //   print_shorts2("y0r:",&y0r);
-    //   print_shorts2("y01:",&y0i);        
-    //   print_shorts2("y1r:",&y1r);
-    //   print_shorts2("y11:",&y1i);        
-    
-    // Detection for y0r
+    y1r  = _mm_unpacklo_pi32(xmm0,xmm1); // = [y1r(1),y1r(2),y1r(3),y1r(4)]
+    y1r_over2  = _mm_srai_pi16(y1r,1);   // divide by 2                    
+    y1i  = _mm_unpackhi_pi32(xmm0,xmm1); // = [y1i(1),y1i(2),y1i(3),y1i(4)]
+    y1i_over2  = _mm_srai_pi16(y1i,1);   // divide by 2                    
+
+    // Compute the terms for the LLR of first bit
     
     xmm0 = _mm_xor_si64(xmm0,xmm0);   // ZERO
     
+    // 1 term for nominator of LLR
     xmm3 = _mm_subs_pi16(y1r_over2,rho_rpi);
-    abs_pi16(xmm3,xmm0,A,xmm1);
-    xmm2 = _mm_adds_pi16(A,y0i_over2);
+    abs_pi16(xmm3,xmm0,A,xmm1); // A = |y1r/2 - rho/4|
+    xmm2 = _mm_adds_pi16(A,y0i_over2); // = |y1r/2 - rho/4| + y0i/2
     xmm3 = _mm_subs_pi16(y1i_over2,rho_rmi);
-    abs_pi16(xmm3,xmm0,B,xmm1);
-    logmax_num_re0 = _mm_adds_pi16(B,xmm2); 
+    abs_pi16(xmm3,xmm0,B,xmm1); // B = |y1i/2 - rho*/4|
+    logmax_num_re0 = _mm_adds_pi16(B,xmm2); // = |y1r/2 - rho/4|+|y1i/2 - rho*/4| + y0i/2
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+4;
 #endif
-    //        print_shorts2("logmax_num_re:",&logmax_num_re0);
-
+    // 2 term for nominator of LLR
     xmm3 = _mm_subs_pi16(y1r_over2,rho_rmi); 
-    abs_pi16(xmm3,xmm0,C,xmm1);       
-    xmm2 = _mm_subs_pi16(C,y0i_over2); 
+    abs_pi16(xmm3,xmm0,C,xmm1); // C = |y1r/2 - rho*/4|       
+    xmm2 = _mm_subs_pi16(C,y0i_over2); // = |y1r/2 - rho*/4| - y0i/2
     xmm3 = _mm_adds_pi16(y1i_over2,rho_rpi); 
-    abs_pi16(xmm3,xmm0,D,xmm1);       
-    xmm2 = _mm_adds_pi16(xmm2,D); 
-    logmax_num_re0 = _mm_max_pi16(logmax_num_re0,xmm2);  
-    /*print_shorts2("logmax_num_re0:",&logmax_num_re0);*/
+    abs_pi16(xmm3,xmm0,D,xmm1); // D = |y1i/2 + rho/4|      
+    xmm2 = _mm_adds_pi16(xmm2,D); // |y1r/2 - rho*/4| + |y1i/2 + rho/4| - y0i/2
+    logmax_num_re0 = _mm_max_pi16(logmax_num_re0,xmm2);  // max, numerator finished
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+5;
 #endif
-    //        print_shorts2("logmax_num_re:",&logmax_num_re0);
 
+    // 1 term for denominator of LLR
     xmm3 = _mm_adds_pi16(y1r_over2,rho_rmi); 
-    abs_pi16(xmm3,xmm0,E,xmm1);       
-    xmm2 = _mm_adds_pi16(E,y0i_over2); 
+    abs_pi16(xmm3,xmm0,E,xmm1); // E = |y1r/2 + rho*/4|
+    xmm2 = _mm_adds_pi16(E,y0i_over2); // = |y1r/2 + rho*/4| + y0i/2
     xmm3 = _mm_subs_pi16(y1i_over2,rho_rpi); 
-    abs_pi16(xmm3,xmm0,F,xmm1);       
-    logmax_den_re0 = _mm_adds_pi16(F,xmm2);
+    abs_pi16(xmm3,xmm0,F,xmm1); // F = |y1i/2 - rho/4|
+    logmax_den_re0 = _mm_adds_pi16(F,xmm2); // = |y1r/2 + rho*/4| + |y1i/2 - rho/4| + y0i/2
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+4;
 #endif
-    //        print_shorts2("logmax_den_re:",&logmax_den_re0);
-    
+    // 2 term for denominator of LLR
     xmm3 = _mm_adds_pi16(y1r_over2,rho_rpi); 
-    abs_pi16(xmm3,xmm0,G,xmm1);       
-    xmm2 = _mm_subs_pi16(G,y0i_over2); 
+    abs_pi16(xmm3,xmm0,G,xmm1); // G = |y1r/2 + rho/4|      
+    xmm2 = _mm_subs_pi16(G,y0i_over2); // = |y1r/2 + rho/4| - y0i/2
     xmm3 = _mm_adds_pi16(y1i_over2,rho_rmi); 
-    abs_pi16(xmm3,xmm0,H,xmm1);       
-    xmm2 = _mm_adds_pi16(xmm2,H); 
+    abs_pi16(xmm3,xmm0,H,xmm1); // H = |y1i/2 + rho*/4|      
+    xmm2 = _mm_adds_pi16(xmm2,H); // = |y1r/2 + rho/4| + |y1i/2 + rho*/4| - y0i/2
+    logmax_den_re0 = _mm_max_pi16(logmax_den_re0,xmm2); // max, denominator finished
 
-    logmax_den_re0 = _mm_max_pi16(logmax_den_re0,xmm2);
-    /*print_shorts2("logmax_den_re0:",&logmax_den_re0);*/
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+5;
 #endif
-    //        print_shorts2("logmax_den_re:",&logmax_den_re0);
 
-    // Detection for y0i
-    
+    // Compute the terms for the LLR of first bit    
+
+    // 1 term for nominator of LLR
     xmm2 = _mm_adds_pi16(A,y0r_over2); 
-    logmax_num_im0 = _mm_adds_pi16(B,xmm2); 
+    logmax_num_im0 = _mm_adds_pi16(B,xmm2); // = |y1r/2 - rho/4| + |y1i/2 - rho*/4| + y0r/2
     
+    // 2 term for nominator of LLR
     xmm2 = _mm_subs_pi16(E,y0r_over2); 
-    xmm2 = _mm_adds_pi16(xmm2,F); 
-    
-    logmax_num_im0 = _mm_max_pi16(logmax_num_im0,xmm2);
-    /*print_shorts2("logmax_num_im0:",&logmax_num_im0);*/
+    xmm2 = _mm_adds_pi16(xmm2,F); // = |y1r/2 + rho*/4| + |y1i/2 - rho/4| - y0r/2    
+
+    logmax_num_im0 = _mm_max_pi16(logmax_num_im0,xmm2); // max, nominator finished
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+5;
 #endif
+
+    // 1 term for denominator of LLR
     xmm2 = _mm_adds_pi16(C,y0r_over2); 
-    logmax_den_im0 = _mm_adds_pi16(D,xmm2); 
-    
+    logmax_den_im0 = _mm_adds_pi16(D,xmm2); // = |y1r/2 - rho*/4| + |y1i/2 + rho/4| - y0r/2
+
+    // 2 term for denominator of LLR
     xmm2 = _mm_subs_pi16(G,y0r_over2); 
-    xmm2 = _mm_adds_pi16(xmm2,H); 
+    xmm2 = _mm_adds_pi16(xmm2,H); // = |y1r/2 + rho/4| + |y1i/2 + rho*/4| - y0r/2
     
-    logmax_den_im0 = _mm_max_pi16(logmax_den_im0,xmm2);  
-    //print_shorts2("logmax_den_im0:",&logmax_den_im0);
+    logmax_den_im0 = _mm_max_pi16(logmax_den_im0,xmm2);  // max, denominator finished
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+5;
 #endif
+
+    // LLR of first bit [L1(1), L1(2), L1(3), L1(4)]
     y0r = _mm_adds_pi16(y0r,logmax_num_re0);
     y0r = _mm_subs_pi16(y0r,logmax_den_re0);
     
+    // LLR of second bit [L2(1), L2(2), L2(3), L2(4)]
     y0i = _mm_adds_pi16(y0i,logmax_num_im0);
     y0i = _mm_subs_pi16(y0i,logmax_den_im0);
+
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+4;
 #endif
-    /*print_shorts2("y0r:",&y0r);    
-      print_shorts2("y0i:",&y0i);*/    
-    stream0_64_out[i] = _mm_unpacklo_pi16(y0r,y0i);
-    if (i<((length>>1) - 1))
-      stream0_64_out[i+1] = _mm_unpackhi_pi16(y0r,y0i);
+    
+    stream0_64_out[i] = _mm_unpacklo_pi16(y0r,y0i); // = [L1(1), L2(1), L1(2), L2(2)]
+    if (i<((length>>1) - 1)) // false if only 2 REs remain
+      stream0_64_out[i+1] = _mm_unpackhi_pi16(y0r,y0i);       
     
   }
-
-  /*
-  print_shorts2("rho01_64[i]:",rho01_64);
-  print_shorts2("rho01_64[i+1]:",rho01_64+1);
-  print_shorts2("stream0_64_in[i]:",stream0_64_in);
-  print_shorts2("stream0_64_in[i+1]:",stream0_64_in+1);
-  print_shorts2("stream1_64_in[i]:",stream1_64_in);
-  print_shorts2("stream1_64_in[i+1]:",stream1_64_in+1);
-  print_shorts2("stream0_64_out[i]:",stream0_64_out);    
-  print_shorts2("stream0_64_out[i+1]:",stream0_64_out+1);    
-  */
     
 #ifdef COMPLEXITY_MEASUREMENT
   printf("Measured cx (per RE) in qpsk_qpsk_prec function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
 #endif
+
   _mm_empty();
   _m_empty();
 
@@ -7588,7 +7450,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  else if ((rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
 	    skip_half=2;
 	}
-	printf("rb %d: alloc %d skip_half %d (rxF %p, rxF_ext %p)\n",rb,rb_alloc_ind,skip_half,rxF,rxF_ext);
+    //	printf("rb %d: alloc %d skip_half %d (rxF %p, rxF_ext %p)\n",rb,rb_alloc_ind,skip_half,rxF,rxF_ext);
 
 	if (rb_alloc_ind==1) {
 
@@ -8003,8 +7865,8 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
       mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
       //       	print_ints("c0",&mmtmpD2);
       //	print_ints("c1",&mmtmpD3);
-      dl_ch_rho128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-      
+      dl_ch_rho128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);      
+
       //print_shorts("rx:",dl_ch128_2);
       //print_shorts("ch:",dl_ch128);
       //print_shorts("pack:",rho128);
@@ -8026,6 +7888,12 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
       //print_shorts("rx:",dl_ch128_2+1);
       //print_shorts("ch:",dl_ch128+1);
       //print_shorts("pack:",rho128+1);	
+      /*
+      short *D0 = (short *) &dl_ch_rho128[0];
+      short *D1 = (short *) &dl_ch_rho128[1];
+      printf("rho = %d %d %d %d %d %d %d %d\n",D0[0],D0[1],D0[2],D0[3],D0[4],D0[5],D0[6],D0[7]);
+      printf("rho = %d %d %d %d %d %d %d %d\n",D1[0],D1[1],D1[2],D1[3],D1[4],D1[5],D1[6],D1[7]);
+      */
 
       if (pilots==0) {  
 	// multiply by conjugated channel
@@ -8045,7 +7913,11 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
 	//print_shorts("rx:",dl_ch128_2+2);
 	//print_shorts("ch:",dl_ch128+2);
 	//print_shorts("pack:",rho128+2);
-	
+	/*
+    short *D2 = (short *) &dl_ch_rho128[2];      
+    printf("rho = %d %d %d %d %d %d %d %d\n",D2[0],D2[1],D2[2],D2[3],D2[4],D2[5],D2[6],D2[7]);
+    */
+
 	dl_ch128+=3;
 	dl_ch128i+=3;
 	dl_ch_rho128+=3;
@@ -8889,7 +8761,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 				     unsigned char output_shift,
 				     unsigned char dl_power_off) {
   
-  unsigned short rb,Nre;
+    unsigned short rb,Nre,ll;
   __m128i *dl_ch128_0,*dl_ch128_1,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
   unsigned char aarx=0,symbol_mod,pilots=0;
   int precoded_signal_strength=0,rx_power_correction;
@@ -8966,18 +8838,19 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 	prec2A_128(pmi_ext[rb],&dl_ch128_0[2],&dl_ch128_1[2]); 
 	//print_shorts("prec(ch0,ch1):",&dl_ch128_0[2]);      
       }
+      
 
       //#endif      
 
       if (mod_order>2) {  
 	// get channel amplitude if not QPSK
 	
-	mmtmpD0 = _mm_madd_epi16(dl_ch128_0[0],dl_ch128_0[0]);
-	
+	mmtmpD0 = _mm_madd_epi16(dl_ch128_0[0],dl_ch128_0[0]);	
 	mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
 	
 	mmtmpD1 = _mm_madd_epi16(dl_ch128_0[1],dl_ch128_0[1]);
 	mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        
 	mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
 	
 	dl_ch_mag128[0] = _mm_unpacklo_epi16(mmtmpD0,mmtmpD0);
@@ -8995,6 +8868,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 	if (pilots==0) {
 	  mmtmpD0 = _mm_madd_epi16(dl_ch128_0[2],dl_ch128_0[2]);
 	  mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+      
 	  mmtmpD1 = _mm_packs_epi32(mmtmpD0,mmtmpD0);
 	  
 	  dl_ch_mag128[2] = _mm_unpacklo_epi16(mmtmpD1,mmtmpD1);
@@ -9078,7 +8952,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
       //	print_shorts("rx:",rxdataF128+2);
       //	print_shorts("ch:",dl_ch128+2);
       //      	print_shorts("pack:",rxdataF_comp128+2);
-      
+
 	dl_ch128_0+=3;
 	dl_ch128_1+=3;
 	dl_ch_mag128+=3;
@@ -10459,6 +10333,122 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
   _m_empty();
 
 }
+
+//compute average channel_level of effective (precoded) channel
+void dlsch_channel_level_prec(int **dl_ch_estimates_ext,
+                              LTE_DL_FRAME_PARMS *frame_parms,
+                              unsigned char *pmi_ext,
+                              int *avg,
+                              u8 symbol_mod,
+                              unsigned short nb_rb){
+
+  short rb;
+  unsigned char aatx,aarx,nre=12;
+  __m128i *dl_ch128_0,*dl_ch128_1, dl_ch128_0_tmp, dl_ch128_1_tmp;
+  
+  //clear average level
+  avg128D = _mm_xor_si128(avg128D,avg128D);
+  // 5 is always a symbol with no pilots for both normal and extended prefix
+
+  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
+      dl_ch128_0 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
+      dl_ch128_1 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+
+      for (rb=0;rb<nb_rb;rb++) {
+
+          dl_ch128_0_tmp = _mm_load_si128(&dl_ch128_0[0]);
+          dl_ch128_1_tmp = _mm_load_si128(&dl_ch128_1[0]);
+
+          prec2A_128(pmi_ext[rb],&dl_ch128_0_tmp,&dl_ch128_1_tmp);
+          mmtmpD0 = _mm_madd_epi16(dl_ch128_0_tmp,dl_ch128_0_tmp);          
+          avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128_0_tmp,dl_ch128_0_tmp));
+
+          dl_ch128_0_tmp = _mm_load_si128(&dl_ch128_0[1]);
+          dl_ch128_1_tmp = _mm_load_si128(&dl_ch128_1[1]);          
+
+          prec2A_128(pmi_ext[rb],&dl_ch128_0_tmp,&dl_ch128_1_tmp);
+          mmtmpD1 = _mm_madd_epi16(dl_ch128_0_tmp,dl_ch128_0_tmp);          
+          avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128_0_tmp,dl_ch128_0_tmp));
+
+          if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+              dl_ch128_0+=2;	
+              dl_ch128_1+=2;
+          }
+          else {
+              dl_ch128_0_tmp = _mm_load_si128(&dl_ch128_0[2]);
+              dl_ch128_1_tmp = _mm_load_si128(&dl_ch128_1[2]);          
+
+              prec2A_128(pmi_ext[rb],&dl_ch128_0_tmp,&dl_ch128_1_tmp);
+              mmtmpD2 = _mm_madd_epi16(dl_ch128_0_tmp,dl_ch128_0_tmp);
+              avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128_0_tmp,dl_ch128_0_tmp));
+
+              dl_ch128_0+=3;	
+              dl_ch128_1+=3;
+          }          
+      }      
+  }
+
+  
+
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+      nre=8;
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+      nre=10;
+  else
+      nre=12;
+
+  avg[0] = (((int*)&avg128D)[0] + 
+            ((int*)&avg128D)[1] + 
+            ((int*)&avg128D)[2] + 
+            ((int*)&avg128D)[3])/(nb_rb*nre);
+
+  _mm_empty();
+  _m_empty();
+}
+
+//compute max channel_level of effective (precoded) channel
+void dlsch_channel_max_prec(int **dl_ch_estimates_ext,
+			 LTE_DL_FRAME_PARMS *frame_parms,
+			 int *avg,
+			 u8 symbol_mod,
+			 unsigned short nb_rb){
+
+  short rb;
+  __m128i *dl_ch128;
+  
+  //clear average level
+  avg128D = _mm_xor_si128(avg128D,avg128D);
+  
+  // 5 is always a symbol with no pilots for both normal and extended prefix
+
+  dl_ch128=(__m128i *)&dl_ch_estimates_ext[0][symbol_mod*frame_parms->N_RB_DL*12];
+  
+  for (rb=0;rb<nb_rb;rb++) {
+      
+      mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128[0]);
+      mmtmpD1 = _mm_madd_epi16(dl_ch128[1],dl_ch128[1]);
+      
+      _mm_max_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),avg128D);
+      _mm_max_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]),avg128D);
+
+      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+          dl_ch128+=2;	
+      }
+      else {
+          _mm_max_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),avg128D);
+
+          dl_ch128+=3;	
+      }
+  }
+
+  avg[0] = cmax(((int*)&avg128D)[0],((int*)&avg128D)[1]);
+  avg[0] = cmax(avg[0],((int*)&avg128D)[2]);
+  avg[0] = cmax(avg[0],((int*)&avg128D)[3]);
+
+  _mm_empty();
+  _m_empty();
+}
+
   
 int avg[4];
 
@@ -10658,17 +10648,18 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     avgs = 0;
     for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-	avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
+          avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
+    //	avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
+    
     lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + 2
       + log2_approx(frame_parms->nb_antennas_tx-1) //-1 because log2_approx counts the number of bits
       + log2_approx(frame_parms->nb_antennas_rx-1);
-    
+
     if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11) &&
 	(dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
 	(dlsch_ue[0]->dl_power_off==1)) // we are in TM 6
       lte_ue_pdsch_vars[eNB_id]->log2_maxh++;
-
 
     // this version here applies the factor .5 also to the extra terms. however, it does not work so well as the one above
     /* K = Nb_rx         in TM1 
@@ -10814,8 +10805,19 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id]->pmi_ext[0]);
 #endif
       
+      /* compute new log2_maxh for effective channel */
+#ifdef ENABLE_FXP      
+      if (first_symbol_flag==1) {
+          // effective channel of desired user is always stronger than interfering eff. channel
+          dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol_mod, nb_rb);
+          avgs = avg[0];
+
+          lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(log2_approx(avgs)-13,0);
+      }      
+#endif
+
 #ifdef ENABLE_FXP
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, first_symbol_flag, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, first_symbol_flag, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP
@@ -10928,8 +10930,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       printf("], pmi=%d\n", lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[0]);
 #endif
 
-#ifdef ENABLE_FXP      
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, first_symbol_flag, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
+#ifdef ENABLE_FXP
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, first_symbol_flag, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP      
@@ -11021,7 +11023,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				      get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
 				      nb_rb,
 				      lte_ue_pdsch_vars[eNB_id]->log2_maxh,
-				      dlsch_ue[0]->dl_power_off);
+				      1);
     }
   }
 
