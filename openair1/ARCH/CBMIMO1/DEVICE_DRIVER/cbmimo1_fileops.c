@@ -854,15 +854,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef RTAI_ENABLED
     if (openair_daq_vars.node_configured > 0) {
       openair_daq_vars.node_running = 0;
-#ifndef NOCARD_TEST
 
-      /*
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
 	bzero((void*) TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
       udelay(1000);
-      */
 
       openair_daq_vars.node_id = NODE;
+
+      /*
 #ifdef OPENAIR_LTE
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
@@ -873,9 +872,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL; 
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
+      */
 
       for (i=0;i<number_of_cards;i++) {
-	setup_regs(i,frame_parms);
+	//setup_regs(i,frame_parms);
 	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       }
 
@@ -892,7 +892,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       */
 
       udelay(1000);
- #endif // NOCARD_TEST
+
       /*
       if (vid == XILINX_VENDOR) {
 	printk("ADC0 (%p) :",(unsigned int *)RX_DMA_BUFFER[0][0]);
@@ -1056,8 +1056,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     // init instance count and copy its pointer to userspace
     copy_to_user((char *)arg,&inst_cnt_ptr,sizeof(s32*));
 
-    // enable the interrupts
     /*
+    // enable the DMA transfers
     for (i=0;i<number_of_cards;i++)
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
     */

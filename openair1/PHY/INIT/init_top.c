@@ -300,6 +300,10 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
     break;
   }
 
+  frame_parms->twiddle_fft      = twiddle_fft;
+  frame_parms->twiddle_ifft     = twiddle_ifft;
+  frame_parms->rev              = rev;
+
   return(1);
 }
 

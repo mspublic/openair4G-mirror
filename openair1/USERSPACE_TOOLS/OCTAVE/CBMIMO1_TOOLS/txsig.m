@@ -1,5 +1,5 @@
 dual_tx=1;
-oarf_config(0,1,dual_tx);
+oarf_config(0,1,dual_tx,255);
 
 s = zeros(76800,2);
 
@@ -43,7 +43,7 @@ error('unknown case')
 endswitch
 
 oarf_set_tx_gain(110,110,110,110);
-oarf_send_frame(0,s);
+oarf_send_frame(0,s,8);
 
 figure(1)
 hold off
