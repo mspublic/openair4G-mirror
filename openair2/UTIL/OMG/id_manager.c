@@ -117,9 +117,10 @@ int get_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager) {
 }
 
 void remove_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager) {
-  if(ID_manager->map_sumo2oai == NULL)
+  if(ID_manager->map_sumo2oai == NULL) {
+     printf("ID_Manager: remove_oaiID_by_SUMO: uninitialized map\n");
     return;
-
+  }
   else {
       ID_manager->map_sumo2oai =  remove_oai_entry(sumo_id, ID_manager->map_sumo2oai);
       if(ID_manager->map_oai2sumo !=NULL) {

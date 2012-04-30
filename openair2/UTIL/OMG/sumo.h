@@ -72,7 +72,7 @@ int start_sumo_generator(omg_global_param omg_param_list) ;
  * Note that the SUMO positions are kept by SUMO. One need to specifically query SUMO to get them.
  * \param cur_time a variable of type double that represents the current time
  */
-void update_sumo(double cur_time) ;
+void update_sumo_nodes(double cur_time) ;
 
 /**
  * \fn void get_sumo_positions(NodePtr node)
