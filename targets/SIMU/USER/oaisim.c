@@ -1144,8 +1144,8 @@ main (int argc, char **argv)
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
-    if ((frame % 10) == 0 ) { // call OMG every 1s 
-      update_nodes(oai_emulation.info.time_s); 
+    if ((frame % 100) == 0 ) { // call OMG every 1s 
+      update_nodes(oai_emulation.info.frame*10); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
       if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
