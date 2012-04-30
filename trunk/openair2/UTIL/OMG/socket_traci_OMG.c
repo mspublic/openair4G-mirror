@@ -52,7 +52,7 @@
 int connection_(char *hoststr,int portno){
         host = gethostbyname(hoststr);
 	
-	
+	printf("trying to connect to %s at the port %i \n",hoststr, portno);
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
              #ifdef STANDALONE 
    		 printf(" Socket Error\n");
@@ -74,7 +74,7 @@ int connection_(char *hoststr,int portno){
               #else
                  LOG_E(OMG, " Connection Error\n");
  	     #endif
-              
+
             return -1;
             
         }  

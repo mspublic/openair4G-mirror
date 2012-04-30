@@ -109,7 +109,7 @@ unsigned char readChar(){
        // if (tracker!=NULL)
 //	{
         	unsigned char hd = tracker->item;
-        	// printf("char: %d \n",(int)hd);        
+        	//printf("OMG char: %d \n",(int)hd);        
         	tracker = tracker->next;
                	return hd;
 	//}else
@@ -177,9 +177,14 @@ char * readString(){
 		descLen = len;
                 char *tmp = (char *)malloc(sizeof(char) * (len));
                 char *ret = tmp; // JHNOTE: added a pointer pointing at the head of the String
-		for (i; i < len; i++) {    
+		//printf("OMG ready to readString of length %d \n",len);
+                for (i; i < len; i++) {    
                        *tmp++ = (char) readChar();
 		}
+		*tmp++ = '\0'; // makes sure it's NUL terminated
+
+		//printf("OMG readString - %s \n",ret);
+		//printf("OMG readString - %s \n",tmp);
 		return ret; // the head is returned
 
 }
@@ -206,12 +211,13 @@ String_list readStringList(String_list vector){
    for (i; i < len; i++) {
       if (vector->string == NULL) {
          char *tmp = readString();
+         //printf("OMG - 1 SUMO ID: %s \n",tmp);
          vector->string = tmp;//readString();
       }
       else {
         entry = (String_list)malloc(sizeof(String_list));
         char *tmp = readString();
-        
+        //printf("OMG - SUMO ID: %s \n",tmp);
         entry->string = tmp;//readString();
         entry->next = NULL;
 

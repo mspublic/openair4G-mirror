@@ -102,12 +102,17 @@ void init(int max_sim_time) {
   // send request message
   sendExact(storageLength(storageStart));
   extractCommandStatus(receiveExact(), CMD_SUBSCRIBE_SIM_VARIABLE, description);
-  if (departed == NULL) 
+  if (departed == NULL) {
     departed = (String_list)malloc(sizeof(String_list)); // departed MUST point to HEAD
-
-  if (arrived == NULL) 
+    departed->string = NULL;
+    departed->next = NULL;
+  }
+  if (arrived == NULL) {
     arrived = (String_list)malloc(sizeof(String_list));  // arrived MUST point to HEAD
-
+    arrived->string = NULL;
+    arrived->next = NULL;
+  } 
+    
   processSubscriptions();
 
   reset();
@@ -144,10 +149,12 @@ void processSubscriptions() {
           int valueDataType = readUnsignedByte();
           if (ok&&cmdId==CMD_SUBSCRIBE_SIM_VARIABLE+0x10&&varID==VAR_DEPARTED_VEHICLES_IDS) {
                tmp_departed = readStringList(tmp_departed);
+               printf(" OMG Got departed cars\n");
                continue;
            }
            if (ok&&cmdId==CMD_SUBSCRIBE_SIM_VARIABLE+0x10&&varID==VAR_ARRIVED_VEHICLES_IDS) {
                tmp_arrived = readStringList(tmp_arrived);
+  		printf(" OMG Got arrived cars\n");
                continue;
            }
        }
@@ -217,17 +224,30 @@ void commandSimulationStep(double time)
 	// Send command
         writeUnsignedByte(1 + 1 + 4); // command length
 	writeUnsignedByte(CMD_SIMSTEP2); // look up TraCIConstants.h
-        writeInt((int)(time*1000)); // TraCI accepts time in milli seconds
+     //   writeInt((int)(time*1000)); // TraCI accepts time in milli seconds
+         writeInt((int)(time)); // TraCI accepts time in milli seconds
 	sendExact(storageLength(storageStart));
 
         extractCommandStatus(receiveExact(), CMD_SIMSTEP2, description);
-	
-         if (departed == NULL) 
+
+        if (departed == NULL) {
+    		departed = (String_list)malloc(sizeof(String_list)); // departed MUST point to HEAD
+    		departed->string = NULL;
+    		departed->next = NULL;
+  	}
+  	if (arrived == NULL) {
+    		arrived = (String_list)malloc(sizeof(String_list));  // arrived MUST point to HEAD
+    		arrived->string = NULL;
+    		arrived->next = NULL;
+  	}	
+
+        /* if (departed == NULL) 
    		departed = (String_list)malloc(sizeof(String_list));  // departed MUST point to HEAD
 
   	if (arrived == NULL) 
     		arrived = (String_list)malloc(sizeof(String_list));  // departed MUST point to HEAD
-        
+        */
+
         processSubscriptions();
 
 }  
