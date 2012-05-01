@@ -187,7 +187,7 @@ void update_IDs() {
   if(tmp_departed->string !=NULL) {
     char * tmp_string = malloc(sizeof(strlen(tmp_departed->string)));     
     strcpy(tmp_string, tmp_departed->string);
-    printf("OMG - 2 head is not null and value is: %s\n",tmp_string);
+    //printf("OMG - 2 head is not null and value is: %s\n",tmp_string);
     int OAI_ID = get_oaiID_by_SUMO(tmp_string, id_manager);
     if (OAI_ID ==-1) {
       if (!activate_and_map(tmp_string)) {
@@ -199,7 +199,7 @@ void update_IDs() {
     }
   }
   while (tmp_departed->next != NULL) {
-    //printf("2 main is not null \n");
+   // printf("OMG - 2 main is not null \n");
     //char tmp_string [strlen(tmp_departed->string)];
     char * tmp_string = malloc(sizeof(strlen(tmp_departed->string)));
     strcpy(tmp_string, tmp_departed->string);
@@ -219,7 +219,8 @@ void update_IDs() {
 
   if(tmp_arrived->string !=NULL) {
     char *tmp_string = tmp_arrived->string;
-     
+    //printf("OMG - 3 head is not null and value is: %s\n",tmp_arrived->string); 
+    
     if(!desactivate_and_unmap(tmp_string)) {
       printf("Could not locate the OAI node ID %s \n", tmp_string);
       //LOG_I(OMG, "Could not locate the OAI node ID %s \n", tmp_string);
@@ -276,8 +277,9 @@ bool activate_and_map(char *sumo_id) {
     printf("activating node %s \n",sumo_id);
   #else
     LOG_I(OMG, "activating node %s \n",sumo_id);
-  #endif		
-  NodePtr active_node = get_first_inactive_OAI_node(Node_Vector[SUMO], SUMO);
+  #endif	 
+  // TODO: So far, only UE can be SUMO mobile, but could change	
+  NodePtr active_node = get_first_inactive_OAI_node(Node_Vector[SUMO], UE);
   if(active_node != NULL) {  // found an inactive OAI node; will be mapped to SUMO
     active_node->mobile = 1; // now node is active in SUMO
 
@@ -323,9 +325,12 @@ void update_sumo_nodes(double cur_time) {
 
   // commandSimulationStep(1.0);// Advance the SUMO simulation by cur_time units
   
+  
    commandSimulationStep(cur_time);// Advance the SUMO simulation by cur_time units
-
+   
+   LOG_I(OMG, "--------Updated SUMO positions by %f [ms]--------\n",cur_time);
    update_IDs();  // both are in the  traCI client
+
 
 }
 
@@ -355,23 +360,23 @@ Node_list get_sumo_positions_updated(double cur_time) {
    #ifdef STANDALONE  
      printf("--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
    #else
-     LOG_D(OMG, "--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
+     LOG_I(OMG, "--------GET SUMO Mobility for a group of ACTIVE OAI nodes--------\n");
    #endif
  
   if (Node_Vector[SUMO] != NULL){
     Node_list tmp = Node_Vector[SUMO];
     while (tmp != NULL){
       if ((tmp->node->generator == SUMO) && (tmp->node->mobile == 1)) {  // OAI node MUST be active
-        //LOG_T(OMG, "found an active node with id %d \n", tmp->node->ID);
-	//LOG_D(OMG, "Old Positions \n");		
+        LOG_I(OMG, "found an active node with id %d \n", tmp->node->ID);
+	LOG_I(OMG, "Old Positions \n");		
 	//printf("Old Positions \n");
-        //display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+        display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
 
         update_sumo_positions(tmp->node);
 	
         //printf("New Positions \n");
-        //LOG_D(OMG, "New Positions \n");		
-	//display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
+        LOG_I(OMG, "New Positions \n");		
+	display_node_position(tmp->node->ID, tmp->node->generator, tmp->node->type ,tmp->node->mobile, tmp->node->X_pos, tmp->node->Y_pos );
       }
       tmp = tmp->next;
     }
@@ -385,7 +390,7 @@ NodePtr get_first_inactive_OAI_node(Node_list list, int node_type) {
   if (list !=NULL) {                             //start search
     current = list;
     while (current->next != NULL) {
-      if(current->node->mobile == 0) {
+      if((current->node->mobile == 0) && (current->node->type == node_type)) {
         return current->node;
       }
       current = current->next;

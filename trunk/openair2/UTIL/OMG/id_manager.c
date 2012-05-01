@@ -106,7 +106,7 @@ char* get_SumoID_by_OAI(int oai_id, IDManagerPtr ID_manager) {
 
 int get_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager) {
   if(ID_manager->map_sumo2oai == NULL) {
-     printf("ID_Manager: get_oaiID_by_SUMO: uninitialized map\n");
+     //printf("ID_Manager: get_oaiID_by_SUMO: uninitialized map\n");
      return -1;
 }
 

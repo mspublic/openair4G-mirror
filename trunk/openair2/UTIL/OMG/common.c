@@ -161,7 +161,7 @@ void display_node_list(Node_list Node_Vector){
       #ifdef STANDALONE  
         printf("Empty Node_list\n");
       #else
-        LOG_D(OMG, "Empty Node_list\n");
+        LOG_I(OMG, "Empty Node_list\n");
       #endif
     }	
     while (tmp != NULL){
