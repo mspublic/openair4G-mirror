@@ -142,7 +142,7 @@ int i = 0;
 for (i=(STATIC+1); i<MAX_NUM_MOB_TYPES; i++){ 
       if (Node_Vector[i] != NULL){
 	//printf(" Mob model to update is: %d \n ", i);
-       //LOG_D(OMG, " Mob model to update is: %d \n ", i); 
+        LOG_I(OMG, " Mob model to update is: %d \n ", i); 
         update_node_vector(i, cur_time);
       }
     }
@@ -194,7 +194,7 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
       Vector = Node_Vector[TRACE];
       break;   
     case SUMO:
-     // LOG_D(OMG,"getting positions from SUMO\n");
+      LOG_I(OMG,"getting positions from SUMO\n");
       //printf("getting positions from SUMO\n");
       Vector = get_sumo_positions_updated(cur_time);
      // Vector = Node_Vector[SUMO];

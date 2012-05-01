@@ -149,12 +149,12 @@ void processSubscriptions() {
           int valueDataType = readUnsignedByte();
           if (ok&&cmdId==CMD_SUBSCRIBE_SIM_VARIABLE+0x10&&varID==VAR_DEPARTED_VEHICLES_IDS) {
                tmp_departed = readStringList(tmp_departed);
-               printf(" OMG Got departed cars\n");
+               //printf(" OMG Got departed cars\n");
                continue;
            }
            if (ok&&cmdId==CMD_SUBSCRIBE_SIM_VARIABLE+0x10&&varID==VAR_ARRIVED_VEHICLES_IDS) {
                tmp_arrived = readStringList(tmp_arrived);
-  		printf(" OMG Got arrived cars\n");
+  		//printf(" OMG Got arrived cars\n");
                continue;
            }
        }
