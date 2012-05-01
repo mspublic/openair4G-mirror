@@ -47,9 +47,16 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
     
   int i;
   for (i=0;i<nb_nodes;i++) {
-    if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
+   if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
+      
       node_data[i]->x = input_node_list->node->X_pos;
+      // JHNOTE (01/05/2012): had to add this safety check as SUMO might return negative positions at the initialization (node 'just' at the boundaries)
+      if (node_data[i]->x <0.0)
+        node_data[i]->x = 0.0;
       node_data[i]->y = input_node_list->node->Y_pos;
+      if (node_data[i]->y <0.0)
+        node_data[i]->y = 0.0;
+      LOG_I(OCM, "extract_position: added node_data %d with position X: %f and Y: %f \n", i,input_node_list->node->X_pos, input_node_list->node->Y_pos );
       input_node_list = input_node_list->next;
     }
     else {

@@ -1138,7 +1138,7 @@ main (int argc, char **argv)
     }
       
     oai_emulation.info.frame = frame;   
-    oai_emulation.info.time_s += 0.01; // emu time in s, each frame lasts for 10 ms 
+    oai_emulation.info.time_s += 10; //0.01; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
     // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
     if ( (oai_emulation.info.n_frames_flag == 0) || (oai_emulation.info.n_frames >= 0xffff) ){ 
       frame %=(oai_emulation.info.n_frames-1);
@@ -1167,6 +1167,7 @@ main (int argc, char **argv)
     }
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time_s);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time_s);
+	
     // check if pipe is still open
     if ((oai_emulation.info.omv_enabled == 1) ){
       omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
@@ -1182,8 +1183,10 @@ main (int argc, char **argv)
 
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
+       LOG_I(OMG," extracting position of eNb...\n");
       extract_position(enb_node_list, enb_data, NB_eNB_INST);
-      extract_position(ue_node_list, ue_data, NB_UE_INST);
+       LOG_I(OMG," extracting position of UE...\n");
+      extract_position(ue_node_list, ue_data, NB_UE_INST); // JHNOTE: TODO MUST reflect the number of ACTIVE SUMO nodes (for example at the beginning, 1 node only is in SUMO...so, x others are just on standby...should not be considered).
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
