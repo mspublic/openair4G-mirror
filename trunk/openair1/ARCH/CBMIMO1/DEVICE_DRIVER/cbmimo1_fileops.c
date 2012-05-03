@@ -195,21 +195,24 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     printk("[openair][IOCTL] Allocating frame_parms\n");
 
     if (openair_daq_vars.node_configured > 0) {
-      printk("[openair][IOCTL] NODE ALREADY CONFIGURED Triggering reset of OAI firmware\n",openair_daq_vars.node_configured);
 
       if (vid == XILINX_VENDOR) {  // This is ExpressMIMO
+	printk("[openair][IOCTL] ExpressMIMO: Triggering reset of OAI firmware\n",openair_daq_vars.node_configured);
 	//exmimo_firmware_init();
 	//openair_dma(0,EXMIMO_PCIE_INIT);
 	ret = setup_regs(0,frame_parms);
 	/*
-	pci_dma_sync_single_for_device(pdev[0], 
-				    exmimo_pci_interface,
-				    1024, 
-				    PCI_DMA_TODEVICE);
+	  pci_dma_sync_single_for_device(pdev[0], 
+	  exmimo_pci_interface,
+	  1024, 
+	  PCI_DMA_TODEVICE);
 	*/
 	udelay(10000);
 	//printk("freq: %d gain: %d\n",exmimo_pci_interface->rf.rf_freq_rx0,exmimo_pci_interface->rf.rx_gain00);
 	openair_dma(0,EXMIMO_CONFIG);
+      }
+      else {
+	printk("[openair][IOCTL] CBMIMO1 does not support reconfiguration!\n");
       }
       /*
       udelay(10000);
@@ -484,7 +487,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       openair_daq_vars.node_id = PRIMARY_CH;
       //openair_daq_vars.dual_tx = 1;
-      
+
+      /*      
 #ifdef OPENAIR_LTE
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
@@ -492,6 +496,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #endif
+      */
       
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
@@ -736,6 +741,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       RRC_CONNECTION_FLAG = 0;
 #endif
       
+      /*
 #ifdef OPENAIR_LTE
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
@@ -743,6 +749,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #endif
+      */
       
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
@@ -869,13 +876,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #endif
+      */
 
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL; 
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
-      */
 
       for (i=0;i<number_of_cards;i++) {
-	//setup_regs(i,frame_parms);
+	setup_regs(i,frame_parms);
 	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       }
 
@@ -921,6 +928,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_GET_BUFFER:
 
     printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
+
+    /*
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
@@ -928,6 +937,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
     //    printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
+    */
 
     //openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME; //this puts the node into RX mode only for TDD, its ignored in FDD mode
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
@@ -1099,6 +1109,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     printk("[openair][IOCTL]     openair_START_FS4_TEST ...(%p)\n",(void *)arg);
     openair_daq_vars.node_id = PRIMARY_CH;
 
+    /*
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
@@ -1106,6 +1117,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
     printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
+    */
+
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
@@ -1154,6 +1167,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     openair_daq_vars.node_id = NODE;
 
+    /*
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
@@ -1161,6 +1175,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
     printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
+    */
+
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
@@ -1221,12 +1237,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     openair_daq_vars.node_id = PRIMARY_CH;
 
+    /*
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #else
     printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
+    */
     
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
@@ -1291,12 +1309,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //      printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
 
     openair_daq_vars.node_id = PRIMARY_CH;
+
+    /*
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #else
     printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
+    */
     
     openair_daq_vars.freq_info = 0 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
@@ -1665,6 +1686,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[IOCTL] Cooperation flag not set, PHY_vars_eNB_g not allocated!!!\n");
     break;
 
+  case openair_SET_RX_OFFSET:
+
+    for (i=0;i<number_of_cards;i++) 
+      pci_interface[i]->frame_offset = ((unsigned int *)arg)[0];
+
+    break;
 
   default:
     //----------------------

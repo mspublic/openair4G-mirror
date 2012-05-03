@@ -3,6 +3,8 @@ LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
 
 CFLAGS += -D__IN_RTAI__ -Wall -O2
 
+SRC = synctest.c condtest.c
+
 OBJ = synctest.o $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o
 #$(OPENAIR1_DIR)/PHY/INIT/lte_parms.o 
 
@@ -37,9 +39,18 @@ condtest: condtest.c
 synctest: $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) -o synctest
 
-run: all
-	rtai-load --verbose
+run: condtest
+	rtai-load condtest --verbose
+
+run_eNB: synctest
+	rtai-load eNB --verbose
+
+run_UE: synctest
+	rtai-load UE --verbose
 
 clean:
 	rm -rf condtest synctest
 	rm -rf $(OBJ)
+
+beautiful:
+	astyle --style=gnu -s2 $(SRC)
