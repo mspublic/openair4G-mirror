@@ -49,7 +49,7 @@ extern unsigned int mem_base;
 
 int oai_exit = 0;
 
-void handler(int sig) {
+void signal_handler(int sig) {
   void *array[10];
   size_t size;
 
@@ -183,7 +183,7 @@ int main(void)
     logInit();
 
     // to make a graceful exit when ctrl-c is pressed
-    signal(SIGSEGV, handler); 
+    signal(SIGSEGV, signal_handler); 
 
     // init the parameters
     frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
