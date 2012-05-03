@@ -131,6 +131,10 @@ ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
 endif
 
+ifdef STATIC
+LFLAGS += -static -L/usr/lib/libblas
+endif
+
 OBJ += openair_hw.o
 
 all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim
@@ -145,35 +149,35 @@ $(OBJ) : %.o : %.c
 
 dlsim : $(OBJ) dlsim.c
 	@echo "Compiling dlsim.c ..."
-	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
+	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS)
 
 framegen: $(OBJ) framegen.c
 	@echo "Compiling framegen.c"
-	@$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 pbchsim : $(OBJ) pbchsim.c
 	@echo "Compiling pbchsim.c"
-	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 pdcchsim : $(OBJ) pdcchsim.c
 	@echo "Compiling pdcchsim.c"
-	@$(CC) pdcchsim.c  -o pdcchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) pdcchsim.c  -o pdcchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 pucchsim : $(OBJ) pucchsim.c
 	@echo "Compiling pucchsim.c"
-	@$(CC) pucchsim.c  -o pucchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) pucchsim.c  -o pucchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 prachsim : $(OBJ) prachsim.c
 	@echo "Compiling prachsim.c"
-	@$(CC) prachsim.c  -o prachsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) prachsim.c  -o prachsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 ulsim : $(OBJ) ulsim.c #ulsim_form.c
 	@echo "Compiling [ulsim.c]"
-	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm  -lblas
+	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 syncsim : $(OBJ) syncsim.c
 	@echo "Compiling syncsim.c"
-	@$(CC) syncsim.c  -o syncsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) syncsim.c  -o syncsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 clean :
 	rm -f $(OBJ)

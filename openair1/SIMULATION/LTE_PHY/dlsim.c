@@ -204,7 +204,7 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
-//  fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
+  //fl_set_xyplot_ybounds(form->demod_out,-256,256);
 
   // DLSCH I/Q
   j=0;
@@ -223,8 +223,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot,I,Q,j,"","","");
-  //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
-  //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
+  fl_set_xyplot_xbounds(form->scatter_plot,-10000,10000);
+  fl_set_xyplot_ybounds(form->scatter_plot,-10000,10000);
 
   // DLSCH I/Q
   j=0;
@@ -243,8 +243,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot1,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot1,-2000,2000);
-  fl_set_xyplot_ybounds(form->scatter_plot1,-2000,2000);
+  fl_set_xyplot_xbounds(form->scatter_plot1,-10000,10000);
+  fl_set_xyplot_ybounds(form->scatter_plot1,-10000,10000);
 
   // DLSCH I/Q
   j=0;
@@ -263,8 +263,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-  //fl_set_xyplot_xbounds(form->scatter_plot2,-1000,1000);
-  //fl_set_xyplot_ybounds(form->scatter_plot2,-1000,1000);
+  fl_set_xyplot_xbounds(form->scatter_plot2,-10000,10000);
+  fl_set_xyplot_ybounds(form->scatter_plot2,-10000,10000);
 
 
   free(llr);
@@ -285,8 +285,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  randominit(0);
-  set_taus_seed(0);
+  srand(1);
+  randominit(1);
+  set_taus_seed(1);
   
   lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
 
@@ -1328,7 +1329,7 @@ int main(int argc, char **argv) {
 	  */
  
 	  //	  printf("Copying tx ..., nsymb %d (n_tx %d), awgn %d\n",nsymb,PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,awgn_flag);
-	  for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
+	  for (i=0;i<2*frame_parms->samples_per_tti;i++) {
 	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
 	      if (awgn_flag == 0) {
 		s_re[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + (i<<1)]);
@@ -1353,7 +1354,7 @@ int main(int argc, char **argv) {
 	  //Multipath channel
 	  if (awgn_flag == 0) {	
 	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel);
+			      2*frame_parms->samples_per_tti,hold_channel);
 	  }
 	  
 	  if(abstx){
@@ -1391,7 +1392,7 @@ int main(int argc, char **argv) {
 	  if (n_frames==1)
 	    printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 
-	  for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
+	  for (i=0; i<2*frame_parms->samples_per_tti; i++) {
 	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 	      //printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
 	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = 
@@ -1500,7 +1501,7 @@ int main(int argc, char **argv) {
 #endif
  
 
-	      if ((Ns==(2+(2*subframe))) && (l==0)) {
+	      if ((Ns==((2*subframe))) && (l==0)) {
 		lte_ue_measurements(PHY_vars_UE,
 				    subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti,
 				    1,
@@ -1820,7 +1821,7 @@ int main(int argc, char **argv) {
 	    }
 	  }
 	
-		// calculate uncoded BLER
+	  // calculate uncoded BLER
 	  /* uncoded_ber=0;
 	  for (i=0;i<coded_bits_per_codeword;i++) 
 	    if (PHY_vars_eNB->dlsch_eNB[0][0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i]<0)) {
@@ -1840,6 +1841,14 @@ int main(int argc, char **argv) {
 	    PHY_vars_UE->PHY_measurements.precoded_cqi_dB[eNB_id][0],
 	    PHY_vars_UE->PHY_measurements.precoded_cqi_dB[eNB_id_i][0]);
 	  */
+
+	  // clip the llrs
+	  for (i=0; i<coded_bits_per_codeword; i++) {
+	    if (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i]>127)
+	      PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i] = 127;
+	    else if (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i]<-128)
+	      PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i] = -128;
+	  }
 
 	  PHY_vars_UE->dlsch_ue[0][0]->rnti = n_rnti;
 	  dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
