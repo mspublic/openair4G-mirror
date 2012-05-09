@@ -138,7 +138,7 @@ help (void) {
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
-  printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:err) \n");
+  printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error) \n");
   printf
     ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
@@ -1433,6 +1433,9 @@ main (int argc, char **argv)
   }	//end of frame
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+
+//Perform KPI measurements
+kpi_gen();
 
   // relase all rx state
   if (ethernet_flag == 1) {

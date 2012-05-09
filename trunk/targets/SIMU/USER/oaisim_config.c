@@ -19,7 +19,7 @@ mapping log_level_names[] =
     {"emerg", LOG_EMERG},
     {"alert", LOG_ALERT},
     {"crit", LOG_CRIT},
-    {"err", LOG_ERR},
+    {"error", LOG_ERR},
     {"warn", LOG_WARNING},
     {"notice", LOG_NOTICE},
     {"info", LOG_INFO},

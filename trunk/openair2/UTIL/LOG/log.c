@@ -156,6 +156,14 @@ void logInit (void) {
     g_log->log_component[OTG].filelog = 1;
     g_log->log_component[OTG].filelog_name = "/tmp/otg.log";
 
+    g_log->log_component[OTG_LATENCY].name = "OTG_LATENCY";
+    g_log->log_component[OTG_LATENCY].level = LOG_FILE;
+    g_log->log_component[OTG_LATENCY].flag =  LOG_MED;
+    g_log->log_component[OTG_LATENCY].interval =  1;
+    g_log->log_component[OTG_LATENCY].fd = 0;
+    g_log->log_component[OTG_LATENCY].filelog = 1;
+    g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
+
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
     g_log->log_component[OCG].flag =  LOG_MED;
@@ -235,7 +243,7 @@ void logInit (void) {
     openlog(g_log->log_component[EMU].name, LOG_PID, g_log->config.facility);
   } 
   if (g_log->filelog) {
-    gfd = open(g_log->filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+    gfd = open(g_log->filelog_name, O_WRONLY | O_CREAT, 0666);
   }
   // could put a loop here to check for all comps
   for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){

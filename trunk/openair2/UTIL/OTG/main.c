@@ -49,7 +49,6 @@
 #include "otg.h"
 #include "otg_tx_socket.h"
 #include "otg_vars.h"
-#include "otg_config.h"
 #include "traffic_config.h"
 
 #include "../MATH/oml.h"
@@ -149,8 +148,8 @@ int main_below_ip()
 int i, j, k, l, rtt_owd ,rx_otg=0, simu_time=0, ctime=0, nb_round=0;
 float p;
 char *packet;
-char *rx_packet_out;
-
+int rx_packet_out;
+int pkt_size;
 printf(" max enb %d, max ue %d \n", NUMBER_OF_eNB_MAX, NUMBER_OF_UE_MAX);
 
 do {
@@ -175,8 +174,8 @@ nb_round=nb_round+1;
 						return(0);
 						}
 					LOG_I(OTG,"val :: ctime=%d\n", ctime);  
-							char *packet;				
-						packet=packet_gen(i, j, k, ctime);
+							char *packet=NULL;				
+						/*packet=packet_gen(i, j, k, ctime);*/ packet=packet_gen(i, j, ctime, &pkt_size);
 						
 												
 					
@@ -194,16 +193,17 @@ nb_round=nb_round+1;
 								otg_info->rx_pkt_owd[i][j]=rtt_owd; 
 								simu_time+=rtt_owd;
 								
-								rx_packet_out=check_packet(i, j, ctime, packet);
-								if (rx_packet_out==NULL)
-									LOG_I(OTG,"PKTS INFO:: DROPED\n"); 
-								else{
-									if (rx_packet_out!=NULL){ 
-										rx_packet_out=NULL;  					
-										free(rx_packet_out);
-									}
+								//rx_packet_out=check_packet(i, j, ctime, packet);
+ 								rx_packet_out=otg_rx_pkt(i,j, ctime, packet, pkt_size);
+								//if (rx_packet_out==NULL)
+								//	LOG_I(OTG,"PKTS INFO:: DROPED\n"); 
+								//else{
+								//	if (rx_packet_out!=NULL){ 
+								//		rx_packet_out=NULL;  					
+										free(packet);
+								//	}
 
-								}
+								//}
 
 								//Do not increase the ctime and simu_time with the one way delay.
 								ctime-=rtt_owd;
@@ -256,7 +256,7 @@ nb_round=nb_round+1;
 				for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
 					LOG_I(OTG,"SOCKET:: OTG emulation src=%d, dst=%d, state=%d \n", i, j, k);
 						ctime=0;
-						socket_packet_send(i, j, k, ctime);
+				//		socket_packet_send(i, j, k, ctime);
 				}
 			}
 		}
@@ -276,8 +276,8 @@ void config_traffic_type(char *traffic)
 {
 Application application;
 int i,j;
-	if (strcmp(traffic, "CBR")==0)
-		application=CBR;
+	if (strcmp(traffic, "SCBR")==0)
+		application=SCBR;
 
 	else if (strcmp(traffic, "OPENARENA")==0)
 		application=OPENARENA;
@@ -324,7 +324,7 @@ if (duration>0)
 }
 
 
-/*
+
 int main (int argc, char **argv){
 
 
@@ -448,9 +448,8 @@ return 0;
 
 }
 
-*/
 
-
+/*
 int main(void) {
 
 int i, min=40, max=1500, std_dev=100;
@@ -469,16 +468,16 @@ n = uniform_dist(min, max);
 //n =ceil(gamma_dist(0.5,25));
 //n =ceil(cauchy_dist(1,10));
 
-/*if ((n<min) || (n>max))
+if ((n<min) || (n>max))
  printf("number=%d out of range \n", n);
  else 
   {printf("gen_nb=%d \n", n);
 // printf("ceil gen_nb=%lf \n", ceil(n));
    }
-}*/
+}
 
 printf("%d\n", n);
 
 return 0;
     }
-
+*/

@@ -199,3 +199,60 @@ void kpi_gen() {
 }
 
 
+void add_log_metric(int src, int dst, int ctime, int metric, unsigned int label){
+ unsigned int i;
+ unsigned int j;
+ unsigned int k;
+ unsigned int node_actif=0;
+
+ switch (label) {
+ case OTG_LATENCY:
+   add_log_label(label, &start_log_latency);
+   break;
+ }
+
+ LOG_F(label,"%d ", ctime);
+  for (i=0; i<=(g_otg->num_nodes); i++){
+    for (j=0; j<=(g_otg->num_nodes); j++){
+    node_actif=0;
+      for (k=0; k<=(MAX_NUM_TRAFFIC_STATE); k++){
+        if (g_otg->idt_dist[i][j][k]>0 )
+	node_actif++; 
+      }
+
+      if ((node_actif>0) && ((i==src) && (j==dst)))
+          LOG_F(label,"%d ", metric);
+      if  ((node_actif>0) && ((i!=src) || (j!=dst)))
+          LOG_F(label,"%d ", 0);
+  }
+ }
+ LOG_F(label,"%d\n", metric);
+}
+
+
+
+void  add_log_label(unsigned int label, unsigned int * start_log_metric){
+ unsigned int i;
+ unsigned int j;
+ unsigned int k;
+ unsigned int node_actif=0;
+
+
+ if (*start_log_metric==0){
+ *start_log_metric=1;
+   LOG_F(label,"Time ");
+   for (i=0; i<=(g_otg->num_nodes); i++){
+     for (j=0; j<=(g_otg->num_nodes); j++){
+       node_actif=0;
+        for (k=0; k<=(MAX_NUM_TRAFFIC_STATE); k++){
+          if (g_otg->idt_dist[i][j][k]>0 )
+	    node_actif++; 
+      }
+      if (node_actif>0)
+        LOG_F(label,"%d-%d ", i, j);  
+    }
+   }
+   LOG_F(label,"Aggregate-Flow\n");
+ }
+}
+
