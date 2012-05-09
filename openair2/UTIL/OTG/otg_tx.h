@@ -154,7 +154,7 @@ void init_predef_traffic();
 
 
 
-/*! \fn void background_gen(int src, int dst, int ctime);
+/*! \fn int background_gen(int src, int dst, int ctime);
 * \brief manage idt and packet size for the backgrounf traffic. 
 * \param[in] src
 * \param[in] dst
@@ -163,6 +163,10 @@ void init_predef_traffic();
 * \note 
 * @ingroup  _otg
 */
-char * background_gen(int src, int dst, int ctime);
+int background_gen(int src, int dst, int ctime);
+
+
+
+int header_size_gen_background(int src);
 
 #endif

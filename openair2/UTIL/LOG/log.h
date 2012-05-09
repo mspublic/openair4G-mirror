@@ -223,7 +223,7 @@ extern "C" {
 
 //static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-  typedef enum {MIN_LOG_COMPONENTS=0, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PDCP, RRC, PERF,OIP, CLI, MSC, OCM, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, PHY, MAC, EMU, OCG, OMG,OPT,OTG,OTG_LATENCY, RLC, PDCP, RRC, PERF,OIP, CLI, MSC, OCM, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 

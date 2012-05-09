@@ -46,7 +46,7 @@
 packet_t *packet=NULL;
 int type_header=0;
 otg_hdr_t *otg_hdr_p;
-char *background_data=NULL;
+
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
 
@@ -180,20 +180,28 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
 
   //double idt;
   int size;
-  int flow_id=1;
+  unsigned int flow_id=1;
   //  char *header=NULL;
   //  otg_hdr_t * otg_hdr=NULL;
   char *buffer_tx=NULL;
   //HEADER_TYPE header_type;
   otg_hdr_info_t *otg_hdr_info_p;
   unsigned int  byte_tx_count=0; 
-  int state=ON_STATE; // default traffic state 
+  unsigned char state=ON_STATE; // default traffic state 
   int state_transition_prob=0;
   int hdr_size;
-  int buffer_size = 0;
+  unsigned int buffer_size = 0;
   *pkt_size = 0;
   set_ctime(ctime);
  //int background_size=0;
+  char *background_data;
+  unsigned int gen_pkts=0;
+  unsigned int background_ok=0; 
+  unsigned char flow;
+  unsigned int seq_num;
+  unsigned int flow_id_background=1;
+  unsigned int flag;
+
 
 	
   //LOG_I(OTG,"num_nodes_tx:: %d , seed:: %d \n", g_otg->num_nodes, g_otg->seed);
@@ -242,104 +250,88 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   }
     state =  otg_info->state[src];
 
-printf("INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n", src, dst, g_otg->application_type[src][dst], g_otg->idt_dist[src][dst][state], g_otg->size_dist[src][dst][state]);
+//printf("INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n", src, dst, g_otg->application_type[src][dst], g_otg->idt_dist[src][dst][state], g_otg->size_dist[src][dst][state]);
 
 //  LOG_D(OTG,"INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n", src, dst, g_otg->application_type[src][dst], g_otg->idt_dist[src][dst][state], g_otg->size_dist[src][dst][state]);
   
   if ((otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) >= otg_info->idt[src][dst] ) )) {
-  printf("Time To Transmit (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
-  LOG_D(OTG,"Time To Transmit (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
+  //printf("Time To Transmit (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
+  LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
     otg_info->ptime[src][dst]=ctime;	
     otg_info->idt[src][dst]=time_dist(src, dst, state); // update the idt for the next otg_tx
+    gen_pkts=1;
   }  //check if there is background traffic to generate
-  else if ( (background_gen(src, dst, ctime)) != NULL) {
-    //background_size=otg_info->size_background[src][dst] + sizeof(otg_hdr_info_t);
-		
-	packet= malloc(sizeof(*packet));
-	packet->header=header_gen(header_size_gen(src)); //???? to modify to random
-        packet->payload=background_data;
 
-//Serialization :: BACKGROUND
-	buffer_tx= (char*)malloc(strlen(packet->header) + strlen(packet->payload) + sizeof(otg_hdr_info_t)+ sizeof(otg_hdr_t));
-
-	otg_hdr_info_p = (otg_hdr_info_t *) (&buffer_tx[byte_tx_count]);
-    	otg_hdr_info_p->size = strlen(packet->header) + strlen(packet->payload) + sizeof(otg_hdr_info_t)+ sizeof(otg_hdr_t);
-	otg_hdr_info_p->flag = 0xbbbb;
-	byte_tx_count +=sizeof(otg_hdr_info_t);
-	otg_hdr_p = (otg_hdr_t *) (&buffer_tx[byte_tx_count]);
-  	otg_header_gen(flow_id, ctime, otg_info->seq_num_background[src][dst],type_header, state, strlen(packet->header) + strlen(packet->payload));
-	byte_tx_count += sizeof(otg_hdr_t);
-  	memcpy(&buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
-  	byte_tx_count += strlen(packet->header);	
-  	memcpy(&buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
-       *pkt_size = sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + strlen(packet->header) + strlen(packet->payload);
-
-       otg_info->tx_num_bytes_background[src][dst]+=  *pkt_size ; 
-       otg_info->tx_num_pkt_background[src][dst]+=1;
-       otg_info->seq_num_background[src][dst]+=1;
-
-       LOG_I(OTG,"PACKET SIZE: BACKGROUND TX [SRC %d][DST %d] :: time(%d), Seq num (%d), Total size (%d)\n", src, dst, ctime, otg_info->seq_num_background[src][dst], *pkt_size);
-
-	return buffer_tx;
-
-    }
-  else  
-    return NULL; // do not generate the packet, and keep the idt
-
+/*
+  else if  ((background_gen(src, dst, ctime) != 0) && (gen_pkts==0)) {
+    background_ok=1;
+  }
+*/
+  else{  
+   LOG_D(OTG,"Time To Transmit::NO (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]);
+   return NULL; // do not generate the packet, and keep the idt
+  }
+ 
   
   size=size_dist(src, dst, state); 
-printf("Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n", src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
+  //printf("Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n", src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
   // LOG_I(OTG,"Generate Packet for (Source= %d, Destination= %d,State= %d) , pkt size dist= %d, simu time= %d ,packet size=%d \n", src, dst, state, g_otg->size_dist[src][dst][state], otg_info->ctime, size);
   packet= malloc(sizeof(*packet));
   //LOG_I(OTG,"Payload size=%d\n",size);	  
-  packet->payload=payload_pkts(size);
-  //LOG_I(OTG,"packet_gen :: payload= (%d, %s) \n", size, packet->payload);
-  //LOG_D(OTG,"==============STEP 1: OTG PAYLOAD OK============== \n");		
-  packet->header=header_gen(header_size_gen(src));
+  packet->payload=payload_pkts(size);	
 
-
-  //LOG_I(OTG,"packet_gen :: protocol HEADER= (%d, %s) \n", strlen(packet->header),packet->header);
-  //LOG_D(OTG,"==============STEP 2: OTG protocol HEADER OK============== \n");
-  
   hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
 
+if (background_ok==0){
+  packet->header=header_gen(header_size_gen(src));
+  packet->payload=payload_pkts(size);
+  flag=0xffff;
+  flow=flow_id;
+  seq_num=otg_info->seq_num[src][dst];
+  otg_info->header_type[src][dst]=type_header;
+  otg_info->seq_num[src][dst]+=1;
   otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(packet->header) + strlen(packet->payload) ; 
   otg_info->tx_num_pkt[src][dst]+=1;
-	
+  }
+else{
+  packet->header=header_gen(header_size_gen_background(src)); // ??? to modify as a random 
+  packet->payload=payload_pkts(otg_info->size_background[src][dst]);
+  flag=0xbbbb;
+  flow=flow_id_background;
+  seq_num=otg_info->seq_num_background[src][dst];
+  otg_info->tx_num_bytes_background[src][dst]+=  hdr_size + strlen(packet->header) + strlen(packet->payload) ; 
+  otg_info->tx_num_pkt_background[src][dst]+=1;
+  otg_info->seq_num_background[src][dst]+=1;
+
+}
+
   
   // Serialization
   buffer_size = hdr_size + strlen(packet->header) + strlen(packet->payload);
   buffer_tx= (char*)malloc(buffer_size);
   otg_hdr_info_p = (otg_hdr_info_t *) (&buffer_tx[byte_tx_count]);
   otg_hdr_info_p->size = buffer_size;
-  otg_hdr_info_p->flag = 0xffff;
+  otg_hdr_info_p->flag = flag;
   byte_tx_count = sizeof(otg_hdr_info_t);
   otg_hdr_p = (otg_hdr_t *) (&buffer_tx[byte_tx_count]);
-  otg_header_gen(flow_id, ctime, otg_info->seq_num[src][dst],type_header, state, strlen(packet->header) + strlen(packet->payload));
+  otg_header_gen(flow, ctime, seq_num,strlen(packet->header), state, strlen(packet->payload));
   byte_tx_count += sizeof(otg_hdr_t);
-  //LOG_D(OTG,"==============STEP 3: OTG control HEADER OK========== \n");
+
   
   memcpy(&buffer_tx[byte_tx_count], packet->header, strlen(packet->header));
   byte_tx_count += strlen(packet->header);	
   memcpy(&buffer_tx[byte_tx_count], packet->payload, strlen(packet->payload));
-  //LOG_D(OTG,"==============STEP 4: PACKET OK============= \n");
-  
-  LOG_I(OTG,"PACKET SIZE TX [SRC %d][DST %d]:  time(%d), Seq num (%d), Total size (%d)\n", src, dst, ctime, otg_info->seq_num[src][dst], buffer_size);
+  byte_tx_count +=strlen(packet->payload);
 
 
-  //add stats
-  otg_info->header_type[src][dst]=type_header;
-  otg_info->seq_num[src][dst]+=1;
-  //end stats
-  
-  /* 
-  if (NULL != packet)
-    //free(packet);  									
-    if (NULL != packet->payload)
-      // free(packet->payload);
-      if (NULL != packet->header)	
-	//free(packet->header);
-	*/  
+
+  LOG_I(OTG,"PACKET SIZE TX [SRC %d][DST %d]: Flag (0x%x), time(%d), Seq num (%d), Total size (%d)\n", src, dst, flag, ctime, seq_num, byte_tx_count);
+
+/*LOG_I(OTG,"details::TX [SRC %d][DST %d]: Flag (0x%x), time(%d), Seq num (%d), Total size (%d), hdr(%d), header(%d), payload (%d) \n", src, dst, flag, ctime, seq_num, buffer_size, hdr_size , strlen(packet->header), strlen(packet->payload));
+
+printf("test_t TX [SRC %d][DST %d]: Flag (0x%x),header %d, (header+payload %d) %s%s \n", src, dst, flag, sizeof(otg_hdr_info_t)+sizeof(otg_hdr_t) , strlen(packet->header) + strlen(packet->payload), packet->header, packet->payload );
+*/
+ 
   *pkt_size = buffer_size;
   
   return buffer_tx;
@@ -371,8 +363,8 @@ type_header=0;
 		type_header+=2;
 	}
 
-printf(" src %d, version_HDR %d \n", src, size_header);
-//LOG_I(OTG,"version_ %d, %d \n", type_header, size_header);
+//printf(" src %d, version_HDR %d \n", src, size_header);
+LOG_I(OTG,"version_ %d, %d \n", type_header, size_header);
 
 return size_header;
 
@@ -421,7 +413,7 @@ void otg_header_gen(int flow_id, int ctime, int seq_num, int hdr_type, int state
   otg_hdr_p->state = state;
   otg_hdr_p->pkts_size = size;
 
-  LOG_D(OTG, " otg_hdr: HDR TYPE %i FLOW ID %i TIME %i  NUM SEQUENCE %i SIZE (PAYLOAD + HEADER) %i \n",
+  LOG_D(OTG, " otg_hdr: HDR TYPE %i FLOW ID %i TIME %i  NUM SEQUENCE %i SIZE (PAYLOAD) %i \n",
 	otg_hdr_p->hdr_type, otg_hdr_p->flow_id, otg_hdr_p->time, otg_hdr_p->seq_num,otg_hdr_p->pkts_size);
   
 }
@@ -510,7 +502,7 @@ printf("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->
        g_otg->ip_v[i] = 1;
        g_otg->idt_dist[i][j][0] = UNIFORM;
        g_otg->idt_dist[i][j][1] = EXPONENTIAL;
-       printf("OTG_CONFIG M2M_AP, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
+       LOG_I(OTG,"OTG_CONFIG M2M_AP, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
        g_otg->idt_min[i][j][0] =  100;
        g_otg->idt_min[i][j][1] =  0;
        g_otg->idt_max[i][j][0] =  500;
@@ -629,39 +621,59 @@ printf("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->
 }
 
 
-char* background_gen(int src, int dst, int ctime) { 
-
-  background_data=NULL;
-
-
-  //*size=100;
-
+int background_gen(int src, int dst, int ctime)
+{ 
 if (otg_info->idt_background[src][dst]==0){
-//*size=ceil(lognormal_dist(5.46,0.85));
-otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
+  //*size=ceil(lognormal_dist(5.46,0.85));
+   otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
    if (otg_info->size_background[src][dst]>1500)
-     otg_info->size_background[src][dst]=1500;
- otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
+       otg_info->size_background[src][dst]=1500;
 
+
+
+   otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
   //otg_info->idt_background[src][dst]=2;
 }
   LOG_I(OTG,"BACKGROUND TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
+  if (((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])  ){
+     LOG_I(OTG,"BACKGROUND TRAFFIC:: OK !!\n");
+     return 1;
+  }
+   else {
+     LOG_I(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d )\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
+     return 0;
+   }
 
-// if (otg_info->idt_background[src][dst]==(ctime-otg_info->ptime_background)){
-if (((ctime-otg_info->ptime_background) >  otg_info->idt_background[src][dst])  ){
-   LOG_I(OTG,"BACKGROUND TRAFFIC:: OK !!\n");
-   otg_info->ptime_background=ctime;
-   background_data=(char*)malloc((otg_info->size_background[src][dst])*sizeof(char));
-   background_data=random_string(otg_info->size_background[src][dst], STATIC_STRING, PAYLOAD_STRING);
-   LOG_I(OTG,"BACKGROUND TRAFFIC:: random_string= %s\n", background_data);
-  }
-  else {
-    LOG_I(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d )\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
-  background_data=NULL;
-  }
- return background_data;
 }
 
+
+
+int header_size_gen_background(src){
+ int size_header=0;
+  if(g_otg->trans_proto_background[src]==0)
+  g_otg->trans_proto_background[src]= rand() % (TCP_IPV6 - UDP_IPV4 + 1) + UDP_IPV4;
+
+ switch (g_otg->trans_proto_background[src]) {
+ case  UDP_IPV4:
+   size_header=HDR_IP_v4_MIN + HDR_UDP;
+ break;
+ case  UDP_IPV6:
+   size_header=HDR_IP_v6 + HDR_UDP;
+ break;
+ case  TCP_IPV4:
+   size_header=HDR_IP_v4_MIN + HDR_TCP;
+ break;
+ case  TCP_IPV6:
+   size_header=HDR_IP_v6 + HDR_TCP;
+ break;
+ default :
+   size_header=HDR_IP_v6 + HDR_TCP;
+}
+
+  LOG_I(OTG," [SRC %d]  BACKGROUND TRAFFIC:: size header%d \n", src, size_header);
+
+return size_header;
+}
 
 
 

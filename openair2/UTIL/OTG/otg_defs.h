@@ -212,6 +212,10 @@ typedef struct {
 
 	int  dst_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Destination port number, for the socket mode*/
 	char *dst_ip[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Destination IP address, for the socket mode*/
+
+	int trans_proto_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief define the transport protocol and IP version for background traffic*/
+
+
 }otg_t; 
 
 
@@ -222,7 +226,7 @@ typedef struct{
 	unsigned int seq_num; 	/*!< \brief Sequence Number, counter of data packets between tx and rx */  
 	unsigned char state; 	/*!< \brief state of node : on, off, or active */
 	unsigned char hdr_type; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
-	unsigned short pkts_size ;		/*!< \brief the size of payload + header */
+	unsigned short pkts_size;		/*!< \brief the size of payload + header */
 	//int payload_size;	/*!< \brief the size of the payload to transmit */
 	//int header_size; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 }__attribute__((__packed__)) otg_hdr_t;
@@ -282,7 +286,8 @@ typedef struct{
 	int rx_pkt_owd[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
 	int rx_owd_min[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  		/*!< \brief  One way delay min*/
 	int rx_owd_max[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay max*/
-	int nb_loss_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	int nb_loss_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Number of data packets losses*/
+	int owd_const[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  One way delay constant*/
 /*!< \brief KPI part: calculate the KPIs, total */ 
 	float tx_throughput[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Tx throughput: (size of transmitted data)/ctime*/ 
 	float rx_goodput[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  Rx goodput: (size of received data)/ctime*/
@@ -294,9 +299,9 @@ typedef struct{
         int rx_num_pkt_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background data packet in the tx */
 	int rx_num_bytes_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background bytes in the tx */
 
-	int rx_pkt_owd_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
-	int rx_owd_min_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  	/*!< \brief  One way delay min*/
-	int rx_owd_max_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay max*/
+//	int rx_pkt_owd_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
+//	int rx_owd_min_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  	/*!< \brief  One way delay min*/
+//	int rx_owd_max_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay max*/
 
 
         int nb_loss_pkts_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];

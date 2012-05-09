@@ -55,11 +55,27 @@
 
 /*! \fn char *check_packet(int src, int dst, int ctime);
 * \brief check if the packet is well received and do measurements: one way delay, throughput,etc. 
-* \param[in] the source, the destination, time of the emulation
+* \param[in] the source 
+* \param[in] the destination 
+* \param[in] time of the emulation
 * \param[out] return NULL is the packet is well received,  else the packet to forward
 * \note 
 * @ingroup  _otg
 */
 int otg_rx_pkt_packet(int src, int dst, int ctime, char *packet, unsigned int size);
+
+
+/*! \fn void owd_const_gen(int src,int dst);
+*\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
+*\param[in] the source 
+*\param[in] the destination
+*\param[out] void
+*\note 
+*@ingroup  _otg
+*/
+void owd_const_gen(int src,int dst);
+
+
+
 
 #endif
