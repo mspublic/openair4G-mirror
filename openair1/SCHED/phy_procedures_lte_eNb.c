@@ -69,6 +69,16 @@
 extern inline unsigned int taus(void);
 extern int exit_openair;
 
+//b Calibration vars
+extern int n_K;
+extern int K_calibration;
+extern int echec_calibration;
+extern int P_eNb_active;
+extern double PeNb_factor[2][600];
+extern int dec_f;
+extern short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
+extern int calibration_flag;
+
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 int eNB_sync_buffer0[640*6] __attribute__ ((aligned(16)));
 int eNB_sync_buffer1[640*6] __attribute__ ((aligned(16)));
@@ -563,6 +573,13 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
 }
 #endif
 
+//b Calibration
+void phy_procedures_eNB_SS_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
+  if ((subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_S) && ((next_slot)==3)) {
+    generate_pilots_SS(phy_vars_eNB, phy_vars_eNB->lte_eNB_common_vars.txdataF[0], 1024);
+  }
+}
+
 void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
 
   u8 *pbch_pdu=&phy_vars_eNB->pbch_pdu[0];
@@ -603,8 +620,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			   phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 			   AMP,
 			   next_slot);
-     
-    
+
+// b Calibration FIX ME
+	/*if ( ((next_slot)==3) && (calibration_flag==1)) {
+    	generate_pilots_SS(phy_vars_eNB, phy_vars_eNB->lte_eNB_common_vars.txdataF[0],1024);
+  	} */       
    
       if (next_slot == 0) {
 	
@@ -1696,6 +1716,22 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
 }
 
 void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
+
+  //Calibration parameters
+  int dec_f=1, aa, k, n_K=15, pilot1=3, UE_id=0; //To def as argument.
+  short nsymb, quant_v, quant=8;    
+  int drs_ch_estimates_length=(2*300*4)/dec_f;
+  quant_v = (2<<(quant-1))/2; //b quantization bit  
+  nsymb = (phy_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
+  short drs_ch_estimates[2][drs_ch_estimates_length];
+  bzero(drs_ch_estimates[0],(drs_ch_estimates_length));
+  bzero(drs_ch_estimates[1],(drs_ch_estimates_length));
+  
+  short drs_ch_est_ZFB[2*300*nsymb]; //Redefine (Crosslink channel)
+  bzero(drs_ch_est_ZFB,2*300*nsymb);
+  short trials=phy_vars_eNB->frame; 
+ 
+
   //RX processing
   u32 l, ret,i,j;
   u32 sect_id=0;
@@ -2136,6 +2172,48 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  else {
 	    // Retrieve calibration information and do whatever
 	    LOG_D(PHY,"[eNB][Auto-Calibration] Frame %d, Subframe %d : ULSCH PDU (RX) %d bytes\n",phy_vars_eNB->frame,last_slot>>1,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);	    
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++
+		 if (ret <= MAX_TURBO_ITERATIONS) {         
+	  K_calibration++;                    
+      } else {
+          echec_calibration++;          
+      }
+       printf("Auto-Calibrationret=%d;  K_calibration = %d; echec_calibration=%d \n" ,ret, K_calibration, echec_calibration);
+
+      if ((ret <= MAX_TURBO_ITERATIONS) && (K_calibration < n_K)) {
+        for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
+          for (k=0; k<2*300; k++) {
+	    //K_dl_ch_estimates[phy_vars_eNB->frame][aa][k]  = dl_ch_estimates[1][k+(aa*2*300)];//b +6 ofset in Chan-Est
+	    K_dl_ch_estimates[K_calibration][aa][k]  = (char)(phy_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->b)[k+(aa*2*300)];	
+	    do_quantization_eNB(phy_vars_eNB, //slot_fep_ul sup exe before
+			    nsymb, 
+			    pilot1-1, //pilot ant 0
+			    pilot1, //pilot ant 1 
+			    quant_v, 
+			    drs_ch_estimates[1], 
+			    UE_id);	
+	     K_drs_ch_estimates[K_calibration][aa][k] = drs_ch_estimates[1][k+(aa*2*300)];//b +6 ofset in Chan-Est 1==kk
+      			}		   
+    		}
+		
+	} else if ((P_eNb_active==0) && (K_calibration == n_K)) {                  				  
+		//exit(-1);
+		do_calibration(K_dl_ch_estimates,
+				K_drs_ch_estimates, 
+				PeNb_factor,
+				phy_vars_eNB->lte_frame_parms.ofdm_symbol_size,
+				n_K);
+		P_eNb_active=1;
+		//write_output("dlch.m","dlR",K_dl_ch_estimates[K_calibration][0],512,1,1);
+		//write_output("drsch.m","drsR",K_drs_ch_estimates[K_calibration][0],512,1,1);
+		//write_output("cal00.m","cl00",PeNb_factor[0],1000,1,8);
+		//printf("phy_vars_eNB->lte_frame_parms.nb_antennas_rx== %d \n", phy_vars_eNB->lte_frame_parms.nb_antennas_rx);
+		//exit(-1);
+		
+	}
+//+++++++++++++++++++++++++++++++++++++++++++++++++
+
 	  }
 #endif
 	}
@@ -2452,8 +2530,12 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
   if ((subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_S) &&
       ((next_slot&1)==0)) {
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_TX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-    phy_procedures_eNB_TX(next_slot,phy_vars_eNB,abstraction_flag);
+     phy_procedures_eNB_TX(next_slot,phy_vars_eNB,abstraction_flag);
+    //if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->calibration_flag == 1)
+      //phy_procedures_eNB_SS_TX(next_slot, phy_vars_eNB, abstraction_flag);
   }
+
+
   if ((subframe_select(&phy_vars_eNB->lte_frame_parms,last_slot>>1)==SF_S) &&
       ((last_slot&1)==0)){
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
