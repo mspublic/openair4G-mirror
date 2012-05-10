@@ -88,6 +88,16 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][9];
 
+//b Calibration vars
+int n_K=15,dec_f=1, K_calibration=1, echec_calibration=0, P_eNb_active=0, first_call_cal=0;
+double PeNb_factor[2][600];
+int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
+short dl_ch_estimates[2][2400]; 
+int doquantUE=0;
+int calibration_flag=1;
+short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
+  
+
 //OAI_Emulation * emulation_scen;
 mapping small_scale_names[] =
 {
@@ -540,6 +550,14 @@ main (int argc, char **argv)
   double **ShaF= NULL;
   u32 frame=0;
 
+//Calibration vars
+for(i=0;i<2;i++) {
+    for(j=0;j<n_K;j++) {
+    	bzero(K_dl_ch_estimates[j][i],600);
+    	bzero(K_drs_ch_estimates[j][i],600);
+    }
+  }
+
   // Framing variables
   s32 slot, last_slot, next_slot;
 
@@ -838,12 +856,30 @@ main (int argc, char **argv)
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t)); 
     init_enb(enb_data[eNB_id],oai_emulation.environment_system_config.antenna.eNB_antenna);
+
+// Calibration
+	/*if ((oai_emulation.info.transmission_mode==1) && calibration_flag==1 ){
+	  //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_tx = 1;
+	  //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_rx = 1;
+	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx = 1;
+	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx = 1;
+	}*/
   }
   
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     ue_data[UE_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
     init_ue(ue_data[UE_id],oai_emulation.environment_system_config.antenna.UE_antenna);
-  } 
+
+	/*if ((oai_emulation.info.transmission_mode==1) && calibration_flag==1 ){
+	  //PHY_vars_UE[0]->lte_frame_parms.nb_antennas_tx = 1;
+	  //PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx = 1;
+	  //PHY_vars_UE[1]->lte_frame_parms.nb_antennas_tx = 1;
+	  //PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx = 1; 
+	}*/
+  }
+
+
+  
 
   // init SF map here!!!
   map1 =(int)oai_emulation.topology_config.area.x_km;

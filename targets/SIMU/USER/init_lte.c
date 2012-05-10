@@ -79,8 +79,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->Ncp                = extended_prefix_flag;
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
-  (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-  (*frame_parms)->nb_antennas_rx     = 1;
+  (*frame_parms)->nb_antennas_tx     = 2;//(transmission_mode == 1) ? 1 : 2;
+  (*frame_parms)->nb_antennas_rx     = 2;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
   (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
@@ -162,6 +162,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     if (NB_eNB_INST>0) {
       PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.Nid_cell;
       PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.nushift;
+      PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx = 1;
+      PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx = 1;
     }
 
     phy_init_lte_ue(PHY_vars_UE_g[UE_id],abstraction_flag);
