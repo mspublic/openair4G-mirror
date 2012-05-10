@@ -74,6 +74,15 @@
 extern inline unsigned int taus(void);
 extern int exit_openair;
 
+//Calibration vars
+extern int dec_f;
+extern int  dl_ch_estimates_length;
+extern short dl_ch_estimates[2][2400]; 
+extern int first_call_cal;
+extern int doquantUE;
+extern int calibration_flag;
+
+
 u8 ulsch_input_buffer[2700] __attribute__ ((aligned(16)));
 
 #ifdef DLSCH_THREAD
@@ -519,8 +528,8 @@ void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
 
 void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
   
+  int i_d;
   u16 first_rb, nb_rb;
- 
   u8 harq_pid;
   unsigned int input_buffer_length;
   unsigned int i, aa;
@@ -720,13 +729,19 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				  eNB_id,
 				  ulsch_input_buffer,
 				  input_buffer_length);
-	      else {
+	      else { // (doquantUE==1)
 		// Get calibration information from TDD procedures
 		LOG_D(PHY,"[UE %d] Frame %d, subframe %d : ULSCH: Getting TDD Auto-Calibration information\n",
 		      phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
-		for (i=0;i<input_buffer_length;i++)
-		  ulsch_input_buffer[i]= i;
-
+		for (i_d=0;i_d<input_buffer_length;i_d++)
+		{ 
+		ulsch_input_buffer[i_d]=(char)(dl_ch_estimates[1][i_d]);
+		//ulsch_input_buffer[i_d]=i_d;		       		    
+		}
+		write_output("dlchestq.m","dlq",dl_ch_estimates[1],512,1,1);
+		write_output("dlchest.m","dl",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][2],512,1,1);
+		//exit(-1);	
+		         
 	      }
 	  }
 #ifdef DEBUG_PHY_PROC
@@ -1710,9 +1725,16 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   return(0);
 }
 
-
  
 int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
+
+// Calibration vars
+  int k; 
+  short nsymb, quant_v, quant=8;
+  nsymb = (phy_vars_ue->lte_frame_parms.Ncp == 0) ? 14 : 12;
+  quant_v = (2<<(quant-1))/2; //b quantization bit 
+  bzero(dl_ch_estimates[0],(dl_ch_estimates_length));
+  bzero(dl_ch_estimates[1],(dl_ch_estimates_length));
 
   u16 l,m,n_symb;
   //  int eNB_id = 0, 
@@ -1741,13 +1763,52 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     pilot3 = 9;
   }
 
-  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_S) 
-    if ((last_slot%2)==0)
-      n_symb = 5;//3;
-    else
-      n_symb = 0;
-  else 
-    n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_S) {
+	    //if (calibration_flag == 0)
+	    //{
+	    	if ((last_slot%2)==0)
+	      	n_symb = 5;//3;
+	    	else
+	      	n_symb = 0;   	
+	    //} 
+	    //else
+	 if (calibration_flag == 1)
+	     {
+              //printf("BORIS\n");exit(-1);
+	     if ((last_slot%2)==0)
+	      n_symb = 1;//3;
+	     else
+	      n_symb = 0;	    	
+		//for (Ns=2;Ns<(2+1);Ns++) {	
+		for (l=0;l<n_symb;l++) {
+			 slot_fep_SS(phy_vars_ue,				   
+				     l,//slot 0 sym 0 (l)
+				     last_slot,
+#ifdef HW_PREFIX_REMOVAL
+		      		     1,
+#else
+			             0,
+#endif
+				     0);//including dl channel estimation an freq ofset fonction		               	    
+		  	}
+		  //}
+                write_output("dlchest00.m","dl00",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][0],512,1,1);
+		write_output("dlchest01.m","dl01",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][2],512,1,1);
+		do_quantization_UE(phy_vars_ue,
+			            nsymb, 
+			            pilot1-1, 
+				    quant_v, 
+				    dl_ch_estimates[1],
+				    dec_f);
+		doquantUE=1;
+
+	    }
+	}
+       else {
+	n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
+	}
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   // RX processing of symbols in last_slot
   for (l=0;l<n_symb;l++) {
@@ -1763,7 +1824,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 	       );
     }
-
+  
     if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_DL)
       lte_ue_measurement_procedures(last_slot,l,phy_vars_ue,eNB_id,abstraction_flag);
 

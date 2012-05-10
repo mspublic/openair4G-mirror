@@ -171,6 +171,46 @@ void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
     }
   }
 }
+
+void generate_pilots_SS(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t **txdataF, s16 amp) {
+
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+
+  u32 slot_offset,tti,tti_offset,Nsymb,samples_per_symbol,k;
+
+  Nsymb = (frame_parms->Ncp==0)?14:12;
+
+#ifdef IFFT_FPGA
+    tti_offset = frame_parms->N_RB_DL*12*Nsymb;
+    samples_per_symbol = frame_parms->N_RB_DL*12;
+#else    
+    tti_offset = frame_parms->ofdm_symbol_size*Nsymb;
+    //printf("frame_parms->ofdm_symbol_size*Nsymb = %d\n", frame_parms->ofdm_symbol_size*Nsymb);
+    samples_per_symbol = frame_parms->ofdm_symbol_size;
+#endif
+    slot_offset = 2;
+    
+    //    printf("tti %d : offset %d (slot %d)\n",tti,tti_offset,slot_offset);
+    //Generate Pilots
+
+    for (k=tti_offset; k<tti_offset+512; k++) {
+      txdataF[0][k] = 0;
+      txdataF[1][k] = 0;
+    }
+    
+    //antenna 0 symbol 0 slot 0
+    lte_dl_cell_spec_SS(phy_vars_eNB,&txdataF[0][tti_offset],
+		     amp,
+		     slot_offset,
+		     0,//Symb 0
+		     0);
+
+    lte_dl_cell_spec_SS(phy_vars_eNB,&txdataF[1][tti_offset],
+		       amp,
+		       slot_offset,
+		       0,//Symb 0
+		       1);//ant 1
+}
 	    
 int generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
