@@ -50,9 +50,10 @@
 #include <unistd.h>
 
 
+#include "otg_defs.h"
+#include "otg_config.h"
 #include "otg.h"
-
-#include "UTIL/MATH/oml.h"
+#include "../MATH/oml.h"
 
 
 
@@ -85,23 +86,22 @@ char *random_string(int size, ALPHABET data_type, char *data_string);
 
 /*! \fn int packet_gen(int src, int dst, int state, int ctime)
 * \brief return int= 1 if the packet is generated: OTG header + header + payload, else 0
-* \param[in] src source identity 
-* \param[in] dst destination id 
+* \param[in] source, 
 * \param[out] packet_t: the generated packet: otg_header + header + payload
 * \note 
 * @ingroup  _otg
 */
-char *packet_gen(int src, int dst, int ctime, int *pkt_size);
+int packet_gen(int src, int dst, int state, int ctime);
 
 
-/*! \fn char *header_gen(int  hdr_size);
+/*! \fn char *header_gen(int ip_v, int trans_proto);
 * \brief generate IP (v4/v6) + transport header(TCP/UDP) 
-* \param[in] int : size 
+* \param[in] int : ip version + transp proto  
 * \param[out] the payload corresponding to ip version and transport protocol
 * \note 
 * @ingroup  _otg
 */
-char *header_gen(int hdr_size);
+char *header_gen(int ip_v, int trans_proto);
 
 /*! \fn char *payload_pkts(int payload_size);
 * \brief generate the payload
@@ -113,14 +113,14 @@ char *header_gen(int hdr_size);
 char *payload_pkts(int payload_size);
 
 
-/*! \fn void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int size);
+/*! \fn char *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type);
 * \brief generate OTG header 
-* \param[in]  flow id, simulation time, , sequence number, header type (to know the transport/ip version in the RX) and, size: payload + header  
+* \param[in]  simulation time, header_type (to know the transport/ip version in the RX) and the packet sequence number  
 * \param[out] otg header
 * \note 
 * @ingroup  _otg
 */
-void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int state, int size);
+otg_hdr_t *otg_header_gen(int time, int seq_num, HEADER_TYPE header_type);
 
 
 /*! \fn int adjust_size(int size);
@@ -131,42 +131,5 @@ void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int state, 
 * @ingroup  _otg
 */
 int adjust_size(int size);
-
-
-/*! \fn int header_size_genint src();
-* \brief return the header size corresponding to ip version and transport protocol  
-* \param[in]  the sender (src)
-* \param[out] size of packet header 
-* \note 
-* @ingroup  _otg
-*/
-int header_size_gen(int src);
-
-
-/*! \fn void init_predef_traffic();
-* \brief initialise OTG with predifined value for pre-configured traffic: cbr, openarena,etc. 
-* \param[in]  
-* \param[out] 
-* \note 
-* @ingroup  _otg
-*/
-void init_predef_traffic();
-
-
-
-/*! \fn int background_gen(int src, int dst, int ctime);
-* \brief manage idt and packet size for the backgrounf traffic. 
-* \param[in] src
-* \param[in] dst
-* \param[in] ctime
-* \param[out] 
-* \note 
-* @ingroup  _otg
-*/
-int background_gen(int src, int dst, int ctime);
-
-
-
-int header_size_gen_background(int src);
 
 #endif

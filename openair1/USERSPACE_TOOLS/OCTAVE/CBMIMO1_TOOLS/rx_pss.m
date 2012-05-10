@@ -1,4 +1,5 @@
 addpath('../../../PHY/LTE_REFSIG/');
+rx_spec;
 primary_synch;
 pss_t = upsample(primary_synch0_time,4);
 corr = abs(conv(conj(pss_t),s(:,1)));

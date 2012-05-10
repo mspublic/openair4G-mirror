@@ -12,7 +12,7 @@
 
 //#include "pci_commands.h"
 #include "cbmimo1_pci.h"
-#include "defs.h"
+
 
 
 extern struct pci_dev *pdev[4];
@@ -46,9 +46,3 @@ extern unsigned short NODE_ID[1];
 #endif
 
 extern char number_of_cards;
-
-#ifdef RTAI_ENABLED
-extern s32 *inst_cnt_ptr;
-extern SEM *oai_semaphore;
-extern RT_TASK *lxrt_task;
-#endif

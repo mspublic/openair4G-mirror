@@ -47,16 +47,9 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
     
   int i;
   for (i=0;i<nb_nodes;i++) {
-   if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
-      
+    if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
       node_data[i]->x = input_node_list->node->X_pos;
-      // JHNOTE (01/05/2012): had to add this safety check as SUMO might return negative positions at the initialization (node 'just' at the boundaries)
-      if (node_data[i]->x <0.0)
-        node_data[i]->x = 0.0;
       node_data[i]->y = input_node_list->node->Y_pos;
-      if (node_data[i]->y <0.0)
-        node_data[i]->y = 0.0;
-      LOG_I(OCM, "extract_position: added node_data %d with position X: %f and Y: %f \n", i,input_node_list->node->X_pos, input_node_list->node->Y_pos );
       input_node_list = input_node_list->next;
     }
     else {
@@ -220,13 +213,11 @@ void get_beta_map() {
     }
   }
 
-  for (mcs = 5; mcs < MCS_COUNT; mcs++) { 
-    // sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs); // navid 
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Real/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
-
+  for (mcs = 5; mcs < MCS_COUNT; mcs++) {
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
-      LOG_E(OCM,"ERROR: Unable to open the file %s\n", file_path);
+      printf("ERROR: Unable to open the file %s\n", file_path);
       exit(-1);
     }
     else {
@@ -244,7 +235,7 @@ void get_beta_map() {
     }
     LOG_D(OCM," Print the table for mcs %d\n",mcs);
     for (table_len = 0; table_len < 9; table_len++)
-      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+      msg("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
   free(file_path);
 }

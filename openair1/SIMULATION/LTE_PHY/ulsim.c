@@ -170,8 +170,6 @@ int main(int argc, char **argv) {
   u8 N0=40;
   double tx_gain=1.0;
 
-  logInit();
-
   while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:")) != -1) {
     switch (c) {
     case 'a':
@@ -813,7 +811,7 @@ int main(int argc, char **argv) {
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
 	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
-	    dump_ulsch(PHY_vars_eNB);
+	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }
 	  round=5;
@@ -822,7 +820,7 @@ int main(int argc, char **argv) {
 	  errs[round]++;
 	  if (n_frames==1) {
 	    printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
-	    dump_ulsch(PHY_vars_eNB);
+	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }
 	  //	    printf("round %d errors %d/%d\n",round,errs[round],trials);

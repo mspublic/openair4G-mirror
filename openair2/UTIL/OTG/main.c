@@ -49,6 +49,7 @@
 #include "otg.h"
 #include "otg_tx_socket.h"
 #include "otg_vars.h"
+#include "otg_config.h"
 #include "traffic_config.h"
 
 #include "../MATH/oml.h"
@@ -94,7 +95,7 @@ printf("duration %d, seeds %d \n", duration, g_otg->seed);
 		g_otg->dst_ip[i]=DST_IP;  
 
 //config ip version
-		
+		//printf("vvversion %s %s\n", ip_version, protocol);
 
 	if (ip_version !=NULL){
 		if ((strcmp(ip_version,"IP4")==0) ||(strcmp(ip_version,"ip4")==0))
@@ -103,7 +104,7 @@ printf("duration %d, seeds %d \n", duration, g_otg->seed);
 			g_otg->ip_v[i]=IPV6;
 	}
 	else	
-		g_otg->ip_v[i]=IPV4;
+		g_otg->ip_v[i]=77;
 
 
 //config transport protocol version
@@ -114,7 +115,7 @@ printf("duration %d, seeds %d \n", duration, g_otg->seed);
 			g_otg->trans_proto[i]=UDP;
 	}
 	else 
-		g_otg->trans_proto[i]=TCP;
+		g_otg->trans_proto[i]=77;
 
 			for (j=0; j<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); j++){
 				g_otg->application_type[i][j]=OPENARENA;
@@ -147,15 +148,14 @@ int main_below_ip()
 {
 int i, j, k, l, rtt_owd ,rx_otg=0, simu_time=0, ctime=0, nb_round=0;
 float p;
-char *packet;
-int rx_packet_out;
-int pkt_size;
+packet_t *packet;
+int packet_val=1;
+
 printf(" max enb %d, max ue %d \n", NUMBER_OF_eNB_MAX, NUMBER_OF_UE_MAX);
 
 do {
 
 nb_round=nb_round+1;
-	// for (stime=0; stime < SIMU_TIME; stime++) // discrete event generation : tick, stime generate the ctime
 		for (i=0; i<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); i++){
 			
 	 		for (j=0; j<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); j++){
@@ -167,44 +167,38 @@ nb_round=nb_round+1;
 
 					ctime=0; // set the ctime to 0   
 					do { 
-
+				//	ctime+=1;
+				//	simu_time+=1;
 					if (simu_time> SIMU_TIME){
 
 						otg_info->ctime=SIMU_TIME;
 						return(0);
 						}
 					LOG_I(OTG,"val :: ctime=%d\n", ctime);  
-							char *packet=NULL;				
-						/*packet=packet_gen(i, j, k, ctime);*/ packet=packet_gen(i, j, ctime, &pkt_size);
-						
+											
+						//packet=packet_gen(i, j, k, ctime);
+						packet_val=packet_gen(i, j, k, ctime);
 												
-					
-					if (packet!=NULL){
+					if (packet_val>0){
 						if ((ceil(g_otg->duration[i]*uniform_rng()))==ctime)  {
-							printf("DROP PACKET (i=%d,j=%d) seq num=%d\n",i, j, otg_info->seq_num[i][j]);
+							printf("sss DROP PACKET (i=%d,j=%d) seq num=%d\n",i, j, otg_info->seq_num[i][j]);
+							//packet=NULL;
+							packet_val=0;
+							otg_info->seq_num[i][j]-=1;
 
 						}
 						else  {
-							printf("SEND PACKET (i=%d,j=%d) seq num=%d\n",i, j, otg_info->seq_num[i][j]);
+							printf("sss SEND PACKET (i=%d,j=%d) seq num=%d\n",i, j, otg_info->seq_num[i][j]);
 							
 								rtt_owd=ceil(uniform_rng()*8.56);
 	 							LOG_I(OTG,"one way delay= %d , (src=%d, dst=%d, state=%d)\n", rtt_owd, i, j, k);
 								ctime+=rtt_owd; 
-								otg_info->rx_pkt_owd[i][j]=rtt_owd; 
+								otg_info->rx_pkt_owd[i][j]=rtt_owd;
+								//otg_info->ctime+=rtt_owd; 
 								simu_time+=rtt_owd;
-								
-								//rx_packet_out=check_packet(i, j, ctime, packet);
- 								rx_packet_out=otg_rx_pkt(i,j, ctime, packet, pkt_size);
-								//if (rx_packet_out==NULL)
-								//	LOG_I(OTG,"PKTS INFO:: DROPED\n"); 
-								//else{
-								//	if (rx_packet_out!=NULL){ 
-								//		rx_packet_out=NULL;  					
-										free(packet);
-								//	}
+								//rx_otg+=check_packet(i, j, ctime, packet);
 
-								//}
-
+								rx_otg+=check_packet(i, j, ctime);
 								//Do not increase the ctime and simu_time with the one way delay.
 								ctime-=rtt_owd;
 								simu_time-=rtt_owd;
@@ -214,7 +208,7 @@ nb_round=nb_round+1;
 						}
 					}
 						else
-							printf("Node (i=%d,j=%d) seq num=%d, ctime %d, prb %lf\n",i, j, otg_info->seq_num[i][j], ctime,(ceil(g_otg->duration[i]*uniform_rng())));
+							printf("sss (i=%d,j=%d) seq num=%d, val %d, ctime %d, prb %lf\n",i, j, otg_info->seq_num[i][j], packet_val, ctime,(ceil(g_otg->duration[i]*uniform_rng())));
 						
 						LOG_I(OTG,"Time:: ctime=%d, duration=%d, simu_time=%d, max=%d, (src=%d, dst=%d, state=%d) \n", ctime,  g_otg->duration[i],simu_time, SIMU_TIME, i, j,k);
 						ctime+=1;
@@ -231,6 +225,7 @@ nb_round=nb_round+1;
 					LOG_I(OTG,"STAT: :: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d, seq NUM=%d \n ",i, j, otg_info->tx_num_pkt[i][j], otg_info->rx_num_pkt[i][j], otg_info->seq_num[i][j]);
 
 
+	//			printf("ERROR SEQ (end) (i=%d,j=%d), %d , pkt %d \n", i, j , otg_info->seq_num[i][j],  otg_info->tx_num_pkt[i][j]);	
 
 			}
 		}
@@ -240,34 +235,6 @@ nb_round=nb_round+1;
 }while (simu_time<=SIMU_TIME);
 
 }
-
-
-int main_above_ip()
-{
-int i, j, k,  simu_time=0, ctime=0, nb_round=0;
-char *packet=NULL;
-printf(" max enb %d, max ue %d \n", NUMBER_OF_eNB_MAX, NUMBER_OF_UE_MAX);
-do {
-nb_round=nb_round+1;
-		for (i=0; i<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); i++){
-			
-	 		for (j=0; j<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); j++){
-
-				for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
-					LOG_I(OTG,"SOCKET:: OTG emulation src=%d, dst=%d, state=%d \n", i, j, k);
-						ctime=0;
-				//		socket_packet_send(i, j, k, ctime);
-				}
-			}
-		}
-
- 
-ctime+=1;
-simu_time+=1;
-}while (simu_time<=SIMU_TIME);
-
-}
-
 
 
 
@@ -276,8 +243,8 @@ void config_traffic_type(char *traffic)
 {
 Application application;
 int i,j;
-	if (strcmp(traffic, "SCBR")==0)
-		application=SCBR;
+	if (strcmp(traffic, "CBR")==0)
+		application=CBR;
 
 	else if (strcmp(traffic, "OPENARENA")==0)
 		application=OPENARENA;
@@ -419,7 +386,7 @@ for (i = 1; i <argc ; i ++){
 
 
 	if (traffic!=NULL)
-		init_predef_traffic();
+		init_predef_otg();
 	else
 		init_config_otg(protocol, ip_version);
 
@@ -429,55 +396,17 @@ for (i = 1; i <argc ; i ++){
 
 
 
-if (simu_mode==0)
+if (simu_mode==0){
 	tx=main_below_ip();
-
-else if (simu_mode==1)
-	tx=main_above_ip();
-
-
+}
 
 // Compute KPI after the end of the simu
 kpi_gen();
 
-free_otg();
+free_addr_otg();
 
 
 
 return 0;
 
 }
-
-
-/*
-int main(void) {
-
-int i, min=40, max=1500, std_dev=100;
-int n;
-
-for(i=1; i<=100000; i++)
-{
-
-init_seeds(i);
-n = uniform_dist(min, max);
-//n = ceil(gaussian_dist((min + max)/2 , std_dev));
-//n = ceil(exponential_dist(0.05));
-//n =ceil(poisson_dist(4));
-//n =ceil(weibull_dist(0,0));
-//n =ceil(pareto_dist(16,4));
-//n =ceil(gamma_dist(0.5,25));
-//n =ceil(cauchy_dist(1,10));
-
-if ((n<min) || (n>max))
- printf("number=%d out of range \n", n);
- else 
-  {printf("gen_nb=%d \n", n);
-// printf("ceil gen_nb=%lf \n", ceil(n));
-   }
-}
-
-printf("%d\n", n);
-
-return 0;
-    }
-*/

@@ -718,7 +718,6 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
           // copy received data to intermediate buffer
           memcpy(context->mr_buffer[k], phy_vars_mr[k]->dlsch_ue[0][0]->harq_processes[0]->b, context->tbs_col>>3);
-          //memset(&context->mr_buffer[k][context->tbs_col>>3], 0, context->mr_buffer_length+4-(context->tbs_col>>3));
         }
       }
 
@@ -1783,7 +1782,7 @@ double compute_ber_soft(u8* ref, s16* rec, int n)
 
   for(k = 0; k < n; k++) {
     if((ref[k]==1) != (rec[k]<0)) {
-            //printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
+      //      printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
       e++;
     }
   }
@@ -1880,9 +1879,7 @@ int block_valid(u8* ref, u8* rec, int n)
   for(k = 0; k < n; k++) {
     if(ref[k] != rec[k])
       return 0;
-      //printf("%d ",k);
   }
-  //printf("\n");
   return 1;
 }
 

@@ -59,6 +59,7 @@
 #include "MeasGapConfig.h"
 #include "TDD-Config.h"
 #include "RACH-ConfigCommon.h"
+#include "MeasObjectToAddModList.h"
 
 //#ifdef PHY_EMUL
 //#include "SIMULATION/PHY_EMULATION/impl_defs.h"
@@ -415,6 +416,10 @@ typedef struct{
   struct PhysicalConfigDedicated *physicalConfigDedicated;
   /// pointer to TDD Configuration (NULL for FDD)
   TDD_Config_t *tdd_Config;
+  /// Number of adjacent cells to measure
+  u8  n_adj_cells;
+  /// Array of adjacent physical cell ids
+  u16 adj_cell_id[6];
   /// Pointer to RRC MAC configuration
   MAC_MainConfig_t *macConfig;
   /// Pointer to RRC Measurement gap configuration
@@ -461,17 +466,21 @@ typedef struct{
   u8 RA_contention_resolution_cnt;
 }UE_MAC_INST;
 
-
+typedef struct {
+  u16 cell_ids[6];
+  u8 n_adj_cells;
+} neigh_cell_id_t;
 
 
 
 /** \brief RRC Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of eNB
-@param CH_flag Indicates if this is a eNB or UE configuration
+@param eNB_flag Indicates if this is a eNB or UE configuration
 @param UE_id Index of UE if this is an eNB configuration
 @param eNB_id Index of eNB if this is a UE configuration
 @param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
 @param physcialConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
+@param measObj Structure from RRCConnectionReconfiguration for UE measurement procedures
 @param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep existing configuration)
 @param logicalChannelIdentity Logical channel identity index of corresponding logical channel config 
 @param logicalChannelConfig Pointer to logical channel configuration
@@ -480,9 +489,10 @@ typedef struct{
 @param SIwindowsize SI Windowsize from SIB1 (if NULL keep existing configuration)
 @param SIperiod SI Period from SIB1 (if NULL keep existing configuration)
 */
-int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 eNB_id, 
+int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
+		       MeasObjectToAddMod_t **measObj,
 		       MAC_MainConfig_t *mac_MainConfig,
 		       long logicalChannelIdentity,
 		       LogicalChannelConfig_t *logicalChannelConfig,
@@ -490,6 +500,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 eNB_id,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);
+
 
 /** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
 for the message.
@@ -515,8 +526,9 @@ void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,u8 *nCCE);
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param nCCE Pointer to current nCCE count
+@param calibration_flag Flag to indicate that TDD auto-calibration PUSCH should be scheduled.
 */
-void schedule_ulsch(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe,u8 *nCCE);
+void schedule_ulsch(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe,u8 *nCCE,int calibration_flag);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 @param Mod_id Instance of eNB
@@ -583,8 +595,9 @@ void mac_UE_out_of_sync_ind(u8 Mod_id,u32 frame, u16 CH_index);
 @param cooperation_flag Flag to indicated that this cell has cooperating nodes (i.e. that there are collaborative transport channels that
 can be scheduled.
 @param subframe Index of current subframe
+@param calibration_flag Flag to indicate that eNB scheduler should schedule TDD auto-calibration PUSCH.
 */
-void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe); 
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe, int calibration_flag); 
 
 /* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary numeber of times after eNB_dlsch_ulsch_scheduler
 in a given subframe.
@@ -654,7 +667,6 @@ void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_DLSCH_STATUS status);
 s8 find_UE_id(u8 Mod_id,u16 rnti) ;
 s16 find_UE_RNTI(u8 Mod_id, u8 UE_id);
 s8 find_active_UEs(u8 Mod_id);
-u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id );
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);

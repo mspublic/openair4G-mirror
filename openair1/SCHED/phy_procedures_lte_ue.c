@@ -713,12 +713,22 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	 
 #ifdef OPENAIR2
 	  //  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
-	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1)
+	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1) { 
+	      if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0)
 	    mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
 				  phy_vars_ue->frame,
 				  eNB_id,
 				  ulsch_input_buffer,
 				  input_buffer_length);
+	      else {
+		// Get calibration information from TDD procedures
+		LOG_D(PHY,"[UE %d] Frame %d, subframe %d : ULSCH: Getting TDD Auto-Calibration information\n",
+		      phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
+		for (i=0;i<input_buffer_length;i++)
+		  ulsch_input_buffer[i]= i;
+
+	      }
+	  }
 #ifdef DEBUG_PHY_PROC
 	  LOG_D(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
@@ -726,8 +736,13 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  msg("\n");
 #endif
 #else //OPENAIR2
-	  for (i=0;i<input_buffer_length;i++)
-	    ulsch_input_buffer[i]= i;
+	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0) {
+	    for (i=0;i<input_buffer_length;i++)
+	      ulsch_input_buffer[i]= i;
+	  }
+	  else {
+	    // Get calibration information from TDD procedures
+	  }
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o    ,0,MAX_CQI_BYTES*sizeof(u8));
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_RI ,0,2*sizeof(u8));
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_ACK,0,4*sizeof(u8));
@@ -1045,6 +1060,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     // UE measurements 
     if (abstraction_flag==0) {
       //debug_msg("Calling measurements with rxdata %p\n",phy_vars_ue->lte_ue_common_vars.rxdata);
+
       lte_ue_measurements(phy_vars_ue,
 #ifdef HW_PREFIX_REMOVAL 
 			  (last_slot>>1)*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size,
@@ -1053,6 +1069,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 #endif
 			  (last_slot == 2) ? 1 : 0,
 			  0);
+
     }
     else {
       lte_ue_measurements(phy_vars_ue,
@@ -1095,11 +1112,15 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     }
 #endif
   }
-  
+
   if (l==(4-frame_parms->Ncp)) {
+
+
     ue_rrc_measurements(phy_vars_ue,
-			last_slot);
+			last_slot,
+			abstraction_flag);
   }  
+
 
   if ((last_slot==1) && (l==(4-frame_parms->Ncp))) {
     
@@ -1782,7 +1803,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
 	if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	  dual_stream_UE = 1;
-	  eNB_id_i = NUMBER_OF_eNB_MAX;
+	  eNB_id_i = NUMBER_OF_CONNECTED_eNB_MAX;
 	  i_mod = 2;
 	}
 	else {
@@ -2053,8 +2074,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 
 #ifdef DEBUG_PHY_PROC
-	    LOG_D(PHY,"[UE  %d] Frame %d, subframe %d, received SI for TBS %d\n",
-		  phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
+	    LOG_I(PHY,"[UE  %d] Frame %d, subframe %d, received SI for TBS %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS>>3);
 #endif
 
@@ -2248,7 +2268,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  
 	    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	      dual_stream_UE = 1;
-	      eNB_id_i = NUMBER_OF_eNB_MAX;
+	      eNB_id_i = NUMBER_OF_CONNECTED_eNB_MAX;
 	      i_mod = 2;
 	    }
 	    else {
@@ -2303,7 +2323,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
 		(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	      dual_stream_UE = 1;
-	      eNB_id_i = NUMBER_OF_eNB_MAX;
+	      eNB_id_i = NUMBER_OF_CONNECTED_eNB_MAX;
 	      i_mod = 2;
 	    }
 	    else {

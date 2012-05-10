@@ -371,6 +371,8 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_sib2_eNB        = phy_config_sib2_eNB;
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
 
+  mac_xface->phy_config_meas_ue         = phy_config_meas_ue;
+
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 

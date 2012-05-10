@@ -45,7 +45,7 @@
 #include "omg.h"
 
 #define frand() ((double) rand() / (RAND_MAX+1))
-//#ifndef STANDALONE
+#ifndef STANDALONE
 mapping nodes_type[] =
 {
     {"eNB", eNB},
@@ -69,7 +69,7 @@ mapping mob_type[] =
     {"SUMO", SUMO},    
     {NULL, -1}
 };
-//#endif
+#endif
 NodePtr create_node(void) {
 	NodePtr ptr;
 	ptr = malloc(sizeof(node_struct));
@@ -117,61 +117,21 @@ Node_list add_entry(NodePtr node, Node_list Node_Vector){
     }
 }
 
-Node_list remove_node_entry(NodePtr node, Node_list Node_Vector){
-  Node_list  list = Node_Vector;
-  Node_list tmp, toRemove;
-  if (list == NULL){  
-    return NULL;
-  }
-  if(list->node->ID == node->ID) {
-    // TODO delete the entry
-    toRemove = list;
-    LOG_D(OMG,"removed entry for node %d \n",list->node->ID);
-    if(list->next ==NULL) {
-    	Node_Vector = NULL;
-        return NULL;
-    }
-    else {
-      Node_Vector = list->next;
-    }
-  } 
-  else{
-     while (list->next !=NULL) {
-       tmp = list;
-       if(list->next->node->ID == node->ID) {
-          toRemove = tmp; // TODO delete the entry
-          tmp = list->next->next;
-          if(tmp !=NULL) {
-             list->next = tmp;
-          }
-          else{
-             list->next = NULL; 
-          }
-       }
-     }
-  }
-  return Node_Vector;
-}
-
 
 // display list of nodes
 void display_node_list(Node_list Node_Vector){
     Node_list tmp = Node_Vector;
     if (tmp == NULL){
-      #ifdef STANDALONE  
-        printf("Empty Node_list\n");
-      #else
-        LOG_I(OMG, "Empty Node_list\n");
-      #endif
+      LOG_D(OMG, "Empty Node_list\n");
     }	
     while (tmp != NULL){
-      LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
-	    map_int_to_str(mob_type, tmp->node->generator),
-	    map_int_to_str(nodes_type, tmp->node->type),  
-	    tmp->node->ID,
-	    map_int_to_str(nodes_status, tmp->node->mobile), 
-	    tmp->node->X_pos,
-	    tmp->node->Y_pos );
+  	 LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
+		map_int_to_str(mob_type, tmp->node->generator),
+		map_int_to_str(nodes_type, tmp->node->type),  
+		tmp->node->ID,
+		map_int_to_str(nodes_status, tmp->node->mobile), 
+		tmp->node->X_pos,
+		tmp->node->Y_pos );
 
     //LOG_I(OMG, "node number %d\tstatus(fix/mobile) %d\tX_pos %.2f\tY_pos %.2f\tnode_type(eNB, UE)%d\t", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos, tmp->node->type);
       //LOG_D(OMG, "mob->X_from %.3f\tmob->Y_from %.3f\tmob->X_to %.3f\tmob->Y_to %.3f\t", tmp->node->mob->X_from,tmp->node->mob->Y_from, tmp->node->mob->X_to, tmp->node->mob->Y_to );
@@ -181,12 +141,12 @@ void display_node_list(Node_list Node_Vector){
 
 void display_node_position(int ID, int generator, int type, int mobile, double X, double Y){
   LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.2f, %.2f) \n", 
-	map_int_to_str(mob_type, generator),
-	map_int_to_str(nodes_type, type),  
-	ID,
-	map_int_to_str(nodes_status, mobile),
-	X,
-	Y
+		map_int_to_str(mob_type, generator),
+		map_int_to_str(nodes_type, type),  
+		ID,
+		map_int_to_str(nodes_status, mobile),
+		X,
+		Y
 	);
 }
 
@@ -251,7 +211,8 @@ Node_list remove_node(Node_list list, int nID, int node_type){
   }
 }
 
-int length(char* s){
+int length(char* s)
+{
 	int count = 0;
 	while(s[count] != '\0'){
 		++count;
@@ -265,7 +226,6 @@ NodePtr find_node(Node_list list, int nID, int node_type){
   Node_list  current;
  
   if (list == NULL){  
-    printf(" Node_LIST for nodeID %d is NULL \n ",nID);
     return NULL;
   } 
   else{                             //start search
@@ -280,7 +240,6 @@ NodePtr find_node(Node_list list, int nID, int node_type){
       return NULL;
     }              //value not found
     else{
-      //printf(" found a node for nodeID %d  \n ",nID);
       return current->node;
     }
     return NULL;
@@ -304,12 +263,10 @@ Node_list clear_node_list(Node_list list) {
   return NULL;
 }
 
-// TODO rewrite this part...not working correctly
 Node_list reset_node_list(Node_list list) {
   Node_list  tmp;
-  Node_list last = list;
+
   if (list == NULL){  
-    //printf("Node_list is NULL\n");
     return NULL;
   } 
   else{
@@ -317,15 +274,13 @@ Node_list reset_node_list(Node_list list) {
        tmp = list;
        list = list->next;
        tmp->node = NULL;
-       //free(tmp);
+       free(tmp);
      }
-     list->node = NULL; // clearing the last one | JHNOTE: dangerous here: the pointer is not NULL, but node is...that leads to segfault...
-     //free(last);
+     list->node = NULL; // clearing the last one
   }
   return list;
 }
 
-// TODO rewrite this part...not working correctly
 String_list clear_String_list(String_list list) {
    String_list  tmp;
 
@@ -340,43 +295,11 @@ String_list clear_String_list(String_list list) {
        tmp->string = NULL;
        free(tmp);
      }
-     list->string = NULL; // clearing the last one | JHNOTE: dangerous here: the pointer is not NULL, but node is...that leads to segfault...
+     list->string = NULL; // clearing the last one
   }
   return list;
 }
 
-#ifdef STANDALONE
-/*
- * for the two functions below, the passed array must have a final entry
- * with string value NULL
- */
-/* map a string to an int. Takes a mapping array and a string as arg */
-int map_str_to_int(mapping *map, const char *str){
-    while (1) {
-        if (map->name == NULL) {
-            return(-1);
-        }
-        if (!strcmp(map->name, str)) {
-            return(map->value);
-        }
-        map++;
-    }
-}
-
-/* map an int to a string. Takes a mapping array and a value */
-char *map_int_to_str(mapping *map, int val) {
-    while (1) {
-        if (map->name == NULL) {
-            return NULL;
-        }
-        if (map->value == val) {
-            return map->name;
-        }
-        map++;
-    }
-}
-
-#endif
 
 
 

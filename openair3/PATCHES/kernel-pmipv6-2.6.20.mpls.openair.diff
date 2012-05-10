@@ -1,0 +1,118 @@
+diff -aur linux-2.6.20.mpls.org/include/linux/in6.h linux-2.6.20.mpls/include/linux/in6.h
+--- linux-2.6.20.mpls.org/include/linux/in6.h	2008-05-16 16:20:52.000000000 +0200
++++ linux-2.6.20.mpls/include/linux/in6.h	2008-05-27 17:39:28.000000000 +0200
+@@ -239,6 +239,7 @@
+  */
+ #define IPV6_RECVTCLASS		66
+ #define IPV6_TCLASS		67
++#define IPV6_ALL_SOLICITED_MCAST_ADDR     68 //Defined by Huu-Nghia.Nguyen@eurecom.fr
+ 
+ /*
+  * Netfilter (2)
+diff -aur linux-2.6.20.mpls.org/include/linux/ipv6.h linux-2.6.20.mpls/include/linux/ipv6.h
+--- linux-2.6.20.mpls.org/include/linux/ipv6.h	2008-05-16 16:22:38.000000000 +0200
++++ linux-2.6.20.mpls/include/linux/ipv6.h	2008-05-16 17:36:36.000000000 +0200
+@@ -294,7 +294,8 @@
+ 				dstopts:1,
+ 				odstopts:1,
+                                 rxflow:1,
+-				rxtclass:1;
++				rxtclass:1,
++				allsma:1; //Added by Huu-Nghia.Nguyen@eurecom.fr
+ 		} bits;
+ 		__u16		all;
+ 	} rxopt;
+diff -aur linux-2.6.20.mpls.org/include/net/mip6.h linux-2.6.20.mpls/include/net/mip6.h
+--- linux-2.6.20.mpls.org/include/net/mip6.h	2008-05-16 16:59:47.000000000 +0200
++++ linux-2.6.20.mpls/include/net/mip6.h	2008-05-28 16:04:12.000000000 +0200
+@@ -52,7 +52,12 @@
+ #define IP6_MH_TYPE_BU		5   /* Binding Update */
+ #define IP6_MH_TYPE_BACK	6   /* Binding ACK */
+ #define IP6_MH_TYPE_BERROR	7   /* Binding Error */
+-#define IP6_MH_TYPE_MAX		IP6_MH_TYPE_BERROR
++//Modified by Huu-Nghia.Nguyen@eurecom.fr to support extension to Proxy MIPv6
++//#define IP6_MH_TYPE_MAX                IP6_MH_TYPE_BERROR
++#define IP6_MH_TYPE_PBRR       8       /* Proxy Binding Request */
++#define IP6_MH_TYPE_PBRE       9       /* Proxy Binding Response */
++#define IP6_MH_TYPE_MAX                IP6_MH_TYPE_PBRE
++
+ 
+ extern int mip6_init(void);
+ extern void mip6_fini(void);
+diff -aur linux-2.6.20.mpls.org/net/ipv6/ip6_input.c linux-2.6.20.mpls/net/ipv6/ip6_input.c
+--- linux-2.6.20.mpls.org/net/ipv6/ip6_input.c	2008-05-16 16:32:24.000000000 +0200
++++ linux-2.6.20.mpls/net/ipv6/ip6_input.c	2008-05-16 16:38:12.000000000 +0200
+@@ -228,6 +228,15 @@
+ 	return NF_HOOK(PF_INET6,NF_IP6_LOCAL_IN, skb, skb->dev, NULL, ip6_input_finish);
+ }
+ 
++//Added by Huu-Nghia.Nguyen@eurecom.fr
++static inline int ipv6_addr_is_solicited_mcast(const struct in6_addr *addr)
++{
++  return (addr->s6_addr32[0] == htonl(0xff020000) &&
++          addr->s6_addr32[1] == htonl(0x00000000) &&
++          addr->s6_addr32[2] == htonl(0x00000001) &&
++          addr->s6_addr [12] == 0xff);
++}
++
+ int ip6_mc_input(struct sk_buff *skb)
+ {
+ 	struct ipv6hdr *hdr;
+@@ -238,6 +247,7 @@
+ 	hdr = skb->nh.ipv6h;
+ 	deliver = likely(!(skb->dev->flags & (IFF_PROMISC|IFF_ALLMULTI))) ||
+ 	    ipv6_chk_mcast_addr(skb->dev, &hdr->daddr, NULL);
++        deliver = deliver || ipv6_addr_is_solicited_mcast(&hdr->daddr); //added by Huu-Nghia.Nguyen.eurecom.fr
+ 
+ 	/*
+ 	 *	IPv6 multicast router mode isnt currently supported.
+diff -aur linux-2.6.20.mpls.org/net/ipv6/raw.c linux-2.6.20.mpls/net/ipv6/raw.c
+--- linux-2.6.20.mpls.org/net/ipv6/raw.c	2008-05-16 16:27:14.000000000 +0200
++++ linux-2.6.20.mpls/net/ipv6/raw.c	2008-05-28 15:58:55.000000000 +0200
+@@ -95,6 +95,13 @@
+ 		if (inet_sk(sk)->num == num) {
+ 			struct ipv6_pinfo *np = inet6_sk(sk);
+ 
++			//Added by Huu-Nghia.Nguyen@eurecom.fr 
++                        if (is_multicast && np->rxopt.bits.allsma &&
++                            loc_addr->s6_addr32[0] == htonl(0xff020000) &&
++                            loc_addr->s6_addr32[1] == htonl(0x00000000) &&
++                            loc_addr->s6_addr32[2] == htonl(0x00000001) &&
++                            loc_addr->s6_addr [12] == 0xff ) goto found;
++
+ 			if (!ipv6_addr_any(&np->daddr) &&
+ 			    !ipv6_addr_equal(&np->daddr, rmt_addr))
+ 				continue;
+@@ -188,6 +195,7 @@
+ 			 * required for each socket.
+ 			 */
+ 			filtered = mip6_mh_filter(sk, skb);
++			filtered = 0; //Added by Huu-Nghia.Nguyen@eurecom.fr: Temporarily disable MH filter; TODO=override mip6_mh_filter
+ 			break;
+ #endif
+ 		default:
+@@ -935,6 +943,12 @@
+ 			return 0;
+ 			break;
+ 
++	        //Added by Huu-Nghia.Nguyen@eurecom.fr to support deliver of NS  message with solicited multicast address to raw socket
++   	        case IPV6_ALL_SOLICITED_MCAST_ADDR: 
++                        rp->inet6.rxopt.bits.allsma = (val != 0);
++         		return 0;
++         		break;
++
+ 		default:
+ 			return(-ENOPROTOOPT);
+ 	}
+@@ -1001,6 +1015,11 @@
+ 			val = rp->offset;
+ 		break;
+ 
++        //Added by Huu-Nghia.Nguyen@eurecom.fr to support deliver of NS  message with solicited multicast address to raw socket
++	case IPV6_ALL_SOLICITED_MCAST_ADDR: 
++		val = rp->inet6.rxopt.bits.allsma;
++         	break;
++
+ 	default:
+ 		return -ENOPROTOOPT;
+ 	}

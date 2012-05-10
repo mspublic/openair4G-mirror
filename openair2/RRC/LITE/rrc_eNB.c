@@ -44,7 +44,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "UTIL/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/LITE/MESSAGES/asn1_msg.h"
+//#include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "UL-CCCH-Message.h"
 #include "DL-CCCH-Message.h"
@@ -140,6 +140,7 @@ void init_SI(u8 Mod_id) {
     rrc_mac_config_req(Mod_id,1,0,0,
 		       (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
 		       (struct PhysicalConfigDedicated *)NULL,
+		       (MeasObjectToAddMod_t **)NULL,
 		       (MAC_MainConfig_t *)NULL,
 		       0,
 		       (struct LogicalChannelConfig *)NULL,
@@ -459,12 +460,11 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
 
 
-  size = do_RRCConnectionReconfiguration(buffer,
+  size = do_RRCConnectionReconfiguration(Mod_id,
+					 buffer,
 					 UE_index,
 					 0,
-					 &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
-					 &eNB_rrc_inst[Mod_id].DRB_config[UE_index][0],
-					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
+					 &eNB_rrc_inst[Mod_id]);
 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
   
@@ -564,6 +564,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
 			   eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelConfig,
@@ -587,6 +588,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
 			   (LogicalChannelConfig_t *)NULL,
@@ -645,6 +647,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
   rrc_mac_config_req(Mod_id,1,UE_index,0,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+		     (MeasObjectToAddMod_t **)NULL,
 		     eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 		     1,
 		     SRB1_logicalChannelConfig,

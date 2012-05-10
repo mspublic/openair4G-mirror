@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include "SIMULATION/TOOLS/defs.h"
+//#include "SIMULATION/TOOLS/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
@@ -19,6 +19,9 @@
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "OCG_vars.h"
+#include "UTIL/OTG/otg_tx.h"
+#include "UTIL/OTG/otg.h"
+#include "UTIL/OTG/otg_vars.h"
 
 
 char binary_table[16][5] = {{"0000\0"},{"0001\0"},{"0010\0"},{"0011\0"},{"0100\0"},{"0101\0"},{"0110\0"},{"0111\0"},{"1000\0"},{"1001\0"},{"1010\0"},{"1011\0"},{"1100\0"},{"1101\0"},{"1110\0"},{"1111\0"}};
@@ -284,12 +287,11 @@ u8 attach_ue0(char *sdu) {
   UE_rrc_inst[0].Info[0].State = RRC_SI_RECEIVED;
   rrc_ue_generate_RRCConnectionRequest(0,131,0);
 
-  //  Size = Rrc_xface->mac_rrc_data_req(0, 
   Size = mac_rrc_data_req(0,
-			  131,
-			  CCCH,1,
-			  &sdu[sizeof(SCH_SUBHEADER_SHORT)],0,
-			  0);
+				     131,
+				     CCCH,1,
+				     &sdu[sizeof(SCH_SUBHEADER_SHORT)],0,
+				     0);
   Size16 = (u16)Size;
 
   generate_ulsch_header((u8 *)sdu,  // mac header
@@ -312,7 +314,6 @@ u8 attach_ue1(char *sdu) {
   mac_rrc_lite_data_ind(0,131,0,UE_rrc_inst[0].Srb0[0].Tx_buffer.Payload,
 			UE_rrc_inst[0].Srb0[0].Tx_buffer.payload_size,1,0);
 
-  //  return(Rrc_xface->mac_rrc_data_req(0,
   return(mac_rrc_data_req(0,
 				     132,
 				     0,1,
@@ -472,7 +473,7 @@ int main (int argc, char **argv) {
     printf("Got SI from files (%d,%d,%d,%d,%d)\n",args.input_sib,args.input1_sdu_flag,args.input2_sdu_flag);
   }
   openair_rrc_on(0,0);
-  openair_rrc_ue_init(0,0);
+  openair_rrc_lite_ue_init(0,0);
 
   switch (args.SDUsource) {
   case eNB_RRC:
