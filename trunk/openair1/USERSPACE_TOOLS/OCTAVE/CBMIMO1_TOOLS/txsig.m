@@ -1,5 +1,15 @@
 dual_tx=1;
-oarf_config(0,1,dual_tx,255);
+cbmimo1=0;
+
+if (cbmimo1)
+  oarf_config(0,1,dual_tx,255);
+  amp = pow2(7)-1;
+  n_bit = 8;
+else
+  oarf_config_exmimo(1902600000,1,dual_tx,30);
+  amp = pow2(15)-1;
+  n_bit = 16;
+end
 
 s = zeros(76800,2);
 
@@ -7,11 +17,9 @@ select = 1;
 
 switch(select)
 
-
-
 case 1
-s(:,1) = 80 * (exp(sqrt(-1)*.5*pi*(0:((76800)-1))));
-s(:,2) = 80 * (exp(sqrt(-1)*.5*pi*(0:((76800)-1))));
+s(:,1) = amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1))));
+s(:,2) = amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1))));
 
 case 2
 s(38400+128,1)= 80-1j*40;
@@ -42,8 +50,10 @@ otherwise
 error('unknown case')
 endswitch
 
-oarf_set_tx_gain(110,110,110,110);
-oarf_send_frame(0,s,8);
+if (cbmimo1)
+  oarf_set_tx_gain(110,110,110,110);
+end
+oarf_send_frame(0,s,n_bit);
 
 figure(1)
 hold off
