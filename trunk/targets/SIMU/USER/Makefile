@@ -58,6 +58,10 @@ ifdef XFORMS
 CFLAGS += -DXFORMS
 endif
 
+ifdef PRINT_STATS
+CFLAGS += -DPRINT_STATS
+endif
+
 ifndef rrc_cellular
 rrc_cellular = 0
 rrc_cellular_eNB = 0
