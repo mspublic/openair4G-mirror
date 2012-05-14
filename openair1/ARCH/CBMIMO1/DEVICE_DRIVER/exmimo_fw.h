@@ -20,6 +20,6 @@ typedef struct {
 #define SLOT_INTERRUPT 0x1111
 #define PCI_PRINTK 0x2222
 #define GET_FRAME_DONE 0x3333
-void pci_fifo_printk();
+void pci_fifo_printk(void);
 
 #endif

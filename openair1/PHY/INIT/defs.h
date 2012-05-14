@@ -154,7 +154,7 @@ int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
 
 void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
-void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
+//void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
 #endif
 

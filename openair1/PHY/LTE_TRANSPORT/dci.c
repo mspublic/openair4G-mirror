@@ -2536,6 +2536,9 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
+  if (phy_vars_ue->UE_mode[eNB_id] < PUSCH)
+    return(dci_cnt);
+
   // These are for CRNTI based on transmission mode
   if (tmode < 3) {
     // Now check UE_SPEC format 1 search spaces at aggregation 1 
@@ -2759,6 +2762,9 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   }
   else { // This is MU-MIMO
   // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 1
+    //#ifdef DEBUG_DCI_DECODING
+    msg("[PHY] MU-MIMO check UE_SPEC format 1E_2A_M10PRB\n");
+    //#endif 
     dci_decoding_procedure0(lte_ue_pdcch_vars,
 			    subframe,
 			    dci_alloc,

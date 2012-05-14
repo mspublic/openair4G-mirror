@@ -4,7 +4,7 @@
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
 
-#ifndef USER_MODE
+#ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
@@ -14,6 +14,9 @@ void
 phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
 
   u16 rx_power_fil_dB;
+#ifdef CBMIMO1
+  int i;
+#endif
 
   rx_power_fil_dB = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id];
 
@@ -46,8 +49,7 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
     phy_vars_ue->rx_total_gain_dB = MIN_RF_GAIN;
   }
 
-#ifndef USER_MODE
-  int i;
+#ifdef CBMIMO1
   for (i=0;i<number_of_cards;i++) {
     //openair_set_rx_rf_mode(i,openair_daq_vars.rx_rf_mode);
     openair_set_rx_gain_cal_openair(i,phy_vars_ue->rx_total_gain_dB);
