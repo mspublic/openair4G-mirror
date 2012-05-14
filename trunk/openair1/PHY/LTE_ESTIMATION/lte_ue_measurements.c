@@ -47,18 +47,22 @@ __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 s16 get_PL(u8 Mod_id,u8 eNB_index) {
 
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
-  /*
+  
   msg("get_PL : rssi %d, eNB power %d\n",
-      phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index],
+      dB_fixed(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB,
       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower);
-  */
-  return((s16)(-phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index] + 
-	       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower));
+  
+  //return((s16)(-phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_index] + 
+  //	       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower));
+  return((s16)(phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->PHY_measurements.rssi) + 
+  	       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower));
+
 }
 
 
 void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
-			 u8 slot) {
+			 u8 slot,
+			 u8 abstraction_flag) {
 
   int aarx,i,rb;
   s16 *rxF;
@@ -67,6 +71,15 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
   u8 Nid1 = Nid_cell/3,Nid2=Nid_cell%3,Nid2b;
   u8 eNB_offset,nu,l,nushift,k;
   u16 off,off2;
+  s16 rx_power_correction;
+
+  // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
+  if ( (abstraction_flag==0) && ((phy_vars_ue->lte_frame_parms.ofdm_symbol_size == 128) ||
+				 (phy_vars_ue->lte_frame_parms.ofdm_symbol_size == 512)) )
+    rx_power_correction = 2;
+  else
+    rx_power_correction = 1;
+
 
   for (eNB_offset = 0;eNB_offset<3;eNB_offset++) {
 
@@ -107,7 +120,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	  if (off>=(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<2))
 	    off = (1+k)<<2;
 
-	  if (eNB_offset==0) {
+	  if ((eNB_offset==0) && (l==0)) {
 	    for (i=0;i<6;i++,off2+=4)
 	      phy_vars_ue->PHY_measurements.rssi += ((rxF[off2]*rxF[off2])+(rxF[off2+1]*rxF[off2+1]));
 	    if (off2==(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<2))
@@ -119,8 +132,11 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	}
       }
     }
-    if (eNB_offset==0)
-      phy_vars_ue->PHY_measurements.rssi>>=1;
+    if (eNB_offset==0) {
+      phy_vars_ue->PHY_measurements.rssi/=(24*phy_vars_ue->lte_frame_parms.N_RB_DL);
+      phy_vars_ue->PHY_measurements.rssi*=rx_power_correction;
+    }
+
     //phy_vars_ue->PHY_measurements.rsrp[eNB_offset]/=(2*phy_vars_ue->lte_frame_parms.N_RB_DL);
     phy_vars_ue->PHY_measurements.rsrp[eNB_offset] = phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_offset][0][0]/(2*phy_vars_ue->lte_frame_parms.N_RB_DL);
     if (phy_vars_ue->PHY_measurements.rssi)
