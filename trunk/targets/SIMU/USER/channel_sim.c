@@ -450,7 +450,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	if (((double)PHY_vars_UE_g[UE_id]->tx_power_dBm + 	
 	     UE2eNB[UE_id][eNB_id]->path_loss_dB) <= -125.0) {
 	  
-	  // don't simulate a UE that is 
+	  // don't simulate a UE that is too weak
 	}
 	else {
 	  

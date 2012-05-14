@@ -108,7 +108,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   
   path_loss = env_desc.fading.free_space_model_parameters.pathloss_0_dB - 
 		10*env_desc.fading.free_space_model_parameters.pathloss_exponent * log10(dist/1000); 
-  //printf("dist %f, Path Loss %f\n",dist,ch_desc->path_loss_dB);
+  //printf("dist %f, Path loss %f\n",dist,ch_desc->path_loss_dB);
 
   /* Calculating the angle in the range -pi to pi from the slope */
   alpha = atan2((ue_data->x - enb_data->x), (ue_data->y - enb_data->y));
@@ -118,15 +118,18 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   ch_desc->aoa = alpha;
   ch_desc->random_aoa = 0;
       
-  gain_max = -1000;
-  for(count = 0; count < enb_data->n_sectors; count++) {
-    theta = enb_data->alpha_rad[count] - alpha;
-    /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
-    gain_sec[count] = -(Am < (12 * pow((theta/enb_data->phi_rad),2)) ? Am : (12 * pow((theta/enb_data->phi_rad),2)));
-    if (gain_sec[count]>gain_max)
-      gain_max = gain_sec[count];
+  if (enb_data->n_sectors==1) //assume omnidirectional antenna
+    gain_max = 0;
+  else {
+    gain_max = -1000;
+    for(count = 0; count < enb_data->n_sectors; count++) {
+      theta = enb_data->alpha_rad[count] - alpha;
+      /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
+      gain_sec[count] = -(Am < (12 * pow((theta/enb_data->phi_rad),2)) ? Am : (12 * pow((theta/enb_data->phi_rad),2)));
+      if (gain_sec[count]>gain_max)  //take the sector that we are closest too (or where the gain is maximum)
+	gain_max = gain_sec[count];
+    }
   }
-
   path_loss += enb_data->ant_gain_dBi + gain_max + ue_data->ant_gain_dBi;
   path_loss += Shad_Fad;
 
