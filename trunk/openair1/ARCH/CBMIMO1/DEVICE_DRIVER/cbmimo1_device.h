@@ -1,4 +1,3 @@
-
 #ifndef OPENAIR_DEVICE_H
 #define OPENAIR_DEVICE_H
 
@@ -100,7 +99,8 @@
 #define openair_SET_COOPERATION_FLAG                  _IOR(openair_IOC_MAGIC,57,int)
 #define openair_SET_RX_OFFSET                         _IOR(openair_IOC_MAGIC,58,int)
 #define openair_START_LXRT                            _IOR(openair_IOC_MAGIC,59,int)
-#define openair_MAXNR         59
+#define openair_GET_PCI_INTERFACE                     _IOR(openair_IOC_MAGIC,60,int)
+#define openair_MAXNR         60
 
 
 

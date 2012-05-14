@@ -1,3 +1,4 @@
+/*
 #ifdef CBMIMO1
 #include "ARCH/COMMON/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
@@ -7,6 +8,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
 //#include "pci_commands.h"
 #endif //CBMIMO1
+*/
 #include "defs.h"
 #include "SCHED/defs.h"
 #include "PHY/extern.h"

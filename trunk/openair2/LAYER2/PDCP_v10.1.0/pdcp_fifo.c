@@ -90,7 +90,7 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
 
   while (sdu && cont) {
 
-#ifdef USER_MODE
+#if defined(USER_MODE) && defined(OAI_EMU)
     // asjust the instance id when passing sdu to IP
     ((pdcp_data_ind_header_t *)(sdu->data))->inst = (((pdcp_data_ind_header_t *)(sdu->data))->inst >= NB_eNB_INST) ?
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - NB_eNB_INST +oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local :// UE

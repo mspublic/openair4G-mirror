@@ -40,6 +40,8 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
+#include "SCHED/extern.h"
 #include "defs.h"
 #include "extern.h"
 
@@ -74,6 +76,10 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 		      phy_vars_ue->rx_offset,
 		      0,
 		      0);
+
+  if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
+    phy_adjust_gain(phy_vars_ue,0);
+
   /*
 	msg("[PHY][UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 		  phy_vars_ue->Mod_id,
@@ -398,8 +404,6 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;
     //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
 
-    phy_adjust_gain(phy_vars_ue,0);
-
   }
   else {
     //#ifdef DEBUG_INIT_SYNC
@@ -410,7 +414,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	metric_fdd_ncp,Nid_cell_fdd_ncp, 
 	metric_fdd_ecp,Nid_cell_fdd_ecp,
 	metric_tdd_ncp,Nid_cell_tdd_ncp,
-	metric_tdd_ecp,Nid_cell_fdd_ecp);
+	metric_tdd_ecp,Nid_cell_tdd_ecp);
     msg("[PHY][UE%d] Initial sync : Estimated Nid_cell %d, Frame_type %d\n",phy_vars_ue->Mod_id,
 	frame_parms->Nid_cell,frame_parms->frame_type);
     //#endif

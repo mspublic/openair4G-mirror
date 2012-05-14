@@ -44,9 +44,10 @@ MAC_xface *mac_xface;
 
 u8 Is_rrc_registered;
 
-#ifndef PHY_EMUL
-unsigned char NB_eNB_INST;
-unsigned char NB_UE_INST;
+#ifdef OPENAIR2
+unsigned char NB_eNB_INST=0;
+unsigned char NB_UE_INST=0;
+unsigned char NB_INST=0;
 #endif
 
 

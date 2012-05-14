@@ -1,3 +1,5 @@
+#ifndef __CBMIMO1_EXTERN_H__
+#define __CBMIMO1_EXTERN_H__
 #ifndef USER_MODE
 #define __NO_VERSION__
 
@@ -11,7 +13,6 @@
 #endif
 
 //#include "pci_commands.h"
-#include "cbmimo1_pci.h"
 #include "defs.h"
 
 
@@ -36,19 +37,22 @@ extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern unsigned int mbox;
 
-extern PCI_interface_t *pci_interface[4];
-extern exmimo_pci_interface_bot *exmimo_pci_bot;
-extern exmimo_pci_interface_t *exmimo_pci_interface;
-
 extern unsigned int vid,did;
 
-extern unsigned short NODE_ID[1];
+//extern unsigned short NODE_ID[1];
 #endif
 
+#include "cbmimo1_pci.h"
+
+extern PCI_interface_t *pci_interface[4];
 extern char number_of_cards;
+
+extern exmimo_pci_interface_bot *exmimo_pci_bot;
+extern exmimo_pci_interface_t *exmimo_pci_interface;
 
 #ifdef RTAI_ENABLED
 extern s32 *inst_cnt_ptr;
 extern SEM *oai_semaphore;
 extern RT_TASK *lxrt_task;
+#endif
 #endif

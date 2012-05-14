@@ -4,19 +4,16 @@
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
 
-#ifndef PLATON
-#ifndef USER_MODE
+#ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
-#endif //USER_MODE
-#endif //PLATON
+#endif 
 
 // Adjust location synchronization point to account for drift
 // The adjustment is performed once per frame based on the
 // last channel estimate of the receiver
-
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      PHY_VARS_UE *phy_vars_ue,
@@ -79,16 +76,9 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
     msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",mac_xface->frame,phy_vars_ue->rx_offset,max_pos,max_pos_fil);
 #endif //DEBUG_PHY
 
-#ifndef USER_MODE
-#ifndef PHY_EMUL
-#ifndef NOCARD_TEST
-#ifndef PLATON
+#ifdef CBMIMO1
   pci_interface[0]->frame_offset = phy_vars_ue->rx_offset;
-  //  openair_dma(ADJUST_SYNCH);
-#endif //PLATON
-#endif //PHY_EMUL
-#endif // NOCARD_TEST
-#endif // PHY_EMUL
+#endif
 
 }
 

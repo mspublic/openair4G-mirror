@@ -883,7 +883,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       for (i=0;i<number_of_cards;i++) {
 	setup_regs(i,frame_parms);
-	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	if (vid != XILINX_VENDOR) {
+	  openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	}
+	else {
+	  openair_dma(i,EXMIMO_STOP_TX);
+	}
       }
 
       openair_daq_vars.tx_test=0;
@@ -951,11 +956,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	
 	openair_daq_vars.node_id = NODE;      
 	
-	for (i=0;i<number_of_cards;i++)
+	for (i=0;i<number_of_cards;i++) {
 	  ret = setup_regs(i,frame_parms);
+	  openair_get_frame(i);
+	}
 
-	
-	openair_daq_vars.one_shot_get_frame=1;
+	//openair_daq_vars.one_shot_get_frame=1;
 	
       }
       else {
@@ -1592,7 +1598,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_SET_TIMING_ADVANCE:
 
     for (i=0;i<number_of_cards;i++) 
-      pci_interface[i]->frame_offset = ((unsigned int *)arg)[0];
+      pci_interface[i]->timing_advance = ((unsigned int *)arg)[0];
 
     /*
     openair_daq_vars.manual_timing_advance = 1;
@@ -1691,7 +1697,16 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     for (i=0;i<number_of_cards;i++) 
       pci_interface[i]->frame_offset = ((unsigned int *)arg)[0];
 
+    printk("[IOCTL] Setting frame offset to %d\n", pci_interface[0]->frame_offset);
+
     break;
+
+  case openair_GET_PCI_INTERFACE:
+    copy_to_user((void *)arg,&pci_interface[0],sizeof(PCI_interface_t*));
+    printk("[IOCTL] copying pci_interface[0]=%p to %p\n", pci_interface[0],arg);
+      
+    break;
+    
 
   default:
     //----------------------

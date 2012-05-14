@@ -414,6 +414,8 @@ typedef struct {
   u8 tdd_config;
   /// TDD S-subframe configuration (0-9) 
   u8 tdd_config_S;
+  /// indicates if node is a UE (NODE=2) or eNB (PRIMARY_CH=0).
+  u8 node_id;
   /// Frequency index of CBMIMO1 card
   u8 freq_idx;
   /// Frequency for ExpressMIMO/LIME

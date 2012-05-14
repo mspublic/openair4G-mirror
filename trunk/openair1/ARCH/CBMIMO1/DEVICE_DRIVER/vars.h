@@ -1,3 +1,5 @@
+#ifndef __CBMIMO1_VARS_H__
+#define __CBMIMO1_VARS_H__
 #ifndef USER_MODE
 #define __NO_VERSION__
 
@@ -10,10 +12,7 @@
 #include <linux/slab.h>
 #endif
 
-#include "cbmimo1_pci.h"
 #include "defs.h"
-
-
 
 unsigned int openair_irq;
 
@@ -37,20 +36,22 @@ int major;
 unsigned int pci_buffer[4][2*NB_ANTENNAS_RX];
 unsigned int mbox;
 
-PCI_interface_t *pci_interface[4];
-exmimo_pci_interface_bot *exmimo_pci_bot;
-exmimo_pci_interface_t *exmimo_pci_interface;
-
-unsigned short NODE_ID[1];
+//unsigned short NODE_ID[1];
 //EXPORT_SYMBOL(NODE_ID);
 
 #endif
 
+#include "cbmimo1_pci.h"
+
+PCI_interface_t *pci_interface[4];
 char number_of_cards;
+
+exmimo_pci_interface_bot *exmimo_pci_bot;
+exmimo_pci_interface_t *exmimo_pci_interface;
 
 #ifdef RTAI_ENABLED
 s32 *inst_cnt_ptr = NULL;
 SEM *oai_semaphore = NULL;
 RT_TASK *lxrt_task;
 #endif
-
+#endif

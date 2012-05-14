@@ -79,8 +79,8 @@
 #define TARGET_SF_TIME_NS 1000000	// 1ms = 1000000 ns
 
 //#ifdef OPENAIR2
-u16 NODE_ID[1];
-u8 NB_INST = 2;
+//u16 NODE_ID[1];
+//u8 NB_INST = 2;
 //#endif //OPENAIR2
 char stats_buffer[16384];
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -632,6 +632,7 @@ main (int argc, char **argv)
   char x_area[20];
   char y_area[20];  
   char z_area[20];
+  char fname[64],vname[64];
 
  u8 awgn_flag = 0;
 #ifdef XFORMS
@@ -1300,7 +1301,7 @@ main (int argc, char **argv)
 	      */
 	    }
  	  }
-#ifndef PRINT_STATS
+#ifdef PRINT_STATS
 	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
@@ -1373,9 +1374,11 @@ main (int argc, char **argv)
 
     }				//end of slot
 
-    if ((frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
+    if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      sprintf(fname,"eNBtxsig%d.m",frame);
+      sprintf(vname,"txs%d",frame);
+      write_output(fname,vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
 
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);

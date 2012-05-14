@@ -93,7 +93,7 @@ void logInit (void) {
     g_log->log_component[PHY].filelog_name = "/tmp/phy.log";
     
     g_log->log_component[MAC].name = "MAC";
-    g_log->log_component[MAC].level = LOG_INFO;
+    g_log->log_component[MAC].level = LOG_DEBUG;
     g_log->log_component[MAC].flag =  LOG_MED;
     g_log->log_component[MAC].interval =  1;
     g_log->log_component[MAC].fd = 0;

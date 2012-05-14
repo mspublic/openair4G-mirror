@@ -112,7 +112,7 @@ endif
 
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
-CFLAGS += -DENABLE_FXP
+CFLAGS += -DENABLE_FXP -DOAI_EMU
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
@@ -150,7 +150,7 @@ INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
 CFLAGS +=-DPROC
 endif 
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
 ifeq ($(OPENAIR2),1)
 OBJ += $(L2_OBJS)
 endif
@@ -171,13 +171,13 @@ printvars:
 	@echo eNB_flag is $(eNB_flag)
 	@echo UE_flag is $(UE_flag)
 
-$(OBJ): %.o : %.c
+$(OBJ) $(ASN1_MSG_OBJS1) : %.o : %.c
 	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
-oaisim : $(OBJ) oaisim.c  
+oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c  
 	@echo "Compiling oaisim.c ..."
-	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
