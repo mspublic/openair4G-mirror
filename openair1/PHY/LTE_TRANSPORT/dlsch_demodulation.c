@@ -6613,7 +6613,6 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       dl_ch_mag128_1b     = (__m128i *)&dl_ch_magb[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
 
       // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
-      //TODO: distingush here between symbols w/o pilots 
       for (i=0;i<nb_rb*3;i++) {
 	rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
 	dl_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0[i],1),_mm_srai_epi16(dl_ch_mag128_1[i],1));
@@ -7451,7 +7450,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  else if ((rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
 	    skip_half=2;
 	}
-	//	printf("rb %d: alloc %d skip_half %d (rxF %p, rxF_ext %p)\n",rb,rb_alloc_ind,skip_half,rxF,rxF_ext);
+    //	printf("rb %d: alloc %d skip_half %d (rxF %p, rxF_ext %p)\n",rb,rb_alloc_ind,skip_half,rxF,rxF_ext);
 
 	if (rb_alloc_ind==1) {
 
@@ -8986,8 +8985,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
   _m_empty();
   
 }     
-
-#ifdef ENABLE_FLP
+	 
 void dlsch_channel_compensation_prec_flp(int **rxdataF_ext,
 					 int **dl_ch_estimates_ext,
 					 int **dl_ch_mag,
@@ -10274,310 +10272,6 @@ void dlsch_channel_compensation_prec_full_flp(int **rxdataF_ext,
             
   phy_measurements->precoded_cqi_dB[eNB_id][0] = dB_fixed2(precoded_signal_strength,phy_measurements->n0_power_tot);
 }
-{  
-  
-  unsigned short rb,Nre;
-  unsigned char aarx=0,symbol_mod,pilots=0;
-  int precoded_signal_strength=0,rx_power_correction;
-  int i;
-  double QAM_amp, QAM_ampb;
-  short *p_dl_ch_0/*input*/, *p_dl_ch_1/*input*/, *p_rxdataF/*input*/;
-  double *p_dl_ch_magb/*output*/, *p_dl_ch_mag/*output*/, *p_rxdataF_comp/*output*/;
-
-  double dl_ch_0_temp[24], dl_ch_1_temp[24], dl_ch_mag_temp[24], dl_ch_magb_temp[24], rxdataF_temp[24], rxdataF_comp_temp[24];
-  double temp0_16bits[8], temp1_16bits[8]/*, temp2_16bits[8], temp3_16bits[8]*/; // Correspond to 8*16 bits
-  double temp0_32bits[4], temp1_32bits[4], temp2_32bits[4], temp3_32bits[4]; // Correspond to 4*32 bits
-
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  // printf("symbol_mod=%d\n", symbol_mod);
-
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
-    pilots=1;
-
-  if ( (frame_parms->ofdm_symbol_size == 128) ||
-       (frame_parms->ofdm_symbol_size == 512) )
-    rx_power_correction = 2;
-  else
-    rx_power_correction = 1;
-
-  if (dl_power_off==1) { /* IA receiver */
-    if (mod_order == 4)
-      {
-	QAM_amp = 2.0/sqrt(10);
-	QAM_ampb = 0.0; // Un-initialized (while used) for 16-QAM
-      }
-    else if (mod_order == 6)
-      {
-	QAM_amp  = 4.0/sqrt(42);
-	QAM_ampb = 2.0/sqrt(42);
-      }
-  }
-  else { /* Non-IA receiver */
-    if (mod_order == 4)
-      {
-	QAM_amp = 2.0/sqrt(10)/sqrt(2);
-	QAM_ampb = 0.0;
-      }
-    else if (mod_order == 6)
-      {
-	QAM_amp  = 4.0/sqrt(42)/sqrt(2);
-	QAM_ampb = 2.0/sqrt(42)/sqrt(2);
-      }
-  }
-  
-  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-    {
-      p_dl_ch_0 = (short *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-      p_dl_ch_1 = (short *)&dl_ch_estimates_ext[2+aarx][symbol_mod*frame_parms->N_RB_DL*12];
-      
-      p_dl_ch_mag  = (double *)&dl_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
-      p_dl_ch_magb = (double *)&dl_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
-      
-      p_rxdataF      = (short *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      p_rxdataF_comp = (double *)&rxdataF_comp[aarx][symbol*frame_parms->N_RB_DL*12];
-      // pointers are first casted to short for 16-bits format reading/writing
-
-      for (rb=0;rb<nb_rb;rb++)
-	{
-	  for (i=0; i<16; i++)
-	    {
-	      dl_ch_0_temp[i] = *(p_dl_ch_0+i)/pow(2, 15);
-	      dl_ch_1_temp[i] = *(p_dl_ch_1+i)/pow(2, 15);
-	      rxdataF_temp[i] = *(p_rxdataF+i)/pow(2, 15);
-	    }
-	  if (pilots==0)
-	    {
-	      for (i=16; i<24; i++)
-		{
-		  dl_ch_0_temp[i] = *(p_dl_ch_0+i)/pow(2, 15);
-		  dl_ch_1_temp[i] = *(p_dl_ch_1+i)/pow(2, 15);
-		  rxdataF_temp[i] = *(p_rxdataF+i)/pow(2, 15);
-		}
-	    }
-
-	  // combine TX channels using precoder from pmi
-	  prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[0], &dl_ch_1_temp[0]);
-	  prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[8], &dl_ch_1_temp[8]);
-	  if (pilots==0)
-	    prec2A_flp(pmi_ext[rb], &dl_ch_0_temp[16], &dl_ch_1_temp[16]);
-
-	  if (mod_order>2)
-	    {
-	      // get channel amplitude if not QPSK
-	      for (i=0; i<8>>1; i++)
-		{
-		  temp0_32bits[i] = dl_ch_0_temp[2*i]*dl_ch_0_temp[2*i]     + dl_ch_0_temp[2*i+1]*dl_ch_0_temp[2*i+1];
-		  temp1_32bits[i] = dl_ch_0_temp[8+2*i]*dl_ch_0_temp[8+2*i] + dl_ch_0_temp[8+2*i+1]*dl_ch_0_temp[8+2*i+1];
-		}
-	      
-	      for (i=0; i<8>>1; i++)
-		{
-		  temp0_16bits[i]   = temp0_32bits[i];
-		  temp0_16bits[4+i] = temp1_32bits[i];
-		}
-	      for (i=0; i<8>>1; i++)
-		{
-		  dl_ch_mag_temp[2*i]     = temp0_16bits[i]; // unpacklo
-		  dl_ch_mag_temp[2*i+1]   = temp0_16bits[i];
-		  dl_ch_mag_temp[8+2*i]   = temp0_16bits[4+i]; // unpachhi
-		  dl_ch_mag_temp[8+2*i+1] = temp0_16bits[4+i];
-		  
-		  dl_ch_magb_temp[2*i]     = dl_ch_mag_temp[2*i];
-		  dl_ch_magb_temp[2*i+1]   = dl_ch_mag_temp[2*i+1];
-		  dl_ch_magb_temp[8+2*i]   = dl_ch_mag_temp[8+2*i];
-		  dl_ch_magb_temp[8+2*i+1] = dl_ch_mag_temp[8+2*i+1];
-		  
-		  dl_ch_mag_temp[2*i]     = dl_ch_mag_temp[2*i]*QAM_amp;
-		  dl_ch_mag_temp[2*i+1]   = dl_ch_mag_temp[2*i+1]*QAM_amp;
-		  dl_ch_mag_temp[8+2*i]   = dl_ch_mag_temp[8+2*i]*QAM_amp;
-		  dl_ch_mag_temp[8+2*i+1] = dl_ch_mag_temp[8+2*i+1]*QAM_amp;
-		}
-
-	      if (pilots==0)
-		{
-		  for (i=0; i<8>>1; i++)
-		    temp0_32bits[i] = dl_ch_0_temp[16+2*i]*dl_ch_0_temp[16+2*i] + dl_ch_0_temp[16+2*i+1]*dl_ch_0_temp[16+2*i+1];
-		  
-		  for (i=0; i<8>>1; i++)
-		    {
-		      temp1_16bits[i]   = temp0_32bits[i];
-		      temp1_16bits[4+i] = temp0_32bits[i];
-		    }
-		  for (i=0; i<8>>1; i++)
-		    {
-		      dl_ch_mag_temp[16+2*i]   = temp1_16bits[i]; // unpacklo
-		      dl_ch_mag_temp[16+2*i+1] = temp1_16bits[i];
-		      
-		      dl_ch_magb_temp[16+2*i]   = dl_ch_mag_temp[16+2*i];
-		      dl_ch_magb_temp[16+2*i+1] = dl_ch_mag_temp[16+2*i+1];
-		      
-		      dl_ch_mag_temp[16+2*i]   = dl_ch_mag_temp[16+2*i]*QAM_amp;
-		      dl_ch_mag_temp[16+2*i+1] = dl_ch_mag_temp[16+2*i+1]*QAM_amp;
-		    }
-		}
-	      
-	      for (i=0; i<8>>1; i++)
-		{
-		  dl_ch_magb_temp[2*i]   = dl_ch_magb_temp[2*i]*QAM_ampb;
-		  dl_ch_magb_temp[2*i+1] = dl_ch_magb_temp[2*i+1]*QAM_ampb;
-		  
-		  dl_ch_magb_temp[8+2*i]   = dl_ch_magb_temp[8+2*i]*QAM_ampb;
-		  dl_ch_magb_temp[8+2*i+1] = dl_ch_magb_temp[8+2*i+1]*QAM_ampb;
-		}
-	      
-	      if (pilots==0)
-		{
-		  for (i=0; i<8>>1; i++)
-		    {
-		      dl_ch_magb_temp[16+2*i]   = dl_ch_magb_temp[16+2*i]*QAM_ampb;
-		      dl_ch_magb_temp[16+2*i+1] = dl_ch_magb_temp[16+2*i+1]*QAM_ampb;
-		    }
-		}
-	    }
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp0_32bits[i] = dl_ch_0_temp[2*i]*rxdataF_temp[2*i] + dl_ch_0_temp[2*i+1]*rxdataF_temp[2*i+1];
-	  
-	  temp1_16bits[0] = -dl_ch_0_temp[1]; // shuffle low
-	  temp1_16bits[1] =  dl_ch_0_temp[0]; // + conjugate
-	  temp1_16bits[2] = -dl_ch_0_temp[3];
-	  temp1_16bits[3] =  dl_ch_0_temp[2];
-	  temp1_16bits[4] = -dl_ch_0_temp[4+1]; // shuffle high
-	  temp1_16bits[5] =  dl_ch_0_temp[4+0];
-	  temp1_16bits[6] = -dl_ch_0_temp[4+3];
-	  temp1_16bits[7] =  dl_ch_0_temp[4+2];
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[2*i] + temp1_16bits[2*i+1]*rxdataF_temp[2*i+1];
-	  
-	  temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	  temp2_32bits[1] = temp1_32bits[0];
-	  temp2_32bits[2] = temp0_32bits[1];
-	  temp2_32bits[3] = temp1_32bits[1];
-	  
-	  temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	  temp3_32bits[1] = temp1_32bits[2];
-	  temp3_32bits[2] = temp0_32bits[3];
-	  temp3_32bits[3] = temp1_32bits[3];
-	  
-	  for (i=0; i<8>>1; i++)
-	    {
-	      rxdataF_comp_temp[i]   = temp2_32bits[i];
-	      rxdataF_comp_temp[4+i] = temp3_32bits[i];
-	    }
-	 
-	  for (i=0; i<8>>1; i++)
-	    temp0_32bits[i] = dl_ch_0_temp[8+2*i]*rxdataF_temp[8+2*i] + dl_ch_0_temp[8+2*i+1]*rxdataF_temp[8+2*i+1];
-	  
-	  temp1_16bits[0] = -dl_ch_0_temp[8+1]; // shuffle low
-	  temp1_16bits[1] =  dl_ch_0_temp[8+0]; // + conjugate
-	  temp1_16bits[2] = -dl_ch_0_temp[8+3];
-	  temp1_16bits[3] =  dl_ch_0_temp[8+2];
-	  temp1_16bits[4] = -dl_ch_0_temp[8+4+1]; // shuffle high
-	  temp1_16bits[5] =  dl_ch_0_temp[8+4+0];
-	  temp1_16bits[6] = -dl_ch_0_temp[8+4+3];
-	  temp1_16bits[7] =  dl_ch_0_temp[8+4+2];
-	  
-	  for (i=0; i<8>>1; i++)
-	    temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[8+2*i] + temp1_16bits[2*i+1]*rxdataF_temp[8+2*i+1];
-	  	  
-	  temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	  temp2_32bits[1] = temp1_32bits[0];
-	  temp2_32bits[2] = temp0_32bits[1];
-	  temp2_32bits[3] = temp1_32bits[1];
-	  
-	  temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	  temp3_32bits[1] = temp1_32bits[2];
-	  temp3_32bits[2] = temp0_32bits[3];
-	  temp3_32bits[3] = temp1_32bits[3];
-	  	  
-	  for (i=0; i<8>>1; i++)
-	    {
-	      rxdataF_comp_temp[8+i]   = temp2_32bits[i];
-	      rxdataF_comp_temp[8+4+i] = temp3_32bits[i];
-	    }
-
-	  if (pilots==0)
-	    {
-	      for (i=0; i<8>>1; i++)
-		temp0_32bits[i] = dl_ch_0_temp[16+2*i]*rxdataF_temp[16+2*i] + dl_ch_0_temp[16+2*i+1]*rxdataF_temp[16+2*i+1];
-	  
-	      temp1_16bits[0] = -dl_ch_0_temp[16+1]; // shuffle low
-	      temp1_16bits[1] =  dl_ch_0_temp[16+0]; // + conjugate
-	      temp1_16bits[2] = -dl_ch_0_temp[16+3];
-	      temp1_16bits[3] =  dl_ch_0_temp[16+2];
-	      temp1_16bits[4] = -dl_ch_0_temp[16+4+1]; // shuffle high
-	      temp1_16bits[5] =  dl_ch_0_temp[16+4+0];
-	      temp1_16bits[6] = -dl_ch_0_temp[16+4+3];
-	      temp1_16bits[7] =  dl_ch_0_temp[16+4+2];
-	  
-	      for (i=0; i<8>>1; i++)
-		temp1_32bits[i] = temp1_16bits[2*i]*rxdataF_temp[16+2*i] + temp1_16bits[2*i+1]*rxdataF_temp[16+2*i+1];
-	  
-	      temp2_32bits[0] = temp0_32bits[0]; // unpacklo_epi32
-	      temp2_32bits[1] = temp1_32bits[0];
-	      temp2_32bits[2] = temp0_32bits[1];
-	      temp2_32bits[3] = temp1_32bits[1];
-	      
-	      temp3_32bits[0] = temp0_32bits[2]; // unpacklo_epi32
-	      temp3_32bits[1] = temp1_32bits[2];
-	      temp3_32bits[2] = temp0_32bits[3];
-	      temp3_32bits[3] = temp1_32bits[3];
-	  
-	      for (i=0; i<8>>1; i++)
-		{
-		  rxdataF_comp_temp[16+i]   = temp2_32bits[i];
-		  rxdataF_comp_temp[16+4+i] = temp3_32bits[i];
-		}
-	 
-	      for (i=0; i<24; i++)
-		{
-		  // Should be casted to int
-		  *(p_dl_ch_0+i)      = (short)floor(dl_ch_0_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_1+i)      = (short)floor(dl_ch_1_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_mag+i)    = (double) dl_ch_mag_temp[i];
-		  *(p_dl_ch_magb+i )  = (double) dl_ch_magb_temp[i];
-		  *(p_rxdataF+i)      = (short)floor(rxdataF_temp[i]*pow(2, output_shift));
-		  *(p_rxdataF_comp+i) = (double) rxdataF_comp_temp[i];
-		}
-	      
-	      p_dl_ch_0      = p_dl_ch_0+24;
-	      p_dl_ch_1      = p_dl_ch_1+24;
-	      p_dl_ch_mag    = p_dl_ch_mag+24;
-	      p_dl_ch_magb   = p_dl_ch_magb+24;
-	      p_rxdataF      = p_rxdataF+24;
-	      p_rxdataF_comp = p_rxdataF_comp+24;
-	    }
-	  else
-	    {
-	      for (i=0; i<16; i++)
-		{
-		  *(p_dl_ch_0+i)      = (short)floor(dl_ch_0_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_1+i)      = (short)floor(dl_ch_1_temp[i]*pow(2, output_shift));
-		  *(p_dl_ch_mag+i)    = (double) dl_ch_mag_temp[i];
-		  *(p_dl_ch_magb+i )  = (double) dl_ch_magb_temp[i];
-		  *(p_rxdataF+i)      = (short)floor(rxdataF_temp[i]*pow(2, output_shift));
-		  *(p_rxdataF_comp+i) = (double) rxdataF_comp_temp[i];
-		}
-	      
-	      p_dl_ch_0      = p_dl_ch_0+16;
-	      p_dl_ch_1      = p_dl_ch_1+16;
-	      p_dl_ch_mag    = p_dl_ch_mag+16;
-	      p_dl_ch_magb   = p_dl_ch_magb+16;
-	      p_rxdataF      = p_rxdataF+16;
-	      p_rxdataF_comp = p_rxdataF_comp+16;
-	    } 
-	}
-      Nre = (pilots==0) ? 12 : 8;
-      
-      precoded_signal_strength += ((signal_energy_nodc(&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*Nre],
-						       (nb_rb*Nre))*rx_power_correction) - (phy_measurements->n0_power[aarx]));
-      //printf("precoded_signal_strength=%d\n", precoded_signal_strength);
-    } // rx_antennas
-            
-  phy_measurements->precoded_cqi_dB[eNB_id][0] = dB_fixed2(precoded_signal_strength,phy_measurements->n0_power_tot);
-}
-#endif
     
 __m128i avg128D;
 
@@ -11070,7 +10764,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
 
 #ifdef ENABLE_FLP
-      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, first_symbol_flag, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
+      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, first_symbol_flag, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP
@@ -11194,7 +10888,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
       
 #ifdef ENABLE_FLP
-      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, first_symbol_flag, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
+      dlsch_channel_compensation_prec_flp(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, first_symbol_flag, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, 1);
 #endif
 
 #ifdef COMPARE_FLP_AND_FXP
@@ -11466,7 +11160,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   return(0);    
 }
 
-#ifdef ENABLE_FLP
 int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
 		      PDSCH_t type,
 		      unsigned char eNB_id,
@@ -11945,7 +11638,6 @@ int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
   
   return(0);    
 }
-#endif
 
 #ifdef USER_MODE
 
@@ -11964,12 +11656,8 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
     write_output("dlsch%d_ch_ext01.m","dl01_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],300*nsymb,1,1);
     write_output("dlsch%d_ch_ext10.m","dl10_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],300*nsymb,1,1);
     write_output("dlsch%d_ch_ext11.m","dl11_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],300*nsymb,1,1);
+    write_output("dlsch%d_rho.m","dl_rho",lte_ue_pdsch_vars[eNB_id]->rho[0],300*nsymb,1,1);
   */
-
-  sprintf(fname,"dlsch%d_rho.m",eNB_id);
-  sprintf(vname,"dl%d_rho",eNB_id);
-  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rho[0],300*nsymb,1,1);
-
   sprintf(fname,"dlsch%d_rxF_comp0.m",eNB_id);
   sprintf(vname,"dl%d_rxF_comp0",eNB_id);
   write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],300*nsymb,1,1);
