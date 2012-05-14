@@ -934,7 +934,7 @@ main (int argc, char **argv)
       perror("close on read\n" );
   }
 
-#ifndef NAS_NETLINK
+#ifdef PRINT_STATS
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
     UE_stats[UE_id] = fopen (UE_stats_filename, "w");
@@ -977,7 +977,7 @@ main (int argc, char **argv)
   map1 =(int)oai_emulation.topology_config.area.x_m;
   map2 =(int)oai_emulation.topology_config.area.y_m;
   //ShaF = createMat(map1,map2); -> memory is allocated within init_SF, shadow fading
-  ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
+  //ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
 
   // size of area to generate shadow fading map
   LOG_D(EMU,"Simulation area x=%f, y=%f\n",
@@ -1190,12 +1190,13 @@ main (int argc, char **argv)
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+	  //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  LOG_D(OCM,"Path loss bandwidth for eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
+	  LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
-		 eNB2UE[eNB_id][UE_id]->path_loss_dB,
-		 ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+		eNB2UE[eNB_id][UE_id]->path_loss_dB,0);
+		//ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	}
       }
     }
@@ -1249,7 +1250,7 @@ main (int argc, char **argv)
 	PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	
-#ifndef NAS_NETLINK
+#ifdef PRINT_STATS
 	//if ((frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
@@ -1299,7 +1300,7 @@ main (int argc, char **argv)
 	      */
 	    }
  	  }
-#ifndef NAS_NETLINK
+#ifndef PRINT_STATS
 	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
@@ -1434,8 +1435,8 @@ main (int argc, char **argv)
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
-//Perform KPI measurements
-kpi_gen();
+  //Perform KPI measurements
+  kpi_gen();
 
   // relase all rx state
   if (ethernet_flag == 1) {
@@ -1477,21 +1478,22 @@ kpi_gen();
       free(ue_data[UE_id]); 
   } //End of PHY abstraction changes
   
-#ifndef NAS_NETLINK
+#ifdef PRINT_STATS
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
     fclose (UE_stats[UE_id]);
   fclose (eNB_stats);
 #endif
- // stop OMG
- stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
+
+  // stop OMG
+  stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
   if ((oai_emulation.info.omv_enabled == 1) ){
     omv_end(pfd[1],omv_data);
   }
- destroyMat(ShaF,map1, map2);
- if (oai_emulation.info.cli_enabled)
-   cli_server_cleanup();
- 
- logClean();
+  //destroyMat(ShaF,map1, map2);
+  if (oai_emulation.info.cli_enabled)
+    cli_server_cleanup();
+  
+  logClean();
 
   return(0);
 }
