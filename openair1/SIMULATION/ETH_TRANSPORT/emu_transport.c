@@ -17,18 +17,18 @@
 #include "UTIL/LOG/log.h"
 
 extern unsigned int   Master_list_rx;
-extern unsigned short NODE_ID[1];
+//extern unsigned short NODE_ID[1];
 extern unsigned char  NB_INST;
 //#define DEBUG_CONTROL 1
-/******************************************************************************************************/ 
+
+/*
 char is_node_local_neighbor(unsigned short Node_id){
-  /******************************************************************************************************/ 
   int i;
   for(i=0;i<NB_INST;i++)
     if(NODE_ID[i]==Node_id) return 1;
   return 0; 
 }
-
+*/
 
 void emu_transport_sync(void){
  
