@@ -1098,7 +1098,8 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
   
   if (l==(4-frame_parms->Ncp)) {
     ue_rrc_measurements(phy_vars_ue,
-			last_slot);
+			last_slot,
+			abstraction_flag);
   }  
 
   if ((last_slot==1) && (l==(4-frame_parms->Ncp))) {

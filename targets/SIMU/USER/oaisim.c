@@ -19,8 +19,6 @@
 #include "LAYER2/MAC/vars.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#include "UTIL/OMG/omg_constants.h"
-
 //#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -42,6 +40,8 @@
 #include "oaisim_config.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "cor_SF_sim.h"
+#include "UTIL/OMG/omg_constants.h"
+
 
 //#ifdef PROC
 #include "../PROC/interface.h"
@@ -1386,7 +1386,7 @@ main (int argc, char **argv)
       do_forms2(form_dl[UE_id],
 		frame_parms,  
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
-		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNB_id],
+		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
 		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
