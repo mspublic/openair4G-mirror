@@ -7,7 +7,7 @@
 * \email: navid.nikaein@eurecom.fr
 */ 
 
-#ifdef RTAI_ENABLED
+#ifndef USER_MODE
 #include <rtai_posix.h>
 #else
 #include <pthread.h>
