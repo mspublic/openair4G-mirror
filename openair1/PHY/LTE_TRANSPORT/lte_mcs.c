@@ -66,6 +66,18 @@ unsigned char get_I_TBS(unsigned char I_MCS) {
 
 }
 
+unsigned char get_I_TBS_UL(unsigned char I_MCS) {
+
+  if (I_MCS <= 10)
+    return(I_MCS);
+  else if (I_MCS == 10)
+    return(10);
+  else if (I_MCS < 21)
+    return(I_MCS-1);
+  else return(I_MCS-2);
+
+}
+
 unsigned char I_TBS2I_MCS(unsigned char I_TBS) {
   unsigned char I_MCS = -1;
   ///note: change from <= to < to go from choosing higher modulation rather than high code-rate

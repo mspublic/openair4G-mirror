@@ -22,7 +22,7 @@ static unsigned int seed, iy, ir[98];
 void randominit(unsigned seed_init)
 {
   int i;
-
+  // this need to be integrated with the existing rng, like taus: navid 
   msg("Initializing random number generator, seed %x\n",seed_init);
 
   if (seed_init == 0) {

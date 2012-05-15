@@ -86,7 +86,7 @@ endif
 ifeq ($(FIRMWARE2010),1)
 EXTRA_CFLAGS += -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH -DHW_PREFIX_REMOVAL
 else
-EXTRA_CFLAGS += -DBIT8_TX -DFW2011 -DPUCCH
+EXTRA_CFLAGS += -DFW2011 -DPUCCH
 endif
 
 ifeq ($(OPENAIR_LTE),1)
@@ -147,6 +147,7 @@ endif
 
 # Init
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
+openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/lte_parms.o
 
 # Tools
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/memory_routines.o

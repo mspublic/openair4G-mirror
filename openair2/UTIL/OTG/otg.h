@@ -49,7 +49,7 @@
 
 
 #include "otg_defs.h"
-
+#include "otg_config.h"
 
 #if STANDALONE==1
 	#define LOG_G(c, x...) printf(x)
@@ -62,14 +62,10 @@
 	#define LOG_D(c, x...) printf(x)
 	#define LOG_F(c, x...) printf(x)  
 	#define LOG_T(c, x...) printf(x)
-typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
-#include "otg_vars.h"
+	typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
 #else
 	#include "../UTIL/LOG/log.h"
-	#include "otg_externs.h"
 #endif 
-
-
 
 
 /*! \fn void init_all_otg(void)
@@ -102,14 +98,14 @@ int get_ctime(void);
 
 
 
-/*! \fn void free_addr_otg(void);
-* \brief free the sting of IP address for the socket mode
+/*! \fn void free_otg(void);
+* \brief free OTG pointers
 * \param[in] 
 * \param[out]
 * \note 
 * @ingroup  _otg
 */
-void free_addr_otg(void);
+void free_otg(void);
 
 
 

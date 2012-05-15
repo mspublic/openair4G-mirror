@@ -20,7 +20,7 @@
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      PHY_VARS_UE *phy_vars_ue,
-		      unsigned char eNb_id,
+		      unsigned char eNB_id,
 		      unsigned char clear,
 		      short coef)
 {
@@ -33,28 +33,17 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   ncoef = 32767 - coef;
 
 #ifdef DEBUG_PHY
-  if (mac_xface->frame%100 == 0)
-    msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",mac_xface->frame,phy_vars_ue->rx_offset);
+  if (phy_vars_ue->frame%10 == 0)
+    msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",phy_vars_ue->frame,phy_vars_ue->rx_offset);
 #endif //DEBUG_PHY
 
-  // do ifft of channel estimate
-  for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
-    if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNb_id][aa])
-      fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNb_id][aa][LTE_CE_OFFSET],
-	  (short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa],
-	  frame_parms->twiddle_ifft,
-	  frame_parms->rev,
-	  frame_parms->log2_symbol_size,
-	  frame_parms->log2_symbol_size/2,
-	  0);
-  }
 
   // we only use channel estimates from tx antenna 0 here
   for (i = 0; i < frame_parms->nb_prefix_samples; i++) {
     temp = 0;
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      Re = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa])[(i<<2)];
-      Im = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa])[1+(i<<2)];
+      Re = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa][eNB_id])[(i<<2)];
+      Im = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa][eNB_id])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
     if (temp > max_val) {
@@ -107,7 +96,7 @@ int max_val;
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 			   LTE_eNB_SRS *lte_eNb_srs,
-			   unsigned int  *eNb_id,
+			   unsigned int  *eNB_id,
 			   unsigned char clear,
 			   unsigned char number_of_cards,
 			   short coef)
@@ -162,7 +151,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       if (temp > max_val) {
 	max_pos = i; 
 	max_val = temp;
-	*eNb_id = ind;
+	*eNB_id = ind;
       }
     }
   }

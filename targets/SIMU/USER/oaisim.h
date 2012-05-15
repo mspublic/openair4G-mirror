@@ -13,8 +13,8 @@
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
+#include "UTIL/OMV/structures.h"
 #endif
-
 
 void init_channel_vars(LTE_DL_FRAME_PARMS *frame_parms, double ***s_re,double ***s_im,double ***r_re,double ***r_im,double ***r_re0,double ***r_im0);
 
@@ -47,3 +47,5 @@ void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *
 
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
+int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data);
+void omv_end (int pfd, Data_Flow_Unit omv_data);

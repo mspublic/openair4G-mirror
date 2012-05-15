@@ -74,11 +74,13 @@ typedef struct
     void (*phy_config_sib2_eNB)(u8 Mod_id,
 			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
-
     /// PHY-Config-Dedicated eNB
     void (*phy_config_dedicated_eNB)(u8 Mod_id,u16 rnti,
-				    struct PhysicalConfigDedicated *physicalConfigDedicated);
+		      struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+    /// PHY-Config-SCell-Dedicated UE
+    void (*phy_config_dedicated_scell_eNB)(u8 Mod_id,u16 rnti,
+     			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
 
     // UE functions
 
@@ -112,6 +114,10 @@ typedef struct
     /// PHY-Config-Dedicated UE
     void (*phy_config_dedicated_ue)(u8 Mod_id,u8 CH_index,
 				    struct PhysicalConfigDedicated *physicalConfigDedicated);
+
+    /// PHY-Config-SCell-Dedicated UE
+    void (*phy_config_dedicated_scell_ue)(u8 Mod_id,u16 rnti,
+    			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
 
     /// Configure Common PHY parameters from SIB1
     void (*phy_config_sib1_ue)(u8 Mod_id,u8 CH_index,

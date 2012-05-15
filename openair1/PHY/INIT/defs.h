@@ -137,6 +137,12 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
 			      struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+void phy_config_dedicated_scell_eNB(u8 Mod_id,u16 rnti,
+			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
+
+void phy_config_dedicated_scell_ue(u8 Mod_id,u16 rnti,
+			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
+
 /*!
 \fn void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB)
 \brief Configure PHY with dedicated parameters between configuration of DLSCH (n) and ULSCH (n+4) in current subframe (n).

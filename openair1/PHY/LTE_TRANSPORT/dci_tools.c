@@ -1357,50 +1357,14 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   return(0);
 }
 
-/*
-  u8 subframe2harq_pid_tdd(u8 tdd_config,u8 subframe) {
-
-  msg("subframe2harq_pid_tdd: tdd_config %d, subframe %d\n",tdd_config,subframe);
-
-  switch (tdd_config) {
-
-  case 2:
-  return(subframe-3);
-  break;
-  case 3:
-  if ((subframe>0) && (subframe<8)) {
-  msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
-  return(255);
-  }
-  return((subframe>7) ? subframe-8 : subframe+3);
-  break;
-  case 4:
-  if (subframe<8) {
-  msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
-  return(255);
-  }
-  return(subframe-8);
-  break;
-  case 5:
-  if ((subframe<8) || (subframe==9)) {
-  msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
-  return(255);
-  }
-  return(subframe-8);
-  break;
-  default:
-  msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode\n");
-  return(255);
-
-  }
-  }
-*/
 
 u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
 
 #ifdef DEBUG_DCI
   if (frame_parms->frame_type == 1)
-    msg("dci_tools.c: subframe2_harq_pid, subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+    msg("dci_tools.c: subframe2_harq_pid, subframe %d for TDD configuration %d\n",subframe,frame_parms->tdd_config);
+  else
+    msg("dci_tools.c: subframe2_harq_pid, subframe %d for FDD \n",subframe);
 #endif
 
   if (frame_parms->frame_type == 0) {
@@ -1426,7 +1390,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
 	  break;
 	default:
 	  msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-	  mac_xface->macphy_exit("");
+	  //	  mac_xface->macphy_exit("");
 	  return(255);
 	  break;
 	}
@@ -1442,7 +1406,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
     case 3:
       if ((subframe<2) || (subframe>4)) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-	mac_xface->macphy_exit("");
+	//	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe-2);
@@ -1450,7 +1414,7 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
     case 4:
       if ((subframe<2) || (subframe>3)) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-	mac_xface->macphy_exit("");
+	//	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe-2);
@@ -1458,19 +1422,76 @@ u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe) {
     case 5:
       if (subframe!=2) {
 	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-	mac_xface->macphy_exit("");
+	//	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe-2);
       break;
     default:
       msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode %d\n",frame_parms->tdd_config);
-      mac_xface->macphy_exit("");
+      //      mac_xface->macphy_exit("");
       return(255);
 
     }
   }
   return(255);
+}
+
+u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n){
+
+    if ((frame_parms->frame_type == 1) && 
+	(frame_parms->tdd_config == 1) &&
+	((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+      return((n+6)%10);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     ((n==0)||(n==1)||(n==5)||(n==6)))  
+      return((n+7)%10);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     (n==9)) // tdd_config 6 SF 9
+      return((n+5)%10);
+    else
+      return((n+4)%10);
+
+}
+
+u8 ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 n){
+
+    if ((frame_parms->frame_type == 1) && 
+	(frame_parms->tdd_config == 1) &&
+	((n==7)||(n==2))) // tdd_config 0,1 SF 1,5
+      return((n==7)? 1 : 6);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     ((n==7)||(n==8)||(n==2)||(n==3)))  
+      return((n+3)%10);
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     (n==4)) // tdd_config 6 SF 9
+      return(9);
+    else
+      return((n+6)%10);
+
+}
+
+u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n){
+
+    if ((frame_parms->frame_type == 1) && 
+	(frame_parms->tdd_config == 1) &&
+	((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+      return(frame + (n==1 ? 0 : 1));
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     ((n==0)||(n==1)||(n==5)||(n==6)))  
+      return(frame + (n>=5 ? 1 : 0));
+    else if ((frame_parms->frame_type == 1) && 
+	     (frame_parms->tdd_config == 6) &&
+	     (n==9)) // tdd_config 6 SF 9
+      return(frame+1);
+    else
+      return(frame+(n>=6 ? 1 : 0));
+
 }
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
@@ -1865,11 +1886,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->n_DMRS2 = 9;
 
     //reserved for cooperative communication
+    /*
     if(ulsch->n_DMRS2 == 6)
       ulsch->cooperation_flag = 2;
     else
       ulsch->cooperation_flag = 0;
-
+    */
 
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
       ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb-1];
@@ -2010,7 +2032,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
       if (ulsch->harq_processes[harq_pid]->mcs < 28)
-	ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
+	ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS_UL(ulsch->harq_processes[harq_pid]->mcs)][ulsch->harq_processes[harq_pid]->nb_rb-1];
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->Nsymb_pusch;
       ulsch->harq_processes[harq_pid]->round = 0;
@@ -2190,7 +2212,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
       //if (ulsch->harq_processes[harq_pid]->mcs)
-      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
+      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS_UL(ulsch->harq_processes[harq_pid]->mcs)][ulsch->harq_processes[harq_pid]->nb_rb-1];
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->Nsymb_pusch;
       ulsch->harq_processes[harq_pid]->round = 0;

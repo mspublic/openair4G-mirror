@@ -379,6 +379,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   }
  
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
+
 #ifdef DEBUG_INIT_SYNCH
     msg("[PHY][UE%d] In synch, rx_offset %d samples\n",phy_vars_ue->Mod_id, phy_vars_ue->rx_offset);
 #endif

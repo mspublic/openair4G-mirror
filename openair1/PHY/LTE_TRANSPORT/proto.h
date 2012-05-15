@@ -489,6 +489,7 @@ u16 dlsch_extract_rbs_single(s32 **rxdataF,
     @param pmi_ext Extracted PMI for chosen RBs
     @param rb_alloc RB allocation vector
     @param symbol Symbol to extract
+    @param subframe Subframe index
     @param frame_parms Pointer to frame descriptor
 */
 u16 dlsch_extract_rbs_dual(s32 **rxdataF,
@@ -499,6 +500,7 @@ u16 dlsch_extract_rbs_dual(s32 **rxdataF,
 			   u8 *pmi_ext,
 			   u32 *rb_alloc,
 			   u8 symbol,
+			   u8 subframe,
 			   LTE_DL_FRAME_PARMS *frame_parms);
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
@@ -740,6 +742,10 @@ u8 get_Qm(u8 I_MCS);
 /** \brief Compute I_TBS (transport-block size) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 u8 get_I_TBS(u8 I_MCS);
+
+/** \brief Compute I_TBS (transport-block size) based on I_MCS for UL.  Implements table 8.6.1-1 from 36.213.
+    @param I_MCS */
+unsigned char get_I_TBS_UL(unsigned char I_MCS);
 
 /** \brief Compute Q (modulation order) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */

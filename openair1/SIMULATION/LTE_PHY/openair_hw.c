@@ -18,35 +18,27 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/COMMON/defs.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+//#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
-#include "LAYER2/MAC/extern.h"
+//#include "LAYER2/MAC/extern.h"
 
 
 TX_RX_VARS dummy_tx_rx_vars;
-
-int openair_fd,fc;
-unsigned int     bigphys_top;
+unsigned int bigphys_top;
 unsigned int mem_base;
 
 
+int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms) {
 
-int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms,
-		 uint32_t carrier_freq[4],
-		 uint32_t rxgain[4]) {
   int i;
+  int openair_fd,fc;
+  
 
   printf("Setting frequency to %d,%d,%d,%d Hz, Gain to %d,%d,%d,%d dB\n",
-	 carrier_freq[0],carrier_freq[1],carrier_freq[2],carrier_freq[3],
-	 rxgain[0],rxgain[1],rxgain[2],rxgain[3]);
+	 frame_parms->carrier_freq[0],frame_parms->carrier_freq[1],frame_parms->carrier_freq[2],frame_parms->carrier_freq[3],
+	 frame_parms->rxgain[0],frame_parms->rxgain[1],frame_parms->rxgain[2],frame_parms->rxgain[3]);
 
-  frame_parms->dual_tx      = 0;
-  frame_parms->freq_idx     = 0;
-  for (i=0;i<4;i++) {
-    frame_parms->carrier_freq[i] = carrier_freq[i];
-    frame_parms->rxgain[i]       = rxgain[i];
-  }
   fc = 0;
   
   printf("Opening /dev/openair0\n");

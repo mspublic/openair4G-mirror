@@ -2025,6 +2025,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				      phy_vars_eNB->frame,
 				      0);
 #endif
+	    phy_vars_eNB->ulsch_eNB[(u32)i]->Msg3_active = 0;
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 0;
+
 	    /*
 #ifdef USER_MODE
 	    if (abstraction_flag == 0)

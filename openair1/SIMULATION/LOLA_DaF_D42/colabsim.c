@@ -718,6 +718,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
           // copy received data to intermediate buffer
           memcpy(context->mr_buffer[k], phy_vars_mr[k]->dlsch_ue[0][0]->harq_processes[0]->b, context->tbs_col>>3);
+          //memset(&context->mr_buffer[k][context->tbs_col>>3], 0, context->mr_buffer_length+4-(context->tbs_col>>3));
         }
       }
 
@@ -805,7 +806,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
         }
         else {
-          phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;//2;
+          phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
         }
 
         // Generate uplink reference signal
@@ -840,9 +841,9 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         // Redo this in a more intuitive manner:
         //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
         tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop2[k])/20.0)/sqrt((double)n_active_relays);
-	//	printf("hop 2: E=%d, ampl=%f, awgn=%f (accum %d)\n", tx_energy, tx_ampl, awgn_stddev,(unsigned char)accumulate_at_rx);
+	//	printf("hop 2 (%d): E=%d, ampl=%f, awgn=%f (accum %d)\n", k,tx_energy, tx_ampl, awgn_stddev,(unsigned char)accumulate_at_rx);
         transmit_subframe(context->channels_hop2[k],
-            phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
+			  phy_vars_mr[k]->lte_ue_common_vars.txdata, frame_parms, 
             //context->subframe_hop2, frame_parms->symbols_per_tti, 256.0/sqrt((double)n_active_relays)/awgn_stddev, accumulate_at_rx);
             context->subframe_hop2, frame_parms->symbols_per_tti, tx_ampl, accumulate_at_rx);
         accumulate_at_rx = true;
@@ -877,7 +878,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         slot_fep_ul(frame_parms, &phy_vars_ch_dest->lte_eNB_common_vars, l, 2*context->subframe_hop2+1, 0, 0);
 
       // Receive ULSCH data
-      rx_ulsch(phy_vars_ch_dest, context->subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 0);//2);
+      rx_ulsch(phy_vars_ch_dest, context->subframe_hop2, 0, 0, phy_vars_ch_dest->ulsch_eNB, 2);
 
       // Compute uncoded bit error rate
       k = 0;
@@ -1782,7 +1783,7 @@ double compute_ber_soft(u8* ref, s16* rec, int n)
 
   for(k = 0; k < n; k++) {
     if((ref[k]==1) != (rec[k]<0)) {
-      //      printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
+            //printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
       e++;
     }
   }
@@ -1879,7 +1880,9 @@ int block_valid(u8* ref, u8* rec, int n)
   for(k = 0; k < n; k++) {
     if(ref[k] != rec[k])
       return 0;
+      //printf("%d ",k);
   }
+  //printf("\n");
   return 1;
 }
 

@@ -115,9 +115,9 @@ int get_oaiID_by_SUMO(char* sumo_id, IDManagerPtr ID_manager);
  * \brief remove an OAI-SUMO mapping from a SUMO ID, and return the ID; return -1 if the mapping does not exist
  * \param sumo_id the SUMO ID used to remove the mapping
  * \param ID_manager the reference to the ID Manager
- * \return the OAI ID in int format, which has been removed from the mapping.
+ * \return the updated pointer to the Map_list
 */
-int remove_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager);
+void remove_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager);
 
 /**
  * \fn char* get_sumo_entry(int oai_id, Map_list Map_Vector)
@@ -143,9 +143,9 @@ int get_oai_entry(char*, Map_list);
  * \brief remove the SUMO-OAI mapping, from a SUMO ID; returns the found OAI ID; returns -1 if the mapping does not exist.
  * \param sumo_id the SUMO ID used to remove the mapping.
  * \param Map_Vector the reference to the SUMO_2_OAI Map list
- * \return the OAI ID in int format, which entry has been removed.
+ * \return the updated pointer to the Map_list
  */
-int remove_oai_entry(char *sumo_id, Map_list Map_Vector);
+Map_list remove_oai_entry(char *sumo_id, Map_list Map_Vector);
 
 
 
