@@ -11,6 +11,7 @@
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
+		       struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 		       MAC_MainConfig_t *mac_MainConfig,
 		       long logicalChannelIdentity,
 		       LogicalChannelConfig_t *logicalChannelConfig,
@@ -126,5 +127,17 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }
   }
+#ifdef Rel10
+  if (physicalConfigDedicatedSCell_r10 != NULL) {
+	if (eNB_flag==1){
+	  mac_xface->phy_config_dedicated_scell_eNB(Mod_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicatedSCell_r10,0 /* CC_id */);
+	}
+	else {
+	  mac_xface->phy_config_dedicated_scell_ue(Mod_id,eNB_index,physicalConfigDedicatedSCell_r10,0 /* CC_id */);
+	  UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicatedSCell_r10; // for SR proc
+	}
+  }
+#endif
+
   return(0);
 }

@@ -49,9 +49,23 @@
 
 #define PI 3.14159265
 
+
+/*! \fn void set_taus_seed(unsigned int seed_type);
+* \brief initialize seeds used for the generation of taus random values
+* \param[in] initial value
+* \param[out] 
+* \note 
+* @ingroup  _oml
+*/
 void set_taus_seed(unsigned int seed_type);
 
-
+/*! \fn inline unsigned int taus(unsigned int comp);
+* \brief compute random number 
+* \param[in] integer
+* \param[out] 
+* \note 
+* @ingroup  _oml
+*/
 inline unsigned int taus(unsigned int comp);
 
 
@@ -62,7 +76,6 @@ inline unsigned int taus(unsigned int comp);
 * \note 
 * @ingroup  _oml
 */
-
 void init_seeds(int seed);
 
 /*! \fn double wichman_hill() ;
@@ -128,7 +141,7 @@ double poisson_dist(double lambda);
 * \brief generates random numbers for the Weibull distribution with scale parameter, and shape parameter. 
 * \param[in] scale parameter, and shape parameter.
 * \param[out] weibull random number
-* \note 
+* \note Formula (http://www.xycoon.com/wei_random.htm)
 * @ingroup  _oml
 */
 double weibull_dist(double scale, double shape);
@@ -137,7 +150,7 @@ double weibull_dist(double scale, double shape);
 * \brief enerates random numbers for the pareto distribution with scale parameter, and shape parameter. 
 * \param[in] scale parameter, and shape parameter.
 * \param[out] pareto random number
-* \note 
+* \note Formula (http://www.xycoon.com/par_random.htm)
 * @ingroup  _oml
 */
 double pareto_dist(double scale, double shape);
@@ -146,7 +159,7 @@ double pareto_dist(double scale, double shape);
 * \brief generates random numbers for the gamma distribution with scale parameter, and shape parameter. 
 * \param[in] scale parameter, and shape parameter.
 * \param[out] gamma random number
-* \note 
+* \note  Formula (http://www.xycoon.com/gamma_random.htm)
 * @ingroup  _oml
 */
 double gamma_dist(double scale, double shape);
@@ -155,7 +168,7 @@ double gamma_dist(double scale, double shape);
 * \brief generates random numbers for the cauchy distribution with scale parameter, and shape parameter. 
 * \param[in] scale parameter, and shape parameter.
 * \param[out] cauchy random number
-* \note 
+* \note Formula(http://www.xycoon.com/cauchy2p_random.htm)
 * @ingroup  _oml
 */
 double cauchy_dist(double scale, double shape);

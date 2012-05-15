@@ -19,6 +19,7 @@
  ********************/
 //#include "rrc_constant.h"
 //#include "rrc_ue_vars_ms_extern.h"
+#include "rrc_L2_proto.h"
 #ifdef NODE_MT
 #include "rrc_ue_vars.h"
 #endif
@@ -79,7 +80,7 @@ void rrc_L2_mac_meas_ind_rx (void){
 }
 
 //-----------------------------------------------------------------------------
-void rrc_L2_def_meas_ind_rx (unsigned char Mod_id, unsigned charIdx2){
+void rrc_L2_def_meas_ind_rx (unsigned char Mod_id, unsigned char Idx2){
 //-----------------------------------------------------------------------------
 #ifdef DEBUG_RRC_DETAILS
     msg ("\n[RRC][L2_INTF] rrc_L2_def_meas_ind_rx - begin\n");
@@ -117,3 +118,60 @@ int rrc_L2_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
    return 0;
 }
 
+//-----------------------------------------------------------------------------
+char rrc_L2_ue_init(u8 Mod_id, unsigned char eNB_index){
+//-----------------------------------------------------------------------------
+#ifdef DEBUG_RRC_DETAILS
+    msg ("\n[RRC][L2_INTF] rrc_L2_ue_init - begin\n");
+#endif
+#ifdef NODE_MT
+    rrc_ue_init (Mod_id);
+#endif
+
+#ifdef NODE_RG
+    rrc_rg_uelite_init(Mod_id, eNB_index);
+#endif
+    return 0;
+}
+
+
+//-----------------------------------------------------------------------------
+char rrc_L2_eNB_init(u8 Mod_id){
+//-----------------------------------------------------------------------------
+#ifdef DEBUG_RRC_DETAILS
+    msg ("\n[RRC][L2_INTF] rrc_L2_eNB_init - begin\n");
+#endif
+#ifdef NODE_MT
+    rrc_ue_rglite_init(Mod_id, 0);
+#endif
+
+#ifdef NODE_RG
+    rrc_rg_init (Mod_id);
+#endif
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// Out of openair_rrc_L2_interface.c
+void openair_rrc_lite_top_init(void){
+//-----------------------------------------------------------------------------
+  //#ifdef DEBUG_RRC_STATE
+   msg ("\n[RRC CELL] [L2_INTF] openair_rrc_lite_top_init - Empty function to keep compatibility with RRC LITE\n\n");
+  //#endif
+}
+
+//-----------------------------------------------------------------------------
+RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
+//-----------------------------------------------------------------------------
+#ifdef DEBUG_RRC_DETAILS
+    msg ("\n[RRC][L2_INTF] rrc_L2_eNB_init - begin\n");
+#endif
+#ifdef NODE_MT
+    rrc_ue_main_scheduler(Mod_id, frame, 0, index);
+#endif
+
+#ifdef NODE_RG
+    rrc_rg_main_scheduler(Mod_id, frame, 0, 0);
+#endif
+    return 0;
+}

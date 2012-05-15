@@ -98,7 +98,8 @@
 #define openair_SET_ULSCH_ALLOCATION_MODE             _IOR(openair_IOC_MAGIC,55,int)
 #define openair_SET_RRC_CONN_SETUP                    _IOR(openair_IOC_MAGIC,56,int)
 #define openair_SET_COOPERATION_FLAG                  _IOR(openair_IOC_MAGIC,57,int)
-#define openair_MAXNR         57
+#define openair_START_LXRT                            _IOR(openair_IOC_MAGIC,58,int)
+#define openair_MAXNR         58
 
 
 

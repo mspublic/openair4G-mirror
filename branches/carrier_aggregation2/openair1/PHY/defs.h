@@ -140,6 +140,10 @@
 
 #define NUM_DCI_MAX 32
 
+#ifdef Rel10
+#define MAX_NUM_CCs 5
+#endif
+
 /// Top-level PHY Data Structure for eNB 
 typedef struct
 {
@@ -232,6 +236,8 @@ typedef struct
   // Pointers for active physicalConfigDedicated to be applied in current subframe
   struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
 
+  // Pointers for physicalConfigDedicated for SCell to be applied in current subframe
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10[NUMBER_OF_UE_MAX][MAX_NUM_CCs-1];
   
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];

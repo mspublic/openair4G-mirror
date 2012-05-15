@@ -95,14 +95,3 @@ else
   L2_incl += -I$(OPENAIR2_TOP)/RRC/LITE
 endif
 
-
-#EXTRA_CFLAGS += $(L2_incl)
-
-printl2objs:
-	@echo $(L2_OBJS)
-	@echo rrc_cellular variable is $(rrc_cellular)
-	@echo eNB_flag is $(eNB_flag)
-	@echo UE_flag is $(UE_flag)
-
-printl2incl:
-	@echo $(L2_incl)

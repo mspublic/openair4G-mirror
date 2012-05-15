@@ -70,6 +70,9 @@ typedef enum  {
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n) 
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s ) 
 
+#define MAX_MEAS_OBJ 3
+#define MAX_MEAS_CONFIG 3
+#define MAX_MEAS_ID 3
 
 #define PAYLOAD_SIZE_MAX 1024
 
@@ -82,21 +85,15 @@ typedef struct{
   u8 SIStatus;
   u8 SIwindowsize;
   u16 SIperiod;
-  u8 CH_id;
   unsigned short UE_index;
-  unsigned int Rach_tx_cnt;
-  unsigned int Nb_bcch_wait;
-  unsigned int Nb_bcch_miss;
-  u8 Nb_rach_res; 
-  u8 Rach_time_alloc;
-  unsigned short Rach_freq_alloc;
-  //  L2_ID CH_mac_id;
-  u8 T300_active;
-  u8 T300_cnt;
-  u8 T304_active;
-  u8 T304_cnt;
-  u8 T310_active;
-  u8 T310_cnt;
+  u32 T300_active;
+  u32 T300_cnt;
+  u32 T304_active;
+  u32 T304_cnt;
+  u32 T310_active;
+  u32 T310_cnt;
+  u32 N310_cnt;
+  u32 N311_cnt;
 }UE_RRC_INFO;
 
 typedef struct{
@@ -234,6 +231,11 @@ typedef struct{
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
+  struct MeasObjectToAddMod       *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
+  struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
+  struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
+  struct MeasIdToAddMod           *MeasId[NB_CNX_UE][MAX_MEAS_ID];
+  RSRP_Range_t                    s_measure;
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
 #ifdef Rel10
   SCellToAddMod_r10_t	  		  *sCell_config[NB_CNX_UE][MAX_NUM_CCs-1];
@@ -247,8 +249,8 @@ typedef struct{
 int rrc_init_global_param(void);
 int L3_xface_init(void);
 void openair_rrc_top_init(void);
-char openair_rrc_eNB_init(u8 Mod_id);
-char openair_rrc_ue_init(u8 Mod_id,u8 CH_IDX);
+char openair_rrc_lite_eNB_init(u8 Mod_id);
+char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag);
 
@@ -495,7 +497,7 @@ int decode_SIB1(u8 Mod_id,u8 CH_index);
 
 int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
-int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
+int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
 
 #endif
 

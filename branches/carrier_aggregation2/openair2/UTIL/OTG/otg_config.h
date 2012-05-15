@@ -50,6 +50,9 @@
 #define MAX_NUM_TRAFFIC_STATE 2 //  we have two states: STATE 0 and STATE 1
 
 
+#define OTG_FLAG_SIZE 3
+#define OTG_FLAG "OTG"
+
 #define IDT_TH 100 
 #define SIZE_COEF 1000
 #define MAXIDT_TIME 1000000 //(1 second = 1000000 microseconds)

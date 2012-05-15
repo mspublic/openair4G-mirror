@@ -84,15 +84,6 @@ void logInit (void) {
 #else
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
-  
-    g_log->log_component[LOG].name = "LOG";
-    g_log->log_component[LOG].level = LOG_INFO;
-    g_log->log_component[LOG].flag =  LOG_MED;
-    g_log->log_component[LOG].interval =  1; // in terms of ms or num frames
-    g_log->log_component[LOG].fd = 0;
-    g_log->log_component[LOG].filelog = 0;
-    g_log->log_component[LOG].filelog_name = "";
-
     g_log->log_component[PHY].name = "PHY";
     g_log->log_component[PHY].level = LOG_INFO;
     g_log->log_component[PHY].flag =  LOG_MED;
@@ -157,8 +148,8 @@ void logInit (void) {
     g_log->log_component[OMG].filelog = 0;
     g_log->log_component[OMG].filelog_name = "";
     
-     g_log->log_component[OTG].name = "OTG";
-    g_log->log_component[OTG].level = LOG_INFO;
+    g_log->log_component[OTG].name = "OTG";
+    g_log->log_component[OTG].level = LOG_FILE;
     g_log->log_component[OTG].flag =  LOG_MED;
     g_log->log_component[OTG].interval =  1;
     g_log->log_component[OTG].fd = 0;
@@ -241,14 +232,14 @@ void logInit (void) {
   g_log->filelog_name = "/tmp/openair.log";
  
   if (g_log->syslog) {
-    openlog(g_log->log_component[LOG].name, LOG_PID, g_log->config.facility);
+    openlog(g_log->log_component[EMU].name, LOG_PID, g_log->config.facility);
   } 
   if (g_log->filelog) {
     gfd = open(g_log->filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   }
   // could put a loop here to check for all comps
   for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-    if (g_log->log_component[i].filelog) 
+    if (g_log->log_component[i].filelog == 1 ) 
       g_log->log_component[i].fd = open(g_log->log_component[i].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   }
 #else
@@ -283,11 +274,12 @@ void logRecord( const char *file, const char *func,
   g_buff_total[0] = '\0';
   c = &g_log->log_component[comp];
   
+  // do not apply filtering for LOG_F
   // only log messages which are enabled and are below the global log level and component's level threshold
-  if ((c->level > g_log->level) || (level > c->level)){
+  if ( (level != LOG_FILE) && ( (c->level > g_log->level) || (level > c->level) || (level > g_log->level)) ){
     //  || ((mac_xface->frame % c->interval) != 0)) { 
     return;
-  }
+   }
    // adjust syslog level for TRACE messages
    if (g_log->syslog) {
      if (g_log->level > LOG_DEBUG) { 
@@ -418,11 +410,11 @@ int  set_log(int component, int level, int interval) {
     return -1;
 }
 
-int  set_comp_log(int component, int level, int flag, int interval) {
+int  set_comp_log(int component, int level, int verbosity, int interval) {
   
   if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
-    if ((flag == LOG_NONE) || (flag == LOG_LOW) || (flag == LOG_MED) || (flag == LOG_FULL) || (flag == LOG_HIGH) ) {
-      g_log->log_component[component].flag = flag; 
+    if ((verbosity == LOG_NONE) || (verbosity == LOG_LOW) || (verbosity == LOG_MED) || (verbosity == LOG_FULL) || (verbosity == LOG_HIGH) ) {
+      g_log->log_component[component].flag = verbosity; 
     }
     if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
       g_log->log_component[component].level = level;
@@ -436,9 +428,9 @@ int  set_comp_log(int component, int level, int flag, int interval) {
     return -1;
 }
 
-void set_glog(int level, int flag) {
+void set_glog(int level, int verbosity) {
   g_log->level = level;
-  g_log->flag = flag;
+  g_log->flag = verbosity;
 }
 void set_glog_syslog(int enable) {
   g_log->syslog = enable;
@@ -525,16 +517,16 @@ main(int argc, char *argv[]) {
 int test_log(){
 
   LOG_ENTER(MAC); // because the default level is DEBUG
-  LOG_I(LOG, "1 Starting OAI logs version %s Build date: %s on %s\n", 
+  LOG_I(EMU, "1 Starting OAI logs version %s Build date: %s on %s\n", 
 	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
   LOG_D(MAC, "1 debug  MAC \n");
   LOG_N(MAC, "1 notice MAC \n");
   LOG_W(MAC, "1 warning MAC \n");
  
-  set_comp_log(LOG, LOG_INFO, FLAG_ONLINE);
+  set_comp_log(EMU, LOG_INFO, FLAG_ONLINE);
   set_comp_log(MAC, LOG_WARNING, 0);
   
-  LOG_I(LOG, "2 Starting OAI logs version %s Build date: %s on %s\n", 
+  LOG_I(EMU, "2 Starting OAI logs version %s Build date: %s on %s\n", 
 	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
   LOG_E(MAC, "2 emerge MAC\n");
   LOG_D(MAC, "2 debug  MAC \n");
@@ -546,7 +538,7 @@ int test_log(){
   set_comp_log(MAC, LOG_NOTICE, 1);
   
   LOG_ENTER(MAC);
-  LOG_I(LOG, "3 Starting OAI logs version %s Build date: %s on %s\n", 
+  LOG_I(EMU, "3 Starting OAI logs version %s Build date: %s on %s\n", 
 	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
   LOG_D(MAC, "3 debug  MAC \n");
   LOG_N(MAC, "3 notice MAC \n");
@@ -554,10 +546,10 @@ int test_log(){
   LOG_I(MAC, "3 info MAC \n");
   
   set_comp_log(MAC, LOG_DEBUG,1);
-  set_comp_log(LOG, LOG_DEBUG,1);
+  set_comp_log(EMU, LOG_DEBUG,1);
  
   LOG_ENTER(MAC);
-  LOG_I(LOG, "4 Starting OAI logs version %s Build date: %s on %s\n", 
+  LOG_I(EMU, "4 Starting OAI logs version %s Build date: %s on %s\n", 
 	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
   LOG_D(MAC, "4 debug  MAC \n");
   LOG_N(MAC, "4 notice MAC \n");
@@ -566,7 +558,7 @@ int test_log(){
 
  
   set_comp_log(MAC, LOG_DEBUG,0);
-  set_comp_log(LOG, LOG_DEBUG,0);
+  set_comp_log(EMU, LOG_DEBUG,0);
  
   LOG_I(LOG, "5 Starting OAI logs version %s Build date: %s on %s\n", 
 	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
@@ -577,7 +569,7 @@ int test_log(){
   
  
   set_comp_log(MAC, LOG_TRACE,0X07F);
-  set_comp_log(LOG, LOG_TRACE,0X07F);
+  set_comp_log(EMU, LOG_TRACE,0X07F);
   
   LOG_ENTER(MAC);
   LOG_I(LOG, "6 Starting OAI logs version %s Build date: %s on %s\n", 

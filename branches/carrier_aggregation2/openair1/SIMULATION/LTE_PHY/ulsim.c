@@ -38,7 +38,7 @@ double sinr_bler_map[MCS_COUNT][2][9];
 
 extern u16 beta_ack[16],beta_ri[16],beta_cqi[16];
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag,u8 N_RB_DL,u8 osf) {
+void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag,u8 N_RB_DL,u8 frame_type,u8 tdd_config,u8 osf) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms;
 
@@ -53,8 +53,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
 
-  lte_frame_parms->frame_type         = 1;
-  lte_frame_parms->tdd_config         = 3;
+  lte_frame_parms->frame_type         = frame_type;
+  lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = N_RB_DL;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
   unsigned short input_buffer_length;
   unsigned int ret;
   unsigned int coded_bits_per_codeword,nsymb;
-  int subframe=2;
+  int subframe=3;
 
   unsigned int tx_lev,tx_lev_dB=0,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0};
 
@@ -165,11 +165,12 @@ int main(int argc, char **argv) {
   u8 cyclic_shift = 0;
   u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
+  u8 tdd_config=3,frame_type=0;
 
   u8 N0=40;
   double tx_gain=1.0;
 
-  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -233,6 +234,13 @@ int main(int argc, char **argv) {
     case 's':
       snr0 = atoi(optarg);
       break;
+    case 'S':
+      subframe = atoi(optarg);
+      break;
+    case 'T':
+      tdd_config=atoi(optarg);
+      frame_type=1;
+      break;
     case 'p':
       extended_prefix_flag=1;
       break;
@@ -290,7 +298,7 @@ int main(int argc, char **argv) {
     }
   }
   
-  lte_param_init(1,1,1,extended_prefix_flag,N_RB_DL,osf);  
+  lte_param_init(1,1,1,extended_prefix_flag,N_RB_DL,frame_type,tdd_config,osf);  
   printf("Setting mcs = %d\n",mcs);
   printf("n_frames = %d\n",n_frames);
 
@@ -421,8 +429,8 @@ int main(int argc, char **argv) {
 				forgetting_factor,
 				0,
 				0);
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(3,0);
-  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(3,0);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,0);
+  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(8,0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
@@ -488,7 +496,7 @@ int main(int argc, char **argv) {
 
   generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
 				    14,
-				    (subframe<4)?(subframe+6):(subframe-4),
+				    ul_subframe2pdcch_alloc_subframe(&PHY_vars_UE->lte_frame_parms,subframe),
 				    format0,
 				    PHY_vars_UE,
 				    SI_RNTI,
@@ -501,7 +509,7 @@ int main(int argc, char **argv) {
 
   generate_eNB_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
 				     14,
-				     (subframe<4)?(subframe+6):(subframe-4),
+				     ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe),
 				     format0,
 				     0,
 				     PHY_vars_eNB,
@@ -526,13 +534,14 @@ int main(int argc, char **argv) {
 
     randominit(0);
       
-
-    harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe);
-
+    PHY_vars_UE->frame=1;
+    PHY_vars_eNB->frame=1;
+    harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->frame,subframe);
+    //    printf("harq_pid %d\n",harq_pid);
     if (input_fd == NULL) {
       input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       input_buffer = (unsigned char *)malloc(input_buffer_length+4);
-      PHY_vars_UE->frame=1;
+
       if (n_frames == 1) {
 	trch_out_fd = fopen("ulsch_trch.txt","w");
 	for (i=0;i<input_buffer_length;i++) {
@@ -580,16 +589,16 @@ int main(int argc, char **argv) {
 	//	printf("Trial %d : Round %d ",trials,round);
 	round_trials[round]++;
 	if (round == 0) {
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[0]->Ndi = 1;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[0]->rvidx = round>>1;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->Ndi = 1;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->rvidx = round>>1;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Ndi = 1;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->rvidx = round>>1;
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->Ndi = 1;
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->rvidx = round>>1;
 	}
 	else {
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[0]->Ndi = 0;
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[0]->rvidx = round>>1;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->Ndi = 0;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->rvidx = round>>1;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Ndi = 0;
+	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->rvidx = round>>1;
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->Ndi = 0;
+	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->rvidx = round>>1;
 	}
 
 	if (input_fd == NULL) {
@@ -603,8 +612,8 @@ int main(int argc, char **argv) {
 	    generate_srs_tx(PHY_vars_UE,0,scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],subframe);
 	  generate_drs_pusch(PHY_vars_UE,0,
 			     scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],subframe,
-			     PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->first_rb,
-			     PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->nb_rb);
+			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb,
+			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
 #endif	
 	  
 	  if (ulsch_encoding(input_buffer,
@@ -854,13 +863,13 @@ int main(int argc, char **argv) {
 	   (double)errs[3]/(round_trials[3]),
 	   rate*((double)(round_trials[0])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3])),
 	   rate,
-	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
+	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
     
     fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
 	    SNR,
 	    mcs,
-	    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
+	    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
 	    rate,
 	    errs[0],
 	    round_trials[0],

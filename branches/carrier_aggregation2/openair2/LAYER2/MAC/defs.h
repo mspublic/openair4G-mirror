@@ -96,7 +96,8 @@
 
 typedef enum {
   CONNECTION_OK=0,
-  CONNECTION_LOST
+  CONNECTION_LOST,
+  PHY_RESYNCH
 } UE_L2_STATE_t;
 
 typedef struct {
@@ -485,6 +486,7 @@ typedef struct{
 int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 eNB_id, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
+		       struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 		       MAC_MainConfig_t *mac_MainConfig,
 		       long logicalChannelIdentity,
 		       LogicalChannelConfig_t *logicalChannelConfig,
@@ -656,6 +658,7 @@ void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_DLSCH_STATUS status);
 s8 find_UE_id(u8 Mod_id,u16 rnti) ;
 s16 find_UE_RNTI(u8 Mod_id, u8 UE_id);
 s8 find_active_UEs(u8 Mod_id);
+u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id );
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
@@ -785,7 +788,7 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 \param[in] subframe the subframe number
 \param[in] direction subframe direction
 \param[in] eNB_index instance of eNB
-@returns L2 state (CONNETION_OK or CONNECTION_LOST)
+@returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
 */
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 

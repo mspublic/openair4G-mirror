@@ -1,9 +1,41 @@
-/*________________________openair_rrc_main.c________________________
+/*******************************************************************************
 
-  Authors : Hicham Anouar, Raymond Knopp
-  Company : EURECOM
-  Emails  : knopp@eurecom.fr
-  ________________________________________________________________*/
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2010 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file rrc_common.c
+* \brief rrc common procedures for eNB and UE
+* \author Raymond Knopp and Navid Nikaein
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
+*/ 
+
 
 #include "defs.h"
 #include "extern.h"
@@ -22,51 +54,30 @@
 extern eNB_MAC_INST *eNB_mac_inst;
 extern UE_MAC_INST *UE_mac_inst;
 
-/*------------------------------------------------------------------------------*/
-void openair_rrc_on(u8 Mod_id,u8 eNB_flag){//configure  BCCH & CCCH Logical Channels and associated rrc_buffers,
-  //configure associated SRBs
-  /*------------------------------------------------------------------------------*/
 
+//configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
+void openair_rrc_on(u8 Mod_id,u8 eNB_flag){
   unsigned short i;
 
-  msg("OPENAIR RRC IN....\n");
-
-
   if( eNB_flag == 1){
-
+    LOG_I(RRC,"[eNB %d] OPENAIR RRC IN....\n", Mod_id);
 
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].SI,BCCH,1);
-
     eNB_rrc_inst[Mod_id].SI.Active=1;
-
-
-
-
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].Srb0,CCCH,1);
-
     eNB_rrc_inst[Mod_id].Srb0.Active=1;
-
-
-  }
-
-  else{
-
+  } else{
+    LOG_I(RRC,"[UE %d] OPENAIR RRC IN....\n", Mod_id);
     for(i=0;i<NB_eNB_INST;i++){
-
       LOG_D(RRC, "[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
       UE_rrc_inst[Mod_id].Srb0[i].Srb_id = CCCH;
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       rrc_config_buffer(&UE_rrc_inst[Mod_id].Srb0[i],CCCH,1);
-
       UE_rrc_inst[Mod_id].Srb0[i].Active=1;
-
     }
   }
-
-
 }
-
 
 int rrc_init_global_param(void){
 
@@ -244,7 +255,7 @@ void openair_rrc_top_init(void){
 
 }
 
-int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
+int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
   if(eNB_flag == 1)
     return(eNB_rrc_inst[Mod_id].Info.Status[index]);
   else
@@ -252,14 +263,15 @@ int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
 }
 
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
-u16 T310[8] = {100,200,300,400,600,1000,1500,2000};
+u16 T310[8] = {0,50,100,200,500,1000,2000};
+u16 N310[8] = {1,2,3,4,6,8,10,20};
+u16 N311[8] = {1,2,3,4,6,8,10,20};
 
 rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
 
   if (UE_rrc_inst[Mod_id].Info[eNB_index].State!=RRC_CONNECTED) {
+    LOG_D(RRC,"Timer 310 expired, going to RRC_IDLE\n");
     UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
-    UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
-    UE_rrc_inst[Mod_id].Info[eNB_index].Nb_bcch_wait=0;
     UE_rrc_inst[Mod_id].Info[eNB_index].UE_index=0xffff;
     
     UE_rrc_inst[Mod_id].Srb0[eNB_index].Rx_buffer.payload_size=0;
@@ -277,7 +289,7 @@ rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
     }
   }
   else {  // Restablishment procedure
-
+    LOG_D(RRC,"Timer 310 expired, trying RRCRestablishment ...\n");    
   }
 }
     
@@ -286,18 +298,30 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   if(eNB_flag == 0) {
     // check timers
     
-    if (UE_rrc_inst[Mod_id].Info[index].T300_active) {
+    if (UE_rrc_inst[Mod_id].Info[index].T300_active==1) {
       if ((UE_rrc_inst[Mod_id].Info[index].T300_cnt % 10) == 0)
 	LOG_D(RRC,"[UE %d][RAPROC] Frame %d T300 Count %d ms\n",Mod_id,frame,
 	      UE_rrc_inst[Mod_id].Info[index].T300_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T300_cnt == T300[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t300]) {
 	UE_rrc_inst[Mod_id].Info[index].T300_active = 0;
+	// ALLOW CCCH to be used
+	UE_rrc_inst[Mod_id].Srb0[index].Tx_buffer.payload_size=0;
+	rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,index);
 	return(RRC_ConnSetup_failed);
       }
       UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
     }
+    if (UE_rrc_inst[Mod_id].sib2[index])
+      if (UE_rrc_inst[Mod_id].Info[index].N310_cnt==N310[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n310]) {
+	UE_rrc_inst[Mod_id].Info[index].T310_active=1;
+      }
     
-    if (UE_rrc_inst[Mod_id].Info[index].T310_active) {
+    if (UE_rrc_inst[Mod_id].Info[index].T310_active==1) {
+      if (UE_rrc_inst[Mod_id].Info[index].N311_cnt ==
+	  N311[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n311]) {
+	UE_rrc_inst[Mod_id].Info[index].T310_active=0;
+	UE_rrc_inst[Mod_id].Info[index].N311_cnt=0;	
+      }
       if ((UE_rrc_inst[Mod_id].Info[index].T310_cnt % 10) == 0)
 	LOG_D(RRC,"[UE %d] Frame %d T310 Count %d ms\n",Mod_id,frame,
 	      UE_rrc_inst[Mod_id].Info[index].T310_cnt);

@@ -45,6 +45,15 @@
 //typedef char bool;
 #include <stdbool.h>
 
+#ifdef STANDALONE
+typedef struct {
+    char *name;	/*!< \brief string name of item */
+    int value;	/*!< \brief integer value of mapping */
+} mapping;
+int  map_str_to_int(mapping *map, const char *str);
+char *map_int_to_str(mapping *map, int val);
+#endif
+
 /*!A sructure that includes all the characteristic mobility elements of a node  */
 typedef struct mobility_struct {
 	double X_from; /*!< The X coordinate of the previous location of the node */
@@ -163,6 +172,15 @@ NodePtr get_node_position(int node_type, int nID);
  */
 Node_list add_entry(NodePtr node, Node_list Node_Vector);
 
+/**
+ * \fn Node_list remove_node_entry(NodePtr node, Node_list Node_Vector)
+ * \brief Remove the Node sructure to the specified Node_Vector. 
+ *     Note: the entry will be removed, but the Node will not be deleted.
+ * \param node a pointer to the node that should be deleted to the Node_Vector 
+ * \param Node_Vector a pointer of type Node_list that represents the Node_Vector storing all the nodes of the specified mobility type
+ * \return the Node_list to which a new entry is removed
+ */
+Node_list remove_node_entry(NodePtr node, Node_list Node_Vector);
 
 /**
  * \fn void display_node_list(Node_list Node_Vector)

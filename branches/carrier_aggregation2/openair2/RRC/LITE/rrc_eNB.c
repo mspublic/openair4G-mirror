@@ -155,7 +155,7 @@ void init_SI(u8 Mod_id) {
 }
 
 /*------------------------------------------------------------------------------*/
-char openair_rrc_eNB_init(u8 Mod_id){
+char openair_rrc_lite_eNB_init(u8 Mod_id){
   /*-----------------------------------------------------------------------------*/
 
   unsigned char j;
@@ -259,6 +259,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
     case UL_DCCH_MessageType__c1_PR_measurementReport:
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes (measurementReport) --->][RRC_eNB][MOD %02d][]\n",
                                      frame, Mod_id, DCCH, sdu_size, Mod_id);
+      rrc_eNB_process_MeasurementReport(Mod_id,UE_index,&ul_dcch_msg->message.choice.c1.choice.measurementReport.criticalExtensions.choice.c1.choice.measurementReport_r8.measResults);
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes (RRCConnectionReconfigurationComplete) --->][RRC_eNB][MOD %02d][]\n",
@@ -470,8 +471,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 					 &eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd]);
 
 	  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
-
-	  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+  	  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
 										 frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
 	  rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
   }
@@ -491,6 +491,34 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_inde
   rrc_eNB_generate_RRCConnectionReconfiguration(Mod_id,frame,UE_index);
 
 
+}
+
+void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *measResults2) {
+
+  printf("Received Measurement Report From UE %d (Measurement Id %d)\n",UE_index,measResults2->measId);
+  if (measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count>0) {
+    printf("Physical Cell Id %d\n",measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId);
+    printf("RSRP of Target %d\n",*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
+    printf("RSRQ of Target %d\n",*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
+  }
+ // printf("RSRP of Source %d\n",measResults2->measResultServCell.rsrpResult);
+ // printf("RSRQ of Source %d\n",measResults2->measResultServCell.rsrqResult);
+  
+  
+  //Look for IP address of the target eNB
+  //Send Handover Request -> target eNB
+  //Wait for Handover Acknowledgement <- target eNB
+  //Send Handover Command
+  
+  //x2delay();
+  //	handover_request_x2(UE_index,Mod_id,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId);
+  
+  //	u8 buffer[100];
+  //    int size=rrc_eNB_generate_Handover_Command_TeNB(0,0,buffer);
+//
+//	  send_check_message((char*)buffer,size);
+  //send_handover_command();
+  
 }
 
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete){

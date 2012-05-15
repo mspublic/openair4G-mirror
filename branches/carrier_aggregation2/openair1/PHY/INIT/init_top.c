@@ -218,27 +218,16 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 
 int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
 
-
-
   // bzero((void *)PHY_vars,sizeof(PHY_VARS));
-
-
-  msg("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
-  msg("[openair][PHY][INIT]FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
-  msg("[openair][PHY][INIT]NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
-  
-
-    
+  LOG_I(PHY,"[INIT] OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
+  LOG_I(PHY,"[INIT] FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
+  LOG_I(PHY,"[INIT] NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
+  LOG_I(PHY,"[INIT] Initializing FFT engine using %d point fft (%d, %p)\n",NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev );
 
 #ifndef USER_MODE
   init_signal_buffers(frame_parms);
 #endif
-  
-#ifdef DEBUG_PHY    
-  msg("[openair][PHY][INIT] Initializing FFT engine\n");
-  msg("[openair][PHY][INIT] Using %d point fft (%d, %p)\n",NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev );
-#endif
-  
+   
 #ifndef EXPRESSMIMO_TARGET
   // Initialize fft variables
   init_fft(NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev);   // TX/RX
@@ -256,10 +245,8 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
   twiddle_fft_half = (short*)malloc16(4095*4*2);
   twiddle_ifft_half = (short*)malloc16(4095*4*2);
 
-#ifdef DEBUG_PHY    
-  msg("[openair][PHY][INIT] twiddle_fft= %p, twiddle_ifft=%p, twiddle_fft_times4=%p,twiddle_ifft_times4=%p\n",
+  LOG_I(PHY,"[INIT] twiddle_fft= %p, twiddle_ifft=%p, twiddle_fft_times4=%p,twiddle_ifft_times4=%p\n",
 	 (void *)twiddle_fft,(void *)twiddle_ifft,(void *)twiddle_fft_times4,(void *)twiddle_ifft_times4);
-#endif
 
   switch (NUMBER_OF_OFDM_CARRIERS) {
 	  
@@ -326,7 +313,7 @@ void phy_cleanup(void) {
   // stop PHY_thread
 
 
-  msg("[openair][PHY][INIT] cleanup\n");
+  LOG_I(PHY,"[INIT] cleanup\n");
 
   
 #ifndef USER_MODE
