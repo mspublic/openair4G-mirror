@@ -1,3 +1,6 @@
+synctest:lxrt+sem+mbx+msg+smi:!./synctest ;sleep 1;popall:control_c
 condtest:lxrt+sem+mbx+msg+smi:!sudo ./condtest;sleep 1;popall:control_c
+msg_test:lxrt+sem+mbx+msg+smi:!sudo ./msg_test;sleep 1;popall:control_c
+msg_many:lxrt+sem+mbx+msg+smi:!sudo ./msg_test;sleep 1;popall:control_c
 eNB:lxrt+sem+mbx+msg+smi:!sudo ./synctest;sleep 1;popall:control_c
 UE:lxrt+sem+mbx+msg+smi:!sudo ./synctest -U -d;sleep 1;popall:control_c
