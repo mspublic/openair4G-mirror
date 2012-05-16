@@ -622,6 +622,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	  rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			     (RadioResourceConfigCommonSIB_t *)NULL,
 			     UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+			     UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
 			     UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 			     1,
 			     SRB1_logicalChannelConfig,
@@ -658,6 +659,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
       rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			 (RadioResourceConfigCommonSIB_t *)NULL,
 			 UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+			 UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
 			 UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 			 2,
 			 SRB2_logicalChannelConfig,
@@ -689,6 +691,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+			   UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
 			   UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 			   *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
 			   UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
@@ -907,7 +910,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 
   LOG_D(RRC,"[UE %d] : Dumping SIB 1 (%d bits)\n",Mod_id,dec_rval.consumed);
 
-  //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);
+  //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);LOG_W(RRC,"Adding SCell configuration in RRC Reconfig Req with index %d ...\n",sCell1_config_ptr->sCellIndex_r10);
 
   msg("cellAccessRelatedInfo.cellIdentity : %x.%x.%x.%x\n",
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[0],
@@ -944,6 +947,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   rrc_mac_config_req(Mod_id,0,0,eNB_index,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     (struct PhysicalConfigDedicated *)NULL,
+		     (struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 		     (MAC_MainConfig_t *)NULL,
 		     0,
 		     (struct LogicalChannelConfig *)NULL,
@@ -1094,6 +1098,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
       rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			 &UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
 			 (struct PhysicalConfigDedicated *)NULL,
+			 (struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 			 (MAC_MainConfig_t *)NULL,
 			 0,
 			 (struct LogicalChannelConfig *)NULL,

@@ -1328,6 +1328,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 	  sCell1_config_ptr->radioResourceConfigDedicatedSCell_r10 = NULL; //Check this!!
 
 	  ASN_SEQUENCE_ADD(&sCellToAddList->list,sCell1_config_ptr);
+	  LOG_W(RRC,"Adding SCell configuration in RRC Reconfig Req with index %d ...\n",sCell1_config_ptr->sCellIndex_r10);
   }
   else {
 	  msg("RRCConnectionReconfiguration SCell addition failed: Not enough SCell resources");
@@ -1351,10 +1352,12 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = CALLOC(1,sizeof(SCellToAddModList_r10_t));
 	  memcpy((void *)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10, (void *)sCellToAddList, sizeof(SCellToAddModList_r10_t));
   	  */
-	  LOG_W(RRC,"[eNB] Adding SCell configuration in RRC Reconfig Req with index %d ...\n",Mod_id,sCell1_config_ptr->sCellIndex_r10);
+	  // Why does this give an error?
+	  // LOG_W(RRC,"Adding SCell configuration in RRC Reconfig Req with index %d ...\n",sCell_config->sCellIndex_r10);
 
   }
 #endif
+
   // RRCConnectionReconfiguration
   // Configure SRB2
 
