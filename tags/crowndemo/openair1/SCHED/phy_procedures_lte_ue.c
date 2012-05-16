@@ -81,6 +81,7 @@ extern short dl_ch_estimates[2][2400];
 extern int first_call_cal;
 extern int doquantUE;
 extern int calibration_flag;
+extern short quant;
 
 
 u8 ulsch_input_buffer[2700] __attribute__ ((aligned(16)));
@@ -738,8 +739,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		ulsch_input_buffer[i_d]=(char)(dl_ch_estimates[1][i_d]);
 		//ulsch_input_buffer[i_d]=i_d;		       		    
 		}
-		write_output("dlchestq.m","dlq",dl_ch_estimates[1],512,1,1);
-		write_output("dlchest.m","dl",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][2],512,1,1);
+		write_output("dlchestq.m","dlq",dl_ch_estimates[1],512,1,1);		
 		//exit(-1);	
 		         
 	      }
@@ -1730,11 +1730,11 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 // Calibration vars
   int k; 
-  short nsymb, quant_v, quant=8;
+  short nsymb, quant_v;
   nsymb = (phy_vars_ue->lte_frame_parms.Ncp == 0) ? 14 : 12;
   quant_v = (2<<(quant-1))/2; //b quantization bit 
-  bzero(dl_ch_estimates[0],(dl_ch_estimates_length));
-  bzero(dl_ch_estimates[1],(dl_ch_estimates_length));
+  //bzero(dl_ch_estimates[0],(dl_ch_estimates_length));
+  //bzero(dl_ch_estimates[1],(dl_ch_estimates_length));
 
   u16 l,m,n_symb;
   //  int eNB_id = 0, 
@@ -1773,7 +1773,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      	n_symb = 0;   	
 	    //} 
 	    //else
-	 if (calibration_flag == 1)
+	 if (eNB_id==0) //(calibration_flag == 1)
 	     {
               //printf("BORIS\n");exit(-1);
 	     if ((last_slot%2)==0)
@@ -1793,8 +1793,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				     0);//including dl channel estimation an freq ofset fonction		               	    
 		  	}
 		  //}
-                write_output("dlchest00.m","dl00",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][0],512,1,1);
-		write_output("dlchest01.m","dl01",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][2],512,1,1);
+                //write_output("dlchest00.m","dl00",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][0],512,1,1);
+		//write_output("dlchest01.m","dl01",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][2],512,1,1);
 		do_quantization_UE(phy_vars_ue,
 			            nsymb, 
 			            pilot1-1, 
@@ -1803,7 +1803,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				    dec_f);
 		doquantUE=1;
 
-	    }
+	    } //eNB_id, (calibration_flag == 1)
 	}
        else {
 	n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;

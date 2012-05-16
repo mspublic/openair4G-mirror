@@ -129,7 +129,8 @@ OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o 
 OAISIM_OBJS += cor_SF_sim.o
 OAISIM_OBJS += phy_procedures_sim_form.o
-OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
+#OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
+OAISIM_OBJS += lte_scope.o
 
 ifdef PROC
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
@@ -160,6 +161,11 @@ $(OBJ): %.o : %.c
 oaisim : $(OBJ) oaisim.c  
 	@echo "Compiling oaisim.c ..."
 	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+
+oaisimCROWN : $(OBJ) oaisimCROWN.c  
+	@echo "Compiling oaisimCROWN.c ..."
+	@$(CC)  oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
