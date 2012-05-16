@@ -78,6 +78,16 @@ extern double PeNb_factor[2][600];
 extern int dec_f;
 extern short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
 extern int calibration_flag;
+extern int prec_length;
+extern short prec[2][2*14*512];
+extern double Norm[2*14*512];
+extern short denom[14*512];
+extern short x_temp;
+extern short drs_ch_est_ZFB[2*300*14]; //Redefine (Crosslink channel)
+extern short drs_ch_estimates[2][2400];
+extern short quant;
+
+
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 int eNB_sync_buffer0[640*6] __attribute__ ((aligned(16)));
@@ -582,6 +592,11 @@ void phy_procedures_eNB_SS_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB
 
 void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
 
+// Calibration vars
+  short nsymb, subframe_DL=6;     
+  nsymb = (phy_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
+  int eNB_id=0;
+
   u8 *pbch_pdu=&phy_vars_eNB->pbch_pdu[0];
   //  unsigned int nb_dci_ue_spec = 0, nb_dci_common = 0;
   u16 input_buffer_length, re_allocated=0;
@@ -621,10 +636,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			   AMP,
 			   next_slot);
 
-// b Calibration FIX ME
-	/*if ( ((next_slot)==3) && (calibration_flag==1)) {
-    	generate_pilots_SS(phy_vars_eNB, phy_vars_eNB->lte_eNB_common_vars.txdataF[0],1024);
-  	} */       
+// b Calibration
+	if ( ((next_slot)==2) && (phy_vars_eNB->is_secondary_eNB==1) ) {// && (calibration_flag==1)
+    	generate_pilots_SS(phy_vars_eNB, phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],1024);
+  	}        
    
       if (next_slot == 0) {
 	
@@ -806,6 +821,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	}
       }
     }
+
   }
 
   sect_id=0;
@@ -818,9 +834,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef OPENAIR2
       // if there are two users and we want to do cooperation
     if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,phy_vars_eNB->frame,next_slot>>1,1);
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,phy_vars_eNB->frame,next_slot>>1,((phy_vars_eNB->is_secondary_eNB==1) ? calibration_flag:0 ));//// calibration_flag
     else
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1,1);
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1,((phy_vars_eNB->is_secondary_eNB==1) ? calibration_flag:0 ) );//calibration_flag
 
     // Parse DCI received from MAC
     DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
@@ -1338,7 +1354,40 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 
 
+//b *********************precoding, before ofdm modulation check
+if ( (next_slot == 12) && (P_eNb_active == 100) && (K_calibration > n_K) ) {            
+	    //b Beamforming    
+	   
+	    prec_length = 2*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;	    
+	    subframe_DL=6; 
+            bzero(prec[0], prec_length);
+            bzero(prec[1], prec_length);
+            // drs_ch_est_ZFB	crosslink DL channel estimated
 
+	    for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
+		do_precoding(phy_vars_eNB, drs_ch_est_ZFB, PeNb_factor, prec[aa], nsymb, UE_id, aa); // nsymb==14
+            }
+
+for (i=0; i<nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size; i++) { //nsymb==14
+
+            	denom[i] = (short)(sqrt((prec[0][2*i])*(prec[0][2*i]) + (prec[0][2*i+1])*(prec[0][2*i+1]) + (prec[1][2*i])*(prec[1][2*i]) + (prec[1][2*i+1])*(prec[1][2*i+1])));
+		if (denom[i] != 0) {
+x_temp = ((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0])[2*i+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size];		
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0])[2*i+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = (short)((x_temp*prec[1][2*i] - ((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size]*prec[1][2*i+1])/denom[i]);
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = (short)((x_temp*prec[1][2*i+1] + ((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size]*prec[1][2*i])/denom[i]);
+
+x_temp = ((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1])[2*i+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size];	
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1])[2*i+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = (-1)*(short)((x_temp*prec[0][2*i] - ((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size]*prec[0][2*i+1])/denom[i]);
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = (-1)*(short)((x_temp*prec[0][2*i+1] + ((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size]*prec[0][2*i])/denom[i]);
+		} else {
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0])[2*i+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = 0;
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = 0;                
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1])[2*i+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = 0;
+((short *)phy_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1])[2*i+1+2*subframe_DL*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size] = 0;
+			}
+	    }
+   }
+//*********************
 
 #ifdef EMOS
   phy_procedures_emos_eNB_TX(next_slot);
@@ -1719,18 +1768,15 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
   //Calibration parameters
   int dec_f=1, aa, k, n_K=15, pilot1=3, UE_id=0; //To def as argument.
-  short nsymb, quant_v, quant=8;    
+  short nsymb, quant_v;    
   int drs_ch_estimates_length=(2*300*4)/dec_f;
   quant_v = (2<<(quant-1))/2; //b quantization bit  
   nsymb = (phy_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
-  short drs_ch_estimates[2][drs_ch_estimates_length];
-  bzero(drs_ch_estimates[0],(drs_ch_estimates_length));
-  bzero(drs_ch_estimates[1],(drs_ch_estimates_length));
   
-  short drs_ch_est_ZFB[2*300*nsymb]; //Redefine (Crosslink channel)
+  //bzero(drs_ch_estimates[0],(drs_ch_estimates_length));
+  //bzero(drs_ch_estimates[1],(drs_ch_estimates_length));
+      
   bzero(drs_ch_est_ZFB,2*300*nsymb);
-  short trials=phy_vars_eNB->frame; 
- 
 
   //RX processing
   u32 l, ret,i,j;
@@ -1776,7 +1822,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
     }
   }
-  sect_id = 0;
+  sect_id = 0;	
+
   /*
     for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
     
@@ -2041,10 +2088,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 	phy_vars_eNB->ulsch_eNB[i]->o_ACK[0] = 0;
 	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1] = 0;
-
-
-
-
+	
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 	  LOG_D(PHY,"[eNB %d][RAPROC] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
 	      phy_vars_eNB->Mod_id,
@@ -2163,6 +2207,19 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
 #ifdef OPENAIR2
+	  //b Calibration 
+	do_quantization_eNB(phy_vars_eNB, //slot_fep_ul sup exe before
+			    nsymb, 
+			    pilot1-1, //pilot ant 0
+			    pilot1, //pilot ant 1 
+			    quant_v, 
+			    drs_ch_estimates[1], 
+			    UE_id);
+
+	//printf("do_quantization_eNB\n");
+//write_output("dlch.m","dl",drs_ch_estimates[1],600,1,1);
+//exit(-1);
+
 	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->calibration_flag == 0) {
 	    mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
 			      phy_vars_eNB->frame,
@@ -2181,23 +2238,17 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
        printf("Auto-Calibrationret=%d;  K_calibration = %d; echec_calibration=%d \n" ,ret, K_calibration, echec_calibration);
 
-      if ((ret <= MAX_TURBO_ITERATIONS) && (K_calibration < n_K)) {
+      if ((ret <= MAX_TURBO_ITERATIONS) && (K_calibration <= n_K)) {
         for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
           for (k=0; k<2*300; k++) {
 	    //K_dl_ch_estimates[phy_vars_eNB->frame][aa][k]  = dl_ch_estimates[1][k+(aa*2*300)];//b +6 ofset in Chan-Est
-	    K_dl_ch_estimates[K_calibration][aa][k]  = (char)(phy_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->b)[k+(aa*2*300)];	
-	    do_quantization_eNB(phy_vars_eNB, //slot_fep_ul sup exe before
-			    nsymb, 
-			    pilot1-1, //pilot ant 0
-			    pilot1, //pilot ant 1 
-			    quant_v, 
-			    drs_ch_estimates[1], 
-			    UE_id);	
-	     K_drs_ch_estimates[K_calibration][aa][k] = drs_ch_estimates[1][k+(aa*2*300)];//b +6 ofset in Chan-Est 1==kk
+	    K_dl_ch_estimates[K_calibration-1][aa][k]  = (char)(phy_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->b)[k+(aa*2*300)];	
+	    K_drs_ch_estimates[K_calibration-1][aa][k] = drs_ch_estimates[1][k+(aa*2*300)];//b +6 ofset in Chan-Est 1==kk
       			}		   
-    		}
-		
-	} else if ((P_eNb_active==0) && (K_calibration == n_K)) {                  				  
+    		}	
+	} 
+	
+	if ((P_eNb_active==0) && (K_calibration == n_K)) {                  				  
 		//exit(-1);
 		do_calibration(K_dl_ch_estimates,
 				K_drs_ch_estimates, 
@@ -2205,11 +2256,15 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				phy_vars_eNB->lte_frame_parms.ofdm_symbol_size,
 				n_K);
 		P_eNb_active=1;
-		//write_output("dlch.m","dlR",K_dl_ch_estimates[K_calibration][0],512,1,1);
-		//write_output("drsch.m","drsR",K_drs_ch_estimates[K_calibration][0],512,1,1);
-		//write_output("cal00.m","cl00",PeNb_factor[0],1000,1,8);
-		//printf("phy_vars_eNB->lte_frame_parms.nb_antennas_rx== %d \n", phy_vars_eNB->lte_frame_parms.nb_antennas_rx);
+		//write_output("dlch.m","dl",K_dl_ch_estimates[3][0],600,1,1);
+		//write_output("drsv.m","drsv",phy_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0],600,1,1);
+		//write_output("drsch.m","drs",K_drs_ch_estimates[3][0],600,1,1);
+		//write_output("cal00.m","cl00",PeNb_factor[0],600,1,8);
+		//calibration_flag=0;
+                                
+		//printf("exit\n");
 		//exit(-1);
+		//clf,clear, dlchestq; dlchest00; dlchest01; plot(abs(dlq)), hold on, plot(abs(dl00),'r'), hold on, plot(abs(dl01),'g');
 		
 	}
 //+++++++++++++++++++++++++++++++++++++++++++++++++

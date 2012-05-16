@@ -146,7 +146,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
   u8 aatx,aarx;
 
   if (next_slot==0)
-    hold_channel = 0;
+    hold_channel = 1;//b 0avt
   else
     hold_channel = 1;
 
@@ -406,11 +406,11 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   u32 i;
   u32 slot_offset,slot_offset_meas;
 
-  u8 hold_channel=1;
+  u8 hold_channel=1; 
   u8 aatx,aarx;
 
   if (next_slot==4) {
-    hold_channel = 0;
+    hold_channel = 1;//b 0avt
   }
 
 
@@ -432,6 +432,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       // Clear RX signal for eNB = eNB_id
+	UE_id=0; //b
+	//printf("UE_id== %d, eNB_id== %d \n",UE_id, eNB_id);
       for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<UE2eNB[UE_id][eNB_id]->nb_rx;aa++) {
 	  r_re[aa][i]=0.0;

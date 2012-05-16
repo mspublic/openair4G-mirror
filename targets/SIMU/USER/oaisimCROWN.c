@@ -31,9 +31,9 @@
 #include "SCHED/vars.h"
 
 #ifdef XFORMS
-#include <forms.h>
-#include "phy_procedures_sim_form.h"
-#include "../../../openair1/USERSPACE_TOOLS/SCOPE/lte_scope.h"
+#include "forms.h"
+//#include "phy_procedures_sim_form.h"
+#include "lte_scope.h"
 #endif //XFORMS
 
 #include "oaisim.h"
@@ -93,9 +93,18 @@ int n_K=15,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_
 double PeNb_factor[2][600];
 int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
 short dl_ch_estimates[2][2400]; 
+short drs_ch_estimates[2][2400];
+short drs_ch_est_ZFB[2*300*14];
 int doquantUE=0;
-int calibration_flag=0;
+int calibration_flag=1;
 short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
+int prec_length = 2*14*512;
+short prec[2][2*14*512];
+double Norm[2*14*512];
+short denom[14*512];
+short x_temp, quant=8;
+SCM_t channel_model=SCM_C;
+int CROWN_SYSTEM=2;
   
 
 //OAI_Emulation * emulation_scen;
@@ -144,6 +153,7 @@ help (void) {
   printf ("-b Set the number of local eNB\n");
   printf ("-u Set the number of local UE\n");
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
+  printf ("-G Set the Channel type for CROWN SIMULATION\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
   printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:err) \n");
@@ -158,7 +168,7 @@ help (void) {
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
 }
 
-#ifdef XFORMS
+#ifdef XFORMSA
 void
 do_forms (FD_phy_procedures_sim * form,
 	  LTE_UE_PDSCH ** lte_ue_pdsch_vars, LTE_eNB_PUSCH ** lte_eNB_pusch_vars, struct complex **ch, u32 ch_len)
@@ -536,12 +546,150 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
 
 #endif //XFORMS
 
+#ifdef XFORMS
+
+extern void ZFB_callback( FL_OBJECT *ob, long user_data) {
+  //fl_set_button(ob,1);
+  int ZFB = user_data;
+  printf("click ZFB\n");
+}
+
+extern void RECAL_callback( FL_OBJECT *ob, long user_data) {
+  calibration_flag = 1;
+  K_calibration	   = 0;
+  P_eNb_active	   = 0;
+  printf("click RECALIBRATION\n");
+}
+
+extern void ZFB1_callback( FL_OBJECT *ob, long user_data) {
+  //fl_set_button(ob,1);
+  int ZFB = user_data;
+  printf("click no ZFB1\n");
+}
+
+
+extern void Rice8_callback( FL_OBJECT *ob, long user_data) {
+  //fl_set_button(ob,1);
+  channel_model=Rice8;
+}
+
+extern void SCM_C_callback( FL_OBJECT *ob, long user_data) {
+  //fl_set_button(ob,1);
+   channel_model=SCM_C;
+}
+
+extern void RayL1_callback( FL_OBJECT *ob, long user_data) {
+  //fl_set_button(ob,1);
+  channel_model=Rayleigh1;
+}
+
+
+extern void Exit_callback( FL_OBJECT *ob, long user_data) {
+  printf("***SIMULATION EXIT***\n");
+  exit(0);
+}
+
+
+void do_formsCROWN(FD_lte_scope *formCROWN, LTE_DL_FRAME_PARMS *frame_parms, short *dl_ch_estimates, short *drs_ch_estimates_a,short *drs_ch_estimates_p, double PeNb_factor[2][600], short *dlsch_comp, short *dlsch_comp0, short *dlsch_comp1)
+{
+  int aa, k, xx=128, yy=128;
+  float x_label[300], y_label[300];
+
+  int i,j;
+  float I[25*12*11*4], Q[25*12*11*4];
+
+  for (k=0; k<2*300; k+=2) {
+        x_label[k>>1] = (float)(k>>1);
+      	y_label[k>>1] = dl_ch_estimates[k];	    
+  }			   
+
+  fl_set_xyplot_data(formCROWN->fig11,x_label,y_label,300,"Dl_chan_Ant0","","");
+  fl_set_xyplot_ybounds(formCROWN->fig11,-50,50);
+
+  for (k=0; k<2*300; k+=2) {
+        x_label[k>>1] = (float)(k>>1);
+      	y_label[k>>1] = dl_ch_estimates[k+2*300];	    
+  }			   
+
+  fl_set_xyplot_data(formCROWN->fig12,x_label,y_label,300,"Dl_chan_Ant1","","");
+  fl_set_xyplot_ybounds(formCROWN->fig12,-50,50);
+
+  for (k=0; k<2*300; k+=2) {
+      	y_label[k>>1] = drs_ch_estimates_a[k];
+  }
+
+  fl_set_xyplot_data(formCROWN->fig13,x_label,y_label,300,"Ul_chan_Ant0","","");
+  fl_set_xyplot_ybounds(formCROWN->fig13,-xx,xx);
+
+  for (k=0; k<2*300; k+=2) {
+      	y_label[k>>1] = drs_ch_estimates_a[k+2*300];
+  }			   
+
+  fl_set_xyplot_data(formCROWN->fig14,x_label,y_label,300,"Ul_chan_Ant1","","");
+  fl_set_xyplot_ybounds(formCROWN->fig14,-xx,xx);
+
+  for (k=0; k<2*300; k+=2) {
+      	y_label[k>>1] = drs_ch_estimates_a[k]*PeNb_factor[0][k] - drs_ch_estimates_a[k+1]*PeNb_factor[0][k+1];
+  }			   
+
+  fl_set_xyplot_data(formCROWN->fig21,x_label,y_label,300,"Dl_chan_est_Ant0","","");
+  fl_set_xyplot_ybounds(formCROWN->fig21,-50,50);
+
+  for (k=0; k<2*300; k+=2) {
+      	y_label[k>>1] = drs_ch_estimates_a[k+2*300]*PeNb_factor[1][k] - drs_ch_estimates_a[k+2*300+1]*PeNb_factor[1][k+1];
+  }			   
+
+  fl_set_xyplot_data(formCROWN->fig22,x_label,y_label,300,"Dl_chan_est_Ant1","","");
+  fl_set_xyplot_ybounds(formCROWN->fig22,-50,50);
+
+    
+    for (k=0; k<2*300; k+=2) {
+      	y_label[k>>1] = drs_ch_estimates_p[k];
+  }			   
+  fl_set_xyplot_data(formCROWN->fig23,x_label,y_label,300,"Int_Crosslink_chan","","");
+  
+ j=0;
+  for (k=0;k<frame_parms->symbols_per_tti;k++) {
+    for(i=0;i<12*25;i++) {
+      I[j] = dlsch_comp[(2*25*12*k)+2*i];
+      Q[j] = dlsch_comp[(2*25*12*k)+2*i+1];
+      j++;
+    }
+  }
+  fl_set_xyplot_data(formCROWN->fig24,I,Q,j,"","","");
+
+  j=0;
+  for (k=0;k<frame_parms->symbols_per_tti;k++) {
+    for(i=0;i<12*25;i++) {
+      I[j] = dlsch_comp0[(2*25*12*k)+2*i];
+      Q[j] = dlsch_comp0[(2*25*12*k)+2*i+1];
+      j++;
+    }
+  }
+  fl_set_xyplot_data(formCROWN->fig25,I,Q,j,"","","");
+
+  
+  j=0;
+  for (k=0;k<frame_parms->symbols_per_tti;k++) {
+    for(i=0;i<12*25;i++) {
+      I[j] = dlsch_comp1[(2*25*12*k)+2*i];
+      Q[j] = dlsch_comp1[(2*25*12*k)+2*i+1];
+      j++;
+    }
+  }
+  fl_set_xyplot_data(formCROWN->fig26,I,Q,j,"","","");
+  
+  fl_check_forms();
+
+}
+#endif
+
 
 int
 main (int argc, char **argv)
 {
   char c;
-  s32 i, j;
+  s32 i, j, iii=0;
   int new_omg_model; // goto ocg in oai_emulation.info.
   // pointers signal buffers (s = transmit, r,r0 = receive)
   double **s_re, **s_im, **r_re, **r_im, **r_re0, **r_im0;
@@ -584,12 +732,18 @@ for(i=0;i<2;i++) {
   lte_subframe_t direction;
 
   u8 awgn_flag = 0;
-#ifdef XFORMS
+#ifdef XFORMSA
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
   FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
   FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   char title[255];
 #endif
+
+#ifdef XFORMS
+  FD_lte_scope *formCROWN[(CROWN_SYSTEM-1)]; //Number of systems
+  char title[255];
+#endif
+ 
   LTE_DL_FRAME_PARMS *frame_parms;
 
   FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats;
@@ -622,7 +776,7 @@ for(i=0;i<2;i++) {
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePoFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
+  while ((c = getopt (argc, argv, "haePoFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:G:l:d:U:B:R:E:X:i:T:AJ"))
 	 != -1) {
 
     switch (c) {
@@ -770,6 +924,52 @@ for(i=0;i<2;i++) {
      node_id = wgt+atoi(optarg);
      port+=atoi(optarg);
      break;
+    case 'G':
+	switch((char)*optarg) {
+	case 'A': 
+	  channel_model=SCM_A;
+	  break;
+	case 'B': 
+	  channel_model=SCM_B;
+	  break;
+	case 'C': 
+	  channel_model=SCM_C;
+	  break;
+	case 'D': 
+	  channel_model=SCM_D;
+	  break;
+	case 'E': 
+	  channel_model=EPA;
+	  break;
+	case 'F': 
+	  channel_model=EVA;
+	  break;
+	case 'G': 
+	  channel_model=ETU;
+	  break;
+	case 'H':
+	  channel_model=Rayleigh8;
+	  break;
+	case 'I':
+	  channel_model=Rayleigh1;
+	  break;
+	case 'J':
+	  channel_model=Rayleigh1_corr;
+	  break;
+	case 'K':
+	  channel_model=Rayleigh1_anticorr;
+	  break;
+	case 'L':
+	  channel_model=Rice8;
+	  break;
+	case 'M':
+	  channel_model=Rice1;
+	  break;
+	default:
+	  msg("Unsupported channel model (New Modif)!\n");
+	  exit(-1);
+	}
+      break;
     default:
       help ();
       exit (-1);
@@ -854,7 +1054,9 @@ for(i=0;i<2;i++) {
     get_beta_map();
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-    enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t)); 
+    enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
+    //b Calibration
+    PHY_vars_eNB_g[eNB_id]->is_secondary_eNB=((eNB_id==1) ? 0:1 );
     init_enb(enb_data[eNB_id],oai_emulation.environment_system_config.antenna.eNB_antenna);
 
 // Calibration
@@ -864,10 +1066,13 @@ for(i=0;i<2;i++) {
 	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx = 1;
 	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx = 1;
 	}*/
+	
   }
   
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     ue_data[UE_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
+    //b Calibration
+    //PHY_vars_UE_g[UE_id]->is_secondary_ue=1;
     init_ue(ue_data[UE_id],oai_emulation.environment_system_config.antenna.UE_antenna);
 
 	/*if ((oai_emulation.info.transmission_mode==1) && calibration_flag==1 ){
@@ -876,6 +1081,7 @@ for(i=0;i<2;i++) {
 	  //PHY_vars_UE[1]->lte_frame_parms.nb_antennas_tx = 1;
 	  //PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx = 1; 
 	}*/
+	
   }
 
 
@@ -903,7 +1109,8 @@ for(i=0;i<2;i++) {
       if (oai_emulation.info.transmission_mode == 5) {
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						     (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
+						     //(UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,//b
+						     channel_model,//b
 						     //(awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
@@ -914,7 +1121,8 @@ for(i=0;i<2;i++) {
       else {
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						     (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						     channel_model, //b
+						     //(awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
 						     0,
@@ -965,7 +1173,7 @@ for(i=0;i<2;i++) {
   }
 
   
-#ifdef XFORMS
+#ifdef XFORMSA
   fl_initialize (&argc, argv, NULL, 0, 0);
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -990,6 +1198,14 @@ for(i=0;i<2;i++) {
   }
 #endif
 
+#ifdef XFORMS
+ for (UE_id = 0; UE_id < (CROWN_SYSTEM-1); UE_id++) {
+ fl_initialize (&argc, argv, NULL, 0, 0);
+  formCROWN[UE_id] = create_form_lte_scope();
+  sprintf (title, "LTE CROWNCOM DEMO SCOPE %d", UE_id);
+  fl_show_form (formCROWN[UE_id]->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+}
+#endif
 
 #ifdef OPENAIR2
   l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
@@ -1291,7 +1507,7 @@ for(i=0;i<2;i++) {
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     } 
   
-#ifdef XFORMS
+#ifdef XFORMSA
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       do_forms2(form_dl[UE_id],
 		frame_parms,  
@@ -1332,8 +1548,32 @@ for(i=0;i<2;i++) {
 		  eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
       }
     }
-#endif	
+#endif
+#ifdef XFORMS
+		//if (slot==12) {
+		
+ //for (UE_id = 0; UE_id < CROWN_SYSTEM; UE_id++) {
+			do_formsCROWN(formCROWN[0],// b
+				   	&PHY_vars_eNB_g[0]->lte_frame_parms,  
+				   	dl_ch_estimates[1],//PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0],//
+				   	drs_ch_estimates[1],//PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0],//
+				   	drs_ch_estimates[0],
+				        PeNb_factor,
+					PHY_vars_UE_g[NB_UE_INST-1]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+					PHY_vars_UE_g[0]->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
+					PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0]);//b
 
+			/*do_formsCROWN(formCROWN[1],// b
+				   	&PHY_vars_eNB_g[0]->lte_frame_parms,  
+				   	PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0],//PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0],//
+				   	PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->drs_ch_estimates[0],//PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0],//
+				   	drs_ch_estimates[0],
+				        PeNb_factor,
+					PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+					PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+					PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0]);	//b	*/	
+ //}
+#endif
     // calibrate at the end of each frame if there is some time  left
     if((sleep_time_us > 0)&& (ethernet_flag ==0)){
       LOG_I(EMU,"Adjust average frame duration, sleep for %d us\n",sleep_time_us);
