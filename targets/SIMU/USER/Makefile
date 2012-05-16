@@ -58,6 +58,10 @@ ifdef XFORMS
 CFLAGS += -DXFORMS
 endif
 
+ifdef PRINT_STATS
+CFLAGS += -DPRINT_STATS
+endif
+
 ifndef rrc_cellular
 rrc_cellular = 0
 rrc_cellular_eNB = 0
@@ -75,16 +79,11 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
-# ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
-# make cleanasn1
-#make all Rel10=1
 ifdef  Rel10
 CFLAGS += -DRel10
- $(shell ln -s $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ;rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated; 	rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; )
 endif
 
 ifdef  Rel8
- $(shell ln -s $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ;rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated; 	rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ;)
 endif
 
 CFLAGS += -DNAS_NETLINK -DLINUX
@@ -108,7 +107,7 @@ endif
 
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
-CFLAGS += -DENABLE_FXP
+CFLAGS += -DENABLE_FXP -DOAI_EMU
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
@@ -146,7 +145,7 @@ INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
 CFLAGS +=-DPROC
 endif 
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
 ifeq ($(OPENAIR2),1)
 OBJ += $(L2_OBJS)
 endif
@@ -167,13 +166,13 @@ printvars:
 	@echo eNB_flag is $(eNB_flag)
 	@echo UE_flag is $(UE_flag)
 
-$(OBJ): %.o : %.c
+$(OBJ) $(ASN1_MSG_OBJS1) : %.o : %.c
 	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
-oaisim : $(OBJ) oaisim.c  
+oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c  
 	@echo "Compiling oaisim.c ..."
-	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -223,6 +222,12 @@ cleanl2:
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
+
+asn1_r8: cleanasn1
+	$(shell ln -sf $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn)
+
+asn1_r10: cleanasn1
+	$(shell ln -sf $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn)
 
 cleancell:
 	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
