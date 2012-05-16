@@ -541,14 +541,14 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
       omv_data.geo[i].node_type = 0; //eNB
       enb_node_list = enb_node_list->next;
       omv_data.geo[i].Neighbors=0;
-      for (j=NB_eNB_INST; j< NB_UE_INST + NB_eNB_INST ; j++){
+      /*   for (j=NB_eNB_INST; j< NB_UE_INST + NB_eNB_INST ; j++){
 	if (is_UE_active(i,j - NB_eNB_INST ) == 1) {
 	  omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors]=  j; 
 	  omv_data.geo[i].Neighbors++; 
 	  LOG_D(OMG,"[eNB %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i,j-NB_eNB_INST, is_UE_active(i,j-NB_eNB_INST), 
 	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
 	} 
-      } 
+	} */
     }
   }
   for (i=NB_eNB_INST;i<NB_UE_INST+NB_eNB_INST;i++) {
@@ -560,14 +560,14 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
       omv_data.geo[i].node_type = 1; //UE
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors=0;
-      for (j=0; j< NB_eNB_INST ; j++){
+      /* for (j=0; j< NB_eNB_INST ; j++){
 	if (is_UE_active(j,i-NB_eNB_INST) == 1) {
 	  omv_data.geo[i].Neighbor[ omv_data.geo[i].Neighbors]=j; 	
 	  omv_data.geo[i].Neighbors++; 
 	  LOG_D(OMG,"[UE %d][eNB %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_eNB_INST,j, is_UE_active(j,i-NB_eNB_INST), 
 	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
 	} 
-      }
+	}*/
     }
   }
  
@@ -1439,7 +1439,8 @@ main (int argc, char **argv)
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   //Perform KPI measurements
-  kpi_gen();
+   if (oai_emulation.info.otg_enabled==1)
+     kpi_gen();
 
   // relase all rx state
   if (ethernet_flag == 1) {
