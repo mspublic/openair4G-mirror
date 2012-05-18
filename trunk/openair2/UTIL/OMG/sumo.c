@@ -82,7 +82,7 @@ sprintf(sumo_line, "%s -c %s ",omg_param_list.sumo_command, omg_param_list.sumo_
   
   init(omg_param_list.sumo_end - omg_param_list.sumo_start);
   
-  int max_node_SUMO = 200; //commandGetMaxSUMONodesVariable(); TODO method not implemented in TraCI server..must find another solution 
+  int max_node_SUMO = 100; //commandGetMaxSUMONodesVariable(); TODO method not implemented in TraCI server..must find another solution 
 
  // printf("received Number of nodes %d\n", max_node_SUMO);
 
