@@ -48,8 +48,8 @@
 #include "log_vars.h"
 
 #ifdef USER_MODE
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
+//#include "UTIL/OCG/OCG.h"
+//#include "UTIL/OCG/OCG_extern.h"
 #include <string.h>
 #include <time.h>
 #else

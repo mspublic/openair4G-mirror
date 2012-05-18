@@ -394,8 +394,12 @@ void GetPosition(NodePtr node, char * sumo_id)
 {    
     commandGetVehicleVariable(sumo_id, VAR_POSITION);
     double x_double = readDouble();
+    if (x_double < 0.0)
+       x_double = 0.0;
     double y_double = readDouble();
-
-    node->X_pos = x_double;
-    node->Y_pos = y_double;
+    if (y_double < 0.0)
+       y_double = 0.0;
+ 
+   node->X_pos = x_double;
+   node->Y_pos = y_double;
 }
