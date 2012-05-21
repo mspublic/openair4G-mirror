@@ -41,7 +41,7 @@
 #define STRUCTURES_H
 
 #define Maxneighbor 64
-#define NUMBER_OF_UE_MAX 100
+#define NUMBER_OF_UE_MAX 8
 #define NUMBER_OF_eNB_MAX 3 
 
 
