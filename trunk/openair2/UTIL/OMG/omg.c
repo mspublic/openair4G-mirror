@@ -52,8 +52,11 @@
 #include "rwalk.h"
 #include "trace.h"
 #include "sumo.h"
-
+#include "../OMV/structures.h"
 //#define STANDALONE
+
+int omv_write (int pfd,  Node_list ue_node_list, Data_Flow_Unit omv_data);
+void omv_end (int pfd, Data_Flow_Unit omv_data);
 
 void init_omg_global_params(void){ //if we want to re initialize all
   int i = 0;
@@ -512,11 +515,25 @@ int main(int argc, char *argv[]) {
 	NodePtr my_node = NULL;
  	int my_ID = 0;
         double emu_info_time;
+	//omv
+ char full_name[200];
+  int pfd[2]; // fd for omv : fixme: this could be a local var
+  char fdstr[10];
+  char frames[10];
+  char num_enb[10];
+  char num_ue[10];
+  //area_x, area_y and area_z for omv
+  char x_area[20];
+  char y_area[20];  
+  char z_area[20];
+  char fname[64],vname[64];
+  Data_Flow_Unit omv_data ;
+  float  n_frames=200.0;
 	omg_param_list.nodes = 200;
 	omg_param_list.min_X = 0;
-	omg_param_list.max_X = 100;
+	omg_param_list.max_X = 1000;
 	omg_param_list.min_Y = 0;
-	omg_param_list.max_Y = 100;
+	omg_param_list.max_Y = 1000;
 	omg_param_list.min_speed = 0.1;
 	omg_param_list.max_speed = 20.0;
 	omg_param_list.min_journey_time = 0.1;
@@ -526,7 +543,7 @@ int main(int argc, char *argv[]) {
 	omg_param_list.min_sleep = 0.1;
 	omg_param_list.max_sleep = 5.0;
 	omg_param_list.mobility_file = "TRACE/example_trace.tr"; 
-        omg_param_list.sumo_command = "sumo-gui"; 
+        omg_param_list.sumo_command = "sumo"; 
         omg_param_list.sumo_config = "SUMO/SCENARIOS/traci.scen.sumo.cfg"; 
 	omg_param_list.sumo_start = 0; 
         omg_param_list.sumo_end = 200; 
@@ -632,10 +649,39 @@ int main(int argc, char *argv[]) {
   LOG_T(OMG, "**********DISPLAY JOB LIST AFTER SORTING**********\n"); 
   display_job_list(Job_Vector);*/
 
-
+	
 	/////////////// to call by OCG
- 	
- for (emu_info_time = 1.0 ; emu_info_time <= 200.0; emu_info_time+=1.0){
+	// init omv
+	if(pipe(pfd) == -1)
+	  perror("pipe error \n");
+    
+	sprintf(full_name, "%s/UTIL/OMV/OMV",getenv("OPENAIR2_DIR"));
+	LOG_I(EMU,"Stating the OMV path %s pfd[0] %d pfd[1] %d \n", full_name, pfd[0],pfd[1]);
+	
+	switch(fork()) {
+	case -1 :
+	  perror("fork failed \n");
+	  break;
+	case 0 : 
+	  if(close(pfd[1]) == -1 ) 
+	    perror("close on write\n" );
+	  sprintf(fdstr, "%d", pfd[0] );
+	  sprintf(num_enb, "%d", 1);
+	  sprintf(num_ue, "%d", omg_param_list.nodes);
+	  sprintf(x_area, "%f", omg_param_list.max_X );
+	  sprintf(y_area, "%f", omg_param_list.max_Y);
+	  sprintf(z_area, "%f", 200.0 );
+	  sprintf(frames, "%d", (int) n_frames);
+	
+	  execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, NULL );
+	  perror( "error in execl the OMV" );
+	}
+	//parent
+	if(close( pfd[0] ) == -1 ) 
+	  perror("close on read\n" );
+
+	
+ for (emu_info_time = 1.0 ; emu_info_time <= n_frames; emu_info_time+=1.0){
 	//printf("updating node positions\n");
         update_nodes(emu_info_time*1000);  
   	//double emu_info.time += 1.0/100; // emu time in ms
@@ -647,12 +693,15 @@ int main(int argc, char *argv[]) {
 	      else {LOG_D( "nodes are STATIC\n"); }
 	    }*/
           printf(" **********asking for positions in SUMO **********\n ");
-          Current_positions = get_current_positions(SUMO, UE, emu_info_time*1000); // type: enb, ue, all	
+          Current_positions = get_current_positions(SUMO, UE, emu_info_time*1000); // type: enb, ue, all
+	 
          if(Current_positions !=NULL) {
            printf(" **********Current_positions at time %f**********\n ",emu_info_time);
             display_node_list(Current_positions);
            printf(" **********DONE**********\n ");
+	   omv_write(pfd[1], Current_positions, omv_data);
          }	
+	 
   }
   stop_mobility_generator(omg_param_list.mobility_type);
 	
@@ -669,12 +718,46 @@ int main(int argc, char *argv[]) {
 	//LOG_D(OMG, "********At %.2f, Node number %d is in position: (%.2f, %.2f) with mobility_type: %d\n",emu_info_time, my_ID,my_node->X_pos,my_node->Y_pos,my_node->mobile);
 
 
-
+  omv_end(pfd[1],omv_data);
 
 
 	return 0;
 }
 
+
+int omv_write (int pfd, Node_list ue_node_list, Data_Flow_Unit omv_data){
+  int i=0,j;
+  omv_data.end=0;
+  // enb 
+  omv_data.geo[i].x = 0.0;
+  omv_data.geo[i].y = 0.0;
+  omv_data.geo[i].z = 1.0;
+  omv_data.geo[i].mobility_type = 0;
+  omv_data.geo[i].node_type = 0; //eNB
+   omv_data.geo[i].Neighbors=0;
+
+  for (i=1;i<omg_param_list.nodes+1;i++) {
+    if (ue_node_list != NULL) {
+      omv_data.geo[i].x =(int) (ue_node_list->node->X_pos < 0.0) ? 0.0 : ue_node_list->node->X_pos;
+      omv_data.geo[i].y = (int) (ue_node_list->node->Y_pos < 0.0) ? 0.0 : ue_node_list->node->Y_pos;
+      omv_data.geo[i].z = 1.0;
+      omv_data.geo[i].mobility_type = omg_param_list.mobility_type;
+      omv_data.geo[i].node_type = 1; //UE
+      ue_node_list = ue_node_list->next;
+      omv_data.geo[i].Neighbors=0;
+      printf("node %d at (%d, %d)\n", i, omv_data.geo[i].x ,omv_data.geo[i].y );
+    }
+  }
+  
+  if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
+   perror( "write omv failed" );
+  return 1;
+}
+void omv_end (int pfd, Data_Flow_Unit omv_data) {
+  omv_data.end=1;
+  if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
+    perror( "write omv failed" );
+}
 #endif 
 
 
