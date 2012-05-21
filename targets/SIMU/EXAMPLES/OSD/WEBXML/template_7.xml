@@ -2,8 +2,8 @@
 <OAI_EMULATION>
   <TOPOLOGY_CONFIG>	
     <AREA>			
-      <X_m>100</X_m>
-      <Y_m>100</Y_m>	
+      <X_m>700</X_m>
+      <Y_m>700</Y_m>	
     </AREA>
     <MOBILITY> 
       <UE_MOBILITY>

@@ -412,7 +412,11 @@ storage* writePacket (unsigned char* packet, int length){
         for(i; i < length; i++)
         { 
 
-        storage *temp_ = (storage *)malloc(sizeof(storage));
+        int localSize =  sizeof(storage);     
+        //storage *temp_ = (storage *)malloc(sizeof(storage));
+        storage *temp_ = (storage *)malloc(localSize);
+        
+
         if  (recvpacket == NULL){
                 recvpacket = temp_;
 		recvpacketStart = recvpacket;
