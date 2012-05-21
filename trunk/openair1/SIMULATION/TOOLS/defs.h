@@ -65,11 +65,11 @@ typedef struct {
 } channel_desc_t;
 
 typedef struct {
-  /// Number of sectors
+  /// Number of sectors (set to 1 in case of an omnidirectional antenna)
   u8 n_sectors;
   /// Antenna orientation for each sector (for non-omnidirectional antennas) in radians wrt north
   double alpha_rad[3];
-  /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas)
+  /// Antenna 3dB beam width (in radians) 
   double phi_rad;
   /// Antenna gain (dBi)
   double ant_gain_dBi;
