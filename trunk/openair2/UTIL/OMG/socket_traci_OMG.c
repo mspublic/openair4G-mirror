@@ -151,13 +151,21 @@ storage * receiveExact(){
         storage *freeTracker = tracker;   
         int s= readInt();
 	int NN = s - 4;
+        printf("debug \n");
+        printf("value of s is %d \n",s);
+        printf("end debug \n");
         //Free space after use
-        //freeStorage(freeTracker); // JHNOte: will be done by calling reset() in storage_traci_omg
+        freeStorage(freeTracker); // JHNOte: will be done by calling reset() in storage_traci_omg
 
-
+        int mySize = sizeof(unsigned char) * (NN);
+        printf("debug \n");
+        printf("value of mySize is %d \n",mySize);
+        printf("end debug \n");
 	// receive actual message content 
-	unsigned char* buf = (unsigned char *)malloc(sizeof(unsigned char) * (NN));
-	bytesRead = 0;
+	//unsigned char* buf = (unsigned char *)malloc(sizeof(unsigned char) * (NN));
+	unsigned char* buf = (unsigned char *)malloc(mySize);
+	
+        bytesRead = 0;
 	readThisTime = 0;
 	
 	while (bytesRead<NN)
