@@ -57,6 +57,7 @@
 
 int omv_write (int pfd,  Node_list ue_node_list, Data_Flow_Unit omv_data);
 void omv_end (int pfd, Data_Flow_Unit omv_data);
+int omv_enabled;
 
 void init_omg_global_params(void){ //if we want to re initialize all
   int i = 0;
@@ -420,7 +421,7 @@ void usage(void){
 }
 int get_options(int argc, char *argv[]){
 	char tag;
-	while ((tag = getopt(argc, argv, "j:J:g:B:b:S:s:Y:y:X:x:N:h:e:t:")) != EOF) {
+	while ((tag = getopt(argc, argv, "vj:J:g:B:b:S:s:Y:y:X:x:N:h:e:t:")) != EOF) {
 
 
 		switch (tag) {
@@ -453,7 +454,9 @@ int get_options(int argc, char *argv[]){
 			omg_param_list.max_speed = atof(optarg);
 			LOG_D(OMG, "max_speed : %.2f \n",omg_param_list.max_speed);
 			break;
-
+		case 'v':
+		  omv_enabled = 1;
+		  break;
 		case 'X':
 			omg_param_list.max_X = atof(optarg);
 			LOG_D(OMG, "X_max : %.2f \n",omg_param_list.max_X);
@@ -652,34 +655,35 @@ int main(int argc, char *argv[]) {
 	
 	/////////////// to call by OCG
 	// init omv
-	if(pipe(pfd) == -1)
-	  perror("pipe error \n");
-    
-	sprintf(full_name, "%s/UTIL/OMV/OMV",getenv("OPENAIR2_DIR"));
-	LOG_I(EMU,"Stating the OMV path %s pfd[0] %d pfd[1] %d \n", full_name, pfd[0],pfd[1]);
-	
-	switch(fork()) {
-	case -1 :
-	  perror("fork failed \n");
-	  break;
-	case 0 : 
-	  if(close(pfd[1]) == -1 ) 
-	    perror("close on write\n" );
-	  sprintf(fdstr, "%d", pfd[0] );
-	  sprintf(num_enb, "%d", 1);
-	  sprintf(num_ue, "%d", omg_param_list.nodes);
-	  sprintf(x_area, "%f", omg_param_list.max_X );
-	  sprintf(y_area, "%f", omg_param_list.max_Y);
-	  sprintf(z_area, "%f", 200.0 );
-	  sprintf(frames, "%d", (int) n_frames);
-	
-	  execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, NULL );
-	  perror( "error in execl the OMV" );
+	if (omv_enabled == 1) {
+	  if(pipe(pfd) == -1)
+	    perror("pipe error \n");
+	  
+	  sprintf(full_name, "%s/UTIL/OMV/OMV",getenv("OPENAIR2_DIR"));
+	  LOG_I(EMU,"Stating the OMV path %s pfd[0] %d pfd[1] %d \n", full_name, pfd[0],pfd[1]);
+	  
+	  switch(fork()) {
+	  case -1 :
+	    perror("fork failed \n");
+	    break;
+	  case 0 : 
+	    if(close(pfd[1]) == -1 ) 
+	      perror("close on write\n" );
+	    sprintf(fdstr, "%d", pfd[0] );
+	    sprintf(num_enb, "%d", 1);
+	    sprintf(num_ue, "%d", omg_param_list.nodes);
+	    sprintf(x_area, "%f", omg_param_list.max_X );
+	    sprintf(y_area, "%f", omg_param_list.max_Y);
+	    sprintf(z_area, "%f", 200.0 );
+	    sprintf(frames, "%d", (int) n_frames);
+	    
+	    execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, NULL );
+	    perror( "error in execl the OMV" );
+	  }
+	  //parent
+	  if(close( pfd[0] ) == -1 ) 
+	    perror("close on read\n" );
 	}
-	//parent
-	if(close( pfd[0] ) == -1 ) 
-	  perror("close on read\n" );
-
 	
  for (emu_info_time = 1.0 ; emu_info_time <= n_frames; emu_info_time+=1.0){
 	//printf("updating node positions\n");
@@ -699,7 +703,8 @@ int main(int argc, char *argv[]) {
            printf(" **********Current_positions at time %f**********\n ",emu_info_time);
             display_node_list(Current_positions);
            printf(" **********DONE**********\n ");
-	   omv_write(pfd[1], Current_positions, omv_data);
+	   if (omv_enabled == 1) 
+	     omv_write(pfd[1], Current_positions, omv_data);
          }	
 	 
   }
@@ -717,11 +722,11 @@ int main(int argc, char *argv[]) {
 	//my_node = (NodePtr) get_node_position( RWP, UE, my_ID);
 	//LOG_D(OMG, "********At %.2f, Node number %d is in position: (%.2f, %.2f) with mobility_type: %d\n",emu_info_time, my_ID,my_node->X_pos,my_node->Y_pos,my_node->mobile);
 
+  if (omv_enabled == 1 )
+    omv_end(pfd[1],omv_data);
 
-  omv_end(pfd[1],omv_data);
 
-
-	return 0;
+  return 0;
 }
 
 
