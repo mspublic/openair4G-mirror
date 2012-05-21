@@ -93,10 +93,9 @@ endif
 
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
-ifdef NAS_NETLINK
-CFLAGS += -DDEBUG_OMG
-else
-NAS_FLAG=0
+ifdef TEST_OMG
+CFLAGS += -DTEST_OMG
+#CFLAGS += -DDEBUG_OMG
 endif
 # after the execution, a profiling output "gmon.out" will be created, 
 #then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
