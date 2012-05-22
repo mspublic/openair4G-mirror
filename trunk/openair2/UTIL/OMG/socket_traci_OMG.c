@@ -157,7 +157,8 @@ storage * receiveExact(){
         //Free space after use
         freeStorage(freeTracker); // JHNOte: will be done by calling reset() in storage_traci_omg
 
-        int mySize = sizeof(unsigned char) * (NN);
+        int mySize = 0;
+        mySize = sizeof(unsigned char) * (NN);
         printf("debug \n");
         printf("value of mySize is %d \n",mySize);
         printf("end debug \n");

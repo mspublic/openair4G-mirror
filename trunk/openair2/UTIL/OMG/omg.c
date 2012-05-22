@@ -546,7 +546,7 @@ int main(int argc, char *argv[]) {
 	omg_param_list.min_sleep = 0.1;
 	omg_param_list.max_sleep = 5.0;
 	omg_param_list.mobility_file = "TRACE/example_trace.tr"; 
-        omg_param_list.sumo_command = "sumo"; 
+        omg_param_list.sumo_command = "sumo-gui"; 
         omg_param_list.sumo_config = "SUMO/SCENARIOS/traci.scen.sumo.cfg"; 
 	omg_param_list.sumo_start = 0; 
         omg_param_list.sumo_end = 200; 
