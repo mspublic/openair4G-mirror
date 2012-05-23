@@ -1,0 +1,358 @@
+Magic: 14000
+
+Internal Form Definition File
+    (do not change)
+
+Number of forms: 1
+Unit of measure: FL_COORD_PIXEL
+
+=============== FORM ===============
+Name: lte_scope
+Width: 745
+Height: 633
+Number of Objects: 19
+
+--------------------
+class: FL_BOX
+type: ROUNDED_BOX
+box: 0 0 745 633
+boxtype: FL_ROUNDED_BOX
+colors: FL_BLACK FL_BLUE
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: NORMAL_XYPLOT
+box: 240 0 240 160
+boxtype: FL_ROUNDED_BOX
+colors: FL_RIGHT_BCOL FL_GREEN
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig12
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: DOTDASHED_XYPLOT
+box: 240 320 240 160
+boxtype: FL_ROUNDED_BOX
+colors: FL_RIGHT_BCOL FL_ORANGERED
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig22
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: NORMAL_XYPLOT
+box: 0 0 240 160
+boxtype: FL_ROUNDED_BOX
+colors: FL_RIGHT_BCOL FL_GREEN
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig11
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: NORMAL_XYPLOT
+box: 0 320 240 160
+boxtype: FL_ROUNDED_BOX
+colors: FL_RIGHT_BCOL FL_ORANGERED
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig21
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: NORMAL_XYPLOT
+box: 0 160 240 160
+boxtype: FL_ROUNDED_BOX
+colors: FL_RIGHT_BCOL FL_YELLOW
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig13
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: NORMAL_XYPLOT
+box: 240 160 240 160
+boxtype: FL_ROUNDED_BOX
+colors: FL_RIGHT_BCOL FL_YELLOW
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig14
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: POINTS_XYPLOT
+box: 490 0 250 200
+boxtype: FL_FRAME_BOX
+colors: FL_WHITE FL_ORANGERED
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig24
+callback: 
+argument: 
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 240 490 80 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_ORANGERED FL_GREEN
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: A-ZFB
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: ZFB
+callback: ZFB_callback
+argument: 1
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 320 490 80 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_ORANGERED FL_GREEN
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: NO-ZFB
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: ZFB1
+callback: ZFB1_callback
+argument: 0
+
+--------------------
+class: FL_XYPLOT
+type: NORMAL_XYPLOT
+box: 0 480 240 150
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_BLUE FL_MAGENTA
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig23
+callback: 
+argument: 
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 320 530 80 40
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LAWNGREEN FL_RED
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: EXIT
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: Exit_callback
+argument: 1
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 310 603 70 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LINEN FL_GREEN
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: RayL1
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: RayL1_callback
+argument: 1
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 380 603 70 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_IVORY FL_GREEN
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: Rice8
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: Rice8_callback
+argument: 1
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 240 603 70 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LAVENDERBLUSH FL_GREEN
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: SCM_C
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: SCM_C
+callback: SCM_C_callback
+argument: 1
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 240 580 210 20
+boxtype: FL_FRAME_BOX
+colors: FL_IVORY FL_GREEN
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: Channel Model
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: Rice8_callback
+argument: 1
+
+--------------------
+class: FL_XYPLOT
+type: POINTS_XYPLOT
+box: 490 210 250 200
+boxtype: FL_FRAME_BOX
+colors: FL_WHITE FL_FUCHSIA
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig25
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: POINTS_XYPLOT
+box: 490 420 250 200
+boxtype: FL_FRAME_BOX
+colors: FL_WHITE FL_BLUE
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fig26
+callback: 
+argument: 
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 400 490 80 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_ORANGERED FL_GREEN
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: RE-CAL
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: RECAL_callback
+argument: 0
+
+==============================
+create_the_forms
