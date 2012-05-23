@@ -121,7 +121,7 @@ static char m1_table[64*256] __attribute__ ((aligned(16)));
 
 
 // Set up Viterbi tables for SSE2 implementation
-void phy_generate_viterbi_tables() {
+void phy_generate_viterbi_tables(void) {
 
   char w[4],in0,in1;
   unsigned char state,index0,index1;

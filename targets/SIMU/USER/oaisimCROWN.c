@@ -49,6 +49,7 @@
 
 
 #define RF
+#define SLOTS_PER_FRAME 20
 
 #define DEBUG_SIM
 
@@ -78,7 +79,7 @@
 
 //#ifdef OPENAIR2
 u16 NODE_ID[1];
-u8 NB_INST = 2;
+//u8 NB_INST = 2;
 //#endif //OPENAIR2
 char stats_buffer[16384];
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -1084,19 +1085,16 @@ for(i=0;i<2;i++) {
 	
   }
 
-
-  
-
   // init SF map here!!!
-  map1 =(int)oai_emulation.topology_config.area.x_km;
-  map2 =(int)oai_emulation.topology_config.area.y_km;
+  map1 =(int)(oai_emulation.topology_config.area.x_m/1000);
+  map2 =(int)(oai_emulation.topology_config.area.y_m/1000);
   //ShaF = createMat(map1,map2); -> memory is allocated within init_SF, shadow fading
   ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
 
   // size of area to generate shadow fading map
   LOG_D(EMU,"Simulation area x=%f, y=%f\n",
-	 oai_emulation.topology_config.area.x_km,
-	 oai_emulation.topology_config.area.y_km);
+	 oai_emulation.topology_config.area.x_m,
+	 oai_emulation.topology_config.area.y_m);
  
   
   if (abstraction_flag == 0 && Process_Flag==0 && Channel_Flag==0)
@@ -1265,13 +1263,13 @@ for(i=0;i<2;i++) {
       }
     }
     oai_emulation.info.frame = frame; 
-    update_nodes(oai_emulation.info.time);  
+    update_nodes(oai_emulation.info.time_ms);  
 
-    enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
-    ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
+    enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time_ms);
+    ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time_ms);
 
     // update the position of all the nodes (eNB/CH, and UE/MR) every frame 
-    if (((int)oai_emulation.info.time % 10) == 0 ) {
+    if (((int)oai_emulation.info.time_ms % 10) == 0 ) {
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
       if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
@@ -1279,7 +1277,7 @@ for(i=0;i<2;i++) {
 	  new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
 	  LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time);
+	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time_ms);
 	}
       }
 
@@ -1288,13 +1286,13 @@ for(i=0;i<2;i++) {
 	  new_omg_model = randomGen (STATIC, MAX_NUM_MOB_TYPES);
 	  LOG_D (OMG, "[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time);
+	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time_ms);
 	}
       }
     }
 
 #ifdef DEBUG_OMG
-    if ((((int) oai_emulation.info.time) % 100) == 0) {
+    if ((((int) oai_emulation.info.time_ms) % 100) == 0) {
       for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++) {
 	get_node_position (UE, UE_id);
       }
@@ -1304,11 +1302,11 @@ for(i=0;i<2;i++) {
     if (oai_emulation.info.n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
       frame %=(oai_emulation.info.n_frames-1);
       // set the emulation time based on 1ms subframe number
-      oai_emulation.info.time += 0.01; // emu time in s 
+      oai_emulation.info.time_ms += 0.01; // emu time in s 
     }
     else { // user set the number of frames for the emulation
       // let the time go faster to see the effect of mobility
-      oai_emulation.info.time += 0.1; 
+      oai_emulation.info.time_ms += 0.1; 
     } 
 
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
@@ -1318,12 +1316,17 @@ for(i=0;i<2;i++) {
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+	  //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+          calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  LOG_D(OCM,"Path loss bandwidth for eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
+          LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
-		 eNB2UE[eNB_id][UE_id]->path_loss_dB,
-		 ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+		eNB2UE[eNB_id][UE_id]->path_loss_dB,0);
+		//ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+	  //LOG_D(OCM,"Path loss bandwidth for eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
+		//eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
+		 //eNB2UE[eNB_id][UE_id]->path_loss_dB,
+		 //ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	}
       }
     }

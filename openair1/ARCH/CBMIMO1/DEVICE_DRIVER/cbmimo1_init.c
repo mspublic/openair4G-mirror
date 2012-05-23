@@ -66,70 +66,7 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
 #ifndef NOCARD_TEST    
 
 
-
-  //  openair_writel(NUMBER_OF_SYMBOLS_PER_FRAME,// OFDM_SYMBOLS_PER_FRAME
-  //		 OFDM_SYMBOLS_PER_FRAME_REG);  // setup PCI size
-
   if (vid != XILINX_VENDOR) {
-    
-#ifndef FW2011
-
-  pci_interface[card_id]->ofdm_symbols_per_frame = NUMBER_OF_SYMBOLS_PER_FRAME;
-  //printk("[openair][INIT] Card %d NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",card_id,pci_interface[card_id]->ofdm_symbols_per_frame);
-
-  pci_interface[card_id]->node_id = openair_daq_vars.node_id;
-  //printk("[openair][INIT] DAQ_NODE_ID = %d\n",openair_daq_vars.node_id);
-
-  pci_interface[card_id]->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
-  //printk("[openair][INIT] Card %d TX_RX_SWITCH_POINT = %d\n",card_id,openair_daq_vars.tx_rx_switch_point);
-
-  pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
-  //printk("[openair][INIT] Card %d TIMING_ADVANCE = %d\n",card_id,openair_daq_vars.timing_advance);
-
-  pci_interface[card_id]->cyclic_prefix_length  = CYCLIC_PREFIX_LENGTH;
-  //printk("[openair][INIT] CYCLIC_PREFIX_LENGTH = %d\n",card_id,pci_interface[card_id]->cyclic_prefix_length);
-
-  pci_interface[card_id]->log2_ofdm_symbol_size = LOG2_NUMBER_OF_OFDM_CARRIERS; 
-  pci_interface[card_id]->samples_per_frame = FRAME_LENGTH_COMPLEX_SAMPLES;
-  pci_interface[card_id]->frame_offset = FRAME_LENGTH_COMPLEX_SAMPLES-1;
-
-  for (i=0;i<NB_ANTENNAS_RX;i++) {
-    pci_interface[card_id]->adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
-  }
-  for (i=0;i<NB_ANTENNAS_TX;i++){
-    pci_interface[card_id]->dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
-  }
-
-  pci_interface[card_id]->freq_info = openair_daq_vars.freq_info;
-  //printk("[openair][INIT] freq0 = %d, freq1 = %d\n",(pci_interface[card_id]->freq_info>>1)&3,(pci_interface[card_id]->freq_info>>3)&3);
-
-  
-  pci_interface[card_id]->rx_rf_mode = openair_daq_vars.rx_rf_mode;
-
-  //printk("[openair][INIT] rx_gain_val = %d\n",openair_daq_vars.rx_gain_val);
-  pci_interface[card_id]->rx_gain_val = openair_daq_vars.rx_gain_val;
-
-  pci_interface[card_id]->tcxo_dac = openair_daq_vars.tcxo_dac;
-
-  //printk("[openair][INIT] Card %d tdd = %d, dual_tx = %d\n",card_id,openair_daq_vars.tdd,openair_daq_vars.dual_tx);
-  pci_interface[card_id]->tdd = openair_daq_vars.tdd;
- 
-  pci_interface[card_id]->dual_tx = openair_daq_vars.dual_tx;
-
-  pci_interface[card_id]->mast_flag = (card_id==0)? 1 : 0;
-
-#else
-
-    pci_interface[card_id]->node_id = openair_daq_vars.node_id;
-    //    printk("[openair][INIT] DAQ_NODE_ID = %d\n",openair_daq_vars.node_id);
-    
-    pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
-    //printk("[openair][INIT] Card %d TIMING_ADVANCE = %d\n",card_id,openair_daq_vars.timing_advance);
-    
-    pci_interface[card_id]->samples_per_frame = FRAME_LENGTH_COMPLEX_SAMPLES;
-    //    printk("[openair][INIT] Card %d samples_per_frame = %d\n",card_id,FRAME_LENGTH_COMPLEX_SAMPLES);
-
-    pci_interface[card_id]->frame_offset = 1;//FRAME_LENGTH_COMPLEX_SAMPLES-1;
     
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       pci_interface[card_id]->adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
@@ -138,28 +75,42 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
       pci_interface[card_id]->dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
     }
     
+#ifndef FW2011
+    pci_interface[card_id]->ofdm_symbols_per_frame = NUMBER_OF_SYMBOLS_PER_FRAME;
+    //printk("[openair][INIT] NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",pci_interface[card_id]->ofdm_symbols_per_frame);
+    pci_interface[card_id]->log2_ofdm_symbol_size = LOG2_NUMBER_OF_OFDM_CARRIERS; 
+    pci_interface[card_id]->cyclic_prefix_length  = CYCLIC_PREFIX_LENGTH;
+    //printk("[openair][INIT] CYCLIC_PREFIX_LENGTH = %d\n",card_id,pci_interface[card_id]->cyclic_prefix_length);
+#endif
+    
+    pci_interface[card_id]->samples_per_frame = FRAME_LENGTH_COMPLEX_SAMPLES;
+    printk("[openair][INIT] samples_per_frame = %d\n",pci_interface[card_id]->samples_per_frame);
+    
+#ifndef FW2011
+    pci_interface[card_id]->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
+#else
+    pci_interface[card_id]->tdd_config = frame_parms->tdd_config;
+#endif
+    
+    pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
+    
+    pci_interface[card_id]->dual_tx = frame_parms->dual_tx;
+    pci_interface[card_id]->tdd     = frame_parms->frame_type;
+    pci_interface[card_id]->node_id = frame_parms->node_id;
+    printk("[openair][INIT] node_id %d, dual_tx %d, tdd %d, tdd_config %d\n",frame_parms->node_id, frame_parms->dual_tx, frame_parms->frame_type, frame_parms->tdd_config );
+
+    
     pci_interface[card_id]->freq_info = openair_daq_vars.freq_info;
     //printk("[openair][INIT] freq0 = %d, freq1 = %d\n",(pci_interface[card_id]->freq_info>>1)&3,(pci_interface[card_id]->freq_info>>3)&3);
     
-    
     pci_interface[card_id]->rx_rf_mode = openair_daq_vars.rx_rf_mode;
     
-    //printk("[openair][INIT] rx_gain_val = %d\n",openair_daq_vars.rx_gain_val);
     pci_interface[card_id]->rx_gain_val = openair_daq_vars.rx_gain_val;
     
     pci_interface[card_id]->tcxo_dac = openair_daq_vars.tcxo_dac;
     
-    //printk("[openair][INIT] Card %d tdd = %d, dual_tx = %d\n",card_id,openair_daq_vars.tdd,openair_daq_vars.dual_tx);
-    pci_interface[card_id]->tdd = openair_daq_vars.tdd;
-
-    pci_interface[card_id]->tdd_config = (unsigned int)frame_parms->tdd_config;
-    
-    pci_interface[card_id]->dual_tx = openair_daq_vars.dual_tx;
-    
     pci_interface[card_id]->mast_flag = (card_id==0)? 1 : 0;
-
-#endif 
-
+    
   }
   else {
     

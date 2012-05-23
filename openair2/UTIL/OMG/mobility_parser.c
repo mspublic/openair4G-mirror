@@ -33,7 +33,7 @@
 * \date 2011
 * \version 0.1
 * \company INRIA
-* \email: sandesh.uppor@inria.fr
+* \email: sandesh.uppoor@inria.fr
 * \note
 * \warning
 */
@@ -78,7 +78,7 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      	  {	  node->visit=0;
 	      		  switch(fmt){
 	      						  case 0:
-	      							node->time=atof(pch);
+	      							node->time=(atof(pch));
 	      							break;
 	      						  case 1:
 	      							node->vid =atoi(pch);
@@ -102,7 +102,7 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 
 	      	  }
 	      	  node->next=NULL;
-		  printf("start UE Trace-driven Mobility - Reading File an getting node %d...\n", node->vid);
+		  
 	      	  //check in the hash table if the key exist node->vid if exist ? initialize headRef
 	      	  int *value = NULL;
 	      	  value = (int *)HT_LOOKUP(table, &(node->vid));
@@ -110,24 +110,22 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      		if (Node_info==NULL){
 	      			Node_info=build_node_info(Node_info,node->vid,&(node->vid));
 	      			head_node_info=Node_info;
-	      			printf("head_node_info %d\n",head_node_info->vid);
 
 	      		}
 	      		else{
 	      			build_node_info(Node_info,node->vid,&(node->vid));
 
 	      		}
-	      		keyholder[i]=&node->vid;i++;
-	      		//printf("Before to hash %p %d %lf\n",node,(node->vid),(node->time));
+	      		keyholder[i]=&node->vid;
+                        i++;
 	      		hash_table_add(table, &(node->vid), sizeof(node->vid), node, sizeof(node));
-	      		//puts("NO node doesnt exist");
 	      		headRef=gen_list();
 
 	      	  }
 	      	  else{
 	      		 //puts("Yes node exist");
 	      		 headRef = (Exnode *)value;
-	      		 printf("value returned %f\n",headRef->time);
+	      		 //printf("value returned %f\n",headRef->time);
 	      		 //printf("After from hash %p %d\n",headRef, headRef->vid );
 
 	      	  }
@@ -176,12 +174,12 @@ void AppendNode(struct Exnode* headRef, struct Exnode* newNode) {
 
 //Just used for testing, it prints a linked list given the head pointer
 void print_list(struct Exnode* head){
-    printf("started printing\n");
+    
 	while(head->next !=NULL){
-		printf("here %f\n",head->time);
+		
 		head=head->next;
 	}
-	printf("here %f\n",head->time);
+	
 }
 
 Exnode* get_next_position(hash_table_t *table,int node_id){

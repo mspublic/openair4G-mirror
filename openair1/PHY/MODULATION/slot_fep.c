@@ -97,13 +97,14 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				aa,
 				l,
 				symbol);
-      for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
+      for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells ;i++) {//b 
 	lte_dl_channel_estimation(phy_vars_ue,eNB_id,i+1,
 				  Ns,
 				  aa,
 				  l,
 				  symbol);
       }
+      
 #endif
 
       // do frequency offset estimation here!

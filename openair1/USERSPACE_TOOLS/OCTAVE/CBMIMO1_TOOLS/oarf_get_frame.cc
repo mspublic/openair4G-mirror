@@ -143,14 +143,18 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   ioctl(openair_fd,openair_GET_BIGPHYSTOP,(void *)&bigphys_top);
   
   if (dummy_tx_rx_vars.TX_DMA_BUFFER[0]==NULL) {
-    printf("pci_buffers not allocated\n");
+    error(FCNNAME);
+    error("pci_buffers not allocated\n");
     close(openair_fd);
-    exit(-1);
+    return octave_value_list();
+    //exit(-1);
   }
   
   printf("BIGPHYS top 0x%x\n",bigphys_top);
   printf("RX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[0]);
   printf("TX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[0]);
+  printf("RX_DMA_BUFFER[1] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[1]);
+  printf("TX_DMA_BUFFER[1] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[1]);
 
   mem_base = (unsigned int)mmap(0,
 				BIGPHYS_NUMPAGES*4096,
@@ -162,8 +166,10 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   if (mem_base != -1)
     msg("MEM base= %p\n",(void*) mem_base);
   else {
-    msg("Could not map physical memory\n");
-    exit(-1);
+    error(FCNNAME);
+    error("Could not map physical memory\n");
+    return octave_value_list();
+    //exit(-1);
   }
 
   for (i=0;i<frame_parms->nb_antennas_rx;i++)
@@ -181,6 +187,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
       dx(i,aa)=Complex( rx_sig[aa][i*2], rx_sig[aa][i*2+1] );
 
   close(openair_fd);
+
+  munmap((void*)mem_base, BIGPHYS_NUMPAGES*4096);
 
   //close(rx_sig_fifo_fd);
   //close(rf_cntl_fifo_fd);

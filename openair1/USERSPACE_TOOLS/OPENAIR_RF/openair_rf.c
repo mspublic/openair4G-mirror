@@ -71,7 +71,7 @@ int main (int argc, char **argv) {
   if (argc < 3) {
     printf("[openair][INFO] Usage %s  frequency(0,1,2,3)  action (0-14) params . . .  \n" , argv[0]);
     printf("[openair][INFO] ACTION DESCRIPTIONS\n");
-    printf("[openair][INFO] Action 0  : Configure PHY/MAC (Kernel module and FPGA) - param dual_tx (0/1) - param tdd (0/1)\n");
+    printf("[openair][INFO] Action 0  : Configure PHY/MAC (Kernel module and FPGA) - param dual_tx (0/1) - param tdd (0/1) - tdd config(0-9, 254=RX only, 255=TX only)\n");
     printf("[openair][INFO] Action 1  : Start Primary Clusterhead - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 2  : Start Secondary Clusterhead - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 3  : Start Node - param 0/1 = frequency offset on/off - param NODE_ID\n");

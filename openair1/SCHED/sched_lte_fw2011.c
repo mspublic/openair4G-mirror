@@ -153,7 +153,7 @@ extern pthread_cond_t dlsch_cond[8];
 
 #ifdef CBMIMO1
 #define NUMBER_OF_CHUNKS_PER_SLOT NUMBER_OF_OFDM_SYMBOLS_PER_SLOT
-#define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * SLOTS_PER_FRAME)
+#define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * LTE_SLOTS_PER_FRAME)
 #define SYNCH_WAIT_TIME 4000  // number of symbols between SYNCH retries
 #define SYNCH_WAIT_TIME_RUNNING 100  // number of symbols between SYNCH retries
 #define DRIFT_OFFSET 300
@@ -171,6 +171,7 @@ unsigned int sync_getting_frame = 0;
 
 //static int hw_frame = 0;
 static int intr_cnt = 0;
+int intr_cnt2 = 0;
 
 int intr_in = 0;
 
@@ -460,11 +461,11 @@ static void * openair_thread(void *param) {
 	msg("[SCHED][openair_thread] ERROR unlocking openair_mutex\n");	
     }
 
-    next_slot = (openair_daq_vars.slot_count + 1 ) % SLOTS_PER_FRAME;
+    next_slot = (openair_daq_vars.slot_count + 1 ) % LTE_SLOTS_PER_FRAME;
     if (openair_daq_vars.slot_count==0) 
-      last_slot = SLOTS_PER_FRAME-1;
+      last_slot = LTE_SLOTS_PER_FRAME-1;
     else
-      last_slot = (openair_daq_vars.slot_count - 1 ) % SLOTS_PER_FRAME; 
+      last_slot = (openair_daq_vars.slot_count - 1 ) % LTE_SLOTS_PER_FRAME; 
 
     //msg("[SCHED][Thread] Mode = %d (openair_NOT_SYNCHED=%d), slot_count = %d, instance_cnt = %d\n",openair_daq_vars.mode,openair_NOT_SYNCHED,openair_daq_vars.slot_count,openair_daq_vars.instance_cnt);
 
@@ -553,7 +554,7 @@ static void * openair_thread(void *param) {
 	      msg("[SCHED][OPENAIR_THREAD] Normal prefix not implemented yet!!!\n");
 	    }
 	  }
-#endif
+#endif //IFFT_FPGA
 	}
       }
       else {
@@ -593,7 +594,7 @@ static void * openair_thread(void *param) {
 	      msg("[SCHED][OPENAIR_THREAD] Normal prefix not implemented yet!!!\n");
 	    }
 	  }
-#endif
+#endif //IFFT_FPGA
       }
 #endif //OPENAIR1
 
@@ -628,9 +629,13 @@ static void * openair_thread(void *param) {
 
     else {   // synchronization and get frame
 
-      if ((openair_daq_vars.hw_frame%100==0) && (openair_daq_vars.slot_count==0) && (openair_daq_vars.mode != openair_SYNCHED))
+      if ((openair_daq_vars.hw_frame%100==0)
+	  && (openair_daq_vars.slot_count==0) 
+	  && (openair_daq_vars.mode != openair_SYNCHED)) {
+	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d: calling openair_sync\n",
+	    openair_daq_vars.hw_frame,openair_daq_vars.slot_count);
 	openair_daq_vars.do_synch=1;
-
+      }
       openair_sync();
 
     }
@@ -683,9 +688,33 @@ int slot_irq_handler(int irq, void *cookie) {
   RTIME             tv;
   struct timespec   ts;
   u32 irqcmd;
+  static int busy=0;
 
   intr_in = 1;
+  intr_cnt++;
 
+  if (oai_semaphore && inst_cnt_ptr && lxrt_task) {
+    rt_sem_wait(oai_semaphore);
+    //if ((intr_cnt2%2000)<10) rt_printk("intr_cnt %d, inst_cnt_ptr %p, inst_cnt %d\n",intr_cnt,inst_cnt_ptr,*inst_cnt_ptr);
+    if (*inst_cnt_ptr==0) {
+      rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
+      if (busy==0) { 
+	rt_printk("intr_cnt %d, worker thread busy!\n", intr_cnt);
+	busy = 1;
+      } //else no need to repeat this message
+    }
+    else {
+      (*inst_cnt_ptr)++;
+      //rt_printk("*inst_cnt_ptr %d\n",*inst_cnt_ptr);
+      rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
+      rt_send_if(lxrt_task,intr_cnt);
+      if (busy==1) {
+	rt_printk("intr_cnt %d, resuming worker thread!\n", intr_cnt);
+	busy = 0;
+      } //else no need to repeat this message
+    }
+    intr_cnt2++;
+  }
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
@@ -704,11 +733,12 @@ int slot_irq_handler(int irq, void *cookie) {
 	
 	adac_cnt = (*(unsigned int *)mbox);
 	
-	//openair_daq_vars.slot_count=intr_cnt % SLOTS_PER_FRAME;
-	openair_daq_vars.slot_count=adac_cnt>>3;
+	openair_daq_vars.slot_count=intr_cnt % LTE_SLOTS_PER_FRAME;
+	//openair_daq_vars.slot_count=adac_cnt>>3;
 
 	//if ((adac_cnt>>3) == 0)
-	if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
+	//if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
+	if (openair_daq_vars.slot_count==0)
 	  openair_daq_vars.hw_frame++;
 	
 	if (((openair_daq_vars.hw_frame %100) == 0) && (openair_daq_vars.hw_frame>0)) {

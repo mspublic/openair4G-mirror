@@ -5,7 +5,7 @@
 //#define DEBUG_CH
 
 // For Channel Estimation in Distributed Alamouti Scheme
-static s16 temp_out_ifft[2048*4] __attribute__((aligned(16)));
+//static s16 temp_out_ifft[2048*4] __attribute__((aligned(16)));
 static s16 temp_out_fft_0[2048*4] __attribute__((aligned(16)));
 static s16 temp_out_fft_1[2048*4] __attribute__((aligned(16)));
 static s16 temp_out_ifft_0[2048*4] __attribute__((aligned(16)));
@@ -59,9 +59,10 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
   s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
-  s32 *temp_out_ifft_ptr = (s32*)0,*in_fft_ptr_0 = (s32*)0,*in_fft_ptr_1 = (s32*)0,
-    *temp_out_fft_0_ptr = (s32*)0,*out_fft_ptr_0 = (s32*)0,*temp_out_fft_1_ptr = (s32*)0,
-    *out_fft_ptr_1 = (s32*)0,*temp_in_ifft_ptr = (s32*)0;
+  s32 *in_fft_ptr_0 = (s32*)0,*in_fft_ptr_1 = (s32*)0,
+    *temp_out_fft_0_ptr = (s32*)0,*out_fft_ptr_0 = (s32*)0,
+    *temp_out_fft_1_ptr = (s32*)0,*out_fft_ptr_1 = (s32*)0,
+    *temp_in_ifft_ptr = (s32*)0;
   
   Msc_RS = N_rb_alloc*12;
 

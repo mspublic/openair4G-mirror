@@ -354,6 +354,7 @@ typedef struct
   unsigned int   chbch_detection_count[4];
   unsigned int   mrbch_search_count; 
   unsigned int   mrbch_detection_count;
+  //unsigned int   n_adj_cells; //b
 #ifdef EMOS
   //  unsigned char  Meas_flag;      	 // This is used as a signal to start recording in multiuser mode
   unsigned int   frame_tx[2];              // This is used to set the file index of the measurement file at the terminal

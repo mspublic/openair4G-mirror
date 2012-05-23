@@ -193,7 +193,7 @@ public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(void pdcp_run (u32_t frame, u8_t eNB_flag);)
+public_pdcp(void pdcp_run (u32_t frame, u8_t eNB_flag, u8 UE_index,u8 eNB_index);)
 public_pdcp(int pdcp_module_init ();)
 public_pdcp(void pdcp_module_cleanup ();)
 public_pdcp(void pdcp_layer_init ();)

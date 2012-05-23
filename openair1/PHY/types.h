@@ -16,7 +16,8 @@ typedef long long s64;
 
 
 #ifdef USER_MODE
-#include <sys/types.h>
+//#include <sys/types.h>
+#include <stdint.h>
 #endif
 
 

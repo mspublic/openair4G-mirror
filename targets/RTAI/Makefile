@@ -9,15 +9,15 @@ export OPENAIR_EMU=0
 endif
 
 ifndef OPENAIR1
-export OPENAIR1=1
+export OPENAIR1=0
 endif
 
 ifndef OPENAIR2
-export OPENAIR2=1
+export OPENAIR2=0
 endif
 
 ifndef OPENAIR3
-export OPENAIR3=1
+export OPENAIR3=0
 endif
 
 ifndef EMOS
@@ -41,13 +41,19 @@ endif
 all: openair_rf_cbmimo1_softmodem.ko asn1_msg_kern.ko nasmesh.ko rb_tool openair_rf scope
 
 openair_rf_cbmimo1_softmodem.ko:  
-	(cd $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1 && mv openair_rf.ko openair_rf_softmodem.ko)
+	(cd $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1 && mv openair_rf.ko $(CURDIR)/openair_rf_softmodem.ko)
+
+oai_user_cbmimo1.ko:
+	(cd $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1 BIT8_TX=1 OPENAIR1=0 OPENAIR2=0 && mv openair_rf.ko $(CURDIR)/openair_rf_softmodem.ko)
+
+oai_user_exmimo.ko:
+	(cd $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1 OPENAIR1=0 OPENAIR2=0 && mv openair_rf.ko $(CURDIR)/openair_rf_softmodem.ko)
 
 asn1_msg_kern.ko:
-	(cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES && $(MAKE) -C /usr/src/linux V=0 M=`pwd` RTAI=1 -j2)
+	(cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES && $(MAKE) -C /usr/src/linux V=0 M=`pwd` RTAI=1 -j2 && mv asn1_msg_kern.ko $(CURDIR)/asn1_msg_kern.ko)
 
 nasmesh.ko:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd`)
+	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd` && mv nasmesh.ko $(CURDIR)/nasmesh.ko)
 
 rb_tool:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
@@ -76,30 +82,33 @@ openair0:
 	mknod /dev/openair0 c 127 0
 	chmod a+rw /dev/openair0
 
-# By default, we set 'updatefirmware' option of make to be void
-# (if the user specify option updatefirmware=1, this will take precedence
-# over the default value)
-updatefirmware=0
-install_cbmimo1_softmodem:
+install_oai_user:
+	make fifos
+	insmod openair_rf_softmodem.ko
+
+updatefw:
+	$(OPENAIR1_DIR)/USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 
+
+boot_exmimo:
+	sudo make install_oai_user
+	$(OPENAIR1_DIR)/USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 
+	sleep 1
+	sudo rmmod openair_rf
+	sudo make install_oai_user
+
+reboot_exmimo:
+	$(OPENAIR1_DIR)/USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 -b
+	sudo rmmod openair_rf
+	sudo make install_oai_user
+
+install_softmodem:
 	make fifos
 ifeq ($(OPENAIR2),1)
-	insmod $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1_msg_kern.ko
+	insmod asn1_msg_kern.ko
 endif
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko updatefirmware=1 ; \
-	else \
-		insmod $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko ; \
-	fi
+	insmod openair_rf_softmodem.ko
 
-install_cbmimo1_softmodem1:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_layer1.ko updatefirmware=1 ; \
-	else \
-		insmod $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_layer1.ko ; \
-	fi
-
-remove_cbmimo1:
+remove:
 	rmmod openair_rf
 ifeq ($(OPENAIR2),1)
 	rmmod asn1_msg_kern

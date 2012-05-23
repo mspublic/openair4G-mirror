@@ -139,8 +139,14 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
   frame_parms->tdd_config         = 3;
   frame_parms->dual_tx            = dual_tx;
   frame_parms->frame_type         = tdd;
-  frame_parms->carrier_freq       = freq;
-  frame_parms->rxgain            = rxgain;
+  frame_parms->carrier_freq[0]       = freq;
+  frame_parms->rxgain[0]            = rxgain;
+  frame_parms->carrier_freq[1]       = freq;
+  frame_parms->rxgain[1]            = rxgain;
+  frame_parms->carrier_freq[2]       = freq;
+  frame_parms->rxgain[2]            = rxgain;
+  frame_parms->carrier_freq[3]       = freq;
+  frame_parms->rxgain[3]            = rxgain;
 
   init_frame_parms(frame_parms,1);
   dump_frame_parms(frame_parms);

@@ -248,7 +248,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   int sync_out[3] = {0,0,0},sync_out2[3] = {0,0,0};
   int tmp[3] = {0,0,0};
   int length =   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti>>1;
-  s16 foff;
 
   //msg("[SYNC TIME] Calling sync_time.\n");
   if (sync_corr_ue0 == NULL) {

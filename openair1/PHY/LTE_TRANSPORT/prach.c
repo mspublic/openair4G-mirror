@@ -172,7 +172,6 @@ u16 du[838];
 void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 
   FILE *fd;
-  int i;
 
   fd = fopen("prach_config.txt","w");
   fprintf(fd,"prach_config: subframe          = %d\n",subframe);
@@ -312,7 +311,7 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
   else {  // TDD
 
     if (tdd_preamble_map[prach_ConfigIndex][tdd_config].num_prach==0) {
-      msg(PHY,"[PHY] Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
+      LOG_D(PHY,"[PHY] Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
       mac_xface->macphy_exit("");
     } 
 
@@ -320,7 +319,7 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
     t1_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t1_ra;
     t2_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t2_ra;
 #ifdef PRACH_DEBUG    
-    msg(PHY,"[PRACH] Checking for PRACH format (ConfigIndex %d) in TDD subframe %d (%d,%d,%d)\n",
+    LOG_D(PHY,"[PRACH] Checking for PRACH format (ConfigIndex %d) in TDD subframe %d (%d,%d,%d)\n",
 	prach_ConfigIndex,
 	subframe,
 	t0_ra,t1_ra,t2_ra);
@@ -381,7 +380,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     // First compute physical root sequence
   if (restricted_set == 0) {
     if (Ncs_config>15) {
-      msg(PHY,"[PHY] FATAL, Illegal Ncs_config for unrestricted format %d\n",Ncs_config);
+      LOG_E(PHY,"[PHY] FATAL, Illegal Ncs_config for unrestricted format %d\n",Ncs_config);
       mac_xface->macphy_exit("");
     }
     NCS = NCS_unrestricted[Ncs_config];
@@ -389,7 +388,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   }
   else {
     if (Ncs_config>14) {
-      msg("[PHY] FATAL, Illegal Ncs_config for restricted format %d\n",Ncs_config);
+      LOG_E(PHY,"[PHY] FATAL, Illegal Ncs_config for restricted format %d\n",Ncs_config);
       mac_xface->macphy_exit("");
     }
     NCS = NCS_restricted[Ncs_config];
@@ -400,7 +399,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   if (frame_type == 1) { // TDD
 
     if (tdd_preamble_map[prach_ConfigIndex][tdd_config].num_prach==0) {
-      msg(PHY,"[PHY][UE %d] Illegal prach_ConfigIndex %d for ",phy_vars_ue->Mod_id,prach_ConfigIndex);
+      LOG_E(PHY,"[PHY][UE %d] Illegal prach_ConfigIndex %d for ",phy_vars_ue->Mod_id,prach_ConfigIndex);
     } 
 
     // adjust n_ra_prboffset for frequency multiplexing (p.36 36.211)
@@ -440,7 +439,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   }
   else { // This is the high-speed case
 #ifdef PRACH_DEBUG
-    msg("[UE %d] High-speed mode, NCS_config %d\n",phy_vars_ue->Mod_id,Ncs_config);
+    LOG_D(PHY,"[UE %d] High-speed mode, NCS_config %d\n",phy_vars_ue->Mod_id,Ncs_config);
 #endif
     not_found=1;
     preamble_index0=preamble_index;
@@ -479,12 +478,12 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
   // now generate PRACH signal
 #ifdef PRACH_DEBUG
-  msg("Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
+  LOG_D(PHY,"Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
 	rootSequenceIndex,preamble_index,NCS,Ncs_config,n_ra_prb,
 	preamble_offset,preamble_shift);
 #endif
   if (preamble_offset > 4) {
-    msg("More than 4 preamble root sequences are not supported yet (got %d)!!!!\n",preamble_offset);
+    LOG_E(PHY,"More than 4 preamble root sequences are not supported yet (got %d)!!!!\n",preamble_offset);
     mac_xface->macphy_exit("");
   }
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -667,7 +666,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
     // First compute physical root sequence
   if (restricted_set == 0) {
     if (Ncs_config>15) {
-      msg("FATAL, Illegal Ncs_config for unrestricted format %d\n",Ncs_config);
+      LOG_E(PHY,"FATAL, Illegal Ncs_config for unrestricted format %d\n",Ncs_config);
       mac_xface->macphy_exit("");
     }
     NCS = NCS_unrestricted[Ncs_config];
@@ -675,7 +674,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   }
   else {
     if (Ncs_config>14) {
-      msg("FATAL, Illegal Ncs_config for restricted format %d\n",Ncs_config);
+      LOG_E(PHY,"FATAL, Illegal Ncs_config for restricted format %d\n",Ncs_config);
       mac_xface->macphy_exit("");
     }
     NCS = NCS_restricted[Ncs_config];

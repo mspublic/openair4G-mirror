@@ -131,7 +131,7 @@ u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     else if (subframe == 1)
       return (7);
     else {
-      msg("phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      LOG_E(PHY, "phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
 	  subframe,frame_parms->tdd_config);
       return(0);
     }
@@ -146,7 +146,7 @@ u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     else if (subframe == 4)
       return (8);
     else {
-      msg("phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
 	  subframe,frame_parms->tdd_config);
       return(0);
     }
@@ -157,7 +157,7 @@ u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     else if (subframe == 3)
       return (7);
     else {
-      msg("phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
 	  subframe,frame_parms->tdd_config);
       return(0);
     }
@@ -169,7 +169,7 @@ u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
     else if (subframe==0)
       return(4);
     else {
-      msg("phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
 	  subframe,frame_parms->tdd_config);
       return(0);
     }
@@ -179,7 +179,7 @@ u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
       return(subframe-6);
     }
     else {
-      msg("phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
 	  subframe,frame_parms->tdd_config);
       return(0);
     }
@@ -189,7 +189,7 @@ u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
       return(2);
     }
     else {
-      msg("phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
 	  subframe,frame_parms->tdd_config);
       return(0);
     }
@@ -212,7 +212,7 @@ u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
       return(8);
     }
     else {
-      msg("phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
 	  subframe,frame_parms->tdd_config);
       return(0);
     }

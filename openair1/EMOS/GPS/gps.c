@@ -13,6 +13,11 @@ FILE *dumpfile_id = NULL;
 void gps_data_callback(int gps_fd, void* data)
 {
   //char tmptxt[1024];
+  time_t timer;
+  struct tm *now;
+
+  timer = time(NULL);
+
   //printf("GPS timer called\n");
   if (gps_data)
     {
@@ -21,8 +26,12 @@ void gps_data_callback(int gps_fd, void* data)
 	  //sprintf(tmptxt,"Error polling data from GPS, gps_data = %x", gps_data);
 	  printf("Error polling data from GPS\n");
 	}
-      //else
-      //printf("GPS poll called\n");
+      else
+	now = localtime(&timer);
+	printf("%04d%02d%02d%02d%02d%02d,%g,%g\n",
+	       now->tm_year+1900,now->tm_mon+1,now->tm_mday,now->tm_hour, now->tm_min, now->tm_sec,
+	       //asctime(localtime(&timer)),
+	       gps_data->fix.latitude,gps_data->fix.longitude);
     }
   //fl_set_timer(ob, 0.05);
   
@@ -57,10 +66,19 @@ void stop_gps(int sig) {
   fclose(dumpfile_id);
   dumpfile_id = NULL;
 
+  fl_finish();
+
   exit(0);
 }
 
 int main(int argc, char *argv[]) {
+
+  time_t timer;
+  char log_filename[256], date_str[128];
+  struct tm *now;
+
+  timer = time(NULL);
+  now = localtime(&timer);
 
   // open GPS
   gps_data = gps_open("127.0.0.1","2947");
@@ -76,19 +94,23 @@ int main(int argc, char *argv[]) {
       exit(-1);
     }
 
-  dumpfile_id = fopen("gps_trace","w");
+  strftime(date_str, 128, "%Y%m%d_%H%M%S", now); 
+  sprintf(log_filename,"gps_trace_%s.log", date_str);
+  dumpfile_id = fopen(log_filename,"w");
   if (dumpfile_id == NULL)
     {
-      printf("Error opening dumpfile");
+      printf("Error opening dumpfile\n");
       exit(-1);
     }
 
   signal(SIGINT, stop_gps); 
 
+  fl_initialize(&argc, argv, "GPS Tracer", 0, 0);
+
   if (gps_data)  
     fl_add_io_callback(gps_data->gps_fd, FL_READ, &gps_data_callback, NULL);
 
-  while (1);
+  fl_do_forms();
 
   exit(0);
 }

@@ -1,3 +1,4 @@
+/*
 #ifdef CBMIMO1
 #include "ARCH/COMMON/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
@@ -7,6 +8,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
 //#include "pci_commands.h"
 #endif //CBMIMO1
+*/
 #include "defs.h"
 #include "SCHED/defs.h"
 #include "PHY/extern.h"
@@ -160,6 +162,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   init_ncs_cell(lte_frame_parms,PHY_vars_eNB_g[Mod_id]->ncs_cell);
 
+  init_ul_hopping(lte_frame_parms);
 
 }
 
@@ -241,6 +244,8 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
 
   // PUCCH
   init_ncs_cell(lte_frame_parms,PHY_vars_UE_g[Mod_id]->ncs_cell);
+
+  init_ul_hopping(lte_frame_parms);
 
 }
 
@@ -667,7 +672,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
       }
   }
     
-  for (eNB_id=0;eNB_id<7;eNB_id++) {
+  for (eNB_id=0;eNB_id<3;eNB_id++) {
     ue_common_vars->dl_ch_estimates_time[eNB_id] = (int **)malloc16(8*sizeof(int*));
     if (ue_common_vars->dl_ch_estimates_time[eNB_id]) {
 #ifdef DEBUG_PHY
@@ -1403,7 +1408,9 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
  
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     eNB_prach_vars->rxsigF[i] = (s16*)malloc16(frame_parms->ofdm_symbol_size*12*2*2);
+#ifdef DEBUG_PHY
     msg("prach_vars->rxsigF[%d] = %p\n",i,eNB_prach_vars->rxsigF[i]);
+#endif
     //    memset(eNB_prach_vars->rxsigF[i],0,frame_parms->ofdm_symbol_size*12*2*2);
   }
 

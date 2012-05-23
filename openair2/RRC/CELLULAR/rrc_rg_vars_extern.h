@@ -1,7 +1,7 @@
 /*********************************************************************
                           rrc_rg_vars_extern.h  -  description
                              -------------------
-    copyright            : (C) 2005, 2008 by Eurecom
+    copyright            : (C) 2005, 2010 by Eurecom
     email                : Michelle.Wetterwald@eurecom.fr
  *********************************************************************
   External definitions for control block memory for RRC_UE

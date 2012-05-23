@@ -170,7 +170,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 
   if(eNB_flag == 0){
 
-    //msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
+    //LOG_D(RRC,"[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
 
     if(Srb_id == BCCH){
 

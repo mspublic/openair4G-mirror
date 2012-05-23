@@ -109,7 +109,7 @@ unsigned char readChar(){
        // if (tracker!=NULL)
 //	{
         	unsigned char hd = tracker->item;
-        	        
+        	//printf("OMG char: %d \n",(int)hd);        
         	tracker = tracker->next;
                	return hd;
 	//}else
@@ -168,16 +168,24 @@ void writeUnsignedByte(int value){
 		writeChar( ((unsigned char)value));
 }
 
+// JNNOTE: had to change the behavior here, as tmp was always pointing at the end of the String and not at the beginning: accordingly, all strings where always '0'
 char * readString(){
 
                 int i=0;
 		int len = readInt();
+
 		descLen = len;
                 char *tmp = (char *)malloc(sizeof(char) * (len));
-		for (i; i < len; i++)
-			*tmp++ = (char) readChar();
-                        
-		return tmp;
+                char *ret = tmp; // JHNOTE: added a pointer pointing at the head of the String
+		//printf("OMG ready to readString of length %d \n",len);
+                for (i; i < len; i++) {    
+                       *tmp++ = (char) readChar();
+		}
+		*tmp++ = '\0'; // makes sure it's NUL terminated
+
+		//printf("OMG readString - %s \n",ret);
+		//printf("OMG readString - %s \n",tmp);
+		return ret; // the head is returned
 
 }
 
@@ -199,14 +207,18 @@ String_list readStringList(String_list vector){
    int len = readInt();
    descLen = len;
    String_list entry = NULL;
-
+   
    for (i; i < len; i++) {
-      if (vector->string == NULL)
-         vector->string = readString();
-         
+      if (vector->string == NULL) {
+         char *tmp = readString();
+         //printf("OMG - 1 SUMO ID: %s \n",tmp);
+         vector->string = tmp;//readString();
+      }
       else {
         entry = (String_list)malloc(sizeof(String_list));
-        entry->string = readString();
+        char *tmp = readString();
+        //printf("OMG - SUMO ID: %s \n",tmp);
+        entry->string = tmp;//readString();
         entry->next = NULL;
 
         if(vector !=NULL) {
@@ -413,10 +425,7 @@ storage* writePacket (unsigned char* packet, int length){
 		recvpacket =temp_;
        		 } 
         }
-	/*
-	while(recvpacketStart!=NULL){
-	printf("haha %d\n",recvpacketStart->item);
-	recvpacketStart = recvpacketStart->next;}*/
+	
         return recvpacketStart;
 
 }

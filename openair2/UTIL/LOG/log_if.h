@@ -68,9 +68,9 @@ extern "C" {
 
 public_log_if( void logInit (void);)
 public_log_if( void logRecord(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
-public_log_if( int set_comp_log(int component, int level, int flag, int interval);)
+public_log_if( int set_comp_log(int component, int level, int verbosity, int interval);)
 public_log_if( int  set_log(int component, int level, int interval);)
-public_log_if( void set_glog(int level, int flag);)
+public_log_if( void set_glog(int level, int verbosity);)
 public_log_if( void set_log_syslog(int enable);)
 public_log_if( void set_log_onlinelog(int enable);)
 public_log_if( void set_log_filelog(int enable);)

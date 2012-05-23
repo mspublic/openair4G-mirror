@@ -1782,7 +1782,7 @@ double compute_ber_soft(u8* ref, s16* rec, int n)
 
   for(k = 0; k < n; k++) {
     if((ref[k]==1) != (rec[k]<0)) {
-      //      printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
+            //printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
       e++;
     }
   }
@@ -1879,7 +1879,9 @@ int block_valid(u8* ref, u8* rec, int n)
   for(k = 0; k < n; k++) {
     if(ref[k] != rec[k])
       return 0;
+      //printf("%d ",k);
   }
+  //printf("\n");
   return 1;
 }
 

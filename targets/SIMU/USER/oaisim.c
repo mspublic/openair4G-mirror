@@ -40,13 +40,15 @@
 #include "oaisim_config.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "cor_SF_sim.h"
+#include "UTIL/OMG/omg_constants.h"
 
-//ALU
+
+//#ifdef PROC
 #include "../PROC/interface.h"
 #include "../PROC/channel_sim_proc.h"
 #include "../PROC/Tsync.h"
 #include "../PROC/Process.h"
-
+//#endif
 
 #define RF
 
@@ -77,8 +79,8 @@
 #define TARGET_SF_TIME_NS 1000000	// 1ms = 1000000 ns
 
 //#ifdef OPENAIR2
-u16 NODE_ID[1];
-u8 NB_INST = 2;
+//u16 NODE_ID[1];
+//u8 NB_INST = 2;
 //#endif //OPENAIR2
 char stats_buffer[16384];
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -146,7 +148,7 @@ help (void) {
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
-  printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:err) \n");
+  printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error) \n");
   printf
     ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
@@ -536,6 +538,59 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
 
 #endif //XFORMS
 
+int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data){
+  int i,j;
+  omv_data.end=0;
+  //omv_data.total_num_nodes = NB_UE_INST + NB_eNB_INST;
+  for (i=0;i<NB_eNB_INST;i++) {
+    if (enb_node_list != NULL) {
+      omv_data.geo[i].x = enb_node_list->node->X_pos;
+      omv_data.geo[i].y = enb_node_list->node->Y_pos;
+      omv_data.geo[i].z = 1.0;
+      omv_data.geo[i].mobility_type = oai_emulation.info.omg_model_enb;
+      omv_data.geo[i].node_type = 0; //eNB
+      enb_node_list = enb_node_list->next;
+      omv_data.geo[i].Neighbors=0;
+      /*   for (j=NB_eNB_INST; j< NB_UE_INST + NB_eNB_INST ; j++){
+	if (is_UE_active(i,j - NB_eNB_INST ) == 1) {
+	  omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors]=  j; 
+	  omv_data.geo[i].Neighbors++; 
+	  LOG_D(OMG,"[eNB %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i,j-NB_eNB_INST, is_UE_active(i,j-NB_eNB_INST), 
+	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
+	} 
+	} */
+    }
+  }
+  for (i=NB_eNB_INST;i<NB_UE_INST+NB_eNB_INST;i++) {
+    if (ue_node_list != NULL) {
+      omv_data.geo[i].x = ue_node_list->node->X_pos;
+      omv_data.geo[i].y = ue_node_list->node->Y_pos;
+      omv_data.geo[i].z = 1.0;
+      omv_data.geo[i].mobility_type = oai_emulation.info.omg_model_ue;
+      omv_data.geo[i].node_type = 1; //UE
+      ue_node_list = ue_node_list->next;
+      omv_data.geo[i].Neighbors=0;
+      /* for (j=0; j< NB_eNB_INST ; j++){
+	if (is_UE_active(j,i-NB_eNB_INST) == 1) {
+	  omv_data.geo[i].Neighbor[ omv_data.geo[i].Neighbors]=j; 	
+	  omv_data.geo[i].Neighbors++; 
+	  LOG_D(OMG,"[UE %d][eNB %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_eNB_INST,j, is_UE_active(j,i-NB_eNB_INST), 
+	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
+	} 
+	}*/
+    }
+  }
+ 
+  if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
+   perror( "write omv failed" );
+  return 1;
+}
+
+void omv_end (int pfd, Data_Flow_Unit omv_data) {
+  omv_data.end=1;
+  if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
+    perror( "write omv failed" );
+}
 
 int
 main (int argc, char **argv)
@@ -565,7 +620,7 @@ for(i=0;i<2;i++) {
   double snr_dB, sinr_dB,snr_direction,sinr_direction;
   u8 set_snr=0,set_sinr=0;
   u8 ue_connection_test=0;
-
+  u8 set_seed=0;
   u8 cooperation_flag;		// for cooperative communication
   u8 target_dl_mcs = 4;
   u8 target_ul_mcs = 2;
@@ -583,7 +638,21 @@ for(i=0;i<2;i++) {
 
   lte_subframe_t direction;
 
-  u8 awgn_flag = 0;
+  // omv related info
+  //pid_t omv_pid;
+  char full_name[200];
+  int pfd[2]; // fd for omv : fixme: this could be a local var
+  char fdstr[10];
+  char frames[10];
+  char num_enb[10];
+  char num_ue[10];
+  //area_x, area_y and area_z for omv
+  char x_area[20];
+  char y_area[20];  
+  char z_area[20];
+  char fname[64],vname[64];
+
+ u8 awgn_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
   FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
@@ -605,12 +674,11 @@ for(i=0;i<2;i++) {
   // Added for PHY abstraction
   Node_list ue_node_list = NULL;
   Node_list enb_node_list = NULL;
- 
-  //ALU
+  Data_Flow_Unit omv_data ;
+//ALU
     int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
     double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
     double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
-
   //default parameters
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -622,7 +690,7 @@ for(i=0;i<2;i++) {
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePoFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
+  while ((c = getopt (argc, argv, "haePoFvIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
 	 != -1) {
 
     switch (c) {
@@ -742,6 +810,26 @@ for(i=0;i<2;i++) {
       break;
     case 'U':
       oai_emulation.info.omg_model_ue = atoi (optarg);
+      switch (oai_emulation.info.omg_model_ue){
+        
+      case STATIC:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
+        break;
+      case RWP:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
+        break;
+      case RWALK:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWALK";
+        break;
+      case TRACE:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "TRACE";
+        break;
+      case SUMO:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "SUMO";
+        break;
+      default:
+        LOG_N(OMG, "Unsupported generator %d \n", oai_emulation.info.omg_model_ue);
+      }
       break;
     case 'T':
       oai_emulation.info.otg_enabled = 1;
@@ -751,6 +839,7 @@ for(i=0;i<2;i++) {
       oai_emulation.info.opt_enabled = 1;
       break;
     case 'E':
+      set_seed = 1;
       oai_emulation.info.seed = atoi (optarg);
       break;
     case 'I':
@@ -770,6 +859,9 @@ for(i=0;i<2;i++) {
      node_id = wgt+atoi(optarg);
      port+=atoi(optarg);
      break;
+    case 'v':
+      oai_emulation.info.omv_enabled = 1;
+      break;
     default:
       help ();
       exit (-1);
@@ -788,7 +880,7 @@ for(i=0;i<2;i++) {
     LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
     exit (-1);
   }
-	
+      
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
   abstraction_flag = 1;
@@ -799,10 +891,10 @@ for(i=0;i<2;i++) {
     sinr_dB = snr_dB - 20;
 
   // setup ntedevice interface (netlink socket)
-#ifdef NAS_NETLINK  
+  //#ifdef NAS_NETLINK  
   LOG_I(EMU,"[INIT] Starting NAS netlink interface\n");
   ret = netlink_init ();
-#endif
+  //#endif
 
   if (ethernet_flag == 1) {
     oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
@@ -830,7 +922,38 @@ for(i=0;i<2;i++) {
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
 
-#ifndef NAS_NETLINK
+  if (oai_emulation.info.omv_enabled == 1) {
+    
+    if(pipe(pfd) == -1)
+      perror("pipe error \n");
+    
+    sprintf(full_name, "%s/UTIL/OMV/OMV",getenv("OPENAIR2_DIR"));
+    LOG_I(EMU,"Stating the OMV path %s pfd[0] %d pfd[1] %d \n", full_name, pfd[0],pfd[1]);
+    
+      switch(fork()) {
+      case -1 :
+	perror("fork failed \n");
+	break;
+      case 0 : /* child is going to be the omv, it is the reader */
+	if(close(pfd[1]) == -1 ) /* we close the write desc. */
+	  perror("close on write\n" );
+	sprintf(fdstr, "%d", pfd[0] );
+	sprintf(num_enb, "%d", NB_eNB_INST);
+	sprintf(num_ue, "%d", NB_UE_INST);
+	sprintf(x_area, "%f", oai_emulation.topology_config.area.x_m );
+	sprintf(y_area, "%f", oai_emulation.topology_config.area.y_m );
+	sprintf(z_area, "%f", 200.0 );
+	sprintf(frames, "%d", oai_emulation.info.n_frames);
+	/* execl is used to launch the visualisor */
+	execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, NULL );
+	perror( "error in execl the OMV" );
+      }
+    //parent
+    if(close( pfd[0] ) == -1 ) /* we close the write desc. */
+      perror("close on read\n" );
+  }
+
+#ifdef PRINT_STATS
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
     UE_stats[UE_id] = fopen (UE_stats_filename, "w");
@@ -844,7 +967,13 @@ for(i=0;i<2;i++) {
   LOG_T(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, awgn_flag %d\n",
   	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,awgn_flag);
   
-
+  if(set_seed){
+    randominit (oai_emulation.info.seed);
+    set_taus_seed (oai_emulation.info.seed);
+  } else {
+    randominit (0);
+    set_taus_seed (0);
+  }
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   //printf ("Nid_cell %d\n", frame_parms->Nid_cell);
@@ -882,15 +1011,15 @@ for(i=0;i<2;i++) {
   
 
   // init SF map here!!!
-  map1 =(int)oai_emulation.topology_config.area.x_km;
-  map2 =(int)oai_emulation.topology_config.area.y_km;
+  map1 =(int)oai_emulation.topology_config.area.x_m;
+  map2 =(int)oai_emulation.topology_config.area.y_m;
   //ShaF = createMat(map1,map2); -> memory is allocated within init_SF, shadow fading
   ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
 
   // size of area to generate shadow fading map
   LOG_D(EMU,"Simulation area x=%f, y=%f\n",
-	 oai_emulation.topology_config.area.x_km,
-	 oai_emulation.topology_config.area.y_km);
+	 oai_emulation.topology_config.area.x_m,
+	 oai_emulation.topology_config.area.y_m);
  
   
   if (abstraction_flag == 0 && Process_Flag==0 && Channel_Flag==0)
@@ -933,9 +1062,6 @@ for(i=0;i<2;i++) {
       random_channel(UE2eNB[UE_id][eNB_id]);
     }
   }
-
-  randominit (0);
-  set_taus_seed (0);
 
   number_of_cards = 1;
 
@@ -993,13 +1119,12 @@ for(i=0;i<2;i++) {
 
 #ifdef OPENAIR2
   l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
-
   for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
       mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);	//UE_id%NB_eNB_INST);
-  }
+      }
 #endif
 
 
@@ -1048,66 +1173,67 @@ for(i=0;i<2;i++) {
 	sinr_direction=1;
       }
     }
-    oai_emulation.info.frame = frame; 
-    update_nodes(oai_emulation.info.time);  
-
-    enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
-    ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
-
-    // update the position of all the nodes (eNB/CH, and UE/MR) every frame 
-    if (((int)oai_emulation.info.time % 10) == 0 ) {
+      
+    oai_emulation.info.frame = frame;   
+    oai_emulation.info.time_s += 10; //0.01; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
+    // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
+    if ( (oai_emulation.info.n_frames_flag == 0) || (oai_emulation.info.n_frames >= 0xffff) ){ 
+      frame %=(oai_emulation.info.n_frames-1);
+    } 
+    
+    if ((frame % 100) == 0 ) { // call OMG every 1s 
+      update_nodes(oai_emulation.info.frame*10); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
       if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
 	for(UE_id=oai_emulation.info.first_ue_local; UE_id<(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);UE_id++){
-	  new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
+	  new_omg_model = randomGen(STATIC,RWALK); 
 	  LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time);
+	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time_s);
 	}
       }
-
       if (oai_emulation.info.omg_model_enb >= MAX_NUM_MOB_TYPES) {	// mix mobility model
 	for (eNB_id = oai_emulation.info.first_enb_local; eNB_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local); eNB_id++) {
-	  new_omg_model = randomGen (STATIC, MAX_NUM_MOB_TYPES);
-	  LOG_D (OMG, "[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
+	  new_omg_model = randomGen (STATIC, RWALK);
+	  LOG_D (OMG,"[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time);
+	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time_s);
 	}
       }
     }
-
+    enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time_s);
+    ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time_s);
+	
+    // check if pipe is still open
+    if ((oai_emulation.info.omv_enabled == 1) ){
+      omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
+    }
+    
 #ifdef DEBUG_OMG
-    if ((((int) oai_emulation.info.time) % 100) == 0) {
+    if ((((int) oai_emulation.info.time_s) % 100) == 0) {
       for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++) {
 	get_node_position (UE, UE_id);
       }
     }
 #endif 
-   
-    if (oai_emulation.info.n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
-      frame %=(oai_emulation.info.n_frames-1);
-      // set the emulation time based on 1ms subframe number
-      oai_emulation.info.time += 0.01; // emu time in s 
-    }
-    else { // user set the number of frames for the emulation
-      // let the time go faster to see the effect of mobility
-      oai_emulation.info.time += 0.1; 
-    } 
 
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
+       LOG_I(OMG," extracting position of eNb...\n");
       extract_position(enb_node_list, enb_data, NB_eNB_INST);
-      extract_position(ue_node_list, ue_data, NB_UE_INST);
+       LOG_I(OMG," extracting position of UE...\n");
+      extract_position(ue_node_list, ue_data, NB_UE_INST); // JHNOTE: TODO MUST reflect the number of ACTIVE SUMO nodes (for example at the beginning, 1 node only is in SUMO...so, x others are just on standby...should not be considered).
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+	  //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  LOG_D(OCM,"Path loss bandwidth for eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
+	  LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
-		 eNB2UE[eNB_id][UE_id]->path_loss_dB,
-		 ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+		eNB2UE[eNB_id][UE_id]->path_loss_dB,0);
+		//ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	}
       }
     }
@@ -1125,7 +1251,7 @@ for(i=0;i<2;i++) {
 	    eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	  }
-	  LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
+	  LOG_D(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
 		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
 	  //	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
 	}
@@ -1138,6 +1264,8 @@ for(i=0;i<2;i++) {
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
+      
+      oai_emulation.info.time_ms = frame * 10 + (next_slot>>1) ;
       
       direction = subframe_select(frame_parms,next_slot>>1);
 #ifdef PROC      
@@ -1159,7 +1287,7 @@ for(i=0;i<2;i++) {
 	PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	
-#ifndef NAS_NETLINK
+#ifdef PRINT_STATS
 	//if ((frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
@@ -1192,7 +1320,7 @@ for(i=0;i<2;i++) {
 	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
 	      exit(-1);
 	    }
-	    if ((frame>0) && (last_slot == (SLOTS_PER_FRAME-2))) {
+	    if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
@@ -1209,7 +1337,7 @@ for(i=0;i<2;i++) {
 	      */
 	    }
  	  }
-#ifndef NAS_NETLINK
+#ifdef PRINT_STATS
 	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
@@ -1282,9 +1410,11 @@ for(i=0;i<2;i++) {
 
     }				//end of slot
 
-    if ((frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
+    if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      sprintf(fname,"eNBtxsig%d.m",frame);
+      sprintf(vname,"txs%d",frame);
+      write_output(fname,vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
 
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -1296,7 +1426,7 @@ for(i=0;i<2;i++) {
       do_forms2(form_dl[UE_id],
 		frame_parms,  
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
-		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNB_id],
+		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
 		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
@@ -1337,12 +1467,16 @@ for(i=0;i<2;i++) {
     // calibrate at the end of each frame if there is some time  left
     if((sleep_time_us > 0)&& (ethernet_flag ==0)){
       LOG_I(EMU,"Adjust average frame duration, sleep for %d us\n",sleep_time_us);
-      usleep(sleep_time_us);
+      // usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
   }	//end of frame
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+
+  //Perform KPI measurements
+   if (oai_emulation.info.otg_enabled==1)
+     kpi_gen();
 
   // relase all rx state
   if (ethernet_flag == 1) {
@@ -1384,17 +1518,22 @@ for(i=0;i<2;i++) {
       free(ue_data[UE_id]); 
   } //End of PHY abstraction changes
   
-#ifndef NAS_NETLINK
+#ifdef PRINT_STATS
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
     fclose (UE_stats[UE_id]);
   fclose (eNB_stats);
 #endif
 
- destroyMat(ShaF,map1, map2);
- if (oai_emulation.info.cli_enabled)
-   cli_server_cleanup();
- 
- logClean();
+  // stop OMG
+  stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
+  if ((oai_emulation.info.omv_enabled == 1) ){
+    omv_end(pfd[1],omv_data);
+  }
+  //destroyMat(ShaF,map1, map2);
+  if (oai_emulation.info.cli_enabled)
+    cli_server_cleanup();
+  
+  logClean();
 
   return(0);
 }

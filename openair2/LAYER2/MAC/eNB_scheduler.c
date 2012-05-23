@@ -297,7 +297,12 @@ s16 find_UE_RNTI(unsigned char Mod_id, unsigned char UE_id) {
   return (eNB_mac_inst[Mod_id].UE_template[UE_id].rnti);
 
 }
-
+u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id ){
+  if (eNB_mac_inst[Mod_id].UE_template[UE_id].rnti !=0 )
+    return 1;
+  else
+    return 0 ;
+}
 s8 find_active_UEs(unsigned char Mod_id){
 
   unsigned char UE_id;
@@ -451,7 +456,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu) {
   LOG_D(MAC,"[eNB %d] Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,rnti,UE_id);
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
-#ifdef DEBUG_PACKET_TRACE
+#ifdef DEBUG_PACKET_TRACE 
   if((sdu!=NULL)&&(sdu!=0))
     trace_pdu(3,sdu,rx_lengths[1]/*(payload_ptr - sdu )*/, Mod_id, rnti, 8);
 #endif
@@ -1019,7 +1024,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	//ULSCH_dci1 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[1].ULSCH_DCI[harq_pid];
 
 	//msg("FAIL\n");
-	status = get_rrc_status(Mod_id,1,next_ue);
+	status = mac_get_rrc_status(Mod_id,1,next_ue);
 
 	/* if((status0 < RRC_CONNECTED) && (status1 < RRC_CONNECTED))
 	       ULSCH_dci->cqi_req = 0;
@@ -4172,9 +4177,11 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   DCI_pdu->Num_ue_spec_dci = 0;
   eNB_mac_inst[Mod_id].bcch_active = 0;
 
-  pdcp_run(frame, 1);
+  if (subframe%5 == 0)
+    pdcp_run(frame, 1, 0, Mod_id);
+
 #ifdef CELLULAR
-  Rrc_xface->rrc_rx_tx(Mod_id, frame, 0, 0);
+  rrc_rx_tx(Mod_id, frame, 0, 0);
 #endif
 
 #ifdef ICIC
