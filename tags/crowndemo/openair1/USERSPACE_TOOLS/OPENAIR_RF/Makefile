@@ -36,12 +36,12 @@ endif
 ifeq ($(OPENAIR_LTE), 0)
 PHY_OBJS        +=$(TOP_DIR)/PHY/INIT/init.o
 else
-PHY_OBJS	+=$(TOP_DIR)/PHY/INIT/init_top.o 
+PHY_OBJS	+=$(TOP_DIR)/PHY/INIT/lte_parms.o 
 #PHY_OBJS	+=$(TOP_DIR)/PHY/INIT/lte_init.o 
 endif
 
 # PHY TOOLS routines
-PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o 
+#PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o 
 
 USERRFOBJS += $(PHY_OBJS) openair_rf.o #openair_generate_ofdm.o
 

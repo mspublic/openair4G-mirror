@@ -44,7 +44,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "UTIL/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
-//#include "RRC/LITE/MESSAGES/asn1_msg.h"
+#include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "UL-CCCH-Message.h"
 #include "DL-CCCH-Message.h"
@@ -460,11 +460,18 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
 
 
-  size = do_RRCConnectionReconfiguration(Mod_id,
+  /*size = do_RRCConnectionReconfiguration(Mod_id,
 					 buffer,
 					 UE_index,
 					 0,
-					 &eNB_rrc_inst[Mod_id]);
+					 &eNB_rrc_inst[Mod_id]);*/
+
+    size = do_RRCConnectionReconfiguration(buffer,
+                                         UE_index,
+                                         0,
+                                         &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
+                                         &eNB_rrc_inst[Mod_id].DRB_config[UE_index][0],
+                                         &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
   

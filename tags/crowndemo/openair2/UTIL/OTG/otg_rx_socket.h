@@ -37,6 +37,10 @@
 * \note
 * \warning
 */
+#ifndef __OTG_RX_SOCKET_H__
+#define __OTG_RX_SOCKET_H__
+
+#include"otg.h"
 
 
 //-----------------------begin func proto-------------------
@@ -54,3 +58,7 @@ void server_socket_tcp_ip4();
 
 
 //-----------------------end func proto-------------------
+
+
+
+#endif

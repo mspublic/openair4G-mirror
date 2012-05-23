@@ -10,7 +10,7 @@
 #ifndef __BYPASS_SESSION_LAYER_EXTERN_H__
 #    define __BYPASS_SESSION_LAYER_EXTERN_H__
 
-#ifdef RTAI_ENABLED
+#ifndef USER_MODE
 #include <rtai_posix.h>
 #else
 #include <pthread.h>

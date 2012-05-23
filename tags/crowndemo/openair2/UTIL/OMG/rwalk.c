@@ -367,17 +367,17 @@ void get_rwalk_positions_updated(double cur_time){
 	      else {
 		     Y_now = Y_now;
 	      }
-			LOG_D(OMG,"X_now %f\tY_now %f\n", X_now, Y_now);
-
-
-			tmp->pair->b->X_pos = (double) ((int) (X_now*100))/ 100;
-			tmp->pair->b->Y_pos = (double) ((int) (Y_now*100))/ 100;
- 				   //tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
-				   //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
-				   //tmp->pair->b->mob->start_journey = cur_time;
-			LOG_I(OMG,"updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+		LOG_D(OMG,"X_now %f\tY_now %f\n", X_now, Y_now);
+		
+		
+		tmp->pair->b->X_pos = (double) ((int) (X_now*100))/ 100;
+		tmp->pair->b->Y_pos = (double) ((int) (Y_now*100))/ 100;
+		//tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
+		//tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
+		//tmp->pair->b->mob->start_journey = cur_time;
+		LOG_D(OMG,"updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
 			}
-				
+			 
 			else{
 			  LOG_E(OMG,"update_generator: unsupported node state : %d \n", tmp->pair->b->mobile);
 			   return; 

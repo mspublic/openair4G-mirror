@@ -47,9 +47,16 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
     
   int i;
   for (i=0;i<nb_nodes;i++) {
-    if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
+   if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
+      
       node_data[i]->x = input_node_list->node->X_pos;
+      // JHNOTE (01/05/2012): had to add this safety check as SUMO might return negative positions at the initialization (node 'just' at the boundaries)
+      if (node_data[i]->x <0.0)
+        node_data[i]->x = 0.0;
       node_data[i]->y = input_node_list->node->Y_pos;
+      if (node_data[i]->y <0.0)
+        node_data[i]->y = 0.0;
+      LOG_I(OCM, "extract_position: added node_data %d with position X: %f and Y: %f \n", i,input_node_list->node->X_pos, input_node_list->node->Y_pos );
       input_node_list = input_node_list->next;
     }
     else {
@@ -101,7 +108,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   
   path_loss = env_desc.fading.free_space_model_parameters.pathloss_0_dB - 
 		10*env_desc.fading.free_space_model_parameters.pathloss_exponent * log10(dist/1000); 
-  //printf("dist %f, Path Loss %f\n",dist,ch_desc->path_loss_dB);
+  //printf("dist %f, Path loss %f\n",dist,ch_desc->path_loss_dB);
 
   /* Calculating the angle in the range -pi to pi from the slope */
   alpha = atan2((ue_data->x - enb_data->x), (ue_data->y - enb_data->y));
@@ -111,15 +118,18 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   ch_desc->aoa = alpha;
   ch_desc->random_aoa = 0;
       
-  gain_max = -1000;
-  for(count = 0; count < enb_data->n_sectors; count++) {
-    theta = enb_data->alpha_rad[count] - alpha;
-    /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
-    gain_sec[count] = -(Am < (12 * pow((theta/enb_data->phi_rad),2)) ? Am : (12 * pow((theta/enb_data->phi_rad),2)));
-    if (gain_sec[count]>gain_max)
-      gain_max = gain_sec[count];
+  if (enb_data->n_sectors==1) //assume omnidirectional antenna
+    gain_max = 0;
+  else {
+    gain_max = -1000;
+    for(count = 0; count < enb_data->n_sectors; count++) {
+      theta = enb_data->alpha_rad[count] - alpha;
+      /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
+      gain_sec[count] = -(Am < (12 * pow((theta/enb_data->phi_rad),2)) ? Am : (12 * pow((theta/enb_data->phi_rad),2)));
+      if (gain_sec[count]>gain_max)  //take the sector that we are closest too (or where the gain is maximum)
+	gain_max = gain_sec[count];
+    }
   }
-
   path_loss += enb_data->ant_gain_dBi + gain_max + ue_data->ant_gain_dBi;
   path_loss += Shad_Fad;
 
@@ -213,11 +223,13 @@ void get_beta_map() {
     }
   }
 
-  for (mcs = 5; mcs < MCS_COUNT; mcs++) {
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs);
+  for (mcs = 5; mcs < MCS_COUNT; mcs++) { 
+    // sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs); // navid 
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Real/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
+
     fp = fopen(file_path,"r");
     if (fp == NULL) {
-      printf("ERROR: Unable to open the file %s\n", file_path);
+      LOG_E(OCM,"ERROR: Unable to open the file %s\n", file_path);
       exit(-1);
     }
     else {
@@ -235,7 +247,7 @@ void get_beta_map() {
     }
     LOG_D(OCM," Print the table for mcs %d\n",mcs);
     for (table_len = 0; table_len < 9; table_len++)
-      msg("%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
   free(file_path);
 }

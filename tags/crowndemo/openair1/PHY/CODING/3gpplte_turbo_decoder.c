@@ -254,7 +254,7 @@ void log_map_s(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short 
 
 }
 
-int SAT_ADD(a,b,m) {
+int SAT_ADD(int a,int b,int m) {
 
   if (a+b > m) {
 #ifdef DEBUG_LOGMAP

@@ -17,18 +17,18 @@
 #include "UTIL/LOG/log.h"
 
 extern unsigned int   Master_list_rx;
-extern unsigned short NODE_ID[1];
+//extern unsigned short NODE_ID[1];
 extern unsigned char  NB_INST;
 //#define DEBUG_CONTROL 1
-/******************************************************************************************************/ 
+
+/*
 char is_node_local_neighbor(unsigned short Node_id){
-  /******************************************************************************************************/ 
   int i;
   for(i=0;i<NB_INST;i++)
     if(NODE_ID[i]==Node_id) return 1;
   return 0; 
 }
-
+*/
 
 void emu_transport_sync(void){
  
@@ -310,7 +310,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      
      pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
      
-//     PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[subframe%2].sr;// UE_transport_info[ue_id].cntl.sr;
+     PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[subframe%2].sr;// UE_transport_info[ue_id].cntl.sr;
      
      //if (PHY_vars_UE_g[ue_id]->sr) LOG_I(EMU,"SR is %d \n", PHY_vars_UE_g[ue_id]->sr);
      

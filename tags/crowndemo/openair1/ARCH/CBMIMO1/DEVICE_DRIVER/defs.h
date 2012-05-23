@@ -1,3 +1,5 @@
+#ifndef __CBMIMO1_DEFS_H__
+#define __CBMIMO1_DEFS_H__
 #ifndef USER_MODE
 #define __NO_VERSION__
 
@@ -63,19 +65,8 @@ int openair_device_release (struct inode *inode,struct file *filp);
 int openair_device_mmap    (struct file *filp, struct vm_area_struct *vma);
 int openair_device_ioctl   (struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg);
 
-
-
-void openair_set_rx_rf_mode(unsigned char card_id,unsigned int arg);
-void openair_set_tx_gain_openair(unsigned char card_id,unsigned char txgain00,unsigned char txgain10,unsigned char txgain01, unsigned char txgain11);
-void openair_set_rx_gain_openair(unsigned char card_id,unsigned char rxgain00,unsigned char rxgain10,unsigned char rxgain01,unsigned char rxgain11);
-void openair_set_lo_freq_openair(unsigned char card_id,char freq0,char freq1);
-void openair_set_rx_gain_cal_openair(unsigned char card_id,unsigned int gain_dB);
-int openair_set_freq_offset(unsigned char card_id,int freq_offset);
-
 void openair_generate_ofdm(void);
 void openair_generate_fs4(unsigned char);
-
-void openair_set_tcxo_dac(unsigned char card_id,unsigned int);
 
 void openair_get_frame(unsigned char card_id);
 
@@ -83,7 +74,7 @@ int openair_dma(unsigned char card_id, unsigned int cmd);
 
 int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms);
 
-void exmimo_firmware_init();
+void exmimo_firmware_init(void);
 
 void dump_config(void);
 
@@ -95,6 +86,15 @@ int fifo_printf(const char *fmt,...);
 void fifo_printf_clean_up(void);
 void fifo_printf_init(void); 
 
-void pci_printk_fifo_init();
+void pci_printk_fifo_init(void);
 void pci_printk_fifo_clean_up (void);
+#endif
+
+void openair_set_rx_rf_mode(unsigned char card_id,unsigned int arg);
+void openair_set_tx_gain_openair(unsigned char card_id,unsigned char txgain00,unsigned char txgain10,unsigned char txgain01, unsigned char txgain11);
+void openair_set_rx_gain_openair(unsigned char card_id,unsigned char rxgain00,unsigned char rxgain10,unsigned char rxgain01,unsigned char rxgain11);
+void openair_set_lo_freq_openair(unsigned char card_id,char freq0,char freq1);
+void openair_set_rx_gain_cal_openair(unsigned char card_id,unsigned int gain_dB);
+int openair_set_freq_offset(unsigned char card_id,int freq_offset);
+void openair_set_tcxo_dac(unsigned char card_id,unsigned int);
 #endif

@@ -44,7 +44,7 @@ STATIC=0,  /*!< STATIC mobility model */
 RWP,  /*!< Random Way Point mobility model */
 RWALK, /*!< Random Walk mobility model */
 TRACE,  /*!< Trace-based Mobility description file */
-SUMO,  /*!< SUMO-based mobility model */
+SUMO,  /*!< SUMO-based mobility model	 */
 MAX_NUM_MOB_TYPES /*!< The maximum number of mobility models. Used to adjust the length of the #Node_Vector */
 }mobility_types;
 
@@ -58,7 +58,7 @@ ALL, /*!< All the types. Used to perform the same operations to all the types of
 
 //#define eps 0.00000095367431649629
 /*! A constant used to compare two doubles */
-#define eps 0.99
+#define eps 10.99
 
 #endif /* __OMG_H_ */
 

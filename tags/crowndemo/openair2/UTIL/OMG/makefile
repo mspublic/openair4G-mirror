@@ -5,8 +5,10 @@ CC= gcc
 OBJstatic = OMG.c common.c static.c
 OBJrwp = OMG.c common.c job.c rwp.c
 OBJrwalk = OMG.c common.c job.c rwalk.c
+OBJtrace = OMG.c common.c job.c trace.c mobility_parser.c hashtable.c
+OBJsumo = OMG.c common.c sumo.c client_traci_OMG.c socket_traci_OMG.c storage_traci_OMG.c id_manager.c
 
-OBJ = OMG.c common.c static.c job.c rwp.c rwalk.c
+OBJ = OMG.c common.c static.c job.c rwp.c rwalk.c trace.c sumo.c mobility_parser.c hashtable.c client_traci_OMG.c socket_traci_OMG.c storage_traci_OMG.c id_manager.c
 
 CFLAGS += -DTEST_OMG
 
@@ -17,6 +19,7 @@ help:
 	@echo '  "make rwpOMG" to compile the RWP version'
 	@echo '  "make rwalkOMG" to compile the RWALK version'
 	@echo '  "make traceOMG" to compile the TRACE version'
+	@echo '  "make sumoOMG" to compile the SUMO version'
 	@echo '  "make clean" to remove the generated files and restore the original distribution'
 	@echo '  "make OMG" to compile the complete version'
 
@@ -26,19 +29,20 @@ staticOMG:	${OBJstatic}
 
 	
 rwpOMG:	${OBJrwp} 
-	${CC} ${OBJrwalk} -lm -o rwpOMG $(CFLAGS)
+	${CC} ${OBJrwp} -lm -o rwpOMG $(CFLAGS)
 	@#-lm: used to link to math lib
 	 
 traceOMG:${OBJtrace} 
 	${CC} ${OBJtrace} -lm -o traceOMG $(CFLAGS)
 
-rwalkOMG:	${OBJrwp} 
+rwalkOMG:	${OBJrwalk} 
 	${CC} ${OBJrwalk} -lm -o rwalkOMG $(CFLAGS)
 
+sumoOMG:	${OBJsumo} 
+	${CC} ${OBJsumo} -lm -o rwalkOMG $(CFLAGS)
 
 OMG:	${OBJ} 
 	${CC} ${OBJ} -lm -o OMG $(CFLAGS)
-
 
 clean:
 	@echo "Cleaning"
@@ -47,7 +51,8 @@ clean:
 	@#rm rwalkOMG
 	@#rm traceOMG
 	@#rm staticOMG
-
+        @#rm OMG
+	
 else
 
 CC= gcc

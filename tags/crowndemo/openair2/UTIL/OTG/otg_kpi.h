@@ -46,9 +46,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "otg.h"
-#include "otg_defs.h"
-#include "otg_config.h"
+#include "otg_externs.h" // not needed, you should compute kpi from the pkt header
 
+
+unsigned int start_log_latency=0;
+unsigned int start_log_throughput=0;
 
 /*! \fn void tx_throughput( int src, int dst)
 * \brief compute the transmitter throughput in bytes per seconds
@@ -96,5 +98,8 @@ void rx_loss_rate_bytes(int src, int dst);
 */
 void kpi_gen(void);
 
+void add_log_metric(int src, int dst, int ctime, int metric, unsigned int labelc);
+
+void  add_log_label(unsigned int label, unsigned int * start_log_metric);
 
 #endif

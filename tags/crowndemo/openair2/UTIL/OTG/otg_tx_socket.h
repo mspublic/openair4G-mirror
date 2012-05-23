@@ -38,6 +38,16 @@
 * \warning
 */
 
+#ifndef __OTG_TX_SOCKET_H__
+#define __OTG_TX_SOCKET_H__
+
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include"otg.h"
+#include"otg_tx.h"
+
 
 //-----------------------begin func proto-------------------
 
@@ -49,7 +59,7 @@
 * \note 
 * @ingroup  _otg
 */
-void socket_packet_send(int src, int dst, int state);
+void socket_packet_send(int src, int dst, int state,int ctime);
 
 /*! \fn client_socket_tcp_ip4(int, int , int)
 * \brief this function allow to run the client, with IPv4 and TCP protocol.
@@ -59,7 +69,7 @@ void socket_packet_send(int src, int dst, int state);
 * \note 
 * @ingroup  _otg
 */
-void client_socket_tcp_ip4(int src, int dst, int state);
+void client_socket_tcp_ip4(int src, int dst, int state,int ctime);
 
 /*! \fn client_socket_tcp_ip6(int, int , int)
 * \brief this function allow to run the client, with IPv6 and TCP protocol.
@@ -69,7 +79,7 @@ void client_socket_tcp_ip4(int src, int dst, int state);
 * \note 
 * @ingroup  _otg
 */
-void client_socket_tcp_ip6(int src, int dst, int state);
+void client_socket_tcp_ip6(int src, int dst, int state,int ctime);
 
 /*! \fn client_socket_udp_ip4(int, int , int)
 * \brief this function allow to run the client, with IPv4 and UDP protocol.
@@ -79,7 +89,7 @@ void client_socket_tcp_ip6(int src, int dst, int state);
 * \note 
 * @ingroup  _otg
 */
-void client_socket_udp_ip4(int src, int dst, int state);
+void client_socket_udp_ip4(int src, int dst, int state,int ctime);
 
 /*! \fn client_socket_udp_ip6(int, int , int)
 * \brief this function allow to run the client, with IPv6 and UDP protocol.
@@ -89,7 +99,32 @@ void client_socket_udp_ip4(int src, int dst, int state);
 * \note 
 * @ingroup  _otg
 */
-void client_socket_udp_ip6(int src, int dst, int state);
+void client_socket_udp_ip6(int src, int dst, int state,int ctime);
+
+
+
+/*! \fn int packet_gen(int src, int dst, int state, int ctime)
+* \brief return char *  pointer over the payload, else NULL
+* \param[in] source, 
+* \param[out] packet_t: the generated packet: otg_header + header + payload
+* \note 
+* @ingroup  _otg
+*/
+char* packet_gen_socket(int src, int dst, int state, int ctime);
+
+
+
+
+control_hdr_t *otg_info_hdr_gen(int src, int dst, int trans_proto, int ip_v);
+
+
+
+
+void init_control_header();
 
 
 //-----------------------end func proto-------------------
+
+
+
+#endif

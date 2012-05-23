@@ -78,7 +78,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
   else
     rx_power_correction = 1;
   
-  for (eNB_offset = 0;eNB_offset<1+phy_vars_ue->PHY_measurements.n_adj_cells;eNB_offset++) {
+  for (eNB_offset = 0;eNB_offset<1+phy_vars_ue->PHY_measurements.n_adj_cells;eNB_offset++) {//b 
 
     if (eNB_offset==0)
       phy_vars_ue->PHY_measurements.rssi = 0;

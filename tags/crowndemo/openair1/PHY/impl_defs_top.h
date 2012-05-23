@@ -111,11 +111,10 @@
 #define HALF_NUMBER_OF_USEFUL_CARRIERS_BYTES (HALF_NUMBER_OF_USEFUL_CARRIERS>>2)
 #define FIRST_CARRIER_OFFSET (HALF_NUMBER_OF_USEFUL_CARRIERS+NUMBER_OF_ZERO_CARRIERS)
 #ifdef OPENAIR_LTE
-#define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT (NUMBER_OF_SYMBOLS_PER_FRAME/20)
+#define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT (NUMBER_OF_SYMBOLS_PER_FRAME/LTE_SLOTS_PER_FRAME)
 #else
 #define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT 16
 #endif
-#define SLOTS_PER_FRAME  (NUMBER_OF_SYMBOLS_PER_FRAME/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT)
 
 #ifdef EMOS
 #define EMOS_SCH_INDEX 1
@@ -309,10 +308,10 @@ typedef struct {
 } TX_RX_VARS;
 
 /// Measurement Variables
-#define NUMBER_OF_eNB_MAX 7
-#define NUMBER_OF_CONNECTED_eNB_MAX 3
+#define NUMBER_OF_eNB_MAX 3
 #define NUMBER_OF_UE_MAX 8
 #define NUMBER_OF_SUBBANDS 7
+#define NUMBER_OF_CONNECTED_eNB_MAX 3
 
 typedef struct
 {
@@ -322,10 +321,8 @@ typedef struct
 
   // RRC measurements
   int rssi;
-  int n_adj_cells;
-  u16 adj_cell_id[6];
-  int rsrq[7];
-  int rsrp[7];
+  int rsrq[3];
+  int rsrp[3];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];                        
@@ -388,7 +385,11 @@ typedef struct
   /// Wideband Rank indication
   unsigned char  rank[NUMBER_OF_CONNECTED_eNB_MAX];                                             
   /// DLSCH error counter
-  // short          dlsch_errors;                                                        
+  // short          dlsch_errors;
+  unsigned int   n_adj_cells;    //b
+
+  unsigned int   adj_cell_id[3];  //b
+                                                    
 } PHY_MEASUREMENTS;
 
 typedef struct

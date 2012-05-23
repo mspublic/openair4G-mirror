@@ -92,7 +92,7 @@ void ue_init_mac(){
     UE_mac_inst[i].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[i].scheduling_info.retxBSR_Timer);
 
     for (j=0; j < MAX_NUM_LCID; j++){
-      LOG_I(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
+      LOG_D(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
       UE_mac_inst[i].scheduling_info.Bj[j]=-1;
       UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
     }
@@ -114,24 +114,23 @@ unsigned char *parse_header(unsigned char *mac_header,
   while (not_done==1) {
 
     if (((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E == 0) {
-      printf("E=0\n");
+      //      printf("E=0\n");
       not_done = 0;
     }
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
     if (lcid < UE_CONT_RES) {
-      printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
+      //printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
       if (not_done==0) {
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
       }
       else {
-	if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
-	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
-	  mac_header_ptr += 2;
-	}
-	else {
+	if (((SCH_SUBHEADER_LONG *)mac_header_ptr)->F == 1) {
 	  length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
 	  mac_header_ptr += 3;
+	}  else {	//if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
+	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
+	  mac_header_ptr += 2;
 	}
       }
 #ifdef DEBUG_HEADER_PARSING
@@ -324,7 +323,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 		       NULL);
     }
     else if (rx_lcids[i] == DTCH) {
-      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d, RRC message (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
+      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
       mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
 		       0,
@@ -341,8 +340,8 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
   int i;
-
-  LOG_T(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
+  
+  //LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
   mac_rrc_data_ind(Mod_id,
 		   frame,
@@ -777,9 +776,11 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   
   //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
-  pdcp_run(frame, 0);
+  if (subframe%5 == 0)
+    pdcp_run(frame, 0, Mod_id, 0);  
+
 #ifdef CELLULAR
-  Rrc_xface->rrc_rx_tx(Mod_id, frame, 0, eNB_index);
+  rrc_rx_tx(Mod_id, frame, 0, eNB_index);
 #else
   switch (rrc_rx_tx(Mod_id,
 		    frame,

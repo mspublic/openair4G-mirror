@@ -1,6 +1,8 @@
 #ifndef OPENAIR_PCI_H
 #define OPENAIR_PCI_H
 
+#include "PHY/types.h"
+
 /* This file is intended for prototypes & declarations to be SHARED with underlying hardware. */
 
 #define PRIMARY_CH 0
@@ -20,7 +22,7 @@ typedef struct  {
   int samples_per_frame;      /// Length of frame in samples
   int rx_prefix_mode;         /// Receiver processing mode (0 no prefix removal, 1 prefix removal)
   int tx_rx_switch_point;     /// TX/RX switch position (Read by LEON during init)
-  int timing_advance;         /// TX/RX switch position (Read by LEON during init)
+  int timing_advance;         /// timing advance for UE
   int dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
   int tdd;                    /// 1 for TDD mode, 0 for FDD mode
   int node_id;                /// Node type (Read by LEON during init)
@@ -65,7 +67,7 @@ typedef struct  {
   int adc_head[2];            /// PCI addresses of ADC buffers in PC memory (Read by LEON during init)
   int dac_head[2];            /// PCI addresses of DAC buffers in PC memory (Read by LEON during init)
   int samples_per_frame;      /// Length of frame in samples
-  int timing_advance;         /// TX/RX switch position (Read by LEON during init)
+  int timing_advance;         /// timing advance for UE
   int dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
   int tdd;                    /// 1 for TDD mode, 0 for FDD mode
   int tdd_config;
