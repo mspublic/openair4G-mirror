@@ -4,7 +4,6 @@ LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
 SRC = synctest.c condtest.c
 
 OBJ = synctest.o $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o
-#$(OPENAIR1_DIR)/PHY/INIT/lte_parms.o 
 
 TOP_DIR = $(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -22,6 +21,7 @@ OBJ += $(LOG_OBJS)
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
 OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) 
+CFLAGS += -DOPENAIR2 -DNO_RRM -DMAC_CONTEXT=1
 endif
 
 CFLAGS += $(L2_incl) $(UTIL_incl)
@@ -39,12 +39,12 @@ CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3
 CFLAGS += -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
 CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 
 
-ifeq ($(OPENAIR2),1)
-CFLAGS += -DOPENAIR2 -DNO_RRM -DMAC_CONTEXT=1
-endif
-
 #only for CBMIMO1
 CFLAGS += -DBIT8_TX -DFW2011 -DCBMIMO1
+
+ifdef HARD_RT
+CFLAGS += -DHARD_RT
+endif
 
 all: condtest synctest
 
@@ -61,6 +61,9 @@ synctest: $(OBJ) $(ASN1_MSG_OBJS1)
 run: condtest
 	rtai-load condtest --verbose
 
+run_eNB_test: synctest 
+	rtai-load eNB_test --verbose
+
 run_eNB: synctest
 	rtai-load eNB --verbose
 
@@ -76,6 +79,7 @@ cleanall: clean
 
 show:
 	@echo $(CFLAGS)
+	@echo $(OBJ)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)
