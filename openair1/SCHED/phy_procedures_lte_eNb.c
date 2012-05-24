@@ -46,7 +46,7 @@
 #include "SCHED/extern.h"
 
 #define DEBUG_PHY_PROC
-#define DEBUG_DLSCH
+//#define DEBUG_DLSCH
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -509,7 +509,6 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
     break;
 
   case 8:
-    /*
     DCI_pdu->Num_ue_spec_dci = 2;
 
     //user 1
@@ -551,7 +550,6 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
     UL_alloc_pdu.dai     = 0;
     UL_alloc_pdu.cqi_req = 1;
     memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-    */
     break;
 
   default:
@@ -987,7 +985,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
  
     if (abstraction_flag == 0) {
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d] Frame %d, subframe %d: Calling generate_dci_top\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot>>1);
+      //LOG_D(PHY,"[eNB %d] Frame %d, subframe %d: Calling generate_dci_top\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot>>1);
 #endif
       for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	num_pdcch_symbols = generate_dci_top(DCI_pdu->Num_ue_spec_dci,
@@ -1011,7 +1009,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 
 #ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[eNB %d] Frame %d, slot %d: num_pdcch_symbols=%d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot,num_pdcch_symbols);
+    //LOG_D(PHY,"[eNB %d] Frame %d, slot %d: num_pdcch_symbols=%d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot,num_pdcch_symbols);
 #endif
 
 
@@ -1128,7 +1126,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	// clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
 	phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->subframe_tx[next_slot>>1]=0;
 #ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[eNB %d] DCI: Clearing subframe_tx for subframe %d, UE %d\n",phy_vars_eNB->Mod_id,next_slot>>1,UE_id);
+	//LOG_D(PHY,"[eNB %d] DCI: Clearing subframe_tx for subframe %d, UE %d\n",phy_vars_eNB->Mod_id,next_slot>>1,UE_id);
 #endif
       }
     } 
@@ -1623,12 +1621,11 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   u8 UE_id;
 
   if (abstraction_flag == 0) {
-    /*
-    msg("[PHY][eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
-	phy_vars_eNB->frame,subframe,
-	dB_fixed(signal_energy(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
-			     512)) - phy_vars_eNB->rx_total_gain_eNB_dB);
-    */
+    LOG_I(PHY,"[eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
+	  phy_vars_eNB->frame,subframe,
+	  dB_fixed(signal_energy(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
+				 512)) - phy_vars_eNB->rx_total_gain_eNB_dB);
+    
     rx_prach(phy_vars_eNB,
 	     subframe,
 	     preamble_energy_list,
