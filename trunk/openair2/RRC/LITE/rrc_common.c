@@ -290,11 +290,18 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       }
       UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
     }
-    if (UE_rrc_inst[Mod_id].sib2[index])
+    if (UE_rrc_inst[Mod_id].sib2[index]) {
       if (UE_rrc_inst[Mod_id].Info[index].N310_cnt==N310[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n310]) {
 	UE_rrc_inst[Mod_id].Info[index].T310_active=1;
       }
-    
+    }
+    else { // in case we have not received SIB2 yet
+      if (UE_rrc_inst[Mod_id].Info[index].N310_cnt==100) {
+	UE_rrc_inst[Mod_id].Info[index].N310_cnt = 0;
+	return RRC_PHY_RESYNCH;
+      }
+    }
+
     if (UE_rrc_inst[Mod_id].Info[index].T310_active==1) {
       if (UE_rrc_inst[Mod_id].Info[index].N311_cnt ==
 	  N311[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n311]) {

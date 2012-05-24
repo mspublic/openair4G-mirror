@@ -38,6 +38,7 @@
 #include "PHY_INTERFACE/vars.h"
 #endif
 
+#include "UTIL/LOG/log_extern.h"
 
 #ifdef XFORMS
 #include <forms.h>
@@ -432,7 +433,22 @@ static void *eNB_thread(void *arg)
                                     7,
                                     &(PHY_vars_eNB_g[0]->lte_frame_parms));
                 }
-            }
+	      // we need to copy the first part of the first slot to the end of the frame due to the timing advance
+	      if (next_slot==0) {
+		slot_offset = PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
+#ifdef BIT8_TX
+		memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+		       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
+		       640*sizeof(unsigned short));
+#else
+		memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+		       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
+		       640*sizeof(unsigned int));
+#endif
+	      }
+	    }
+
+#endif //IFFT_FPGA
           out = rt_get_time_ns();
           diff = out-in;
 
@@ -442,7 +458,6 @@ static void *eNB_thread(void *arg)
                       in,out,diff);
 
         }
-#endif //IFFT_FPGA
 
       /*
       if ((slot%2000)<10)
@@ -630,13 +645,17 @@ int main(int argc, char **argv)
           tcxo=atoi(optarg);
           break;
         case 'U':
-          printf("configuring for UE\n");
           UE_flag = 1;
           break;
         default:
           break;
         }
     }
+
+  if (UE_flag==1)
+    printf("configuring for UE (tcxo=%d)\n",tcxo);
+  else 
+    printf("configuring for eNB (fs4_test=%d)\n",fs4_test);
 
   // initialize the log (see log.h for details)
   logInit();
@@ -692,6 +711,7 @@ int main(int argc, char **argv)
 
   if (UE_flag==1)
     {
+      g_log->log_component[PHY].level = LOG_DEBUG;
       frame_parms->node_id = NODE;
       PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
       PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);

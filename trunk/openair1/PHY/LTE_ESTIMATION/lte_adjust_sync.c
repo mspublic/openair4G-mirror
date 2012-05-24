@@ -11,6 +11,8 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 #endif 
 
+#define DEBUG_PHY
+
 // Adjust location synchronization point to account for drift
 // The adjustment is performed once per frame based on the
 // last channel estimate of the receiver
@@ -30,7 +32,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   ncoef = 32767 - coef;
 
 #ifdef DEBUG_PHY
-  if (phy_vars_ue->frame%10 == 0)
+  if (phy_vars_ue->frame%100 == 0)
     msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",phy_vars_ue->frame,phy_vars_ue->rx_offset);
 #endif //DEBUG_PHY
 
@@ -39,8 +41,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   for (i = 0; i < frame_parms->nb_prefix_samples; i++) {
     temp = 0;
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      Re = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa][eNB_id])[(i<<2)];
-      Im = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa][eNB_id])[1+(i<<2)];
+      Re = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
+      Im = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
     if (temp > max_val) {
@@ -56,7 +58,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
     max_pos_fil = ((max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
 
 
-  diff = max_pos_fil - frame_parms->nb_prefix_samples/8;
+  diff = max_pos_fil - 16; //frame_parms->nb_prefix_samples/8;
 
   if ( diff > SYNCH_HYST )
     phy_vars_ue->rx_offset++;
@@ -72,8 +74,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 #ifdef DEBUG_PHY
-  if (mac_xface->frame%100 == 0)
-    msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",mac_xface->frame,phy_vars_ue->rx_offset,max_pos,max_pos_fil);
+  if (phy_vars_ue->frame%100 == 0)
+    msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",phy_vars_ue->frame,phy_vars_ue->rx_offset,max_pos,max_pos_fil);
 #endif //DEBUG_PHY
 
 #ifdef CBMIMO1
@@ -83,6 +85,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 int max_val;
+
+#undef DEBUG_PHY
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 			   LTE_eNB_SRS *lte_eNb_srs,
