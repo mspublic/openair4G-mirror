@@ -1245,7 +1245,11 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
       phy_vars_ue->UE_mode[eNB_id] = PRACH;
     }
 #ifdef CBMIMO1
+#ifdef USER_MODE
+    //TODO: send IOCTL
+#else
     openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+#endif //USER_MODE
 #endif //CBMIMO1
     phy_vars_ue->frame = -1;
     openair_daq_vars.synch_wait_cnt=0;
