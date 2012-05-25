@@ -40,9 +40,6 @@ int dummy_cnt = 0;
 extern int bigphys_ptr;
 #endif
 
-SEM* oai_semaphore;
-CND* oai_condition;
-
 //-----------------------------------------------------------------------------
 int openair_device_open (struct inode *inode,struct file *filp) {
   //-----------------------------------------------------------------------------
@@ -936,6 +933,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_GET_BUFFER:
 
     printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
+
+    /*
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
@@ -1052,15 +1051,32 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_START_LXRT:
 
     // get condition and semaphore variables by name
-    oai_semaphore = rt_get_adr("OAI_SEM");
-    oai_condition = rt_get_adr("OAI_CON");
+
+    //rt_sem_init(&oai_semaphore, 1);
+    //rt_register(nam2num("MUTEX"),&oai_semaphore,IS_SEM, 0);
+    oai_semaphore = rt_get_adr(nam2num("MUTEX"));
+    if (oai_semaphore==0)
+      printk("Error init mutex\n");
+
+    lxrt_task = rt_get_adr(nam2num("TASK0"));
+    if (lxrt_task==0)
+      printk("Error init lxrt_task\n");
+
+    inst_cnt_ptr = malloc16(sizeof(s32));
+    *inst_cnt_ptr = -1;
+
+    intr_cnt2=0;
+
+    printk("[openair][IOCTL] openair_START_LXRT, oai_semaphore=%p, lxrt_task=%p, inst_cnt_ptr = %p\n",oai_semaphore,lxrt_task,inst_cnt_ptr);
 
     // init instance count and copy its pointer to userspace
-    openair_daq_vars.instance_cnt = -1;
-    copy_to_user((char *)arg,&openair_daq_vars.instance_cnt,sizeof(s32*));
+    copy_to_user((char *)arg,&inst_cnt_ptr,sizeof(s32*));
 
-    // enable the interrupts
-
+    /*
+    // enable the DMA transfers
+    for (i=0;i<number_of_cards;i++)
+      openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    */
 
     break;
 

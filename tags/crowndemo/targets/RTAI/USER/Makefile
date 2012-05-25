@@ -76,6 +76,7 @@ cleanall: clean
 
 show:
 	@echo $(CFLAGS)
+	@echo $(OBJ)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)
