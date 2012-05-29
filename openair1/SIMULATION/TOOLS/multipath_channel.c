@@ -5,7 +5,7 @@
 #include "defs.h"
 #include "SIMULATION/RF/defs.h"
 
-//#define DEBUG_CH
+#define DEBUG_CH
 /*
 int init_multipath_channel(channel_desc_t *channel) {
   int i;
@@ -188,7 +188,7 @@ void multipath_tv_channel(channel_desc_t *desc,
 			  u16 length,
 			  u8 keep_channel) {
   
-  double complex **tx,**rx,***H_t,*rx_temp; //**H,*H_tmp;
+  double complex **tx,**rx,***H_t,*rx_temp, *tv_H_t; //**H,*H_tmp;
   double path_loss = pow(10,desc->path_loss_dB/20);
   int i,j,k;
   tx = (double complex **)malloc(desc->nb_tx*sizeof(double complex));
@@ -197,6 +197,7 @@ void multipath_tv_channel(channel_desc_t *desc,
   //H_tmp = (double complex*) calloc(length,sizeof(double complex));
   //H = (double complex **) malloc(length*sizeof(double complex *));
   H_t= (double complex ***) malloc(desc->nb_tx*desc->nb_rx*sizeof(double complex **));
+  tv_H_t = (double complex *) malloc(length*sizeof(double complex));
   rx_temp= (double complex *) calloc(length,sizeof(double complex));
   
   for(i=0;i<desc->nb_tx;i++){
@@ -247,6 +248,14 @@ void multipath_tv_channel(channel_desc_t *desc,
       rx_sig_im[i][j] = cimag(rx[i][j])*path_loss;
     }
   }
+
+
+  for(k=0;k<length;k++)
+    tv_H_t[k] = H_t[0][k][0];
+  //  for(k=0;k<length;k++){
+  //  printf("channel %f  %f\n",creal(H_t[0][k][0]),cimag(H_t[0][k][0])); 
+  //}
+  write_output("tv_real_ch.m","ch",tv_H_t,length,1,8); 
   
   /*
     for(i=0;i<length;i++){
