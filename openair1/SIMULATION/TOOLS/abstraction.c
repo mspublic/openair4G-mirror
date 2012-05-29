@@ -24,7 +24,10 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 	for (aatx=0;aatx<desc->nb_tx;aatx++) {
 	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f]=0.0;
 	  for (l=0;l<(int)desc->nb_taps;l++) {
-	    delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->BW;
+	    if (desc->nb_taps==1)
+	      delay = desc->delays[l];
+	    else
+	      delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->BW;
 	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2]+=(creal(desc->a[l][aarx+(aatx*desc->nb_rx)])*cos(2*M_PI*freq*delay)+ cimag(desc->a[l][aarx+(aatx*desc->nb_rx)])*sin(2*M_PI*freq*delay))+I*(-creal(desc->a[l][aarx+(aatx*desc->nb_rx)])*sin(2*M_PI*freq*delay)+cimag(desc->a[l][aarx+(aatx*desc->nb_rx)])*cos(2*M_PI*freq*delay));
 	  }
 	  	  	  	// printf("chF(%d) => (%f,%f)\n",n_samples/2+f,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);

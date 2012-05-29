@@ -437,6 +437,84 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   0);
       break;
 
+  case Rayleigh1_50:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 50;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      break;
+
+  case Rayleigh1_100:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 100;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      break;
+
+  case Rayleigh1_200:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 200;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      break;
+
   case Rayleigh1_corr:
       nb_taps = 1;
       Td = 0;
@@ -650,6 +728,7 @@ int random_channel(channel_desc_t *desc) {
   int i,k,l,aarx,aatx;
   double complex anew[NB_ANTENNAS_TX*NB_ANTENNAS_RX],acorr[NB_ANTENNAS_TX*NB_ANTENNAS_RX];
   double complex phase, alpha, beta;
+  double tmp1,tmp2;
   
   if ((desc->nb_tx>NB_ANTENNAS_TX) || (desc->nb_rx > NB_ANTENNAS_RX)) {
     msg("random_channel.c: Error: temporary buffer for channel not big enough\n");
@@ -662,7 +741,9 @@ int random_channel(channel_desc_t *desc) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
 
 	
-	anew[aarx+(aatx*desc->nb_rx)] = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0)+I*sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
+	tmp1 = (sqrt(desc->ricean_factor*desc->amps[i]/2)*gaussdouble(0.0,1.0));
+	tmp2 = (sqrt(desc->ricean_factor*desc->amps[i]/2)*gaussdouble(0.0,1.0));
+	anew[aarx+(aatx*desc->nb_rx)] = tmp1+I*tmp2;
 
 	if ((i==0) && (desc->ricean_factor != 1.0)) {
 	  if (desc->random_aoa==1) {
@@ -676,7 +757,7 @@ int random_channel(channel_desc_t *desc) {
 	  /*phase.x = cos(M_PI*((aarx-aatx)*sin(desc->aoa)));
 	  phase.y = sin(M_PI*((aarx-aatx)*sin(desc->aoa)));*/
 	  
- 	  anew[aarx+(aatx*desc->nb_rx)] = anew[aarx+(aatx*desc->nb_rx)]+ creal(phase)*sqrt(1.0-desc->ricean_factor) + I* cimag(phase)*sqrt(1.0-desc->ricean_factor);
+ 	  anew[aarx+(aatx*desc->nb_rx)] = anew[aarx+(aatx*desc->nb_rx)] + sqrt(1.0-desc->ricean_factor)*phase;
 	  /*anew[aarx+(aatx*desc->nb_rx)].x += phase.x * sqrt(1-desc->ricean_factor);
 	  anew[aarx+(aatx*desc->nb_rx)].y += phase.y * sqrt(1-desc->ricean_factor);*/
 	}

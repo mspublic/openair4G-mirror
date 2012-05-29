@@ -286,8 +286,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  randominit(0);
-  set_taus_seed(0);
+  srand(1);
+  randominit(1);
+  set_taus_seed(1);
   
   lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
 
@@ -630,6 +631,15 @@ int main(int argc, char **argv) {
 	  break;
 	case 'M':
 	  channel_model=Rice1;
+	  break;
+	case 'N':
+	  channel_model=Rayleigh1_50;
+	  break;
+	case 'O':
+	  channel_model=Rayleigh1_100;
+	  break;
+	case 'P':
+	  channel_model=Rayleigh1_200;
 	  break;
 	default:
 	  msg("Unsupported channel model!\n");
@@ -1357,7 +1367,7 @@ int main(int argc, char **argv) {
 	  }
 
 	  //Multipath channel
-	  //#define TV_CHANNEL
+#define TV_CHANNEL
 	  if (awgn_flag == 0) {	
 #ifdef TV_CHANNEL 
 	    multipath_tv_channel(eNB2UE,s_re,s_im,r_re,r_im,

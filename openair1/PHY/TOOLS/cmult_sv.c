@@ -1,5 +1,10 @@
 #include "defs.h"
 
+#ifndef __SSE3__
+inline __m128i _mm_abs_epi16(__m128i xmmx) {__m128i zero; _mm_xor_si128(zero,zero); return(_mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx))));}
+inline __m128i _mm_sign_epi16(__m128i xmmx, __m128i xmmy) {__m128i zero; _mm_xor_si128(zero,zero); return(_mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy))));}
+#endif
+
 #ifndef EXPRESSMIMO_TARGET
 static  __m128i alpha_128 __attribute__ ((aligned(16))); 
 static  __m128i shift     __attribute__ ((aligned(16)));

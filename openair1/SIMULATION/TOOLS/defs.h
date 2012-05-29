@@ -142,7 +142,10 @@ typedef enum {
   Rice1,
   Rice1_corr,
   Rice1_anticorr,
-  AWGN
+  AWGN,
+  Rayleigh1_50,
+  Rayleigh1_100,
+  Rayleigh1_200
 } SCM_t;
 
 /** 

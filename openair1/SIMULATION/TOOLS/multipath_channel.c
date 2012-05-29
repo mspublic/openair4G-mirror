@@ -173,7 +173,7 @@ void multipath_channel(channel_desc_t *desc,
       rx_sig_im[ii][i-dd] = cimag(rx_tmp)*path_loss;
       /*
       if ((ii==0)&&((i%32)==0)) {
-	printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],rx_tmp.x,rx_tmp.y,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
+	printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],creal(rx_tmp),cimag(rx_tmp),rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
       }
       */
     } // ii
@@ -281,7 +281,7 @@ void multipath_tv_channel(channel_desc_t *desc,
   free(rx_temp);
 }
 
-
+//TODO: make phi_rad a parameter of this function
 void tv_channel(channel_desc_t *desc,double complex ***H,u16 length){
   
   int i,j,p,l,k;
@@ -333,6 +333,7 @@ for(j=0;j<desc->nb_paths;j++)
     for(j=0;j<desc->nb_tx;j++){
       for(k=0;k<length;k++){
 	for(l=0;l<desc->nb_taps;l++){
+	  H[i+(j*desc->nb_rx)][k][l] = 0;
 	  for(p=0;p<desc->nb_paths;p++){
 	    H[i+(j*desc->nb_rx)][k][l] += sqrt(desc->amps[l]/2)*alpha[p]*cexp(I*(2*pi*w_Hz[p]*k*(1/(desc->BW*1e6))+phi_rad[p]));
 	  }
