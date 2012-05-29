@@ -46,6 +46,7 @@ FD_lte_scope *form_dl=NULL;
 #endif //XFORMS
 
 #define FRAME_PERIOD 100000000ULL
+#define DAQ_PERIOD 66666ULL
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -54,6 +55,8 @@ static SEM *mutex;
 
 static int thread0;
 static int thread1;
+static int sync_thread;
+
 pthread_t  thread2;
 
 static int instance_cnt=-1; //0 means worker is busy, -1 means its free
@@ -68,6 +71,8 @@ int openair_fd = 0;
 int oai_exit = 0;
 
 //PCI_interface_t *pci_interface[3];
+
+unsigned int *DAQ_MBOX;
 
 void signal_handler(int sig)
 {
@@ -304,13 +309,38 @@ void *scope_thread(void *arg) {
 }
 #endif
 
+static void *sync_hw(void *arg)
+{
+  RT_TASK *task;
+  task = rt_task_init_schmod(nam2num("TASK2"), 0, 0, 0, SCHED_FIFO, 0xF);
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  rt_printk("fun0: task %p\n",task);
+
+#ifdef HARD_RT
+  rt_make_hard_real_time();
+#endif
+
+  while (!oai_exit) {
+
+    rt_printk("exmimo_pci_interface->mbox = %d\n",((unsigned int *)DAQ_MBOX)[0]);
+
+    rt_sleep(FRAME_PERIOD*10);    
+  }
+  
+}
+
+
 /* This is the main eNB thread. It gets woken up by the kernel driver using the RTAI message mechanism (rt_send and rt_receive). */
 static void *eNB_thread(void *arg)
 {
   RT_TASK *task;
-  int slot=0,last_slot, next_slot,frame=0;
+  int slot=0,hw_slot,last_slot, next_slot,frame=0;
   unsigned int msg;
   unsigned int aa,slot_offset, slot_offset_F;
+  int diff;
+  int delay_cnt;
+  RTIME time_in;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -323,6 +353,9 @@ static void *eNB_thread(void *arg)
 
   while (!oai_exit)
     {
+      //      rt_printk("eNB: slot %d\n",slot);
+
+#ifdef CBMIMO1
       rt_sem_wait(mutex);
       /*
       if ((slot%2000)<10)
@@ -339,74 +372,113 @@ static void *eNB_thread(void *arg)
 	  */
         }
       rt_sem_signal(mutex);
-
       slot = msg % LTE_SLOTS_PER_FRAME;
+
+#else
+      hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+      delay_cnt = 0;
+      while ((hw_slot <= slot) && (!oai_exit)) {
+	diff = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+	if (diff<=1)
+	  diff=2;
+	time_in = rt_get_time_ns();
+	//	rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+	rt_sleep(diff*DAQ_PERIOD);
+	//	rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
+	hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+	delay_cnt++;
+	if (delay_cnt == 10) {
+	  oai_exit = 1;
+	  rt_printk("eNB Frame %d: HW stopped ... \n",frame);
+	}
+	if ((hw_slot < 5) && (slot==19))
+	  break;
+      }
+
+#endif
       last_slot = (slot - 1)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=20;
       next_slot = (slot + 1)%LTE_SLOTS_PER_FRAME;
-
+      
       PHY_vars_eNB_g[0]->frame = frame;
-      phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
+      if (frame>5) {
+	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
 #ifndef IFFT_FPGA
-      slot_offset_F = (next_slot)*
-                      (PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size)*
-                      ((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
-      slot_offset = (next_slot)*
-                    (PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti>>1);
-
-      for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
-        {
-          if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1)
-            {
-              PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+	slot_offset_F = (next_slot)*
+	  (PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size)*
+	  ((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
+	slot_offset = (next_slot)*
+	  (PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti>>1);
+	
+	for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
+	  {
+	    if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1)
+	      {
+		PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
 #ifdef BIT8_TX
-                           &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+			     &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
 #else
-                           &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+			     &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
 #endif
-                           PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
-                           6,
-                           PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
-                           PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
-                           PHY_vars_eNB_g[0]->lte_frame_parms.rev,
-                           CYCLIC_PREFIX);
-            }
-          else
-            {
-              normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+			     PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
+			     6,
+			     PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
+			     PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
+			     PHY_vars_eNB_g[0]->lte_frame_parms.rev,
+			     CYCLIC_PREFIX);
+	      }
+	    else
+	      {
+		normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
 #ifdef BIT8_TX
-                                &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+				  &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
 #else
-                                &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+				  &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
 #endif
-                                7,
-                                &(PHY_vars_eNB_g[0]->lte_frame_parms));
-            }
-        }
+				  7,
+				  &(PHY_vars_eNB_g[0]->lte_frame_parms));
+	      }
+	  }
 #endif //IFFT_FPGA
+      }	
+      /*
+	    if ((slot%2000)<10)
+	    rt_printk("fun0: doing very hard work\n");
+      */
+#ifndef CBMIMO1
+      slot++;
+      if (slot==20) {
+	slot=0;
+      }
+      if ((frame % 100) == 0)
+	rt_printk("eNB Frame %d\n",frame);
 
       /*
-      if ((slot%2000)<10)
-        rt_printk("fun0: doing very hard work\n");
-      */
-
+      if (frame==4) {
+	rt_printk("Debug exit after 4 frames\n");
+	oai_exit=1;
+      }	
+      */  
+#endif
       //slot++;
       if ((slot%20)==0)
-        frame++;
-
+	frame++;
+#ifdef CBMIMO1
       rt_sem_wait(mutex);
       (*instance_cnt_ptr_user)--;
       //rt_printk("fun0: instance_cnt %d!\n",*instance_cnt_ptr_user);
       rt_sem_signal(mutex);
-
+#endif
+      
     }
+  
   rt_printk("fun0: finished, ran %d times.\n",slot);
-
+  
 #ifdef HARD_RT
   rt_make_soft_real_time();
 #endif
-
+  
   // clean task
   rt_task_delete(task);
   rt_printk("Task deleted. returning\n");
@@ -418,12 +490,15 @@ static void *UE_thread(void *arg)
 {
   RT_TASK *task;
   RTIME in, out, diff;
-  int slot=0,last_slot, next_slot;
+  int slot=0,hw_slot,last_slot, next_slot;
   unsigned int msg;
   unsigned int aa,slot_offset, slot_offset_F;
   static int is_synchronized = 0;
   static int received_slots = 0;
   static int slot0 = 0;
+  int delay_cnt;
+  RTIME time_in;
+  int hw_slot_offset = 0;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -436,6 +511,7 @@ static void *UE_thread(void *arg)
 
   while (!oai_exit)
     {
+#ifdef CBMIMO1
       rt_sem_wait(mutex);
       /*
       if ((slot%2000)<10)
@@ -454,11 +530,34 @@ static void *UE_thread(void *arg)
 
       rt_sem_signal(mutex);
 
+
       slot = (msg - slot0) % LTE_SLOTS_PER_FRAME;
-      last_slot = (slot - 1)%LTE_SLOTS_PER_FRAME;
+#else
+      hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+      delay_cnt = 0;
+      while ((hw_slot <= slot) && (!oai_exit)) {
+	diff = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+	if (diff<=1)
+	  diff=2;
+	time_in = rt_get_time_ns();
+	//	rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+	rt_sleep(diff*DAQ_PERIOD);
+	//	rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
+	hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+	delay_cnt++;
+	if (delay_cnt == 10) {
+	  oai_exit = 1;
+	  rt_printk("eNB Frame %d: HW stopped ... \n",frame);
+	}
+	if ((hw_slot < 5) && (slot==19))
+	  break;
+      }
+      
+#endif
+      last_slot = (slot + hw_slot_offset - 1)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=LTE_SLOTS_PER_FRAME;
-      next_slot = (slot + 1)%LTE_SLOTS_PER_FRAME;
+      next_slot = (slot + hw_slot_offset + 1)%LTE_SLOTS_PER_FRAME;
 
 
       if (is_synchronized)
@@ -477,7 +576,7 @@ static void *UE_thread(void *arg)
             ((PHY_vars_UE_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
           slot_offset = (next_slot)*
             (PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti>>1);
-
+	  /*
           for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_tx; aa++) {
             if (PHY_vars_UE_g[0]->lte_frame_parms.Ncp == 1) {
               PHY_ofdm_mod(&PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF[aa][slot_offset_F],
@@ -504,7 +603,9 @@ static void *UE_thread(void *arg)
           		      &(PHY_vars_UE_g[0]->lte_frame_parms));
             }
           }
+	  */
           #endif //IFFT_FPGA
+	  
 
 	  out = rt_get_time_ns();
 	  diff = out-in;
@@ -516,6 +617,7 @@ static void *UE_thread(void *arg)
         }
       else   // we are not yet synchronized
         {
+	  hw_slot_offset = 0;
 	  if (received_slots==0) {
 	    ioctl(openair_fd,openair_GET_BUFFER,NULL);
 	  }
@@ -525,8 +627,10 @@ static void *UE_thread(void *arg)
               received_slots = -1; // will be increased below
               if (initial_sync(PHY_vars_UE_g[0])==0)
                 {
+#ifdef CBMIMO1
                   ioctl(openair_fd,openair_SET_RX_OFFSET,&PHY_vars_UE_g[0]->rx_offset); //synchronize hardware
-		  // here we should actually do another dump config with the parameters obtained from the sync. 
+		  // here we should actually do another dump config with the parameters obtained from the sync.
+ 
 		  ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
 		  //for better visualization afterwards
 		  for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
@@ -534,6 +638,9 @@ static void *UE_thread(void *arg)
 			   PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
                   is_synchronized = 1;
                   slot0 = msg;
+#else
+		  hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
+#endif
                 }
             }
           received_slots++;
@@ -543,12 +650,21 @@ static void *UE_thread(void *arg)
       if ((slot%2000)<10)
         rt_printk("fun0: doing very hard work\n");
       */
-
+#ifdef CBMIMO1
       rt_sem_wait(mutex);
       (*instance_cnt_ptr_user)--;
       //rt_printk("fun0: instance_cnt %d!\n",*instance_cnt_ptr_user);
       rt_sem_signal(mutex);
+#else
+      slot++;
+      if (slot==20) {
+	slot=0;
+      }
+      if ((frame % 100) == 0)
+	rt_printk("eNB Frame %d\n",frame);
 
+
+#endif
     }
   rt_printk("fun0: finished, ran %d times.\n",slot);
 
@@ -585,7 +701,7 @@ static void *UE_thread(void *arg)
 int main(int argc, char **argv)
 {
   RT_TASK *task;
-  int i,j;
+  int i,j,aa;
 
   LTE_DL_FRAME_PARMS *frame_parms;
   u32 carrier_freq[4]={1907600000,1907600000,1907600000,1907600000};
@@ -677,6 +793,12 @@ int main(int argc, char **argv)
       PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
       NB_eNB_INST=1;
       NB_INST=1;
+      // Set LSBs for antenna switch (ExpressMIMO)
+      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++)
+	for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+	  PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
+
+      
     }
 
   mac_xface = malloc(sizeof(MAC_xface));
@@ -750,14 +872,7 @@ int main(int argc, char **argv)
   // initialize the instance cnt before starting the thread
   instance_cnt_ptr_user = &instance_cnt;
 
-  // start the main thread
-  if (UE_flag == 1)
-    thread1 = rt_thread_create(UE_thread, NULL, 10000000);
-  else
-    thread0 = rt_thread_create(eNB_thread, NULL, 10000000);
 
-  rt_sleep(FRAME_PERIOD);
-  printf("thread created\n");
 
   // signal the driver to set up for user-space operation
   // this will initialize the semaphore and the task pointers in the kernel
@@ -769,16 +884,37 @@ int main(int argc, char **argv)
 
   rt_sleep(FRAME_PERIOD);
 
-  ioctl(openair_fd,openair_SET_TCXO_DAC,(void *)&tcxo);
-
   ioctl(openair_fd,openair_GET_PCI_INTERFACE,&pci_interface_ptr_kern);
+
+#ifdef CBMIMO1
+  ioctl(openair_fd,openair_SET_TCXO_DAC,(void *)&tcxo);
+#endif
+
+#ifdef CBMIMO1
   pci_interface[0] = (PCI_interface_t*) (pci_interface_ptr_kern-bigphys_top+mem_base);
   printf("pci_interface_ptr_kern = %p, pci_interface = %p, tcxo_dac =%d\n", (void*) pci_interface_ptr_kern, pci_interface[0],pci_interface[0]->tcxo_dac);
-
+#else
+  exmimo_pci_interface = (exmimo_pci_interface_t*) (pci_interface_ptr_kern-bigphys_top+mem_base);
+  printf("pci_interface_ptr_kern = %p, exmimo_pci_interface = %p\n", (void*) pci_interface_ptr_kern, exmimo_pci_interface);
+  DAQ_MBOX = (unsigned int *)(0xc0000000+exmimo_pci_interface->rf.mbox-bigphys_top+mem_base);
+#endif
   // this starts the DMA transfers
   if (UE_flag!=1)
     ioctl(openair_fd,openair_START_TX_SIG,NULL);
 
+  // start the main thread
+  if (UE_flag == 1)
+    thread1 = rt_thread_create(UE_thread, NULL, 10000000);
+  else
+    thread0 = rt_thread_create(eNB_thread, NULL, 10000000);
+
+
+  //  rt_sleep(FRAME_PERIOD);
+  printf("thread created\n");
+
+#ifndef CBMIMO1
+  //  sync_thread = rt_thread_create(sync_hw,NULL,10000000);
+#endif
 
 #ifdef XFORMS
   if ((do_forms==1) && (UE_flag==1)) {
