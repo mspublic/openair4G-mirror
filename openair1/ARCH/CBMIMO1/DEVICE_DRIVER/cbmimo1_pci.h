@@ -120,6 +120,7 @@ typedef struct {
 } exmimo_pcidma_t;
 
 typedef struct {
+  uint32_t mbox;
   uint32_t adc_head[4];            // PCI addresses of ADC buffers in PC memory (Read by LEON during init)
   uint32_t dac_head[4];            // PCI addresses of DAC buffers in PC memory (Read by LEON during init)
   uint32_t rf_freq_rx0;
@@ -162,15 +163,13 @@ typedef struct {
 
 
 typedef struct {
-  unsigned int cyclic_prefix_mode;
-  unsigned int log2_ofdm_symbol_size;
-  unsigned int samples_per_frame;
-  unsigned int tx_rx_switch_point;
-  unsigned int timing_advance;
-  unsigned int frame_offset;
+  uint32_t tdd;
+  uint32_t tdd_config;
+  uint32_t eNB_flag;
 } exmimo_framing_t;
 
 typedef struct {
+  //  uint32_t mbox[4];
   exmimo_rf_t rf;
   exmimo_framing_t framing;
 } exmimo_pci_interface_t;

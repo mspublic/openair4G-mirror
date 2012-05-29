@@ -214,32 +214,12 @@ int slot_irq_handler(int irq, void *cookie) {
   struct timespec   ts;
   u32 irqcmd;
   static int busy=0;
+  unsigned int slot_interrupt = 0;
 
   intr_in = 1;
-  intr_cnt++;
+  //  intr_cnt++;
 
-  if (oai_semaphore && inst_cnt_ptr && lxrt_task) {
-    rt_sem_wait(oai_semaphore);
-    //if ((intr_cnt2%2000)<10) rt_printk("intr_cnt %d, inst_cnt_ptr %p, inst_cnt %d\n",intr_cnt,inst_cnt_ptr,*inst_cnt_ptr);
-    if (*inst_cnt_ptr==0) {
-      rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
-      if (busy==0) { 
-	rt_printk("intr_cnt %d, worker thread busy!\n", intr_cnt);
-	busy = 1;
-      } //else no need to repeat this message
-    }
-    else {
-      (*inst_cnt_ptr)++;
-      //rt_printk("*inst_cnt_ptr %d\n",*inst_cnt_ptr);
-      rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
-      rt_send_if(lxrt_task,intr_cnt);
-      if (busy==1) {
-	rt_printk("intr_cnt %d, resuming worker thread!\n", intr_cnt);
-	busy = 0;
-      } //else no need to repeat this message
-    }
-    intr_cnt2++;
-  }
+
 
   if (vid != XILINX_VENDOR) { //CBMIMO1
 
@@ -248,49 +228,20 @@ int slot_irq_handler(int irq, void *cookie) {
     
     if ((irqval&8) != 0)  {
 
+      intr_cnt++;
+      slot_interrupt = 1;
       //msg("got interrupt for CBMIMO1, intr_cnt=%d, node_configured=%d\n",intr_cnt,openair_daq_vars.node_configured);
 
       // RESET PCI IRQ
       openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK|FROM_GRLIB_PCI_IRQ_ACK);
       openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
 	
-      if (openair_daq_vars.node_configured > 0) {
-	
-	adac_cnt = (*(unsigned int *)mbox);
-	
-	openair_daq_vars.slot_count=intr_cnt % LTE_SLOTS_PER_FRAME;
-	//openair_daq_vars.slot_count=adac_cnt>>3;
 
-	//if ((adac_cnt>>3) == 0)
-	//if (((int) adac_cnt - (int) openair_daq_vars.last_adac_cnt)<0)    // This is a new frame
-	if (openair_daq_vars.slot_count==0)
-	  openair_daq_vars.hw_frame++;
-	
-	if (((openair_daq_vars.hw_frame %100) == 0) && (openair_daq_vars.hw_frame>0)) {
-	  tv = rt_get_time_ns();
-	  msg("[SCHED][slot_irq_handler] time %llu, interrupt count %d, adac %d, last %d, HW Frame %d, slot %d\n",
-	      tv,intr_cnt,adac_cnt,openair_daq_vars.last_adac_cnt,openair_daq_vars.hw_frame,openair_daq_vars.slot_count);
-	}
-	
-	openair_daq_vars.last_adac_cnt=adac_cnt;
-	
-	/*
-	  if ((openair_daq_vars.hw_frame %100) == 0)
-	  printk("[SCHED][slot_irq_handler] Current HW Frame %d, interrupt cnt %d\n",openair_daq_vars.hw_frame,intr_cnt);
-	*/
-	
-	
-	tv = rt_get_time();
-	count2timespec(tv, &ts);
-	ts.tv_nsec += 100000;
-		
-      } // node_configured > 0
 
       rt_ack_irq(irq);
       rt_unmask_irq(irq);
       rt_enable_irq(irq);
       intr_in = 0;
-      return IRQ_HANDLED;
       
     } 
     else {  // CBMIMO is not source of interrupt
@@ -300,10 +251,28 @@ int slot_irq_handler(int irq, void *cookie) {
       return IRQ_NONE;
     }
        
-    // CBMIMO1 is not activated yet (no interrupts!)
-    rt_pend_linux_irq(irq);
-    intr_in = 0;
-    return IRQ_NONE;
+    if (oai_semaphore && inst_cnt_ptr && lxrt_task && (slot_interrupt == 1)) {
+      rt_sem_wait(oai_semaphore);
+      if ((intr_cnt2%2000)==0) rt_printk("***intr_cnt %d, intr_cnt2 %d, inst_cnt_ptr %p, inst_cnt %d\n",intr_cnt,intr_cnt2,inst_cnt_ptr,*inst_cnt_ptr);
+      if (*inst_cnt_ptr==0) {
+	rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
+	if (busy==0) { 
+	  rt_printk("intr_cnt %d, worker thread busy!\n", intr_cnt);
+	  busy = 1;
+	} //else no need to repeat this message
+      }
+      else {
+	(*inst_cnt_ptr)++;
+	//rt_printk("*inst_cnt_ptr %d\n",*inst_cnt_ptr);
+	rt_sem_signal(oai_semaphore); //now the mutex should have vaule 1
+	rt_send_if(lxrt_task,intr_cnt);
+	if (busy==1) {
+	  rt_printk("intr_cnt %d, resuming worker thread!\n", intr_cnt);
+	  busy = 0;
+	} //else no need to repeat this message
+      }
+      intr_cnt2++;
+    }
   }
   else { //EXPRESS MIMO
     
@@ -320,29 +289,56 @@ int slot_irq_handler(int irq, void *cookie) {
    
       if (irqcmd == SLOT_INTERRUPT) {
 	//	process_slot_interrupt();
+
+	intr_cnt++;
+	slot_interrupt = 1;
+	rt_ack_irq(irq);
+	rt_unmask_irq(irq);
+	rt_enable_irq(irq);
+	intr_in = 0;
+	if ((intr_cnt%2000)==0) rt_printk("intr_cnt %d\n",intr_cnt);
+
       }
       else if (irqcmd == PCI_PRINTK) {
 	//	msg("Got PCIe interrupt for printk ...\n");
 	pci_fifo_printk();
-	
+	rt_ack_irq(irq);
+	rt_unmask_irq(irq);
+	rt_enable_irq(irq);
+	intr_in = 0;
+	return IRQ_HANDLED;	
       }
       else if (irqcmd == GET_FRAME_DONE) {
 	msg("Got PCIe interrupt for GET_FRAME_DONE ...\n");
 	openair_daq_vars.get_frame_done=1;
+	rt_ack_irq(irq);
+	rt_unmask_irq(irq);
+	rt_enable_irq(irq);
+	intr_in = 0;
+	return IRQ_HANDLED;
       }
-      rt_ack_irq(irq);
-      rt_unmask_irq(irq);
-      rt_enable_irq(irq);
-      intr_in = 0;
-      return IRQ_HANDLED;
+
     }
     else {
       // RESET PCI IRQ
+      rt_printk("EXMIMO: got %x from control register (intr_cnt %d)\n",irqval,intr_cnt);
+      irqval = ioread32(bar[0]);
+      rt_printk("EXMIMO: retry got %x from control register (intr_cnt %d)\n",irqval,intr_cnt);
+
       rt_pend_linux_irq(irq);
       intr_in = 0;
       return IRQ_NONE;
     }
   }
+
+ 
+
+
+
+  // clear PCIE interrupt bit (bit 7 of register 0x0)
+
+
+  return IRQ_HANDLED;
 
 }
 

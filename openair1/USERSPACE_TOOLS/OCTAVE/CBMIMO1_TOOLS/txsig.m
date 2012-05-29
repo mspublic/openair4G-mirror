@@ -1,12 +1,13 @@
 dual_tx=1;
 cbmimo1=0;
+eNB_flag = 0;
 
 if (cbmimo1)
   oarf_config(0,1,dual_tx,255);
   amp = pow2(7)-1;
   n_bit = 8;
 else
-  oarf_config_exmimo(1902600000,1,dual_tx,30);
+  oarf_config_exmimo(1902600000,1,dual_tx,30,eNB_flag);
   amp = pow2(15)-1;
   n_bit = 16;
 end

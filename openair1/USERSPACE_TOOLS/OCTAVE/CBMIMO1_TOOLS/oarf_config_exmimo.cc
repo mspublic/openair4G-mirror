@@ -36,10 +36,10 @@ static bool any_bad_argument(const octave_value_list &args)
 {
   octave_value v,w;
 
-  if (args.length()!=4)
+  if (args.length()!=5)
   {
     error(FCNNAME);
-    error("syntax: oarf_config_exmimo(freq,tdd,dual_tx,rxgain)");
+    error("syntax: oarf_config_exmimo(freq,tdd,dual_tx,rxgain,eNB_flag)");
     return true;
   }
 
@@ -71,6 +71,12 @@ static bool any_bad_argument(const octave_value_list &args)
       error("gain must be between 0 and 30.");
       return true;
   }
+  if ((!args(4).is_real_scalar()) || (args(4).scalar_value()<0.0) || (args(4).scalar_value()>1))
+  {
+      error(FCNNAME);
+      error("eNB_flag must be between 0 and 1 (got %f).",args(4).scalar_value());
+      return true;
+  }
   return false;
 }
 
@@ -93,6 +99,7 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
   const int tdd = args(1).int_value();
   const int dual_tx = args(2).int_value();  
   const int rxgain = args(3).int_value();
+  const int eNB_flag = args(4).int_value();
 
   octave_value returnvalue;
   int openair_fd;
@@ -128,6 +135,7 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
   */
 
   frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
+  frame_parms->node_id            = (eNB_flag == 1) ? 0 : 1;
   frame_parms->N_RB_DL            = 25;
   frame_parms->N_RB_UL            = 25;
   frame_parms->Ncp                = 1;

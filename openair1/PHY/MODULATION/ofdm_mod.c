@@ -125,7 +125,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
 	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
 #else
-	output_ptr[j] = temp_ptr[2*j];
+	output_ptr[j] = temp_ptr[2*j]<<4;
 #endif
       }
 
