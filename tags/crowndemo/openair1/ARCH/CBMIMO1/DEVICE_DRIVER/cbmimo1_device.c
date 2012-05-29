@@ -277,8 +277,10 @@ static int __init openair_init_module( void ) {
       release_mem_region(mmio_start,256);
       return(-1);
     }
-
-
+	iowrite32((1<<8) | (1<<9) | (1<<10),bar[0]);
+	udelay(1000);
+    readback = ioread32(bar[0]);
+	printk("CONTROL0 readback %x\n",readback);
 
   }
 #endif //NOCARD_TEST
