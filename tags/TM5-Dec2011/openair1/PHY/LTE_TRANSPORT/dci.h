@@ -414,6 +414,8 @@ struct DCI1D_5MHz_2A_TDD {
   unsigned char pmi:1;
   /// Downlink Power Offset
   unsigned char dl_power_off:1;
+  /// padding
+  ///unsigned char padding:1;
 } __attribute__ ((__packed__));
 
 typedef struct DCI1D_5MHz_2A_TDD DCI1D_5MHz_2A_TDD_t;
