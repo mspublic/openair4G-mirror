@@ -54,7 +54,7 @@ DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
-
+DCI1D_5MHz_2A_TDD_t DLSCH_alloc_pdu1D;
 #endif
 
 

@@ -50,6 +50,8 @@
 #include "../PROC/Process.h"
 
 
+//#define dci_format1D 1
+
 #define RF
 
 #define DEBUG_SIM
@@ -111,9 +113,10 @@ mapping small_scale_names[] =
 };
 
 
-
+int dci_format1D = 1;
 
 extern int transmission_mode_rrc;//FIXME!!!
+extern int dci_format1D;
 
 #ifdef LINUX
 void
@@ -955,7 +958,7 @@ main (int argc, char **argv)
       if (oai_emulation.info.transmission_mode == 5) {
 	  eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						       (UE_id == 0)? Rayleigh8:Rayleigh8,
+						       (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
 						       //map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						       oai_emulation.environment_system_config.system_bandwidth_MB,
 						       forgetting_factor,

@@ -22,6 +22,7 @@
 #define BW 10.0
 #define N_TRIALS 100
 
+
 PHY_VARS_eNB *PHY_vars_eNB,*PHY_vars_eNB1,*PHY_vars_eNB2;
 PHY_VARS_UE *PHY_vars_UE;
 
@@ -29,6 +30,10 @@ PHY_VARS_UE *PHY_vars_UE;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
+//int dci_format1D = 1;
+//extern int dci_format1D;
+
+extern int transmission_mode_rrc;
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 tdd_config,u8 N_RB_DL,u8 osf) {
 
@@ -117,6 +122,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 int main(int argc, char **argv) {
 
+
   char c;
 
   int i,l,aa;
@@ -143,7 +149,7 @@ int main(int argc, char **argv) {
   s8 interf1=-128,interf2=-128;
   u8 dci_cnt=0;
   LTE_DL_FRAME_PARMS *frame_parms;
-  u8 log2L=2, log2Lcommon=2, format_selector=0;
+  u8 log2L=1, log2Lcommon=2, format_selector=0;
   u8 dci_length=sizeof_DCI1_5MHz_TDD_t;
   DCI_format_t format=format1;
   u8 dci_length_bytes=sizeof(DCI1_5MHz_TDD_t);
@@ -246,7 +252,8 @@ int main(int argc, char **argv) {
 	transmission_mode=atoi(optarg);
 	if ((transmission_mode!=1) &&
 	    (transmission_mode!=2) &&
-	    (transmission_mode!=6)) {
+	    (transmission_mode!=6) &&
+	    (transmission_mode!=5)) {
 	  msg("Unsupported transmission mode %d\n",transmission_mode);
 	  exit(-1);
 	}
@@ -322,7 +329,7 @@ int main(int argc, char **argv) {
 	printf("-r Ricean factor (dB, 0 means Rayleigh, 100 is almost AWGN\n");
 	printf("-s Starting SNR, runs from SNR to SNR + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
 	printf("-t Delay spread for multipath channel\n");
-	printf("-x Transmission mode (1,2,6 for the moment)\n");
+	printf("-x Transmission mode (1,2,5,6 for the moment)\n");
 	printf("-y Number of TX antennas used in eNB\n");
 	printf("-z Number of RX antennas used in UE\n");
 	printf("-P Number of interfering PHICH\n");
@@ -352,6 +359,10 @@ int main(int argc, char **argv) {
 	break;
       }
   }
+
+
+  transmission_mode_rrc = transmission_mode;
+  //dci_format1D = 0;
 
   switch(format_selector) {
   case 0:
@@ -388,6 +399,7 @@ int main(int argc, char **argv) {
     dci_length_bytes = sizeof(DCI1C_5MHz_t);
     break;
   case 5:
+    dlsch_pdu = (void*) &DLSCH_alloc_pdu1D;
     format     = format1D;
     dci_length = sizeof_DCI1D_5MHz_2A_TDD_t;
     dci_length_bytes = sizeof(DCI1D_5MHz_2A_TDD_t);
@@ -440,10 +452,10 @@ int main(int argc, char **argv) {
     dci_length_bytes = sizeof(DCI2_5MHz_4A_M10PRB_TDD_t);
     break;
   case 15:
-    dlsch_pdu = (void*) &DLSCH_alloc_pdu2D;
-    format     = format2_2D_M10PRB;
-    dci_length = sizeof_DCI2_5MHz_2D_M10PRB_TDD_t;
-    dci_length_bytes = sizeof(DCI2_5MHz_2D_M10PRB_TDD_t);
+    dlsch_pdu = (void*) &DLSCH_alloc_pdu1E;
+    format     = format1E_2A_M10PRB;
+    dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
+    dci_length_bytes = sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t);
     break;
     /*
   case 16:
