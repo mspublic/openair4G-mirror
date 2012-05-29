@@ -297,7 +297,7 @@ void *scope_thread(void *arg) {
 	      (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF,
 	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
 	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
 	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->llr[0],
 	      (s16*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
 	      (s8*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,
@@ -391,7 +391,7 @@ static void *eNB_thread(void *arg)
 	  oai_exit = 1;
 	  rt_printk("eNB Frame %d: HW stopped ... \n",frame);
 	}
-	if ((hw_slot < 5) && (slot==19))
+	if ((hw_slot < 5) && (slot==19)) //why?
 	  break;
       }
 
@@ -490,7 +490,7 @@ static void *UE_thread(void *arg)
 {
   RT_TASK *task;
   RTIME in, out, diff;
-  int slot=0,hw_slot,last_slot, next_slot;
+  int slot=0,frame=0,hw_slot,last_slot, next_slot;
   unsigned int msg;
   unsigned int aa,slot_offset, slot_offset_F;
   static int is_synchronized = 0;
@@ -540,14 +540,15 @@ static void *UE_thread(void *arg)
 	if (diff<=1)
 	  diff=2;
 	time_in = rt_get_time_ns();
-	//	rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+	rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",
+		  frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
 	rt_sleep(diff*DAQ_PERIOD);
-	//	rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
+	rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
 	hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
 	delay_cnt++;
 	if (delay_cnt == 10) {
 	  oai_exit = 1;
-	  rt_printk("eNB Frame %d: HW stopped ... \n",frame);
+	  rt_printk("UE frame %d: HW stopped ... \n",frame);
 	}
 	if ((hw_slot < 5) && (slot==19))
 	  break;
@@ -618,6 +619,7 @@ static void *UE_thread(void *arg)
       else   // we are not yet synchronized
         {
 	  hw_slot_offset = 0;
+#ifdef CBMIMO1
 	  if (received_slots==0) {
 	    ioctl(openair_fd,openair_GET_BUFFER,NULL);
 	  }
@@ -627,7 +629,6 @@ static void *UE_thread(void *arg)
               received_slots = -1; // will be increased below
               if (initial_sync(PHY_vars_UE_g[0])==0)
                 {
-#ifdef CBMIMO1
                   ioctl(openair_fd,openair_SET_RX_OFFSET,&PHY_vars_UE_g[0]->rx_offset); //synchronize hardware
 		  // here we should actually do another dump config with the parameters obtained from the sync.
  
@@ -638,13 +639,27 @@ static void *UE_thread(void *arg)
 			   PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
                   is_synchronized = 1;
                   slot0 = msg;
-#else
-		  hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
-#endif
                 }
             }
           received_slots++;
-        }
+#else
+	  ioctl(openair_fd,openair_GET_BUFFER,NULL);
+	  rt_printk("fun0: slot %d: doing sync\n",slot);
+	  /*
+	  if (initial_sync(PHY_vars_UE_g[0])==0)
+	    {
+	      //for better visualization afterwards
+	      for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
+		memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
+		       PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
+
+	      is_synchronized = 1;
+	      
+	      hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
+	    }
+	  */
+#endif
+	}
 
       /*
       if ((slot%2000)<10)
@@ -659,10 +674,12 @@ static void *UE_thread(void *arg)
       slot++;
       if (slot==20) {
 	slot=0;
+	frame++;
       }
+      
       if ((frame % 100) == 0)
-	rt_printk("eNB Frame %d\n",frame);
-
+	rt_printk("UE Frame %d\n",frame);
+      
 
 #endif
     }
