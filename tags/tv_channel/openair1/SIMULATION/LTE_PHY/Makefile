@@ -3,7 +3,7 @@
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 #-msse4
+CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 #-msse4
 #CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
 #CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
@@ -75,9 +75,12 @@ CFLAGS += -DNO_RRM -DOPENAIR2 #-DPHY_ABSTRACTION
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
 
+ifdef STATIC
+LFLAGS += -static -L/usr/lib/libblas
+endif
+
 include $(TOP_DIR)/PHY/Makefile.inc
-#SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
-include $(TOP_DIR)/SCHED/Makefile.inc
+#include $(TOP_DIR)/SCHED/Makefile.inc
 include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
@@ -85,6 +88,8 @@ include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) $(UTIL_incl)
 # EXTRA_CFLAGS = 
+
+SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o #$(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
 
 #STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
@@ -110,31 +115,35 @@ $(OBJ) : %.o : %.c
 
 dlsim : $(OBJ) dlsim.c
 	@echo "Compiling dlsim.c ..."
-	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) -L/usr/lib/libblas
+	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 framegen: $(OBJ) framegen.c
 	@echo "Compiling framegen.c"
-	@$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) $(LFLAGS)
 
 pbchsim : $(OBJ) pbchsim.c
 	@echo "Compiling pbchsim.c"
-	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS)
 
 pdcchsim : $(OBJ) pdcchsim.c
 	@echo "Compiling pdcchsim.c"
-	@$(CC) pdcchsim.c  -o pdcchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) pdcchsim.c  -o pdcchsim $(CFLAGS) $(OBJ) $(LFLAGS)
 
 pucchsim : $(OBJ) pucchsim.c
 	@echo "Compiling pucchsim.c"
-	@$(CC) pucchsim.c  -o pucchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) pucchsim.c  -o pucchsim $(CFLAGS) $(OBJ) $(LFLAGS)
 
 prachsim : $(OBJ) prachsim.c
 	@echo "Compiling prachsim.c"
-	@$(CC) prachsim.c  -o prachsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) prachsim.c  -o prachsim $(CFLAGS) $(OBJ) $(LFLAGS)
 
 ulsim : $(OBJ) ulsim.c #ulsim_form.c
 	@echo "Compiling [ulsim.c]"
-	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm  -lblas
+	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS)
+
+syncsim : $(OBJ) syncsim.c
+	@echo "Compiling syncsim.c"
+	@$(CC) syncsim.c  -o syncsim $(CFLAGS) $(OBJ) $(LFLAGS)
 
 clean :
 	rm -f $(OBJ)

@@ -16,6 +16,11 @@
 #include "express-mimo/simulator/baseband/C/defs.h"
 #endif //EXPRESSMIMO_TARGET
 
+#ifndef __SSE3__
+inline __m128i _mm_abs_epi16(__m128i xmmx);
+inline __m128i _mm_sign_epi16(__m128i xmmx, __m128i xmmy);
+#endif
+
 //defined in rtai_math.h
 /*#ifndef _RTAI_MATH_H
 struct complex

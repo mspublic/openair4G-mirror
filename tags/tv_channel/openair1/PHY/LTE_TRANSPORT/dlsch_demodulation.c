@@ -51,12 +51,6 @@
 #include "defs.h"
 #include "extern.h"
 
-#ifndef __SSE3__
-__m128i zero,tmp_result;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over_sqrt_10;
-#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
-#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
-#endif
-
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
 #else
@@ -6779,10 +6773,6 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-#ifndef __SSE3__
-  zero = _mm_xor_si128(zero,zero);
-#endif
-
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
 
     if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size    
@@ -7097,10 +7087,6 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
     rx_power_correction = 2;
   else
     rx_power_correction = 1;
-
-#ifndef __SSE3__
-  zero = _mm_xor_si128(zero,zero);
-#endif
 
   //printf("comp prec: symbol %d, pilots %d\n",symbol, pilots);
 
