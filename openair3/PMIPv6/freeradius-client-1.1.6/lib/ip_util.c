@@ -163,6 +163,11 @@ int rc_good_ipaddr (char *addr)
 		//rc_log(LOG_ERR,"rc_good_ipaddr(%s): false @2", addr);
 		return -1;
 	}
+	if (qc == 0 && qd == 0)
+	{
+		//rc_log(LOG_ERR,"rc_good_ipaddr(%s): false @3", addr);
+		return -1;
+	}
 
 	ip_number_index = 0;
 	for ( str_index = 0 ; str_index < strlen(addr); str_index++) {
