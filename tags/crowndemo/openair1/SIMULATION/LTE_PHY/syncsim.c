@@ -267,6 +267,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
   lte_frame_parms->tdd_config = 3;
   lte_frame_parms->frame_type = frame_type;
+  lte_frame_parms->node_id = 2;
   init_frame_parms(lte_frame_parms,osf);
   
   

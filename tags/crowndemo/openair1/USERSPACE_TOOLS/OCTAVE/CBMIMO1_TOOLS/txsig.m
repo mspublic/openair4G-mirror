@@ -1,6 +1,6 @@
 dual_tx=1;
 cbmimo1=0;
-eNB_flag = 0;
+eNB_flag = 1;
 
 if (cbmimo1)
   oarf_config(0,1,dual_tx,255);
@@ -14,13 +14,13 @@ end
 
 s = zeros(76800,2);
 
-select = 1;
+select = 4;
 
 switch(select)
 
 case 1
-s(:,1) = amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1))));
-s(:,2) = amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1))));
+s(:,1) = amp * (exp(sqrt(-1)*.00005*pi*(0:((76800)-1))));
+s(:,2) = amp * (exp(sqrt(-1)*.00005*pi*(0:((76800)-1))));
 
 case 2
 s(38400+128,1)= 80-1j*40;
@@ -42,11 +42,11 @@ pss0_t = [pss0_t((512-127):512) pss0_t];
 pss0_t = [pss0_t zeros(1,512+36) pss0_t]; 
 pss0_max = max(max(abs(real(pss0_t))),max(abs(imag(pss0_t))));
 
-pss0_t_fp_re = floor(real(128*pss0_t/pss0_max)); 
-pss0_t_fp_im = floor(imag(128*pss0_t/pss0_max)); 
+pss0_t_fp_re = floor(real(8192*pss0_t/pss0_max)); 
+pss0_t_fp_im = floor(imag(8192*pss0_t/pss0_max)); 
 
-s(38400+(1:length(pss0_t_fp_re)),1) = pss0_t_fp_re + sqrt(-1)*pss0_t_fp_im;
-s(38400+(1:length(pss0_t_fp_re)),2) = pss0_t_fp_re + sqrt(-1)*pss0_t_fp_im;
+s(38400+(1:length(pss0_t_fp_re)),1) = 2*floor(pss0_t_fp_re) + 2*sqrt(-1)*floor(pss0_t_fp_im);
+s(38400+(1:length(pss0_t_fp_re)),2) = 2*floor(pss0_t_fp_re) + 2*sqrt(-1)*floor(pss0_t_fp_im);
 otherwise 
 error('unknown case')
 endswitch
