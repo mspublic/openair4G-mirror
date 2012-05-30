@@ -2590,7 +2590,7 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
   if ((subframe_select(&phy_vars_eNB->lte_frame_parms,last_slot>>1)==SF_S) &&
       ((last_slot&1)==0)){
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
-    phy_procedures_eNB_S_RX(last_slot,phy_vars_eNB,abstraction_flag);
+    //phy_procedures_eNB_S_RX(last_slot,phy_vars_eNB,abstraction_flag);
   }
 }
 
