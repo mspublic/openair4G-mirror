@@ -74,6 +74,7 @@ int oai_exit = 0;
 
 unsigned int *DAQ_MBOX;
 
+unsigned int time_offset[4] = {44,0,0,0};
 void signal_handler(int sig)
 {
   void *array[10];
@@ -309,6 +310,8 @@ void *scope_thread(void *arg) {
 }
 #endif
 
+int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
+
 static void *sync_hw(void *arg)
 {
   RT_TASK *task;
@@ -341,6 +344,7 @@ static void *eNB_thread(void *arg)
   int diff;
   int delay_cnt;
   RTIME time_in;
+  int i;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -396,13 +400,15 @@ static void *eNB_thread(void *arg)
       }
 
 #endif
-      last_slot = (slot - 1)%LTE_SLOTS_PER_FRAME;
+      last_slot = (hw_slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=20;
-      next_slot = (slot + 1)%LTE_SLOTS_PER_FRAME;
+      next_slot = (hw_slot + 2)%LTE_SLOTS_PER_FRAME;
       
       PHY_vars_eNB_g[0]->frame = frame;
       if (frame>5) {
+	if (frame<100)
+	  rt_printk("slot %d hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",slot, hw_slot,next_slot,DAQ_MBOX[0]);
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
 #ifndef IFFT_FPGA
 	slot_offset_F = (next_slot)*
@@ -410,38 +416,63 @@ static void *eNB_thread(void *arg)
 	  ((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
 	slot_offset = (next_slot)*
 	  (PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti>>1);
-	
-	for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
-	  {
-	    if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1)
-	      {
-		PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+	if ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_DL)||
+	    ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_S)&&((next_slot&1)==0))) {
+	  //	  rt_printk("Frame %d: Generating slot %d\n",frame,next_slot);
+
+	  for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
+	    {
+	      if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1)
+		{
+		  PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
 #ifdef BIT8_TX
-			     &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+			       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
 #else
-			     &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+			       dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
 #endif
-			     PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
-			     6,
-			     PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
-			     PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
-			     PHY_vars_eNB_g[0]->lte_frame_parms.rev,
-			     CYCLIC_PREFIX);
-	      }
-	    else
-	      {
-		normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+			       PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
+			       6,
+			       PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
+			       PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
+			       PHY_vars_eNB_g[0]->lte_frame_parms.rev,
+			       CYCLIC_PREFIX);
+		}
+	      else
+		{
+		  normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
 #ifdef BIT8_TX
-				  &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+				    &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
 #else
-				  &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+				    dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
 #endif
-				  7,
-				  &(PHY_vars_eNB_g[0]->lte_frame_parms));
+				    7,
+				    &(PHY_vars_eNB_g[0]->lte_frame_parms));
+		}
+#ifndef CBMIMO1
+	      if (next_slot<19) {
+		for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;i++) {
+		  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
+		    ((short*)dummy_tx_buffer)[i]<<4;
+		}
 	      }
-	  }
+	      else {
+		for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1);i++) {
+		  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
+		    ((short*)dummy_tx_buffer)[i]<<4;
+		  
+		}  // handle wrap-around
+		for (i=0;i<time_offset[aa];i++) {
+		  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0])[i] = ((short*)dummy_tx_buffer)[PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1)+i]<<4;
+		}
+	      } 
+#endif
+	    }
 #endif //IFFT_FPGA
-      }	
+	}
+
+	if (frame<100)
+	  rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
+      }
       /*
 	    if ((slot%2000)<10)
 	    rt_printk("fun0: doing very hard work\n");
@@ -767,7 +798,7 @@ int main(int argc, char **argv)
   frame_parms->Ncp_UL             = 0;
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx     = 1;
+  frame_parms->nb_antennas_tx     = (UE_flag == 1) ? 1 : 2;
   frame_parms->nb_antennas_rx     = 1;
   frame_parms->mode1_flag         = 1; //default == SISO
   frame_parms->frame_type         = 1;
@@ -802,7 +833,7 @@ int main(int argc, char **argv)
       PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
       NB_UE_INST=1;
       NB_INST=1;
-    }
+    } 
   else
     {
       frame_parms->node_id = PRIMARY_CH;
@@ -810,11 +841,8 @@ int main(int argc, char **argv)
       PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
       NB_eNB_INST=1;
       NB_INST=1;
-      // Set LSBs for antenna switch (ExpressMIMO)
-      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++)
-	for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-	  PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
-
+      if (calibration_flag == 1)
+	PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
       
     }
 
@@ -841,19 +869,11 @@ int main(int argc, char **argv)
   else
     {
       setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms);
-
-      // test signal
-      for (j=0;j<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti*10;j+=4)
-        {
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j] = 0;
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j+2] = 0x7f;
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j+4] = 0;
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j+6] = 0x80;
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j+1] = 0x7f;
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j+3] = 0;
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j+5] = 0x80;
-          ((char*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0])[2*j+7] = 0;
-        }
+      printf("Setting eNB buffer to all-RX\n");
+      // Set LSBs for antenna switch (ExpressMIMO)
+      for (i=0;i<frame_parms->samples_per_tti*10;i++)
+	for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+	  PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
     }
 
   // make main thread LXRT soft realtime
