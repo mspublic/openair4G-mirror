@@ -17,11 +17,21 @@ CFLAGS += -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_M
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3)
-CFLAGS += -DNO_RRM
+
 
 ifeq ($(turbo_flag),1)
   CFLAGS += -DTURBO_S
+endif
+
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)"  "4.4.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.5.2"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.6.1"
+    CFLAGS += -Wno-packed-bitfield-compat
 endif
 
 include $(TOP_DIR)/PHY/Makefile.inc
@@ -30,10 +40,15 @@ SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o
 include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(TOP_DIR)/../openair2/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
+include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
+include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 
 LAYER2_OBJ = $(OPENAIR2_DIR)/LAYER2/MAC/lte_transport_init.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) #$(ASN1_MSG_OBJS) 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) $(LOG_OBJS) #$(ASN1_MSG_OBJS) 
+
+CFLAGS += -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3) $(UTIL_incl)
+CFLAGS += -DNO_RRM
 
 all: ltetest
 
