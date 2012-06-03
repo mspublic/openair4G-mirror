@@ -84,26 +84,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   
   phy_init_lte_top(lte_frame_parms);
-
-  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
-		  &PHY_vars_UE->lte_ue_common_vars,
-		  PHY_vars_UE->lte_ue_dlsch_vars,
-		  PHY_vars_UE->lte_ue_dlsch_vars_SI,
-		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
-		  PHY_vars_UE->lte_ue_pbch_vars,
-		  PHY_vars_UE->lte_ue_pdcch_vars,
-		  PHY_vars_UE,0);
-
-  phy_init_lte_eNB(&PHY_vars_eNB->lte_frame_parms,
-		   &PHY_vars_eNB->lte_eNB_common_vars,
-		   PHY_vars_eNB->lte_eNB_ulsch_vars,
-		   0,
-		   PHY_vars_eNB,
-		   0,
-		   0);
-
-
-  phy_init_lte_top(lte_frame_parms);
+  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
   printf("Done lte_param_init\n");
 
@@ -596,7 +578,7 @@ int main(int argc, char *argv[]) {
 				     PHY_vars_eNB->dlsch_eNB[0],
 				     &PHY_vars_eNB->lte_frame_parms,
 				     SI_RNTI,
-				     RA_RNTI,
+				     0,
 				     P_RNTI,
 				     0); //change this later
   generate_ue_dlsch_params_from_dci(subframe,
@@ -606,7 +588,7 @@ int main(int argc, char *argv[]) {
 				    PHY_vars_UE->dlsch_ue[0],
 				    &PHY_vars_UE->lte_frame_parms,
 				    SI_RNTI,
-				    RA_RNTI,
+				    0,
 				    P_RNTI);
   
   coded_bits = 	get_G(&PHY_vars_eNB->lte_frame_parms,NB_RB,PHY_vars_eNB->dlsch_eNB[0][0]->rb_alloc,
