@@ -542,7 +542,7 @@ int main(int argc, char *argv[]) {
   int subframe = 6;
 
   randominit(0);
-
+  logInit();
   lte_param_init(1,1,1,0,0,3);
 
   PHY_vars_eNB->dlsch_eNB[0][0] = new_eNB_dlsch(1,8,0);
