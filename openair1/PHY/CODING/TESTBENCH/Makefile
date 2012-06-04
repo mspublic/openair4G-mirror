@@ -24,6 +24,10 @@ ifeq ($(turbo_flag),1)
 endif
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+
+ifeq "$(GCCVERSION)"  "4.4.0"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 ifeq "$(GCCVERSION)"  "4.4.3"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
