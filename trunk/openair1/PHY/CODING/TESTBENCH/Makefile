@@ -25,7 +25,7 @@ endif
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 
-ifeq "$(GCCVERSION)"  "4.4.0"
+ifeq "$(GCCVERSION)"  "4.4.0-4)"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 ifeq "$(GCCVERSION)"  "4.4.3"
