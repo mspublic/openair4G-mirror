@@ -351,9 +351,9 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   u8 restricted_set     = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag;
   u8 n_ra_prboffset     = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
   u8 preamble_index     = phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
-  u8 tdd_mapindex      = phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index;
+  u8 tdd_mapindex       = phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index;
   s16 *prachF           = phy_vars_ue->lte_ue_prach_vars[eNB_id]->prachF;
-  s16 *prach            = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe*phy_vars_ue->lte_frame_parms.samples_per_tti];
+  s16 *prach;
   s16 *prach2;
   s16 amp               = phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp;
   s16 Ncp;
@@ -374,8 +374,12 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   s16 *Xu,*e;
   s32 Xu_re,Xu_im;
   u16 offset,offset2;
+  int i;
+  int frame_length_samples = phy_vars_ue->lte_frame_parms.samples_per_tti*10;
+  int prach_start = phy_vars_ue->rx_offset+(subframe*phy_vars_ue->lte_frame_parms.samples_per_tti)%frame_length_samples;
+  int overflow;
 
-
+  prach = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][prach_start];
 
     // First compute physical root sequence
   if (restricted_set == 0) {
@@ -571,7 +575,14 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     }
     else {
       ifft6144(prachF,prach2);
+      for (i=0;i<6144*2;i++)
+	prach2[i]<<=1;
       memcpy((void*)prach,(void*)(prach+12288),Ncp<<2);
+      overflow = prach_start + 6144+Ncp - frame_length_samples;
+      if (overflow>0)
+	memcpy(phy_vars_ue->lte_ue_common_vars.txdata[0],
+	       phy_vars_ue->lte_ue_common_vars.txdata[0][frame_length_samples],
+	       overflow<<2);
     }
     if (prach_fmt>1)
       memcpy((void*)(prach2+24576),(void*)prach2,49152);
