@@ -1303,8 +1303,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
     }
     else {
-      openair_dma(0,EXMIMO_CONFIG);
-      udelay(1000);
+      //      openair_dma(0,EXMIMO_CONFIG);
+      //      udelay(1000);
       openair_dma(0,EXMIMO_START_RT_ACQUISITION);
     }
     break;
