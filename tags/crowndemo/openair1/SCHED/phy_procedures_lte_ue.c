@@ -562,10 +562,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*(frame_parms->N_RB_DL*12)*(frame_parms->symbols_per_tti>>1)],
 	       0,(frame_parms->N_RB_DL*12)*(frame_parms->symbols_per_tti)*sizeof(mod_sym_t));
 #else
-	memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][next_slot*(frame_parms->samples_per_tti>>1)],
-	       0,(frame_parms->samples_per_tti)*sizeof(s32));
-	memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*7*(frame_parms->ofdm_symbol_size)],
-	       0,14*(frame_parms->ofdm_symbol_size)*sizeof(s32));
+	//	memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][next_slot*(frame_parms->samples_per_tti>>1)],
+	//	       0,(frame_parms->samples_per_tti)*sizeof(s32));
+	//	memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*7*(frame_parms->ofdm_symbol_size)],
+	//	       0,14*(frame_parms->ofdm_symbol_size)*sizeof(s32));
 #endif
       }
     }
@@ -1149,13 +1149,14 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
       phy_adjust_gain (phy_vars_ue,0);
     
     eNB_id = 0;
+    /*
     if (abstraction_flag == 0) 
       lte_adjust_synch(&phy_vars_ue->lte_frame_parms,
 		       phy_vars_ue,
 		       eNB_id,
 		       0,
 		       16384);
-
+    */
     if (openair_daq_vars.auto_freq_correction == 1) {
       if (phy_vars_ue->frame % 100 == 0) {
 	if ((phy_vars_ue->lte_ue_common_vars.freq_offset>100) && (openair_daq_vars.freq_offset < 1000)) {
@@ -1288,6 +1289,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   u16 frame_tx;
   static u8 first_run = 1;
 
+  
   for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
     //msg("[PHY][UE  %d] Trying PBCH %d (NidCell %d, eNB_id %d)\n",phy_vars_ue->Mod_id,pbch_phase,phy_vars_ue->lte_frame_parms.Nid_cell,eNB_id);
     if (abstraction_flag == 0) {
@@ -1314,6 +1316,8 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     }
    
   }
+
+
 
   if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
 
@@ -1399,7 +1403,8 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq++;
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors++;
-    mac_xface->out_of_sync_ind(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id);
+    //mac_xface->out_of_sync_ind(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id);
+    //mac_xface->macphy_exit("");
   }
 
   if (phy_vars_ue->frame % 100 == 0) {
@@ -1837,7 +1842,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       slot_fep(phy_vars_ue,
 	       l,
 	       last_slot,
-	       0,
+	       phy_vars_ue->rx_offset,
 #ifdef HW_PREFIX_REMOVAL
 	       1
 #else
@@ -2466,6 +2471,7 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
   UE_L2_STATE_t ret;
 #endif
 
+  //  printf("phy_procedures_UE_lte: frame %d last_slot %d, eNB_id %d\n",phy_vars_ue->frame,last_slot,eNB_id);
   if ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1)==SF_UL)||
       (phy_vars_ue->lte_frame_parms.frame_type == 0)){
     phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag);
