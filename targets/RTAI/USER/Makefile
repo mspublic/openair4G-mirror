@@ -67,6 +67,15 @@ run_eNB: synctest
 run_UE: synctest
 	rtai-load UE --verbose
 
+run_UE0: synctest
+	rtai-load UE0 --verbose
+
+run_UE1: synctest
+	rtai-load UE1 --verbose
+
+run_eNB0: synctest
+	rtai-load eNB0 --verbose
+
 clean:
 	rm -rf condtest synctest
 	rm -rf $(OBJ)
