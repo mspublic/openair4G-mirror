@@ -83,7 +83,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
     if (eNB_offset==0)
       phy_vars_ue->PHY_measurements.rssi = 0;
 
-    printf("ue_rrc_measurements: eNB_offset %d => rssi %d\n",eNB_offset,phy_vars_ue->PHY_measurements.rssi);
+    //    printf("ue_rrc_measurements: eNB_offset %d => rssi %d\n",eNB_offset,phy_vars_ue->PHY_measurements.rssi);
     // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
     //    printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, Nid2 %d, nushift %d, eNB_offset %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,Nid2,nushift,eNB_offset);
     if (eNB_offset > 0)
@@ -151,8 +151,10 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	phy_vars_ue->PHY_measurements.rssi/=(24*phy_vars_ue->lte_frame_parms.N_RB_DL);
 	phy_vars_ue->PHY_measurements.rssi*=rx_power_correction;
       }
-      phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = 100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi;
-      
+      if (phy_vars_ue->PHY_measurements.rssi > 0)
+	phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = 100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi;
+      else
+	phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = -12000;
       //((200*phy_vars_ue->PHY_measurements.rsrq[eNB_offset]) + ((1024-200)*100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi))>>10;
     }
     else {   // Do abstraction of RSRP and RSRQ
@@ -161,6 +163,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
     }
     if (((phy_vars_ue->frame %10) == 0) && 
 	(slot == 1)) {
+      /*
       if (eNB_offset == 0)
 	LOG_I(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rssi %3.1f dBm\n",phy_vars_ue->Mod_id,
 	      phy_vars_ue->frame,slot,10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB);
@@ -171,7 +174,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	    (dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12),
 	    (10*log10(phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_offset][0][0])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12)-6.02,
 	    (10*log10(phy_vars_ue->PHY_measurements.rsrq[eNB_offset]))-20);
-    
+      */
     }
   }
 }
