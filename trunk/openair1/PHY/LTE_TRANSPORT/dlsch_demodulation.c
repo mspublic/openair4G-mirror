@@ -2784,6 +2784,7 @@ NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_8 __attribute__((aligned(16)));
 NOCYGWIN_STATIC __m64 ONE_OVER_FOUR_SQRT_10 __attribute__((aligned(16)));
 NOCYGWIN_STATIC __m64 ONE_OVER_TWO_SQRT_10 __attribute__((aligned(16)));
 NOCYGWIN_STATIC __m64 SQRT_10_OVER_FOUR __attribute__((aligned(16)));
+NOCYGWIN_STATIC __m64 NINE_OVER_TWO_SQRT_10 __attribute__((aligned(16)));
 NOCYGWIN_STATIC __m64 NINE_OVER_FOUR_SQRT_10 __attribute__((aligned(16)));
 NOCYGWIN_STATIC __m64 rho_rpi __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m64  rho_rmi __attribute__ ((aligned(16)));
@@ -2971,7 +2972,8 @@ NOCYGWIN_STATIC __m64  G __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m64  H __attribute__ ((aligned(16))); 
 
 /* 
-   2011.11.28, Sebastien Aubert
+   Author: Sebastian Wagner
+   Date: 2012-06-04
    Input: 
    stream0_in:  MF filter for 1st stream, i.e., y1=h1'*y
    stream!_in:  MF filter for 2nd stream, i.e., y2=h2'*y
@@ -3018,64 +3020,35 @@ void qam16_qam16_mu_mimo(short *stream0_in,
 #endif
 
   int i;
-
-  ((short*)&ONE_OVER_SQRT_10)[0] = 10362; // round(2^15/sqrt(10))=10362, round(2^16/sqrt(10))=20724
+  ((short*)&ONE_OVER_SQRT_10)[0] = 10362;
   ((short*)&ONE_OVER_SQRT_10)[1] = 10362;
   ((short*)&ONE_OVER_SQRT_10)[2] = 10362;
   ((short*)&ONE_OVER_SQRT_10)[3] = 10362;
 
-  ((short*)&ONE_OVER_SQRT_2)[0] = 23170; // round(2^15/sqrt(2))=23170, round(2^16/sqrt(2))=46341>32786
+  ((short*)&ONE_OVER_SQRT_2)[0] = 23170;
   ((short*)&ONE_OVER_SQRT_2)[1] = 23170;
   ((short*)&ONE_OVER_SQRT_2)[2] = 23170;
   ((short*)&ONE_OVER_SQRT_2)[3] = 23170;
 
-  ((short*)&TWO_OVER_SQRT_10)[0] = 20724; // round((2^15)*2/sqrt(10))= 20724, round((2^16)*2/sqrt(10))=41449
-  ((short*)&TWO_OVER_SQRT_10)[1] = 20724; // We can not exceed 32786 so we use 2^15 here. Multiplication routines will also be changed
-  ((short*)&TWO_OVER_SQRT_10)[2] = 20724;
-  ((short*)&TWO_OVER_SQRT_10)[3] = 20724;
-
-  ((short*)&THREE_OVER_SQRT_10)[0] = 31086; // round((2^15)*3/sqrt(10))=31086, round((2^16)*3/sqrt(10))=62173
-  ((short*)&THREE_OVER_SQRT_10)[1] = 31086; // We can not exceed 32786 so we use 2^15 here. Multiplication routines will also be changed
+  ((short*)&THREE_OVER_SQRT_10)[0] = 31086;
+  ((short*)&THREE_OVER_SQRT_10)[1] = 31086;
   ((short*)&THREE_OVER_SQRT_10)[2] = 31086;
   ((short*)&THREE_OVER_SQRT_10)[3] = 31086; 
 
-  ((short*)&ONE_OVER_FOUR_SQRT_10)[0] = 5181; // round((2^15)/(4*sqrt(10)))=2591, round((2^16)/(4*sqrt(10)))=5181
-  ((short*)&ONE_OVER_FOUR_SQRT_10)[1] = 5181;
-  ((short*)&ONE_OVER_FOUR_SQRT_10)[2] = 5181;
-  ((short*)&ONE_OVER_FOUR_SQRT_10)[3] = 5181; 
-
-  ((short*)&SQRT_10_OVER_FOUR)[0] = 25905; // round((2^15)*sqrt(10)/4)=25905, round((2^16)*sqrt(10)/4 =51811
-  ((short*)&SQRT_10_OVER_FOUR)[1] = 25905; // We can not exceed 32786 so we use 2^15 here. Multiplication routines are also changed
+  ((short*)&SQRT_10_OVER_FOUR)[0] = 25905;
+  ((short*)&SQRT_10_OVER_FOUR)[1] = 25905;
   ((short*)&SQRT_10_OVER_FOUR)[2] = 25905;
   ((short*)&SQRT_10_OVER_FOUR)[3] = 25905; 
 
-  ((short*)&ONE_OVER_TWO_SQRT_10)[0] = 10362; // round((2^15)/(2*sqrt(10)))=5181, round((2^16)/(2*sqrt(10)))=10362
-  ((short*)&ONE_OVER_TWO_SQRT_10)[1] = 10362;
-  ((short*)&ONE_OVER_TWO_SQRT_10)[2] = 10362;
-  ((short*)&ONE_OVER_TWO_SQRT_10)[3] = 10362; 
+  ((short*)&ONE_OVER_TWO_SQRT_10)[0] = 5181;
+  ((short*)&ONE_OVER_TWO_SQRT_10)[1] = 5181;
+  ((short*)&ONE_OVER_TWO_SQRT_10)[2] = 5181;
+  ((short*)&ONE_OVER_TWO_SQRT_10)[3] = 5181; 
 
-  ((short*)&NINE_OVER_FOUR_SQRT_10)[0] = 23315; // round((2^15)*(9/(4*sqrt(10))))=23315,  round((2^16)*(9/(4*sqrt(10))))=46630
-  ((short*)&NINE_OVER_FOUR_SQRT_10)[1] = 23315; // We can not exceed 32786 so we use 2^15 here. Multiplication routines are also changed
-  ((short*)&NINE_OVER_FOUR_SQRT_10)[2] = 23315;
-  ((short*)&NINE_OVER_FOUR_SQRT_10)[3] = 23315; 
-
-
-  ((short*)&ONE_OVER_2_SQRT_20)[0] = 3663;
-  ((short*)&ONE_OVER_2_SQRT_20)[1] = 3663; 
-  ((short*)&ONE_OVER_2_SQRT_20)[2] = 3663;
-  ((short*)&ONE_OVER_2_SQRT_20)[3] = 3663; 
-
-  ((short*)&SQRT_5_OVER_4)[0] = 18317; // Q1.15 !!
-  ((short*)&SQRT_5_OVER_4)[1] = 18317;
-  ((short*)&SQRT_5_OVER_4)[2] = 18317;
-  ((short*)&SQRT_5_OVER_4)[3] = 18317;
-
-  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[0] = 16486; // Q2.13 !!
-  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[1] = 16486; // Q2.13 !!
-  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[2] = 16486; // Q2.13 !!
-  ((short*)&SQRT_5_NINE_OVER_SQRT_20)[3] = 16486; // Q2.13 !!
-
-
+  ((short*)&NINE_OVER_TWO_SQRT_10)[0] = 23315; // Q2.14
+  ((short*)&NINE_OVER_TWO_SQRT_10)[1] = 23315;
+  ((short*)&NINE_OVER_TWO_SQRT_10)[2] = 23315;
+  ((short*)&NINE_OVER_TWO_SQRT_10)[3] = 23315; 
 
 #ifdef COMPLEXITY_MEASUREMENT
   printf("length=%d\n", length);
@@ -3157,15 +3130,23 @@ void qam16_qam16_mu_mimo(short *stream0_in,
     cnt_mul = cnt_mul+2;
 #endif
 
-    // Divide by 2
-    rho_rpi_1_1 = _mm_srai_pi16(rho_rpi_1_1,1); // = [ Re(rho)+ Im(rho)]/sqrt(10)/(2)
-    rho_rpi_1_3 = _mm_srai_pi16(rho_rpi_1_3,1); // = [ Re(rho)+3Im(rho)]/sqrt(10)/(2)
-    rho_rpi_3_1 = _mm_srai_pi16(rho_rpi_3_1,1); // = [3Re(rho)+ Im(rho)]/sqrt(10)/(2)
-    rho_rpi_3_3 = _mm_srai_pi16(rho_rpi_3_3,1); // = [3Re(rho)+3Im(rho)]/sqrt(10)/(2)
-    rho_rmi_1_1 = _mm_srai_pi16(rho_rmi_1_1,1); // = [ Re(rho)- Im(rho)]/sqrt(10)/(2)
-    rho_rmi_1_3 = _mm_srai_pi16(rho_rmi_1_3,1); // = [ Re(rho)-3Im(rho)]/sqrt(10)/(2)
-    rho_rmi_3_1 = _mm_srai_pi16(rho_rmi_3_1,1); // = [3Re(rho)- Im(rho)]/sqrt(10)/(2)
-    rho_rmi_3_3 = _mm_srai_pi16(rho_rmi_3_3,1); // = [3Re(rho)-3Im(rho)]/sqrt(10)/(2)
+    // Divide by sqrt(2)
+    rho_rpi_1_1 = _mm_mulhi_pi16(rho_rpi_1_1, ONE_OVER_SQRT_2);
+    rho_rpi_1_1 = _mm_slli_pi16(rho_rpi_1_1,1); // = [ Re(rho)+ Im(rho)]/sqrt(10)/(2)
+    rho_rpi_1_3 = _mm_mulhi_pi16(rho_rpi_1_3, ONE_OVER_SQRT_2);
+    rho_rpi_1_3 = _mm_slli_pi16(rho_rpi_1_3,1); // = [ Re(rho)+3Im(rho)]/sqrt(10)/(2)
+    rho_rpi_3_1 = _mm_mulhi_pi16(rho_rpi_3_1, ONE_OVER_SQRT_2);
+    rho_rpi_3_1 = _mm_slli_pi16(rho_rpi_3_1,1); // = [3Re(rho)+ Im(rho)]/sqrt(10)/(2)
+    rho_rpi_3_3 = _mm_mulhi_pi16(rho_rpi_3_3, ONE_OVER_SQRT_2);
+    rho_rpi_3_3 = _mm_slli_pi16(rho_rpi_3_3,1); // = [3Re(rho)+3Im(rho)]/sqrt(10)/(2)
+    rho_rmi_1_1 = _mm_mulhi_pi16(rho_rmi_1_1, ONE_OVER_SQRT_2);
+    rho_rmi_1_1 = _mm_slli_pi16(rho_rmi_1_1,1); // = [ Re(rho)- Im(rho)]/sqrt(10)/(2)
+    rho_rmi_1_3 = _mm_mulhi_pi16(rho_rmi_1_3, ONE_OVER_SQRT_2);
+    rho_rmi_1_3 = _mm_slli_pi16(rho_rmi_1_3,1); // = [ Re(rho)-3Im(rho)]/sqrt(10)/(2)
+    rho_rmi_3_1 = _mm_mulhi_pi16(rho_rmi_3_1, ONE_OVER_SQRT_2);
+    rho_rmi_3_1 = _mm_slli_pi16(rho_rmi_3_1,1); // = [3Re(rho)- Im(rho)]/sqrt(10)/(2)
+    rho_rmi_3_3 = _mm_mulhi_pi16(rho_rmi_3_3, ONE_OVER_SQRT_2);
+    rho_rmi_3_3 = _mm_slli_pi16(rho_rmi_3_3,1); // = [3Re(rho)-3Im(rho)]/sqrt(10)/(2)
 
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+0;
@@ -3316,10 +3297,9 @@ void qam16_qam16_mu_mimo(short *stream0_in,
    cnt_add = cnt_add+0;
    cnt_mul = cnt_mul+8;
 #endif
-
    
-   ch_mag_int_with_sigma2 = _mm_mulhi_pi16(ch_mag_int, ONE_OVER_SQRT_2);
-   ch_mag_int_with_sigma2 = _mm_slli_pi16(ch_mag_int_with_sigma2, 1);
+   //ch_mag_int_with_sigma2 = _mm_mulhi_pi16(ch_mag_int, ONE_OVER_SQRT_2);
+   //ch_mag_int_with_sigma2 = _mm_slli_pi16(ch_mag_int_with_sigma2, 1);
    
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+0;
@@ -3327,38 +3307,38 @@ void qam16_qam16_mu_mimo(short *stream0_in,
 #endif
 
    // Compute optimal interfering symbol
-   interference_abs_pi16(&psi_r_p1_p1 ,&ch_mag_int_with_sigma2,&a_r_p1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p1_p1 ,&ch_mag_int_with_sigma2,&a_i_p1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_p1_p3 ,&ch_mag_int_with_sigma2,&a_r_p1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p1_p3 ,&ch_mag_int_with_sigma2,&a_i_p1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_p1_m1 ,&ch_mag_int_with_sigma2,&a_r_p1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p1_m1 ,&ch_mag_int_with_sigma2,&a_i_p1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_p1_m3 ,&ch_mag_int_with_sigma2,&a_r_p1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p1_m3 ,&ch_mag_int_with_sigma2,&a_i_p1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_p3_p1 ,&ch_mag_int_with_sigma2,&a_r_p3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p3_p1 ,&ch_mag_int_with_sigma2,&a_i_p3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_p3_p3 ,&ch_mag_int_with_sigma2,&a_r_p3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p3_p3 ,&ch_mag_int_with_sigma2,&a_i_p3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_p3_m1 ,&ch_mag_int_with_sigma2,&a_r_p3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p3_m1 ,&ch_mag_int_with_sigma2,&a_i_p3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_p3_m3 ,&ch_mag_int_with_sigma2,&a_r_p3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_p3_m3 ,&ch_mag_int_with_sigma2,&a_i_p3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m1_p1 ,&ch_mag_int_with_sigma2,&a_r_m1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m1_p1 ,&ch_mag_int_with_sigma2,&a_i_m1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m1_p3 ,&ch_mag_int_with_sigma2,&a_r_m1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m1_p3 ,&ch_mag_int_with_sigma2,&a_i_m1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m1_m1 ,&ch_mag_int_with_sigma2,&a_r_m1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m1_m1 ,&ch_mag_int_with_sigma2,&a_i_m1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m1_m3 ,&ch_mag_int_with_sigma2,&a_r_m1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m1_m3 ,&ch_mag_int_with_sigma2,&a_i_m1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m3_p1 ,&ch_mag_int_with_sigma2,&a_r_m3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m3_p1 ,&ch_mag_int_with_sigma2,&a_i_m3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m3_p3 ,&ch_mag_int_with_sigma2,&a_r_m3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m3_p3 ,&ch_mag_int_with_sigma2,&a_i_m3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m3_m1 ,&ch_mag_int_with_sigma2,&a_r_m3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m3_m1 ,&ch_mag_int_with_sigma2,&a_i_m3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_r_m3_m3 ,&ch_mag_int_with_sigma2,&a_r_m3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
-   interference_abs_pi16(&psi_i_m3_m3 ,&ch_mag_int_with_sigma2,&a_i_m3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p1_p1 ,&ch_mag_int,&a_r_p1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p1_p1 ,&ch_mag_int,&a_i_p1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p1_p3 ,&ch_mag_int,&a_r_p1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p1_p3 ,&ch_mag_int,&a_i_p1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p1_m1 ,&ch_mag_int,&a_r_p1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p1_m1 ,&ch_mag_int,&a_i_p1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p1_m3 ,&ch_mag_int,&a_r_p1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p1_m3 ,&ch_mag_int,&a_i_p1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p3_p1 ,&ch_mag_int,&a_r_p3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p3_p1 ,&ch_mag_int,&a_i_p3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p3_p3 ,&ch_mag_int,&a_r_p3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p3_p3 ,&ch_mag_int,&a_i_p3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p3_m1 ,&ch_mag_int,&a_r_p3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p3_m1 ,&ch_mag_int,&a_i_p3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_p3_m3 ,&ch_mag_int,&a_r_p3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_p3_m3 ,&ch_mag_int,&a_i_p3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m1_p1 ,&ch_mag_int,&a_r_m1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m1_p1 ,&ch_mag_int,&a_i_m1_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m1_p3 ,&ch_mag_int,&a_r_m1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m1_p3 ,&ch_mag_int,&a_i_m1_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m1_m1 ,&ch_mag_int,&a_r_m1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m1_m1 ,&ch_mag_int,&a_i_m1_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m1_m3 ,&ch_mag_int,&a_r_m1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m1_m3 ,&ch_mag_int,&a_i_m1_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m3_p1 ,&ch_mag_int,&a_r_m3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m3_p1 ,&ch_mag_int,&a_i_m3_p1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m3_p3 ,&ch_mag_int,&a_r_m3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m3_p3 ,&ch_mag_int,&a_i_m3_p3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m3_m1 ,&ch_mag_int,&a_r_m3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m3_m1 ,&ch_mag_int,&a_i_m3_m1 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_r_m3_m3 ,&ch_mag_int,&a_r_m3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
+   interference_abs_pi16(&psi_i_m3_m3 ,&ch_mag_int,&a_i_m3_m3 ,&ONE_OVER_SQRT_10, &THREE_OVER_SQRT_10);
 
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+32;
@@ -3394,29 +3374,29 @@ void qam16_qam16_mu_mimo(short *stream0_in,
 #endif
 
    // Calculation of a group of two terms in the bit metric involving squares of interference
-   ch_mag_int_over_20= _mm_mulhi_pi16(ch_mag_int,ONE_OVER_FOUR_SQRT_10);
+   // ch_mag_int_over_20= _mm_mulhi_pi16(ch_mag_int,ONE_OVER_FOUR_SQRT_10);
 
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+1;
    cnt_mul = cnt_mul+0;
 #endif
    
-   square_a_pi16(a_r_p1_p1,a_i_p1_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_p1);
-   square_a_pi16(a_r_p1_p3,a_i_p1_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_p3);
-   square_a_pi16(a_r_p3_p1,a_i_p3_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_p1);
-   square_a_pi16(a_r_p3_p3,a_i_p3_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_p3);
-   square_a_pi16(a_r_p1_m1,a_i_p1_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_m1);
-   square_a_pi16(a_r_p1_m3,a_i_p1_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_p1_m3);
-   square_a_pi16(a_r_p3_m1,a_i_p3_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_m1);
-   square_a_pi16(a_r_p3_m3,a_i_p3_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_p3_m3);
-   square_a_pi16(a_r_m1_p1,a_i_m1_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_p1);
-   square_a_pi16(a_r_m1_p3,a_i_m1_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_p3);
-   square_a_pi16(a_r_m3_p1,a_i_m3_p1,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_p1);
-   square_a_pi16(a_r_m3_p3,a_i_m3_p3,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_p3);
-   square_a_pi16(a_r_m1_m1,a_i_m1_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_m1);
-   square_a_pi16(a_r_m1_m3,a_i_m1_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_m1_m3);
-   square_a_pi16(a_r_m3_m1,a_i_m3_m1,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_m1);
-   square_a_pi16(a_r_m3_m3,a_i_m3_m3,ch_mag_int,SQRT_5_OVER_4,a_sq_m3_m3);   
+   square_a_pi16(a_r_p1_p1,a_i_p1_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_p1);
+   square_a_pi16(a_r_p1_p3,a_i_p1_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_p3);
+   square_a_pi16(a_r_p3_p1,a_i_p3_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_p1);
+   square_a_pi16(a_r_p3_p3,a_i_p3_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_p3);
+   square_a_pi16(a_r_p1_m1,a_i_p1_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_m1);
+   square_a_pi16(a_r_p1_m3,a_i_p1_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p1_m3);
+   square_a_pi16(a_r_p3_m1,a_i_p3_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_m1);
+   square_a_pi16(a_r_p3_m3,a_i_p3_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_p3_m3);
+   square_a_pi16(a_r_m1_p1,a_i_m1_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_p1);
+   square_a_pi16(a_r_m1_p3,a_i_m1_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_p3);
+   square_a_pi16(a_r_m3_p1,a_i_m3_p1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_p1);
+   square_a_pi16(a_r_m3_p3,a_i_m3_p3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_p3);
+   square_a_pi16(a_r_m1_m1,a_i_m1_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_m1);
+   square_a_pi16(a_r_m1_m3,a_i_m1_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m1_m3);
+   square_a_pi16(a_r_m3_m1,a_i_m3_m1,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_m1);
+   square_a_pi16(a_r_m3_m3,a_i_m3_m3,ch_mag_int,SQRT_10_OVER_FOUR,a_sq_m3_m3);   
 
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+16;
@@ -3424,25 +3404,12 @@ void qam16_qam16_mu_mimo(short *stream0_in,
 #endif
 
    // Computing different multiples of channel norms
-   ch_mag_over_10=_mm_mulhi_pi16(ch_mag_des,ONE_OVER_2_SQRT_20);
-   ch_mag_over_10=_mm_slli_pi16(ch_mag_over_10,1);
-   ch_mag_over_2=_mm_mulhi_pi16(ch_mag_des,SQRT_5_OVER_4);
-   ch_mag_over_2=_mm_slli_pi16(ch_mag_over_2,1);
-   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des,SQRT_5_NINE_OVER_SQRT_20);
-   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,2);
-
-   /*
-   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des,NINE_OVER_SQRT_20);
-   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,3);
-   ch_mag_9_over_10=_mm_srai_pi16(ch_mag_9_over_10,1);*/
-   
-   /*
-   ch_mag_over_10=_mm_mulhi_pi16(ch_mag_des,ONE_OVER_SQRT_20);
-   ch_mag_over_10=_mm_slli_pi16(ch_mag_over_10,1);
-   ch_mag_over_2=_mm_mulhi_pi16(ch_mag_des,SQRT_5_OVER_2);
-   ch_mag_over_2=_mm_slli_pi16(ch_mag_over_2,2);
-   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des,NINE_OVER_SQRT_20);
-   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10,3);*/
+   ch_mag_over_10=_mm_mulhi_pi16(ch_mag_des, ONE_OVER_TWO_SQRT_10);
+   ch_mag_over_10=_mm_slli_pi16(ch_mag_over_10, 1);
+   ch_mag_over_2=_mm_mulhi_pi16(ch_mag_des, SQRT_10_OVER_FOUR);
+   ch_mag_over_2=_mm_slli_pi16(ch_mag_over_2, 1);
+   ch_mag_9_over_10=_mm_mulhi_pi16(ch_mag_des, NINE_OVER_TWO_SQRT_10);
+   ch_mag_9_over_10=_mm_slli_pi16(ch_mag_9_over_10, 2);                  
 
 #ifdef COMPLEXITY_MEASUREMENT
    cnt_add = cnt_add+3;
@@ -5760,7 +5727,7 @@ length = number of resource elements
   __m64 *stream1_64_in = (__m64 *)stream1_in;
   __m64 *stream0_64_out = (__m64 *)stream0_out;
 
-  int i,ll;
+  int i;
   
 #ifdef COMPLEXITY_MEASUREMENT
   printf("length=%d\n", length);
@@ -10809,10 +10776,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #ifdef ENABLE_FXP      
       if (first_symbol_flag==1) {
           // effective channel of desired user is always stronger than interfering eff. channel
-          dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol_mod, nb_rb);
-          avgs = avg[0];
+          dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	&avg[0], symbol_mod, nb_rb);
 
-          lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(log2_approx(avgs)-13,0);
+          avg[0] = log2_approx(avg[0])-13;
+          lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
       }      
 #endif
 
