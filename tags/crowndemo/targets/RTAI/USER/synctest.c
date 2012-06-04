@@ -530,7 +530,7 @@ static void *UE_thread(void *arg)
   int delay_cnt;
   RTIME time_in;
   int hw_slot_offset = 0;
-
+  int diff2;
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -567,17 +567,17 @@ static void *UE_thread(void *arg)
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       delay_cnt = 0;
       while ((hw_slot <= slot) && (!oai_exit)) {
-	diff = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-	if (diff<=1)
-	  diff=2;
+	diff2 = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+	if (diff2<=1)
+	  diff2=2;
 	time_in = rt_get_time_ns();
-	rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",
-		  frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
-	rt_sleep(diff*DAQ_PERIOD);
-	rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
+	rt_printk("UE Frame %d delaycnt %d : hw_slot %d (%d), last_slot %d, slot %d, (slot+1)*15 %d, diff %d, time %llu\n",
+		  frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],last_slot,slot,(((slot+1)*15)>>1),diff2,time_in);
+	rt_sleep(diff2*DAQ_PERIOD);
+	rt_printk("UE Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
 	hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
 	delay_cnt++;
-	if (delay_cnt == 10) {
+	if (delay_cnt == 30) {
 	  oai_exit = 1;
 	  rt_printk("UE frame %d: HW stopped ... \n",frame);
 	}
@@ -650,6 +650,7 @@ static void *UE_thread(void *arg)
       else   // we are not yet synchronized
         {
 	  hw_slot_offset = 0;
+
 #ifdef CBMIMO1
 	  if (received_slots==0) {
 	    ioctl(openair_fd,openair_GET_BUFFER,NULL);
@@ -674,21 +675,27 @@ static void *UE_thread(void *arg)
             }
           received_slots++;
 #else
+	  slot = 0;
 	  ioctl(openair_fd,openair_GET_BUFFER,NULL);
-	  rt_printk("fun0: slot %d: doing sync\n",slot);
-	  /*
+	  rt_sleep(FRAME_PERIOD);
+	  //	  rt_printk("fun0: slot %d: doing sync\n",slot);
+	  
 	  if (initial_sync(PHY_vars_UE_g[0])==0)
 	    {
 	      //for better visualization afterwards
+	      /*
 	      for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
 		memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
 		       PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
-
+	      */
 	      is_synchronized = 1;
-	      
+	      ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
+
+	      //	      oai_exit=1;
 	      hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
+	      rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
 	    }
-	  */
+	  
 #endif
 	}
 
@@ -768,7 +775,7 @@ int main(int argc, char **argv)
   char title[255];
 #endif
 
-  while ((c = getopt (argc, argv, "Ud")) != -1)
+  while ((c = getopt (argc, argv, "UdC:")) != -1)
     {
       switch (c)
         {
@@ -779,6 +786,12 @@ int main(int argc, char **argv)
           printf("configuring for UE\n");
           UE_flag = 1;
           break;
+	case 'C':
+	  carrier_freq[0] = atoi(optarg);
+	  carrier_freq[1] = atoi(optarg);
+	  carrier_freq[2] = atoi(optarg);
+	  carrier_freq[3] = atoi(optarg);
+	  break;
         default:
           break;
         }
@@ -864,8 +877,12 @@ int main(int argc, char **argv)
   number_of_cards = 1;
 
   // connect the TX/RX buffers
-  if (UE_flag==1)
+  if (UE_flag==1) {
     setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,0);
+    for (i=0;i<frame_parms->samples_per_tti*10;i++)
+      for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+	PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
+  }
   else
     {
       setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms);
@@ -941,7 +958,7 @@ int main(int argc, char **argv)
 
   // start the main thread
   if (UE_flag == 1)
-    thread1 = rt_thread_create(UE_thread, NULL, 10000000);
+    thread1 = rt_thread_create(UE_thread, NULL, 100000000);
   else
     thread0 = rt_thread_create(eNB_thread, NULL, 10000000);
 
