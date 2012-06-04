@@ -6,65 +6,103 @@
 #ifndef _FEMTO_UTILS
 #define  _FEMTO_UTILS
 
+/*! \file SIMULATION/LTE_FEMTO/femtoUtils.h
+* \brief Defines structure and function  headers 
+* \author L. Garcia
+* \date 2012
+* \version 0.1
+* \company Eurecom
+* \note
+* \warning
+*/
 
+///Top-level data Structure for general options of simulation and other global variables
 typedef struct {
-	 double snr_init;
-	 double snr_max;	 
-	 double snr_step;
-	 int nframes;
-	 int extended_prefix_flag;  
-	 u8 frame_type;				//Frame type (0 FDD, 1 TDD). 
-	 u8 transmission_mode;		//Transmission mode (1,2,6 for the moment)
-	 u8 n_tx;
-	 u8 n_rx;
-	 int nInterf;
-	 s8 *dbInterf;
-	 u16 Nid_cell;	 
-	 u8 oversampling;
-	 SCM_t channel_model;
-	 char interfLevels[100];
-	 int awgn_flag;
-	 int nsymb;
-	 int num_layers;
-	 u16 n_rnti;	
-	 u8 mcs;				//Modulation and code scheme 
-	 //TODO int n_ch_rlz = 1;   printf("-N Determines the number of Channel Realizations in Absraction mode. Default value is 1. \n");
-	 
-	 
-	 u8 pilot1,pilot2,pilot3;
-	 FILE *outputFile;
-	 FILE *outputBler;
-	 u8 num_rounds;
-	 u8 subframe;
-	 int eNB_id;
-	 s16 amp;			//	Amplitude of QPSK symbols 
-	 u8 dci_flag;		//1- Analysis  of errors on DCI, 0- No analysis of errors in DCI
-	 int testNumber;
-	 char folderName[50];
-	 
-	 char parameters[150];
-	 
-}options_t;
+	
+    double snr_init;
+    double snr_max;
+    double snr_step;
+    int nframes;
+    int extended_prefix_flag;
+    ///Frame type (0 FDD, 1 TDD).
+    u8 frame_type;				
+    ///Transmission mode (1 for the moment)
+    u8 transmission_mode;		
+    ///Number of Transmit antennas in node.  
+    u8 n_tx;
+    ///Number of Receive antennas in node. 
+    u8 n_rx;
+    ///Number of interference to simulate
+    int nInterf;
+    ///Array with interference  level in dB 
+    s8 *dbInterf;
+    char interfLevels[100];
+    
+    u16 Nid_cell;
+    u8 oversampling;
+    SCM_t channel_model;    
+    int awgn_flag;
+    int nsymb;
+    int num_layers;
+    u16 n_rnti;
+    ///Modulation and code scheme
+    u8 mcs;				    
 
-typedef struct{
-	 double **s_re;
-	 double **s_im;
-	 double **r_re;
-	 double **r_im;
-}data_t;
 
+    u8 pilot1,pilot2,pilot3;
+    ///Pointer  to the output file SNRvsBLER
+    FILE *outputFile;
+    ///Pointer  to the output file errors and trials for each SNR 
+    FILE *outputBler;
+    
+    u8 num_rounds;
+    u8 subframe;
+    int eNB_id;
+    ///	Amplitude of QPSK symbols
+    s16 amp;			
+    ///1- Analysis  of errors on DCI, 0- No analysis of errors in DCI
+    u8 dci_flag;		    
+    int testNumber;
+    char folderName[50];
+    char parameters[150];
+
+} options_t;
+
+/// Store signal data
+typedef struct {
+    double **s_re;
+    double **s_im;
+    double **r_re;
+    double **r_im;
+} data_t;
+
+/// Parses the command line options and assigns values ​​to  pilots, num_symbols, etc.  modified by the options selected
 void _parseOptions(options_t *opts, int argc, char ** argv);
 void _printOptions(options_t *opts);
+/// Interference Levels are recivend in form  num,num,num this function parse the string and fill dbInterf array 
 void _parseInterferenceLevels(s8 **dbInterf, char *interfLevels,int nInterf);
+/// Allocate memory  for signal data arrays 
 void _allocData(data_t *data, u8 n_tx,u8 n_rx,int Frame_length_complex_samples);
+/// Generate output dir with the prefix specified in testNumber
 void _makeOutputDir(options_t *opts);
 
-
+/// Initializes  lte_frame_parms structure and make the structures of the  eNB and EU involved in the simulation, including interference, if any.
 LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts);
+/// Set defaults values for the simulations
 void _initDefaults(options_t *opts);
+/// Allocate and fill  UL, CCCH and DLSCH structures
 void _fill_Ul_CCCH_DLSCH_Alloc(options_t opts);
+/// Allocate the eNB2UE structure for transmision and interference
 void _generatesRandomChannel(options_t opts);
-void _allocBroadcastTransportChannel(options_t opts);
+/** @brief This function allocates structures for a particular DLSCH at eNB.
+ *
+ * modifications  will be required with more than 2 users
+ * It's used to generate the dci. they contain informations such as the modulation and coding scheme
+ * either if the transmit power control is required or not and so on...
+ * dlsch_eNB can suport 8 users.
+ * Create transport channel structures for 2 transport blocks (MIMO)
+*/
+void _allocDLSChannel(options_t opts);
 void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx);//,u8 **input_buffer);
 void _freeMemory(data_t data,options_t opts);
 void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx,u16 NB_RB,LTE_DL_FRAME_PARMS  *frame_parms);
