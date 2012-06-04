@@ -121,9 +121,9 @@
 #define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
 #endif //EXPRESSMiMO_TARGET
 
-#ifdef Rel10
+
 #define MAX_NUM_CCs 5
-#endif
+
  
 
 #include "spec_defs_top.h"

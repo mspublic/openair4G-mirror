@@ -514,10 +514,26 @@ SCellIndex_r10_t locate_sCell_index(u8 Mod_id,u8 eNB_index,SCellIndex_r10_t sCel
 
 void	rrc_ue_process_sCellAdd(u8 Mod_id,u8 eNB_index,SCellToAddMod_r10_t *sCellToAdd){
 	if (sCellToAdd != NULL) {
-		if (sCellToAdd->sCellIndex_r10)
-			UE_rrc_inst[Mod_id].sCell_config[eNB_index][locate_sCell_index(Mod_id, eNB_index, sCellToAdd->sCellIndex_r10)] = sCellToAdd;
-			LOG_W(RRC,"[UE %d] Added SCell with index %d ...\n",Mod_id,sCellToAdd->sCellIndex_r10);
+		if (sCellToAdd->sCellIndex_r10) {
+			UE_rrc_inst[Mod_id].sCell_config[eNB_index][0] = CALLOC(1,sizeof(SCellToAddMod_r10_t));
+			UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10 = \
+							CALLOC(1,sizeof(struct RadioResourceConfigDedicatedSCell_r10));
+			UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 = \
+							CALLOC(1,sizeof(struct PhysicalConfigDedicatedSCell_r10));
+
+		    /*
+		    memcpy((char*)UE_rrc_inst[Mod_id].sCell_config[eNB_index][0],(char*)sCellToAdd,
+			     sizeof(SCellToAddMod_r10_t));
+			*/
+			memcpy(UE_rrc_inst[Mod_id].sCell_config[eNB_index][0],sCellToAdd,
+						     sizeof(SCellToAddMod_r10_t));
+
+			//UE_rrc_inst[Mod_id].sCell_config[eNB_index][0] = sCellToAdd;
+		}
+		//UE_rrc_inst[Mod_id].sCell_config[eNB_index][locate_sCell_index(Mod_id, eNB_index, sCellToAdd->sCellIndex_r10)] = sCellToAdd;
+		LOG_W(RRC,"[UE %d] Added SCell with index %d ...\n",Mod_id,sCellToAdd->sCellIndex_r10);
 	}
+}
 	/*// This is how you could implement multiple SCell being added/deleted at a time
 	u8 cnt;
 	if (sCellList->list !=NULL) {
@@ -526,7 +542,6 @@ void	rrc_ue_process_sCellAdd(u8 Mod_id,u8 eNB_index,SCellToAddMod_r10_t *sCellTo
 	    }
 	}
 	*/
-}
 
 
 void	rrc_ue_process_sCellRelease(u8 Mod_id,u8 eNB_index,SCellToReleaseList_r10_t *sCellList) {
@@ -622,7 +637,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	  rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			     (RadioResourceConfigCommonSIB_t *)NULL,
 			     UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
-			     UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
+			     (PhysicalConfigDedicatedSCell_r10_t *)NULL,
 			     UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 			     1,
 			     SRB1_logicalChannelConfig,
@@ -659,7 +674,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
       rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			 (RadioResourceConfigCommonSIB_t *)NULL,
 			 UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
-			 UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
+			 (PhysicalConfigDedicatedSCell_r10_t *)NULL,
 			 UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 			 2,
 			 SRB2_logicalChannelConfig,
@@ -717,6 +732,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
 
   LOG_I(RRC,"[UE %d] Frame %d: Logical Channel DL-DCCH (SRB1), Processing RRCConnectionReconfiguration (eNB %d)\n",
 	Mod_id,frame,eNB_index);
+
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
@@ -730,6 +746,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
 	rrc_ue_process_measConfig(Mod_id,eNB_index,
 				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
       }
+#ifdef Rel10
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->list.array[0]) {
 	// Note: Addition of only 1 SCell at a time is possible in the current implementation. More ambitious ppl are welcome
     // to extend the implementation for multiple SCell addition!
@@ -742,6 +759,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
     rrc_ue_process_sCellRelease(Mod_id,eNB_index,
 			rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToReleaseList_r10->list.array[0]);
       }
+#endif
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
 	rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
 						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
