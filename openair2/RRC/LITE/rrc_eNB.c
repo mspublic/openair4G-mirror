@@ -530,6 +530,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 
 	/* Rel 10 optional parameters - not sure what to do with these */
 	if(rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension != NULL) {
+		eNB_rrc_inst[Mod_id].rrcRel10IEs[0] = malloc(sizeof(RRCConnectionReconfigurationComplete_v1020_IEs_t));
 		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->logMeasAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->logMeasAvailable_r10;
 		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->rlf_InfoAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->rlf_InfoAvailable_r10;
 	}
@@ -659,7 +660,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
   rrc_mac_config_req(Mod_id,1,UE_index,0,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
-		     eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
+		     (PhysicalConfigDedicatedSCell_r10_t *)NULL,
 		     eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 		     1,
 		     SRB1_logicalChannelConfig,

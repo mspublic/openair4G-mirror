@@ -449,9 +449,9 @@ int main (int argc, char **argv) {
   }
 
   mac_xface = (MAC_xface *)malloc(sizeof(MAC_xface));
+  logInit();
   init_lte_vars (&frame_parms, 0, 1, 0, 0, 25, 0, 0, 1, 1);
   set_taus_seed(0);
-  logInit();
   set_log(OMG,  LOG_INFO, 20);
   set_log(EMU,  LOG_INFO, 10);
   set_log(OCG,  LOG_INFO, 1);  
