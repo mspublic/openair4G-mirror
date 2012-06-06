@@ -6419,20 +6419,20 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   //printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
   
 #ifdef ENABLE_FXP
-  /*qam16_qam16_mu_mimo((short *)rxF,
+  qam16_qam16_mu_mimo((short *)rxF,
 		      (short *)rxF_i,
 		      (short *)ch_mag,
 		      (short *)ch_mag_i,
 		      (short *)llr16,
 		      (short *)rho,
-		      len);*/
-  qam16_qam16_mu_mimo_flp2((short *)rxF,
+		      len);
+  /*  qam16_qam16_mu_mimo_flp2((short *)rxF,
 		      (short *)rxF_i,
 		      (short *)ch_mag,
 		      (short *)ch_mag_i,
 		      (short *)llr16,
 		      (short *)rho,                      
-              len);
+              len);*/
 
 #endif
   
