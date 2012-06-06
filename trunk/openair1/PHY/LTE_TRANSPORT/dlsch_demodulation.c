@@ -4170,6 +4170,176 @@ bit_met_m3_m3[j] = -9/10.0*ch_mag_des[j]*sqrt(10)/2 - 6/sqrt(10)*y0_re[j]*1/sqrt
     }
 }
 
+void qam16_qam16_mu_mimo_flp2(short *stream0_in,
+        short *stream1_in,
+        short *ch_mag,
+        short *ch_mag_i,
+        short *stream0_out,
+        short *rho01,
+        int length
+        ) {
+ 
+    short *llr_fxp;
+    int k,m;
+    double y0r,y0i,y1r,y1i,rho_r,rho_i,h0s,h1s,s0r,s0i,s1r,s1i,eta1,eta2,llr;
+    double pow2 = pow(2,15);
+    double tmp0,tmp1,tmp2,tmp3,maxMetNum,maxMetDen;
+   
+    double Q16r[16] = {1,1,3,3,1,1,3,3,-1,-1,-3,-3,-1,-1,-3,-3};
+    double Q16i[16] = {1,3,1,3,-1,-3,-1,-3,1,3,1,3,-1,-3,-1,-3};
+    double metric[16];
+       
+    // Loop over REs
+    for (m=0;m<length;m++) {
+
+        // cast to double
+        y0r = (double) stream0_in[2*m];
+        y0i = (double) stream0_in[2*m+1];
+        y1r = (double) stream1_in[2*m];
+        y1i = (double) stream1_in[2*m+1];
+        rho_r = (double) rho01[2*m];
+        rho_i = (double) rho01[2*m+1];
+        h0s = (double) ch_mag[2*m];
+        h1s = (double) ch_mag_i[2*m];
+        llr_fxp = &stream0_out[4*m];
+       
+        //printf("y0r=%5f\n",y0r);
+        //printf("y0i=%5f\n",y0i);
+
+        // undo fxp
+        y0r /= pow2;
+        y0i /= pow2;
+        y1r /= pow2;
+        y1i /= pow2;
+        rho_r /= pow2;
+        rho_i /= pow2;
+        h0s /= pow2;
+        h1s /= pow2;
+       
+        // scale
+        h0s *= sqrt(5.0); // undo scaling
+        h0s /= 2;
+        h1s *= sqrt(5.0); // undo scaling
+        h1s /= 2;
+        y0r *= sqrt(2.0);
+        y0i *= sqrt(2.0);
+        y1r *= sqrt(2.0);
+        y1i *= sqrt(2.0);
+        //rho_r /= 2;
+        //rho_i /= 2;                      
+       
+        // Compute metrics
+        for (k=0;k<16;k++) {
+            s0r = Q16r[k]/sqrt(10);
+            s0i = Q16i[k]/sqrt(10);
+           
+            // compute metric
+            eta1 = rho_r*s0r + rho_i*s0i - y1r;
+            eta1 = abs(eta1);
+            eta2 = rho_r*s0i - rho_i*s0r - y1i;
+            eta2 = abs(eta2);
+           
+            // optimal interfering symbol amplitude
+            if (eta1 < 4*h1s/sqrt(10))
+                s1r = 1/sqrt(10);
+            else
+                s1r = 3/sqrt(10);
+           
+            if (eta2 < 4*h1s/sqrt(10))
+                s1i = 1/sqrt(10);
+            else
+                s1i = 3/sqrt(10);
+           
+            metric[k] = -h0s*(s0r*s0r+s0i*s0i) + y0r*s0r + y0i*s0i + eta1*s1r + eta2*s1i - h1s*(s1r*s1r+s1i*s1i);
+            //if (metric[k]!=0)
+             //   mexPrintf("D=%3.4f\n", metric[k]);
+        }
+       
+        // Compute LLRs
+        // Bit 1 (MSB)
+        tmp0 = cmax(metric[0],metric[1]);
+        tmp1 = cmax(metric[2],metric[3]);
+        tmp2 = cmax(metric[4],metric[5]);
+        tmp3 = cmax(metric[6],metric[7]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetNum = cmax(tmp0,tmp1); // Bit = 0
+       
+        tmp0 = cmax(metric[8],metric[9]);
+        tmp1 = cmax(metric[10],metric[11]);
+        tmp2 = cmax(metric[12],metric[13]);
+        tmp3 = cmax(metric[14],metric[15]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetDen = cmax(tmp0,tmp1); // Bit = 1
+
+        llr = maxMetNum - maxMetDen;
+        llr_fxp[0] = (short) floor(llr*pow2);
+       
+        // Bit 2
+        tmp0 = cmax(metric[0],metric[1]);
+        tmp1 = cmax(metric[2],metric[3]);
+        tmp2 = cmax(metric[8],metric[9]);
+        tmp3 = cmax(metric[10],metric[11]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetNum = cmax(tmp0,tmp1); // Bit = 0
+       
+        tmp0 = cmax(metric[4],metric[5]);
+        tmp1 = cmax(metric[6],metric[7]);
+        tmp2 = cmax(metric[12],metric[13]);
+        tmp3 = cmax(metric[14],metric[15]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetDen = cmax(tmp0,tmp1); // Bit = 1
+        
+        llr = maxMetNum - maxMetDen;
+        llr_fxp[1] = (short) floor(llr*pow2);
+       
+        // Bit 3
+        tmp0 = cmax(metric[0],metric[1]);
+        tmp1 = cmax(metric[4],metric[5]);
+        tmp2 = cmax(metric[8],metric[9]);
+        tmp3 = cmax(metric[12],metric[13]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetNum = cmax(tmp0,tmp1); // Bit = 0
+       
+        tmp0 = cmax(metric[2],metric[3]);
+        tmp1 = cmax(metric[6],metric[7]);
+        tmp2 = cmax(metric[10],metric[11]);
+        tmp3 = cmax(metric[14],metric[15]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetDen = cmax(tmp0,tmp1); // Bit = 1
+       
+        llr = maxMetNum - maxMetDen;
+        llr_fxp[2] = (short) floor(llr*pow2);
+
+        // Bit 4 (LSB)
+        tmp0 = cmax(metric[0],metric[2]);
+        tmp1 = cmax(metric[4],metric[6]);
+        tmp2 = cmax(metric[8],metric[10]);
+        tmp3 = cmax(metric[12],metric[14]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetNum = cmax(tmp0,tmp1); // Bit = 0
+       
+        tmp0 = cmax(metric[1],metric[3]);
+        tmp1 = cmax(metric[5],metric[7]);
+        tmp2 = cmax(metric[9],metric[11]);
+        tmp3 = cmax(metric[13],metric[15]);
+        tmp0 = cmax(tmp0,tmp1);
+        tmp1 = cmax(tmp2,tmp3);
+        maxMetDen= cmax(tmp0,tmp1); // Bit = 1
+       
+        llr = maxMetNum - maxMetDen;
+        llr_fxp[3] = (short) floor(llr*pow2);               
+
+        //printf("llr = %d %d %d %d\n",llr_fxp[0],llr_fxp[1],llr_fxp[2],llr_fxp[3]);
+    }
+}
+
 void qam16_qam16_mu_mimo_full_flp(double *stream0_in, // from rxdataF_comp
 				  double *stream1_in,
 				  double *ch_mag,
@@ -6258,6 +6428,14 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		      (short *)llr16,
 		      (short *)rho,
 		      len);
+  /*qam16_qam16_mu_mimo_flp2((short *)rxF,
+		      (short *)rxF_i,
+		      (short *)ch_mag,
+		      (short *)ch_mag_i,
+		      (short *)llr16,
+		      (short *)rho,                      
+              len);*/
+
 #endif
   
 #ifdef ENABLE_FLP
@@ -10780,6 +10958,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
           avg[0] = log2_approx(avg[0])-13;
           lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
+          printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }      
 #endif
 
