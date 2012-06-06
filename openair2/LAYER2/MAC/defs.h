@@ -416,6 +416,8 @@ typedef struct{
   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
   /// pointer to RRC PHY configuration 
   struct PhysicalConfigDedicated *physicalConfigDedicated;
+  /// pointer to RRC PHY configuration SCEll
+  struct PhysicalConfigDedicatedSCell_r10	*physicalConfigDedicatedSCell_r10[MAX_NUM_CCs];
   /// pointer to TDD Configuration (NULL for FDD)
   TDD_Config_t *tdd_Config;
   /// Pointer to RRC MAC configuration
