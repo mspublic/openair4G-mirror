@@ -82,7 +82,7 @@ NOCYGWIN_STATIC __m64 ONE_OVER_2_SQRT_20 __attribute__((aligned(16)));
 NOCYGWIN_STATIC __m64 SQRT_5_OVER_4 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 SQRT_5_NINE_OVER_SQRT_20 __attribute__((aligned(16))); 
 
-
+#define abs(a) (((a) > 0) ? (a) : (-a))
 #define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; tmp_result=_mm_xor_si64(x,sign); tmp_result2=_mm_srli_pi16(sign,15); res=_mm_adds_pi16(tmp_result2,tmp_result);  //negate negativesg
 
 //#define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; res=_mm_xor_si64(x,sign);   //negate negativesg
@@ -4225,8 +4225,6 @@ void qam16_qam16_mu_mimo_flp2(short *stream0_in,
         y0i *= sqrt(2.0);
         y1r *= sqrt(2.0);
         y1i *= sqrt(2.0);
-        //rho_r /= 2;
-        //rho_i /= 2;                      
        
         // Compute metrics
         for (k=0;k<16;k++) {
@@ -6421,20 +6419,20 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   //printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
   
 #ifdef ENABLE_FXP
-  qam16_qam16_mu_mimo((short *)rxF,
+  /*qam16_qam16_mu_mimo((short *)rxF,
 		      (short *)rxF_i,
 		      (short *)ch_mag,
 		      (short *)ch_mag_i,
 		      (short *)llr16,
 		      (short *)rho,
-		      len);
-  /*qam16_qam16_mu_mimo_flp2((short *)rxF,
+		      len);*/
+  qam16_qam16_mu_mimo_flp2((short *)rxF,
 		      (short *)rxF_i,
 		      (short *)ch_mag,
 		      (short *)ch_mag_i,
 		      (short *)llr16,
 		      (short *)rho,                      
-              len);*/
+              len);
 
 #endif
   
@@ -10958,7 +10956,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
           avg[0] = log2_approx(avg[0])-13;
           lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
-          printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+          //printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }      
 #endif
 
