@@ -934,14 +934,14 @@ main (int argc, char **argv)
       perror("close on read\n" );
   }
 
-#ifndef NAS_NETLINK
+//#ifndef NAS_NETLINK
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
     UE_stats[UE_id] = fopen (UE_stats_filename, "w");
   }
   eNB_stats = fopen ("eNB_stats.txt", "w");
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
-#endif
+//#endif
       
   LOG_I(EMU,"total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
   LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
@@ -1244,13 +1244,13 @@ main (int argc, char **argv)
 	PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	
-#ifndef NAS_NETLINK
+//#ifndef NAS_NETLINK
 	//if ((frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
 	  //}
-#endif
+//#endif
       }
       emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
 
@@ -1294,11 +1294,11 @@ main (int argc, char **argv)
 	      */
 	    }
  	  }
-#ifndef NAS_NETLINK
+//#ifndef NAS_NETLINK
 	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-#endif
+//#endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
  
@@ -1469,11 +1469,11 @@ main (int argc, char **argv)
       free(ue_data[UE_id]); 
   } //End of PHY abstraction changes
   
-#ifndef NAS_NETLINK
+//#ifndef NAS_NETLINK
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
     fclose (UE_stats[UE_id]);
   fclose (eNB_stats);
-#endif
+//#endif
  // stop OMG
  stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
   if ((oai_emulation.info.omv_enabled == 1) ){

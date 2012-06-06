@@ -125,6 +125,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     }else{
       mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
+      //memcpy(UE_mac_inst[Mod_id].physicalConfigDedicated,physicalConfigDedicated,sizeof(PhysicalConfigDedicated_t));
     }
   }
 #ifdef Rel10
@@ -134,7 +135,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	}
 	else {
 	  mac_xface->phy_config_dedicated_scell_ue(Mod_id,eNB_index,physicalConfigDedicatedSCell_r10,0 /* CC_id */);
-	  UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicatedSCell_r10; // for SR proc
+	  UE_mac_inst[Mod_id].physicalConfigDedicatedSCell_r10[0]=physicalConfigDedicatedSCell_r10; // using SCell index 0
 	}
   }
 #endif

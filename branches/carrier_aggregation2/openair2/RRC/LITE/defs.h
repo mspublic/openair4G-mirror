@@ -197,7 +197,7 @@ typedef struct{
   struct SPS_Config               *sps_Config[NB_CNX_eNB];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_eNB];
   MeasGapConfig_t                 *measGapConfig[NB_CNX_eNB];
-#ifdef Rel10l
+#ifdef Rel10
   RRCConnectionReconfigurationComplete_v1020_IEs_t *rrcRel10IEs[NB_CNX_eNB];
 #endif
 }eNB_RRC_INST;
