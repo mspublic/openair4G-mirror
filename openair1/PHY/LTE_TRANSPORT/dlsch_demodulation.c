@@ -5931,10 +5931,10 @@ length = number of resource elements
     rho_rmi = _mm_srai_pi16(rho_rmi,2);
 
     // divide by sqrt(2)
-    rho_rpi = _mm_mulhi_pi16(rho_rpi,ONE_OVER_SQRT_2);
+    /*rho_rpi = _mm_mulhi_pi16(rho_rpi,ONE_OVER_SQRT_2);
     rho_rmi = _mm_mulhi_pi16(rho_rmi,ONE_OVER_SQRT_2);
     rho_rpi = _mm_slli_pi16(rho_rpi,1);
-    rho_rmi = _mm_slli_pi16(rho_rmi,1);
+    rho_rmi = _mm_slli_pi16(rho_rmi,1);*/
 
 #ifdef COMPLEXITY_MEASUREMENT
     cnt_add = cnt_add+2;
