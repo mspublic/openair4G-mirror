@@ -449,7 +449,7 @@ int main(int argc, char **argv) {
   u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
 
-  int eNB_id = 0, eNB_id_i = NUMBER_OF_eNB_MAX;
+  int eNB_id = 0, eNB_id_i = 1;
   unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
   unsigned char i_mod = 2;
   unsigned short NB_RB;
@@ -1882,7 +1882,7 @@ int main(int argc, char **argv) {
 		   PHY_vars_UE->lte_ue_common_vars.rxdata,
 		   PHY_vars_UE->lte_ue_common_vars.rxdataF,
 		   PHY_vars_UE->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-		   PHY_vars_UE->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+		   PHY_vars_UE->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
 		   PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_ch_rho_ext[0],
 		   PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0],coded_bits_per_codeword);
 	  //PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->w[0],3*(tbs+64)); 

@@ -38,6 +38,7 @@
 #include "PHY_INTERFACE/vars.h"
 #endif
 
+#include "UTIL/LOG/log_extern.h"
 
 #ifdef XFORMS
 #include <forms.h>
@@ -108,36 +109,36 @@ void exit_fun(const char* s)
 }
 
 #ifdef XFORMS
-void do_forms2(FD_lte_scope *form, 
-	       LTE_DL_FRAME_PARMS *frame_parms, 
-	       int pdcch_symbols,
-	       s16 **channel, 
-	       s16 **channel_f, 
-	       s16 **rx_sig, 
-	       s16 **rx_sig_f, 
-	       s16 *pdcch_comp, 
-	       s16 *dlsch_comp, 
-	       s16 *dlsch_comp_i, 
-	       s16 *dlsch_llr, 
-	       s16 *pbch_comp, 
-	       s8 *pbch_llr, 
-	       int coded_bits_per_codeword)
+void do_forms2(FD_lte_scope *form,
+               LTE_DL_FRAME_PARMS *frame_parms,
+               int pdcch_symbols,
+               s16 **channel,
+               s16 **channel_f,
+               s16 **rx_sig,
+               s16 **rx_sig_f,
+               s16 *pdcch_comp,
+               s16 *dlsch_comp,
+               s16 *dlsch_comp_i,
+               s16 *dlsch_llr,
+               s16 *pbch_comp,
+               s8 *pbch_llr,
+               int coded_bits_per_codeword)
 {
 
   int i,j,k,s;
 
   float Re,Im;
   float mag_sig[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
-    sig_time[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
-    sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
-    time2[FRAME_LENGTH_COMPLEX_SAMPLES],
-    I[25*12*11*4], Q[25*12*11*4],
-    *llr,*llr_time;
+  sig_time[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
+  sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
+  time2[FRAME_LENGTH_COMPLEX_SAMPLES],
+  I[25*12*11*4], Q[25*12*11*4],
+  *llr,*llr_time;
   int ind;
   float avg, cum_avg;
 
   extern int* sync_corr_ue0;
-  
+
   //  u16 nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
   llr = malloc(coded_bits_per_codeword*sizeof(float));
@@ -145,44 +146,50 @@ void do_forms2(FD_lte_scope *form,
 
 
   // Channel frequency response
-  if (channel_f[0] != NULL) {
-    cum_avg = 0;
-    ind = 0;
-    for (j=0; j<2; j++) { 
-      for (i=0;i<frame_parms->nb_antennas_rx;i++) {
-	for (k=0;k<(13*frame_parms->N_RB_DL);k++){
-	  sig_time[ind] = (float)ind;
-	  Re = (float)(channel_f[(j<<1)+i][(2*k)]);
-	  Im = (float)(channel_f[(j<<1)+i][(2*k)+1]);
-	  //mag_sig[ind] = (short) rand(); 
-	  mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
-	  cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
-	  ind++;
-	}
-	//      ind+=NUMBER_OF_OFDM_CARRIERS/4; // spacing for visualization
-      }
+  if (channel_f[0] != NULL)
+    {
+      cum_avg = 0;
+      ind = 0;
+      for (j=0; j<2; j++)
+        {
+          for (i=0;i<frame_parms->nb_antennas_rx;i++)
+            {
+              for (k=0;k<(13*frame_parms->N_RB_DL);k++)
+                {
+                  sig_time[ind] = (float)ind;
+                  Re = (float)(channel_f[(j<<1)+i][(2*k)]);
+                  Im = (float)(channel_f[(j<<1)+i][(2*k)+1]);
+                  //mag_sig[ind] = (short) rand();
+                  mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im));
+                  cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
+                  ind++;
+                }
+              //      ind+=NUMBER_OF_OFDM_CARRIERS/4; // spacing for visualization
+            }
+        }
+
+      avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
+
+      //fl_set_xyplot_ybounds(form->channel_f,30,70);
+      fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
     }
 
-    avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
-
-    //fl_set_xyplot_ybounds(form->channel_f,30,70);
-    fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
-  }
-
   // sync_corr
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++){
-    time2[i] = (float) i;
-    sig2[i] = (float) sync_corr_ue0[i];
-  }
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++)
+    {
+      time2[i] = (float) i;
+      sig2[i] = (float) sync_corr_ue0[i];
+    }
   fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
   fl_set_xyplot_ybounds(form->channel_t_im,0,1e6);
 
   // rx sig 0
-  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
-    //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
-    sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
-    time2[i] = (float) i;
-  }
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)
+    {
+      //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+      sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
+      time2[i] = (float) i;
+    }
   fl_set_xyplot_ybounds(form->channel_t_re,30,60);
   //fl_set_xyplot_data(form->channel_t_re,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
@@ -200,112 +207,124 @@ void do_forms2(FD_lte_scope *form,
   */
 
   // PBCH LLR
-  if (pbch_llr!=NULL) {
-    j=0;
-    for(i=0;i<1920;i++) {
-      llr[j] = (float) pbch_llr[i];
-      llr_time[j] = (float) j;
-      //if (i==63)
-      //  i=127;
-      //else if (i==191)
-      //  i=319;
-      j++;
+  if (pbch_llr!=NULL)
+    {
+      j=0;
+      for (i=0;i<1920;i++)
+        {
+          llr[j] = (float) pbch_llr[i];
+          llr_time[j] = (float) j;
+          //if (i==63)
+          //  i=127;
+          //else if (i==191)
+          //  i=319;
+          j++;
+        }
+
+      fl_set_xyplot_data(form->decoder_input,llr_time,llr,1920,"","","");
+      //fl_set_xyplot_ybounds(form->decoder_input,-100,100);
     }
-    
-    fl_set_xyplot_data(form->decoder_input,llr_time,llr,1920,"","","");
-    //fl_set_xyplot_ybounds(form->decoder_input,-100,100);
-  }
 
   // PBCH I/Q
-  if (pbch_comp!=NULL) {
-    j=0;
-    for(i=0;i<12*12;i++) {
-      I[j] = pbch_comp[2*i];
-      Q[j] = pbch_comp[2*i+1];
-      j++;
-      //if (i==47)
-      //  i=96;
-      //else if (i==191)
-      //  i=239;
+  if (pbch_comp!=NULL)
+    {
+      j=0;
+      for (i=0;i<12*12;i++)
+        {
+          I[j] = pbch_comp[2*i];
+          Q[j] = pbch_comp[2*i+1];
+          j++;
+          //if (i==47)
+          //  i=96;
+          //else if (i==191)
+          //  i=239;
+        }
+
+      fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
+      //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+      //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
     }
 
-    fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
-    //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
-    //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
-  }
 
-  
   // PDCCH I/Q
   j=0;
-  for(i=0;i<12*25*1;i++) {
-    I[j] = pdcch_comp[2*i];
-    Q[j] = pdcch_comp[2*i+1];
-    j++;
-  }
+  for (i=0;i<12*25*1;i++)
+    {
+      I[j] = pdcch_comp[2*i];
+      Q[j] = pdcch_comp[2*i+1];
+      j++;
+    }
 
   fl_set_xyplot_data(form->scatter_plot1,I,Q,12*25*1,"","","");
   //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
   //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
-  
+
 
   // DLSCH LLR
-  if (dlsch_llr != NULL) {
-    for(i=0;i<coded_bits_per_codeword;i++) {
-      llr[i] = (float) dlsch_llr[i];
-      llr_time[i] = (float) i;
-    }
+  if (dlsch_llr != NULL)
+    {
+      for (i=0;i<coded_bits_per_codeword;i++)
+        {
+          llr[i] = (float) dlsch_llr[i];
+          llr_time[i] = (float) i;
+        }
 
-    fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
-    //    fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
-  }
+      fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
+      //    fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
+    }
 
   // DLSCH I/Q
-  if (dlsch_comp!=NULL) {
-    j=0;
-    for (s=pdcch_symbols;s<frame_parms->symbols_per_tti;s++) {
-      for(i=0;i<12*25;i++) {
-	I[j] = dlsch_comp[(2*25*12*s)+2*i];
-	Q[j] = dlsch_comp[(2*25*12*s)+2*i+1];
-	j++;
-      }
-      //if (s==2)
-      //  s=3;
-      //else if (s==5)
-      //  s=6;
-      //else if (s==8)
-      //  s=9;
+  if (dlsch_comp!=NULL)
+    {
+      j=0;
+      for (s=pdcch_symbols;s<frame_parms->symbols_per_tti;s++)
+        {
+          for (i=0;i<12*25;i++)
+            {
+              I[j] = dlsch_comp[(2*25*12*s)+2*i];
+              Q[j] = dlsch_comp[(2*25*12*s)+2*i+1];
+              j++;
+            }
+          //if (s==2)
+          //  s=3;
+          //else if (s==5)
+          //  s=6;
+          //else if (s==8)
+          //  s=9;
+        }
+
+      fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
+      //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
+      //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
     }
-    
-    fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-    //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
-    //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
-  }
 
 
   free(llr);
   free(llr_time);
 
-}  
+}
 
-void *scope_thread(void *arg) {
-  while (!oai_exit) {
-    do_forms2(form_dl,
-	      &(PHY_vars_UE_g[0]->lte_frame_parms),
-	      PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,    
-	      (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates_time,
-	      (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0],
-	      (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata,
-	      (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF,
-	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
-	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
-	      (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->llr[0],
-	      (s16*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
-	      (s8*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,
-	      1920);
-    printf("doing forms\n");
-    sleep(1);
-  }
+void *scope_thread(void *arg)
+{
+  while (!oai_exit)
+    {
+      do_forms2(form_dl,
+                &(PHY_vars_UE_g[0]->lte_frame_parms),
+                PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
+                (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates_time,
+                (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0],
+                (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata,
+                (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF,
+                (s16*)PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
+                (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+                (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
+                (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->llr[0],
+                (s16*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
+                (s8*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,
+                1920);
+      printf("doing forms\n");
+      //sleep(1);
+    }
   return (void*)(1);
 }
 #endif
@@ -324,13 +343,14 @@ static void *sync_hw(void *arg)
   rt_make_hard_real_time();
 #endif
 
-  while (!oai_exit) {
+  while (!oai_exit)
+    {
 
-    rt_printk("exmimo_pci_interface->mbox = %d\n",((unsigned int *)DAQ_MBOX)[0]);
+      rt_printk("exmimo_pci_interface->mbox = %d\n",((unsigned int *)DAQ_MBOX)[0]);
 
-    rt_sleep(FRAME_PERIOD*10);    
-  }
-  
+      rt_sleep(nano2count(FRAME_PERIOD*10));
+    }
+
 }
 
 
@@ -339,7 +359,7 @@ static void *eNB_thread(void *arg)
 {
   RT_TASK *task;
   int slot=0,hw_slot,last_slot, next_slot,frame=0;
-  unsigned int msg;
+  unsigned int msg1;
   unsigned int aa,slot_offset, slot_offset_F;
   int diff;
   int delay_cnt;
@@ -368,148 +388,173 @@ static void *eNB_thread(void *arg)
       while (*instance_cnt_ptr_user<0)
         {
           rt_sem_signal(mutex);
-          rt_receive(0,&msg);
+          rt_receive(0,&msg1);
           rt_sem_wait(mutex);
-	  /*
-          if ((slot%2000)<10)
-            rt_printk("fun0: instance_cnt %d, msg %d!\n",*instance_cnt_ptr_user,msg);
-	  */
+          /*
+                if ((slot%2000)<10)
+                  rt_printk("fun0: instance_cnt %d, msg1 %d!\n",*instance_cnt_ptr_user,msg1);
+          */
         }
       rt_sem_signal(mutex);
-      slot = msg % LTE_SLOTS_PER_FRAME;
+      slot = msg1 % LTE_SLOTS_PER_FRAME;
 
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       delay_cnt = 0;
-      while ((hw_slot <= slot) && (!oai_exit)) {
-	diff = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-	if (diff<=1)
-	  diff=2;
-	time_in = rt_get_time_ns();
-	//	rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
-	rt_sleep(diff*DAQ_PERIOD);
-	//	rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
-	hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
-	delay_cnt++;
-	if (delay_cnt == 10) {
-	  oai_exit = 1;
-	  rt_printk("eNB Frame %d: HW stopped ... \n",frame);
-	}
-	if ((hw_slot < 5) && (slot==19)) //why?
-	  break;
-      }
+      while ((hw_slot <= slot) && (!oai_exit))
+        {
+          diff = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+          if (diff<=1)
+            diff=2;
+          time_in = rt_get_time_ns();
+          //	rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+          rt_sleep(nano2count(diff*DAQ_PERIOD));
+          //	rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
+          hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+          delay_cnt++;
+          if (delay_cnt == 10)
+            {
+              oai_exit = 1;
+              rt_printk("eNB Frame %d: HW stopped ... \n",frame);
+            }
+          if ((hw_slot < 5) && (slot==19)) //why?
+            break;
+        }
 
 #endif
       last_slot = (hw_slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=20;
       next_slot = (hw_slot + 2)%LTE_SLOTS_PER_FRAME;
-      
+
       PHY_vars_eNB_g[0]->frame = frame;
-      if (frame>5) {
-	if (frame<100)
-	  rt_printk("slot %d hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",slot, hw_slot,next_slot,DAQ_MBOX[0]);
-	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
+      if (frame>5)
+        {
+          if (frame<100)
+            rt_printk("slot %d hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",slot, hw_slot,next_slot,DAQ_MBOX[0]);
+          phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
 #ifndef IFFT_FPGA
-	slot_offset_F = (next_slot)*
-	  (PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size)*
-	  ((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
-	slot_offset = (next_slot)*
-	  (PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti>>1);
-	if ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_DL)||
-	    ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_S)&&((next_slot&1)==0))) {
-	  //	  rt_printk("Frame %d: Generating slot %d\n",frame,next_slot);
+          slot_offset_F = (next_slot)*
+                          (PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size)*
+                          ((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
+          slot_offset = (next_slot)*
+                        (PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti>>1);
+          if ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_DL)||
+              ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_S)&&((next_slot&1)==0)))
+            {
+              //	  rt_printk("Frame %d: Generating slot %d\n",frame,next_slot);
 
-	  for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
-	    {
-	      if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1)
-		{
-		  PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+              for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
+                {
+                  if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1)
+                    {
+                      PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
 #ifdef BIT8_TX
-			       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+                                   &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
 #else
-			       dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+                                   dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
 #endif
-			       PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
-			       6,
-			       PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
-			       PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
-			       PHY_vars_eNB_g[0]->lte_frame_parms.rev,
-			       CYCLIC_PREFIX);
-		}
-	      else
-		{
-		  normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+                                   PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
+                                   6,
+                                   PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
+                                   PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
+                                   PHY_vars_eNB_g[0]->lte_frame_parms.rev,
+                                   CYCLIC_PREFIX);
+                    }
+                  else
+                    {
+                      normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
 #ifdef BIT8_TX
-				    &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+                                        &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
 #else
-				    dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+                                        dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
 #endif
-				    7,
-				    &(PHY_vars_eNB_g[0]->lte_frame_parms));
-		}
+                                        7,
+                                        &(PHY_vars_eNB_g[0]->lte_frame_parms));
+                    }
 #ifndef CBMIMO1
-	      if (next_slot<19) {
-		for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;i++) {
-		  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
-		    ((short*)dummy_tx_buffer)[i]<<4;
-		}
-	      }
-	      else {
-		for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1);i++) {
-		  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
-		    ((short*)dummy_tx_buffer)[i]<<4;
-		  
-		}  // handle wrap-around
-		for (i=0;i<time_offset[aa];i++) {
-		  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0])[i] = ((short*)dummy_tx_buffer)[PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1)+i]<<4;
-		}
-	      } 
-#endif
-	    }
-#endif //IFFT_FPGA
-	}
+                  if (next_slot<19)
+                    {
+                      for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;i++)
+                        {
+                          ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
+                            ((short*)dummy_tx_buffer)[i]<<4;
+                        }
+                    }
+                  else
+                    {
+                      for (i=0;i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1);i++)
+                        {
+                          ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
+                            ((short*)dummy_tx_buffer)[i]<<4;
 
-	if (frame<100)
-	  rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
-      }
+                        }  // handle wrap-around
+                      for (i=0;i<time_offset[aa];i++)
+                        {
+                          ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0])[i] = ((short*)dummy_tx_buffer)[PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1)+i]<<4;
+                        }
+                    }
+#endif
+                }
+	      // we need to copy the first part of the first slot to the end of the frame due to the timing advance
+	      if (next_slot==0) {
+		slot_offset = PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
+#ifdef BIT8_TX
+		memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+		       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
+		       640*sizeof(unsigned short));
+#else
+		memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+		       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
+		       640*sizeof(unsigned int));
+#endif
+	      }
+	    }
+
+#endif //IFFT_FPGA
+
+          if (frame<100)
+            rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
+        }
+
       /*
-	    if ((slot%2000)<10)
-	    rt_printk("fun0: doing very hard work\n");
+      if ((slot%2000)<10)
+      rt_printk("fun0: doing very hard work\n");
       */
 #ifndef CBMIMO1
       slot++;
-      if (slot==20) {
-	slot=0;
-      }
+      if (slot==20)
+        {
+          slot=0;
+        }
       if ((frame % 100) == 0)
-	rt_printk("eNB Frame %d\n",frame);
+        rt_printk("eNB Frame %d\n",frame);
 
       /*
       if (frame==4) {
-	rt_printk("Debug exit after 4 frames\n");
-	oai_exit=1;
-      }	
-      */  
+      rt_printk("Debug exit after 4 frames\n");
+      oai_exit=1;
+      }
+      */
 #endif
       //slot++;
       if ((slot%20)==0)
-	frame++;
+        frame++;
 #ifdef CBMIMO1
       rt_sem_wait(mutex);
       (*instance_cnt_ptr_user)--;
       //rt_printk("fun0: instance_cnt %d!\n",*instance_cnt_ptr_user);
       rt_sem_signal(mutex);
 #endif
-      
+
     }
-  
+
   rt_printk("fun0: finished, ran %d times.\n",slot);
-  
+
 #ifdef HARD_RT
   rt_make_soft_real_time();
 #endif
-  
+
   // clean task
   rt_task_delete(task);
   rt_printk("Task deleted. returning\n");
@@ -522,7 +567,7 @@ static void *UE_thread(void *arg)
   RT_TASK *task;
   RTIME in, out, diff;
   int slot=0,frame=0,hw_slot,last_slot, next_slot;
-  unsigned int msg;
+  unsigned int msg1;
   unsigned int aa,slot_offset, slot_offset_F;
   static int is_synchronized = 0;
   static int received_slots = 0;
@@ -551,40 +596,42 @@ static void *UE_thread(void *arg)
       while (*instance_cnt_ptr_user<0)
         {
           rt_sem_signal(mutex);
-          rt_receive(0,&msg);
+          rt_receive(0,&msg1);
           rt_sem_wait(mutex);
-	  /*
-          if ((slot%2000)<10)
-            rt_printk("fun0: instance_cnt %d, msg %d!\n",*instance_cnt_ptr_user,msg);
-	  */
+          /*
+                if ((slot%2000)<10)
+                  rt_printk("fun0: instance_cnt %d, msg1 %d!\n",*instance_cnt_ptr_user,msg1);
+          */
         }
 
       rt_sem_signal(mutex);
 
-
-      slot = (msg - slot0) % LTE_SLOTS_PER_FRAME;
+      slot = (msg1 - slot0) % LTE_SLOTS_PER_FRAME;
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       delay_cnt = 0;
-      while ((hw_slot <= slot) && (!oai_exit)) {
-	diff2 = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-	if (diff2<=1)
-	  diff2=2;
-	time_in = rt_get_time_ns();
-	rt_printk("UE Frame %d delaycnt %d : hw_slot %d (%d), last_slot %d, slot %d, (slot+1)*15 %d, diff %d, time %llu\n",
-		  frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],last_slot,slot,(((slot+1)*15)>>1),diff2,time_in);
-	rt_sleep(diff2*DAQ_PERIOD);
-	rt_printk("UE Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
-	hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
-	delay_cnt++;
-	if (delay_cnt == 30) {
-	  oai_exit = 1;
-	  rt_printk("UE frame %d: HW stopped ... \n",frame);
-	}
-	if ((hw_slot < 5) && (slot==19))
-	  break;
-      }
-      
+      while ((hw_slot <= slot) && (!oai_exit) && (is_synchronized) )
+        {
+          diff2 = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+          if (diff2<=1)
+            diff2=2;
+          time_in = rt_get_time_ns();
+          //rt_printk("UE Frame %d delaycnt %d : hw_slot %d, slot %d, diff %d, time %llu, sleeping until %lld\n",
+          //          frame,delay_cnt,hw_slot,slot,diff2,time_in,time_in + diff2*DAQ_PERIOD);
+          //rt_sleep_until(nano2count(time_in + diff2*DAQ_PERIOD));
+          rt_sleep(nano2count(diff2*DAQ_PERIOD));
+          //rt_printk("UE Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
+          hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+          delay_cnt++;
+          if (delay_cnt == 30)
+            {
+              oai_exit = 1;
+              rt_printk("UE frame %d: HW stopped ... \n",frame);
+            }
+          if ((hw_slot < 5) && (slot==19))
+            break;
+        }
+
 #endif
       last_slot = (slot + hw_slot_offset - 1)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
@@ -594,110 +641,87 @@ static void *UE_thread(void *arg)
 
       if (is_synchronized)
         {
-	  /*
-	  if (PHY_vars_UE_g[0]->frame%100==0)
-	    rt_printk("fun0: slot %d, next_slot %d, last_slot %d!\n",slot,last_slot,next_slot);
-	  */
+          /*
+          if (PHY_vars_UE_g[0]->frame%100==0)
+            rt_printk("fun0: slot %d, next_slot %d, last_slot %d!\n",slot,last_slot,next_slot);
+          */
 
-	  in = rt_get_time_ns();
+          in = rt_get_time_ns();
           phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0);
+          out = rt_get_time_ns();
+          diff = out-in;
 
-          #ifndef IFFT_FPGA
-          slot_offset_F = (next_slot)*
-            (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)*
-            ((PHY_vars_UE_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
-          slot_offset = (next_slot)*
-            (PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti>>1);
-	  /*
-          for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_tx; aa++) {
-            if (PHY_vars_UE_g[0]->lte_frame_parms.Ncp == 1) {
-              PHY_ofdm_mod(&PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF[aa][slot_offset_F],
-          #ifdef BIT8_TX
-          		 &PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][slot_offset>>1],
-          #else
-          		 &PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][slot_offset],
-          #endif
-          		 PHY_vars_UE_g[0]->lte_frame_parms.log2_symbol_size,
-          		 6,
-          		 PHY_vars_UE_g[0]->lte_frame_parms.nb_prefix_samples,
-          		 PHY_vars_UE_g[0]->lte_frame_parms.twiddle_ifft,
-          		 PHY_vars_UE_g[0]->lte_frame_parms.rev,
-          		 CYCLIC_PREFIX);
-            }
-            else {
-              normal_prefix_mod(&PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF[aa][slot_offset_F],
-          #ifdef BIT8_TX
-          		      &PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][slot_offset>>1],
-          #else
-          		      &PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][slot_offset],
-          #endif
-          		      7,
-          		      &(PHY_vars_UE_g[0]->lte_frame_parms));
-            }
-          }
-	  */
-          #endif //IFFT_FPGA
-	  
-
-	  out = rt_get_time_ns();
-	  diff = out-in;
-
-	  if (PHY_vars_UE_g[0]->frame % 100 == 0)
-	    rt_printk("Frame %d: last_slot %d, phy_procedures_lte_ue time_in %llu, time_out %llu, diff %llu\n", 
-		PHY_vars_UE_g[0]->frame, last_slot,
-		in,out,diff);
+          if (PHY_vars_UE_g[0]->frame % 100 == 0)
+            rt_printk("Frame %d: last_slot %d, phy_procedures_lte_ue time_in %llu, time_out %llu, diff %llu\n",
+                      PHY_vars_UE_g[0]->frame, last_slot,
+                      in,out,diff);
         }
       else   // we are not yet synchronized
         {
-	  hw_slot_offset = 0;
+          hw_slot_offset = 0;
 
 #ifdef CBMIMO1
-	  if (received_slots==0) {
-	    ioctl(openair_fd,openair_GET_BUFFER,NULL);
-	  }
+          if (received_slots==0)
+            {
+              ioctl(openair_fd,openair_GET_BUFFER,NULL);
+            }
           if (received_slots==(100*LTE_SLOTS_PER_FRAME)-1)   //we got enough slots so we can do sync (the factor 100 is to wait some time longer)
             {
               rt_printk("fun0: slot %d: doing sync\n",slot);
               received_slots = -1; // will be increased below
               if (initial_sync(PHY_vars_UE_g[0])==0)
                 {
+                  lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
+                                   PHY_vars_UE_g[0],
+                                   0,
+                                   1,
+                                   16384);
+
                   ioctl(openair_fd,openair_SET_RX_OFFSET,&PHY_vars_UE_g[0]->rx_offset); //synchronize hardware
-		  // here we should actually do another dump config with the parameters obtained from the sync.
- 
-		  ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
-		  //for better visualization afterwards
-		  for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
-		    memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
-			   PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
+                  // here we should actually do another dump config with the parameters obtained from the sync.
+
+                  ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
+
+                  //for better visualization afterwards
+                  for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
+                    memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
+                           PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
                   is_synchronized = 1;
-                  slot0 = msg;
+                  slot0 = msg1;
                 }
             }
           received_slots++;
 #else
-	  slot = 0;
-	  ioctl(openair_fd,openair_GET_BUFFER,NULL);
-	  rt_sleep(FRAME_PERIOD);
-	  //	  rt_printk("fun0: slot %d: doing sync\n",slot);
-	  
-	  if (initial_sync(PHY_vars_UE_g[0])==0)
-	    {
-	      //for better visualization afterwards
-	      /*
-	      for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
-		memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
-		       PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
-	      */
-	      is_synchronized = 1;
-	      ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
+          slot = 0;
+          ioctl(openair_fd,openair_GET_BUFFER,NULL);
+          rt_sleep(nano2count(FRAME_PERIOD));
+          //	  rt_printk("fun0: slot %d: doing sync\n",slot);
 
-	      //	      oai_exit=1;
-	      hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
-	      rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
-	    }
-	  
+          if (initial_sync(PHY_vars_UE_g[0])==0)
+            {
+	      /*
+	      lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
+			       PHY_vars_UE_g[0],
+			       0,
+			       1,
+			       16384);
+	      */
+              //for better visualization afterwards
+              /*
+              for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
+              memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
+                 PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
+              */
+              is_synchronized = 1;
+              ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
+
+              //	      oai_exit=1;
+              hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
+              rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
+            }
+
 #endif
-	}
+        }
 
       /*
       if ((slot%2000)<10)
@@ -710,15 +734,11 @@ static void *UE_thread(void *arg)
       rt_sem_signal(mutex);
 #else
       slot++;
-      if (slot==20) {
-	slot=0;
-	frame++;
-      }
-      
-      if ((frame % 100) == 0)
-	rt_printk("UE Frame %d\n",frame);
-      
-
+      if (slot==20)
+        {
+          slot=0;
+          frame++;
+        }
 #endif
     }
   rt_printk("fun0: finished, ran %d times.\n",slot);
@@ -734,24 +754,24 @@ static void *UE_thread(void *arg)
 }
 
 // Calibration parameters from oaisimCROWN
-  //b Calibration vars
-  int n_K=15,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_call_cal=0;
-  double PeNb_factor[2][600];
-  int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
-  short dl_ch_estimates[2][2400]; 
-  short drs_ch_estimates[2][2400];
-  short drs_ch_est_ZFB[2*300*14];
-  int doquantUE=0;
-  int calibration_flag=1;
-  short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
-  int prec_length = 2*14*512;
-  short prec[2][2*14*512];
-  double Norm[2*14*512];
-  short denom[14*512];
-  short x_temp, quant=8;
+//b Calibration vars
+int n_K=15,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_call_cal=0;
+double PeNb_factor[2][600];
+int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
+short dl_ch_estimates[2][2400];
+short drs_ch_estimates[2][2400];
+short drs_ch_est_ZFB[2*300*14];
+int doquantUE=0;
+int calibration_flag=1;
+short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
+int prec_length = 2*14*512;
+short prec[2][2*14*512];
+double Norm[2*14*512];
+short denom[14*512];
+short x_temp, quant=8;
 //SCM_t channel_model=SCM_C;
-  int CROWN_SYSTEM=2;
-  //*******************************
+int CROWN_SYSTEM=2;
+//*******************************
 
 int main(int argc, char **argv)
 {
@@ -779,23 +799,27 @@ int main(int argc, char **argv)
     {
       switch (c)
         {
-	case 'd':
-	  do_forms=1;
-	  break;
+        case 'd':
+          do_forms=1;
+          break;
         case 'U':
-          printf("configuring for UE\n");
           UE_flag = 1;
           break;
-	case 'C':
-	  carrier_freq[0] = atoi(optarg);
-	  carrier_freq[1] = atoi(optarg);
-	  carrier_freq[2] = atoi(optarg);
-	  carrier_freq[3] = atoi(optarg);
-	  break;
+        case 'C':
+          carrier_freq[0] = atoi(optarg);
+          carrier_freq[1] = atoi(optarg);
+          carrier_freq[2] = atoi(optarg);
+          carrier_freq[3] = atoi(optarg);
+          break;
         default:
           break;
         }
     }
+
+  if (UE_flag==1)
+    printf("configuring for UE (tcxo=%d)\n",tcxo);
+  else 
+    printf("configuring for eNB\n");
 
   // initialize the log (see log.h for details)
   logInit();
@@ -840,13 +864,14 @@ int main(int argc, char **argv)
 
   if (UE_flag==1)
     {
+      g_log->log_component[PHY].level = LOG_INFO;
       frame_parms->node_id = NODE;
       PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
       PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
       PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
       NB_UE_INST=1;
       NB_INST=1;
-    } 
+    }
   else
     {
       frame_parms->node_id = PRIMARY_CH;
@@ -855,8 +880,8 @@ int main(int argc, char **argv)
       NB_eNB_INST=1;
       NB_INST=1;
       if (calibration_flag == 1)
-	PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
-      
+        PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
+
     }
 
   mac_xface = malloc(sizeof(MAC_xface));
@@ -877,20 +902,21 @@ int main(int argc, char **argv)
   number_of_cards = 1;
 
   // connect the TX/RX buffers
-  if (UE_flag==1) {
-    setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,0);
-    for (i=0;i<frame_parms->samples_per_tti*10;i++)
-      for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-	PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
-  }
+  if (UE_flag==1)
+    {
+      setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,0);
+      for (i=0;i<frame_parms->samples_per_tti*10;i++)
+        for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+          PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
+    }
   else
     {
       setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms);
       printf("Setting eNB buffer to all-RX\n");
       // Set LSBs for antenna switch (ExpressMIMO)
       for (i=0;i<frame_parms->samples_per_tti*10;i++)
-	for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-	  PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
+        for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+          PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
     }
 
   // make main thread LXRT soft realtime
@@ -936,7 +962,7 @@ int main(int argc, char **argv)
   *instance_cnt_ptr_user = -1;
   printf("instance_cnt_ptr_kern %p, instance_cnt_ptr_user %p, *instance_cnt_ptr_user %d\n", (void*) instance_cnt_ptr_kern, (void*) instance_cnt_ptr_user,*instance_cnt_ptr_user);
 
-  rt_sleep(FRAME_PERIOD);
+  rt_sleep(nano2count(FRAME_PERIOD));
 
   ioctl(openair_fd,openair_GET_PCI_INTERFACE,&pci_interface_ptr_kern);
 
@@ -963,23 +989,23 @@ int main(int argc, char **argv)
     thread0 = rt_thread_create(eNB_thread, NULL, 10000000);
 
 
-  //  rt_sleep(FRAME_PERIOD);
-  printf("thread created\n");
-
 #ifndef CBMIMO1
   //  sync_thread = rt_thread_create(sync_hw,NULL,10000000);
 #endif
 
 #ifdef XFORMS
-  if ((do_forms==1) && (UE_flag==1)) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_dl = create_form_lte_scope();
-    sprintf (title, "LTE DL SCOPE UE");
-    fl_show_form (form_dl->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    thread2 = pthread_create(&thread2, NULL, scope_thread, NULL);
-  }
+  if ((do_forms==1) && (UE_flag==1))
+    {
+      fl_initialize (&argc, argv, NULL, 0, 0);
+      form_dl = create_form_lte_scope();
+      sprintf (title, "LTE DL SCOPE UE");
+      fl_show_form (form_dl->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+      //thread2 = pthread_create(&thread2, NULL, scope_thread, NULL);
+    }
 #endif
 
+  rt_sleep(nano2count(FRAME_PERIOD));
+  printf("threads created\n");
 
   // wait for end of program
   printf("TYPE <ENTER> TO TERMINATE\n");
@@ -987,7 +1013,7 @@ int main(int argc, char **argv)
 
   // stop threads
   oai_exit=1;
-  rt_sleep(FRAME_PERIOD);
+  rt_sleep(nano2count(FRAME_PERIOD));
 
   // cleanup
   stop_rt_timer();
@@ -997,11 +1023,12 @@ int main(int argc, char **argv)
   munmap((void*)mem_base, BIGPHYS_NUMPAGES*4096);
 
 #ifdef XFORMS
-  if ((do_forms==1) && (UE_flag==1)) {
-    //pthread_join?
-    fl_hide_form(form_dl->lte_scope);
-    fl_free_form(form_dl->lte_scope);
-  }
+  if ((do_forms==1) && (UE_flag==1))
+    {
+      //pthread_join?
+      fl_hide_form(form_dl->lte_scope);
+      fl_free_form(form_dl->lte_scope);
+    }
 #endif
 
   return 0;

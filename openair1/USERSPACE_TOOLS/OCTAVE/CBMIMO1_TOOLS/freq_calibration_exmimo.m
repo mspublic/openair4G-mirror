@@ -35,9 +35,7 @@ i=0;
 do 
   format long
   fc
-  oarf_config_exmimo(fc,tdd,dual_tx,20,0);
-
-%30);
+  oarf_config_exmimo(fc,tdd,dual_tx,30,0);
 
   i=i+1;
   sleep(1);

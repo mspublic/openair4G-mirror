@@ -416,7 +416,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   case Rayleigh1:
       nb_taps = 1;
       Td = 0;
-      channel_length = 10;
+      channel_length = 1;
       ricean_factor = 1;
       aoa = .03;
       maxDoppler = 0;
@@ -442,7 +442,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   case Rayleigh1_corr:
       nb_taps = 1;
       Td = 0;
-      channel_length = 10;
+      channel_length = 1;
       ricean_factor = 1;
       aoa = .03;
       maxDoppler = 0;
@@ -477,7 +477,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   case Rayleigh1_anticorr:
       nb_taps = 1;
       Td = 0;
-      channel_length = 10;
+      channel_length = 1;
       ricean_factor = 1;
       aoa = .03;
       maxDoppler = 0;
@@ -512,7 +512,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   case Rice1:
       nb_taps = 1;
       Td = 0;
-      channel_length = 10;
+      channel_length = 1;
       ricean_factor = 0.1;
       aoa = .03;
       maxDoppler = 0;
@@ -564,7 +564,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   case Rice1_corr:
       nb_taps = 1;
       Td = 0;
-      channel_length = 10;
+      channel_length = 1;
       ricean_factor = 0.1;
       aoa = .03;
       maxDoppler = 0;
@@ -599,7 +599,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   case Rice1_anticorr:
       nb_taps = 1;
       Td = 0;
-      channel_length = 10;
+      channel_length = 1;
       ricean_factor = 0.1;
       aoa = .03;
       maxDoppler = 0;

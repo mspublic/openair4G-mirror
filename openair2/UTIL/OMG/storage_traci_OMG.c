@@ -406,13 +406,24 @@ void writeDouble(double value){
 
 storage* writePacket (unsigned char* packet, int length){
 
+        //printf("required length is %d \n",length);
+
         storage *recvpacket = NULL;
         storage *recvpacketStart= NULL;
+	storage *temp_  = NULL;
+        
+       int localSize = 0;
+
+        localSize = sizeof(storage); 
+        
         int i = 0;
         for(i; i < length; i++)
-        { 
+        {
+        printf("in %d round \n",i);
+        //storage *temp_ = (storage *)malloc(sizeof(storage));
+        temp_ = (storage *)malloc(localSize);
+        
 
-        storage *temp_ = (storage *)malloc(sizeof(storage));
         if  (recvpacket == NULL){
                 recvpacket = temp_;
 		recvpacketStart = recvpacket;
