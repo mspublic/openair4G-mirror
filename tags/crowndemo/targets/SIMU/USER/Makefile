@@ -93,10 +93,9 @@ endif
 
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
-ifdef NAS_NETLINK
-CFLAGS += -DDEBUG_OMG
-else
-NAS_FLAG=0
+ifdef TEST_OMG
+CFLAGS += -DTEST_OMG
+#CFLAGS += -DDEBUG_OMG
 endif
 # after the execution, a profiling output "gmon.out" will be created, 
 #then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
@@ -143,7 +142,9 @@ OAISIM_OBJS += sinr_sim.o
 OAISIM_OBJS += cor_SF_sim.o
 OAISIM_OBJS += phy_procedures_sim_form.o
 #OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
+ifdef XFORMS
 OAISIM_OBJS += lte_scope.o
+endif 
 
 ifdef PROC
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o

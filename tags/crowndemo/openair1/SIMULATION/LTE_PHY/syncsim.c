@@ -385,6 +385,7 @@ int main(int argc, char **argv) {
 
   int UE_idx,N_carriers=1,subframe=2;
   int dual_stream_flag=0;
+  unsigned char i_mod = 2;
 
   int rx_offset_mod;
 
@@ -1353,6 +1354,8 @@ int main(int argc, char **argv) {
 	    
 
 	    PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars[0]->crnti = n_rnti;
+	    PHY_vars_UE[UE_idx]->transmission_mode[0] = transmission_mode;
+	    PHY_vars_UE[UE_idx]->UE_mode[0] = PUSCH;
 	    
 	    printf("Fine Frequency offset %d\n",PHY_vars_UE[UE_idx]->lte_ue_common_vars.freq_offset);
 	    printf("Doing PDCCH RX : num_pdcch_symbols at TX %d\n",num_pdcch_symbols);
@@ -1382,7 +1385,8 @@ int main(int argc, char **argv) {
 					      0,
 					      P_RNTI);
 
-	    
+	    i_mod = get_Qm(PHY_vars_UE[UE_idx]->dlsch_ue[0][0]->harq_processes[0]->mcs);
+
 	    /*
 	    // overwrite some values until source is sure
 	    PHY_vars_UE[UE_idx]->dlsch_ue[0][0]->nb_rb = 25;
@@ -1398,12 +1402,12 @@ int main(int argc, char **argv) {
 	      rx_pdsch(PHY_vars_UE[UE_idx],
 		       PDSCH,
 		       0,
-		       3,
+		       1,
 		       subframe,  // subframe,
 		       l,  // symbol
 		       (l==PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,   // first_symbol_flag
 		       dual_stream_flag,  // dual stream
-		       2);
+		       i_mod);
 	    }
 	    for (l=1+(PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp==0)?4:3 ; 
 		 l<((PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp==0)?7:6);
@@ -1426,12 +1430,12 @@ int main(int argc, char **argv) {
 	      rx_pdsch(PHY_vars_UE[UE_idx],
 		       PDSCH,
 		       0,
-		       3,
+		       1,
 		       subframe,  // subframe,
 		       l,  // symbol
 		       0,   // first_symbol_flag
 		       dual_stream_flag,  // dual stream
-		       2);
+		       i_mod);
 	    }
 	    for (l=1; 
 		 l<1+((PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp==0)?4:3);
@@ -1448,12 +1452,12 @@ int main(int argc, char **argv) {
 	      rx_pdsch(PHY_vars_UE[UE_idx],
 		       PDSCH,
 		       0,
-		       3,
+		       1,
 		       subframe,  // subframe,
 		       l,  // symbol
 		       0,   // first_symbol_flag
 		       dual_stream_flag,  // dual stream
-		       2); 
+		       i_mod); 
 	    }
 	    for (l=1+(PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp==0)?4:3 ; 
 		 l<((PHY_vars_UE[UE_idx]->lte_frame_parms.Ncp==0)?7:6);
@@ -1475,12 +1479,12 @@ int main(int argc, char **argv) {
 	      rx_pdsch(PHY_vars_UE[UE_idx],
 		       PDSCH,
 		       0,
-		       3,
+		       1,
 		       subframe,  // subframe,
 		       l,  // symbol
 		       0,   // first_symbol_flag
 		       dual_stream_flag,  // dual stream
-		       2); 
+		       i_mod); 
 	    }
 
 
@@ -1537,7 +1541,7 @@ int main(int argc, char **argv) {
 		      (s16**)PHY_vars_UE[0]->lte_ue_common_vars.rxdataF,
 		      (s16*)PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
 		      (s16*)PHY_vars_UE[0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-		      (s16*)PHY_vars_UE[0]->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+		      (s16*)PHY_vars_UE[0]->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
 		      (s16*)PHY_vars_UE[0]->lte_ue_pdsch_vars[0]->llr[0],
 		      (s16*)PHY_vars_UE[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
 		      (s8*)PHY_vars_UE[0]->lte_ue_pbch_vars[0]->llr,

@@ -341,6 +341,8 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
   return(2==1);
 }
 
+static short prach_tmp[45600*2] __attribute__((aligned(16)));
+
 s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
   u8 frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
@@ -353,8 +355,14 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   u8 preamble_index     = phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
   u8 tdd_mapindex       = phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index;
   s16 *prachF           = phy_vars_ue->lte_ue_prach_vars[eNB_id]->prachF;
-  s16 *prach;
+  s16 *prach            = (s16*)prach_tmp;
   s16 *prach2;
+  s16 subframe_offset   = subframe*phy_vars_ue->lte_frame_parms.samples_per_tti;
+#ifdef BIT8_TX
+  s8 *prach_out;         
+#else
+  s16 *prach_out;       
+#endif
   s16 amp               = phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp;
   s16 Ncp;
   u8 n_ra_prb;
@@ -374,12 +382,20 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   s16 *Xu,*e;
   s32 Xu_re,Xu_im;
   u16 offset,offset2;
-  int i;
   int frame_length_samples = phy_vars_ue->lte_frame_parms.samples_per_tti*10;
   int prach_start = phy_vars_ue->rx_offset+(subframe*phy_vars_ue->lte_frame_parms.samples_per_tti)%frame_length_samples;
   int overflow;
+  u32 i, prach_len;
 
-  prach = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][prach_start];
+#ifdef CBMIMO1
+#ifdef BIT8_TX
+  s8 *prach_out         = (s8*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe_offset>>1];
+#else
+#error CBMIMO1 and BIT8_TX always have to be defined together
+#endif
+#else
+  prach_out = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][prach_start];
+#endif
 
     // First compute physical root sequence
   if (restricted_set == 0) {
@@ -547,31 +563,43 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   case 6:
     if (prach_fmt == 4) {
       fft(prachF,prach2,twiddle_ifft256,rev256,8,4,0);
+      //TODO: account for repeated format in fft output
       memcpy((void*)prach,(void*)(prach+512),Ncp<<2);
+      prach_len=256+Ncp;
     }
     else {
       ifft1536(prachF,prach2);
       memcpy((void*)prach,(void*)(prach+3072),Ncp<<2);
+      prach_len = 1536+Ncp;
+      if (prach_fmt>1) {
+	memcpy((void*)(prach2+3072),(void*)prach2,6144);
+	prach_len = 2*1536+Ncp;
+      }
     }
-    if (prach_fmt>1)
-      memcpy((void*)(prach2+6144),(void*)prach2,12288);
     break;
   case 15:
     if (prach_fmt == 4) {
       fft(prachF,prach2,twiddle_ifft512,rev512,9,4,0);
+      //TODO: account for repeated format in fft output
       memcpy((void*)prach,(void*)(prach+1024),Ncp<<2);
+      prach_len = 512+Ncp;
     }
     else {
       ifft3072(prachF,prach2);
       memcpy((void*)prach,(void*)(prach+6144),Ncp<<2);
+      prach_len = 3072+Ncp;
+      if (prach_fmt>1) {
+	memcpy((void*)(prach2+6144),(void*)prach2,12288);
+	prach_len = 2*3072+Ncp;
+      }
     }
-    if (prach_fmt>1)
-      memcpy((void*)(prach2+12288),(void*)prach2,24576);
     break;
   case 25:
     if (prach_fmt == 4) {
       fft(prachF,prach2,twiddle_ifft1024,rev1024,10,5,0);
+      //TODO: account for repeated format in fft output
       memcpy((void*)prach,(void*)(prach+2048),Ncp<<2);
+      prach_len = 1024+Ncp;
     }
     else {
       ifft6144(prachF,prach2);
@@ -581,50 +609,83 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
       overflow = prach_start + 6144+Ncp - frame_length_samples;
       if (overflow>0)
 	memcpy(phy_vars_ue->lte_ue_common_vars.txdata[0],
-	       phy_vars_ue->lte_ue_common_vars.txdata[0][frame_length_samples],
+	       &phy_vars_ue->lte_ue_common_vars.txdata[0][frame_length_samples],
 	       overflow<<2);
+      prach_len = 6144+Ncp;
+      if (prach_fmt>1){
+	memcpy((void*)(prach2+12288),(void*)prach2,24576);
+	prach_len = 2*6144+Ncp;
+      }
     }
-    if (prach_fmt>1)
-      memcpy((void*)(prach2+24576),(void*)prach2,49152);
     break;
   case 50:
     if (prach_fmt == 4) {
       fft(prachF,prach2,twiddle_ifft2048,rev2048,11,5,0);
+      //TODO: account for repeated format in fft output
       memcpy((void*)prach,(void*)(prach+4096),Ncp<<2);
+      prach_len = 2048+Ncp;
     }
     else {
       ifft12288(prachF,prach2);
       memcpy((void*)prach,(void*)(prach+24576),Ncp<<2);
-
+      prach_len = 12288+Ncp;
+      if (prach_fmt>1) {
+	memcpy((void*)(prach2+24576),(void*)prach2,49152);
+	prach_len = 2*12288+Ncp;
+      }
     }
-    if (prach_fmt>1)
-      memcpy((void*)(prach2+24576),(void*)prach2,49152);
     break;
   case 75:
     if (prach_fmt == 4) {
       ifft3072(prachF,prach2);
+      //TODO: account for repeated format in fft output
       memcpy((void*)prach,(void*)(prach+6144),Ncp<<2);
+      prach_len = 3072+Ncp;
     }
     else {
       ifft18432(prachF,prach2);
       memcpy((void*)prach,(void*)(prach+36864),Ncp<<2);
+      prach_len = 18432+Ncp;
+      if (prach_fmt>1) {
+	memcpy((void*)(prach2+36834),(void*)prach2,73728);
+	prach_len = 2*18432+Ncp;
+      }
     }
-    if (prach_fmt>1)
-      memcpy((void*)(prach2+36834),(void*)prach2,73728);
     break;
   case 100:
     if (prach_fmt == 4) {
       fft(prachF,prach2,twiddle_ifft4096,rev4096,12,6,0);
+      //TODO: account for repeated format in fft output
       memcpy((void*)prach,(void*)(prach+8192),Ncp<<2);
+      prach_len = 4096+Ncp;
     }
     else {
       ifft24576(prachF,prach2);
       memcpy((void*)prach,(void*)(prach+49152),Ncp<<2);
-    } 
-    if (prach_fmt>1)
-      memcpy((void*)(prach2+49152),(void*)prach2,98304);
- 
+      prach_len = 24576+Ncp;
+      if (prach_fmt>1) {
+	memcpy((void*)(prach2+49152),(void*)prach2,98304);
+	prach_len = 2* 24576+Ncp;
+      }
+     } 
     break;
+  }
+
+  //LOG_D(PHY,"prach_len=%d\n",prach_len);
+
+  for (i=0; i<prach_len; i++) {
+    if (prach_fmt==4) {
+      //TODO: account for repeated format in fft output
+    }
+    else {
+#ifdef BIT8_TX
+      prach_out[2*i] = (char) prach[2*i];
+      prach_out[2*i+1] = (char) prach[2*i+1];
+#else
+      prach_out[2*i] = prach[2*i];
+      prach_out[2*i+1] = prach[2*i+1];
+#endif
+    }
   }
 
   //  apply_625_Hz(phy_vars_ue,prach);
@@ -826,9 +887,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	  }
 	  else {
 	    fft1536(prach2,rxsigF[aa]);
+	    if (prach_fmt>1)
+	      fft1536(prach2+3072,rxsigF[aa]+3072);
 	  }
-	  if (prach_fmt>1)
-	    fft1536(prach2+3072,rxsigF[aa]+3072);
 	  
 	  break;
 	case 15:
@@ -837,9 +898,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	  }
 	  else {
 	    fft3072(prach2,rxsigF[aa]);
+	    if (prach_fmt>1)
+	      fft3072(prach2+6144,rxsigF[aa]+6144);
 	  }
-	  if (prach_fmt>1)
-	    fft3072(prach2+6144,rxsigF[aa]+6144);
 	  break;
 	case 25:
 	  if (prach_fmt == 4) {
@@ -847,9 +908,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	  }
 	  else {
 	    fft6144(prach2,rxsigF[aa]);
+	    if (prach_fmt>1)
+	      fft6144(prach2+12288,rxsigF[aa]+12288);
 	  }
-	  if (prach_fmt>1)
-	    fft6144(prach2+12288,rxsigF[aa]+12288);
 	  break;
 	case 50:
 	  if (prach_fmt == 4) {
@@ -857,9 +918,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	  }
 	  else {
 	    fft12288(prach2,rxsigF[aa]);
+	    if (prach_fmt>1)
+	      fft12288(prach2+24576,rxsigF[aa]+24576);
 	  }
-	  if (prach_fmt>1)
-	    fft12288(prach2+24576,rxsigF[aa]+24576);
 	  break;
 	case 75:
 	  if (prach_fmt == 4) {
@@ -867,10 +928,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	  }
 	  else {
 	    fft18432(prach2,rxsigF[aa]);
+	    if (prach_fmt>1)
+	      fft18432(prach2+36864,rxsigF[aa]+36864);
 	  }
-	  if (prach_fmt>1)
-	    fft18432(prach2+36864,rxsigF[aa]+36864);
-
 	  break;
 	case 100:
 	  if (prach_fmt == 4) {
@@ -879,10 +939,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	  else {
 	    fft24576(prach2,rxsigF[aa]);
 	    memset(prachF,0,4*24576);
+	    if (prach_fmt>1)
+	      fft24576(prach2+49152,rxsigF[aa]+49152);
 	  } 
-	  if (prach_fmt>1)
-	    fft24576(prach2+49152,rxsigF[aa]+49152);
-	  
 	  break;
 	}
 	

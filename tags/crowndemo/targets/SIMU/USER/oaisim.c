@@ -544,8 +544,8 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
   //omv_data.total_num_nodes = NB_UE_INST + NB_eNB_INST;
   for (i=0;i<NB_eNB_INST;i++) {
     if (enb_node_list != NULL) {
-      omv_data.geo[i].x = enb_node_list->node->X_pos;
-      omv_data.geo[i].y = enb_node_list->node->Y_pos;
+      omv_data.geo[i].x = (enb_node_list->node->X_pos < 0.0)? 0.0 : enb_node_list->node->X_pos;
+      omv_data.geo[i].y = (enb_node_list->node->Y_pos < 0.0)? 0.0 : enb_node_list->node->Y_pos;
       omv_data.geo[i].z = 1.0;
       omv_data.geo[i].mobility_type = oai_emulation.info.omg_model_enb;
       omv_data.geo[i].node_type = 0; //eNB
@@ -563,8 +563,8 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
   }
   for (i=NB_eNB_INST;i<NB_UE_INST+NB_eNB_INST;i++) {
     if (ue_node_list != NULL) {
-      omv_data.geo[i].x = ue_node_list->node->X_pos;
-      omv_data.geo[i].y = ue_node_list->node->Y_pos;
+      omv_data.geo[i].x = (ue_node_list->node->X_pos < 0.0) ? 0.0 : ue_node_list->node->X_pos;
+      omv_data.geo[i].y = (ue_node_list->node->Y_pos < 0.0) ? 0.0 : ue_node_list->node->Y_pos;
       omv_data.geo[i].z = 1.0;
       omv_data.geo[i].mobility_type = oai_emulation.info.omg_model_ue;
       omv_data.geo[i].node_type = 1; //UE
@@ -871,7 +871,7 @@ for(i=0;i<2;i++) {
 
   // configure oaisim with OCG
   oaisim_config(); // config OMG and OCG, OPT, OTG, OLG
-
+#ifndef TEST_OMG
   if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX ) {
     LOG_E(EMU,"Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
     exit (-1);
@@ -917,11 +917,10 @@ for(i=0;i<2;i++) {
       emu_transport_sync ();	//emulation_tx_rx();
     }
   }				// ethernet flag
-
+#endif
 
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
-
   if (oai_emulation.info.omv_enabled == 1) {
     
     if(pipe(pfd) == -1)
@@ -1181,7 +1180,7 @@ for(i=0;i<2;i++) {
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
-    if ((frame % 100) == 0 ) { // call OMG every 1s 
+    if ((frame % 100) == 0 ) { // call OMG every 100ms 
       update_nodes(oai_emulation.info.frame*10); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
@@ -1275,7 +1274,7 @@ for(i=0;i<2;i++) {
      if(Channel_Flag==0){
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
-      
+#ifndef TEST_OMG      
       for (eNB_id=oai_emulation.info.first_enb_local;
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
@@ -1295,9 +1294,9 @@ for(i=0;i<2;i++) {
 	  //}
 #endif
       }
-      emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
-
       // Call ETHERNET emulation here
+      emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
+      
       if ((next_slot % 2) == 0)
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
       
@@ -1389,6 +1388,7 @@ for(i=0;i<2;i++) {
          write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
          }
        */
+#endif 
       if (next_slot %2 == 0){
 	clock_gettime (CLOCK_REALTIME, &time_spec);
 	time_last = time_now;
