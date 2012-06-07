@@ -431,7 +431,7 @@ static void *eNB_thread(void *arg)
       if (frame>5)
         {
           if (frame<100)
-            rt_printk("slot %d hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",slot, hw_slot,next_slot,DAQ_MBOX[0]);
+            rt_printk("slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",slot, hw_slot,next_slot,DAQ_MBOX[0]);
           phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
 #ifndef IFFT_FPGA
           slot_offset_F = (next_slot)*
@@ -495,21 +495,22 @@ static void *eNB_thread(void *arg)
                         }
                     }
 #endif
-                }
-	      // we need to copy the first part of the first slot to the end of the frame due to the timing advance
-	      if (next_slot==0) {
-		slot_offset = PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
+                  // we need to copy the first part of the first slot to the end of the frame due to the timing advance
+                  if (next_slot==0)
+                    {
+                      slot_offset = PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
 #ifdef BIT8_TX
-		memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
-		       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
-		       640*sizeof(unsigned short));
+                      memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
+                             &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
+                             640*sizeof(unsigned short));
 #else
-		memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
-		       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
-		       640*sizeof(unsigned int));
+                      memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+                             &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
+                             640*sizeof(unsigned int));
 #endif
-	      }
-	    }
+                    }
+                }
+            }
 
 #endif //IFFT_FPGA
 
@@ -524,18 +525,7 @@ static void *eNB_thread(void *arg)
 #ifndef CBMIMO1
       slot++;
       if (slot==20)
-        {
-          slot=0;
-        }
-      if ((frame % 100) == 0)
-        rt_printk("eNB Frame %d\n",frame);
-
-      /*
-      if (frame==4) {
-      rt_printk("Debug exit after 4 frames\n");
-      oai_exit=1;
-      }
-      */
+        slot=0;
 #endif
       //slot++;
       if ((slot%20)==0)
@@ -699,13 +689,13 @@ static void *UE_thread(void *arg)
 
           if (initial_sync(PHY_vars_UE_g[0])==0)
             {
-	      /*
-	      lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
-			       PHY_vars_UE_g[0],
-			       0,
-			       1,
-			       16384);
-	      */
+              /*
+              lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
+                   PHY_vars_UE_g[0],
+                   0,
+                   1,
+                   16384);
+              */
               //for better visualization afterwards
               /*
               for (aa=0; aa<PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx; aa++)
@@ -818,7 +808,7 @@ int main(int argc, char **argv)
 
   if (UE_flag==1)
     printf("configuring for UE (tcxo=%d)\n",tcxo);
-  else 
+  else
     printf("configuring for eNB\n");
 
   // initialize the log (see log.h for details)
@@ -874,6 +864,7 @@ int main(int argc, char **argv)
     }
   else
     {
+      g_log->log_component[PHY].level = LOG_INFO;
       frame_parms->node_id = PRIMARY_CH;
       PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
       PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);

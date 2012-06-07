@@ -77,4 +77,11 @@ int lte_generate_srs(mod_sym_t **txdataF,
 		     unsigned int sub_frame_offset);
 
 
+int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
+		     mod_sym_t *output,
+		     short amp,
+		     unsigned char Ns,
+		     unsigned char l,//nb of sym per slot 
+			unsigned char p);
+
 #endif
