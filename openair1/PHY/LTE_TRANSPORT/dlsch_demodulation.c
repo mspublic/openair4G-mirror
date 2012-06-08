@@ -6735,13 +6735,15 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rho_i,
 			 int **dl_ch_mag,
 			 int **dl_ch_magb,
+			 int **dl_ch_mag_i,
+			 int **dl_ch_magb_i,
 			 unsigned char symbol,
 			 unsigned short nb_rb,
 			 unsigned char dual_stream_UE) {
 
   unsigned char aatx;
 
-  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*dl_ch_mag128_0,*dl_ch_mag128_1,*dl_ch_mag128_0b,*dl_ch_mag128_1b,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
+  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*dl_ch_mag128_0,*dl_ch_mag128_1,*dl_ch_mag128_0b,*dl_ch_mag128_1b,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1,*dl_ch_mag128_i0,*dl_ch_mag128_i1,*dl_ch_mag128_i0b,*dl_ch_mag128_i1b;
   int i;
 
   if (frame_parms->nb_antennas_rx>1) {
@@ -6757,9 +6759,9 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 
       // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
       for (i=0;i<nb_rb*3;i++) {
-	rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
-	dl_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0[i],1),_mm_srai_epi16(dl_ch_mag128_1[i],1));
-	dl_ch_mag128_0b[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0b[i],1),_mm_srai_epi16(dl_ch_mag128_1b[i],1));
+          rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
+          dl_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0[i],1),_mm_srai_epi16(dl_ch_mag128_1[i],1));
+          dl_ch_mag128_0b[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0b[i],1),_mm_srai_epi16(dl_ch_mag128_1b[i],1));
       }
     }
 
@@ -6776,9 +6778,15 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       rho128_i1 = (__m128i *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_i0   = (__m128i *)&rxdataF_comp_i[0][symbol*frame_parms->N_RB_DL*12];  
       rxdataF_comp128_i1   = (__m128i *)&rxdataF_comp_i[1][symbol*frame_parms->N_RB_DL*12];  
+      dl_ch_mag128_i0      = (__m128i *)&dl_ch_mag_i[0][symbol*frame_parms->N_RB_DL*12];  
+      dl_ch_mag128_i1      = (__m128i *)&dl_ch_mag_i[1][symbol*frame_parms->N_RB_DL*12]; 
+      dl_ch_mag128_i0b     = (__m128i *)&dl_ch_magb_i[0][symbol*frame_parms->N_RB_DL*12];  
+      dl_ch_mag128_i1b     = (__m128i *)&dl_ch_magb_i[1][symbol*frame_parms->N_RB_DL*12];
       for (i=0;i<nb_rb*3;i++) {
 	rxdataF_comp128_i0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_i0[i],1),_mm_srai_epi16(rxdataF_comp128_i1[i],1));
 	rho128_i0[i]           = _mm_adds_epi16(_mm_srai_epi16(rho128_i0[i],1),_mm_srai_epi16(rho128_i1[i],1));
+    dl_ch_mag128_i0[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_i0[i],1),_mm_srai_epi16(dl_ch_mag128_i1[i],1));
+    dl_ch_mag128_i0b[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_i0b[i],1),_mm_srai_epi16(dl_ch_mag128_i1b[i],1));
       }
     }
   }
@@ -10491,7 +10499,16 @@ void dlsch_channel_level_prec(int **dl_ch_estimates_ext,
   
   //clear average level
   avg128D = _mm_xor_si128(avg128D,avg128D);
+  avg[0] = 0;
+  avg[1] = 0;
   // 5 is always a symbol with no pilots for both normal and extended prefix
+
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+      nre=8;
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+      nre=10;
+  else
+      nre=12;
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       dl_ch128_0 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
@@ -10528,22 +10545,14 @@ void dlsch_channel_level_prec(int **dl_ch_estimates_ext,
               dl_ch128_0+=3;	
               dl_ch128_1+=3;
           }          
-      }      
+      }
+      avg[aarx] = (((int*)&avg128D)[0] + 
+                   ((int*)&avg128D)[1] + 
+                   ((int*)&avg128D)[2] + 
+                   ((int*)&avg128D)[3])/(nb_rb*nre);
   }
-
-  
-
-  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
-      nre=8;
-  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
-      nre=10;
-  else
-      nre=12;
-
-  avg[0] = (((int*)&avg128D)[0] + 
-            ((int*)&avg128D)[1] + 
-            ((int*)&avg128D)[2] + 
-            ((int*)&avg128D)[3])/(nb_rb*nre);
+  // choose maximum of the 2 effective channels
+  avg[0] = cmax(avg[0],avg[1]);
 
   _mm_empty();
   _m_empty();
@@ -10952,7 +10961,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #ifdef ENABLE_FXP      
       if (first_symbol_flag==1) {
           // effective channel of desired user is always stronger than interfering eff. channel
-          dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	&avg[0], symbol_mod, nb_rb);
+          dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol_mod, nb_rb);
 
           avg[0] = log2_approx(avg[0])-13;
           lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
@@ -11180,6 +11189,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
 			lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
 			lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+			lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+			lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb,
 			symbol,
 			nb_rb,
 			dual_stream_flag); 
