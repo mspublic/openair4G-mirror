@@ -432,6 +432,8 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 			 s32 **rho_i,
 			 s32 **dl_ch_mag,
 			 s32 **dl_ch_magb,
+             s32 **dl_ch_mag_i,
+             s32 **dl_ch_magb_i,
 			 u8 symbol,
 			 u16 nb_rb,
 			 u8 dual_stream_UE);
