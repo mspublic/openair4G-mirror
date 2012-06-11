@@ -1496,17 +1496,25 @@ u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n){
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
 
-  int i;
+  int i, aarx;
   u16 pmiq=0;
   u16 pmivect = 0;
   u8 rank = meas->rank[eNB_id];
   int pmi_re,pmi_im;
 
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
+      pmi_re = 0;
+      pmi_im = 0;
 
     if (rank == 0) {
-      pmi_re = meas->subband_pmi_re[eNB_id][i][meas->selected_rx_antennas[eNB_id][i]];
-      pmi_im = meas->subband_pmi_im[eNB_id][i][meas->selected_rx_antennas[eNB_id][i]];
+        for (aarx=0; aarx<meas->nb_antennas_rx; aarx++) {
+            pmi_re += meas->subband_pmi_re[eNB_id][i][aarx];
+            pmi_im += meas->subband_pmi_im[eNB_id][i][aarx];
+        }
+
+        //  pmi_re = meas->subband_pmi_re[eNB_id][i][meas->selected_rx_antennas[eNB_id][i]];
+        //  pmi_im = meas->subband_pmi_im[eNB_id][i][meas->selected_rx_antennas[eNB_id][i]];
+
       //      printf("pmi => (%d,%d)\n",pmi_re,pmi_im);
       if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
 	pmiq = PMI_2A_11;
@@ -1539,8 +1547,8 @@ u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id) {
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
     if (rank == 0) {
-      pmi_re = meas->subband_pmi_re[eNB_id][i][a_id];
-      pmi_im = meas->subband_pmi_im[eNB_id][i][a_id];
+        pmi_re = meas->subband_pmi_re[eNB_id][i][a_id];
+        pmi_im = meas->subband_pmi_im[eNB_id][i][a_id];
 
       if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
 	pmiq = PMI_2A_11;
