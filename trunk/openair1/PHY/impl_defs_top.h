@@ -382,7 +382,9 @@ typedef struct
   /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas) 
   unsigned char           selected_rx_antennas[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];         
   /// Wideband Rank indication
-  unsigned char  rank[NUMBER_OF_eNB_MAX];                                             
+  unsigned char  rank[NUMBER_OF_eNB_MAX]; 
+  /// Number of RX Antennas                                            
+  unsigned char  nb_antennas_rx; 
   /// DLSCH error counter
   // short          dlsch_errors;                                                        
 } PHY_MEASUREMENTS;
