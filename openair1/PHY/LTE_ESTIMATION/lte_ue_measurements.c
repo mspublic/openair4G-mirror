@@ -170,6 +170,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   int *dl_ch0,*dl_ch1;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
 
+  phy_vars_ue->PHY_measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
+
   if (openair_daq_vars.rx_rf_mode == 0)
     gain_offset = 25;
   else
