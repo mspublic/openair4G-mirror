@@ -104,7 +104,7 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 
   nbits = args(2).scalar_value();
 
-  ioctl(openair_fd,openair_STOP,(void*)&dummy);
+  //  ioctl(openair_fd,openair_STOP,(void*)&dummy);
 
   // version using mmap
   ioctl(openair_fd,openair_GET_VARS,(void* )&dummy_tx_rx_vars);
@@ -116,11 +116,11 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
     error("pci_buffers not allocated");
     return octave_value_list();
   }
-  
+  /*
   printf("BIGPHYS top 0x%x\n",bigphys_top);
   printf("RX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[0]);
   printf("TX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[0]);
-
+  */
   mem_base = (unsigned int)mmap(0,
 				BIGPHYS_NUMPAGES*4096,
 				PROT_WRITE,
