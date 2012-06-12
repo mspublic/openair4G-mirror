@@ -110,9 +110,8 @@ mapping small_scale_names[] =
     {"AWGN", 14},
     {NULL, -1}
 };
-
+static void *sigh(void *arg);
 extern int transmission_mode_rrc;//FIXME!!!
-
 
 void 
 help (void) {
@@ -649,10 +648,9 @@ main (int argc, char **argv)
 #ifdef ICIC
   remove ("dci.txt");
 #endif
-
   //time_t t0,t1;
   //clock_t start, stop;
-
+  
   // Added for PHY abstraction
   Node_list ue_node_list = NULL;
   Node_list enb_node_list = NULL;
@@ -850,10 +848,22 @@ main (int argc, char **argv)
       break;
     }
   }
-
-  // configure oaisim with OCG
+  /*  pthread_t sigth;
+  sigset_t sigblock;
+  sigemptyset(&sigblock);
+  sigaddset(&sigblock, SIGHUP);
+  sigaddset(&sigblock, SIGINT);
+  sigaddset(&sigblock, SIGTERM);
+  pthread_sigmask(SIG_BLOCK, &sigblock, NULL);
+  if (pthread_create(&sigth, NULL, sigh, NULL)) {
+    msg("Pthread for tracing Signals is not created!\n");
+    return -1;
+  } else {
+    msg("Pthread for tracing Signals is created!\n");
+    }*/
+   // configure oaisim with OCG
   oaisim_config(); // config OMG and OCG, OPT, OTG, OLG
-#ifndef TEST_OMG
+  
   if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX ) {
     LOG_E(EMU,"Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
     exit (-1);
@@ -899,7 +909,7 @@ main (int argc, char **argv)
       emu_transport_sync ();	//emulation_tx_rx();
     }
   }				// ethernet flag
-#endif
+
 
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
@@ -1138,14 +1148,14 @@ main (int argc, char **argv)
     }
       
     oai_emulation.info.frame = frame;   
-    oai_emulation.info.time_s += 10; //0.01; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
+    oai_emulation.info.time_s += 0.1; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
     // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
     if ( (oai_emulation.info.n_frames_flag == 0) || (oai_emulation.info.n_frames >= 0xffff) ){ 
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
     if ((frame % 100) == 0 ) { // call OMG every 100ms 
-      update_nodes(oai_emulation.info.frame*10); 
+      update_nodes(oai_emulation.info.time_s); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
       if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
@@ -1238,7 +1248,7 @@ main (int argc, char **argv)
      if(Channel_Flag==0){
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
-#ifndef TEST_OMG      
+
       for (eNB_id=oai_emulation.info.first_enb_local;
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
@@ -1307,7 +1317,7 @@ main (int argc, char **argv)
 #endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
- 
+      
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
@@ -1328,7 +1338,7 @@ main (int argc, char **argv)
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
 	}
       }
-
+    
       if ((last_slot == 1) && (frame == 0)
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
@@ -1352,7 +1362,7 @@ main (int argc, char **argv)
          write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
          }
        */
-#endif 
+
       if (next_slot %2 == 0){
 	clock_gettime (CLOCK_REALTIME, &time_spec);
 	time_last = time_now;
@@ -1472,6 +1482,7 @@ main (int argc, char **argv)
 
     lte_sync_time_free ();
   }
+  //  pthread_join(sigth, NULL);
 
   // added for PHY abstraction
   if (oai_emulation.info.ocm_enabled == 1) {
@@ -1496,11 +1507,43 @@ main (int argc, char **argv)
   //destroyMat(ShaF,map1, map2);
   if (oai_emulation.info.cli_enabled)
     cli_server_cleanup();
-  
+  //bring oai if down
+  terminate();
   logClean();
-
+  
   return(0);
 }
 
 
-// could be per mobility type : void update_node_vector(int mobility_type, double cur_time) ;
+static void *sigh(void *arg) {
+   
+  int signum;
+  sigset_t sigcatch;
+  sigemptyset(&sigcatch);
+  sigaddset(&sigcatch, SIGHUP);
+  sigaddset(&sigcatch, SIGINT);
+  sigaddset(&sigcatch, SIGTERM);
+  
+  for (;;) {
+    sigwait(&sigcatch, &signum);
+    switch (signum) {
+    case SIGHUP:
+    case SIGINT:
+    case SIGTERM:
+      terminate();
+    default:
+      break;
+    }
+  }
+  pthread_exit(NULL);
+}
+
+void terminate(void) {
+  int i;
+  char interfaceName[8];
+  for (i=0; i < NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX; i++)
+    if (oai_emulation.info.oai_ifup[i]==1){
+      sprintf(interfaceName, "oai%d", i);
+      bringInterfaceUp(interfaceName,0);
+    }
+}

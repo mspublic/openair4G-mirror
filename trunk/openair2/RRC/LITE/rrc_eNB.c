@@ -53,9 +53,14 @@
 #include "TDD-Config.h"
 #include "rlc.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
+#ifdef Rel10
+#include "MeasResults.h"
+#endif
 #ifdef USER_MODE
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
+#include "OCG.h"
+#include "OCG_extern.h"
 #endif
 #ifdef PHY_EMUL
 extern EMULATION_VARS *Emul_vars;
@@ -466,7 +471,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 					 &eNB_rrc_inst[Mod_id].DRB_config[UE_index][0],
 					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
 
-  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
+  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
+	Mod_id,frame, size, UE_index);
   
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
 	frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
@@ -498,9 +504,13 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
     printf("RSRP of Target %d\n",*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
     printf("RSRQ of Target %d\n",*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
   }
+#ifdef Rel10
+  printf("RSRP of Source %d\n",measResults2->measResultPCell.rsrpResult);
+  printf("RSRQ of Source %d\n",measResults2->measResultPCell.rsrqResult);
+#else  
   printf("RSRP of Source %d\n",measResults2->measResultServCell.rsrpResult);
   printf("RSRQ of Source %d\n",measResults2->measResultServCell.rsrqResult);
-  
+#endif   
   
   //Look for IP address of the target eNB
   //Send Handover Request -> target eNB
@@ -543,7 +553,8 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 		   Mod_id+1);// fourth octet
 
 	 if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
-	    LOG_I(OIP,"[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",  
+	  oai_emulation.info.oai_ifup[Mod_id]=1;
+	  LOG_I(OIP,"[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",  
 		  Mod_id,
 		  Mod_id,
 		  (UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);

@@ -129,7 +129,7 @@ void init_oai_emulation() {
 	oai_emulation.topology_config.network_type.selected_option = "homogeneous";
 	oai_emulation.topology_config.cell_type.selected_option = "macrocell";
 	oai_emulation.topology_config.relay.number_of_relays = 0;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
+	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid = 1;
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid = 1;
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_trip_type.selected_option = "random_destination";
@@ -243,10 +243,16 @@ void init_oai_emulation() {
   oai_emulation.info.cli_num_enb= NUMBER_OF_eNB_MAX;
   oai_emulation.info.cli_num_ue= NUMBER_OF_UE_MAX;
  
-  for (i=0; i < oai_emulation.info.cli_num_enb; i++)
+  //for (i=0; i < oai_emulation.info.cli_num_enb; i++)
+  for (i=0; i < NUMBER_OF_eNB_MAX; i++)
     oai_emulation.info.cli_start_enb[i]=1;    
-  for (i=0; i < oai_emulation.info.cli_num_ue; i++)
+
+  // for (i=0; i < oai_emulation.info.cli_num_ue; i++)
+  for (i=0; i < NUMBER_OF_UE_MAX; i++)
     oai_emulation.info.cli_start_ue[i]=1;
+  
+  for (i=0; i < NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX; i++)
+    oai_emulation.info.oai_ifup[i]=0;
   
    oai_emulation.info.nb_master =0;
    oai_emulation.info.ethernet_id=0;
@@ -296,7 +302,7 @@ void oaisim_config() {
 
 int olg_config() {
   int comp;
-  oai_emulation.info.g_log_level = map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
+  oai_emulation.info.g_log_level = (oai_emulation.info.g_log_level < LOG_TRACE)? oai_emulation.info.g_log_level : map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
   oai_emulation.info.g_log_verbosity = map_str_to_int(log_verbosity_names, oai_emulation.emulation_config.log_emu.verbosity);
   LOG_N(EMU,"global log level is set to (%s,%d) with vebosity (%s, 0x%x) and frequency %d\n", 
 	oai_emulation.emulation_config.log_emu.level, 

@@ -44,7 +44,7 @@ extern LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue;
 
 #ifndef PHY_EMUL
 #ifndef PHYSIM
-#define NB_INST 1
+//#define NB_INST 1
 #else
 extern unsigned char NB_INST;
 #endif

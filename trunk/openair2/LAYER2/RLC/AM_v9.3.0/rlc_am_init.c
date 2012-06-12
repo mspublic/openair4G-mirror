@@ -48,7 +48,8 @@ void rlc_am_init(rlc_am_entity_t *rlcP,u32_t frame)
     list_init(&rlcP->pdus_to_mac_layer,     "PDUS TO MAC");
     list_init(&rlcP->control_pdu_list,      "CONTROL PDU LIST");
     list_init(&rlcP->segmentation_pdu_list, "SEGMENTATION PDU LIST");
-
+    //LOG_D(RLC,"RLC_AM_SDU_CONTROL_BUFFER_SIZE %d sizeof(rlc_am_tx_sdu_management_t) %d \n",  RLC_AM_SDU_CONTROL_BUFFER_SIZE, sizeof(rlc_am_tx_sdu_management_t));
+    
     rlcP->input_sdus_alloc         = get_free_mem_block(RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
     rlcP->input_sdus               = (rlc_am_tx_sdu_management_t*)((rlcP->input_sdus_alloc)->data);
     rlcP->pdu_retrans_buffer_alloc = get_free_mem_block((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t));

@@ -116,8 +116,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
   if (action == 0 ) {
     
     msgreq = (struct nas_msg_rb_establishment_request *)(gifr.msg);
-    msgreq->rab_id =  rb;
-    msgreq->lcr = cx;
+    msgreq->rab_id =  (nasRadioBearerId_t) rb;
+    msgreq->lcr = (nasRadioBearerId_t) cx;
     msgreq->qos = 0;
     
     gifr.type =  NAS_MSG_RB_ESTABLISHMENT_REQUEST;
@@ -127,8 +127,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
     }
     
     msgreq_class = (struct nas_msg_class_add_request *)(gifr.msg);
-    msgreq_class->rab_id = rb;
-    msgreq_class->lcr = cx;
+    msgreq_class->rab_id = (nasRadioBearerId_t) rb;
+    msgreq_class->lcr = (nasRadioBearerId_t) cx;
     msgreq_class->version = 4;//ipv4
     
     msgreq_class->classref = 0 + (msgreq_class->lcr<<3);
@@ -147,8 +147,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
       LOG_E(OIP,"IOCTL error: DIR SEND: ADD REQ\n");
     }
     
-    msgreq_class->rab_id = rb;
-    msgreq_class->lcr = cx;
+    msgreq_class->rab_id = (nasRadioBearerId_t)rb;
+    msgreq_class->lcr = (nasRadioBearerId_t)cx;
     msgreq_class->classref = 1+(msgreq_class->lcr<<3);
     msgreq_class->dir = NAS_DIRECTION_RECEIVE;
     msgreq_class->daddr.ipv4 = saddr_ipv4; 

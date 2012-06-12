@@ -344,10 +344,13 @@ typedef struct
 
   /// PUSCH Varaibles
   PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_eNB_MAX];
+ 
+  /// PUSCH contention-based access vars
+  PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
   /// PUCCH variables
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_eNB_MAX];
-
+  
   u8 ncs_cell[20][7];
 
   /// UL-POWER-Control

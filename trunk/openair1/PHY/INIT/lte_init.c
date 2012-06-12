@@ -436,6 +436,13 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 	msg("------------------------------------------------------------\n");
 
       }
+      if (physicalConfigDedicated->pusch_CAConfigDedicated_vlola){
+	phy_vars_ue->pusch_ca_config_dedicated[CH_index].betaOffset_CA_Index = (u16) *physicalConfigDedicated->pusch_CAConfigDedicated_vlola->betaOffset_CA_Index;
+	phy_vars_ue->pusch_ca_config_dedicated[CH_index].cShift = (u16) *physicalConfigDedicated->pusch_CAConfigDedicated_vlola->cShift;
+	LOG_D(PHY,"[UE %d ] physicalConfigDedicated pusch CBA config dedicated: beta offset %d cshift %d \n",Mod_id, 
+	      phy_vars_ue->pusch_ca_config_dedicated[CH_index].betaOffset_CA_Index,
+	      phy_vars_ue->pusch_ca_config_dedicated[CH_index].cShift);
+      }
 
     }
     else {

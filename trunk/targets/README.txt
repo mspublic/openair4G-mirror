@@ -52,3 +52,11 @@ The 3 folders have the following structures
      go back to $OPENAIR_TARGET and make install 
    - cd $OPENAIR_TARGET, and make a sanity check by doing make check   
    - Check out simple examples in $OPENAIR_TARGET/SIMU/EXAMPLES   
+
+4. to automatically bring up the oai interfaces and configure the default radio beares (usefull when sending data traffic):
+   - add your username into the list of sudoers
+     + edit /etc/sudoers as a super user 
+     + after the line: # User privilege specification, add : user_name   ALL=(ALL:ALL) ALL
+     + after the line: %admin ALL=(ALL) ALL,           add : user_name   ALL=(ALL) NOPASSWD: ALL
+   - include this line: alias sudo='sudo -E', to the .bashrc 
+   - run oai as follows: sudo ./oaisim arg1 arg2 ....

@@ -82,14 +82,20 @@ endif
 # ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
 # make cleanasn1
 #make all Rel10=1
+export IS_REL10=$(shell if [ -f .lock-rel10 ] ; then  echo "1" ; else  echo "0" ; fi)
+export IS_REL8=$(shell if [ -f .lock-rel8 ] ; then  echo "1" ; else  echo "0" ; fi)
+
 ifdef  Rel10
 CFLAGS += -DRel10
- $(shell ln -s $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ;rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated; 	rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; )
+ifeq ($(IS_REL10), 0) 
+ $(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ; ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; touch .lock-rel10 ; rm .lock-rel8 ;)
+endif
+else # rel 8
+ifeq ($(IS_REL8), 0) 
+ $(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ; ln -s EUTRA-RRC-Definitions-86.asn EUTRA-RRC-Definitions.asn ;  cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ; touch .lock-rel8 ; rm .lock-rel10 ; )
+endif
 endif
 
-ifdef  Rel8
- $(shell ln -s $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn $OPENAIR2_DIR/openair2/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ;rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated; 	rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ;)
-endif
 
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
@@ -101,7 +107,7 @@ endif
 #then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
 # you could also use the script "grpof2dot.py gmon.txt" for visual diagrams 
 ifdef GPROF
-#CFLAGS += -pg
+CFLAGS += -pg
 endif
 
 #require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)
@@ -238,6 +244,8 @@ print:
 	@echo $(CFLAGS)
 	@echo $(EXTRA_CFLAGS)
 	@echo $(OBJ)
+	@echo $(IS_REL10)
+	@echo $(IS_REL8)
 
 showcflags:
 	@echo $(CFLAGS)

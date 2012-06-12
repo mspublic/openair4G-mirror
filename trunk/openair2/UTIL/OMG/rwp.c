@@ -235,7 +235,7 @@ void get_rwp_positions_updated(double cur_time){
   LOG_D(OMG, "--------GET RWP POSITIONS--------\n");
   
   Pair my_pair = Job_Vector->pair;
-  if ( (my_pair !=NULL) && (cur_time <= my_pair->a )){
+  if ( (my_pair !=NULL) && (cur_time <= my_pair->a +eps)){
     LOG_D(OMG, "[RWP] current time %.2f <= time when reaching the destination %.2f\n ",cur_time, my_pair->a);
     Job_list tmp = Job_Vector;
     while (tmp != NULL){
