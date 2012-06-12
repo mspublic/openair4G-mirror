@@ -56,8 +56,8 @@
 #include "MeasObjectEUTRA.h"
 #include "TDD-Config.h"
 #ifdef PHY_ABSTRACTION
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
+#include "OCG.h"
+#include "OCG_extern.h"
 #endif
 #ifdef USER_MODE
 #include "RRC/NAS/nas_config.h"
@@ -86,7 +86,7 @@ void init_SI_UE(u8 Mod_id,u8 eNB_index) {
   UE_rrc_inst[Mod_id].sib1[eNB_index] = (SystemInformationBlockType1_t *)malloc16(sizeof(SystemInformationBlockType1_t));
   UE_rrc_inst[Mod_id].SI[eNB_index] = (u8 *)malloc16(64);
 
-  for (i=0;i<8;i++) {
+  for (i=0;i<NB_CNX_UE;i++) {
      UE_rrc_inst[Mod_id].si[eNB_index][i] = (SystemInformation_t *)malloc16(sizeof(SystemInformation_t));
   }
 
@@ -369,6 +369,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 	       oai_emulation.info.nb_enb_local+Mod_id+1,
 	       NB_eNB_INST+Mod_id+1);
     if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
+      oai_emulation.info.oai_ifup[Mod_id]=1;
       LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",  
 	    Mod_id,
 	    oai_emulation.info.nb_enb_local+Mod_id,
@@ -376,7 +377,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 	    
 	    rb_conf_ipv4(0,//add
 			 Mod_id,//cx align with the UE index
-			 oai_emulation.info.nb_enb_local+Mod_id,//inst num_ue+ue_index
+			 oai_emulation.info.nb_enb_local+Mod_id,//inst num_enb+ue_index
 			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
 			 0,//dscp
 			 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,NB_eNB_INST+Mod_id+1),//saddr

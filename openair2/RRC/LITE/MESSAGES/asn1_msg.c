@@ -891,7 +891,11 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config,*SRB2_lchan_config;
   struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters,*SRB2_ul_SpecificParameters;
   SRB_ToAddModList_t *SRB_list;
-
+#ifdef Rel10
+  struct PUSCH_CAConfigDedicated_vlola	*pusch_CAConfigDedicated_vlola;
+  long * betaOffset_CA_Index;
+  long * cShift;
+#endif 
   PhysicalConfigDedicated_t *physicalConfigDedicated2;
 
   DL_CCCH_Message_t dl_ccch_msg;
@@ -1030,7 +1034,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
 #ifdef Rel10
-  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola = NULL;
+  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_CAConfigDedicated_vlola));
 #endif
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
@@ -1182,6 +1186,12 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
 #ifdef Rel10
+  betaOffset_CA_Index = CALLOC(1,sizeof(long));
+  cShift = CALLOC(1,sizeof(long));
+  *betaOffset_CA_Index=10; // need to be changed by Kaijie
+  *cShift=4;
+  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola->betaOffset_CA_Index=betaOffset_CA_Index;
+  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola->cShift=cShift;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_RA_ConfigList_rlola = NULL;
 #endif
 
@@ -1230,7 +1240,10 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   ReportConfigToAddMod_t *ReportConfig;
   MeasIdToAddModList_t *MeasId_list;
   MeasIdToAddMod_t *MeasId;
-  
+#if Rel10
+    struct PUSCH_CAConfigDedicated_vlola  *pusch_CAConfigDedicated_vlola;
+#endif
+
   long *logicalchannelgroup,*logicalchannelgroup_drb;
 
   DL_DCCH_Message_t dl_dcch_msg;
@@ -1547,8 +1560,13 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
 
 
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId=measid;
+#ifdef Rel10
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult=rsrp_s;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult=rsrq_s;
+#else
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrpResult=rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrqResult=rsrq_s;
+#endif
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells=CALLOC(1,sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells));
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->present=MeasResults__measResultNeighCells_PR_measResultListEUTRA;
 

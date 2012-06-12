@@ -45,7 +45,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#define DEBUG_PHY_PROC
+//#define DEBUG_PHY_PROC
 //#define DEBUG_DLSCH
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
@@ -203,8 +203,8 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
       subframe_m4 = subframe-4;
     */
 #ifdef DEBUG_PHY_PROC
-    msg("[PHY][eNB] get_ue_active_harq_pid: Frame %d subframe %d, current harq_id %d\n",
-	frame,subframe,DLSCH_ptr->harq_ids[subframe]);
+    LOG_D(PHY,"[eNB %d] get_ue_active_harq_pid: Frame %d subframe %d, current harq_id %d\n",
+	  Mod_id,frame,subframe,DLSCH_ptr->harq_ids[subframe]);
 #endif
     // switch on TDD or FDD configuration here later
     *harq_pid = DLSCH_ptr->harq_ids[subframe];
@@ -212,7 +212,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 	((DLSCH_ptr->harq_processes[*harq_pid]->round > 0))) {
 
       *round = DLSCH_ptr->harq_processes[*harq_pid]->round;
-      msg("round %d\n",*round);
+      LOG_D(PHY,"round %d\n",*round);
     
     //    else if ((subframe_m4==5) || (subframe_m4==6)) {
     //      *harq_pid = 0;//DLSCH_ptr->harq_ids[subframe_m4];//Ankit
@@ -229,11 +229,11 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 	    return(0);
 	  }
 	  else {
-	    msg("process %d is active\n",i);
+	    LOG_D(PHY,"process %d is active\n",i);
 	  }
 	}
 	else {
-	  msg("[PHY] eNB %d DLSCH process %d for rnti %x (UE_id %d) not allocated\n",Mod_id,i,rnti,UE_id);
+	  LOG_E(PHY,"[eNB %d] DLSCH process %d for rnti %x (UE_id %d) not allocated\n",Mod_id,i,rnti,UE_id);
 	  return(-1);
 	}
       }
@@ -249,7 +249,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 				  ulsch_frame,
 				  ulsch_subframe);
     *round    = ULSCH_ptr->harq_processes[*harq_pid]->round;
-    msg("[PHY][eNB %d][PUSCH %d] Frame %d subframe %d Checking HARQ, round %d\n",Mod_id,*harq_pid,frame+((subframe==0)?1:0),subframe,*round);
+    LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d Checking HARQ, round %d\n",Mod_id,*harq_pid,frame+((subframe==0)?1:0),subframe,*round);
   }
   return(0);
 }
@@ -1153,7 +1153,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       LOG_D(PHY,"[eNB %d][SI] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d, num_pdcch_symbols %d\n",
 	  phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot, input_buffer_length,num_pdcch_symbols);
       for (i=0;i<input_buffer_length;i++)
-	LOG_D(PHY,"%x.",i,DLSCH_pdu[i]);
+	LOG_T(PHY,"%x.",i,DLSCH_pdu[i]);
       LOG_D(PHY,"\n");
 #endif
 #endif
@@ -2085,7 +2085,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 #ifdef OPENAIR2
 #ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[eNB %d][RAPROC] Frame %d Terminating ra_proc for harq %d, UE %d\n",phy_vars_eNB->Mod_id,
+	  LOG_D(PHY,"[eNB %d][RAPROC] Frame %d Terminating ra_proc for harq %d, UE %d\n",
+		phy_vars_eNB->Mod_id,
 		phy_vars_eNB->frame,harq_pid,i);
 #endif
 	  mac_xface->terminate_ra_proc(phy_vars_eNB->Mod_id,
@@ -2112,8 +2113,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef DEBUG_PHY_PROC
 	  LOG_D(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX) %d bytes:",phy_vars_eNB->frame,last_slot>>1,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
-	    LOG_D(PHY,"%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b[j]);
-	  LOG_D(PHY,"\n");
+	    msg("%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b[j]);
+	  msg("\n");
 #endif
 
 #ifdef OPENAIR2

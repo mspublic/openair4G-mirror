@@ -603,6 +603,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char cli_start_enb[NUMBER_OF_eNB_MAX];
     unsigned char cli_num_ue;
     unsigned char cli_start_ue[NUMBER_OF_UE_MAX];
+    unsigned char oai_ifup[NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX];
     // emu related 
     unsigned int seed;
     unsigned int frame;

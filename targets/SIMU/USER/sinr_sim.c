@@ -134,7 +134,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   path_loss += Shad_Fad;
 
   ch_desc->path_loss_dB = MCL < path_loss ?  MCL : path_loss;
-  //printf("x_coordinate\t%f\t,y_coordinate\t%f\t, path_loss %f\n",ue_data->x,ue_data->y,ch_desc->path_loss_dB);
+  //LOG_D(OCM,"x_coordinate\t%f\t,y_coordinate\t%f\t, path_loss %f\n",ue_data->x,ue_data->y,ch_desc->path_loss_dB);
 }
 
 

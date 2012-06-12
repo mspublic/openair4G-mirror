@@ -421,9 +421,9 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
     }
   }       
   //printf("sinr_eff1 = %f\n",sinr_eff);
-  sinr_eff =  -beta_dlsch[mcs] *log((sinr_eff)/(2*rb_count));
+  sinr_eff =  - beta_dlsch[mcs] *log((sinr_eff)/(2*rb_count));
   sinr_eff = 10 * log10(sinr_eff);
-  msg("sinr_eff2 = %f\n",sinr_eff);
+  LOG_I(OCM,"sinr_eff2 = %f\n",sinr_eff);
 
   // table lookup
   sinr_eff *= 10;
@@ -446,11 +446,11 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
   }
 #ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
    if (uniformrandom() < bler) {
-    msg("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+     LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(0);
   }
   else {
-    msg("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    LOG_I(OCM,"abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(1);
   }
 #endif
@@ -478,7 +478,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     mac_xface->macphy_exit("");
   }
 
-  LOG_D(PHY,"UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
+  LOG_D(PHY,"[UE] dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
 
   //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);
 
@@ -542,7 +542,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
       dlsch_ue->harq_ack[subframe].send_harq_status = 1;
       return(1+MAX_TURBO_ITERATIONS);
-    }
+      }
 
     break;
   case 3: // TB1

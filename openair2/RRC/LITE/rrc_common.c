@@ -208,17 +208,22 @@ void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
 
-  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
-  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d\n",NB_INST);
+  LOG_D(RRC,"[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n",
+	NB_UE_INST,NB_eNB_INST);
+  
+  if (NB_UE_INST>0){
+    UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
+    memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
+    LOG_D(RRC,"ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
+  } else
+    UE_rrc_inst=NULL;
 
-  UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
-  memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
-  LOG_D(RRC,"ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
-
-  eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
-  memset(eNB_rrc_inst,0,NB_eNB_INST*sizeof(eNB_RRC_INST));
-  LOG_D(RRC,"ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
-
+  if (NB_eNB_INST>0){
+    eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
+    memset(eNB_rrc_inst,0,NB_eNB_INST*sizeof(eNB_RRC_INST));
+    LOG_D(RRC,"ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
+  }else
+    eNB_rrc_inst=NULL;
 #ifndef NO_RRM
 #ifndef USER_MODE
 

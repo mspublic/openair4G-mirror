@@ -135,7 +135,7 @@ int mac_top_init(){
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
 
-  LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d\n",NB_INST);
+  LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
@@ -144,15 +144,16 @@ int mac_top_init(){
   }
   else
     UE_mac_inst = NULL;
+  LOG_I(MAC,"[MAIN] Init function start:Nb_eNB_INST=%d\n",NB_eNB_INST);
   if (NB_eNB_INST>0) {
     eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
-    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
+    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
     bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
   }
   else
     eNB_mac_inst = NULL;
 
-  for(Mod_id=0;Mod_id<NB_INST;Mod_id++){
+  for(Mod_id=0;Mod_id<NB_eNB_INST;Mod_id++){
 
 #ifdef PHY_EMUL
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;//0: MR, 1: CH, 2: not CH neither MR
@@ -201,7 +202,7 @@ int mac_top_init(){
 
     UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[0];
     for (j=0;j<NB_CNX_eNB;j++) {
-      UE_template->rnti=0;
+      UE_template[j].rnti=0;
     }
   }
 

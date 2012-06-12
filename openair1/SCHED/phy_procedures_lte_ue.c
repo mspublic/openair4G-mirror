@@ -52,7 +52,7 @@
 //#endif
 
 
-#define DEBUG_PHY_PROC 1
+//#define DEBUG_PHY_PROC 1
 
 #define PUCCH 1
 
@@ -1069,7 +1069,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 			  (last_slot == 2) ? 1 : 0,
 			  0);
     }
-    else {
+    else { // need to be updated for abstraction mode 
       lte_ue_measurements(phy_vars_ue,
 			  0,
 			  0,

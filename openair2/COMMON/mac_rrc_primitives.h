@@ -64,7 +64,7 @@ result could be based on an event-driven measurement report.
 */
 
 #        define NB_SIG_CNX_CH 1
-#        define NB_CNX_CH 16//MAX_MOBILES_PER_RG  
+#        define NB_CNX_CH MAX_MOBILES_PER_RG  
 
 #        define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
 #        define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE  

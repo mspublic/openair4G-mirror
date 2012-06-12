@@ -52,6 +52,8 @@ private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #    else
 #        define MEM_SCALE 1
 #    endif
+// navid : 3 * 32
+#    define MEM_SCALE MAX_RG * MAX_MOBILES_PER_RG
 
 // definition of the size of the allocated memory area
 #    define MEM_MNGT_MB0_BLOCK_SIZE     64

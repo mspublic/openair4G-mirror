@@ -183,6 +183,14 @@ typedef struct {
   u16 betaOffset_CQI_Index;
 } PUSCH_CONFIG_DEDICATED;
 
+/// lola CBA information 
+typedef struct {
+  /// 
+  u16 betaOffset_CA_Index;
+  ///
+  u16 cShift;
+} PUSCH_CA_CONFIG_DEDICATED;
+
 /// PDSCH-ConfigCommon from 36.331 RRC spec
 typedef struct {
   /// Donwlink Reference Signal EPRE (-60... 50), 36.213 (5.2)
