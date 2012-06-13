@@ -13,6 +13,7 @@
 #include "mRALlte_constants.h"
 #include "mRALlte_variables.h"
 #include "mRALlte_proto.h"
+#include "mRALlte_mih_msg.h"
 #include "nas_ue_netlink.h"
 #include "nasUE_config.h"
 //-----------------------------------------------------------------------------
