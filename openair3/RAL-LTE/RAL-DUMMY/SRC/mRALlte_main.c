@@ -247,7 +247,9 @@ int inits(int argc, char *argv[]) {
 
     MIH_C_init(g_log_output);
 
-    parse_opts( argc, argv);
+    if (parse_opts( argc, argv) < 0) {
+        exit(0);
+    }
 
 
     if (mRALlte_mihf_connect() < 0 ) {
