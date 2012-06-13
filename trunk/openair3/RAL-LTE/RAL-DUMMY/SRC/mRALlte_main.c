@@ -41,9 +41,9 @@ static void arg_usage(char *exec_nameP) {
             "Usage: %s [options]\nOptions:\n"
             "  -V,          --version             Display version information\n"
             "  -?, -h,      --help                Display this help text\n"
-            "  -P <number>, --ral-listening-port  Mistening port for incoming MIH-F messages\n"
+            "  -P <number>, --ral-listening-port  Listening port for incoming MIH-F messages\n"
             "  -I <string>, --ral-ip-address      Binding IP(v4 or v6) address for RAL\n"
-            "  -p <number>, --mihf-remote-port    MIH-H remote port\n"
+            "  -p <number>, --mihf-remote-port    MIH-F remote port\n"
             "  -i <string>, --mihf-ip-address     MIH-F IP(v4 or v6) address\n"
             "  -c,          --output-to-console   All stream outputs are redirected to console\n"
             "  -f,          --output-to-syslog    All stream outputs are redirected to file\n"
@@ -242,7 +242,7 @@ int inits(int argc, char *argv[]) {
     g_mihf_ip_address               = DEFAULT_IP_ADDRESS_MIHF;
     g_link_id                       = DEFAULT_LINK_ID;
     g_mihf_id                       = DEFAULT_MIHF_ID;
-    sockd_mihf                      = -1;
+    g_sockd_mihf                    = -1;
     g_log_output                    = LOG_TO_CONSOLE;
 
     MIH_C_init(g_log_output);
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]){
     do{
         // Create fd_set and wait for input;
         FD_ZERO(&readfds);
-        FD_SET(sockd_mihf, &readfds);
+        FD_SET(g_sockd_mihf, &readfds);
         FD_SET (s_nas, &readfds);
         tv.tv_sec  = MIH_C_RADIO_POLLING_INTERVAL_SECONDS;
         tv.tv_usec = MIH_C_RADIO_POLLING_INTERVAL_MICRO_SECONDS;
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]){
 
         //something received!
         if(rc >= 0){
-            if(FD_ISSET(sockd_mihf, &readfds)){
+            if(FD_ISSET(g_sockd_mihf, &readfds)){
                 done=mRALlte_mih_link_process_message();
             } /*else { // tick
                 mRALlte_mih_fsm(NULL, 0);
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]){
         }
     }while(!done);
 
-    close(sockd_mihf);
+    close(g_sockd_mihf);
     close(netl_s);
     MIH_C_exit();
     return 0;
