@@ -684,8 +684,8 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
       prach_out[2*i+1] = (char) prach[2*i+1];
 #else
 #ifdef EXMIMO
-      prach_out[2*i] = prach[2*i];
-      prach_out[2*i+1] = prach[2*i+1];
+      prach_out[2*i] = prach[2*i]<<4;
+      prach_out[2*i+1] = prach[2*i+1]<<4;
 #else
       prach_out[2*i] = prach[2*i];
       prach_out[2*i+1] = prach[2*i+1];

@@ -527,13 +527,15 @@ void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
 }
 #endif
 
+int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
+
 void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
   
   int i_d;
   u16 first_rb, nb_rb;
   u8 harq_pid;
   unsigned int input_buffer_length;
-  unsigned int i, aa;
+  unsigned int i,aa;
   u8 Msg3_flag=0;
   u8 pucch_ack_payload[2];
   u8 n1_pucch;
@@ -547,6 +549,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   u8 ack_status=0;
   s8 Po_PUCCH;
   s32 ulsch_start=0,overflow=0;
+  int k,l;
 
 #ifndef OPENAIR2
   PRACH_RESOURCES_t prach_resources_local;
@@ -611,9 +614,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       //#endif
       if (abstraction_flag == 0) {
 #ifdef OFDMA_ULSCH
-	generate_srs_tx(phy_vars_ue,eNB_id,4*AMP,next_slot>>1);
+	generate_srs_tx(phy_vars_ue,eNB_id,AMP,next_slot>>1);
 #else
-	generate_srs_tx(phy_vars_ue,eNB_id,4*AMP,next_slot>>1);
+	generate_srs_tx(phy_vars_ue,eNB_id,AMP,next_slot>>1);
 #endif
       }
       
@@ -704,9 +707,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	if (abstraction_flag==0) {
 #ifdef OFDMA_ULSCH      
-	  generate_drs_pusch(phy_vars_ue,eNB_id,4*AMP,next_slot>>1,first_rb,nb_rb);
+	  generate_drs_pusch(phy_vars_ue,eNB_id,AMP,next_slot>>1,first_rb,nb_rb);
 #else
-	  generate_drs_pusch(phy_vars_ue,eNB_id,4*AMP,next_slot>>1,first_rb,nb_rb);
+	  generate_drs_pusch(phy_vars_ue,eNB_id,AMP,next_slot>>1,first_rb,nb_rb);
 #endif
 	}      
 	
@@ -827,7 +830,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->tx_power_dBm);
 #ifdef OFDMA_ULSCH
 	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,
-			   4*AMP,
+			   AMP,
 			   phy_vars_ue->frame,
 			   (next_slot>>1),
 			   &phy_vars_ue->lte_frame_parms,
@@ -835,7 +838,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 #else
 	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,
-			   4*AMP,
+			   AMP,
 			   phy_vars_ue->frame,
 			   (next_slot>>1),
 			   &phy_vars_ue->lte_frame_parms,
@@ -920,7 +923,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			   0,  // n2_pucch
 			   1,  // shortened format
 			   pucch_ack_payload,
-			   4*AMP,
+			   AMP,
 			   next_slot>>1);
 	    Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format);
 	    phy_vars_ue->tx_power_dBm = Po_PUCCH;
@@ -954,7 +957,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			   0,  // n2_pucch
 			   1,  // shortened format
 			   pucch_ack_payload,  // this is ignored anyway, we just need a pointer
-			   4*AMP,
+			   AMP,
 			   next_slot>>1);	 
 	  }
 	  else {
@@ -982,7 +985,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  for (aa=0; aa<1; aa++) {
 	    if (frame_parms->Ncp == 1) 
 	      PHY_ofdm_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size],
+#ifdef EXMIMO
+			   dummy_tx_buffer, 
+#else
 			   &phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],
+#endif
 			   frame_parms->log2_symbol_size,
 			   nsymb,
 			   frame_parms->nb_prefix_samples,
@@ -991,17 +998,13 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			   CYCLIC_PREFIX);
 	    else
 	      normal_prefix_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size],
+#ifdef EXMIMO
+				dummy_tx_buffer, 
+#else
 				&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],
+#endif
 				nsymb,
 				&phy_vars_ue->lte_frame_parms);
-
-#ifdef EXMIMO
-	    overflow = ulsch_start - 9*frame_parms->samples_per_tti;
-	    if (overflow>0)
-	      memcpy(phy_vars_ue->lte_ue_common_vars.txdata[aa],
-		     &phy_vars_ue->lte_ue_common_vars.txdata[aa][frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME],
-		     overflow<<2);
-#endif
 
 	    /*
 	    if ((next_slot>>1) == 8) {
@@ -1016,8 +1019,13 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    }
 	    */
 #ifndef OFDMA_ULSCH
-	    apply_7_5_kHz(phy_vars_ue,subframe<<1);
-	    apply_7_5_kHz(phy_vars_ue,1+(subframe<<1));
+#ifdef EXMIMO
+	    apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,0);
+	    apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,1);
+#else
+	    apply_7_5_kHz(phy_vars_ue,&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],0);
+	    apply_7_5_kHz(phy_vars_ue,&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],1);
+#endif
 	    /*
 	    if ((next_slot>>1) == 8) {
 	      write_output("txsig8_mod.m","txs8_mod", &phy_vars_ue->lte_ue_common_vars.txdata[0][phy_vars_ue->lte_frame_parms.samples_per_tti*subframe],
@@ -1025,6 +1033,22 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    }
 	    */
 #endif
+
+#ifdef EXMIMO
+	    overflow = ulsch_start - 9*frame_parms->samples_per_tti;
+	    printf("ulsch_start %d, overflow %d\n",ulsch_start,overflow);
+	    for (k=ulsch_start,l=0; k<min(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++,l++)
+	      {
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k] = ((short*)dummy_tx_buffer)[2*l]<<4;
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k+1] = ((short*)dummy_tx_buffer)[2*l+1]<<4;
+	      }
+	    for (k=0;k<overflow;k++,l++)
+	      {
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k] = ((short*)dummy_tx_buffer)[2*l]<<4;
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k+1] = ((short*)dummy_tx_buffer)[2*l+1]<<4;
+	      }
+#endif
+	  
 	  }
 	} // generate_ul_signal == 1
       } 
@@ -1063,7 +1087,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		  phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
 		  phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
 		  phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
-	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = 4*AMP;
+	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = AMP;
 	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
 	    LOG_I(PHY,"[UE  %d][RAPROC] PRACH digital power %d dB\n",
 		  phy_vars_ue->Mod_id,
@@ -1668,7 +1692,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
 	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 	  phy_vars_ue->UE_mode[eNB_id] = PUSCH;
-	  mac_xface->macphy_exit("Connected. Exiting\n");
+	  //mac_xface->macphy_exit("Connected. Exiting\n");
 	}
       }
       else
