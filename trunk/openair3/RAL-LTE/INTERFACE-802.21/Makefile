@@ -62,6 +62,7 @@ clean:
 	-find . -name "*.*~" -delete
 	-find . -name "*~" -delete
 	-rm -Rf DOXYGEN/html
+	-rm -f $(OUT)
 
 
 

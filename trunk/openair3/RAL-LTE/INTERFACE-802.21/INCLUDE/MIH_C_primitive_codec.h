@@ -96,7 +96,9 @@ protected_mih_c_primitive_codec(int MIH_C_Link_Primitive_Link_Configure_Threshol
 protected_mih_c_primitive_codec(int MIH_C_Link_Primitive_Decode_Link_Action_request              (Bit_Buffer_t* bbP, MIH_C_Link_Action_request_t                  *primitiveP);)
 protected_mih_c_primitive_codec(int MIH_C_Link_Primitive_Link_Action_request2String              (MIH_C_Link_Action_request_t *primitiveP, char* bufP);)
 
+#ifdef MIH_C_MEDIEVAL_EXTENSIONS
 protected_mih_c_primitive_codec(int MIH_C_Link_Primitive_Encode_Link_Register_indication         (Bit_Buffer_t* bbP, MIH_C_Link_Register_indication_t             *primitiveP);)
+#endif
 protected_mih_c_primitive_codec(int MIH_C_Link_Primitive_Encode_Link_Detected_indication         (Bit_Buffer_t* bbP, MIH_C_Link_Detected_indication_t             *primitiveP);)
 protected_mih_c_primitive_codec(int MIH_C_Link_Primitive_Encode_Link_Up_indication               (Bit_Buffer_t* bbP, MIH_C_Link_Up_indication_t                   *primitiveP);)
 protected_mih_c_primitive_codec(int MIH_C_Link_Primitive_Encode_Link_Parameters_Report_indication(Bit_Buffer_t* bbP, MIH_C_Link_Parameters_Report_indication_t    *primitiveP);)

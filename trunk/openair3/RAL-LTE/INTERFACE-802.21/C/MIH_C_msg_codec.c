@@ -353,6 +353,7 @@ int MIH_C_Link_Message_Link_Action_request2String(MIH_C_Message_Link_Action_requ
     buffer_index += sprintf(&bufP[buffer_index], "--------------------------------------------------------------------------------------\n");
     return buffer_index;
 }
+#ifdef MIH_C_MEDIEVAL_EXTENSIONS
 //-----------------------------------------------------------------------------
 int MIH_C_Link_Message_Encode_Link_Register_indication(Bit_Buffer_t* bbP, MIH_C_Message_Link_Register_indication_t *messageP) {
 //-----------------------------------------------------------------------------
@@ -413,6 +414,7 @@ int MIH_C_Link_Message_Encode_Link_Register_indication(Bit_Buffer_t* bbP, MIH_C_
 
     return saved_byte_position;
 }
+#endif
 //-----------------------------------------------------------------------------
 int MIH_C_Link_Message_Encode_Link_Detected_indication(Bit_Buffer_t* bbP, MIH_C_Message_Link_Detected_indication_t *messageP) {
 //-----------------------------------------------------------------------------

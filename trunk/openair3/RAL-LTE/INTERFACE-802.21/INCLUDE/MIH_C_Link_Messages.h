@@ -21,8 +21,9 @@
 //-----------------------------------------------------------------------------
 #define MIH_C_PROTOCOL_VERSION    1
 #define MIH_C_MESSAGE_ID(SID, OC, AID) ((u_int16_t)SID << 12) | ((u_int16_t)OC << 10) | ((u_int16_t)AID)
-// ODTONE SPECIFIC MESSAGE MIH_C_MESSAGE_LINK_REGISTER_INDICATION_ID
+#ifdef MIH_C_MEDIEVAL_EXTENSIONS
 #define MIH_C_MESSAGE_LINK_REGISTER_INDICATION_ID               MIH_C_MESSAGE_ID(1, 3, 6)
+#endif
 #define MIH_C_MESSAGE_LINK_DETECTED_INDICATION_ID               MIH_C_MESSAGE_ID(2, 3, 1)
 #define MIH_C_MESSAGE_LINK_UP_INDICATION_ID                     MIH_C_MESSAGE_ID(2, 3, 2)
 #define MIH_C_MESSAGE_LINK_DOWN_INDICATION_ID                   MIH_C_MESSAGE_ID(2, 3, 3)
@@ -46,7 +47,7 @@
 //-----------------------------------------------------------------------------
 
 
-
+#ifdef MIH_C_MEDIEVAL_EXTENSIONS
 /*! \struct  MIH_C_Message_Link_Register_indication
 * \brief Structure defining the message Link_Register.indication, ODTONE specific.
 */
@@ -58,7 +59,7 @@ typedef struct MIH_C_Message_Link_Register_indication
     MIH_C_Link_Register_indication_t      primitive;      /*!< \brief  Primitive. */
 }__attribute__((__packed__))MIH_C_Message_Link_Register_indication_t;
 
-
+#endif
 
 /*! \struct  MIH_C_Message_Link_Detected_indication
 * \brief Structure defining the message Link_Detected.indication
