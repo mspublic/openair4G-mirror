@@ -86,8 +86,7 @@ protected_mRALlte_mih_msg(char*              g_ral_ip_address;)
 protected_mRALlte_mih_msg(char*              g_ral_listening_port_for_mihf;)
 protected_mRALlte_mih_msg(char*              g_link_id;)
 protected_mRALlte_mih_msg(char*              g_mihf_id;)
-protected_mRALlte_mih_msg(int                sockd_mihf;)
-protected_mRALlte_mih_msg(struct sockaddr_in mihf_sockaddr_in;)
+protected_mRALlte_mih_msg(int                g_sockd_mihf;)
 protected_mRALlte_mih_msg(char               g_msg_print_buffer[8192];)
 
 //-----------------------------------------------------------------------------
