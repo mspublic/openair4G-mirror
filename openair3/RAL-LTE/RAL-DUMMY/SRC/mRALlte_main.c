@@ -234,6 +234,7 @@ int inits(int argc, char *argv[]) {
     unsigned int                     t;
     struct sockaddr_un               nas_socket;
 
+    ralpriv = &rl_priv;
 
     // Initialize defaults
     g_ral_ip_address                = DEFAULT_IP_ADDRESS_RAL;
