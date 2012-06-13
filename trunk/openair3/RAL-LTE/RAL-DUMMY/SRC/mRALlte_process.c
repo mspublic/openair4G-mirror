@@ -1,0 +1,229 @@
+/***************************************************************************
+                          mRALlte_process.c  -  description
+                             -------------------
+    copyright            : (C) 2005, 2007 by Eurecom
+    email                : michelle.wetterwald@eurecom.fr
+ ***************************************************************************
+ Handling of measurements in A21_MT_RAL_UMTS
+ ***************************************************************************/
+#define MRAL_MODULE
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/socket.h>
+
+#include "mRALlte_variables.h"
+#include "mRALlte_proto.h"
+#include "MIH_C.h"
+#include "mRALlte_mih_msg.h"
+// for real-time
+//#include "nas_ue_ioctl.h"
+//#include "nasmt_constant.h"
+// for dummy
+#include "nas_ue_netlink.h"
+
+//global variables
+extern int meas_counter;
+extern int s_nas;
+
+//---------------------------------------------------------------------------
+// Temp - Enter hard-coded measures in IAL
+void IAL_NAS_measures_init(void)
+//---------------------------------------------------------------------------
+{
+#ifdef RAL_DUMMY
+   ralpriv->num_measures = 3;
+#endif
+#ifdef RAL_REALTIME
+   ralpriv->num_measures = 1;
+#endif
+   ralpriv->meas_cell_id[0] = 0;
+   ralpriv->last_meas_level[0] = 30;
+   ralpriv->integrated_meas_level[0] = ralpriv->last_meas_level[0];
+   ralpriv->provider_id[0] = 25;
+   ralpriv->meas_cell_id[1] = 1;
+   ralpriv->last_meas_level[1] = 50;
+   ralpriv->integrated_meas_level[1] = ralpriv->last_meas_level[1];
+   ralpriv->provider_id[1] = 1;
+   ralpriv->meas_cell_id[2] = 20;
+   ralpriv->last_meas_level[2] = 20;
+   ralpriv->integrated_meas_level[2] = ralpriv->last_meas_level[2];
+   ralpriv->provider_id[2] = 25;
+}
+
+//---------------------------------------------------------------------------
+// Temp - Enter hard-coded measures in IAL
+void IAL_NAS_measures_update(int i)
+//---------------------------------------------------------------------------
+{
+   int j;
+
+   //ralpriv->meas_cell_id[0] = ralpriv->cell_id;
+   j = i%2;
+   if (j==0){
+   ralpriv->integrated_meas_level[2] = (ralpriv->integrated_meas_level[2] + (ralpriv->last_meas_level[2]/5));
+   }else{
+   ralpriv->integrated_meas_level[2] = (ralpriv->integrated_meas_level[2] - (ralpriv->last_meas_level[2]/5));
+   }
+   ralpriv->curr_signal_level = ralpriv->integrated_meas_level[0];
+
+//   DEBUG ("Measure update - cell 1 %d, %d \n", ralpriv->last_meas_level[1], ralpriv->integrated_meas_level[1]);
+}
+
+//---------------------------------------------------------------------------
+void IAL_integrate_measure(int measure, int i){
+//---------------------------------------------------------------------------
+  int new_integrated = 0;
+
+  new_integrated = (((10-LAMBDA)*ralpriv->last_meas_level[i])+(LAMBDA*measure))/10;
+  //apply correction to get a value between 0-100 - now is linear
+  new_integrated = (new_integrated*100)/MEAS_MAX_RSSI;
+  // print result
+  //DEBUG ("\nIntegrate measure : old %d, new %d, integrated %d", ralpriv->last_meas_level[i], measure,new_integrated  );
+  // store the result
+  ralpriv->last_meas_level[i] =  measure;
+  ralpriv->prev_integrated_meas_level[i] = ralpriv->integrated_meas_level[i];
+  ralpriv->integrated_meas_level[i] =  new_integrated;
+}
+
+
+//---------------------------------------------------------------------------
+// poll for measures in NAS
+void rallte_NAS_measures_polling(void){
+//---------------------------------------------------------------------------
+    MIH_C_LINK_DN_REASON_T      reason_code;
+    MIH_C_TRANSACTION_ID_T      transaction_id;
+    MIH_C_LINK_TUPLE_ID_T       link_identifier;
+    MIH_C_LINK_PARAM_RPT_LIST_T link_parameters_report_list;
+
+    IAL_process_DNAS_message(IO_OBJ_MEAS, IO_CMD_LIST, 0);
+
+// hard-coded trigger for test
+#ifdef MRALU_SIMU_LINKDOWN
+    meas_counter ++;
+    if (meas_counter == 4){
+       ralpriv->curr_signal_level = ralpriv->curr_signal_level/10;
+       IAL_integrate_measure(ralpriv->curr_signal_level, 0);
+       DEBUG ("\n signal level %d , integrated new value : %d\n",ralpriv->curr_signal_level, ralpriv->integrated_meas_level[0]);
+    }
+
+    if (meas_counter == 5){
+       ralpriv->curr_signal_level = 40;
+       IAL_integrate_measure(ralpriv->curr_signal_level, 0);
+       DEBUG ("\n signal level %d , integrated new value : %d\n",ralpriv->curr_signal_level, ralpriv->integrated_meas_level[0]);
+    }
+    if (meas_counter == 6){
+       ralpriv->curr_signal_level = 0;
+       IAL_integrate_measure(ralpriv->curr_signal_level, 0);
+       DEBUG ("\n signal level %d , integrated new value : %d\n",ralpriv->curr_signal_level, ralpriv->integrated_meas_level[0]);
+    }
+#endif
+//  condition still TBD - message dropped or level = 0
+    if (!ralpriv->curr_signal_level) {
+       //mRALu_send_linkdown_ind();
+    	//mRALte_send_link_down_indication();
+        transaction_id                           = MIH_C_get_new_transaction_id();
+        reason_code                              = MIH_C_LINK_DOWN_REASON_NO_RESOURCE;
+        link_identifier.link_id.link_type        = MIH_C_WIRELESS_UMTS;
+        link_identifier.link_id.link_addr.choice = (MIH_C_CHOICE_T)MIH_C_CHOICE_3GPP_ADDR;
+        MIH_C_3GPP_ADDR_load_3gpp_str_address(&link_identifier.link_id.link_addr._union._3gpp_addr, (u_int8_t*)DEFAULT_ADDRESS_3GPP);
+        link_identifier.choice                   = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
+
+        mRALlte_send_link_down_indication(&transaction_id,
+                                          &link_identifier,
+                                          NULL,
+                                          &reason_code);
+
+    } else if (ralpriv->integrated_meas_level[0]< ((ralpriv->prev_integrated_meas_level[0]*7)/10)) {
+        //mRALu_send_link_parms_report_ind();
+        //mRALte_send_link_parameters_report_indication();
+        link_identifier.link_id.link_type        = MIH_C_WIRELESS_UMTS;
+        link_identifier.link_id.link_addr.choice = (MIH_C_CHOICE_T)MIH_C_CHOICE_3GPP_ADDR;
+        MIH_C_3GPP_ADDR_load_3gpp_str_address(&link_identifier.link_id.link_addr._union._3gpp_addr, (u_int8_t*)DEFAULT_ADDRESS_3GPP);
+        link_identifier.choice                   = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
+
+        link_parameters_report_list.val[0].link_param.link_param_type.choice                = MIH_C_LINK_PARAM_TYPE_CHOICE_GEN;
+        link_parameters_report_list.val[0].link_param.link_param_type._union.link_param_gen = MIH_C_LINK_PARAM_GEN_DATA_RATE;
+        link_parameters_report_list.val[0].link_param.choice                                = MIH_C_LINK_PARAM_CHOICE_LINK_PARAM_VAL;
+        link_parameters_report_list.val[0].link_param._union.link_param_val                 = 100;
+
+        link_parameters_report_list.val[0].choice                          = MIH_C_LINK_PARAM_RPT_CHOICE_NULL;
+        //link_parameters_report_list.val[0]._union.threshold.threshold_val  = 100;
+        //link_parameters_report_list.val[0]._union.threshold.threshold_xdir = MIH_C_BELOW_THRESHOLD;
+        link_parameters_report_list.length                                 = 1;
+
+        transaction_id                           = MIH_C_get_new_transaction_id();
+        mRALlte_send_link_parameters_report_indication(&transaction_id, &link_identifier, &link_parameters_report_list);
+
+    }
+}
+
+//---------------------------------------------------------------------------
+// find correponding cell in NAS measures
+int rallte_NAS_corresponding_cell(int req_index)
+//---------------------------------------------------------------------------
+{
+  int index, i=0;
+
+  while ((i<=ralpriv->num_measures)&&(ralpriv->req_cell_id[req_index]!=ralpriv->meas_cell_id[i]))
+    i++;
+
+  index = i;
+  return index;
+}
+
+//---------------------------------------------------------------------------
+void rallte_verifyPendingConnection(void){
+//---------------------------------------------------------------------------
+    MIH_C_TRANSACTION_ID_T              transaction_id;
+    MIH_C_STATUS_T                      status;
+    //LIST(MIH_C_LINK_SCAN_RSP,           scan_response_set);
+    MIH_C_LINK_AC_RESULT_T              link_action_result;
+    int                                 if_ready = 0;
+
+
+    if ((ralpriv->pending_req_flag)%5==0){
+        DEBUG("Pending Req Flag %d\n", ralpriv->pending_req_flag);
+        DEBUG(" >>>> rallte_verifyPendingConnection ");
+        //poll status from driver
+#ifdef RAL_DUMMY
+        IAL_process_DNAS_message(IO_OBJ_CNX, IO_CMD_LIST, ralpriv->cell_id);
+
+        if ((ralpriv->nas_state == NAS_CONNECTED)&&(ralpriv->num_rb>=1)){
+           if_ready = 1;
+           ralpriv->state = CONNECTED;
+        }
+#endif
+#ifdef RAL_REALTIME
+        IAL_process_NAS_message(IO_OBJ_CNX, IO_CMD_LIST, ralpriv->cell_id);
+        if ((ralpriv->nas_state == GRAAL_CX_DCH)&&(ralpriv->num_rb>=1)){
+           if_ready = 1;
+           ralpriv->state = CONNECTED;
+        }
+#endif
+        if ((if_ready==1)||(ralpriv->pending_req_flag > 100)){
+            // here or just after ioctl? or between?
+            //mRALu_send_link_switch_cnf();
+        	//mRALte_send_link_action_confirm();
+            status             = MIH_C_STATUS_SUCCESS;
+            if (ralpriv->pending_req_status == Failed_Action) {
+                link_action_result = MIH_C_LINK_AC_RESULT_FAILURE;
+            } if (ralpriv->pending_req_status == Successful_Action) {
+                link_action_result = MIH_C_LINK_AC_RESULT_SUCCESS;
+            } else if (ralpriv->pending_req_status == Rejected_Action) {
+                link_action_result = MIH_C_LINK_AC_RESULT_REFUSED;
+            } else {
+                link_action_result = MIH_C_LINK_AC_RESULT_INCAPABLE;
+            }
+            transaction_id = ralpriv->pending_req_transaction_id;
+
+            mRALlte_send_link_action_confirm(&transaction_id, &status, NULL, &link_action_result);
+
+            DEBUG("After response, Pending Req Flag = %d\n", ralpriv->pending_req_flag);
+            ralpriv->pending_req_flag = 0;
+            // Link_up Ind not needed anymore
+            //sleep(2);
+            //mRALte_send_link_up_indication();
+        }
+    }
+}
