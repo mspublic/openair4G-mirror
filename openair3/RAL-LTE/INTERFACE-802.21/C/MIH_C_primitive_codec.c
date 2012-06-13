@@ -191,6 +191,7 @@ int MIH_C_Link_Primitive_Link_Action_request2String(MIH_C_Link_Action_request_t 
     buffer_index += sprintf(&bufP[buffer_index], "\n");
     return buffer_index;
 }
+#ifdef MIH_C_MEDIEVAL_EXTENSIONS
 //-----------------------------------------------------------------------------
 int MIH_C_Link_Primitive_Encode_Link_Register_indication(Bit_Buffer_t* bbP, MIH_C_Link_Register_indication_t *primitiveP) {
 //-----------------------------------------------------------------------------
@@ -219,6 +220,7 @@ int MIH_C_Link_Primitive_Encode_Link_Register_indication(Bit_Buffer_t* bbP, MIH_
 
     return MIH_PRIMITIVE_ENCODE_OK;
 }
+#endif
 //-----------------------------------------------------------------------------
 int MIH_C_Link_Primitive_Link_Register_indication2String(MIH_C_Link_Register_indication_t *primitiveP, char* bufP) {
 //-----------------------------------------------------------------------------
@@ -757,24 +759,24 @@ int MIH_C_Link_Primitive_Encode_Link_Action_confirm(Bit_Buffer_t* bbP, MIH_C_Lin
     MIH_C_STATUS_encode(bbP, &primitiveP->Status);
 
     if (primitiveP->Status == MIH_C_STATUS_SUCCESS) {
+        if (primitiveP->ScanResponseSet_list != NULL) {
+            //---------  ScanResponseSet_list ------------
+            // TYPE
+            tlv = MIH_C_TLV_LINK_SCAN_RSP_LIST;
+            MIH_C_TLV_TYPE_encode(bbP, &tlv);
+            // VALUE
+            saved_byte_position = BitBuffer_getPosition(bbP);
+            MIH_C_LINK_SCAN_RSP_LIST_encode(bbP, primitiveP->ScanResponseSet_list);
+            end_byte_position = BitBuffer_getPosition(bbP);
 
-        //---------  ScanResponseSet_list ------------
-        // TYPE
-        tlv = MIH_C_TLV_LINK_SCAN_RSP_LIST;
-        MIH_C_TLV_TYPE_encode(bbP, &tlv);
-        // VALUE
-        saved_byte_position = BitBuffer_getPosition(bbP);
-        MIH_C_LINK_SCAN_RSP_LIST_encode(bbP, primitiveP->ScanResponseSet_list);
-        end_byte_position = BitBuffer_getPosition(bbP);
-
-        // LENGTH
-        encode_length = end_byte_position - saved_byte_position;
-        hole_size     = MIH_C_LIST_LENGTH_get_encode_num_bytes(encode_length);
-        BitBuffer_write_shift_last_n_bytes_right(bbP, encode_length, hole_size);
-        BitBuffer_rewind_to(bbP, saved_byte_position);
-        MIH_C_LIST_LENGTH_encode(bbP, encode_length);
-        BitBuffer_rewind_to(bbP, end_byte_position + hole_size);
-
+            // LENGTH
+            encode_length = end_byte_position - saved_byte_position;
+            hole_size     = MIH_C_LIST_LENGTH_get_encode_num_bytes(encode_length);
+            BitBuffer_write_shift_last_n_bytes_right(bbP, encode_length, hole_size);
+            BitBuffer_rewind_to(bbP, saved_byte_position);
+            MIH_C_LIST_LENGTH_encode(bbP, encode_length);
+            BitBuffer_rewind_to(bbP, end_byte_position + hole_size);
+        }
         //---------  LinkActionResult ------------
         // TYPE
         tlv = MIH_C_TLV_LINK_AC_RESULT;

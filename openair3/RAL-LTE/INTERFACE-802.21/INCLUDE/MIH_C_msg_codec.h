@@ -79,7 +79,9 @@ typedef u_int16_t MIH_C_Message_Id_t;
 typedef struct MIH_C_Message_Wrapper {
     MIH_C_Message_Id_t         message_id;
     union {
+#ifdef MIH_C_MEDIEVAL_EXTENSIONS
         MIH_C_Message_Link_Register_indication_t                   link_register_indication;
+#endif
         MIH_C_Message_Link_Detected_indication_t                   link_detected_indication;
         MIH_C_Message_Link_Up_indication_t                         link_up_indication;
         MIH_C_Message_Link_Down_indication_t                       link_down_indication;
@@ -119,7 +121,9 @@ public_mih_c_msg_codec(  int MIH_C_Link_Message_Link_Configure_Thresholds_reques
 public_mih_c_msg_codec(  int MIH_C_Link_Message_Decode_Link_Action_request(               Bit_Buffer_t* bbP, MIH_C_Message_Link_Action_request_t               *messageP);)
 public_mih_c_msg_codec(  int MIH_C_Link_Message_Link_Action_request2String(               MIH_C_Message_Link_Action_request_t *messageP, char* bufP);)
 
+#ifdef MIH_C_MEDIEVAL_EXTENSIONS
 public_mih_c_msg_codec(  int MIH_C_Link_Message_Encode_Link_Register_indication(          Bit_Buffer_t* bbP, MIH_C_Message_Link_Register_indication_t          *messageP);)
+#endif
 public_mih_c_msg_codec(  int MIH_C_Link_Message_Encode_Link_Detected_indication(          Bit_Buffer_t* bbP, MIH_C_Message_Link_Detected_indication_t          *messageP);)
 public_mih_c_msg_codec(  int MIH_C_Link_Message_Encode_Link_Up_indication(                Bit_Buffer_t* bbP, MIH_C_Message_Link_Up_indication_t                *messageP);)
 public_mih_c_msg_codec(  int MIH_C_Link_Message_Encode_Link_Parameters_Report_indication( Bit_Buffer_t* bbP, MIH_C_Message_Link_Parameters_Report_indication_t *messageP);)

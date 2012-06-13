@@ -92,6 +92,13 @@ private_mih_c_log(int g_mih_c_log_output;)
 
 private_mih_c_log(const char* g_log_level2string[LOG_DEBUG+1];)
 
+/*! \fn char* getTimeStamp4Log(void)
+* \brief    Get a formated string of current time.
+* \return   a char string of current time in seconds and micro seconds.
+*/
+public_mih_c_log( char* getTimeStamp4Log(void);)
+
+
 /*! \fn int mih_c_log_init(unsigned int log_outputP)
 * \brief    Initialize log module.
 * \param[in]  log_outputP       Identifier of output where logs go are sent.

@@ -8,6 +8,36 @@
 //-----------------------------------------------------------------------------
 #include "MIH_C_log.h"
 //-----------------------------------------------------------------------------
+#define LOG_BUFF_SIZE  2048
+static char        g_log_buffer_time[24];
+static char        g_log_buffer[LOG_BUFF_SIZE];
+static int         g_bypass_header;
+//-----------------------------------------------------------------------------
+char* getTimeStamp4Log()
+//-----------------------------------------------------------------------------
+{
+    int len;
+    struct timespec time_spec;
+    unsigned int time_now_micros;
+    unsigned int time_now_s;
+    clock_gettime (CLOCK_REALTIME, &time_spec);
+    time_now_s      = (unsigned int) time_spec.tv_sec % 3600;
+    time_now_micros = (unsigned int) time_spec.tv_nsec/1000;
+    len=snprintf(g_log_buffer_time,24, "%06d:%06d", time_now_s, time_now_micros);
+    return g_log_buffer_time;
+}
+//-----------------------------------------------------------------------------
+int is_newline( char *str, int size){
+//-----------------------------------------------------------------------------
+    int i;
+    for (  i = 0; i < size; i++ ) {
+      if ( str[i] == '\n' )
+    return 1;
+    }
+    /* if we get all the way to here, there must not have been a newline! */
+    return 0;
+}
+
 // Initialize logging system
 int MIH_C_log_init(unsigned int log_outputP) {
 //-----------------------------------------------------------------------------
@@ -23,7 +53,7 @@ int MIH_C_log_init(unsigned int log_outputP) {
     g_log_level2string[LOG_INFO]          = "INFO     ";
     g_log_level2string[LOG_DEBUG]         = "DEBUG    ";
 
-
+    g_bypass_header = 0;
 
     switch (g_mih_c_log_output){
         case LOG_TO_CONSOLE:
@@ -53,37 +83,55 @@ int MIH_C_log_init(unsigned int log_outputP) {
 int MIH_C_log_record(int levelP, const char * log_msgP, ...) {
 //-----------------------------------------------------------------------------
     struct timespec time_spec;
-    unsigned int time_now_micros;
-    unsigned int time_now_s;
-    va_list log_ap;
+    unsigned int    time_now_micros;
+    unsigned int    time_now_s;
+    va_list         log_ap;
+    int             len;
+
 
     switch (g_mih_c_log_output){
         case LOG_TO_CONSOLE:
-
-            clock_gettime (CLOCK_REALTIME, &time_spec);
-            time_now_s      = (unsigned int) time_spec.tv_sec;
-            time_now_micros = (unsigned int) time_spec.tv_nsec/1000;
-            printf("[%06d:%06d][%s][%s]", time_now_s, time_now_micros, MIH_C_SYSLOG_NAME, g_log_level2string[levelP]);
             va_start(log_ap, log_msgP);
-            vprintf(log_msgP, log_ap);
+            len = vsnprintf(g_log_buffer, LOG_BUFF_SIZE-1, log_msgP, log_ap);
             va_end(log_ap);
+            if (g_bypass_header == 0) {
+                clock_gettime (CLOCK_REALTIME, &time_spec);
+                time_now_s      = (unsigned int) time_spec.tv_sec;
+                time_now_micros = (unsigned int) time_spec.tv_nsec/1000;
+                printf("[%06d:%06d][%s][%s]", time_now_s, time_now_micros, MIH_C_SYSLOG_NAME, g_log_level2string[levelP]);
+            }
+            printf("%s",g_log_buffer);
             fflush(stdout);
             fflush(stderr);
+            if (is_newline(g_log_buffer,len) == 0 ){
+                g_bypass_header = 1;
+            } else {
+                g_bypass_header = 0;
+            }
             break;
         case LOG_TO_FILE:
-            clock_gettime (CLOCK_REALTIME, &time_spec);
-            time_now_s      = (unsigned int) time_spec.tv_sec;
-            time_now_micros = (unsigned int) time_spec.tv_nsec/1000;
-            fprintf(g_mih_c_log_file, "[%06d:%06d][%s][%s] ", time_now_s, time_now_micros, MIH_C_SYSLOG_NAME, g_log_level2string[levelP]);
             va_start(log_ap, log_msgP);
-            vfprintf(g_mih_c_log_file,log_msgP, log_ap);
+            len = vsnprintf(g_log_buffer, LOG_BUFF_SIZE-1, log_msgP, log_ap);
             va_end(log_ap);
+            if (g_bypass_header == 0) {
+                clock_gettime (CLOCK_REALTIME, &time_spec);
+                time_now_s      = (unsigned int) time_spec.tv_sec;
+                time_now_micros = (unsigned int) time_spec.tv_nsec/1000;
+                fprintf(g_mih_c_log_file, "[%06d:%06d][%s][%s] ", time_now_s, time_now_micros, MIH_C_SYSLOG_NAME, g_log_level2string[levelP]);
+            }
+            fprintf(g_mih_c_log_file, "%s", g_log_buffer);
             fflush(g_mih_c_log_file);
+            if (is_newline(g_log_buffer,len) == 0 ){
+                g_bypass_header = 1;
+            } else {
+                g_bypass_header = 0;
+            }
             break;
         case LOG_TO_SYSTEM:
             va_start(log_ap, log_msgP);
             syslog(levelP, log_msgP, log_ap);
             va_end(log_ap);
+            return 0;
             break;
         default:
             printf("MIH_C_log_record: level error %d", levelP);
