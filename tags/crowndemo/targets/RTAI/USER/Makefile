@@ -42,10 +42,24 @@ CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1
 #only for CBMIMO1
 ifdef CBMIMO1
 CFLAGS += -DFW2011 -DBIT8_TX -DCBMIMO1
+else
+#only for EXPRESS MIMO
+CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=230
 endif
 
 ifdef HARD_RT
 CFLAGS += -DHARD_RT
+endif
+
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)"  "4.4.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.5.2"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.6.1"
+    CFLAGS += -Wno-packed-bitfield-compat
 endif
 
 all: condtest synctest

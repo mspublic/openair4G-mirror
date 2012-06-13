@@ -83,8 +83,8 @@ void do_forms2(FD_lte_scope *form,
   
   //  u16 nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
-  llr = malloc(coded_bits_per_codeword*sizeof(float));
-  llr_time = malloc(coded_bits_per_codeword*sizeof(float));
+  llr = malloc(max(coded_bits_per_codeword,1920)*sizeof(float));
+  llr_time = malloc(max(coded_bits_per_codeword,1920)*sizeof(float));
 
 
   // Channel frequency response
