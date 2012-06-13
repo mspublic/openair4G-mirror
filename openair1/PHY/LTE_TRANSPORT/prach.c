@@ -343,6 +343,10 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
 
 static short prach_tmp[45600*2] __attribute__((aligned(16)));
 
+#ifndef EXMIMO
+#define TIMING_ADVANCE_HW 0
+#endif
+
 s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
   u8 frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
@@ -357,7 +361,6 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   s16 *prachF           = phy_vars_ue->lte_ue_prach_vars[eNB_id]->prachF;
   s16 *prach            = (s16*)prach_tmp;
   s16 *prach2;
-  s16 subframe_offset   = subframe*phy_vars_ue->lte_frame_parms.samples_per_tti;
 #ifdef BIT8_TX
   s8 *prach_out;         
 #else
@@ -376,23 +379,19 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   u8 f_ra,t1_ra;
   u16 N_ZC = (prach_fmt <4)?839:139;
   u8 not_found;
-  //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  //  u16 subframe_offset;
   s16 k;
   s16 *Xu,*e;
   s32 Xu_re,Xu_im;
   u16 offset,offset2;
-  int frame_length_samples = phy_vars_ue->lte_frame_parms.samples_per_tti*10;
-  int prach_start = phy_vars_ue->rx_offset+(subframe*phy_vars_ue->lte_frame_parms.samples_per_tti)%frame_length_samples;
+  int frame_length_samples = phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  int prach_start = (phy_vars_ue->rx_offset+subframe*phy_vars_ue->lte_frame_parms.samples_per_tti-TIMING_ADVANCE_HW)%frame_length_samples;
   int overflow;
   u32 i, prach_len;
 
-#ifdef CBMIMO1
+  //LOG_I(PHY,"[PRACH] prach_start=%d\n",prach_start);
+
 #ifdef BIT8_TX
-  s8 *prach_out         = (s8*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe_offset>>1];
-#else
-#error CBMIMO1 and BIT8_TX always have to be defined together
-#endif
+  prach_out = (s8*)&phy_vars_ue->lte_ue_common_vars.txdata[0][prach_start>>1];
 #else
   prach_out = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][prach_start];
 #endif
@@ -606,11 +605,13 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
       for (i=0;i<6144*2;i++)
 	prach2[i]<<=1;
       memcpy((void*)prach,(void*)(prach+12288),Ncp<<2);
+#ifndef CBMIMO1
       overflow = prach_start + 6144+Ncp - frame_length_samples;
       if (overflow>0)
 	memcpy(phy_vars_ue->lte_ue_common_vars.txdata[0],
 	       &phy_vars_ue->lte_ue_common_vars.txdata[0][frame_length_samples],
 	       overflow<<2);
+#endif
       prach_len = 6144+Ncp;
       if (prach_fmt>1){
 	memcpy((void*)(prach2+12288),(void*)prach2,24576);
@@ -682,8 +683,13 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
       prach_out[2*i] = (char) prach[2*i];
       prach_out[2*i+1] = (char) prach[2*i+1];
 #else
+#ifdef EXMIMO
       prach_out[2*i] = prach[2*i];
       prach_out[2*i+1] = prach[2*i+1];
+#else
+      prach_out[2*i] = prach[2*i];
+      prach_out[2*i+1] = prach[2*i+1];
+#endif
 #endif
     }
   }
