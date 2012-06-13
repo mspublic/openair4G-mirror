@@ -45,7 +45,7 @@ void mRALlte_action_request(MIH_C_Message_Link_Action_request_t* messageP) {
 
         case MIH_C_LINK_AC_TYPE_LINK_POWER_DOWN:
             ERR("%s ACTION REQUESTED: MIH_C_LINK_AC_TYPE_LINK_POWER_DOWN\n", __FUNCTION__);
-            if ( ralpriv->event | LINK_AC_TYPE_POWER_DOWN ) {
+            if ( ralpriv->event | MIH_C_LINK_AC_TYPE_LINK_POWER_DOWN ) {
                 DEBUG("Cell_ID = 0, Deactivation requested to NAS interface\n");
                 IAL_process_DNAS_message(IO_OBJ_CNX, IO_CMD_DEL, ralpriv->cell_id);
                 //lpd = LINK_AC_TYPE_POWER_DOWN;
@@ -61,7 +61,7 @@ void mRALlte_action_request(MIH_C_Message_Link_Action_request_t* messageP) {
         case MIH_C_LINK_AC_TYPE_LINK_POWER_UP:
             ERR("%s ACTION REQUESTED: MIH_C_LINK_AC_TYPE_LINK_POWER_UP\n", __FUNCTION__);
             // Activation requested - check it is not already active
-            if(ralpriv->event | LINK_AC_TYPE_POWER_DOWN) {
+            if(ralpriv->event | MIH_C_LINK_AC_TYPE_LINK_POWER_DOWN) {
                 if (ralpriv->state == CONNECTED){
                     DEBUG("Cell_ID != 0, Activation requested, but interface already active ==> NO OP\n");
                     ralpriv->pending_req_status = 0;

@@ -66,13 +66,13 @@ int IAL_decode_NAS_message(void){
             case NAS_UE_MSG_CNX_ESTABLISH_REPLY:
                 NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_CNX_ESTABLISH_REPLY --->][%s]\n",
                         getTimeStamp4Log(),
-                        MIH_SOURCE_ID);
+                        g_link_id);
                 DEBUG("NAS_UE_MSG_CNX_ESTABLISH_REPLY received\n");
                 ralpriv->state = DISCONNECTED;
                 if (msgToRcve->ialNASPrimitive.cnx_est_rep.status==0) {
                     ERR(" Connexion establishment failure: %d\n",msgToRcve->ialNASPrimitive.cnx_est_rep.status);
                     done = 1;
-                    ralpriv->pending_req_status = Failed_Action;
+                    ralpriv->pending_req_status = MIH_C_LINK_AC_RESULT_FAILURE;
                     //mRALu_send_link_switch_cnf();
                     //mRALte_send_link_action_confirm();
                     status         = MIH_C_STATUS_UNSPECIFIED_FAILURE;
@@ -87,7 +87,7 @@ int IAL_decode_NAS_message(void){
             case NAS_UE_MSG_CNX_RELEASE_REPLY:
                 NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_CNX_RELEASE_REPLY --->][%s]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
                 DEBUG("NAS_UE_MSG_CNX_RELEASE_REPLY received\n");
                 if (msgToRcve->ialNASPrimitive.cnx_rel_rep.status>0){
                 ERR(" Connexion release failure: %d", msgToRcve->ialNASPrimitive.cnx_rel_rep.status);
@@ -108,7 +108,7 @@ int IAL_decode_NAS_message(void){
                     struct nas_ue_msg_cnx_list_reply *p;
                     NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_CNX_LIST_REPLY --->][%s]\n",
                             getTimeStamp4Log(),
-                            MIH_SOURCE_ID);
+                            g_link_id);
                     DEBUG("NAS_UE_MSG_CNX_LIST_REPLY received\n");
                     p = &(msgToRcve->ialNASPrimitive.cnx_list_rep);
                     DEBUG(" CellId\tIID4\tIID6\t\t\tnum_rb\tnsclass\tState\n");
@@ -131,7 +131,7 @@ int IAL_decode_NAS_message(void){
              struct nas_ue_msg_rb_list_reply *p;
              NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_RB_LIST_REPLY --->][%s]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
              DEBUG("NAS_UE_MSG_RB_LIST_REPLY received\n");
              p = &(msgToRcve->ialNASPrimitive.rb_list_rep);
              ralpriv->num_rb = p->num_rb;
@@ -152,7 +152,7 @@ int IAL_decode_NAS_message(void){
              struct nas_ue_msg_measure_reply *p;
              NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_MEASUREMENT_REPLY --->][%s]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
              DEBUG("NAS_UE_MSG_MEASUREMENT_REPLY received\n");
              p = &(msgToRcve->ialNASPrimitive.meas_rep);
              #ifdef DEBUG_MRALU_MEASURES
@@ -178,7 +178,7 @@ int IAL_decode_NAS_message(void){
            case NAS_UE_MSG_IMEI_REPLY:
              NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_IMEI_REPLY --->][%s]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
              DEBUG("NAS_UE_MSG_IMEI_REPLY received\n");
              DEBUG("IMEI value received= %d %d\n", msgToRcve->ialNASPrimitive.l2id_rep.l2id[0], msgToRcve->ialNASPrimitive.l2id_rep.l2id[1]);
              //store the received value, to be used later
@@ -223,7 +223,7 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
               {
                 NOTICE("[MSC_MSG][%s][%s][--- NAS_UE_MSG_CNX_ESTABLISH_REQUEST --->][nas]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
                 msgToSend->type=NAS_UE_MSG_CNX_ESTABLISH_REQUEST;
                 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+ sizeof(struct nas_ue_netl_request);
                 msgToSend->ialNASPrimitive.cnx_req.cellid = ioctl_cellid;
@@ -239,7 +239,7 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
 
                 NOTICE("[MSC_MSG][%s][%s][--- NAS_UE_MSG_CNX_RELEASE_REQUEST --->][nas]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
           			msgToSend->type=NAS_UE_MSG_CNX_RELEASE_REQUEST;
                 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+ sizeof(struct nas_ue_netl_request);
                 //
@@ -252,7 +252,7 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
               {
                 NOTICE("[MSC_MSG][%s][%s][--- NAS_UE_MSG_CNX_LIST_REQUEST --->][nas]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
            			msgToSend->type=NAS_UE_MSG_CNX_LIST_REQUEST;
                 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+ sizeof(struct nas_ue_netl_request);
                 //
@@ -275,7 +275,7 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
               {
                 NOTICE("[MSC_MSG][%s][%s][--- NAS_UE_MSG_RB_LIST_REQUEST --->][nas]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
                 msgToSend->type=NAS_UE_MSG_RB_LIST_REQUEST;
                 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+ sizeof(struct nas_ue_netl_request);
                 //
@@ -296,7 +296,7 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
             msgToSend->type=NAS_UE_MSG_MEAS_REQUEST;
             NOTICE("[MSC_MSG][%s][%s][--- NAS_UE_MSG_MEAS_REQUEST --->][nas]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
             msgToSend->length = sizeof(struct nas_ue_netl_hdr)+ sizeof(struct nas_ue_netl_request);
            //
             DEBUG("ioctl : Measurement requested\n");
@@ -308,7 +308,7 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
         {
             NOTICE("[MSC_MSG][%s][%s][--- NAS_UE_MSG_IMEI_REQUEST --->][nas]\n",
                        getTimeStamp4Log(),
-                       MIH_SOURCE_ID);
+                       g_link_id);
       		msgToSend->type=NAS_UE_MSG_IMEI_REQUEST;
           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+ sizeof(struct nas_ue_netl_request);
            //

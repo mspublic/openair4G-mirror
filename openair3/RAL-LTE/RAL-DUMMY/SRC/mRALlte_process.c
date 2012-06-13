@@ -206,15 +206,7 @@ void rallte_verifyPendingConnection(void){
             //mRALu_send_link_switch_cnf();
         	//mRALte_send_link_action_confirm();
             status             = MIH_C_STATUS_SUCCESS;
-            if (ralpriv->pending_req_status == Failed_Action) {
-                link_action_result = MIH_C_LINK_AC_RESULT_FAILURE;
-            } if (ralpriv->pending_req_status == Successful_Action) {
-                link_action_result = MIH_C_LINK_AC_RESULT_SUCCESS;
-            } else if (ralpriv->pending_req_status == Rejected_Action) {
-                link_action_result = MIH_C_LINK_AC_RESULT_REFUSED;
-            } else {
-                link_action_result = MIH_C_LINK_AC_RESULT_INCAPABLE;
-            }
+            link_action_result = ralpriv->pending_req_status;
             transaction_id = ralpriv->pending_req_transaction_id;
 
             mRALlte_send_link_action_confirm(&transaction_id, &status, NULL, &link_action_result);
