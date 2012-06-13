@@ -40,7 +40,7 @@ OBJ = $(SRC:.c=.o)
 
 LIBS =  -L/usr/local/lib -lrt
 
-OUT = $(LIB_DIR)/mih_c-802.21.a
+OUT = $(LIB_DIR)/libmih_c-802.21.a
 
 
 
