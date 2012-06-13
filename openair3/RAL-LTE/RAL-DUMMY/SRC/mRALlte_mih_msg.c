@@ -16,7 +16,7 @@ int mRALlte_send_to_mih(u_int8_t  *bufferP, size_t lenP) {
 //-----------------------------------------------------------------------------
     int result;
     mRALlte_print_buffer((char*)bufferP, lenP);
-    result = send(sockd_mihf, (const void *)bufferP, lenP, 0);
+    result = send(g_sockd_mihf, (const void *)bufferP, lenP, 0);
     if (result != lenP) {
         ERR("send_to_mih %d bytes failed, returned %d: %s\n", lenP, result, strerror(errno));
     }
@@ -120,12 +120,12 @@ int mRALlte_mihf_connect(void){
         and) try the next address. */
 
     for (rp = result; rp != NULL; rp = rp->ai_next) {
-        sockd_mihf = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sockd_mihf == -1)
+        g_sockd_mihf = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (g_sockd_mihf == -1)
             continue;
 
         on = 1;
-        setsockopt( sockd_mihf, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        setsockopt( g_sockd_mihf, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
         if(rp->ai_family == AF_INET) {
             DEBUG(" %s is an ipv4 address\n",g_mihf_ip_address);
@@ -142,17 +142,17 @@ int mRALlte_mihf_connect(void){
                 return -1;
             }
 
-            s = bind(sockd_mihf, (const struct sockaddr *)addr, sizeof(struct sockaddr_in));
+            s = bind(g_sockd_mihf, (const struct sockaddr *)addr, sizeof(struct sockaddr_in));
             if (s == -1) {
                 ERR(" RAL IPv4 Address Bind: %s\n", strerror(errno));
                 return -1;
             }
             // sockd_mihf is of type SOCK_DGRAM, rp->ai_addr is the address to which datagrams are sent by default
-            if (connect(sockd_mihf, rp->ai_addr, rp->ai_addrlen) != -1) {
+            if (connect(g_sockd_mihf, rp->ai_addr, rp->ai_addrlen) != -1) {
                 NOTICE(" RAL is now UDP-CONNECTED to MIH-F\n");
                 return 0;
             } else {
-                close(sockd_mihf);
+                close(g_sockd_mihf);
             }
         } else if (rp->ai_family == AF_INET6) {
             DEBUG(" %s is an ipv6 address\n",g_mihf_ip_address);
@@ -169,21 +169,21 @@ int mRALlte_mihf_connect(void){
                 return -1;
             }
 
-            s = bind(sockd_mihf, (const struct sockaddr *)addr6, sizeof(struct sockaddr_in));
+            s = bind(g_sockd_mihf, (const struct sockaddr *)addr6, sizeof(struct sockaddr_in));
             if (s == -1) {
                 ERR(" RAL IPv6 Address Bind: %s\n", strerror(errno));
                 return -1;
             }
-            if (connect(sockd_mihf, rp->ai_addr, rp->ai_addrlen) != -1) {
+            if (connect(g_sockd_mihf, rp->ai_addr, rp->ai_addrlen) != -1) {
                 NOTICE(" RAL is now UDP-CONNECTED to MIH-F\n");
                 return 0;
             } else {
-                close(sockd_mihf);
+                close(g_sockd_mihf);
             }
         } else {
             ERR(" %s is an unknown address format %d\n",g_mihf_ip_address,rp->ai_family);
         }
-        close(sockd_mihf);
+        close(g_sockd_mihf);
     }
 
     if (rp == NULL) {   /* No address succeeded */
@@ -822,7 +822,7 @@ int mRALlte_mih_link_process_message(void){
 
     bb = new_BitBuffer_0();
 
-    nb_bytes_received = recvfrom(sockd_mihf,
+    nb_bytes_received = recvfrom(g_sockd_mihf,
                                  (void *)g_msg_codec_recv_buffer,
                                  MSG_CODEC_RECV_BUFFER_SIZE,
                                  0,
