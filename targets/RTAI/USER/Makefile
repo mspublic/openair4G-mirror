@@ -1,6 +1,17 @@
 CFLAGS = $(shell rtai-config --lxrt-cflags)
 LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
 
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)"  "4.4.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.5.2"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.6.1"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+
 SRC = synctest.c condtest.c
 
 OBJ = synctest.o $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o
