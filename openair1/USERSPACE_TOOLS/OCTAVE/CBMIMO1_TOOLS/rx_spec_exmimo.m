@@ -1,5 +1,8 @@
 dual_tx=0;
-oarf_config_exmimo(1907600000,1,dual_tx,30)
+limeparms;
+rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM;
+
+oarf_config_exmimo(1907600000,1907600000,1,dual_tx,30,0,rf_mode,rf_rxdc,rf_local,rf_vcocal)
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System

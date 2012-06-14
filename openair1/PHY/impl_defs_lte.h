@@ -418,10 +418,20 @@ typedef struct {
   u8 node_id;
   /// Frequency index of CBMIMO1 card
   u8 freq_idx;
-  /// Frequency for ExpressMIMO/LIME
+  /// RX Frequency for ExpressMIMO/LIME
   u32 carrier_freq[4];
+  /// TX Frequency for ExpressMIMO/LIME
+  u32 carrier_freqtx[4];
   /// RX gain for ExpressMIMO/LIME
   u32 rxgain[4];
+  /// RF mode for ExpressMIMO/LIME
+  u32 rfmode[4];
+  /// RF RX DC Calibration for ExpressMIMO/LIME
+  u32 rxdc[4];
+  /// RF TX DC Calibration for ExpressMIMO/LIME
+  u32 rflocal[4];
+  /// RF VCO calibration for ExpressMIMO/LIME
+  u32 rfvcolocal[4];
   /// Turns on second TX of CBMIMO1 card
   u8 dual_tx;                
 /// flag to indicate SISO transmission
