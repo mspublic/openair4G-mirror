@@ -825,7 +825,11 @@ int main(int argc, char **argv)
   int i,j,aa;
 
   LTE_DL_FRAME_PARMS *frame_parms;
-  u32 carrier_freq[4]={1907600000,1907600000,1907600000,1907600000};
+  u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
+  u32 rf_mode[4]     = {55759,55759,55759,55759};
+  u32 rf_local[4]    = {8253517,8253451,8257340,8257340}; // eNB PETRONAS
+  u32 rf_vcocal[4]   = {910,910,910,910};
+  u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   u32 rxgain[4]={30,30,30,30};
 
   u8  eNB_id=0,UE_id=0;
@@ -914,6 +918,10 @@ int main(int argc, char **argv)
     {
       frame_parms->carrier_freq[i] = carrier_freq[i];
       frame_parms->rxgain[i]       = rxgain[i];
+      frame_parms->rfmode[i]       = rf_mode[i];
+      frame_parms->rflocal[i]      = rf_local[i];
+      frame_parms->rfvcolocal[i]   = rf_vcocal[i];
+      frame_parms->rxdc[i]         = rf_rxdc[i];
     }
 
   init_frame_parms(frame_parms,1);
