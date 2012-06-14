@@ -7,47 +7,51 @@
 # You can modify the below as well, but probably
 # won't need to.
 INTERFACE_DIR=../INTERFACE-802.21
-CORE_DIR=SRC/CORE
-MIH_LINK_DIR=SRC/MIH_LINK
+INCLUDE_DIR=INCLUDE
+SRC_DIR=SRC
+
 
 CC = gcc
 
-CFLAGS = -Wall -g -ISRC  -I$(INTERFACE_DIR)/INCLUDE -I$(CORE_DIR) -I$(MIH_LINK_DIR) -DMIH_C_MEDIEVAL_EXTENSIONS
+CFLAGS = -Wall -g -I$(SRC_DIR)  -I$(INTERFACE_DIR)/INCLUDE  -I$(INCLUDE_DIR) -DMIH_C_MEDIEVAL_EXTENSIONS -DMSCGEN_PYTOOL
+
+SRC_OBJS   = $(SRC_DIR)/mRALlte_mih_msg.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_thresholds.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_parameters.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_action.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_get.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_subscribe.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_main.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_NAS.o
+SRC_OBJS  += $(SRC_DIR)/mRALlte_process.o
 
 
+OBJS =   $(SRC_OBJS)
 
-MIH_LINK_OBJS = $(MIH_LINK_DIR)/mRALlteInt_mih_msg.o
-
-CORE_OBJS  = $(CORE_DIR)/mRALlteInt_mih_fsm.o
-CORE_OBJS  += $(CORE_DIR)/mRALlteInt_thresholds.o
-CORE_OBJS  += $(CORE_DIR)/mRALlteInt_parameters.o
-CORE_OBJS  += $(CORE_DIR)/mRALlteInt_action.o
-CORE_OBJS  += $(CORE_DIR)/mRALlteInt_get.o
-
-
-OBJS = SRC/mRALlteInt_main.o   $(INTERFACE_OBJS) $(CORE_OBJS) $(MIH_LINK_OBJS)
-
-EXECUTABLE = mRALlteInt
+EXECUTABLE = mRALlteDummy NASUEdummy
 
 # "all" is the default target. Simply make it point to myprogram.
 
 all: $(EXECUTABLE)
 
-mRALlteInt : $(OBJS)
-	$(CC) -o mRALlteInt $(OBJS) -lrt -L$(INTERFACE_DIR)/LIB -lmih_c-802.21
+mRALlteDummy : $(OBJS)
+	$(CC) -o mRALlteDummy $(OBJS) -lrt -L$(INTERFACE_DIR)/LIB -lmih_c-802.21
 
+NASUEdummy : $(SRC_DIR)/nasUEdummy.o
+	$(CC) -o NASUEdummy $(SRC_DIR)/nasUEdummy.o
 
 $(OBJS): %.o : %.c
 	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS)  -o $@ $<
 
 %.o: %.c
-	$(COMPILE) -o $@ $<
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS)  -o $@ $<
 
 clean:
 	-find . -name "*.o" -delete
 	-find . -name "*.*~" -delete
 	-find . -name "*~" -delete
+	-rm -f mRALlteDummy NASUEdummy
 
 
 
