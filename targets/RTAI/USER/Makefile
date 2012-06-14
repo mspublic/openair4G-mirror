@@ -29,11 +29,11 @@ include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 OBJ += $(LOG_OBJS)
 
-ifeq ($(OPENAIR2),1)
+#ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
 OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) 
 CFLAGS += -DOPENAIR2 -DNO_RRM -DMAC_CONTEXT=1
-endif
+#endif
 
 CFLAGS += $(L2_incl) $(UTIL_incl)
 
