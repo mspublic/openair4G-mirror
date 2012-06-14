@@ -2,25 +2,32 @@ dual_tx=1;
 cbmimo1=0;
 eNB_flag = 1;
 
+off = 0; % -994;
 if (cbmimo1)
   oarf_config(0,1,dual_tx,255);
   amp = pow2(7)-1;
   n_bit = 8;
 else
-  oarf_config_exmimo(1902600000,1,dual_tx,30,eNB_flag);
+  limeparms;
+  rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM;
+%  rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
+
+  rf_local  = 14 + (0)*(2^6) + 31*(2^12) + 31*(2^18);
+
+  oarf_config_exmimo(1907600000+off,1907600000+off,1,dual_tx,30,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
   amp = pow2(15)-1;
   n_bit = 16;
 end
 
 s = zeros(76800,2);
 
-select = 4;
+select = 1;
 
 switch(select)
 
 case 1
-s(:,1) = amp * (exp(sqrt(-1)*.00005*pi*(0:((76800)-1))));
-s(:,2) = amp * (exp(sqrt(-1)*.00005*pi*(0:((76800)-1))));
+  s(:,1) = floor(amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
+s(:,2) = floor(amp * (exp(sqrt(-1)*.00005*pi*(0:((76800)-1)))));
 
 case 2
 s(38400+128,1)= 80-1j*40;

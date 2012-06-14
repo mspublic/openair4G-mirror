@@ -126,17 +126,39 @@ int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
       exmimo_pci_interface->rf.dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
     }
 
-    printk("Freq %d,%d,%d,%d, Gain %d,%d,%d,%d\n",
+    printk("Freq %d,%d,%d,%d, Gain %d,%d,%d,%d, RFmode %d, RXDC %d, RF_local %d, rf_vcocal %d\n",
 	   frame_parms->carrier_freq[0],frame_parms->carrier_freq[1],frame_parms->carrier_freq[2],frame_parms->carrier_freq[3],
-	   frame_parms->rxgain[0],frame_parms->rxgain[1],frame_parms->rxgain[2],frame_parms->rxgain[3]);
+	   frame_parms->rxgain[0],frame_parms->rxgain[1],frame_parms->rxgain[2],frame_parms->rxgain[3],
+	   frame_parms->rfmode[0],frame_parms->rflocal[0],
+	   frame_parms->rxdc[0],frame_parms->rfvcolocal[0]);
     exmimo_pci_interface->rf.rf_freq_rx0          = frame_parms->carrier_freq[0];
+    exmimo_pci_interface->rf.rf_freq_tx0          = frame_parms->carrier_freqtx[0];
     exmimo_pci_interface->rf.rx_gain00            = frame_parms->rxgain[0];
     exmimo_pci_interface->rf.rf_freq_rx1          = frame_parms->carrier_freq[1];
+    exmimo_pci_interface->rf.rf_freq_tx1          = frame_parms->carrier_freqtx[1];
     exmimo_pci_interface->rf.rx_gain10            = frame_parms->rxgain[1];
     exmimo_pci_interface->rf.rf_freq_rx2          = frame_parms->carrier_freq[2];
+    exmimo_pci_interface->rf.rf_freq_tx2          = frame_parms->carrier_freqtx[2];
     exmimo_pci_interface->rf.rx_gain20            = frame_parms->rxgain[2];
     exmimo_pci_interface->rf.rf_freq_rx3          = frame_parms->carrier_freq[3];
+    exmimo_pci_interface->rf.rf_freq_tx3          = frame_parms->carrier_freqtx[3];
     exmimo_pci_interface->rf.rx_gain30            = frame_parms->rxgain[3];
+    exmimo_pci_interface->rf.rf_mode0             = frame_parms->rfmode[0];
+    exmimo_pci_interface->rf.rf_local0            = frame_parms->rflocal[0];
+    exmimo_pci_interface->rf.rf_rxdc0             = frame_parms->rxdc[0];
+    exmimo_pci_interface->rf.rf_vcocal0           = frame_parms->rfvcolocal[0];
+    exmimo_pci_interface->rf.rf_mode1             = frame_parms->rfmode[1];
+    exmimo_pci_interface->rf.rf_local1            = frame_parms->rflocal[1];
+    exmimo_pci_interface->rf.rf_rxdc1             = frame_parms->rxdc[1];
+    exmimo_pci_interface->rf.rf_vcocal1           = frame_parms->rfvcolocal[1];
+    exmimo_pci_interface->rf.rf_mode2             = frame_parms->rfmode[2];
+    exmimo_pci_interface->rf.rf_local2            = frame_parms->rflocal[2];
+    exmimo_pci_interface->rf.rf_rxdc2             = frame_parms->rxdc[2];
+    exmimo_pci_interface->rf.rf_vcocal2           = frame_parms->rfvcolocal[2];
+    exmimo_pci_interface->rf.rf_mode3             = frame_parms->rfmode[3];
+    exmimo_pci_interface->rf.rf_local3            = frame_parms->rflocal[3];
+    exmimo_pci_interface->rf.rf_rxdc3             = frame_parms->rxdc[3];
+    exmimo_pci_interface->rf.rf_vcocal3           = frame_parms->rfvcolocal[3];
   }
 #endif // RTAI_ENABLED
     

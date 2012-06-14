@@ -87,7 +87,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
     error("Error opening /dev/openair0");
     return octave_value_list();
   }
-
+#ifdef CBMIMO1
   if ((rx_sig_fifo_fd = open("/dev/rtf59", O_RDONLY,0)) <0)
   {
     error(FCNNAME);
@@ -101,7 +101,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
     error("Error opening /dev/rtf60");
     return octave_value_list();
   }
-
+#endif
   /*
   printf("Getting PHY_vars ...\n");
 
@@ -111,11 +111,11 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   //printf("Getting PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
   */
 
-  printf("Getting PHY_config ...\n");
+  //  printf("Getting PHY_config ...\n");
 
   ioctl(openair_fd,openair_GET_CONFIG,frame_parms);
 
-  dump_frame_parms(frame_parms);
+  //  dump_frame_parms(frame_parms);
 
   ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES,frame_parms->nb_antennas_rx);
 
@@ -149,12 +149,13 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
     return octave_value_list();
     //exit(-1);
   }
-  
+  /*  
   printf("BIGPHYS top 0x%x\n",bigphys_top);
   printf("RX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[0]);
   printf("TX_DMA_BUFFER[0] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[0]);
   printf("RX_DMA_BUFFER[1] %p\n",dummy_tx_rx_vars.RX_DMA_BUFFER[1]);
   printf("TX_DMA_BUFFER[1] %p\n",dummy_tx_rx_vars.TX_DMA_BUFFER[1]);
+  */
 
   mem_base = (unsigned int)mmap(0,
 				BIGPHYS_NUMPAGES*4096,
@@ -163,8 +164,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
 				openair_fd,
 				0);
 
-  if (mem_base != -1)
-    msg("MEM base= %p\n",(void*) mem_base);
+  if (mem_base != -1) {}
+    //msg("MEM base= %p\n",(void*) mem_base);
   else {
     error(FCNNAME);
     error("Could not map physical memory\n");
@@ -177,10 +178,12 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
 
   
   fc=0;
-  msg("Getting buffer...\n");
+  //  msg("Getting buffer...\n");
   ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
-  sleep(1);   
 
+#ifdef CBMIMO1
+  sleep(1);   
+#endif
 
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++)
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++)
