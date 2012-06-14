@@ -267,7 +267,7 @@ int inits(int argc, char *argv[]) {
                                               MIH_C_BIT_LINK_HANDOVER_COMPLETE |
                                               MIH_C_BIT_LINK_PDU_TRANSMIT_STATUS;
 
-    ralpriv->mih_supported_link_command_list =   MIH_C_BIT_LINK_EVENT_SUBSCRIBE | MIH_C_BIT_LINK_EVENT_UNSUBSCRIBE | \
+    ralpriv->mih_supported_link_command_list = MIH_C_BIT_LINK_EVENT_SUBSCRIBE | MIH_C_BIT_LINK_EVENT_UNSUBSCRIBE | \
                                               MIH_C_BIT_LINK_GET_PARAMETERS  | MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS | \
                                               MIH_C_BIT_LINK_ACTION;
 
