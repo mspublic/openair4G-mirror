@@ -717,6 +717,8 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
     int                                      status = MIH_MESSAGE_DECODE_FAILURE;
     MIH_C_HEADER_T                           header;
     MIH_C_STATUS_T                           mih_status;
+    char                                     msg_src[32];
+    char                                     msg_dst[32];
 
 
     if ((bbP != NULL) && (message_wrapperP != NULL)) {
@@ -736,6 +738,14 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                 memcpy(&message_wrapperP->_union_message.link_capability_discover_request.header, (const void *)&header, sizeof(MIH_C_HEADER_T));
                 status = MIH_C_Link_Message_Decode_Link_Capability_Discover_request(bbP, &message_wrapperP->_union_message.link_capability_discover_request);
                 if (status == MIH_MESSAGE_DECODE_OK) {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_capability_discover_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_capability_discover_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Capability_Discover.request --->][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                     MIH_C_Link_Message_Link_Capability_Discover_request2String(&message_wrapperP->_union_message.link_capability_discover_request, g_msg_print_buffer);
                     DEBUG("%s", g_msg_print_buffer);
 
@@ -745,6 +755,15 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                                                             &mih_status,
                                                             &ralpriv->mih_supported_link_event_list,
                                                             &ralpriv->mih_supported_link_command_list);
+                } else {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_capability_discover_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_capability_discover_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Capability_Discover.request ---x][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                 }
                 break;
 
@@ -753,7 +772,24 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                 memcpy(&message_wrapperP->_union_message.link_event_subscribe_request.header, (const void *)&header, sizeof(MIH_C_HEADER_T));
                 status = MIH_C_Link_Message_Decode_Link_Event_Subscribe_request(bbP, &message_wrapperP->_union_message.link_event_subscribe_request);
                 if (status == MIH_MESSAGE_DECODE_OK) {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Subscribe.request --->][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                     mRALlte_subscribe_request(&message_wrapperP->_union_message.link_event_subscribe_request);
+                } else {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Subscribe.request ---x][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                 }
                 break;
 
@@ -762,7 +798,24 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                 memcpy(&message_wrapperP->_union_message.link_event_unsubscribe_request.header, (const void *)&header, sizeof(MIH_C_HEADER_T));
                 status = MIH_C_Link_Message_Decode_Link_Event_Unsubscribe_request(bbP, &message_wrapperP->_union_message.link_event_unsubscribe_request);
                 if (status == MIH_MESSAGE_DECODE_OK) {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Unsubscribe.request --->][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                     mRALlte_unsubscribe_request(&message_wrapperP->_union_message.link_event_unsubscribe_request);
+                } else {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Unsubscribe.request ---x][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                 }
                 break;
 
@@ -771,7 +824,24 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                 memcpy(&message_wrapperP->_union_message.link_get_parameters_request.header, (const void *)&header, sizeof(MIH_C_HEADER_T));
                 status = MIH_C_Link_Message_Decode_Link_Get_Parameters_request(bbP, &message_wrapperP->_union_message.link_get_parameters_request);
                 if (status == MIH_MESSAGE_DECODE_OK) {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_get_parameters_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_get_parameters_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Get_Parameters.request --->][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                     mRALlte_get_parameters_request(&message_wrapperP->_union_message.link_get_parameters_request);
+                } else {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_get_parameters_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_get_parameters_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Get_Parameters.request ---x][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                 }
                 break;
 
@@ -780,7 +850,24 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                 memcpy(&message_wrapperP->_union_message.link_configure_thresholds_request.header, (const void *)&header, sizeof(MIH_C_HEADER_T));
                 status = MIH_C_Link_Message_Decode_Link_Configure_Thresholds_request(bbP, &message_wrapperP->_union_message.link_configure_thresholds_request);
                 if (status == MIH_MESSAGE_DECODE_OK) {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_configure_thresholds_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_configure_thresholds_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Configure_Thresholds.request --->][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                     mRALlte_configure_thresholds_request(&message_wrapperP->_union_message.link_configure_thresholds_request);
+                } else {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_configure_thresholds_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_configure_thresholds_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Configure_Thresholds.request ---x][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                 }
                 break;
 
@@ -789,7 +876,24 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                 memcpy(&message_wrapperP->_union_message.link_action_request.header, (const void *)&header, sizeof(MIH_C_HEADER_T));
                 status = MIH_C_Link_Message_Decode_Link_Action_request(bbP, &message_wrapperP->_union_message.link_action_request);
                 if (status == MIH_MESSAGE_DECODE_OK) {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_action_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_action_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Action.request --->][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                     mRALlte_action_request(&message_wrapperP->_union_message.link_action_request);
+                } else {
+                    #ifdef MSCGEN_PYTOOL
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_action_request.source), msg_src);
+                    MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_action_request.destination), msg_dst);
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Action.request --->][%s]\n",
+                        getTimeStamp4Log(),
+                        msg_src,
+                        msg_dst);
+                    #endif
                 }
                 break;
 
