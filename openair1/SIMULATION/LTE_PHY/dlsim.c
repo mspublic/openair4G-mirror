@@ -1152,7 +1152,6 @@ int main(int argc, char **argv) {
 						   &PHY_vars_eNB->lte_frame_parms,
 						   PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 						   subframe);
-
 	    if (num_pdcch_symbols_2 > num_pdcch_symbols) {
 	      msg("Error: given num_pdcch_symbols not big enough\n");
 	      exit(-1);
@@ -1244,8 +1243,6 @@ int main(int argc, char **argv) {
 	      else
 		amp = 1024;
 
-	      //	      if (k==1)
-	      //	amp=0;
 	      re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 					      amp,
 					      subframe,
@@ -1371,10 +1368,10 @@ int main(int argc, char **argv) {
 	  if (awgn_flag == 0) {	
 #ifdef TV_CHANNEL 
 	    multipath_tv_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				 2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel);
+				 2*PHY_vars_UE->lte_frame_parms.samples_per_tti,hold_channel);
 #else
 	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-				 2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel);
+				 2*PHY_vars_UE->lte_frame_parms.samples_per_tti,hold_channel);
 #endif
 	  } //if(awgn_flg)
 	  
@@ -1654,7 +1651,7 @@ int main(int argc, char **argv) {
 		  dlsch_active = 1;
 		} // if dci_flag == 1
 	      }
-
+	    
 	      if (dlsch_active == 1) {
 		if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
 
@@ -1712,12 +1709,8 @@ int main(int argc, char **argv) {
 		      dlsch_active=0;
 		      break;
 		    }
-		
-		if ((n_frames==1) && (Ns==(2+(2*subframe))) && (l==0))  {
-		  write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);
-		  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-		    write_output("ch1.m","ch1",eNB2UE->ch[PHY_vars_eNB->lte_frame_parms.nb_antennas_rx],eNB2UE->channel_length,1,8);
-
+	      
+		if ((n_frames==1) && (Ns==(1+2*subframe)) && (l==PHY_vars_eNB->lte_frame_parms.symbols_per_tti/2-1)) {
 		  //common vars
 		  write_output("rxsig0.m","rxs0", &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
 		  write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
@@ -1725,6 +1718,13 @@ int main(int argc, char **argv) {
 		    write_output("rxsig1.m","rxs1", PHY_vars_UE->lte_ue_common_vars.rxdata[1],PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
 		    write_output("rxsigF1.m","rxsF1", PHY_vars_UE->lte_ue_common_vars.rxdataF[1],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
 		  }
+		}
+
+
+		if ((n_frames==1) && (Ns==(2+(2*subframe))) && (l==0))  {
+		  write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);
+		  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
+		    write_output("ch1.m","ch1",eNB2UE->ch[PHY_vars_eNB->lte_frame_parms.nb_antennas_rx],eNB2UE->channel_length,1,8);
 
 		  write_output("dlsch00_ch0.m","dl00_ch0",
 			       &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][0][0]),
@@ -1862,6 +1862,7 @@ int main(int argc, char **argv) {
 		for (i=0;i<Kr_bytes;i++)
 		  printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i],PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->c[s][i]);
 	      }
+	      /*
 	      write_output("rxsig0.m","rxs0", &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
 	      write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
 	      if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {
@@ -1891,7 +1892,7 @@ int main(int argc, char **argv) {
 	      write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
 	      write_output("dlsch_eNB_w.m","w",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);
 	      write_output("dlsch_UE_w.m","w",PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
-
+	      */
 	      
 	      exit(-1);
 	    }
@@ -1904,7 +1905,7 @@ int main(int argc, char **argv) {
 	      printf("DLSCH in error in round %d\n",round);
 		
 	  }
-	 free(uncoded_ber_bit);
+	  free(uncoded_ber_bit);
 	  uncoded_ber_bit = NULL;
 	  
 	}  //round
