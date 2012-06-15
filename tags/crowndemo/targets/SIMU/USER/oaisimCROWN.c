@@ -97,7 +97,7 @@ short dl_ch_estimates[2][2400];
 short drs_ch_estimates[2][2400];
 short drs_ch_est_ZFB[2*300*14];
 int doquantUE=0;
-int calibration_flag=1;
+int calibration_flag=0;
 short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
 int prec_length = 2*14*512;
 short prec[2][2*14*512];

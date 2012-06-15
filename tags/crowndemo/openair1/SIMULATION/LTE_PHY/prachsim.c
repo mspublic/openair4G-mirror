@@ -134,6 +134,8 @@ int main(int argc, char **argv) {
   u8 prach_fmt;
   int N_ZC;
 
+  logInit();
+
   channel_length = (int) 11+2*BW*Td;
 
   number_of_cards = 1;
@@ -382,7 +384,7 @@ int main(int argc, char **argv) {
 
   compute_prach_seq(prach_root_sequence_map0_3[PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex],N_ZC, PHY_vars_UE->X_u);
 
-  PHY_vars_UE->lte_ue_prach_vars[0]->amp = (s32)scfdma_amps[6];
+  PHY_vars_UE->lte_ue_prach_vars[0]->amp = AMP;
 
   PHY_vars_UE->prach_resources[0] = &prach_resources;
   if (preamble_tx == 99)

@@ -206,29 +206,31 @@ void do_forms2(FD_lte_scope *form,
   if (rx_sig != NULL) { 
     if  (rx_sig[0] != NULL)
       {
-	for (i=30720; i<38400; i++)
+	//for (i=30720; i<38400; i++)
+	//for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+	for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)
 	  {
-	    //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
-	    //sig2[i-30720] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
-	    sig2[i-30720] = (double) ((rx_sig[0][2*i]));
-	    time2[i-30720] = (float) i;
+	    sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
+	    //sig2[i] = (float) ((rx_sig[0][2*i]));
+	    time2[i] = (float) i;
 	  }
 	//fl_set_xyplot_ybounds(form->channel_t_re,30,60);
 	//fl_set_xyplot_data(form->channel_t_re,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
-	fl_set_xyplot_data(form->channel_t_re,time2,sig2,7680,"","","");
+	fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
       }
 
     // rx sig 1
     if (rx_sig[1] !=NULL) {
-	for (i=30720; i<38400; i++)
+      //for (i=30720; i<38400; i++)
+	for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)
 	  {
-	    //sig2[i] = 10*log10(1.0+(double) ((rx_sig[1][2*i])*(rx_sig[1][2*i])+(rx_sig[1][2*i+1])*(rx_sig[1][2*i+1])));
-	    sig2[i-30720] = (double) ((rx_sig[1][2*i]));
-	    time2[i-30720] = (float) i;
+	    sig2[i] = 10*log10(1.0+(double) ((rx_sig[1][2*i])*(rx_sig[1][2*i])+(rx_sig[1][2*i+1])*(rx_sig[1][2*i+1])));
+	    //sig2[i] = (float) ((rx_sig[1][2*i]));
+	    time2[i] = (float) i;
 	  }
 	//fl_set_xyplot_ybounds(form->channel_t_im,30,60);
 	//fl_set_xyplot_data(form->channel_t_im,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
-	fl_set_xyplot_data(form->channel_t_im,time2,sig2,7680,"","","");
+	fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
     }
   }
 
@@ -834,7 +836,7 @@ short dl_ch_estimates[2][2400];
 short drs_ch_estimates[2][2400];
 short drs_ch_est_ZFB[2*300*14];
 int doquantUE=0;
-int calibration_flag=1;
+int calibration_flag=0;
 short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
 int prec_length = 2*14*512;
 short prec[2][2*14*512];
@@ -853,7 +855,8 @@ int main(int argc, char **argv)
   LTE_DL_FRAME_PARMS *frame_parms;
   u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
   u32 rf_mode[4]     = {55759,55759,55759,55759};
-  u32 rf_local[4]    = {8255067,8254810,8257340,8257340}; // eNB PETRONAS
+  u32 rf_local[4]    = {8254617, 8254617, 8254617, 8254617}; //eNB khalifa
+    //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   u32 rxgain[4]={30,30,30,30};
@@ -926,9 +929,11 @@ int main(int argc, char **argv)
   frame_parms->nb_antennas_rx     = 1;
   frame_parms->mode1_flag         = 1; //default == SISO
   frame_parms->frame_type         = 1;
+#ifdef CBMIMO1
   if (fs4_test==1)
     frame_parms->tdd_config         = 255;
   else
+#endif
     frame_parms->tdd_config         = 3;
   frame_parms->tdd_config_S       = 0;
   frame_parms->phich_config_common.phich_resource = oneSixth;
@@ -1125,16 +1130,6 @@ int main(int argc, char **argv)
   if (UE_flag!=1)
     ioctl(openair_fd,openair_START_TX_SIG,NULL);
 
-  // start the main thread
-  if (UE_flag == 1)
-    thread1 = rt_thread_create(UE_thread, NULL, 100000000);
-  else
-    thread0 = rt_thread_create(eNB_thread, NULL, 10000000);
-
-
-#ifndef CBMIMO1
-  //  sync_thread = rt_thread_create(sync_hw,NULL,10000000);
-#endif
 
 #ifdef XFORMS
   if (do_forms==1)
@@ -1152,7 +1147,20 @@ int main(int argc, char **argv)
     }
 #endif
 
-  rt_sleep(nano2count(FRAME_PERIOD));
+  rt_sleep(nano2count(10*FRAME_PERIOD));
+
+
+  // start the main thread
+  if (UE_flag == 1)
+    thread1 = rt_thread_create(UE_thread, NULL, 100000000);
+  else
+    thread0 = rt_thread_create(eNB_thread, NULL, 10000000);
+
+
+#ifndef CBMIMO1
+  //  sync_thread = rt_thread_create(sync_hw,NULL,10000000);
+#endif
+
   printf("threads created\n");
 
   // wait for end of program

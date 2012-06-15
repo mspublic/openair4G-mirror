@@ -564,9 +564,9 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
       UL_alloc_pdu.ndi     = 1;
       UL_alloc_pdu.TPC     = 0;
       if ((cooperation_flag==0) || (cooperation_flag==1))
-      UL_alloc_pdu.cshift  = 0;
+	UL_alloc_pdu.cshift  = 0;
       else
-      UL_alloc_pdu.cshift  = 1;
+	UL_alloc_pdu.cshift  = 1;
       UL_alloc_pdu.dai     = 0;
       UL_alloc_pdu.cqi_req = 1;
       memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
@@ -1341,7 +1341,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 
   //b *********************precoding, before ofdm modulation check
-  if ( (next_slot == 12) && (P_eNb_active == 100) && (K_calibration > n_K) ) {            
+  if ( (next_slot == 12) && (P_eNb_active == 100) && (K_calibration > n_K) && (calibration_flag==1)) {            
     //b Beamforming    
 	   
     prec_length = 2*nsymb*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;	    
@@ -2188,19 +2188,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
 #ifdef OPENAIR2
-	  //b Calibration 
-	  do_quantization_eNB(phy_vars_eNB, //slot_fep_ul sup exe before
-			      nsymb, 
-			      pilot1-1, //pilot ant 0
-			      pilot1, //pilot ant 1 
-			      quant_v, 
-			      drs_ch_estimates[1], 
-			      UE_id);
-
-	  //printf("do_quantization_eNB\n");
-	  //write_output("dlch.m","dl",drs_ch_estimates[1],600,1,1);
-	  //exit(-1);
-
 	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->calibration_flag == 0) {
 	    mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
 			      phy_vars_eNB->frame,
@@ -2208,6 +2195,19 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b);
 	  }
 	  else {
+	    //b Calibration 
+	    do_quantization_eNB(phy_vars_eNB, //slot_fep_ul sup exe before
+				nsymb, 
+				pilot1-1, //pilot ant 0
+				pilot1, //pilot ant 1 
+				quant_v, 
+				drs_ch_estimates[1], 
+				UE_id);
+	    
+	    //printf("do_quantization_eNB\n");
+	    //write_output("dlch.m","dl",drs_ch_estimates[1],600,1,1);
+	    //exit(-1);
+
 	    // Retrieve calibration information and do whatever
 	    LOG_D(PHY,"[eNB][Auto-Calibration] Frame %d, Subframe %d : ULSCH PDU (RX) %d bytes\n",phy_vars_eNB->frame,last_slot>>1,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);	    
 
@@ -2229,7 +2229,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	      }	
 	    } 
 	
-	    if ((P_eNb_active==0) && (K_calibration == n_K)) {                  				  
+	    if ((P_eNb_active==0) && (K_calibration == n_K) && (calibration_flag==1)) {                  				  
 	      //exit(-1);
 	      do_calibration(K_dl_ch_estimates,
 			     K_drs_ch_estimates, 
