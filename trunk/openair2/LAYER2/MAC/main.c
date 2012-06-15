@@ -375,6 +375,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 
+  mac_xface->get_PHR = get_PHR;
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
 
   mac_xface->macphy_init();

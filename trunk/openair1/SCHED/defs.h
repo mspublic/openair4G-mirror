@@ -441,7 +441,9 @@ s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t p
     @param j index of type of PUSCH (SPS, Normal, Msg3)
     @returns Transmit power
  */
-void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j);
+void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j, u8 abstraction_flag);
+
+s8 get_PHR(u8 Mod_id, u8 eNB_index);
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti);
 int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);

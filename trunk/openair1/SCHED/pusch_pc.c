@@ -66,59 +66,60 @@ u16 hundred_times_log10_NPRB[100] = {0,301,477,602,698,778,845,903,954,1000,1041
 
 u8 alpha_lut[8] = {0,40,50,60,70,80,90,100};
 
-void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j) {
+void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j, u8 abstraction_flag) {
 
   u8 harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,subframe);    
-
+  
   u8 nb_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb;
   s8 PL;
-
+  
   
   // P_pusch = 10*log10(nb_rb + P_opusch(j)+ alpha(u)*PL + delta_TF(i) + f(i))
   // 
   // P_opusch(0) = P_oPTR + deltaP_Msg3 if PUSCH is transporting Msg3
   // else
   // P_opusch(0) = PO_NOMINAL_PUSCH(j) + P_O_UE_PUSCH(j)
-  PL = get_PL(phy_vars_ue->Mod_id,eNB_id);
+  if (abstraction_flag!=0) // navid: fixme
+    PL=103;
+  else
+    PL = get_PL(phy_vars_ue->Mod_id,eNB_id);
+  
   phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH = (hundred_times_log10_NPRB[nb_rb-1]+
 					     get_hundred_times_delta_IF(phy_vars_ue,eNB_id,harq_pid) +
 					     100*phy_vars_ue->ulsch_ue[eNB_id]->f_pusch)/100; 
-
-  if( phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {  // Msg3 PUSCH
-
-    phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += (mac_xface->get_Po_NOMINAL_PUSCH(phy_vars_ue->Mod_id) + PL);
-
-    msg("[PHY][UE  %d][RAPROC] frame %d, subframe %d: Msg3 Po_PUSCH %d dBm (%d,%d,%d,%d,%d)\n",
-	phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH,
-	100*mac_xface->get_Po_NOMINAL_PUSCH(phy_vars_ue->Mod_id),
-	hundred_times_log10_NPRB[nb_rb-1],
-	100*PL,
-	get_hundred_times_delta_IF(phy_vars_ue,eNB_id,harq_pid),
-	100*phy_vars_ue->ulsch_ue[eNB_id]->f_pusch);
-  }
-  else if (j==0) {  // SPS PUSCH
+  
+  if( phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
+    
+  }else if (j==0) {  // SPS PUSCH
 
   }
   else if (j==1) {  // Normal PUSCH
-
+    
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += 	((alpha_lut[phy_vars_ue->lte_frame_parms.ul_power_control_config_common.alpha]*PL)/100);
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += 	phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
     phy_vars_ue->ulsch_ue[eNB_id]->PHR       =  15-phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;  // 15 dBm, FIX ME
-
+    
     if (phy_vars_ue->ulsch_ue[eNB_id]->PHR < -23)
-      phy_vars_ue->ulsch_ue[eNB_id] = -23;
+      phy_vars_ue->ulsch_ue[eNB_id]->PHR = -23;
     else if (phy_vars_ue->ulsch_ue[eNB_id]->PHR > 40)
-      phy_vars_ue->ulsch_ue[eNB_id] = 40;
+      phy_vars_ue->ulsch_ue[eNB_id]->PHR = 40;
 
-    msg("[PHY][UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PL, %d,alpha*PL %f,delta_IF %f,f_pusch %d\n",
+    msg("[PHY][UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
 	phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe,
 	phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH,
 	phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH,
 	hundred_times_log10_NPRB[nb_rb-1]/100.0,
+	phy_vars_ue->ulsch_ue[eNB_id]->PHR,
 	PL,
 	alpha_lut[phy_vars_ue->lte_frame_parms.ul_power_control_config_common.alpha]*PL/100.0,
 	get_hundred_times_delta_IF(phy_vars_ue,eNB_id,harq_pid)/100.0,
 	phy_vars_ue->ulsch_ue[eNB_id]->f_pusch);
   }
-
+  
 }
+
+s8 get_PHR(u8 Mod_id, u8 eNB_index){
+
+  return PHY_vars_UE_g[Mod_id]->ulsch_ue[eNB_index]->PHR; 
+}
+

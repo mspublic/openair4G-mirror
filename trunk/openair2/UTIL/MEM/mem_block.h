@@ -46,15 +46,15 @@ public_mem_block(void         check_mem_area (void);)
 #    ifdef USER_MODE
 private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #    endif
-
+#ifdef USER_MODE
+#    define MEM_SCALE MAX_RG * MAX_MOBILES_PER_RG
+#else
 #    ifdef NODE_RG
 #        define MEM_SCALE 2
 #    else
 #        define MEM_SCALE 1
 #    endif
-// navid : 3 * 32
-#    define MEM_SCALE MAX_RG * MAX_MOBILES_PER_RG
-
+#endif
 // definition of the size of the allocated memory area
 #    define MEM_MNGT_MB0_BLOCK_SIZE     64
                                         // 64
