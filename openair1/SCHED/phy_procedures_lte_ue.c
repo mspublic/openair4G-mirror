@@ -1080,7 +1080,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  
 	  phy_vars_ue->generate_prach=1;
 	  phy_vars_ue->prach_cnt=0;
-	  //phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
+	  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
 	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
 	  
 	  if (abstraction_flag == 0) {
@@ -1432,8 +1432,8 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       phy_vars_ue->frame = (phy_vars_ue->frame & 0xFFFFFC00) | (frame_tx & 0x000003FF);
     }
     else 
-      if (((frame_tx & 0x03FF) != (phy_vars_ue->frame & 0x03FF)) || 
-	  (pbch_tx_ant != phy_vars_ue->lte_frame_parms.nb_antennas_tx)) {
+      if (((frame_tx & 0x03FF) != (phy_vars_ue->frame & 0x03FF))) { 
+	  //(pbch_tx_ant != phy_vars_ue->lte_frame_parms.nb_antennas_tx)) {
 	LOG_I(PHY,"[UE  %d] frame %d, slot %d: Re-adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d).\n",
 	      phy_vars_ue->Mod_id, 
 	      phy_vars_ue->frame,
