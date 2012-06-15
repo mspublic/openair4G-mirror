@@ -183,6 +183,8 @@ typedef struct {
   u8 n_DMRS;
   /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
   u8 control_only;
+  /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
+  int calibration_flag;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -300,6 +302,8 @@ typedef struct {
   s16 f_pusch;
   /// Po_PUSCH - target output power for PUSCH
   s16 Po_PUSCH;
+  /// PHR - current power headroom (based on last PUSCH transmission)
+  s16 PHR;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -335,7 +339,7 @@ typedef struct {
   u32 RTC[8]; 
   /// Index of current HARQ round for this ULSCH
   u8 round; 
-  /// MCS format for this DLSCH
+  /// MCS format for this ULSCH
   u8 mcs; 
   /// Redundancy-version of the current sub-frame
   u8 rvidx;
@@ -363,6 +367,8 @@ typedef struct {
   u8 Nsymb_initial;
   /// DRMS field for this ULSCH
   u8 n_DMRS;
+  /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)
+  int calibration_flag;
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {
