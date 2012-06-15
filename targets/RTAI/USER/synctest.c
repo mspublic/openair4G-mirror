@@ -43,7 +43,9 @@
 #ifdef XFORMS
 #include <forms.h>
 #include "USERSPACE_TOOLS/SCOPE/lte_scope.h"
+#include "stats.h"
 FD_lte_scope *form_dl=NULL;
+FD_stats_form *form_stats=NULL;
 #endif //XFORMS
 
 #define FRAME_PERIOD 100000000ULL
@@ -333,9 +335,20 @@ void do_forms2(FD_lte_scope *form,
 void *scope_thread(void *arg)
 {
   s16 prach_corr[1024], i;
+  char stats_buffer[16384];
+  //FILE *UE_stats, *eNB_stats;
+  int len=0;
+
+  /*
+  if (UE_flag==1) 
+    UE_stats  = fopen("UE_stats.txt", "w");
+  else 
+    eNB_stats = fopen("eNB_stats.txt", "w");
+  */
+
   while (!oai_exit)
     {
-      if (UE_flag==1)
+      if (UE_flag==1) {
         do_forms2(form_dl,
                   &(PHY_vars_UE_g[0]->lte_frame_parms),
                   PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
@@ -352,6 +365,11 @@ void *scope_thread(void *arg)
                   1920,
 		  sync_corr_ue0,
 		  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10);
+	len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0);
+	fl_set_object_label(form_stats->stats_text, stats_buffer);
+	//rewind (UE_stats);
+	//fwrite (stats_buffer, 1, len, UE_stats);
+      }
       else {
 	for (i=0;i<1024;i++) 
 	  prach_corr[i] = ((s32)prach_ifft[0][i<<2]*prach_ifft[0][i<<2]+
@@ -372,10 +390,20 @@ void *scope_thread(void *arg)
 		  0,
                   prach_corr,
                   1024);
+
+	len = dump_eNB_stats (PHY_vars_eNB_g[0], stats_buffer, 0);
+	fl_set_object_label(form_stats->stats_text, stats_buffer);
+	//rewind (eNB_stats);
+	//fwrite (stats_buffer, 1, len, eNB_stats);
+
       }
       //printf("doing forms\n");
       sleep(0.1);
     }
+
+  //fclose (UE_stats);
+  //fclose (eNB_stats);
+
   return (void*)(1);
 }
 #endif
@@ -452,8 +480,6 @@ static void *eNB_thread(void *arg)
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       delay_cnt = 0;
-      //if (slot > (hw_slot + 2))
-      //exit;
       while ((hw_slot <= slot) && (!oai_exit))
         {
           diff = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
@@ -679,10 +705,10 @@ static void *UE_thread(void *arg)
         }
 
 #endif
-      last_slot = (slot + hw_slot_offset - 1)%LTE_SLOTS_PER_FRAME;
+      last_slot = (hw_slot + hw_slot_offset)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=LTE_SLOTS_PER_FRAME;
-      next_slot = (slot + hw_slot_offset + 1)%LTE_SLOTS_PER_FRAME;
+      next_slot = (hw_slot + hw_slot_offset + 2)%LTE_SLOTS_PER_FRAME;
 
 
       if (is_synchronized)
@@ -940,12 +966,17 @@ int main(int argc, char **argv)
       PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
       PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
       PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+#ifndef OPENAIR2
+      PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
+      //PHY_vars_UE_g[0]->lte_frame_parms.
+#endif
       NB_UE_INST=1;
       NB_INST=1;
     }
   else
     {
       g_log->log_component[PHY].level = LOG_INFO;
+      g_log->log_component[PHY].flag = LOG_HIGH;
       g_log->log_component[MAC].level = LOG_INFO;
       frame_parms->node_id = PRIMARY_CH;
       PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
@@ -954,7 +985,10 @@ int main(int argc, char **argv)
       NB_INST=1;
       if (calibration_flag == 1)
         PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
-
+      openair_daq_vars.ue_ul_nb_rb=25;
+      openair_daq_vars.target_ue_dl_mcs=5;
+      openair_daq_vars.ue_ul_nb_rb=2;
+      openair_daq_vars.target_ue_ul_mcs=5;
     }
 
   mac_xface = malloc(sizeof(MAC_xface));
@@ -1107,11 +1141,13 @@ int main(int argc, char **argv)
     {
       fl_initialize (&argc, argv, NULL, 0, 0);
       form_dl = create_form_lte_scope();
+      form_stats = create_form_stats_form();
       if (UE_flag==1)      
 	sprintf (title, "LTE DL SCOPE UE");
       else
 	sprintf (title, "LTE UL SCOPE eNB");
       fl_show_form (form_dl->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+      fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
       thread2 = pthread_create(&thread2, NULL, scope_thread, NULL);
     }
 #endif
@@ -1138,6 +1174,8 @@ int main(int argc, char **argv)
   if (do_forms==1)
     {
       //pthread_join?
+      fl_hide_form(form_stats->stats_form);
+      fl_free_form(form_stats->stats_form);
       fl_hide_form(form_dl->lte_scope);
       fl_free_form(form_dl->lte_scope);
     }

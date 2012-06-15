@@ -14,7 +14,7 @@ endif
 
 SRC = synctest.c condtest.c
 
-OBJ = synctest.o $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o
+OBJ = synctest.o $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
 
 TOP_DIR = $(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -39,11 +39,12 @@ CFLAGS += $(L2_incl) $(UTIL_incl)
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM
 
-#ifdef XFORMS
+ifdef XFORMS
 CFLAGS += -DXFORMS -I/usr/include/X11
 LDFLAGS += -lforms
 OBJ += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
-#endif
+OBJ += stats.o
+endif
 
 CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
