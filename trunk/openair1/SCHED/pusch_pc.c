@@ -103,6 +103,13 @@ void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j) {
 
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += 	((alpha_lut[phy_vars_ue->lte_frame_parms.ul_power_control_config_common.alpha]*PL)/100);
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += 	phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
+    phy_vars_ue->ulsch_ue[eNB_id]->PHR       =  15-phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;  // 15 dBm, FIX ME
+
+    if (phy_vars_ue->ulsch_ue[eNB_id]->PHR < -23)
+      phy_vars_ue->ulsch_ue[eNB_id] = -23;
+    else if (phy_vars_ue->ulsch_ue[eNB_id]->PHR > 40)
+      phy_vars_ue->ulsch_ue[eNB_id] = 40;
+
     msg("[PHY][UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PL, %d,alpha*PL %f,delta_IF %f,f_pusch %d\n",
 	phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe,
 	phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH,
