@@ -547,9 +547,10 @@ int main(int argc, char *argv[]) {
 	omg_param_list.max_sleep = 5.0;
 	omg_param_list.mobility_file = "TRACE/example_trace.tr"; 
         omg_param_list.sumo_command = "sumo-gui"; 
-        omg_param_list.sumo_config = "SUMO/SCENARIOS/traci.scen.sumo.cfg"; 
-	omg_param_list.sumo_start = 0; 
-        omg_param_list.sumo_end = 200; 
+        omg_param_list.sumo_config = "SUMO/SCENARIOS/traci.scen.sumo.cfg";
+     //   omg_param_list.sumo_config = "SUMO/SCENARIOS/traci.koln.sumo.cfg";
+	omg_param_list.sumo_start = 0;//25900; 
+        omg_param_list.sumo_end = 200;//26200; 
         omg_param_list.sumo_step = 1; 
         omg_param_list.sumo_host = "localhost"; 
         omg_param_list.sumo_port = 8890; 
