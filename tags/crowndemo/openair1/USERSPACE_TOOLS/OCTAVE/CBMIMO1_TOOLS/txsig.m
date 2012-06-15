@@ -1,10 +1,14 @@
+fc = 1907600000;
+fidx=1;
+tdd=1;
 dual_tx=1;
 cbmimo1=0;
+gain=30;
 eNB_flag = 1;
 
 off = 0; % -994;
 if (cbmimo1)
-  oarf_config(0,1,dual_tx,255);
+  oarf_config(fidx,tdd,dual_tx,255);
   amp = pow2(7)-1;
   n_bit = 8;
 else
@@ -60,11 +64,13 @@ endswitch
 
 if (cbmimo1)
   oarf_set_tx_gain(110,110,110,110);
+else
+  s = s*2;
 end
 oarf_send_frame(0,s,n_bit);
 
 figure(1)
 hold off
-plot(real(s(38401:38400+640)),'r')
+plot(real(s(:,1)),'r')
 hold on
-plot(imag(s(38401:38400+640)),'b')
+plot(imag(s(:,2)),'b')

@@ -18,6 +18,15 @@ fref = fc+fs/4;
 power_dBm=-70;
 f_off_min = 1e6;
 
+limeparms;
+rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*[1 1 1 1];
+freq_rx = 1907600000*[1 1 1 1];
+freq_tx = freq_rx+1920000;
+rx_gain = 30*[1 1 1 1];
+rf_local=rf_local*[1 1 1 1];
+rf_rxdc =rf_rxdc*[1 1 1 1];
+rf_vcocal=rf_vcocal*[1 1 1 1];
+
 %gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal generator
 %gpib_send(gpib_card,gpib_device,['POW ' int2str(power_dBm+cables_loss_dB) 'dBm']);
 %gpib_send(gpib_card,gpib_device,['FREQ 1.91860 Ghz']); % set the frequency 
@@ -35,7 +44,7 @@ i=0;
 do 
   format long
   fc
-  oarf_config_exmimo(fc,tdd,dual_tx,30,0);
+  oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rx_gain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal)
 
   i=i+1;
   sleep(1);
@@ -57,6 +66,7 @@ do
     f_off2 = mean(s_phase2(2:length(s_phase2))*fs/4./(1:(length(s_phase2)-1))/2/pi)
     hold on
     plot(1:length(s_phase2),s_phase2,'g');
+    drawnow;
     hold off
   end
 
