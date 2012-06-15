@@ -90,6 +90,8 @@
 #define NB_RA_PROC_MAX 4
 
 #define BSR_TABLE_SIZE 64
+// The power headroom reporting range is from -23 ...+40 dB and beyond, with step 1
+#define PHR_MAPPING_OFFSET 23  // if ( x>= -23 ) val = floor (x + 23) 
 
 typedef enum {
   CONNECTION_OK=0,
@@ -194,6 +196,7 @@ typedef struct {
 #define SHORT_PADDING 31
 
 // ULSCH LCHAN IDs
+#define EXTENDED_POWER_HEADROOM 25
 #define POWER_HEADROOM 26
 #define CRNTI 27
 #define TRUNCATED_BSR 28
@@ -291,7 +294,9 @@ typedef struct{
   
   /// UE BSR info for each logical channel
   u8 bsr_info[MAX_NUM_LCID]; 
-
+  
+  /// phr information 
+   u8 phr_info; 
 } UE_TEMPLATE;
 
 typedef struct {
@@ -401,6 +406,18 @@ typedef struct {
   struct DRX_Config *drx_config;
   /// default value is release
   struct MAC_MainConfig__phr_Config *phr_config;
+  ///timer before triggering a periodic PHR
+  u16 periodicPHR_Timer;
+  ///timer before triggering a prohibit PHR
+  u16 prohibitPHR_Timer;
+  ///DL Pathloss change value 
+  u16 PathlossChange;
+  ///number of subframe before triggering a periodic PHR
+  s16 periodicPHR_SF;
+  ///number of subframe before triggering a prohibit PHR
+  s16 prohibitPHR_SF;
+  ///DL Pathloss Change in db 
+  u16 PathlossChange_db;
   //Bj bucket usage per  lcid
   s16 Bj[MAX_NUM_LCID];
   // Bucket size per lcid
@@ -459,6 +476,14 @@ typedef struct{
   u8 RA_contention_resolution_timer_active;
   /// Random-access Contention Resolution Timer count value
   u8 RA_contention_resolution_cnt;
+  /// power headroom reporitng reconfigured 
+  u8 PHR_reconfigured; 
+  /// power headroom state as configured by the higher layers
+  u8 PHR_state; 
+  /// power backoff due to power management (as allowed by P-MPRc) for this cell
+  u8 PHR_reporting_active; 
+ /// power backoff due to power management (as allowed by P-MPRc) for this cell
+  u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
 }UE_MAC_INST;
 
 
@@ -848,9 +873,44 @@ int get_ms_bucketsizeduration(u8 bucketsizeduration);
 /*! \fn  int get_sf_retxBSRTimer(u8 retxBSR_Timer)
    \brief get the number of subframe form the bucket size duration configured by the higher layer
 \param[in]  retxBSR_Timer timer for regular BSR
-\return the time in ms
+\return the time in sf
 */
 int get_sf_retxBSRTimer(u8 retxBSR_Timer);
+
+/*! \fn  int get_sf_perioidicPHR_Timer(u8 perioidicPHR_Timer){
+   \brief get the number of subframe form the periodic PHR timer configured by the higher layer
+\param[in]  perioidicPHR_Timer timer for reguluar PHR
+\return the time in sf
+*/
+int get_sf_perioidicPHR_Timer(u8 perioidicPHR_Timer);
+
+/*! \fn  int get_sf_prohibitPHR_Timer(u8 prohibitPHR_Timer)
+   \brief get the number of subframe form the prohibit PHR duration configured by the higher layer
+\param[in]  prohibitPHR_Timer timer for  PHR
+\return the time in sf
+*/
+int get_sf_prohibitPHR_Timer(u8 prohibitPHR_Timer);
+
+/*! \fn  int get_db_dl_PathlossChange(u8 dl_PathlossChange)
+   \brief get the db form the path loss change configured by the higher layer
+\param[in]  dl_PathlossChange path loss for PHR
+\return the pathloss in db
+*/
+int get_db_dl_PathlossChange(u8 dl_PathlossChange);
+
+/*! \fn  u8 get_phr_mapping (u8 Mod_id, u8 eNB_index)
+   \brief get phr mapping as described in 36.313
+\param[in]  Mod_id index of eNB
+\return phr mapping
+*/
+u8 get_phr_mapping (u8 Mod_id, u8 eNB_index);
+
+/*! \fn  void update_phr (u8 Mod_id)
+   \brief update/reset the phr timers
+\param[in]  Mod_id index of eNB
+\return void
+*/
+void update_phr (u8 Mod_id);
 
 /*! \brief Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
 \param[in] Mod_id Instance index of UE

@@ -718,12 +718,14 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	 
 #ifdef OPENAIR2
 	  //  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
-	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1)
+	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1){
+	    pusch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id, 1, abstraction_flag);
 	    mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
 				  phy_vars_ue->frame,
 				  eNB_id,
 				  ulsch_input_buffer,
 				  input_buffer_length);
+	  }
 #ifdef DEBUG_PHY_PROC
 	  LOG_D(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
@@ -759,7 +761,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 	}
 	if (abstraction_flag == 0) {
-	  pusch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,1);
 	  phy_vars_ue->tx_power_dBm = phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;
 	  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Po_PUSCH : %d dBm\n",
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->tx_power_dBm);

@@ -174,6 +174,8 @@ typedef struct
     /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (deltaP_rampup parameter)
     s8 (*get_deltaP_rampup)(u8 Mod_id);
 
+    /// Function for UE/PHY to compute PHR
+    s8 (*get_PHR)(u8 Mod_id, u8 eNB_index);
 
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
 

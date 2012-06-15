@@ -82,7 +82,7 @@ void init_enb(node_desc_t  *enb_data, eNB_Antenna enb_ant) {//changed from node_
   double sect_angle[3]={0,2*PI/3,4*PI/3};
 
   enb_data->n_sectors = enb_ant.number_of_sectors;
-  for (i=0;i<3;i++) 
+  for (i=0;i<enb_data->n_sectors;i++) 
     enb_data->alpha_rad[i] = sect_angle[i]; //enb_ant.alpha_rad[i]; 
   enb_data->phi_rad = enb_ant.beam_width_dB;
   enb_data->ant_gain_dBi = enb_ant.antenna_gain_dBi;

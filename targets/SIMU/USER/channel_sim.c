@@ -187,7 +187,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	LOG_E(OCM,"Cannot find eNB for UE %d, return\n",UE_id);
 	return; //exit(-1);
       }
-
+      
       rx_pwr = signal_energy_fp2(eNB2UE[att_eNB_id][UE_id]->ch[0],
 				 eNB2UE[att_eNB_id][UE_id]->channel_length)*eNB2UE[att_eNB_id][UE_id]->channel_length;
       LOG_D(OCM,"Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
@@ -210,7 +210,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	}
       }
       //dlsch_abstraction(PHY_vars_UE_g[UE_id]->sinr_dB, rb_alloc, 8);
-
+      /*
       // fill in perfect channel estimates
       channel_desc_t *desc1;
       s32 **dl_channel_est = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0];
@@ -236,7 +236,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 		    }
 		}
 	    }
-	}
+	    }*/
       
     } //UE_id
   }

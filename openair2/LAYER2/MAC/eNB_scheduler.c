@@ -413,7 +413,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
       not_done = 0;
 
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
-    if (lcid < UE_CONT_RES) { // checkme: this should be  POWER_HEADROOM ???
+    if (lcid < EXTENDED_POWER_HEADROOM) { 
 
       if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
@@ -427,7 +427,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
       rx_lengths[num_sdus] = length;
       num_sdus++;
     }
-    else {  // This is a control element subheader BSR and CRNTI
+    else {  // This is a control element subheader POWER_HEADROOM, BSR and CRNTI
       rx_ces[num_ces] = lcid;
       num_ces++;
       //LOG_D(MAC,"[eNB] bsr ce %d lcid %d\n",num_ces,lcid);
@@ -469,7 +469,8 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu) {
 
     switch (rx_ces[i]) { // implement and process BSR + CRNTI +
     case POWER_HEADROOM:
-      LOG_I(MAC,"[eNB] MAC CE_LCID %d : Received PHR R = %d PH = %d\n", rx_ces[i], (payload_ptr[0]>>6), payload_ptr[0]&0x3f);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info =  (payload_ptr[0]&0x3f);// - PHR_MAPPING_OFFSET; 
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d : Received PHR PH = %d (db)\n", rx_ces[i], eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info);
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
     case CRNTI:

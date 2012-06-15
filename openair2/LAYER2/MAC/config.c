@@ -115,7 +115,27 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       
       UE_mac_inst[Mod_id].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
       UE_mac_inst[Mod_id].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
-
+      if (mac_MainConfig->phr_Config){
+	UE_mac_inst[Mod_id].PHR_state = mac_MainConfig->phr_Config->present;
+	UE_mac_inst[Mod_id].PHR_reconfigured = 1;
+	UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer = mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer;
+	UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer = mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer;
+	UE_mac_inst[Mod_id].scheduling_info.PathlossChange = mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange;
+      } else {
+	UE_mac_inst[Mod_id].PHR_reconfigured = 0;
+	UE_mac_inst[Mod_id].PHR_state = MAC_MainConfig__phr_Config_PR_setup;
+	UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
+	UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
+	UE_mac_inst[Mod_id].scheduling_info.PathlossChange = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
+      }	
+      UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer);
+      UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer);
+      UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_id].scheduling_info.PathlossChange);
+      LOG_D(MAC,"[UE %d] config PHR (%d): periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
+	    Mod_id,mac_MainConfig->phr_Config->present, 
+	    UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF,
+	    UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF,
+	    UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db);
     }
   }
   if (physicalConfigDedicated != NULL) {
