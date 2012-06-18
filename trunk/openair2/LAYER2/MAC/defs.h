@@ -488,6 +488,29 @@ typedef struct{
 
 
 
+/* \brief Generate header for DL-SCH.  This function parses the desired control elements and sdus and generates the header as described
+in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
+in the DLSCH buffer.
+@param mac_header Pointer to the first byte of the MAC header (DL-SCH buffer)
+@param num_sdus Number of SDUs in the payload
+@param sdu_lengths Pointer to array of SDU lengths
+@param sdu_lcids Pointer to array of LCIDs (the order must be the same as the SDU length array)
+@param drx_cmd dicontinous reception command 
+@param timing_advancd_cmd timing advanced command
+@param ue_cont_res_id Pointer to contention resolution identifier (NULL means not present in payload)
+@param short_padding Number of bytes for short padding (0,1,2)
+@param post_padding number of bytes for padding at the end of MAC PDU 
+@returns Number of bytes used for header
+*/
+unsigned char generate_dlsch_header(unsigned char *mac_header,
+				    unsigned char num_sdus,
+				    unsigned short *sdu_lengths,
+				    unsigned char *sdu_lcids,
+				    unsigned char drx_cmd,
+				    unsigned char timing_advance_cmd,
+				    unsigned char *ue_cont_res_id,
+				    unsigned char short_padding,
+				    unsigned short post_padding);
 
 
 /** \brief RRC Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
@@ -765,6 +788,7 @@ in the ULSCH buffer.
 @param truncated_bsr Pointer to Truncated BSR command (NULL means not present in payload)
 @param short_bsr Pointer to Short BSR command (NULL means not present in payload)
 @param long_bsr Pointer to Long BSR command (NULL means not present in payload)
+@param post_padding Number of bytes for padding at the end of MAC PDU
 @returns Number of bytes used for header
 */
 unsigned char generate_ulsch_header(u8 *mac_header,
@@ -776,7 +800,8 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 				    u16 *crnti,
 				    BSR_SHORT *truncated_bsr,
 				    BSR_SHORT *short_bsr,
-				    BSR_LONG *long_bsr);
+				    BSR_LONG *long_bsr,
+				    unsigned short post_padding);
 
 /* \brief Parse header for UL-SCH.  This function parses the received UL-SCH header as described
 in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
