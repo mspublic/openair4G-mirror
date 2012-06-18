@@ -36,7 +36,7 @@ typedef struct {
     int nInterf;
     ///Array with interference  level in dB 
     s8 *dbInterf;
-    char interfLevels[100];
+    char interfLevels[150];
     
     u16 Nid_cell;
     u8 oversampling;
@@ -64,7 +64,14 @@ typedef struct {
     u8 dci_flag;		    
     int testNumber;
     char folderName[50];
-    char parameters[150];
+    char parameters[300];
+    
+    int SIZE_TXDATAF;
+	int SIZE_TXDATA;
+	int SIZE_RXDATA;
+	int SIZE_RXDATAF;
+	
+	u16 interCellId;
 
 } options_t;
 
@@ -74,15 +81,19 @@ typedef struct {
     double **s_im;
     double **r_re;
     double **r_im;
+    double ***is_re;
+    double ***is_im;
+    double ***ir_re;
+    double ***ir_im;
 } data_t;
 
 /// Parses the command line options and assigns values ​​to  pilots, num_symbols, etc.  modified by the options selected
 void _parseOptions(options_t *opts, int argc, char ** argv);
 void _printOptions(options_t *opts);
 /// Interference Levels are recivend in form  num,num,num this function parse the string and fill dbInterf array 
-void _parseInterferenceLevels(s8 **dbInterf, char *interfLevels,int nInterf);
+void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf);
 /// Allocate memory  for signal data arrays 
-void _allocData(data_t *data, u8 n_tx,u8 n_rx,int Frame_length_complex_samples);
+void _allocData(options_t opts,data_t *data, u8 n_tx,u8 n_rx,int Frame_length_complex_samples);
 /// Generate output dir with the prefix specified in testNumber
 void _makeOutputDir(options_t *opts);
 
@@ -109,11 +120,15 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 void _printResults(u32 *errs,u32 *round_trials,u32 dci_errors,double rate);
 void _printFileResults(double SNR, double rate,u32  *errs,u32  *round_trials,u32 dci_errors,options_t opts);
 void _initErrsRoundsTrials(u32 **errs,u32 **trials,int allocFlag,options_t opts);
-void _fillData(options_t opts,data_t data);
-void _applyNoise(options_t opts,data_t data,double sigma2,double iqim);
+void _fillData(options_t opts,data_t data,int numSubFrames);
+void _applyNoise(options_t opts,data_t data,double sigma2,double iqim,int numSubFrames);
 u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_alloc,options_t opts,u8 num_pdcch_symbols);
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms);
-void _apply_Multipath_Noise_Interference(options_t opts,data_t data,double sigma2_dB,double sigma2);
+void _apply_Multipath_Noise_Interference(options_t opts,data_t data,double sigma2_dB,double sigma2,int numSubFrames);
 void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncoded_ber_bit,u32 tbs);
 void _dumpTransportBlockSegments(u32 C,u32 Cminus,u32 Kminus,u32 Kplus,  u8 ** c_UE,u8 ** c_eNB);
+void _applyInterference(options_t opts,data_t data,double sigma2,double iqim,int numSubFrames);
+
+
+void _writeTxData(char *num,char *desc, int init, int numframes,options_t opts, int output,int senial);
 #endif
