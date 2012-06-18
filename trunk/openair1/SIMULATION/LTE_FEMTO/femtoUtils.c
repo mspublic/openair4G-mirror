@@ -18,7 +18,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
     char c;
     char aux[100];
 
-    while ((c = getopt (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:")) != -1)
+    while ((c = getopt (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:e")) != -1)
     {
 		
         switch (c)
@@ -27,6 +27,10 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             opts->awgn_flag=1;
                opts->channel_model=AWGN;
             sprintf(opts->parameters,"%s -a",opts->parameters);
+            break;
+         case 'e':
+            opts->dci_flag=1;               
+            sprintf(opts->parameters,"%s -d",opts->parameters);
             break;
         case 's':
             opts->snr_init=atof(optarg);
