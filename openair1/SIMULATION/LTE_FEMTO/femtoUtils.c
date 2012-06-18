@@ -16,13 +16,16 @@
 
 void _parseOptions(options_t *opts, int argc, char ** argv) {
     char c;
+    char aux[100];
 
-    while ((c = getopt (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:")) != -1)
+    while ((c = getopt (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:")) != -1)
     {
+		
         switch (c)
         {
         case 'a':
             opts->awgn_flag=1;
+               opts->channel_model=AWGN;
             sprintf(opts->parameters,"%s -a",opts->parameters);
             break;
         case 's':
@@ -83,13 +86,19 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             opts->nInterf=atoi(optarg);
             sprintf(opts->parameters,"%s  -I%d",opts->parameters, opts->nInterf);
             break;
-        case 'j':
-            strcpy(opts->interfLevels,optarg);
-            sprintf(opts->parameters,"%s  -j%s", opts->interfLevels);
+        case 'w':
+			//TODO : fix this to set de interference level differents             
+            sprintf(aux,"%d",atoi(optarg));
+            strcpy(opts->interfLevels,aux);
+            sprintf(opts->parameters,"%s  -w%s", opts->parameters,opts->interfLevels);
             break;
         case 'N':
             opts->Nid_cell = atoi(optarg);
             sprintf(opts->parameters,"%s  -N%d",opts->parameters, opts->Nid_cell);
+            break;
+          case 'c':
+            opts->interCellId = atoi(optarg);
+            sprintf(opts->parameters,"%s  -c%d",opts->parameters, opts->interCellId);
             break;
         case 'o':
             opts->oversampling=atoi(optarg);
@@ -124,8 +133,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                 opts->channel_model=ETU;
                 break;
             default:
-                msg("Unsupported channel model!\n");
-                \
+                msg("Unsupported channel model!\n");                
                 exit(-1);
             }
             break;
@@ -142,7 +150,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             printf("-y    Number of TX antennas used in eNB, default value is %d\n",opts->n_tx);
             printf("-z    Number of RX antennas used in UE, default value is %d\n",opts->n_rx);
             printf("-I    Number of interference to apply, default value is %d \n",opts->nInterf);
-            printf("-j    Relative strength of  inteference list (in dB) \n");
+            printf("-w    Relative strength of  inteference list (in dB) \n");
             printf("-N    Nid_cell, default value is %d \n",opts->Nid_cell);
             printf("-o    Oversampling factor (1,2,4,8,16), default value is %d \n",opts->oversampling);
             printf("-g    [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor), default value is AWGN\n");
@@ -158,7 +166,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 
     sprintf(opts->folderName,"%d_resp",opts->testNumber);
     if (opts->nInterf>0)
-        _parseInterferenceLevels(&(opts->dbInterf),opts->interfLevels,opts->nInterf);
+        _parseInterferenceLevels(opts,opts->interfLevels,opts->nInterf);
 }
 
 void _printOptions(options_t *opts)
@@ -179,12 +187,14 @@ void _printOptions(options_t *opts)
     printf("\nchannel_model:\t\t%d",opts->channel_model);
     printf("\nawgn_flag:\t\t%d",opts->awgn_flag);
     printf("\nnInterf:\t\t%d",opts->nInterf);
-    printf("xx:%p",(void *)opts->outputFile);
+    printf("\nxx:%p",(void *)opts->outputFile);
 
     for (i=0; i<opts->nInterf; i++)
     {
-        printf("\n\tInterference %d:%d",i+1,(int)opts->dbInterf[i]);
+        printf("\n\tInterference n%d:%d",i+1,(int)opts->dbInterf[i]);
     }
+
+
 
 
     printf("\n");
@@ -192,15 +202,18 @@ void _printOptions(options_t *opts)
 
 }
 
-void _parseInterferenceLevels(s8 **dbInterf, char *interfLevels,int nInterf)
+void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf)
 {
     int i;
     char * pch;
-    (*dbInterf)=malloc(sizeof(s8)*nInterf);
-
+    opts->dbInterf=malloc(sizeof(s8)*nInterf);
     for (i=0; i<nInterf; i++)
-        (*dbInterf)[i]=0;
-
+    {        
+        opts->dbInterf[i]=atoi(interfLevels);
+        printf("%d\n",atoi(interfLevels));
+        printf("%d\n",opts->dbInterf[i]);
+	}
+/*
     pch = strtok (interfLevels,",");
     i=0;
     while (pch != NULL)
@@ -210,30 +223,58 @@ void _parseInterferenceLevels(s8 **dbInterf, char *interfLevels,int nInterf)
         i++;
         pch = strtok (NULL,",");
     }
-
+*/
 }
 
-void _allocData(data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_complex_samples)
+void _allocData(options_t opts, data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_complex_samples)
 {
-    int i;
+    int i,j;
     data->s_re = (double**)malloc(n_tx*sizeof(double*));
     data->s_im = (double**)malloc(n_tx*sizeof(double*));
     data->r_re = (double**)malloc(n_rx*sizeof(double*));
     data->r_im = (double**)malloc(n_rx*sizeof(double*));
+    
+    if(opts.nInterf>0)
+    {
+		data->is_re=(double***)malloc(opts.nInterf*sizeof(double**));
+		data->is_im=(double***)malloc(opts.nInterf*sizeof(double**));
+		data->ir_re=(double***)malloc(opts.nInterf*sizeof(double**));
+		data->ir_im=(double***)malloc(opts.nInterf*sizeof(double**));
+		for(i=0;i<opts.nInterf;i++)
+		{
+			data->is_re[i]=(double**)malloc(n_tx*sizeof(double*));
+			data->is_im[i]=(double**)malloc(n_tx*sizeof(double*));
+			data->ir_re[i]=(double**)malloc(n_tx*sizeof(double*));
+			data->ir_im[i]=(double**)malloc(n_tx*sizeof(double*));
+		}
+	}
 
     for (i=0; i<n_tx; i++)
     {
 
         data->s_re[i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
-        bzero(data->s_re[i],Frame_length_complex_samples*sizeof(double));
         data->s_im[i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
-        bzero(data->s_im[i],Frame_length_complex_samples*sizeof(double));
-
-
         data->r_re[i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
-        bzero(data->r_re[i],Frame_length_complex_samples*sizeof(double));
         data->r_im[i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
+        
+        bzero(data->s_re[i],Frame_length_complex_samples*sizeof(double));        
+        bzero(data->s_im[i],Frame_length_complex_samples*sizeof(double));
+        bzero(data->r_re[i],Frame_length_complex_samples*sizeof(double));       
         bzero(data->r_im[i],Frame_length_complex_samples*sizeof(double));
+        
+        for(j=0;j<opts.nInterf;j++)
+        {
+			data->is_re[j][i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
+			data->is_im[j][i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
+			data->ir_re[j][i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
+			data->ir_im[j][i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
+			
+			bzero(data->is_re[j][i],Frame_length_complex_samples*sizeof(double));        
+			bzero(data->is_im[j][i],Frame_length_complex_samples*sizeof(double));
+			bzero(data->ir_re[j][i],Frame_length_complex_samples*sizeof(double));       
+			bzero(data->ir_im[j][i],Frame_length_complex_samples*sizeof(double));
+		}
+        
     }
 
 
@@ -243,7 +284,8 @@ void _allocData(data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_complex_samples)
 void _makeOutputDir(options_t *opts)
 {
     int status;
-    char auxDir[100];
+    char auxDir[100]; 
+    char auxFile[100];   
     FILE *controlFile;
 
     status=mkdir ("testResults",S_IRWXU | S_IRWXG | S_IRWXO);
@@ -252,8 +294,10 @@ void _makeOutputDir(options_t *opts)
     status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);
 
     status=chdir(auxDir);
+    
+    sprintf(auxFile,"OutpuSimulation_%df_%dI_%sdB_%dch.m",opts->nframes,opts->nInterf,opts->interfLevels,opts->channel_model);
 
-    opts->outputFile =fopen("OutpuSimulation.m","w");
+    opts->outputFile =fopen(auxFile,"w");
     opts->outputBler =fopen("OuputBler.svn","w");
 
     controlFile=fopen("ControlTest.txt","w");
@@ -283,3 +327,5 @@ void _makeOutputDir(options_t *opts)
     fclose(controlFile);
 
 }
+
+
