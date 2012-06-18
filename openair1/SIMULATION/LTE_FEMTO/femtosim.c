@@ -782,7 +782,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                 }
 
 
-                re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id],
+               re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id],
                                                 opts.amp,
                                                 opts.subframe,
                                                 &PHY_vars_eNB->lte_frame_parms,
@@ -799,7 +799,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                 interf_PHY_vars_eNB[i]->dlsch_eNB[0][0]);
 				}
                 
-				_writeTxData("2","mod", 0, 2,opts,0,0);//aqui pasa algo 
+				_writeTxData("2","mod", 0, 2,opts,0,0);
 
                 if (cont_frames==0 && round==0) printf("re_allocated:  %d\n",re_allocated);
 
@@ -1320,7 +1320,7 @@ void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncod
 	write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[opts.eNB_id]->llr,2400,1,4);
 	
 	dump_dlsch2(PHY_vars_UE,opts.eNB_id,coded_bits_per_codeword);
-	dump_dlsch2(PHY_vars_UE,eNB_id_i,coded_bits_per_codeword);
+	dump_dlsch2(PHY_vars_UE,NUMBER_OF_eNB_MAX,coded_bits_per_codeword);
 	
 	
     
