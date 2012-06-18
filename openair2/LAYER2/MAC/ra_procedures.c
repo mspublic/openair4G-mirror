@@ -257,7 +257,8 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 				NULL,  // crnti
 				NULL,  // truncated bsr
 				NULL, // short bsr
-				NULL); // long_bsr
+				NULL,
+				0); // long_bsr
 	  return(&UE_mac_inst[Mod_id].RA_prach_resources);
 	}
       }

@@ -370,7 +370,8 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 				    u16 *crnti,
 				    BSR_SHORT *truncated_bsr,
 				    BSR_SHORT *short_bsr,
-				    BSR_LONG *long_bsr) {
+				    BSR_LONG *long_bsr,
+				    unsigned short post_padding) {
 
   SCH_SUBHEADER_FIXED *mac_header_ptr = (SCH_SUBHEADER_FIXED *)mac_header;
   unsigned char first_element=0,last_size=0,i;
@@ -567,11 +568,25 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 #endif
     }
   }
-
-  mac_header_ptr+=last_size;
-  memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
-  mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
-
+  if (post_padding>0) {// we have lots of padding at the end of the packet
+    mac_header_ptr->E = 1;
+    mac_header_ptr+=last_size;
+    // add a padding element
+    mac_header_ptr->R    = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = SHORT_PADDING;
+    mac_header_ptr++;
+  }
+  else { // no end of packet padding
+    // last SDU subhead is of fixed type (sdu length implicitly to be computed at UE)
+    //mac_header_ptr++;
+    mac_header_ptr+=last_size;
+  }
+  
+  if ((ce_ptr-mac_header_control_elements) > 0) {
+    memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
+    mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
+  }
 #ifdef DEBUG_HEADER_PARSING
   LOG_T(MAC," [UE %d] header : ", crnti);
   for (i=0;i<((unsigned char*)mac_header_ptr - mac_header);i++)
@@ -596,8 +611,9 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   BSR_LONG  *bsr_l=&bsr_long;
   POWER_HEADROOM_CMD phr;
   POWER_HEADROOM_CMD *phr_p=&phr;
-
+  unsigned short short_padding, post_padding;
   int lcid;
+  int j; // used for padding
   // Compute header length
 
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
@@ -733,25 +749,38 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
      update_phr(Mod_id);
   }else
     phr_p=NULL;
+  
+  if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
+    short_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
+    post_padding = 0;
+  }
+  else {
+    short_padding = 0;
+    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
+  }
+  
   // Generate header
   if (num_sdus>0) {
 
     payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
 					   num_sdus,      // num sdus
-					   0,            // short pading
+					   short_padding,            // short pading
 					   sdu_lengths,  // sdu length
 					   sdu_lcids,    // sdu lcid
 					   phr_p,  // power headroom
 					   NULL,  // crnti
 					   NULL,  // truncated bsr
 					   bsr_s, // short bsr
-					   bsr_l); // long_bsr
-
-    LOG_D(MAC,"[UE %d] Payload offset %d sdu total length %d\n",
-	Mod_id,payload_offset, sdu_length_total);
-
+					   bsr_l,
+					   post_padding); // long_bsr
+    LOG_D(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,padding %d,post_padding %d, reminder %d \n",
+	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset,
+	  short_padding,post_padding, buflen-sdu_length_total-payload_offset);
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
+    // fill remainder of DLSCH with random data
+    for (j=0;j<(buflen-sdu_length_total-payload_offset);j++)
+      ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
   }
   else { // send BSR
     // bsr.LCGID = 0x0;
@@ -759,23 +788,25 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
     payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
 					   num_sdus,      // num sdus
-					   0,            // short pading
+					   short_padding,            // short pading
 					   sdu_lengths,  // sdu length
 					   sdu_lcids,    // sdu lcid
 					   phr_p,  // power headroom
 					   NULL,  // crnti
 					   NULL,  // truncated bsr
 					   bsr_s,
-					   bsr_l);
+					   bsr_l,
+					   post_padding);
 
-    LOG_D(MAC,"[UE %d] Payload offset %d sdu total length %d\n",
-	Mod_id,payload_offset, sdu_length_total);
-
+    LOG_D(MAC,"[UE %d] Generate header : bufflen %d sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,padding %d,post_padding %d, sdu reminder %d bytes\n",
+	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset,
+	  short_padding,post_padding, buflen-sdu_length_total-payload_offset);
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
-
-
-    }
+    // fill remainder of DLSCH with random data
+    for (j=0;j<(buflen-sdu_length_total-payload_offset);j++)
+      ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
+  }
 
     LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
 	  Mod_id,payload_offset, sdu_length_total);

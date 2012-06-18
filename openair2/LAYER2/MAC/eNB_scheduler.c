@@ -405,7 +405,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 
   unsigned char not_done=1,num_ces=0,num_sdus=0,lcid;
   unsigned char *mac_header_ptr = mac_header;
-  unsigned short length;
+  unsigned short length, ce_len=1;
 
   while (not_done==1) {
 
@@ -414,7 +414,6 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
     if (lcid < EXTENDED_POWER_HEADROOM) { 
-
       if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
 	mac_header_ptr += 2;//sizeof(SCH_SUBHEADER_SHORT);
@@ -428,10 +427,15 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
       num_sdus++;
     }
     else {  // This is a control element subheader POWER_HEADROOM, BSR and CRNTI
-      rx_ces[num_ces] = lcid;
-      num_ces++;
-      //LOG_D(MAC,"[eNB] bsr ce %d lcid %d\n",num_ces,lcid);
-      mac_header_ptr++;// sizeof(SCH_SUBHEADER_FIXED);
+      if (lcid == SHORT_PADDING) {
+	mac_header_ptr++;
+      }
+      else {
+	rx_ces[num_ces] = lcid;
+	num_ces++;
+	//LOG_D(MAC,"[eNB] bsr ce %d lcid %d\n",num_ces,lcid);
+	mac_header_ptr++;// sizeof(SCH_SUBHEADER_FIXED);
+      }
     }
   }
   *num_ce = num_ces;
@@ -448,7 +452,7 @@ void SR_indication(u8 Mod_id,u32 frame, u16 rnti, u8 subframe) {
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 1;
 
 }
-void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu) {
+ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
@@ -3771,7 +3775,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 				       padding,                        
 				       post_padding);
 #ifdef DEBUG_eNB_SCHEDULER
-	msg("[MAC][eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
+	LOG_D(MAC,"[eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
 	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
 	    eNB_UE_stats->UE_timing_offset/4,
 	    next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
