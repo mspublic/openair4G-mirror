@@ -2,6 +2,30 @@
 #define MIH_C_F4_DATA_TYPES_FOR_LINKS_CODEC_C
 #include "MIH_C_F4_data_types_for_links_codec.h"
 
+
+#define MIH_C_OPMODE_NORMAL_MODE                 0
+#define MIH_C_OPMODE_POWER_SAVING_MODE           1
+#define MIH_C_OPMODE_POWERED_DOWN                2
+//-----------------------------------------------------------------------------
+unsigned int MIH_C_OPMODE2String2(MIH_C_OPMODE_T *dataP, char* bufP) {
+//-----------------------------------------------------------------------------
+    unsigned int buffer_index = 0;
+
+    switch (*dataP) {
+        case MIH_C_OPMODE_NORMAL_MODE:
+            buffer_index+= sprintf(&bufP[buffer_index], "OPMODE_NORMAL_MODE");
+            break;
+        case MIH_C_OPMODE_POWER_SAVING_MODE:
+            buffer_index+= sprintf(&bufP[buffer_index], "POWER_SAVING_MODE");
+            break;
+        case MIH_C_OPMODE_POWERED_DOWN:
+            buffer_index+= sprintf(&bufP[buffer_index], "POWERED_DOWN");
+            break;
+        default:
+            buffer_index+= sprintf(&bufP[buffer_index], "UNKNOWN");
+    }
+    return buffer_index;
+}
 //-----------------------------------------------------------------------------
 inline void MIH_C_DEV_STATE_RSP_encode(Bit_Buffer_t* bbP, MIH_C_DEV_STATE_RSP_T *dataP) {
 //-----------------------------------------------------------------------------
@@ -33,12 +57,62 @@ inline void MIH_C_DEV_STATE_RSP_decode(Bit_Buffer_t* bbP, MIH_C_DEV_STATE_RSP_T 
     }
 }
 //-----------------------------------------------------------------------------
+unsigned int MIH_C_LINK_EVENT_LIST2String2(MIH_C_LINK_EVENT_LIST_T *dataP, char* bufP) {
+//-----------------------------------------------------------------------------
+    unsigned int buffer_index = 0;
+
+    if (*dataP & MIH_C_BIT_LINK_DETECTED)            buffer_index+= sprintf(&bufP[buffer_index], "LK_DETECTED,");
+    if (*dataP & MIH_C_BIT_LINK_UP)                  buffer_index+= sprintf(&bufP[buffer_index], "LK_UP,");
+    if (*dataP & MIH_C_BIT_LINK_DOWN)                buffer_index+= sprintf(&bufP[buffer_index], "LK_DOWN,");
+    if (*dataP & MIH_C_BIT_LINK_PARAMETERS_REPORT)   buffer_index+= sprintf(&bufP[buffer_index], "LK_PARAMETERS_REPORT,");
+    if (*dataP & MIH_C_BIT_LINK_GOING_DOWN)          buffer_index+= sprintf(&bufP[buffer_index], "LK_GOING_DOWN,");
+    if (*dataP & MIH_C_BIT_LINK_HANDOVER_IMMINENT)   buffer_index+= sprintf(&bufP[buffer_index], "LK_HANDOVER_IMMINENT,");
+    if (*dataP & MIH_C_BIT_LINK_HANDOVER_COMPLETE)   buffer_index+= sprintf(&bufP[buffer_index], "LK_HANDOVER_COMPLETE,");
+    if (*dataP & MIH_C_BIT_LINK_PDU_TRANSMIT_STATUS) buffer_index+= sprintf(&bufP[buffer_index], "LK_PDU_TRANSMIT_STATUS");
+
+    return buffer_index;
+}
+//-----------------------------------------------------------------------------
+unsigned int MIH_C_LINK_CMD_LIST2String2(MIH_C_LINK_CMD_LIST_T *dataP, char* bufP) {
+//-----------------------------------------------------------------------------
+    unsigned int buffer_index = 0;
+
+    if (*dataP & MIH_C_BIT_LINK_EVENT_SUBSCRIBE)      buffer_index+= sprintf(&bufP[buffer_index], "LK_EVT_SUBSCRIBE,");
+    if (*dataP & MIH_C_BIT_LINK_EVENT_UNSUBSCRIBE)    buffer_index+= sprintf(&bufP[buffer_index], "LK_EVT_UNSUBSCRIBE,");
+    if (*dataP & MIH_C_BIT_LINK_GET_PARAMETERS)       buffer_index+= sprintf(&bufP[buffer_index], "LK_GET_PARAMETERS,");
+    if (*dataP & MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS) buffer_index+= sprintf(&bufP[buffer_index], "LK_CONFIGURE_THRESHOLDS,");
+    if (*dataP & MIH_C_BIT_LINK_ACTION)               buffer_index+= sprintf(&bufP[buffer_index], "LK_ACTION");
+
+    return buffer_index;
+}
+//-----------------------------------------------------------------------------
+unsigned int MIH_C_LINK_TYPE2String2(MIH_C_LINK_TYPE_T *dataP, char* bufP) {
+//-----------------------------------------------------------------------------
+    unsigned int buffer_index = 0;
+    switch (*dataP) {
+        case MIH_C_WIRELESS_GSM:            buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_GSM"); break;
+        case MIH_C_WIRELESS_GPRS:           buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_GPRS"); break;
+        case MIH_C_WIRELESS_EDGE:           buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_EDGE"); break;
+        case MIH_C_ETHERNET:                buffer_index += sprintf(&bufP[buffer_index], "ETHERNET"); break;
+        case MIH_C_WIRELESS_OTHER:          buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_OTHER"); break;
+        case MIH_C_WIRELESS_IEEE802_11:     buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_IEEE802_11"); break;
+        case MIH_C_WIRELESS_CDMA_2000:      buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_CDMA_2000"); break;
+        case MIH_C_WIRELESS_UMTS:           buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_UMTS"); break;
+        case MIH_C_WIRELESS_CDMA_2000_HRPD: buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_CDMA_2000_HRPD"); break;
+        case MIH_C_WIRELESS_IEEE802_16:     buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_IEEE802_16"); break;
+        case MIH_C_WIRELESS_IEEE802_20:     buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_IEEE802_20"); break;
+        case MIH_C_WIRELESS_IEEE802_22:     buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_IEEE802_22"); break;
+        default:                            buffer_index += sprintf(&bufP[buffer_index], "WIRELESS_IEEE802_22");
+    }
+    return buffer_index;
+}
+//-----------------------------------------------------------------------------
 unsigned int MIH_C_LINK_ID2String(MIH_C_LINK_ID_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
 
     buffer_index += sprintf(&bufP[buffer_index], "LINK_TYPE = ");
-    buffer_index += MIH_C_LINK_TYPE2String(&dataP->link_type, &bufP[buffer_index]);
+    buffer_index += MIH_C_LINK_TYPE2String2(&dataP->link_type, &bufP[buffer_index]);
     buffer_index += sprintf(&bufP[buffer_index], ", LINK_ADDR = ");
     buffer_index += MIH_C_LINK_ADDR2String(&dataP->link_addr, &bufP[buffer_index]);
     return buffer_index;
@@ -173,11 +247,11 @@ unsigned int MIH_C_LINK_SCAN_RSP2String(MIH_C_LINK_SCAN_RSP_T *dataP, char* bufP
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
 
-    buffer_index += sprintf(&bufP[buffer_index], "LINK_ADDR    = ");
+    buffer_index += sprintf(&bufP[buffer_index], "LINK_ADDR=");
     buffer_index += MIH_C_LINK_ADDR2String(&dataP->link_addr, &bufP[buffer_index]);
-    buffer_index += sprintf(&bufP[buffer_index], ", NETWORK_ID   = ");
+    buffer_index += sprintf(&bufP[buffer_index], ", NETWORK_ID=");
     buffer_index += MIH_C_NETWORK_ID2String(&dataP->network_id, &bufP[buffer_index]);
-    buffer_index += sprintf(&bufP[buffer_index], ", SIG_STRENGTH = ");
+    buffer_index += sprintf(&bufP[buffer_index], ", SIG_STRENGTH=");
     buffer_index += MIH_C_SIG_STRENGTH2String(&dataP->sig_strength, &bufP[buffer_index]);
     return buffer_index;
 }
@@ -231,9 +305,9 @@ inline void MIH_C_LINK_ACTION_RSP_decode(Bit_Buffer_t* bbP, MIH_C_LINK_ACTION_RS
 unsigned int MIH_C_THRESHOLD2String(MIH_C_THRESHOLD_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
-    buffer_index += sprintf(&bufP[buffer_index], "THRESHOLD_VAL  = ");
+    buffer_index += sprintf(&bufP[buffer_index], "THRESHOLD_VAL=");
     buffer_index += MIH_C_THRESHOLD_VAL2String(&dataP->threshold_val, &bufP[buffer_index]);
-    buffer_index += sprintf(&bufP[buffer_index], ", THRESHOLD_XDIR = ");
+    buffer_index += sprintf(&bufP[buffer_index], ", THRESHOLD_XDIR=");
     buffer_index += MIH_C_THRESHOLD_XDIR2String2(&dataP->threshold_xdir, &bufP[buffer_index]);
     return buffer_index;
 }
@@ -325,27 +399,28 @@ inline void MIH_C_LINK_PARAM_TYPE_decode(Bit_Buffer_t* bbP, MIH_C_LINK_PARAM_TYP
 unsigned int MIH_C_LINK_CFG_PARAM2String(MIH_C_LINK_CFG_PARAM_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
-    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_TYPE = ");
+    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_TYPE=");
     buffer_index += MIH_C_LINK_PARAM_TYPE2String(&dataP->link_param_type, &bufP[buffer_index]);
     switch (dataP->choice) {
         case 0:
-            buffer_index += sprintf(&bufP[buffer_index], "\nCHOICE NULL");
+            buffer_index += sprintf(&bufP[buffer_index], ", CHOICE NULL");
             break;
         case 1:
-            buffer_index += sprintf(&bufP[buffer_index], "\nTIMER_INTERVAL = ");
+            buffer_index += sprintf(&bufP[buffer_index], ", TIMER_INTERVAL=");
             buffer_index += MIH_C_TIMER_INTERVAL2String(&dataP->_union.timer_interval, &bufP[buffer_index]);
             break;
         case 2:
-            buffer_index += sprintf(&bufP[buffer_index], "\nLINK_SCAN_RSP_LIST = ");
+            buffer_index += sprintf(&bufP[buffer_index], ", LINK_SCAN_RSP_LIST=");
             buffer_index += MIH_C_LINK_SCAN_RSP_LIST2String(&dataP->_union.link_scan_rsp_list, &bufP[buffer_index]);
             break;
         default:
-            buffer_index += sprintf(&bufP[buffer_index], "\nCHOICE UNINITIALIZED");
+            buffer_index += sprintf(&bufP[buffer_index], ", CHOICE UNINITIALIZED");
     }
-    buffer_index += sprintf(&bufP[buffer_index], "\nTH_ACTION = ");
+    buffer_index += sprintf(&bufP[buffer_index], ", TH_ACTION=");
     buffer_index += MIH_C_TH_ACTION2String2(&dataP->th_action, &bufP[buffer_index]);
-    buffer_index += sprintf(&bufP[buffer_index], "\nTHRESHOLD_LIST = ");
+    buffer_index += sprintf(&bufP[buffer_index], ", THRESHOLD_LIST={");
     buffer_index += MIH_C_THRESHOLD_LIST2String(&dataP->threshold_list, &bufP[buffer_index]);
+    buffer_index += sprintf(&bufP[buffer_index], "}");
     return buffer_index;
 }
 //-----------------------------------------------------------------------------
@@ -392,13 +467,13 @@ inline void MIH_C_LINK_CFG_PARAM_decode(Bit_Buffer_t* bbP, MIH_C_LINK_CFG_PARAM_
 unsigned int MIH_C_LINK_CFG_STATUS2String(MIH_C_LINK_CFG_STATUS_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
-    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_TYPE = ");
+    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_TYPE=");
     buffer_index += MIH_C_LINK_PARAM_TYPE2String(&dataP->link_param_type, &bufP[buffer_index]);
 
-    buffer_index += sprintf(&bufP[buffer_index], ", THRESHOLD = ");
+    buffer_index += sprintf(&bufP[buffer_index], ", THRESHOLD=");
     buffer_index += MIH_C_THRESHOLD2String(&dataP->threshold, &bufP[buffer_index]);
 
-    buffer_index += sprintf(&bufP[buffer_index], ", CONFIG_STATUS = ");
+    buffer_index += sprintf(&bufP[buffer_index], ", CONFIG_STATUS=");
     buffer_index += MIH_C_CONFIG_STATUS2String(&dataP->config_status, &bufP[buffer_index]);
     return buffer_index;
 }
@@ -422,11 +497,11 @@ unsigned int MIH_C_LINK_DESC_RSP2String(MIH_C_LINK_DESC_RSP_T *dataP, char* bufP
     unsigned int buffer_index = 0;
     switch (dataP->choice) {
         case 0:
-            buffer_index += sprintf(&bufP[buffer_index], "NUM_COS = ");
+            buffer_index += sprintf(&bufP[buffer_index], "NUM_COS=");
             buffer_index += MIH_C_NUM_COS2String(&dataP->_union.num_cos, &bufP[buffer_index]);
             break;
         case 1:
-            buffer_index += sprintf(&bufP[buffer_index], "NUM_QUEUE = ");
+            buffer_index += sprintf(&bufP[buffer_index], "NUM_QUEUE=");
             buffer_index += MIH_C_NUM_QUEUE2String(&dataP->_union.num_queue, &bufP[buffer_index]);
             break;
         default:
@@ -468,15 +543,15 @@ inline void MIH_C_LINK_DESC_RSP_decode(Bit_Buffer_t* bbP, MIH_C_LINK_DESC_RSP_T 
 unsigned int MIH_C_LINK_PARAM2String(MIH_C_LINK_PARAM_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
-    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_TYPE = ");
+    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_TYPE=");
     buffer_index += MIH_C_LINK_PARAM_TYPE2String(&dataP->link_param_type, &bufP[buffer_index]);
     switch (dataP->choice) {
         case 0:
-            buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_VAL = ");
+            buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM_VAL=");
             buffer_index += MIH_C_LINK_PARAM_VAL2String(&dataP->_union.link_param_val, &bufP[buffer_index]);
             break;
         case 1:
-            buffer_index += sprintf(&bufP[buffer_index], "QOS_PARAM_VAL = ");
+            buffer_index += sprintf(&bufP[buffer_index], "QOS_PARAM_VAL=");
             buffer_index += MIH_C_QOS_PARAM_VAL2String(&dataP->_union.qos_param_val, &bufP[buffer_index]);
             break;
         default:
@@ -512,14 +587,14 @@ inline void MIH_C_LINK_PARAM_decode(Bit_Buffer_t* bbP, MIH_C_LINK_PARAM_T *dataP
 unsigned int MIH_C_LINK_PARAM_RPT2String(MIH_C_LINK_PARAM_RPT_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
-    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM = ");
+    buffer_index += sprintf(&bufP[buffer_index], "LINK_PARAM=");
     buffer_index += MIH_C_LINK_PARAM2String(&dataP->link_param, &bufP[buffer_index]);
     switch (dataP->choice) {
         case 0:
-            buffer_index += sprintf(&bufP[buffer_index], ", CHOICE NULL");
+            //buffer_index += sprintf(&bufP[buffer_index], ", CHOICE NULL");
             break;
         case 1:
-            buffer_index += sprintf(&bufP[buffer_index], ", THRESHOLD = ");
+            buffer_index += sprintf(&bufP[buffer_index], ", THRESHOLD=");
             buffer_index += MIH_C_THRESHOLD2String(&dataP->_union.threshold, &bufP[buffer_index]);
             break;
         default:
@@ -569,11 +644,11 @@ unsigned int MIH_C_LINK_STATES_RSP2String(MIH_C_LINK_STATES_RSP_T *dataP, char* 
     unsigned int buffer_index = 0;
     switch (dataP->choice) {
         case 0:
-            buffer_index += sprintf(&bufP[buffer_index], "OPMODE = ");
-            buffer_index += MIH_C_OPMODE2String(&dataP->_union.op_mode, &bufP[buffer_index]);
+            buffer_index += sprintf(&bufP[buffer_index], "OPMODE=");
+            buffer_index += MIH_C_OPMODE2String2(&dataP->_union.op_mode, &bufP[buffer_index]);
             break;
         case 1:
-            buffer_index += sprintf(&bufP[buffer_index], "CHANNEL ID = ");
+            buffer_index += sprintf(&bufP[buffer_index], "CHANNEL ID=");
             buffer_index += MIH_C_CHANNEL_ID2String(&dataP->_union.channel_id, &bufP[buffer_index]);
             break;
         default:
@@ -602,6 +677,22 @@ inline void MIH_C_LINK_STATES_RSP_decode(Bit_Buffer_t* bbP, MIH_C_LINK_STATES_RS
         default:
             ERR("NO KNOWN VALUE FOR DECODING CHOICE OF MIH_C_LINK_STATES_RSP_T %d\n", dataP->choice);
     }
+}
+//-----------------------------------------------------------------------------
+unsigned int MIH_C_LINK_STATES_REQ2String2(MIH_C_LINK_STATES_REQ_T *dataP, char* bufP) {
+//-----------------------------------------------------------------------------
+    unsigned int buffer_index = 0;
+    if  (*dataP & MIH_C_BIT_LINK_STATES_REQ_OP_MODE) buffer_index += sprintf(&bufP[buffer_index], "OPMODE");
+    if  (*dataP & MIH_C_BIT_LINK_STATES_REQ_CHANNEL_ID) buffer_index += sprintf(&bufP[buffer_index], " CHANNEL_ID");
+    return buffer_index;
+}
+//-----------------------------------------------------------------------------
+unsigned int MIH_C_LINK_DESC_REQ2String2(MIH_C_LINK_DESC_REQ_T *dataP, char* bufP) {
+//-----------------------------------------------------------------------------
+    unsigned int buffer_index = 0;
+    if  (*dataP & MIH_C_BIT_NUMBER_OF_CLASSES_OF_SERVICE_SUPPORTED) buffer_index += sprintf(&bufP[buffer_index], "NUM_OF_COS_SUPPORTED");
+    if  (*dataP & MIH_C_BIT_NUMBER_OF_QUEUES_SUPPORTED) buffer_index += sprintf(&bufP[buffer_index], " NUM_OF_QUEUES_SUPPORTED");
+    return buffer_index;
 }
 //-----------------------------------------------------------------------------
 inline void MIH_C_LINK_STATUS_REQ_encode(Bit_Buffer_t* bbP, MIH_C_LINK_STATUS_REQ_T *dataP) {

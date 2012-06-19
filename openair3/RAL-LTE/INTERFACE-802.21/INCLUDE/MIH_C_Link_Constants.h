@@ -44,7 +44,7 @@
 #define MIH_C_BIT_30_VALUE                  0x40000000
 #define MIH_C_BIT_31_VALUE                  0x80000000
 
-#define MIH_C_3GPP_ADDR_LENGTH             8
+#define MIH_C_3GPP_ADDR_LENGTH             16
 #define MIH_C_3GPP2_ADDR_LENGTH            8
 #define MIH_C_OTHER_L2_ADDR_LENGTH         64
 #define MIH_C_LINK_SCAN_RSP_LENGTH         8

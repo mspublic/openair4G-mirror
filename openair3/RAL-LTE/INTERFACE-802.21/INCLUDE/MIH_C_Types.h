@@ -546,9 +546,9 @@ u_int16_t MIH_C_LIST_LENGTH_get_encode_length(u_int16_t lengthP);
         int index = 0;\
         unsigned int buffer_index = 0;\
         while ((index <  listP->length) && (index < MAX_LENGTH)){\
-            buffer_index += sprintf(&bufP[buffer_index], "%s [%d] = ", STR(DATA_TYPE_NAME) , index);\
+            buffer_index += sprintf(&bufP[buffer_index], "%s (%d) = ", STR(DATA_TYPE_NAME) , index);\
             buffer_index += DATA_TYPE_NAME ## 2String(&listP->val[index], &bufP[buffer_index]);\
-            buffer_index += sprintf(&bufP[buffer_index], "\n");\
+            buffer_index += sprintf(&bufP[buffer_index], " ");\
             index = index + 1;\
         }\
         return buffer_index;\
@@ -697,11 +697,9 @@ TYPEDEF_ENUMERATED(MIH_C_BOOLEAN)
      */
 #define TYPEDEF_OCTET_STRING(DATA_TYPE_NAME, MAX_LENGTH)    typedef  struct DATA_TYPE_NAME { u_int16_t length; u_int8_t val[MAX_LENGTH];} DATA_TYPE_NAME ## _T;\
     unsigned int DATA_TYPE_NAME ## 2String(DATA_TYPE_NAME ## _T *listP, char* bufP) {\
-        unsigned int buffer_index = 0;\
-        buffer_index += sprintf(&bufP[buffer_index], "%s [] = ", STR(DATA_TYPE_NAME));\
-        memcpy(&bufP[buffer_index], listP->val, listP->length);\
-        buffer_index += listP->length;\
-        return buffer_index;\
+        memcpy(bufP, listP->val, listP->length);\
+        bufP[listP->length] = 0;\
+        return listP->length;\
     };\
     inline void DATA_TYPE_NAME ## _decode(Bit_Buffer_t *bbP, DATA_TYPE_NAME ## _T *listP) {\
         MIH_C_LIST_LENGTH_decode(bbP, &listP->length);\
