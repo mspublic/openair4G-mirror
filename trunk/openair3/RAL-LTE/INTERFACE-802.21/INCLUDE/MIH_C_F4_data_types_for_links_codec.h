@@ -70,8 +70,12 @@
 //-----------------------------------------------------------------------------
 #include "MIH_C.h"
 //-----------------------------------------------------------------------------
+public_F4_codec(unsigned int MIH_C_OPMODE2String2(MIH_C_OPMODE_T *dataP, char* bufP);)
 public_F4_codec(inline void MIH_C_DEV_STATE_RSP_encode(Bit_Buffer_t* bbP, MIH_C_DEV_STATE_RSP_T *dataP);)
 public_F4_codec(inline void MIH_C_DEV_STATE_RSP_decode(Bit_Buffer_t* bbP, MIH_C_DEV_STATE_RSP_T *dataP);)
+public_F4_codec(unsigned int MIH_C_LINK_EVENT_LIST2String2(MIH_C_LINK_EVENT_LIST_T *dataP, char* bufP);)
+public_F4_codec(unsigned int MIH_C_LINK_CMD_LIST2String2(MIH_C_LINK_CMD_LIST_T *dataP, char* bufP);)
+public_F4_codec(unsigned int MIH_C_LINK_TYPE2String2(MIH_C_LINK_TYPE_T *dataP, char* bufP);)
 public_F4_codec(unsigned int MIH_C_LINK_ID2String(MIH_C_LINK_ID_T *dataP, char* bufP);)
 public_F4_codec(inline void MIH_C_LINK_ID_encode(Bit_Buffer_t* bbP, MIH_C_LINK_ID_T *dataP);)
 public_F4_codec(inline void MIH_C_LINK_ID_decode(Bit_Buffer_t* bbP, MIH_C_LINK_ID_T *dataP);)
@@ -115,6 +119,8 @@ public_F4_codec(inline void MIH_C_LINK_STATUS_REQ_encode(Bit_Buffer_t* bbP, MIH_
 public_F4_codec(inline void MIH_C_LINK_STATUS_REQ_decode(Bit_Buffer_t* bbP, MIH_C_LINK_STATUS_REQ_T *dataP);)
 public_F4_codec(inline void MIH_C_LINK_STATUS_RSP_encode(Bit_Buffer_t* bbP, MIH_C_LINK_STATUS_RSP_T *dataP);)
 public_F4_codec(inline void MIH_C_LINK_STATUS_RSP_decode(Bit_Buffer_t* bbP, MIH_C_LINK_STATUS_RSP_T *dataP);)
+public_F4_codec(unsigned int MIH_C_LINK_STATES_REQ2String2(MIH_C_LINK_STATES_REQ_T *dataP, char* bufP);)
+public_F4_codec(unsigned int MIH_C_LINK_DESC_REQ2String2(MIH_C_LINK_DESC_REQ_T *dataP, char* bufP);)
 public_F4_codec(inline void MIH_C_LINK_TUPLE_ID_encode(Bit_Buffer_t* bbP, MIH_C_LINK_TUPLE_ID_T *dataP);)
 public_F4_codec(inline void MIH_C_LINK_TUPLE_ID_decode(Bit_Buffer_t* bbP, MIH_C_LINK_TUPLE_ID_T *dataP);)
 public_F4_codec(inline void MIH_C_LINK_DET_INFO_encode(Bit_Buffer_t* bbP, MIH_C_LINK_DET_INFO_T *dataP);)
