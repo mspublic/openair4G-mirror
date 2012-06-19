@@ -247,7 +247,7 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 }
 
 //------------------------------------------------------------------------------------------------------------------//
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
+void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;

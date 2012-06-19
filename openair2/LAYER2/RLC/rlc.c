@@ -32,7 +32,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "mem_block.h"
 #include "../MAC/extern.h"
 #include "UTIL/LOG/log.h"
-extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP);
+extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP, u8 is_data_plane);
 
 #define DEBUG_RLC_PDCP_INTERFACE
 
@@ -359,8 +359,8 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
     LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_ind:\n", frame, module_idP, rb_idP);
     rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
     check_mem_area();
-
-    if ((is_data_planeP)) {
+    // now demux is done at PDCP 
+    //  if ((is_data_planeP)) { 
 #ifdef DEBUG_RLC_PDCP_INTERFACE
       msg("[RLC] TTI %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
 	  frame, module_idP,
@@ -379,8 +379,8 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][PDCP][MOD %02d][RB %02d]\n",frame, module_idP,rb_idP,sdu_sizeP, module_idP,rb_idP);
              break;
       }*/
-      pdcp_data_ind (module_idP, frame, eNB_flag, rb_idP, sdu_sizeP, sduP);
-    } else {
+         pdcp_data_ind (module_idP, frame, eNB_flag, rb_idP, sdu_sizeP, sduP, is_data_planeP);
+      /*     } else {
         if (rlc_rrc_data_ind != NULL) {
 #ifdef DEBUG_RLC_PDCP_INTERFACE
             msg("[RLC] Frame %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
@@ -389,7 +389,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
 	    sdu_sizeP,
             rb_idP);
 #endif //DEBUG_RLC_PDCP_INTERFACE
-        /*switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
+	    switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
             case RLC_AM:
                 LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                 break;
@@ -399,13 +399,13 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
             case RLC_TM:
                 LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                 break;
-        }*/
+        }
 	  // msg("[RLC] RRC DATA IND\n");
             rlc_rrc_data_ind(module_idP , frame, eNB_flag, rb_idP , sdu_sizeP , sduP->data);
 	  //msg("[RLC] Freeing SDU\n");
             free_mem_block(sduP);
-        }
-    }
+	    }*/
+	 // }
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP) {

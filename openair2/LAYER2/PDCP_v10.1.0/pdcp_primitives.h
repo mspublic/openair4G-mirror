@@ -22,8 +22,8 @@
 /*
  * Data or control (1-bit, see 6.3.7)
  */
-#define PDCP_CONTROL_PDU 0x01
-#define PDCP_DATA_PDU 0x00
+#define PDCP_CONTROL_PDU 0x00
+#define PDCP_DATA_PDU 0x01
 /*
  * PDU-type (3-bit, see 6.3.8)
  */
@@ -39,7 +39,8 @@ typedef struct {
               // reserved field is unnecessary here
   u32 mac_i;  // Integration protection is not implemented (pad with 0)
 } pdcp_control_plane_data_pdu_header;
-
+#define PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE 1
+#define PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE 4
 /*
  * 6.2.3 User Plane PDCP Data PDU with long PDCP SN (12-bit)
  */
@@ -84,6 +85,16 @@ typedef struct {
 #define PDCP_CONTROL_PDU_STATUS_REPORT_HEADER_SIZE 2
 
 /*
+ * Parses data/control field out of buffer of User Plane PDCP Data PDU with
+ * long PDCP SN (12-bit)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return 1 bit dc
+ */
+
+u8 pdcp_get_dc_filed(unsigned char* pdu_buffer);
+
+/*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *
@@ -102,8 +113,24 @@ u16 pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer);
 u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer);
 
 /*
- * Fills the incoming buffer with the fields of the header (since the structs
- * defined herein is not aligned in accordance with the standart)
+ * Parses sequence number out of buffer of Control Plane PDCP Data PDU with
+ * short PDCP SN (5-bit)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return 5-bit sequence number
+ */
+u8 pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer);
+
+/*
+ * Fills the incoming buffer with the fields of the header for SRB1 
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return TRUE on success, FALSE otherwise
+ */
+BOOL pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char* pdu_buffer, \
+							      pdcp_control_plane_data_pdu_header* pdu);
+/*
+ * Fills the incoming buffer with the fields of the header for long SN (RLC UM and AM)
  *
  * @param pdu_buffer PDCP PDU buffer
  * @return TRUE on success, FALSE otherwise

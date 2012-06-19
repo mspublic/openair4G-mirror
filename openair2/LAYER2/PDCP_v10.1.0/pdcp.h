@@ -1,11 +1,39 @@
-/*
-                                 pdcp.h
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
+/*******************************************************************************
 
- ***************************************************************************/
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file pdcp.c
+* \brief pdcp interface with RLC
+* \author  Lionel GAUTHIER and Navid Nikaein
+* \date 2009-2012
+* \version 1.0
+*/
+
 #ifndef __PDCP_H__
 #    define __PDCP_H__
 //-----------------------------------------------------------------------------
@@ -118,8 +146,7 @@ typedef struct pdcp_t {
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
-                                unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
+public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
 /*! \fn BOOL pdcp_data_ind(module_id_t, u32_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
 * \brief This functions handles data transfer indications coming from test code (see below for actual code)
 * \param[in] module_id Module ID
@@ -143,14 +170,17 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \param[in] frame Frame number
 * \param[in] Shows if relevant PDCP entity is part of an eNB or a UE
 * \param[in] rab_id Radio Bearer ID
+* \param[in] muiP 
+* \param[in] confirmP
 * \param[in] sdu_buffer_size Size of incoming SDU in bytes
 * \param[in] sdu_buffer Buffer carrying SDU
+* \param[in] is_data_plane flag to indicate whether the userplane data belong to the control plane or data plane
 * \return TRUE on success, FALSE otherwise
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
-                                unsigned char* sdu_buffer);)
+public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, u32 muiP, u32 confirmP, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 is_data_pdu);)
+
 /*! \fn BOOL pdcp_data_ind(module_id_t, u32_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
 * \brief This functions handles data transfer indications coming from RLC
 * \param[in] module_id Module ID
@@ -159,24 +189,29 @@ public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \param[in] rab_id Radio Bearer ID
 * \param[in] sdu_buffer_size Size of incoming SDU in bytes
 * \param[in] sdu_buffer Buffer carrying SDU
+* \param[in] is_data_plane flag to indicate whether the userplane data belong to the control plane or data plane
 * \return TRUE on success, FALSE otherwise
 * \note None
 * @ingroup _pdcp
 */
 public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
-                                mem_block_t* sdu_buffer);)
+                                mem_block_t* sdu_buffer, u8 is_data_plane);)
 #endif // PDCP_UNIT_TEST
 
-/*! \fn void pdcp_config_req(module_id_t, rb_id_t)
+/*! \fn void rrc_pdcp_config_req(module_id_t, rb_id_t,u8)
 * \brief This functions initializes relevant PDCP entity
 * \param[in] module_id Module ID of relevant PDCP entity
+* \param[in] frame frame counter (TTI) 
+* \param[in] eNB_flag flag indicating the node type
+* \param[in] action flag for action: add, remove , modify
 * \param[in] rab_id Radio Bearer ID of relevant PDCP entity
 * \return none
 * \note None
 * @ingroup _pdcp
-*/
-public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
-/*! \fn void pdcp_config_release(module_id_t, rb_id_t)
+*/ 
+public_pdcp(void rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rab_id);)
+
+/*! \fn void rrc_pdcp_config_release(module_id_t, rb_id_t)
 * \brief This functions is unused
 * \param[in] module_id Module ID of relevant PDCP entity
 * \param[in] rab_id Radio Bearer ID of relevant PDCP entity
@@ -184,7 +219,8 @@ public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
+//public_pdcp(void rrc_pdcp_config_release (module_id_t, rb_id_t);)
+
 /*! \fn void pdcp_run(u32_t, u8_t)
 * \brief Runs PDCP entity to let it handle incoming/outgoing SDUs
 * \param[in] frame Frame number

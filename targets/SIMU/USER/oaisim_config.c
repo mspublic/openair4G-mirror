@@ -24,6 +24,7 @@ mapping log_level_names[] =
     {"notice", LOG_NOTICE},
     {"info", LOG_INFO},
     {"debug", LOG_DEBUG},
+    {"file", LOG_FILE},
     {"trace", LOG_TRACE},
     {NULL, -1}
 };
@@ -257,7 +258,7 @@ void init_oai_emulation() {
    oai_emulation.info.nb_master =0;
    oai_emulation.info.ethernet_id=0;
    oai_emulation.info.multicast_group=0;
-   oai_emulation.info.g_log_level= LOG_TRACE;
+   oai_emulation.info.g_log_level= LOG_DEBUG;
    oai_emulation.info.g_log_verbosity= LOG_LOW;
     
     oai_emulation.info.frame_type=1;
@@ -302,10 +303,12 @@ void oaisim_config() {
 
 int olg_config() {
   int comp;
-  oai_emulation.info.g_log_level = (oai_emulation.info.g_log_level < LOG_TRACE)? oai_emulation.info.g_log_level : map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
+  int ocg_log_level = map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
+  oai_emulation.info.g_log_level = ((oai_emulation.info.ocg_enabled == 1) && (ocg_log_level != -1)) ? ocg_log_level :
+    oai_emulation.info.g_log_level;
   oai_emulation.info.g_log_verbosity = map_str_to_int(log_verbosity_names, oai_emulation.emulation_config.log_emu.verbosity);
   LOG_N(EMU,"global log level is set to (%s,%d) with vebosity (%s, 0x%x) and frequency %d\n", 
-	oai_emulation.emulation_config.log_emu.level, 
+	map_int_to_str (log_level_names, oai_emulation.info.g_log_level), 
 	oai_emulation.info.g_log_level,
 	oai_emulation.emulation_config.log_emu.verbosity,
 	oai_emulation.info.g_log_verbosity,
@@ -313,7 +316,10 @@ int olg_config() {
   set_glog(oai_emulation.info.g_log_level, oai_emulation.info.g_log_verbosity ); //g_glog
   // component, log level, log interval
   for (comp = PHY; comp < MAX_LOG_COMPONENTS ; comp++)
-    set_comp_log(comp,  oai_emulation.info.g_log_level, oai_emulation.info.g_log_verbosity, oai_emulation.emulation_config.log_emu.interval);
+    set_comp_log(comp,  
+		 oai_emulation.info.g_log_level, 
+		 oai_emulation.info.g_log_verbosity, 
+		 oai_emulation.emulation_config.log_emu.interval);
   // if perf eval then reset the otg log level
   /*
   set_log(OCG,  LOG_DEBUG, 1);  

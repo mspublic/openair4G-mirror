@@ -41,6 +41,8 @@
 //#define IDROMEL_NEMO 1
 
 #include "pdcp.h"
+#include "pdcp_primitives.h"
+
 #ifdef USER_MODE
   #include <errno.h>
   #include <stdio.h>
@@ -279,8 +281,11 @@ pdcp_fifo_read_input_sdus_remaining_bytes (u32_t frame,u8_t eNB_flag)
         pdcp_data_req (pdcp_input_header.inst,
 		       frame, eNB_flag,
 		       pdcp_input_header.rb_id,
+		       RLC_MUI_UNDEFINED, 
+		       RLC_SDU_CONFIRM_NO,
 		       pdcp_input_header.data_size,
-		       pdcp_input_sdu_buffer);
+		       pdcp_input_sdu_buffer,
+		       PDCP_DATA_PDU);
 
         // not necessary
         //memset(pdcp_input_sdu_buffer, 0, MAX_IP_PACKET_SIZE);
@@ -425,7 +430,15 @@ pdcp_fifo_read_input_sdus (u32_t frame,u8_t eNB_flag)
 
 #endif
 
-      pdcp_data_req(pdcp_read_header.inst, frame, eNB_flag, pdcp_read_header.rb_id, pdcp_read_header.data_size, pdcp_read_payload);
+      pdcp_data_req(pdcp_read_header.inst, 
+		    frame, 
+		    eNB_flag, 
+		    pdcp_read_header.rb_id, 
+		    RLC_MUI_UNDEFINED, 
+		    RLC_SDU_CONFIRM_NO,
+		    pdcp_read_header.data_size, 
+		    pdcp_read_payload,
+		    PDCP_DATA_PDU);
     }
 
   }
