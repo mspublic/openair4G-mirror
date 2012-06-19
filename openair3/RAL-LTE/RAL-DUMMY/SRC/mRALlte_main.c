@@ -257,6 +257,7 @@ int inits(int argc, char *argv[]) {
         ERR("Could not connect to MIH-F...exiting\n");
         exit(-1);
     }
+    DEBUG("MT-MIHF socket initialized.\n\n");
 
     ralpriv->mih_supported_link_event_list = MIH_C_BIT_LINK_DETECTED |
                                               MIH_C_BIT_LINK_UP |
@@ -271,7 +272,8 @@ int inits(int argc, char *argv[]) {
                                               MIH_C_BIT_LINK_GET_PARAMETERS  | MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS | \
                                               MIH_C_BIT_LINK_ACTION;
 
-    NOTICE("[MSC_NEW][%s][RAL=%s]\n", getTimeStamp4Log(), g_mihf_id);
+    NOTICE("[MSC_NEW][%s][MIH-F=%s]\n", getTimeStamp4Log(), g_mihf_id);
+    NOTICE("[MSC_NEW][%s][RAL=%s]\n", getTimeStamp4Log(), g_link_id);
     NOTICE("[MSC_NEW][%s][NAS=%s]\n", getTimeStamp4Log(), "nas");
 
     IAL_D_Netlink_socket_init();
@@ -290,14 +292,6 @@ int inits(int argc, char *argv[]) {
     IAL_process_DNAS_message(IO_OBJ_IMEI, IO_CMD_ADD, 0);
 
     IAL_decode_NAS_message();
-
-    // connect to MIHF
-    DEBUG("Initializing MT-MIHF socket\n");
-    if (mRALlte_mihf_connect() < 0) {
-        perror("main - MIHF socket ");
-        exit(1);
-    };
-    DEBUG("MT-MIHF socket initialized.\n\n");
 
     // Initialize measurements
     IAL_NAS_measures_init();
