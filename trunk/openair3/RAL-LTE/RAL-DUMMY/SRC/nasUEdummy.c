@@ -15,6 +15,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netdb.h>
+#include <sys/time.h>
+#include <ctype.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "nas_ue_netlink.h"
 
@@ -25,6 +30,144 @@
 
 int state, cell_id;
 
+#ifdef MIH_USER_CONTROL
+char        *g_mih_user_ip_address             = MIH_USER_IP_ADDRESS;
+char        *g_mih_user_remote_port            = MIH_USER_REMOTE_PORT;
+char        *g_nas_ip_address                  = NAS_IP_ADDRESS;
+char        *g_nas_listening_port_for_mih_user = NAS_LISTENING_PORT_FOR_MIH_USER;
+int          g_sockd_mih_user;
+signed int   g_mih_user_rssi_increment         = 0;
+//---------------------------------------------------------------------------
+int NAS_mihuser_connect(void){
+//---------------------------------------------------------------------------
+    struct addrinfo      hints;
+    struct addrinfo     *result, *rp;
+    int                  s, on;
+    struct sockaddr_in  *addr  = NULL;
+    struct sockaddr_in6 *addr6 = NULL;
+    unsigned char        buf[sizeof(struct sockaddr_in6)];
+
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family   = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+    hints.ai_socktype = SOCK_DGRAM;   /* Datagram socket */
+    hints.ai_flags    = 0;
+    hints.ai_protocol = 0;            /* Any protocol */
+
+    s = getaddrinfo(g_mih_user_ip_address, g_mih_user_remote_port, &hints, &result);
+    if (s != 0) {
+        printf("ERR getaddrinfo: %s\n", gai_strerror(s));
+        return -1;
+    }
+
+    /* getaddrinfo() returns a list of address structures.
+        Try each address until we successfully connect(2).
+        If socket(2) (or connect(2)) fails, we (close the socket
+        and) try the next address. */
+
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        g_sockd_mih_user = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (g_sockd_mih_user == -1)
+            continue;
+
+        on = 1;
+        setsockopt( g_sockd_mih_user, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+
+        if(rp->ai_family == AF_INET) {
+            printf(" %s is an ipv4 address\n",g_mih_user_ip_address);
+            addr             = (struct sockaddr_in *)(&buf[0]);
+            addr->sin_port   = htons(atoi(g_nas_listening_port_for_mih_user));
+            addr->sin_family = AF_INET;
+            s = inet_pton(AF_INET, g_nas_ip_address, &addr->sin_addr);
+            if (s <= 0) {
+                if (s == 0) {
+                    printf("ERR IP NAS address should be a IPv4 ADDR - But found not in presentation format : %s\n", g_nas_ip_address);
+                } else {
+                    printf("ERR %s - inet_pton(NAS IPv4 ADDR %s): %s\n", __FUNCTION__, g_nas_ip_address, strerror(s));
+                }
+                return -1;
+            }
+
+            s = bind(g_sockd_mih_user, (const struct sockaddr *)addr, sizeof(struct sockaddr_in));
+            if (s == -1) {
+                printf("ERR NAS IPv4 Address Bind: %s\n", strerror(errno));
+                return -1;
+            }
+            // sockd_mihf is of type SOCK_DGRAM, rp->ai_addr is the address to which datagrams are sent by default
+            if (connect(g_sockd_mih_user, rp->ai_addr, rp->ai_addrlen) != -1) {
+                printf(" NAS is now UDP-CONNECTED to MIH-F\n");
+                return 0;
+            } else {
+                close(g_sockd_mih_user);
+            }
+        } else if (rp->ai_family == AF_INET6) {
+            printf(" %s is an ipv6 address\n",g_mih_user_ip_address);
+            addr6              = (struct sockaddr_in6 *)(&buf[0]);
+            addr6->sin6_port   = htons(atoi(g_nas_listening_port_for_mih_user));
+            addr6->sin6_family = AF_INET6;
+            s = inet_pton(AF_INET, g_nas_ip_address, &addr6->sin6_addr);
+            if (s <= 0) {
+                if (s == 0) {
+                    printf("ERR IP NAS address should be a IPv6 ADDR, But found not in presentation format : %s\n", g_nas_ip_address);
+                } else {
+                    printf("ERR %s - inet_pton(NAS IPv6 ADDR %s): %s\n", __FUNCTION__, g_nas_ip_address, strerror(s));
+                }
+                return -1;
+            }
+
+            s = bind(g_sockd_mih_user, (const struct sockaddr *)addr6, sizeof(struct sockaddr_in));
+            if (s == -1) {
+                printf("ERR NAS IPv6 Address Bind: %s\n", strerror(errno));
+                return -1;
+            }
+            if (connect(g_sockd_mih_user, rp->ai_addr, rp->ai_addrlen) != -1) {
+                printf(" NAS is now UDP-CONNECTED to MIH-F\n");
+                return 0;
+            } else {
+                close(g_sockd_mih_user);
+            }
+        } else {
+            printf("ERR %s is an unknown address format %d\n",g_mih_user_ip_address,rp->ai_family);
+        }
+        close(g_sockd_mih_user);
+    }
+
+    if (rp == NULL) {   /* No address succeeded */
+        printf("ERR Could not connect to MIH-F\n");
+        return -1;
+    }
+    return -1;
+}
+
+int NAS_MIHUSERreceive(int sock)
+{
+  unsigned char str[NAS_UE_NETL_MAXLEN];
+  int i, t, done;
+    t=recv(sock, str, NAS_UE_NETL_MAXLEN, 0);
+    if (t <= 0) {
+        if (t < 0) perror("NAS_MIHUSERreceive : recv");
+        done = 1;
+    }
+    printf("\nmessage from MIH-USER, length:  %d\n", t);
+    switch (str[0]) {
+        case 0xff:
+            printf("MIH-USER ASK FOR DECREASING RSSI\n");
+            g_mih_user_rssi_increment = -1;
+            break;
+        case 0x00:
+            printf("MIH-USER ASK FOR NOT MODIFYING RSSI\n");
+            g_mih_user_rssi_increment = 0;
+            break;
+        case 0x01:
+            printf("MIH-USER ASK FOR INCREASING RSSI\n");
+            g_mih_user_rssi_increment = 1;
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
+#endif
 int NAS_IAL_sock_connect(void)
 {
     struct sockaddr_un remote;
@@ -47,6 +190,7 @@ int NAS_IAL_sock_connect(void)
     printf("Connected.\n");
     return s;
 }
+
 
 int NAS_IALreceive(int s)
 {
@@ -146,6 +290,9 @@ int NAS_IALreceive(int s)
               msgToSend->ialNASPrimitive.meas_rep.measures[i].cell_id = conf_cell_id[i];
               msgToSend->ialNASPrimitive.meas_rep.measures[i].level = conf_level[i];
               msgToSend->ialNASPrimitive.meas_rep.measures[i].provider_id = conf_provider_id[i];
+              #ifdef MIH_USER_CONTROL
+              conf_level[i] += g_mih_user_rssi_increment;
+              #endif
            }
            break;
        case NAS_UE_MSG_IMEI_REQUEST:
@@ -186,11 +333,18 @@ int main(void)
         }
     } while (s < 0);
 
+#ifdef MIH_USER_CONTROL
+    NAS_mihuser_connect();
+#endif
+
     done = 0;
     do {
         // Create fd_set and wait for input
         FD_ZERO(&readfds);
         FD_SET (s, &readfds);
+#ifdef MIH_USER_CONTROL
+        FD_SET (g_sockd_mih_user, &readfds);
+#endif
         tv.tv_sec = 0;
         tv.tv_usec = 100000; // timeout select for 100ms and read FIFOs
 
@@ -204,6 +358,11 @@ int main(void)
             if (FD_ISSET(s,&readfds)){
                 done = NAS_IALreceive(s);
             }
+#ifdef MIH_USER_CONTROL
+            if (FD_ISSET(g_sockd_mih_user,&readfds)){
+                done = NAS_MIHUSERreceive(g_sockd_mih_user);
+            }
+#endif
         }
 
     } while (!done);
