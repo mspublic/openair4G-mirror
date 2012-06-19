@@ -9,6 +9,12 @@
 #ifndef __NASUE_CONFIG_H__
 #define __NASUE_CONFIG_H__
 
+#ifdef MIH_USER_CONTROL
+#define MIH_USER_IP_ADDRESS             "127.0.0.1"
+#define MIH_USER_REMOTE_PORT            "0"
+#define NAS_IP_ADDRESS                  "127.0.0.1"
+#define NAS_LISTENING_PORT_FOR_MIH_USER "22222"
+#endif
 //#define SOCKET_RAL_TD_CDMA_NAME		"/tmp/graal"
 
 #define MIHLink_MAX_LENGTH 500
