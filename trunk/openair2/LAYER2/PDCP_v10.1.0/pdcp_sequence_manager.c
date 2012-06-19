@@ -113,6 +113,7 @@ u16 pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
   if (pdcp_entity->next_pdcp_tx_sn == pdcp_calculate_max_seq_num_for_given_size(pdcp_entity->seq_num_size)) {
     pdcp_entity->next_pdcp_tx_sn = 0;
     pdcp_entity->tx_hfn++;
+    LOG_D(PDCP,"Reseting the PDCP sequence number\n");
   } else {
     pdcp_entity->next_pdcp_tx_sn++;
   }

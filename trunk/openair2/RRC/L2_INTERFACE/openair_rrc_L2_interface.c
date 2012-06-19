@@ -80,8 +80,9 @@ void rlcrrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, un
 /********************************************************************************************************************/
 #ifdef CELLULAR
   rrc_L2_rlc_data_ind_rx();
-#else 
-  rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+#else  // now this is called from PDCP
+  //rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+  rrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
 #endif //CELLULAR
 }
 

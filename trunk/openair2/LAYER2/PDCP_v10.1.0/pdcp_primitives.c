@@ -42,6 +42,26 @@
 extern BOOL util_mark_nth_bit_of_octet(u8_t* octet, u8_t index);
 
 /*
+ * Parses data/control field out of buffer of User Plane PDCP Data PDU with
+ * long PDCP SN (12-bit)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return 1 bit dc
+ */
+u8 pdcp_get_dc_filed(unsigned char* pdu_buffer)
+{
+  u8 dc = 0x00;
+
+  if (pdu_buffer == NULL)
+    return 0;
+
+  dc = (u8)pdu_buffer[0] & 0xF0; // Reset D/C field
+  dc >>= 8;
+  
+  return dc;
+}
+
+/*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *
@@ -85,10 +105,46 @@ u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer)
    */
   return (u8)pdu_buffer[0] & 0x7F; // Reset D/C field
 }
+/*
+ * Parses sequence number out of buffer of Control Plane PDCP Data PDU with
+ * short PDCP SN (5-bit)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return 5-bit sequence number
+ */
+u8 pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer)
+{
+  if (pdu_buffer == NULL)
+    return 0;
+
+  /*
+   * First octet carries all 5 bits of SN (see 6.2.4)
+   */
+  return (u8)pdu_buffer[0] & 0x1F; 
+}
+/*
+ * Fills the incoming buffer with the fields of the header for srb sn
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return TRUE on success, FALSE otherwise
+ */
+BOOL pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char* pdu_buffer, \
+     pdcp_control_plane_data_pdu_header* pdu)
+{
+  if (pdu_buffer == NULL || pdu == NULL)
+    return FALSE;
+
+  /*
+   * Fill the Sequence Number field
+   */
+  u8 sequence_number = pdu->sn;
+  pdu_buffer[0] = sequence_number & 0x1F; // 5bit sn
+ 
+  return TRUE;
+}
 
 /*
- * Fills the incoming buffer with the fields of the header (since the structs
- * defined herein is not aligned in accordance with the standart)
+ * Fills the incoming buffer with the fields of the header for long sn
  *
  * @param pdu_buffer PDCP PDU buffer
  * @return TRUE on success, FALSE otherwise
@@ -110,7 +166,7 @@ BOOL pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_b
   /*
    * Fill Data or Control field
    */
-  if (pdu->dc == PDCP_CONTROL_PDU) {
+  if (pdu->dc == PDCP_DATA_PDU) {
     LOG_D(PDCP, "Setting PDU as a Control PDU\n");
     pdu_buffer[0] |= 0x80; // set the first bit as 1
   }
