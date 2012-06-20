@@ -14,6 +14,7 @@
 #define MIH_USER_REMOTE_PORT            "0"
 #define NAS_IP_ADDRESS                  "127.0.0.1"
 #define NAS_LISTENING_PORT_FOR_MIH_USER "22222"
+#define RSSI_INCREMENT_STEP             20
 #endif
 //#define SOCKET_RAL_TD_CDMA_NAME		"/tmp/graal"
 
@@ -77,7 +78,8 @@ int conf_dscp[CONF_num_rb]     = {5   ,25 };
 // measures
 #define CONF_num_cells 3
 int conf_cell_id[CONF_num_cells] = {CONF_CURR_CELL_ID, 8, 2 };
-int conf_level [CONF_num_cells] =  {50, 5, 20};
+// LGint conf_level [CONF_num_cells] =  {50, 5, 20};
+int conf_level [CONF_num_cells] =  {5, 50, 20};
 int conf_provider_id [CONF_num_cells] = {25, 1 , 25 };
 
 //float conf_MTU[3]         = {1000.,1100.,1200.};
