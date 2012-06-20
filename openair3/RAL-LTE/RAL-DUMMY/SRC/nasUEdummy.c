@@ -30,6 +30,9 @@
 
 int state, cell_id;
 
+#define MEAS_MAX_RSSI 110
+
+
 #ifdef MIH_USER_CONTROL
 char        *g_mih_user_ip_address             = MIH_USER_IP_ADDRESS;
 char        *g_mih_user_remote_port            = MIH_USER_REMOTE_PORT;
@@ -142,7 +145,7 @@ int NAS_mihuser_connect(void){
 int NAS_MIHUSERreceive(int sock)
 {
   unsigned char str[NAS_UE_NETL_MAXLEN];
-  int i, t, done;
+  int  t, done;
     t=recv(sock, str, NAS_UE_NETL_MAXLEN, 0);
     if (t <= 0) {
         if (t < 0) perror("NAS_MIHUSERreceive : recv");
@@ -152,7 +155,7 @@ int NAS_MIHUSERreceive(int sock)
     switch (str[0]) {
         case 0xff:
             printf("MIH-USER ASK FOR DECREASING RSSI\n");
-            g_mih_user_rssi_increment = -1;
+            g_mih_user_rssi_increment = -RSSI_INCREMENT_STEP;
             break;
         case 0x00:
             printf("MIH-USER ASK FOR NOT MODIFYING RSSI\n");
@@ -160,7 +163,7 @@ int NAS_MIHUSERreceive(int sock)
             break;
         case 0x01:
             printf("MIH-USER ASK FOR INCREASING RSSI\n");
-            g_mih_user_rssi_increment = 1;
+            g_mih_user_rssi_increment = RSSI_INCREMENT_STEP;
             break;
         default:
             return -1;
@@ -287,12 +290,17 @@ int NAS_IALreceive(int s)
 					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_measure_reply);
            msgToSend->ialNASPrimitive.meas_rep.num_cells = CONF_num_cells;
            for (i=0; i<CONF_num_rb; i++){
+              #ifdef MIH_USER_CONTROL
+              // LG TEST WITH ONLY i =0
+              if (i == 0) {
+                  conf_level[i] += g_mih_user_rssi_increment;
+                  if (conf_level[i] > MEAS_MAX_RSSI) conf_level[i] = MEAS_MAX_RSSI;
+                  if (conf_level[i] < 0)             conf_level[i] = 0;
+              }
+              #endif
               msgToSend->ialNASPrimitive.meas_rep.measures[i].cell_id = conf_cell_id[i];
               msgToSend->ialNASPrimitive.meas_rep.measures[i].level = conf_level[i];
               msgToSend->ialNASPrimitive.meas_rep.measures[i].provider_id = conf_provider_id[i];
-              #ifdef MIH_USER_CONTROL
-              conf_level[i] += g_mih_user_rssi_increment;
-              #endif
            }
            break;
        case NAS_UE_MSG_IMEI_REQUEST:

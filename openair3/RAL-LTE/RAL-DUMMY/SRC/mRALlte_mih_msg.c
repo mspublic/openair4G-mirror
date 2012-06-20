@@ -111,6 +111,7 @@ int mRALlte_mihf_connect(void){
     s = getaddrinfo(g_mihf_ip_address, g_mihf_remote_port, &hints, &result);
     if (s != 0) {
         ERR(" getaddrinfo: %s\n", gai_strerror(s));
+        freeaddrinfo(result);
         return -1;
     }
 
@@ -150,6 +151,7 @@ int mRALlte_mihf_connect(void){
             // sockd_mihf is of type SOCK_DGRAM, rp->ai_addr is the address to which datagrams are sent by default
             if (connect(g_sockd_mihf, rp->ai_addr, rp->ai_addrlen) != -1) {
                 NOTICE(" RAL is now UDP-CONNECTED to MIH-F\n");
+                freeaddrinfo(result);
                 return 0;
             } else {
                 close(g_sockd_mihf);
@@ -176,6 +178,7 @@ int mRALlte_mihf_connect(void){
             }
             if (connect(g_sockd_mihf, rp->ai_addr, rp->ai_addrlen) != -1) {
                 NOTICE(" RAL is now UDP-CONNECTED to MIH-F\n");
+                freeaddrinfo(result);
                 return 0;
             } else {
                 close(g_sockd_mihf);
@@ -255,7 +258,7 @@ void mRALlte_send_link_register_indication(MIH_C_TRANSACTION_ID_T  *transaction_
             g_mihf_id);
         #endif
     }
-
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_detected_indication(MIH_C_TRANSACTION_ID_T  *transaction_idP, MIH_C_LINK_DET_INFO_T   *link_detected_infoP) {
@@ -263,6 +266,10 @@ void mRALlte_send_link_detected_indication(MIH_C_TRANSACTION_ID_T  *transaction_
     MIH_C_Message_Link_Detected_indication_t  message;
     Bit_Buffer_t                             *bb;
     int                                       message_total_length;
+    #ifdef MSCGEN_PYTOOL
+    char                                      buf[128];
+    unsigned int                              buffer_index;
+    #endif
 
     bb = new_BitBuffer_0();
     BitBuffer_wrap(bb, g_msg_codec_send_buffer, (unsigned int)MSG_CODEC_SEND_BUFFER_SIZE);
@@ -293,20 +300,32 @@ void mRALlte_send_link_detected_indication(MIH_C_TRANSACTION_ID_T  *transaction_
     if (mRALlte_send_to_mih(bb->m_buffer,message_total_length)<0){
         ERR(": Send Link_Detected.indication\n");
         #ifdef MSCGEN_PYTOOL
-        NOTICE("[MSC_MSG][%s][%s][--- Link_Detected.indication ---x][%s]\n",
+        buffer_index = 0;
+        memset(buf, 0, 128);
+        buffer_index = MIH_C_SIG_STRENGTH2String(&link_detected_infoP->sig_strength, &buf[buffer_index]);
+        buffer_index = sprintf(&buf[buffer_index], "\\nSINR %d\\nData rate %d", link_detected_infoP->sinr, link_detected_infoP->link_data_rate);
+        NOTICE("[MSC_MSG][%s][%s][--- Link_Detected.indication\\n%s ---x][%s]\n",
             getTimeStamp4Log(),
             g_link_id,
+            buf,
             g_mihf_id);
         #endif
     } else {
         DEBUG(": Sent Link_Detected.indication\n");
         #ifdef MSCGEN_PYTOOL
-        NOTICE("[MSC_MSG][%s][%s][--- Link_Detected.indication --->][%s]\n",
+        buffer_index = 0;
+        memset(buf, 0, 128);
+        buffer_index = MIH_C_SIG_STRENGTH2String(&link_detected_infoP->sig_strength, &buf[buffer_index]);
+        buffer_index = sprintf(&buf[buffer_index], "\\nSINR %d\\nData rate %d", link_detected_infoP->sinr, link_detected_infoP->link_data_rate);
+
+        NOTICE("[MSC_MSG][%s][%s][--- Link_Detected.indication\\n%s --->][%s]\n",
             getTimeStamp4Log(),
             g_link_id,
+            buf,
             g_mihf_id);
         #endif
     }
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_up_indication(MIH_C_TRANSACTION_ID_T    *transaction_idP,
@@ -368,7 +387,7 @@ void mRALlte_send_link_up_indication(MIH_C_TRANSACTION_ID_T    *transaction_idP,
             g_mihf_id);
         #endif
     }
-
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_parameters_report_indication(MIH_C_TRANSACTION_ID_T      *transaction_idP,
@@ -378,6 +397,11 @@ void mRALlte_send_link_parameters_report_indication(MIH_C_TRANSACTION_ID_T      
     MIH_C_Message_Link_Parameters_Report_indication_t  message;
     Bit_Buffer_t                             *bb;
     int                                       message_total_length;
+    #ifdef MSCGEN_PYTOOL
+    char                                      buf[256];
+    unsigned int                              buffer_index;
+    unsigned int                              index;
+    #endif
 
     bb = new_BitBuffer_0();
     BitBuffer_wrap(bb, g_msg_codec_send_buffer, (unsigned int)MSG_CODEC_SEND_BUFFER_SIZE);
@@ -417,13 +441,21 @@ void mRALlte_send_link_parameters_report_indication(MIH_C_TRANSACTION_ID_T      
     } else {
         DEBUG(": Sent Link_Parameters_Report.indication\n");
         #ifdef MSCGEN_PYTOOL
-        NOTICE("[MSC_MSG][%s][%s][--- Link_Parameters_Report.indication --->][%s]\n",
+        buffer_index = 0;
+        memset(buf, 0, 256);
+        buffer_index += MIH_C_LINK_ID2String(&link_identifierP->link_id, &buf[buffer_index]);
+        for (index = 0; index < link_parameters_report_listP->length; index++) {
+            buffer_index += sprintf(&buf[buffer_index], "\\n");
+            buffer_index += MIH_C_LINK_PARAM_RPT2String(&link_parameters_report_listP->val[index], &buf[buffer_index]);
+        }
+        NOTICE("[MSC_MSG][%s][%s][--- Link_Parameters_Report.indication\\n%s --->][%s]\n",
             getTimeStamp4Log(),
             g_link_id,
+            buf,
             g_mihf_id);
         #endif
     }
-
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_going_down_indication(MIH_C_TRANSACTION_ID_T      *transaction_idP,
@@ -481,7 +513,7 @@ void mRALlte_send_link_going_down_indication(MIH_C_TRANSACTION_ID_T      *transa
             g_mihf_id);
         #endif
     }
-
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T      *transaction_idP,
@@ -539,7 +571,7 @@ void mRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T      *transaction_
             g_mihf_id);
         #endif
     }
-
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_action_confirm(MIH_C_TRANSACTION_ID_T     *transaction_idP,
@@ -551,7 +583,9 @@ void mRALlte_send_link_action_confirm(MIH_C_TRANSACTION_ID_T     *transaction_id
     Bit_Buffer_t                             *bb;
     int                                       message_total_length;
     #ifdef MSCGEN_PYTOOL
-    char                                      buf_status[64];
+    char                                      buf[256];
+    unsigned int                              buffer_index;
+    unsigned int                              index;
     #endif
 
     bb = new_BitBuffer_0();
@@ -584,8 +618,19 @@ void mRALlte_send_link_action_confirm(MIH_C_TRANSACTION_ID_T     *transaction_id
     message_total_length = MIH_C_Link_Message_Encode_Link_Action_confirm(bb, &message);
 
     #ifdef MSCGEN_PYTOOL
-    memset(buf_status, 0, 64);
-    MIH_C_STATUS2String(&message.primitive.Status, buf_status);
+    memset(buf, 0, 256);
+    buffer_index = 0;
+    buffer_index += MIH_C_STATUS2String(&message.primitive.Status, &buf[buffer_index]);
+    if (scan_response_setP) {
+        for (index = 0; index < scan_response_setP->length; index++) {
+            buffer_index += sprintf(&buf[buffer_index], "\\nScan resp:");
+            buffer_index += MIH_C_LINK_SCAN_RSP2String(&scan_response_setP->val[index], &buf[buffer_index]);
+        }
+    }
+    if (link_action_resultP) {
+            buffer_index += sprintf(&buf[buffer_index], "\\nAction result:");
+            buffer_index += MIH_C_LINK_AC_RESULT2String2(link_action_resultP, &buf[buffer_index]);
+    }
     #endif
     if (mRALlte_send_to_mih(bb->m_buffer,message_total_length)<0){
         ERR(": Send Link_Action.confirm\n");
@@ -593,7 +638,7 @@ void mRALlte_send_link_action_confirm(MIH_C_TRANSACTION_ID_T     *transaction_id
         NOTICE("[MSC_MSG][%s][%s][--- Link_Action.confirm\\nstatus=%s ---x][%s]\n",
             getTimeStamp4Log(),
             g_link_id,
-            buf_status,
+            buf,
             g_mihf_id);
         #endif
     } else {
@@ -602,11 +647,11 @@ void mRALlte_send_link_action_confirm(MIH_C_TRANSACTION_ID_T     *transaction_id
         NOTICE("[MSC_MSG][%s][%s][--- Link_Action.confirm\\nstatus=%s --->][%s]\n",
             getTimeStamp4Log(),
             g_link_id,
-            buf_status,
+            buf,
             g_mihf_id);
         #endif
     }
-
+    free_BitBuffer(bb);
 }
 
 //-----------------------------------------------------------------------------
@@ -681,6 +726,7 @@ void mRALte_send_capability_discover_confirm(MIH_C_TRANSACTION_ID_T  *transactio
             g_mihf_id);
         #endif
     }
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALte_send_event_subscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_idP,
@@ -747,6 +793,7 @@ void mRALte_send_event_subscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_id
             g_mihf_id);
         #endif
     }
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALte_send_event_unsubscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_idP,
@@ -813,6 +860,7 @@ void mRALte_send_event_unsubscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_
             g_mihf_id);
         #endif
     }
+    free_BitBuffer(bb);
 }
  //-----------------------------------------------------------------------------
 void mRALte_send_configure_thresholds_confirm(MIH_C_TRANSACTION_ID_T   *transaction_idP,
@@ -884,6 +932,7 @@ void mRALte_send_configure_thresholds_confirm(MIH_C_TRANSACTION_ID_T   *transact
             g_mihf_id);
         #endif
     }
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 void mRALte_send_get_parameters_confirm     (MIH_C_TRANSACTION_ID_T       *transaction_idP,
@@ -974,6 +1023,7 @@ void mRALte_send_get_parameters_confirm     (MIH_C_TRANSACTION_ID_T       *trans
             g_mihf_id);
         #endif
     }
+    free_BitBuffer(bb);
 }
 //-----------------------------------------------------------------------------
 int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *message_wrapperP) {
@@ -984,7 +1034,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
 #ifdef MSCGEN_PYTOOL
     char                                     msg_src[32];
     char                                     msg_dst[32];
-    char                                     buf[1024];
+    char                                     buf[512];
     int                                      buffer_index;
     int                                      i;
 #endif
@@ -1043,7 +1093,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.source), msg_src);
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.destination), msg_dst);
-                    memset(buf, 0, 1024);
+                    memset(buf, 0, 512);
                     MIH_C_LINK_EVENT_LIST2String2(&message_wrapperP->_union_message.link_event_subscribe_request.primitive.RequestedLinkEventList, buf);
                     NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Subscribe.request\\n%s --->][%s]\n",
                         getTimeStamp4Log(),
@@ -1056,7 +1106,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.source), msg_src);
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_subscribe_request.destination), msg_dst);
-                    memset(buf, 0, 1024);
+                    memset(buf, 0, 512);
                     MIH_C_LINK_EVENT_LIST2String2(&message_wrapperP->_union_message.link_event_subscribe_request.primitive.RequestedLinkEventList, buf);
                     NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Subscribe.request\\nERR DECODE ---x][%s]\n",
                         getTimeStamp4Log(),
@@ -1074,7 +1124,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.source), msg_src);
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.destination), msg_dst);
-                    memset(buf, 0, 1024);
+                    memset(buf, 0, 512);
                     MIH_C_LINK_EVENT_LIST2String2(&message_wrapperP->_union_message.link_event_unsubscribe_request.primitive.RequestedLinkEventList, buf);
                     NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Unsubscribe.request\\n%s --->][%s]\n",
                         getTimeStamp4Log(),
@@ -1087,7 +1137,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.source), msg_src);
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_event_unsubscribe_request.destination), msg_dst);
-                    memset(buf, 0, 1024);
+                    memset(buf, 0, 512);
                     MIH_C_LINK_EVENT_LIST2String2(&message_wrapperP->_union_message.link_event_unsubscribe_request.primitive.RequestedLinkEventList, buf);
                     NOTICE("[MSC_MSG][%s][%s][--- Link_Event_Unsubscribe.request\\nERR DECODE ---x][%s]\n",
                         getTimeStamp4Log(),
@@ -1105,7 +1155,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_get_parameters_request.source), msg_src);
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_get_parameters_request.destination), msg_dst);
-                    memset(buf, 0, 1024);
+                    memset(buf, 0, 512);
                     buffer_index = 0;
                     for (i = 0; i < message_wrapperP->_union_message.link_get_parameters_request.primitive.LinkParametersRequest_list.length; i++) {
                         buffer_index += MIH_C_LINK_PARAM_TYPE2String(&message_wrapperP->_union_message.link_get_parameters_request.primitive.LinkParametersRequest_list.val[i], &buf[buffer_index]);
@@ -1142,7 +1192,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_configure_thresholds_request.source), msg_src);
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_configure_thresholds_request.destination), msg_dst);
-                    memset(buf, 0, 1024);
+                    memset(buf, 0, 512);
                     buffer_index = 0;
                     for (i = 0; i < message_wrapperP->_union_message.link_configure_thresholds_request.primitive.LinkConfigureParameterList_list.length; i++) {
                         buffer_index += MIH_C_LINK_CFG_PARAM2String(&message_wrapperP->_union_message.link_configure_thresholds_request.primitive.LinkConfigureParameterList_list.val[i], &buf[buffer_index]);
@@ -1174,9 +1224,18 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_action_request.source), msg_src);
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_action_request.destination), msg_dst);
-                    NOTICE("[MSC_MSG][%s][%s][--- Link_Action.request --->][%s]\n",
+                    memset(buf, 0, 512);
+                    buffer_index = 0;
+                    buffer_index += MIH_C_LINK_ACTION2String(&message_wrapperP->_union_message.link_action_request.primitive.LinkAction, buf);
+                    buffer_index += sprintf(&buf[buffer_index], "\\nExecution Delay=%d", message_wrapperP->_union_message.link_action_request.primitive.ExecutionDelay);
+                    if (message_wrapperP->_union_message.link_action_request.primitive.PoALinkAddress != NULL) {
+                        buffer_index += sprintf(&buf[buffer_index], "\\nPoALinkAddress=");
+                        buffer_index += MIH_C_LINK_ADDR2String(message_wrapperP->_union_message.link_action_request.primitive.PoALinkAddress, &buf[buffer_index]);
+                    }
+                    NOTICE("[MSC_MSG][%s][%s][--- Link_Action.request\\n%s --->][%s]\n",
                         getTimeStamp4Log(),
                         msg_src,
+                        buf,
                         msg_dst);
                     #endif
                     mRALlte_action_request(&message_wrapperP->_union_message.link_action_request);
@@ -1258,5 +1317,6 @@ int mRALlte_mih_link_process_message(void){
         } else if ((status == MIH_MESSAGE_DECODE_TOO_SHORT)) {
         }
     }
+    free_BitBuffer(bb);
     return 0;
 }
