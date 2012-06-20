@@ -822,6 +822,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     else
       ulsch->cqi_crc_status = 0;
 
+    //printf("crc(cqi) rx: %x\n",(crc8(o_flip,ulsch->Or1)>>24));
+
     if (ulsch->Or1<=32) {
       ulsch->o[3] = o_flip[0] ;
       ulsch->o[2] = o_flip[1] ;
