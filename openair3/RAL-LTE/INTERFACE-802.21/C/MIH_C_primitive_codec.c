@@ -161,18 +161,25 @@ int MIH_C_Link_Primitive_Decode_Link_Action_request(Bit_Buffer_t* bbP, MIH_C_Lin
     MIH_C_LINK_ACTION_decode(bbP, &primitiveP->LinkAction);
 
 
+    MIH_C_TLV_TYPE_decode(bbP, &tlv);
+    assert(tlv == MIH_C_TLV_LINK_TIME_INTERVAL);
+    MIH_C_LIST_LENGTH_decode(bbP, &length);
     MIH_C_UNSIGNED_INT2_decode(bbP, &primitiveP->ExecutionDelay);
 
     if (BitBuffer_isCheckReadOverflowOK(bbP, 0) == BIT_BUFFER_FALSE) {
         return MIH_PRIMITIVE_DECODE_TOO_SHORT;
     }
-    PoALinkAddress = malloc(sizeof(MIH_C_LINK_ADDR_T));
-    MIH_C_LINK_ADDR_decode(bbP, PoALinkAddress);
+
+    MIH_C_TLV_TYPE_decode(bbP, &tlv);
+    if (tlv == MIH_C_TLV_POA) {
+        PoALinkAddress = malloc(sizeof(MIH_C_LINK_ADDR_T));
+        MIH_C_LINK_ADDR_decode(bbP, PoALinkAddress);
+        primitiveP->PoALinkAddress = PoALinkAddress;
+    }
     if (BitBuffer_isCheckReadOverflowOK(bbP, 0) == BIT_BUFFER_FALSE) {
         free(PoALinkAddress);
         return MIH_PRIMITIVE_DECODE_TOO_SHORT;
     }
-    primitiveP->PoALinkAddress = PoALinkAddress;
     return MIH_PRIMITIVE_DECODE_OK;
 }
 //-----------------------------------------------------------------------------
