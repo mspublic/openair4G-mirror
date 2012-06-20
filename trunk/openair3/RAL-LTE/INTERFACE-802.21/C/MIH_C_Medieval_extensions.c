@@ -455,18 +455,18 @@ unsigned int MIH_C_LINK_AC_PARAM2String(MIH_C_LINK_AC_PARAM_T *dataP, char* bufP
     unsigned int buffer_index = 0;
     switch (dataP->choice) {
         case 0:
-            buffer_index += sprintf(&bufP[buffer_index], "LINK_AC_PARAM = NULL");
+            buffer_index += sprintf(&bufP[buffer_index], "NULL");
             break;
         case 1:
-            buffer_index += sprintf(&bufP[buffer_index], "FLOW_ATTRIBUTE = ");
+            buffer_index += sprintf(&bufP[buffer_index], "FLOW_ATTRIBUTE=");
             buffer_index += MIH_C_FLOW_ATTRIBUTE2String(&dataP->_union.flow_attribute, &bufP[buffer_index]);
             break;
         case 2:
-            buffer_index += sprintf(&bufP[buffer_index], "RESOURCE_DESC = ");
+            buffer_index += sprintf(&bufP[buffer_index], "RESOURCE_DESC=");
             buffer_index += MIH_C_RESOURCE_DESC2String(&dataP->_union.resource_desc, &bufP[buffer_index]);
             break;
         default:
-            buffer_index += sprintf(&bufP[buffer_index], "LINK_AC_PARAM UNINITIALIZED ");
+            buffer_index += sprintf(&bufP[buffer_index], "UNINITIALIZED ");
     }
     return buffer_index;
 }
