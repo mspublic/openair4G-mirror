@@ -69,5 +69,6 @@
 protected_mRALlte_thresholds(LIST(MIH_C_LINK_CFG_PARAM, g_link_cfg_param_thresholds);)
 //-----------------------------------------------------------------------------
 protected_mRALlte_thresholds(void mRALlte_configure_thresholds_request(MIH_C_Message_Link_Configure_Thresholds_request_t* messageP);)
+public_mRALlte_thresholds(   void mRALlte_check_thresholds_signal_strength(MIH_C_THRESHOLD_VAL_T new_valP, MIH_C_THRESHOLD_VAL_T old_valP);)
 
 #endif
