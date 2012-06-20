@@ -125,9 +125,12 @@ public_F4_codec(inline void MIH_C_LINK_TUPLE_ID_encode(Bit_Buffer_t* bbP, MIH_C_
 public_F4_codec(inline void MIH_C_LINK_TUPLE_ID_decode(Bit_Buffer_t* bbP, MIH_C_LINK_TUPLE_ID_T *dataP);)
 public_F4_codec(inline void MIH_C_LINK_DET_INFO_encode(Bit_Buffer_t* bbP, MIH_C_LINK_DET_INFO_T *dataP);)
 public_F4_codec(inline void MIH_C_LINK_DET_INFO_decode(Bit_Buffer_t* bbP, MIH_C_LINK_DET_INFO_T *dataP);)
+public_F4_codec(unsigned int MIH_C_LINK_AC_ATTR2String2(MIH_C_LINK_AC_ATTR_T *dataP, char* bufP);)
 public_F4_codec(unsigned int MIH_C_TH_ACTION2String2(MIH_C_TH_ACTION_T *actionP, char* bufP);)
+public_F4_codec(unsigned int MIH_C_LINK_AC_TYPE2String2(MIH_C_LINK_AC_TYPE_T *dataP, char* bufP);)
 public_F4_codec(unsigned int MIH_C_THRESHOLD_XDIR2String2(MIH_C_THRESHOLD_XDIR_T *valP, char* bufP);)
 public_F4_codec(unsigned int MIH_C_LINK_PARAM_GEN2String2(MIH_C_LINK_PARAM_GEN_T *valP, char* bufP);)
+public_F4_codec(unsigned int MIH_C_LINK_AC_RESULT2String2(MIH_C_LINK_AC_RESULT_T *dataP, char* bufP);)
 
 #endif
 /** @}*/
