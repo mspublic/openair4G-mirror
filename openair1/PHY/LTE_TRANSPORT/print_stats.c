@@ -212,7 +212,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
     len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/((phy_vars_eNB->frame+1)*10));
     */
 
-    for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+    //for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+    for (UE_id=0;UE_id<2;UE_id++) {
 #ifdef OPENAIR2
       if (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti>0) {
 	phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
@@ -233,6 +234,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
     len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",(phy_vars_eNB->total_transmitted_bits/1000),phy_vars_eNB->frame+1);
     len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->total_system_throughput)/((phy_vars_eNB->frame+1)*10));
     len += sprintf(&buffer[len],"[eNB PROC] Total Successful DLSCH Transmissions %d in %dframe(s)\n",success,phy_vars_eNB->frame+1);
+    len += sprintf(&buffer[len],"[eNB PROC] Transmission mode %d\n",phy_vars_eNB->transmission_mode[0]);
     if(phy_vars_eNB->transmission_mode[0] == 5){
 
     len += sprintf(&buffer[len],"[eNB PROC] For TM5:FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->FULL_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
@@ -246,7 +248,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
     
   }
   
-  for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+  //for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+  for (UE_id=0;UE_id<2;UE_id++) {
 #ifdef OPENAIR2
     if (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti>0) {
 #endif

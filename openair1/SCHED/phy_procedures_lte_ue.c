@@ -58,6 +58,9 @@
 #define PUCCH 1
 #endif
 
+//#undef AMP
+//#define AMP 2048
+
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
@@ -222,9 +225,11 @@ void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
 #ifdef CBMIMO1  
   u8 card_id;
 #endif
+  /*
   if ((timing_advance>>10) & 1) //it is negative
     timing_advance = timing_advance - (1<<11);
-  
+  */
+
   if (openair_daq_vars.manual_timing_advance == 0) {
     openair_daq_vars.timing_advance = cmax(0,TIMING_ADVANCE_INIT + timing_advance*4);
     
@@ -582,12 +587,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #else
 #ifdef EXMIMO //this is the EXPRESS MIMO case
 	ulsch_start = (phy_vars_ue->rx_offset+subframe*frame_parms->samples_per_tti-TIMING_ADVANCE_HW);
-	//printf("ulsch_start=%d\n",ulsch_start);
 	if (ulsch_start<0)
 	  ulsch_start+=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 	if (ulsch_start>=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
 	  ulsch_start-=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-	//printf("ulsch_start=%d\n",ulsch_start);
+	if (phy_vars_ue->frame%100==0)
+	  printf("rx_offset=%d, ulsch_start=%d\n",phy_vars_ue->rx_offset,ulsch_start);
 	if (ulsch_start>(9*frame_parms->samples_per_tti)) //we have to divide the memset in two parts
 	  {
 	    memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],0,
@@ -795,19 +800,21 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  LOG_T(PHY,"\n");
 #endif
 #else //OPENAIR2
-	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0) {
-	    for (i=0;i<input_buffer_length;i++)
-	      ulsch_input_buffer[i]= i;
-	  }
-	  else {
-	    // Get calibration information from TDD procedures
-	    for (i=0;i<input_buffer_length;i++) 
-	      ulsch_input_buffer[i]= (u8)(taus()&0xff);
-	  }
+	  /*
+	  for (i=0;i<input_buffer_length;i++)
+	    ulsch_input_buffer[i]= i;
+	  */
+	 
+	  for (i=0;i<input_buffer_length;i++) 
+	    ulsch_input_buffer[i]= (u8)(taus()&0xff);
+	  
+	  // this is for PUCCO demo
+	  /*
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o    ,0,MAX_CQI_BYTES*sizeof(u8));
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_RI ,0,2*sizeof(u8));
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_ACK,0,4*sizeof(u8));
-	  
+	  */
+
 #endif //OPENAIR2
 	  if (abstraction_flag==0) {
 	    if (phy_vars_ue->frame%100==0) {
@@ -1150,7 +1157,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
   if (l==0) {
     // UE measurements 
     if (abstraction_flag==0) {
-      //debug_msg("Calling measurements with rxdata %p\n",phy_vars_ue->lte_ue_common_vars.rxdata);
+      //LOG_I(PHY,"Calling measurements with rxdata %p\n",phy_vars_ue->lte_ue_common_vars.rxdata);
 
       lte_ue_measurements(phy_vars_ue,
 #ifdef HW_PREFIX_REMOVAL 
@@ -2085,7 +2092,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		harq_pid,phy_vars_ue->frame,last_slot>>1,
 		phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
 		phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
-	    dump_dlsch(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),harq_pid);
+	    //dump_dlsch(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),harq_pid);
 		       
 #endif
 	  }
@@ -2377,7 +2384,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 		    timing_advance);		
 	      
-	      timing_advance = 0;
+	      //timing_advance = 0;
 	      process_timing_advance_rar(phy_vars_ue,timing_advance);
 	      
 	      phy_vars_ue->ulsch_ue_Msg3_active[eNB_id]=1;

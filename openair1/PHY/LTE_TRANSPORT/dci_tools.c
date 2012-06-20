@@ -2002,16 +2002,16 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
-    //    print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
+    //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
     // save PUSCH pmi for later (transmission modes 4,5,6)
 
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
     dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
 
-#ifdef DEBUG_PHY
-    if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10))
+    //#ifdef DEBUG_PHY
+    if (((phy_vars_ue->frame % 100) == 0)) //|| (phy_vars_ue->frame < 10))
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
-#endif
+    //#endif
 
     if (AckNackFBMode == multiplexing)
       ulsch->O_ACK                               = ((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai;

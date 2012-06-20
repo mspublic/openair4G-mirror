@@ -126,6 +126,7 @@ void exit_fun(const char* s)
 void do_forms2(FD_lte_scope *form,
                LTE_DL_FRAME_PARMS *frame_parms,
                int pdcch_symbols,
+	       int UE_flag,
                s16 **channel,
                s16 **channel_f,
                s16 **rx_sig,
@@ -152,8 +153,9 @@ void do_forms2(FD_lte_scope *form,
   *llr,*llr_time;
   int ind;
   float avg, cum_avg;
-
-  //  u16 nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
+  int nb_tx_ant = (UE_flag==1 ? 2 : 1);
+  int nb_ce_symb = (UE_flag==1 ? 1 : frame_parms->symbols_per_tti); 
+		 
 
   llr = malloc(coded_bits_per_codeword*sizeof(float));
   llr_time = malloc(coded_bits_per_codeword*sizeof(float));
@@ -164,11 +166,11 @@ void do_forms2(FD_lte_scope *form,
     {
       cum_avg = 0;
       ind = 0;
-      for (j=0; j<2; j++)
+      for (j=0; j<nb_tx_ant; j++)
         {
           for (i=0; i<frame_parms->nb_antennas_rx; i++)
             {
-              for (k=0; k<(13*frame_parms->N_RB_DL); k++)
+              for (k=0; k<(12*frame_parms->N_RB_DL*nb_ce_symb); k++)
                 {
                   sig_time[ind] = (float)ind;
                   Re = (float)(channel_f[(j<<1)+i][(2*k)]);
@@ -187,8 +189,20 @@ void do_forms2(FD_lte_scope *form,
       //fl_set_xyplot_ybounds(form->channel_f,30,70);
       fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
     }
-
   /*
+  // time domain channel
+  if ((channel != NULL) && (channel[0] !=NULL))
+    {
+      for (i=0; i<512; i++)
+        {
+          time2[i] = (float) i;
+          sig2[i] = (float) (channel[0][4*i]*channel[0][4*i]+channel[0][4*i+1]*channel[0][4*i+1]);
+        }
+      fl_set_xyplot_data(form->channel_t_im,time2,sig2,128,"","","");
+      //fl_set_xyplot_ybounds(form->channel_t_im,0,1e6);
+    }
+  */
+
   // sync_corr
   if (sync_corr != NULL)
     {
@@ -200,7 +214,6 @@ void do_forms2(FD_lte_scope *form,
       fl_set_xyplot_data(form->channel_t_im,time2,sig2,sync_corr_len,"","","");
       //fl_set_xyplot_ybounds(form->channel_t_im,0,1e6);
     }
-  */
 
   // rx sig 0
   if (rx_sig != NULL) { 
@@ -219,6 +232,7 @@ void do_forms2(FD_lte_scope *form,
 	fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
       }
 
+    /*
     // rx sig 1
     if (rx_sig[1] !=NULL) {
       //for (i=30720; i<38400; i++)
@@ -232,6 +246,7 @@ void do_forms2(FD_lte_scope *form,
 	//fl_set_xyplot_data(form->channel_t_im,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
 	fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
     }
+    */
   }
 
   // PBCH LLR
@@ -302,6 +317,8 @@ void do_forms2(FD_lte_scope *form,
       fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
       //    fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
     }
+  else
+    printf("lls==NULL\n");
 
   // DLSCH I/Q
   if (dlsch_comp!=NULL)
@@ -354,7 +371,8 @@ void *scope_thread(void *arg)
         do_forms2(form_dl,
                   &(PHY_vars_UE_g[0]->lte_frame_parms),
                   PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-                  (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates_time,
+		  UE_flag,
+                  (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates_time[0],
                   (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0],
                   (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata,
                   (s16**)PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF,
@@ -379,17 +397,18 @@ void *scope_thread(void *arg)
         do_forms2(form_dl,
                   &(PHY_vars_eNB_g[0]->lte_frame_parms),
                   0,
-                  NULL,
-                  NULL,
+		  UE_flag,
+                  (s16**)PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->drs_ch_estimates_time[0],
+                  (s16**)PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->drs_ch_estimates[0],
                   (s16**)PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0],
                   (s16**)PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdataF[0],
-                  NULL,
-                  NULL,
-                  NULL,
-                  NULL,
-                  NULL,
 		  NULL,
-		  0,
+                  (s16*)PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
+                  NULL,
+                  (s16*)PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->llr,
+                  NULL,
+                  NULL,
+		  PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->nb_rb*12*get_Qm(PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->mcs)*PHY_vars_eNB_g[0]->ulsch_eNB[0]->Nsymb_pusch,
                   prach_corr,
                   1024);
 
@@ -482,24 +501,30 @@ static void *eNB_thread(void *arg)
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       delay_cnt = 0;
-      while ((hw_slot <= slot) && (!oai_exit))
+      diff = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+      if (diff<(-1))
+	diff+=150;
+
+      //rt_printk("eNB Frame %d (before while): slot %d, hw_slot %d, diff %d\n",frame, slot, hw_slot, diff);
+
+      while ((diff>0) && (!oai_exit))
         {
-          diff = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-          if (diff<=1)
-            diff=2;
+ 
           time_in = rt_get_time_ns();
-          //rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15 %d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+          //rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15=%d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
           rt_sleep(nano2count(diff*DAQ_PERIOD));
-          //rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
           hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+          //rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
           delay_cnt++;
           if (delay_cnt == 10)
             {
               oai_exit = 1;
               rt_printk("eNB Frame %d: HW stopped ... \n",frame);
             }
-          if ((hw_slot < 5) && (slot==19)) //why?
-            break;
+          diff = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+	  if (diff<(-1))
+	    diff+=150;
+
         }
 
 #endif
@@ -508,7 +533,7 @@ static void *eNB_thread(void *arg)
         last_slot+=20;
       next_slot = (hw_slot + 2)%LTE_SLOTS_PER_FRAME;
 
-      PHY_vars_eNB_g[0]->frame = frame;
+      //PHY_vars_eNB_g[0]->frame = frame;
       if (frame>5)
         {
           if (frame<10)
@@ -576,20 +601,6 @@ static void *eNB_thread(void *arg)
                             {
                               ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0])[i] = ((short*)dummy_tx_buffer)[PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1)+i]<<4;
                             }
-                        }
-                      // we need to copy the first part of the first slot to the end of the frame due to the timing advance
-                      if (next_slot==0)
-                        {
-                          slot_offset = PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
-#ifdef BIT8_TX
-                          memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
-                                 &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
-                                 640*sizeof(unsigned short));
-#else
-                          memcpy(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
-                                 &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0],
-                                 640*sizeof(unsigned int));
-#endif
                         }
 #endif //EXMIMO
                     }
@@ -684,26 +695,27 @@ static void *UE_thread(void *arg)
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       delay_cnt = 0;
-      while ((hw_slot <= slot) && (!oai_exit) && (is_synchronized) )
+      diff2 = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+      if (diff2<(-1))
+	diff2+=150;
+      while ((diff2>0) && (!oai_exit) && (is_synchronized) )
         {
-          diff2 = (((slot+1)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-          if (diff2<=1)
-            diff2=2;
           time_in = rt_get_time_ns();
           //rt_printk("UE Frame %d delaycnt %d : hw_slot %d, slot %d, diff %d, time %llu, sleeping until %lld\n",
           //          frame,delay_cnt,hw_slot,slot,diff2,time_in,time_in + diff2*DAQ_PERIOD);
           //rt_sleep_until(nano2count(time_in + diff2*DAQ_PERIOD));
-          rt_sleep(nano2count(diff2*DAQ_PERIOD));
-          //rt_printk("UE Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
+          rt_sleep(nano2count(diff2*DAQ_PERIOD)); 
           hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+	  //rt_printk("UE Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
           delay_cnt++;
           if (delay_cnt == 30)
             {
               oai_exit = 1;
               rt_printk("UE frame %d: HW stopped ... \n",frame);
             }
-          if ((hw_slot < 5) && (slot==19))
-            break;
+          diff2 = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
+          if (diff2<(-1))
+            diff2+=150;
         }
 
 #endif
@@ -864,6 +876,7 @@ int main(int argc, char **argv)
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
   u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
+  u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   char c;
   char do_forms=0;
@@ -927,7 +940,7 @@ int main(int argc, char **argv)
   frame_parms->nushift            = 0;
   frame_parms->nb_antennas_tx     = (UE_flag == 1) ? 1 : 2;
   frame_parms->nb_antennas_rx     = 1;
-  frame_parms->mode1_flag         = 1; //default == SISO
+  frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
 #ifdef CBMIMO1
   if (fs4_test==1)
@@ -970,6 +983,13 @@ int main(int argc, char **argv)
       frame_parms->node_id = NODE;
       PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
       PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
+
+      for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
+	PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+      }
+
       PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
 #ifndef OPENAIR2
       PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
@@ -977,6 +997,9 @@ int main(int argc, char **argv)
 #endif
       NB_UE_INST=1;
       NB_INST=1;
+
+      openair_daq_vars.manual_timing_advance = 0;
+      openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
     }
   else
     {
@@ -986,14 +1009,21 @@ int main(int argc, char **argv)
       frame_parms->node_id = PRIMARY_CH;
       PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
       PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
+
+      for (i=0;i<NUMBER_OF_UE_MAX;i++) {
+	PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+      }
+
       NB_eNB_INST=1;
       NB_INST=1;
       if (calibration_flag == 1)
         PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
       openair_daq_vars.ue_ul_nb_rb=25;
       openair_daq_vars.target_ue_dl_mcs=5;
-      openair_daq_vars.ue_ul_nb_rb=2;
-      openair_daq_vars.target_ue_ul_mcs=5;
+      openair_daq_vars.ue_ul_nb_rb=12;
+      openair_daq_vars.target_ue_ul_mcs=10;
     }
 
   mac_xface = malloc(sizeof(MAC_xface));

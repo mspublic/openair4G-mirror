@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
   int UE_id = 0;
   unsigned char nb_rb=2,first_rb=0,mcs=4,round=0,bundling_flag=1;
   unsigned char l;
-  SCM_t channel_model=Rayleigh1_corr;
+  SCM_t channel_model=Rice1;
 
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
@@ -460,7 +460,7 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.mcs     = mcs;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
-  UL_alloc_pdu.cqi_req = 0;
+  UL_alloc_pdu.cqi_req = 1;
   UL_alloc_pdu.cshift  = 0;
   UL_alloc_pdu.dai     = 1;
 
@@ -534,7 +534,7 @@ int main(int argc, char **argv) {
 
     round=0;
 
-    randominit(0);
+    //randominit(0);
       
     PHY_vars_UE->frame=1;
     PHY_vars_eNB->frame=1;
@@ -611,9 +611,9 @@ int main(int argc, char **argv) {
 	  
 #else
 	  if (srs_flag)
-	    generate_srs_tx(PHY_vars_UE,0,scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],subframe);
+	    generate_srs_tx(PHY_vars_UE,0,AMP,subframe);
 	  generate_drs_pusch(PHY_vars_UE,0,
-			     scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],subframe,
+			     AMP,subframe,
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb,
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
 #endif	
@@ -635,7 +635,7 @@ int main(int argc, char **argv) {
 			   PHY_vars_UE->frame,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0]);
 #else  
 	  //	  printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
-	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],
+	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,
 			   PHY_vars_UE->frame,subframe,&PHY_vars_UE->lte_frame_parms,
 			   PHY_vars_UE->ulsch_ue[0]);
 #endif
@@ -703,8 +703,8 @@ int main(int argc, char **argv) {
 				frame_parms);
 	    
 #ifndef OFDMA_ULSCH
-	    apply_7_5_kHz(PHY_vars_UE,subframe<<1);
-	    apply_7_5_kHz(PHY_vars_UE,1+(subframe<<1));
+	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],subframe<<1);
+	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],1+(subframe<<1));
 #endif
 	    
 	    tx_lev += signal_energy(&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
@@ -812,7 +812,9 @@ int main(int argc, char **argv) {
       
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
-	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
+	    printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
+	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
+	      print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
 	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }

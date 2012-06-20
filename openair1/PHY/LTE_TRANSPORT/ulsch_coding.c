@@ -461,7 +461,7 @@ u32 ulsch_encoding(u8 *a,
     H = Q_CQI;
     Hprime = H/Q_m;
   }
-  
+
 
   //  Do CQI coding
   if ((ulsch->O>1) && (ulsch->O < 12)) {
@@ -469,11 +469,10 @@ u32 ulsch_encoding(u8 *a,
     return(-1);
   }
   else {
-
     // add 8-bit CRC
     crc = crc8(o_flip,
 	       ulsch->O)>>24;
-    //    printf("crc(cqi) tx : %x\n",crc);
+    //printf("cqi tx : O=%d, o=%2x.%2x.%2x.%2x.%2x.%2x.%2x.%2x, crc=%x\n",ulsch->O,o_flip[0],o_flip[1],o_flip[2],o_flip[3],o_flip[4],o_flip[5],o_flip[6],o_flip[7],crc);
     memset((void *)&ulsch->o_d[0],LTE_NULL,96);
     
     ccodelte_encode(ulsch->O,
