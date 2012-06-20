@@ -29,6 +29,9 @@
 extern char message[NAS_UE_NETL_MAXLEN];
 extern int sd_graal, s_nas;
 
+#define MSC_GEN_BUF_SIZE 1024
+static char msc_gen_buff[MSC_GEN_BUF_SIZE];
+
 /***************************************************************************
      Reception side
  ***************************************************************************/
@@ -50,7 +53,9 @@ int IAL_decode_NAS_message(void){
     MIH_C_TRANSACTION_ID_T    transaction_id;
     int done=0, n, i;
     char *buffer;
-
+    #ifdef MSCGEN_PYTOOL
+    unsigned int              buffer_index;
+    #endif
     n = recv(s_nas, message, NAS_UE_NETL_MAXLEN, 0);
     if (n <= 0) {
         if (n < 0) perror("IAL_decode_NAS_message : recv");
@@ -150,9 +155,6 @@ int IAL_decode_NAS_message(void){
            case NAS_UE_MSG_MEAS_REPLY:
              {
              struct nas_ue_msg_measure_reply *p;
-             NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_MEASUREMENT_REPLY --->][%s]\n",
-                       getTimeStamp4Log(),
-                       g_link_id);
              DEBUG("NAS_UE_MSG_MEASUREMENT_REPLY received\n");
              p = &(msgToRcve->ialNASPrimitive.meas_rep);
              #ifdef DEBUG_MRALU_MEASURES
@@ -167,6 +169,20 @@ int IAL_decode_NAS_message(void){
                  IAL_integrate_measure(p-> measures[i].level, i);
                  ralpriv->provider_id[i] = p-> measures[i].provider_id;
              }
+             #ifdef MSCGEN_PYTOOL
+             memset(msc_gen_buff, 0, MSC_GEN_BUF_SIZE);
+             buffer_index = 0;
+
+             for (i=0;i<p->num_cells; i++){
+                 buffer_index += sprintf(&msc_gen_buff[buffer_index], "\\nCell Id %d Level %d Provider %d",
+                                        p-> measures[i].cell_id, p-> measures[i].level, p-> measures[i].provider_id);
+                 ralpriv->meas_cell_id[i] = p-> measures[i].cell_id;
+             }
+             NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_MEASUREMENT_REPLY%s --->][%s]\n",
+                getTimeStamp4Log(),
+                msc_gen_buff,
+                g_link_id);
+             #endif
              //Temp
              #ifdef RAL_DUMMY
              ralpriv->num_measures = p->num_cells;  //TEMP- To be activated later
@@ -176,9 +192,6 @@ int IAL_decode_NAS_message(void){
              break;
 
            case NAS_UE_MSG_IMEI_REPLY:
-             NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_IMEI_REPLY --->][%s]\n",
-                       getTimeStamp4Log(),
-                       g_link_id);
              DEBUG("NAS_UE_MSG_IMEI_REPLY received\n");
              DEBUG("IMEI value received= %d %d\n", msgToRcve->ialNASPrimitive.l2id_rep.l2id[0], msgToRcve->ialNASPrimitive.l2id_rep.l2id[1]);
              //store the received value, to be used later
@@ -186,10 +199,22 @@ int IAL_decode_NAS_message(void){
              ralpriv->ipv6_l2id[1] = msgToRcve->ialNASPrimitive.l2id_rep.l2id[1];
              buffer = (char *)(&ralpriv->ipv6_l2id[0]);
              DEBUG ("IMEI value: = ");
-             for (i = 0; i < 8; i++)
-
-               DEBUG ("-%hhx-", (unsigned char) buffer[i]);
+             for (i = 0; i < 8; i++) {
+                 DEBUG ("-%hhx-", (unsigned char) buffer[i]);
+             }
              DEBUG ("\n");
+             #ifdef MSCGEN_PYTOOL
+             memset(msc_gen_buff, 0, MSC_GEN_BUF_SIZE);
+             buffer_index = 0;
+             buffer_index = sprintf(&msc_gen_buff[buffer_index], "\\nIMEI:%hhx-%hhx-%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
+                                    (unsigned char) buffer[0],(unsigned char) buffer[1],
+                                    (unsigned char) buffer[2],(unsigned char) buffer[3],
+                                    (unsigned char) buffer[4],(unsigned char) buffer[5],
+                                    (unsigned char) buffer[6],(unsigned char) buffer[7]);
+             NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_IMEI_REPLY --->][%s]\n",
+                       getTimeStamp4Log(),
+                       g_link_id);
+             #endif
              break;
 
            default:

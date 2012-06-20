@@ -235,6 +235,7 @@ int inits(int argc, char *argv[]) {
     struct sockaddr_un               nas_socket;
 
     ralpriv = &rl_priv;
+    memset(ralpriv, 0, sizeof(struct ral_lte_priv));
 
     // Initialize defaults
     g_ral_ip_address                = DEFAULT_IP_ADDRESS_RAL;
@@ -271,6 +272,8 @@ int inits(int argc, char *argv[]) {
     ralpriv->mih_supported_link_command_list = MIH_C_BIT_LINK_EVENT_SUBSCRIBE | MIH_C_BIT_LINK_EVENT_UNSUBSCRIBE | \
                                               MIH_C_BIT_LINK_GET_PARAMETERS  | MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS | \
                                               MIH_C_BIT_LINK_ACTION;
+
+    ralpriv->link_to_be_detected = MIH_C_BOOLEAN_TRUE;
 
     NOTICE("[MSC_NEW][%s][MIH-F=%s]\n", getTimeStamp4Log(), g_mihf_id);
     NOTICE("[MSC_NEW][%s][RAL=%s]\n", getTimeStamp4Log(), g_link_id);
@@ -348,7 +351,7 @@ int main(int argc, char *argv[]){
             }
 
             //get measures from NAS - timer = 21x100ms  -- impair
-//            if (meas_polling_counter ++ == 21){
+//            if (meas_polling_counter ++ == 51){
             if (meas_polling_counter ++ == 51){
                 IAL_NAS_measures_update(meas_polling_counter);
                 rallte_NAS_measures_polling();

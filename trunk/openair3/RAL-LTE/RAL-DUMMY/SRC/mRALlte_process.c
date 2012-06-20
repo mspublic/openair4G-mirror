@@ -16,6 +16,7 @@
 #include "mRALlte_proto.h"
 #include "MIH_C.h"
 #include "mRALlte_mih_msg.h"
+#include "mRALlte_thresholds.h"
 // for real-time
 //#include "nas_ue_ioctl.h"
 //#include "nasmt_constant.h"
@@ -38,7 +39,11 @@ void IAL_NAS_measures_init(void)
    ralpriv->num_measures = 1;
 #endif
    ralpriv->meas_cell_id[0] = 0;
+#ifdef MIH_USER_CONTROL
+   ralpriv->last_meas_level[0] = 0;
+#else
    ralpriv->last_meas_level[0] = 30;
+#endif
    ralpriv->integrated_meas_level[0] = ralpriv->last_meas_level[0];
    ralpriv->provider_id[0] = 25;
    ralpriv->meas_cell_id[1] = 1;
@@ -79,7 +84,7 @@ void IAL_integrate_measure(int measure, int i){
   //apply correction to get a value between 0-100 - now is linear
   new_integrated = (new_integrated*100)/MEAS_MAX_RSSI;
   // print result
-  //DEBUG ("\nIntegrate measure : old %d, new %d, integrated %d", ralpriv->last_meas_level[i], measure,new_integrated  );
+  DEBUG ("\nIntegrate measure : old %d, new %d, integrated %d", ralpriv->last_meas_level[i], measure,new_integrated  );
   // store the result
   ralpriv->last_meas_level[i] =  measure;
   ralpriv->prev_integrated_meas_level[i] = ralpriv->integrated_meas_level[i];
@@ -94,7 +99,8 @@ void rallte_NAS_measures_polling(void){
     MIH_C_LINK_DN_REASON_T      reason_code;
     MIH_C_TRANSACTION_ID_T      transaction_id;
     MIH_C_LINK_TUPLE_ID_T       link_identifier;
-    MIH_C_LINK_PARAM_RPT_LIST_T link_parameters_report_list;
+    MIH_C_LINK_DET_INFO_T       link_detected_info;
+    //MIH_C_LINK_PARAM_RPT_LIST_T link_parameters_report_list;
 
     IAL_process_DNAS_message(IO_OBJ_MEAS, IO_CMD_LIST, 0);
 
@@ -134,7 +140,40 @@ void rallte_NAS_measures_polling(void){
                                           NULL,
                                           &reason_code);
 
-    } else if (ralpriv->integrated_meas_level[0]< ((ralpriv->prev_integrated_meas_level[0]*7)/10)) {
+    } else if ((ralpriv->link_to_be_detected == MIH_C_BOOLEAN_TRUE) && (ralpriv->curr_signal_level > PREDEFINED_LINK_DETECTED_INDICATION_SIG_STRENGTH)) {
+        transaction_id                           = MIH_C_get_new_transaction_id();
+        // MIH_C_LINK_TUPLE_ID_T
+        link_detected_info.link_tuple_id.link_id.link_type        = MIH_C_WIRELESS_UMTS;
+        link_detected_info.link_tuple_id.link_id.link_addr.choice = (MIH_C_CHOICE_T)MIH_C_CHOICE_3GPP_ADDR;
+        MIH_C_3GPP_ADDR_set(&link_detected_info.link_tuple_id.link_id.link_addr._union._3gpp_addr, (u_int8_t*)DEFAULT_ADDRESS_3GPP, strlen(DEFAULT_ADDRESS_3GPP));
+        link_detected_info.link_tuple_id.choice                   = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
+        // MIH_C_NETWORK_ID_T
+        MIH_C_NETWORK_ID_set(&link_detected_info.network_id, (u_int8_t *)PREDEFINED_MIH_NETWORK_ID, strlen(PREDEFINED_MIH_NETWORK_ID));
+        // MIH_C_NET_AUX_ID_T
+        MIH_C_NET_AUX_ID_set(&link_detected_info.net_aux_id, (u_int8_t *)PREDEFINED_MIH_NETAUX_ID, strlen(PREDEFINED_MIH_NETAUX_ID));
+        // MIH_C_SIG_STRENGTH_T
+        link_detected_info.sig_strength.choice     = MIH_C_SIG_STRENGTH_CHOICE_PERCENTAGE;
+        link_detected_info.sig_strength._union.percentage = ralpriv->curr_signal_level;
+        // sinr
+        link_detected_info.sinr = PREDEFINED_LINK_DETECTED_INDICATION_SINR;
+        // MIH_C_LINK_DATA_RATE_T
+        link_detected_info.link_data_rate = PREDEFINED_LINK_DETECTED_INDICATION_LINK_DATA_RATE;
+        // MIH_C_LINK_MIHCAP_FLAG
+        link_detected_info.link_mihcap_flag = MIH_C_BIT_EVENT_SERVICE_SUPPORTED    |
+                                              MIH_C_BIT_COMMAND_SERVICE_SUPPORTED  |
+                                              MIH_C_BIT_INFORMATION_SERVICE_SUPPORTED;
+        // MIH_C_NET_CAPS_T
+        link_detected_info.net_caps = MIH_C_BIT_NET_CAPS_QOS_CLASS0 |
+                                      MIH_C_BIT_NET_CAPS_QOS_CLASS1 |
+                                      MIH_C_BIT_NET_CAPS_INTERNET_ACCESS;
+
+
+        mRALlte_send_link_detected_indication(&transaction_id, &link_detected_info);
+        ralpriv->link_to_be_detected = MIH_C_BOOLEAN_FALSE;
+    }
+
+
+    /*else if (ralpriv->integrated_meas_level[0]< ((ralpriv->prev_integrated_meas_level[0]*7)/10)) {
         //mRALu_send_link_parms_report_ind();
         //mRALte_send_link_parameters_report_indication();
         link_identifier.link_id.link_type        = MIH_C_WIRELESS_UMTS;
@@ -155,7 +194,9 @@ void rallte_NAS_measures_polling(void){
         transaction_id                           = MIH_C_get_new_transaction_id();
         mRALlte_send_link_parameters_report_indication(&transaction_id, &link_identifier, &link_parameters_report_list);
 
-    }
+    }*/
+    // LG: TO DO CHECK IF INDEX IS 0
+    mRALlte_check_thresholds_signal_strength(ralpriv->integrated_meas_level[0], ralpriv->prev_integrated_meas_level[0]);
 }
 
 //---------------------------------------------------------------------------
