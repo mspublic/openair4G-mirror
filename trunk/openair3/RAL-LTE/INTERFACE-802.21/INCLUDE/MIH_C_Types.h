@@ -1010,7 +1010,7 @@ TYPEDEF_ENUMERATED(MIH_C_LINK_AC_RESULT)
 *        Bit 2: DATA_FWD_REQ
 *        Bit 3–7: (Reserved)
 */
-TYPEDEF_BITMAP16(MIH_C_LINK_AC_ATTR)
+TYPEDEF_BITMAP8(MIH_C_LINK_AC_ATTR)
 //-------------------------------------------
 /*!
 * \ingroup MIH_C_F4_DATA_TYPES_FOR_LINKS_CODEC

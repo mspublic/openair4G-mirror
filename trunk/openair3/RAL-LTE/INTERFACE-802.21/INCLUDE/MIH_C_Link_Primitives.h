@@ -191,8 +191,7 @@ typedef struct MIH_C_Link_Get_Parameters_confirm
     LIST(MIH_C_LINK_DESC_RSP,   *LinkDescriptorsResponse)        /*!< \brief  The descriptors of a link.*/
 }__attribute__((__packed__))MIH_C_Link_Get_Parameters_confirm_t;
 
-
-TYPEDEF_LIST(MIH_C_LINK_CFG_PARAM, 16);
+TYPEDEF_LIST(MIH_C_LINK_CFG_PARAM, MIH_C_LINK_CFG_PARAM_LIST_LENGTH);
 /*! \struct  MIH_C_Link_Configure_Thresholds_request
 * \brief Structure defining the Link_Configure_Thresholds.request MIH_LINK_SAP primitive (see IEEE Std 802.21-2008 7.3.13.1 Link_Configure_Thresholds.request)
 */

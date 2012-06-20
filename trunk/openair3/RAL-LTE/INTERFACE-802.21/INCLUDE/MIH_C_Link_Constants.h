@@ -52,6 +52,8 @@
 #define MIH_C_LINK_ADDR_LIST_LENGTH        8
 #define MIH_C_QOS_LIST_LENGTH              255
 #define MIH_C_LINK_STATUS_REQ_LIST_LENGTH  32
+#define MIH_C_LINK_CFG_PARAM_LIST_LENGTH 16
+
 
 #endif
 
