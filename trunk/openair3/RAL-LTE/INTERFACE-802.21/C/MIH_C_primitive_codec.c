@@ -175,6 +175,8 @@ int MIH_C_Link_Primitive_Decode_Link_Action_request(Bit_Buffer_t* bbP, MIH_C_Lin
         PoALinkAddress = malloc(sizeof(MIH_C_LINK_ADDR_T));
         MIH_C_LINK_ADDR_decode(bbP, PoALinkAddress);
         primitiveP->PoALinkAddress = PoALinkAddress;
+    } else {
+        primitiveP->PoALinkAddress = NULL;
     }
     if (BitBuffer_isCheckReadOverflowOK(bbP, 0) == BIT_BUFFER_FALSE) {
         free(PoALinkAddress);
