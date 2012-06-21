@@ -69,6 +69,7 @@ unsigned int MIH_C_LINK_EVENT_LIST2String2(MIH_C_LINK_EVENT_LIST_T *dataP, char*
     if (*dataP & MIH_C_BIT_LINK_HANDOVER_IMMINENT)   buffer_index+= sprintf(&bufP[buffer_index], "LK_HANDOVER_IMMINENT,");
     if (*dataP & MIH_C_BIT_LINK_HANDOVER_COMPLETE)   buffer_index+= sprintf(&bufP[buffer_index], "LK_HANDOVER_COMPLETE,");
     if (*dataP & MIH_C_BIT_LINK_PDU_TRANSMIT_STATUS) buffer_index+= sprintf(&bufP[buffer_index], "LK_PDU_TRANSMIT_STATUS");
+    if (*dataP == 0)                                 buffer_index+= sprintf(&bufP[buffer_index], "NULL");
 
     return buffer_index;
 }
@@ -82,6 +83,7 @@ unsigned int MIH_C_LINK_CMD_LIST2String2(MIH_C_LINK_CMD_LIST_T *dataP, char* buf
     if (*dataP & MIH_C_BIT_LINK_GET_PARAMETERS)       buffer_index+= sprintf(&bufP[buffer_index], "LK_GET_PARAMETERS,");
     if (*dataP & MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS) buffer_index+= sprintf(&bufP[buffer_index], "LK_CONFIGURE_THRESHOLDS,");
     if (*dataP & MIH_C_BIT_LINK_ACTION)               buffer_index+= sprintf(&bufP[buffer_index], "LK_ACTION");
+    if (*dataP == 0)                                  buffer_index+= sprintf(&bufP[buffer_index], "NULL");
 
     return buffer_index;
 }
@@ -137,6 +139,7 @@ unsigned int MIH_C_LINK_AC_ATTR2String2(MIH_C_LINK_AC_ATTR_T *dataP, char* bufP)
     if (*dataP & MIH_C_BIT_LINK_AC_ATTR_LINK_SCAN)       buffer_index+= sprintf(&bufP[buffer_index], "AC_ATTR_LINK_SCAN");
     if (*dataP & MIH_C_BIT_LINK_AC_ATTR_LINK_RES_RETAIN) buffer_index+= sprintf(&bufP[buffer_index], ",AC_ATTR_LINK_RES_RETAIN");
     if (*dataP & MIH_C_BIT_LINK_AC_ATTR_DATA_FWD_REQ)    buffer_index+= sprintf(&bufP[buffer_index], ",AC_ATTR_DATA_FWD_REQ");
+    if (*dataP == 0)                                     buffer_index+= sprintf(&bufP[buffer_index], "NULL");
     return buffer_index;
 }
 //-----------------------------------------------------------------------------
