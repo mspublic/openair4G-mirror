@@ -261,6 +261,18 @@ int inits(int argc, char *argv[]) {
     }
     DEBUG("MT-MIHF socket initialized.\n\n");
 
+    // excluded MIH_C_LINK_AC_TYPE_NONE
+    // excluded MIH_C_LINK_AC_TYPE_LINK_LOW_POWER
+    // excluded MIH_C_LINK_AC_TYPE_NONE
+    ralpriv->mih_supported_action_list =  MIH_C_LINK_AC_TYPE_LINK_DISCONNECT            |
+                                          MIH_C_LINK_AC_TYPE_LINK_POWER_DOWN            |
+                                          MIH_C_LINK_AC_TYPE_LINK_POWER_UP              |
+                                          MIH_C_LINK_AC_TYPE_LINK_FLOW_ATTR             |
+                                          MIH_C_LINK_AC_TYPE_LINK_ACTIVATE_RESOURCES    |
+                                          MIH_C_LINK_AC_TYPE_LINK_DEACTIVATE_RESOURCES;
+
+
+
     ralpriv->mih_supported_link_event_list = MIH_C_BIT_LINK_DETECTED |
                                               MIH_C_BIT_LINK_UP |
                                               MIH_C_BIT_LINK_DOWN |

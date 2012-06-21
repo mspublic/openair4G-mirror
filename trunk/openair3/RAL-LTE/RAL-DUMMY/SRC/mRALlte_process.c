@@ -216,12 +216,7 @@ int rallte_NAS_corresponding_cell(int req_index)
 //---------------------------------------------------------------------------
 void rallte_verifyPendingConnection(void){
 //---------------------------------------------------------------------------
-    MIH_C_TRANSACTION_ID_T              transaction_id;
-    MIH_C_STATUS_T                      status;
-    //LIST(MIH_C_LINK_SCAN_RSP,           scan_response_set);
-    MIH_C_LINK_AC_RESULT_T              link_action_result;
     int                                 if_ready = 0;
-
 
     if ((ralpriv->pending_req_flag)%5==0){
         DEBUG("Pending Req Flag %d\n", ralpriv->pending_req_flag);
@@ -246,11 +241,8 @@ void rallte_verifyPendingConnection(void){
             // here or just after ioctl? or between?
             //mRALu_send_link_switch_cnf();
         	//mRALte_send_link_action_confirm();
-            status             = MIH_C_STATUS_SUCCESS;
-            link_action_result = ralpriv->pending_req_status;
-            transaction_id = ralpriv->pending_req_transaction_id;
 
-            mRALlte_send_link_action_confirm(&transaction_id, &status, NULL, &link_action_result);
+            mRALlte_send_link_action_confirm(&ralpriv->pending_req_transaction_id, &ralpriv->pending_req_status, NULL, &ralpriv->pending_req_ac_result);
 
             DEBUG("After response, Pending Req Flag = %d\n", ralpriv->pending_req_flag);
             ralpriv->pending_req_flag = 0;
