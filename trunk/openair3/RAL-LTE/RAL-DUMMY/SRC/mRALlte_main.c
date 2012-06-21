@@ -237,6 +237,7 @@ int inits(int argc, char *argv[]) {
     ralpriv = &rl_priv;
     memset(ralpriv, 0, sizeof(struct ral_lte_priv));
 
+    memset(g_msg_codec_recv_buffer, 0, MSG_CODEC_RECV_BUFFER_SIZE);
     // Initialize defaults
     g_ral_ip_address                = DEFAULT_IP_ADDRESS_RAL;
     g_ral_listening_port_for_mihf   = DEFAULT_LOCAL_PORT_RAL;
