@@ -52,7 +52,6 @@ struct ral_lte_priv {
    // only to call ralu_verifyPendingConnection
    u8 pending_req_flag;
 
-   u16 pending_req_transaction_id;
 
 // network parameters
    u16 cell_id;
@@ -86,12 +85,18 @@ struct ral_lte_priv {
    u32 rx_dropped;
    u32 tx_dropped;
    char buffer[800];  // For ioctl with NAS driver
-   MIH_C_LINK_AC_TYPE_T            event;
-   u8 command;
 
-// MIH interface
-   MIH_C_LINK_AC_RESULT_T          pending_req_status;
-   MIH_C_TRANSACTION_ID_T          pending_request_transaction_id;
+   // MIH-INTERFACE data
+   // Initialised, then read-only, supported actions
+   MIH_C_LINK_AC_TYPE_T            mih_supported_action_list;
+   // action currently processed
+   MIH_C_LINK_AC_TYPE_T            pending_req_action;
+   // actions requested by MIH-H
+   MIH_C_LINK_AC_TYPE_T            req_action_list;
+
+   MIH_C_STATUS_T                  pending_req_status;
+   MIH_C_LINK_AC_RESULT_T          pending_req_ac_result;
+   MIH_C_TRANSACTION_ID_T          pending_req_transaction_id;
    // set unset bits by MIH_C_Message_Link_Event_Subscribe_request MIH_C_Message_Link_Event_Unsubscribe_request
    MIH_C_LINK_EVENT_LIST_T         mih_subscribe_req_event_list;
    // Initialised, then read-only
