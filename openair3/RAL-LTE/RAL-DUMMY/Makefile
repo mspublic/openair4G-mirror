@@ -13,7 +13,7 @@ SRC_DIR=SRC
 
 CC = gcc
 
-CFLAGS = -Wall -g -I$(SRC_DIR)  -I$(INTERFACE_DIR)/INCLUDE  -I$(INCLUDE_DIR) -DMIH_C_MEDIEVAL_EXTENSIONS -DMSCGEN_PYTOOL
+CFLAGS = -Wall  -g -I$(SRC_DIR)  -I$(INTERFACE_DIR)/INCLUDE  -I$(INCLUDE_DIR) -DMIH_C_MEDIEVAL_EXTENSIONS -DMSCGEN_PYTOOL -DMIH_USER_CONTROL
 
 SRC_OBJS   = $(SRC_DIR)/mRALlte_mih_msg.o
 SRC_OBJS  += $(SRC_DIR)/mRALlte_thresholds.o
@@ -28,11 +28,25 @@ SRC_OBJS  += $(SRC_DIR)/mRALlte_process.o
 
 OBJS =   $(SRC_OBJS)
 
-EXECUTABLE = mRALlteDummy NASUEdummy
+EXECUTABLE = interface mRALlteDummy NASUEdummy
 
 # "all" is the default target. Simply make it point to myprogram.
 
 all: $(EXECUTABLE)
+
+ral: mRALlteDummy
+
+runralwithvalgrind: mRALlteDummy
+	-rm -f /tmp/*.txt
+	-valgrind --leak-check=full --show-reachable=yes --track-origins=yes  ./mRALlteDummy > /tmp/mral.txt
+
+runral: mRALlteDummy
+	-rm -f /tmp/*.txt
+	-./mRALlteDummy > /tmp/mral.txt
+
+interface :
+	-(cd $(INTERFACE_DIR) && make clean && make)
+
 
 mRALlteDummy : $(OBJS)
 	$(CC) -o mRALlteDummy $(OBJS) -lrt -L$(INTERFACE_DIR)/LIB -lmih_c-802.21
