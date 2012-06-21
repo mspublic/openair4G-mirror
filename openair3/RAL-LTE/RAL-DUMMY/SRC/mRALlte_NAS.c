@@ -49,8 +49,6 @@ void print_state(u8 state){
 int IAL_decode_NAS_message(void){
 //---------------------------------------------------------------------------
     struct nas_ue_netl_reply *msgToRcve;
-    MIH_C_STATUS_T            status;
-    MIH_C_TRANSACTION_ID_T    transaction_id;
     int done=0, n, i;
     char *buffer;
     #ifdef MSCGEN_PYTOOL
@@ -73,19 +71,20 @@ int IAL_decode_NAS_message(void){
                         getTimeStamp4Log(),
                         g_link_id);
                 DEBUG("NAS_UE_MSG_CNX_ESTABLISH_REPLY received\n");
+                ralpriv->pending_req_action = MIH_C_LINK_AC_TYPE_NONE;
                 ralpriv->state = DISCONNECTED;
                 if (msgToRcve->ialNASPrimitive.cnx_est_rep.status==0) {
                     ERR(" Connexion establishment failure: %d\n",msgToRcve->ialNASPrimitive.cnx_est_rep.status);
                     done = 1;
-                    ralpriv->pending_req_status = MIH_C_LINK_AC_RESULT_FAILURE;
+                    ralpriv->pending_req_status    = MIH_C_STATUS_SUCCESS;
+                    ralpriv->pending_req_ac_result = MIH_C_LINK_AC_RESULT_FAILURE;
                     //mRALu_send_link_switch_cnf();
                     //mRALte_send_link_action_confirm();
-                    status         = MIH_C_STATUS_UNSPECIFIED_FAILURE;
-                    transaction_id = ralpriv->pending_req_transaction_id;
-                    mRALlte_send_link_action_confirm(&transaction_id, &status, NULL,NULL);
                  } else {
-                        ralpriv->pending_req_flag = 1;
-                        DEBUG(" Connexion establishment pending: pending_req_flag %d\n\n",ralpriv->pending_req_flag);
+                    ralpriv->pending_req_status    = MIH_C_STATUS_SUCCESS;
+                    ralpriv->pending_req_ac_result = MIH_C_LINK_AC_RESULT_SUCCESS;
+                    ralpriv->pending_req_flag = 1;
+                    DEBUG(" Connexion establishment pending: pending_req_flag %d\n\n",ralpriv->pending_req_flag);
                 }
                 break;
 
@@ -94,15 +93,20 @@ int IAL_decode_NAS_message(void){
                        getTimeStamp4Log(),
                        g_link_id);
                 DEBUG("NAS_UE_MSG_CNX_RELEASE_REPLY received\n");
+                ralpriv->pending_req_action = MIH_C_LINK_AC_TYPE_NONE;
                 if (msgToRcve->ialNASPrimitive.cnx_rel_rep.status>0){
-                ERR(" Connexion release failure: %d", msgToRcve->ialNASPrimitive.cnx_rel_rep.status);
-                done = 1;
+                    ERR(" Connexion release failure: %d", msgToRcve->ialNASPrimitive.cnx_rel_rep.status);
+                    done = 1;
+                    ralpriv->pending_req_status    = MIH_C_STATUS_SUCCESS;
+                    ralpriv->pending_req_ac_result = MIH_C_LINK_AC_RESULT_FAILURE;
+                } else {
+                    ralpriv->pending_req_status    = MIH_C_STATUS_SUCCESS;
+                    ralpriv->pending_req_ac_result = MIH_C_LINK_AC_RESULT_SUCCESS;
+                    ralpriv->pending_req_flag = 1;
+                    DEBUG(" Connexion establishment pending: pending_req_flag %d\n\n",ralpriv->pending_req_flag);
                 }
                 ralpriv->state = DISCONNECTED;
                 //mRALu_send_link_switch_cnf();
-                status         = MIH_C_STATUS_UNSPECIFIED_FAILURE;
-                transaction_id = ralpriv->pending_req_transaction_id;
-                mRALlte_send_link_action_confirm(&transaction_id, &status, NULL,NULL);
                 //added
                 ralpriv->pending_req_flag = 0;
                 ralpriv->cell_id = CONF_UNKNOWN_CELL_ID;
