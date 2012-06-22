@@ -82,6 +82,12 @@ unsigned int time_offset[4] = {0,0,0,0};
 int fs4_test=0;
 char UE_flag=0;
 
+struct timing_info_t {
+  unsigned int frame, hw_slot, last_slot, next_slot;
+  RTIME time0, time1, time2;
+  unsigned int mbox0, mbox1, mbox2, mbox_target;
+} timing_info[20];
+
 extern s16* sync_corr_ue0;
 extern s16 prach_ifft[4][1024*2];
 
@@ -189,7 +195,7 @@ void do_forms2(FD_lte_scope *form,
       //fl_set_xyplot_ybounds(form->channel_f,30,70);
       fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
     }
-  /*
+
   // time domain channel
   if ((channel != NULL) && (channel[0] !=NULL))
     {
@@ -201,8 +207,8 @@ void do_forms2(FD_lte_scope *form,
       fl_set_xyplot_data(form->channel_t_im,time2,sig2,128,"","","");
       //fl_set_xyplot_ybounds(form->channel_t_im,0,1e6);
     }
-  */
 
+  /*
   // sync_corr
   if (sync_corr != NULL)
     {
@@ -214,6 +220,7 @@ void do_forms2(FD_lte_scope *form,
       fl_set_xyplot_data(form->channel_t_im,time2,sig2,sync_corr_len,"","","");
       //fl_set_xyplot_ybounds(form->channel_t_im,0,1e6);
     }
+  */
 
   // rx sig 0
   if (rx_sig != NULL) { 
@@ -464,6 +471,7 @@ static void *eNB_thread(void *arg)
   int diff;
   int delay_cnt;
   RTIME time_in;
+  int mbox_target=0,mbox_current=0;
   int i;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
@@ -500,44 +508,63 @@ static void *eNB_thread(void *arg)
 
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+      //this is the mbox counter where we should be 
+      mbox_target = ((((slot+1)%20)*15+1)>>1);
+      //this is the mbox counter where we are
+      mbox_current = ((unsigned int *)DAQ_MBOX)[0];
+      //this is the time we need to sleep in order to synchronize with the hw (in multiples of DAQ_PERIOD)
+      if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
+	diff = 150-mbox_current+mbox_target;
+      else if ((mbox_current<15) && (mbox_target>=135))
+	diff = -150+mbox_target-mbox_current;
+      else
+        diff = mbox_target - mbox_current;
+ 
+      if (diff < (-5)) {
+	rt_printk("eNB Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff);
+	slot++;
+	if (slot==20)
+          slot=0;
+	continue;
+      }
+      if (diff>8) 
+	rt_printk("eNB Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff);
+
       delay_cnt = 0;
-      diff = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-      if (diff<(-1))
-	diff+=150;
-
-      //rt_printk("eNB Frame %d (before while): slot %d, hw_slot %d, diff %d\n",frame, slot, hw_slot, diff);
-
       while ((diff>0) && (!oai_exit))
         {
- 
-          time_in = rt_get_time_ns();
-          //rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15=%d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+	  time_in = rt_get_time_ns();
+	  //rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15=%d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+	  //rt_printk("Frame %d: slot %d, sleeping for %llu\n", frame, slot, diff*DAQ_PERIOD);
           rt_sleep(nano2count(diff*DAQ_PERIOD));
           hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
-          //rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns()-time_in);
+          //rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
           delay_cnt++;
           if (delay_cnt == 10)
             {
               oai_exit = 1;
               rt_printk("eNB Frame %d: HW stopped ... \n",frame);
             }
-          diff = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-	  if (diff<(-1))
-	    diff+=150;
-
+	  mbox_current = ((unsigned int *)DAQ_MBOX)[0];
+	  if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
+	    diff = 150-mbox_current+mbox_target;
+	  else
+	    diff = mbox_target - mbox_current;
         }
 
 #endif
-      last_slot = (hw_slot)%LTE_SLOTS_PER_FRAME;
+      last_slot = (slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=20;
-      next_slot = (hw_slot + 2)%LTE_SLOTS_PER_FRAME;
+      next_slot = (slot+2)%LTE_SLOTS_PER_FRAME;
 
       //PHY_vars_eNB_g[0]->frame = frame;
       if (frame>5)
         {
-          if (frame<10)
-            rt_printk("slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",slot, hw_slot,next_slot,DAQ_MBOX[0]);
+	  /*
+          if (frame%100==0)
+            rt_printk("frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
+	  */
           if (fs4_test==0)
             {
               phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
@@ -608,9 +635,10 @@ static void *eNB_thread(void *arg)
             }
 
 #endif //IFFT_FPGA
-
-          if (frame<10)
+	  /*
+          if (frame%100==0)
             rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
+	  */
         }
 
       /*
@@ -659,7 +687,7 @@ static void *UE_thread(void *arg)
   static int slot0 = 0;
   int delay_cnt;
   RTIME time_in;
-  int hw_slot_offset = 0;
+  int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -693,54 +721,89 @@ static void *UE_thread(void *arg)
 
       slot = (msg1 - slot0) % LTE_SLOTS_PER_FRAME;
 #else
-      hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+      hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15; //the slot the hw is about to store
+      
+      //this is the mbox counter that indicates the start of the frame
+      rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (LTE_SLOTS_PER_FRAME*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti); 
+      //this is the mbox counter where we should be 
+      mbox_target = (((((slot+1)%20)*15+1)>>1) + rx_offset_mbox + 1)%150;
+      //this is the mbox counter where we are
+      mbox_current = ((unsigned int *)DAQ_MBOX)[0];
+      //this is the time we need to sleep in order to synchronize with the hw (in multiples of DAQ_PERIOD)
+      if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
+	diff2 = 150-mbox_current+mbox_target;
+      else if ((mbox_current<15) && (mbox_target>=135))
+	diff2 = -150+mbox_target-mbox_current;
+      else
+        diff2 = mbox_target - mbox_current;
+
+      if (diff2 <(-5)) {
+	rt_printk("UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
+	slot++;
+	if (slot==20)
+          slot=0;
+	continue;
+      }
+      if (diff2>8) 
+	rt_printk("UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
+
+      timing_info[slot].time0 = rt_get_time_ns();
+      timing_info[slot].mbox0 = ((unsigned int *)DAQ_MBOX)[0];
+
       delay_cnt = 0;
-      diff2 = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-      if (diff2<(-1))
-	diff2+=150;
       while ((diff2>0) && (!oai_exit) && (is_synchronized) )
         {
-          time_in = rt_get_time_ns();
-          //rt_printk("UE Frame %d delaycnt %d : hw_slot %d, slot %d, diff %d, time %llu, sleeping until %lld\n",
-          //          frame,delay_cnt,hw_slot,slot,diff2,time_in,time_in + diff2*DAQ_PERIOD);
-          //rt_sleep_until(nano2count(time_in + diff2*DAQ_PERIOD));
           rt_sleep(nano2count(diff2*DAQ_PERIOD)); 
           hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
-	  //rt_printk("UE Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
           delay_cnt++;
           if (delay_cnt == 30)
             {
               oai_exit = 1;
               rt_printk("UE frame %d: HW stopped ... \n",frame);
             }
-          diff2 = ((((slot+1)%20)*15)>>1) - ((unsigned int *)DAQ_MBOX)[0];
-          if (diff2<(-1))
-            diff2+=150;
+	  mbox_current = ((unsigned int *)DAQ_MBOX)[0];
+	  if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
+	    diff2 = 150-mbox_current+mbox_target;
+	  else
+	    diff2 = mbox_target - mbox_current;
         }
+      
+      timing_info[slot].time1 = rt_get_time_ns();
+      timing_info[slot].mbox1 = ((unsigned int *)DAQ_MBOX)[0];
+      timing_info[slot].mbox_target = mbox_target;
 
 #endif
-      last_slot = (hw_slot + hw_slot_offset)%LTE_SLOTS_PER_FRAME;
+      last_slot = slot%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=LTE_SLOTS_PER_FRAME;
-      next_slot = (hw_slot + hw_slot_offset + 2)%LTE_SLOTS_PER_FRAME;
+      next_slot = (slot + 2)%LTE_SLOTS_PER_FRAME;
 
+      timing_info[slot].frame = PHY_vars_UE_g[0]->frame;
+      timing_info[slot].hw_slot = hw_slot;
+      timing_info[slot].last_slot = last_slot;
+      timing_info[slot].next_slot = next_slot;
 
       if (is_synchronized)
         {
           /*
-          if (PHY_vars_UE_g[0]->frame%100==0)
-            rt_printk("fun0: slot %d, next_slot %d, last_slot %d!\n",slot,last_slot,next_slot);
-          */
-
+          if (frame%100==0)
+            rt_printk("frame %d (%d), slot %d, hw_slot %d, last_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,last_slot,DAQ_MBOX[0]);
+	  */
           in = rt_get_time_ns();
           phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0);
           out = rt_get_time_ns();
           diff = out-in;
-
-          if (PHY_vars_UE_g[0]->frame % 100 == 0)
+	  /*
+          if (frame % 100 == 0)
+            rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
+	  
             rt_printk("Frame %d: last_slot %d, phy_procedures_lte_ue time_in %llu, time_out %llu, diff %llu\n",
-                      PHY_vars_UE_g[0]->frame, last_slot,
-                      in,out,diff);
+                      frame, last_slot,in,out,diff);
+	  */
+
+	  timing_info[slot].time2 = rt_get_time_ns();
+	  timing_info[slot].mbox2 = ((unsigned int *)DAQ_MBOX)[0];
+
         }
       else   // we are not yet synchronized
         {
@@ -773,6 +836,9 @@ static void *UE_thread(void *arg)
                     memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
                            PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
                   is_synchronized = 1;
+#ifndef OPENAIR2
+		  PHY_vars_UE_g[0]->UE_mode[0]=PUSCH;
+#endif
                   slot0 = msg1;
                 }
             }
@@ -801,7 +867,6 @@ static void *UE_thread(void *arg)
               is_synchronized = 1;
               ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
 
-              //	      oai_exit=1;
               hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
               rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
             }
@@ -867,7 +932,7 @@ int main(int argc, char **argv)
   LTE_DL_FRAME_PARMS *frame_parms;
   u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
   u32 rf_mode[4]     = {55759,55759,55759,55759};
-  u32 rf_local[4]    = {8254617, 8254617, 8254617, 8254617}; //eNB khalifa
+  u32 rf_local[4]    = {8254816, 8254681, 8254617, 8254617}; //eNB khalifa
     //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
@@ -1022,8 +1087,8 @@ int main(int argc, char **argv)
         PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
       openair_daq_vars.ue_ul_nb_rb=25;
       openair_daq_vars.target_ue_dl_mcs=5;
-      openair_daq_vars.ue_ul_nb_rb=12;
-      openair_daq_vars.target_ue_ul_mcs=10;
+      openair_daq_vars.ue_ul_nb_rb=4;
+      openair_daq_vars.target_ue_ul_mcs=5;
     }
 
   mac_xface = malloc(sizeof(MAC_xface));
