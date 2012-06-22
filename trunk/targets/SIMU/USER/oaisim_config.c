@@ -230,6 +230,7 @@ void init_oai_emulation() {
   oai_emulation.info.ocg_enabled=0;// flag c
   oai_emulation.info.otg_enabled=0;// flag T
   oai_emulation.info.opt_enabled=0; // P flag
+  oai_emulation.info.opt_mode=-1; // arg for P flag
   oai_emulation.info.cli_enabled=0;// I flag
   oai_emulation.info.omv_enabled =0; // v flag
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
@@ -767,8 +768,9 @@ int ocg_config_emu(){
   //bin/LOG_I(OCG, "OPT output file directory = %s\n", oai_emulation.info.output_path);
   oai_emulation.info.opt_enabled = ( oai_emulation.emulation_config.packet_trace.enabled == 0) ? oai_emulation.info.opt_enabled :  oai_emulation.emulation_config.packet_trace.enabled;
   if (oai_emulation.info.opt_enabled == 1 ){
-      LOG_I(OPT, " initiated  ");
-      Init_OPT(0,"outfile.dump","127.0.0.1",1234); // Init_OPT(2, oai_emulation.info.output_path, NULL, 0);*/
+    if (init_opt(oai_emulation.info.opt_mode,
+		 "/home/navid/openair4G/targets/SIMU/USER/outfile.dump","127.0.0.1","1234") == -1)
+      LOG_E(OPT,"failed to run OPT \n")
     }
   
   return 1;  

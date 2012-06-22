@@ -1637,12 +1637,12 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
     memset(&preamble_energy_list[0],0,64*sizeof(u16));
     memset(&preamble_delay_list[0],0,64*sizeof(u16));
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-      /*
-      printf("[RAPROC] UE_id %d, generate_prach %d, UE RSI %d, eNB RSI %d\n",
+      
+      LOG_D(PHY,"[RAPROC] UE_id %d, generate_prach %d, UE RSI %d, eNB RSI %d\n",
 	     UE_id,PHY_vars_UE_g[UE_id]->generate_prach,
 	     PHY_vars_UE_g[UE_id]->lte_frame_parms.prach_config_common.rootSequenceIndex,
 	     phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex);
-      */
+      
       if ((PHY_vars_UE_g[UE_id]->generate_prach==1) &&
 	  (PHY_vars_UE_g[UE_id]->lte_frame_parms.prach_config_common.rootSequenceIndex ==
 	   phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex) ) {

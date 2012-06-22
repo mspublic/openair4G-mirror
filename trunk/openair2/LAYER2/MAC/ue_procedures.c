@@ -48,11 +48,13 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LITE/extern.h"
 #include "UTIL/LOG/log.h"
+#include "OCG.h"
+#include "OCG_extern.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif
 
-#define DEBUG_HEADER_PARSING
+#define DEBUG_HEADER_PARSING 1
 
 /*
 #ifndef USER_MODE
@@ -538,7 +540,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
     }
     if (sdu_lengths[i] < 128) {
-      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 3;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0; // 3
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
@@ -808,6 +810,14 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
       ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
   }
 
+#if defined(USER_MODE) && defined(OAI_EMU)
+  if (oai_emulation.info.opt_enabled)
+    trace_pdu(0, ulsch_buffer, buflen, Mod_id, 3, 
+	      find_UE_RNTI(eNB_index,Mod_id),frame,0,0);
+  LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n", 
+	Mod_id, frame, find_UE_RNTI(eNB_index,Mod_id), buflen);
+#endif
+  
     LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
 	  Mod_id,payload_offset, sdu_length_total);
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;

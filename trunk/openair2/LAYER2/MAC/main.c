@@ -341,6 +341,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_SB_size	      	   = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
+  mac_xface->Msg1_transmitted          = Msg1_tx;
   mac_xface->ra_failed                 = ra_failed;
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");

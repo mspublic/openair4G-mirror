@@ -349,7 +349,7 @@ void nas_init(struct net_device *dev){
     //
 #endif 
     // dev->type = ARPHRD_EUROPENAIRMESH;
-    //dev->type = ARPHRD_ETHER;
+    dev->type = ARPHRD_ETHER;
     //  dev->features = NETIF_F_NO_CSUM;
     dev->hard_header_len = 0;
     dev->addr_len = NAS_ADDR_LEN;
@@ -409,18 +409,15 @@ void nas_init(struct net_device *dev){
     #endif
 // this is more appropriate for user space soft realtime emulation    
 #else
-    
-        memcpy(dev->dev_addr,&nas_IMEI[0],8);
-     printk("Setting HW addr to : %X%X\n",*((unsigned int *)&dev->dev_addr[0]),*((unsigned int *)&dev->dev_addr[4]));
-
-    ((unsigned char*)dev->dev_addr)[7] = (unsigned char)find_inst(dev);
-
-   
-
+	memcpy(dev->dev_addr,&nas_IMEI[0],8);
+	printk("Setting HW addr to : %X%X\n",*((unsigned int *)&dev->dev_addr[0]),*((unsigned int *)&dev->dev_addr[4]));
+	
+	((unsigned char*)dev->dev_addr)[7] = (unsigned char)find_inst(dev);
+	
         memcpy((u8 *)priv->cx[0].iid6,&nas_IMEI[0],8);
     
         printk("INIT: init IMEI to IID\n");
-#endif  
+ #endif  
     printk("INIT: end\n");
     return;
   }  // instance value check

@@ -145,7 +145,8 @@ help (void) {
   printf ("-T activate the traffic generator: 0 for NONE, 1 for CBR, 2 for M2M, 3 for FPS Gaming, 4 for mix\n");
   printf ("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
   printf ("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
-  printf ("-E Random number generator seed\n");
+  printf ("-E Random number generator seed\n"); 
+  printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
 }
 
@@ -670,7 +671,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePoFvIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
+  while ((c = getopt (argc, argv, "haeoFvIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
 	 != -1) {
 
     switch (c) {
@@ -817,6 +818,7 @@ main (int argc, char **argv)
       break;
     case 'P':
       oai_emulation.info.opt_enabled = 1;
+      oai_emulation.info.opt_mode = atoi (optarg);
       break;
     case 'E':
       set_seed = 1;

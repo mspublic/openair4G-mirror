@@ -167,7 +167,7 @@ BOOL pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_b
    * Fill Data or Control field
    */
   if (pdu->dc == PDCP_DATA_PDU) {
-    LOG_D(PDCP, "Setting PDU as a Control PDU\n");
+    LOG_D(PDCP, "Setting PDU as a DATA PDU\n");
     pdu_buffer[0] |= 0x80; // set the first bit as 1
   }
 
