@@ -99,7 +99,8 @@ NOCYGWIN_STATIC __m64 SQRT_5_NINE_OVER_SQRT_20 __attribute__((aligned(16)));
 #define square_a_pi16(a_r,a_i,int_ch_mag,scale_factor,a_sq)  tmp_result=_mm_mulhi_pi16(a_r,a_r); tmp_result = _mm_slli_pi16(tmp_result,1); tmp_result=_mm_mulhi_pi16(tmp_result,scale_factor); tmp_result = _mm_slli_pi16(tmp_result,1); tmp_result=_mm_mulhi_pi16(tmp_result,int_ch_mag); tmp_result = _mm_slli_pi16(tmp_result,1);tmp_result2=_mm_mulhi_pi16(a_i,a_i); tmp_result2 = _mm_slli_pi16(tmp_result2,1); tmp_result2=_mm_mulhi_pi16(tmp_result2,scale_factor);tmp_result2 = _mm_slli_pi16(tmp_result2,1);tmp_result2=_mm_mulhi_pi16(tmp_result2,int_ch_mag);tmp_result2 = _mm_slli_pi16(tmp_result2,1);a_sq=_mm_adds_pi16(tmp_result,tmp_result2);    //calcluates two terms in the bit metric with the scale factor based on 2^15
 
 // Calculates two terms in the bit metric with the scale factor based on 2^15 (less cx compared to 16-QAM release)
-#define square_a_64qam_pi16(a_r, a_i, int_ch_mag_direct, a_sq) tmp_result = _mm_mulhi_pi16(a_r, a_r); tmp_result = _mm_slli_pi16(tmp_result, 1); tmp_result2 = _mm_mulhi_pi16(a_i, a_i); tmp_result2 = _mm_slli_pi16(tmp_result2, 1); tmp_result = _mm_adds_pi16(tmp_result, tmp_result2); a_sq = _mm_mulhi_pi16(tmp_result, int_ch_mag_direct); a_sq = _mm_slli_pi16(a_sq, 1);
+#define square_a_64qam_pi16(a_r,a_i,int_ch_mag,scale_factor,a_sq)  tmp_result=_mm_mulhi_pi16(a_r,a_r); tmp_result = _mm_slli_pi16(tmp_result,1); tmp_result=_mm_mulhi_pi16(tmp_result,scale_factor); tmp_result = _mm_slli_pi16(tmp_result,3); tmp_result=_mm_mulhi_pi16(tmp_result,int_ch_mag); tmp_result = _mm_slli_pi16(tmp_result,1);tmp_result2=_mm_mulhi_pi16(a_i,a_i); tmp_result2 = _mm_slli_pi16(tmp_result2,1); tmp_result2=_mm_mulhi_pi16(tmp_result2,scale_factor);tmp_result2 = _mm_slli_pi16(tmp_result2,3);tmp_result2=_mm_mulhi_pi16(tmp_result2,int_ch_mag);tmp_result2 = _mm_slli_pi16(tmp_result2,1);a_sq=_mm_adds_pi16(tmp_result,tmp_result2);
+
 
 //#define cmax(a,b) ((a)>(b) ? (a) : (b))
 
@@ -197,86 +198,37 @@ double I_flp(double in1, double in2)
 }
 
 void interference_abs_64qam_pi16(__m64 *psi, __m64 *int_ch_mag, __m64 *int_two_ch_mag, __m64 *int_three_ch_mag, __m64 *a, __m64 *ONE_OVER_SQRT_2_42, __m64 *THREE_OVER_SQRT_2_42, __m64 *FIVE_OVER_SQRT_2_42, __m64 *SEVEN_OVER_SQRT_2_42) {
-
-  short *psi_temp = (short *)psi;
-  short *int_ch_mag_temp = (short *)int_ch_mag;
-  short *int_two_ch_mag_temp = (short *)int_two_ch_mag;
-  short *int_three_ch_mag_temp = (short *)int_three_ch_mag;
-  short *a_temp = (short *)a;
-  short *ONE_OVER_SQRT_2_42_temp   = (short *)ONE_OVER_SQRT_2_42;
-  short *THREE_OVER_SQRT_2_42_temp = (short *)THREE_OVER_SQRT_2_42;
-  short *FIVE_OVER_SQRT_2_42_temp  = (short *)FIVE_OVER_SQRT_2_42;
-  short *SEVEN_OVER_SQRT_2_42_temp = (short *)SEVEN_OVER_SQRT_2_42;
-  int jj;
-
-  for (jj=0; jj<4; jj++)
-    {
-      if (psi_temp[jj] < int_two_ch_mag_temp[jj])
-	{
-	  // 4-1
-	  if (psi_temp[jj] < int_ch_mag_temp[jj])
-	    {
-	      // 4-1 - 2*(...)
-	      if ( (psi_temp[jj] < int_ch_mag_temp[jj]) || (psi_temp[jj] > int_three_ch_mag_temp[jj]) )
-		{
-		  // 4-1 - 2*1
-		  a_temp[jj] = ONE_OVER_SQRT_2_42_temp[jj];
+	
+	short *psi_temp = (short *)psi;
+	short *int_ch_mag_temp = (short *)int_ch_mag;
+	short *int_two_ch_mag_temp = (short *)int_two_ch_mag;
+	short *int_three_ch_mag_temp = (short *)int_three_ch_mag;
+	short *a_temp = (short *)a;
+	short *ONE_OVER_SQRT_2_42_temp   = (short *)ONE_OVER_SQRT_2_42;
+	short *THREE_OVER_SQRT_2_42_temp = (short *)THREE_OVER_SQRT_2_42;
+	short *FIVE_OVER_SQRT_2_42_temp  = (short *)FIVE_OVER_SQRT_2_42;
+	short *SEVEN_OVER_SQRT_2_42_temp = (short *)SEVEN_OVER_SQRT_2_42;
+	int jj;
+	
+	for (jj=0; jj<4; jj++) {
+		if (psi_temp[jj] < int_two_ch_mag_temp[jj]) { // 3 or 1
+			if (psi_temp[jj] < int_ch_mag_temp[jj]) { // 1
+				a_temp[jj] = ONE_OVER_SQRT_2_42_temp[jj];
+			}
+			else { // 3
+				a_temp[jj] = THREE_OVER_SQRT_2_42_temp[jj];
+			}
 		}
-	      else
-		{
-		  // 4-1 - 2*0
-		  a_temp[jj] = THREE_OVER_SQRT_2_42_temp[jj];
+		else { // 5 or 7
+			if ( psi_temp[jj] < int_three_ch_mag_temp[jj] ) { // 5
+				a_temp[jj] = FIVE_OVER_SQRT_2_42_temp[jj];
+			}
+			else { // 7
+				a_temp[jj] = SEVEN_OVER_SQRT_2_42_temp[jj];
+			}
 		}
-	    }
-	  else
-	    {
-	      // 4-1 + 2*(...)
-	      if ( (psi_temp[jj] < int_ch_mag_temp[jj]) || (psi_temp[jj] > int_three_ch_mag_temp[jj]) )
-		{
-		  // 4-1 + 2*1
-		  a_temp[jj] = FIVE_OVER_SQRT_2_42_temp[jj];
-		}
-	      else
-		{
-		  // 4-1 + 2*0
-		  a_temp[jj] = THREE_OVER_SQRT_2_42_temp[jj];
-		}
-	    }
 	}
-      else
-	{
-	  // 4+1
-	  if (psi_temp[jj] < int_ch_mag_temp[jj])
-	    {
-	      // 4+1 - 2*(...)
-	      if ( (psi_temp[jj] < int_ch_mag_temp[jj]) || (psi_temp[jj] > int_three_ch_mag_temp[jj]) )
-		{
-		  // 4+1 - 2*1
-		  a_temp[jj] = THREE_OVER_SQRT_2_42_temp[jj];
-		}
-	      else
-		{
-		  // 4+1 - 2*0
-		  a_temp[jj] = FIVE_OVER_SQRT_2_42_temp[jj];
-		}
-	    }
-	  else
-	    {
-	      // 4+1 + 2*(...)
-	      if ( (psi_temp[jj] < int_ch_mag_temp[jj]) || (psi_temp[jj] > int_three_ch_mag_temp[jj]) )
-		{
-		  // 4+1 + 2*1
-		  a_temp[jj] = SEVEN_OVER_SQRT_2_42_temp[jj];
-		}
-	      else
-		{
-		  // 4+1 + 2*0
-		  a_temp[jj] = FIVE_OVER_SQRT_2_42_temp[jj];
-		}
-	    }
-	}
-    }
-  a= (__m64 *) a_temp;
+	a= (__m64 *) a_temp;
 }
 
 /* Static variables for 64-QAM, 64 bits vector format (ex mmx) of 16 bits elements format */
@@ -847,22 +799,26 @@ NOCYGWIN_STATIC __m64  logmax_den_re1 __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m64  logmax_den_im1 __attribute__ ((aligned(16)));
 
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 THREE_OVER_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 FIVE_OVER_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 SEVEN_OVER_SQRT_42 __attribute__((aligned(16))); 
+
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_2 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_2_42 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 THREE_OVER_SQRT_2_42 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 FIVE_OVER_SQRT_2_42 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 SEVEN_OVER_SQRT_2_42 __attribute__((aligned(16))); 
 
-NOCYGWIN_STATIC __m64 NINETYEIGHT_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 SEVENTYFOUR_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 FIFTYEIGHT_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 FIFTY_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 THIRTYFOUR_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 EIGHTEEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 TWENTYSIX_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 TEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 TWO_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
-NOCYGWIN_STATIC __m64 SQRT_42_OVER_TWO __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 FORTYNINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 THIRTYSEVEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 TWENTYNINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 TWENTYFIVE_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 SEVENTEEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 NINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 THIRTEEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 FIVE_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 ONE_OVER_FOUR_SQRT_42 __attribute__((aligned(16))); 
+NOCYGWIN_STATIC __m64 SQRT_42_OVER_FOUR __attribute__((aligned(16))); 
 
 NOCYGWIN_STATIC __m64 ONE_OVER_SQRT_21 __attribute__((aligned(16))); 
 NOCYGWIN_STATIC __m64 THREE_OVER_SQRT_21 __attribute__((aligned(16))); 
@@ -935,12 +891,27 @@ void qam64_qam64_mu_mimo(short *stream0_in,
   print_shorts2("ch_mag_64_i[i+1]:",ch_mag_64_i+1);
 #endif
 
-  int i, j;
+  int i;
 
   ((short*)&ONE_OVER_SQRT_42)[0] = 5056; // round(2^15/sqrt(42))=5056, round(2^16/sqrt(42))=10112
   ((short*)&ONE_OVER_SQRT_42)[1] = 5056;
   ((short*)&ONE_OVER_SQRT_42)[2] = 5056;
   ((short*)&ONE_OVER_SQRT_42)[3] = 5056;
+  
+  ((short*)&THREE_OVER_SQRT_42)[0] = 15168; 
+  ((short*)&THREE_OVER_SQRT_42)[1] = 15168;
+  ((short*)&THREE_OVER_SQRT_42)[2] = 15168;
+  ((short*)&THREE_OVER_SQRT_42)[3] = 15168;
+  
+  ((short*)&FIVE_OVER_SQRT_42)[0] = 25281; 
+  ((short*)&FIVE_OVER_SQRT_42)[1] = 25281;
+  ((short*)&FIVE_OVER_SQRT_42)[2] = 25281;
+  ((short*)&FIVE_OVER_SQRT_42)[3] = 25281;
+  
+  ((short*)&SEVEN_OVER_SQRT_42)[0] = 17696; // Q2.14
+  ((short*)&SEVEN_OVER_SQRT_42)[1] = 17696;
+  ((short*)&SEVEN_OVER_SQRT_42)[2] = 17696;
+  ((short*)&SEVEN_OVER_SQRT_42)[3] = 17696;
 
   ((short*)&ONE_OVER_SQRT_2)[0] = 23170; // round(2^15/sqrt(2))=23170, round(2^16/sqrt(2))=46341>32786
   ((short*)&ONE_OVER_SQRT_2)[1] = 23170;
@@ -967,50 +938,50 @@ void qam64_qam64_mu_mimo(short *stream0_in,
   ((short*)&SEVEN_OVER_SQRT_2_42)[2] = 25027;
   ((short*)&SEVEN_OVER_SQRT_2_42)[3] = 25027;
 
-  ((short*)&NINETYEIGHT_OVER_FOUR_SQRT_42)[0] = 15485; // round(2^12*98/(4*sqrt(42)))=15485, round(2^13*98/(4*sqrt(42)))=30969
-  ((short*)&NINETYEIGHT_OVER_FOUR_SQRT_42)[1] = 15485;
-  ((short*)&NINETYEIGHT_OVER_FOUR_SQRT_42)[2] = 15485;
-  ((short*)&NINETYEIGHT_OVER_FOUR_SQRT_42)[3] = 15485;
+  ((short*)&FORTYNINE_OVER_FOUR_SQRT_42)[0] = 30969; // Q2.14
+  ((short*)&FORTYNINE_OVER_FOUR_SQRT_42)[1] = 30969;
+  ((short*)&FORTYNINE_OVER_FOUR_SQRT_42)[2] = 30969;
+  ((short*)&FORTYNINE_OVER_FOUR_SQRT_42)[3] = 30969;
 
-  ((short*)&SEVENTYFOUR_OVER_FOUR_SQRT_42)[0] = 23385; // round(2^13*74/(4*sqrt(42)))=23385, round(2^14*74/(4*sqrt(42)))>32786
-  ((short*)&SEVENTYFOUR_OVER_FOUR_SQRT_42)[1] = 23385;
-  ((short*)&SEVENTYFOUR_OVER_FOUR_SQRT_42)[2] = 23385;
-  ((short*)&SEVENTYFOUR_OVER_FOUR_SQRT_42)[3] = 23385;
+  ((short*)&THIRTYSEVEN_OVER_FOUR_SQRT_42)[0] = 23384; // Q2.14
+  ((short*)&THIRTYSEVEN_OVER_FOUR_SQRT_42)[1] = 23384;
+  ((short*)&THIRTYSEVEN_OVER_FOUR_SQRT_42)[2] = 23384;
+  ((short*)&THIRTYSEVEN_OVER_FOUR_SQRT_42)[3] = 23384;
 
-  ((short*)&FIFTYEIGHT_OVER_FOUR_SQRT_42)[0] = 18329; // round(2^13*58/(4*sqrt(42)))=18329, round(2^14*58/(4*sqrt(42)))>32786
-  ((short*)&FIFTYEIGHT_OVER_FOUR_SQRT_42)[1] = 18329;
-  ((short*)&FIFTYEIGHT_OVER_FOUR_SQRT_42)[2] = 18329;
-  ((short*)&FIFTYEIGHT_OVER_FOUR_SQRT_42)[3] = 18329;
+  ((short*)&TWENTYFIVE_OVER_FOUR_SQRT_42)[0] = 31601; // Q1.15
+  ((short*)&TWENTYFIVE_OVER_FOUR_SQRT_42)[1] = 31601;
+  ((short*)&TWENTYFIVE_OVER_FOUR_SQRT_42)[2] = 31601;
+  ((short*)&TWENTYFIVE_OVER_FOUR_SQRT_42)[3] = 31601;
 
-  ((short*)&FIFTY_OVER_FOUR_SQRT_42)[0] = 15801; // round(2^13*50/(4*sqrt(42)))=15801, round(2^14*50/(4*sqrt(42)))=31601
-  ((short*)&FIFTY_OVER_FOUR_SQRT_42)[1] = 15801;
-  ((short*)&FIFTY_OVER_FOUR_SQRT_42)[2] = 15801;
-  ((short*)&FIFTY_OVER_FOUR_SQRT_42)[3] = 15801;
+  ((short*)&TWENTYNINE_OVER_FOUR_SQRT_42)[0] = 18328; // Q2.14
+  ((short*)&TWENTYNINE_OVER_FOUR_SQRT_42)[1] = 18328;
+  ((short*)&TWENTYNINE_OVER_FOUR_SQRT_42)[2] = 18328;
+  ((short*)&TWENTYNINE_OVER_FOUR_SQRT_42)[3] = 18328;
 
-  ((short*)&THIRTYFOUR_OVER_FOUR_SQRT_42)[0] = 21489; // round(2^14*34/(4*sqrt(42)))=21489, round(2^16*34/(4*sqrt(42)))>32786
-  ((short*)&THIRTYFOUR_OVER_FOUR_SQRT_42)[1] = 21489;
-  ((short*)&THIRTYFOUR_OVER_FOUR_SQRT_42)[2] = 21489;
-  ((short*)&THIRTYFOUR_OVER_FOUR_SQRT_42)[3] = 21489;
+  ((short*)&SEVENTEEN_OVER_FOUR_SQRT_42)[0] = 21488;
+  ((short*)&SEVENTEEN_OVER_FOUR_SQRT_42)[1] = 21488;
+  ((short*)&SEVENTEEN_OVER_FOUR_SQRT_42)[2] = 21488;
+  ((short*)&SEVENTEEN_OVER_FOUR_SQRT_42)[3] = 21488;
 
-  ((short*)&TWENTYSIX_OVER_FOUR_SQRT_42)[0] = 16433; // round(2^14*26/(4*sqrt(42)))=, round(2^14*26/(4*sqrt(42)))>32786
-  ((short*)&TWENTYSIX_OVER_FOUR_SQRT_42)[1] = 16433;
-  ((short*)&TWENTYSIX_OVER_FOUR_SQRT_42)[2] = 16433;
-  ((short*)&TWENTYSIX_OVER_FOUR_SQRT_42)[3] = 16433;
+  ((short*)&NINE_OVER_FOUR_SQRT_42)[0] = 11376;
+  ((short*)&NINE_OVER_FOUR_SQRT_42)[1] = 11376;
+  ((short*)&NINE_OVER_FOUR_SQRT_42)[2] = 11376;
+  ((short*)&NINE_OVER_FOUR_SQRT_42)[3] = 11376;
 
-  ((short*)&EIGHTEEN_OVER_FOUR_SQRT_42)[0] = 22753; // round(2^15*18/(4*sqrt(42)))=22753, round(2^16*18/(4*sqrt(42)))>32786
-  ((short*)&EIGHTEEN_OVER_FOUR_SQRT_42)[1] = 22753;
-  ((short*)&EIGHTEEN_OVER_FOUR_SQRT_42)[2] = 22753;
-  ((short*)&EIGHTEEN_OVER_FOUR_SQRT_42)[3] = 22753;
+  ((short*)&THIRTEEN_OVER_FOUR_SQRT_42)[0] = 16432;
+  ((short*)&THIRTEEN_OVER_FOUR_SQRT_42)[1] = 16432;
+  ((short*)&THIRTEEN_OVER_FOUR_SQRT_42)[2] = 16432;
+  ((short*)&THIRTEEN_OVER_FOUR_SQRT_42)[3] = 16432;
 
-  ((short*)&TEN_OVER_FOUR_SQRT_42)[0] = 12641; // round(2^15*10/(4*sqrt(42)))=12641, round(2^16*10/(4*sqrt(42)))=25281
-  ((short*)&TEN_OVER_FOUR_SQRT_42)[1] = 12641;
-  ((short*)&TEN_OVER_FOUR_SQRT_42)[2] = 12641;
-  ((short*)&TEN_OVER_FOUR_SQRT_42)[3] = 12641;
+  ((short*)&FIVE_OVER_FOUR_SQRT_42)[0] = 6320;
+  ((short*)&FIVE_OVER_FOUR_SQRT_42)[1] = 6320;
+  ((short*)&FIVE_OVER_FOUR_SQRT_42)[2] = 6320;
+  ((short*)&FIVE_OVER_FOUR_SQRT_42)[3] = 6320;
 
-  ((short*)&TWO_OVER_FOUR_SQRT_42)[0] = 2528; // round(2^15*2/(4*sqrt(42)))=2528, round(2^16*2/(4*sqrt(42)))=5056
-  ((short*)&TWO_OVER_FOUR_SQRT_42)[1] = 2528;
-  ((short*)&TWO_OVER_FOUR_SQRT_42)[2] = 2528;
-  ((short*)&TWO_OVER_FOUR_SQRT_42)[3] = 2528;
+  ((short*)&ONE_OVER_FOUR_SQRT_42)[0] = 1264;
+  ((short*)&ONE_OVER_FOUR_SQRT_42)[1] = 1264;
+  ((short*)&ONE_OVER_FOUR_SQRT_42)[2] = 1264;
+  ((short*)&ONE_OVER_FOUR_SQRT_42)[3] = 1264;
 
   ((short*)&ONE_OVER_SQRT_21)[0] = 7151; // round(2^15*1/sqrt(21))=7151, round(2^16*1/(sqrt(21))=14301
   ((short*)&ONE_OVER_SQRT_21)[1] = 7151;
@@ -1032,123 +1003,88 @@ void qam64_qam64_mu_mimo(short *stream0_in,
   ((short*)&SEVEN_OVER_SQRT_21)[2] = 25027;
   ((short*)&SEVEN_OVER_SQRT_21)[3] = 25027;
 
-  ((short*)&SQRT_42_OVER_TWO)[0] = 26545; // round(2^13*sqrt(42)/2)=26545, round(2^14*sqrt(42)/2)>1 
-  ((short*)&SQRT_42_OVER_TWO)[1] = 26545;
-  ((short*)&SQRT_42_OVER_TWO)[2] = 26545;
-  ((short*)&SQRT_42_OVER_TWO)[3] = 26545;
+  ((short*)&SQRT_42_OVER_FOUR)[0] = 13272; // Q3.12
+  ((short*)&SQRT_42_OVER_FOUR)[1] = 13272;
+  ((short*)&SQRT_42_OVER_FOUR)[2] = 13272;
+  ((short*)&SQRT_42_OVER_FOUR)[3] = 13272;
 
 #ifdef COMPLEXITY_MEASUREMENT
   printf("length=%d\n", length);
 #endif
   for (i=0; i<length>>1; i+=2)
-    {// In one iteration, we deal with 4 complex samples or 8 real samples
-#ifdef COMPLEXITY_MEASUREMENT
-    // Matching filter and cross-correlation cx considered here (inside of the loop)
-    cnt_add = cnt_add+2*2+(2-1); // h1'*y
-    cnt_mul = cnt_mul+4*2;       // h1'*y
-    cnt_add = cnt_add+2*2+(2-1); // h2'*y
-    cnt_mul = cnt_mul+4*2;       // h2'*y
-    cnt_add = cnt_add+2*2+(2-1); // h2'*h1
-    cnt_mul = cnt_mul+4*2;       // h2'*h1
-#endif
-
+      {
+          
     // STREAM 0
     xmm0 = rho01_64[i];
-    xmm1 = rho01_64[i+1];
-    /* short type format is 2 bytes whereas __m64 format is 8 bytes: [Re1 Im1 Re2 Im2 Re3 Im3 Re4 Im4]
-                                                                      \__ __/ \__ __/ \__ __/ \__ __/
-								         .       .       .       .
-								       short   short   short   short
-     */
-    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3));13*16^1+8*16^0=216
-    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
-    // [Re1 Im1 Re2 Im2] becomes [Re1 Re2 Im1 Im2]
-   
+    xmm1 = rho01_64[i+1];    
+    xmm0 = _mm_shuffle_pi16(xmm0,0xd8);//_MM_SHUFFLE(0,2,1,3)) 13*16^1+8*16^0=216
+    xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3)) [Re1 Im1 Re2 Im2] becomes [Re1 Re2 Im1 Im2]   
     xmm2 = _mm_unpacklo_pi32(xmm0,xmm1); // All reals. 4 real samples
     xmm3 = _mm_unpackhi_pi32(xmm0,xmm1); // All imaginarys. 4 imaginary samples
-#ifdef DEBUG_LLR
-    print_shorts2("rho_real:",&xmm2);
-    print_shorts2("rho_imag:",&xmm3);
-#endif
+    rho_rpi = _mm_adds_pi16(xmm2, xmm3); // real(rho) + imag(rho)
+    rho_rmi = _mm_subs_pi16(xmm2, xmm3); // real(rho) - imag(rho)
 
-    rho_rpi = _mm_adds_pi16(xmm2, xmm3);   // real(rho) + imag(rho)
-    rho_rmi = _mm_subs_pi16(xmm2, xmm3);   // real(rho) - imag(rho)
-    rho_rpi_1_1 = _mm_mulhi_pi16(rho_rpi, ONE_OVER_SQRT_2_42);   rho_rmi_1_1 = _mm_mulhi_pi16(rho_rmi, ONE_OVER_SQRT_2_42);
-    rho_rpi_3_3 = _mm_mulhi_pi16(rho_rpi, THREE_OVER_SQRT_2_42); rho_rmi_3_3 = _mm_mulhi_pi16(rho_rmi, THREE_OVER_SQRT_2_42);
-    rho_rpi_5_5 = _mm_mulhi_pi16(rho_rpi, FIVE_OVER_SQRT_2_42);  rho_rmi_5_5 = _mm_mulhi_pi16(rho_rmi, FIVE_OVER_SQRT_2_42); 
-    rho_rpi_7_7 = _mm_mulhi_pi16(rho_rpi, SEVEN_OVER_SQRT_2_42); rho_rmi_7_7 = _mm_mulhi_pi16(rho_rmi, SEVEN_OVER_SQRT_2_42);
+    rho_rpi_1_1 = _mm_mulhi_pi16(rho_rpi, ONE_OVER_SQRT_2_42);   
+	rho_rmi_1_1 = _mm_mulhi_pi16(rho_rmi, ONE_OVER_SQRT_2_42);
+    rho_rpi_3_3 = _mm_mulhi_pi16(rho_rpi, THREE_OVER_SQRT_2_42); 
+	rho_rmi_3_3 = _mm_mulhi_pi16(rho_rmi, THREE_OVER_SQRT_2_42);
+    rho_rpi_5_5 = _mm_mulhi_pi16(rho_rpi, FIVE_OVER_SQRT_2_42);  
+	rho_rmi_5_5 = _mm_mulhi_pi16(rho_rmi, FIVE_OVER_SQRT_2_42); 
+    rho_rpi_7_7 = _mm_mulhi_pi16(rho_rpi, SEVEN_OVER_SQRT_2_42); 
+	rho_rmi_7_7 = _mm_mulhi_pi16(rho_rmi, SEVEN_OVER_SQRT_2_42);
 
-    rho_rpi_1_1 = _mm_slli_pi16(rho_rpi_1_1, 1); rho_rmi_1_1 = _mm_slli_pi16(rho_rmi_1_1, 1);
-    rho_rpi_3_3 = _mm_slli_pi16(rho_rpi_3_3, 1); rho_rmi_3_3 = _mm_slli_pi16(rho_rmi_3_3, 1);
-    rho_rpi_5_5 = _mm_slli_pi16(rho_rpi_5_5, 1); rho_rmi_5_5 = _mm_slli_pi16(rho_rmi_5_5, 1);
-    rho_rpi_7_7 = _mm_slli_pi16(rho_rpi_7_7, 1); rho_rmi_7_7 = _mm_slli_pi16(rho_rmi_7_7, 1);
-#ifdef COMPLEXITY_MEASUREMENT
-    cnt_add = cnt_add+2;
-    cnt_mul = cnt_mul+8;
-#endif
+    rho_rpi_1_1 = _mm_slli_pi16(rho_rpi_1_1, 1); 
+	rho_rmi_1_1 = _mm_slli_pi16(rho_rmi_1_1, 1);
+    rho_rpi_3_3 = _mm_slli_pi16(rho_rpi_3_3, 1); 
+	rho_rmi_3_3 = _mm_slli_pi16(rho_rmi_3_3, 1);
+    rho_rpi_5_5 = _mm_slli_pi16(rho_rpi_5_5, 1); 
+	rho_rmi_5_5 = _mm_slli_pi16(rho_rmi_5_5, 1);
+    rho_rpi_7_7 = _mm_slli_pi16(rho_rpi_7_7, 1); 
+	rho_rmi_7_7 = _mm_slli_pi16(rho_rmi_7_7, 1);
 
-    xmm4 = _mm_mulhi_pi16(xmm2, ONE_OVER_SQRT_2_42);   xmm4 = _mm_slli_pi16(xmm4, 1);
-    xmm5 = _mm_mulhi_pi16(xmm3, ONE_OVER_SQRT_2_42);   xmm5 = _mm_slli_pi16(xmm5, 1);
-    xmm6 = _mm_mulhi_pi16(xmm3, THREE_OVER_SQRT_2_42); xmm6 = _mm_slli_pi16(xmm6, 1);
-    xmm7 = _mm_mulhi_pi16(xmm3, FIVE_OVER_SQRT_2_42);  xmm7 = _mm_slli_pi16(xmm7, 1);
-    xmm8 = _mm_mulhi_pi16(xmm3, SEVEN_OVER_SQRT_2_42); xmm8 = _mm_slli_pi16(xmm8, 1);
-    rho_rpi_1_3 = _mm_adds_pi16(xmm4, xmm6); rho_rmi_1_3 = _mm_subs_pi16(xmm4, xmm6); 
-    rho_rpi_1_5 = _mm_adds_pi16(xmm4, xmm7); rho_rmi_1_5 = _mm_subs_pi16(xmm4, xmm7);
-    rho_rpi_1_7 = _mm_adds_pi16(xmm4, xmm8); rho_rmi_1_7 = _mm_subs_pi16(xmm4, xmm8);
+    xmm4 = _mm_mulhi_pi16(xmm2, ONE_OVER_SQRT_2_42);   
+	xmm4 = _mm_slli_pi16(xmm4, 1);
+    xmm5 = _mm_mulhi_pi16(xmm3, ONE_OVER_SQRT_2_42);   
+	xmm5 = _mm_slli_pi16(xmm5, 1);
+    xmm6 = _mm_mulhi_pi16(xmm3, THREE_OVER_SQRT_2_42); 
+	xmm6 = _mm_slli_pi16(xmm6, 1);
+    xmm7 = _mm_mulhi_pi16(xmm3, FIVE_OVER_SQRT_2_42);  
+	xmm7 = _mm_slli_pi16(xmm7, 1);
+    xmm8 = _mm_mulhi_pi16(xmm3, SEVEN_OVER_SQRT_2_42); 
+	xmm8 = _mm_slli_pi16(xmm8, 1);
+    rho_rpi_1_3 = _mm_adds_pi16(xmm4, xmm6); 
+	rho_rmi_1_3 = _mm_subs_pi16(xmm4, xmm6); 
+    rho_rpi_1_5 = _mm_adds_pi16(xmm4, xmm7); 
+	rho_rmi_1_5 = _mm_subs_pi16(xmm4, xmm7);
+    rho_rpi_1_7 = _mm_adds_pi16(xmm4, xmm8); 
+	rho_rmi_1_7 = _mm_subs_pi16(xmm4, xmm8);
 
-    xmm4 = _mm_mulhi_pi16(xmm2, THREE_OVER_SQRT_2_42); xmm4 = _mm_slli_pi16(xmm4, 1);
-    rho_rpi_3_1 = _mm_adds_pi16(xmm4, xmm5); rho_rmi_3_1 = _mm_subs_pi16(xmm4, xmm5); 
-    rho_rpi_3_5 = _mm_adds_pi16(xmm4, xmm7); rho_rmi_3_5 = _mm_subs_pi16(xmm4, xmm7);
-    rho_rpi_3_7 = _mm_adds_pi16(xmm4, xmm8); rho_rmi_3_7 = _mm_subs_pi16(xmm4, xmm8);
+    xmm4 = _mm_mulhi_pi16(xmm2, THREE_OVER_SQRT_2_42); 
+	xmm4 = _mm_slli_pi16(xmm4, 1);
+    rho_rpi_3_1 = _mm_adds_pi16(xmm4, xmm5); 
+	rho_rmi_3_1 = _mm_subs_pi16(xmm4, xmm5); 
+    rho_rpi_3_5 = _mm_adds_pi16(xmm4, xmm7); 
+	rho_rmi_3_5 = _mm_subs_pi16(xmm4, xmm7);
+    rho_rpi_3_7 = _mm_adds_pi16(xmm4, xmm8); 
+	rho_rmi_3_7 = _mm_subs_pi16(xmm4, xmm8);
 
-    xmm4 = _mm_mulhi_pi16(xmm2, FIVE_OVER_SQRT_2_42); xmm4 = _mm_slli_pi16(xmm4, 1);
-    rho_rpi_5_1 = _mm_adds_pi16(xmm4, xmm5); rho_rmi_5_1 = _mm_subs_pi16(xmm4, xmm5); 
-    rho_rpi_5_3 = _mm_adds_pi16(xmm4, xmm6); rho_rmi_5_3 = _mm_subs_pi16(xmm4, xmm6);
-    rho_rpi_5_7 = _mm_adds_pi16(xmm4, xmm8); rho_rmi_5_7 = _mm_subs_pi16(xmm4, xmm8);
+    xmm4 = _mm_mulhi_pi16(xmm2, FIVE_OVER_SQRT_2_42); 
+	xmm4 = _mm_slli_pi16(xmm4, 1);
+    rho_rpi_5_1 = _mm_adds_pi16(xmm4, xmm5); 
+	rho_rmi_5_1 = _mm_subs_pi16(xmm4, xmm5); 
+    rho_rpi_5_3 = _mm_adds_pi16(xmm4, xmm6); 
+	rho_rmi_5_3 = _mm_subs_pi16(xmm4, xmm6);
+    rho_rpi_5_7 = _mm_adds_pi16(xmm4, xmm8); 
+	rho_rmi_5_7 = _mm_subs_pi16(xmm4, xmm8);
 
-    xmm4 = _mm_mulhi_pi16(xmm2, SEVEN_OVER_SQRT_2_42); xmm4 = _mm_slli_pi16(xmm4, 1);
-    rho_rpi_7_1 = _mm_adds_pi16(xmm4, xmm5); rho_rmi_7_1 = _mm_subs_pi16(xmm4, xmm5); 
-    rho_rpi_7_3 = _mm_adds_pi16(xmm4, xmm6); rho_rmi_7_3 = _mm_subs_pi16(xmm4, xmm6);
-    rho_rpi_7_5 = _mm_adds_pi16(xmm4, xmm7); rho_rmi_7_5 = _mm_subs_pi16(xmm4, xmm7);
-#ifdef COMPLEXITY_MEASUREMENT
-    cnt_add = cnt_add+24;
-    cnt_mul = cnt_mul+8;
-#endif
-#ifdef DEBUG_LLR
-    print_shorts2("rho_rpi_1_1:",&rho_rpi_1_1);
-    print_shorts2("rho_rpi_1_3:",&rho_rpi_1_3);
-    print_shorts2("rho_rpi_1_5:",&rho_rpi_1_5);
-    print_shorts2("rho_rpi_1_7:",&rho_rpi_1_7);    
-    print_shorts2("rho_rpi_3_1:",&rho_rpi_3_1);
-    print_shorts2("rho_rpi_3_3:",&rho_rpi_3_3);
-    print_shorts2("rho_rpi_3_5:",&rho_rpi_3_5);
-    print_shorts2("rho_rpi_3_7:",&rho_rpi_3_7);
-    print_shorts2("rho_rpi_5_1:",&rho_rpi_5_1);
-    print_shorts2("rho_rpi_5_3:",&rho_rpi_5_3);
-    print_shorts2("rho_rpi_5_5:",&rho_rpi_5_5);
-    print_shorts2("rho_rpi_5_7:",&rho_rpi_5_7);
-    print_shorts2("rho_rpi_7_1:",&rho_rpi_7_1);
-    print_shorts2("rho_rpi_7_3:",&rho_rpi_7_3);
-    print_shorts2("rho_rpi_7_5:",&rho_rpi_7_5);
-    print_shorts2("rho_rpi_7_7:",&rho_rpi_7_7);
-
-    print_shorts2("rho_rmi_1_1:",&rho_rmi_1_1);
-    print_shorts2("rho_rmi_1_3:",&rho_rmi_1_3);
-    print_shorts2("rho_rmi_1_5:",&rho_rmi_1_5);
-    print_shorts2("rho_rmi_1_7:",&rho_rmi_1_7);    
-    print_shorts2("rho_rmi_3_1:",&rho_rmi_3_1);
-    print_shorts2("rho_rmi_3_3:",&rho_rmi_3_3);
-    print_shorts2("rho_rmi_3_5:",&rho_rmi_3_5);
-    print_shorts2("rho_rmi_3_7:",&rho_rmi_3_7);
-    print_shorts2("rho_rmi_5_1:",&rho_rmi_5_1);
-    print_shorts2("rho_rmi_5_3:",&rho_rmi_5_3);
-    print_shorts2("rho_rmi_5_5:",&rho_rmi_5_5);
-    print_shorts2("rho_rmi_5_7:",&rho_rmi_5_7);
-    print_shorts2("rho_rmi_7_1:",&rho_rmi_7_1);
-    print_shorts2("rho_rmi_7_3:",&rho_rmi_7_3);
-    print_shorts2("rho_rmi_7_5:",&rho_rmi_7_5);
-    print_shorts2("rho_rmi_7_7:",&rho_rmi_7_7);
-#endif
+    xmm4 = _mm_mulhi_pi16(xmm2, SEVEN_OVER_SQRT_2_42); 
+	xmm4 = _mm_slli_pi16(xmm4, 1);
+    rho_rpi_7_1 = _mm_adds_pi16(xmm4, xmm5); 
+	rho_rmi_7_1 = _mm_subs_pi16(xmm4, xmm5); 
+    rho_rpi_7_3 = _mm_adds_pi16(xmm4, xmm6); 
+	rho_rmi_7_3 = _mm_subs_pi16(xmm4, xmm6);
+    rho_rpi_7_5 = _mm_adds_pi16(xmm4, xmm7); 
+	rho_rmi_7_5 = _mm_subs_pi16(xmm4, xmm7);
 
     xmm0 = stream1_64_in[i];
     xmm1 = stream1_64_in[i+1];
@@ -1157,10 +1093,6 @@ void qam64_qam64_mu_mimo(short *stream0_in,
     xmm1 = _mm_shuffle_pi16(xmm1,0xd8);//_MM_SHUFFLE(0,2,1,3));
     y1r  = _mm_unpacklo_pi32(xmm0,xmm1);
     y1i  = _mm_unpackhi_pi32(xmm0,xmm1);
-#ifdef DEBUG_LLR
-    print_shorts2("y1r:",&y1r);
-    print_shorts2("y1i:",&y1i);
-#endif
 
     // Psi_r calculation from rho_rpi or rho_rmi
     xmm0 = _mm_xor_si64(xmm0, xmm0); // ZERO for abs_pi16
@@ -1296,144 +1228,11 @@ void qam64_qam64_mu_mimo(short *stream0_in,
     xmm2 = _mm_adds_pi16(rho_rmi_3_7, y1i); abs_pi16(xmm2, xmm0, psi_i_m7_m3, xmm1);
     xmm2 = _mm_adds_pi16(rho_rmi_5_7, y1i); abs_pi16(xmm2, xmm0, psi_i_m7_m5, xmm1);
     xmm2 = _mm_adds_pi16(rho_rmi_7_7, y1i); abs_pi16(xmm2, xmm0, psi_i_m7_m7, xmm1);
-#ifdef COMPLEXITY_MEASUREMENT
-    cnt_add = cnt_add+128;
-    cnt_mul = cnt_mul+0;
-#endif
 
-#ifdef DEBUG_LLR
-    print_shorts2("psi_r_p7_p7:", &psi_r_p7_p7);
-    print_shorts2("psi_r_p7_p5:", &psi_r_p7_p5);
-    print_shorts2("psi_r_p7_p3:", &psi_r_p7_p3);
-    print_shorts2("psi_r_p7_p1:", &psi_r_p7_p1);
-    print_shorts2("psi_r_p7_m1:", &psi_r_p7_m1);
-    print_shorts2("psi_r_p7_m3:", &psi_r_p7_m3);
-    print_shorts2("psi_r_p7_m5:", &psi_r_p7_m5);
-    print_shorts2("psi_r_p7_m7:", &psi_r_p7_m7);
-    print_shorts2("psi_r_p5_p7:", &psi_r_p5_p7);
-    print_shorts2("psi_r_p5_p5:", &psi_r_p5_p5);
-    print_shorts2("psi_r_p5_p3:", &psi_r_p5_p3);
-    print_shorts2("psi_r_p5_p1:", &psi_r_p5_p1);
-    print_shorts2("psi_r_p5_m1:", &psi_r_p5_m1);
-    print_shorts2("psi_r_p5_m3:", &psi_r_p5_m3);
-    print_shorts2("psi_r_p5_m5:", &psi_r_p5_m5);
-    print_shorts2("psi_r_p5_m7:", &psi_r_p5_m7);
-    print_shorts2("psi_r_p3_p7:", &psi_r_p3_p7);
-    print_shorts2("psi_r_p3_p5:", &psi_r_p3_p5);
-    print_shorts2("psi_r_p3_p3:", &psi_r_p3_p3);
-    print_shorts2("psi_r_p3_p1:", &psi_r_p3_p1);
-    print_shorts2("psi_r_p3_m1:", &psi_r_p3_m1);
-    print_shorts2("psi_r_p3_m3:", &psi_r_p3_m3);
-    print_shorts2("psi_r_p3_m5:", &psi_r_p3_m5);
-    print_shorts2("psi_r_p3_m7:", &psi_r_p3_m7);
-    print_shorts2("psi_r_p1_p7:", &psi_r_p1_p7);
-    print_shorts2("psi_r_p1_p5:", &psi_r_p1_p5);
-    print_shorts2("psi_r_p1_p3:", &psi_r_p1_p3);
-    print_shorts2("psi_r_p1_p1:", &psi_r_p1_p1);
-    print_shorts2("psi_r_p1_m1:", &psi_r_p1_m1);
-    print_shorts2("psi_r_p1_m3:", &psi_r_p1_m3);
-    print_shorts2("psi_r_p1_m5:", &psi_r_p1_m5);
-    print_shorts2("psi_r_p1_m7:", &psi_r_p1_m7);
 
-    print_shorts2("psi_r_m1_p7:", &psi_r_m1_p7);
-    print_shorts2("psi_r_m1_p5:", &psi_r_m1_p5);
-    print_shorts2("psi_r_m1_p3:", &psi_r_m1_p3);
-    print_shorts2("psi_r_m1_p1:", &psi_r_m1_p1);
-    print_shorts2("psi_r_m1_m1:", &psi_r_m1_m1);
-    print_shorts2("psi_r_m1_m3:", &psi_r_m1_m3);
-    print_shorts2("psi_r_m1_m5:", &psi_r_m1_m5);
-    print_shorts2("psi_r_m1_m7:", &psi_r_m1_m7);
-    print_shorts2("psi_r_m3_p7:", &psi_r_m3_p7);
-    print_shorts2("psi_r_m3_p5:", &psi_r_m3_p5);
-    print_shorts2("psi_r_m3_p3:", &psi_r_m3_p3);
-    print_shorts2("psi_r_m3_p1:", &psi_r_m3_p1);
-    print_shorts2("psi_r_m3_m1:", &psi_r_m3_m1);
-    print_shorts2("psi_r_m3_m3:", &psi_r_m3_m3);
-    print_shorts2("psi_r_m3_m5:", &psi_r_m3_m5);
-    print_shorts2("psi_r_m3_m7:", &psi_r_m3_m7);
-    print_shorts2("psi_r_m5_p7:", &psi_r_m5_p7);
-    print_shorts2("psi_r_m5_p5:", &psi_r_m5_p5);
-    print_shorts2("psi_r_m5_p3:", &psi_r_m5_p3);
-    print_shorts2("psi_r_m5_p1:", &psi_r_m5_p1);
-    print_shorts2("psi_r_m5_m1:", &psi_r_m5_m1);
-    print_shorts2("psi_r_m5_m3:", &psi_r_m5_m3);
-    print_shorts2("psi_r_m5_m5:", &psi_r_m5_m5);
-    print_shorts2("psi_r_m5_m7:", &psi_r_m5_m7);
-    print_shorts2("psi_r_m7_p7:", &psi_r_m7_p7);
-    print_shorts2("psi_r_m7_p5:", &psi_r_m7_p5);
-    print_shorts2("psi_r_m7_p3:", &psi_r_m7_p3);
-    print_shorts2("psi_r_m7_p1:", &psi_r_m7_p1);
-    print_shorts2("psi_r_m7_m1:", &psi_r_m7_m1);
-    print_shorts2("psi_r_m7_m3:", &psi_r_m7_m3);
-    print_shorts2("psi_r_m7_m5:", &psi_r_m7_m5);
-    print_shorts2("psi_r_m7_m7:", &psi_r_m7_m7);
 
-    print_shorts2("psi_i_p7_p7:", &psi_i_p7_p7);
-    print_shorts2("psi_i_p7_p5:", &psi_i_p7_p5);
-    print_shorts2("psi_i_p7_p3:", &psi_i_p7_p3);
-    print_shorts2("psi_i_p7_p1:", &psi_i_p7_p1);
-    print_shorts2("psi_i_p7_m1:", &psi_i_p7_m1);
-    print_shorts2("psi_i_p7_m3:", &psi_i_p7_m3);
-    print_shorts2("psi_i_p7_m5:", &psi_i_p7_m5);
-    print_shorts2("psi_i_p7_m7:", &psi_i_p7_m7);
-    print_shorts2("psi_i_p5_p7:", &psi_i_p5_p7);
-    print_shorts2("psi_i_p5_p5:", &psi_i_p5_p5);
-    print_shorts2("psi_i_p5_p3:", &psi_i_p5_p3);
-    print_shorts2("psi_i_p5_p1:", &psi_i_p5_p1);
-    print_shorts2("psi_i_p5_m1:", &psi_i_p5_m1);
-    print_shorts2("psi_i_p5_m3:", &psi_i_p5_m3);
-    print_shorts2("psi_i_p5_m5:", &psi_i_p5_m5);
-    print_shorts2("psi_i_p5_m7:", &psi_i_p5_m7);
-    print_shorts2("psi_i_p3_p7:", &psi_i_p3_p7);
-    print_shorts2("psi_i_p3_p5:", &psi_i_p3_p5);
-    print_shorts2("psi_i_p3_p3:", &psi_i_p3_p3);
-    print_shorts2("psi_i_p3_p1:", &psi_i_p3_p1);
-    print_shorts2("psi_i_p3_m1:", &psi_i_p3_m1);
-    print_shorts2("psi_i_p3_m3:", &psi_i_p3_m3);
-    print_shorts2("psi_i_p3_m5:", &psi_i_p3_m5);
-    print_shorts2("psi_i_p3_m7:", &psi_i_p3_m7);
-    print_shorts2("psi_i_p1_p7:", &psi_i_p1_p7);
-    print_shorts2("psi_i_p1_p5:", &psi_i_p1_p5);
-    print_shorts2("psi_i_p1_p3:", &psi_i_p1_p3);
-    print_shorts2("psi_i_p1_p1:", &psi_i_p1_p1);
-    print_shorts2("psi_i_p1_m1:", &psi_i_p1_m1);
-    print_shorts2("psi_i_p1_m3:", &psi_i_p1_m3);
-    print_shorts2("psi_i_p1_m5:", &psi_i_p1_m5);
-    print_shorts2("psi_i_p1_m7:", &psi_i_p1_m7);
 
-    print_shorts2("psi_i_m1_p7:", &psi_i_m1_p7);
-    print_shorts2("psi_i_m1_p5:", &psi_i_m1_p5);
-    print_shorts2("psi_i_m1_p3:", &psi_i_m1_p3);
-    print_shorts2("psi_i_m1_p1:", &psi_i_m1_p1);
-    print_shorts2("psi_i_m1_m1:", &psi_i_m1_m1);
-    print_shorts2("psi_i_m1_m3:", &psi_i_m1_m3);
-    print_shorts2("psi_i_m1_m5:", &psi_i_m1_m5);
-    print_shorts2("psi_i_m1_m7:", &psi_i_m1_m7);
-    print_shorts2("psi_i_m3_p7:", &psi_i_m3_p7);
-    print_shorts2("psi_i_m3_p5:", &psi_i_m3_p5);
-    print_shorts2("psi_i_m3_p3:", &psi_i_m3_p3);
-    print_shorts2("psi_i_m3_p1:", &psi_i_m3_p1);
-    print_shorts2("psi_i_m3_m1:", &psi_i_m3_m1);
-    print_shorts2("psi_i_m3_m3:", &psi_i_m3_m3);
-    print_shorts2("psi_i_m3_m5:", &psi_i_m3_m5);
-    print_shorts2("psi_i_m3_m7:", &psi_i_m3_m7);
-    print_shorts2("psi_i_m5_p7:", &psi_i_m5_p7);
-    print_shorts2("psi_i_m5_p5:", &psi_i_m5_p5);
-    print_shorts2("psi_i_m5_p3:", &psi_i_m5_p3);
-    print_shorts2("psi_i_m5_p1:", &psi_i_m5_p1);
-    print_shorts2("psi_i_m5_m1:", &psi_i_m5_m1);
-    print_shorts2("psi_i_m5_m3:", &psi_i_m5_m3);
-    print_shorts2("psi_i_m5_m5:", &psi_i_m5_m5);
-    print_shorts2("psi_i_m5_m7:", &psi_i_m5_m7);
-    print_shorts2("psi_i_m7_p7:", &psi_i_m7_p7);
-    print_shorts2("psi_i_m7_p5:", &psi_i_m7_p5);
-    print_shorts2("psi_i_m7_p3:", &psi_i_m7_p3);
-    print_shorts2("psi_i_m7_p1:", &psi_i_m7_p1);
-    print_shorts2("psi_i_m7_m1:", &psi_i_m7_m1);
-    print_shorts2("psi_i_m7_m3:", &psi_i_m7_m3);
-    print_shorts2("psi_i_m7_m5:", &psi_i_m7_m5);
-    print_shorts2("psi_i_m7_m7:", &psi_i_m7_m7);
-#endif
+
 
     xmm0 = stream0_64_in[i];
     xmm1 = stream0_64_in[i+1];
@@ -1442,10 +1241,6 @@ void qam64_qam64_mu_mimo(short *stream0_in,
     y0r  = _mm_unpacklo_pi32(xmm0, xmm1);
     y0i  = _mm_unpackhi_pi32(xmm0, xmm1);
     
-#ifdef DEBUG_LLR
-    print_shorts2(" y0r:",&y0r);  
-    print_shorts2(" y0i:",&y0i);   
-#endif
     // In one iteration, we are dealing with 4 complex samples so we need 4 channel magnitudes for these complex samples. Channel magnitudes are repeated once so we need to rearrange them
     
     xmm2 = ch_mag_64[i];   // Out of 4 samples, first two samples are same and last two samples are same
@@ -1453,31 +1248,30 @@ void qam64_qam64_mu_mimo(short *stream0_in,
     xmm2 = _mm_shuffle_pi16(xmm2, 0xd8); //_MM_SHUFFLE(0,2,1,3));
     xmm3 = _mm_shuffle_pi16(xmm3, 0xd8); //_MM_SHUFFLE(0,2,1,3));
     ch_mag_des  = _mm_unpacklo_pi32(xmm2, xmm3);
-#ifdef DEBUG_LLR
-    print_shorts2("ch_mag_des:", &ch_mag_des);
-#endif
+
     xmm2 = ch_mag_64_i[i];   // Out of 4 samples, first two samples are same and last two samples are same
     xmm3 = ch_mag_64_i[i+1]; // Out of 4 samples, first two samples are same and last two samples are same
     xmm2 = _mm_shuffle_pi16(xmm2, 0xd8); //_MM_SHUFFLE(0,2,1,3));
     xmm3 = _mm_shuffle_pi16(xmm3, 0xd8); //_MM_SHUFFLE(0,2,1,3));
     ch_mag_int  = _mm_unpacklo_pi32(xmm2, xmm3);
-#ifdef DEBUG_LLR
-    print_shorts2("ch_mag_int:", &ch_mag_int); 
-#endif
-    
-    y0r_one_over_sqrt_21   = _mm_mulhi_pi16(y0r, ONE_OVER_SQRT_21);   y0r_one_over_sqrt_21   = _mm_slli_pi16(y0r_one_over_sqrt_21, 1);
-    y0r_three_over_sqrt_21 = _mm_mulhi_pi16(y0r, THREE_OVER_SQRT_21); y0r_three_over_sqrt_21 = _mm_slli_pi16(y0r_three_over_sqrt_21, 1);
-    y0r_five_over_sqrt_21  = _mm_mulhi_pi16(y0r, FIVE_OVER_SQRT_21);  y0r_five_over_sqrt_21  = _mm_slli_pi16(y0r_five_over_sqrt_21, 2);  // *2^14
-    y0r_seven_over_sqrt_21 = _mm_mulhi_pi16(y0r, SEVEN_OVER_SQRT_21); y0r_seven_over_sqrt_21 = _mm_slli_pi16(y0r_seven_over_sqrt_21, 2); // *2^14
 
-    y0i_one_over_sqrt_21   = _mm_mulhi_pi16(y0i, ONE_OVER_SQRT_21);   y0i_one_over_sqrt_21   = _mm_slli_pi16(y0i_one_over_sqrt_21, 1);
-    y0i_three_over_sqrt_21 = _mm_mulhi_pi16(y0i, THREE_OVER_SQRT_21); y0i_three_over_sqrt_21 = _mm_slli_pi16(y0i_three_over_sqrt_21, 1);
-    y0i_five_over_sqrt_21  = _mm_mulhi_pi16(y0i, FIVE_OVER_SQRT_21);  y0i_five_over_sqrt_21  = _mm_slli_pi16(y0i_five_over_sqrt_21, 2);  // *2^14
-    y0i_seven_over_sqrt_21 = _mm_mulhi_pi16(y0i, SEVEN_OVER_SQRT_21); y0i_seven_over_sqrt_21 = _mm_slli_pi16(y0i_seven_over_sqrt_21, 2); // *2^14
-#ifdef COMPLEXITY_MEASUREMENT
-    cnt_add = cnt_add+0;
-    cnt_mul = cnt_mul+8;
-#endif
+    y0r_one_over_sqrt_21   = _mm_mulhi_pi16(y0r, ONE_OVER_SQRT_42);   
+	y0r_one_over_sqrt_21   = _mm_slli_pi16(y0r_one_over_sqrt_21, 1);
+    y0r_three_over_sqrt_21 = _mm_mulhi_pi16(y0r, THREE_OVER_SQRT_42); 
+	y0r_three_over_sqrt_21 = _mm_slli_pi16(y0r_three_over_sqrt_21, 1);
+    y0r_five_over_sqrt_21  = _mm_mulhi_pi16(y0r, FIVE_OVER_SQRT_42);  
+	y0r_five_over_sqrt_21  = _mm_slli_pi16(y0r_five_over_sqrt_21, 1);
+    y0r_seven_over_sqrt_21 = _mm_mulhi_pi16(y0r, SEVEN_OVER_SQRT_42); 
+	y0r_seven_over_sqrt_21 = _mm_slli_pi16(y0r_seven_over_sqrt_21, 2); // Q2.14
+
+    y0i_one_over_sqrt_21   = _mm_mulhi_pi16(y0i, ONE_OVER_SQRT_42);   
+	y0i_one_over_sqrt_21   = _mm_slli_pi16(y0i_one_over_sqrt_21, 1);
+    y0i_three_over_sqrt_21 = _mm_mulhi_pi16(y0i, THREE_OVER_SQRT_42); 
+	y0i_three_over_sqrt_21 = _mm_slli_pi16(y0i_three_over_sqrt_21, 1);
+    y0i_five_over_sqrt_21  = _mm_mulhi_pi16(y0i, FIVE_OVER_SQRT_42);  
+	y0i_five_over_sqrt_21  = _mm_slli_pi16(y0i_five_over_sqrt_21, 1);
+    y0i_seven_over_sqrt_21 = _mm_mulhi_pi16(y0i, SEVEN_OVER_SQRT_42); 
+	y0i_seven_over_sqrt_21 = _mm_slli_pi16(y0i_seven_over_sqrt_21, 2); // Q2.14
 
     y0_p_7_1 = _mm_adds_pi16(y0r_seven_over_sqrt_21, y0i_one_over_sqrt_21);
     y0_p_7_3 = _mm_adds_pi16(y0r_seven_over_sqrt_21, y0i_three_over_sqrt_21);
@@ -1512,62 +1306,12 @@ void qam64_qam64_mu_mimo(short *stream0_in,
     y0_m_7_3 = _mm_subs_pi16(y0r_seven_over_sqrt_21, y0i_three_over_sqrt_21);
     y0_m_7_5 = _mm_subs_pi16(y0r_seven_over_sqrt_21, y0i_five_over_sqrt_21);
     y0_m_7_7 = _mm_subs_pi16(y0r_seven_over_sqrt_21, y0i_seven_over_sqrt_21);
-#ifdef COMPLEXITY_MEASUREMENT
-    cnt_add = cnt_add+32;
-    cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("y0_p_1_1:", &y0_p_1_1);
-     print_shorts2("y0_p_1_3:", &y0_p_1_3);
-     print_shorts2("y0_p_1_5:", &y0_p_1_5);
-     print_shorts2("y0_p_1_7:", &y0_p_1_7);
-     print_shorts2("y0_p_3_1:", &y0_p_3_1);
-     print_shorts2("y0_p_3_3:", &y0_p_3_3);
-     print_shorts2("y0_p_3_5:", &y0_p_3_5);
-     print_shorts2("y0_p_3_7:", &y0_p_3_7);
-     print_shorts2("y0_p_5_1:", &y0_p_5_1);
-     print_shorts2("y0_p_5_3:", &y0_p_5_3);
-     print_shorts2("y0_p_5_5:", &y0_p_5_5);
-     print_shorts2("y0_p_5_7:", &y0_p_5_7);
-     print_shorts2("y0_p_7_1:", &y0_p_7_1);
-     print_shorts2("y0_p_7_3:", &y0_p_7_3);
-     print_shorts2("y0_p_7_5:", &y0_p_7_5);
-     print_shorts2("y0_p_7_7:", &y0_p_7_7);
-     
-     print_shorts2("y0_m_1_1:", &y0_m_1_1);
-     print_shorts2("y0_m_1_3:", &y0_m_1_3);
-     print_shorts2("y0_m_1_5:", &y0_m_1_5);
-     print_shorts2("y0_m_1_7:", &y0_m_1_7);
-     print_shorts2("y0_m_3_1:", &y0_m_3_1);
-     print_shorts2("y0_m_3_3:", &y0_m_3_3);
-     print_shorts2("y0_m_3_5:", &y0_m_3_5);
-     print_shorts2("y0_m_3_7:", &y0_m_3_7);
-     print_shorts2("y0_m_5_1:", &y0_m_5_1);
-     print_shorts2("y0_m_5_3:", &y0_m_5_3);
-     print_shorts2("y0_m_5_5:", &y0_m_5_5);
-     print_shorts2("y0_m_5_7:", &y0_m_5_7);
-     print_shorts2("y0_m_7_1:", &y0_m_7_1);
-     print_shorts2("y0_m_7_3:", &y0_m_7_3);
-     print_shorts2("y0_m_7_5:", &y0_m_7_5);
-     print_shorts2("y0_m_7_7:", &y0_m_7_7);
-#endif
 
    // Detection of interference term
-   ch_mag_int_with_sigma2       = _mm_mulhi_pi16(ch_mag_int, ONE_OVER_SQRT_2); ch_mag_int_with_sigma2       = _mm_slli_pi16(ch_mag_int_with_sigma2, 1);
-   two_ch_mag_int_with_sigma2   = _mm_mulhi_pi16(ch_mag_int, ONE_OVER_SQRT_2); two_ch_mag_int_with_sigma2   = _mm_slli_pi16(two_ch_mag_int_with_sigma2, 1);
-   three_ch_mag_int_with_sigma2 = _mm_mulhi_pi16(ch_mag_int, ONE_OVER_SQRT_2); three_ch_mag_int_with_sigma2 = _mm_slli_pi16(three_ch_mag_int_with_sigma2, 1);
-   two_ch_mag_int_with_sigma2   = _mm_slli_pi16(two_ch_mag_int_with_sigma2, 1);
-   three_ch_mag_int_with_sigma2 = _mm_adds_pi16(three_ch_mag_int_with_sigma2, _mm_slli_pi16(three_ch_mag_int_with_sigma2, 1));
-
-#ifdef COMPLEXITY_MEASUREMENT
-   cnt_add = cnt_add+1;
-   cnt_mul = cnt_mul+3;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("ch_mag_int_with_sigma2:", &ch_mag_int_with_sigma2);
-     print_shorts2("two_ch_mag_int_with_sigma2:", &two_ch_mag_int_with_sigma2);
-     print_shorts2("three_ch_mag_int_with_sigma2:", &three_ch_mag_int_with_sigma2);
-#endif
+   ch_mag_int_with_sigma2       = _mm_srai_pi16(ch_mag_int, 1); // *2
+   two_ch_mag_int_with_sigma2   = ch_mag_int; // *4
+   three_ch_mag_int_with_sigma2 = _mm_adds_pi16(ch_mag_int_with_sigma2, two_ch_mag_int_with_sigma2); // *6
+   
 
    interference_abs_64qam_pi16(&psi_r_p7_p7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_p7_p7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_r_p7_p5, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_p7_p5, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
@@ -1601,7 +1345,7 @@ void qam64_qam64_mu_mimo(short *stream0_in,
    interference_abs_64qam_pi16(&psi_r_p1_m3, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_p1_m3, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_r_p1_m5, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_p1_m5, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_r_p1_m7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_p1_m7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
-  interference_abs_64qam_pi16(&psi_r_m1_p7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_m1_p7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
+   interference_abs_64qam_pi16(&psi_r_m1_p7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_m1_p7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_r_m1_p5, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_m1_p5, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_r_m1_p3, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_m1_p3, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_r_m1_p1, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_r_m1_p1, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
@@ -1666,7 +1410,7 @@ void qam64_qam64_mu_mimo(short *stream0_in,
    interference_abs_64qam_pi16(&psi_i_p1_m3, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_p1_m3, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_i_p1_m5, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_p1_m5, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_i_p1_m7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_p1_m7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
-  interference_abs_64qam_pi16(&psi_i_m1_p7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_m1_p7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
+   interference_abs_64qam_pi16(&psi_i_m1_p7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_m1_p7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_i_m1_p5, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_m1_p5, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_i_m1_p3, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_m1_p3, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_i_m1_p1, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_m1_p1, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
@@ -1699,468 +1443,313 @@ void qam64_qam64_mu_mimo(short *stream0_in,
    interference_abs_64qam_pi16(&psi_i_m7_m5, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_m7_m5, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
    interference_abs_64qam_pi16(&psi_i_m7_m7, &ch_mag_int_with_sigma2, &two_ch_mag_int_with_sigma2, &three_ch_mag_int_with_sigma2, &a_i_m7_m7, &ONE_OVER_SQRT_2_42, &THREE_OVER_SQRT_2_42, &FIVE_OVER_SQRT_2_42, &SEVEN_OVER_SQRT_2_42);
 
-#ifdef COMPLEXITY_MEASUREMENT
-   cnt_add = cnt_add+4*128; // 1 Comparison = 1 substraction (then sign reading), 4 CMP per fct call
-   cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("a_r_p7_p7:", &a_r_p7_p7);
-     print_shorts2("a_r_p7_p5:", &a_r_p7_p5);
-     print_shorts2("a_r_p7_p3:", &a_r_p7_p3);
-     print_shorts2("a_r_p7_p1:", &a_r_p7_p1);
-     print_shorts2("a_r_p7_m1:", &a_r_p7_m1);
-     print_shorts2("a_r_p7_m3:", &a_r_p7_m3);
-     print_shorts2("a_r_p7_m5:", &a_r_p7_m5);
-     print_shorts2("a_r_p7_m7:", &a_r_p7_m7);
-     print_shorts2("a_r_p5_p7:", &a_r_p5_p7);
-     print_shorts2("a_r_p5_p5:", &a_r_p5_p5);
-     print_shorts2("a_r_p5_p3:", &a_r_p5_p3);
-     print_shorts2("a_r_p5_p1:", &a_r_p5_p1);
-     print_shorts2("a_r_p5_m1:", &a_r_p5_m1);
-     print_shorts2("a_r_p5_m3:", &a_r_p5_m3);
-     print_shorts2("a_r_p5_m5:", &a_r_p5_m5);
-     print_shorts2("a_r_p5_m7:", &a_r_p5_m7);
-     print_shorts2("a_r_p3_p7:", &a_r_p3_p7);
-     print_shorts2("a_r_p3_p5:", &a_r_p3_p5);
-     print_shorts2("a_r_p3_p3:", &a_r_p3_p3);
-     print_shorts2("a_r_p3_p1:", &a_r_p3_p1);
-     print_shorts2("a_r_p3_m1:", &a_r_p3_m1);
-     print_shorts2("a_r_p3_m3:", &a_r_p3_m3);
-     print_shorts2("a_r_p3_m5:", &a_r_p3_m5);
-     print_shorts2("a_r_p3_m7:", &a_r_p3_m7);
-     print_shorts2("a_r_p1_p7:", &a_r_p1_p7);
-     print_shorts2("a_r_p1_p5:", &a_r_p1_p5);
-     print_shorts2("a_r_p1_p3:", &a_r_p1_p3);
-     print_shorts2("a_r_p1_p1:", &a_r_p1_p1);
-     print_shorts2("a_r_p1_m1:", &a_r_p1_m1);
-     print_shorts2("a_r_p1_m3:", &a_r_p1_m3);
-     print_shorts2("a_r_p1_m5:", &a_r_p1_m5);
-     print_shorts2("a_r_p1_m7:", &a_r_p1_m7);
-     print_shorts2("a_r_m1_p7:", &a_r_m1_p7);
-     print_shorts2("a_r_m1_p5:", &a_r_m1_p5);
-     print_shorts2("a_r_m1_p3:", &a_r_m1_p3);
-     print_shorts2("a_r_m1_p1:", &a_r_m1_p1);
-     print_shorts2("a_r_m1_m1:", &a_r_m1_m1);
-     print_shorts2("a_r_m1_m3:", &a_r_m1_m3);
-     print_shorts2("a_r_m1_m5:", &a_r_m1_m5);
-     print_shorts2("a_r_m1_m7:", &a_r_m1_m7);
-     print_shorts2("a_r_m3_p7:", &a_r_m3_p7);
-     print_shorts2("a_r_m3_p5:", &a_r_m3_p5);
-     print_shorts2("a_r_m3_p3:", &a_r_m3_p3);
-     print_shorts2("a_r_m3_p1:", &a_r_m3_p1);
-     print_shorts2("a_r_m3_m1:", &a_r_m3_m1);
-     print_shorts2("a_r_m3_m3:", &a_r_m3_m3);
-     print_shorts2("a_r_m3_m5:", &a_r_m3_m5);
-     print_shorts2("a_r_m3_m7:", &a_r_m3_m7);
-     print_shorts2("a_r_m5_p7:", &a_r_m5_p7);
-     print_shorts2("a_r_m5_p5:", &a_r_m5_p5);
-     print_shorts2("a_r_m5_p3:", &a_r_m5_p3);
-     print_shorts2("a_r_m5_p1:", &a_r_m5_p1);
-     print_shorts2("a_r_m5_m1:", &a_r_m5_m1);
-     print_shorts2("a_r_m5_m3:", &a_r_m5_m3);
-     print_shorts2("a_r_m5_m5:", &a_r_m5_m5);
-     print_shorts2("a_r_m5_m7:", &a_r_m5_m7);
-     print_shorts2("a_r_m7_p7:", &a_r_m7_p7);
-     print_shorts2("a_r_m7_p5:", &a_r_m7_p5);
-     print_shorts2("a_r_m7_p3:", &a_r_m7_p3);
-     print_shorts2("a_r_m7_p1:", &a_r_m7_p1);
-     print_shorts2("a_r_m7_m1:", &a_r_m7_m1);
-     print_shorts2("a_r_m7_m3:", &a_r_m7_m3);
-     print_shorts2("a_r_m7_m5:", &a_r_m7_m5);
-     print_shorts2("a_r_m7_m7:", &a_r_m7_m7);
 
-     print_shorts2("a_i_p7_p7:", &a_i_p7_p7);
-     print_shorts2("a_i_p7_p5:", &a_i_p7_p5);
-     print_shorts2("a_i_p7_p3:", &a_i_p7_p3);
-     print_shorts2("a_i_p7_p1:", &a_i_p7_p1);
-     print_shorts2("a_i_p7_m1:", &a_i_p7_m1);
-     print_shorts2("a_i_p7_m3:", &a_i_p7_m3);
-     print_shorts2("a_i_p7_m5:", &a_i_p7_m5);
-     print_shorts2("a_i_p7_m7:", &a_i_p7_m7);
-     print_shorts2("a_i_p5_p7:", &a_i_p5_p7);
-     print_shorts2("a_i_p5_p5:", &a_i_p5_p5);
-     print_shorts2("a_i_p5_p3:", &a_i_p5_p3);
-     print_shorts2("a_i_p5_p1:", &a_i_p5_p1);
-     print_shorts2("a_i_p5_m1:", &a_i_p5_m1);
-     print_shorts2("a_i_p5_m3:", &a_i_p5_m3);
-     print_shorts2("a_i_p5_m5:", &a_i_p5_m5);
-     print_shorts2("a_i_p5_m7:", &a_i_p5_m7);
-     print_shorts2("a_i_p3_p7:", &a_i_p3_p7);
-     print_shorts2("a_i_p3_p5:", &a_i_p3_p5);
-     print_shorts2("a_i_p3_p3:", &a_i_p3_p3);
-     print_shorts2("a_i_p3_p1:", &a_i_p3_p1);
-     print_shorts2("a_i_p3_m1:", &a_i_p3_m1);
-     print_shorts2("a_i_p3_m3:", &a_i_p3_m3);
-     print_shorts2("a_i_p3_m5:", &a_i_p3_m5);
-     print_shorts2("a_i_p3_m7:", &a_i_p3_m7);
-     print_shorts2("a_i_p1_p7:", &a_i_p1_p7);
-     print_shorts2("a_i_p1_p5:", &a_i_p1_p5);
-     print_shorts2("a_i_p1_p3:", &a_i_p1_p3);
-     print_shorts2("a_i_p1_p1:", &a_i_p1_p1);
-     print_shorts2("a_i_p1_m1:", &a_i_p1_m1);
-     print_shorts2("a_i_p1_m3:", &a_i_p1_m3);
-     print_shorts2("a_i_p1_m5:", &a_i_p1_m5);
-     print_shorts2("a_i_p1_m7:", &a_i_p1_m7);
-     print_shorts2("a_i_m1_p7:", &a_i_m1_p7);
-     print_shorts2("a_i_m1_p5:", &a_i_m1_p5);
-     print_shorts2("a_i_m1_p3:", &a_i_m1_p3);
-     print_shorts2("a_i_m1_p1:", &a_i_m1_p1);
-     print_shorts2("a_i_m1_m1:", &a_i_m1_m1);
-     print_shorts2("a_i_m1_m3:", &a_i_m1_m3);
-     print_shorts2("a_i_m1_m5:", &a_i_m1_m5);
-     print_shorts2("a_i_m1_m7:", &a_i_m1_m7);
-     print_shorts2("a_i_m3_p7:", &a_i_m3_p7);
-     print_shorts2("a_i_m3_p5:", &a_i_m3_p5);
-     print_shorts2("a_i_m3_p3:", &a_i_m3_p3);
-     print_shorts2("a_i_m3_p1:", &a_i_m3_p1);
-     print_shorts2("a_i_m3_m1:", &a_i_m3_m1);
-     print_shorts2("a_i_m3_m3:", &a_i_m3_m3);
-     print_shorts2("a_i_m3_m5:", &a_i_m3_m5);
-     print_shorts2("a_i_m3_m7:", &a_i_m3_m7);
-     print_shorts2("a_i_m5_p7:", &a_i_m5_p7);
-     print_shorts2("a_i_m5_p5:", &a_i_m5_p5);
-     print_shorts2("a_i_m5_p3:", &a_i_m5_p3);
-     print_shorts2("a_i_m5_p1:", &a_i_m5_p1);
-     print_shorts2("a_i_m5_m1:", &a_i_m5_m1);
-     print_shorts2("a_i_m5_m3:", &a_i_m5_m3);
-     print_shorts2("a_i_m5_m5:", &a_i_m5_m5);
-     print_shorts2("a_i_m5_m7:", &a_i_m5_m7);
-     print_shorts2("a_i_m7_p7:", &a_i_m7_p7);
-     print_shorts2("a_i_m7_p5:", &a_i_m7_p5);
-     print_shorts2("a_i_m7_p3:", &a_i_m7_p3);
-     print_shorts2("a_i_m7_p1:", &a_i_m7_p1);
-     print_shorts2("a_i_m7_m1:", &a_i_m7_m1);
-     print_shorts2("a_i_m7_m3:", &a_i_m7_m3);
-     print_shorts2("a_i_m7_m5:", &a_i_m7_m5);
-     print_shorts2("a_i_m7_m7:", &a_i_m7_m7);
-#endif
-     
-     // Calculation of a group of two terms in the bit metric involving product of psi and interference
-     // psi_a to multiply by 2 eveywhere
-     prodsum_psi_a_pi16(psi_r_p7_p7, a_r_p7_p7, psi_i_p7_p7, a_i_p7_p7, psi_a_p7_p7); psi_a_p7_p7 = _mm_slli_pi16(psi_a_p7_p7, 1);
-     prodsum_psi_a_pi16(psi_r_p7_p5, a_r_p7_p5, psi_i_p7_p5, a_i_p7_p5, psi_a_p7_p5); psi_a_p7_p5 = _mm_slli_pi16(psi_a_p7_p5, 1);
-     prodsum_psi_a_pi16(psi_r_p7_p3, a_r_p7_p3, psi_i_p7_p3, a_i_p7_p3, psi_a_p7_p3); psi_a_p7_p3 = _mm_slli_pi16(psi_a_p7_p3, 1);
-     prodsum_psi_a_pi16(psi_r_p7_p1, a_r_p7_p1, psi_i_p7_p1, a_i_p7_p1, psi_a_p7_p1); psi_a_p7_p1 = _mm_slli_pi16(psi_a_p7_p1, 1);
-     prodsum_psi_a_pi16(psi_r_p7_m1, a_r_p7_m1, psi_i_p7_m1, a_i_p7_m1, psi_a_p7_m1); psi_a_p7_m1 = _mm_slli_pi16(psi_a_p7_m1, 1);
-     prodsum_psi_a_pi16(psi_r_p7_m3, a_r_p7_m3, psi_i_p7_m3, a_i_p7_m3, psi_a_p7_m3); psi_a_p7_m3 = _mm_slli_pi16(psi_a_p7_m3, 1);
-     prodsum_psi_a_pi16(psi_r_p7_m5, a_r_p7_m5, psi_i_p7_m5, a_i_p7_m5, psi_a_p7_m5); psi_a_p7_m5 = _mm_slli_pi16(psi_a_p7_m5, 1);
-     prodsum_psi_a_pi16(psi_r_p7_m7, a_r_p7_m7, psi_i_p7_m7, a_i_p7_m7, psi_a_p7_m7); psi_a_p7_m7 = _mm_slli_pi16(psi_a_p7_m7, 1);
-     prodsum_psi_a_pi16(psi_r_p5_p7, a_r_p5_p7, psi_i_p5_p7, a_i_p5_p7, psi_a_p5_p7); psi_a_p5_p7 = _mm_slli_pi16(psi_a_p5_p7, 1);
-     prodsum_psi_a_pi16(psi_r_p5_p5, a_r_p5_p5, psi_i_p5_p5, a_i_p5_p5, psi_a_p5_p5); psi_a_p5_p5 = _mm_slli_pi16(psi_a_p5_p5, 1);
-     prodsum_psi_a_pi16(psi_r_p5_p3, a_r_p5_p3, psi_i_p5_p3, a_i_p5_p3, psi_a_p5_p3); psi_a_p5_p3 = _mm_slli_pi16(psi_a_p5_p3, 1);
-     prodsum_psi_a_pi16(psi_r_p5_p1, a_r_p5_p1, psi_i_p5_p1, a_i_p5_p1, psi_a_p5_p1); psi_a_p5_p1 = _mm_slli_pi16(psi_a_p5_p1, 1);
-     prodsum_psi_a_pi16(psi_r_p5_m1, a_r_p5_m1, psi_i_p5_m1, a_i_p5_m1, psi_a_p5_m1); psi_a_p5_m1 = _mm_slli_pi16(psi_a_p5_m1, 1);
-     prodsum_psi_a_pi16(psi_r_p5_m3, a_r_p5_m3, psi_i_p5_m3, a_i_p5_m3, psi_a_p5_m3); psi_a_p5_m3 = _mm_slli_pi16(psi_a_p5_m3, 1);
-     prodsum_psi_a_pi16(psi_r_p5_m5, a_r_p5_m5, psi_i_p5_m5, a_i_p5_m5, psi_a_p5_m5); psi_a_p5_m5 = _mm_slli_pi16(psi_a_p5_m5, 1);
-     prodsum_psi_a_pi16(psi_r_p5_m7, a_r_p5_m7, psi_i_p5_m7, a_i_p5_m7, psi_a_p5_m7); psi_a_p5_m7 = _mm_slli_pi16(psi_a_p5_m7, 1);
-     prodsum_psi_a_pi16(psi_r_p3_p7, a_r_p3_p7, psi_i_p3_p7, a_i_p3_p7, psi_a_p3_p7); psi_a_p3_p7 = _mm_slli_pi16(psi_a_p3_p7, 1);
-     prodsum_psi_a_pi16(psi_r_p3_p5, a_r_p3_p5, psi_i_p3_p5, a_i_p3_p5, psi_a_p3_p5); psi_a_p3_p5 = _mm_slli_pi16(psi_a_p3_p5, 1);
-     prodsum_psi_a_pi16(psi_r_p3_p3, a_r_p3_p3, psi_i_p3_p3, a_i_p3_p3, psi_a_p3_p3); psi_a_p3_p3 = _mm_slli_pi16(psi_a_p3_p3, 1);
-     prodsum_psi_a_pi16(psi_r_p3_p1, a_r_p3_p1, psi_i_p3_p1, a_i_p3_p1, psi_a_p3_p1); psi_a_p3_p1 = _mm_slli_pi16(psi_a_p3_p1, 1);
-     prodsum_psi_a_pi16(psi_r_p3_m1, a_r_p3_m1, psi_i_p3_m1, a_i_p3_m1, psi_a_p3_m1); psi_a_p3_m1 = _mm_slli_pi16(psi_a_p3_m1, 1);
-     prodsum_psi_a_pi16(psi_r_p3_m3, a_r_p3_m3, psi_i_p3_m3, a_i_p3_m3, psi_a_p3_m3); psi_a_p3_m3 = _mm_slli_pi16(psi_a_p3_m3, 1);
-     prodsum_psi_a_pi16(psi_r_p3_m5, a_r_p3_m5, psi_i_p3_m5, a_i_p3_m5, psi_a_p3_m5); psi_a_p3_m5 = _mm_slli_pi16(psi_a_p3_m5, 1);
-     prodsum_psi_a_pi16(psi_r_p3_m7, a_r_p3_m7, psi_i_p3_m7, a_i_p3_m7, psi_a_p3_m7); psi_a_p3_m7 = _mm_slli_pi16(psi_a_p3_m7, 1);
-     prodsum_psi_a_pi16(psi_r_p1_p7, a_r_p1_p7, psi_i_p1_p7, a_i_p1_p7, psi_a_p1_p7); psi_a_p1_p7 = _mm_slli_pi16(psi_a_p1_p7, 1);
-     prodsum_psi_a_pi16(psi_r_p1_p5, a_r_p1_p5, psi_i_p1_p5, a_i_p1_p5, psi_a_p1_p5); psi_a_p1_p5 = _mm_slli_pi16(psi_a_p1_p5, 1);
-     prodsum_psi_a_pi16(psi_r_p1_p3, a_r_p1_p3, psi_i_p1_p3, a_i_p1_p3, psi_a_p1_p3); psi_a_p1_p3 = _mm_slli_pi16(psi_a_p1_p3, 1);
-     prodsum_psi_a_pi16(psi_r_p1_p1, a_r_p1_p1, psi_i_p1_p1, a_i_p1_p1, psi_a_p1_p1); psi_a_p1_p1 = _mm_slli_pi16(psi_a_p1_p1, 1);
-     prodsum_psi_a_pi16(psi_r_p1_m1, a_r_p1_m1, psi_i_p1_m1, a_i_p1_m1, psi_a_p1_m1); psi_a_p1_m1 = _mm_slli_pi16(psi_a_p1_m1, 1);
-     prodsum_psi_a_pi16(psi_r_p1_m3, a_r_p1_m3, psi_i_p1_m3, a_i_p1_m3, psi_a_p1_m3); psi_a_p1_m3 = _mm_slli_pi16(psi_a_p1_m3, 1);
-     prodsum_psi_a_pi16(psi_r_p1_m5, a_r_p1_m5, psi_i_p1_m5, a_i_p1_m5, psi_a_p1_m5); psi_a_p1_m5 = _mm_slli_pi16(psi_a_p1_m5, 1);
-     prodsum_psi_a_pi16(psi_r_p1_m7, a_r_p1_m7, psi_i_p1_m7, a_i_p1_m7, psi_a_p1_m7); psi_a_p1_m7 = _mm_slli_pi16(psi_a_p1_m7, 1);
-     prodsum_psi_a_pi16(psi_r_m1_p7, a_r_m1_p7, psi_i_m1_p7, a_i_m1_p7, psi_a_m1_p7); psi_a_m1_p7 = _mm_slli_pi16(psi_a_m1_p7, 1);
-     prodsum_psi_a_pi16(psi_r_m1_p5, a_r_m1_p5, psi_i_m1_p5, a_i_m1_p5, psi_a_m1_p5); psi_a_m1_p5 = _mm_slli_pi16(psi_a_m1_p5, 1);
-     prodsum_psi_a_pi16(psi_r_m1_p3, a_r_m1_p3, psi_i_m1_p3, a_i_m1_p3, psi_a_m1_p3); psi_a_m1_p3 = _mm_slli_pi16(psi_a_m1_p3, 1);
-     prodsum_psi_a_pi16(psi_r_m1_p1, a_r_m1_p1, psi_i_m1_p1, a_i_m1_p1, psi_a_m1_p1); psi_a_m1_p1 = _mm_slli_pi16(psi_a_m1_p1, 1);
-     prodsum_psi_a_pi16(psi_r_m1_m1, a_r_m1_m1, psi_i_m1_m1, a_i_m1_m1, psi_a_m1_m1); psi_a_m1_m1 = _mm_slli_pi16(psi_a_m1_m1, 1);
-     prodsum_psi_a_pi16(psi_r_m1_m3, a_r_m1_m3, psi_i_m1_m3, a_i_m1_m3, psi_a_m1_m3); psi_a_m1_m3 = _mm_slli_pi16(psi_a_m1_m3, 1);
-     prodsum_psi_a_pi16(psi_r_m1_m5, a_r_m1_m5, psi_i_m1_m5, a_i_m1_m5, psi_a_m1_m5); psi_a_m1_m5 = _mm_slli_pi16(psi_a_m1_m5, 1);
-     prodsum_psi_a_pi16(psi_r_m1_m7, a_r_m1_m7, psi_i_m1_m7, a_i_m1_m7, psi_a_m1_m7); psi_a_m1_m7 = _mm_slli_pi16(psi_a_m1_m7, 1);
-     prodsum_psi_a_pi16(psi_r_m3_p7, a_r_m3_p7, psi_i_m3_p7, a_i_m3_p7, psi_a_m3_p7); psi_a_m3_p7 = _mm_slli_pi16(psi_a_m3_p7, 1);
-     prodsum_psi_a_pi16(psi_r_m3_p5, a_r_m3_p5, psi_i_m3_p5, a_i_m3_p5, psi_a_m3_p5); psi_a_m3_p5 = _mm_slli_pi16(psi_a_m3_p5, 1);
-     prodsum_psi_a_pi16(psi_r_m3_p3, a_r_m3_p3, psi_i_m3_p3, a_i_m3_p3, psi_a_m3_p3); psi_a_m3_p3 = _mm_slli_pi16(psi_a_m3_p3, 1);
-     prodsum_psi_a_pi16(psi_r_m3_p1, a_r_m3_p1, psi_i_m3_p1, a_i_m3_p1, psi_a_m3_p1); psi_a_m3_p1 = _mm_slli_pi16(psi_a_m3_p1, 1);
-     prodsum_psi_a_pi16(psi_r_m3_m1, a_r_m3_m1, psi_i_m3_m1, a_i_m3_m1, psi_a_m3_m1); psi_a_m3_m1 = _mm_slli_pi16(psi_a_m3_m1, 1);
-     prodsum_psi_a_pi16(psi_r_m3_m3, a_r_m3_m3, psi_i_m3_m3, a_i_m3_m3, psi_a_m3_m3); psi_a_m3_m3 = _mm_slli_pi16(psi_a_m3_m3, 1);
-     prodsum_psi_a_pi16(psi_r_m3_m5, a_r_m3_m5, psi_i_m3_m5, a_i_m3_m5, psi_a_m3_m5); psi_a_m3_m5 = _mm_slli_pi16(psi_a_m3_m5, 1);
-     prodsum_psi_a_pi16(psi_r_m3_m7, a_r_m3_m7, psi_i_m3_m7, a_i_m3_m7, psi_a_m3_m7); psi_a_m3_m7 = _mm_slli_pi16(psi_a_m3_m7, 1);
-     prodsum_psi_a_pi16(psi_r_m5_p7, a_r_m5_p7, psi_i_m5_p7, a_i_m5_p7, psi_a_m5_p7); psi_a_m5_p7 = _mm_slli_pi16(psi_a_m5_p7, 1);
-     prodsum_psi_a_pi16(psi_r_m5_p5, a_r_m5_p5, psi_i_m5_p5, a_i_m5_p5, psi_a_m5_p5); psi_a_m5_p5 = _mm_slli_pi16(psi_a_m5_p5, 1);
-     prodsum_psi_a_pi16(psi_r_m5_p3, a_r_m5_p3, psi_i_m5_p3, a_i_m5_p3, psi_a_m5_p3); psi_a_m5_p3 = _mm_slli_pi16(psi_a_m5_p3, 1);
-     prodsum_psi_a_pi16(psi_r_m5_p1, a_r_m5_p1, psi_i_m5_p1, a_i_m5_p1, psi_a_m5_p1); psi_a_m5_p1 = _mm_slli_pi16(psi_a_m5_p1, 1);
-     prodsum_psi_a_pi16(psi_r_m5_m1, a_r_m5_m1, psi_i_m5_m1, a_i_m5_m1, psi_a_m5_m1); psi_a_m5_m1 = _mm_slli_pi16(psi_a_m5_m1, 1);
-     prodsum_psi_a_pi16(psi_r_m5_m3, a_r_m5_m3, psi_i_m5_m3, a_i_m5_m3, psi_a_m5_m3); psi_a_m5_m3 = _mm_slli_pi16(psi_a_m5_m3, 1);
-     prodsum_psi_a_pi16(psi_r_m5_m5, a_r_m5_m5, psi_i_m5_m5, a_i_m5_m5, psi_a_m5_m5); psi_a_m5_m5 = _mm_slli_pi16(psi_a_m5_m5, 1);
-     prodsum_psi_a_pi16(psi_r_m5_m7, a_r_m5_m7, psi_i_m5_m7, a_i_m5_m7, psi_a_m5_m7); psi_a_m5_m7 = _mm_slli_pi16(psi_a_m5_m7, 1);
-     prodsum_psi_a_pi16(psi_r_m7_p7, a_r_m7_p7, psi_i_m7_p7, a_i_m7_p7, psi_a_m7_p7); psi_a_m7_p7 = _mm_slli_pi16(psi_a_m7_p7, 1);
-     prodsum_psi_a_pi16(psi_r_m7_p5, a_r_m7_p5, psi_i_m7_p5, a_i_m7_p5, psi_a_m7_p5); psi_a_m7_p5 = _mm_slli_pi16(psi_a_m7_p5, 1);
-     prodsum_psi_a_pi16(psi_r_m7_p3, a_r_m7_p3, psi_i_m7_p3, a_i_m7_p3, psi_a_m7_p3); psi_a_m7_p3 = _mm_slli_pi16(psi_a_m7_p3, 1);
-     prodsum_psi_a_pi16(psi_r_m7_p1, a_r_m7_p1, psi_i_m7_p1, a_i_m7_p1, psi_a_m7_p1); psi_a_m7_p1 = _mm_slli_pi16(psi_a_m7_p1, 1);
-     prodsum_psi_a_pi16(psi_r_m7_m1, a_r_m7_m1, psi_i_m7_m1, a_i_m7_m1, psi_a_m7_m1); psi_a_m7_m1 = _mm_slli_pi16(psi_a_m7_m1, 1);
-     prodsum_psi_a_pi16(psi_r_m7_m3, a_r_m7_m3, psi_i_m7_m3, a_i_m7_m3, psi_a_m7_m3); psi_a_m7_m3 = _mm_slli_pi16(psi_a_m7_m3, 1);
-     prodsum_psi_a_pi16(psi_r_m7_m5, a_r_m7_m5, psi_i_m7_m5, a_i_m7_m5, psi_a_m7_m5); psi_a_m7_m5 = _mm_slli_pi16(psi_a_m7_m5, 1);
-     prodsum_psi_a_pi16(psi_r_m7_m7, a_r_m7_m7, psi_i_m7_m7, a_i_m7_m7, psi_a_m7_m7); psi_a_m7_m7 = _mm_slli_pi16(psi_a_m7_m7, 1);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+64;
-     cnt_mul = cnt_mul+128;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("psi_a_p7_p7:", &psi_a_p7_p7);
-     print_shorts2("psi_a_p7_p5:", &psi_a_p7_p5);
-     print_shorts2("psi_a_p7_p3:", &psi_a_p7_p3);
-     print_shorts2("psi_a_p7_p1:", &psi_a_p7_p1);
-     print_shorts2("psi_a_p7_m1:", &psi_a_p7_m1);
-     print_shorts2("psi_a_p7_m3:", &psi_a_p7_m3);
-     print_shorts2("psi_a_p7_m5:", &psi_a_p7_m5);
-     print_shorts2("psi_a_p7_m7:", &psi_a_p7_m7);
-     print_shorts2("psi_a_p5_p7:", &psi_a_p5_p7);
-     print_shorts2("psi_a_p5_p5:", &psi_a_p5_p5);
-     print_shorts2("psi_a_p5_p3:", &psi_a_p5_p3);
-     print_shorts2("psi_a_p5_p1:", &psi_a_p5_p1);
-     print_shorts2("psi_a_p5_m1:", &psi_a_p5_m1);
-     print_shorts2("psi_a_p5_m3:", &psi_a_p5_m3);
-     print_shorts2("psi_a_p5_m5:", &psi_a_p5_m5);
-     print_shorts2("psi_a_p5_m7:", &psi_a_p5_m7);
-     print_shorts2("psi_a_p3_p7:", &psi_a_p3_p7);
-     print_shorts2("psi_a_p3_p5:", &psi_a_p3_p5);
-     print_shorts2("psi_a_p3_p3:", &psi_a_p3_p3);
-     print_shorts2("psi_a_p3_p1:", &psi_a_p3_p1);
-     print_shorts2("psi_a_p3_m1:", &psi_a_p3_m1);
-     print_shorts2("psi_a_p3_m3:", &psi_a_p3_m3);
-     print_shorts2("psi_a_p3_m5:", &psi_a_p3_m5);
-     print_shorts2("psi_a_p3_m7:", &psi_a_p3_m7);
-     print_shorts2("psi_a_p1_p7:", &psi_a_p1_p7);
-     print_shorts2("psi_a_p1_p5:", &psi_a_p1_p5);
-     print_shorts2("psi_a_p1_p3:", &psi_a_p1_p3);
-     print_shorts2("psi_a_p1_p1:", &psi_a_p1_p1);
-     print_shorts2("psi_a_p1_m1:", &psi_a_p1_m1);
-     print_shorts2("psi_a_p1_m3:", &psi_a_p1_m3);
-     print_shorts2("psi_a_p1_m5:", &psi_a_p1_m5);
-     print_shorts2("psi_a_p1_m7:", &psi_a_p1_m7);
-     print_shorts2("psi_a_m1_p7:", &psi_a_m1_p7);
-     print_shorts2("psi_a_m1_p5:", &psi_a_m1_p5);
-     print_shorts2("psi_a_m1_p3:", &psi_a_m1_p3);
-     print_shorts2("psi_a_m1_p1:", &psi_a_m1_p1);
-     print_shorts2("psi_a_m1_m1:", &psi_a_m1_m1);
-     print_shorts2("psi_a_m1_m3:", &psi_a_m1_m3);
-     print_shorts2("psi_a_m1_m5:", &psi_a_m1_m5);
-     print_shorts2("psi_a_m1_m7:", &psi_a_m1_m7);
-     print_shorts2("psi_a_m3_p7:", &psi_a_m3_p7);
-     print_shorts2("psi_a_m3_p5:", &psi_a_m3_p5);
-     print_shorts2("psi_a_m3_p3:", &psi_a_m3_p3);
-     print_shorts2("psi_a_m3_p1:", &psi_a_m3_p1);
-     print_shorts2("psi_a_m3_m1:", &psi_a_m3_m1);
-     print_shorts2("psi_a_m3_m3:", &psi_a_m3_m3);
-     print_shorts2("psi_a_m3_m5:", &psi_a_m3_m5);
-     print_shorts2("psi_a_m3_m7:", &psi_a_m3_m7);
-     print_shorts2("psi_a_m5_p7:", &psi_a_m5_p7);
-     print_shorts2("psi_a_m5_p5:", &psi_a_m5_p5);
-     print_shorts2("psi_a_m5_p3:", &psi_a_m5_p3);
-     print_shorts2("psi_a_m5_p1:", &psi_a_m5_p1);
-     print_shorts2("psi_a_m5_m1:", &psi_a_m5_m1);
-     print_shorts2("psi_a_m5_m3:", &psi_a_m5_m3);
-     print_shorts2("psi_a_m5_m5:", &psi_a_m5_m5);
-     print_shorts2("psi_a_m5_m7:", &psi_a_m5_m7);
-     print_shorts2("psi_a_m7_p7:", &psi_a_m7_p7);
-     print_shorts2("psi_a_m7_p5:", &psi_a_m7_p5);
-     print_shorts2("psi_a_m7_p3:", &psi_a_m7_p3);
-     print_shorts2("psi_a_m7_p1:", &psi_a_m7_p1);
-     print_shorts2("psi_a_m7_m1:", &psi_a_m7_m1);
-     print_shorts2("psi_a_m7_m3:", &psi_a_m7_m3);
-     print_shorts2("psi_a_m7_m5:", &psi_a_m7_m5);
-     print_shorts2("psi_a_m7_m7:", &psi_a_m7_m7); 
-#endif
+   
+
+
+     // Calculation of a group of two terms in the bit metric involving product of psi and interference     
+     prodsum_psi_a_pi16(psi_r_p7_p7, a_r_p7_p7, psi_i_p7_p7, a_i_p7_p7, psi_a_p7_p7);
+     prodsum_psi_a_pi16(psi_r_p7_p5, a_r_p7_p5, psi_i_p7_p5, a_i_p7_p5, psi_a_p7_p5); 
+     prodsum_psi_a_pi16(psi_r_p7_p3, a_r_p7_p3, psi_i_p7_p3, a_i_p7_p3, psi_a_p7_p3); 
+     prodsum_psi_a_pi16(psi_r_p7_p1, a_r_p7_p1, psi_i_p7_p1, a_i_p7_p1, psi_a_p7_p1); 
+     prodsum_psi_a_pi16(psi_r_p7_m1, a_r_p7_m1, psi_i_p7_m1, a_i_p7_m1, psi_a_p7_m1); 
+     prodsum_psi_a_pi16(psi_r_p7_m3, a_r_p7_m3, psi_i_p7_m3, a_i_p7_m3, psi_a_p7_m3); 
+     prodsum_psi_a_pi16(psi_r_p7_m5, a_r_p7_m5, psi_i_p7_m5, a_i_p7_m5, psi_a_p7_m5); 
+     prodsum_psi_a_pi16(psi_r_p7_m7, a_r_p7_m7, psi_i_p7_m7, a_i_p7_m7, psi_a_p7_m7); 
+     prodsum_psi_a_pi16(psi_r_p5_p7, a_r_p5_p7, psi_i_p5_p7, a_i_p5_p7, psi_a_p5_p7); 
+     prodsum_psi_a_pi16(psi_r_p5_p5, a_r_p5_p5, psi_i_p5_p5, a_i_p5_p5, psi_a_p5_p5); 
+     prodsum_psi_a_pi16(psi_r_p5_p3, a_r_p5_p3, psi_i_p5_p3, a_i_p5_p3, psi_a_p5_p3); 
+     prodsum_psi_a_pi16(psi_r_p5_p1, a_r_p5_p1, psi_i_p5_p1, a_i_p5_p1, psi_a_p5_p1); 
+     prodsum_psi_a_pi16(psi_r_p5_m1, a_r_p5_m1, psi_i_p5_m1, a_i_p5_m1, psi_a_p5_m1); 
+     prodsum_psi_a_pi16(psi_r_p5_m3, a_r_p5_m3, psi_i_p5_m3, a_i_p5_m3, psi_a_p5_m3); 
+     prodsum_psi_a_pi16(psi_r_p5_m5, a_r_p5_m5, psi_i_p5_m5, a_i_p5_m5, psi_a_p5_m5); 
+     prodsum_psi_a_pi16(psi_r_p5_m7, a_r_p5_m7, psi_i_p5_m7, a_i_p5_m7, psi_a_p5_m7); 
+     prodsum_psi_a_pi16(psi_r_p3_p7, a_r_p3_p7, psi_i_p3_p7, a_i_p3_p7, psi_a_p3_p7);
+     prodsum_psi_a_pi16(psi_r_p3_p5, a_r_p3_p5, psi_i_p3_p5, a_i_p3_p5, psi_a_p3_p5);
+     prodsum_psi_a_pi16(psi_r_p3_p3, a_r_p3_p3, psi_i_p3_p3, a_i_p3_p3, psi_a_p3_p3);
+     prodsum_psi_a_pi16(psi_r_p3_p1, a_r_p3_p1, psi_i_p3_p1, a_i_p3_p1, psi_a_p3_p1);
+     prodsum_psi_a_pi16(psi_r_p3_m1, a_r_p3_m1, psi_i_p3_m1, a_i_p3_m1, psi_a_p3_m1);
+     prodsum_psi_a_pi16(psi_r_p3_m3, a_r_p3_m3, psi_i_p3_m3, a_i_p3_m3, psi_a_p3_m3);
+     prodsum_psi_a_pi16(psi_r_p3_m5, a_r_p3_m5, psi_i_p3_m5, a_i_p3_m5, psi_a_p3_m5);
+     prodsum_psi_a_pi16(psi_r_p3_m7, a_r_p3_m7, psi_i_p3_m7, a_i_p3_m7, psi_a_p3_m7);
+     prodsum_psi_a_pi16(psi_r_p1_p7, a_r_p1_p7, psi_i_p1_p7, a_i_p1_p7, psi_a_p1_p7);
+     prodsum_psi_a_pi16(psi_r_p1_p5, a_r_p1_p5, psi_i_p1_p5, a_i_p1_p5, psi_a_p1_p5);
+     prodsum_psi_a_pi16(psi_r_p1_p3, a_r_p1_p3, psi_i_p1_p3, a_i_p1_p3, psi_a_p1_p3);
+     prodsum_psi_a_pi16(psi_r_p1_p1, a_r_p1_p1, psi_i_p1_p1, a_i_p1_p1, psi_a_p1_p1);
+     prodsum_psi_a_pi16(psi_r_p1_m1, a_r_p1_m1, psi_i_p1_m1, a_i_p1_m1, psi_a_p1_m1);
+     prodsum_psi_a_pi16(psi_r_p1_m3, a_r_p1_m3, psi_i_p1_m3, a_i_p1_m3, psi_a_p1_m3);
+     prodsum_psi_a_pi16(psi_r_p1_m5, a_r_p1_m5, psi_i_p1_m5, a_i_p1_m5, psi_a_p1_m5);
+     prodsum_psi_a_pi16(psi_r_p1_m7, a_r_p1_m7, psi_i_p1_m7, a_i_p1_m7, psi_a_p1_m7);
+     prodsum_psi_a_pi16(psi_r_m1_p7, a_r_m1_p7, psi_i_m1_p7, a_i_m1_p7, psi_a_m1_p7);
+     prodsum_psi_a_pi16(psi_r_m1_p5, a_r_m1_p5, psi_i_m1_p5, a_i_m1_p5, psi_a_m1_p5);
+     prodsum_psi_a_pi16(psi_r_m1_p3, a_r_m1_p3, psi_i_m1_p3, a_i_m1_p3, psi_a_m1_p3);
+     prodsum_psi_a_pi16(psi_r_m1_p1, a_r_m1_p1, psi_i_m1_p1, a_i_m1_p1, psi_a_m1_p1);
+     prodsum_psi_a_pi16(psi_r_m1_m1, a_r_m1_m1, psi_i_m1_m1, a_i_m1_m1, psi_a_m1_m1);
+     prodsum_psi_a_pi16(psi_r_m1_m3, a_r_m1_m3, psi_i_m1_m3, a_i_m1_m3, psi_a_m1_m3);
+     prodsum_psi_a_pi16(psi_r_m1_m5, a_r_m1_m5, psi_i_m1_m5, a_i_m1_m5, psi_a_m1_m5);
+     prodsum_psi_a_pi16(psi_r_m1_m7, a_r_m1_m7, psi_i_m1_m7, a_i_m1_m7, psi_a_m1_m7);
+     prodsum_psi_a_pi16(psi_r_m3_p7, a_r_m3_p7, psi_i_m3_p7, a_i_m3_p7, psi_a_m3_p7);
+     prodsum_psi_a_pi16(psi_r_m3_p5, a_r_m3_p5, psi_i_m3_p5, a_i_m3_p5, psi_a_m3_p5);
+     prodsum_psi_a_pi16(psi_r_m3_p3, a_r_m3_p3, psi_i_m3_p3, a_i_m3_p3, psi_a_m3_p3);
+     prodsum_psi_a_pi16(psi_r_m3_p1, a_r_m3_p1, psi_i_m3_p1, a_i_m3_p1, psi_a_m3_p1);
+     prodsum_psi_a_pi16(psi_r_m3_m1, a_r_m3_m1, psi_i_m3_m1, a_i_m3_m1, psi_a_m3_m1);
+     prodsum_psi_a_pi16(psi_r_m3_m3, a_r_m3_m3, psi_i_m3_m3, a_i_m3_m3, psi_a_m3_m3);
+     prodsum_psi_a_pi16(psi_r_m3_m5, a_r_m3_m5, psi_i_m3_m5, a_i_m3_m5, psi_a_m3_m5);
+     prodsum_psi_a_pi16(psi_r_m3_m7, a_r_m3_m7, psi_i_m3_m7, a_i_m3_m7, psi_a_m3_m7);
+     prodsum_psi_a_pi16(psi_r_m5_p7, a_r_m5_p7, psi_i_m5_p7, a_i_m5_p7, psi_a_m5_p7);
+     prodsum_psi_a_pi16(psi_r_m5_p5, a_r_m5_p5, psi_i_m5_p5, a_i_m5_p5, psi_a_m5_p5);
+     prodsum_psi_a_pi16(psi_r_m5_p3, a_r_m5_p3, psi_i_m5_p3, a_i_m5_p3, psi_a_m5_p3);
+     prodsum_psi_a_pi16(psi_r_m5_p1, a_r_m5_p1, psi_i_m5_p1, a_i_m5_p1, psi_a_m5_p1);
+     prodsum_psi_a_pi16(psi_r_m5_m1, a_r_m5_m1, psi_i_m5_m1, a_i_m5_m1, psi_a_m5_m1); 
+     prodsum_psi_a_pi16(psi_r_m5_m3, a_r_m5_m3, psi_i_m5_m3, a_i_m5_m3, psi_a_m5_m3);
+     prodsum_psi_a_pi16(psi_r_m5_m5, a_r_m5_m5, psi_i_m5_m5, a_i_m5_m5, psi_a_m5_m5);
+     prodsum_psi_a_pi16(psi_r_m5_m7, a_r_m5_m7, psi_i_m5_m7, a_i_m5_m7, psi_a_m5_m7);
+     prodsum_psi_a_pi16(psi_r_m7_p7, a_r_m7_p7, psi_i_m7_p7, a_i_m7_p7, psi_a_m7_p7);
+     prodsum_psi_a_pi16(psi_r_m7_p5, a_r_m7_p5, psi_i_m7_p5, a_i_m7_p5, psi_a_m7_p5);
+     prodsum_psi_a_pi16(psi_r_m7_p3, a_r_m7_p3, psi_i_m7_p3, a_i_m7_p3, psi_a_m7_p3); 
+     prodsum_psi_a_pi16(psi_r_m7_p1, a_r_m7_p1, psi_i_m7_p1, a_i_m7_p1, psi_a_m7_p1);
+     prodsum_psi_a_pi16(psi_r_m7_m1, a_r_m7_m1, psi_i_m7_m1, a_i_m7_m1, psi_a_m7_m1); 
+     prodsum_psi_a_pi16(psi_r_m7_m3, a_r_m7_m3, psi_i_m7_m3, a_i_m7_m3, psi_a_m7_m3);
+     prodsum_psi_a_pi16(psi_r_m7_m5, a_r_m7_m5, psi_i_m7_m5, a_i_m7_m5, psi_a_m7_m5);
+     prodsum_psi_a_pi16(psi_r_m7_m7, a_r_m7_m7, psi_i_m7_m7, a_i_m7_m7, psi_a_m7_m7);
+
+
+     psi_a_p7_p7 = _mm_mulhi_pi16(psi_a_p7_p7, ONE_OVER_SQRT_2);
+     psi_a_p7_p7 = _mm_slli_pi16(psi_a_p7_p7, 2);
+     psi_a_p7_p5 = _mm_mulhi_pi16(psi_a_p7_p5, ONE_OVER_SQRT_2);
+     psi_a_p7_p5 = _mm_slli_pi16(psi_a_p7_p5, 2);
+     psi_a_p7_p3 = _mm_mulhi_pi16(psi_a_p7_p3, ONE_OVER_SQRT_2);
+     psi_a_p7_p3 = _mm_slli_pi16(psi_a_p7_p3, 2);
+     psi_a_p7_p1 = _mm_mulhi_pi16(psi_a_p7_p1, ONE_OVER_SQRT_2);
+     psi_a_p7_p1 = _mm_slli_pi16(psi_a_p7_p1, 2);
+     psi_a_p7_m1 = _mm_mulhi_pi16(psi_a_p7_m1, ONE_OVER_SQRT_2);
+     psi_a_p7_m1 = _mm_slli_pi16(psi_a_p7_m1, 2);
+     psi_a_p7_m3 = _mm_mulhi_pi16(psi_a_p7_m3, ONE_OVER_SQRT_2);
+     psi_a_p7_m3 = _mm_slli_pi16(psi_a_p7_m3, 2);
+     psi_a_p7_m5 = _mm_mulhi_pi16(psi_a_p7_m5, ONE_OVER_SQRT_2);
+     psi_a_p7_m5 = _mm_slli_pi16(psi_a_p7_m5, 2);
+     psi_a_p7_m7 = _mm_mulhi_pi16(psi_a_p7_m7, ONE_OVER_SQRT_2);
+     psi_a_p7_m7 = _mm_slli_pi16(psi_a_p7_m7, 2);
+     psi_a_p5_p7 = _mm_mulhi_pi16(psi_a_p5_p7, ONE_OVER_SQRT_2);
+     psi_a_p5_p7 = _mm_slli_pi16(psi_a_p5_p7, 2);
+     psi_a_p5_p5 = _mm_mulhi_pi16(psi_a_p5_p5, ONE_OVER_SQRT_2);
+     psi_a_p5_p5 = _mm_slli_pi16(psi_a_p5_p5, 2);
+     psi_a_p5_p3 = _mm_mulhi_pi16(psi_a_p5_p3, ONE_OVER_SQRT_2);
+     psi_a_p5_p3 = _mm_slli_pi16(psi_a_p5_p3, 2);
+     psi_a_p5_p1 = _mm_mulhi_pi16(psi_a_p5_p1, ONE_OVER_SQRT_2);
+     psi_a_p5_p1 = _mm_slli_pi16(psi_a_p5_p1, 2);
+     psi_a_p5_m1 = _mm_mulhi_pi16(psi_a_p5_m1, ONE_OVER_SQRT_2);
+     psi_a_p5_m1 = _mm_slli_pi16(psi_a_p5_m1, 2);
+     psi_a_p5_m3 = _mm_mulhi_pi16(psi_a_p5_m3, ONE_OVER_SQRT_2);
+     psi_a_p5_m3 = _mm_slli_pi16(psi_a_p5_m3, 2);
+     psi_a_p5_m5 = _mm_mulhi_pi16(psi_a_p5_m5, ONE_OVER_SQRT_2);
+     psi_a_p5_m5 = _mm_slli_pi16(psi_a_p5_m5, 2);
+     psi_a_p5_m7 = _mm_mulhi_pi16(psi_a_p5_m7, ONE_OVER_SQRT_2);
+     psi_a_p5_m7 = _mm_slli_pi16(psi_a_p5_m7, 2);
+     psi_a_p3_p7 = _mm_mulhi_pi16(psi_a_p3_p7, ONE_OVER_SQRT_2);
+     psi_a_p3_p7 = _mm_slli_pi16(psi_a_p3_p7, 2);
+     psi_a_p3_p5 = _mm_mulhi_pi16(psi_a_p3_p5, ONE_OVER_SQRT_2);
+     psi_a_p3_p5 = _mm_slli_pi16(psi_a_p3_p5, 2);
+     psi_a_p3_p3 = _mm_mulhi_pi16(psi_a_p3_p3, ONE_OVER_SQRT_2);
+     psi_a_p3_p3 = _mm_slli_pi16(psi_a_p3_p3, 2);
+     psi_a_p3_p1 = _mm_mulhi_pi16(psi_a_p3_p1, ONE_OVER_SQRT_2);
+     psi_a_p3_p1 = _mm_slli_pi16(psi_a_p3_p1, 2);
+     psi_a_p3_m1 = _mm_mulhi_pi16(psi_a_p3_m1, ONE_OVER_SQRT_2);
+     psi_a_p3_m1 = _mm_slli_pi16(psi_a_p3_m1, 2);
+     psi_a_p3_m3 = _mm_mulhi_pi16(psi_a_p3_m3, ONE_OVER_SQRT_2);
+     psi_a_p3_m3 = _mm_slli_pi16(psi_a_p3_m3, 2);
+     psi_a_p3_m5 = _mm_mulhi_pi16(psi_a_p3_m5, ONE_OVER_SQRT_2);
+     psi_a_p3_m5 = _mm_slli_pi16(psi_a_p3_m5, 2);
+     psi_a_p3_m7 = _mm_mulhi_pi16(psi_a_p3_m7, ONE_OVER_SQRT_2);
+     psi_a_p3_m7 = _mm_slli_pi16(psi_a_p3_m7, 2);
+     psi_a_p1_p7 = _mm_mulhi_pi16(psi_a_p1_p7, ONE_OVER_SQRT_2);
+     psi_a_p1_p7 = _mm_slli_pi16(psi_a_p1_p7, 2);
+     psi_a_p1_p5 = _mm_mulhi_pi16(psi_a_p1_p5, ONE_OVER_SQRT_2);
+     psi_a_p1_p5 = _mm_slli_pi16(psi_a_p1_p5, 2);
+     psi_a_p1_p3 = _mm_mulhi_pi16(psi_a_p1_p3, ONE_OVER_SQRT_2);
+     psi_a_p1_p3 = _mm_slli_pi16(psi_a_p1_p3, 2);
+     psi_a_p1_p1 = _mm_mulhi_pi16(psi_a_p1_p1, ONE_OVER_SQRT_2);
+     psi_a_p1_p1 = _mm_slli_pi16(psi_a_p1_p1, 2);
+     psi_a_p1_m1 = _mm_mulhi_pi16(psi_a_p1_m1, ONE_OVER_SQRT_2);
+     psi_a_p1_m1 = _mm_slli_pi16(psi_a_p1_m1, 2);
+     psi_a_p1_m3 = _mm_mulhi_pi16(psi_a_p1_m3, ONE_OVER_SQRT_2);
+     psi_a_p1_m3 = _mm_slli_pi16(psi_a_p1_m3, 2);
+     psi_a_p1_m5 = _mm_mulhi_pi16(psi_a_p1_m5, ONE_OVER_SQRT_2);
+     psi_a_p1_m5 = _mm_slli_pi16(psi_a_p1_m5, 2);
+     psi_a_p1_m7 = _mm_mulhi_pi16(psi_a_p1_m7, ONE_OVER_SQRT_2);
+     psi_a_p1_m7 = _mm_slli_pi16(psi_a_p1_m7, 2);
+     psi_a_m1_p7 = _mm_mulhi_pi16(psi_a_m1_p7, ONE_OVER_SQRT_2);
+     psi_a_m1_p7 = _mm_slli_pi16(psi_a_m1_p7, 2);
+     psi_a_m1_p5 = _mm_mulhi_pi16(psi_a_m1_p5, ONE_OVER_SQRT_2);
+     psi_a_m1_p5 = _mm_slli_pi16(psi_a_m1_p5, 2);
+     psi_a_m1_p3 = _mm_mulhi_pi16(psi_a_m1_p3, ONE_OVER_SQRT_2);
+     psi_a_m1_p3 = _mm_slli_pi16(psi_a_m1_p3, 2);
+     psi_a_m1_p1 = _mm_mulhi_pi16(psi_a_m1_p1, ONE_OVER_SQRT_2);
+     psi_a_m1_p1 = _mm_slli_pi16(psi_a_m1_p1, 2);
+     psi_a_m1_m1 = _mm_mulhi_pi16(psi_a_m1_m1, ONE_OVER_SQRT_2);
+     psi_a_m1_m1 = _mm_slli_pi16(psi_a_m1_m1, 2);
+     psi_a_m1_m3 = _mm_mulhi_pi16(psi_a_m1_m3, ONE_OVER_SQRT_2);
+     psi_a_m1_m3 = _mm_slli_pi16(psi_a_m1_m3, 2);
+     psi_a_m1_m5 = _mm_mulhi_pi16(psi_a_m1_m5, ONE_OVER_SQRT_2);
+     psi_a_m1_m5 = _mm_slli_pi16(psi_a_m1_m5, 2);
+     psi_a_m1_m7 = _mm_mulhi_pi16(psi_a_m1_m7, ONE_OVER_SQRT_2);
+     psi_a_m1_m7 = _mm_slli_pi16(psi_a_m1_m7, 2);
+     psi_a_m3_p7 = _mm_mulhi_pi16(psi_a_m3_p7, ONE_OVER_SQRT_2);
+     psi_a_m3_p7 = _mm_slli_pi16(psi_a_m3_p7, 2);
+     psi_a_m3_p5 = _mm_mulhi_pi16(psi_a_m3_p5, ONE_OVER_SQRT_2);
+     psi_a_m3_p5 = _mm_slli_pi16(psi_a_m3_p5, 2);
+     psi_a_m3_p3 = _mm_mulhi_pi16(psi_a_m3_p3, ONE_OVER_SQRT_2);
+     psi_a_m3_p3 = _mm_slli_pi16(psi_a_m3_p3, 2);
+     psi_a_m3_p1 = _mm_mulhi_pi16(psi_a_m3_p1, ONE_OVER_SQRT_2);
+     psi_a_m3_p1 = _mm_slli_pi16(psi_a_m3_p1, 2);
+     psi_a_m3_m1 = _mm_mulhi_pi16(psi_a_m3_m1, ONE_OVER_SQRT_2);
+     psi_a_m3_m1 = _mm_slli_pi16(psi_a_m3_m1, 2);
+     psi_a_m3_m3 = _mm_mulhi_pi16(psi_a_m3_m3, ONE_OVER_SQRT_2);
+     psi_a_m3_m3 = _mm_slli_pi16(psi_a_m3_m3, 2);
+     psi_a_m3_m5 = _mm_mulhi_pi16(psi_a_m3_m5, ONE_OVER_SQRT_2);
+     psi_a_m3_m5 = _mm_slli_pi16(psi_a_m3_m5, 2);
+     psi_a_m3_m7 = _mm_mulhi_pi16(psi_a_m3_m7, ONE_OVER_SQRT_2);
+     psi_a_m3_m7 = _mm_slli_pi16(psi_a_m3_m7, 2);
+     psi_a_m5_p7 = _mm_mulhi_pi16(psi_a_m5_p7, ONE_OVER_SQRT_2);
+     psi_a_m5_p7 = _mm_slli_pi16(psi_a_m5_p7, 2);
+     psi_a_m5_p5 = _mm_mulhi_pi16(psi_a_m5_p5, ONE_OVER_SQRT_2);
+     psi_a_m5_p5 = _mm_slli_pi16(psi_a_m5_p5, 2);
+     psi_a_m5_p3 = _mm_mulhi_pi16(psi_a_m5_p3, ONE_OVER_SQRT_2);
+     psi_a_m5_p3 = _mm_slli_pi16(psi_a_m5_p3, 2);
+     psi_a_m5_p1 = _mm_mulhi_pi16(psi_a_m5_p1, ONE_OVER_SQRT_2);
+     psi_a_m5_p1 = _mm_slli_pi16(psi_a_m5_p1, 2);
+     psi_a_m5_m1 = _mm_mulhi_pi16(psi_a_m5_m1, ONE_OVER_SQRT_2);
+     psi_a_m5_m1 = _mm_slli_pi16(psi_a_m5_m1, 2);
+     psi_a_m5_m3 = _mm_mulhi_pi16(psi_a_m5_m3, ONE_OVER_SQRT_2);
+     psi_a_m5_m3 = _mm_slli_pi16(psi_a_m5_m3, 2);
+     psi_a_m5_m5 = _mm_mulhi_pi16(psi_a_m5_m5, ONE_OVER_SQRT_2);
+     psi_a_m5_m5 = _mm_slli_pi16(psi_a_m5_m5, 2);
+     psi_a_m5_m7 = _mm_mulhi_pi16(psi_a_m5_m7, ONE_OVER_SQRT_2);
+     psi_a_m5_m7 = _mm_slli_pi16(psi_a_m5_m7, 2);
+     psi_a_m7_p7 = _mm_mulhi_pi16(psi_a_m7_p7, ONE_OVER_SQRT_2);
+     psi_a_m7_p7 = _mm_slli_pi16(psi_a_m7_p7, 2);
+     psi_a_m7_p5 = _mm_mulhi_pi16(psi_a_m7_p5, ONE_OVER_SQRT_2);
+     psi_a_m7_p5 = _mm_slli_pi16(psi_a_m7_p5, 2);
+     psi_a_m7_p3 = _mm_mulhi_pi16(psi_a_m7_p3, ONE_OVER_SQRT_2);
+     psi_a_m7_p3 = _mm_slli_pi16(psi_a_m7_p3, 2);
+     psi_a_m7_p1 = _mm_mulhi_pi16(psi_a_m7_p1, ONE_OVER_SQRT_2);
+     psi_a_m7_p1 = _mm_slli_pi16(psi_a_m7_p1, 2);
+     psi_a_m7_m1 = _mm_mulhi_pi16(psi_a_m7_m1, ONE_OVER_SQRT_2);
+     psi_a_m7_m1 = _mm_slli_pi16(psi_a_m7_m1, 2);
+     psi_a_m7_m3 = _mm_mulhi_pi16(psi_a_m7_m3, ONE_OVER_SQRT_2);
+     psi_a_m7_m3 = _mm_slli_pi16(psi_a_m7_m3, 2);
+     psi_a_m7_m5 = _mm_mulhi_pi16(psi_a_m7_m5, ONE_OVER_SQRT_2);
+     psi_a_m7_m5 = _mm_slli_pi16(psi_a_m7_m5, 2);
+     psi_a_m7_m7 = _mm_mulhi_pi16(psi_a_m7_m7, ONE_OVER_SQRT_2);
+     psi_a_m7_m7 = _mm_slli_pi16(psi_a_m7_m7, 2);
+
+
+
+
 
      // Calculation of a group of two terms in the bit metric involving squares of interference
-     ch_mag_int_direct = _mm_mulhi_pi16(ch_mag_int, SQRT_42_OVER_TWO);
-     ch_mag_int_direct = _mm_slli_pi16(ch_mag_int_direct, 3); // *2^13
+     ch_mag_int_direct = _mm_mulhi_pi16(ch_mag_int, SQRT_42_OVER_FOUR);
+     ch_mag_int_direct = _mm_slli_pi16(ch_mag_int_direct, 3); // Q4.12
      
-#ifdef COMPLEXITY_MEASUREMENT
-   cnt_add = cnt_add+0;
-   cnt_mul = cnt_mul+1;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("ch_mag_int_direct:", &ch_mag_int_direct);
-#endif
 
-   square_a_64qam_pi16(a_r_p7_p7, a_i_p7_p7, ch_mag_int_direct, a_sq_p7_p7);
-   square_a_64qam_pi16(a_r_p7_p5, a_i_p7_p5, ch_mag_int_direct, a_sq_p7_p5);
-   square_a_64qam_pi16(a_r_p7_p3, a_i_p7_p3, ch_mag_int_direct, a_sq_p7_p3);
-   square_a_64qam_pi16(a_r_p7_p1, a_i_p7_p1, ch_mag_int_direct, a_sq_p7_p1);
-   square_a_64qam_pi16(a_r_p7_m1, a_i_p7_m1, ch_mag_int_direct, a_sq_p7_m1);
-   square_a_64qam_pi16(a_r_p7_m3, a_i_p7_m3, ch_mag_int_direct, a_sq_p7_m3);
-   square_a_64qam_pi16(a_r_p7_m5, a_i_p7_m5, ch_mag_int_direct, a_sq_p7_m5);
-   square_a_64qam_pi16(a_r_p7_m7, a_i_p7_m7, ch_mag_int_direct, a_sq_p7_m7);
-   square_a_64qam_pi16(a_r_p5_p7, a_i_p5_p7, ch_mag_int_direct, a_sq_p5_p7);
-   square_a_64qam_pi16(a_r_p5_p5, a_i_p5_p5, ch_mag_int_direct, a_sq_p5_p5);
-   square_a_64qam_pi16(a_r_p5_p3, a_i_p5_p3, ch_mag_int_direct, a_sq_p5_p3);
-   square_a_64qam_pi16(a_r_p5_p1, a_i_p5_p1, ch_mag_int_direct, a_sq_p5_p1);
-   square_a_64qam_pi16(a_r_p5_m1, a_i_p5_m1, ch_mag_int_direct, a_sq_p5_m1);
-   square_a_64qam_pi16(a_r_p5_m3, a_i_p5_m3, ch_mag_int_direct, a_sq_p5_m3);
-   square_a_64qam_pi16(a_r_p5_m5, a_i_p5_m5, ch_mag_int_direct, a_sq_p5_m5);
-   square_a_64qam_pi16(a_r_p5_m7, a_i_p5_m7, ch_mag_int_direct, a_sq_p5_m7);
-   square_a_64qam_pi16(a_r_p3_p7, a_i_p3_p7, ch_mag_int_direct, a_sq_p3_p7);
-   square_a_64qam_pi16(a_r_p3_p5, a_i_p3_p5, ch_mag_int_direct, a_sq_p3_p5);
-   square_a_64qam_pi16(a_r_p3_p3, a_i_p3_p3, ch_mag_int_direct, a_sq_p3_p3);
-   square_a_64qam_pi16(a_r_p3_p1, a_i_p3_p1, ch_mag_int_direct, a_sq_p3_p1);
-   square_a_64qam_pi16(a_r_p3_m1, a_i_p3_m1, ch_mag_int_direct, a_sq_p3_m1);
-   square_a_64qam_pi16(a_r_p3_m3, a_i_p3_m3, ch_mag_int_direct, a_sq_p3_m3);
-   square_a_64qam_pi16(a_r_p3_m5, a_i_p3_m5, ch_mag_int_direct, a_sq_p3_m5);
-   square_a_64qam_pi16(a_r_p3_m7, a_i_p3_m7, ch_mag_int_direct, a_sq_p3_m7);
-   square_a_64qam_pi16(a_r_p1_p7, a_i_p1_p7, ch_mag_int_direct, a_sq_p1_p7);
-   square_a_64qam_pi16(a_r_p1_p5, a_i_p1_p5, ch_mag_int_direct, a_sq_p1_p5);
-   square_a_64qam_pi16(a_r_p1_p3, a_i_p1_p3, ch_mag_int_direct, a_sq_p1_p3);
-   square_a_64qam_pi16(a_r_p1_p1, a_i_p1_p1, ch_mag_int_direct, a_sq_p1_p1);
-   square_a_64qam_pi16(a_r_p1_m1, a_i_p1_m1, ch_mag_int_direct, a_sq_p1_m1);
-   square_a_64qam_pi16(a_r_p1_m3, a_i_p1_m3, ch_mag_int_direct, a_sq_p1_m3);
-   square_a_64qam_pi16(a_r_p1_m5, a_i_p1_m5, ch_mag_int_direct, a_sq_p1_m5);
-   square_a_64qam_pi16(a_r_p1_m7, a_i_p1_m7, ch_mag_int_direct, a_sq_p1_m7);
-   square_a_64qam_pi16(a_r_m1_p7, a_i_m1_p7, ch_mag_int_direct, a_sq_m1_p7);
-   square_a_64qam_pi16(a_r_m1_p5, a_i_m1_p5, ch_mag_int_direct, a_sq_m1_p5);
-   square_a_64qam_pi16(a_r_m1_p3, a_i_m1_p3, ch_mag_int_direct, a_sq_m1_p3);
-   square_a_64qam_pi16(a_r_m1_p1, a_i_m1_p1, ch_mag_int_direct, a_sq_m1_p1);
-   square_a_64qam_pi16(a_r_m1_m1, a_i_m1_m1, ch_mag_int_direct, a_sq_m1_m1);
-   square_a_64qam_pi16(a_r_m1_m3, a_i_m1_m3, ch_mag_int_direct, a_sq_m1_m3);
-   square_a_64qam_pi16(a_r_m1_m5, a_i_m1_m5, ch_mag_int_direct, a_sq_m1_m5);
-   square_a_64qam_pi16(a_r_m1_m7, a_i_m1_m7, ch_mag_int_direct, a_sq_m1_m7);
-   square_a_64qam_pi16(a_r_m3_p7, a_i_m3_p7, ch_mag_int_direct, a_sq_m3_p7);
-   square_a_64qam_pi16(a_r_m3_p5, a_i_m3_p5, ch_mag_int_direct, a_sq_m3_p5);
-   square_a_64qam_pi16(a_r_m3_p3, a_i_m3_p3, ch_mag_int_direct, a_sq_m3_p3);
-   square_a_64qam_pi16(a_r_m3_p1, a_i_m3_p1, ch_mag_int_direct, a_sq_m3_p1);
-   square_a_64qam_pi16(a_r_m3_m1, a_i_m3_m1, ch_mag_int_direct, a_sq_m3_m1);
-   square_a_64qam_pi16(a_r_m3_m3, a_i_m3_m3, ch_mag_int_direct, a_sq_m3_m3);
-   square_a_64qam_pi16(a_r_m3_m5, a_i_m3_m5, ch_mag_int_direct, a_sq_m3_m5);
-   square_a_64qam_pi16(a_r_m3_m7, a_i_m3_m7, ch_mag_int_direct, a_sq_m3_m7);
-   square_a_64qam_pi16(a_r_m5_p7, a_i_m5_p7, ch_mag_int_direct, a_sq_m5_p7);
-   square_a_64qam_pi16(a_r_m5_p5, a_i_m5_p5, ch_mag_int_direct, a_sq_m5_p5);
-   square_a_64qam_pi16(a_r_m5_p3, a_i_m5_p3, ch_mag_int_direct, a_sq_m5_p3);
-   square_a_64qam_pi16(a_r_m5_p1, a_i_m5_p1, ch_mag_int_direct, a_sq_m5_p1);
-   square_a_64qam_pi16(a_r_m5_m1, a_i_m5_m1, ch_mag_int_direct, a_sq_m5_m1);
-   square_a_64qam_pi16(a_r_m5_m3, a_i_m5_m3, ch_mag_int_direct, a_sq_m5_m3);
-   square_a_64qam_pi16(a_r_m5_m5, a_i_m5_m5, ch_mag_int_direct, a_sq_m5_m5);
-   square_a_64qam_pi16(a_r_m5_m7, a_i_m5_m7, ch_mag_int_direct, a_sq_m5_m7);
-   square_a_64qam_pi16(a_r_m7_p7, a_i_m7_p7, ch_mag_int_direct, a_sq_m7_p7);
-   square_a_64qam_pi16(a_r_m7_p5, a_i_m7_p5, ch_mag_int_direct, a_sq_m7_p5);
-   square_a_64qam_pi16(a_r_m7_p3, a_i_m7_p3, ch_mag_int_direct, a_sq_m7_p3);
-   square_a_64qam_pi16(a_r_m7_p1, a_i_m7_p1, ch_mag_int_direct, a_sq_m7_p1);
-   square_a_64qam_pi16(a_r_m7_m1, a_i_m7_m1, ch_mag_int_direct, a_sq_m7_m1);
-   square_a_64qam_pi16(a_r_m7_m3, a_i_m7_m3, ch_mag_int_direct, a_sq_m7_m3);
-   square_a_64qam_pi16(a_r_m7_m5, a_i_m7_m5, ch_mag_int_direct, a_sq_m7_m5);
-   square_a_64qam_pi16(a_r_m7_m7, a_i_m7_m7, ch_mag_int_direct, a_sq_m7_m7);
-#ifdef COMPLEXITY_MEASUREMENT
-   cnt_add = cnt_add+64;
-   cnt_mul = cnt_mul+4*64;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("a_sq_p7_p7:", &a_sq_p7_p7);
-     print_shorts2("a_sq_p7_p5:", &a_sq_p7_p5);
-     print_shorts2("a_sq_p7_p3:", &a_sq_p7_p3);
-     print_shorts2("a_sq_p7_p1:", &a_sq_p7_p1);
-     print_shorts2("a_sq_p7_m1:", &a_sq_p7_m1);
-     print_shorts2("a_sq_p7_m3:", &a_sq_p7_m3);
-     print_shorts2("a_sq_p7_m5:", &a_sq_p7_m5);
-     print_shorts2("a_sq_p7_m7:", &a_sq_p7_m7);
-     print_shorts2("a_sq_p5_p7:", &a_sq_p5_p7);
-     print_shorts2("a_sq_p5_p5:", &a_sq_p5_p5);
-     print_shorts2("a_sq_p5_p3:", &a_sq_p5_p3);
-     print_shorts2("a_sq_p5_p1:", &a_sq_p5_p1);
-     print_shorts2("a_sq_p5_m1:", &a_sq_p5_m1);
-     print_shorts2("a_sq_p5_m3:", &a_sq_p5_m3);
-     print_shorts2("a_sq_p5_m5:", &a_sq_p5_m5);
-     print_shorts2("a_sq_p5_m7:", &a_sq_p5_m7);
-     print_shorts2("a_sq_p3_p7:", &a_sq_p3_p7);
-     print_shorts2("a_sq_p3_p5:", &a_sq_p3_p5);
-     print_shorts2("a_sq_p3_p3:", &a_sq_p3_p3);
-     print_shorts2("a_sq_p3_p1:", &a_sq_p3_p1);
-     print_shorts2("a_sq_p3_m1:", &a_sq_p3_m1);
-     print_shorts2("a_sq_p3_m3:", &a_sq_p3_m3);
-     print_shorts2("a_sq_p3_m5:", &a_sq_p3_m5);
-     print_shorts2("a_sq_p3_m7:", &a_sq_p3_m7);
-     print_shorts2("a_sq_p1_p7:", &a_sq_p1_p7);
-     print_shorts2("a_sq_p1_p5:", &a_sq_p1_p5);
-     print_shorts2("a_sq_p1_p3:", &a_sq_p1_p3);
-     print_shorts2("a_sq_p1_p1:", &a_sq_p1_p1);
-     print_shorts2("a_sq_p1_m1:", &a_sq_p1_m1);
-     print_shorts2("a_sq_p1_m3:", &a_sq_p1_m3);
-     print_shorts2("a_sq_p1_m5:", &a_sq_p1_m5);
-     print_shorts2("a_sq_p1_m7:", &a_sq_p1_m7);
-     print_shorts2("a_sq_m1_p7:", &a_sq_m1_p7);
-     print_shorts2("a_sq_m1_p5:", &a_sq_m1_p5);
-     print_shorts2("a_sq_m1_p3:", &a_sq_m1_p3);
-     print_shorts2("a_sq_m1_p1:", &a_sq_m1_p1);
-     print_shorts2("a_sq_m1_m1:", &a_sq_m1_m1);
-     print_shorts2("a_sq_m1_m3:", &a_sq_m1_m3);
-     print_shorts2("a_sq_m1_m5:", &a_sq_m1_m5);
-     print_shorts2("a_sq_m1_m7:", &a_sq_m1_m7);
-     print_shorts2("a_sq_m3_p7:", &a_sq_m3_p7);
-     print_shorts2("a_sq_m3_p5:", &a_sq_m3_p5);
-     print_shorts2("a_sq_m3_p3:", &a_sq_m3_p3);
-     print_shorts2("a_sq_m3_p1:", &a_sq_m3_p1);
-     print_shorts2("a_sq_m3_m1:", &a_sq_m3_m1);
-     print_shorts2("a_sq_m3_m3:", &a_sq_m3_m3);
-     print_shorts2("a_sq_m3_m5:", &a_sq_m3_m5);
-     print_shorts2("a_sq_m3_m7:", &a_sq_m3_m7);
-     print_shorts2("a_sq_m5_p7:", &a_sq_m5_p7);
-     print_shorts2("a_sq_m5_p5:", &a_sq_m5_p5);
-     print_shorts2("a_sq_m5_p3:", &a_sq_m5_p3);
-     print_shorts2("a_sq_m5_p1:", &a_sq_m5_p1);
-     print_shorts2("a_sq_m5_m1:", &a_sq_m5_m1);
-     print_shorts2("a_sq_m5_m3:", &a_sq_m5_m3);
-     print_shorts2("a_sq_m5_m5:", &a_sq_m5_m5);
-     print_shorts2("a_sq_m5_m7:", &a_sq_m5_m7);
-     print_shorts2("a_sq_m7_p7:", &a_sq_m7_p7);
-     print_shorts2("a_sq_m7_p5:", &a_sq_m7_p5);
-     print_shorts2("a_sq_m7_p3:", &a_sq_m7_p3);
-     print_shorts2("a_sq_m7_p1:", &a_sq_m7_p1);
-     print_shorts2("a_sq_m7_m1:", &a_sq_m7_m1);
-     print_shorts2("a_sq_m7_m3:", &a_sq_m7_m3);
-     print_shorts2("a_sq_m7_m5:", &a_sq_m7_m5);
-     print_shorts2("a_sq_m7_m7:", &a_sq_m7_m7); 
-#endif
+   square_a_64qam_pi16(a_r_p7_p7, a_i_p7_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p7);
+   square_a_64qam_pi16(a_r_p7_p5, a_i_p7_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p5);
+   square_a_64qam_pi16(a_r_p7_p3, a_i_p7_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p3);
+   square_a_64qam_pi16(a_r_p7_p1, a_i_p7_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p1);
+   square_a_64qam_pi16(a_r_p7_m1, a_i_p7_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m1);
+   square_a_64qam_pi16(a_r_p7_m3, a_i_p7_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m3);
+   square_a_64qam_pi16(a_r_p7_m5, a_i_p7_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m5);
+   square_a_64qam_pi16(a_r_p7_m7, a_i_p7_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m7);
+   square_a_64qam_pi16(a_r_p5_p7, a_i_p5_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p7);
+   square_a_64qam_pi16(a_r_p5_p5, a_i_p5_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p5);
+   square_a_64qam_pi16(a_r_p5_p3, a_i_p5_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p3);
+   square_a_64qam_pi16(a_r_p5_p1, a_i_p5_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p1);
+   square_a_64qam_pi16(a_r_p5_m1, a_i_p5_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m1);
+   square_a_64qam_pi16(a_r_p5_m3, a_i_p5_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m3);
+   square_a_64qam_pi16(a_r_p5_m5, a_i_p5_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m5);
+   square_a_64qam_pi16(a_r_p5_m7, a_i_p5_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m7);
+   square_a_64qam_pi16(a_r_p3_p7, a_i_p3_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p7);
+   square_a_64qam_pi16(a_r_p3_p5, a_i_p3_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p5);
+   square_a_64qam_pi16(a_r_p3_p3, a_i_p3_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p3);
+   square_a_64qam_pi16(a_r_p3_p1, a_i_p3_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p1);
+   square_a_64qam_pi16(a_r_p3_m1, a_i_p3_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m1);
+   square_a_64qam_pi16(a_r_p3_m3, a_i_p3_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m3);
+   square_a_64qam_pi16(a_r_p3_m5, a_i_p3_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m5);
+   square_a_64qam_pi16(a_r_p3_m7, a_i_p3_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m7);
+   square_a_64qam_pi16(a_r_p1_p7, a_i_p1_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p7);
+   square_a_64qam_pi16(a_r_p1_p5, a_i_p1_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p5);
+   square_a_64qam_pi16(a_r_p1_p3, a_i_p1_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p3);
+   square_a_64qam_pi16(a_r_p1_p1, a_i_p1_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p1);
+   square_a_64qam_pi16(a_r_p1_m1, a_i_p1_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m1);
+   square_a_64qam_pi16(a_r_p1_m3, a_i_p1_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m3);
+   square_a_64qam_pi16(a_r_p1_m5, a_i_p1_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m5);
+   square_a_64qam_pi16(a_r_p1_m7, a_i_p1_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m7);
+   square_a_64qam_pi16(a_r_m1_p7, a_i_m1_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p7);
+   square_a_64qam_pi16(a_r_m1_p5, a_i_m1_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p5);
+   square_a_64qam_pi16(a_r_m1_p3, a_i_m1_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p3);
+   square_a_64qam_pi16(a_r_m1_p1, a_i_m1_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p1);
+   square_a_64qam_pi16(a_r_m1_m1, a_i_m1_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m1);
+   square_a_64qam_pi16(a_r_m1_m3, a_i_m1_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m3);
+   square_a_64qam_pi16(a_r_m1_m5, a_i_m1_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m5);
+   square_a_64qam_pi16(a_r_m1_m7, a_i_m1_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m7);
+   square_a_64qam_pi16(a_r_m3_p7, a_i_m3_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p7);
+   square_a_64qam_pi16(a_r_m3_p5, a_i_m3_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p5);
+   square_a_64qam_pi16(a_r_m3_p3, a_i_m3_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p3);
+   square_a_64qam_pi16(a_r_m3_p1, a_i_m3_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p1);
+   square_a_64qam_pi16(a_r_m3_m1, a_i_m3_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m1);
+   square_a_64qam_pi16(a_r_m3_m3, a_i_m3_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m3);
+   square_a_64qam_pi16(a_r_m3_m5, a_i_m3_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m5);
+   square_a_64qam_pi16(a_r_m3_m7, a_i_m3_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m7);
+   square_a_64qam_pi16(a_r_m5_p7, a_i_m5_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p7);
+   square_a_64qam_pi16(a_r_m5_p5, a_i_m5_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p5);
+   square_a_64qam_pi16(a_r_m5_p3, a_i_m5_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p3);
+   square_a_64qam_pi16(a_r_m5_p1, a_i_m5_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p1);
+   square_a_64qam_pi16(a_r_m5_m1, a_i_m5_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m1);
+   square_a_64qam_pi16(a_r_m5_m3, a_i_m5_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m3);
+   square_a_64qam_pi16(a_r_m5_m5, a_i_m5_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m5);
+   square_a_64qam_pi16(a_r_m5_m7, a_i_m5_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m7);
+   square_a_64qam_pi16(a_r_m7_p7, a_i_m7_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p7);
+   square_a_64qam_pi16(a_r_m7_p5, a_i_m7_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p5);
+   square_a_64qam_pi16(a_r_m7_p3, a_i_m7_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p3);
+   square_a_64qam_pi16(a_r_m7_p1, a_i_m7_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p1);
+   square_a_64qam_pi16(a_r_m7_m1, a_i_m7_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m1);
+   square_a_64qam_pi16(a_r_m7_m3, a_i_m7_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m3);
+   square_a_64qam_pi16(a_r_m7_m5, a_i_m7_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m5);
+   square_a_64qam_pi16(a_r_m7_m7, a_i_m7_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m7);
 
      // Computing different multiples of ||h1||^2
-     ch_mag_98_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, NINETYEIGHT_OVER_FOUR_SQRT_42);
-     ch_mag_74_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, SEVENTYFOUR_OVER_FOUR_SQRT_42);
-     ch_mag_58_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, FIFTYEIGHT_OVER_FOUR_SQRT_42);
-     ch_mag_50_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, FIFTY_OVER_FOUR_SQRT_42);
-     ch_mag_34_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, THIRTYFOUR_OVER_FOUR_SQRT_42);
-     ch_mag_18_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, EIGHTEEN_OVER_FOUR_SQRT_42);
-     ch_mag_26_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, TWENTYSIX_OVER_FOUR_SQRT_42);
-     ch_mag_10_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des, TEN_OVER_FOUR_SQRT_42);
-     ch_mag_2_over_42_with_sigma2  = _mm_mulhi_pi16(ch_mag_des, TWO_OVER_FOUR_SQRT_42);
- 
-     // *2^12, thus <<1, <<1, <<1, <<1
-     ch_mag_98_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_98_over_42_with_sigma2, 4);
-     
-     // *2^13, thus <<1, <<1, <<1
-     ch_mag_74_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_74_over_42_with_sigma2, 3);
-     ch_mag_58_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_58_over_42_with_sigma2, 3);
-     ch_mag_50_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_50_over_42_with_sigma2, 3);
-          
-     // *2^14, thus <<1, <<1
-     ch_mag_34_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_34_over_42_with_sigma2, 2);
-     ch_mag_26_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_26_over_42_with_sigma2, 2);
-          
-     // *2^15, thus <<1
-     ch_mag_18_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_18_over_42_with_sigma2, 1);
-     ch_mag_10_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_10_over_42_with_sigma2, 1);
-     ch_mag_2_over_42_with_sigma2  = _mm_slli_pi16(ch_mag_2_over_42_with_sigma2, 1);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+0;
-     cnt_mul = cnt_mul+9;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("ch_mag_98_over_42_with_sigma2:", &ch_mag_98_over_42_with_sigma2);
-     print_shorts2("ch_mag_74_over_42_with_sigma2:", &ch_mag_74_over_42_with_sigma2);
-     print_shorts2("ch_mag_58_over_42_with_sigma2:", &ch_mag_58_over_42_with_sigma2);
-     print_shorts2("ch_mag_50_over_42_with_sigma2:", &ch_mag_50_over_42_with_sigma2);
-     print_shorts2("ch_mag_34_over_42_with_sigma2:", &ch_mag_34_over_42_with_sigma2);
-     print_shorts2("ch_mag_26_over_42_with_sigma2:", &ch_mag_26_over_42_with_sigma2);
-     print_shorts2("ch_mag_18_over_42_with_sigma2:", &ch_mag_18_over_42_with_sigma2);
-     print_shorts2("ch_mag_10_over_42_with_sigma2:", &ch_mag_10_over_42_with_sigma2);
-     print_shorts2("ch_mag_2_over_42_with_sigma2:",  &ch_mag_2_over_42_with_sigma2);
-#endif     
+   // x=1, y=1
+   ch_mag_2_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,ONE_OVER_FOUR_SQRT_42);
+   ch_mag_2_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_2_over_42_with_sigma2,1);
+   // x=1, y=3
+   ch_mag_10_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,FIVE_OVER_FOUR_SQRT_42);
+   ch_mag_10_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_10_over_42_with_sigma2,1);
+   // x=1, x=5
+   ch_mag_26_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,THIRTEEN_OVER_FOUR_SQRT_42);
+   ch_mag_26_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_26_over_42_with_sigma2,1);
+   // x=1, y=7
+   ch_mag_50_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,TWENTYFIVE_OVER_FOUR_SQRT_42);
+   ch_mag_50_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_50_over_42_with_sigma2,1);
+   // x=3, y=3
+   ch_mag_18_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,NINE_OVER_FOUR_SQRT_42);
+   ch_mag_18_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_18_over_42_with_sigma2,1);
+   // x=3, y=5
+   ch_mag_34_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,SEVENTEEN_OVER_FOUR_SQRT_42);
+   ch_mag_34_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_34_over_42_with_sigma2,1);
+   // x=3, y=7
+   ch_mag_58_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,TWENTYNINE_OVER_FOUR_SQRT_42);
+   ch_mag_58_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_58_over_42_with_sigma2,2);
+   // x=5, y=5
+   ch_mag_50_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,TWENTYFIVE_OVER_FOUR_SQRT_42);
+   ch_mag_50_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_50_over_42_with_sigma2,1);
+   // x=5, y=7
+   ch_mag_74_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,THIRTYSEVEN_OVER_FOUR_SQRT_42);
+   ch_mag_74_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_74_over_42_with_sigma2,2);
+   // x=7, y=7
+   ch_mag_98_over_42_with_sigma2 = _mm_mulhi_pi16(ch_mag_des,FORTYNINE_OVER_FOUR_SQRT_42);
+   ch_mag_98_over_42_with_sigma2 = _mm_slli_pi16(ch_mag_98_over_42_with_sigma2,2);
+		      
+
      // Computing Metrics
 xmm0 = _mm_subs_pi16(psi_a_p7_p7, a_sq_p7_p7); xmm1 = _mm_adds_pi16(xmm0, y0_p_7_7); bit_met_p7_p7 = _mm_subs_pi16(xmm1, ch_mag_98_over_42_with_sigma2);
 xmm0 = _mm_subs_pi16(psi_a_p7_p5, a_sq_p7_p5); xmm1 = _mm_adds_pi16(xmm0, y0_p_7_5); bit_met_p7_p5 = _mm_subs_pi16(xmm1, ch_mag_74_over_42_with_sigma2);
@@ -2227,78 +1816,9 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m1, a_sq_m7_m1); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
 xmm0 = _mm_subs_pi16(psi_a_m7_m3, a_sq_m7_m3); xmm1 = _mm_subs_pi16(xmm0, y0_p_7_3); bit_met_m7_m3 = _mm_subs_pi16(xmm1, ch_mag_58_over_42_with_sigma2);
 xmm0 = _mm_subs_pi16(psi_a_m7_m5, a_sq_m7_m5); xmm1 = _mm_subs_pi16(xmm0, y0_p_7_5); bit_met_m7_m5 = _mm_subs_pi16(xmm1, ch_mag_74_over_42_with_sigma2);
 xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7_7); bit_met_m7_m7 = _mm_subs_pi16(xmm1, ch_mag_98_over_42_with_sigma2);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+3*64;
-     cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("bit_met_p7_p7:", &bit_met_p7_p7);
-     print_shorts2("bit_met_p7_p5:", &bit_met_p7_p5);
-     print_shorts2("bit_met_p7_p3:", &bit_met_p7_p3);
-     print_shorts2("bit_met_p7_p1:", &bit_met_p7_p1);
-     print_shorts2("bit_met_p7_m1:", &bit_met_p7_m1);
-     print_shorts2("bit_met_p7_m3:", &bit_met_p7_m3);
-     print_shorts2("bit_met_p7_m5:", &bit_met_p7_m5);
-     print_shorts2("bit_met_p7_m7:", &bit_met_p7_m7);
-     print_shorts2("bit_met_p5_p7:", &bit_met_p5_p7);
-     print_shorts2("bit_met_p5_p5:", &bit_met_p5_p5);
-     print_shorts2("bit_met_p5_p3:", &bit_met_p5_p3);
-     print_shorts2("bit_met_p5_p1:", &bit_met_p5_p1);
-     print_shorts2("bit_met_p5_m1:", &bit_met_p5_m1);
-     print_shorts2("bit_met_p5_m3:", &bit_met_p5_m3);
-     print_shorts2("bit_met_p5_m5:", &bit_met_p5_m5);
-     print_shorts2("bit_met_p5_m7:", &bit_met_p5_m7);
-     print_shorts2("bit_met_p3_p7:", &bit_met_p3_p7);
-     print_shorts2("bit_met_p3_p5:", &bit_met_p3_p5);
-     print_shorts2("bit_met_p3_p3:", &bit_met_p3_p3);
-     print_shorts2("bit_met_p3_p1:", &bit_met_p3_p1);
-     print_shorts2("bit_met_p3_m1:", &bit_met_p3_m1);
-     print_shorts2("bit_met_p3_m3:", &bit_met_p3_m3);
-     print_shorts2("bit_met_p3_m5:", &bit_met_p3_m5);
-     print_shorts2("bit_met_p3_m7:", &bit_met_p3_m7);
-     print_shorts2("bit_met_p1_p7:", &bit_met_p1_p7);
-     print_shorts2("bit_met_p1_p5:", &bit_met_p1_p5);
-     print_shorts2("bit_met_p1_p3:", &bit_met_p1_p3);
-     print_shorts2("bit_met_p1_p1:", &bit_met_p1_p1);
-     print_shorts2("bit_met_p1_m1:", &bit_met_p1_m1);
-     print_shorts2("bit_met_p1_m3:", &bit_met_p1_m3);
-     print_shorts2("bit_met_p1_m5:", &bit_met_p1_m5);
-     print_shorts2("bit_met_p1_m7:", &bit_met_p1_m7);
-     print_shorts2("bit_met_m1_p7:", &bit_met_m1_p7);
-     print_shorts2("bit_met_m1_p5:", &bit_met_m1_p5);
-     print_shorts2("bit_met_m1_p3:", &bit_met_m1_p3);
-     print_shorts2("bit_met_m1_p1:", &bit_met_m1_p1);
-     print_shorts2("bit_met_m1_m1:", &bit_met_m1_m1);
-     print_shorts2("bit_met_m1_m3:", &bit_met_m1_m3);
-     print_shorts2("bit_met_m1_m5:", &bit_met_m1_m5);
-     print_shorts2("bit_met_m1_m7:", &bit_met_m1_m7);
-     print_shorts2("bit_met_m3_p7:", &bit_met_m3_p7);
-     print_shorts2("bit_met_m3_p5:", &bit_met_m3_p5);
-     print_shorts2("bit_met_m3_p3:", &bit_met_m3_p3);
-     print_shorts2("bit_met_m3_p1:", &bit_met_m3_p1);
-     print_shorts2("bit_met_m3_m1:", &bit_met_m3_m1);
-     print_shorts2("bit_met_m3_m3:", &bit_met_m3_m3);
-     print_shorts2("bit_met_m3_m5:", &bit_met_m3_m5);
-     print_shorts2("bit_met_m3_m7:", &bit_met_m3_m7);
-     print_shorts2("bit_met_m5_p7:", &bit_met_m5_p7);
-     print_shorts2("bit_met_m5_p5:", &bit_met_m5_p5);
-     print_shorts2("bit_met_m5_p3:", &bit_met_m5_p3);
-     print_shorts2("bit_met_m5_p1:", &bit_met_m5_p1);
-     print_shorts2("bit_met_m5_m1:", &bit_met_m5_m1);
-     print_shorts2("bit_met_m5_m3:", &bit_met_m5_m3);
-     print_shorts2("bit_met_m5_m5:", &bit_met_m5_m5);
-     print_shorts2("bit_met_m5_m7:", &bit_met_m5_m7);
-     print_shorts2("bit_met_m7_p7:", &bit_met_m7_p7);
-     print_shorts2("bit_met_m7_p5:", &bit_met_m7_p5);
-     print_shorts2("bit_met_m7_p3:", &bit_met_m7_p3);
-     print_shorts2("bit_met_m7_p1:", &bit_met_m7_p1);
-     print_shorts2("bit_met_m7_m1:", &bit_met_m7_m1);
-     print_shorts2("bit_met_m7_m3:", &bit_met_m7_m3);
-     print_shorts2("bit_met_m7_m5:", &bit_met_m7_m5);
-     print_shorts2("bit_met_m7_m7:", &bit_met_m7_m7); 
-#endif
 
      // Detection for 1st bit (LTE mapping)
+     // bit = 1 
      xmm0 = _mm_max_pi16(bit_met_m7_p7, bit_met_m7_p5);
      xmm1 = _mm_max_pi16(bit_met_m7_p3, bit_met_m7_p1);
      xmm2 = _mm_max_pi16(bit_met_m7_m1, bit_met_m7_m3);
@@ -2330,7 +1850,8 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      xmm5 = _mm_max_pi16(xmm2, xmm3);
      logmax_den_re0 = _mm_max_pi16(logmax_den_re0, xmm4);
      logmax_den_re0 = _mm_max_pi16(logmax_den_re0, xmm5);
-
+	 
+	 // bit = 0
      xmm0 = _mm_max_pi16(bit_met_p7_p7, bit_met_p7_p5);
      xmm1 = _mm_max_pi16(bit_met_p7_p3, bit_met_p7_p1);
      xmm2 = _mm_max_pi16(bit_met_p7_m1, bit_met_p7_m3);
@@ -2363,18 +1884,10 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm4);
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm5);
 
-     y0r = _mm_subs_pi16(logmax_den_re0, logmax_num_re0);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+63; // 1 max = 1 subs
-     cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-     /*print_shorts2("logmax_den_re0:", &logmax_den_re0);
-     print_shorts2("logmax_num_re0:", &logmax_num_re0);*/    
-     print_shorts2("y0r:", &y0r);
-#endif
-
+     y0r = _mm_subs_pi16(logmax_num_re0, logmax_den_re0);
+	 
      // Detection for 2nd bit (LTE mapping)
+	 // bit = 1
      xmm0 = _mm_max_pi16(bit_met_p7_m1, bit_met_p5_m1);
      xmm1 = _mm_max_pi16(bit_met_p3_m1, bit_met_p1_m1);
      xmm2 = _mm_max_pi16(bit_met_m1_m1, bit_met_m3_m1);
@@ -2385,7 +1898,7 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      xmm0 = _mm_max_pi16(bit_met_p7_m3, bit_met_p5_m3);
      xmm1 = _mm_max_pi16(bit_met_p3_m3, bit_met_p1_m3);
      xmm2 = _mm_max_pi16(bit_met_m1_m3, bit_met_m3_m3);
-     xmm3 = _mm_max_pi16(bit_met_m5_m3, bit_met_m5_m3);
+     xmm3 = _mm_max_pi16(bit_met_m5_m3, bit_met_m7_m3);
      xmm4 = _mm_max_pi16(xmm0, xmm1);
      xmm5 = _mm_max_pi16(xmm2, xmm3);
      logmax_den_re0 = _mm_max_pi16(logmax_den_re0, xmm4);
@@ -2398,15 +1911,16 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      xmm5 = _mm_max_pi16(xmm2, xmm3);
      logmax_den_re0 = _mm_max_pi16(logmax_den_re0, xmm4);
      logmax_den_re0 = _mm_max_pi16(logmax_den_re0, xmm5);
-     xmm0 = _mm_max_pi16(bit_met_p7_m5, bit_met_p5_m5);
-     xmm1 = _mm_max_pi16(bit_met_p3_m5, bit_met_p1_m5);
-     xmm2 = _mm_max_pi16(bit_met_m1_m5, bit_met_m3_m5);
-     xmm3 = _mm_max_pi16(bit_met_m5_m5, bit_met_m7_m5);
+     xmm0 = _mm_max_pi16(bit_met_p7_m7, bit_met_p5_m7);
+     xmm1 = _mm_max_pi16(bit_met_p3_m7, bit_met_p1_m7);
+     xmm2 = _mm_max_pi16(bit_met_m1_m7, bit_met_m3_m7);
+     xmm3 = _mm_max_pi16(bit_met_m5_m7, bit_met_m7_m7);
      xmm4 = _mm_max_pi16(xmm0, xmm1);
      xmm5 = _mm_max_pi16(xmm2, xmm3);
      logmax_den_re0 = _mm_max_pi16(logmax_den_re0, xmm4);
      logmax_den_re0 = _mm_max_pi16(logmax_den_re0, xmm5);
-
+	 
+     // bit = 0
      xmm0 = _mm_max_pi16(bit_met_p7_p1, bit_met_p5_p1);
      xmm1 = _mm_max_pi16(bit_met_p3_p1, bit_met_p1_p1);
      xmm2 = _mm_max_pi16(bit_met_m1_p1, bit_met_m3_p1);
@@ -2439,14 +1953,7 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm4);
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm5);
 
-     y1r = _mm_subs_pi16(logmax_den_re0, logmax_num_re0);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+63; // 1 max = 1 subs
-     cnt_mul = cnt_mul+0;
-#endif
-#ifdef DEBUG_LLR
-     print_shorts2("y1r:",&y1r);
-#endif
+     y1r = _mm_subs_pi16(logmax_num_re0, logmax_den_re0);
      
      // Detection for 3rd bit (LTE mapping)
      xmm0 = _mm_max_pi16(bit_met_m7_m7, bit_met_m7_m5);
@@ -2513,11 +2020,7 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm4);
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm5);
 
-     y2r = _mm_subs_pi16(logmax_den_re0, logmax_num_re0);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+63; // 1 max = 1 subs
-     cnt_mul = cnt_mul+0;
-#endif
+     y2r = _mm_subs_pi16(logmax_num_re0, logmax_den_re0);
 
      // Detection for 4th bit (LTE mapping)
      xmm0 = _mm_max_pi16(bit_met_p7_p7, bit_met_p5_p7);
@@ -2584,11 +2087,8 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm4);
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm5);
 
-     y0i = _mm_subs_pi16(logmax_den_re0, logmax_num_re0);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+63; // 1 max = 1 subs
-     cnt_mul = cnt_mul+0;
-#endif
+     y0i = _mm_subs_pi16(logmax_num_re0, logmax_den_re0);
+
 
      // Detection for 5th bit (LTE mapping)
      xmm0 = _mm_max_pi16(bit_met_m7_m7, bit_met_m7_m5);
@@ -2655,11 +2155,8 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm4);
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm5);
 
-     y1i = _mm_subs_pi16(logmax_den_re0, logmax_num_re0);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+63; // 1 max = 1 subs
-     cnt_mul = cnt_mul+0;
-#endif
+     y1i = _mm_subs_pi16(logmax_num_re0, logmax_den_re0);
+
 
      // Detection for 6th bit (LTE mapping)
      xmm0 = _mm_max_pi16(bit_met_p7_p7, bit_met_p5_p7);
@@ -2726,56 +2223,41 @@ xmm0 = _mm_subs_pi16(psi_a_m7_m7, a_sq_m7_m7); xmm1 = _mm_subs_pi16(xmm0, y0_p_7
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm4);
      logmax_num_re0 = _mm_max_pi16(logmax_num_re0, xmm5);
 
-     y2i = _mm_subs_pi16(logmax_den_re0, logmax_num_re0);
-#ifdef COMPLEXITY_MEASUREMENT
-     cnt_add = cnt_add+63; // 1 max = 1 subs
-     cnt_mul = cnt_mul+0;
-#endif
+     y2i = _mm_subs_pi16(logmax_num_re0, logmax_den_re0);
 
-#ifdef DEBUG_LLR
-     print_shorts2("y0r:", &y0r);
-     print_shorts2("y1r:", &y1r);
-     print_shorts2("y2r:", &y2r);
-     print_shorts2("y0i:", &y0i);
-     print_shorts2("y1i:", &y1i);
-     print_shorts2("y2i:", &y2i);
-#endif
-     
-     /*xmm0 = _mm_unpacklo_pi16(y0r, y0i); // y0r has first bit LLRs of 4 complex samples
-     xmm1 = _mm_unpackhi_pi16(y0r, y0i);
-     xmm2 = _mm_unpacklo_pi16(y1r, y1i);
-     xmm3 = _mm_unpackhi_pi16(y1r, y1i);
-     
-     stream0_64_out[2*i+0] = _mm_unpacklo_pi16(xmm0, xmm3);
-     stream0_64_out[2*i+1] = _mm_unpackhi_pi16(xmm0, xmm3);
-     stream0_64_out[2*i+2] = _mm_unpacklo_pi16(xmm1, xmm4);
-     stream0_64_out[2*i+3] = _mm_unpackhi_pi16(xmm1, xmm4);*/
+     // map to output stream, difficult to do in SIMD since we have 6 16bit LLRs
+     // RE 1
+     stream0_out[12*i + 0] = ((short *)&y0r)[0];
+     stream0_out[12*i + 1] = ((short *)&y1r)[0];
+     stream0_out[12*i + 2] = ((short *)&y2r)[0];
+     stream0_out[12*i + 3] = ((short *)&y0i)[0];
+     stream0_out[12*i + 4] = ((short *)&y1i)[0];
+     stream0_out[12*i + 5] = ((short *)&y2i)[0];
+     // RE 2
+     stream0_out[12*i + 6] = ((short *)&y0r)[1];
+     stream0_out[12*i + 7] = ((short *)&y1r)[1];
+     stream0_out[12*i + 8] = ((short *)&y2r)[1];
+     stream0_out[12*i + 9] = ((short *)&y0i)[1];
+     stream0_out[12*i + 10] = ((short *)&y1i)[1];
+     stream0_out[12*i + 11] = ((short *)&y2i)[1];
+     // RE 3
+     stream0_out[12*i + 12] = ((short *)&y0r)[2];
+     stream0_out[12*i + 13] = ((short *)&y1r)[2];
+     stream0_out[12*i + 14] = ((short *)&y2r)[2];
+     stream0_out[12*i + 15] = ((short *)&y0i)[2];
+     stream0_out[12*i + 16] = ((short *)&y1i)[2];
+     stream0_out[12*i + 17] = ((short *)&y2i)[2];
+     // RE 4
+     stream0_out[12*i + 18] = ((short *)&y0r)[3];
+     stream0_out[12*i + 19] = ((short *)&y1r)[3];
+     stream0_out[12*i + 20] = ((short *)&y2r)[3];
+     stream0_out[12*i + 21] = ((short *)&y0i)[3];
+     stream0_out[12*i + 22] = ((short *)&y1i)[3];
+     stream0_out[12*i + 23] = ((short *)&y2i)[3];
 
-     // TO DO in SIMD fashion
-     // Loop over all LLRs in quad word (24 coded bits)
-     for (j=0; j<4; j++)
-       {
-	 *(stream0_out++) = ((short *)&y0r)[j];
-	 *(stream0_out++) = ((short *)&y1r)[j];
-	 *(stream0_out++) = ((short *)&y2r)[j];
-	 *(stream0_out++) = ((short *)&y0i)[j];
-	 *(stream0_out++) = ((short *)&y1r)[j];
-	 *(stream0_out++) = ((short *)&y2i)[j];
-	 
-#ifdef DEBUG_LLR
-	 printf("stream0_out[0]=%d\n", *(stream0_out-6));
-	 printf("stream0_out[1]=%d\n", *(stream0_out-5));
-	 printf("stream0_out[2]=%d\n", *(stream0_out-4));
-	 printf("stream0_out[3]=%d\n", *(stream0_out-3));
-	 printf("stream0_out[4]=%d\n", *(stream0_out-2));
-	 printf("stream0_out[5]=%d\n", *(stream0_out-1));
-#endif
-       }
-    }
-  
-#ifdef COMPLEXITY_MEASUREMENT
-  printf("Measured cx (per RE) in qam64_qam64 function: %d ADD, %d MUL\n", 4*cnt_add/length, 4*cnt_mul/length);
-#endif
+     //     stream0_out += 24;
+
+  }
   _mm_empty();
   _m_empty();
 }
@@ -6549,11 +6031,11 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (first_symbol_flag == 1)
     {
-      llr16 = (s16*)dlsch_llr;
+        llr16 = (s16*)dlsch_llr;
     }
   else
     {
-      llr16 = (s16*)dlsch_llr;
+        llr16 = (s16*)(*llr16p);
     }
   
   if (!llr16) {
