@@ -52,7 +52,6 @@ This header file must be included */
 #endif
 #ifndef project_include
 #define project_include
-#include "packet-mac-lte.h"
 #include "UTIL/LOG/log_if.h"
 #include "UTIL/LOG/log_extern.h"
 #include "PHY/defs.h"
@@ -60,36 +59,21 @@ This header file must be included */
 #include "PHY/impl_defs_lte.h"
 #endif
 
+typedef unsigned char  guint8;
+typedef unsigned short guint16;
+typedef unsigned int   guint32;
+typedef unsigned char gboolean;
+typedef time_t nstime_t;
+
 /**
  * function def
 */
-void trace_pdu(int type,unsigned char *pdu_buffer, int pdu_length, int ue_id,int rnti,int subframe);
-void dispatcher(int type,unsigned char *pdu_buffer,int pdu_length, int ue_id,int rnti,int subframe);
-void SendFrame (guint8 radioType, guint8 direction, guint8 rntiType,
-	   guint16 rnti, guint16 ueid, guint16 subframeNumber,
-	   guint8 isPredefinedData, guint8 retx, guint8 crcStatus);
-void _Send_Ra_Mac_Pdu( int PDU_type ,guint8 Extension, guint8 TypeRaPid,
-  guint8 RaPid, guint16 TA, guint8 Hopping_flag, guint16 fsrba, 
-  guint8 tmcs, guint8 tcsp, guint8 ul_delay, guint8 cqi_request,
- guint8 crnti_temporary, guint8 radioType, guint8 direction, 
-  guint8 rntiType, guint16 rnti, guint16 ueid, guint16 subframeNumber,
-  guint8 isPredefinedData, guint8 retx, guint8 crcStatus);
-/*  static void g_pdu_construct(
-  guint8 Ext,guint8 T, guint8 RaPid,
-   guint16 TA, guint8 hopping_flag, guint16 fsrba, 
-   guint8 tmcs, guint8 tcsp, guint8 ul_delay, guint8 cqi_request,
-   guint16 crnti_temporary);
-*/
-//void _probe_mac_pdu( LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci,int TA,int Mod_id,u8 lcid);
-void test_ra_header(unsigned char *MAC_PDU,u8 length, int ue_id,int rnti,int subframe);
-int pdu_format_convert(int type);
-int send_dl_mac_pdu( unsigned char *pdu_buffer, int pdu_length, int ue_id,int rnti,int subframe);
-int send_ul_mac_pdu( unsigned char *pdu_buffer, int pdu_length, int ue_id,int rnti,int subframe);
-/*static void g_pdu_construct(
-  guint8 Ext,guint8 T, guint8 RaPid,
-   guint16 TA, guint8 hopping_flag, guint16 fsrba, 
-   guint8 tmcs, guint8 tcsp, guint8 ul_delay, guint8 cqi_request,
-   guint16 crnti_temporary);
-*/
-   double *timing_analyzer(int index, int direction );
-   void Init_OPT(int trace_mode, char *path,char* ip, int port);
+
+void trace_pdu(int direction, char *pdu_buffer, unsigned int pdu_buffer_size, int ueid,int rntiType, int rnti, int sysframe, int oob_event, int oob_event_value);
+
+int init_opt(int trace_mode, char *path,char* ip, char* port);
+
+void terminate_opt(void);
+
+double *timing_analyzer(int index, int direction );
+

@@ -41,7 +41,9 @@
 #include "MAC_INTERFACE/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 #include "UTIL/LOG/log.h"
- 
+#include "OCG.h"
+#include "OCG_extern.h"
+
 //#define DEBUG_RAR
 
 extern unsigned int  localRIV2alloc_LUT25[512];
@@ -54,7 +56,8 @@ extern inline unsigned int taus(void);
 unsigned short fill_rar(u8 Mod_id,
 			u32 frame,
 			u8 *dlsch_buffer,
-			u16 N_RB_UL) {
+			u16 N_RB_UL,
+			u8 input_buffer_length) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   
@@ -73,9 +76,15 @@ unsigned short fill_rar(u8 Mod_id,
   rar->cqi_req                = 1;
   rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;
 
-#ifdef DEBUG_RAR
   LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Generating RAR for CRNTI %x,preamble %d/%d\n",Mod_id,frame,rar->t_crnti,rarh->RAPID,eNB_mac_inst[Mod_id].RA_template[0].preamble_index);
-#endif
+
+#if defined(USER_MODE) && defined(OAI_EMU)
+  if (oai_emulation.info.opt_enabled){
+    trace_pdu(1, dlsch_buffer, input_buffer_length, Mod_id, 2, 1,frame,0,0);
+    LOG_D(OPT,"[eNB %d][RAPROC] RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n", 
+	  Mod_id, frame, rar->t_crnti, rarh->RAPID, input_buffer_length);
+  } 
+#endif 
   return(rar->t_crnti);
 }
 

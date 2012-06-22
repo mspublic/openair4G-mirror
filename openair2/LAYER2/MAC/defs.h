@@ -445,6 +445,8 @@ typedef struct{
   /// Incoming DLSCH pdu for PHY
   DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
   //ULSCH_PDU ULSCH_pdu[NB_CNX_UE][2];
+  /// number of attempt for rach
+  u8 RA_attempt_number;
   /// Random-access procedure flag
   u8 RA_active;
   /// Random-access window counter
@@ -658,7 +660,8 @@ void initiate_ra_proc(u8 Mod_id,u32 frame, u16 preamble_index,s16 timing_offset,
 */
 u16  fill_rar(u8 Mod_id,u32 frame,
 	      u8 *dlsch_buffer,
-	      u16 N_RB_UL);
+	      u16 N_RB_UL,
+	      u8 input_buffer_length);
 
 /* \brief This function indicates the end of RA procedure and provides the l3msg received on ULSCH.
 @param Mod_id Instance ID of eNB
@@ -942,6 +945,14 @@ void update_phr (u8 Mod_id);
 \param[in] eNB_id Index of eNB
 */
 void Msg3_tx(u8 Mod_id,u32 frame,u8 eNB_id);
+
+
+/*! \brief Function to indicate the transmission of msg1/rach
+\param[in] Mod_id Instance index of UE
+\param[in] eNB_id Index of eNB
+*/
+
+void Msg1_tx(u8 Mod_id,u32 frame, u8 eNB_id);
 
 void dl_phy_sync_success(unsigned char Mod_id,
 			 u32 frame,

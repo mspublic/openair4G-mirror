@@ -1011,6 +1011,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  else {
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
+	    mac_xface->Msg1_transmitted(phy_vars_ue->Mod_id,
+					 phy_vars_ue->frame,
+					 eNB_id);
 	  }
 	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), l3msg \n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
