@@ -726,9 +726,9 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
       msg("[PHY][eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
 #endif
     } //phase
-    //#ifdef DEBUG_PUCCH_RX 
+#ifdef DEBUG_PUCCH_RX 
       LOG_I(PHY,"[eNB] PUCCH fmt0:  stat_max : %d, sigma2_dB %d, phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phase_max);
-    //#endif
+#endif
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  //
       *payload = 1;
     else

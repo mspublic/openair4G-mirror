@@ -425,7 +425,25 @@ u16 attach_ue4(char *dcch_sdu_eNB, char dcch_sdu_eNB_len, char *dcch_sdu_ue) {
   return(sdu_len);
 }
 
-u8 NB_INST=2;
+// Calibration parameters from oaisimCROWN
+//b Calibration vars
+int n_K=15,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_call_cal=0;
+double PeNb_factor[2][600];
+int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
+short dl_ch_estimates[2][2400];
+short drs_ch_estimates[2][2400];
+short drs_ch_est_ZFB[2*300*14];
+int doquantUE=0;
+int calibration_flag=0;
+short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
+int prec_length = 2*14*512;
+short prec[2][2*14*512];
+double Norm[2*14*512];
+short denom[14*512];
+short x_temp, quant=8;
+//SCM_t channel_model=SCM_C;
+int CROWN_SYSTEM=2;
+//*******************************
 
 int main (int argc, char **argv) {
 
@@ -439,9 +457,11 @@ int main (int argc, char **argv) {
   u8 payload_offset;
   int i;
 
+  logInit();
+
   NB_UE_INST  = 1;
   NB_eNB_INST = 1;
-
+  NB_INST=2;
 
   // Parse arguments
   if(parse_args(argc, argv, &args) > 0) {
