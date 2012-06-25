@@ -35,7 +35,7 @@ typedef struct {
     ///Number of interference to simulate
     int nInterf;
     ///Array with interference  level in dB 
-    s8 *dbInterf;
+    double *dbInterf;
     char interfLevels[150];
     
     u16 Nid_cell;
@@ -54,6 +54,7 @@ typedef struct {
     FILE *outputFile;
     ///Pointer  to the output file errors and trials for each SNR 
     FILE *outputBler;
+    FILE *outputBer;
     
     u8 num_rounds;
     u8 subframe;
@@ -118,7 +119,7 @@ void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_r
 void _freeMemory(data_t data,options_t opts);
 void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx,u16 NB_RB,LTE_DL_FRAME_PARMS  *frame_parms);
 void _printResults(u32 *errs,u32 *round_trials,u32 dci_errors,double rate);
-void _printFileResults(double SNR, double rate,u32  *errs,u32  *round_trials,u32 dci_errors,options_t opts);
+void _printFileResults(double SNR, double rate,u32  *errs,u32  *round_trials,u32 dci_errors,options_t opts,double BER);
 void _initErrsRoundsTrials(u32 **errs,u32 **trials,int allocFlag,options_t opts);
 void _fillData(options_t opts,data_t data,int numSubFrames);
 void _applyNoise(options_t opts,data_t data,double sigma2,double iqim,int numSubFrames);
@@ -128,7 +129,7 @@ void _apply_Multipath_Noise_Interference(options_t opts,data_t data,double sigma
 void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncoded_ber_bit,u32 tbs);
 void _dumpTransportBlockSegments(u32 C,u32 Cminus,u32 Kminus,u32 Kplus,  u8 ** c_UE,u8 ** c_eNB);
 void _applyInterference(options_t opts,data_t data,double sigma2,double iqim,int numSubFrames);
-
+double compute_ber_soft(u8* ref, s16* rec, int n);
 
 void _writeTxData(char *num,char *desc, int init, int numframes,options_t opts, int output,int senial);
 #endif

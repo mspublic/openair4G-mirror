@@ -18,8 +18,12 @@
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
 
+#include "SCHED/defs.h"
+
+
 
 #include "femtoUtils.h"
+
 
 
 #define BW    7.68
@@ -43,6 +47,7 @@ LTE_DL_FRAME_PARMS *frame_parms; //WARNING if you don't put this variable, some 
 int WRITE_FILES =1;
 int NOISE=1;
 
+int x=0;
 int main(int argc,char **argv)
 {
 
@@ -92,6 +97,7 @@ int main(int argc,char **argv)
 
 
     fprintf(opts.outputFile,"s%d=[",opts.testNumber);
+    fprintf(opts.outputBer,"s%d=[",opts.testNumber);
 
 
     _makeSimulation(data,opts,dci_alloc,dci_alloc_rx,NB_RB,frame_parms);
@@ -100,8 +106,10 @@ int main(int argc,char **argv)
     _freeMemory(data,opts);
 
     fprintf(opts.outputFile,"];\n");
+    fprintf(opts.outputBer,"];\n");
     fclose(opts.outputFile);
     fclose(opts.outputBler);
+    fclose(opts.outputBer);
 
     return 0;
 }
@@ -428,7 +436,7 @@ void _printResults(u32 *errs,u32 *round_trials,u32 dci_errors,double rate)
 
 }
 
-void _printFileResults(double SNR, double rate,u32  *errs,u32  *round_trials,u32 dci_errors,options_t opts)
+void _printFileResults(double SNR, double rate,u32  *errs,u32  *round_trials,u32 dci_errors,options_t opts,double BER)
 {
 
     fprintf(opts.outputFile,"%f %f;\n", SNR, (float)errs[0]/round_trials[0]);
@@ -447,7 +455,8 @@ void _printFileResults(double SNR, double rate,u32  *errs,u32  *round_trials,u32
             errs[3],
             round_trials[3],
             dci_errors);
-
+            
+		fprintf(opts.outputBer,"%f %f;\n",SNR, BER);
 }
 
 void _initErrsRoundsTrials(u32 **errs,u32 **trials,int allocFlag,options_t opts)
@@ -499,7 +508,7 @@ void _applyInterference(options_t opts,data_t data,double sigma2,double iqim,int
         for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) 
         {
 			for(j=0;j<opts.nInterf;j++)
-			{								
+			{									
 				data.r_re[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_re[j][aa][i]);				
 				data.r_im[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_im[j][aa][i]);
 			}
@@ -576,7 +585,10 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
     unsigned char *input_buffer;
     unsigned char **interferer_input_buffer=null;    
     unsigned short input_buffer_length;
-
+	double raw_ber;
+	double rawberT;
+	int numresults;
+	
     //Index and counters
     int aa;				//Antennas index
     int i,j; 			//General index for arrays
@@ -649,6 +661,10 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
         _initErrsRoundsTrials(&errs,&round_trials,0,opts);
 
         dci_errors=0;
+        numresults=0;
+        raw_ber=0;
+        rawberT=0;
+        x=0;
 
         for (cont_frames = 0; cont_frames<opts.nframes; cont_frames++)
         {
@@ -781,7 +797,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                 PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->c);
                 }
 
-
+			   //Modulation
                re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id],
                                                 opts.amp,
                                                 opts.subframe,
@@ -803,6 +819,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
                 if (cont_frames==0 && round==0) printf("re_allocated:  %d\n",re_allocated);
 
+				//Generate pilots 
+				
                 generate_pilots(PHY_vars_eNB,PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id],opts.amp,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 				
 				for(i=0;i<opts.nInterf;i++)
@@ -812,7 +830,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                 
                 
 				_writeTxData("3","pilots", 0, 2,opts,0,0);
-
+				
+				//OFDM Modulation
 				for(i=0;i<3;i++)
 				{
 					do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id],
@@ -870,7 +889,9 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
         
                 sigma2_dB = 10*log10((double)tx_lev) +10*log10(numOFDMSymbSubcarrier) - SNR;
                 sigma2 = pow(10,sigma2_dB/10);
-
+                
+				//Noise and Interference
+				
                 _apply_Multipath_Noise_Interference(opts,data,sigma2_dB,sigma2,2);
 				
 				_writeTxData("7","noise_ch_int", 0, 3,opts,1,1);	
@@ -886,13 +907,14 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
                 i_mod = get_Qm(opts.mcs);
 
-
+				/*********Reciver **************/
                 //TODO: Optimize and clean code
                 // Inner receiver scheduling for 3 slots
                 for (Ns=(2*opts.subframe); Ns<((2*opts.subframe)+3); Ns++)
                 {
                     for (l=0; l<opts.pilot2; l++)
                     {                   
+						
                         slot_fep(PHY_vars_UE,l,Ns%20,0,0);
 
 #ifdef PERFECT_CE
@@ -1020,7 +1042,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                 for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols; m<opts.pilot2; m++)
                                 {
 #if defined ENABLE_FXP || ENABLE_FLP
-                                    //		      printf("fxp or flp release used\n");
+                                    		      //printf("fxp or flp release used\n");                                    		                                        
+            					
                                     if (rx_pdsch(PHY_vars_UE,
                                                  PDSCH,
                                                  opts.eNB_id,
@@ -1029,14 +1052,15 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                  m,
                                                  (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
                                                  dual_stream_UE,
-                                                 i_mod)==-1)
+                                                 i_mod))
                                     {
+										
                                         dlsch_active = 0;
                                         break;
                                     }
 #endif
 #ifdef ENABLE_FULL_FLP
-                                    // printf("Full flp release used\n");
+                                 //    printf("Full flp release used\n");                                 
                                     if (rx_pdsch_full_flp(PHY_vars_UE,
                                                           PDSCH,
                                                           opts.eNB_id,
@@ -1045,7 +1069,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                           m,
                                                           (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
                                                           dual_stream_UE,
-                                                          i_mod)==-1)
+                                                          i_mod))
                                     {
                                         dlsch_active = 0;
                                         break;
@@ -1060,6 +1084,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                 {
 #if defined ENABLE_FXP || ENABLE_FLP
                                     //			printf("fxp or flp release used\n");
+
                                     if (rx_pdsch(PHY_vars_UE,
                                                  PDSCH,
                                                  opts.eNB_id,
@@ -1069,13 +1094,13 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                  0,
                                                  dual_stream_UE,
                                                  i_mod)==-1)
-                                    {
+                                    {										
                                         dlsch_active=0;
                                         break;
                                     }
 #endif
 #ifdef ENABLE_FULL_FLP
-                                    // printf("Full flp release used\n");
+                                    // printf("Full flp release used\n");                                    
                                     if (rx_pdsch_full_flp(PHY_vars_UE,
                                                           PDSCH,
                                                           opts.eNB_id,
@@ -1098,7 +1123,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                 for (m=opts.pilot3; m<PHY_vars_UE->lte_frame_parms.symbols_per_tti; m++)
                                 {
 #if defined ENABLE_FXP || ENABLE_FLP
-                                    //			printf("fxp or flp release used\n");
+                                    //			printf("fxp or flp release used\n");                               
                                     if (rx_pdsch(PHY_vars_UE,
                                                  PDSCH,
                                                  opts.eNB_id,
@@ -1108,13 +1133,13 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                  0,
                                                  dual_stream_UE,
                                                  i_mod)==-1)
-                                    {
+                                    {										
                                         dlsch_active=0;
                                         break;
                                     }
 #endif
 #ifdef ENABLE_FULL_FLP
-                                    // printf("Full flp release used\n");
+                                    // printf("Full flp release used\n");        
                                     if (rx_pdsch_full_flp(PHY_vars_UE,
                                                           PDSCH,
                                                           opts.eNB_id,
@@ -1141,8 +1166,14 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 				}
 
 
-
-
+				if(round==0)
+				{
+					raw_ber += compute_ber_soft(PHY_vars_eNB->dlsch_eNB[0][0]->e,
+																	PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0],
+																	coded_bits_per_codeword);
+					numresults++;
+				}
+																	
 
                 PHY_vars_UE->dlsch_ue[0][0]->rnti = opts.n_rnti;
                 dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
@@ -1202,15 +1233,15 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
         }   //cont_frames
 
 
-        printf("---------------------------------------------------------------------\n");
-        printf("SNR = %f dB (tx_lev %f, sigma2_dB %f)\n",SNR,(double)tx_lev_dB+10*log10(numOFDMSymbSubcarrier),sigma2_dB);
+        printf("\n---------------------------------------------------------------------\n");
+        printf("SNR = %f dB (tx_lev %f, sigma2_dB %f)  BER (%f/%d=%f)\n",SNR,(double)tx_lev_dB+10*log10(numOFDMSymbSubcarrier),sigma2_dB,raw_ber,numresults,(raw_ber/numresults));
 
 
         _printResults(errs,round_trials,dci_errors,rate);
-        _printFileResults( SNR,  rate,errs,round_trials, dci_errors, opts);
+        _printFileResults( SNR,  rate,errs,round_trials, dci_errors, opts,raw_ber/numresults);
 
 
-       // if (((double)errs[0]/(round_trials[0]))<1e-2) break;
+      if (((double)errs[0]/(round_trials[0]))<1e-2) break;
 
     }// SNR
 
@@ -1408,3 +1439,20 @@ void _writeTxData(char *num,char *desc, int init, int numframes,options_t opts, 
 	}
 }
 
+
+double compute_ber_soft(u8* ref, s16* rec, int n)
+{
+ int k;
+ int e = 0;
+ 
+ for(k = 0; k < n; k++) {
+   if((ref[k]==1) != (rec[k]<0)) {
+#ifdef SIG_DEBUG	   
+       printf("error pos %d ( %d => %d)\n",k,ref[k],rec[k]);
+#endif       
+		e++;
+   }
+ }  
+  //printf("ber:%d %f\t\n",x++,((double)e / (double)n));
+ return (double)e / (double)n;
+}
