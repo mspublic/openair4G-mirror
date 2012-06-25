@@ -17,10 +17,40 @@
 void _parseOptions(options_t *opts, int argc, char ** argv) {
     char c;
     char aux[100];
+    
+     static struct option long_options[] =
+             {                             
+               {"h",     no_argument,       0, 'h'},
+               {"s",  required_argument, 0, 's'},
+               {"S",  required_argument, 0, 'S'},
+               {"T",  required_argument, 0, 'T'},
+               {"n",    required_argument, 0, 'n'},
+               {"x",    no_argument, 	  0, 'x'},
+               {"d",    no_argument, 	  0, 'd'},
+               {"t",    required_argument, 0, 't'},
+               {"y",    required_argument, 0, 'y'},
+               {"z",    required_argument, 0, 'z'},
+               {"I",    required_argument, 0, 'I'},
+               {"j",    required_argument, 0, 'j'},
+               {"N",    required_argument, 0, 'N'},
+               {"o",    required_argument, 0, 'o'},
+               {"g",    required_argument, 0, 'g'},
+               {"f",    required_argument, 0, 'f'},
+               {"a",    no_argument, 	  0, 'a'},
+               {"b",    required_argument, 0, 'b'},
+               {"w",    required_argument, 0, 'w'},
+               {"c",    required_argument, 0, 'c'},
+               {"e",    no_argument, 0, 'e'},
+               {"m",    required_argument, 0, 'm'},
+               {0, 0, 0, 0}
+             };
 
-    while ((c = getopt (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:e")) != -1)
-    {
+
+		int option_index = 0;   
 		
+    while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:em:",long_options, &option_index)) != -1)
+    {
+		printf("%c %s\n",c,optarg);
         switch (c)
         {
         case 'a':
@@ -91,8 +121,8 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             sprintf(opts->parameters,"%s  -I%d",opts->parameters, opts->nInterf);
             break;
         case 'w':
-			//TODO : fix this to set de interference level differents             
-            sprintf(aux,"%d",atoi(optarg));
+			//TODO : fix this to set de interference level differents             			
+            sprintf(aux,"%s",optarg);
             strcpy(opts->interfLevels,aux);
             sprintf(opts->parameters,"%s  -w%s", opts->parameters,opts->interfLevels);
             break;
@@ -111,6 +141,10 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
         case 'b':
             opts->testNumber=atoi(optarg);
             sprintf(opts->parameters,"%s  -b%d",opts->parameters, opts->testNumber);
+            break;
+        case 'm':
+            opts->mcs=atoi(optarg);
+            sprintf(opts->parameters,"%s  -b%d",opts->parameters, opts->mcs);
             break;
         case 'g':
             sprintf(opts->parameters,"%s  -g%s",opts->parameters, optarg);
@@ -161,6 +195,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             printf("-f    Output filename (.txt format) for Pe/SNR results\n");
             printf("-a    Use AWGN channel and not multipath\n");
             printf("-b    Test Number\n");
+            printf("-C    CellId Number for interferer\n");
             exit (-1);
             break;
 
@@ -195,7 +230,7 @@ void _printOptions(options_t *opts)
 
     for (i=0; i<opts->nInterf; i++)
     {
-        printf("\n\tInterference n%d:%d",i+1,(int)opts->dbInterf[i]);
+        printf("\n\tInterference n%d:%f",i+1,opts->dbInterf[i]);
     }
 
 
@@ -210,24 +245,21 @@ void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf)
 {
     int i;
     char * pch;
-    opts->dbInterf=malloc(sizeof(s8)*nInterf);
+    opts->dbInterf=(double*)malloc(sizeof(double)*nInterf);
     for (i=0; i<nInterf; i++)
     {        
-        opts->dbInterf[i]=atoi(interfLevels);
-        printf("%d\n",atoi(interfLevels));
-        printf("%d\n",opts->dbInterf[i]);
+        opts->dbInterf[i]=0.0;
 	}
-/*
+
     pch = strtok (interfLevels,",");
     i=0;
     while (pch != NULL)
     {
-
-        (*dbInterf)[i]=atoi(pch);
+         opts->dbInterf[i]=atof(pch);
         i++;
         pch = strtok (NULL,",");
     }
-*/
+
 }
 
 void _allocData(options_t opts, data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_complex_samples)
@@ -303,6 +335,7 @@ void _makeOutputDir(options_t *opts)
 
     opts->outputFile =fopen(auxFile,"w");
     opts->outputBler =fopen("OuputBler.svn","w");
+    opts->outputBer =fopen("OuputBER.svn","w");
 
     controlFile=fopen("ControlTest.txt","w");
 
