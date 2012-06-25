@@ -460,6 +460,17 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
 
   typedef struct
   {
+	int pu;
+	double prob_off_pu;
+	double prob_pu_ed;
+	double holding_time_off_pu;
+	int pe;
+	double prob_off_ed;
+	double prob_ed_pe;
+	double holding_time_off_ed;
+	int ed;
+	double holding_time_off_pe;
+
     char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];

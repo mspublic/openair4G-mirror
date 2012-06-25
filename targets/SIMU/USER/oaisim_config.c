@@ -188,7 +188,17 @@ void init_oai_emulation() {
 		oai_emulation.application_config.customized_traffic.destination_port[i] = 8080;
 	}
 
-
+	oai_emulation.application_config.customized_traffic.pu = 0;
+	oai_emulation.application_config.customized_traffic.prob_off_pu = 0;
+	oai_emulation.application_config.customized_traffic.prob_pu_ed = 0;
+	oai_emulation.application_config.customized_traffic.holding_time_off_pu = 0;
+	oai_emulation.application_config.customized_traffic.ed = 0;
+	oai_emulation.application_config.customized_traffic.prob_off_ed = 0;
+	oai_emulation.application_config.customized_traffic.prob_ed_pe = 0;
+	oai_emulation.application_config.customized_traffic.holding_time_off_ed = 0;
+	oai_emulation.application_config.customized_traffic.pe = 0;
+	oai_emulation.application_config.customized_traffic.holding_time_off_pe = 0;
+	
 	oai_emulation.emulation_config.emulation_time_ms = 0;
 	oai_emulation.emulation_config.performance_metrics.throughput = 0;
 	oai_emulation.emulation_config.performance_metrics.latency = 0;
@@ -298,6 +308,7 @@ void oaisim_config() {
  	// if T is set or ocg enabled 
   if (oai_emulation.info.otg_enabled ) {
     ocg_config_app(); // packet generator 
+    oai_emulation.info.frame_type=1;
 }
      
 }
@@ -560,6 +571,7 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 	      source_id_start = atoi(source_id_start);
 	      source_id_end = atoi(source_id_end);
 	      destination_id_index = atoi(oai_emulation.application_config.customized_traffic.destination_id[customized_traffic_config_index]);
+
 	      
 	      for (source_id_index = source_id_start; source_id_index <= source_id_end; source_id_index++) {
 		
@@ -725,6 +737,22 @@ LOG_I(OTG,"custom:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, dist 
 	      g_otg->dst_port[destination_id_index] = oai_emulation.application_config.customized_traffic.destination_port[customized_traffic_config_index];
 	      
 	    }
+
+		if (oai_emulation.application_config.customized_traffic.pu) {
+			g_otg->prob_off_pu = oai_emulation.application_config.customized_traffic.prob_off_pu;
+			g_otg->prob_pu_ed = oai_emulation.application_config.customized_traffic.prob_pu_ed;
+			g_otg->holding_time_off_pu = oai_emulation.application_config.customized_traffic.holding_time_off_pu;
+		}
+	
+		if (oai_emulation.application_config.customized_traffic.ed) {
+			g_otg->prob_off_ed = oai_emulation.application_config.customized_traffic.prob_off_ed;
+			g_otg->prob_ed_pe = oai_emulation.application_config.customized_traffic.prob_ed_pe;
+			g_otg->holding_time_off_ed = oai_emulation.application_config.customized_traffic.holding_time_off_ed;
+		}
+		if (oai_emulation.application_config.customized_traffic.pe) {
+			g_otg->holding_time_off_pe = oai_emulation.application_config.customized_traffic.holding_time_off_pe;
+		}
+	printf("g_otg->prob_off_pu = %lf\n", g_otg->prob_off_pu);
 	    
 	  }
 	} else { // OCG not used, but -T option is used, so config here

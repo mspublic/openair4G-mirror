@@ -198,7 +198,7 @@ int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 		        case STATE_CALL_EMU : // change this state to set_params
 
 				if ((detect_file_OK == MODULE_OK) && (parse_filename_OK == MODULE_OK) && (create_dir_OK == MODULE_OK) && (parse_XML_OK == MODULE_OK) && (save_XML_OK == MODULE_OK)) { 
-				// if the above tasks are all successful, we could tell the oaisim.c that everything is ready before running the emulation
+				// if the above tasks are all successful, we could tell the oaisim_config.c that everything is ready before running the emulation
 					oai_emulation.info.ocg_ok = 1;
 				}
 							
