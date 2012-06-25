@@ -216,6 +216,20 @@ typedef struct {
 	int trans_proto_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief define the transport protocol and IP version for background traffic*/
 
 
+// add m2m specific config params by Lusheng below
+// to be improved by Aymen
+
+	double prob_off_pu;
+	double prob_pu_ed;
+	double holding_time_off_pu;
+
+	double prob_off_ed;
+	double prob_ed_pe;
+	double holding_time_off_ed;
+	
+	double holding_time_off_pe;
+
+
 }otg_t; 
 
 

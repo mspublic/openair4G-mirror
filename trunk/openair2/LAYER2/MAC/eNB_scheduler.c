@@ -957,8 +957,8 @@ u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id) {
 
   if ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]>0) ||
       (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]>0) ||
-      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]>0) ||
-      (eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR>0))
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]>0) || 
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR>0)) // uplink scheduling request
     return(1);
   else return(0);
 }
@@ -1007,28 +1007,43 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 2; // set to maximum aggregation level
 
+
+// UE data info;
+
+// check which UE has data to transmit
+
+// function to decide the scheduling
+// e.g. scheduling_rslt = Greedy(granted_UEs, nb_RB)
+
+// default function for default scheduling
+// 
+
+// output of scheduling, the UE numbers in RBs, where it is in the code???
+
+
+
   // allocated UE_ids until nCCE
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > aggregation);UE_id++) {
 
-    if (UE_is_to_be_scheduled(Mod_id,UE_id)>0) {
+    if (UE_is_to_be_scheduled(Mod_id,UE_id)>0) { // if there is information on bsr of DCCH, DTCH or if there is UL_SR
 
 
       // find next ue to schedule
       //    msg("[MAC][eNB] subframe %d: checking UE_id %d\n",subframe,UE_id);
       next_ue = UE_id;//schedule_next_ulue(Mod_id,UE_id,subframe);
       //    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
-      rnti = find_UE_RNTI(Mod_id,next_ue);
+      rnti = find_UE_RNTI(Mod_id,next_ue); // radio network temp id is obtained
 
       LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE (SR %d)\n",Mod_id,rnti,frame,subframe,
 	    eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
 
-      eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0;
+      eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0; //// why =0 ???
 
 
-      if (rnti==0)
+      if (rnti==0) // if so, go to next UE
 	continue;
       //    msg("[MAC][eNB] subframe %d: rnti %x\n",subframe,rnti);
-      aggregation = process_ue_cqi(Mod_id,next_ue);
+      aggregation = process_ue_cqi(Mod_id,next_ue); // =2 by default!! // what is the msc for this enb (mod_id) and ue (next_ue)
       //    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
 
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
@@ -1037,10 +1052,10 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
       //msg("[MAC][eNB %d] Scheduler Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (rnti %x,mode %s), format 0\n",Mod_id,frame,subframe,*nCCE,next_ue,Mod_id, rnti,mode_string[eNB_UE_stats->mode]);
 
-      if (eNB_UE_stats->mode == PUSCH) {
+      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 
 	// Get candidate harq_pid from PHY
-	mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1);
+	mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1); // where is this function ???
 
 	// Note this code is still for a specific DCI format
 	ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
@@ -1057,15 +1072,14 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	       ULSCH_dci->cqi_req = 1;
 	*/
 
-	if (status < RRC_CONNECTED)
+	if (status < RRC_CONNECTED) // what is the value ???
 	  ULSCH_dci->cqi_req = 0;
 	else
 	  ULSCH_dci->cqi_req = 1;
 
-
 	ULSCH_dci->type=0;
 	if (round > 0) {
-	  ULSCH_dci->ndi = 0;
+	  ULSCH_dci->ndi = 0; // if round != 0, it means the data is not new. ndi:new data indicator
 	}
 	else {
 	  ULSCH_dci->ndi = 1;
@@ -1076,12 +1090,12 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	if (ULSCH_dci->ndi == 1) // set mcs for first round
 	  ULSCH_dci->mcs     = openair_daq_vars.target_ue_ul_mcs;
 	else  // increment RV
-	  ULSCH_dci->mcs = round + 28;
+	  ULSCH_dci->mcs = round + 28; // why 28 ???
 
 	// schedule 4 RBs for UL
 	if((cooperation_flag > 0) && (next_ue == 1))// Allocation on same set of RBs
 	  {
-	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c
 						       ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
 						       4);//openair_daq_vars.ue_ul_nb_rb);
 	  }
@@ -1190,6 +1204,9 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
     } // UE_is_to_be_scheduled
   } // loop over UE_id
 }
+
+
+
 u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
 
   int i;
