@@ -17,7 +17,7 @@
 #include "PHY_INTERFACE/extern.h"
 #endif
 
-
+extern int calibration_flag;
 
 PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms, 
 			   u8 eNB_id,
@@ -192,10 +192,15 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
 
     //b***********************For CROWN DEMO
-	if(PHY_vars_eNB_g[eNB_id]->is_secondary_eNB==0){ //
+    if (calibration_flag==1) {
+      if (eNB_id==0) {
+	PHY_vars_eNB_g[eNB_id]->is_secondary_eNB=1;
+      }
+      else {
 	PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx=1;
 	PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx=1;
-	}
+      }
+    }
     //b***********************
 
     phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id],0,0,abstraction_flag);

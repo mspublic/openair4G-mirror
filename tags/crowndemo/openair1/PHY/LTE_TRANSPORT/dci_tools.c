@@ -2035,7 +2035,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       if (ulsch->harq_processes[harq_pid]->mcs < 28)
 	ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS_UL(ulsch->harq_processes[harq_pid]->mcs)][ulsch->harq_processes[harq_pid]->nb_rb-1];
       else if (ulsch->harq_processes[harq_pid]->mcs == 29) {
-	ulsch->harq_processes[harq_pid]->mcs = 18;
+	ulsch->harq_processes[harq_pid]->mcs = 5;
 	ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS_UL(ulsch->harq_processes[harq_pid]->mcs)][ulsch->harq_processes[harq_pid]->nb_rb-1];
 	ulsch->harq_processes[harq_pid]->calibration_flag =1;
 	printf("Auto-Calibration (UE): mcs %d, TBS %d, nb_rb %d\n",ulsch->harq_processes[harq_pid]->mcs,ulsch->harq_processes[harq_pid]->TBS,ulsch->harq_processes[harq_pid]->nb_rb);
@@ -2222,7 +2222,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->calibration_flag = 0;
       //if (ulsch->harq_processes[harq_pid]->mcs)
       if (ulsch->harq_processes[harq_pid]->mcs == 29) {
-	ulsch->harq_processes[harq_pid]->mcs = 18;
+	ulsch->harq_processes[harq_pid]->mcs = 5;
 	ulsch->harq_processes[harq_pid]->calibration_flag = 1;
 	printf("Auto-Calibration (eNB): mcs %d, nb_rb %d\n",ulsch->harq_processes[harq_pid]->mcs,ulsch->harq_processes[harq_pid]->nb_rb);
       }

@@ -2245,7 +2245,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    //exit(-1);
 
 	    // Retrieve calibration information and do whatever
-	    LOG_D(PHY,"[eNB][Auto-Calibration] Frame %d, Subframe %d : ULSCH PDU (RX) %d bytes\n",phy_vars_eNB->frame,last_slot>>1,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);	    
+	    LOG_I(PHY,"[eNB][Auto-Calibration] Frame %d, Subframe %d : ULSCH PDU (RX) %d bytes\n",phy_vars_eNB->frame,last_slot>>1,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);	    
 
 	    //+++++++++++++++++++++++++++++++++++++++++++++++++
 	    if (ret <= MAX_TURBO_ITERATIONS) {         
@@ -2253,7 +2253,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    } else {
 	      echec_calibration++;          
 	    }
-	    printf("Auto-Calibrationret=%d;  K_calibration = %d; echec_calibration=%d \n" ,ret, K_calibration, echec_calibration);
+	    LOG_I(PHY,"Auto-Calibrationret=%d;  K_calibration = %d; echec_calibration=%d \n" ,ret, K_calibration, echec_calibration);
 
 	    if ((ret <= MAX_TURBO_ITERATIONS) && (K_calibration <= n_K)) {
 	      for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
