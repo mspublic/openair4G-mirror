@@ -195,7 +195,8 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             printf("-f    Output filename (.txt format) for Pe/SNR results\n");
             printf("-a    Use AWGN channel and not multipath\n");
             printf("-b    Test Number\n");
-            printf("-C    CellId Number for interferer\n");
+            printf("-C    CellId Number for interferer\n"
+            printf("-m    MCS\n");
             exit (-1);
             break;
 
