@@ -160,7 +160,7 @@ typedef struct{
   uint16_t                          physCellId;
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
-  BCCH_DL_SCH_Message_t             systemInformation;
+  SystemInformation_t               systemInformation;
   SystemInformationBlockType1_t     *sib1;
   SystemInformationBlockType2_t     *sib2;
   SystemInformationBlockType3_t     *sib3;

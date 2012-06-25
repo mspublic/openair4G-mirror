@@ -266,6 +266,12 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	  frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
 #endif 
   }
+  else {
+#ifdef DEBUG_INIT_SYNCH
+    msg("SSS error condition : sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
+#endif
+  }
+
 
   if (ret==-1) {
 
@@ -298,6 +304,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 #ifdef DEBUG_INIT_SYNCH
       msg("FDD Extended prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
+#endif
+    }
+    else {
+#ifdef DEBUG_INIT_SYNCH
+      msg("SSS error condition : sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
     }
 
@@ -336,6 +347,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 #ifdef DEBUG_INIT_SYNCH
 	msg("TDD Normal prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	    frame_parms->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp,ret);
+#endif
+      }
+      else {
+#ifdef DEBUG_INIT_SYNCH
+	msg("SSS error condition : sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
       }
    

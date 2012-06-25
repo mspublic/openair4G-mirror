@@ -1375,7 +1375,7 @@ for(i=0;i<2;i++) {
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	
-	PHY_vars_eNB_g[eNB_id]->frame = frame;
+	//PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	
 #ifndef NAS_NETLINK
@@ -1402,7 +1402,7 @@ for(i=0;i<2;i++) {
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    if (frame>0) {
-	      PHY_vars_UE_g[UE_id]->frame = frame;
+	      //PHY_vars_UE_g[UE_id]->frame = frame;
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 	    }
 	  }
@@ -1411,7 +1411,7 @@ for(i=0;i<2;i++) {
 	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
 	      exit(-1);
 	    }
-	    if ((frame>0) && (last_slot == (SLOTS_PER_FRAME-2))) {
+	    if ((frame>11) && (last_slot == (SLOTS_PER_FRAME-2))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);

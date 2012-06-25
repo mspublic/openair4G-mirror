@@ -509,7 +509,7 @@ static void *eNB_thread(void *arg)
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       //this is the mbox counter where we should be 
-      mbox_target = ((((slot+1)%20)*15+1)>>1);
+      mbox_target = ((((slot+1)%20)*15+1)>>1)%150;
       //this is the mbox counter where we are
       mbox_current = ((unsigned int *)DAQ_MBOX)[0];
       //this is the time we need to sleep in order to synchronize with the hw (in multiples of DAQ_PERIOD)
@@ -556,15 +556,13 @@ static void *eNB_thread(void *arg)
       last_slot = (slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=20;
-      next_slot = (slot+2)%LTE_SLOTS_PER_FRAME;
+      next_slot = (slot+3)%LTE_SLOTS_PER_FRAME;
 
       //PHY_vars_eNB_g[0]->frame = frame;
       if (frame>5)
         {
-	  /*
           if (frame%100==0)
             rt_printk("frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
-	  */
           if (fs4_test==0)
             {
               phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
@@ -724,15 +722,15 @@ static void *UE_thread(void *arg)
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15; //the slot the hw is about to store
       
       //this is the mbox counter that indicates the start of the frame
-      rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (LTE_SLOTS_PER_FRAME*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti); 
+      rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (10*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti); 
       //this is the mbox counter where we should be 
       mbox_target = (((((slot+1)%20)*15+1)>>1) + rx_offset_mbox + 1)%150;
       //this is the mbox counter where we are
       mbox_current = ((unsigned int *)DAQ_MBOX)[0];
       //this is the time we need to sleep in order to synchronize with the hw (in multiples of DAQ_PERIOD)
-      if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
+      if ((mbox_current>=120) && (mbox_target<30)) //handle the frame wrap-arround
 	diff2 = 150-mbox_current+mbox_target;
-      else if ((mbox_current<15) && (mbox_target>=135))
+      else if ((mbox_current<30) && (mbox_target>=120))
 	diff2 = -150+mbox_target-mbox_current;
       else
         diff2 = mbox_target - mbox_current;
@@ -747,6 +745,8 @@ static void *UE_thread(void *arg)
       if (diff2>8) 
 	rt_printk("UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
 
+      if (frame%100==0)
+	rt_printk("frame %d (%d), slot %d, hw_slot %d, rx_offset_mbox %d, mbox_target %d, mbox_current %d, diff %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,rx_offset_mbox,mbox_target,mbox_current,diff2);
       timing_info[slot].time0 = rt_get_time_ns();
       timing_info[slot].mbox0 = ((unsigned int *)DAQ_MBOX)[0];
 
@@ -773,10 +773,10 @@ static void *UE_thread(void *arg)
       timing_info[slot].mbox_target = mbox_target;
 
 #endif
-      last_slot = slot%LTE_SLOTS_PER_FRAME;
+      last_slot = (slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=LTE_SLOTS_PER_FRAME;
-      next_slot = (slot + 2)%LTE_SLOTS_PER_FRAME;
+      next_slot = (slot+3)%LTE_SLOTS_PER_FRAME;
 
       timing_info[slot].frame = PHY_vars_UE_g[0]->frame;
       timing_info[slot].hw_slot = hw_slot;
@@ -785,10 +785,8 @@ static void *UE_thread(void *arg)
 
       if (is_synchronized)
         {
-          /*
           if (frame%100==0)
             rt_printk("frame %d (%d), slot %d, hw_slot %d, last_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,last_slot,DAQ_MBOX[0]);
-	  */
           in = rt_get_time_ns();
           phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0);
           out = rt_get_time_ns();
@@ -836,9 +834,6 @@ static void *UE_thread(void *arg)
                     memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
                            PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
                   is_synchronized = 1;
-#ifndef OPENAIR2
-		  PHY_vars_UE_g[0]->UE_mode[0]=PUSCH;
-#endif
                   slot0 = msg1;
                 }
             }
@@ -1044,7 +1039,8 @@ int main(int argc, char **argv)
     {
       g_log->log_component[PHY].level = LOG_INFO;
       g_log->log_component[PHY].flag = LOG_HIGH;
-      g_log->log_component[MAC].level = LOG_DEBUG;
+      g_log->log_component[MAC].level = LOG_INFO;
+      g_log->log_component[MAC].flag = LOG_HIGH;
       frame_parms->node_id = NODE;
       PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
       PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
@@ -1071,6 +1067,7 @@ int main(int argc, char **argv)
       g_log->log_component[PHY].level = LOG_INFO;
       g_log->log_component[PHY].flag = LOG_HIGH;
       g_log->log_component[MAC].level = LOG_INFO;
+      g_log->log_component[MAC].flag = LOG_HIGH;
       frame_parms->node_id = PRIMARY_CH;
       PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
       PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
