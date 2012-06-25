@@ -1225,7 +1225,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    ULSCH_dci->mcs     = 29;
 	  }
 	  else  // increment RV
-	    ULSCH_dci->mcs = round + 28;
+	    ULSCH_dci->mcs = 29;//round + 28;
 	  
 	  if (ULSCH_dci->ndi==1) {
 	    LOG_D(MAC,"[eNB %d][PUSCH %x][Auto-Calibration] Frame %d subframe %d Scheduled UE PUSCH\n",
@@ -1233,7 +1233,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    
 	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 						       0,
-						       25);//25);//openair_daq_vars.ue_ul_nb_rb);
+						       4);//25);//openair_daq_vars.ue_ul_nb_rb);
 	    
 	  }
 	  

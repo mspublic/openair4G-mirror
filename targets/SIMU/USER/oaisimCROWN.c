@@ -97,7 +97,7 @@ short dl_ch_estimates[2][2400];
 short drs_ch_estimates[2][2400];
 short drs_ch_est_ZFB[2*300*14];
 int doquantUE=0;
-int calibration_flag=0;
+int calibration_flag=1;
 short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
 int prec_length = 2*14*512;
 short prec[2][2*14*512];
@@ -1045,7 +1045,6 @@ for(i=0;i<2;i++) {
   LOG_T(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, awgn_flag %d\n",
   	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,awgn_flag);
   
-
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   //printf ("Nid_cell %d\n", frame_parms->Nid_cell);
@@ -1056,17 +1055,15 @@ for(i=0;i<2;i++) {
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
-    //b Calibration
-    PHY_vars_eNB_g[eNB_id]->is_secondary_eNB=((eNB_id==1) ? 0:1 );
     init_enb(enb_data[eNB_id],oai_emulation.environment_system_config.antenna.eNB_antenna);
 
-// Calibration
-	/*if ((oai_emulation.info.transmission_mode==1) && calibration_flag==1 ){
-	  //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_tx = 1;
-	  //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_rx = 1;
-	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx = 1;
-	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx = 1;
-	}*/
+    // Calibration
+    /*if ((oai_emulation.info.transmission_mode==1) && calibration_flag==1 ){
+    //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_tx = 1;
+    //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_rx = 1;
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx = 1;
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx = 1;
+    }*/
 	
   }
   

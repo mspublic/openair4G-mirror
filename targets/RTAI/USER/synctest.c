@@ -908,7 +908,7 @@ short dl_ch_estimates[2][2400];
 short drs_ch_estimates[2][2400];
 short drs_ch_est_ZFB[2*300*14];
 int doquantUE=0;
-int calibration_flag=0;
+int calibration_flag=1;
 short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
 int prec_length = 2*14*512;
 short prec[2][2*14*512];
@@ -999,7 +999,7 @@ int main(int argc, char **argv)
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = 0;
   frame_parms->nb_antennas_tx     = (UE_flag == 1) ? 1 : 2;
-  frame_parms->nb_antennas_rx     = 1;
+  frame_parms->nb_antennas_rx     = ((UE_flag == 0) && (calibration_flag==1)) ? 2 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
 #ifdef CBMIMO1
