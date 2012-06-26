@@ -164,6 +164,15 @@ void logInit (void) {
     g_log->log_component[OTG_LATENCY].filelog = 1;
     g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
 
+
+    g_log->log_component[OTG_OWD].name = "OTG_OWD";
+    g_log->log_component[OTG_OWD].level = LOG_FILE;
+    g_log->log_component[OTG_OWD].flag =  LOG_MED;
+    g_log->log_component[OTG_OWD].interval =  1;
+    g_log->log_component[OTG_OWD].fd = 0;
+    g_log->log_component[OTG_OWD].filelog = 1;
+    g_log->log_component[OTG_OWD].filelog_name = "/tmp/otg_owd.log";
+
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
     g_log->log_component[OCG].flag =  LOG_MED;
@@ -425,7 +434,7 @@ int  set_comp_log(int component, int level, int verbosity, int interval) {
       g_log->log_component[component].flag = verbosity; 
     }
     if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
-      g_log->log_component[component].level = level;
+	 g_log->log_component[component].level = level;
     }
     if ((interval > 0) && (interval <= 0xFF)){
       g_log->log_component[component].interval = interval;
