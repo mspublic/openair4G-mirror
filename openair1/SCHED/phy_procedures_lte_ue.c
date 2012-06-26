@@ -779,21 +779,21 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  //  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
 	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1) { 
 	      if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0)
-	    mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
-				  phy_vars_ue->frame,
-				  eNB_id,
-				  ulsch_input_buffer,
-				  input_buffer_length);
+		mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
+				      phy_vars_ue->frame,
+				      eNB_id,
+				      ulsch_input_buffer,
+				      input_buffer_length);
 	      else { // (doquantUE==1)
 		// Get calibration information from TDD procedures
 		LOG_D(PHY,"[UE %d] Frame %d, subframe %d : ULSCH: Getting TDD Auto-Calibration information\n",
 		      phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
 		for (i_d=0;i_d<input_buffer_length;i_d++)
-		{ 
-		ulsch_input_buffer[i_d]=(char)(dl_ch_estimates[1][i_d]);
-		//ulsch_input_buffer[i_d]=i_d;		       		    
-		}
-		write_output("dlchestq.m","dlq",dl_ch_estimates[1],512,1,1);		
+		  { 
+		    ulsch_input_buffer[i_d]=(char)(dl_ch_estimates[1][i_d]);
+		    //ulsch_input_buffer[i_d]=i_d;		       		    
+		  }
+		//write_output("dlchestq.m","dlq",dl_ch_estimates[1],512,1,1);		
 		//exit(-1);	
 		         
 	      }
@@ -823,7 +823,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif //OPENAIR2
 	  if (abstraction_flag==0) {
 	    if (phy_vars_ue->frame%100==0) {
-	      LOG_I(PHY,"Encoding ulsch\n");}
+	      LOG_I(PHY,"Encoding ulsch\n");
+	    }
 	    if (ulsch_encoding(ulsch_input_buffer,
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->ulsch_ue[eNB_id],
@@ -2041,7 +2042,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	dlsch_thread_index = 0;
 	
 	if (pthread_mutex_lock (&dlsch_mutex[dlsch_thread_index]) != 0) {               // Signal MAC_PHY Scheduler
-	  LOG_D(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",phy_vars_ue->Mod_id);     // lock before accessing shared resource
+	  LOG_E(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",phy_vars_ue->Mod_id);     // lock before accessing shared resource
 	  return(-1);
 	}
 	dlsch_instance_cnt[dlsch_thread_index]++;
@@ -2050,12 +2051,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	if (dlsch_instance_cnt[dlsch_thread_index] == 0) {
 	  if (pthread_cond_signal(&dlsch_cond[dlsch_thread_index]) != 0) {
-	    LOG_D(PHY,"[UE  %d] ERROR pthread_cond_signal for dlsch_cond[%d]\n",phy_vars_ue->Mod_id,dlsch_thread_index);
+	    LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for dlsch_cond[%d]\n",phy_vars_ue->Mod_id,dlsch_thread_index);
 	    return(-1);
 	  }
 	}
 	else {
-	  LOG_D(PHY,"[UE  %d] DLSCH thread for dlsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,dlsch_thread_index);
+	  LOG_W(PHY,"[UE  %d] DLSCH thread for dlsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,dlsch_thread_index);
 	  return(-1);
 	}
 	
