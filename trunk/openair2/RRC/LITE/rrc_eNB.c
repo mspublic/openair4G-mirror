@@ -368,6 +368,12 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
       LOG_I(RRC,"[eNB %d] Frame %d : Received PR_NOTHING on UL-CCCH-Message\n",Mod_id,frame);
       break;
 
+    case UL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentRequest :
+      LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_eNB][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReestablishmentRequest on SRB0) -->][RRC_eNB][MOD %02d][]\n",
+            frame, Mod_id, Mod_id);
+      LOG_I(RRC,"[eNB %d] Frame %d : RRCConnectionReestablishmentRequest not supported yet\n",Mod_id,frame);
+      break;
+
     case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest :
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_eNB][MOD %02d][][--- MAC_DATA_IND  (rrcConnectionRequest on SRB0) -->][RRC_eNB][MOD %02d][]\n",
             frame, Mod_id, Mod_id);
@@ -433,14 +439,9 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 	LOG_D(RRC,"[eNB %d] RLC AM allocation index@1 is %d\n",rlc[Mod_id].m_rlc_am_array[1].allocation);
 	*/
 #endif //NO_RRM
+      }
 	break;
 
-    case UL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentRequest :
-      LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_eNB][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReestablishmentRequest on SRB0) -->][RRC_eNB][MOD %02d][]\n",
-            frame, Mod_id, Mod_id);
-      LOG_I(RRC,"[eNB %d] Frame %d : RRCConnectionReestablishmentRequest not supported yet\n",Mod_id,frame);
-      break;
-      }
     default:
       LOG_E(RRC,"[eNB %d] Frame %d : Unknown message\n",Mod_id,frame);
       return -1;

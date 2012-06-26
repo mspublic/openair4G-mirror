@@ -233,9 +233,9 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *l3msg) {
   u16 rx_lengths[MAX_NUM_RB];
   s8 UE_id;
 
-  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Received l3msg %x.%x.%x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
+  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Received l3msg %x.%x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
 	Mod_id,frame,
-	l3msg[0],l3msg[1],l3msg[2],l3msg[3],l3msg[4],l3msg[5],l3msg[6],l3msg[7], rnti);
+	l3msg[0],l3msg[1],l3msg[2],l3msg[3],l3msg[4],l3msg[5],l3msg[6], rnti);
 
   for (i=0;i<NB_RA_PROC_MAX;i++) {
     LOG_D(MAC,"[RAPROC] Checking proc %d : rnti (%x, %x), active %d\n",i,
@@ -416,7 +416,10 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
     if (lcid < EXTENDED_POWER_HEADROOM) { 
-      if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
+      if (lcid == CCCH ){
+	length= 1;
+	mac_header_ptr += 1;//sizeof(SCH_SUBHEADER_FIXED);
+      } else if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
 	mac_header_ptr += 2;//sizeof(SCH_SUBHEADER_SHORT);
       }
@@ -3804,7 +3807,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   if (oai_emulation.info.opt_enabled)
     trace_pdu(1,  eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0], TBS, Mod_id, 3, 
 	      find_UE_RNTI(Mod_id,next_ue),frame,0,0);
-  LOG_D(OPT,"[eNB %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n", 
+  LOG_D(OPT,"[eNB %d][DLSCH] Frame %d  rnti %x  with size %d\n", 
 	Mod_id, frame, find_UE_RNTI(Mod_id,next_ue), TBS);
 #endif
 
