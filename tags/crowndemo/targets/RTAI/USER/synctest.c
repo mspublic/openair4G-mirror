@@ -1,3 +1,42 @@
+/*******************************************************************************
+
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2011 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+/*! \file synctest.c
+* \brief main program to control HW and scheduling
+* \author R. Knopp, F. Kaltenberger
+* \date 2012
+* \version 0.1
+* \company Eurecom
+* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+* \note
+* \warning
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,6 +78,8 @@
 #endif
 
 #include "UTIL/LOG/log_extern.h"
+#include "UTIL/OTG/otg.h"
+#include "UTIL/OTG/otg_vars.h"
 
 #ifdef XFORMS
 #include <forms.h>
@@ -90,6 +131,8 @@ struct timing_info_t {
 
 extern s16* sync_corr_ue0;
 extern s16 prach_ifft[4][1024*2];
+
+int otg_enabled = 0;
 
 void signal_handler(int sig)
 {
@@ -477,7 +520,7 @@ static void *eNB_thread(void *arg)
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  rt_printk("fun0: task %p\n",task);
+  rt_printk("Started eNB thread (id %p)\n",task);
 
 #ifdef HARD_RT
   rt_make_hard_real_time();
@@ -687,10 +730,11 @@ static void *UE_thread(void *arg)
   RTIME time_in;
   int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
+
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  rt_printk("fun0: task %p\n",task);
+  rt_printk("Started UE thread (id %p)\n",task);
 
 #ifdef HARD_RT
   rt_make_hard_real_time();
@@ -927,7 +971,7 @@ int main(int argc, char **argv)
   LTE_DL_FRAME_PARMS *frame_parms;
   u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
   u32 rf_mode[4]     = {55759,55759,55759,55759};
-  u32 rf_local[4]    = {8254816, 8254681, 8254617, 8254617}; //eNB khalifa
+  u32 rf_local[4]    = {8254617, 8254816, 8254617, 8254617}; //eNB khalifa
     //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
@@ -1083,8 +1127,8 @@ int main(int argc, char **argv)
       if (calibration_flag == 1)
         PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
       openair_daq_vars.ue_ul_nb_rb=25;
-      openair_daq_vars.target_ue_dl_mcs=5;
-      openair_daq_vars.ue_ul_nb_rb=4;
+      openair_daq_vars.target_ue_dl_mcs=9;
+      openair_daq_vars.ue_ul_nb_rb=12;
       openair_daq_vars.target_ue_ul_mcs=5;
     }
 
@@ -1096,9 +1140,22 @@ int main(int argc, char **argv)
     mac_xface->dl_phy_sync_success (0, 0, 0, 1);
   else
     mac_xface->mrbch_phy_sync_failure (0, 0, 0);
+
+  pdcp_layer_init(); 
 #endif
 
+
   mac_xface->macphy_exit = &exit_fun;
+  init_all_otg();
+  g_otg->seed = 0;
+  init_seeds(g_otg->seed);
+  g_otg->num_nodes = 1;
+  for (i=0; i<g_otg->num_nodes; i++){
+    for (j=0; j<g_otg->num_nodes; j++){ 
+      g_otg->application_type[i][j] = SCBR;
+      init_predef_traffic();
+    }
+  }
 
   // start up the hardware
   openair_fd=setup_oai_hw(frame_parms);
@@ -1243,11 +1300,18 @@ int main(int argc, char **argv)
 
 
   // start the main thread
-  if (UE_flag == 1)
+  if (UE_flag == 1) {
     thread1 = rt_thread_create(UE_thread, NULL, 100000000);
-  else
-    thread0 = rt_thread_create(eNB_thread, NULL, 10000000);
-
+#ifdef DLSCH_THREAD
+    init_dlsch_threads();
+#endif
+  }
+  else {
+    thread0 = rt_thread_create(eNB_thread, NULL, 100000000);
+#ifdef ULSCH_THREAD
+    init_ulsch_threads();
+#endif
+  }
 
 #ifndef CBMIMO1
   //  sync_thread = rt_thread_create(sync_hw,NULL,10000000);
@@ -1264,6 +1328,14 @@ int main(int argc, char **argv)
   rt_sleep(nano2count(FRAME_PERIOD));
 
   // cleanup
+  if (UE_flag == 1) 
+#ifdef DLSCH_THREAD
+    cleanup_dlsch_threads();
+#endif
+  else
+#ifdef ULSCH_THREAD
+    cleanup_ulsch_threads();
+#endif
   stop_rt_timer();
 
   fd = 0;
