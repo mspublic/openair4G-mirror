@@ -265,7 +265,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
 	  UE_mac_inst[Mod_id].RA_active=0;
 	  // check if RA procedure has finished completely (no contention)
-	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[2];//2=sizeof(SCH_SUBHEADER_SHORT);
+	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[1];//1=sizeof(SCH_SUBHEADER_FIXED);
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
 	      LOG_D(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
@@ -524,7 +524,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 #ifdef DEBUG_HEADER_PARSING
     LOG_T(MAC,"[UE] sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
 #endif
-    if (first_element>0) {
+    if ((first_element>0)) {
       mac_header_ptr->E = 1;
 #ifdef DEBUG_HEADER_PARSING
       LOG_D(MAC,"[UE] last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
@@ -539,7 +539,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       first_element=1;
 
     }
-    if (sdu_lengths[i] < 128) {
+     if  (sdu_lcids[i] == CCCH){
+      ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R    = 0; 
+      ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E    = 0;
+      ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID = sdu_lcids[i];
+      }
+      else if (sdu_lengths[i] < 128) {
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0; // 3
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;
@@ -646,7 +651,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 				    DCCH,
 				    (buflen-dcch_header_len-bsr_len-phr_len));
-    LOG_D(MAC,"[UE %d] Frame %d : DL-DCCH -> DLSCH, RRC message has %d bytes to send (Transport Block size %d, mac header len %d)\n",
+    LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH -> ULSCH, RRC message has %d bytes to send (Transport Block size %d, mac header len %d)\n",
 	  Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dcch_header_len);
 
     sdu_lengths[0] += mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
@@ -672,7 +677,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 				    DCCH1,
 				    (buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-sdu_length_total));
 
-    LOG_D(MAC,"[UE %d] Frame %d : DL-DCCH1 -> DLSCH, RRC message has %d bytes to send (Transport Block size %d, mac header len %d)\n",
+    LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH1 -> ULSCH, RRC message has %d bytes to send (Transport Block size %d, mac header len %d)\n",
 	  Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dcch1_header_len);
 
     sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
@@ -813,9 +818,9 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled)
     trace_pdu(0, ulsch_buffer, buflen, Mod_id, 3, 
-	      find_UE_RNTI(eNB_index,Mod_id),frame,0,0);
+	      UE_mac_inst[Mod_id].crnti,frame,0,0);
   LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n", 
-	Mod_id, frame, find_UE_RNTI(eNB_index,Mod_id), buflen);
+	Mod_id, frame, UE_mac_inst[Mod_id].crnti, buflen);
 #endif
   
     LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",

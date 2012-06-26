@@ -44,7 +44,7 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
-//#define DEBUG_RAR
+#define DEBUG_RAR
 
 extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];
@@ -62,7 +62,7 @@ unsigned short fill_rar(u8 Mod_id,
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
-
+  // subheader fixed 
   rarh->E                     = 0; // First and last RAR
   rarh->T                     = 0; // Preamble ID RAR
   rarh->RAPID                 = eNB_mac_inst[Mod_id].RA_template[0].preamble_index; // Respond to Preamble 0 only for the moment
@@ -112,8 +112,11 @@ u16 ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 preamb
 #endif
   if (preamble_index == rarh->RAPID) {
     *t_crnti = rar->t_crnti;
+     UE_mac_inst[Mod_id].crnti = rar->t_crnti;
     return(rar->Timing_Advance_Command);
   }
-  else
+  else {
+    UE_mac_inst[Mod_id].crnti=0;
     return(0xffff);
+  }
 }

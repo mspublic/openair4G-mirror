@@ -426,6 +426,8 @@ typedef struct {
 
 typedef struct{
   u16 Node_id;
+  /// C-RNTI of UE
+  u16 crnti;
   /// pointer to RRC PHY configuration 
   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
   /// pointer to RRC PHY configuration 

@@ -76,7 +76,7 @@ extern int nas_netlink_init(void);
 u8 NULL_IMEI[14]={0x05, 0x04, 0x03, 0x01, 0x02 ,0x00, 0x00, 0x00, 0x05, 0x04, 0x03 ,0x00, 0x01, 0x08};
 
 
-static unsigned int nas_IMEI[2]; // may change to char
+static unsigned int  nas_IMEI[6]={0x03, 0x01, 0x02 ,0x00, 0x00, 0x00}; // may change to char
 static int m_arg=0;
 static unsigned int nas_is_clusterhead=0;
 
@@ -349,7 +349,7 @@ void nas_init(struct net_device *dev){
     //
 #endif 
     // dev->type = ARPHRD_EUROPENAIRMESH;
-    dev->type = ARPHRD_ETHER;
+    //dev->type = ARPHRD_ETHER;
     //  dev->features = NETIF_F_NO_CSUM;
     dev->hard_header_len = 0;
     dev->addr_len = NAS_ADDR_LEN;
@@ -418,6 +418,7 @@ void nas_init(struct net_device *dev){
     
         printk("INIT: init IMEI to IID\n");
  #endif  
+
     printk("INIT: end\n");
     return;
   }  // instance value check
