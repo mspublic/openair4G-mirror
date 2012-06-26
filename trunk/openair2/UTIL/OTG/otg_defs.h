@@ -92,6 +92,7 @@ typedef enum {
 	PARETO,
 	GAMMA,
 	CAUCHY,
+        LOG_NORMAL,
 }dist_type;
 
 
@@ -178,7 +179,8 @@ typedef struct {
 	int ip_v[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Ip version */
 	//int header_compression; 				/*!\brief Specify if header compression is used or not */
 	int num_nodes; 						/*!\brief Number of used nodes in the simulation */
-	
+	int background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief enable or disable background traffic  */
+
 	// src id , dst id, and state  						// think to the case of several streams per node !!!!!
 	int idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE];	/*!\brief Inter Departure Time distribution */	
 	int idt_min[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; 	/*!\brief Min Inter Departure Time, for uniform distrib  */
@@ -216,6 +218,7 @@ typedef struct {
 	int trans_proto_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief define the transport protocol and IP version for background traffic*/
 
 
+
 // add m2m specific config params by Lusheng below
 // to be improved by Aymen
 
@@ -228,6 +231,11 @@ typedef struct {
 	double holding_time_off_ed;
 	
 	double holding_time_off_pe;
+
+
+unsigned int throughput_metric;
+unsigned int latency_metric; 
+unsigned int loss_metric;
 
 
 }otg_t; 
@@ -323,7 +331,10 @@ typedef struct{
 	float rx_goodput_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Rx goodput: (size of received data)/ctime*/
 	float rx_loss_rate_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Rx Loss Rate: ratio, unit: bytes*/
 
+float radio_access_delay[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 
+
 	
+
 }otg_info_t;
 
 
@@ -347,5 +358,18 @@ typedef struct{
 	char* payload_rest; 			/*!< \brief  */  
 }__attribute__((__packed__)) payload_t;
 
+
+
+
+#define MAX_SAMPLES 100
+
+typedef struct{
+	int init_forms;
+	int is_data_plot;
+	float data_owd[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_SAMPLES];
+	float data_throughput[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_SAMPLES];
+	float data_ctime[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_SAMPLES];
+	int idx[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+}otg_forms_info_t;
 
 #endif
