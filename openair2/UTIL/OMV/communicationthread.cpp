@@ -73,6 +73,7 @@ extern int nb_frames;
 extern int node_number;
 extern int nb_enb;
 extern int nb_ue;
+extern int supervised_id;
 
 CommunicationThread::CommunicationThread(MyWindow* window){
     this->window = window;
@@ -103,8 +104,7 @@ void CommunicationThread::run()
         default :
             QString information, information_for_a_node;
 	    geo[nb_enb].mobility_type = data.geo[nb_enb].mobility_type;
-	    information.sprintf("Frame: %d\nUE nodes mobility type: %s\n",nb_frames - counter, 
-			map_int_to_str(omg_model_names, geo[nb_enb].mobility_type));   
+	    information.sprintf("Frame %d: Format of Log (Node type, Id, Position, Mobility type, Pathloss, State, RSSI)\n",nb_frames - counter);   
          
 	    end = data.end;
             
@@ -115,7 +115,7 @@ void CommunicationThread::run()
 		geo[i].y = data.geo[i].y;
 		geo[i].node_type = data.geo[i].node_type;
 
-		information_for_a_node.sprintf("    eNb %d: Position (%d,%d)\n" , i, data.geo[i].x, data.geo[i].y);
+		information_for_a_node.sprintf("    eNb %d (%d,%d) %s %d %d %d\n" , i, data.geo[i].x, data.geo[i].y, map_int_to_str(omg_model_names, geo[nb_enb].mobility_type), 0, 0, 0);
 		information += information_for_a_node;		
 
                 for(int j = 0; j<data.geo[i].Neighbors; j++)
@@ -129,7 +129,7 @@ void CommunicationThread::run()
 		geo[i].y = data.geo[i].y;
 		geo[i].node_type = data.geo[i].node_type;
 
-		information_for_a_node.sprintf("    UE %d: Position (%d,%d)\n" , i, data.geo[i].x, data.geo[i].y);
+		information_for_a_node.sprintf("    UE %d (%d,%d) %s %d %d %d\n" , i, data.geo[i].x, data.geo[i].y, map_int_to_str(omg_model_names, geo[nb_enb].mobility_type), 0, 0, 0);
 		information += information_for_a_node;		
 
                 for(int j = 0; j<data.geo[i].Neighbors; j++)
@@ -143,7 +143,7 @@ void CommunicationThread::run()
         counter--;
     }
 
-    sleep(10);
+    sleep(30);
     emit endOfTheSimulation();
 
     

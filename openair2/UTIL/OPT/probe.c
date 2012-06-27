@@ -117,7 +117,15 @@ what about the implementation
 
 *@{*/
 
+
 #include "opt.h"
+
+typedef unsigned char  guint8;
+typedef unsigned short guint16;
+typedef unsigned int   guint32;
+typedef unsigned char gboolean;
+typedef time_t nstime_t;
+
 #include "packet-mac-lte.h"
 #include "mac_pcap.h"
 

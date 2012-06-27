@@ -55,9 +55,13 @@ class OpenGLWidget : public QGLWidget
         void drawNodes();
 	void loadTexture();
         void drawConnections();
-	void drawSquare(int digit);
-	void drawBaseStation();
+	void drawSquare(int digit, int back, int w, int h, int sw, int sh);
+	void drawBaseStation(int digit);
         void setDrawConnections(int draw);
+	void setUseMap(int use);
+	void setLinksColor(int index);
+	void setNodesColor(int index);
+	void updateNodeSize(int size);
         ~OpenGLWidget();
 
     protected:
