@@ -32,7 +32,9 @@ function r = read_results(f)
 %          for n_relays==2 there are four values: [0 MR1 MR2 MR1+MR2], this is for all transmissions
 %          over hop 2, even if the PDU was not finally received at the destination CH
 
-A = dlmread(f, ' ', [0 0 0 4]);
+fid = fopen(f, 'r');
+
+A = mread(fid, 1, 5);
 r.n_relays = A(1);
 r.channel_model = parse_channel(A(2));
 r.n_tests = A(3);
@@ -46,33 +48,39 @@ n_harq = A(5);
 
 test_row = 1;
 for test = 1:n_tests
-  r.tests(test).snr_hop1 = dlmread(f, ' ', [test_row 0 test_row n_relays-1]);
-  r.tests(test).snr_hop2 = dlmread(f, ' ', [test_row+1 0 test_row+1 n_relays-1]);
-  A = dlmread(f, ' ', [test_row+2 0 test_row+2 5]);
+  r.tests(test).snr_hop1 = mread(fid, 1, n_relays);
+  r.tests(test).snr_hop2 = mread(fid, 1, n_relays);
+  A = mread(fid, 1, 6);
   r.tests(test).n_frames_hop1 = A(1);
   r.tests(test).n_frames_hop2 = A(2);
   r.tests(test).n_bits_hop1 = A(3);
   r.tests(test).n_bits_hop2 = A(4);
   r.tests(test).n_pdu_success_hop1 = A(5);
   r.tests(test).n_pdu_success_hop2 = A(6);
-  r.tests(test).ber_hop1 = dlmread(f, ' ', [test_row+3 0 test_row+3 n_relays-1]);
-  r.tests(test).ber_hop2 = dlmread(f, ' ', [test_row+3 n_relays test_row+3 n_relays]);
-  r.tests(test).n_harq_tries_hop1 = dlmread(f, ' ', [test_row+4 0 test_row+4 n_harq-1]);
-  r.tests(test).n_harq_success_hop1 = dlmread(f, ' ', [test_row+5 0 test_row+5 n_harq-1]);
-  r.tests(test).n_harq_tries_hop2 = dlmread(f, ' ', [test_row+6 0 test_row+6 n_harq-1]);
-  r.tests(test).n_harq_success_hop2 = dlmread(f, ' ', [test_row+7 0 test_row+7 n_harq-1]);
-  r.tests(test).mcs_hop1 = dlmread(f, ' ', [test_row+8+n_pdu*0 0 test_row+8+n_pdu*1-1 n_harq-1]);
-  r.tests(test).mcs_hop2 = dlmread(f, ' ', [test_row+8+n_pdu*1 0 test_row+8+n_pdu*2-1 n_harq-1]);
-  r.tests(test).tbs_hop1 = dlmread(f, ' ', [test_row+8+n_pdu*2 0 test_row+8+n_pdu*3-1 n_harq-1]);
-  r.tests(test).tbs_hop2 = dlmread(f, ' ', [test_row+8+n_pdu*3 0 test_row+8+n_pdu*4-1 n_harq-1]);
-  r.tests(test).n_rb_hop1 = dlmread(f, ' ', [test_row+8+n_pdu*4 0 test_row+8+n_pdu*5-1 n_harq-1]);
-  r.tests(test).n_rb_hop2 = dlmread(f, ' ', [test_row+8+n_pdu*5 0 test_row+8+n_pdu*6-1 n_harq-1]);
-  r.tests(test).n_transmissions = dlmread(f, ' ', [test_row+8+n_pdu*6 0 test_row+8+n_pdu*6+n_harq-1 n_harq-1]);
-  r.tests(test).relay_activity = dlmread(f, ' ', [test_row+8+n_pdu*6+n_harq 0 test_row+8+n_pdu*6+n_harq 2^n_relays-1]);
-  test_row = test_row + 8 + n_pdu*6+n_harq+1;
+  A = mread(fid, 1, n_relays+1);
+  r.tests(test).ber_hop1 = A(1:end-1);
+  r.tests(test).ber_hop2 = A(end);
+  r.tests(test).n_harq_tries_hop1 = mread(fid, 1, n_harq);
+  r.tests(test).n_harq_success_hop1 = mread(fid, 1, n_harq);
+  r.tests(test).n_harq_tries_hop2 = mread(fid, 1, n_harq);
+  r.tests(test).n_harq_success_hop2 = mread(fid, 1, n_harq);
+  r.tests(test).mcs_hop1 = mread(fid, n_pdu, n_harq);
+  r.tests(test).mcs_hop2 = mread(fid, n_pdu, n_harq);
+  r.tests(test).tbs_hop1 = mread(fid, n_pdu, n_harq);
+  r.tests(test).tbs_hop2 = mread(fid, n_pdu, n_harq);
+  r.tests(test).n_rb_hop1 = mread(fid, n_pdu, n_harq);
+  r.tests(test).n_rb_hop2 = mread(fid, n_pdu, n_harq);
+  r.tests(test).n_transmissions = mread(fid, n_harq, n_harq);
+  r.tests(test).relay_activity = mread(fid, 1, 2^n_relays);
 end
+
+fclose(fid);
 
 function s = parse_channel(c)
 
 s = sprintf('%d', c);
+
+function A = mread(fid, nrow, ncol)
+
+A = fscanf(fid, '%f', [ncol,nrow])';
 
