@@ -7,5 +7,5 @@ eNB_test:lxrt+sem+mbx+msg+smi:!sudo ./synctest -S;sleep 1;popall:control_c
 UE:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -T 108;sleep 1;popall:control_c
 UE0:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606002;sleep 1;popall:control_c
 UE1:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1902606002;sleep 1;popall:control_c
-eNB0:lxrt+sem+mbx+msg:!sudo ./synctest -C 1907599006 -d;sleep 1;popall:control_c
+eNB0:lxrt+sem+mbx+msg:!sudo ./synctest -C 1907600000 -d;sleep 1;popall:control_c
 

@@ -10,7 +10,7 @@ Unit of measure: FL_COORD_PIXEL
 Name: lte_scope
 Width: 780
 Height: 687
-Number of Objects: 11
+Number of Objects: 12
 
 --------------------
 class: FL_BOX
@@ -209,6 +209,24 @@ gravity: FL_NoGravity FL_NoGravity
 name: fig12
 callback: 
 argument: 
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 650 630 70 40
+boxtype: FL_UP_BOX
+colors: FL_COL1 FL_COL1
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: Recall
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: recal
+callback: RECAL_callback
+argument: 0
 
 ==============================
 create_the_forms

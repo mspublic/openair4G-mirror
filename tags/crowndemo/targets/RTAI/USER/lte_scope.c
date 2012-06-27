@@ -61,6 +61,10 @@ create_form_lte_scope( void )
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
     fl_set_object_color( obj, FL_BLACK, FL_RED );
 
+    fdui->recal = obj = fl_add_button( FL_NORMAL_BUTTON, 650, 630, 70, 40, "Recall" );
+    fl_set_object_lalign( obj, FL_ALIGN_CENTER );
+    fl_set_object_callback( obj, RECAL_callback, 0 );
+
     fl_end_form( );
 
     fdui->lte_scope->fdui = fdui;

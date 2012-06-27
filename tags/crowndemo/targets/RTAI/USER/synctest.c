@@ -83,7 +83,8 @@
 
 #ifdef XFORMS
 #include <forms.h>
-#include "USERSPACE_TOOLS/SCOPE/lte_scope.h"
+#include "lte_scope.h"
+//#include "USERSPACE_TOOLS/SCOPE/lte_scope.h"
 #include "stats.h"
 FD_lte_scope *form_dl=NULL;
 FD_stats_form *form_stats=NULL;
@@ -133,6 +134,34 @@ extern s16* sync_corr_ue0;
 extern s16 prach_ifft[4][1024*2];
 
 int otg_enabled = 0;
+
+//*******************************
+// Calibration parameters from oaisimCROWN
+//b Calibration vars
+int n_K=100,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_call_cal=0;
+double PeNb_factor[2][600];
+int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
+short dl_ch_estimates[2][2400];
+short drs_ch_estimates[2][2400];
+short drs_ch_est_ZFB[2*300*14];
+int doquantUE=0;
+int calibration_flag=1;
+short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
+int prec_length = 2*14*512;
+short prec[2][2*14*512];
+double Norm[2*14*512];
+short denom[14*512];
+short x_temp, quant=8;
+//SCM_t channel_model=SCM_C;
+int CROWN_SYSTEM=2;
+
+extern void RECAL_callback( FL_OBJECT *ob, long user_data) {
+  calibration_flag = 1;
+  K_calibration	   = 0;
+  P_eNb_active	   = 0;
+  printf("click RECALIBRATION\n");
+}
+//*******************************
 
 void signal_handler(int sig)
 {
@@ -188,10 +217,15 @@ void do_forms2(FD_lte_scope *form,
                s8 *pbch_llr,
                s16 coded_bits_per_codeword,
 	       s16 *sync_corr,
-	       s16 sync_corr_len)
+	       s16 sync_corr_len,
+	       s16 *dl_ch_estimates,
+	       s16 *drs_ch_estimates_a, 
+	       double PeNb_factor[2][600])
 {
 
   int i,j,k,s;
+  int aa, xx=128, yy=128;//b  
+  float x_label[300], y_label[300];//b
 
   float Re,Im;
   float mag_sig[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
@@ -209,6 +243,44 @@ void do_forms2(FD_lte_scope *form,
   llr = malloc(coded_bits_per_codeword*sizeof(float));
   llr_time = malloc(coded_bits_per_codeword*sizeof(float));
 
+
+//*****************************SCOPE CROWN*************************
+  if (drs_ch_estimates_a != NULL)
+  {
+	  for (k=0; k<2*300; k+=2) {
+            x_label[k>>1] = k>>1;
+	    y_label[k>>1] = drs_ch_estimates_a[k]*PeNb_factor[0][k] - drs_ch_estimates_a[k+1]*PeNb_factor[0][k+1];
+	  }			   
+
+	  fl_set_xyplot_data(form->fig11,x_label,y_label,300,"eNB_Dl_chan_est_Ant0","","");
+	  fl_set_xyplot_ybounds(form->fig11,-128,128);
+
+	  for (k=0; k<2*300; k+=2) {
+	    y_label[k>>1] =  K_dl_ch_estimates[3][0][k];//PeNb_factor[0][k];//drs_ch_estimates_a[k+2*300]*PeNb_factor[1][k] - drs_ch_estimates_a[k+2*300+1]*PeNb_factor[1][k+1];
+	  }			   
+
+	  fl_set_xyplot_data(form->fig12,x_label,y_label,300,"eNB_Dl_chan_est_Ant1","","");
+	  //fl_set_xyplot_ybounds(form->fig12);
+  }
+  
+  if (dl_ch_estimates != NULL)  
+  {
+	    for (k=0; k<2*300; k+=2) {
+		x_label[k>>1] = (float)(k>>1);
+	      	y_label[k>>1] = dl_ch_estimates[k];	    
+	  }			   
+
+	  fl_set_xyplot_data(form->fig11,x_label,y_label,300,"UE_Dl_chan_Ant0","","");
+	  //fl_set_xyplot_ybounds(form->fig11);
+
+	  for (k=0; k<2*300; k+=2) {
+		x_label[k>>1] = (float)(k>>1);
+	      	y_label[k>>1] = dl_ch_estimates[k+2*300];	    
+	  }
+	fl_set_xyplot_data(form->fig12,x_label,y_label,300,"UE_Dl_chan_Ant1","","");
+  	//fl_set_xyplot_ybounds(form->fig12);
+  }		
+//********************************************
 
   // Channel frequency response
   if ((channel_f != NULL) && (channel_f[0] != NULL))
@@ -394,7 +466,7 @@ void do_forms2(FD_lte_scope *form,
       //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
       //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
     }
-
+ fl_check_forms();
 
   free(llr);
   free(llr_time);
@@ -434,7 +506,10 @@ void *scope_thread(void *arg)
                   (s8*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,
                   1920,
 		  sync_corr_ue0,
-		  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10);
+		  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10,		  
+		  dl_ch_estimates[1],
+		  NULL,
+		  NULL);
 	len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0);
 	fl_set_object_label(form_stats->stats_text, stats_buffer);
 	//rewind (UE_stats);
@@ -460,7 +535,10 @@ void *scope_thread(void *arg)
                   NULL,
 		  PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->nb_rb*12*get_Qm(PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->mcs)*PHY_vars_eNB_g[0]->ulsch_eNB[0]->Nsymb_pusch,
                   prach_corr,
-                  1024);
+                  1024,
+                  NULL,
+                  drs_ch_estimates[1],
+                  PeNb_factor);                                                                  
 
 	len = dump_eNB_stats (PHY_vars_eNB_g[0], stats_buffer, 0);
 	fl_set_object_label(form_stats->stats_text, stats_buffer);
@@ -943,25 +1021,6 @@ static void *UE_thread(void *arg)
   return 0;
 }
 
-// Calibration parameters from oaisimCROWN
-//b Calibration vars
-int n_K=15,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_call_cal=0;
-double PeNb_factor[2][600];
-int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
-short dl_ch_estimates[2][2400];
-short drs_ch_estimates[2][2400];
-short drs_ch_est_ZFB[2*300*14];
-int doquantUE=0;
-int calibration_flag=1;
-short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
-int prec_length = 2*14*512;
-short prec[2][2*14*512];
-double Norm[2*14*512];
-short denom[14*512];
-short x_temp, quant=8;
-//SCM_t channel_model=SCM_C;
-int CROWN_SYSTEM=2;
-//*******************************
 
 int main(int argc, char **argv)
 {
@@ -1126,7 +1185,7 @@ int main(int argc, char **argv)
       NB_INST=1;
       if (calibration_flag == 1)
         PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
-      openair_daq_vars.ue_ul_nb_rb=25;
+      openair_daq_vars.ue_dl_rb_alloc=0x1fff;
       openair_daq_vars.target_ue_dl_mcs=9;
       openair_daq_vars.ue_ul_nb_rb=12;
       openair_daq_vars.target_ue_ul_mcs=5;
