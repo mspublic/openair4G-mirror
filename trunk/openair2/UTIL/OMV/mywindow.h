@@ -66,7 +66,13 @@ class MyWindow : public QWidget
         void writeToConsole(QString data);
         void endOfTheSimulation();
         void setDrawConnections(int draw);
-    
+	void setUseMap(int use);
+	void setNodesColor(int index);
+	void setLinksColor(int index);
+	void updateSize(int size);
+	void updateSupervNode(int id);
+	void updateSupervData();
+	
     signals:
 	void exitSignal();
 

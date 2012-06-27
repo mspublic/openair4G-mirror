@@ -59,11 +59,6 @@ This header file must be included */
 #include "PHY/impl_defs_lte.h"
 #endif
 
-typedef unsigned char  guint8;
-typedef unsigned short guint16;
-typedef unsigned int   guint32;
-typedef unsigned char gboolean;
-typedef time_t nstime_t;
 
 /**
  * function def

@@ -43,15 +43,28 @@
 #define Maxneighbor 64
 #define NUMBER_OF_UE_MAX 64
 #define NUMBER_OF_eNB_MAX 3 
+#define NB_ANTENNAS_RX  3
+//#include "../../../openair1/PHY/impl_defs_top.h"
 
+// how to add an underlying map as OMV background
 
 typedef struct Geo {
   int x, y,z;
-	//int Speedx, Speedy, Speedz; // speeds in each of direction
-	int mobility_type; // model of mobility
-        int node_type;
-        int Neighbors; // number of neighboring nodes (distance between the node and its neighbors < 100)
-	int Neighbor[NUMBER_OF_UE_MAX]; // array of its neighbors
+  //int Speedx, Speedy, Speedz; // speeds in each of direction
+  int mobility_type; // model of mobility
+  int node_type;
+  int Neighbors; // number of neighboring nodes (distance between the node and its neighbors < 100)
+  int Neighbor[NUMBER_OF_UE_MAX]; // array of its neighbors
+  /* relavent to UE only 
+  unsigned short state;
+  unsigned short rnti;
+  unsigned int connected_eNB;
+  int RSSI[NB_ANTENNAS_RX];
+  int RSRP;
+  int RSRQ;
+  int Pathloss;
+  /// more info to display 
+  */
 } Geo;
 
 typedef struct Data_Flow_Unit {
