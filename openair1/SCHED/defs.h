@@ -97,6 +97,7 @@ typedef struct {
   u32  target_ue_dl_mcs;
   u32  target_ue_ul_mcs;
   u32  ue_ul_nb_rb;
+  u32  ue_dl_rb_alloc;
   u32  dlsch_rate_adaptation;
   u32  dlsch_transmission_mode;
   u32  ulsch_allocation_mode;

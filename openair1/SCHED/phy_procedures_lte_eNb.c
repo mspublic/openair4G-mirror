@@ -432,7 +432,6 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
 #ifndef OPENAIR2
 void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmission_mode) {
 
-  //u32 rballoc = (((1<<(openair_daq_vars.target_ue_ul_mcs/2))-1)<<(openair_daq_vars.target_ue_dl_mcs/2)) & 0x1FFF;
   u32 rballoc = 0x00F0;
   u32 rballoc2 = 0x000F;
   /*
@@ -489,13 +488,13 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
     break;
   case 7:
     if (transmission_mode==1) {
-      DCI_pdu->Num_ue_spec_dci = 2;
+      DCI_pdu->Num_ue_spec_dci = 1;
       DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_5MHz_TDD_t; 
       DCI_pdu->dci_alloc[0].L          = 2;
       DCI_pdu->dci_alloc[0].rnti       = 0x1235;
       DCI_pdu->dci_alloc[0].format     = format1;
       
-      DLSCH_alloc_pdu.rballoc          = rballoc;
+      DLSCH_alloc_pdu.rballoc          = openair_daq_vars.ue_dl_rb_alloc;
       DLSCH_alloc_pdu.TPC              = 0;
       DLSCH_alloc_pdu.dai              = 0;
       DLSCH_alloc_pdu.harq_pid         = 1;
@@ -504,6 +503,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
       DLSCH_alloc_pdu.rv               = 0;
       memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu,sizeof(DCI1_5MHz_TDD_t));
       
+      /*
       DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_5MHz_TDD_t; 
       DCI_pdu->dci_alloc[1].L          = 2;
       DCI_pdu->dci_alloc[1].rnti       = 0x1236;
@@ -517,6 +517,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
       DLSCH_alloc_pdu.ndi              = 1;
       DLSCH_alloc_pdu.rv               = 0;
       memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&DLSCH_alloc_pdu,sizeof(DCI1_5MHz_TDD_t));
+      */
     }
     else if (transmission_mode==5) {
       DCI_pdu->Num_ue_spec_dci = 2;
