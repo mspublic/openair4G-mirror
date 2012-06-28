@@ -47,7 +47,7 @@
 #include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "UL-CCCH-Message.h"
-#include "DL-CCCH-Message.h"
+#include "DL-CCCH-Message.h" 
 #include "UL-DCCH-Message.h"
 #include "DL-DCCH-Message.h"
 #include "TDD-Config.h"
@@ -145,6 +145,7 @@ void init_SI(u8 Mod_id) {
     rrc_mac_config_req(Mod_id,1,0,0,
 		       (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
 		       (struct PhysicalConfigDedicated *)NULL,
+		       (MeasObjectToAddMod_t **)NULL,
 		       (MAC_MainConfig_t *)NULL,
 		       0,
 		       (struct LogicalChannelConfig *)NULL,
@@ -167,14 +168,14 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
   LOG_I(RRC,"[eNB %d] Init (UE State = RRC_IDLE)...\n",Mod_id);
   LOG_D(RRC, "[MSC_NEW][FRAME 00000][RRC_eNB][MOD %02d][]\n", Mod_id);
 
-  for (j=0; j<NB_CNX_eNB; j++)
+  for (j=0; j<NUMBER_OF_UE_MAX; j++)
     eNB_rrc_inst[Mod_id].Info.Status[j] = CH_READY;
 
   eNB_rrc_inst[Mod_id].Info.Nb_ue=0;
 
   eNB_rrc_inst[Mod_id].Srb0.Active=0;
 
-  for(j=0;j<(NB_CNX_eNB+1);j++){
+  for(j=0;j<(NUMBER_OF_UE_MAX+1);j++){
     eNB_rrc_inst[Mod_id].Srb2[j].Active=0;
   }
 
@@ -201,7 +202,7 @@ u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 
   u8 i,first_index = 255,reg=0;
 
-  for (i=0;i<NB_CNX_eNB;i++) {
+  for (i=0;i<NUMBER_OF_UE_MAX;i++) {
 
 
     if ((first_index == 255) && (*(unsigned int*)eNB_rrc_inst[Mod_id].Info.UE_list[i] == 0x00000000))
@@ -465,12 +466,11 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
 
 
-  size = do_RRCConnectionReconfiguration(buffer,
+  size = do_RRCConnectionReconfiguration(Mod_id,
+					 buffer,
 					 UE_index,
 					 0,
-					 &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
-					 &eNB_rrc_inst[Mod_id].DRB_config[UE_index][0],
-					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
+					 &eNB_rrc_inst[Mod_id]);
 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
 	Mod_id,frame, size, UE_index);
@@ -499,18 +499,18 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_inde
 
 void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *measResults2) {
 
-  printf("Received Measurement Report From UE %d (Measurement Id %d)\n",UE_index,measResults2->measId);
+  LOG_I(RRC,"Received Measurement Report From UE %d (Measurement Id %d)\n",UE_index,(int)measResults2->measId);
   if (measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count>0) {
-    printf("Physical Cell Id %d\n",measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId);
-    printf("RSRP of Target %d\n",*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
-    printf("RSRQ of Target %d\n",*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
+    LOG_I(RRC,"Physical Cell Id %d\n",(int)measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId);
+    LOG_I(RRC,"RSRP of Target %d\n",(int)*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
+    LOG_I(RRC,"RSRQ of Target %d\n",(int)*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
   }
 #ifdef Rel10
-  printf("RSRP of Source %d\n",measResults2->measResultPCell.rsrpResult);
-  printf("RSRQ of Source %d\n",measResults2->measResultPCell.rsrqResult);
+  LOG_I(RRC,"RSRP of Source %d\n",measResults2->measResultPCell.rsrpResult);
+  LOG_I(RRC,"RSRQ of Source %d\n",measResults2->measResultPCell.rsrqResult);
 #else  
-  printf("RSRP of Source %d\n",measResults2->measResultServCell.rsrpResult);
-  printf("RSRQ of Source %d\n",measResults2->measResultServCell.rsrqResult);
+  LOG_I(RRC,"RSRP of Source %d\n",measResults2->measResultServCell.rsrpResult);
+  LOG_I(RRC,"RSRQ of Source %d\n",measResults2->measResultServCell.rsrqResult);
 #endif   
   
   //Look for IP address of the target eNB
@@ -578,6 +578,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
 			   eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelConfig,
@@ -603,6 +604,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
 			   (LogicalChannelConfig_t *)NULL,
@@ -661,6 +663,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
   rrc_mac_config_req(Mod_id,1,UE_index,0,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+		     (MeasObjectToAddMod_t **)NULL,
 		     eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 		     1,
 		     SRB1_logicalChannelConfig,

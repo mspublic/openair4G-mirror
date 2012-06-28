@@ -35,7 +35,7 @@ typedef struct
     
     // eNB functions
     /// Invoke dlsch/ulsch scheduling procedure for new subframe
-    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);
+    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);//, int calibration_flag);
 
     /// Fill random access response sdu, passing timing advance
     u16 (*fill_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
@@ -123,6 +123,7 @@ typedef struct
     void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
 			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
+
     /// Function to indicate failure of contention resolution or RA procedure
     void (*ra_failed)(u8 Mod_id,u8 eNB_index);
 
@@ -131,6 +132,9 @@ typedef struct
 
     /// Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
     void (*Msg3_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
+
+    /// Function to pass inter-cell measurement parameters to PHY (cell Ids)
+    void (*phy_config_meas_ue)(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u16 *adj_cell_id);
 
     // PHY Helper Functions
 
@@ -160,6 +164,12 @@ typedef struct
 
     /// Function for UE MAC to retrieve measured Path Loss
     u16 (*get_PL)(u8 Mod_id,u8 eNB_index);
+
+    /// Function for UE MAC to retrieve RSRP/RSRQ measurements
+    u8* (*get_RSRP)(u8 Mod_id,u8 eNB_index);
+
+    /// Function for UE MAC to retrieve RSRP/RSRQ measurements
+    u8* (*get_RSRQ)(u8 Mod_id,u8 eNB_index);
 
     /// Function for UE/eNB MAC to retrieve number of PRACH in TDD
     u8 (*get_num_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms);
