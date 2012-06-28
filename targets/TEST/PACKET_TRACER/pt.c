@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include "SIMULATION/TOOLS/defs.h"
+//#include "SIMULATION/TOOLS/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
@@ -19,6 +19,9 @@
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "OCG_vars.h"
+#include "UTIL/OTG/otg_tx.h"
+#include "UTIL/OTG/otg.h"
+#include "UTIL/OTG/otg_vars.h"
 
 
 char binary_table[16][5] = {{"0000\0"},{"0001\0"},{"0010\0"},{"0011\0"},{"0100\0"},{"0101\0"},{"0110\0"},{"0111\0"},{"1000\0"},{"1001\0"},{"1010\0"},{"1011\0"},{"1100\0"},{"1101\0"},{"1110\0"},{"1111\0"}};
@@ -301,7 +304,8 @@ u8 attach_ue0(char *sdu) {
 			NULL,  // crnti
 			NULL,  // truncated bsr
 			NULL, // short bsr
-			NULL); // long_bsr
+			NULL,
+			0); // post padding
 
   return(Size+sizeof(SCH_SUBHEADER_SHORT));
 }
@@ -424,7 +428,7 @@ u16 attach_ue4(char *dcch_sdu_eNB, char dcch_sdu_eNB_len, char *dcch_sdu_ue) {
   return(sdu_len);
 }
 
-u8 NB_INST=2;
+//u8 NB_INST=2;
 
 int main (int argc, char **argv) {
 
@@ -472,7 +476,7 @@ int main (int argc, char **argv) {
     printf("Got SI from files (%d,%d,%d,%d,%d)\n",args.input_sib,args.input1_sdu_flag,args.input2_sdu_flag);
   }
   openair_rrc_on(0,0);
-  openair_rrc_ue_init(0,0);
+  openair_rrc_lite_ue_init(0,0);
 
   switch (args.SDUsource) {
   case eNB_RRC:
@@ -527,7 +531,7 @@ int main (int argc, char **argv) {
 					       255,                                   // no drx
 					       0,                                   // no timing advance
 					       sdu0,        // contention res id
-					       0);
+					       0,0);
 	memcpy(&dlsch_buffer[payload_offset],sdu1,sdu_len1);
 	printf("\nRRCConnectionSetup (DLSCH input / MAC output)\n\n");
 	for (i=0;i<sdu_len1+payload_offset;i++)
@@ -551,7 +555,7 @@ int main (int argc, char **argv) {
 					       255,                                   // no drx
 					       1,      // timing advance
 					       NULL,                                  // contention res idk
-					       0);  
+					       0,0);  
 	memcpy(&dlsch_buffer[payload_offset],sdu3,sdu_len3);
 	printf("\nRRCConnectionReconfiguration (DLSCH input / MAC output)\n\n");
 	for (i=0;i<sdu_len3+payload_offset;i++)
@@ -601,7 +605,8 @@ int main (int argc, char **argv) {
 					     NULL,  // crnti
 					     NULL,  // truncated bsr
 					     NULL, // short bsr
-					     NULL); // long_bsr
+					     NULL, // long_bsr
+					     0);
       printf("Got MAC header of length %d\n",payload_offset);
       memcpy(&ulsch_buffer[payload_offset],sdu2,sdu_len2);
 
@@ -629,7 +634,8 @@ int main (int argc, char **argv) {
 					     NULL,  // crnti
 					     NULL,  // truncated bsr
 					     NULL, // short bsr
-					     NULL); // long_bsr
+					     NULL, // long_bsr
+					     0); 
       printf("Got MAC header of length %d\n",payload_offset);
       memcpy(&ulsch_buffer[payload_offset],sdu4,sdu_len4);
 

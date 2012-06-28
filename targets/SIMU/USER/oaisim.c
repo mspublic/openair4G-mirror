@@ -657,9 +657,10 @@ main (int argc, char **argv)
   Node_list enb_node_list = NULL;
   Data_Flow_Unit omv_data ;
 //ALU
-    int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
-    double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
-    double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
+
+  int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
+  double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
+  double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
   //default parameters
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -667,7 +668,7 @@ main (int argc, char **argv)
   oai_emulation.info.n_frames_flag = 0;//fixme
   snr_dB = 30;
   cooperation_flag = 0;		// default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
-   
+
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
@@ -1406,7 +1407,7 @@ main (int argc, char **argv)
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
 		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[PHY_vars_UE_g[UE_id]->n_connected_eNB]->rxdataF_comp[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->llr[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
