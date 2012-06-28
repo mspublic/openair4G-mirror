@@ -98,7 +98,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_vars_UE->Mod_id=UE_id; 
   memcpy(&(PHY_vars_UE->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   phy_init_lte_ue(PHY_vars_UE,abstraction_flag);
-  for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
+  for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
     for (j=0;j<2;j++) {
       PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
       if (!PHY_vars_UE->dlsch_ue[i][j]) {
@@ -166,9 +166,50 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     PHY_vars_eNB_g[eNB_id] = init_lte_eNB(*frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
   }
 
+
+  // init all UE vars
+  /*
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
+
+
+    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), *frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+    // Do this until SSS detection is finished
+    if (NB_eNB_INST>0) {
+      PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.Nid_cell;
+      PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.nushift;
+    }
+
+    phy_init_lte_ue(PHY_vars_UE_g[UE_id],abstraction_flag);
+
+    for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
+      for (j=0;j<2;j++) {
+	PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
+	if (!PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]) {
+	  msg("Can't get ue dlsch structures\n");
+	  exit(-1);
+	}
+	else
+	  msg("dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]);//navid
+      }
+      
+      
+      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
+      if (!PHY_vars_UE_g[UE_id]->ulsch_ue[i]) {
+	msg("Can't get ue ulsch structures\n");
+	exit(-1);
+      }
+      
+      PHY_vars_UE_g[UE_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
+      PHY_vars_UE_g[UE_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
+
+      PHY_vars_UE_g[UE_id]->transmission_mode[i] = transmission_mode;
+    }
+*/
+
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id] = init_lte_UE(*frame_parms, UE_id,abstraction_flag,transmission_mode);
+
   }
 
 }
