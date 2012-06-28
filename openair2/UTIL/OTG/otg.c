@@ -63,7 +63,12 @@ void init_all_otg()  {
    		LOG_E(OTG,"Couldn't allocate memory for otg_info_t\n");
  	memset(otg_info, 0, sizeof(otg_info_t));
 
-
+        //set otg forms infos to 0
+	otg_forms_info=calloc(1, sizeof(otg_forms_info_t));
+	if (otg_forms_info == NULL)
+   	/* Memory could not be allocated */
+   		LOG_E(OTG,"Couldn't allocate memory for otg_forms_info_t\n");
+ 	memset(otg_forms_info, 0, sizeof(otg_forms_info_t));
 
 	LOG_I(OTG,"init done: init_all_otg\n");
 

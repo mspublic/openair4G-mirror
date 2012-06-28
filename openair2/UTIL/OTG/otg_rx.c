@@ -40,9 +40,11 @@
 
 #include "otg_rx.h"
 #include "otg_vars.h"
-#include "otg_vars.h"
 #include "../UTIL/MATH/oml.h"
 #include <math.h>
+#include "otg_form.h"
+
+//#include "LAYER2/MAC/extern.h"
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define MIN(x,y) ((x)<(y)?(x):(y))
@@ -58,10 +60,14 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
   int is_size_ok=0;
   unsigned int seq_num_rx;
   unsigned int nb_loss_pkts;
-  packet_t *packet_rx=NULL;
+  //packet_t *packet_rx=NULL;
+  //float owd_mobile_core=0;
+  //float owd_IP_backbone=0;
+  //float owd_application=0;
+char * hdr_payload=NULL;
+int header_size;
 
-  if (buffer_tx!=NULL) { // 1st check : buffer_tx
-   
+  if (buffer_tx!=NULL) { 
     otg_hdr_info_rx = (otg_hdr_info_t *) (&buffer_tx[bytes_read]);
     bytes_read += sizeof (otg_hdr_info_t);
 
@@ -70,20 +76,23 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
     if ((otg_hdr_info_rx->flag == 0xffff)||(otg_hdr_info_rx->flag == 0xbbbb)){ //data traffic
       /*is_size_ok= 0;
       if (( otg_hdr_info_rx->size ) == size ) {*/
-	 is_size_ok= 1;
+      is_size_ok= 1;
 	otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
-	LOG_I(OTG,"[SRC %d][DST %d] RX pkt at time %d: flag 0x %x, seq number %d, size (hdr %d, pdcp %d) \n", src, dst,ctime, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
+	LOG_I(OTG,"[SRC %d][DST %d] RX INFO pkt at time %d: flag 0x %x, seq number %d, tx time %d, size (hdr %d, pdcp %d) \n", src, dst,ctime, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, otg_hdr_rx->time, otg_hdr_info_rx->size, size);
+	 bytes_read += sizeof (otg_hdr_t);
 
-	
-	// LOG_I(OTG,"HDR OTG: SIZE= HEADER + PAYLOAD %d\n", otg_hdr_rx->pkts_size);
-	// LOG_I(OTG,"HDR OTG: FLOW ID %d\n", otg_hdr_rx->flow_id);
-	// LOG_I(OTG,"HDR OTG: TX TIME %d\n", otg_hdr_rx->time);
-	// LOG_I(OTG,"HDR OTG: SEQ NUM %d\n", otg_hdr_rx->seq_num);
-	// LOG_I(OTG,"HDR OTG: HEADER TYPE %d\n", otg_hdr_rx->hdr_type);
-	      
-	bytes_read += sizeof (otg_hdr_t);
-	
-	//set_ctime(ctime); // ????????
+	      /*if (( otg_hdr_info_rx->size ) != size ) {
+		header_size=bytes_read;
+		hdr_payload=(char*)malloc((size-bytes_read)*sizeof(char)); //size-bytes_read
+		//char hdr_payload[size-bytes_read];
+ 		memcpy(hdr_payload, &buffer_tx[bytes_read], size-bytes_read); 
+		hdr_payload[size-bytes_read-1]=0;
+		printf("[SRC %d][DST %d] FALSE::RX pkt at (time %d, ctime %d) flag 0x %x, seq number %d, 
+                size (hdr %d, pdcp %d, other %d) hdr %d: %s: %c \n", src, dst,otg_hdr_rx->time, ctime, otg_hdr_info_rx->flag, 
+                otg_hdr_rx->seq_num, otg_hdr_info_rx->size,   size, header_size+strlen(hdr_payload),header_size,hdr_payload, buffer_tx[size-2]);
+		printf("PACKET_RX hdr %d , %d, strlen %d  %s end %c \n", bytes_read, size-bytes_read,strlen(hdr_payload), hdr_payload, buffer_tx[size-2]);
+		free(hdr_payload);
+	      }*/
 
         if (otg_hdr_info_rx->flag == 0xffff){
           seq_num_rx=otg_info->seq_num_rx[src][dst];
@@ -94,8 +103,9 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
           nb_loss_pkts=otg_info->nb_loss_pkts_background[src][dst];
         }
 
- 
-	
+
+       
+	/* Loss and out of sequence data management */
 	if ((otg_hdr_rx->seq_num)==seq_num_rx+1) {
 	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
 	  seq_num_rx+=1;
@@ -109,15 +119,26 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
 	  nb_loss_pkts-=1;
 	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
 	}
+        /* End Loss and out of sequence data management */
+
 	if (otg_info->owd_const[src][dst]==0)
-	  owd_const_gen(src,dst);
+	  owd_const_gen(src,dst,1);
 
-	otg_info->rx_pkt_owd[src][dst]= (get_ctime() - otg_hdr_rx->time) + otg_info->owd_const[src][dst];
-	LOG_I(OTG,"RX INFO :: [SRC %d][DST %d] RTT (one way) ms: %d, rx time:%d, tx time: %d \n", src, dst, otg_info->rx_pkt_owd[src][dst], get_ctime(), otg_hdr_rx->time);
 
-	//LOG_F(OTG,"%d %d %d %d\n", src, dst, get_ctime(), otg_info->rx_pkt_owd[src][dst]);
-        add_log_metric(src, dst, ctime, otg_info->rx_pkt_owd[src][dst], OTG_LATENCY);
 
+	if (otg_hdr_rx->time<=ctime){
+	  otg_info->radio_access_delay[src][dst]=(float)(ctime- otg_hdr_rx->time);
+         }
+
+	
+ 	otg_info->rx_pkt_owd[src][dst]=otg_info->owd_const[src][dst]+ otg_info->radio_access_delay[src][dst];
+	
+
+	LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %f (tx time %d, ctime %d), OWD:%f (ms):\n", src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_rx->time, ctime , otg_info->rx_pkt_owd[src][dst]);
+
+        /*if (g_otg->latency_metric==1)
+          add_log_metric(src, dst, ctime, otg_info->radio_access_delay[src][dst], OTG_LATENCY); // TO FIX !!!! segmentation fault */
+	
 
 	if (otg_info->rx_owd_max[src][dst]==0){
 	  otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
@@ -129,7 +150,13 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
 	}
 	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
 	
-
+	// xforms part	
+	if (g_otg->graphic==1){ 
+          if (g_otg->owd_radio_access==0)
+            add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  ctime);
+          else
+            add_tab_metric(src, dst,  otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  ctime);    
+        }
 
 //printf("payload_size %d, header_size %d \n", otg_hdr_rx->pkts_size, otg_hdr_rx->hdr_type);
   LOG_I(OTG,"PACKET SIZE RX [SRC %d][DST %d]: Flag (0x%x), time(%d), Seq num (%d), Total size (%d)\n", src, dst, otg_hdr_info_rx->flag, ctime, otg_hdr_rx->seq_num, size);
@@ -154,41 +181,50 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
 	LOG_I(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size mis-matche (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
       }
       return(0);
+    } else{
+      LOG_I(OTG,"RX: Not an OTG pkt, forward to upper layer (flag %x, size %d, pdcp_size %d) FIX ME \n", otg_hdr_info_rx->flag, otg_hdr_info_rx->size, size);	
+      return(0); //????? have to be fixed on the real case to one 
     }
    
-
-
-
-
-   else{
-      LOG_I(OTG," RX: Not an OTG pkt, forward to upper layer \n");	
-      return(1);
-    }
-    
   }
+
   return(0);
 }
 
 
 
-void owd_const_gen(int src, int dst){
-  float capillary_domain_latency=0;
-  float access_domain_latency=0;
-  float core_application_domain_latency=0;
-
-  capillary_domain_latency=uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + TERMINAL_ACCESS_DELAY;
-
-  access_domain_latency= uniform_dist(MIN_U_PLANE_GW_PROCESSING_DELAY,MAX_U_PLANE_GW_PROCESSING_DELAY) + uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY);
-
-  core_application_domain_latency= uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY) + uniform_dist(MIN_SERVICE_ENABLERS_DELAY, MAX_SERVICE_ENABLERS_DELAY) + uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
-
-
-  //otg_info->owd_const[src][dst]=ceil(capillary_domain_latency + access_domain_latency + core_application_domain_latency );
-  otg_info->owd_const[src][dst]=0;
+void owd_const_gen(int src, int dst, unsigned int flag){
+  otg_info->owd_const[src][dst]=owd_const_capillary()+owd_const_mobile_core()+owd_const_IP_backbone();
 }
 
 
 
+float owd_const_capillary(){
+  float capillary_domain_latency=0;
+  capillary_domain_latency=uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + TERMINAL_ACCESS_DELAY;
+  return capillary_domain_latency;
+}
+
+
+float owd_const_mobile_core(){
+  float mobile_core_domain_latency=0;
+  mobile_core_domain_latency= uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) +  uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY);
+return mobile_core_domain_latency;
+
+}
+
+float owd_const_IP_backbone(){
+  float IP_backbone_domain_latency=0;
+  IP_backbone_domain_latency= uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY);;
+  return IP_backbone_domain_latency;
+}
+
+
+float owd_const_application(){
+  float application_latency=0;
+  application_latency= uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
+  return application_latency;
+}
 
 
 

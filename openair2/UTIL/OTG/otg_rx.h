@@ -73,9 +73,11 @@ int otg_rx_pkt_packet(int src, int dst, int ctime, char *packet, unsigned int si
 *\note 
 *@ingroup  _otg
 */
-void owd_const_gen(int src,int dst);
-
-
+void owd_const_gen(int src,int dst, unsigned int flag);
+float owd_const_capillary();
+float owd_const_mobile_core();
+float owd_const_IP_backbone();
+float owd_const_application();
 
 
 #endif
