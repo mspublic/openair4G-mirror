@@ -23,15 +23,13 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   int ch_offset,symbol_offset;
   //  unsigned int n;
   //  int i;
-  u16 Nid_cell = phy_vars_ue->lte_frame_parms.Nid_cell;
-  u8 Nid1 = Nid_cell/3,Nid2=Nid_cell%3;
+  u16 Nid_cell = (eNB_offset == 0) ? phy_vars_ue->lte_frame_parms.Nid_cell : phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1];
+
   u8 nushift;
-  int **dl_ch_estimates=phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[(eNB_id+eNB_offset)%3];
+  int **dl_ch_estimates=phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset];
   int **rxdataF=phy_vars_ue->lte_ue_common_vars.rxdataF;
 
   // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
-  Nid2 = (Nid2+eNB_offset)%3;
-  Nid_cell = (Nid1*3) + Nid2;
   nushift =  Nid_cell%6;
 
   if ((p==0) && (l==0) )
@@ -54,7 +52,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   k = (nu + nushift)%6;
   
 #ifdef DEBUG_CH
-  printf("Channel Estimation : ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d\n",ch_offset,phy_vars_ue->lte_frame_parms.ofdm_symbol_size,phy_vars_ue->lte_frame_parms.Ncp,l,Ns,k);
+  printf("Channel Estimation : eNB_offset %d cell_id %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d\n",eNB_offset,Nid_cell,ch_offset,phy_vars_ue->lte_frame_parms.ofdm_symbol_size,phy_vars_ue->lte_frame_parms.Ncp,l,Ns,k);
 #endif
   
   switch (k) {
@@ -612,9 +610,9 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
   // do ifft of channel estimate
   for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
-    if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[(eNB_id+eNB_offset)%3][aa])
-      fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[(eNB_id+eNB_offset)%3][aa][LTE_CE_OFFSET],
-	  (short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[(eNB_id+eNB_offset)%3][aa],
+    if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa])
+      fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][LTE_CE_OFFSET],
+	  (short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
 	  phy_vars_ue->lte_frame_parms.twiddle_ifft,
 	  phy_vars_ue->lte_frame_parms.rev,
 	  phy_vars_ue->lte_frame_parms.log2_symbol_size,

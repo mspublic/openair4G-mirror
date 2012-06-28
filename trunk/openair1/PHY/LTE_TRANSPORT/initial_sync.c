@@ -259,8 +259,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     if (flip_fdd_ncp==1)
       phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
     init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
-    for (i=0;i<3;i++)
-      lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
+    lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
     ret = pbch_detection(phy_vars_ue);
 #ifdef DEBUG_INIT_SYNCH
       msg("FDD Normal prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -293,8 +292,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
       if (flip_fdd_ecp==1)
 	phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
       init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
-      for (i=0;i<3;i++)
-	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
+      lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
       ret = pbch_detection(phy_vars_ue);
       
 #ifdef DEBUG_INIT_SYNCH
@@ -330,8 +328,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	  phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
 	frame_parms->nushift  = frame_parms->Nid_cell%6;
 	init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
-	for (i=0;i<3;i++)
-	  lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
+
+	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
 	ret = pbch_detection(phy_vars_ue);
 	
 
@@ -365,8 +363,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	  if (flip_tdd_ecp==1)
 	    phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
 	  init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
-	  for (i=0;i<3;i++)
-	    lte_gold(frame_parms,phy_vars_ue->lte_gold_table[i],i);    
+	  lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
 	  ret = pbch_detection(phy_vars_ue);
 	  
 #ifdef DEBUG_INIT_SYNCH

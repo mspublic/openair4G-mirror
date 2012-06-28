@@ -20,6 +20,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   unsigned int subframe_offset,subframe_offset_F;
   unsigned int slot_offset;
+  int i;
 
   if (no_prefix) {
     subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
@@ -96,17 +97,13 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				aa,
 				l,
 				symbol);
-      lte_dl_channel_estimation(phy_vars_ue,eNB_id,1,
-				Ns,
-				aa,
-				l,
-				symbol);
-      lte_dl_channel_estimation(phy_vars_ue,eNB_id,2,
-				Ns,
-				aa,
-				l,
-				symbol);
-      
+      for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
+	lte_dl_channel_estimation(phy_vars_ue,eNB_id,i+1,
+				  Ns,
+				  aa,
+				  l,
+				  symbol);
+      }
 #endif
 
       // do frequency offset estimation here!

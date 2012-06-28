@@ -575,9 +575,9 @@ typedef struct {
   s32 **rxdataF;         
   s32 **rxdataF2;         
   /// hold the channel estimates in frequency domain
-  s32 **dl_ch_estimates[3];  
+  s32 **dl_ch_estimates[7];  
   /// hold the channel estimates in time domain (used for tracking)
-  s32 **dl_ch_estimates_time[3];
+  s32 **dl_ch_estimates_time[7];
   /// holds output of the sync correlator  
   s32 *sync_corr;         
   /// estimated frequency offset (in radians) for all subcarriers

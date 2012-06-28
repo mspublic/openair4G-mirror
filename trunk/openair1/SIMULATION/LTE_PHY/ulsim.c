@@ -16,6 +16,11 @@
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
 
+#ifdef XFORMS
+#include <forms.h>
+#include "../../../openair1/USERSPACE_TOOLS/SCOPE/lte_scope.h"
+#endif //XFORMS
+
 extern unsigned short dftsizes[33];
 extern short *ul_ref_sigs[30][2][33];
 
@@ -37,6 +42,277 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][9];
 
 extern u16 beta_ack[16],beta_ri[16],beta_cqi[16];
+
+#ifdef XFORMS
+  FD_lte_scope *form_ul;
+  char title[255];
+#endif
+
+#ifdef XFORMS
+void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, 
+	       short ***channel, 
+	       short **channel_f, 
+	       short **rx_sig, 
+	       short **rx_sig_f, 
+	       short *dlsch_comp, 
+	       short* dlsch_comp_i, 
+	       short* dlsch_llr, 
+	       short* pbch_comp, 
+	       char *pbch_llr, 
+	       int coded_bits_per_codeword) {
+
+  int i,j,ind,k,s;
+  
+  float Re,Im;
+  float mag_sig[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
+    sig_time[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
+    sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
+    time2[FRAME_LENGTH_COMPLEX_SAMPLES],
+    I[25*12*11*4], Q[25*12*11*4],
+    *llr,*llr_time;
+
+  float avg, cum_avg;
+  
+  llr = malloc(coded_bits_per_codeword*sizeof(float));
+  llr_time = malloc(coded_bits_per_codeword*sizeof(float));
+
+  // Channel frequency response
+  if (channel_f != NULL) {
+    cum_avg = 0;
+    ind = 0;
+    for (j=0; j<4; j++) { 
+      for (i=0;i<frame_parms->nb_antennas_rx;i++) {
+	for (k=0;k<NUMBER_OF_OFDM_CARRIERS*7;k++){
+	  sig_time[ind] = (float)ind;
+	  Re = (float)(channel_f[(j<<1)+i][2*k]);
+	  Im = (float)(channel_f[(j<<1)+i][2*k+1]);
+	  //mag_sig[ind] = (short) rand(); 
+	  mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+	  cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
+	  ind++;
+	}
+	//      ind+=NUMBER_OF_OFDM_CARRIERS/4; // spacing for visualization
+      }
+    }
+
+    avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
+
+    //fl_set_xyplot_ybounds(form->channel_f,30,70);
+    fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
+  }
+  
+  /*  
+  // channel time resonse
+  if (channel) {
+    cum_avg = 0;
+    ind = 0;
+    memset(mag_sig,0,3*(10+frame_parms->nb_prefix_samples0)*sizeof(float));
+    memset(sig_time,0,3*(10+frame_parms->nb_prefix_samples0)*sizeof(float));
+    fl_set_xyplot_ybounds(form->channel_t_im,30,70);
+
+    for (k=0;k<1;k++){
+      for (j=0;j<1;j++) {
+	
+	for (i=0;i<frame_parms->nb_prefix_samples0;i++){
+	  sig_time[ind] = (float)ind;
+	  Re = (float)(channel[0][k+2*j][2*i]);
+	  Im = (float)(channel[0][k+2*j][2*i+1]);
+	  //mag_sig[ind] = (short) rand(); 
+	  mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+
+	  Re = (float)(channel[1][k+2*j][2*i]);
+	  Im = (float)(channel[1][k+2*j][2*i+1]);
+	  //mag_sig[ind] = (short) rand(); 
+	  mag_sig[ind+frame_parms->nb_prefix_samples0] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+
+	  Re = (float)(channel[2][k+2*j][2*i]);
+	  Im = (float)(channel[2][k+2*j][2*i+1]);
+	  //mag_sig[ind] = (short) rand(); 
+	  mag_sig[ind+(frame_parms->nb_prefix_samples0*2)] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+
+	  cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
+	  ind++;
+	}
+	fl_set_xyplot_data(form->channel_t_im,sig_time,mag_sig,(ind),"","","");
+	fl_add_xyplot_overlay(form->channel_t_im,1,sig_time,&mag_sig[ind],(ind),FL_GREEN);
+	fl_add_xyplot_overlay(form->channel_t_im,2,sig_time,&mag_sig[2*ind],(ind),FL_RED);
+
+      }
+    }
+    
+
+
+    
+  }
+  */
+
+  /*
+  // channel_t_re = rx_sig_f[0]
+  //for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
+  for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+    sig2[i] = 10*log10(1.0+(double) ((rx_sig_f[0][4*i])*(rx_sig_f[0][4*i])+(rx_sig_f[0][4*i+1])*(rx_sig_f[0][4*i+1])));
+    time2[i] = (float) i;
+  } 
+
+  //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti,"","","");
+  //fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
+  
+
+  // channel_t_im = rx_sig[0]
+  //if (frame_parms->nb_antennas_rx>1) {
+
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+    //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+    sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
+    time2[i] = (float) i;
+  }
+
+  //fl_set_xyplot_ybounds(form->channel_t_im,0,100);
+  //fl_set_xyplot_data(form->channel_t_im,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
+  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  //}
+  */
+
+
+  // PBCH LLR
+  if (pbch_llr!=NULL) {
+    j=0;
+    for(i=0;i<1920;i++) {
+      llr[j] = (float) pbch_llr[i];
+      llr_time[j] = (float) j;
+      //if (i==63)
+      //  i=127;
+      //else if (i==191)
+      //  i=319;
+      j++;
+    }
+    
+    fl_set_xyplot_data(form->decoder_input,llr_time,llr,1920,"","","");
+    //fl_set_xyplot_ybounds(form->decoder_input,-100,100);
+  }
+
+  // PBCH I/Q
+  if (pbch_comp!=NULL) {
+    j=0;
+    for(i=0;i<12*12;i++) {
+      I[j] = pbch_comp[2*i];
+      Q[j] = pbch_comp[2*i+1];
+      j++;
+      //if (i==47)
+      //  i=96;
+      //else if (i==191)
+      //  i=239;
+    }
+
+    fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
+    //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+    //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
+  }
+
+  /*
+  // PDCCH I/Q
+  j=0;
+  for(i=0;i<12*25*3;i++) {
+  I[j] = pdcch_comp[2*i];
+  Q[j] = pdcch_comp[2*i+1];
+  j++;
+  //if (i==47)
+  //  i=96;
+  //else if (i==191)
+  //  i=239;
+  }
+
+  fl_set_xyplot_data(form->scatter_plot1,I,Q,12*25*3,"","","");
+  //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+  //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
+  */
+
+  // DLSCH LLR
+  if (dlsch_llr != NULL) {
+    for(i=0;i<coded_bits_per_codeword;i++) {
+      llr[i] = (float) dlsch_llr[i];
+      llr_time[i] = (float) i;
+    }
+
+    fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
+    fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
+  }
+
+  // DLSCH I/Q
+  if (dlsch_comp!=NULL) {
+    j=0;
+    for (s=0;s<frame_parms->symbols_per_tti;s++) {
+      for(i=0;i<12*25;i++) {
+	I[j] = dlsch_comp[(2*25*12*s)+2*i];
+	Q[j] = dlsch_comp[(2*25*12*s)+2*i+1];
+	j++;
+      }
+      //if (s==2)
+      //  s=3;
+      //else if (s==5)
+      //  s=6;
+      //else if (s==8)
+      //  s=9;
+    }
+    
+    fl_set_xyplot_data(form->scatter_plot1,I,Q,j,"","","");
+    //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
+    //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
+  }
+
+  // DLSCH I/Q
+  if (dlsch_comp_i!=NULL) {
+    j=0;
+    for (s=0;s<frame_parms->symbols_per_tti;s++) {
+      for(i=0;i<12*25;i++) {
+	I[j] = dlsch_comp_i[(2*25*12*s)+2*i];
+	Q[j] = dlsch_comp_i[(2*25*12*s)+2*i+1];
+	j++;
+      }
+      //if (s==2)
+      //  s=3;
+      //else if (s==5)
+      //  s=6;
+      //else if (s==8)
+      //  s=9;
+    }
+    
+
+    fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
+    //fl_set_xyplot_xbounds(form->scatter_plot1,-2000,2000);
+    //fl_set_xyplot_ybounds(form->scatter_plot1,-2000,2000);
+  }
+  /*
+  // DLSCH rho
+  if (dlsch_rho!=NULL) {
+  j=0;
+  for (s=0;s<frame_parms->symbols_per_tti;s++) {
+  for(i=0;i<12*25;i++) {
+  I[j] = dlsch_rho[(2*25*12*s)+2*i];
+  Q[j] = dlsch_rho[(2*25*12*s)+2*i+1];
+  j++;
+  }
+  //if (s==2)
+  //  s=3;
+  //else if (s==5)
+  //  s=6;
+  //else if (s==8)
+  //  s=9;
+  }
+
+  fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
+  //fl_set_xyplot_xbounds(form->scatter_plot2,-1000,1000);
+  //fl_set_xyplot_ybounds(form->scatter_plot2,-1000,1000);
+  }
+  */
+
+  free(llr);
+  free(llr_time);
+
+}
+
+#endif //XFORMS
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag,u8 N_RB_DL,u8 frame_type,u8 tdd_config,u8 osf) {
 
@@ -370,6 +646,14 @@ int main(int argc, char **argv) {
   }
 
 
+#ifdef XFORMS
+  fl_initialize (&argc, argv, NULL, 0, 0);
+  form_ul = create_form_lte_scope();
+  sprintf (title, "LTE UL SCOPE");
+  fl_show_form (form_ul->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+  
+#endif
+
   PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 14;
 
   // Fill in UL_alloc
@@ -611,9 +895,9 @@ int main(int argc, char **argv) {
 	  
 #else
 	  if (srs_flag)
-	    generate_srs_tx(PHY_vars_UE,0,scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],subframe);
+	    generate_srs_tx(PHY_vars_UE,0,AMP,subframe);
 	  generate_drs_pusch(PHY_vars_UE,0,
-			     scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],subframe,
+			     AMP,subframe,
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb,
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
 #endif	
@@ -634,8 +918,8 @@ int main(int argc, char **argv) {
 	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,
 			   PHY_vars_UE->frame,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0]);
 #else  
-	  //	  printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
-	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[PHY_vars_UE->lte_frame_parms.N_RB_UL],
+	  //	  printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,AMP,nb_rb);
+	  ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,
 			   PHY_vars_UE->frame,subframe,&PHY_vars_UE->lte_frame_parms,
 			   PHY_vars_UE->ulsch_ue[0]);
 #endif
@@ -717,8 +1001,8 @@ int main(int argc, char **argv) {
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
 	sigma2_dB = N0;//10*log10((double)tx_lev)  +10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(PHY_vars_UE->lte_frame_parms.N_RB_DL*12)) - SNR;
-	tx_gain = sqrt(pow(10.0,.1*(N0+SNR))*nb_rb/((double)tx_lev*PHY_vars_eNB->lte_frame_parms.N_RB_UL));
- 
+	tx_gain = sqrt(pow(10.0,.1*(N0+SNR))*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*(double)tx_lev*nb_rb));
+  
 	//AWGN
 
 	sigma2 = pow(10,sigma2_dB/10);
@@ -813,7 +1097,7 @@ int main(int argc, char **argv) {
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
 	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
-	    dump_ulsch(PHY_vars_eNB);
+	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }
 	  round=5;
@@ -822,7 +1106,7 @@ int main(int argc, char **argv) {
 	  errs[round]++;
 	  if (n_frames==1) {
 	    printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
-	    dump_ulsch(PHY_vars_eNB);
+	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }
 	  //	    printf("round %d errors %d/%d\n",round,errs[round],trials);
@@ -837,11 +1121,24 @@ int main(int argc, char **argv) {
       //      printf("\n");
       if ((errs[0]>=100) && (trials>(n_frames/2)))
 	break;
-      
+#ifdef XFORMS      
+      do_forms2(form_ul,
+		frame_parms,  
+		NULL,
+		NULL,
+		PHY_vars_eNB->lte_eNB_common_vars.rxdata[0],
+		PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0],
+		PHY_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
+		NULL,
+		PHY_vars_eNB->lte_eNB_pusch_vars[0]->llr,
+		NULL,
+		NULL,
+		1024);
+#endif       
     }   //trials
-    printf("\n**********************SNR = %f dB : TX %f dB (gain %f dB), N0W %f dB, I0 %d dB [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
+    printf("\n**********************SNR = %f dB : TX %d dB (gain %f dB), N0W %f dB, I0 %d dB [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
 	   SNR,
-	   tx_lev_dB+20*log10(tx_gain),
+	   tx_lev_dB,
 	   20*log10(tx_gain),
 	   (double)N0,
 	   PHY_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dB,

@@ -67,7 +67,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
   mprime = 110 - phy_vars_eNB->lte_frame_parms.N_RB_DL;
   
   k = (nu + phy_vars_eNB->lte_frame_parms.nushift);
-  if (k > 6)
+  if (k > 5)
     k -=6;
 
 #ifdef IFFT_FPGA

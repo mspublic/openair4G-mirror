@@ -126,6 +126,17 @@ void phy_config_sib2_eNB(u8 Mod_id,
 void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+/** \brief Configure RRC inter-cell measurements procedures
+@param Mod_id Index of UE
+@param eNB_index Index of corresponding eNB
+@param n_adj_cells Number of adjacent cells on which to perform the measuremnts
+@param adj_cell_id Array of cell ids of adjacent cells
+*/
+void phy_config_meas_ue(u8 Mod_id,
+			u8 eNB_index,
+			u8 n_adj_cells,
+			u16 *adj_cell_id);
+
 /*!
 \fn void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
                                   struct PhysicalConfigDedicated *physicalConfigDedicated)

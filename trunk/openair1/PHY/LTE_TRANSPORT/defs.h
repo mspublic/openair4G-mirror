@@ -184,7 +184,7 @@ typedef struct {
   /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
   u8 control_only;
   /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
-  int calibration_flag;
+  //  int calibration_flag;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -368,7 +368,7 @@ typedef struct {
   /// DRMS field for this ULSCH
   u8 n_DMRS;
   /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)
-  int calibration_flag;
+  //  int calibration_flag;
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {

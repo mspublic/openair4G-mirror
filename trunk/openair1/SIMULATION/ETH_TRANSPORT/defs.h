@@ -93,11 +93,11 @@ typedef struct {
 typedef struct {
   UE_cntl cntl;
   u8 num_eNB;
-  u16 rnti[NUMBER_OF_eNB_MAX];
-  u8 eNB_id[NUMBER_OF_eNB_MAX]; 
-  u8 harq_pid[NUMBER_OF_eNB_MAX];
-  u16 tbs[NUMBER_OF_eNB_MAX];
-  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];//*NUMBER_OF_eNB_MAX];
+  u16 rnti[NUMBER_OF_CONNECTED_eNB_MAX];
+  u8 eNB_id[NUMBER_OF_CONNECTED_eNB_MAX]; 
+  u8 harq_pid[NUMBER_OF_CONNECTED_eNB_MAX];
+  u16 tbs[NUMBER_OF_CONNECTED_eNB_MAX];
+  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];//*NUMBER_OF_CONNECTED_eNB_MAX];
 } __attribute__ ((__packed__)) UE_transport_info_t ;
 
 /*! \brief */
@@ -119,7 +119,6 @@ typedef struct bypass_proto2multicast_header_t {
 
 /* // replaced to OCG.h
 #define NUMBER_OF_MASTER_MAX   20
-//#define NUMBER_OF_eNB_MAX 3
 //#define NUMBER_OF_UE_MAX 32
 
 

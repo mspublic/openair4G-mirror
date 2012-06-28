@@ -125,6 +125,8 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
   msg("pusch_config_common.enable64QAM = %d\n",lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift);  
+
+  init_ul_hopping(lte_frame_parms);
   
   lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
 
@@ -211,7 +213,7 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
   
-  
+  init_ul_hopping(lte_frame_parms);  
   lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
   if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.present==SoundingRS_UL_ConfigCommon_PR_setup) {
     lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 1;
@@ -333,6 +335,21 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
       phy_vars_eNB->physicalConfigDedicated[UE_id] = NULL;    
     }
   }
+}
+
+void phy_config_meas_ue(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u16 *adj_cell_id) {
+  
+  PHY_MEASUREMENTS *phy_meas = &PHY_vars_UE_g[Mod_id]->PHY_measurements;
+  int i;
+
+  LOG_I(PHY,"Configuring inter-cell measurements for %d cells, ids: \n",n_adj_cells);
+  for (i=0;i<n_adj_cells;i++) {
+    LOG_I(PHY,"%d\n",adj_cell_id[i]);
+    lte_gold(&PHY_vars_UE_g[Mod_id]->lte_frame_parms,PHY_vars_UE_g[Mod_id]->lte_gold_table[i+1],adj_cell_id[i]); 
+  }
+  phy_meas->n_adj_cells = n_adj_cells;
+  memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(u16));
+
 }
 
 void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
@@ -507,7 +524,9 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 
   msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
 
-  for(eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++){
+  phy_vars_ue->n_connected_eNB = 1;
+
+  for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++){
     phy_vars_ue->total_TBS[eNB_id] = 0;
     phy_vars_ue->total_TBS_last[eNB_id] = 0;
     phy_vars_ue->bitrate[eNB_id] = 0;
@@ -629,7 +648,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 
     
   // Channel estimates  
-  for (eNB_id=0;eNB_id<3;eNB_id++) {
+  for (eNB_id=0;eNB_id<7;eNB_id++) {
     ue_common_vars->dl_ch_estimates[eNB_id] = (int **)malloc16(8*sizeof(int*));
     if (ue_common_vars->dl_ch_estimates[eNB_id]) {
 #ifdef DEBUG_PHY
@@ -661,7 +680,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
       }
   }
     
-  for (eNB_id=0;eNB_id<3;eNB_id++) {
+  for (eNB_id=0;eNB_id<7;eNB_id++) {
     ue_common_vars->dl_ch_estimates_time[eNB_id] = (int **)malloc16(8*sizeof(int*));
     if (ue_common_vars->dl_ch_estimates_time[eNB_id]) {
 #ifdef DEBUG_PHY
@@ -697,7 +716,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   //  lte_ue_pbch_vars = (LTE_UE_PBCH **)malloc16(3*sizeof(LTE_UE_PBCH*));
 
   // DLSCH
-  for (eNB_id=0;eNB_id<NUMBER_OF_eNB_MAX;eNB_id++) {
+  for (eNB_id=0;eNB_id<phy_vars_ue->n_connected_eNB;eNB_id++) {
     ue_pdsch_vars[eNB_id]    = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
 #ifdef ENABLE_FULL_FLP
     ue_pdsch_vars_flp[eNB_id]= (LTE_UE_PDSCH_FLP *)malloc16(sizeof(LTE_UE_PDSCH_FLP));
@@ -968,45 +987,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     
       ue_prach_vars[eNB_id]->prachF = (s16 *)malloc16(sizeof(int)*(7*2*sizeof(int)*(frame_parms->ofdm_symbol_size*12)));
       ue_prach_vars[eNB_id]->prach  = (s16 *)malloc16(sizeof(int)*(7*2*sizeof(int)*(frame_parms->ofdm_symbol_size*12)));
-
-      // Initialize Gold sequence table
-      // lte_gold(frame_parms); --> moved to phy_init_lte_top
-      
-      // Initialize Sync
-      // lte_sync_time_init(frame_parms); --> moved to phy_init_lte_top
-      
-#ifndef NO_UL_REF 
-      // generate_ul_ref_sigs(); --> moved to phy_init_lte_top
-#endif
-      
-      
-      if (phy_vars_ue->is_secondary_ue) {
-	phy_vars_ue->ul_precoder_S_UE = (int **)malloc16(4*sizeof(int*));
-	if (phy_vars_ue->ul_precoder_S_UE) {
-#ifdef DEBUG_PHY
-	  msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE allocated at %p\n",phy_vars_ue->ul_precoder_S_UE);
-#endif
-	}
-	else {
-	  msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE not allocated\n");
-	  return(-1);
-	}
-	
-	for (j=0; j<phy_vars_ue->lte_frame_parms.nb_antennas_tx; j++) {
-	  phy_vars_ue->ul_precoder_S_UE[j] = (int *)malloc16(2*sizeof(int)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)); // repeated format (hence the '2*')
-	  if (phy_vars_ue->ul_precoder_S_UE[j]) {
-#ifdef DEBUG_PHY
-	    msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE[%d] allocated at %p\n",j,
-		phy_vars_ue->ul_precoder_S_UE[j]);
-#endif
-	    memset(phy_vars_ue->ul_precoder_S_UE[j],0,2*sizeof(int)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
-	  }
-	  else {
-	    msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE[%d] not allocated\n",j);
-	    return(-1);
-	  }
-	} //for(j=...nb_antennas_tx
-      }
     }
     else {
       ue_pbch_vars[eNB_id] = (LTE_UE_PBCH *)malloc16(sizeof(LTE_UE_PBCH));
@@ -1018,97 +998,97 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     } 
   }
   //initialization for the last instance of ue_pdsch_vars (used for MU-MIMO)
-  ue_pdsch_vars[NUMBER_OF_eNB_MAX]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
-  ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX] = (LTE_UE_PDSCH_FLP *)malloc16(sizeof(LTE_UE_PDSCH_FLP));
+  ue_pdsch_vars[eNB_id]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
+  ue_pdsch_vars_flp[eNB_id] = (LTE_UE_PDSCH_FLP *)malloc16(sizeof(LTE_UE_PDSCH_FLP));
 #ifdef DEBUG_PHY
   msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars[%d] = %p\n",    NUMBER_OF_eNB_MAX,ue_pdsch_vars[NUMBER_OF_eNB_MAX]);
   msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars_flp[%d] = %p\n",NUMBER_OF_eNB_MAX,ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]);
 #endif
   if(abstraction_flag == 0){
     
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->rxdataF_ext     = (int **)malloc16(8*sizeof(int*));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->rxdataF_ext = (int **)malloc16(8*sizeof(int*));
+    ue_pdsch_vars[eNB_id]->rxdataF_ext     = (int **)malloc16(8*sizeof(int*));
+    ue_pdsch_vars_flp[eNB_id]->rxdataF_ext = (int **)malloc16(8*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       {
 	for (j=0; j<4; j++) //frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->rxdataF_ext[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
-	    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->rxdataF_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
+	    ue_pdsch_vars[eNB_id]->rxdataF_ext[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
+	    ue_pdsch_vars_flp[eNB_id]->rxdataF_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
 	  }
       }
 
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->rxdataF_comp     = (int **)malloc16(8*sizeof(int*));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->rxdataF_comp = (double **)malloc16(8*sizeof(int*));
+    ue_pdsch_vars[eNB_id]->rxdataF_comp     = (int **)malloc16(8*sizeof(int*));
+    ue_pdsch_vars_flp[eNB_id]->rxdataF_comp = (double **)malloc16(8*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->rxdataF_comp[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
-	    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->rxdataF_comp[(j<<1)+i] = (double *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
+	    ue_pdsch_vars[eNB_id]->rxdataF_comp[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
+	    ue_pdsch_vars_flp[eNB_id]->rxdataF_comp[(j<<1)+i] = (double *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
 	  }
       }
     //    printf("rxdataF_comp[0] %p\n",ue_pdsch_vars[eNB_id]->rxdataF_comp[0]);
     
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_estimates_ext     = (int **)malloc16(8*sizeof(int*));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_estimates_ext = (int **)malloc16(8*sizeof(int*));
+    ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext     = (int **)malloc16(8*sizeof(int*));
+    ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext = (int **)malloc16(8*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_estimates_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-	    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+	    ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+	    ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
 	  }
       }
     
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_rho_ext     = (int **)malloc16(8*sizeof(short*));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_rho_ext = (double **)malloc16(8*sizeof(double*));
+    ue_pdsch_vars[eNB_id]->dl_ch_rho_ext     = (int **)malloc16(8*sizeof(short*));
+    ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext = (double **)malloc16(8*sizeof(double*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_rho_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-	    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_rho_ext[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms->N_RB_DL*12));
+	    ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+	    ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms->N_RB_DL*12));
 	  }
       }
 
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->pmi_ext     = (unsigned char *)malloc16(frame_parms->N_RB_DL);
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->pmi_ext = (unsigned char *)malloc16(frame_parms->N_RB_DL);
+    ue_pdsch_vars[eNB_id]->pmi_ext     = (unsigned char *)malloc16(frame_parms->N_RB_DL);
+    ue_pdsch_vars_flp[eNB_id]->pmi_ext = (unsigned char *)malloc16(frame_parms->N_RB_DL);
         
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_mag     = (int **)malloc16(8*sizeof(short*));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_mag = (double **)malloc16(8*sizeof(double*));
+    ue_pdsch_vars[eNB_id]->dl_ch_mag     = (int **)malloc16(8*sizeof(short*));
+    ue_pdsch_vars_flp[eNB_id]->dl_ch_mag = (double **)malloc16(8*sizeof(double*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++) 
 	  {
-	    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_mag[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-	    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_mag[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms->N_RB_DL*12));
+	    ue_pdsch_vars[eNB_id]->dl_ch_mag[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+	    ue_pdsch_vars_flp[eNB_id]->dl_ch_mag[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms->N_RB_DL*12));
 	  }
       }
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_magb     = (int **)malloc16(8*sizeof(short*));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_magb = (double **)malloc16(8*sizeof(double*));
+    ue_pdsch_vars[eNB_id]->dl_ch_magb     = (int **)malloc16(8*sizeof(short*));
+    ue_pdsch_vars_flp[eNB_id]->dl_ch_magb = (double **)malloc16(8*sizeof(double*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       {
       for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	{
-	  ue_pdsch_vars[NUMBER_OF_eNB_MAX]->dl_ch_magb[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-	  ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->dl_ch_magb[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms->N_RB_DL*12));
+	  ue_pdsch_vars[eNB_id]->dl_ch_magb[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+	  ue_pdsch_vars_flp[eNB_id]->dl_ch_magb[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms->N_RB_DL*12));
 	}
       }
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->rho     = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->rho = (double **)malloc16(frame_parms->nb_antennas_rx*sizeof(double*));
+    ue_pdsch_vars[eNB_id]->rho     = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+    ue_pdsch_vars_flp[eNB_id]->rho = (double **)malloc16(frame_parms->nb_antennas_rx*sizeof(double*));
     for (i=0;i<frame_parms->nb_antennas_rx;i++)
       {
-	ue_pdsch_vars[NUMBER_OF_eNB_MAX]->rho[i]     = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*7*2));
-	ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->rho[i] = (double *)malloc16(sizeof(double)*(frame_parms->N_RB_DL*12*7*2));
+	ue_pdsch_vars[eNB_id]->rho[i]     = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*7*2));
+	ue_pdsch_vars_flp[eNB_id]->rho[i] = (double *)malloc16(sizeof(double)*(frame_parms->N_RB_DL*12*7*2));
       }
     
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->llr[1] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->llr[1] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
+    ue_pdsch_vars[eNB_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
+    ue_pdsch_vars[eNB_id]->llr[1] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
+    ue_pdsch_vars_flp[eNB_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
+    ue_pdsch_vars_flp[eNB_id]->llr[1] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
     
-    ue_pdsch_vars[NUMBER_OF_eNB_MAX]->llr128     = (short **)malloc16(sizeof(short **));
-    ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX]->llr128 = (short **)malloc16(sizeof(short **));
+    ue_pdsch_vars[eNB_id]->llr128     = (short **)malloc16(sizeof(short **));
+    ue_pdsch_vars_flp[eNB_id]->llr128 = (short **)malloc16(sizeof(short **));
   }
   else { //abstraction == 1
     phy_vars_ue->sinr_dB = (double*) malloc16(frame_parms->N_RB_DL*2*sizeof(double));
@@ -1141,7 +1121,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
       frame_parms->N_RB_DL,frame_parms->phich_config_common.phich_resource,
       frame_parms->phich_config_common.phich_duration);
 
-  lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
+  lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,frame_parms->Nid_cell);
   generate_pcfich_reg_mapping(frame_parms);
   generate_phich_reg_mapping(frame_parms);
   //  init_prach625(frame_parms);

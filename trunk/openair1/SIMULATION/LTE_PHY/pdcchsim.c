@@ -102,6 +102,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   phy_init_lte_top(lte_frame_parms);
 
+  PHY_vars_UE->PHY_measurements.n_adj_cells=2;
+  PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
+  PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
   

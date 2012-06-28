@@ -19,6 +19,7 @@ s32 rx_power_avg_eNB[3][3];
 void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
 			     unsigned char eNB_id,
 			     unsigned char clear) {
+
   LTE_eNB_COMMON *eNB_common_vars = &phy_vars_eNb->lte_eNB_common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNb->lte_frame_parms;
   PHY_MEASUREMENTS_eNB *phy_measurements = &phy_vars_eNb->PHY_measurements_eNB[eNB_id];

@@ -20,9 +20,9 @@ unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char 
 /*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL reference signals.
 @param frame_parms LTE DL Frame parameters
 @param lte_gold_table pointer to table where sequences are stored
-@param offset offset for Nid2 (to compute sequences and cell Ids of adjacent cells sharing the same Nid1*/
+@param Nid_cell Cell Id (to compute sequences for local and adjacent cells) */
 
-void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_table[20][2][14],u8 offset);
+void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_table[20][2][14],u16 Nid_cell);
 
 /*! \brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1)
 @param phy_vars_eNB Pointer to eNB variables
