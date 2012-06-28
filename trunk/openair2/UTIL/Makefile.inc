@@ -48,6 +48,7 @@ OTG_OBJS =  $(OTG_DIR)/otg_tx.o
 OTG_OBJS +=  $(OTG_DIR)/otg.o
 OTG_OBJS +=  $(OTG_DIR)/otg_rx.o
 OTG_OBJS +=  $(OTG_DIR)/otg_kpi.o
+OTG_OBJS +=  $(OTG_DIR)/otg_form.o
 
 MATH_OBJS  =  $(MATH_DIR)/oml.o
 
