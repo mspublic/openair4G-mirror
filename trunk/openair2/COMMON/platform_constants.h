@@ -18,7 +18,7 @@
 #    define MAX_MODULES                NB_MODULES_MAX
 #    define MAX_RG                     2
 
-#    define MAX_MOBILES_PER_RG         64 //32 
+#    define MAX_MOBILES_PER_RG         16 
 #    define MAX_MANAGED_RG_PER_MOBILE  2
 
 #    define NB_RB_MAX  11

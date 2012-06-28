@@ -3,6 +3,7 @@
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
+#include "MeasObjectToAddModList.h"
 #include "TDD-Config.h"
 #include "defs.h"
 #include "extern.h"
@@ -10,7 +11,8 @@
 
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-		       struct PhysicalConfigDedicated *physicalConfigDedicated,
+		       PhysicalConfigDedicated_t *physicalConfigDedicated,
+		       MeasObjectToAddMod_t **measObj,
 		       MAC_MainConfig_t *mac_MainConfig,
 		       long logicalChannelIdentity,
 		       LogicalChannelConfig_t *logicalChannelConfig,
@@ -18,10 +20,13 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod) {
-  
+
+  int i;
+
   if (eNB_flag==0) {
     LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_id,eNB_index);
-    UE_mac_inst[Mod_id].tdd_Config = tdd_Config;
+    if (tdd_Config != NULL)
+      UE_mac_inst[Mod_id].tdd_Config = tdd_Config;
   }else {
     if (physicalConfigDedicated == NULL){
       LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY\n",Mod_id);
@@ -145,6 +150,18 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }
+  }
+  if (eNB_flag == 0) {
+    if (measObj!= NULL) 
+      if (measObj[0]!= NULL){
+	UE_mac_inst[Mod_id].n_adj_cells = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.count;
+	LOG_I(MAC,"Number of adjacent cells %d\n",UE_mac_inst[Mod_id].n_adj_cells);
+	for (i=0;i<UE_mac_inst[Mod_id].n_adj_cells;i++) {
+	  UE_mac_inst[Mod_id].adj_cell_id[i] = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.array[i]->physCellId;
+	  LOG_I(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_id].adj_cell_id[i]);
+	}
+	mac_xface->phy_config_meas_ue(Mod_id,eNB_index,UE_mac_inst[Mod_id].n_adj_cells,UE_mac_inst[Mod_id].adj_cell_id);
+      }
   }
   return(0);
 }
