@@ -1,0 +1,26 @@
+~ Management GeoNetworking Interface Implementation (IF.MGMT) ~
+
+IF.MGMT is a server application handling messages sent from 
+GN (GeoNetworking) module. Since IF.MGMT is the server it has 
+to be started before GN module. IF.MGMT expects only one 
+command line parameter and it's the configuration file's name.
+
+[demiray@leynes test]$  ./IF.MGMT IF.MGMT.conf
+
+After IF.MGMT is started it'll read the configuration file,
+update local configuration (such as UDP server port) and MIB
+(Management Information Base) parameters, then it'll start
+listening for incoming connections on UDP port defined by 
+CONF_SERVER_PORT parameter in configuration file. Output of a 
+sample run is given below:
+
+[demiray@leynes test]$  ./IF.MGMT IF.MGMT.conf
+Initialized configuration map with 22 element(s)
+Starting Management & GeoNetworking Interface...
+Reading configuration file...
+Started to listen on UDP port 1402
+Ready to receive data...
+
+At this point hc2xnwt utility can be started.
+
+- Baris Demiray <baris.demiray@eurecom.fr>

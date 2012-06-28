@@ -1,0 +1,66 @@
+v1.0.14
+* Wireless State response/request is now separate (not tested)
+
+v1.0.13
+* Compilation error fixed in main.cpp
+* Doxygen comments for UdpServer class has been added
+
+v1.0.12
+* Forgotten UDP server class committed and version numbers are corrected
+
+v1.0.11
+* Missing Doxygen tags added
+
+v1.0.10
+* ManagementClient added and client state is now kept per-client basis
+
+v1.0.9
+* Communication profile request and response packets added
+* README.BUILD.ECLISE and README.BUILD.ECLIPSE.CODING_STYLE.xml
+  files added for Eclipse development instructions
+* GeonetMessageHandler now keeps client state and sends bulk configuration 
+  if corresponding request has been lost
+
+v1.0.8
+* ITS parameters are now classified and processed accordingly
+* ItsKeyManager class added to split ITS configuration code
+* Linkage parameters are re-ordered in Makefile
+
+v1.0.7
+* UdpServer.{cpp|hpp} updated and main() code clarified
+
+v1.0.6
+* Parameter parsing error fixed
+* FAC_ parameters added into configuration file
+* Wireless State response parser added (not tested)
+* README.BUILD.ECLIPSE file added
+
+v1.0.5
+* Makefile (and Makefile.sources) file added to remove development ties with
+  Eclipse and README.BUILD file updated accordingly
+
+v1.0.4
+* ITS key values are updated and classified as FAC and NET
+* Wireless state and network state packets added
+* Location table is now asked and response is parsed
+
+v1.0.3
+* Doxygen file added (IF.MGMT.doxyfile)
+
+v1.0.2
+* Configuration file added
+* Configuration file is no more hard-coded but read as a command-line parameter
+* UDP server port number is no more hard-coded but read from configuration file
+* All 22 parameters are encoded into Set Configuration bulk message
+* Comment lines written for most header files/classes/methods
+* Faulty `key count' field encode fixed 
+
+v1.0.1
+* `Get Configuration' message is parsed and replied with a "partial" 
+  bulk Set Configuration message
+
+v1.0.0
+* Initial version
+* Mostly structural code, almost nothing functional
+
+- Baris Demiray <baris.demiray@eurecom.fr>

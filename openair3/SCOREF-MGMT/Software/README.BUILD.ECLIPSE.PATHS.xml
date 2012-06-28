@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cdtprojectproperties>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.IncludePaths">
+<language name="holder for library settings">
+
+</language>
+<language name="Assembly">
+<includepath>/usr/include</includepath>
+<includepath workspace_path="true">/IF.MGMT/src</includepath>
+<includepath workspace_path="true">/IF.MGMT/src/packets</includepath>
+<includepath>/usr/include/c++/4.4</includepath>
+<includepath>/usr/include/linux</includepath>
+<includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
+<includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
+
+</language>
+<language name="GNU C++">
+<includepath>/usr/include</includepath>
+<includepath workspace_path="true">/IF.MGMT/src</includepath>
+<includepath workspace_path="true">/IF.MGMT/src/packets</includepath>
+<includepath>/usr/include/c++/4.4</includepath>
+<includepath>/usr/include/linux</includepath>
+<includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
+<includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
+
+</language>
+<language name="GNU C">
+<includepath>/usr/include</includepath>
+<includepath workspace_path="true">/IF.MGMT/src</includepath>
+<includepath workspace_path="true">/IF.MGMT/src/packets</includepath>
+<includepath>/usr/include/c++/4.4</includepath>
+<includepath>/usr/include/linux</includepath>
+<includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
+<includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
+
+</language>
+</section>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.Macros">
+<language name="holder for library settings">
+
+</language>
+<language name="Assembly">
+
+</language>
+<language name="GNU C++">
+
+</language>
+<language name="GNU C">
+
+</language>
+</section>
+</cdtprojectproperties>
