@@ -176,10 +176,12 @@ static int destination_port_;
 
 static int emulation_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
 static int emulation_time_ms_;
+static int graphic_;
 static int performance_metrics_;		/*!< \brief indicating that the parsing position is now within Performance_*/
 static int throughput_;
 static int latency_;
 static int loss_rate_;
+static int owd_radio_access_;
 static int layer_;				/*!< \brief indicating that the parsing position is now within Layer_*/
 static int phy_;
 static int mac_;
@@ -463,6 +465,8 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		emulation_config_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_TIME_ms")) {
 		emulation_time_ms_ = 1;
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRAPHIC")) {
+		graphic_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -471,6 +475,8 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		latency_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "LOSS_RATE")) {
 		loss_rate_ = 1;
+	} else if (!xmlStrcmp(name,(unsigned char*) "OWD_RADIO_ACESS")) {
+		owd_radio_access_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "LAYER")) {
 		layer_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PHY")) {
@@ -758,6 +764,8 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		emulation_config_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_TIME_ms")) {
 		emulation_time_ms_ = 0;
+	}else if (!xmlStrcmp(name,(unsigned char*) "GRAPHIC")) {
+		graphic_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -766,6 +774,8 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		latency_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "LOSS_RATE")) {
 		loss_rate_ = 0;
+	} else if (!xmlStrcmp(name,(unsigned char*) "OWD_RADIO_ACESS")) {
+		owd_radio_access_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "LAYER")) {
 		layer_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PHY")) {
@@ -1077,13 +1087,17 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 		} else if (emulation_config_) {
 		  if (emulation_time_ms_) {
 		    oai_emulation.emulation_config.emulation_time_ms = atof(ch);
-		  } else if (performance_metrics_) {
+		  } else if (graphic_) {
+		    oai_emulation.emulation_config.graphic = atof(ch);
+		  }else if (performance_metrics_) {
 		    if (throughput_) {
 		      oai_emulation.emulation_config.performance_metrics.throughput = atoi(ch);
 		    } else if (latency_) {
 		      oai_emulation.emulation_config.performance_metrics.latency = atoi(ch);
 		    } else if (loss_rate_) {
 		      oai_emulation.emulation_config.performance_metrics.loss_rate = atoi(ch);
+		    }else if (owd_radio_access_) {
+		      oai_emulation.emulation_config.performance_metrics.owd_radio_access = atoi(ch);
 		    }
 		  } else if (layer_) {
 		    if (phy_) {
