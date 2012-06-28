@@ -32,25 +32,30 @@ const bool false = 0;
 const bool true = 1;
 
 #define BW 7.68
-#define N_RB 25
+#define N_PRB 25
 #define RBG_SIZE 2
 #define NID_CELL 0
 #define MAX_RELAYS 8
 #define MAX_HARQ_ROUNDS 4
+#define MAX_FRAMES 2*MAX_HARQ_ROUNDS+1
 
-const u8 cp_type = 0; // Normal cyclic prefix
-const u8 n_txantenna_ch = 1;
-const u8 n_rxantenna_ch = 1;
-const u8 n_txantenna_mr = 1;
-const u8 n_rxantenna_mr = 1;
+const u8 cp_type = 0;         // Normal cyclic prefix
+const u8 n_txantenna_ch = 1;  // Number of CH transmit antennas
+const u8 n_rxantenna_ch = 1;  // Number of CH receive antennas
+const u8 n_txantenna_mr = 1;  // Number of MR transmit antennas
+const u8 n_rxantenna_mr = 1;  // Number of MR receive antennas
 const u8 oversampling = 1;
-//const u16 rb_alloc = 0x1fff;
-const u8 subframe_hop1 = 4;
-const u8 subframe_hop2 = 7;
-const u8 n_avail_pdcch_symbols = 3;
+const u8 subframe_hop1 = 1;   // Subframe for CH1 PDCCH+PDSCH transmission
+const u8 subframe_hop2 = 7;  // Subframe for MR PDU to CH2
+const u8 n_pdcch_symbols = 3; // Number of PDCCH symbols in DL subframes
 
 typedef enum {
-  analysis_single, analysis_sweep, analysis_bsweep
+  analysis_single,      // Simulate one SNR point
+  analysis_snrsweep_a,  // Sweep SNR of first relay from negative to positive 
+                        // for both hops
+  analysis_snrsweep_b,  // Sweep SNR of first relay from negative to positive 
+                        // for hop 1 and from postive to negative for hop 2
+  analysis_snrsweep_c
 } analysis_t;
 
 typedef enum {
@@ -60,33 +65,32 @@ typedef enum {
 
 // Structure for command line parsed arguments
 typedef struct {
-  bool debug_output;
-  bool debug_print;
-  int verbose;
-  analysis_t analysis;
-  int range;
-  double step;
-  strategy_t strategy;
-  int n_relays;
-  int n_pdu;
-  int n_harq;
-  int mcs_hop1;
-  int mcs_hop2;
-  int n_rb_hop1;
-  int n_rb_hop2;
-  bool autorb;
-  SCM_t channel_model;
-  double channel_correlation;
-  double snr_hop1[MAX_RELAYS];
-  double snr_hop2[MAX_RELAYS];
-  const char* results_fn;
+  bool debug_output;              // Output MATLAB signal files
+  int verbose;                    // Verbosity level
+  analysis_t analysis;            // Analysis mode
+  int range;                      // Sweep range
+  double step;                    // Sweep step size
+  strategy_t strategy;            // HARQ strategy
+  int n_relays;                   // Number of relays
+  int n_pdu;                      // Number of MAC PDUs to simulate
+  int n_harq;                     // Maximum number of HARQ rounds
+  int mcs_hop1;                   // MCS for hop 1
+  int mcs_hop2;                   // MCS for hop 2
+  int n_prb_hop1;                 // Number of PRB utilized in hop 1
+  int n_prb_hop2;                 // Number of PRB utilized in hop 2
+  bool autorb;                    // Reduce number of PRB to balance TBS
+  SCM_t channel_model;            // Channel model
+  double channel_correlation;     // Channel reutilization factor
+  double snr_hop1[MAX_RELAYS];    // SNR used in hop 1 for all links
+  double snr_hop2[MAX_RELAYS];    // SNR used in hop 2 for all links
+  const char* results_fn;         // File to save simulation results to
 } args_t;
 
 // Structure containing link simulation results for one test
-// Note: mcs_hop*, tbs_hop*, n_rb_hop* are matrices containing values for each
+// Note: mcs_hop*, tbs_hop*, n_prb_hop* are matrices containing values for each
 //   transmission attempt in the simulation. The first index is the MAC PDU
 //   index and the second is the HARQ round index. Currently no AMC is
-//   implemented, and all these values are the same.
+//   implemented, and all these values are the same for each MAC PDU.
 // Note: The meaning of n_harq_success_hop1 is dependent on the HARQ strategy.
 //   In HARQ strategy 1, both relays must be decode.
 //   Other HARQ strategies are not implemented yet.
@@ -101,8 +105,8 @@ typedef struct {
   int** mcs_hop2;           // MCS used in hop 2
   int** tbs_hop1;           // transport block size for hop 1
   int** tbs_hop2;           // transport block size for hop 2
-  int** n_rb_hop1;          // number of used RBs in hop 1
-  int** n_rb_hop2;          // number of used RBs in hop 2
+  int** n_prb_hop1;         // number of used PRBs in hop 1
+  int** n_prb_hop2;         // number of used PRBs in hop 2
   int n_frames_hop1;        // number of transmitted LTE frames in hop 1
   int n_frames_hop2;        // number of transmitted LTE frames in hop 2
   int n_bits_hop1;          // number of correctly received information bits over hop 1
@@ -120,8 +124,10 @@ typedef struct {
   int* relay_activity;      // PDF of relay activity, [1]: MR1 active, [2]: MR2 active, [3]: MR1+MR2 active
 } results_t;
 
+// Relay role in distributed Alamouti coding
 typedef enum {
-  RELAY_ROLE_STANDARD, RELAY_ROLE_ALTERNATE
+  RELAY_ROLE_STANDARD,    // Relay sends [ x1   x2 ]
+  RELAY_ROLE_ALTERNATE    // Relay sends [-x2*  x1*]
 } relay_role_t;
 
 typedef struct {
@@ -177,10 +183,13 @@ bool parse_snr(const char* str, double* snr, int n);
 void print_usage(const char* prog);
 void print_channel_usage();
 void signal_handler(int sig);
-void setup_snrs_single(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays);
-void setup_snrs_sweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
-void setup_snrs_bsweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
+void setup_single(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays);
+void setup_snrsweep_a(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
+void setup_snrsweep_b(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
+void setup_snrsweep_c(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
 void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmission_mode);
+void setup_phy_vars(LTE_DL_FRAME_PARMS* frame_parms, PHY_VARS_eNB* phy_vars_ch_src, 
+    PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays);
 u16 rballoc_type0(int n_rb, int rbg_size);
 void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb);
 void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb);
@@ -212,12 +221,14 @@ void write_results_header(FILE* f, results_t* r, int n_tests);
 void write_results_data(FILE* f, results_t* r);
 double calc_delay(int* n_frames, int n_harq);
 
+// Function declarations missing in LTE_TRANSPORT/proto.h:
+u8 pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS* frame_parms, u8 n);
+u8 ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS* frame_parms, u8 n);
+
 int main(int argc, char **argv) {
   args_t args;
   results_t results;
   context_t context;
-
-  LTE_DL_FRAME_PARMS* frame_parms;
 
   DCI_ALLOC_t dci_hop1;
   DCI_ALLOC_t dci_hop2;
@@ -245,11 +256,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  // General setup
-  signal(SIGSEGV, signal_handler);
-  randominit(0);
-  set_taus_seed(0);
-
+  // Check argument bounds
   if(args.n_relays > MAX_RELAYS) {
     printf("Too many relays, increase MAX_RELAYS\n");
     exit(1);
@@ -260,9 +267,14 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  // General setup
+  signal(SIGSEGV, signal_handler);
+  randominit(0);
+  set_taus_seed(0);
+
   // Allocate memory for frame parameters and node structures
-  frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
-  memset(frame_parms, 0, sizeof(LTE_DL_FRAME_PARMS));
+  context.frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
+  memset(context.frame_parms, 0, sizeof(LTE_DL_FRAME_PARMS));
   context.phy_vars_ch_src = malloc(sizeof(PHY_VARS_eNB));
   context.phy_vars_ch_dest = malloc(sizeof(PHY_VARS_eNB));
   context.phy_vars_mr = malloc(args.n_relays*sizeof(PHY_VARS_UE*));
@@ -273,6 +285,9 @@ int main(int argc, char **argv) {
   memset(context.phy_vars_ch_src, 0, sizeof(PHY_VARS_eNB));
   memset(context.phy_vars_ch_dest, 0, sizeof(PHY_VARS_eNB));
 
+  // Initialize log
+  logInit();
+
   // Initialize result data
   init_results(&results, &args);
 
@@ -282,16 +297,19 @@ int main(int argc, char **argv) {
   memset(context.channels_hop1, 0, args.n_relays*sizeof(sh_channel_t*));
   memset(context.channels_hop2, 0, args.n_relays*sizeof(sh_channel_t*));
 
-  // Allocate and setup vector of SNR tests
+  // Setup analysis structures
   switch(args.analysis) {
   case analysis_single:
-    setup_snrs_single(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays);
+    setup_single(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays);
     break;
-  case analysis_sweep:
-    setup_snrs_sweep(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, args.step, -args.range, args.range);
+  case analysis_snrsweep_a:
+    setup_snrsweep_a(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, args.step, -args.range, args.range);
     break;
-  case analysis_bsweep:
-    setup_snrs_bsweep(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, args.step, -args.range, args.range);
+  case analysis_snrsweep_b:
+    setup_snrsweep_b(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, args.step, -args.range, args.range);
+    break;
+  case analysis_snrsweep_c:
+    setup_snrsweep_c(&snrs, &n_tests, args.snr_hop1, args.snr_hop2, args.n_relays, args.step, -args.range, args.range);
     break;
   }
 
@@ -299,6 +317,10 @@ int main(int argc, char **argv) {
   if(args.results_fn) {
     store_results = true;
     results_file = fopen(args.results_fn, "w");
+    if(!results_file) {
+      perror("fopen");
+      exit(1);
+    }
   }
 
   if(store_results) {
@@ -306,59 +328,20 @@ int main(int argc, char **argv) {
   }
 
   // Setup PHY structures
-  setup_frame_params(frame_parms, 1);
-  context.phy_vars_ch_src->lte_frame_parms = *frame_parms;
-  context.phy_vars_ch_src->frame=1;
-  phy_init_lte_eNB(context.phy_vars_ch_src, 0, 0, 0);
-  for(k = 0; k < args.n_relays; k++) {
-    context.phy_vars_mr[k]->lte_frame_parms = *frame_parms;
-    context.phy_vars_mr[k]->frame=1;
-    lte_gold(frame_parms, context.phy_vars_mr[k]->lte_gold_table[0], 0);
-    lte_gold(frame_parms, context.phy_vars_mr[k]->lte_gold_table[1], 1);
-    lte_gold(frame_parms, context.phy_vars_mr[k]->lte_gold_table[2], 2);
+  setup_frame_params(context.frame_parms, 1);
+  setup_phy_vars(context.frame_parms, context.phy_vars_ch_src, context.phy_vars_mr, context.phy_vars_ch_dest, args.n_relays);
 
-    phy_init_lte_ue(context.phy_vars_mr[k], 0);
-    context.phy_vars_mr[k]->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
-    context.phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
-    context.phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
-    context.phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
-
-    context.phy_vars_mr[k]->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
-    context.phy_vars_mr[k]->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-    context.phy_vars_mr[k]->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
-    msg("Init UL hopping UE\n");
-    init_ul_hopping(&context.phy_vars_mr[k]->lte_frame_parms);
-
-  }
-    
-  context.phy_vars_ch_dest->lte_frame_parms = *frame_parms;
-  context.phy_vars_ch_dest->frame = 1;
-  phy_init_lte_eNB(context.phy_vars_ch_dest, 0, 2, 0);
-
-  context.phy_vars_ch_dest->transmission_mode[0] = 2;
-  context.phy_vars_ch_dest->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
-  context.phy_vars_ch_dest->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
-  context.phy_vars_ch_dest->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-  context.phy_vars_ch_dest->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
-  context.phy_vars_ch_dest->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
-  context.phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
-  context.phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
-  context.phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
-
-  msg("Init UL hopping eNB\n");
-  init_ul_hopping(&context.phy_vars_ch_dest->lte_frame_parms);
-
-  context.frame_parms = frame_parms;
+  // Setup simulation context
   context.rnti_hop1 = 0x1515;
   context.rnti_hop2 = 0x1516;
   context.mcs_hop1 = args.mcs_hop1;
   context.mcs_hop2 = args.mcs_hop2;
-  context.n_avail_pdcch_symbols = n_avail_pdcch_symbols;
+  context.n_avail_pdcch_symbols = n_pdcch_symbols;
   context.subframe_hop1 = subframe_hop1;
   context.subframe_hop2 = subframe_hop2;
 
   // Allocate temporary signal structures
-  context.rxdata[0] = malloc(10*frame_parms->samples_per_tti);
+  context.rxdata[0] = malloc(10*context.frame_parms->samples_per_tti);
 
   // Allocate first hop transport channel
   alloc_broadcast_transport_channel(context.phy_vars_ch_src, context.phy_vars_mr, args.n_relays, context.rnti_hop1);
@@ -367,41 +350,39 @@ int main(int argc, char **argv) {
   alloc_distributed_transport_channel(context.phy_vars_ch_dest, context.phy_vars_mr, args.n_relays, context.rnti_hop2);
   
   // Setup channel structures
-  channel_vars = alloc_channel_vars(frame_parms);
+  channel_vars = alloc_channel_vars(context.frame_parms);
   for(k = 0; k < args.n_relays; k++) {
     context.channels_hop1[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_ch, n_rxantenna_mr, args.channel_correlation);
     context.channels_hop2[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_mr, n_rxantenna_ch, args.channel_correlation);
   }
   // Create broadcast DCI and generate transport channel parameters,
   // in order to determine hop 1 transfer block size and number of coded bits
-  setup_broadcast_dci(&dci_hop1, context.rnti_hop1, 0, args.mcs_hop1, args.n_rb_hop1);
+  setup_broadcast_dci(&dci_hop1, context.rnti_hop1, 0, args.mcs_hop1, args.n_prb_hop1);
   generate_eNB_dlsch_params_from_dci(subframe_hop1, dci_hop1.dci_pdu, 
-      context.rnti_hop1, format1, context.phy_vars_ch_src->dlsch_eNB[0], frame_parms, 
+      context.rnti_hop1, format1, context.phy_vars_ch_src->dlsch_eNB[0], context.frame_parms, 
       SI_RNTI, RA_RNTI, P_RNTI,
       context.phy_vars_ch_src->eNB_UE_stats[0].DL_pmi_single);
   context.tbs_hop1 = context.phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->TBS;
-  context.n_coded_bits_hop1 = get_G(frame_parms, context.phy_vars_ch_src->dlsch_eNB[0][0]->nb_rb,
+  context.n_coded_bits_hop1 = get_G(context.frame_parms, context.phy_vars_ch_src->dlsch_eNB[0][0]->nb_rb,
       context.phy_vars_ch_src->dlsch_eNB[0][0]->rb_alloc,
       get_Qm(context.phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->mcs),
-      n_avail_pdcch_symbols, subframe_hop1);
+      context.n_avail_pdcch_symbols, subframe_hop1);
 
   // Create distributed DCI and generate transport channel parameters,
   // in order to determine hop 2 transfer block size and number of coded bits
-  context.harq_pid_hop2 = subframe2harq_pid(frame_parms, 0, subframe_hop2);
-  setup_distributed_dci(&dci_hop2, context.rnti_hop2, 0, args.mcs_hop2, args.n_rb_hop2);
+  context.harq_pid_hop2 = subframe2harq_pid(context.frame_parms, 0, subframe_hop2);
+  setup_distributed_dci(&dci_hop2, context.rnti_hop2, 0, args.mcs_hop2, args.n_prb_hop2);
   generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context.rnti_hop2, 
-				    ul_subframe2pdcch_alloc_subframe(frame_parms,subframe_hop2),//(subframe_hop2+6)%10, 
+				    ul_subframe2pdcch_alloc_subframe(context.frame_parms, subframe_hop2),
 				    format0, context.phy_vars_mr[0], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
   context.tbs_hop2 = context.phy_vars_mr[0]->ulsch_ue[0]->harq_processes[context.harq_pid_hop2]->TBS;
   context.n_coded_bits_hop2 = get_ulsch_G(context.phy_vars_mr[0]->ulsch_ue[0], context.harq_pid_hop2);
 
   if(args.verbose > 1) {
     print_dlsch_eNB_stats(context.phy_vars_ch_src->dlsch_eNB[0][0]);
-    //print_dlsch_ue_stats(phy_vars_mr[0]->dlsch_ue[0][0]);
     print_ulsch_ue_stats(context.phy_vars_mr[0]->ulsch_ue[0]);
-    //print_ulsch_eNB_stats(phy_vars_ch_dest->ulsch_eNB[0]);
-    dump_dci(frame_parms, &dci_hop1);
-    dump_dci(frame_parms, &dci_hop2);
+    dump_dci(context.frame_parms, &dci_hop1);
+    dump_dci(context.frame_parms, &dci_hop2);
   }
   printf("Hop 1: TBS=%d, G=%d, rate=%f. Hop 2: TBS=%d, G=%d, rate=%f\n", 
       context.tbs_hop1, context.n_coded_bits_hop1, (float)context.tbs_hop1/(float)context.n_coded_bits_hop1,
@@ -481,7 +462,7 @@ int main(int argc, char **argv) {
   for(k = 0; k < args.n_relays; k++)
     free(context.phy_vars_mr[k]);
   free(context.phy_vars_mr);
-  free(frame_parms);
+  free(context.frame_parms);
 
   return 0;
 }
@@ -576,10 +557,10 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       // Fill results
       results->mcs_hop1[pdu][round_hop1] = context->mcs_hop1;
       results->tbs_hop1[pdu][round_hop1] = context->tbs_hop1;
-      results->n_rb_hop1[pdu][round_hop1] = args->n_rb_hop1;
+      results->n_prb_hop1[pdu][round_hop1] = args->n_prb_hop1;
 
       // Create first hop DCI
-      setup_broadcast_dci(&dci_hop1, context->rnti_hop1, round_hop1, context->mcs_hop1, args->n_rb_hop1);
+      setup_broadcast_dci(&dci_hop1, context->rnti_hop1, round_hop1, context->mcs_hop1, args->n_prb_hop1);
       if(args->verbose > 1)
         dump_dci(frame_parms, &dci_hop1);
 
@@ -632,7 +613,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
       // Transmit over channel
       for(k = 0; k < args->n_relays; k++) {
-        //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop1*12))/pow(10.0, ((double)context->snr_hop1[k])/10.0)/2.0);
+        //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_prb_hop1*12))/pow(10.0, ((double)context->snr_hop1[k])/10.0)/2.0);
         awgn_stddev = sqrt((double)tx_energy)/pow(10.0, ((double)context->snr_hop1[k])/20.0);
         tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop1[k])/20.0);
         //printf("hop 1: E=%d, ampl=%f, awgn=%f\n", tx_energy, tx_ampl, awgn_stddev);
@@ -751,7 +732,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       // Fill results
       results->mcs_hop2[pdu][round_hop2] = context->mcs_hop2;
       results->tbs_hop2[pdu][round_hop2] = context->tbs_hop2;
-      results->n_rb_hop2[pdu][round_hop2] = args->n_rb_hop2;
+      results->n_prb_hop2[pdu][round_hop2] = args->n_prb_hop2;
       l = 0;
       for(k = args->n_relays-1; k >= 0; k--)
         if(decoded_at_mr[k])
@@ -761,7 +742,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       results->relay_activity[l]++;
 
       // create second hop dci
-      setup_distributed_dci(&dci_hop2, context->rnti_hop2, round_hop2, context->mcs_hop2, args->n_rb_hop2);
+      setup_distributed_dci(&dci_hop2, context->rnti_hop2, round_hop2, context->mcs_hop2, args->n_prb_hop2);
       if(args->verbose > 1)
         dump_dci(frame_parms, &dci_hop2);
 
@@ -810,7 +791,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         }
 
         // Generate uplink reference signal
-        generate_drs_pusch(phy_vars_mr[k], 0, AMP, context->subframe_hop2, 0, args->n_rb_hop2);
+        generate_drs_pusch(phy_vars_mr[k], 0, AMP, context->subframe_hop2, 0, args->n_prb_hop2);
   
         // Encode ULSCH data
 	//	printf("transmit_one_pdu 1 : ulsch_encoding mr %d\n",k);
@@ -839,7 +820,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
         // Transmit over channel
         // Redo this in a more intuitive manner:
-        //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_rb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
+        //awgn_stddev = sqrt((double)tx_energy*((double)frame_parms->ofdm_symbol_size/(args->n_prb_hop2*12))/pow(10.0, ((double)context->snr_hop2[k])/10.0)/2.0);
         tx_ampl = awgn_stddev/sqrt((double)tx_energy)*pow(10.0, ((double)context->snr_hop2[k])/20.0)/sqrt((double)n_active_relays);
 	//	printf("hop 2 (%d): E=%d, ampl=%f, awgn=%f (accum %d)\n", k,tx_energy, tx_ampl, awgn_stddev,(unsigned char)accumulate_at_rx);
         transmit_subframe(context->channels_hop2[k],
@@ -955,7 +936,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
     // Activate MRs that decoded during this frame
     for(k = 0; k < args->n_relays; k++)
       if(activate_mr[k]) {
-        setup_distributed_dci(&dci_hop2, context->rnti_hop2, 0, context->mcs_hop2, args->n_rb_hop2);
+        setup_distributed_dci(&dci_hop2, context->rnti_hop2, 0, context->mcs_hop2, args->n_prb_hop2);
 
         // Generate transport channel parameters
         generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context->rnti_hop2, 
@@ -1082,6 +1063,7 @@ int parse_args(int argc, char** argv, args_t* args)
     {"single", no_argument, NULL, 261},
     {"sweep", no_argument, NULL, 262},
     {"bsweep", no_argument, NULL, 263},
+    {"csweep", no_argument, NULL, 271},
     {"strategy", required_argument, NULL, 264},
     {"rb1", required_argument, NULL, 265},
     {"rb2", required_argument, NULL, 266},
@@ -1093,14 +1075,13 @@ int parse_args(int argc, char** argv, args_t* args)
 
   args->n_relays = 2;
   args->debug_output = false;
-  args->debug_print = false;
   args->verbose = 0;
   args->n_pdu = 1;
   args->n_harq = 4;
   args->mcs_hop1 = 0;
   args->mcs_hop2 = 0;
-  args->n_rb_hop1 = N_RB;
-  args->n_rb_hop2 = N_RB;
+  args->n_prb_hop1 = N_PRB;
+  args->n_prb_hop2 = N_PRB;
   args->autorb = false;
   args->channel_model = AWGN;
   args->channel_correlation = 0.0;
@@ -1178,10 +1159,13 @@ int parse_args(int argc, char** argv, args_t* args)
       args->analysis = analysis_single;
       break;
     case 262:
-      args->analysis = analysis_sweep;
+      args->analysis = analysis_snrsweep_a;
       break;
     case 263:
-      args->analysis = analysis_bsweep;
+      args->analysis = analysis_snrsweep_b;
+      break;
+    case 271:
+      args->analysis = analysis_snrsweep_c;
       break;
     case 264:
       switch(atoi(optarg)) {
@@ -1196,13 +1180,13 @@ int parse_args(int argc, char** argv, args_t* args)
       }
       break;
     case 265: // --rb1
-      args->n_rb_hop1 = atoi(optarg);
-      if(args->n_rb_hop1 <= 0 || args->n_rb_hop1 > N_RB)
+      args->n_prb_hop1 = atoi(optarg);
+      if(args->n_prb_hop1 <= 0 || args->n_prb_hop1 > N_PRB)
         return 1;
       break;
     case 266: // --rb2
-      args->n_rb_hop2 = atoi(optarg);
-      if(args->n_rb_hop2 <= 0 || args->n_rb_hop2 > N_RB)
+      args->n_prb_hop2 = atoi(optarg);
+      if(args->n_prb_hop2 <= 0 || args->n_prb_hop2 > N_PRB)
         return 1;
       break;
     case 267: // --autorb
@@ -1310,8 +1294,8 @@ void print_usage(const char* prog)
   printf("  -m MCS     : set mcs for both hops to MCS [0]\n");
   printf("  --mcs1 MCS : set mcs for hop 1 to MCS\n");
   printf("  --mcs2 MCS : set mcs for hop 2 to MCS\n");
-  printf("  --rb1 NUM  : set number of resource blocks for hop 1 [%d]\n", N_RB);
-  printf("  --rb2 NUM  : set number of resource blocks for hop 2 [%d]\n", N_RB);
+  printf("  --rb1 NUM  : set number of resource blocks for hop 1 [%d]\n", N_PRB);
+  printf("  --rb2 NUM  : set number of resource blocks for hop 2 [%d]\n", N_PRB);
   //printf("  --autorb   : adjust the hop bandwidths to have similar TBS\n");
   printf("\n");
   printf("    Definition of results:\n");
@@ -1352,7 +1336,7 @@ void signal_handler(int sig)
   exit(1);
 }
 
-void setup_snrs_single(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays)
+void setup_single(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays)
 {
   int k;
 
@@ -1366,7 +1350,7 @@ void setup_snrs_single(double** snrs, int* n_tests, double* snr_hop1, double* sn
   *n_tests = 1;
 }
 
-void setup_snrs_sweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end)
+void setup_snrsweep_a(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end)
 {
   int l;
   int k;
@@ -1383,7 +1367,7 @@ void setup_snrs_sweep(double** snrs, int* n_tests, double* snr_hop1, double* snr
   }
 }
 
-void setup_snrs_bsweep(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end)
+void setup_snrsweep_b(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end)
 {
   int l;
   int k;
@@ -1400,26 +1384,34 @@ void setup_snrs_bsweep(double** snrs, int* n_tests, double* snr_hop1, double* sn
   }
 }
 
+void setup_snrsweep_c(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end)
+{
+  int l;
+  int k;
+  *n_tests = end-start+1;
+
+  *snrs = malloc((*n_tests)*2*n_relays*sizeof(double));
+  for(l = 0; l < *n_tests; l++) {
+    for(k = 0; k < n_relays; k++) {
+      (*snrs)[2*n_relays*l + k] = snr_hop1[k] + step*(start+l);
+      (*snrs)[2*n_relays*l + n_relays + k] = snr_hop2[k] + step*(start+l);
+    }
+  }
+}
+
 void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmission_mode)
 {
-  // alloc max_xface?
-
-  frame_parms->N_RB_DL = N_RB;
-  frame_parms->N_RB_UL = N_RB;
+  frame_parms->N_RB_DL = N_PRB;
+  frame_parms->N_RB_UL = N_PRB;
   frame_parms->Nid_cell = NID_CELL;
   frame_parms->Ncp = cp_type;
   frame_parms->Ncp_UL = cp_type;
   frame_parms->nushift = 0;
   frame_parms->frame_type = 1; // TDD frames
-  // TODO: TDD config 1 needs changes to subframe2harq_pid
   frame_parms->tdd_config = 1; // TDD frame type 1
   frame_parms->mode1_flag = (transmission_mode == 1 ? 1 : 0);
   frame_parms->nb_antennas_tx = n_txantenna_ch;
   frame_parms->nb_antennas_rx = n_rxantenna_mr;
-
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
 
   init_frame_parms(frame_parms, oversampling);
   phy_init_top(frame_parms);
@@ -1428,8 +1420,45 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   frame_parms->rev = rev;
 
   phy_init_lte_top(frame_parms);
+
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   init_ul_hopping(frame_parms);
-  dump_frame_parms(frame_parms);
+  //dump_frame_parms(frame_parms);
+}
+
+void setup_phy_vars(LTE_DL_FRAME_PARMS* frame_parms, PHY_VARS_eNB* phy_vars_ch_src, 
+    PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays)
+{
+  int k;
+
+  phy_vars_ch_src->lte_frame_parms = *frame_parms;
+  phy_vars_ch_src->frame = 1;
+  phy_init_lte_eNB(phy_vars_ch_src, 0, 0, 0);
+  for(k = 0; k < n_relays; k++) {
+    phy_vars_mr[k]->lte_frame_parms = *frame_parms;
+    phy_vars_mr[k]->frame = 1;
+    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[0], 0);
+    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[1], 1);
+    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[2], 2);
+
+    phy_init_lte_ue(phy_vars_mr[k], 0);
+    phy_vars_mr[k]->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
+    phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
+    phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
+    phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
+  }
+    
+  phy_vars_ch_dest->lte_frame_parms = *frame_parms;
+  phy_vars_ch_dest->frame = 1;
+  phy_init_lte_eNB(phy_vars_ch_dest, 0, 2, 0);
+
+  phy_vars_ch_dest->transmission_mode[0] = 2;
+  phy_vars_ch_dest->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
+  phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
+  phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
+  phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
 }
 
 void alloc_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti)
@@ -1545,14 +1574,14 @@ void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, 
         break;
       case 2:
 	//        dci_data->mcs = 31;
-	dci_data->mcs = 29;
+        dci_data->mcs = 29;
         break;
       case 3:
         dci_data->mcs = 29;
         break;
     }
   }
-  dci_data->rballoc = computeRIV(N_RB,0,n_rb);
+  dci_data->rballoc = computeRIV(N_PRB,0,n_rb);
   dci_data->hopping = 0;
   dci_data->type = 0;
 
@@ -1898,15 +1927,15 @@ void init_results(results_t* r, args_t* a)
   r->mcs_hop2 = malloc(a->n_pdu*sizeof(int*));
   r->tbs_hop1 = malloc(a->n_pdu*sizeof(int*));
   r->tbs_hop2 = malloc(a->n_pdu*sizeof(int*));
-  r->n_rb_hop1 = malloc(a->n_pdu*sizeof(int*));
-  r->n_rb_hop2 = malloc(a->n_pdu*sizeof(int*));
+  r->n_prb_hop1 = malloc(a->n_pdu*sizeof(int*));
+  r->n_prb_hop2 = malloc(a->n_pdu*sizeof(int*));
   for(k = 0; k < a->n_pdu; k++) {
     r->mcs_hop1[k] = malloc(a->n_harq*sizeof(int));
     r->mcs_hop2[k] = malloc(a->n_harq*sizeof(int));
     r->tbs_hop1[k] = malloc(a->n_harq*sizeof(int));
     r->tbs_hop2[k] = malloc(a->n_harq*sizeof(int));
-    r->n_rb_hop1[k] = malloc(a->n_harq*sizeof(int));
-    r->n_rb_hop2[k] = malloc(a->n_harq*sizeof(int));
+    r->n_prb_hop1[k] = malloc(a->n_harq*sizeof(int));
+    r->n_prb_hop2[k] = malloc(a->n_harq*sizeof(int));
   }
   r->relay_activity = malloc((1 << a->n_relays)*sizeof(int));
 }
@@ -1937,8 +1966,8 @@ void clear_results(results_t* r)
     memset(r->mcs_hop2[k], 0, r->n_harq*sizeof(int));
     memset(r->tbs_hop1[k], 0, r->n_harq*sizeof(int));
     memset(r->tbs_hop2[k], 0, r->n_harq*sizeof(int));
-    memset(r->n_rb_hop1[k], 0, r->n_harq*sizeof(int));
-    memset(r->n_rb_hop2[k], 0, r->n_harq*sizeof(int));
+    memset(r->n_prb_hop1[k], 0, r->n_harq*sizeof(int));
+    memset(r->n_prb_hop2[k], 0, r->n_harq*sizeof(int));
   }
   memset(r->n_transmissions, 0, MAX_HARQ_ROUNDS*MAX_HARQ_ROUNDS*sizeof(int));
   memset(r->relay_activity, 0, (1 << (r->n_relays))*sizeof(int));
@@ -1952,15 +1981,15 @@ void free_results(results_t* r)
     free(r->mcs_hop2[k]);
     free(r->tbs_hop1[k]);
     free(r->tbs_hop2[k]);
-    free(r->n_rb_hop1[k]);
-    free(r->n_rb_hop2[k]);
+    free(r->n_prb_hop1[k]);
+    free(r->n_prb_hop2[k]);
   }
   free(r->mcs_hop1);
   free(r->mcs_hop2);
   free(r->tbs_hop1);
   free(r->tbs_hop2);
-  free(r->n_rb_hop1);
-  free(r->n_rb_hop2);
+  free(r->n_prb_hop1);
+  free(r->n_prb_hop2);
   free(r->relay_activity);
 }
 
@@ -2065,12 +2094,12 @@ void write_results_data(FILE* f, results_t* r)
   }
   for(l = 0; l < r->n_pdu; l++) {
     for(k = 0; k < r->n_harq; k++)
-      fprintf(f, "%d ", r->n_rb_hop1[l][k]);
+      fprintf(f, "%d ", r->n_prb_hop1[l][k]);
     fprintf(f, "\n");
   }
   for(l = 0; l < r->n_pdu; l++) {
     for(k = 0; k < r->n_harq; k++)
-      fprintf(f, "%d ", r->n_rb_hop2[l][k]);
+      fprintf(f, "%d ", r->n_prb_hop2[l][k]);
     fprintf(f, "\n");
   }
   for(l = 0; l < r->n_harq; l++) {
