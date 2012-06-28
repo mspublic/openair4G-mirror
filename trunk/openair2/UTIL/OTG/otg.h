@@ -51,6 +51,7 @@
 #include "otg_defs.h"
 #include "otg_config.h"
 
+
 #if STANDALONE==1
 	#define LOG_G(c, x...) printf(x)
 	#define LOG_A(c, x...) printf(x)

@@ -43,11 +43,13 @@
 #include"otg_kpi.h"
 #include"otg_externs.h"
 
+extern unsigned char NB_eNB_INST;
+extern unsigned char NB_UE_INST;
 
 void tx_throughput(int src, int dst){
   
   otg_info->tx_throughput[src][dst]=((double)otg_info->tx_num_bytes[src][dst] / get_ctime()); // unit Kbytes/sec, if ctime in ms
-  LOG_I(OTG,"KPI :: TX src=%d, dst=%d, ctime=%d, tx throughput=%.3lf(Kbytes/sec) \n", src, dst, get_ctime(), otg_info->tx_throughput[src][dst]);
+  //LOG_I(OTG,"KPI :: TX src=%d, dst=%d, ctime=%d, tx throughput=%.3lf(Kbytes/sec) \n", src, dst, get_ctime(), otg_info->tx_throughput[src][dst]);
 }
 
 
@@ -55,7 +57,7 @@ void tx_throughput(int src, int dst){
 void rx_goodput(int src, int dst){
 
   otg_info->rx_goodput[src][dst]=((double)otg_info->rx_num_bytes[src][dst] /get_ctime()); // unit bytes/sec, if ctime in ms 
-  LOG_I(OTG,"KPI :: RX src=%d, dst=%d, ctime=%d , bytes=%d, tx throughput=%.3lf(Kbytes/sec) \n", src, dst, get_ctime(), otg_info->rx_num_bytes[src][dst],otg_info->rx_goodput[src][dst]);
+  //LOG_I(OTG,"KPI :: RX src=%d, dst=%d, ctime=%d , bytes=%d, tx throughput=%.3lf(Kbytes/sec) \n", src, dst, get_ctime(), otg_info->rx_num_bytes[src][dst],otg_info->rx_goodput[src][dst]);
 }
 
 
@@ -68,7 +70,7 @@ void rx_loss_rate_pkts(int src, int dst){
   else
     otg_info->rx_loss_rate[src][dst]=0;
   
-  LOG_I(OTG, "loss rate (src=%d, dst=%d):: = %lf(pkts) \n",src, dst, otg_info->rx_loss_rate[src][dst]);
+  //LOG_I(OTG, "loss rate (src=%d, dst=%d):: = %lf(pkts) \n",src, dst, otg_info->rx_loss_rate[src][dst]);
   
 }
 
@@ -103,26 +105,35 @@ void kpi_gen() {
 #ifdef STANDALONE	
   FILE *file;
   file = fopen("log_OTG.txt", "w"); 
+#else   // Maybe to do modifo log function in order to clear file before a new write !!!! 
+FILE *fc;
+fc=fopen("/tmp/otg.log","w");;
+  if(fc!=0) 
+    fclose(fc);
 #endif
-  for (i=0; i<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); i++){
-    for (j=0; j<(NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX); j++){
+
+
+
+  for (i=0; i<(NB_eNB_INST + NB_UE_INST); i++){
+    for (j=0; j<(NB_eNB_INST + NB_UE_INST); j++){
       
       tx_throughput(i, j);
       rx_goodput(i, j);
       rx_loss_rate_pkts(i, j);
       
-      LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j,  otg_info->tx_num_pkt[i][j],  otg_info->rx_num_pkt[i][j]);
+      //LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j,  otg_info->tx_num_pkt[i][j],  otg_info->rx_num_pkt[i][j]);
       
       
-      if (otg_info->tx_throughput[i][j]>0) {
+     if (otg_info->tx_throughput[i][j]>0) {
 	
-	if (otg_info->tx_throughput[i][j]==otg_info->rx_goodput[i][j]){
+ /*	if (otg_info->tx_throughput[i][j]==otg_info->rx_goodput[i][j]){
 	  LOG_I(OTG,"KPI:  (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %lf(Kbytes/sec), RX goodput= %lf (Kbytes/sec), loss rate(percentage)= %d\n",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j],0);
 	}
 	
 	else if (otg_info->tx_throughput[i][j]>otg_info->rx_goodput[i][j]){
 	  LOG_I(OTG,"KPI: (LOSS):: (src=%d, dst=%d), RTT MIN (one way)ms= %d, RTT MAX (one way)ms= %d, TX throughput = %.3lf(Kbytes/sec), RX goodput= %lf (Kbytes/sec), loss rate(percentage)= %lf pkts\n ",i, j, otg_info->rx_owd_min[i][j], otg_info->rx_owd_max[i][j],otg_info->tx_throughput[i][j],otg_info->rx_goodput[i][j], (otg_info->rx_loss_rate[i][j]*100)); }
-	
+	*/
+
 	tx_total_bytes+=otg_info->tx_num_bytes[i][j];
 	tx_total_pkts+=otg_info->tx_num_pkt[i][j];
 	
@@ -134,7 +145,7 @@ void kpi_gen() {
 	if ((max_owd<otg_info->rx_owd_max[i][j]) || (max_owd==0))
 	  max_owd=otg_info->rx_owd_max[i][j];
 	
-	LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j,  otg_info->tx_num_pkt[i][j],  otg_info->rx_num_pkt[i][j]);
+	//LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j,  otg_info->tx_num_pkt[i][j],  otg_info->rx_num_pkt[i][j]);
 	
 #ifdef STANDALONE
 	
@@ -168,9 +179,7 @@ void kpi_gen() {
 	  LOG_F(OTG,"NB Lost  packets= %d \n", otg_info->nb_loss_pkts[i][j]);
 	}
 #endif 
-      }
-    }
-  }
+
   	
 #ifdef STANDALONE
   fprintf (file,"**************** TOTAL RESULTS ******************\n");
@@ -196,10 +205,14 @@ void kpi_gen() {
   LOG_F(OTG,"TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes/otg_info->ctime);
   LOG_F(OTG,"RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes/otg_info->ctime);
 #endif
+      }
+    }
+  }
+
 }
 
 
-void add_log_metric(int src, int dst, int ctime, int metric, unsigned int label){
+void add_log_metric(int src, int dst, int ctime, float metric, unsigned int label){
  unsigned int i;
  unsigned int j;
  unsigned int k;
@@ -211,7 +224,7 @@ void add_log_metric(int src, int dst, int ctime, int metric, unsigned int label)
    break;
  }
 
- LOG_F(label,"%d ", ctime);
+ LOG_F(label,"%d", ctime);
   for (i=0; i<=(g_otg->num_nodes); i++){
     for (j=0; j<=(g_otg->num_nodes); j++){
     node_actif=0;
@@ -226,7 +239,7 @@ void add_log_metric(int src, int dst, int ctime, int metric, unsigned int label)
           LOG_F(label,"%d ", 0);
   }
  }
- LOG_F(label,"%d\n", metric);
+ LOG_F(label,"%f\n", metric);
 }
 
 
