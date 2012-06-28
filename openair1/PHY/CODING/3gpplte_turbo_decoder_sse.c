@@ -151,11 +151,22 @@ __m128i *mbot_g[MAX_DECODING_THREADS] = {mbot_0, mbot_1, mbot_2, mbot_3, mbot_4}
 __m128i mtmp[MAX_DECODING_THREADS],mtmp2[MAX_DECODING_THREADS],lsw[MAX_DECODING_THREADS],msw[MAX_DECODING_THREADS],new[MAX_DECODING_THREADS],mb[MAX_DECODING_THREADS],newcmp[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
 __m128i TOP,BOT,THRES128;
 
+#define L 40
+
 void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,unsigned char inst)
 {
-  int k;
-  __m128i *alpha128=(__m128i *)alpha;
-
+  int k,K1,K2,K3,K4,K5,K6,K7;
+  __m128i *alpha128=(__m128i *)alpha,*alpha_ptr;
+  __m128i m11_0,m10_0,m11_0tmp,m10_0tmp;
+  __m128i m11_1,m10_1,m11_1tmp,m10_1tmp;
+  __m128i m11_2,m10_2,m11_2tmp,m10_2tmp;
+  __m128i m11_3,m10_3,m11_3tmp,m10_3tmp;
+  __m128i m11_4,m10_4,m11_4tmp,m10_4tmp;
+  __m128i m11_5,m10_5,m11_5tmp,m10_5tmp;
+  __m128i m11_6,m10_6,m11_6tmp,m10_6tmp;
+  __m128i m11_7,m10_7,m11_7tmp,m10_7tmp;
+  __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
+  __m128i new0,new1,new2,new3,new4,new5,new6,new7;
   //  __m128i mtmp,mtmp2,lsw,msw,new,mb,newcmp;
   //  __m128i TOP,BOT,THRES128;
 
@@ -167,37 +178,38 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
   llr_t m11,m10;
 
 
+  if (1) { //(frame_length < SHORT_LENGTH_CW) {
 #ifdef DEBUG_LOGMAP
-  msg("compute_alpha(%x,%x,%x,%d,%d,%d)\n",alpha,m_11,m10,frame_length,F,inst);
+    msg("compute_alpha(%x,%x,%x,%d,%d,%d)\n",alpha,m_11,m10,frame_length,F,inst);
 #endif
-  
-  THRES128 = _mm_set1_epi16(THRES);
-
-  alpha128[0] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
-
-  TOP = _mm_set_epi16(-1,1,1,-1,-1,1,1,-1);
-  
-  BOT = _mm_set_epi16(1,-1,-1,1,1,-1,-1,1);
-
-  for (k=1;k<=F;k++)
-    alpha128[k]=alpha128[0];
-
-  alpha128+=F;
-  //
-  // compute log_alpha[k][m]
-  // Steady-state portion
-
-
-  for (k=F;k<frame_length+4;k++){
+    
+    THRES128 = _mm_set1_epi16(THRES);
+    
+    alpha128[0] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
+    
+    TOP = _mm_set_epi16(-1,1,1,-1,-1,1,1,-1);
+    
+    BOT = _mm_set_epi16(1,-1,-1,1,1,-1,-1,1);
+    
+    for (k=1;k<=F;k++)
+      alpha128[k]=alpha128[0];
+    
+    alpha128+=F;
+    //
+    // compute log_alpha[k][m]
+    // Steady-state portion
+    
+    
+    for (k=F;k<frame_length+4;k++){
       // get 8 consecutive gammas
-
+      
       //      m11_128=m_11_128[k];
       //      m10_128=m_10_128[k];
-
+      
       m11=m_11[k];
       m10=m_10[k];
       //      msg("m11 %d, m10 %d\n",m11,m10);
-
+      
       // First compute state transitions  (Think about LUT!)
       //      mtmp = m11_128;
       // Think about __mm_set1_epi16 instruction!!!!
@@ -274,7 +286,7 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
             
       new[inst] = _mm_max_epi16(new[inst],mb[inst]);
       newcmp[inst] = _mm_cmpgt_epi16(new[inst],THRES128);
-
+      
 #ifndef __SSE4_1__
       newcmp_int = (int*) &newcmp[inst];
       if (newcmp_int[0]==0 && newcmp_int[1]==0 && newcmp_int[2]==0 && newcmp_int[3]==0) // if any states above THRES normalize
@@ -289,8 +301,325 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 	//	print_shorts(" ",alpha128);
       }
       
+    }
       //      print_shorts("alpha",alpha128);
 	  
+  }
+  else {
+    alpha128[0] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
+    alpha128[1] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[2] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[3] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[4] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[5] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[6] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[7] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+
+    K1 = (frame_length>>3);
+    K2 = K1<<1;
+    K3 = 3*K1;
+    K4 = K1<<2;
+    K5 = 5*K1;
+    K6 = 6*K1;
+    K7 = 7*K1;
+
+    for (k=0;k<(K1+L);k+=8){
+
+      m11_0=((__m128i*)m_11)[k];  // [00 01 02 03 04 05 06 07]
+      m10_0=((__m128i*)m_10)[k];
+      m11_1=((__m128i*)m_11)[k+K1];  // [10 11 12 13 14 15 16 17]
+      m10_1=((__m128i*)m_10)[k+K1];
+      m11_2=((__m128i*)m_11)[k+K2];  // [20 21 22 23 24 25 26 27]
+      m10_2=((__m128i*)m_10)[k+K2];
+      m11_3=((__m128i*)m_11)[k+K3];  // [30 31 32 33 34 35 36 37]
+      m10_3=((__m128i*)m_10)[k+K3];
+      m11_4=((__m128i*)m_11)[k+K4];  // [40 41 42 43 44 45 46 47]
+      m10_4=((__m128i*)m_10)[k+K4];
+      m11_5=((__m128i*)m_11)[k+K5];  // [50 51 52 53 54 55 56 57]
+      m10_5=((__m128i*)m_10)[k+K5];
+      m11_6=((__m128i*)m_11)[k+K6];  // [60 61 62 63 64 65 66 67] 
+      m10_6=((__m128i*)m_10)[k+K6];
+      m11_7=((__m128i*)m_11)[k+K7];  // [70 71 72 73 74 75 76 77]
+      m10_7=((__m128i*)m_10)[k+K7];
+
+      m11_0tmp = _mm_unpacklo_epi16(m11_0,m11_1); // [00 10 01 11 02 12 03 13]
+      m11_1    = _mm_unpackhi_epi16(m11_0,m11_1); // [04 14 05 15 06 16 07 17]
+      m11_2tmp = _mm_unpacklo_epi16(m11_2,m11_3); // [20 30 21 31 22 32 23 33]
+      m11_3    = _mm_unpackhi_epi16(m11_2,m11_3); // [24 34 25 35 26 36 27 37]
+      m11_4tmp = _mm_unpacklo_epi16(m11_4,m11_5); // [40 50 41 51 42 52 43 53]
+      m11_5    = _mm_unpackhi_epi16(m11_4,m11_5); // [44 54 45 55 46 56 47 57]
+      m11_6tmp = _mm_unpacklo_epi16(m11_6,m11_7); // [60 70 61 71 62 72 63 73]
+      m11_7    = _mm_unpackhi_epi16(m11_6,m11_7); // [64 74 65 75 66 76 67 77]
+
+      m11_0      = _mm_unpacklo_epi32(m11_0tmp,m11_2tmp);  // [00 10 20 30 01 11 21 31]
+      m11_2      = _mm_unpackhi_epi32(m11_0tmp,m11_2tmp);  // [02 12 22 32 03 13 23 33]
+      m11_1tmp   = _mm_unpacklo_epi32(m11_1,m11_3);  // [04 14 24 34 05 15 25 35]
+      m11_3      = _mm_unpackhi_epi32(m11_1,m11_3);  // [06 16 26 36 07 17 27 37]
+      m11_4      = _mm_unpacklo_epi32(m11_4tmp,m11_6tmp);  // [40 50 60 70 41 51 61 71]
+      m11_6      = _mm_unpackhi_epi32(m11_4tmp,m11_6tmp);  // [42 52 62 72 43 53 63 73]
+      m11_5tmp   = _mm_unpacklo_epi32(m11_5,m11_7);  // [44 54 64 74 45 55 65 75]
+      m11_7      = _mm_unpackhi_epi32(m11_5,m11_7);  // [46 56 66 76 47 57 67 77]
+
+      m11_0tmp   = _mm_unpacklo_epi64(m11_0,m11_4); // [00 10 20 30 40 50 60 70]
+      m11_1      = _mm_unpackhi_epi64(m11_0,m11_4); // [01 11 21 31 41 51 61 71]
+      m11_2tmp   = _mm_unpacklo_epi64(m11_2,m11_6); // [02 12 22 32 42 52 62 72]
+      m11_3tmp   = _mm_unpackhi_epi64(m11_2,m11_6); // [03 13 23 33 43 53 63 73]
+      m11_4      = _mm_unpacklo_epi64(m11_1tmp,m11_5tmp); // [04 14 24 34 44 54 64 74]
+      m11_5      = _mm_unpackhi_epi64(m11_1tmp,m11_5tmp); // [05 15 25 35 45 55 65 75]
+      m11_6      = _mm_unpacklo_epi64(m11_3,m11_7); // [06 16 26 36 46 56 66 76]
+      m11_7      = _mm_unpackhi_epi64(m11_3,m11_7); // [07 17 27 37 47 57 67 77]
+
+      m11_0tmp = _mm_unpacklo_epi16(m11_0,m11_1); // [00 10 01 11 02 12 03 13]
+      m11_1    = _mm_unpackhi_epi16(m11_0,m11_1); // [04 14 05 15 06 16 07 17]
+      m11_2tmp = _mm_unpacklo_epi16(m11_2,m11_3); // [20 30 21 31 22 32 23 33]
+      m11_3    = _mm_unpackhi_epi16(m11_2,m11_3); // [24 34 25 35 26 36 27 37]
+      m11_4tmp = _mm_unpacklo_epi16(m11_4,m11_5); // [40 50 41 51 42 52 43 53]
+      m11_5    = _mm_unpackhi_epi16(m11_4,m11_5); // [44 54 45 55 46 56 47 57]
+      m11_6tmp = _mm_unpacklo_epi16(m11_6,m11_7); // [60 70 61 71 62 72 63 73]
+      m11_7    = _mm_unpackhi_epi16(m11_6,m11_7); // [64 74 65 75 66 76 67 77]
+
+      m10_0      = _mm_unpacklo_epi32(m10_0tmp,m10_2tmp);  // [00 10 20 30 01 11 21 31]
+      m10_2      = _mm_unpackhi_epi32(m10_0tmp,m10_2tmp);  // [02 12 22 32 03 13 23 33]
+      m10_1tmp   = _mm_unpacklo_epi32(m10_1,m10_3);  // [04 14 24 34 05 15 25 35]
+      m10_3      = _mm_unpackhi_epi32(m10_1,m10_3);  // [06 16 26 36 07 17 27 37]
+      m10_4      = _mm_unpacklo_epi32(m10_4tmp,m10_6tmp);  // [40 50 60 70 41 51 61 71]
+      m10_6      = _mm_unpackhi_epi32(m10_4tmp,m10_6tmp);  // [42 52 62 72 43 53 63 73]
+      m10_5tmp   = _mm_unpacklo_epi32(m10_5,m10_7);  // [44 54 64 74 45 55 65 75]
+      m10_7      = _mm_unpackhi_epi32(m10_5,m10_7);  // [46 56 66 76 47 57 67 77]
+
+      m10_0tmp   = _mm_unpacklo_epi64(m10_0,m10_4); // [00 10 20 30 40 50 60 70]
+      m10_1      = _mm_unpackhi_epi64(m10_0,m10_4); // [01 11 21 31 41 51 61 71]
+      m10_2tmp   = _mm_unpacklo_epi64(m10_2,m10_6); // [02 12 22 32 42 52 62 72]
+      m10_3tmp   = _mm_unpackhi_epi64(m10_2,m10_6); // [03 13 23 33 43 53 63 73]
+      m10_4      = _mm_unpacklo_epi64(m10_1tmp,m10_5tmp); // [04 14 24 34 44 54 64 74]
+      m10_5      = _mm_unpackhi_epi64(m10_1tmp,m10_5tmp); // [05 15 25 35 45 55 65 75]
+      m10_6      = _mm_unpacklo_epi64(m10_3,m10_7); // [06 16 26 36 46 56 66 76]
+      m10_7      = _mm_unpackhi_epi64(m10_3,m10_7); // [07 17 27 37 47 57 67 77]
+
+      alpha_ptr = &alpha128[k<<3];
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_0);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_0);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_0);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_0);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_0);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_0);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_0);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_0);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_0);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_0);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_0);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_0);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_0);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_0);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_0);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_0);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_1);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_1);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_1);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_1);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_1);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_1);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_1);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_1);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_1);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_1);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_1);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_1);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_1);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_1);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_1);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_1);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_2);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_2);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_2);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_2);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_2);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_2);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_2);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_2);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_2);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_2);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_2);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_2);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_2);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_2);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_2);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_2);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr    += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_3);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_3);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_3);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_3);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_3);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_3);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_3);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_3);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_3);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_3);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_3);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_3);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_3);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_3);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_3);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_3);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_4);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_4);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_4);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_4);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_4);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_4);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_4);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_4);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_4);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_4);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_4);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_4);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_4);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_4);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_4);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_4);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_5);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_5);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_5);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_5);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_5);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_5);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_5);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_5);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_5);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_5);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_5);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_5);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_5);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_5);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_5);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_5);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_6);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_6);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_6);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_6);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_6);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_6);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_6);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_6);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_6);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_6);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_6);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_6);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_6);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_6);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_6);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_6);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_7);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_7);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_7);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_7);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_7);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_7);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_7);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_7);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_7);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_7);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_7);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_7);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_7);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_7);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_7);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_7);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+    }
   }
   _mm_empty();
   _m_empty();

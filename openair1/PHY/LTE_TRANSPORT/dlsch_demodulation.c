@@ -6579,7 +6579,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    j=0;
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
-		if (i!=(frame_parms->nushift+poffset)) {
+		if (i!=((frame_parms->nushift+poffset)%6)) {
 		  rxF_ext[j]=rxF[i<<1];
 		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
@@ -6590,7 +6590,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    }
 	    else if (skip_half==2) {
 	      for (i=0;i<6;i++) {
-		if (i!=(frame_parms->nushift+poffset)) {
+		if (i!=((frame_parms->nushift+poffset)%6)) {
 		  rxF_ext[j]=rxF[(i+6)<<1];
 		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i+6];
@@ -6602,7 +6602,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    else {
 	      for (i=0;i<12;i++) {
 		if ((i!=(frame_parms->nushift+poffset)) &&
-		    (i!=(frame_parms->nushift+poffset+6))) {
+		    (i!=((frame_parms->nushift+poffset+6)%12))) {
 		  rxF_ext[j]=rxF[i<<1];
 		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
@@ -6675,7 +6675,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	else { // pilots==1
 	  j=0;
 	  for (i=0;i<6;i++) {
-	    if (i!=(frame_parms->nushift+poffset)) {
+	    if (i!=((frame_parms->nushift+poffset)%6)) {
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      rxF_ext[j++]=rxF[i<<1];
 	      //	           	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
@@ -6683,7 +6683,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  }
 	  rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	  for (;i<12;i++) {
-	    if (i!=(frame_parms->nushift+6+poffset)) {
+	    if (i!=((frame_parms->nushift+6+poffset)%12)) {
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      rxF_ext[j++]=rxF[(1+i-6)<<1];
 	      //	            	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
@@ -6798,7 +6798,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    j=0;
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
-		if (i!=(frame_parms->nushift+poffset)) {
+		if (i!=((frame_parms->nushift+poffset)%6)) {
 		  rxF_ext[j]=rxF[i<<1];
 		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
@@ -6809,7 +6809,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    }
 	    else if (skip_half==2) {
 	      for (i=0;i<6;i++) {
-		if (i!=(frame_parms->nushift+poffset)) {
+		if (i!=((frame_parms->nushift+poffset)%6)) {
 		  rxF_ext[j]=rxF[(i+6)<<1];
 		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i+6];
@@ -6821,7 +6821,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    else {
 	      for (i=0;i<12;i++) {
 		if ((i!=(frame_parms->nushift+poffset)) &&
-		    (i!=(frame_parms->nushift+poffset+6))) {
+		    (i!=((frame_parms->nushift+poffset+6)%12))) {
 		  rxF_ext[j]=rxF[i<<1];
 		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
@@ -7000,7 +7000,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	      if ((i!=frame_parms->nushift) &&
 		  (i!=frame_parms->nushift+3) &&
 		  (i!=frame_parms->nushift+6) &&
-		  (i!=frame_parms->nushift+9)) {
+		  (i!=((frame_parms->nushift+9)%12))) {
 		rxF_ext[j]=rxF[i<<1];
 		//	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		dl_ch0_ext[j]=dl_ch0[i];
@@ -7125,7 +7125,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
  		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3)) {
+		    (i!=((frame_parms->nushift+3)%6))) {
 		  
 		  rxF_ext[j]=rxF[i<<1];
 		  //	  printf("(pilots,skip1)extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
@@ -7140,7 +7140,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    else if (skip_half==2) {
 	      for (i=0;i<6;i++) {
  		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3)) {
+		    (i!=((frame_parms->nushift+3)%6))) {
 		      rxF_ext[j]=rxF[(i+6)<<1];
 		      //	      printf("(pilots,skip2)extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		      dl_ch0_ext[j]=dl_ch0[i+6];
@@ -7157,7 +7157,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 		if ((i!=frame_parms->nushift) &&
 		    (i!=frame_parms->nushift+3) &&
 		    (i!=frame_parms->nushift+6) &&
-		    (i!=frame_parms->nushift+9)) {
+		    (i!=((frame_parms->nushift+9)%12))) {
 		  rxF_ext[j]=rxF[i<<1];
 		  //	  printf("(pilots)extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  
@@ -7248,7 +7248,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  j=0;
 	  for (i=0;i<6;i++) {
 	    if ((i!=frame_parms->nushift) &&
-		(i!=frame_parms->nushift+3)){
+		(i!=((frame_parms->nushift+3)%6))){
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      dl_ch1_ext[j]=dl_ch1[i];
 	      rxF_ext[j++]=rxF[i<<1];
@@ -7260,8 +7260,8 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  }
 	  rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	  for (;i<12;i++) {
-	    if ((i!=frame_parms->nushift+6) &&
-		(i!=frame_parms->nushift+9)){
+	    if ((i!=((frame_parms->nushift+6)%12)) &&
+		(i!=((frame_parms->nushift+9)%12))){
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      dl_ch1_ext[j]=dl_ch1[i];
 	      rxF_ext[j++]=rxF[(1+i-6)<<1];
@@ -7391,7 +7391,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
 		if ((i!=(frame_parms->nushift)) &&
-		    (i!=frame_parms->nushift+3)){
+		    (i!=((frame_parms->nushift+3)%6))){
 		  rxF_ext[j]=rxF[i<<1];
 		  //  		  printf("(skip1,pilots)extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j]=dl_ch0[i];
@@ -7405,7 +7405,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    else if (skip_half==2) {
 	      for (i=0;i<6;i++) {
 		if ((i!=(frame_parms->nushift))  &&
-		    (i!=frame_parms->nushift+3)){
+		    (i!=((frame_parms->nushift+3)%6))){
 		  rxF_ext[j]=rxF[(i+6)<<1];
 		  //  		  printf("(skip2,pilots)extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j]=dl_ch0[i+6];
@@ -7421,7 +7421,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 		if ((i!=frame_parms->nushift) &&
 		    (i!=frame_parms->nushift+3) &&
 		    (i!=frame_parms->nushift+6) &&
-		    (i!=frame_parms->nushift+9)) {
+		    (i!=((frame_parms->nushift+9)%12))) {
 		  rxF_ext[j]=rxF[i<<1];
 		  //	printf("(pilots)extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j]=dl_ch0[i];
@@ -10089,7 +10089,7 @@ int avg[4];
 int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	     PDSCH_t type,
 	     unsigned char eNB_id,
-	     unsigned char eNB_id_i, //if this == NUMBER_OF_eNB_MAX, we assume MU interference
+	     unsigned char eNB_id_i, //if this == NUMBER_OF_CONNECTED_eNB_MAX, we assume MU interference
 	     u8 subframe,
 	     unsigned char symbol,
 	     unsigned char first_symbol_flag,
@@ -10196,7 +10196,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				   frame_parms);
 
     if (dual_stream_flag==1) {
-      if (eNB_id_i!=NUMBER_OF_eNB_MAX)
+      if (eNB_id_i!=NUMBER_OF_CONNECTED_eNB_MAX)
 	nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				       lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
 				       lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
@@ -10234,7 +10234,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				     frame_parms);
     
     if (dual_stream_flag==1) {
-      if (eNB_id_i!=NUMBER_OF_eNB_MAX)
+      if (eNB_id_i!=NUMBER_OF_CONNECTED_eNB_MAX)
 	nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 					 lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
 					 lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
@@ -10337,7 +10337,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
     
-    if ((dual_stream_flag==1) && (eNB_id_i!=NUMBER_OF_eNB_MAX)) {
+    if ((dual_stream_flag==1) && (eNB_id_i!=NUMBER_OF_CONNECTED_eNB_MAX)) {
       // get MF output for interfering stream
       dlsch_channel_compensation(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
 				 lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
@@ -10371,7 +10371,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   }
   else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding
     //    printf("Channel compensation for precoding\n");
-    if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_eNB_MAX)) {
+    if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_CONNECTED_eNB_MAX)) {
 #ifdef COMPARE_FLP_AND_FXP
       // Store reference streams for the sake of comparison
       int i;
@@ -10800,7 +10800,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
 		      PDSCH_t type,
 		      unsigned char eNB_id,
-		      unsigned char eNB_id_i, //if this == NUMBER_OF_eNB_MAX, we assume MU interference
+		      unsigned char eNB_id_i, //if this == NUMBER_OF_CONNECTED_eNB_MAX, we assume MU interference
 		      u8 subframe,
 		      unsigned char symbol,
 		      unsigned char first_symbol_flag,
@@ -10899,7 +10899,7 @@ int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
       
       if (dual_stream_flag==1)
 	{
-	  if (eNB_id_i!=NUMBER_OF_eNB_MAX)
+	  if (eNB_id_i!=NUMBER_OF_CONNECTED_eNB_MAX)
 	    {
 	      msg("dlsch_extract_rbs_dual, step 1.\n");
 	      //nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
@@ -10944,7 +10944,7 @@ int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
       
       if (dual_stream_flag==1)
 	{
-	  if (eNB_id_i!=NUMBER_OF_eNB_MAX)
+	  if (eNB_id_i!=NUMBER_OF_CONNECTED_eNB_MAX)
 	    {
 	      msg("dlsch_extract_rbs_single, step 1.\n");
 	      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
@@ -11012,7 +11012,7 @@ int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
       //			 lte_ue_pdsch_vars_flp[eNB_id]->log2_maxh,
       //			 phy_measurements); // log2_maxh+I0_shift
     
-      if ((dual_stream_flag==1) && (eNB_id_i!=NUMBER_OF_eNB_MAX))
+      if ((dual_stream_flag==1) && (eNB_id_i!=NUMBER_OF_CONNECTED_eNB_MAX))
 	{
 	  // get MF output for interfering stream
 	  msg("dlsch_channel_compensation, step 2.\n");
@@ -11043,7 +11043,7 @@ int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
   else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1)
     {// single-layer precoding
       //    msg("Channel compensation for precoding\n");
-      if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_eNB_MAX))
+      if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_CONNECTED_eNB_MAX))
 	{
 	  msg("dlsch_channel_compensation_prec_full_flp, step 0.\n");
 	  dlsch_channel_compensation_prec_full_flp(lte_ue_pdsch_vars_flp[eNB_id]->rxdataF_ext,

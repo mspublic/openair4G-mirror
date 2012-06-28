@@ -136,6 +136,8 @@
 
 #define NUM_DCI_MAX 32
 
+#define NUMBER_OF_eNB_SECTORS_MAX 3
+
 /// Top-level PHY Data Structure for eNB 
 typedef struct
 {
@@ -145,7 +147,7 @@ typedef struct
   unsigned int rx_total_gain_eNB_dB;
   u32 frame;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
-  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
+  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_SRS      lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH     lte_eNB_pbch;
@@ -264,57 +266,58 @@ typedef struct
   unsigned int rx_total_gain_dB;
   s8 tx_power_dBm;
   u32 frame;
+  u8 n_connected_eNB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_eNB_MAX+1];
-  LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX+1];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_eNB_MAX];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_eNB_MAX];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_eNB_MAX];
-  LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
-  LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_eNB_MAX][2];
-  LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_eNB_MAX];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
   u8               sr[10];
   u8               pucch_payload[22];
 
-  UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
-  s8               g_pucch[NUMBER_OF_eNB_MAX];
+  UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  s8               g_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
   /// cell-specific reference symbols
-  unsigned int lte_gold_table[3][20][2][14];
+  unsigned int lte_gold_table[7][20][2][14];
 
 
   s16 X_u[64][2*839];
 
-  char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
+  char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  unsigned char ulsch_ue_Msg3_active[NUMBER_OF_eNB_MAX];
-  unsigned int  ulsch_ue_Msg3_frame[NUMBER_OF_eNB_MAX];
-  unsigned char ulsch_ue_Msg3_subframe[NUMBER_OF_eNB_MAX];
-  //  unsigned char Msg3_timer[NUMBER_OF_eNB_MAX];
-  //unsigned char *Msg3_ptr[NUMBER_OF_eNB_MAX];
-  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_eNB_MAX];
+  unsigned char ulsch_ue_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int  ulsch_ue_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char ulsch_ue_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
+  //  unsigned char Msg3_timer[NUMBER_OF_CONNECTED_eNB_MAX];
+  //unsigned char *Msg3_ptr[NUMBER_OF_CONNECTED_eNB_MAX];
+  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
-  unsigned int total_TBS[NUMBER_OF_eNB_MAX];
-  unsigned int total_TBS_last[NUMBER_OF_eNB_MAX];
-  unsigned int bitrate[NUMBER_OF_eNB_MAX];
-  unsigned int total_received_bits[NUMBER_OF_eNB_MAX];
-  int dlsch_errors[NUMBER_OF_eNB_MAX];
-  int dlsch_errors_last[NUMBER_OF_eNB_MAX];
-  int dlsch_received[NUMBER_OF_eNB_MAX];
-  int dlsch_received_last[NUMBER_OF_eNB_MAX];
-  int dlsch_fer[NUMBER_OF_eNB_MAX];
-  int dlsch_SI_received[NUMBER_OF_eNB_MAX];
-  int dlsch_SI_errors[NUMBER_OF_eNB_MAX];
-  int dlsch_ra_received[NUMBER_OF_eNB_MAX];
-  int dlsch_ra_errors[NUMBER_OF_eNB_MAX];
-  int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
-  unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
+  unsigned int total_TBS[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int total_TBS_last[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int bitrate[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int total_received_bits[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_errors_last[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_received[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_received_last[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_fer[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_SI_received[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
   u8               generate_prach;
   u8               prach_cnt;
   u8               prach_PreambleIndex;
@@ -340,37 +343,37 @@ typedef struct
   double N0;
   
   /// PDSCH Varaibles
-  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_eNB_MAX];
+  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// PUSCH Varaibles
-  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_eNB_MAX];
+  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
  
   /// PUSCH contention-based access vars
   PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
   /// PUCCH variables
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_eNB_MAX];
+  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
   
   u8 ncs_cell[20][7];
 
   /// UL-POWER-Control
-  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_eNB_MAX];
+  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// TPC
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_eNB_MAX];
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_eNB_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// CQI reporting
-  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_eNB_MAX];
+  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// SRS Variables
-  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_eNB_MAX];
+  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_eNB_MAX];
+  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// Transmission mode per eNB
-  u8 transmission_mode[NUMBER_OF_eNB_MAX];
+  u8 transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
 
 
 } PHY_VARS_UE;

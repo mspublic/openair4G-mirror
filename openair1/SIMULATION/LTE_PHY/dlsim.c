@@ -295,7 +295,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->N_RB_UL            = N_RB_DL;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = 0;
+  lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->phich_config_common.phich_resource         = oneSixth;
@@ -324,8 +324,12 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   phy_init_lte_top(lte_frame_parms);
   dump_frame_parms(lte_frame_parms);
 
+  PHY_vars_UE->PHY_measurements.n_adj_cells=2;
+  PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
+  PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
+
   for (i=0;i<3;i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
+    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);    
 
   phy_init_lte_ue(PHY_vars_UE,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
@@ -1250,7 +1254,7 @@ int main(int argc, char **argv) {
 						num_pdcch_symbols,
 						PHY_vars_eNB->dlsch_eNB[k][1]);
 	    } //n_users
-	    //  printf("Did not Crash here 4\n");
+
 	    
 	    generate_pilots(PHY_vars_eNB,
 			    PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
@@ -1873,12 +1877,12 @@ int main(int argc, char **argv) {
 #ifdef XFORMS
 	  do_forms(form,
 		   &PHY_vars_UE->lte_frame_parms,  
-		   PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates_time,
-		   PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id],
+		   PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates_time[0],
+		   PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0],
 		   PHY_vars_UE->lte_ue_common_vars.rxdata,
 		   PHY_vars_UE->lte_ue_common_vars.rxdataF,
 		   PHY_vars_UE->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-		   PHY_vars_UE->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+		   PHY_vars_UE->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
 		   PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_ch_rho_ext[0],
 		   PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0],coded_bits_per_codeword);
 	  //PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->w[0],3*(tbs+64)); 

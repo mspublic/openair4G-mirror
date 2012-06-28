@@ -120,10 +120,11 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned char N0_symbol,
 			 unsigned char abstraction_flag) __attribute__ ((force_align_arg_pointer));
 
+//! \brief This function performance RSRP/RSCP measurements
 void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 			 u8 slot,
 			 u8 abstraction_flag);
-
+ 
 void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id);
 
 /*! \brief Function to return the path-loss based on the UE cell-specific reference signal strength and transmission power of eNB
@@ -180,6 +181,7 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
 		       unsigned char symbol,
 		       unsigned short Msc_RS,
 		       unsigned char Qm);
+
 
 /** @} */ 
 #endif

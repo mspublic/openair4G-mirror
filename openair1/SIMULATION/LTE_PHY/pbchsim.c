@@ -315,8 +315,12 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
 
   phy_init_lte_top(lte_frame_parms);
+
+  PHY_vars_UE->PHY_measurements.n_adj_cells=2;
+  PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
+  PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
   for (i=0;i<3;i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
+    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);    
 
   phy_init_lte_ue(PHY_vars_UE,0);
 
@@ -342,6 +346,12 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 
 }
+
+mod_sym_t *dummybuf[4];
+mod_sym_t dummy0[2048*14];
+mod_sym_t dummy1[2048*14];
+mod_sym_t dummy2[2048*14];
+mod_sym_t dummy3[2048*14];
 
 
 int main(int argc, char **argv) {
@@ -398,6 +408,7 @@ int main(int argc, char **argv) {
   int openair_fd,rx_sig_fifo_fd,get_frame=0;
   int frequency=0,fc=0;
   unsigned char frame_type = 0;
+  unsigned char pbch_phase = 0;
 
 #ifdef XFORMS
   FD_lte_scope *form_dl;
@@ -422,7 +433,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hA:Cpf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:d")) != -1)
+  while ((c = getopt (argc, argv, "hA:Cpf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:dP:")) != -1)
     {
       switch (c)
 	{
@@ -559,6 +570,11 @@ int main(int argc, char **argv) {
 	    printf("Problem with filename %s\n",optarg);
 	    exit(-1);
 	  }
+	  break;
+	case 'P':
+	  pbch_phase = atoi(optarg);
+	  if (pbch_phase>3)
+	    printf("Illegal PBCH phase (0-3) got %d\n",pbch_phase);
 	  break;
 	default:
 	case 'h':
@@ -846,12 +862,25 @@ int main(int argc, char **argv) {
       exit(-1);
     }
     */
+    if (pbch_phase>0) {
+      dummybuf[0] = dummy0;
+      dummybuf[1] = dummy1;
+      dummybuf[2] = dummy2;
+      dummybuf[3] = dummy3;
+      generate_pbch(&PHY_vars_eNb->lte_eNB_pbch,
+		    (mod_sym_t**)dummybuf,
+		    AMP,
+		    &PHY_vars_eNb->lte_frame_parms,
+		    pbch_pdu,
+		    0);
+    }
+
     generate_pbch(&PHY_vars_eNb->lte_eNB_pbch,
 		  PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
 		  AMP,
 		  &PHY_vars_eNb->lte_frame_parms,
 		  pbch_pdu,
-		  0);
+		  pbch_phase);
 
     if (interf1>-20) {
       /*
@@ -1274,6 +1303,8 @@ int main(int argc, char **argv) {
 	      if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
 		PHY_vars_UE->lte_frame_parms.mode1_flag = 1;
 		break;
+		if (pbch_phase != frame_mod4)
+		  printf("pbch_phase different!!!\n");
 	      }
 	      
 	      pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
@@ -1299,7 +1330,7 @@ int main(int argc, char **argv) {
 	      n_errors++;
 	      n_errors2++;
 	      //if (n_frames==1)
-	      msg("pbch error\n");
+	      msg("pbch error (%d)\n",pbch_tx_ant);
 	    }
 	  }
 	}
@@ -1310,9 +1341,9 @@ int main(int argc, char **argv) {
 		  PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0],
 		  PHY_vars_UE->lte_ue_common_vars.rxdata,
 		  PHY_vars_UE->lte_ue_common_vars.rxdataF,
-		  PHY_vars_UE->lte_ue_dlsch_vars[0]->rxdataF_comp[0],
-		  PHY_vars_UE->lte_ue_dlsch_vars[3]->rxdataF_comp[0],
-		  PHY_vars_UE->lte_ue_dlsch_vars[0]->llr[0],
+		  PHY_vars_UE->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+		  PHY_vars_UE->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
+		  PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0],
 		  PHY_vars_UE->lte_ue_pbch_vars[0]->rxdataF_comp[0],
 		  PHY_vars_UE->lte_ue_pbch_vars[0]->llr,
 		  1920);

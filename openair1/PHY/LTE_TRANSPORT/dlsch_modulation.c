@@ -58,7 +58,7 @@ u8 is_not_pilot(u8 pilots, u8 re, u8 nushift, u8 use2ndpilots) {
     return(1);
 
   if (use2ndpilots==1) {  // This is for SISO (mode 1)
-    if ((re!=nushift+offset) && (re!=nushift+6+offset))
+    if ((re!=nushift+offset) && (re!=((nushift+6+offset)%12)))
       return(1);
   }
   else { // 2 antenna pilots

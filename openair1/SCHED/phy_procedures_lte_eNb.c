@@ -793,10 +793,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 #ifdef OPENAIR2
       // if there are two users and we want to do cooperation
-    if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,phy_vars_eNB->frame,next_slot>>1);
-    else
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1);
+    //    if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
+    //      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,phy_vars_eNB->frame,next_slot>>1);//,1);
+    //    else
+    mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1);//,1);
 
     // Parse DCI received from MAC
     DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
@@ -1876,18 +1876,20 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
 
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, Ndi %d, first_rb %d, nb_rb %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift %d, nprs %d) \n",
-	  phy_vars_eNB->Mod_id,harq_pid,(((last_slot>>1)==9)?-1:0)+phy_vars_eNB->frame,last_slot>>1,
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc,
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc,
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round,
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->Ndi,
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->first_rb,
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb,
-	  phy_vars_eNB->ulsch_eNB[i]->cyclicShift,
-	  phy_vars_eNB->ulsch_eNB[i]->n_DMRS2,
-	  phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
-	  nPRS);
+      LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, Ndi %d, first_rb %d, nb_rb %d, mcs %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift %d, nprs %d) \n",
+	    phy_vars_eNB->Mod_id,harq_pid,(((last_slot>>1)==9)?-1:0)+phy_vars_eNB->frame,last_slot>>1,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->Ndi,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->first_rb,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->mcs,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rvidx,
+	    phy_vars_eNB->ulsch_eNB[i]->cyclicShift,
+	    phy_vars_eNB->ulsch_eNB[i]->n_DMRS2,
+	    phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
+	    nPRS);
 #endif
       if (abstraction_flag==0) {
 	rx_ulsch(phy_vars_eNB,
@@ -2118,10 +2120,18 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
 #ifdef OPENAIR2
+	  //	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->calibration_flag == 0) {
 	  mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
 			    phy_vars_eNB->frame,
 			    phy_vars_eNB->ulsch_eNB[i]->rnti,
 			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b);
+	  //}
+	  /*
+	  else {
+	    // Retrieve calibration information and do whatever
+	    LOG_D(PHY,"[eNB][Auto-Calibration] Frame %d, Subframe %d : ULSCH PDU (RX) %d bytes\n",phy_vars_eNB->frame,last_slot>>1,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);	    
+	  }
+	  */
 #endif
 	}
       }  // ulsch not in error
