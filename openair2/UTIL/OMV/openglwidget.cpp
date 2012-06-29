@@ -50,6 +50,7 @@ int use_map = 1;
 int node_color = 0;
 int link_color = 0;
 int w = 10, h = 16, sw = 24, sh = 22;
+QString usedMap;
 
 void drawMeter() {
   glBegin(GL_LINES);
@@ -68,6 +69,12 @@ OpenGLWidget::OpenGLWidget()
 {
     geo[0].x = -1;
     draw_connections = true;  
+    QString uri;
+    QString image;
+    uri.sprintf("%s/UTIL/OMV/",getenv("OPENAIR2_DIR"));
+  
+    image = "mus.png";
+    usedMap = uri + image;
 }
 
 void OpenGLWidget::paintGL()
@@ -149,7 +156,7 @@ void OpenGLWidget::loadTexture(){
     
     glEnable(GL_TEXTURE_2D);
 
-    textures[0] = bindTexture(QPixmap("../../../openair2/UTIL/OMV/mus.png"), GL_TEXTURE_2D);
+    textures[0] = bindTexture(QPixmap(usedMap), GL_TEXTURE_2D);
 
     glBegin(GL_QUADS);
       glTexCoord2d(0,1);  glVertex2d(58,520);
@@ -175,6 +182,53 @@ void OpenGLWidget::setDrawConnections(int draw){
 void OpenGLWidget::setUseMap(int use){
     use_map = use;
     updateGL();
+}
+
+void OpenGLWidget::setUsedMap(QString map_path){
+  usedMap = map_path;
+}
+
+void OpenGLWidget::setUsedMap(int map){
+    QString uri;
+    QString image;
+    uri.sprintf("%s/UTIL/OMV/",getenv("OPENAIR2_DIR"));
+  
+    switch (map){
+      case 1:
+      image = "mus.png";
+      usedMap = uri + image;
+      break;
+      
+      case 2:
+      image = "new.jpg";
+      usedMap = uri + image;
+      break;
+      
+      case 3:
+      image = "new2.jpg";
+      usedMap = uri + image;
+      break;
+      
+      case 4:
+      image = "white.png";
+      usedMap = uri + image;
+      break;
+      
+      case 5:
+      image = "red.png";
+      usedMap = uri + image;
+      break;
+      
+      case 6:
+      image = "green.png";
+      usedMap = uri + image;
+      break;
+      
+      case 7:
+      image = "blue.png";
+      usedMap = uri + image;
+      break;
+    }
 }
 
 void OpenGLWidget::setNodesColor(int index){
@@ -251,8 +305,14 @@ void OpenGLWidget::drawConnections(){
                 //choose it according to the number of displayed nodes
                 glLineWidth(0.7);
                 glBegin(GL_LINES);
-                    glVertex2d((int)(((float)geo[i].x/(float)x_area)*500),(int)(((float)geo[i].y/(float)y_area)*500));
-                    glVertex2d((int)(((float)geo[j].x/(float)x_area)*500),(int)(((float)geo[j].y/(float)y_area)*500));
+		    if (geo[i].node_type == 0) 
+		      glVertex2d((int)(((float)geo[i].x/(float)x_area)*500),(int)(((float)(geo[i].y + 2 * sh)/(float)y_area)*500));
+		    else
+		      glVertex2d((int)(((float)geo[i].x/(float)x_area)*500),(int)(((float)geo[i].y/(float)y_area)*500));
+		    if (geo[j].node_type == 0)
+		      glVertex2d((int)(((float)geo[j].x/(float)x_area)*500),(int)(((float)(geo[j].y + 2 * sh)/(float)y_area)*500));
+		    else
+		      glVertex2d((int)(((float)geo[j].x/(float)x_area)*500),(int)(((float)geo[j].y/(float)y_area)*500));
                 glEnd();
             }
         }
@@ -487,21 +547,21 @@ void OpenGLWidget::drawSquare(int digit, int back, int w, int h, int sw, int sh)
 }
 
 void OpenGLWidget::drawBaseStation(int digit){
-    GLUquadric* params;
+   /* GLUquadric* params;
     params = gluNewQuadric();
     gluQuadricDrawStyle(params,GLU_FILL);
     
     gluDisk(params,0,sw/2,20,1);
-    gluDeleteQuadric(params);
+    gluDeleteQuadric(params);*/
     
     glLineWidth(2.0);
-    /*glBegin(GL_TRIANGLES);
+    glBegin(GL_TRIANGLES);
 	
-	glVertex2d(0,sh);
-	glVertex2d(-sw,-sh/2);
-	glVertex2d(sw,-sh/2);
+	glVertex2d(0,2*sh);
+	glVertex2d(-sw*2/3,-sh/2);
+	glVertex2d(sw*2/3,-sh/2);
 	
-    glEnd();*/
+    glEnd();
     drawSquare(digit, 2, w, h, sw, sh);
 
 }
