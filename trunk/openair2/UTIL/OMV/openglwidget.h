@@ -42,6 +42,7 @@
 #define OPENGLWIDGET_H
 
 #include <QGLWidget>
+#include <QString>
 #include "qgl.h"
 #include "structures.h"
 
@@ -59,6 +60,8 @@ class OpenGLWidget : public QGLWidget
 	void drawBaseStation(int digit);
         void setDrawConnections(int draw);
 	void setUseMap(int use);
+	void setUsedMap(int map);
+	void setUsedMap(QString map_path);
 	void setLinksColor(int index);
 	void setNodesColor(int index);
 	void updateNodeSize(int size);

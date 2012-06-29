@@ -55,7 +55,7 @@ typedef struct Geo {
   int node_type;
   int Neighbors; // number of neighboring nodes (distance between the node and its neighbors < 100)
   int Neighbor[NUMBER_OF_UE_MAX]; // array of its neighbors
-  /* relavent to UE only 
+   //relavent to UE only 
   unsigned short state;
   unsigned short rnti;
   unsigned int connected_eNB;
@@ -64,7 +64,6 @@ typedef struct Geo {
   int RSRQ;
   int Pathloss;
   /// more info to display 
-  */
 } Geo;
 
 typedef struct Data_Flow_Unit {
