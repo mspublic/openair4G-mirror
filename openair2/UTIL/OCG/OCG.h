@@ -559,7 +559,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     Log_Emu log_emu;
     Packet_Trace packet_trace;
     Seed seed;
-    int graphic;
+    char * curve;
     // CLI tags are in Info 
     //char g_log_level[20];
   } Emulation_Config;
