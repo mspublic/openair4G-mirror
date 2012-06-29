@@ -11,6 +11,17 @@
 #include "mgmt_gn_packet.hpp"
 
 /**
+ * Communication Profile Response
+ */
+struct CommunicationProfileResponse {
+	MessageHeader header;
+
+	u_int16_t communicationProfileCount;
+	u_int16_t reserved;
+	/* CommunicationProfileItem(s) follow(s)... */
+} __attribute__((packed));
+
+/**
  * A container for Communication Profile Response event
  */
 class GeonetCommunicationProfileResponsePacket : public GeonetPacket {

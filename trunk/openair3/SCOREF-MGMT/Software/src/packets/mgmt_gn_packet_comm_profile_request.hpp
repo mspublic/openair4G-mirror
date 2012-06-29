@@ -11,6 +11,18 @@
 #include "mgmt_gn_packet.hpp"
 
 /**
+ * Communication Profile Request
+ */
+struct CommunicationProfileRequest {
+	MessageHeader header;
+
+	u_int8_t transport;
+	u_int8_t network;
+	u_int8_t access;
+	u_int8_t channel;
+} __attribute__((packed));
+
+/**
  * A container for Communication Profile Request event
  */
 class GeonetCommunicationProfileRequestPacket: public GeonetPacket {

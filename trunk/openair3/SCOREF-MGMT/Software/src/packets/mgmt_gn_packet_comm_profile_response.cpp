@@ -25,15 +25,15 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	GeonetPacket::serialize(buffer);
 	// ...then append communication profile item count
 	u_int8_t payloadIndex = sizeof(MessageHeader);
-	Util::encode2byteInteger(buffer, payloadIndex, mib.communicationProfileMap.size());
+	Util::encode2byteInteger(buffer, payloadIndex, mib.communicationProfileManager.getProfileCount());
 	payloadIndex += 2;
 	// ...and `reserved' field
 	Util::encode2byteInteger(buffer, payloadIndex, 0x0000);
 	payloadIndex += 2;
 
 	// ...and communication profile item(s)
-	map<CommunicationProfileID, CommunicationProfileResponseItem>::iterator iterator;
-	while (iterator != mib.communicationProfileMap.end()) {
+	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
+	while (iterator != mib.communicationProfileManager.getProfileMap().end()) {
 		Util::encode4byteInteger(buffer, payloadIndex, iterator->second.id);
 		payloadIndex += 4;
 
@@ -47,8 +47,8 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	}
 
 	// Resize incoming buffer
-	buffer.resize(sizeof(CommunicationProfileResponse) + mib.communicationProfileMap.size()
-			* sizeof(CommunicationProfileResponseItem));
+	buffer.resize(sizeof(CommunicationProfileResponse) + mib.communicationProfileManager.getProfileCount()
+			* sizeof(CommunicationProfileItem));
 
 	return true;
 }
@@ -57,16 +57,7 @@ string GeonetCommunicationProfileResponsePacket::toString() const {
 	stringstream ss;
 
 	ss << GeonetPacket::toString() << endl;
-	ss << "Communication profile count: " << mib.communicationProfileMap.size() << endl;
-
-	map<CommunicationProfileID, CommunicationProfileResponseItem>::iterator iterator;
-	while (iterator != mib.communicationProfileMap.end()) {
-		ss << "Communication Profile [ID:" << iterator->second.id
-			<< ", transport:" << iterator->second.transport
-			<< ", network:" << iterator->second.network
-			<< ", access: " << iterator->second.access
-			<< ", channel: " << iterator->second.channel << "]" << endl;
-	}
+	ss << mib.communicationProfileManager.toString() << endl;
 
 	return ss.str();
 }

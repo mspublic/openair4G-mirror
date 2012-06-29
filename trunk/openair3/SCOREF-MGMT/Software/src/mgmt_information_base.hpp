@@ -8,8 +8,9 @@
 #ifndef MGMT_INFORMATION_BASE_HPP_
 #define MGMT_INFORMATION_BASE_HPP_
 
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_comm_prof_manager.hpp"
 #include "mgmt_its_key_manager.hpp"
+#include "mgmt_gn_datatypes.hpp"
 #include <sys/types.h>
 #include <string>
 #include <map>
@@ -108,9 +109,9 @@ class ManagementInformationBase {
 		 */
 		map<GnAddress, LocationTableItem> locationTable;
 		/**
-		 * Communication profile map
+		 * Communication profile manager
 		 */
-		map<CommunicationProfileID, CommunicationProfileResponseItem> communicationProfileMap;
+		CommunicationProfileManager communicationProfileManager;
 };
 
 #endif /* MGMT_INFORMATION_BASE_HPP_ */

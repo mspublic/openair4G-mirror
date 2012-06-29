@@ -33,6 +33,7 @@ bool Configuration::parseConfigurationFile(ManagementInformationBase& mib) {
 	string facParameterPrefix("MIB_GN_FAC");
 	string commonParameterPrefix("MIB_GN_ALL");
 	string confParameterPrefix("CONF_");
+	string communicationProfilePrefix("CP");
 
 	configurationFile.open(this->configurationFile.c_str());
 
@@ -50,6 +51,8 @@ bool Configuration::parseConfigurationFile(ManagementInformationBase& mib) {
 					// Others must be general configuration parameters
 				} else if (!line.compare(0, confParameterPrefix.size(), confParameterPrefix)) {
 					setValue(parameter, value);
+				} else if (!line.compare(0, communicationProfilePrefix.size(), communicationProfilePrefix)) {
+					mib.communicationProfileManager.insert(parameter, value);
 				}
 			}
 		}
