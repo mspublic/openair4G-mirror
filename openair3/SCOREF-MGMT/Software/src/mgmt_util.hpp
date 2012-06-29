@@ -121,6 +121,14 @@ class Util {
 		 * @return true on success, false otherwise
 		 */
 		static bool encode2byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int16_t data);
+		/**
+		 * Splits given string with given delimiter
+		 *
+		 * @param input Input string that is going to be split
+		 * @param delimiter Delimiter character
+		 * @return std::vector containing split parts
+		 */
+		static vector<string> split(const string& input, char delimiter);
 };
 
 #endif /* MGMT_UTIL_HPP_ */

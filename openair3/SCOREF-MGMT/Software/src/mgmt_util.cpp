@@ -7,6 +7,9 @@
 
 #include "mgmt_util.hpp"
 
+#include <sstream>
+using namespace std;
+
 void Util::resetBuffer(void* buffer, size_t bufferSize) {
 	memset(buffer, 0x00, bufferSize);
 }
@@ -164,4 +167,15 @@ bool Util::encode2byteInteger(vector<unsigned char>& buffer, u_int16_t bufferInd
 	buffer[bufferIndex + 1] = (data & 0xff);
 
 	return true;
+}
+
+vector<string> Util::split(const string& input, char delimiter) {
+	vector<string> elements;
+	stringstream inputStream(input);
+	string item;
+
+	while (std::getline(inputStream, item, delimiter))
+		elements.push_back(item);
+
+	return elements;
 }

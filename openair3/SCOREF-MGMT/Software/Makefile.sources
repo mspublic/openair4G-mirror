@@ -3,6 +3,7 @@ SRC_DIR=src/
 SRC_PCKT_DIR=src/packets/
 
 SOURCES=$(SRC_DIR)/main.cpp \
+	$(SRC_DIR)/mgmt_comm_prof_manager.cpp \
 	$(SRC_DIR)/mgmt_configuration.cpp \
 	$(SRC_DIR)/mgmt_gn_packet_factory.cpp \
 	$(SRC_DIR)/mgmt_gn_packet_handler.cpp \
@@ -22,6 +23,7 @@ SOURCES=$(SRC_DIR)/main.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_wireless_state_response.cpp
 
 HEADERS=$(SRC_DIR)/mgmt_client.hpp \
+	$(SRC_DIR)/mgmt_comm_prof_manager.hpp \
 	$(SRC_DIR)/mgmt_configuration.hpp \
 	$(SRC_DIR)/mgmt_gn_datatypes.hpp \
 	$(SRC_DIR)/mgmt_gn_packet_factory.hpp \

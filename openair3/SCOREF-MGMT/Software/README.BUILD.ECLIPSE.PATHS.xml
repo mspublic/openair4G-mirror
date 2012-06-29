@@ -12,6 +12,7 @@
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
 <includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
+<includepath>/usr/include/boost</includepath>
 
 </language>
 <language name="GNU C++">
@@ -22,6 +23,7 @@
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
 <includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
+<includepath>/usr/include/boost</includepath>
 
 </language>
 <language name="GNU C">
@@ -32,6 +34,7 @@
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
 <includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
+<includepath>/usr/include/boost</includepath>
 
 </language>
 </section>

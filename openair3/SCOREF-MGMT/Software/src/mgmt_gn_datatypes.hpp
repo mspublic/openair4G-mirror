@@ -319,39 +319,4 @@ struct BulkConfigurationResponse {
 	u_int16_t keyCount;
 } __attribute__((packed));
 
-/**
- * Communication Profile Request
- */
-struct CommunicationProfileRequest {
-	MessageHeader header;
-
-	u_int8_t transport;
-	u_int8_t network;
-	u_int8_t access;
-	u_int8_t channel;
-} __attribute__((packed));
-
-/**
- * Communication Profile Response Item
- */
-typedef u_int32_t CommunicationProfileID;
-struct CommunicationProfileResponseItem {
-	CommunicationProfileID id;
-	u_int8_t transport;
-	u_int8_t network;
-	u_int8_t access;
-	u_int8_t channel;
-} __attribute__((packed));
-
-/**
- * Communication Profile Response
- */
-struct CommunicationProfileResponse {
-	MessageHeader header;
-
-	u_int16_t communicationProfileCount;
-	u_int16_t reserved;
-	/* CommunicationProfileResponseItem(s) follow(s)... */
-} __attribute__((packed));
-
 #endif /* MGMT_GN_DATATYPES_HPP_ */
