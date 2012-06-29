@@ -682,7 +682,7 @@ u16  fill_rar(u8 Mod_id,u32 frame,
 @param rnti RNTI of UE transmitting l3msg
 @param l3msg Pointer to received l3msg
 */
-void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti, u8 *l3msg);
+void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti, u8 *l3msg, u16 l3msg_len);
 
 /* \brief Function to indicate a failed RA response.  It removes all temporary variables related to the initial connection of a UE
 @param Mod_id Instance ID of eNB
@@ -695,7 +695,7 @@ void cancel_ra_proc(u8 Mod_id,u32 frame, u16 preamble_index);
 @param rnti RNTI of UE transmitting the SR
 @param sdu Pointer to received SDU
 */
-void rx_sdu(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu);
+void rx_sdu(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu, u16 sdu_len);
 
 /* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
 @param Mod_id Instance ID of eNB
@@ -836,7 +836,8 @@ u8 *parse_ulsch_header(u8 *mac_header,
 		       u8 *num_sdu,
 		       u8 *rx_ces,
 		       u8 *rx_lcids,
-		       u16 *rx_lengths);
+		       u16 *rx_lengths,
+		       u16 tx_lenght);
 
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms);

@@ -41,7 +41,7 @@ typedef struct
     u16 (*fill_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
 
     /// Terminate the RA procedure upon reception of l3msg on ulsch
-    void (*terminate_ra_proc)(u8 Mod_id,u32 frame,u16 UE_id, u8 *l3msg);
+    void (*terminate_ra_proc)(u8 Mod_id,u32 frame,u16 UE_id, u8 *l3msg,u16 l3msg_len);
 
     /// Initiate the RA procedure upon reception (hypothetical) of a valid preamble
     void (*initiate_ra_proc)(u8 Mod_id,u32 frame,u16 preamble,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
@@ -56,7 +56,7 @@ typedef struct
     u8* (*get_dlsch_sdu)(u8 Mod_id,u32 frame,u16 rnti,u8 TB_index);
 
     /// Send ULSCH sdu to MAC for given rnti
-    void (*rx_sdu)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu);
+    void (*rx_sdu)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu,u16 sdu_len);
 
     /// Indicate failure to synch to external source
     void (*mrbch_phy_sync_failure) (u8 Mod_id,u32 frame, u8 Free_ch_index);

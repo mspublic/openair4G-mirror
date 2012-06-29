@@ -129,7 +129,7 @@ unsigned char *parse_header(unsigned char *mac_header,
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
     if (lcid < UE_CONT_RES) {
       //printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
-      if (not_done==0) {
+      if (not_done==0) {// last MAC SDU, length is implicit
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
       }
@@ -543,6 +543,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R    = 0; 
       ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID = sdu_lcids[i];
+      last_size=1;
       }
       else if (sdu_lengths[i] < 128) {
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0; // 3
@@ -586,8 +587,8 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   }
   else { // no end of packet padding
     // last SDU subhead is of fixed type (sdu length implicitly to be computed at UE)
-    //mac_header_ptr++;
-    mac_header_ptr+=last_size;
+    mac_header_ptr++;
+    //mac_header_ptr=last_size; // FIXME: should be ++
   }
   
   if ((ce_ptr-mac_header_control_elements) > 0) {
@@ -607,7 +608,8 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
-  u8 dcch_header_len,dcch1_header_len,dtch_header_len, bsr_header_len, bsr_ce_len=0, bsr_len, phr_header_len, phr_ce_len=0,phr_len;
+  u8 dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0, bsr_header_len=0, bsr_ce_len=0, bsr_len=0; 
+  u8 phr_header_len=0, phr_ce_len=0,phr_len=0;
   u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
   u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
@@ -618,7 +620,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   BSR_LONG  *bsr_l=&bsr_long;
   POWER_HEADROOM_CMD phr;
   POWER_HEADROOM_CMD *phr_p=&phr;
-  unsigned short short_padding, post_padding;
+  unsigned short short_padding=0, post_padding=0;
   int lcid;
   int j; // used for padding
   // Compute header length
@@ -724,6 +726,12 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   else { // no rlc pdu : generate the dummy header
     dtch_header_len = 0;
   }
+  // adjust the header length 
+  if ((dtch_header_len==0)&& (dcch_header_len>0))
+    dcch_header_len--;  
+  else if (dtch_header_len >0)
+    dtch_header_len--;     
+  
   // regular BSR :  build bsr
   if (bsr_ce_len == sizeof(BSR_SHORT)) {
     bsr_l = NULL;
@@ -756,18 +764,23 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
      update_phr(Mod_id);
   }else
     phr_p=NULL;
-  
+ 
   if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
     short_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
     post_padding = 0;
   }
   else {
     short_padding = 0;
-    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
+    if ((dtch_header_len==0)&&(dcch_header_len ==1))
+      dcch_header_len++;  
+    else if ( dtch_header_len == 1) 
+      dtch_header_len++; 
+    
+    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total-1;
   }
-  
+ 
   // Generate header
-  if (num_sdus>0) {
+  // if (num_sdus>0) {
 
     payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
 					   num_sdus,      // num sdus
@@ -780,15 +793,15 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					   bsr_s, // short bsr
 					   bsr_l,
 					   post_padding); // long_bsr
-    LOG_D(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,padding %d,post_padding %d, reminder %d \n",
-	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset,
-	  short_padding,post_padding, buflen-sdu_length_total-payload_offset);
+    LOG_D(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,  dcch_header_len %d, dtch_header_len %d, padding %d,post_padding %d, bsr len %d, phr len %d, reminder %d \n",
+	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset, dcch_header_len,  dtch_header_len,
+	  short_padding,post_padding, bsr_len, phr_len,buflen-sdu_length_total-payload_offset);
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
     // fill remainder of DLSCH with random data
     for (j=0;j<(buflen-sdu_length_total-payload_offset);j++)
       ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
-  }
+    /*  }
   else { // send BSR
     // bsr.LCGID = 0x0;
     //bsr.Buffer_size = 0x3f;
@@ -805,16 +818,16 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					   bsr_l,
 					   post_padding);
 
-    LOG_D(MAC,"[UE %d] Generate header : bufflen %d sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,padding %d,post_padding %d, sdu reminder %d bytes\n",
+    LOG_D(MAC,"[UE %d] Generate header : bufflen %d sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,padding %d,post_padding %d,  bsr len %d, phr len %d, sdu reminder %d bytes\n",
 	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset,
-	  short_padding,post_padding, buflen-sdu_length_total-payload_offset);
+	  short_padding,post_padding, bsr_len, phr_len, buflen-sdu_length_total-payload_offset);
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
     // fill remainder of DLSCH with random data
     for (j=0;j<(buflen-sdu_length_total-payload_offset);j++)
       ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
   }
-
+    */
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled)
     trace_pdu(0, ulsch_buffer, buflen, Mod_id, 3, 
