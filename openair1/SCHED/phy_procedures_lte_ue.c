@@ -52,7 +52,7 @@
 //#endif
 
 
-//#define DEBUG_PHY_PROC 1
+#define DEBUG_PHY_PROC 1
 
 #define PUCCH 1
 
