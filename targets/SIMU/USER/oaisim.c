@@ -541,14 +541,14 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
       omv_data.geo[i].node_type = 0; //eNB
       enb_node_list = enb_node_list->next;
       omv_data.geo[i].Neighbors=0;
-      /*   for (j=NB_eNB_INST; j< NB_UE_INST + NB_eNB_INST ; j++){
+      for (j=NB_eNB_INST; j< NB_UE_INST + NB_eNB_INST ; j++){
 	if (is_UE_active(i,j - NB_eNB_INST ) == 1) {
 	  omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors]=  j; 
 	  omv_data.geo[i].Neighbors++; 
 	  LOG_D(OMG,"[eNB %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i,j-NB_eNB_INST, is_UE_active(i,j-NB_eNB_INST), 
 	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
 	} 
-	} */
+      } 
     }
   }
   for (i=NB_eNB_INST;i<NB_UE_INST+NB_eNB_INST;i++) {
@@ -558,16 +558,27 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
       omv_data.geo[i].z = 1.0;
       omv_data.geo[i].mobility_type = oai_emulation.info.omg_model_ue;
       omv_data.geo[i].node_type = 1; //UE
+      //trial
+      omv_data.geo[i].state = 1;
+      omv_data.geo[i].rnti = 88;
+      omv_data.geo[i].connected_eNB = 0;
+      omv_data.geo[i].RSRP = 66;
+      omv_data.geo[i].RSRQ = 55;
+      omv_data.geo[i].Pathloss = 44;
+      omv_data.geo[i].RSSI[0] = 33;
+      omv_data.geo[i].RSSI[1] = 22;
+      omv_data.geo[i].RSSI[2] = 11;
+      
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors=0;
-      /* for (j=0; j< NB_eNB_INST ; j++){
+         for (j=0; j< NB_eNB_INST ; j++){
 	if (is_UE_active(j,i-NB_eNB_INST) == 1) {
 	  omv_data.geo[i].Neighbor[ omv_data.geo[i].Neighbors]=j; 	
 	  omv_data.geo[i].Neighbors++; 
 	  LOG_D(OMG,"[UE %d][eNB %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_eNB_INST,j, is_UE_active(j,i-NB_eNB_INST), 
 	  	omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
 	} 
-	}*/
+	}
     }
   }
  
@@ -633,8 +644,11 @@ main (int argc, char **argv)
   char y_area[20];  
   char z_area[20];
   char fname[64],vname[64];
-
- u8 awgn_flag = 0;
+  char nb_antenna[20];
+  char frame_type[10];
+  char tdd_config[10];
+  
+  u8 awgn_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
   FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
@@ -938,8 +952,11 @@ main (int argc, char **argv)
 	sprintf(y_area, "%f", oai_emulation.topology_config.area.y_m );
 	sprintf(z_area, "%f", 200.0 );
 	sprintf(frames, "%d", oai_emulation.info.n_frames);
+	sprintf(nb_antenna, "%d", 4);
+	sprintf(frame_type, "%s", (oai_emulation.info.frame_type == 0) ? "FDD" : "TDD");
+	sprintf(tdd_config, "%d", oai_emulation.info.tdd_config);
 	/* execl is used to launch the visualisor */
-	execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, NULL );
+	execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, nb_antenna, frame_type, tdd_config,NULL );
 	perror( "error in execl the OMV" );
       }
     //parent
