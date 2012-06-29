@@ -22,31 +22,24 @@
   </TOPOLOGY_CONFIG>
   <APPLICATION_CONFIG>
 
-<!---->
+<!-- BACKGROUND TRAFFIC-->
 <PREDEFINED_TRAFFIC>
       <SOURCE_ID>0</SOURCE_ID>					
-      <APPLICATION_TYPE>no_predefined_traffic</APPLICATION_TYPE> 
-    <BACKGROUND_TRAFFIC>enable</BACKGROUND_TRAFFIC>  
+      <APPLICATION_TYPE>no_predefined_traffic</APPLICATION_TYPE> <!-- for background traffic we should not select an application type, use only: no_predefined_traffic-->
+    <BACKGROUND_TRAFFIC>enable</BACKGROUND_TRAFFIC>   <!-- option: enable, disable -->
       <DESTINATION_ID>1:3</DESTINATION_ID>
 </PREDEFINED_TRAFFIC>
-
-<!--<PREDEFINED_TRAFFIC>
-      <SOURCE_ID>0</SOURCE_ID>					
-      <APPLICATION_TYPE>scbr</APPLICATION_TYPE>  
-      <DESTINATION_ID>1:3</DESTINATION_ID>
-</PREDEFINED_TRAFFIC>-->
-
 
 <!--DOWN-->
 <CUSTOMIZED_TRAFFIC>  	
        <SOURCE_ID>0</SOURCE_ID>		
-      <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> 
-      <IP_VERSION>ipv4</IP_VERSION> 
+      <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL>  <!-- option: no_proto, tcp, udp -->
+      <IP_VERSION>ipv4</IP_VERSION>    <!-- option: no_ip, ipv4, ipv6  -->
   <DESTINATION_ID>1:3</DESTINATION_ID>
-      <IDT_DIST>uniform</IDT_DIST> 
+      <IDT_DIST>uniform</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <IDT_MIN_ms>41</IDT_MIN_ms>
       <IDT_MAX_ms>47</IDT_MAX_ms>
-      <SIZE_DIST>log_normal</SIZE_DIST> 
+      <SIZE_DIST>log_normal</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <SIZE_MIN_byte>2</SIZE_MIN_byte>
       <SIZE_MAX_byte>8.078</SIZE_MAX_byte>
       <SIZE_STANDARD_DEVIATION>0.47</SIZE_STANDARD_DEVIATION> 
@@ -55,13 +48,13 @@
 <!--UP-->
 <CUSTOMIZED_TRAFFIC>	 
       <SOURCE_ID>1:3</SOURCE_ID> 		
-      <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> 
-      <IP_VERSION>ipv4</IP_VERSION> 
+      <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL>  <!-- option: no_proto, tcp, udp -->
+      <IP_VERSION>ipv4</IP_VERSION>   <!-- option: no_ip, ipv4, ipv6  -->
       <DESTINATION_ID>0</DESTINATION_ID>   
-      <IDT_DIST>uniform</IDT_DIST> 
+      <IDT_DIST>uniform</IDT_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <IDT_MIN_ms>69</IDT_MIN_ms>
       <IDT_MAX_ms>103</IDT_MAX_ms>
-      <SIZE_DIST>gaussian</SIZE_DIST> 
+      <SIZE_DIST>gaussian</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <SIZE_MIN_byte>100</SIZE_MIN_byte>
       <SIZE_MAX_byte>200</SIZE_MAX_byte>
       <SIZE_STANDARD_DEVIATION>4.6</SIZE_STANDARD_DEVIATION>
@@ -70,12 +63,12 @@
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>60000</EMULATION_TIME_ms> <!--set to infinity 60000--> 
-    <GRAPHIC>1</GRAPHIC>
+    <EMULATION_TIME_ms>60000</EMULATION_TIME_ms> <!--if0 set to infinity--> 
+    <CURVE>enable</CURVE> <!-- option: enable, disable. If CURVE is enable, graphes are ploted in real time (UL and DL) of WOD and throughput measurement for each packet -->
     <PERFORMANCE_METRICS>
       	<THROUGHPUT>0</THROUGHPUT>
       	<LATENCY>0</LATENCY>
-      	<OWD_RADIO_ACESS>1</OWD_RADIO_ACESS>
+      	<OWD_RADIO_ACESS>0</OWD_RADIO_ACESS>  <!-- option: 0, 1. If 1 owd curve shows the one way radio access delay,else shows end to end owd -->
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
       <LEVEL>info</LEVEL>
