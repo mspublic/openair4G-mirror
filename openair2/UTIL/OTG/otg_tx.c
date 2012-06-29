@@ -435,7 +435,7 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
  for (i=0; i<g_otg->num_nodes; i++){ // src 
    for (j=0; j<g_otg->num_nodes; j++){ // dst
   
-LOG_I("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->application_type[i][j]);
+//LOG_I("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->application_type[i][j]);
   
      LOG_D(OTG,"OTG_CONFIG node (src=%d,dst=%d)\n",  i,j);
      
