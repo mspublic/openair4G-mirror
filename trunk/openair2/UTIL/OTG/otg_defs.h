@@ -236,7 +236,7 @@ typedef struct {
 unsigned int throughput_metric;
 unsigned int latency_metric; 
 unsigned int loss_metric;
-unsigned int graphic;
+unsigned int curve;
 unsigned int owd_radio_access;
 }otg_t; 
 

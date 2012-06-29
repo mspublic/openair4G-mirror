@@ -151,7 +151,7 @@ int header_size;
 	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
 	
 	// xforms part	
-	if (g_otg->graphic==1){ 
+	if (g_otg->curve==1){ 
           if (g_otg->owd_radio_access==0)
             add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  ctime);
           else
