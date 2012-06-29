@@ -100,18 +100,23 @@ CommunicationProfileItem CommunicationProfileManager::parse(const string& profil
 	/*
 	 * Fill transport, network, access, and channel fields respectively
 	 */
+	cout << "transport = " << profileItemVector[0] << endl;
+	cout << "network = " << profileItemVector[1] << endl;
+	cout << "access = " << profileItemVector[2] << endl;
+	cout << "channel = " << profileItemVector[3] << endl;
 	Util::setBit(communicationProfileItem.transport, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[0]]));
 	Util::setBit(communicationProfileItem.network, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[1]]));
 	Util::setBit(communicationProfileItem.access, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[2]]));
 	/*
 	 * For access methods `3G' and `Ethernet' this information is not relevant; for `11n'
-	 * the choise is made by the Access Point, here parse accordingly
+	 * the choice is made by the Access Point, here parse accordingly
 	 */
-	if (!profileItemVector.data()->compare("3G")
-			|| !profileItemVector.data()->compare("Ethernet")
-			|| !profileItemVector.data()->compare("11n")) {
+	if (!profileItemVector[2].compare("3G")
+			|| !profileItemVector[2].compare("Ethernet")
+			|| !profileItemVector[2].compare("11n")) {
 		cout << "Access type is either 3G, or Ethernet, or 11n. Skipping channel information" << endl;
 	} else {
+		cout << "Encoding channel information" << endl;
 		Util::setBit(communicationProfileItem.channel, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[3]]));
 	}
 
