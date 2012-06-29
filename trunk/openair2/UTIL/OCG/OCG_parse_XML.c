@@ -176,7 +176,7 @@ static int destination_port_;
 
 static int emulation_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
 static int emulation_time_ms_;
-static int graphic_;
+static int curve_;
 static int performance_metrics_;		/*!< \brief indicating that the parsing position is now within Performance_*/
 static int throughput_;
 static int latency_;
@@ -465,8 +465,8 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		emulation_config_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_TIME_ms")) {
 		emulation_time_ms_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "GRAPHIC")) {
-		graphic_ = 1;
+	} else if (!xmlStrcmp(name,(unsigned char*) "CURVE")) {
+		curve_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -764,8 +764,8 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		emulation_config_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_TIME_ms")) {
 		emulation_time_ms_ = 0;
-	}else if (!xmlStrcmp(name,(unsigned char*) "GRAPHIC")) {
-		graphic_ = 0;
+	}else if (!xmlStrcmp(name,(unsigned char*) "CURVE")) {
+		curve_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -1087,8 +1087,8 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 		} else if (emulation_config_) {
 		  if (emulation_time_ms_) {
 		    oai_emulation.emulation_config.emulation_time_ms = atof(ch);
-		  } else if (graphic_) {
-		    oai_emulation.emulation_config.graphic = atof(ch);
+		  } else if (curve_) {
+		    oai_emulation.emulation_config.curve = strndup(ch, len);
 		  }else if (performance_metrics_) {
 		    if (throughput_) {
 		      oai_emulation.emulation_config.performance_metrics.throughput = atoi(ch);
