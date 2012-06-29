@@ -100,6 +100,12 @@ mapping otg_background_names[] =
     {NULL, -1}
 };
 
+mapping otg_curve_names[] =
+{
+    {"disable", 0},
+    {"enable", 1},
+    {NULL, -1}
+};
 
 
 void init_oai_emulation() {
@@ -209,7 +215,7 @@ void init_oai_emulation() {
 	oai_emulation.application_config.customized_traffic.holding_time_off_pe = 0;
 	
 	oai_emulation.emulation_config.emulation_time_ms = 0;
-        oai_emulation.emulation_config.graphic = 0;
+        oai_emulation.emulation_config.curve = "disable";
 	oai_emulation.emulation_config.performance_metrics.throughput = 0;
 	oai_emulation.emulation_config.performance_metrics.latency = 0;
 	oai_emulation.emulation_config.performance_metrics.loss_rate = 0;
@@ -483,13 +489,13 @@ int ocg_config_app(){
 	int customized_traffic_config_index;
 
 	init_all_otg();
-
+        g_otg->seed= oai_emulation.info.seed;
 	g_otg->num_nodes = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_ue_local;
 	g_otg->throughput_metric =oai_emulation.emulation_config.performance_metrics.throughput;
         g_otg->latency_metric =oai_emulation.emulation_config.performance_metrics.latency;
 	g_otg->loss_metric =oai_emulation.emulation_config.performance_metrics.loss_rate;
         g_otg->owd_radio_access =oai_emulation.emulation_config.performance_metrics.owd_radio_access;
-        g_otg->graphic=oai_emulation.emulation_config.graphic;
+        g_otg->curve=map_str_to_int(otg_curve_names,oai_emulation.emulation_config.curve);
 	for (i=0; i<g_otg->num_nodes; i++){
 		g_otg->duration[i]=oai_emulation.emulation_config.emulation_time_ms;
 		
