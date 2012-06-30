@@ -307,7 +307,9 @@ static const struct net_device_ops nasmesh_netdev_ops = {
 	.ndo_stop		= nas_stop,
 	.ndo_start_xmit		= nas_hard_start_xmit,
 	.ndo_validate_addr	= NULL,
+#ifdef  KERNEL_VERSION_GREATER_THAN_32
 	.ndo_set_multicast_list	= NULL,
+#endif
 	.ndo_set_mac_address	= NULL,
 	.ndo_set_config     = nas_set_config,
 	.ndo_do_ioctl       = nas_CTL_ioctl,
@@ -547,15 +549,13 @@ void cleanup_module(void){
 
 
 
+#ifdef  KERNEL_VERSION_GREATER_THAN_32
 
 #define DRV_NAME		"NASMESH"
 #define DRV_VERSION		"3.0.2"DRV_NAME
 #define DRV_DESCRIPTION	"OPENAIR MESH Device Driver"
 #define DRV_COPYRIGHT	"-Copyright(c) GNU GPL Eurecom 2009"
 #define DRV_AUTHOR      "Raymond Knopp, and Navid Nikaein: <firstname.name@eurecom.fr>"DRV_COPYRIGHT
-
-
-
 
 module_param_array(nas_IMEI,uint,&m_arg,0444);
 MODULE_PARM_DESC(nas_IMEI,"The IMEI Hardware address (64-bit, decimal nibbles)");
@@ -566,7 +566,7 @@ MODULE_PARM_DESC(nas_is_clusterhead,"The Clusterhead Indicator");
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION(DRV_DESCRIPTION);
 MODULE_AUTHOR(DRV_AUTHOR);
-
+#endif
 
 
 

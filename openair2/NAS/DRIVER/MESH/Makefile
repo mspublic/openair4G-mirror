@@ -27,6 +27,7 @@ SET_X64=$(shell if [ $(KERNEL_ARCH) = 'x86_64' -a $(SUBVERSION) -ge 20 ]; then e
 IS_KERNEL_SUBVERSION_GREATER_THAN_22=$(shell if [ $(SUBVERSION) -ge 22 ] ; then echo true ; fi)
 IS_KERNEL_SUBVERSION_GREATER_THAN_29=$(shell if [ $(SUBVERSION) -ge 29 ] ; then echo true ; fi)
 IS_KERNEL_SUBVERSION_GREATER_THAN_30=$(shell if [ $(SUBVERSION) -ge 30 ] ; then echo true ; fi)
+IS_KERNEL_SUBVERSION_GREATER_THAN_32=$(shell if [ $(SUBVERSION) -ge 32 ] ; then echo true ; fi)
 
 # Add global rule for V3 kernels
 ifeq ($(KERNEL_MAIN_VERSION),3)
@@ -37,6 +38,7 @@ endif
 
 GT2622= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_22),-DKERNEL_VERSION_GREATER_THAN_2622=1)
 GT2629= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_29),-DKERNEL_VERSION_GREATER_THAN_2629=1)
+GT32= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_32),-DKERNEL_VERSION_GREATER_THAN_32=1)
 ####################################################
 #      NASMESH compilation flags
 ####################################################
@@ -51,7 +53,7 @@ GT2629= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_29),-DKERNEL_VERSION_GREATER_TH
 ####################################################
 #      EXTRA COMPILER FLAGS
 ####################################################
-EXTRA_CFLAGS = -fno-common $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3  -fno-stack-protector -mpreferred-stack-boundary=4)  $(if $(SET_X64),-DARCH_64,) $(if $(SET_X64),-mcmodel=kernel,) $(if $(SET_X64),-m64,) $(GT2622) $(GT2629) $(V3)
+EXTRA_CFLAGS = -fno-common $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3  -fno-stack-protector -mpreferred-stack-boundary=4)  $(if $(SET_X64),-DARCH_64,) $(if $(SET_X64),-mcmodel=kernel,) $(if $(SET_X64),-m64,) $(GT2622) $(GT2629) $(V3) $(GT32)
 
 ifdef NAS_NETLINK
 EXTRA_CFLAGS += -DNAS_NETLINK

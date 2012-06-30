@@ -1524,6 +1524,9 @@ main (int argc, char **argv)
   if ((oai_emulation.info.omv_enabled == 1) ){
     omv_end(pfd[1],omv_data);
   }
+  if ((oai_emulation.info.opt_enabled == 1) ){
+    terminate_opt();
+  }
   //destroyMat(ShaF,map1, map2);
   if (oai_emulation.info.cli_enabled)
     cli_server_cleanup();
