@@ -23,6 +23,9 @@ endif
 ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
+ifeq "$(GCCVERSION)" "4.6.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES

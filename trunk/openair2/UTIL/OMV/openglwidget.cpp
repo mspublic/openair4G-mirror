@@ -38,6 +38,7 @@
 */ 
 
 #include "openglwidget.h"
+#include <GL/glu.h>
 #include <stdio.h>
 
 extern struct Geo geo[NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX];

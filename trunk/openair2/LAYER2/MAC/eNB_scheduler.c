@@ -3545,7 +3545,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u16 nCCE;
   unsigned char aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char header_len_dcch=0,header_len_dtch=0;
+  unsigned char header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0;
   unsigned char sdu_lcids[11],offset,num_sdus=0;
   u16 nb_rb,nb_available_rb,TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
@@ -3832,11 +3832,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
 	// Now compute number of required RBs for total sdu length
 	// Assume RAH format 2
-	// correct header lengths
-	if ((header_len_dtch==0)&&(header_len_dcch >0))
-	  header_len_dcch--;  // remove length field
-	else if (header_len_dtch > 0) // DTCH is always after DCCH
-	  header_len_dtch--;     // remove length field for the last SDU
+	// adjust  header lengths
+	header_len_dcch_tmp = header_len_dcch;
+	header_len_dtch_tmp = header_len_dtch;
+	if (header_len_dtch==0)
+	  header_len_dcch = (header_len_dcch >0) ? 1 : header_len_dcch;  // remove length field
+	else 
+	header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
 	
 
 	nb_rb = 2;
@@ -3880,11 +3882,11 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	}
 	else {
 	  padding = 0;
-	   // adjust the header len
-	  if ((header_len_dtch==0)&&(header_len_dcch==1))
-	    header_len_dcch++;  // add the length field
-	  else if (header_len_dtch==1)
-	    header_len_dtch++;  // add the length field
+	   // adjust the header len 
+	  if (header_len_dtch==0)
+	    header_len_dcch = header_len_dcch_tmp; 
+	  else //if (( header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
+	    header_len_dtch = header_len_dtch_tmp; 
 	  
 	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - 1; 
 	}

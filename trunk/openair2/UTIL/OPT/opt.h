@@ -70,5 +70,5 @@ int init_opt(int trace_mode, char *path,char* ip, char* port);
 
 void terminate_opt(void);
 
-double *timing_analyzer(int index, int direction );
+//double *timing_analyzer(int index, int direction );
 

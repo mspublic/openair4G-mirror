@@ -608,7 +608,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
-  u8 dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0, bsr_header_len=0, bsr_ce_len=0, bsr_len=0; 
+  u8 dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0;
+  u8 dcch_header_len_tmp=0, dtch_header_len_tmp=0;
+  u8 bsr_header_len=0, bsr_ce_len=0, bsr_len=0; 
   u8 phr_header_len=0, phr_ce_len=0,phr_len=0;
   u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
@@ -628,7 +630,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   // hypo length,in case of long header skip the padding byte
-  dtch_header_len=(UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 128 ) ? 3 : 2 ; //sizeof(SCH_SUBHEADER_LONG)-1 : sizeof(SCH_SUBHEADER_SHORT);
+  dtch_header_len=(buflen > 128 ) ? 3 : 2 ; //sizeof(SCH_SUBHEADER_LONG)-1 : sizeof(SCH_SUBHEADER_SHORT);
   bsr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
   phr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
   bsr_ce_len = get_bsr_len (Mod_id, buflen);
@@ -700,12 +702,15 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   if ((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 0) &&
       ((bsr_len+phr_len+dcch_header_len+dcch1_header_len+dtch_header_len+sdu_length_total) <= buflen)){
 
-    // adjust the dtch header lenght
-    if ((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 128) &&
-	((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH]+bsr_len+phr_len+dcch_header_len+dcch1_header_len+dtch_header_len) > buflen))
+    // optimize the dtch header lenght
+    //if ((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 128) &&   
+    /*   if (((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] >= 128) &&
+	((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH]+bsr_len+phr_len+dcch_header_len+dcch1_header_len+dtch_header_len) > buflen)&&
+	 buflen >=128 ))
       dtch_header_len = 3;//sizeof(SCH_SUBHEADER_LONG);
-
-
+    else 
+      dtch_header_len = 2;//sizeof(SCH_SUBHEADER_SHORT);
+    */
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 				    DTCH,
 				    buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
@@ -717,6 +722,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					     DTCH,
 					     (char *)&ulsch_buff[sdu_length_total]);
 
+    //adjust dtch header
+    dtch_header_len = (sdu_lengths[num_sdus] >= 128) ? 3 : 2;
     LOG_D(MAC,"[UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
     sdu_lcids[num_sdus] = DTCH;
     sdu_length_total += sdu_lengths[num_sdus];
@@ -726,12 +733,6 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   else { // no rlc pdu : generate the dummy header
     dtch_header_len = 0;
   }
-  // adjust the header length 
-  if ((dtch_header_len==0)&& (dcch_header_len>0))
-    dcch_header_len--;  
-  else if (dtch_header_len >0)
-    dtch_header_len--;     
-  
   // regular BSR :  build bsr
   if (bsr_ce_len == sizeof(BSR_SHORT)) {
     bsr_l = NULL;
@@ -765,16 +766,24 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   }else
     phr_p=NULL;
  
+  // adjust the header length 
+  dcch_header_len_tmp = dcch_header_len;
+  dtch_header_len_tmp = dtch_header_len;
+  if (dtch_header_len==0)
+    dcch_header_len = (dcch_header_len>0)? 1: dcch_header_len;  
+  else 
+    dtch_header_len= (dtch_header_len >0)? 1: dtch_header_len;   // for short and long, cut the length+F fields  
+  
   if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
     short_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
     post_padding = 0;
   }
   else {
     short_padding = 0;
-    if ((dtch_header_len==0)&&(dcch_header_len ==1))
-      dcch_header_len++;  
-    else if ( dtch_header_len == 1) 
-      dtch_header_len++; 
+    if (dtch_header_len==0)
+      dcch_header_len = dcch_header_len_tmp;
+    else 
+      dtch_header_len= dtch_header_len_tmp;
     
     post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total-1;
   }
