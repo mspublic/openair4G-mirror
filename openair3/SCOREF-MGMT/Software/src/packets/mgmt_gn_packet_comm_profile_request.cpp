@@ -6,7 +6,7 @@
  */
 
 #include "mgmt_gn_packet_comm_profile_request.hpp"
-#include "../mgmt_util.hpp"
+#include "../util/mgmt_util.hpp"
 
 #include <sstream>
 

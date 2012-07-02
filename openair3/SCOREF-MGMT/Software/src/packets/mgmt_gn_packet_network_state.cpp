@@ -6,7 +6,7 @@
  */
 
 #include "mgmt_gn_packet_network_state.hpp"
-#include "../mgmt_util.hpp"
+#include "../util/mgmt_util.hpp"
 #include <sstream>
 
 GeonetNetworkStateEventPacket::GeonetNetworkStateEventPacket(ManagementInformationBase& mib, vector<unsigned char> packetBuffer)

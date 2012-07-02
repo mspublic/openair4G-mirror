@@ -6,7 +6,7 @@
  */
 
 #include "mgmt_gn_packet.hpp"
-#include "../mgmt_util.hpp"
+#include "../util/mgmt_util.hpp"
 #include <sstream>
 #include <iostream>
 using namespace std;

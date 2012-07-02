@@ -6,7 +6,7 @@
  */
 
 #include "mgmt_gn_packet_location_table_request.hpp"
-#include "../mgmt_util.hpp"
+#include "../util/mgmt_util.hpp"
 #include <iostream>
 #include <sstream>
 using namespace std;
