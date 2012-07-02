@@ -6,8 +6,8 @@
 </language>
 <language name="Assembly">
 <includepath>/usr/include</includepath>
-<includepath workspace_path="true">/IF.MGMT/src</includepath>
-<includepath workspace_path="true">/IF.MGMT/src/packets</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src/packets</includepath>
 <includepath>/usr/include/c++/4.4</includepath>
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
@@ -17,8 +17,8 @@
 </language>
 <language name="GNU C++">
 <includepath>/usr/include</includepath>
-<includepath workspace_path="true">/IF.MGMT/src</includepath>
-<includepath workspace_path="true">/IF.MGMT/src/packets</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src/packets</includepath>
 <includepath>/usr/include/c++/4.4</includepath>
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
@@ -28,8 +28,8 @@
 </language>
 <language name="GNU C">
 <includepath>/usr/include</includepath>
-<includepath workspace_path="true">/IF.MGMT/src</includepath>
-<includepath workspace_path="true">/IF.MGMT/src/packets</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src/packets</includepath>
 <includepath>/usr/include/c++/4.4</includepath>
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>

@@ -6,7 +6,7 @@
  */
 
 #include "mgmt_comm_prof_manager.hpp"
-#include "mgmt_util.hpp"
+#include "util/mgmt_util.hpp"
 
 #include <cstdlib>
 
@@ -24,7 +24,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 		return false;
 
 	u_int8_t profileID = atoi(profileIdString.substr(profileIdString.find("CP") + 2, profileIdString.length() - 2).c_str());
-	cout << "Comm. Profile ID = " << (int)profileID << endl;
+	cout << "Comm. Profile ID = " << (int)profileID << endl << endl;
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(profileID, parse(profileDefinitionString)));
 
 	return true;
@@ -94,31 +94,62 @@ void CommunicationProfileManager::initialise() {
 CommunicationProfileItem CommunicationProfileManager::parse(const string& profileString) {
 	CommunicationProfileItem communicationProfileItem;
 
+	/*
+	 * Parse communication profile string and get tokens for each layer
+	 */
 	vector<string> profileItemVector = Util::split(profileString, ',');
+	const string transport = profileItemVector[0];
+	const string network = profileItemVector[1];
+	const string access = profileItemVector[2];
+	string channel;
+	/*
+	 * For access methods `3G' and `Ethernet' this information is not relevant; for `11n'
+	 * the choice is made by the Access Point, here parse accordingly
+	 */
+	cout << "access = '" << access << "'" << endl;
+	if (!access.compare(0, 2, "3G") || !access.compare(0, 8, "Ethernet") || !access.compare(0, 3, "11n")) {
+		channel = "";
+	} else {
+		channel = profileItemVector[3];
+	}
+
 	cout << "There are " << profileItemVector.size() << " item(s)" << endl;
 
 	/*
 	 * Fill transport, network, access, and channel fields respectively
 	 */
+	setFlags(profileItemVector[0], communicationProfileItem.transport);
 	cout << "transport = " << profileItemVector[0] << endl;
+	setFlags(profileItemVector[1], communicationProfileItem.network);
 	cout << "network = " << profileItemVector[1] << endl;
+	setFlags(profileItemVector[2], communicationProfileItem.access);
 	cout << "access = " << profileItemVector[2] << endl;
-	cout << "channel = " << profileItemVector[3] << endl;
-	Util::setBit(communicationProfileItem.transport, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[0]]));
-	Util::setBit(communicationProfileItem.network, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[1]]));
-	Util::setBit(communicationProfileItem.access, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[2]]));
-	/*
-	 * For access methods `3G' and `Ethernet' this information is not relevant; for `11n'
-	 * the choice is made by the Access Point, here parse accordingly
-	 */
-	if (!profileItemVector[2].compare("3G")
-			|| !profileItemVector[2].compare("Ethernet")
-			|| !profileItemVector[2].compare("11n")) {
+
+	if (channel.empty()) {
 		cout << "Access type is either 3G, or Ethernet, or 11n. Skipping channel information" << endl;
 	} else {
+		cout << "lenght = " << access.length() << endl;
 		cout << "Encoding channel information" << endl;
-		Util::setBit(communicationProfileItem.channel, static_cast<u_int8_t>(communicationProfileStringMap[profileItemVector[3]]));
+		setFlags(profileItemVector[3], communicationProfileItem.channel);
+		cout << "channel = " << profileItemVector[3] << endl;
 	}
 
 	return communicationProfileItem;
+}
+
+bool CommunicationProfileManager::setFlags(const string& configuration, u_int8_t& octet) {
+	if (configuration.empty())
+		return false;
+
+	vector<string> profileStrings = Util::split(configuration, ':');
+	vector<string>::iterator iterator = profileStrings.begin();
+
+	while (iterator != profileStrings.end()) {
+		cout << "Setting '" << *iterator << "' flag..." << endl;
+		Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator]));
+
+		++iterator;
+	}
+
+	return true;
 }

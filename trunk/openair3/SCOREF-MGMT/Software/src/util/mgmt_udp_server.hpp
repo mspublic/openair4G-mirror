@@ -15,7 +15,7 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "packets/mgmt_gn_packet.hpp"
+#include "../packets/mgmt_gn_packet.hpp"
 
 /**
  * A wrapper container to maintain UDP socket connection

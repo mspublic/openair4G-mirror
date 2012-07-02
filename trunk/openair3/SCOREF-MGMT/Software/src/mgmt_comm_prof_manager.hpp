@@ -79,6 +79,16 @@ class CommunicationProfileManager {
 		 * @return CommunicationProfileItem having parsed information
 		 */
 		CommunicationProfileItem parse(const string& profileString);
+		/**
+		 * A helper method to set any bits given in particular communication
+		 * profile string, e.g. if a string "IPv4/v6:DSMIPv4/v6" is given then
+		 * this method will set both 'IPv4/v6' and 'DSMIPv4/v6' flags in given
+		 * octet
+		 *
+		 * @param octet Octet that the found out flags will be set
+		 * @return true on success, false otherwise
+		 */
+		bool setFlags(const string& configuration, u_int8_t& octet);
 
 	private:
 		/**

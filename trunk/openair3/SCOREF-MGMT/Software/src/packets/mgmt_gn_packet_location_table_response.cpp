@@ -6,7 +6,7 @@
  */
 
 #include "mgmt_gn_packet_location_table_response.hpp"
-#include "../mgmt_util.hpp"
+#include "../util/mgmt_util.hpp"
 #include <sstream>
 
 GeonetLocationTableResponseEventPacket::GeonetLocationTableResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer)

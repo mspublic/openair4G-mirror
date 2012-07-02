@@ -6,7 +6,7 @@
  */
 
 #include "mgmt_gn_packet_wireless_state_response.hpp"
-#include "../mgmt_util.hpp"
+#include "../util/mgmt_util.hpp"
 #include <sstream>
 
 GeonetWirelessStateResponseEventPacket::GeonetWirelessStateResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer)

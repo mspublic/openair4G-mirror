@@ -18,8 +18,8 @@ using boost::asio::ip::udp;
 #include "mgmt_configuration.hpp"
 #include "mgmt_gn_packet_handler.hpp"
 #include "packets/mgmt_gn_packet_location_table_request.hpp"
-#include "mgmt_udp_server.hpp"
-#include "mgmt_util.hpp"
+#include "util/mgmt_udp_server.hpp"
+#include "util/mgmt_util.hpp"
 
 void printHelp(string binaryName) {
 	cerr << binaryName << " <configurationFile>" << endl;
