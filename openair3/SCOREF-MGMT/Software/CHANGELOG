@@ -1,4 +1,12 @@
 
+v1.0.16
+* Openair source file template has been prepended to every source file
+* README.HEADER_TEMPLATE file has been added
+* 'CM-GN Interface Definition_v4.pdf' and 
+  'ITS Station Management Core - Low Level Description.pdf' files has been
+  added under Documentation/ and Documentation/README file has been updated
+* Doxygen documentation has been added for mgmt_its_key_manager.hpp file
+
 v1.0.15
 * README.BUILD.ECLIPSE.PATHS.xml file updated with Boost path
 * Communication profiles defined in L221-4.1.3 are entered into conf. file
