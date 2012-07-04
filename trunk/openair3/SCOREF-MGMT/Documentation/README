@@ -1,4 +1,9 @@
 
-Please see Software/README.DOCUMENTATION.
+Here two Lot 3 documents resides on messages exchanged among 
+SCOREF Management and Geonetworking modules, and big picture 
+of these (and other) modules.
+
+For the Doxygen documentation of the code please see 
+../Software/README.DOCUMENTATION.
 
 - Baris Demiray <baris.demiray@eurecom.fr>

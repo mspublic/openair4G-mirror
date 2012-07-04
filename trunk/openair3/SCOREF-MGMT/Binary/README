@@ -8,6 +8,6 @@ tar xfa IF.MGMT-v1.0.4.tar.lzma
 
 Not for all versions a binary is created when the change is 
 subtle and/or documentation related. So follow Software/ directory
-for most up-to-date version.
+for the most up-to-date version.
 
 - Baris Demiray <baris.demiray@eurecom.fr>
