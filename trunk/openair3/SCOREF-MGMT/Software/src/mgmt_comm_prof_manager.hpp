@@ -101,6 +101,13 @@ class CommunicationProfileManager {
 		 * @return std::map of Communication Profile Table
 		 */
 		map<CommunicationProfileID, CommunicationProfileItem> getProfileMap() const;
+		/**
+		 * Returns communication profile map subset filtered by incoming request map
+		 *
+		 * @param filter 32-bit filter part of a Communication Profile Request packet
+		 * @return Filtered subset of communication profile
+		 */
+		map<CommunicationProfileID, CommunicationProfileItem> getProfileMapSubset(u_int32_t filter) const;
 
 	private:
 		/**
