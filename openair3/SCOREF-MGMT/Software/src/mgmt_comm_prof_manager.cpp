@@ -58,7 +58,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 		return false;
 
 	u_int8_t profileID = atoi(profileIdString.substr(profileIdString.find("CP") + 2, profileIdString.length() - 2).c_str());
-	cout << "Comm. Profile ID = " << (int)profileID << endl << endl;
+	cout << "Communication Profile ID = " << (int)profileID << endl << endl;
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(profileID, parse(profileDefinitionString)));
 
 	return true;
@@ -87,6 +87,23 @@ u_int8_t CommunicationProfileManager::getProfileCount() const {
 
 map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMap() const {
 	return communicationProfileMap;
+}
+
+map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMapSubset(u_int32_t filter) const {
+	/**
+	 * If we're asked everything, return everything
+	 */
+	if (filter == 0xFFFFFFFF)
+		return getProfileMap();
+
+	map<CommunicationProfileID, CommunicationProfileItem> filteredProfileMap;
+	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
+
+	while (it != communicationProfileMap.end()) {
+		++it;
+	}
+
+	return filteredProfileMap;
 }
 
 void CommunicationProfileManager::initialise() {
