@@ -960,7 +960,7 @@ struct ieee80211_local {
 	struct mutex mtx;
 
 	/* Scanning and BSS list */
-	unsigned long scanning;
+	unsigned long scanning; // JHNOTE: could add another tag for OCBActivated
 	struct cfg80211_ssid scan_ssid;
 	struct cfg80211_scan_request *int_scan_req;
 	struct cfg80211_scan_request *scan_req, *hw_scan_req;
