@@ -267,7 +267,7 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 	if (unlikely(test_bit(SCAN_SW_SCANNING, &tx->local->scanning)) &&
 	    test_bit(SDATA_STATE_OFFCHANNEL, &tx->sdata->state) &&
 	    !ieee80211_is_probe_req(hdr->frame_control) &&
-	    !ieee80211_is_nullfunc(hdr->frame_control))
+	    !ieee80211_is_nullfunc(hdr->frame_control))  // JHNOTE: ensure that we are NEVER scanning in OCB mode.
 		/*
 		 * When software scanning only nullfunc frames (to notify
 		 * the sleep state to the AP) and probe requests (for the
@@ -293,7 +293,7 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 	if (tx->sta)
 		assoc = test_sta_flag(tx->sta, WLAN_STA_ASSOC);
 
-	if (likely(tx->flags & IEEE80211_TX_UNICAST)) {
+	if (likely(tx->flags & IEEE80211_TX_UNICAST)) { // JHNOTE: change something here...as it will be very ' likely' and we should accept it
 		if (unlikely(!assoc &&
 			     ieee80211_is_data(hdr->frame_control))) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
@@ -313,7 +313,7 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 		 */
 		return TX_DROP;
 	}
-
+    // JHNOTE: to clarify here: if I read well, if I am AD-HOC and BROADCAST, no change are required (no need to be associated...)...,right?
 	return TX_CONTINUE;
 }
 
@@ -1326,11 +1326,11 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 			goto txh_done;	\
 	} while (0)
 
-	CALL_TXH(ieee80211_tx_h_dynamic_ps);
-	CALL_TXH(ieee80211_tx_h_check_assoc);
-	CALL_TXH(ieee80211_tx_h_ps_buf);
-	CALL_TXH(ieee80211_tx_h_check_control_port_protocol);
-	CALL_TXH(ieee80211_tx_h_select_key);
+	CALL_TXH(ieee80211_tx_h_dynamic_ps); // JHNOTE: not necessary (we do not do Power saving so far)
+	CALL_TXH(ieee80211_tx_h_check_assoc); // JHNOTE: check that scanning is false, check that if unicast and not assoc, we return true; for broadcast and AD_HOC, it is always true
+	CALL_TXH(ieee80211_tx_h_ps_buf); // JHNOTE: not necessary (but just set the right flag to bypass it
+	CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // JHNOTE: ignoring with the right flags
+	CALL_TXH(ieee80211_tx_h_select_key); // bypass directly (test OCBActivated..)
 	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL))
 		CALL_TXH(ieee80211_tx_h_rate_ctrl);
 
@@ -1340,12 +1340,12 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 		goto txh_done;
 	}
 
-	CALL_TXH(ieee80211_tx_h_michael_mic_add);
-	CALL_TXH(ieee80211_tx_h_sequence);
-	CALL_TXH(ieee80211_tx_h_fragment);
+	CALL_TXH(ieee80211_tx_h_michael_mic_add); // JHNOTE: ignore
+	CALL_TXH(ieee80211_tx_h_sequence); // JHNOTE: keep it but no impact
+	CALL_TXH(ieee80211_tx_h_fragment); // JHNOTE: keep it, no impact if flags correctly set (IEEE80211_TX_CTL_DONTFRAG)
 	/* handlers after fragment must be aware of tx info fragmentation! */
-	CALL_TXH(ieee80211_tx_h_stats);
-	CALL_TXH(ieee80211_tx_h_encrypt);
+	CALL_TXH(ieee80211_tx_h_stats);  // JHNOTE: keep it: no impact
+	CALL_TXH(ieee80211_tx_h_encrypt); // JHNOTE: bypass if with check on OCBActivated
 	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL))
 		CALL_TXH(ieee80211_tx_h_calculate_duration);
 #undef CALL_TXH
@@ -1388,7 +1388,7 @@ static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
 
 	/* initialises tx */
 	led_len = skb->len;
-	res_prepare = ieee80211_tx_prepare(sdata, &tx, skb);
+	res_prepare = ieee80211_tx_prepare(sdata, &tx, skb); // JHNote: nothing specific if we set the right flags...
 
 	if (unlikely(res_prepare == TX_DROP)) {
 		dev_kfree_skb(skb);
@@ -1449,7 +1449,7 @@ void ieee80211_xmit(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 
 	rcu_read_lock();
 
-	may_encrypt = !(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT);
+	may_encrypt = !(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT); // JHNOTE: OCB mode: should be false
 
 	headroom = local->tx_headroom;
 	if (may_encrypt)
@@ -1479,7 +1479,7 @@ void ieee80211_xmit(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 	/* Older kernels do not have the select_queue callback */
 	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, skb));
 #endif
-	ieee80211_set_qos_hdr(sdata, skb);
+	ieee80211_set_qos_hdr(sdata, skb); // JHNOTE: if we have the flag that QoS is not enable, we bypass this..
 	ieee80211_tx(sdata, skb, false);
 	rcu_read_unlock();
 }
@@ -1904,7 +1904,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		/* DA SA BSSID */
 		memcpy(hdr.addr1, skb->data, ETH_ALEN);
 		memcpy(hdr.addr2, skb->data + ETH_ALEN, ETH_ALEN);
-		memcpy(hdr.addr3, sdata->u.ibss.bssid, ETH_ALEN);
+		memcpy(hdr.addr3, sdata->u.ibss.bssid, ETH_ALEN); // JHNOTE: here, we can add that we have a clause on the OCB; by default: cpu_to_le16(~IEEE80211_FCTL_FROMDS | ~IEEE80211_FCTL_TODS) should be set
 		hdrlen = 24;
 		break;
 	default:
@@ -1933,7 +1933,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		wme_sta = true;
 
 	/* receiver and we are QoS enabled, use a QoS type frame */
-	if (wme_sta && local->hw.queues >= 4) {
+	if (wme_sta && local->hw.queues >= 4) {  // JHNOTE: for 802.11p PLATA: just make sure wme_sta is FALSE
 		fc |= cpu_to_le16(IEEE80211_STYPE_QOS_DATA);
 		hdrlen += 2;
 	}
@@ -2079,7 +2079,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	}
 #endif
 
-	if (ieee80211_is_data_qos(fc)) {
+	if (ieee80211_is_data_qos(fc)) {  //JHNOTE: be sure it is false
 		__le16 *qos_control;
 
 		qos_control = (__le16*) skb_push(skb, 2);
@@ -2110,7 +2110,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 
 	dev->trans_start = jiffies;
 
-	info->flags = info_flags;
+	info->flags = info_flags;  // JHNOTE: check info_flags HERE...(in particular be sure that encryption is disabled (IEEE80211_TX_INTFL_DONT_ENCRYPT) and other flags to bypass the statemachine
 	info->ack_frame_id = info_id;
 
 	ieee80211_xmit(sdata, skb);

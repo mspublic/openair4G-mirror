@@ -860,7 +860,7 @@ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
 		      ieee80211_is_pspoll(hdr->frame_control)) &&
 		     rx->sdata->vif.type != NL80211_IFTYPE_ADHOC &&
 		     rx->sdata->vif.type != NL80211_IFTYPE_WDS &&
-		     (!rx->sta || !test_sta_flag(rx->sta, WLAN_STA_ASSOC)))) {
+		     (!rx->sta || !test_sta_flag(rx->sta, WLAN_STA_ASSOC)))) { // JHnote: either data or BS poll and not ADHOC and either no station or not associated
 		/*
 		 * accept port control frames from the AP even when it's not
 		 * yet marked ASSOC to prevent a race where we don't set the
@@ -2672,25 +2672,25 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 		 */
 		rx->skb = skb;
 
-		CALL_RXH(ieee80211_rx_h_decrypt)
-		CALL_RXH(ieee80211_rx_h_check_more_data)
-		CALL_RXH(ieee80211_rx_h_uapsd_and_pspoll)
-		CALL_RXH(ieee80211_rx_h_sta_process)
-		CALL_RXH(ieee80211_rx_h_defragment)
-		CALL_RXH(ieee80211_rx_h_michael_mic_verify)
+		CALL_RXH(ieee80211_rx_h_decrypt)  // JHNOTE: no use for 802.11p
+		CALL_RXH(ieee80211_rx_h_check_more_data)  // JHNOTE: no use as we do not POLL in 802.11p
+		CALL_RXH(ieee80211_rx_h_uapsd_and_pspoll)  // JHNOTE: no use as we do not poll (if AD_HOC, return)
+		CALL_RXH(ieee80211_rx_h_sta_process)  // JHNOTE: what is this method really doing?
+		CALL_RXH(ieee80211_rx_h_defragment) // can be either ignored (we do not fragement, or followed..as no change)
+		CALL_RXH(ieee80211_rx_h_michael_mic_verify) // JHNOTE: probably not necessary as no encryption
 		/* must be after MMIC verify so header is counted in MPDU mic */
 #ifdef CONFIG_MAC80211_MESH
 		if (ieee80211_vif_is_mesh(&rx->sdata->vif))
 			CALL_RXH(ieee80211_rx_h_mesh_fwding);
 #endif
-		CALL_RXH(ieee80211_rx_h_amsdu)
-		CALL_RXH(ieee80211_rx_h_data)
-		CALL_RXH(ieee80211_rx_h_ctrl);
-		CALL_RXH(ieee80211_rx_h_mgmt_check)
-		CALL_RXH(ieee80211_rx_h_action)
-		CALL_RXH(ieee80211_rx_h_userspace_mgmt)
+		CALL_RXH(ieee80211_rx_h_amsdu)  // JHNOTE: can be left here..no change
+		CALL_RXH(ieee80211_rx_h_data)  // JHNOTE: to double check..important calls (to deliver_skb notably)
+		CALL_RXH(ieee80211_rx_h_ctrl); // JHNOTE: not important, we do not have control frames
+		CALL_RXH(ieee80211_rx_h_mgmt_check)  // JHNOTE: ignore as we do not have management frames
+		CALL_RXH(ieee80211_rx_h_action) // JHNOTE: not sure..probably not useful
+		CALL_RXH(ieee80211_rx_h_userspace_mgmt) // JHNOTE: can be ignored...we do not use managmenet at userspace yet
 		CALL_RXH(ieee80211_rx_h_action_return)
-		CALL_RXH(ieee80211_rx_h_mgmt)
+		CALL_RXH(ieee80211_rx_h_mgmt) // JHNOTE: need to add a flag for not processing such frames if we are in 802.11p mode.
 
  rxh_next:
 		ieee80211_rx_handlers_result(rx, res);
@@ -2715,7 +2715,7 @@ static void ieee80211_invoke_rx_handlers(struct ieee80211_rx_data *rx)
 			goto rxh_next;  \
 	} while (0);
 
-	CALL_RXH(ieee80211_rx_h_passive_scan)
+	CALL_RXH(ieee80211_rx_h_passive_scan)  // JHNOTE: by maintaining the flag: IEEE80211_RX_IN_SCAN = false for 802.11p mode, we exit immediately
 	CALL_RXH(ieee80211_rx_h_check)
 
 	ieee80211_rx_reorder_ampdu(rx);
@@ -2770,12 +2770,12 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 
 	switch (sdata->vif.type) {
 	case NL80211_IFTYPE_STATION:
-		if (!bssid && !sdata->u.mgd.use_4addr)
+		if (!bssid && !sdata->u.mgd.use_4addr) // no BSSID and not using all 4 addresses (as we would not have a BSSID in that case)
 			return 0;
 		if (!multicast &&
-		    compare_ether_addr(sdata->vif.addr, hdr->addr1) != 0) {
+		    compare_ether_addr(sdata->vif.addr, hdr->addr1) != 0) { // ppacket NOT for me
 			if (!(sdata->dev->flags & IFF_PROMISC) ||
-			    sdata->u.mgd.use_4addr)
+			    sdata->u.mgd.use_4addr)  // if not Promi. mode OR if I use all four addresses
 				return 0;
 			status->rx_flags &= ~IEEE80211_RX_RA_MATCH;
 		}
@@ -2786,14 +2786,14 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 		if (ieee80211_is_beacon(hdr->frame_control)) {
 			return 1;
 		}
-		else if (!ieee80211_bssid_match(bssid, sdata->u.ibss.bssid)) {
-			if (!(status->rx_flags & IEEE80211_RX_IN_SCAN))
+		else if (!ieee80211_bssid_match(bssid, sdata->u.ibss.bssid)) {  // do not have the same BSSID
+			if (!(status->rx_flags & IEEE80211_RX_IN_SCAN))  // not in SCAN MODE
 				return 0;
 			status->rx_flags &= ~IEEE80211_RX_RA_MATCH;
 		} else if (!multicast &&
 			   compare_ether_addr(sdata->vif.addr,
-					      hdr->addr1) != 0) {
-			if (!(sdata->dev->flags & IFF_PROMISC))
+					      hdr->addr1) != 0) {   // JHNote: not a multicast and packet is NOT for me
+			if (!(sdata->dev->flags & IFF_PROMISC)) // not in Promisc Mode
 				return 0;
 			status->rx_flags &= ~IEEE80211_RX_RA_MATCH;
 		} else if (!rx->sta) {
@@ -2803,7 +2803,7 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 			else
 				rate_idx = status->rate_idx;
 			ieee80211_ibss_rx_no_sta(sdata, bssid, hdr->addr2,
-						 BIT(rate_idx));
+						 BIT(rate_idx));  // trigger an IBSS receive...
 		}
 		break;
 	case NL80211_IFTYPE_MESH_POINT:
@@ -2876,7 +2876,7 @@ static bool ieee80211_prepare_and_rx_handle(struct ieee80211_rx_data *rx,
 	if (!prepares)
 		return false;
 
-	if (!consume) {
+	if (!consume) { // JHnote: first time we call it (we did not consume the SKB so far)
 		skb = skb_copy(skb, GFP_ATOMIC);
 		if (!skb) {
 			if (net_ratelimit())
@@ -2939,7 +2939,7 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 	if (ieee80211_is_data(fc)) {
 		prev_sta = NULL;
 
-		for_each_sta_info(local, hdr->addr2, sta, tmp) {
+		for_each_sta_info(local, hdr->addr2, sta, tmp) { // JHNote: check if this packet if for me
 			if (!prev_sta) {
 				prev_sta = sta;
 				continue;
