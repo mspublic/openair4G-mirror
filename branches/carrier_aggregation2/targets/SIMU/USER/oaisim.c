@@ -874,10 +874,10 @@ main (int argc, char **argv)
     sinr_dB = snr_dB - 20;
 
   // setup ntedevice interface (netlink socket)
-  //#ifdef NAS_NETLINK  
+  #ifdef NAS_NETLINK  
   LOG_I(EMU,"[INIT] Starting NAS netlink interface\n");
   ret = netlink_init ();
-  //#endif
+  #endif
 
   if (ethernet_flag == 1) {
     oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
@@ -893,11 +893,14 @@ main (int argc, char **argv)
       j *= 2;
     }
     LOG_I (EMU, " Total number of master %d my master id %d\n", oai_emulation.info.nb_master, oai_emulation.info.master_id);
-    init_bypass ();
-
+   #ifdef PHY_ABSTRACTION
+init_bypass ();
+#endif
     while (emu_tx_status != SYNCED_TRANSPORT) {
       LOG_I (EMU, " Waiting for EMU Transport to be synced\n");
-      emu_transport_sync ();	//emulation_tx_rx();
+   #ifdef PHY_ABSTRACTION
+   emu_transport_sync ();	//emulation_tx_rx();
+#endif
     }
   }				// ethernet flag
 
@@ -936,14 +939,14 @@ main (int argc, char **argv)
       perror("close on read\n" );
   }
 
-//#ifndef NAS_NETLINK
+#ifndef NAS_NETLINK
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
     UE_stats[UE_id] = fopen (UE_stats_filename, "w");
   }
   eNB_stats = fopen ("eNB_stats.txt", "w");
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
-//#endif
+#endif
       
   LOG_I(EMU,"total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
   LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
@@ -1236,10 +1239,13 @@ main (int argc, char **argv)
       if(Channel_Flag==1)
           Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms,slot);
 #endif 
+
      if(Channel_Flag==0){
       if((next_slot %2) ==0)
+#ifdef PHY_ABSTRACTION
+
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
-      
+#endif      
       for (eNB_id=oai_emulation.info.first_enb_local;
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
@@ -1250,21 +1256,22 @@ main (int argc, char **argv)
 	
 	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
 	  PHY_vars_eNB_g[eNB_id][CC_id]->frame = frame;
-	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
-	
-//#ifndef NAS_NETLINK
+	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);	
+#ifndef NAS_NETLINK
 	//if ((frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
 	  //}
-//#endif
+#endif
       }
+#ifdef PHY_ABSTRACTION
       emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
 
       // Call ETHERNET emulation here
       if ((next_slot % 2) == 0)
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
+#endif
       
       for (UE_id = oai_emulation.info.first_ue_local; 
 	   (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1); 
@@ -1302,14 +1309,15 @@ main (int argc, char **argv)
 	      */
 	    }
  	  }
-//#ifndef NAS_NETLINK
+#ifndef NAS_NETLINK
 	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-//#endif
+#endif
 	}
+#ifdef PHY_ABSTRACTION
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
- 
+#endif
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
@@ -1445,10 +1453,12 @@ main (int argc, char **argv)
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
+#ifdef PHY_ABSTRACTION
   // relase all rx state
   if (ethernet_flag == 1) {
     emu_transport_release ();
   }
+#endif
 
   if (abstraction_flag == 0 && Channel_Flag==0 && Process_Flag==0) {
     /*
@@ -1485,11 +1495,11 @@ main (int argc, char **argv)
       free(ue_data[UE_id]); 
   } //End of PHY abstraction changes
   
-//#ifndef NAS_NETLINK
+#ifndef NAS_NETLINK
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
     fclose (UE_stats[UE_id]);
   fclose (eNB_stats);
-//#endif
+#endif
  // stop OMG
  stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
   if ((oai_emulation.info.omv_enabled == 1) ){
@@ -1505,4 +1515,4 @@ main (int argc, char **argv)
 }
 
 
-// could be per mobility type : void update_node_vector(int mobility_type, double cur_time) ;
+// cou:ld be per mobility type : void update_node_vector(int mobility_type, double cur_time) ;
