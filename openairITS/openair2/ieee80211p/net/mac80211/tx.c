@@ -287,15 +287,16 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 	if (tx->sdata->vif.type == NL80211_IFTYPE_MESH_POINT)
 		return TX_CONTINUE;
 
-	if (tx->flags & IEEE80211_TX_PS_BUFFERED)
+	if (tx->flags & IEEE80211_TX_PS_BUFFERED)   // JHNOTE: double check here..not sure w
 		return TX_CONTINUE;
 
-	if (tx->sta)
+	// check only if OCB is not activated
+	if (tx->sta && ((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)))
 		assoc = test_sta_flag(tx->sta, WLAN_STA_ASSOC);
 
 	if (likely(tx->flags & IEEE80211_TX_UNICAST)) { // JHNOTE: change something here...as it will be very ' likely' and we should accept it
 		if (unlikely(!assoc &&
-			     ieee80211_is_data(hdr->frame_control))) {
+			     ieee80211_is_data(hdr->frame_control) && ((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)))) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 			printk(KERN_DEBUG "%s: dropped data frame to not "
 			       "associated station %pM\n",
@@ -1161,7 +1162,7 @@ ieee80211_tx_prepare(struct ieee80211_sub_if_data *sdata,
 	} else if (info->flags & IEEE80211_TX_CTL_INJECTED) {
 		tx->sta = sta_info_get_bss(sdata, hdr->addr1);
 	}
-	if (!tx->sta)
+	if (!tx->sta) // need to check if we could enter here
 		tx->sta = sta_info_get(sdata, hdr->addr1);
 
 	if (tx->sta && ieee80211_is_data_qos(hdr->frame_control) &&
@@ -1326,11 +1327,20 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 			goto txh_done;	\
 	} while (0)
 
-	CALL_TXH(ieee80211_tx_h_dynamic_ps); // JHNOTE: not necessary (we do not do Power saving so far)
+	// no power saving mode when OCB is activated
+	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	  CALL_TXH(ieee80211_tx_h_dynamic_ps); // JHNOTE: not necessary (we do not do Power saving so far)
+    }
+
 	CALL_TXH(ieee80211_tx_h_check_assoc); // JHNOTE: check that scanning is false, check that if unicast and not assoc, we return true; for broadcast and AD_HOC, it is always true
-	CALL_TXH(ieee80211_tx_h_ps_buf); // JHNOTE: not necessary (but just set the right flag to bypass it
-	CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // JHNOTE: ignoring with the right flags
-	CALL_TXH(ieee80211_tx_h_select_key); // bypass directly (test OCBActivated..)
+
+	// no power saving and no key management
+	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	  CALL_TXH(ieee80211_tx_h_ps_buf); // JHNOTE: bypass as no PS
+	  CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // JHNOTE: ignoring with the right flags but not sure...
+	  CALL_TXH(ieee80211_tx_h_select_key); // bypass directly (test OCBActivated..)
+	}
+
 	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL))
 		CALL_TXH(ieee80211_tx_h_rate_ctrl);
 
@@ -1340,12 +1350,17 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 		goto txh_done;
 	}
 
-	CALL_TXH(ieee80211_tx_h_michael_mic_add); // JHNOTE: ignore
+	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	  CALL_TXH(ieee80211_tx_h_michael_mic_add); // JHNOTE: ignore
+	}
 	CALL_TXH(ieee80211_tx_h_sequence); // JHNOTE: keep it but no impact
 	CALL_TXH(ieee80211_tx_h_fragment); // JHNOTE: keep it, no impact if flags correctly set (IEEE80211_TX_CTL_DONTFRAG)
 	/* handlers after fragment must be aware of tx info fragmentation! */
 	CALL_TXH(ieee80211_tx_h_stats);  // JHNOTE: keep it: no impact
-	CALL_TXH(ieee80211_tx_h_encrypt); // JHNOTE: bypass if with check on OCBActivated
+
+	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	  CALL_TXH(ieee80211_tx_h_encrypt); // JHNOTE: bypass if with check on OCBActivated
+	}
 	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL))
 		CALL_TXH(ieee80211_tx_h_calculate_duration);
 #undef CALL_TXH
@@ -1449,7 +1464,7 @@ void ieee80211_xmit(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 
 	rcu_read_lock();
 
-	may_encrypt = !(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT); // JHNOTE: OCB mode: should be false
+	may_encrypt = !(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT); // JHNOTE: OCB mode: should be false - DONE
 
 	headroom = local->tx_headroom;
 	if (may_encrypt)
