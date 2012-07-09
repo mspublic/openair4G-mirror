@@ -13,6 +13,8 @@ OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -O2 -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat 
 
+CFLAGS += -DRel10
+
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)"  "4.4.3"
     CFLAGS += -Wno-packed-bitfield-compat
@@ -86,7 +88,7 @@ endif
 ifdef  Rel8
 endif
 
-CFLAGS += -DNAS_NETLINK -DLINUX
+#CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
 ifdef NAS_NETLINK
 CFLAGS += -DDEBUG_OMG
