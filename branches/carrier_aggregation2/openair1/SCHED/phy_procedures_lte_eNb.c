@@ -178,15 +178,15 @@ s8 find_next_ue_index(PHY_VARS_eNB *phy_vars_eNB) {
   return(-1);
 }
 
-int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag) {
+int get_ue_active_harq_pid(u8 Mod_id,u8 CC_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag) {
 
   LTE_eNB_DLSCH_t *DLSCH_ptr;  
   LTE_eNB_ULSCH_t *ULSCH_ptr;  
   //  u8 subframe_m4;
   u8 ulsch_subframe,ulsch_frame; 
   u8 i;
-  s8 UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id]);
-  u32 frame = PHY_vars_eNB_g[Mod_id]->frame;
+  s8 UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
+  u32 frame = PHY_vars_eNB_g[Mod_id][CC_id]->frame;
 
   if (UE_id==-1) {
     msg("[PHY] Cannot find UE with rnti %x\n",rnti);
@@ -195,7 +195,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
   }
 
   if (ul_flag == 0)  {// this is a DL request
-    DLSCH_ptr = PHY_vars_eNB_g[Mod_id]->dlsch_eNB[(u32)UE_id][0];
+    DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(u32)UE_id][0];
     /*    
     if (subframe<4)
       subframe_m4 = subframe+6;
@@ -241,11 +241,11 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
   }
   else {  // This is a UL request
 
-    ULSCH_ptr = PHY_vars_eNB_g[Mod_id]->ulsch_eNB[(u32)UE_id];
-    ulsch_subframe = pdcch_alloc2ul_subframe(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,subframe);
-    ulsch_frame    = pdcch_alloc2ul_frame(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,((subframe==0)?1:0)+frame,subframe);
+    ULSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->ulsch_eNB[(u32)UE_id];
+    ulsch_subframe = pdcch_alloc2ul_subframe(&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms,subframe);
+    ulsch_frame    = pdcch_alloc2ul_frame(&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms,((subframe==0)?1:0)+frame,subframe);
     // Note this is for TDD configuration 3,4,5 only
-    *harq_pid = subframe2harq_pid(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,
+    *harq_pid = subframe2harq_pid(&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms,
 				  ulsch_frame,
 				  ulsch_subframe);
     *round    = ULSCH_ptr->harq_processes[*harq_pid]->round;
@@ -791,17 +791,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   sect_id=0;
 
   if ((next_slot % 2)==0) {
-    //#ifdef DEBUG_PHY_PROC
-    //    msg("[PHY][eNB %d] UE %d: Mode %s\n",phy_vars_eNB->Mod_id,0,mode_string[phy_vars_eNB->eNB_UE_stats[0].mode]);
-    //#endif
-
 #ifdef OPENAIR2
-      // if there are two users and we want to do cooperation
-    if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,phy_vars_eNB->frame,next_slot>>1);
-    else
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1);
-
     // Parse DCI received from MAC
     DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
 				     phy_vars_eNB->frame,
@@ -2424,32 +2414,47 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     
 }
 
-void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
+void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB **phy_vars_eNB,u8 abstraction_flag) {
 
-  /*
-  if (phy_vars_eNB->frame >= 1000)
-    mac_xface->macphy_exit("Exiting after 1000 Frames\n");
-  */
+  int CC_id;
 
-  if (((phy_vars_eNB->lte_frame_parms.frame_type == 1)&&(subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_DL))||
-      (phy_vars_eNB->lte_frame_parms.frame_type == 0)){
+  if (((phy_vars_eNB[0]->lte_frame_parms.frame_type == 1)&&(subframe_select(&phy_vars_eNB[0]->lte_frame_parms,next_slot>>1)==SF_DL))||
+      (phy_vars_eNB[0]->lte_frame_parms.frame_type == 0)){
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_TX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-    phy_procedures_eNB_TX(next_slot,phy_vars_eNB,abstraction_flag);
+#ifdef OPENAIR2
+    if ((next_slot % 2)==0) {
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[0]->Mod_id,0,phy_vars_eNB[0]->frame,next_slot>>1);
+    }
+#endif
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      phy_procedures_eNB_TX(next_slot,phy_vars_eNB[CC_id],abstraction_flag);
+    }
   }
-  if (((phy_vars_eNB->lte_frame_parms.frame_type == 1 )&&(subframe_select(&phy_vars_eNB->lte_frame_parms,last_slot>>1)==SF_UL))||
-      (phy_vars_eNB->lte_frame_parms.frame_type == 0)){
+  if (((phy_vars_eNB[0]->lte_frame_parms.frame_type == 1 )&&(subframe_select(&phy_vars_eNB[0]->lte_frame_parms,last_slot>>1)==SF_UL))||
+      (phy_vars_eNB[0]->lte_frame_parms.frame_type == 0)){
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_RX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
-    phy_procedures_eNB_RX(last_slot,phy_vars_eNB,abstraction_flag);
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      phy_procedures_eNB_RX(last_slot,phy_vars_eNB[CC_id],abstraction_flag);
+    }
   }
-  if ((subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_S) &&
+  if ((subframe_select(&phy_vars_eNB[0]->lte_frame_parms,next_slot>>1)==SF_S) &&
       ((next_slot&1)==0)) {
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_TX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-    phy_procedures_eNB_TX(next_slot,phy_vars_eNB,abstraction_flag);
+#ifdef OPENAIR2
+    if ((next_slot % 2)==0) {
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[0]->Mod_id,0,phy_vars_eNB[0]->frame,next_slot>>1);
+    }
+#endif
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      phy_procedures_eNB_TX(next_slot,phy_vars_eNB[CC_id],abstraction_flag);
+    }
   }
-  if ((subframe_select(&phy_vars_eNB->lte_frame_parms,last_slot>>1)==SF_S) &&
+  if ((subframe_select(&phy_vars_eNB[0]->lte_frame_parms,last_slot>>1)==SF_S) &&
       ((last_slot&1)==0)){
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
-    phy_procedures_eNB_S_RX(last_slot,phy_vars_eNB,abstraction_flag);
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      phy_procedures_eNB_S_RX(last_slot,phy_vars_eNB[CC_id],abstraction_flag);
+    }
   }
 }
 

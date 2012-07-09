@@ -229,9 +229,9 @@ u8 get_transmission_mode(u16 Mod_id, u16 rnti) {
   unsigned char UE_id;
 
   // find the UE_index corresponding to rnti
-  UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id]);
+  UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][0]);
 
-  return(PHY_vars_eNB_g[Mod_id]->transmission_mode[UE_id]);
+  return(PHY_vars_eNB_g[Mod_id][0]->transmission_mode[UE_id]);
 }
 
 int generate_eNB_dlsch_params_from_dci(u8 subframe,

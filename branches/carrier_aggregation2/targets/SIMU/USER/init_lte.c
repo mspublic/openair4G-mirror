@@ -45,16 +45,21 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u16 Nid_cell,
 		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
 
-  u8 eNB_id,UE_id;
+  u8 eNB_id,UE_id,CC_id;
   int i,j;
 
-  PHY_vars_eNB_g = malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB*));
-  for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){ 
-    PHY_vars_eNB_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
-    PHY_vars_eNB_g[eNB_id]->Mod_id=eNB_id;
-    PHY_vars_eNB_g[eNB_id]->cooperation_flag=cooperation_flag;
 
+  PHY_vars_eNB_g = (PHY_VARS_eNB***) malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB**));
+  for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){
+    PHY_vars_eNB_g[eNB_id] = (PHY_VARS_eNB**) malloc(MAX_NUM_CCs*sizeof(PHY_VARS_eNB*));
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[eNB_id][CC_id] =(PHY_VARS_eNB*)  malloc(sizeof(PHY_VARS_eNB));
+      PHY_vars_eNB_g[eNB_id][CC_id]->Mod_id=eNB_id;
+      PHY_vars_eNB_g[eNB_id][CC_id]->CC_id=CC_id;
+      PHY_vars_eNB_g[eNB_id][CC_id]->cooperation_flag=cooperation_flag;
+    }
   }
+
   //  PHY_VARS_UE *PHY_vars_UE; 
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
@@ -98,59 +103,61 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   // init all eNB vars
 
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-    memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
-    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
-    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
-    phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id],0,0,abstraction_flag);
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    memcpy(&(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
+    PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
+    PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.Nid_cell%6;
+    phy_init_lte_eNB(PHY_vars_eNB_g[eNB_id][CC_id],0,0,abstraction_flag);
 
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {
-	PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,abstraction_flag);
-	if (!PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]) {
+	PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,abstraction_flag);
+	if (!PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j]) {
 	  LOG_E(PHY,"Can't get eNB dlsch structures\n");
 	  exit(-1);
 	}
 	else {
-	  LOG_D(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]);
-	  PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]->rnti=0;
+	  LOG_D(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j]);
+	  PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j]->rnti=0;
 	}
       }
-      PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i] = new_eNB_ulsch(8,abstraction_flag);
-      if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i]) {
+      PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[1+i] = new_eNB_ulsch(8,abstraction_flag);
+      if (!PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[1+i]) {
 	LOG_E(PHY,"Can't get eNB ulsch structures\n");
 	exit(-1);
       }
 
       // this is the transmission mode for the signalling channels
       // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-      PHY_vars_eNB_g[eNB_id]->transmission_mode[i] = (transmission_mode==1?1:2);
+      PHY_vars_eNB_g[eNB_id][CC_id]->transmission_mode[i] = (transmission_mode==1?1:2);
 
     }
 
     // ULSCH for RA
-    PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0] = new_eNB_ulsch(8,abstraction_flag);
-    if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0]) {
+    PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[0] = new_eNB_ulsch(8,abstraction_flag);
+    if (!PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[0]) {
       LOG_E(PHY,"Can't get eNB ulsch structures\n");
       exit(-1);
     }
 
-    PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,abstraction_flag);
-    LOG_D(PHY,"[eNB %d] : SI %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI);
-    PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
-    LOG_D(PHY,"[eNB %d] : RA %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra);
+    PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,abstraction_flag);
+    LOG_D(PHY,"[eNB %d] : SI %p\n",eNB_id,PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_SI);
+    PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
+    LOG_D(PHY,"[eNB %d] : RA %p\n",eNB_id,PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_ra);
 
-    PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB=150;
+    PHY_vars_eNB_g[eNB_id][CC_id]->rx_total_gain_eNB_dB=150;
 
     for(i=0;i<NUMBER_OF_UE_MAX;i++)
-      PHY_vars_eNB_g[eNB_id]->mu_mimo_mode[i].dl_pow_off = 2;
+      PHY_vars_eNB_g[eNB_id][CC_id]->mu_mimo_mode[i].dl_pow_off = 2;
 
-    PHY_vars_eNB_g[eNB_id]->check_for_total_transmissions = 0;
+    PHY_vars_eNB_g[eNB_id][CC_id]->check_for_total_transmissions = 0;
 
-    PHY_vars_eNB_g[eNB_id]->check_for_MUMIMO_transmissions = 0;
+    PHY_vars_eNB_g[eNB_id][CC_id]->check_for_MUMIMO_transmissions = 0;
 
-    PHY_vars_eNB_g[eNB_id]->FULL_MUMIMO_transmissions = 0;
+    PHY_vars_eNB_g[eNB_id][CC_id]->FULL_MUMIMO_transmissions = 0;
 
-    PHY_vars_eNB_g[eNB_id]->check_for_SUMIMO_transmissions = 0;
+    PHY_vars_eNB_g[eNB_id][CC_id]->check_for_SUMIMO_transmissions = 0;
+    }
   }
 
   // init all UE vars
@@ -159,8 +166,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), *frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     // Do this until SSS detection is finished
     if (NB_eNB_INST>0) {
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.Nid_cell;
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.nushift;
+      PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.Nid_cell;
+      PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.nushift;
     }
 
     phy_init_lte_ue(PHY_vars_UE_g[UE_id],abstraction_flag);
