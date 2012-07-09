@@ -30,12 +30,13 @@
 #include <linux/skbuff.h>
 
 #include "ieee80211p-device.h"
+#include "ieee80211p-driver.h"
 
 /******************************************************************************
  *
  * Module information
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 #define DRV_DESCRIPTION	"EURECOM / THALES COMMUNICATIONS & SECURITY IEEE 802.11p driver"
 #define DRV_VERSION "V0.1"
@@ -46,16 +47,105 @@ MODULE_VERSION(DRV_VERSION);
 MODULE_DESCRIPTION(DRV_DESCRIPTION);
 MODULE_AUTHOR(DRV_AUTHOR);
 
-/*****************************************************************************
+/******************************************************************************
+ *
+ * Global variables
+ *
+ *****************************************************************************/
+
+/* Driver's private data */	
+static struct ieee80211p_device_priv priv;
+
+/******************************************************************************
  * 
  * Callbacks from mac80211p to the driver
  *
- ****************************************************************************/
+ *****************************************************************************/
 
-/*void ieee80211p_tx_queue(struct ieee80211_hw *hw, struct sk_buff *skb,
-					struct ieee80211p_txq) {
+int ieee80211p_tx_buf_setup(struct ieee80211p_skbqueue *buf, struct sk_buff *skb) {
+	
+	/* Return value */	
+	int ret = 0;	
 
-}*/
+	/* Element allocation */
+	buf = kzalloc(sizeof(struct ieee80211p_skbqueue),GFP_KERNEL);
+
+	if (!buf) {
+		ret = -1;
+		goto error;
+	}
+
+	/* skb copy */
+	buf->skb = skb_clone(skb,GFP_KERNEL);
+
+	if (!buf->skb) {
+		ret = -1;
+		goto error;
+	}
+
+error:
+	return ret;
+
+} /* ieee80211p_tx_buf_setup */
+
+void ieee80211p_tx_queue(struct ieee80211_hw *hw, struct sk_buff *skb,
+					struct ieee80211p_txq *txq) {	
+
+	/* Return value */
+	int ret = 0;	
+
+	/* New buffered frame */
+	struct ieee80211p_skbqueue *buf;
+
+	/* Get driver's private data */
+	struct ieee80211p_device_priv *priv = hw->priv;
+
+	/* TODO : If needed add padding after the header */
+
+	/* TODO : Send the skb to the hw */
+	
+	/* If the hw is busy, put the skb in queue */
+	if (ret == -1) {
+		/* Check if there's space in the queue */
+		/* If there's not, stop mac80211 queues and drop the frame */	
+		if (txq->queue_len >= txq->queue_max) {
+			ieee80211_stop_queue(hw, txq->queue_num);
+			dev_kfree_skb_any(skb);
+			printk(KERN_ERR "ieee80211p_tx_queue: frame dropped\n");
+			return;
+		}
+
+		/* Lock */	
+		spin_lock(&priv->txqlock);
+		
+		/* Create a new ieee80211p_skbqueue element */
+		ret = ieee80211p_tx_buf_setup(buf,skb);
+
+		if(ret == -1) {
+			dev_kfree_skb_any(skb);
+			printk(KERN_ERR "ieee80211p_tx_queue: alloc failed\n");
+			return;
+		}
+
+		/* Add ieee80211p_skbqueue element to the queue */		
+		list_add_tail(&buf->list,&txq->queue.list);
+		txq->queue_len++;
+
+		/* Schedule the TX tasklet for delayed TX */
+		tasklet_schedule(&priv->txtq);
+		priv->tx_pending = TRUE;
+
+		/* Unlock */ 
+		spin_unlock(&priv->txqlock);
+	} 
+	
+	/* Else the transmission went fine */	
+	else {
+	
+		ieee80211_tx_status(hw,skb);
+	}
+	
+} /* ieee80211p_tx_queue */
 
 static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 	
@@ -66,13 +156,13 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 	int qnum = skb_get_queue_mapping(skb);
 
 	if (qnum >= IEEE80211P_NUM_TXQ) {
-		printk(KERN_ERR "ieee80211p_tx: wrong queue number hw\n");
+		printk(KERN_ERR "ieee80211p_tx: wrong queue number\n");
 		dev_kfree_skb_any(skb);
 		return;
 	}
 
-	//ieee80211p_tx_queue(hw,skb,&priv->txqs[qnum]);
-}
+	ieee80211p_tx_queue(hw,skb,&priv->txqs[qnum]);
+} /* ieee80211p_tx */
 
 
 static int ieee80211p_start(struct ieee80211_hw *hw) {
@@ -80,31 +170,86 @@ static int ieee80211p_start(struct ieee80211_hw *hw) {
 	/* Nothing to be done here */	
 	
 	return 0;
-}
+} /* ieee80211p_start */
 
 
 static void ieee80211p_stop(struct ieee80211_hw *hw) {
 
 	/* Nothing to be done here */
-
-}
+} /* ieee80211p_stop */
 
 
 static int ieee80211p_add_interface(struct ieee80211_hw *hw, struct ieee80211_vif *vif) {
-	return 0;
-}
+	
+	struct ieee80211p_device_priv *priv = hw->priv;
+	struct ieee80211p_vif_priv *vif_priv = (void *)vif->drv_priv;	
+	int ret = 0;	
+
+	spin_lock(&priv->lock);
+
+	/* IEEE 80211.p only supports STA interfaces */	
+	if (vif->type == NL80211_IFTYPE_STATION || vif->type == NL80211_IFTYPE_ADHOC) {
+		vif_priv->opmode = vif->type;
+	} else {
+		ret = -EOPNOTSUPP;
+		goto end;
+	}
+
+	/* Keep track of the number of vifs */	
+	priv->nvifs++;		
+
+end:
+	spin_unlock(&priv->lock);
+	return ret;
+} /* ieee80211p_add_interface */
 
 
 static void ieee80211p_remove_interface(struct ieee80211_hw *hw, struct ieee80211_vif *vif) {
-}
+
+	struct ieee80211p_device_priv *priv = hw->priv;
+
+	spin_lock(&priv->lock);
+	
+	/* Keep track of the number of vifs */
+	priv->nvifs--;
+
+	spin_unlock(&priv->lock);
+
+} /* ieee80211p_remove_interface */
 
 
 static int ieee80211p_config(struct ieee80211_hw *hw, u32 changed) {
+	
+	struct ieee80211p_device_priv *priv = hw->priv;
+	struct ieee80211_conf *conf = &hw->conf;
+
+	spin_lock(&priv->lock);
+
+	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
+		if (conf->channel != NULL) {
+			priv->curchan = conf->channel;
+		}
+	}
+
+	if (changed & IEEE80211_CONF_CHANGE_POWER) {
+		priv->power_level = conf->power_level;
+	}
+	
+	spin_unlock(&priv->lock);
+	
 	return 0;
-}
+} /* ieee80211p_config */
 
 
-static void ieee80211p_configure_filter(struct ieee80211_hw *hw, unsigned int changed_flags, unsigned int *new_flags, u64 multicast) {
+static void ieee80211p_configure_filter(struct ieee80211_hw *hw, unsigned int changed_flags,
+									 unsigned int *new_flags, u64 multicast) {
+
+#define SUPPORTED_FIF_FLAGS \
+	(FIF_PROMISC_IN_BSS | FIF_ALLMULTI | FIF_FCSFAIL | \
+	FIF_PLCPFAIL | FIF_CONTROL | FIF_OTHER_BSS | \
+	FIF_BCN_PRBRESP_PROMISC)	
+	
+	*new_flags &= SUPPORTED_FIF_FLAGS;	
 }
 
 /* Only the mandatory callbacks from ieee80211p_ops are implemented */
@@ -118,11 +263,23 @@ const struct ieee80211_ops ieee80211p_driver_ops = {
 	.configure_filter = ieee80211p_configure_filter,
 };
 
-/*****************************************************************************
+/******************************************************************************
  *
- * Initialization and release functions
+ * Driver's exported functions
  *
- ****************************************************************************/
+ *****************************************************************************/
+
+char *ieee80211p_driver_get_rx_addr(void) {
+	return priv.rx_buf.buf;
+}
+
+EXPORT_SYMBOL(ieee80211p_driver_get_rx_addr);
+
+/******************************************************************************
+ *
+ * Driver's initialization and release functions
+ *
+ *****************************************************************************/
 
 static int ieee80211p_driver_start(struct ieee80211p_device_priv *priv) {
 
@@ -173,7 +330,7 @@ static int ieee80211p_driver_start(struct ieee80211p_device_priv *priv) {
 	
 error:
 	return ret;
-}
+} /* ieee80211p_driver_start */
 
 static void ieee80211p_driver_stop(struct ieee80211p_device_priv *priv) {
 	
@@ -191,16 +348,13 @@ static void ieee80211p_driver_stop(struct ieee80211p_device_priv *priv) {
 	 *********************************/
 
 	ieee80211p_device_exit(priv);
-}
+} /* ieee80211p_driver_stop */
 
-/*****************************************************************************
+/******************************************************************************
  *
- * Driver and module entry point
+ * Driver entry point
  *
  *****************************************************************************/
-
-/* Driver's private data */	
-static struct ieee80211p_device_priv priv;
 
 /* Called at insmod */
 static int __init ieee80211p_init(void)
@@ -216,7 +370,7 @@ static int __init ieee80211p_init(void)
 	}
 
 	return 0;
-}
+} /* ieee80211p_init */
 
 /* Called at rmmod */
 static void __exit ieee80211p_exit(void)
@@ -224,7 +378,8 @@ static void __exit ieee80211p_exit(void)
 	ieee80211p_driver_stop(&priv);	
 
 	printk(KERN_DEBUG "ieee80211p_init: ieee80211p driver removed\n");
-}
+} /* ieee80211p_exit */
+
 
 module_exit(ieee80211p_exit);
 module_init(ieee80211p_init);
