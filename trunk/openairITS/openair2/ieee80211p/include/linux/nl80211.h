@@ -2458,10 +2458,14 @@ enum nl80211_tx_rate_attributes {
  * enum nl80211_band - Frequency band
  * @NL80211_BAND_2GHZ: 2.4 GHz ISM band
  * @NL80211_BAND_5GHZ: around 5 GHz band (4.9 - 5.7 GHz)
+ * @NL80211_BAND_5_9GHZ: around the ITS 5.9GHz band (5.875GHz - 5.905GHz)
+ * @NL80211_BAND_0_8GHZ: around the 800 MHz band
  */
 enum nl80211_band {
 	NL80211_BAND_2GHZ,
 	NL80211_BAND_5GHZ,
+	NL80211_BAND_5_9GHZ,
+	NL80211_BAND_0_8GHZ,
 };
 
 enum nl80211_ps_state {
