@@ -22,18 +22,17 @@
  *
  * Contact Information:
  * Thales Communications & Seucrity <philippe.agostini@thalesgroup.com>
+ * EURECOM EURECOM <marouane.amamou@eurecom.fr>
  *
  *****************************************************************************/
 
 #ifndef __ieee80211p_device_h__
 #define __ieee80211p_device_h__
 
-#include <linux/spinlock_types.h>
+#include <linux/spinlock.h>
 #include <linux/list.h>
-
 #include <linux/skbuff.h>
 #include <linux/gfp.h>
-
 #include <net/mac80211.h>
 #include <net/cfg80211.h>
 
@@ -42,18 +41,74 @@
 #define IEEE80211P_TXQ_LEN_MAX 100
 #define FALSE 0
 #define TRUE 1
-
 #define RX_STATUS_LEN 11
 
+/******************************************************************************
+ *
+ * Device structures 
+ *
+ *****************************************************************************/
+
+/****************************** 										
+ * Channels / Birates / Bands *
+ ******************************/
+
+/* Supported channel */
+static struct ieee80211_channel channels = {
+	.band = IEEE80211_BAND_2GHZ,
+	.center_freq = 2437,
+	.hw_value = 0,
+	.flags = 0,
+	.max_antenna_gain = 3,
+	.max_power = 20,
+	.max_reg_power = 20,
+	.beacon_found = FALSE,
+	.orig_flags = 0,
+	.orig_mag = 0,
+	.orig_mpwr = 0,
+};/* struct ieee80211_channel */
+
+
+/* Supported bitrate */
+static struct ieee80211_rate bitrates = {
+	.flags = 0,
+	/* bitrate in units of 100 Kbps */
+	.bitrate = 10,
+	.hw_value = 0,
+	.hw_value_short = 0,
+};/* struct ieee80211_rate */
+
+/* Supported band (channel + bitrate) */
+static struct ieee80211_supported_band bands = {
+	.channels = &channels,
+	.bitrates = &bitrates,
+	.band = IEEE80211_BAND_2GHZ,
+	.n_channels = 1,
+	.n_bitrates = 1,
+	.ht_cap.ht_supported = FALSE,
+};/* struct ieee80211_supported_band */
+
+/*********** 
+ * TX path *
+ ***********/
+
+struct ieee80211p_skbqueue {
+	struct list_head list;	
+	struct sk_buff *skb;
+};/* struct ieee80211p_skbqueue */
+
 struct ieee80211p_txq {
-	struct list_head txq; //Transmit buffer
-	spinlock_t txqlock; //Lock
-	int txq_len; //Number of queued buffers
-	int txq_max; //Max allowed num of queue buffers
+	struct ieee80211p_skbqueue queue; //Doubly linked list of struct sk_buff	
+	int queue_num; //Number of the queue
+	int queue_len; //Number of queued buffers
+	int queue_max; //Max allowed num of queue buffers
 };/* struct ieee80211p_txq */
 
-/*RX related struct*/
-struct oai_rx_status{
+/*********** 
+ * RX path *
+ ***********/
+
+struct ieee80211p_rx_status {
 	u16     rs_datalen;	//frame data lenght
 	u16     rs_tstamp;	//time stamp used to compute the MAC time
 	u8      rs_status;	//errors status (CRC, PHY, fifo, decryption, MIC errors) used to check if continue frame processing or not
@@ -63,36 +118,77 @@ struct oai_rx_status{
 	u8      rs_rate;
 	u8      rs_antenna;
 	u8      rs_more;	//jumbo frame errors
+}; /* struct ieee80211p_rx_status */
+
+struct ieee80211p_rx_buf {
+	struct ieee80211p_rx_status rs;
+	char *buf;
+}; /* struct ieee80211p_rx_buf */
+
+/*********************
+ * Regulatory domain *									
+ *********************/
+
+/* Regulatory domain */ 
+static struct ieee80211_regdomain regd = {
+	.n_reg_rules = 1,
+	.alpha2 = "99",
+	.dfs_region = 0,
+	.reg_rules = {
+		/* start freq / end freq / bandwidth / gain / eirp / flags */
+		REG_RULE(0,5000,40,0,47,0),
+	}
 };
 
-struct oai_rx_buf{
-	
-	struct oai_rx_status 	rs;
-	uint8_t  		skb[IEEE80211_MAX_FRAME_LEN];
+/******************************************************************************
+ *
+ * Device's private data 
+ *
+ *****************************************************************************/
 
-};/*end RX related struct*/
+struct ieee80211p_vif_priv {
+	enum nl80211_iftype opmode;
+};
 
 struct ieee80211p_device_priv {
 	
 	/* Configuration and hardware information for an 802.11 PHY */	
 	struct ieee80211_hw *hw;	
 		
-	struct oai_rx_buf *rx_buf_addr;		//the rx buffer DMA mapped. should contain the physical address the DMA space allocated  
+	/* The RX buffer DMA mapped */
+	/* Shall contain the physical address the DMA space allocated */
+	struct ieee80211p_rx_buf rx_buf; 
 	
 	/* TX */
+	spinlock_t txqlock; //Lock
 	struct ieee80211p_txq txqs[IEEE80211P_NUM_TXQ];	
 	struct tasklet_struct txtq;
 	bool tx_pending; //TX tasklet pending
 	
 	/* RX */
-	//struct list_head rxq; //Receive buffer
 	spinlock_t rxqlock;	
 	struct tasklet_struct rxtq;
 	bool rx_pending; //RX tasklet pending
 
+	/* Lock */	
+	spinlock_t lock;
+
+	/* Virtual interfaces */
+	int nvifs;
+
+	/* Current channel in use */
+	struct ieee80211_channel *curchan;
+
+	/* Requested power level in dBm */
+	int power_level;
+
 };/* ieee80211p_device_priv */
 
-/* ieee80211p device related routines */
+/******************************************************************************
+ * 
+ * Device related routines
+ *
+ *****************************************************************************/
 
 int ieee80211p_device_init(struct ieee80211p_device_priv *priv);
 void ieee80211p_device_exit(struct ieee80211p_device_priv *priv);
