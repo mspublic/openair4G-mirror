@@ -861,7 +861,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   
 }
 
-
+#ifdef PHY_ABSTRACTION
 u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
 		 u8 eNB_id,
 		 u8 pbch_phase) {
@@ -885,3 +885,4 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
   else
     return(-1);
 }
+#endif

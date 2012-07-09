@@ -127,7 +127,7 @@ void cleanup_dlsch_threads(void);
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
+void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB **phy_vars_eNB,u8 abstraction_flag);
 /*!
   \brief Top-level entry routine for UE procedures.  Called every slot by process scheduler. In even slots, it performs RX functions from previous subframe (if required).  On odd slots, it generate TX waveform for the following subframe.
   @param last_slot Index of last slot (0-19)
@@ -219,7 +219,7 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
   @param subframe Subframe index
   @returns Subframe type (DL,UL,S) 
 */
-lte_subframe_t get_subframe_direction(u8 Mod_id, u8 subframe);
+lte_subframe_t get_subframe_direction(u8 Mod_id, u8 CC_id, u8 subframe);
 
 /*!
   \brief Function to indicate PHICH transmission subframes.  Implements Table 9.1.2-1 for TDD.
@@ -443,8 +443,8 @@ s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t p
  */
 void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j);
 
-LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti);
-int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);
+LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u8 CC_id, u16 rnti);
+int get_ue_active_harq_pid(u8 Mod_id,u8 CC_id, u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);
 
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);

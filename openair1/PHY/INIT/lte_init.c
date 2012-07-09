@@ -39,11 +39,12 @@ void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
 }
 
 void phy_config_sib1_eNB(u8 Mod_id,
+			 u8 CC_id,
 			 TDD_Config_t *tdd_Config,
 			 u8 SIwindowsize,
 			 u16 SIPeriod) {
    
-  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms;
 
   lte_frame_parms->tdd_config    = tdd_Config->subframeAssignment;
   lte_frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns;  
@@ -51,7 +52,8 @@ void phy_config_sib1_eNB(u8 Mod_id,
   lte_frame_parms->SIPeriod      = SIPeriod;
 }
 
-void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
+void phy_config_sib1_ue(u8 Mod_id,
+			u8 CH_index,
 			 TDD_Config_t *tdd_Config,
 			 u8 SIwindowsize,
 			 u16 SIperiod) {
@@ -66,14 +68,15 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
 }
 
 void phy_config_sib2_eNB(u8 Mod_id,
+			 u8 CC_id,
 			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
-  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms;
   int N_ZC;
   u8 prach_fmt;
   int u;
 
-  msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,PHY_vars_eNB_g[Mod_id]->frame);
+  msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,PHY_vars_eNB_g[Mod_id][CC_id]->frame);
 
   lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
   lte_frame_parms->prach_config_common.prach_Config_enabled=1;
@@ -87,7 +90,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
   u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
     prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
 
-  compute_prach_seq(u,N_ZC, PHY_vars_eNB_g[Mod_id]->X_u);
+  compute_prach_seq(u,N_ZC, PHY_vars_eNB_g[Mod_id][CC_id]->X_u);
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
   lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
@@ -156,7 +159,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   // PUCCH
 
-  init_ncs_cell(lte_frame_parms,PHY_vars_eNB_g[Mod_id]->ncs_cell);
+  init_ncs_cell(lte_frame_parms,PHY_vars_eNB_g[Mod_id][CC_id]->ncs_cell);
 
   init_ul_hopping(lte_frame_parms);
 
@@ -333,10 +336,12 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
   }
 }
 
-void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
+void phy_config_dedicated_eNB(u8 Mod_id,
+			      u8 CC_id,
+			      u16 rnti,
 			      struct PhysicalConfigDedicated *physicalConfigDedicated) {
 
-  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id];
+  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][CC_id];
   u8 UE_id = find_ue(rnti,phy_vars_eNB);
   
 
@@ -351,10 +356,12 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
 
 }
 
-void phy_config_dedicated_scell_eNB(u8 Mod_id,u16 rnti,
-			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id) {
+void phy_config_dedicated_scell_eNB(u8 Mod_id,
+				    u16 rnti,
+				    struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, 
+				    u8 CC_id) {
 
-  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id];
+  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][CC_id];
   u8 UE_id = find_ue(rnti,phy_vars_eNB);
 
 
