@@ -70,11 +70,15 @@
  *
  * @IEEE80211_BAND_2GHZ: 2.4GHz ISM band
  * @IEEE80211_BAND_5GHZ: around 5GHz band (4.9-5.7)
+ * @IEEE80211_BAND_5_9GHZ: around the ITS 5.9GHz band (5.875GHz - 5.905GHz)
+ * @IEEE80211_BAND_0_8GHZ: around 800MHz band
  * @IEEE80211_NUM_BANDS: number of defined bands
  */
 enum ieee80211_band {
 	IEEE80211_BAND_2GHZ = NL80211_BAND_2GHZ,
 	IEEE80211_BAND_5GHZ = NL80211_BAND_5GHZ,
+	IEEE80211_BAND_5_9GHZ = NL80211_BAND_5_9GHZ,
+	IEEE80211_BAND_0_8GHZ = NL80211_BAND_0_8GHZ,
 
 	/* keep last */
 	IEEE80211_NUM_BANDS
@@ -1933,7 +1937,7 @@ struct wiphy_wowlan_support {
  * @frag_threshold: Fragmentation threshold (dot11FragmentationThreshold);
  *	-1 = fragmentation disabled, only odd values >= 256 used
  * @rts_threshold: RTS threshold (dot11RTSThreshold); -1 = RTS/CTS disabled
- * @dot11OCBActivated: the OCB mode is activated or not (IEEE 802.11p mode)
+ * @dot11OCBActivated: the OCB mode is activated or not (IEEE 802.11p mode) [1 - dot11p ; 0 - not dot11p]
  * @_net: the network namespace this wiphy currently lives in
  * @perm_addr: permanent MAC address of this device
  * @addr_mask: If the device supports multiple MAC addresses by masking,
@@ -2057,7 +2061,7 @@ struct wiphy {
 	u32 rts_threshold;
 	u8 coverage_class;
 
-	bool dot11OCBActivated;
+	bool dot11OCBActivated; // [1 - dot11p ; 0 - not dot11p]
 
 	char fw_version[ETHTOOL_BUSINFO_LEN];
 	u32 hw_version;
