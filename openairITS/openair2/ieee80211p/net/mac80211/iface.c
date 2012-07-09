@@ -294,7 +294,7 @@ static int ieee80211_do_open(struct net_device *dev, bool coming_up)
 		ieee80211_bss_info_change_notify(sdata, changed);
 
 		if (sdata->vif.type == NL80211_IFTYPE_STATION ||
-		    sdata->vif.type == NL80211_IFTYPE_ADHOC)
+		    (sdata->vif.type == NL80211_IFTYPE_ADHOC) && ((local->hw->wiphy.dot11OCBActivated == 0) || (local->hw->wiphy.flags &= WIPHY_FLAG_OCB_CAPABLE)))
 			netif_carrier_off(dev);
 		else
 			netif_carrier_on(dev);

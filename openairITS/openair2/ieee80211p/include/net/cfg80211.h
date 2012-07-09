@@ -1767,6 +1767,7 @@ struct cfg80211_ops {
  *	responds to probe-requests in hardware.
  * @WIPHY_FLAG_OFFCHAN_TX: Device supports direct off-channel TX.
  * @WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL: Device supports remain-on-channel call.
+ * @WIPHY_FLAG_OCB_CAPABLE: Device supports operations related to OCB (IEEE 802.11p)
  */
 enum wiphy_flags {
 	WIPHY_FLAG_CUSTOM_REGULATORY		= BIT(0),
@@ -1790,6 +1791,7 @@ enum wiphy_flags {
 	WIPHY_FLAG_AP_PROBE_RESP_OFFLOAD	= BIT(19),
 	WIPHY_FLAG_OFFCHAN_TX			= BIT(20),
 	WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL	= BIT(21),
+	WIPHY_FLAG_OCB_CAPABLE	= BIT(22),
 };
 
 /**
@@ -1933,6 +1935,7 @@ struct wiphy_wowlan_support {
  * @frag_threshold: Fragmentation threshold (dot11FragmentationThreshold);
  *	-1 = fragmentation disabled, only odd values >= 256 used
  * @rts_threshold: RTS threshold (dot11RTSThreshold); -1 = RTS/CTS disabled
+ * @dot11OCBActivated: the OCB mode is activated or not (IEEE 802.11p mode)
  * @_net: the network namespace this wiphy currently lives in
  * @perm_addr: permanent MAC address of this device
  * @addr_mask: If the device supports multiple MAC addresses by masking,
@@ -2055,6 +2058,8 @@ struct wiphy {
 	u32 frag_threshold;
 	u32 rts_threshold;
 	u8 coverage_class;
+
+	bool dot11OCBActivated;
 
 	char fw_version[ETHTOOL_BUSINFO_LEN];
 	u32 hw_version;
