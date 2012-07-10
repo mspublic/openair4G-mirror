@@ -14,7 +14,7 @@
 #define MIH_USER_REMOTE_PORT            "0"
 #define NAS_IP_ADDRESS                  "127.0.0.1"
 #define NAS_LISTENING_PORT_FOR_MIH_USER "22222"
-#define RSSI_INCREMENT_STEP             20
+#define RSSI_INCREMENT_STEP             5
 #endif
 //#define SOCKET_RAL_TD_CDMA_NAME		"/tmp/graal"
 
