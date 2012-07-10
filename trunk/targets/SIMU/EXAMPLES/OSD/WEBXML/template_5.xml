@@ -62,18 +62,18 @@
   <APPLICATION_CONFIG>
     <PREDEFINED_TRAFFIC>
       <SOURCE_ID>0</SOURCE_ID> <!-- valid formats are: -->					
-      <APPLICATION_TYPE>hcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
+      <APPLICATION_TYPE>bcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
       <DESTINATION_ID>1</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC>
     <PREDEFINED_TRAFFIC>
       <SOURCE_ID>0</SOURCE_ID> <!-- valid formats are: -->					
-      <APPLICATION_TYPE>hcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
+      <APPLICATION_TYPE>bcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
       <DESTINATION_ID>2</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC>
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>0</EMULATION_TIME_ms> <!--set to infinity--> 
+    <EMULATION_TIME_ms>1000</EMULATION_TIME_ms> <!--set to infinity--> 
     
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
