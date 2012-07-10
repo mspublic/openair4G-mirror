@@ -23,6 +23,9 @@ endif
 ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
+ifeq "$(GCCVERSION)" "4.6.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
@@ -66,19 +69,8 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
-ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
-CFLAGS += -DDEBUG_OMG
-else
-NAS_FLAG=0
-endif
-# after the execution, a profiling output "gmon.out" will be created, 
-#then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
-# you could also use the script "grpof2dot.py gmon.txt" for visual diagrams 
-#ifdef GPROF
-CFLAGS += -pg
-#endif
 
 #require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)
 ifdef ADDCONF
@@ -90,6 +82,8 @@ CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 ifdef TRAFFIC_TM5
 CFLAGS += -DRLC_UM_TEST_TRAFFIC=1 -DFULL_BUFFER=1
 endif
+
+CFLAGS += -DOAI_EMU
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
@@ -129,7 +123,7 @@ $(OBJ): %.o : %.c
 
 pt: $(OBJ) pt.c  
 	@echo "Compiling pt.c ..."
-	@$(CC)  pt.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o pt $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm -lpthread -lxml2 -lX11 -lXpm -lrt 
+	@$(CC)  pt.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o pt $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) -lm  -lblas -lpthread -lxml2 -lX11 -lXpm -lrt  -lforms -llapack_atlas
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB

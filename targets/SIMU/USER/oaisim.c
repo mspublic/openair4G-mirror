@@ -1461,7 +1461,7 @@ main (int argc, char **argv)
     // calibrate at the end of each frame if there is some time  left
     if((sleep_time_us > 0)&& (ethernet_flag ==0)){
       LOG_I(EMU,"Adjust average frame duration, sleep for %d us\n",sleep_time_us);
-      // usleep(sleep_time_us);
+      usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
   }	//end of frame

@@ -185,12 +185,12 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
 	
 
   //LOG_I(OTG,"num_nodes_tx:: %d , seed:: %d \n", g_otg->num_nodes, g_otg->seed);
-if (g_otg->idt_dist[src][dst][0]>0)
-  LOG_I(OTG,"NODE_INFO (Source= %d, Destination= %d,idt= %d) ctime %d \n", src, dst, g_otg->idt_dist[src][dst][0], otg_info->ctime);
+  //if (g_otg->idt_dist[src][dst][0]>0)
+  //LOG_D(OTG,"NODE_INFO (Source= %d, Destination= %d,idt= %d) ctime %d \n", src, dst, g_otg->idt_dist[src][dst][0], otg_info->ctime);
     
 
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
-  if ((g_otg->application_type[src][dst]==0) && (g_otg->idt_dist[src][dst][state]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
+  if ((g_otg->application_type[src][dst]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
     LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d: no app type and/or idt are defined\n", src, dst); 
     return NULL;	 
   }
@@ -246,7 +246,7 @@ else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][st
     LOG_I(OTG,"BACKGROUND :: Time To Transmit [SRC %d][DST %d] \n", src, dst);
   }
   else{  
-   LOG_D(OTG,"Time To Transmit::NO (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]);
+    // LOG_D(OTG,"Time To Transmit::NO (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]);
    return NULL; // do not generate the packet, and keep the idt
   }
   size=size_dist(src, dst, state);
@@ -429,7 +429,7 @@ void init_predef_traffic() {
 int i;
 int j;
 
-LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
+//LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
 
 
  for (i=0; i<g_otg->num_nodes; i++){ // src 
@@ -437,7 +437,7 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
   
 //LOG_I("OTG_CONFIG_, src = %d, dst = %d, application type= %d\n", i, j,  g_otg->application_type[i][j]);
   
-     LOG_D(OTG,"OTG_CONFIG node (src=%d,dst=%d)\n",  i,j);
+     //LOG_D(OTG,"OTG_CONFIG node (src=%d,dst=%d)\n",  i,j);
      
      switch  (g_otg->application_type[i][j]) {
      case  SCBR : 
@@ -620,7 +620,21 @@ LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
 #endif 
        break;
      case NO_PREDEFINED_TRAFFIC : 
-       LOG_E(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
+       LOG_I(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
+       g_otg->trans_proto[i] = 0;
+       g_otg->ip_v[i] = 0;
+       g_otg->idt_dist[i][j][0] = 0;
+       g_otg->idt_dist[i][j][1] = 0;
+       g_otg->idt_min[i][j][0] =  0; 
+       g_otg->idt_min[i][j][1] =  0;
+       g_otg->idt_max[i][j][0] =  0;
+       g_otg->idt_max[i][j][1] =  0;
+       g_otg->size_dist[i][j][0] = FIXED;
+       g_otg->size_dist[i][j][1] = FIXED;
+       g_otg->size_min[i][j][0] =  0;
+       g_otg->size_min[i][j][1] =  0;
+       g_otg->size_max[i][j][0] = 0;
+       g_otg->size_max[i][j][1] =  0;
        break;
      default:
        LOG_E(OTG, "[SRC %d][DST %d] Unknown traffic type\n", i, j);
@@ -650,7 +664,7 @@ int background_gen(int src, int dst, int ctime){
      return 1;
   }
    else {
-     LOG_I(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
+     // LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
      return 0;
    }
 

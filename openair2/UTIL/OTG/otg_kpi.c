@@ -164,6 +164,20 @@ fc=fopen("/tmp/otg.log","w");;
 	  fprintf(file,"NB Lost  packets=%d \n", otg_info->nb_loss_pkts[i][j]);
 	}
 #else
+	LOG_I(OTG,"----------------------------------------------------------\n");
+	LOG_I(OTG,"Total Time= %d \n", otg_info->ctime);
+	LOG_I(OTG,"From eNB= %d \n", i);
+	LOG_I(OTG,"To UE= %d \n", j);
+	LOG_I(OTG,"Total packets(TX)= %d \n", otg_info->tx_num_pkt[i][j]);
+	LOG_I(OTG,"Total bytes(TX)= %d \n", otg_info->tx_num_bytes[i][j]);
+	LOG_I(OTG,"RTT MIN (one way)ms= %d \n", otg_info->rx_owd_min[i][j]);
+	LOG_I(OTG,"RTT MAX (one way)ms= %d \n", otg_info->rx_owd_max[i][j]);
+	LOG_I(OTG,"TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput[i][j]);
+	LOG_I(OTG,"RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput[i][j]);
+	if (otg_info->rx_loss_rate[i][j]>0){
+	  LOG_I(OTG,"Loss rate(percentage)= %lf pkts \n", (otg_info->rx_loss_rate[i][j]*100));
+	  LOG_I(OTG,"NB Lost  packets= %d \n", otg_info->nb_loss_pkts[i][j]);
+	}
 	LOG_F(OTG,"----------------------------------------------------------\n");
 	LOG_F(OTG,"Total Time= %d \n", otg_info->ctime);
 	LOG_F(OTG,"From eNB= %d \n", i);
@@ -194,6 +208,17 @@ fc=fopen("/tmp/otg.log","w");;
   fprintf(file,"RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes/otg_info->ctime);
   fclose(file);
 #else
+  LOG_I(OTG,"**************** TOTAL RESULTS ******************\n");
+  LOG_I(OTG,"Total Time= %d \n", otg_info->ctime);
+  LOG_I(OTG,"Total packets(TX)= %d \n", tx_total_pkts);
+  LOG_I(OTG,"Total packets(RX)= %d \n", rx_total_pkts);
+  LOG_I(OTG,"Total bytes(TX)= %d \n", tx_total_bytes);
+  LOG_I(OTG,"Total bytes(RX)= %d \n", rx_total_bytes);
+  LOG_I(OTG,"RTT MIN (one way)ms= %d \n", min_owd);
+  LOG_I(OTG,"RTT MAX (one way)ms= %d \n", max_owd);
+  LOG_I(OTG,"TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes/otg_info->ctime);
+  LOG_I(OTG,"RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes/otg_info->ctime);
+  
   LOG_F(OTG,"**************** TOTAL RESULTS ******************\n");
   LOG_F(OTG,"Total Time= %d \n", otg_info->ctime);
   LOG_F(OTG,"Total packets(TX)= %d \n", tx_total_pkts);
