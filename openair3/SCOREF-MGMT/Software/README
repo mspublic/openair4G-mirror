@@ -1,6 +1,6 @@
-~ Management GeoNetworking Interface Implementation (IF.MGMT) ~
+~ Management GeoNetworking Interface Implementation (SCOREF-MGMT) ~
 
-IF.MGMT is a server application handling messages sent from 
+SCOREF-MGMT is a server application handling messages sent from 
 GN (GeoNetworking) module.
 
 Please refer to following files for further information,

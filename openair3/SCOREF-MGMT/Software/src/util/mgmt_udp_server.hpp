@@ -45,6 +45,7 @@
 #include <vector>
 using namespace std;
 
+#include <boost/thread.hpp>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
@@ -113,6 +114,10 @@ class UdpServer {
 		 * handlers for any asynchronous operations performed on the socket
 		 */
 		boost::asio::io_service ioService;
+		/**
+		 * Mutex to coordinate accesses to UDP server socket
+		 */
+		boost::mutex mutex;
 		/**
 		 * udp::socket of Boost library
 		 */

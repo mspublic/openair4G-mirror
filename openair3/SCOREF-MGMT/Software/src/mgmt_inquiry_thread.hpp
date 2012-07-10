@@ -28,8 +28,8 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packet_wireless_state_request.hpp
- * \brief A container for Wireless State Event Request packet
+ * \file mgmt_inquiry_thread.hpp
+ * \brief A thread worker function to ask repetitive questions to relevant modules to update MIB
  * \company EURECOM
  * \date 2012
  * \author Baris Demiray
@@ -39,39 +39,39 @@
  * \warning none
 */
 
-#ifndef MGMT_GN_PACKET_WIRELESS_STATE_REQUEST_HPP_
-#define MGMT_GN_PACKET_WIRELESS_STATE_REQUEST_HPP_
+#ifndef MGMT_INQUIRY_THREAD_HPP_
+#define MGMT_INQUIRY_THREAD_HPP_
 
-#include "mgmt_gn_packet.hpp"
+#include "util/mgmt_udp_server.hpp"
 
-/**
- * A container for Wireless State Event Request packet
- */
-class GeonetWirelessStateRequestEventPacket : public GeonetPacket {
+class InquiryThread {
 	public:
 		/**
-		 * Constructor for GeonetWirelessStateRequestEventPacket class
+		 * Constructor for InquiryThread class
+		 *
+		 * @param connection UdpServer object that the questions will be asked through
 		 */
-		GeonetWirelessStateRequestEventPacket();
+		InquiryThread(UdpServer& connection);
 		/**
-		 * Destructor for GeonetWirelessStateRequestEventPacket class
+		 * Destructor for InquiryThread class
 		 */
-		virtual ~GeonetWirelessStateRequestEventPacket();
+		virtual ~InquiryThread();
 
 	public:
 		/**
-		 * Serialises packet information into incoming buffer
-		 *
-		 * @param buffer std::vector that packet information will be serialised into
-		 * @return true on success, false otherwise
+		 * () operator overload to pass this method to boost::thread
 		 */
-		bool serialize(vector<unsigned char>& buffer) const;
+		void operator()();
 		/**
-		 * Returns string representation of this packet
-		 *
-		 * @return std::string representation of this packet
+		 * Sends request for a Wireless State Response message
+		 * Incoming message will be handled and MIB will be updated
+		 * accordingly by GeonetMessageHandler class
 		 */
-		string toString() const;
+		bool requestWirelessStateUpdate();
+
+	private:
+		UdpServer& connection;
 };
 
-#endif /* MGMT_GN_PACKET_WIRELESS_STATE_REQUEST_HPP_ */
+
+#endif /* MGMT_INQUIRY_THREAD_HPP_ */

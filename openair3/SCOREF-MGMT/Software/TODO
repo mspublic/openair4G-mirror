@@ -1,4 +1,4 @@
 - A document having doxygen-generated class diagrams (and more) will be produced
-- EURECOM header templates will be prepended to source files
+- packets/ directory (and may be util/ too) will be a shared object
 
 - Baris Demiray <baris.demiray@eurecom.fr>

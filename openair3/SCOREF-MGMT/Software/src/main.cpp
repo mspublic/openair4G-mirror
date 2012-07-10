@@ -49,10 +49,11 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "mgmt_configuration.hpp"
-#include "mgmt_gn_packet_handler.hpp"
 #include "packets/mgmt_gn_packet_location_table_request.hpp"
+#include "mgmt_gn_packet_handler.hpp"
 #include "util/mgmt_udp_server.hpp"
+#include "mgmt_inquiry_thread.hpp"
+#include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
 
 void printHelp(string binaryName) {
@@ -83,6 +84,9 @@ int main(int argc, char** argv) {
 	}
 
 	UdpServer server(configuration.getServerPort());
+	boost::thread inquiryThread(InquiryThread);
+	inquiryThread.join();
+
 	vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
 	vector<unsigned char> txBuffer(UdpServer::TX_BUFFER_SIZE);
 

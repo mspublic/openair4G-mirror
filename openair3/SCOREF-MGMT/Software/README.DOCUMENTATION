@@ -2,7 +2,7 @@ Please find .doxygen file in the root directory of the project.
 Following command will generate source code documentation in ./doc/
 directory.
 
-$ doxygen IF.MGMT.doxygen
+$ doxygen SCOREF-MGMT.doxygen
 
 More documentation, especially on control & data flow, will be added 
 over time. Class diagrams may be reached through Doxygen documentation.

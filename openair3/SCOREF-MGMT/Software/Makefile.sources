@@ -9,6 +9,7 @@ SOURCES=$(SRC_DIR)/main.cpp \
 	$(SRC_DIR)/mgmt_gn_packet_factory.cpp \
 	$(SRC_DIR)/mgmt_gn_packet_handler.cpp \
 	$(SRC_DIR)/mgmt_information_base.cpp \
+	$(SRC_DIR)/mgmt_inquiry_thread.cpp \
 	$(SRC_DIR)/mgmt_its_key_manager.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_comm_profile_request.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_comm_profile_response.cpp \
@@ -19,6 +20,7 @@ SOURCES=$(SRC_DIR)/main.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_location_table_response.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_network_state.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_set_configuration.cpp \
+	$(SRC_PCKT_DIR)/mgmt_gn_packet_wireless_state_request.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_wireless_state_response.cpp \
 	$(SRC_UTIL_DIR)/mgmt_log.cpp \
 	$(SRC_UTIL_DIR)/mgmt_udp_server.cpp \
@@ -31,6 +33,7 @@ HEADERS=$(SRC_DIR)/mgmt_client.hpp \
 	$(SRC_DIR)/mgmt_gn_packet_factory.hpp \
 	$(SRC_DIR)/mgmt_gn_packet_handler.hpp \
 	$(SRC_DIR)/mgmt_information_base.hpp \
+	$(SRC_DIR)/mgmt_inquiry_thread.hpp \
 	$(SRC_DIR)/mgmt_its_key_manager.hpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_comm_profile_request.hpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_comm_profile_response.hpp \
@@ -41,6 +44,7 @@ HEADERS=$(SRC_DIR)/mgmt_client.hpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_location_table_response.hpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_network_state.hpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_set_configuration.hpp \
+	$(SRC_PCKT_DIR)/mgmt_gn_packet_wireless_state_request.cpp \
 	$(SRC_PCKT_DIR)/mgmt_gn_packet_wireless_state_response.hpp \
 	$(SRC_UTIL_DIR)/mgmt_log.hpp \
 	$(SRC_UTIL_DIR)/mgmt_udp_server.hpp \

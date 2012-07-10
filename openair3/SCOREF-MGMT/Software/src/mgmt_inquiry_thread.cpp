@@ -28,8 +28,8 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packet_wireless_state_request.hpp
- * \brief A container for Wireless State Event Request packet
+ * \file mgmt_inquiry_thread.cpp
+ * \brief A thread worker function to ask repetitive questions to relevant modules to update MIB
  * \company EURECOM
  * \date 2012
  * \author Baris Demiray
@@ -39,39 +39,42 @@
  * \warning none
 */
 
-#ifndef MGMT_GN_PACKET_WIRELESS_STATE_REQUEST_HPP_
-#define MGMT_GN_PACKET_WIRELESS_STATE_REQUEST_HPP_
+#include "packets/mgmt_gn_packet_wireless_state_request.hpp"
+#include "mgmt_inquiry_thread.hpp"
+#include <boost/date_time.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+using namespace std;
 
-#include "mgmt_gn_packet.hpp"
+InquiryThread::InquiryThread(UdpServer& connection)
+	: connection(connection) {
+}
 
-/**
- * A container for Wireless State Event Request packet
- */
-class GeonetWirelessStateRequestEventPacket : public GeonetPacket {
-	public:
-		/**
-		 * Constructor for GeonetWirelessStateRequestEventPacket class
-		 */
-		GeonetWirelessStateRequestEventPacket();
-		/**
-		 * Destructor for GeonetWirelessStateRequestEventPacket class
-		 */
-		virtual ~GeonetWirelessStateRequestEventPacket();
+InquiryThread::~InquiryThread() {
+}
 
-	public:
-		/**
-		 * Serialises packet information into incoming buffer
-		 *
-		 * @param buffer std::vector that packet information will be serialised into
-		 * @return true on success, false otherwise
-		 */
-		bool serialize(vector<unsigned char>& buffer) const;
-		/**
-		 * Returns string representation of this packet
-		 *
-		 * @return std::string representation of this packet
-		 */
-		string toString() const;
-};
+void InquiryThread::operator()() {
+	// todo this wait time will be configurable
+	boost::posix_time::seconds wait(5);
 
-#endif /* MGMT_GN_PACKET_WIRELESS_STATE_REQUEST_HPP_ */
+	while (true) {
+		boost::this_thread::sleep(wait);
+
+		if (!requestWirelessStateUpdate())
+			break;
+	}
+}
+
+bool InquiryThread::requestWirelessStateUpdate() {
+	GeonetWirelessStateRequestEventPacket request;
+
+	if (connection.send(request)) {
+		cout << "Wireless state request message has been sent" << endl;
+
+		return true;
+	} else {
+		cerr << "Wireless state request message cannot be sent!" << endl;
+
+		return false;
+	}
+}
