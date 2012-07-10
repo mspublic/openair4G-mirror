@@ -18,6 +18,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#include "UTIL/LOG/log.h"
 #include "OCG_vars.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg.h"
@@ -291,7 +292,7 @@ u8 attach_ue0(char *sdu) {
   Size = mac_rrc_data_req(0,
 			  131,
 			  CCCH,1,
-			  &sdu[sizeof(SCH_SUBHEADER_SHORT)],0,
+			  &sdu[sizeof(SCH_SUBHEADER_FIXED)],0,
 			  0);
   Size16 = (u16)Size;
 
@@ -307,7 +308,7 @@ u8 attach_ue0(char *sdu) {
 			NULL,
 			0); // post padding
 
-  return(Size+sizeof(SCH_SUBHEADER_SHORT));
+  return(Size+sizeof(SCH_SUBHEADER_FIXED));
 }
 
 // This retrieves the RRCConnectionSetup RRC SDU
@@ -440,7 +441,7 @@ int main (int argc, char **argv) {
   char ulsch_buffer[1024],dlsch_buffer[1024];
   u8 lcid;
   u8 payload_offset;
-  int i;
+  int i,comp;
 
   NB_UE_INST  = 1;
   NB_eNB_INST = 1;
@@ -452,11 +453,16 @@ int main (int argc, char **argv) {
     exit(1);
   }
 
-  mac_xface = (MAC_xface *)malloc(sizeof(MAC_xface));
-  init_lte_vars (&frame_parms, 0, 1, 0, 0, 25, 0, 0, 1, 1);
   set_taus_seed(0);
   logInit();
-  set_log(OMG,  LOG_INFO, 20);
+  set_glog(LOG_TRACE, 1);
+  for (comp = PHY; comp < MAX_LOG_COMPONENTS ; comp++)
+    set_comp_log(comp,  
+		 LOG_TRACE, 
+		 LOG_NONE,
+		 1);
+ /*
+ set_log(OMG,  LOG_INFO, 20);
   set_log(EMU,  LOG_INFO, 10);
   set_log(OCG,  LOG_INFO, 1);  
   set_log(MAC,  LOG_TRACE, 1);  
@@ -464,7 +470,9 @@ int main (int argc, char **argv) {
   set_log(PHY,  LOG_DEBUG, 1);  
   set_log(PDCP, LOG_TRACE, 1);  
   set_log(RRC,  LOG_TRACE, 1);  
- 
+ */
+  mac_xface = (MAC_xface *)malloc(sizeof(MAC_xface));
+  init_lte_vars (&frame_parms, 0, 1, 0, 0, 25, 0, 0, 1, 1);
   l2_init(frame_parms);
 
   // Generate eNB SI

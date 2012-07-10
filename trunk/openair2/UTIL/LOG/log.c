@@ -84,7 +84,12 @@ void logInit (void) {
 #else
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
-    g_log->log_component[PHY].name = "PHY";
+  if (g_log == NULL) {
+    perror ("cannot allocated memory for log generation modeul \n");
+    exit(-1);
+  }
+  
+  g_log->log_component[PHY].name = "PHY";
     g_log->log_component[PHY].level = LOG_INFO;
     g_log->log_component[PHY].flag =  LOG_MED;
     g_log->log_component[PHY].interval =  1;
@@ -266,7 +271,7 @@ void logInit (void) {
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
   
-
+  printf("log init done\n");
 
 }
 
@@ -308,6 +313,8 @@ void logRecord( const char *file, const char *func,
   len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
   va_end(args);
 
+  //printf (g_buff_info);
+  //return; 
  // make sure that for log trace the extra info is only printed once, reset when the level changes
   if ((level == LOG_FILE) ||  (c->flag == LOG_NONE) ){
     bypass_log_hdr = 1;

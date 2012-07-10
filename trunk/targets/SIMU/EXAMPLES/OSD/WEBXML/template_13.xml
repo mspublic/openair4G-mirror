@@ -64,7 +64,7 @@
   
   <EMULATION_CONFIG>
     <EMULATION_TIME_ms>60000</EMULATION_TIME_ms> <!--if0 set to infinity--> 
-    <CURVE>enable</CURVE> <!-- option: enable, disable. If CURVE is enable, graphes are ploted in real time (UL and DL) of WOD and throughput measurement for each packet -->
+    <CURVE>enabled</CURVE> <!-- option: enabled, disabled. If CURVE is enabled, graphes are ploted in real time (UL and DL) of WOD and throughput measurement for each packet -->
     <PERFORMANCE_METRICS>
       	<THROUGHPUT>0</THROUGHPUT>
       	<LATENCY>0</LATENCY>

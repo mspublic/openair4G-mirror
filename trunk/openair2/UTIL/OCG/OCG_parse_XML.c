@@ -1003,7 +1003,7 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					}
 				} 
 			}else if (omv_) {
-			  oai_emulation.topology_config.omv=1;
+			  oai_emulation.topology_config.omv=atoi(ch);
 			}
 
 		} else if (application_config_) {

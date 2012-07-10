@@ -79,9 +79,13 @@ int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 		strcpy(web_XML_folder, WEB_XML_FOLDER);
 		strcat(output_dir, OUTPUT_DIR);
 	} else { // local user
-		strcpy(web_XML_folder, OPENAIR_TARGETS);
+		
+	  sprintf(web_XML_folder,"%s/SIMU/EXAMPLES/OSD/WEBXML/",getenv("OPENAIR_TARGETS"));
+	  sprintf(output_dir,"%s/SIMU/EXAMPLES/OSD/RESULTS/",getenv("OPENAIR_TARGETS"));
+	  /*
+	  strcpy(web_XML_folder, OPENAIR_TARGETS);
 		strcpy(output_dir, OPENAIR_TARGETS);
-
+		
 		char *slash;
 		slash = web_XML_folder + strlen(web_XML_folder) - 1;
 		if (strcmp(slash, "/")) { // check if the path OPENAIR_TARGETS is ended with a '/'
@@ -90,10 +94,11 @@ int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 		}
 		strcat(web_XML_folder, "SIMU/EXAMPLES/OSD/WEBXML/");
 		strcat(output_dir, "SIMU/EXAMPLES/OSD/RESULTS/");
-	}
+	  */ }
 
 	LOG_I(OCG, "Folder for detecting the XML configuration file is %s\n", web_XML_folder);
 	LOG_I(OCG, "Folder for generating the results is %s\n", output_dir);
+	LOG_I(OCG, "OSD XML config file is %s\n", is_local_server);
 
 
 	while(state != STATE_END) {
