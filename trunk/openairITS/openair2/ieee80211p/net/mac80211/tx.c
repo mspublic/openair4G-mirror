@@ -1162,7 +1162,7 @@ ieee80211_tx_prepare(struct ieee80211_sub_if_data *sdata,
 	} else if (info->flags & IEEE80211_TX_CTL_INJECTED) {
 		tx->sta = sta_info_get_bss(sdata, hdr->addr1);
 	}
-	if (!tx->sta) // need to check if we could enter here
+	if (!tx->sta) // in OCBActivated, we should very likely enter here...
 		tx->sta = sta_info_get(sdata, hdr->addr1);
 
 	if (tx->sta && ieee80211_is_data_qos(hdr->frame_control) &&
