@@ -91,6 +91,8 @@ void mRALlte_action_request(MIH_C_Message_Link_Action_request_t* messageP) {
                             ralpriv->pending_req_transaction_id = messageP->header.transaction_id;
                             DEBUG("Deactivation requested to NAS interface\n");
                             IAL_process_DNAS_message(IO_OBJ_CNX, IO_CMD_DEL, ralpriv->cell_id);
+                            //Send immediatly a confirm, otherwise it will arrive to late and MIH-F will report a failure to the MIH-USER
+                            mRALlte_send_link_action_confirm(&messageP->header.transaction_id, &status, NULL, &link_action_result);
                         }
                     } else {
                         ralpriv->pending_req_action |= MIH_C_LINK_AC_TYPE_LINK_POWER_DOWN;
@@ -98,12 +100,14 @@ void mRALlte_action_request(MIH_C_Message_Link_Action_request_t* messageP) {
                         ralpriv->pending_req_transaction_id = messageP->header.transaction_id;
                         DEBUG("Deactivation requested to NAS interface\n");
                         IAL_process_DNAS_message(IO_OBJ_CNX, IO_CMD_DEL, ralpriv->cell_id);
+                        //Send immediatly a confirm, otherwise it will arrive to late and MIH-F will report a failure to the MIH-USER
+                        mRALlte_send_link_action_confirm(&messageP->header.transaction_id, &status, NULL, &link_action_result);
                     }
                 } else {
                     DEBUG ("[mRAL]: command POWER DOWN not available \n\n");
                     link_action_result = MIH_C_LINK_AC_RESULT_INCAPABLE;
                     ralpriv->pending_req_status = 0;
-                    mRALlte_send_link_action_confirm(&messageP->header.transaction_id, &status, &scan_response_set_list, &link_action_result);
+                    mRALlte_send_link_action_confirm(&messageP->header.transaction_id, &status, NULL, &link_action_result);
                 }
                 break;
 
