@@ -58,6 +58,11 @@ unsigned UdpServer::receive(vector<unsigned char>& rxBuffer) {
 	boost::system::error_code error;
 	unsigned bytesRead = 0;
 
+	/**
+	 * Ensure there's only one I/O method of UdpServer running at any given moment
+	 */
+	boost::lock_guard<boost::mutex> lock(mutex);
+
 	try {
 		cout << "Reading..." << endl;
 		bytesRead = socket->receive_from(boost::asio::buffer(rxBuffer), client, 0, error);
@@ -80,6 +85,11 @@ unsigned UdpServer::receive(vector<unsigned char>& rxBuffer) {
 bool UdpServer::send(vector<unsigned char>& txBuffer) {
 	boost::system::error_code error;
 
+	/**
+	 * Ensure there's only one I/O method of UdpServer running at any given moment
+	 */
+	boost::lock_guard<boost::mutex> lock(mutex);
+
 	try {
 		cout << "Writing..." << endl;
 		socket->send_to(boost::asio::buffer(txBuffer), client, 0, error);
@@ -95,6 +105,11 @@ bool UdpServer::send(vector<unsigned char>& txBuffer) {
 
 bool UdpServer::send(const GeonetPacket& packet) {
 	vector<unsigned char> txBuffer(TX_BUFFER_SIZE);
+
+	/**
+	 * Ensure there's only one I/O method of UdpServer running at any given moment
+	 */
+	boost::lock_guard<boost::mutex> lock(mutex);
 
 	if (packet.serialize(txBuffer))
 		return send(txBuffer);

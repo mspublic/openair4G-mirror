@@ -4,12 +4,12 @@ RM=rm
 CPPFLAGS=-Wall
 ECHO=echo
 STRIP=strip
-LDFLAGS=-lboost_system -lboost_filesystem -pthread
+LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread
 OPT_FLAGS=-O3
 DEBUG_FLAGS=-O0 -g3
 STATIC_FLAGS=-static
-INCLUDES=-Isrc/ -Isrc/packets/
-EXE=bin/IF.MGMT
+INCLUDES=-Isrc/ -Isrc/packets/ -Isrc/util/
+EXE=bin/SCOREF-MGMT
 
 -include Makefile.sources
 

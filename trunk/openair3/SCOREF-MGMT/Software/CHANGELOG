@@ -1,4 +1,6 @@
 
+* InquiryThread class has been added for sending repetitive Wireless State Request (not tested)
+
 v1.0.17
 * SCOREF-MGMT_Configuration.pdf file has been added under Documentation/
 
