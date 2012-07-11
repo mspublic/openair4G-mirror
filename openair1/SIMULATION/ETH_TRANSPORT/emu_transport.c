@@ -281,22 +281,24 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
   LTE_UE_ULSCH_t *ulsch;
   PUCCH_FMT_t pucch_format;
   //  u8 ue_transport_info_index[NUMBER_OF_eNB_MAX];
-  u8 subframe = last_slot>>1;
+  u8 subframe = (last_slot+1)>>1;
  
-  memcpy (&ue_cntl_delay[(subframe+1)%2],
+  memcpy (&ue_cntl_delay[ue_id][(last_slot+1)%2],
   	  &UE_transport_info[ue_id].cntl,
   	  sizeof(UE_cntl));
 
    
-   LOG_D(EMU, "Fill phy UE %d vars PRACH is (%d, %d) preamble (%d,%d)!\n", 
-	ue_id,
+   LOG_D(EMU, "Last slot %d subframe %d Fill phy UE %d vars PRACH is (%d,%d) preamble (%d,%d) SR (%d,%d)\n", 
+	 last_slot,subframe,ue_id,
 	UE_transport_info[ue_id].cntl.prach_flag,
-	 ue_cntl_delay[subframe%2].prach_flag,
+	 ue_cntl_delay[ue_id][last_slot%2].prach_flag,
 	 UE_transport_info[ue_id].cntl.prach_id,
-	 ue_cntl_delay[subframe%2].prach_id);
+	 ue_cntl_delay[ue_id][last_slot%2].prach_id,
+	 UE_transport_info[ue_id].cntl.sr,
+	 ue_cntl_delay[ue_id][last_slot%2].sr);
 
    //ue_cntl_delay[subframe%2].prach_flag ;
-   PHY_vars_UE_g[ue_id]->generate_prach = UE_transport_info[ue_id].cntl.prach_flag; 
+   PHY_vars_UE_g[ue_id]->generate_prach = ue_cntl_delay[ue_id][last_slot%2].prach_flag;//UE_transport_info[ue_id].cntl.prach_flag; 
    if (PHY_vars_UE_g[ue_id]->generate_prach == 1) {
      //     if (PHY_vars_UE_g[ue_id]->prach_resources[enb_id] == NULL)
      //  PHY_vars_UE_g[ue_id]->prach_resources[enb_id] = malloc(sizeof(PRACH_RESOURCES_t));
@@ -304,25 +306,20 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      PHY_vars_UE_g[ue_id]->prach_PreambleIndex = UE_transport_info[ue_id].cntl.prach_id; 
    }
 
+   pucch_format= ue_cntl_delay[ue_id][last_slot%2].pucch_flag;// UE_transport_info[ue_id].cntl.pucch_flag;
+   if ((last_slot+1) % 2  == 0 ) {
+     if (pucch_format == pucch_format1) // UE_transport_info[ue_id].cntl.sr;
+       PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[ue_id][last_slot%2].sr;
+     else if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
+       PHY_vars_UE_g[ue_id]->pucch_payload[0] = ue_cntl_delay[ue_id][last_slot%2].pucch_payload;//UE_transport_info[ue_id].cntl.pucch_payload;
+     } 
+   }
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
     
      //LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
      
-     pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
-     
-     PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[subframe%2].sr;// UE_transport_info[ue_id].cntl.sr;
-     
-     //if (PHY_vars_UE_g[ue_id]->sr) LOG_I(EMU,"SR is %d \n", PHY_vars_UE_g[ue_id]->sr);
-     
-     if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
-       PHY_vars_UE_g[ue_id]->pucch_payload[0] = UE_transport_info[ue_id].cntl.pucch_payload;
-     }
-     
      rnti = UE_transport_info[ue_id].rnti[n_enb];
      enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
-
-
-
      
      PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
      
@@ -331,11 +328,11 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      
      ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
      
-     ulsch->o_RI[0]                          = ue_cntl_delay[subframe%2].pusch_ri & 0x1;
-     ulsch->o_RI[1]                          = (ue_cntl_delay[subframe%2].pusch_ri>>1) & 0x1;
+     ulsch->o_RI[0]                          = ue_cntl_delay[ue_id][last_slot%2].pusch_ri & 0x1;
+     ulsch->o_RI[1]                          = (ue_cntl_delay[ue_id][last_slot%2].pusch_ri>>1) & 0x1;
      
-     ulsch->o_ACK[0]                          = ue_cntl_delay[subframe%2].pusch_ack & 0x1;
-     ulsch->o_ACK[1]                          = (ue_cntl_delay[subframe%2].pusch_ack>>1) & 0x1;
+     ulsch->o_ACK[0]                          = ue_cntl_delay[ue_id][last_slot%2].pusch_ack & 0x1;
+     ulsch->o_ACK[1]                          = (ue_cntl_delay[ue_id][last_slot%2].pusch_ack>>1) & 0x1;
      
      
      memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b,
