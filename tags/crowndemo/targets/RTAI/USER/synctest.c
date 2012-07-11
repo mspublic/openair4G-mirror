@@ -49,6 +49,7 @@
 #include <sched.h>
 #include <signal.h>
 #include <execinfo.h>
+#include <getopt.h>
 
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>
@@ -133,6 +134,11 @@ struct timing_info_t {
 extern s16* sync_corr_ue0;
 extern s16 prach_ifft[4][1024*2];
 
+
+runmode_t mode;
+int rx_input_level_dBm;
+
+
 int otg_enabled = 0;
 
 //*******************************
@@ -145,7 +151,7 @@ short dl_ch_estimates[2][2400];
 short drs_ch_estimates[2][2400];
 short drs_ch_est_ZFB[2*300*14];
 int doquantUE=0;
-int calibration_flag=1;
+int calibration_flag=0;
 short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
 int prec_length = 2*14*512;
 short prec[2][2*14*512];
@@ -162,6 +168,7 @@ extern void RECAL_callback( FL_OBJECT *ob, long user_data) {
   printf("click RECALIBRATION\n");
 }
 //*******************************
+
 
 void signal_handler(int sig)
 {
@@ -510,7 +517,7 @@ void *scope_thread(void *arg)
 		  dl_ch_estimates[1],
 		  NULL,
 		  NULL);
-	len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0);
+	len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0, mode,rx_input_level_dBm);
 	fl_set_object_label(form_stats->stats_text, stats_buffer);
 	//rewind (UE_stats);
 	//fwrite (stats_buffer, 1, len, UE_stats);
@@ -910,7 +917,7 @@ static void *UE_thread(void *arg)
           if (frame%100==0)
             rt_printk("frame %d (%d), slot %d, hw_slot %d, last_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,last_slot,DAQ_MBOX[0]);
           in = rt_get_time_ns();
-          phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0);
+          phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0,mode);
           out = rt_get_time_ns();
           diff = out-in;
 	  /*
@@ -1022,37 +1029,64 @@ static void *UE_thread(void *arg)
 }
 
 
-int main(int argc, char **argv)
-{
+
+
+
+int main(int argc, char **argv) {
+
   RT_TASK *task;
   int i,j,aa;
 
   LTE_DL_FRAME_PARMS *frame_parms;
   u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
-  u32 rf_mode[4]     = {55759,55759,55759,55759};
-  u32 rf_local[4]    = {8254617, 8254816, 8254617, 8254617}; //eNB khalifa
+  u32 rf_mode_max[4]     = {55759,55759,55759,55759};
+  u32 rf_mode_med[4]     = {39375,39375,39375,39375};
+  u32 rf_mode_byp[4]     = {22991,22991,22991,22991};
+
+  u32 rf_local[4]    = {8255000,8255000,8255000,8255000}; // UE zepto
+    //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
     //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
+
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
-  u32 rxgain[4]={30,30,30,30};
+#ifdef EXMIMO
+  u32 rxgain[4]={50,50,50,50};
+#endif
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
   u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
-  char c;
+  int c;
   char do_forms=0;
   unsigned int fd;
   unsigned int tcxo = 114;
 
   int amp;
 
+  char rxg_fname[100];
+  char rflo_fname[100];
+  FILE *rxg_fd=NULL;
+  FILE *rflo_fd=NULL;
+  unsigned int rxg_max[4],rxg_med[4],rxg_byp[4];
+
+  const struct option long_options[] = {
+    {"calib-ue-rx", required_argument, NULL, 256},
+    {"calib-ue-rx-med", required_argument, NULL, 257},
+    {"calib-ue-rx-byp", required_argument, NULL, 258},
+    {"debug-ue-prach", no_argument, NULL, 259},
+    {"no-L2-connect", no_argument, NULL, 260},
+    {NULL, 0, NULL, 0}};
+
+  mode = normal_txrx;
+
+
 #ifdef XFORMS
   char title[255];
 #endif
 
-  while ((c = getopt (argc, argv, "C:ST:Ud")) != -1)
+  while ((c = getopt_long (argc, argv, "C:ST:UdF:",long_options,NULL)) != -1)
     {
       switch (c)
         {
@@ -1074,6 +1108,49 @@ int main(int argc, char **argv)
         case 'T':
           tcxo=atoi(optarg);
           break;
+	case 'F':
+	  sprintf(rxg_fname,"%srxg.lime",optarg);
+	  rxg_fd = fopen(rxg_fname,"r");
+	  if (rxg_fd) {
+	    printf("Loading RX Gain parameters from %s\n",rxg_fname);
+	    fscanf(rxg_fd,"%d %d %d %d",&rxg_max[0],&rxg_max[1],&rxg_max[2],&rxg_max[3]);
+	    fscanf(rxg_fd,"%d %d %d %d",&rxg_med[0],&rxg_med[1],&rxg_med[2],&rxg_med[3]);
+	    fscanf(rxg_fd,"%d %d %d %d",&rxg_byp[0],&rxg_byp[1],&rxg_byp[2],&rxg_byp[3]);
+	  }
+	  else 
+	    printf("%s not found, running with defaults\n",rxg_fname);
+
+	  sprintf(rflo_fname,"%srflo.lime",optarg);
+	  rflo_fd = fopen(rflo_fname,"r");
+	  if (rflo_fd) {
+	    printf("Loading RF LO parameters from %s\n",rxg_fname);
+	    fscanf(rflo_fd,"%d %d %d %d",&rf_local[0],&rf_local[1],&rf_local[2],&rf_local[3]);
+	  }
+	  else 
+	    printf("%s not found, running with defaults\n",rflo_fname);
+
+	  break;
+	case 256:
+	  mode = rx_calib_ue;
+	  rx_input_level_dBm = atoi(optarg);
+	  printf("Running with UE calibration on (LNA max), input level %d dBm\n",rx_input_level_dBm);
+	  break;
+	case 257:
+	  mode = rx_calib_ue_med;
+	  rx_input_level_dBm = atoi(optarg);
+	  printf("Running with UE calibration on (LNA med), input level %d dBm\n",rx_input_level_dBm);
+	  break;
+	case 258:
+	  mode = rx_calib_ue_byp;
+	  rx_input_level_dBm = atoi(optarg);
+	  printf("Running with UE calibration on (LNA byp), input level %d dBm\n",rx_input_level_dBm);
+	  break;
+	case 259:
+	  mode = debug_prach;
+	  break;
+	case 260:
+	  mode = no_L2_connect;
+	  break;
         default:
           break;
         }
@@ -1120,17 +1197,7 @@ int main(int argc, char **argv)
   // for CBMIMO
   frame_parms->dual_tx            = 0;
   frame_parms->freq_idx           = 1;
-  // for Express MIMO
-  for (i=0; i<4; i++)
-    {
-      frame_parms->carrier_freq[i] = carrier_freq[i];
-      frame_parms->carrier_freqtx[i] = carrier_freq[i];
-      frame_parms->rxgain[i]       = rxgain[i];
-      frame_parms->rfmode[i]       = rf_mode[i];
-      frame_parms->rflocal[i]      = rf_local[i];
-      frame_parms->rfvcolocal[i]   = rf_vcocal[i];
-      frame_parms->rxdc[i]         = rf_rxdc[i];
-    }
+
 
   init_frame_parms(frame_parms,1);
   dump_frame_parms(frame_parms);
@@ -1138,61 +1205,97 @@ int main(int argc, char **argv)
   phy_init_top(frame_parms);
   phy_init_lte_top(frame_parms);
 
-  if (UE_flag==1)
-    {
-      g_log->log_component[PHY].level = LOG_INFO;
-      g_log->log_component[PHY].flag = LOG_HIGH;
-      g_log->log_component[MAC].level = LOG_INFO;
-      g_log->log_component[MAC].flag = LOG_HIGH;
-      frame_parms->node_id = NODE;
-      PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
-      PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
 
-      for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
-	PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-	PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-	PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-      }
-
-      PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+  if (UE_flag==1) {
+    g_log->log_component[PHY].level = LOG_INFO;
+    g_log->log_component[PHY].flag = LOG_HIGH;
+    g_log->log_component[MAC].level = LOG_DEBUG;
+    g_log->log_component[MAC].flag = LOG_HIGH;
+    frame_parms->node_id = NODE;
+    PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
+    PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
+    
+    for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
+      PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+      PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+      PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+    }
+    
+    PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
 #ifndef OPENAIR2
-      PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
-      //PHY_vars_UE_g[0]->lte_frame_parms.
+    PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
+    //PHY_vars_UE_g[0]->lte_frame_parms.
 #endif
-      NB_UE_INST=1;
-      NB_INST=1;
+    NB_UE_INST=1;
+    NB_INST=1;
+    
+    openair_daq_vars.manual_timing_advance = 0;
+    openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+  }
+  else {
+    g_log->log_component[PHY].level = LOG_INFO;
+    g_log->log_component[PHY].flag = LOG_HIGH;
+    g_log->log_component[MAC].level = LOG_INFO;
+    g_log->log_component[MAC].flag = LOG_HIGH;
 
-      openair_daq_vars.manual_timing_advance = 0;
-      openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+    frame_parms->node_id = PRIMARY_CH;
+    PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
+    PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
+    
+    for (i=0;i<NUMBER_OF_UE_MAX;i++) {
+      PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+      PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+      PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
     }
-  else
-    {
-      g_log->log_component[PHY].level = LOG_INFO;
-      g_log->log_component[PHY].flag = LOG_HIGH;
-      g_log->log_component[MAC].level = LOG_INFO;
-      g_log->log_component[MAC].flag = LOG_HIGH;
-      frame_parms->node_id = PRIMARY_CH;
-      PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
-      PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
-
-      for (i=0;i<NUMBER_OF_UE_MAX;i++) {
-	PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-	PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-	PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-      }
-
-      NB_eNB_INST=1;
-      NB_INST=1;
-      if (calibration_flag == 1)
-        PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
-      openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-      openair_daq_vars.target_ue_dl_mcs=9;
-      openair_daq_vars.ue_ul_nb_rb=12;
-      openair_daq_vars.target_ue_ul_mcs=5;
+    
+    NB_eNB_INST=1;
+    NB_INST=1;
+    if (calibration_flag == 1)
+      PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
+    openair_daq_vars.ue_ul_nb_rb=25;
+    openair_daq_vars.target_ue_dl_mcs=5;
+    openair_daq_vars.ue_ul_nb_rb=12;
+    openair_daq_vars.target_ue_ul_mcs=10;
+  }
+ 
+  // for Express MIMO
+  for (i=0; i<4; i++) {
+    frame_parms->carrier_freq[i] = carrier_freq[i];
+    frame_parms->carrier_freqtx[i] = carrier_freq[i];
+    frame_parms->rxgain[i]       = rxgain[i];
+    if ((mode == normal_txrx) || (mode == rx_calib_ue) || (mode == no_L2_connect) || (mode == debug_prach)) {
+      frame_parms->rfmode[i]       = rf_mode_max[i];
+      PHY_vars_UE_g[0]->rx_gain_mode[i]  = max;
+      if (i==0)
+	PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_max[0];
     }
-
+    else if ((mode == rx_calib_ue_med)) {
+      frame_parms->rfmode[i]       = rf_mode_med[i];
+      PHY_vars_UE_g[0]->rx_gain_mode[i] = med;
+      if (i==0)
+	PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_med[0];
+    }
+    else if ((mode == rx_calib_ue_byp)) {
+      frame_parms->rfmode[i]       = rf_mode_byp[i];
+      PHY_vars_UE_g[0]->rx_gain_mode[i] = byp;
+      if (i==0)
+	PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0];
+    }
+    frame_parms->rflocal[i]      = rf_local[i];
+    frame_parms->rfvcolocal[i]   = rf_vcocal[i];
+    frame_parms->rxdc[i]         = rf_rxdc[i];
+  }
+  
+  if (rxg_fd!= NULL) {
+    for (i=0;i<4;i++) {
+      PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
+      PHY_vars_UE_g[0]->rx_gain_med[i] = rxg_med[i];
+      PHY_vars_UE_g[0]->rx_gain_byp[i] = rxg_byp[i];
+    }
+  }
+  
   mac_xface = malloc(sizeof(MAC_xface));
-
+  
 #ifdef OPENAIR2
   l2_init(frame_parms);
   if (UE_flag == 1)
@@ -1229,7 +1332,7 @@ int main(int argc, char **argv)
       for (i=0; i<frame_parms->samples_per_tti*10; i++)
         for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
           PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
-#endif
+#endif 
     }
   else
     {
