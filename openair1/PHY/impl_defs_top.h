@@ -170,9 +170,9 @@
 #define SLOT_TIME_NS         (SLOT_LENGTH_SAMPLES*(1e3)/7.68)            // slot time in ns
 
 
-#define TARGET_RX_POWER 50		// Target digital power for the AGC
+#define TARGET_RX_POWER 40		// Target digital power for the AGC
 #define TARGET_RX_POWER_MAX 65		// Maximum digital power, such that signal does not saturate (value found by simulation)
-#define TARGET_RX_POWER_MIN 35		// Minimum digital power, anything below will be discarded (value found by simulation)
+#define TARGET_RX_POWER_MIN 30		// Minimum digital power, anything below will be discarded (value found by simulation)
 //the min and max gains have to match the calibrated gain table
 //#define MAX_RF_GAIN 160
 //#define MIN_RF_GAIN 96

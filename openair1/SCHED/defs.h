@@ -136,8 +136,9 @@ void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eN
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id ID of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
+  @param mode calibration/debug mode
 */
-void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
 
 /*!
   \brief Scheduling for UE TX procedures in normal subframes.  
@@ -145,16 +146,18 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id Local id of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
+  @param mode calib/normal mode
 */
-void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
 /*!
   \brief Scheduling for UE RX procedures in normal subframes.  
   @param last_slot Index of last slot (0-19)
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id Local id of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
+  @param mode calibration/debug mode
 */
-int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
 
 /*!
   \brief Scheduling for UE TX procedures in TDD S-subframes.  

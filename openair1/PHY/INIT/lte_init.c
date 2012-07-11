@@ -516,6 +516,11 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 
   msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
 
+  for (i=0;i<4;i++) {
+    phy_vars_ue->rx_gain_max[i] = 135;
+    phy_vars_ue->rx_gain_med[i] = 128;
+    phy_vars_ue->rx_gain_byp[i] = 120;
+  }
   phy_vars_ue->n_connected_eNB = 1;
 
   for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++){

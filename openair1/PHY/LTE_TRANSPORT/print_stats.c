@@ -42,135 +42,151 @@
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
-extern u8 number_of_cards;
+#ifdef EXMIMO
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+#endif
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
+//extern u8 number_of_cards;
+
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
   u8 eNB=0;
 
   if (phy_vars_ue==NULL)
     return 0;
 
-  len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
-  len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
-		 phy_vars_ue->frame,
-		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
-		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[1],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][1],
-		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[2],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][1],
-		 phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
-		 phy_vars_ue->PHY_measurements.n0_power_dB[0],
-		 phy_vars_ue->PHY_measurements.n0_power_dB[1]);
-  len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
-  if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) {
-    len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
-    len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
-    if (phy_vars_ue->UE_mode[0] == PUSCH)
-      len += sprintf(&buffer[len], "[UE PROC] DLSCH FER %d, cqi = %d\n",phy_vars_ue->dlsch_fer[0],phy_vars_ue->current_dlsch_cqi[0]);
-    len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->mcs);
-    len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
-  }
-  len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",openair_daq_vars.timing_advance);
-  
-  
-  //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
-  for (eNB=0;eNB<1;eNB++) {
-    len += sprintf(&buffer[len], "[UE PROC] RX spatial power eNB%d: [%d %d; %d %d] dB\n",
-		   eNB,
-		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][0][0],
-		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][0][1],
-		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][0],
-		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][1]);
-    
-    len += sprintf(&buffer[len], "[UE PROC] Subband CQI eNB%d (Ant 0): [%d %d %d %d %d %d %d] dB\n",
-		   eNB,
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][0],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][1],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][2],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][3],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][4],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][5],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][6]);
-    
-    len += sprintf(&buffer[len], "[UE PROC] Subband CQI eNB%d (Ant 1): [%d %d %d %d %d %d %d] dB\n",
-		   eNB,
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][0],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][1],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][2],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][3],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][4],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][5],
-		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][6]);
+  if ((mode == normal_txrx) || (mode == no_L2_connect)) {
+    len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
+    len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\nRSSI %3.2f dBm (%d)\nN0 %d dBm (%d dB, %d dB)\n",
+		   phy_vars_ue->frame,
+		   10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB,
+		   dB_fixed(phy_vars_ue->PHY_measurements.rssi),
+		   phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+		   phy_vars_ue->PHY_measurements.n0_power_dB[0],
+		   phy_vars_ue->PHY_measurements.n0_power_dB[1]);
+#ifdef CBMIMO1
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
+#else
+#ifdef EXMIMO
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],exmimo_pci_interface->rf.rx_gain00);
+#endif
+#endif
+    if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) {
+      len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
+      len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
+      if (phy_vars_ue->UE_mode[0] == PUSCH)
+	len += sprintf(&buffer[len], "[UE PROC] DLSCH FER %d, cqi = %d\n",phy_vars_ue->dlsch_fer[0],phy_vars_ue->current_dlsch_cqi[0]);
+      len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->mcs);
+      len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
+    }
+    len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",openair_daq_vars.timing_advance);
     
     
-    len += sprintf(&buffer[len], "[UE PROC] Subband PMI eNB%d (Ant 0): [(%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d)]\n",
-		   eNB,
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][0][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][0][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][1][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][1][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][2][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][2][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][3][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][3][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][4][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][4][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][5][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][5][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][6][0],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][6][0]);
-    
-    len += sprintf(&buffer[len], "[UE PROC] Subband PMI eNB%d (Ant 1): [(%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d)]\n",
-		   eNB,
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][0][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][0][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][1][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][1][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][2][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][2][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][3][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][3][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][4][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][4][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][5][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][5][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][6][1],
-		   phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][6][1]);
-    
-    len += sprintf(&buffer[len], "[UE PROC] PMI Antenna selection eNB%d : [%d %d %d %d %d %d %d]\n",
-		   eNB,
-		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][0],
-		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][1],
-		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][2],
-		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][3],
-		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][4],
-		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][5],
-		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][6]);
-    
-    len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB]);
-    len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (max): %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&phy_vars_ue->PHY_measurements,eNB)));
-    len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (both): %x,%x\n",eNB,
-		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,0)),
-		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,1)));
-    
-    
-    len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag);
-    if (openair_daq_vars.dlsch_transmission_mode == 6)
-      len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
-    if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) 
-      len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(phy_vars_ue->dlsch_ue[0][0]->pmi_alloc),phy_vars_ue->dlsch_ue[0][0]);
-    
-    len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",phy_vars_ue->dlsch_received[0],phy_vars_ue->dlsch_errors[0],phy_vars_ue->dlsch_fer[0]);
-    len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",phy_vars_ue->dlsch_SI_received[0],phy_vars_ue->dlsch_SI_errors[0]);
-    len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",phy_vars_ue->dlsch_ra_received[0],phy_vars_ue->dlsch_ra_errors[0]);
-    len += sprintf(&buffer[len], "[UE PROC] DLSCH Bitrate %dkbps\n",(phy_vars_ue->bitrate[0]/1000));
-    len += sprintf(&buffer[len], "[UE PROC] Total Received Bits %dkbits\n",(phy_vars_ue->total_received_bits[0]/1000));
+    //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
+    for (eNB=0;eNB<1;eNB++) {
+      len += sprintf(&buffer[len], "[UE PROC] RX spatial power eNB%d: [%d %d; %d %d] dB\n",
+		     eNB,
+		     phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][0][0],
+		     phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][0][1],
+		     phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][0],
+		     phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][1]);
+      
+      len += sprintf(&buffer[len], "[UE PROC] Subband CQI eNB%d (Ant 0): [%d %d %d %d %d %d %d] dB\n",
+		     eNB,
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][0],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][1],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][2],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][3],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][4],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][5],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][6]);
+      
+      len += sprintf(&buffer[len], "[UE PROC] Subband CQI eNB%d (Ant 1): [%d %d %d %d %d %d %d] dB\n",
+		     eNB,
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][0],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][1],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][2],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][3],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][4],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][5],
+		     phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][1][6]);
+      
+      
+      len += sprintf(&buffer[len], "[UE PROC] Subband PMI eNB%d (Ant 0): [(%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d)]\n",
+		     eNB,
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][0][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][0][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][1][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][1][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][2][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][2][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][3][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][3][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][4][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][4][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][5][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][5][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][6][0],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][6][0]);
+      
+      len += sprintf(&buffer[len], "[UE PROC] Subband PMI eNB%d (Ant 1): [(%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d)]\n",
+		     eNB,
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][0][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][0][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][1][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][1][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][2][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][2][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][3][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][3][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][4][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][4][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][5][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][5][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_re[eNB][6][1],
+		     phy_vars_ue->PHY_measurements.subband_pmi_im[eNB][6][1]);
+      
+      len += sprintf(&buffer[len], "[UE PROC] PMI Antenna selection eNB%d : [%d %d %d %d %d %d %d]\n",
+		     eNB,
+		     phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][0],
+		     phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][1],
+		     phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][2],
+		     phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][3],
+		     phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][4],
+		     phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][5],
+		     phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][6]);
+      
+      len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB]);
+      len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (max): %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&phy_vars_ue->PHY_measurements,eNB)));
+      len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (both): %x,%x\n",eNB,
+		     pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,0)),
+		     pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,1)));
+      
+      
+      len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag);
+      if (openair_daq_vars.dlsch_transmission_mode == 6)
+	len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
+      if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) 
+	len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(phy_vars_ue->dlsch_ue[0][0]->pmi_alloc),phy_vars_ue->dlsch_ue[0][0]);
+      
+      len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",phy_vars_ue->dlsch_received[0],phy_vars_ue->dlsch_errors[0],phy_vars_ue->dlsch_fer[0]);
+      len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",phy_vars_ue->dlsch_SI_received[0],phy_vars_ue->dlsch_SI_errors[0]);
+      len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",phy_vars_ue->dlsch_ra_received[0],phy_vars_ue->dlsch_ra_errors[0]);
+      len += sprintf(&buffer[len], "[UE PROC] DLSCH Bitrate %dkbps\n",(phy_vars_ue->bitrate[0]/1000));
+      len += sprintf(&buffer[len], "[UE PROC] Total Received Bits %dkbits\n",(phy_vars_ue->total_received_bits[0]/1000));
 
+    }
+  }
+  else {
+    len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\nRSSI %3.2f dB Gain %3.2f \nN0 %d dBm (%d dB, %d dB)\n",
+		   phy_vars_ue->frame,
+		   10*log10(phy_vars_ue->PHY_measurements.rssi),
+		   10*log10(phy_vars_ue->PHY_measurements.rssi)-input_level_dBm,
+		   phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+		   phy_vars_ue->PHY_measurements.n0_power_dB[0],
+		   phy_vars_ue->PHY_measurements.n0_power_dB[1]);
   }
   buffer[len]='\0';
 
