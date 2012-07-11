@@ -101,6 +101,21 @@ run_UE: synctest
 run_UE0: synctest
 	rtai-load UE0 --verbose
 
+run_UE0prach: synctest
+	rtai-load UE0prach --verbose
+
+run_UE0noL2: synctest
+	rtai-load UE0noL2 -- verbose
+
+run_UE0calib: synctest
+	rtai-load UE0calib --verbose
+
+run_UE0calibmed: synctest
+	rtai-load UE0calibmed --verbose
+
+run_UE0calibbyp: synctest
+	rtai-load UE0calibbyp --verbose
+
 run_UE1: synctest
 	rtai-load UE1 --verbose
 
