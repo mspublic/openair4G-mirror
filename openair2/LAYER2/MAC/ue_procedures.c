@@ -251,7 +251,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
       switch (rx_ces[i]) {
       case UE_CONT_RES:
 
-	LOG_D(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n",
+	LOG_I(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n",
 	      Mod_id,frame,payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
 	  UE_mac_inst[Mod_id].RA_active=0;
@@ -259,7 +259,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[2];//2=sizeof(SCH_SUBHEADER_SHORT);
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
-	      LOG_D(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
+	      LOG_I(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
 	      mac_xface->ra_failed(Mod_id,eNB_index);
 	      return;
 	    }
@@ -815,7 +815,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       UE_mac_inst[Mod_id].RA_active = 0;
       // Signal PHY to quit RA procedure
       mac_xface->ra_failed(Mod_id,eNB_index);
-      LOG_D(MAC,"Counter resolution timer expired, RA failed\n");
+      LOG_I(MAC,"Counter resolution timer expired, RA failed\n");
     }
   }
 
@@ -853,10 +853,10 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 	UE_mac_inst[Mod_id].scheduling_info.BSR[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
 	//	UE_mac_inst[Mod_id].scheduling_info.num_BSR++;
 	UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
-	LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCGID %d with BSR level %d (%d bytes in RLC)\n",
-	      Mod_id, frame,subframe,lcid,
-	      UE_mac_inst[Mod_id].scheduling_info.BSR[lcid],
-	      rlc_status[lcid].bytes_in_buffer);
+	//LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCGID %d with BSR level %d (%d bytes in RLC)\n",
+	//      Mod_id, frame,subframe,lcid,
+	//      UE_mac_inst[Mod_id].scheduling_info.BSR[lcid],
+	//      rlc_status[lcid].bytes_in_buffer);
       } else {
 	UE_mac_inst[Mod_id].scheduling_info.BSR[lcid]=0;
       }
