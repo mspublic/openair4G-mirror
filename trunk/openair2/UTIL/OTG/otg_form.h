@@ -20,4 +20,8 @@ void show_otg_form(void);
 void add_tab_metric(int eNB_id, int UE_id, float owd, float throughput, int ctime);
 void plot_graphes_ul(int src, int dst);
 void plot_graphes_dl(int src, int dst);
+void create_form_clock(void);
+void exit_cb(FL_OBJECT *ob, long q);
+
+
 #endif 
