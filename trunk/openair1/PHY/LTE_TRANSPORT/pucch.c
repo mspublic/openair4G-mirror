@@ -416,9 +416,9 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
     UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_payload = pucch_payload[0] + (pucch_payload[1]<<1);
   }
   else if (format == pucch_format1) {
-  }
+ 
   phy_vars_ue->sr[subframe] = sr;
-
+ }
 }
 
 s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
