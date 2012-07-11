@@ -6,6 +6,7 @@ extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 
 FD_otg * form_dl, *form_ul;
+FL_FORM *fclock;
 
 FD_otg *create_form_otg(void)
 {
@@ -16,8 +17,13 @@ FD_otg *create_form_otg(void)
   obj = fl_add_box(FL_UP_BOX,0,0,900,700,"");
   fdui->owd = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,50,30,450,190,"One Way Delay(ms)"); 
     fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
-  fdui->throughput = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,50,300,450,190,"Throughput(bit/s)");
+  fdui->throughput = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,50,300,450,190,"Throughput(Kbit/s)");
     fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
+   
+  
+   obj = fl_add_button(FL_NORMAL_BUTTON,250,510,50,30,"Exit");
+   fl_set_object_callback(obj, exit_cb, 0);
+
   fl_end_form();
   fdui->otg->fdui = fdui;
   return fdui;   
@@ -55,10 +61,17 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
       fl_set_xyplot_ybounds(form_ul->throughput,0,100); 
 
     }
+
+    //create_form_clock();
+    //fl_show_form(fclock, FL_PLACE_CENTER,FL_TRANSIENT,"clocks");
+    //fl_do_forms();
+
+   fl_check_forms();
 }	
 
 																																																																																																																																																																																																		
 void add_tab_metric(int src, int dst, float owd, float throughput, int ctime){
+
 
 printf("values_forms src %d, dst %d, owd %f, th %f  \n", src, dst, owd, throughput);
   if (otg_forms_info->init_forms==0){
@@ -102,25 +115,19 @@ if (otg_forms_info->idx_ul[src][dst]==max_samples-1){
 
   if (otg_forms_info->is_data_plot_ul == -1) 
     otg_forms_info->is_data_plot_ul=src;
-  /*else
-  otg_forms_info->graph_id[src]=id_plot++;*/
 
-
-//fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime[eNB_id][UE_id],
-//otg_forms_info->data_owd[eNB_id][UE_id], 
-//otg_forms_info->idx[eNB_id][UE_id], "eNB->UE", "ctime(ms)", "OWD(ms)"); 
   if (otg_forms_info->is_data_plot_ul == src) {
     fl_set_xyplot_data (form_ul->owd, otg_forms_info->data_ctime_ul[src][dst],
     otg_forms_info->data_owd_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "ms");  
 
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[src][dst],
-    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "Mbit/s");  
+    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "Kbit/s");  
   } 
   else {
     fl_set_xyplot_data (form_ul->owd, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
     otg_forms_info->data_owd_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "ms");  
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
-    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "Mbit/s");  
+    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "Kbit/s");  
 
   }
 
@@ -147,6 +154,9 @@ if (otg_forms_info->idx_ul[src][dst]==max_samples-1){
   otg_forms_info->idx_ul[src][dst]--;
 }
 
+   //fl_clear_browser(form_ul->owd);
+   //fl_clear_browser(form_ul->throughput);
+   fl_check_forms();
 
 }
 
@@ -171,16 +181,16 @@ if (otg_forms_info->idx_dl[src][dst]==max_samples-1){
     otg_forms_info->data_owd_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "ms");   
 
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][dst],
-    otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "Mbit/s");  
-printf("DL_owd (1)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info->data_owd_dl[src][dst][10], otg_forms_info->idx_dl[src][dst] );
+    otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "Kbit/s");  
+//printf("DL_owd (1)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info->data_owd_dl[src][dst][10], otg_forms_info->idx_dl[src][dst] );
   } 
   else {
     fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
     otg_forms_info->data_owd_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "ms");  
 
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
-    otg_forms_info->data_throughput_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "Mbit/s");  
-printf("DL_owd (2)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info->data_owd_dl[src][dst][10], otg_forms_info->idx_dl[src][dst] );
+    otg_forms_info->data_throughput_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "Kbit/s");  
+
   }
 
   for (dst_idx=1;dst_idx<=NB_UE_INST;dst_idx++){
@@ -194,7 +204,7 @@ printf("DL_owd (2)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info
       otg_forms_info->data_ctime_dl[src][dst_idx],
       otg_forms_info->data_throughput_dl[src][dst_idx],
       otg_forms_info->idx_dl[src][dst_idx],dst_idx+6);
-printf("DL_owd (3)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info->data_owd_dl[src][dst][10], otg_forms_info->idx_dl[src][dst] );
+
 
     } 
   }
@@ -207,7 +217,50 @@ printf("DL_owd (3)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info
   otg_forms_info->idx_dl[src][dst]--;
 }
 
+   //fl_clear_browser(form_ul->owd);
+   //fl_clear_browser(form_ul->throughput);
+   fl_check_forms();
 
 }
+
+
+
+
+
+
+void exit_cb(FL_OBJECT *ob, long q)
+{
+   fl_finish();
+   exit(0);
+}
+
+void create_form_clock(void)
+{
+   FL_OBJECT *obj;
+
+   if (fclock)
+       return;
+
+   fclock = fl_bgn_form(FL_NO_BOX,500,350);
+   obj = fl_add_box(FL_UP_BOX,0,0,500,350,"");
+
+   obj = fl_add_clock(FL_DIGITAL_CLOCK,185,20,150,35,"");
+   fl_set_object_boxtype(obj,FL_ROUNDED_BOX); 
+   fl_set_object_color(obj,FL_COL1,FL_BLACK);
+   fl_set_object_lsize(obj,FL_MEDIUM_SIZE);
+   fl_set_object_lstyle(obj,FL_BOLD_STYLE);
+
+   obj = fl_add_clock(FL_ANALOG_CLOCK,30,70,220,200,"");
+   fl_set_object_boxtype(obj,FL_UP_BOX);
+
+   obj = fl_add_clock(FL_ANALOG_CLOCK,260,70,220,200,"");
+   fl_set_object_boxtype(obj,FL_OVAL3D_UPBOX);
+   obj = fl_add_button(FL_NORMAL_BUTTON,375,300,110,35,"Exit");
+   fl_set_object_callback(obj, exit_cb, 0);
+   fl_end_form();
+
+   fl_scale_form(fclock, 0.7, 0.7);
+}
+
 
 

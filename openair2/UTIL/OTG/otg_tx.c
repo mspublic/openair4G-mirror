@@ -87,7 +87,8 @@ int idt=0;
    idt =ceil((lognormal_dist((g_otg->idt_max[src][dst][state] + g_otg->idt_min[src][dst][state])/2 , g_otg->idt_std_dev[src][dst][state])));
    break;
  default :
-   LOG_E(OTG, "IDT distribution unknown \n");
+   idt =0;
+   LOG_W(OTG, "IDT distribution unknown, set to 0 \n");
  }
  
  LOG_D(OTG,"IDT :: Inter Departure Time Distribution= %d , val= %d\n", g_otg->idt_dist[src][dst][state],idt);
@@ -190,7 +191,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
     
 
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
-  if ((g_otg->application_type[src][dst]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
+  if ((g_otg->application_type[src][dst]==0) && (g_otg->idt_dist[src][dst][state]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
     LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d: no app type and/or idt are defined\n", src, dst); 
     return NULL;	 
   }
