@@ -95,8 +95,8 @@ mapping otg_distribution_names[] =
 
 mapping otg_background_names[] =
 {
-    {"disable", 0},
-    {"enable", 1},
+    {"disabled", 0},
+    {"enabled", 1},
     {NULL, -1}
 };
 
@@ -576,11 +576,12 @@ int ocg_config_app(){
 	      	for (source_id_index = source_id_start; source_id_index <= source_id_end; source_id_index++) {
 		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
 		  g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+		  }
 			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(otg_background_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
 
 LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application = %d\n", source_id_start, source_id_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index]);
 
-		  }
+		  
 		}
 	      }
 
@@ -593,9 +594,10 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 		source_id_index = atoi(per_source_id); 
 		if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
 		  g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+		}
 		  g_otg->background[source_id_index][destination_id_index] =map_str_to_int(otg_background_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
 		  per_source_id = strtok(NULL, comma);
-		}
+		
 	      }
 	    } else { // single node configuration 
 	      source_id_index = atoi(oai_emulation.application_config.predefined_traffic.source_id[predefined_traffic_config_index]);
@@ -618,11 +620,12 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 	      	for (source_id_index = source_id_start; source_id_index <= source_id_end; source_id_index++) {
 		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
 		   g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+		}
 			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(otg_background_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
 
 LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application = %d\n", source_id_start, source_id_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index]);
 		 
-		  }
+		  
 		}
 	      }
 
