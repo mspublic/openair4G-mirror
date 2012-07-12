@@ -255,7 +255,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     else if (N0_symbol != 0) {
       phy_vars_ue->PHY_measurements.n0_power_tot = 0;
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-#ifdef USER_MODE
+#ifndef HW_PREFIX_REMOVAL
 	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset2+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
 	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset2+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size);

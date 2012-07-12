@@ -6079,7 +6079,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
 
-    if (dual_stream_UE == 1) {
+    if ((dual_stream_UE == 1) && (rxdataF_comp_i!=NULL) && (dl_ch_mag_i!=NULL) && (dl_ch_magb_i!=NULL)) {
       rho128_i0 = (__m128i *) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
       rho128_i1 = (__m128i *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_i0   = (__m128i *)&rxdataF_comp_i[0][symbol*frame_parms->N_RB_DL*12];  
@@ -10486,19 +10486,34 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   }
 
   //  printf("MRC\n");
-  if (frame_parms->nb_antennas_rx > 1)
-    dlsch_detection_mrc(frame_parms,
-			lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			lte_ue_pdsch_vars[eNB_id]->rho,
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
-			lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
-			lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb,
-			symbol,
-			nb_rb,
-			dual_stream_flag); 
+  if (frame_parms->nb_antennas_rx > 1) {
+    if (lte_ue_pdsch_vars[eNB_id_i] == NULL) //this is the case for SI and RA 
+      dlsch_detection_mrc(frame_parms,
+			  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+			  NULL,
+			  lte_ue_pdsch_vars[eNB_id]->rho,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+			  NULL,
+			  NULL,
+			  symbol,
+			  nb_rb,
+			  dual_stream_flag); 
+    else
+      dlsch_detection_mrc(frame_parms,
+			  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+			  lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+			  lte_ue_pdsch_vars[eNB_id]->rho,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+			  lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+			  lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+			  lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb,
+			  symbol,
+			  nb_rb,
+			  dual_stream_flag); 
+  }
 
   //  printf("Combining");
   // Single-layer transmission formats

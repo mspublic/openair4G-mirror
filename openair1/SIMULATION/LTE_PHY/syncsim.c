@@ -354,7 +354,7 @@ int main(int argc, char **argv) {
   u8 num_pdcch_symbols=1;
   u16 NB_RB=25;
 
-  SCM_t channel_model=Rayleigh1_anticorr;
+  SCM_t channel_model=Rayleigh8;
 
   u8 abstraction_flag=0;
   double pbch_sinr; 

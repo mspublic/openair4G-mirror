@@ -859,6 +859,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 #ifdef DEBUG_DCI
   msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
 #endif
+
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
