@@ -1986,6 +1986,10 @@ static void ieee80211_destroy_assoc_data(struct ieee80211_sub_if_data *sdata,
 	sdata->u.mgd.assoc_data = NULL;
 }
 
+/*
+ * [PLATA] after a association success - the state machine is changed...how to do this for the OCB mode?
+ *  probably the station should directly be in mode 'authorized'
+ */
 static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 				    struct cfg80211_bss *cbss,
 				    struct ieee80211_mgmt *mgmt, size_t len)

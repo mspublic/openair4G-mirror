@@ -3726,6 +3726,9 @@ static int nl80211_trigger_scan(struct sk_buff *skb, struct genl_info *info)
 
 	wiphy = &rdev->wiphy;
 
+	/*
+	 * [PLATA] - this method is called and it is hard to block it. But if the next if clause returns 0, then we also exit without scanning
+	 */
 	if (!rdev->ops->scan)
 		return -EOPNOTSUPP;
 
@@ -4571,7 +4574,7 @@ static int nl80211_associate(struct sk_buff *skb, struct genl_info *info)
 
 	if (!info->attrs[NL80211_ATTR_MAC] ||
 	    !info->attrs[NL80211_ATTR_SSID] ||
-	    !info->attrs[NL80211_ATTR_WIPHY_FREQ])
+	    !info->attrs[NL80211_ATTR_WIPHY_FREQ]) // JHNOTE: should maybe add the OCB here...as we would directly return...
 		return -EINVAL;
 
 	if (!rdev->ops->assoc)

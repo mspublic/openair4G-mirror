@@ -164,7 +164,16 @@ struct ieee80211_channel {
  * @IEEE80211_RATE_MANDATORY_G: This bitrate is a mandatory rate
  *	when used with 802.11g (on the 2.4 GHz band); filled by the
  *	core code when registering the wiphy.
+ * @IEEE80211_RATE_MANDATORY_P: This bitrate is a mandatory rate
+ *	when used with 802.11p (on the 5.9 GHz and 800MHz bands); filled by the
+ *	core code when registering the wiphy.
  * @IEEE80211_RATE_ERP_G: This is an ERP rate in 802.11g mode.
+ * @IEEE80211_RATE_MANDATORY_P: This bitrate is a mandatory rate
+ *	when used with 802.11p (on the 5.9 GHz and 800MHz bands); filled by the
+ *	core code when registering the wiphy.
+ */
+/*
+ * [PLATA] added a new mandatory rate for 802.11p mode
  */
 enum ieee80211_rate_flags {
 	IEEE80211_RATE_SHORT_PREAMBLE	= 1<<0,
@@ -172,6 +181,7 @@ enum ieee80211_rate_flags {
 	IEEE80211_RATE_MANDATORY_B	= 1<<2,
 	IEEE80211_RATE_MANDATORY_G	= 1<<3,
 	IEEE80211_RATE_ERP_G		= 1<<4,
+	IEEE80211_RATE_MANDATORY_P	= 1<<5,
 };
 
 /**
