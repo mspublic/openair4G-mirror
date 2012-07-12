@@ -1203,7 +1203,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 #ifdef HW_PREFIX_REMOVAL 
 			  (last_slot>>1)*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size,
 #else
-			  (last_slot>>1)*frame_parms->samples_per_tti,
+			  (last_slot>>1)*frame_parms->samples_per_tti+phy_vars_ue->rx_offset,
 #endif
 			  (last_slot == 2) ? 1 : 0,
 			  0);
@@ -1217,11 +1217,11 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     }
 
 #ifdef DEBUG_PHY_PROC    
-    if (last_slot == 0) {
+    if ((last_slot == 2) && (phy_vars_ue->frame%100==0)) {
 	
-      LOG_D(PHY,"[UE  %d] frame %d, slot %d, freq_offset_filt = %d \n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
+      LOG_I(PHY,"[UE  %d] frame %d, slot %d, freq_offset_filt = %d \n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
 	
-      LOG_D(PHY,"[UE  %d] frame %d, slot %d, RX RSSI (%d,%d,%d) dBm, digital (%d, %d)(%d,%d)(%d,%d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
+      LOG_I(PHY,"[UE  %d] frame %d, slot %d, RX RSSI (%d,%d,%d) dBm, digital (%d, %d)(%d,%d)(%d,%d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,
 		phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
 		phy_vars_ue->PHY_measurements.rx_rssi_dBm[1] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
@@ -1238,7 +1238,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 		phy_vars_ue->PHY_measurements.rx_power_avg[0],
 		phy_vars_ue->rx_total_gain_dB);
       
-      LOG_D(PHY,"[UE  %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
+      LOG_I(PHY,"[UE  %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,
 		phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		phy_vars_ue->PHY_measurements.n0_power_dB[0],
@@ -1981,7 +1981,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
        else {
 	n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
 	}
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   // RX processing of symbols in last_slot
   for (l=0;l<n_symb;l++) {
@@ -2002,8 +2002,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	       );
     }
   
-    if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_DL)
-      lte_ue_measurement_procedures(last_slot,l,phy_vars_ue,eNB_id,abstraction_flag,mode);
+    //if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_DL)
+    lte_ue_measurement_procedures(last_slot,l,phy_vars_ue,eNB_id,abstraction_flag,mode);
 
 
     if ((last_slot==1) && (l==4-phy_vars_ue->lte_frame_parms.Ncp)) {
@@ -2041,10 +2041,16 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     if (((last_slot%2)==0) && (l==0)) {
       // Regular PDSCH
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
+
+	harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
+
 	if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	  dual_stream_UE = 1;
 	  eNB_id_i = phy_vars_ue->n_connected_eNB;
-	  i_mod = 2;
+	  i_mod = get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+	  if (phy_vars_ue->frame%100==0) {
+	    LOG_I(PHY,"using IA receiver\n");
+	  }
 	}
 	else {
 	  dual_stream_UE = 0;
@@ -2069,7 +2075,6 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	}
 	
 	phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
-	harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
 	
 #ifdef DEBUG_PHY_PROC
 	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d Scheduling DLSCH decoding\n",
