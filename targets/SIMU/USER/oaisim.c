@@ -95,10 +95,18 @@ int n_K=15,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_
 double PeNb_factor[2][600];
 int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
 short dl_ch_estimates[2][2400]; 
+short drs_ch_estimates[2][2400];
+short drs_ch_est_ZFB[2*300*14];
 int doquantUE=0;
 int calibration_flag=0;
 short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
-  
+int prec_length = 2*14*512;
+short prec[2][2*14*512];
+double Norm[2*14*512];
+short denom[14*512];
+short x_temp, quant=8;
+SCM_t channel_model=SCM_C;
+int CROWN_SYSTEM=2;
 
 //OAI_Emulation * emulation_scen;
 mapping small_scale_names[] =
@@ -984,29 +992,12 @@ for(i=0;i<2;i++) {
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t)); 
     init_enb(enb_data[eNB_id],oai_emulation.environment_system_config.antenna.eNB_antenna);
-
-// Calibration
-	/*if ((oai_emulation.info.transmission_mode==1) && calibration_flag==1 ){
-	  //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_tx = 1;
-	  //PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_rx = 1;
-	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx = 1;
-	  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx = 1;
-	}*/
   }
   
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     ue_data[UE_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
     init_ue(ue_data[UE_id],oai_emulation.environment_system_config.antenna.UE_antenna);
-
-	/*if ((oai_emulation.info.transmission_mode==1) && calibration_flag==1 ){
-	  //PHY_vars_UE[0]->lte_frame_parms.nb_antennas_tx = 1;
-	  //PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx = 1;
-	  //PHY_vars_UE[1]->lte_frame_parms.nb_antennas_tx = 1;
-	  //PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx = 1; 
-	}*/
   }
-
-
   
 
   // init SF map here!!!
@@ -1424,13 +1415,13 @@ for(i=0;i<2;i++) {
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       do_forms2(form_dl[UE_id],
-		frame_parms,  
+		&PHY_vars_UE_g[UE_id]->lte_frame_parms,  
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
 		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[1]->rxdataF_comp[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->llr[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
@@ -1440,7 +1431,7 @@ for(i=0;i<2;i++) {
 
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
       do_forms2(form_ul[eNB_id],
-		frame_parms,  
+		&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,  
 		NULL,
 		NULL,
 		PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],

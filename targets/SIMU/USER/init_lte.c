@@ -195,11 +195,17 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     if (calibration_flag==1) {
       if (eNB_id==0) {
 	PHY_vars_eNB_g[eNB_id]->is_secondary_eNB=1;
+	PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx=2;
+	PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx=2;
       }
       else {
-	PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx=1;
+	PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx=1;
 	PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx=1;
       }
+    }
+    else {
+      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx=(transmission_mode == 1) ? 1 : 2;
+      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx=1;
     }
     //b***********************
 
@@ -263,8 +269,16 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     if (NB_eNB_INST>0) {
       PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.Nid_cell;
       PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.nushift;
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx = 1;
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx = 1;
+      //b***********************For CROWN DEMO
+      if (calibration_flag==1) {
+	PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx = 1;
+	PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx = 2; //FIXME: there is confusion here with the number of tx at the eNB
+      }
+      else {
+	PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx = 1;
+	PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx = 2; //FIXME: there is confusion here with the number of tx at the eNB
+      }	
+      //b***********************
     }
 
     phy_init_lte_ue(PHY_vars_UE_g[UE_id],abstraction_flag);
