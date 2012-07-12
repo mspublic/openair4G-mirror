@@ -810,7 +810,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned ch
 	Mod_id, frame, 0xffff, bcch_sdu_length);
 #endif
 
-    LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->BCH for SI %d bytes (mcs %d, TBS %d)\n",
+    LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->BCH for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
 	frame,
 	bcch_sdu_length,
 	BCCH_alloc_pdu.mcs,

@@ -674,7 +674,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//	debug_LOG_D(PHY,"[UE  %d] Frame %d, Subframe %d ulsch harq_pid %d : O %d, O_ACK %d, O_RI %d, TBS %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,harq_pid,phy_vars_ue->ulsch_ue[eNB_id]->O,phy_vars_ue->ulsch_ue[eNB_id]->O_ACK,phy_vars_ue->ulsch_ue[eNB_id]->O_RI,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS);
 	//#endif
 	if (Msg3_flag == 1) {
-	  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d next slot %d Generating Msg3 (nb_rb %d, first_rb %d, Ndi %d, rvidx %d) : %x.%x.%x.%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1, next_slot, 
+	  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d next slot %d Generating Msg3 (nb_rb %d, first_rb %d, Ndi %d, rvidx %d) Msg3: %x.%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1, next_slot, 
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi,
@@ -685,14 +685,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      phy_vars_ue->prach_resources[eNB_id]->Msg3[3],
 	      phy_vars_ue->prach_resources[eNB_id]->Msg3[4],
 	      phy_vars_ue->prach_resources[eNB_id]->Msg3[5],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[6],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[7],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[8]);
-	  msg("Msg3:");
-	  for (i=0;i<8;i++) {
-	    msg("%x.",phy_vars_ue->prach_resources[eNB_id]->Msg3[i]);
+	      phy_vars_ue->prach_resources[eNB_id]->Msg3[6]);
+	  /* msg("Msg3:");
+	  for (i=0;i<7;i++) {
+	  msg("%x.",phy_vars_ue->prach_resources[eNB_id]->Msg3[i]);
 	  }
-	  msg("\n");
+	  msg("\n"); */
 	  if (abstraction_flag==0) {
 	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
@@ -1010,7 +1008,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  
 	  phy_vars_ue->generate_prach=1;
 	  phy_vars_ue->prach_cnt=0;
-	  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 0;
+	  // phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 0;
 	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
 	  
 	  if (abstraction_flag == 0) {

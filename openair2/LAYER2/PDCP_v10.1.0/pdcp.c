@@ -123,7 +123,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
       pdcp_control_plane_data_pdu_header pdu_header;
       pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
       current_sn = pdu_header.sn;
-      pdu_header.mac_i = 0x00;
+      memset(&pdu_header.mac_i[0],0,PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE);
       if (pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
 	LOG_E(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
 	return FALSE;
@@ -156,7 +156,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     //For control plane data that are not integrity protected, 
     // the MAC-I field is still present and should be padded with padding bits set to 0.
     for (i=0;i<pdcp_tailer_len;i++)
-      pdcp_pdu->data[pdcp_header_len + sdu_buffer_size + i] = 0x00; // pdu_header.mac_i
+      pdcp_pdu->data[pdcp_header_len + sdu_buffer_size + i] = 0x00;// pdu_header.mac_i[i];
 
     /* Print octets of outgoing data in hexadecimal form */
     LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n", 
@@ -273,10 +273,10 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
    * if incoming SN is in line with RX window
    */ 
   
-  if (pdcp_header_len == PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) {
+  if (pdcp_header_len == PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) { // DRB
     sequence_number =     pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer->data);
     u8 dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer->data);
-  } else {
+  } else { //SRB1/2
     sequence_number =   pdcp_get_sequence_number_of_pdu_with_SRB_sn((unsigned char*)sdu_buffer->data);
   }
   if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp) == TRUE) {
@@ -299,9 +299,9 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
 #endif
   }
-   // control-plane data  
+   // SRB1/2: control-plane data  
   if ( (rab_id % MAX_NUM_RB) <  DTCH ){ 
-    new_sdu = get_free_mem_block(sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
+    /*new_sdu = get_free_mem_block(sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
     if (new_sdu) {
       memcpy(new_sdu->data, 
 	     &sdu_buffer->data[pdcp_header_len], 
@@ -312,9 +312,15 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 			rab_id, 
 			sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
 			new_sdu->data);
-    }
+			}*/
+    rrc_lite_data_ind(module_id, 
+			frame, 
+			eNB_flag, 
+			rab_id, 
+			sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
+			&sdu_buffer->data[pdcp_header_len]);
     free_mem_block(sdu_buffer);
-    free_mem_block(new_sdu);
+    // free_mem_block(new_sdu);
     return TRUE;
   }
 #if defined(USER_MODE) && defined(OAI_EMU)

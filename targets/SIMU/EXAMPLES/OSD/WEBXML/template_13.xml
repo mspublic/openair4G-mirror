@@ -69,7 +69,7 @@
     <PERFORMANCE_METRICS>
       	<THROUGHPUT>disable</THROUGHPUT>
       	<LATENCY>disable</LATENCY>
-      	<OWD_RADIO_ACESS>disable</OWD_RADIO_ACESS>  <!-- option: 0, 1. If 1 owd curve shows the one way radio access delay,else shows end to end owd -->
+      	<OWD_RADIO_ACESS>enable</OWD_RADIO_ACESS>  <!-- option: 0, 1. If 1 owd curve shows the one way radio access delay,else shows end to end owd -->
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
       <LEVEL>info</LEVEL>
