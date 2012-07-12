@@ -293,8 +293,9 @@ static int ieee80211_do_open(struct net_device *dev, bool coming_up)
 		changed |= ieee80211_reset_erp_info(sdata);
 		ieee80211_bss_info_change_notify(sdata, changed);
 
-		if (sdata->vif.type == NL80211_IFTYPE_STATION ||
-		    (sdata->vif.type == NL80211_IFTYPE_ADHOC) && ((local->hw->wiphy.dot11OCBActivated == 0) || (local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)))
+		//if (sdata->vif.type == NL80211_IFTYPE_STATION ||
+		//    (sdata->vif.type == NL80211_IFTYPE_ADHOC) && ((local->hw->wiphy.dot11OCBActivated == 0) || (local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)))
+		if ((sdata->vif.type == NL80211_IFTYPE_STATION)||((sdata->vif.type == NL80211_IFTYPE_ADHOC)&&(local->hw.wiphy->dot11OCBActivated==0)))
 			netif_carrier_off(dev);
 		else
 			netif_carrier_on(dev);
