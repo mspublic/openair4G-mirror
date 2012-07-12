@@ -40,10 +40,13 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
+#include "PHY/impl_defs_top.h" //for NUMBER_OF_UE_MAX and NUMBER_OF_eNB_MAX
+
 #define Maxneighbor 64
+/*
 #define NUMBER_OF_UE_MAX 200
 #define NUMBER_OF_eNB_MAX 3 
-
+*/
 
 typedef struct Geo {
   int x, y,z;
