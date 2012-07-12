@@ -384,6 +384,8 @@ typedef struct
   unsigned char           selected_rx_antennas[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS];         
   /// Wideband Rank indication
   unsigned char  rank[NUMBER_OF_CONNECTED_eNB_MAX];                                             
+  /// Number of RX Antennas                                            
+  unsigned char  nb_antennas_rx; 
   /// DLSCH error counter
   // short          dlsch_errors;
   unsigned int   n_adj_cells;    //b

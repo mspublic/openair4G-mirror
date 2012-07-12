@@ -196,6 +196,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
     unsigned int subframe_offset2 = subframe_offset + phy_vars_ue->rx_offset;
 
+    phy_vars_ue->PHY_measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
+
     if (subframe_offset2 >= FRAME_LENGTH_SAMPLES)
       subframe_offset2 -= FRAME_LENGTH_SAMPLES;
 

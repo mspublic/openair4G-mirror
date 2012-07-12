@@ -487,7 +487,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
     */
     break;
   case 7:
-    if (transmission_mode==1) {
+    if (transmission_mode<3) {
       DCI_pdu->Num_ue_spec_dci = 1;
       DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_5MHz_TDD_t; 
       DCI_pdu->dci_alloc[0].L          = 2;
@@ -569,7 +569,8 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
     */
     break;
 
-  case 8:
+  case 0:
+    /*
       DCI_pdu->Num_ue_spec_dci++;
 
       //user 1
@@ -614,6 +615,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
 	UL_alloc_pdu.cqi_req = 1;
 	memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
       }
+    */
     break;
 
   default:
@@ -1800,7 +1802,8 @@ void ulsch_decoding_procedures(unsigned char last_slot, unsigned int i, PHY_VARS
   u32 ret,j;
   u32 harq_pid, round;
   //Calibration parameters
-  int dec_f=1, aa, k, n_K=15, pilot1=3, UE_id=0; //To def as argument.
+  int dec_f=1, aa, k, pilot1=3, UE_id=0; //To def as argument.
+  //int n_K=15;
   short nsymb, quant_v;    
 
   quant_v = (2<<(quant-1))/2; //b quantization bit  
