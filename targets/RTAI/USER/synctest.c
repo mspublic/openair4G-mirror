@@ -815,6 +815,7 @@ static void *UE_thread(void *arg)
   RTIME time_in;
   int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
+  static int first_run=1;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -850,6 +851,7 @@ static void *UE_thread(void *arg)
 #else
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15; //the slot the hw is about to store
       
+      if (is_synchronized) {
       //this is the mbox counter that indicates the start of the frame
       rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (10*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti); 
       //this is the mbox counter where we should be 
@@ -896,11 +898,11 @@ static void *UE_thread(void *arg)
 	  else
 	    diff2 = mbox_target - mbox_current;
         }
-      
+
       timing_info[slot].time1 = rt_get_time_ns();
       timing_info[slot].mbox1 = ((unsigned int *)DAQ_MBOX)[0];
       timing_info[slot].mbox_target = mbox_target;
-
+      }
 #endif
       last_slot = (slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
@@ -1050,7 +1052,7 @@ int main(int argc, char **argv) {
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
 #ifdef EXMIMO
-  u32 rxgain[4]={50,50,50,50};
+  u32 rxgain[4]={30,30,30,30};
 #endif
 
   u8  eNB_id=0,UE_id=0;
@@ -1069,7 +1071,7 @@ int main(int argc, char **argv) {
   char rflo_fname[100];
   FILE *rxg_fd=NULL;
   FILE *rflo_fd=NULL;
-  unsigned int rxg_max[4],rxg_med[4],rxg_byp[4];
+  unsigned int rxg_max[4]={133,133,133,133}, rxg_med[4]={127,127,127,127}, rxg_byp[4]={120,120,120,120};
 
   const struct option long_options[] = {
     {"calib-ue-rx", required_argument, NULL, 256},
@@ -1231,6 +1233,29 @@ int main(int argc, char **argv) {
     
     openair_daq_vars.manual_timing_advance = 0;
     openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+    openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
+
+    for (i=0;i<4;i++) {
+      PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
+      PHY_vars_UE_g[0]->rx_gain_med[i] = rxg_med[i];
+      PHY_vars_UE_g[0]->rx_gain_byp[i] = rxg_byp[i];
+    }
+  
+    if ((mode == normal_txrx) || (mode == rx_calib_ue) || (mode == no_L2_connect) || (mode == debug_prach)) {
+      for (i=0; i<4; i++) 
+	PHY_vars_UE_g[0]->rx_gain_mode[i]  = max;
+      PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_max[0];
+      }
+    else if ((mode == rx_calib_ue_med)) {
+      for (i=0; i<4; i++) 
+	PHY_vars_UE_g[0]->rx_gain_mode[i] = med;
+      PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_med[0];
+    }
+    else if ((mode == rx_calib_ue_byp)) {
+      for (i=0; i<4; i++) 
+	PHY_vars_UE_g[0]->rx_gain_mode[i] = byp;
+      PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0];
+    }
   }
   else {
     g_log->log_component[PHY].level = LOG_INFO;
@@ -1252,8 +1277,8 @@ int main(int argc, char **argv) {
     NB_INST=1;
     if (calibration_flag == 1)
       PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
-    openair_daq_vars.ue_ul_nb_rb=25;
-    openair_daq_vars.target_ue_dl_mcs=5;
+    openair_daq_vars.ue_dl_rb_alloc=0x1fff;
+    openair_daq_vars.target_ue_dl_mcs=9;
     openair_daq_vars.ue_ul_nb_rb=12;
     openair_daq_vars.target_ue_ul_mcs=10;
   }
@@ -1265,33 +1290,16 @@ int main(int argc, char **argv) {
     frame_parms->rxgain[i]       = rxgain[i];
     if ((mode == normal_txrx) || (mode == rx_calib_ue) || (mode == no_L2_connect) || (mode == debug_prach)) {
       frame_parms->rfmode[i]       = rf_mode_max[i];
-      PHY_vars_UE_g[0]->rx_gain_mode[i]  = max;
-      if (i==0)
-	PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_max[0];
     }
     else if ((mode == rx_calib_ue_med)) {
       frame_parms->rfmode[i]       = rf_mode_med[i];
-      PHY_vars_UE_g[0]->rx_gain_mode[i] = med;
-      if (i==0)
-	PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_med[0];
     }
     else if ((mode == rx_calib_ue_byp)) {
       frame_parms->rfmode[i]       = rf_mode_byp[i];
-      PHY_vars_UE_g[0]->rx_gain_mode[i] = byp;
-      if (i==0)
-	PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0];
     }
     frame_parms->rflocal[i]      = rf_local[i];
     frame_parms->rfvcolocal[i]   = rf_vcocal[i];
     frame_parms->rxdc[i]         = rf_rxdc[i];
-  }
-  
-  if (rxg_fd!= NULL) {
-    for (i=0;i<4;i++) {
-      PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
-      PHY_vars_UE_g[0]->rx_gain_med[i] = rxg_med[i];
-      PHY_vars_UE_g[0]->rx_gain_byp[i] = rxg_byp[i];
-    }
   }
   
   mac_xface = malloc(sizeof(MAC_xface));
