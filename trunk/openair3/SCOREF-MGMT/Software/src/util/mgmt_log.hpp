@@ -102,6 +102,12 @@ class Logger {
 		 * @param level Log level
 		 */
 		void log(const string& message, Logger::LOG_LEVEL level);
+		/**
+		 * Updates configured log level with incoming information
+		 *
+		 * @param logLevel New log level of type Logger::LOG_LEVEL
+		 */
+		void setLogLevel(Logger::LOG_LEVEL logLevel);
 
 	private:
 		/**

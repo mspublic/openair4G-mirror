@@ -46,7 +46,7 @@
 using namespace std;
 
 GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version, u_int8_t priority,
-    u_int16_t eventType) {
+    u_int16_t eventType, Logger& logger) : logger(logger) {
 	Util::resetBuffer(&header, sizeof(MessageHeader));
 
 	if (extendedMessage)
@@ -61,9 +61,10 @@ GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version
 	this->header.eventSubtype = (eventType & 0x0f);
 }
 
-GeonetPacket::GeonetPacket(const vector<unsigned char>& packetBuffer) {
+GeonetPacket::GeonetPacket(const vector<unsigned char>& packetBuffer, Logger& logger)
+	: logger(logger) {
 	parseHeaderBuffer(packetBuffer, &this->header);
-	cout << toString() << endl;
+	logger.info(toString());
 }
 
 GeonetPacket::~GeonetPacket() {
@@ -82,7 +83,7 @@ bool GeonetPacket::parseHeaderBuffer(const vector<unsigned char>& headerBuffer, 
 }
 
 bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
-	cout << "Serializing header..." << endl;
+	logger.debug("Serializing header...");
 
 	buffer[0] = header.version;
 	buffer[0] |= 0x40; // encode Validity flag as 1

@@ -40,17 +40,23 @@
 */
 
 #include "mgmt_gn_packet_wireless_state_request.hpp"
+#include <iostream>
 #include <sstream>
 
-GeonetWirelessStateRequestEventPacket::GeonetWirelessStateRequestEventPacket()
-	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST) {
+GeonetWirelessStateRequestEventPacket::GeonetWirelessStateRequestEventPacket(Logger& logger)
+	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST, logger) {
 }
 
 GeonetWirelessStateRequestEventPacket::~GeonetWirelessStateRequestEventPacket() {}
 
 bool GeonetWirelessStateRequestEventPacket::serialize(vector<unsigned char>& buffer) const {
 	/* This packet is an only-header packet */
-	return GeonetPacket::serialize(buffer);
+	if (!GeonetPacket::serialize(buffer)) {
+		cerr << "Cannot serialise packet header!" << endl;
+	}
+
+	buffer.resize(sizeof(MessageHeader));
+	return true;
 }
 
 string GeonetWirelessStateRequestEventPacket::toString() const {

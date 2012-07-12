@@ -45,8 +45,8 @@
 #include <sstream>
 using namespace std;
 
-GeonetLocationTableRequestEventPacket::GeonetLocationTableRequestEventPacket(GnAddress address)
-	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_LOCATION_TABLE_REQUEST) {
+GeonetLocationTableRequestEventPacket::GeonetLocationTableRequestEventPacket(GnAddress address, Logger& logger)
+	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_LOCATION_TABLE_REQUEST, logger) {
 	this->gnAddress = address;
 }
 

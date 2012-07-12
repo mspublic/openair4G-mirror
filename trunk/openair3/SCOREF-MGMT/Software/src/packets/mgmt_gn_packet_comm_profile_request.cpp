@@ -44,8 +44,8 @@
 
 #include <sstream>
 
-GeonetCommunicationProfileRequestPacket::GeonetCommunicationProfileRequestPacket(const vector<unsigned char>& packetBuffer)
-	: GeonetPacket(packetBuffer) {
+GeonetCommunicationProfileRequestPacket::GeonetCommunicationProfileRequestPacket(const vector<unsigned char>& packetBuffer, Logger& logger)
+	: GeonetPacket(packetBuffer, logger) {
 	parse(packetBuffer);
 }
 

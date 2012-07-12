@@ -44,8 +44,8 @@
 #include <sstream>
 using namespace std;
 
-GeonetConfigurationAvailableEventPacket::GeonetConfigurationAvailableEventPacket(ManagementInformationBase& mib)
-	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_CONF_UPDATE_AVAILABLE), mib(mib) {
+GeonetConfigurationAvailableEventPacket::GeonetConfigurationAvailableEventPacket(ManagementInformationBase& mib, Logger& logger)
+	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_CONF_UPDATE_AVAILABLE, logger), mib(mib) {
 }
 
 GeonetConfigurationAvailableEventPacket::~GeonetConfigurationAvailableEventPacket() {

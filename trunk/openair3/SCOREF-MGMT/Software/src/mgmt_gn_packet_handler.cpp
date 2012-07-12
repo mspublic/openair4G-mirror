@@ -41,18 +41,19 @@
 
 #include "mgmt_gn_packet_handler.hpp"
 #include "mgmt_gn_datatypes.hpp"
-#include <iostream>
-#include <exception>
-#include <cstring>
+#include "util/mgmt_util.hpp"
 #include <arpa/inet.h>
+#include <exception>
+#include <iostream>
+#include <cstring>
 using namespace std;
 
-GeonetMessageHandler::GeonetMessageHandler(ManagementInformationBase& mib) :
-	mib(mib) {
+GeonetMessageHandler::GeonetMessageHandler(ManagementInformationBase& mib, Logger& logger) :
+	mib(mib), logger(logger) {
 	try {
-		this->packetFactory = new GeonetPacketFactory(mib);
+		this->packetFactory = new GeonetPacketFactory(mib, logger);
 	} catch (std::exception& e) {
-		cerr << e.what() << endl;
+		logger.error(e.what());
 	}
 }
 
@@ -61,10 +62,12 @@ GeonetMessageHandler::~GeonetMessageHandler() {
 }
 
 GeonetPacket* GeonetMessageHandler::handleGeonetMessage(const vector<unsigned char>& packetBuffer, const udp::endpoint& client) {
-	if (packetBuffer.size() < sizeof(MessageHeader))
-		return NULL; // todo throw an exception here
+	if (packetBuffer.size() < sizeof(MessageHeader)) {
+		logger.error("Buffer size is not enough to carry a Geonet message!");
+		return NULL;
+	}
 
-	cout << "Incoming message size is " << packetBuffer.size() << " byte(s)" << endl;
+	logger.info("Incoming packet size in bytes is " + packetBuffer.size());
 
 	MessageHeader* header = (MessageHeader*) packetBuffer.data();
 
@@ -72,25 +75,25 @@ GeonetPacket* GeonetMessageHandler::handleGeonetMessage(const vector<unsigned ch
 	eventType <<= 8;
 	eventType |= header->eventSubtype;
 
-	cout << "Event field has the value " << eventType << endl;
+	logger.info("Event field has the value " + eventType);
 
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
 			clientState[ManagementClient(client)] = ManagementClient::CONNECTED;
-			return handleGetConfigurationEvent(new GeonetGetConfigurationEventPacket(packetBuffer));
+			return handleGetConfigurationEvent(new GeonetGetConfigurationEventPacket(packetBuffer, logger));
 
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
 			clientState[ManagementClient(client)] = ManagementClient::ONLINE;
-			if (handleWirelessStateResponseEvent(new GeonetWirelessStateResponseEventPacket(mib, packetBuffer))) {
-				cout << "Wireless state event message processed" << endl;
+			if (handleWirelessStateResponseEvent(new GeonetWirelessStateResponseEventPacket(mib, packetBuffer, logger))) {
+				logger.info("Wireless state event message processed");
 				return NULL;
 			}
 			break;
 
 		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
-			if (handleNetworkStateEvent(new GeonetNetworkStateEventPacket(mib, packetBuffer))) {
-				cout << "Network state event message processed" << endl;
-				/*
+			if (handleNetworkStateEvent(new GeonetNetworkStateEventPacket(mib, packetBuffer, logger))) {
+				logger.info("Network state event message processed");
+				/**
 				 * If the first message we have received from the client is a
 				 * periodic network state then there was a configuration request
 				 * that has been lost (cause the client was started before the
@@ -108,11 +111,11 @@ GeonetPacket* GeonetMessageHandler::handleGeonetMessage(const vector<unsigned ch
 
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
 			clientState[ManagementClient(client)] = ManagementClient::ONLINE;
-			return handleCommunicationProfileRequestEvent(new GeonetCommunicationProfileRequestPacket(packetBuffer));
+			return handleCommunicationProfileRequestEvent(new GeonetCommunicationProfileRequestPacket(packetBuffer, logger));
 
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
-			if (handleLocationTableResponse(new GeonetLocationTableResponseEventPacket(mib, packetBuffer))) {
-				cout << "Location table response packet processed" << endl;
+			if (handleLocationTableResponse(new GeonetLocationTableResponseEventPacket(mib, packetBuffer, logger))) {
+				logger.info("Location table response packet processed");
 			}
 			clientState[ManagementClient(client)] = ManagementClient::ONLINE;
 			break;
@@ -126,13 +129,13 @@ GeonetPacket* GeonetMessageHandler::handleGeonetMessage(const vector<unsigned ch
 		case MGMT_GN_EVENT_CONF_BULK_RESPONSE:
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE:
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST:
-			cerr << "Unexpected packet (event: " << eventType << ") received, connected client is buggy" << endl;
-			cerr << "Ignoring..." << endl;
+			// todo logger.error("Unexpected packet (event: " + eventType + ") received, connected client is buggy");
+			logger.error("Ignoring...");
 			break;
 
 		case MGMT_GN_EVENT_ANY:
 		default:
-			cerr << "Unknown message received, ignoring..." << endl;
+			logger.error("Unknown message received, ignoring...");
 			break;
 	}
 

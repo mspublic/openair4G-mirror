@@ -42,10 +42,11 @@
 #ifndef MGMT_UTIL_HPP_
 #define MGMT_UTIL_HPP_
 
+#include "mgmt_log.hpp"
 #include <sys/types.h>
+#include <iostream>
 #include <cstring>
 #include <iomanip>
-#include <iostream>
 #include <vector>
 using namespace std;
 
@@ -77,17 +78,27 @@ class Util {
 		 *
 		 * @param buffer Buffer that will be printed out
 		 * @param bufferSize Size of the buffer
+		 * @param logger Logger object reference
 		 * @return true on success, false otherwise
 		 */
-		static bool printHexRepresentation(unsigned char* buffer, unsigned long bufferSize);
+		static bool printHexRepresentation(unsigned char* buffer, unsigned long bufferSize, Logger& logger);
 		/**
 		 * Prints binary representation of given octet
 		 *
 		 * @param message Text message that'll be written before writing octet's content
 		 * @param octet Octet to be printed out
+		 * @param logger Logger object reference
 		 * @return none
 		 */
-		static void printBinaryRepresentation(unsigned char* message, u_int8_t octet);
+		static void printBinaryRepresentation(unsigned char* message, u_int8_t octet, Logger& logger);
+		/**
+		 * Returns string representation of given numeric value
+		 *
+		 * @param numeric Numerical value to be 'stringified'
+		 * @return std:string representation of given numerical value
+		 */
+		template <class T>
+		static string stringify(T numerical);
 		/**
 		 * Sets Nth bit of given octet
 		 *

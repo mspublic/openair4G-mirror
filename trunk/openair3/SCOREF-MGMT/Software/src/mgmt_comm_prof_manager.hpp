@@ -42,11 +42,11 @@
 #ifndef MGMT_COMM_PROF_MANAGER_HPP_
 #define MGMT_COMM_PROF_MANAGER_HPP_
 
-#include <map>
-#include <string>
-using namespace std;
-
 #include "mgmt_gn_datatypes.hpp"
+#include "util/mgmt_log.hpp"
+#include <string>
+#include <map>
+using namespace std;
 
 /**
  * Communication Profile Item
@@ -67,8 +67,10 @@ class CommunicationProfileManager {
 	public:
 		/**
 		 * Constructor for CommunicationProfileManager class
+		 *
+		 * @param logger Logger object reference
 		 */
-		CommunicationProfileManager();
+		CommunicationProfileManager(Logger& logger);
 		/**
 		 * Destructor for CommunicationProfileManager class
 		 */
@@ -143,6 +145,11 @@ class CommunicationProfileManager {
 		 * Communication profile string and bitmap index map
 		 */
 		map<string, u_int8_t> communicationProfileStringMap;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
+
 };
 
 #endif /* MGMT_COMM_PROF_MANAGER_HPP_ */

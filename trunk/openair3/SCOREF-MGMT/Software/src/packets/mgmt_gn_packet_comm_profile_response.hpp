@@ -65,8 +65,9 @@ class GeonetCommunicationProfileResponsePacket : public GeonetPacket {
 		 *
 		 * @param mib Management Information Base reference
 		 * @param communicationProfileRequest Communication Profile Request
+		 * @param logger Logger object reference
 		 */
-		GeonetCommunicationProfileResponsePacket(ManagementInformationBase& mib, u_int32_t communicationProfileRequest);
+		GeonetCommunicationProfileResponsePacket(ManagementInformationBase& mib, u_int32_t communicationProfileRequest, Logger& logger);
 		/**
 		 * Destructor for GeonetCommunicationProfileResponsePacket class
 		 */

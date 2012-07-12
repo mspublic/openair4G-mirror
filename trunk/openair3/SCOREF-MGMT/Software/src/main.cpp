@@ -39,12 +39,13 @@
  * \warning none
 */
 
-#include <ctime>
 #include <iostream>
-#include <string>
 #include <vector>
+#include <string>
+#include <ctime>
 using namespace std;
 
+#include <boost/program_options.hpp>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
@@ -55,12 +56,45 @@ using boost::asio::ip::udp;
 #include "mgmt_inquiry_thread.hpp"
 #include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
+#include "util/mgmt_log.hpp"
 
 void printHelp(string binaryName) {
 	cerr << binaryName << " <configurationFile>" << endl;
+	// todo explain other commandline options here
 }
 
+const string CONF_HELP_PARAMETER_STRING = "help";
+const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
+
 int main(int argc, char** argv) {
+	Logger logger(Logger::DEBUG);
+
+#ifdef BOOST_VERSION_1_50
+	/**
+	 * Define and parse command-line parameters
+	 */
+	po::options_description commandLineOptions("Command-line options");
+	desc.add_options()
+			(CONF_HELP_PARAMETER_STRING, "Print help message")
+			(CONF_LOG_LEVEL_PARAMETER_STRING, po::value<int>(), "Set log level (DEBUG=0, INFO=1, WARNING=2, ERROR=3)");
+
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, commandLineOptions), vm);
+	po::notify(vm);
+
+	if (vm.count(CONF_HELP_PARAMETER_STRING)) {
+		printHelp(argv[0]);
+		return 1;
+	}
+
+	if (vm.count(CONF_LOG_LEVEL_PARAMETER_STRING)) {
+		logger.info("Log level was set to " + vm[CONF_LOG_LEVEL_PARAMETER_STRING].as<int>());
+		logger.setLogLevel(vm[CONF_LOG_LEVEL_PARAMETER_STRING.as<int>]);
+	} else {
+		logger.info("Compression level was not set, default is DEBUG");
+	}
+#endif
+
 	// Location table update will be done at the beginning for once
 	// todo this should be managed by ManagementClientState
 	bool locationTableUpdated = false;
@@ -71,21 +105,25 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
-	ManagementInformationBase mib;
-	GeonetMessageHandler packetHandler(mib);
+	ManagementInformationBase mib(logger);
+	GeonetMessageHandler packetHandler(mib, logger);
 
-	cout << "Starting Management & GeoNetworking Interface..." << endl;
-	cout << "Reading configuration file..." << endl;
+	logger.info("Starting Management & GeoNetworking Interface...");
+	logger.info("Reading configuration file...");
 
-	Configuration configuration(argv[1]);
-	if (!configuration.parseConfigurationFile(mib)) {
-		cerr << "Cannot open/parse configuration file, exiting..." << endl;
+	Configuration configuration(argv[1], logger);
+	if (!configuration.pars23 May 2012eConfigurationFile(mib)) {
+		logger.error("Cannot open/parse configuration file, exiting...");
 		return -1;
 	}
 
-	UdpServer server(configuration.getServerPort());
-	boost::thread inquiryThread(InquiryThread);
-	inquiryThread.join();
+	UdpServer server(configuration.getServerPort(), logger);
+
+	/**
+	 * Initialise InquiryThread object for Wireless State updates
+	 */
+	InquiryThread inquiryThreadObject(server, configuration.getWirelessStateUpdateInterval(), logger);
+	boost::thread inquiryThread(inquiryThreadObject);
 
 	vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
 	vector<unsigned char> txBuffer(UdpServer::TX_BUFFER_SIZE);
@@ -107,7 +145,7 @@ int main(int argc, char** argv) {
 
 			if (!locationTableUpdated) {
 				// Initialise location table
-				GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff);
+				GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
 				server.send(locationTableRequest);
 				locationTableUpdated = true;
 			}
@@ -117,8 +155,13 @@ int main(int argc, char** argv) {
 			txBuffer.reserve(UdpServer::TX_BUFFER_SIZE);
 		}
 	} catch (std::exception& e) {
-		cerr << e.what() << std::endl;
+		logger.error(e.what());
 	}
+
+	/**
+	 * Wait for inquiry thread to finish its job
+	 */
+	inquiryThread.join();
 
 	return 0;
 }

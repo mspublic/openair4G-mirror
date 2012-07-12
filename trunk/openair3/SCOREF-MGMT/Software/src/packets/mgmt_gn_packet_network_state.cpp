@@ -43,10 +43,10 @@
 #include "../util/mgmt_util.hpp"
 #include <sstream>
 
-GeonetNetworkStateEventPacket::GeonetNetworkStateEventPacket(ManagementInformationBase& mib, vector<unsigned char> packetBuffer)
-	: GeonetPacket(packetBuffer), mib(mib) {
+GeonetNetworkStateEventPacket::GeonetNetworkStateEventPacket(ManagementInformationBase& mib, vector<unsigned char> packetBuffer, Logger& logger)
+	: GeonetPacket(packetBuffer, logger), mib(mib) {
 	if (parse(packetBuffer)) {
-		cout << "MIB is updated with incoming network state information" << endl;
+		logger.info("MIB is updated with incoming network state information");
 	}
 }
 
@@ -75,4 +75,3 @@ bool GeonetNetworkStateEventPacket::parse(const vector<unsigned char> packetBuff
 
 	return true;
 }
-

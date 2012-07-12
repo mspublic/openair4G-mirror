@@ -44,9 +44,9 @@
 #include <sstream>
 using namespace std;
 
-GeonetSetConfigurationEventPacket::GeonetSetConfigurationEventPacket(ManagementInformationBase& mib, ItsKeyID itsKeyID) :
+GeonetSetConfigurationEventPacket::GeonetSetConfigurationEventPacket(ManagementInformationBase& mib, Logger& logger, ItsKeyID itsKeyID) :
 	GeonetPacket(false, true, 0x00, 0x00,
-	    ((itsKeyID >= MGMT_GN_ITSKEY_SET_NET) ? MGMT_GN_EVENT_CONF_BULK_RESPONSE : MGMT_GN_EVENT_CONF_CONT_RESPONSE)), mib(
+	    ((itsKeyID >= MGMT_GN_ITSKEY_SET_NET) ? MGMT_GN_EVENT_CONF_BULK_RESPONSE : MGMT_GN_EVENT_CONF_CONT_RESPONSE), logger), mib(
 	    mib) {
 	isBulk = (itsKeyID >= MGMT_GN_ITSKEY_SET_NET) ? true : false;
 	requestedItsKey = itsKeyID;

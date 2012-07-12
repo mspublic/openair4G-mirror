@@ -43,8 +43,8 @@
 #include "../util/mgmt_util.hpp"
 
 GeonetCommunicationProfileResponsePacket::GeonetCommunicationProfileResponsePacket(ManagementInformationBase& mib,
-		u_int32_t communicationProfileRequest) :
-	GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE), mib(mib) {
+		u_int32_t communicationProfileRequest, Logger& logger) :
+	GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE, logger), mib(mib) {
 	this->communicationProfileRequest = communicationProfileRequest;
 }
 

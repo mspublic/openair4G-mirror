@@ -65,8 +65,9 @@ class GeonetCommunicationProfileRequestPacket: public GeonetPacket {
 		 * Constructor for GeonetCommunicationProfileRequestPacket class
 		 *
 		 * @param packetBuffer vector containing packet data
+		 * @param logger Logger object reference
 		 */
-		GeonetCommunicationProfileRequestPacket(const vector<unsigned char>& packetBuffer);
+		GeonetCommunicationProfileRequestPacket(const vector<unsigned char>& packetBuffer, Logger& logger);
 		/**
 		 * Destructor for GeonetCommunicationProfileRequestPacket class
 		 */

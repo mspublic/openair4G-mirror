@@ -48,12 +48,15 @@ using namespace std;
 
 // Initialise configuration parameter strings
 const string Configuration::CONF_SERVER_PORT_PARAMETER("CONF_SERVER_PORT");
+const string Configuration::CONF_WIRELESS_STATE_UPDATE_INTERVAL("CONF_WIRELESS_STATE_UPDATE_INTERVAL");
 
-Configuration::Configuration(string configurationFile) {
+Configuration::Configuration(string configurationFile, Logger& logger)
+	: logger(logger) {
 	this->configurationFile = configurationFile;
 
 	// Set default values
 	this->serverPort = 1402;
+	this->wirelessStateUpdateInterval = 10;
 }
 
 Configuration::~Configuration() {
@@ -98,7 +101,7 @@ bool Configuration::parseConfigurationFile(ManagementInformationBase& mib) {
 			}
 		}
 	} else {
-		cerr << "Cannot open configuration file" << endl;
+		logger.error("Cannot open configuration file!");
 		return false;
 	}
 
@@ -124,6 +127,8 @@ bool Configuration::parseLine(const string& line, string& parameter, string& val
 bool Configuration::setValue(const string& parameter, const string& value) {
 	if (!parameter.compare(0, CONF_SERVER_PORT_PARAMETER.length(), CONF_SERVER_PORT_PARAMETER)) {
 		setServerPort(atoi(value.c_str()));
+	} else if (!parameter.compare(0, CONF_WIRELESS_STATE_UPDATE_INTERVAL.length(), CONF_WIRELESS_STATE_UPDATE_INTERVAL)) {
+		setWirelessStateUpdateInterval(atoi(value.c_str()));
 	}
 
 	return true;
@@ -143,4 +148,12 @@ int Configuration::getServerPort() const {
 
 void Configuration::setServerPort(int serverPort) {
 	this->serverPort = serverPort;
+}
+
+u_int8_t Configuration::getWirelessStateUpdateInterval() const {
+	return wirelessStateUpdateInterval;
+}
+
+void Configuration::setWirelessStateUpdateInterval(u_int8_t interval) {
+	wirelessStateUpdateInterval = interval;
 }

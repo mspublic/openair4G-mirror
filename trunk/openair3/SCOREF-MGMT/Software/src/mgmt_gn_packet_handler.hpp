@@ -52,6 +52,7 @@ using namespace boost;
 #include "packets/mgmt_gn_packet_network_state.hpp"
 #include "mgmt_gn_packet_factory.hpp"
 #include "mgmt_information_base.hpp"
+#include "util/mgmt_log.hpp"
 #include "mgmt_client.hpp"
 
 /**
@@ -64,8 +65,9 @@ class GeonetMessageHandler {
 		 * Constructor for GeonetMessageHandler class
 		 *
 		 * @param mib ManagementInformationBase reference
+		 * @param logger Logger object reference
 		 */
-		GeonetMessageHandler(ManagementInformationBase& mib);
+		GeonetMessageHandler(ManagementInformationBase& mib, Logger& logger);
 		/**
 		 * Destructor for GeonetMessageHandler class
 		 */
@@ -134,6 +136,10 @@ class GeonetMessageHandler {
 		 * State map holding clients' states
 		 */
 		map<ManagementClient, ManagementClient::ManagementClientState> clientState;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_GN_PACKET_HANDLER_HPP_ */

@@ -43,8 +43,8 @@
 #include "../util/mgmt_util.hpp"
 #include <sstream>
 
-GeonetLocationTableResponseEventPacket::GeonetLocationTableResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer)
-	: GeonetPacket(packetBuffer), mib(mib) {
+GeonetLocationTableResponseEventPacket::GeonetLocationTableResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer, Logger& logger)
+	: GeonetPacket(packetBuffer, logger), mib(mib) {
 	parse(packetBuffer);
 }
 
@@ -60,9 +60,9 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 
 	// Parse LPV Count...
 	if (Util::parse2byteInteger(packetBuffer.data() + packetBufferIndex, &lpvCount)) {
-		cout << "Location table response has " << lpvCount << " entr{y|ies}" << endl;
+		logger.info("Location table response has following number of entr{y|ies}: " + lpvCount);
 	} else {
-		cerr << "Cannot parse location table entry count" << endl;
+		logger.error("Cannot parse location table entry count");
 		return false;
 	}
 	// ...and Network Flags
@@ -87,8 +87,8 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 		// Update MIB with this record
 		mib.locationTable.insert(mib.locationTable.end(), pair<GnAddress, LocationTableItem>(item.gnAddress, item));
 
-		cout << "Management Information Base has been updated with following location table entry: " << endl;
-		cout << item.toString() << endl;
+		logger.info("Management Information Base has been updated with following location table entry: ");
+		logger.info(item.toString());
 
 		// itemIndex shows the next record now, if there's any
 	}

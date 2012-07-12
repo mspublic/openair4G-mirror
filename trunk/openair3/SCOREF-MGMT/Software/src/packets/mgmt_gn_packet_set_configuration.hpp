@@ -42,6 +42,7 @@
 #ifndef MGMT_GN_PACKET_SET_CONFIGURATION_HPP_
 #define MGMT_GN_PACKET_SET_CONFIGURATION_HPP_
 
+#include "../util/mgmt_log.hpp"
 #include "mgmt_gn_packet.hpp"
 
 /**
@@ -54,9 +55,10 @@ class GeonetSetConfigurationEventPacket: public GeonetPacket {
 		 *
 		 * @param mib Management Information Base reference to fetch necessary
 		 * configuration information
+		 * @param logger Logger object reference
 		 * @param itsKeyId Requested ITS key or key set
 		 */
-		GeonetSetConfigurationEventPacket(ManagementInformationBase& mib, ItsKeyID itsKeyID = MGMT_GN_ITSKEY_ALL);
+		GeonetSetConfigurationEventPacket(ManagementInformationBase& mib, Logger& logger, ItsKeyID itsKeyID = MGMT_GN_ITSKEY_ALL);
 		/**
 		 * Destructor of GeonetSetConfigurationEventPacket class
 		 */

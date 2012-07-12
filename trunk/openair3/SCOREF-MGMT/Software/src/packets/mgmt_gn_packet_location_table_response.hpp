@@ -42,8 +42,9 @@
 #ifndef MGMT_GN_PACKET_LOCATION_TABLE_RESPONSE_HPP_
 #define MGMT_GN_PACKET_LOCATION_TABLE_RESPONSE_HPP_
 
-#include "mgmt_gn_packet.hpp"
 #include "../mgmt_information_base.hpp"
+#include "../util/mgmt_log.hpp"
+#include "mgmt_gn_packet.hpp"
 #include <string>
 using namespace std;
 
@@ -58,9 +59,10 @@ class GeonetLocationTableResponseEventPacket: public GeonetPacket {
 		 * @param mib Management Information Base reference to keep it up-to-date
 		 * with incoming information
 		 * @param packetBuffer std::vector containing packet data
+		 * @param logger Logger object reference
 		 */
 		GeonetLocationTableResponseEventPacket(ManagementInformationBase& mib,
-				const vector<unsigned char>& packetBuffer);
+				const vector<unsigned char>& packetBuffer, Logger& logger);
 
 	public:
 		/**

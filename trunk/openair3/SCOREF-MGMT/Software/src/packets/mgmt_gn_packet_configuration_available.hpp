@@ -42,9 +42,10 @@
 #ifndef MGMT_GN_PACKET_CONFIGURATION_AVAILABLE_HPP_
 #define MGMT_GN_PACKET_CONFIGURATION_AVAILABLE_HPP_
 
-#include <vector>
-#include "mgmt_gn_packet.hpp"
 #include "../mgmt_information_base.hpp"
+#include "../util/mgmt_log.hpp"
+#include "mgmt_gn_packet.hpp"
+#include <vector>
 
 /**
  * A container for Configuration Available Event
@@ -56,8 +57,9 @@ class GeonetConfigurationAvailableEventPacket : public GeonetPacket {
 		 *
 		 * @param mib Management Information Base reference to fetch necessary
 		 * information to build this packet
+		 * @param logger Logger object reference
 		 */
-		GeonetConfigurationAvailableEventPacket(ManagementInformationBase& mib);
+		GeonetConfigurationAvailableEventPacket(ManagementInformationBase& mib, Logger& logger);
 		/**
 		 * Destructor for GeonetConfigurationAvailableEventPacket class
 		 */

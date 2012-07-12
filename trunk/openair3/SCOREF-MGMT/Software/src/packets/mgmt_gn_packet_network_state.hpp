@@ -57,8 +57,9 @@ class GeonetNetworkStateEventPacket: public GeonetPacket {
 		 * with incoming information
 		 * @param packetBuffer Buffer containing Network State Event packet (which
 		 * is going to be parsed using parse())
+		 * @param logger Logger object reference
 		 */
-		GeonetNetworkStateEventPacket(ManagementInformationBase& mib, vector<unsigned char> packetBuffer);
+		GeonetNetworkStateEventPacket(ManagementInformationBase& mib, vector<unsigned char> packetBuffer, Logger& logger);
 		/**
 		 * Destructor of GeonetNetworkStateEventPacket class
 		 */

@@ -44,7 +44,8 @@
 
 #include <cstdlib>
 
-CommunicationProfileManager::CommunicationProfileManager() {
+CommunicationProfileManager::CommunicationProfileManager(Logger& logger)
+	: logger(logger) {
 	initialise();
 }
 
@@ -58,7 +59,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 		return false;
 
 	u_int8_t profileID = atoi(profileIdString.substr(profileIdString.find("CP") + 2, profileIdString.length() - 2).c_str());
-	cout << "Communication Profile ID = " << (int)profileID << endl << endl;
+	logger.info("Communication Profile ID = " + (int)profileID);
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(profileID, parse(profileDefinitionString)));
 
 	return true;
@@ -100,6 +101,7 @@ map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManage
 	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
 
 	while (it != communicationProfileMap.end()) {
+		// todo Intelligent code goes here
 		++it;
 	}
 
@@ -157,32 +159,23 @@ CommunicationProfileItem CommunicationProfileManager::parse(const string& profil
 	 * For access methods `3G' and `Ethernet' this information is not relevant; for `11n'
 	 * the choice is made by the Access Point, here parse accordingly
 	 */
-	cout << "access = '" << access << "'" << endl;
 	if (!access.compare(0, 2, "3G") || !access.compare(0, 8, "Ethernet") || !access.compare(0, 3, "11n")) {
 		channel = "";
 	} else {
 		channel = profileItemVector[3];
 	}
 
-	cout << "There are " << profileItemVector.size() << " item(s)" << endl;
-
 	/*
 	 * Fill transport, network, access, and channel fields respectively
 	 */
 	setFlags(profileItemVector[0], communicationProfileItem.transport);
-	cout << "transport = " << profileItemVector[0] << endl;
 	setFlags(profileItemVector[1], communicationProfileItem.network);
-	cout << "network = " << profileItemVector[1] << endl;
 	setFlags(profileItemVector[2], communicationProfileItem.access);
-	cout << "access = " << profileItemVector[2] << endl;
 
 	if (channel.empty()) {
-		cout << "Access type is either 3G, or Ethernet, or 11n. Skipping channel information" << endl;
+		logger.info("Access type is either 3G, or Ethernet, or 11n. Skipping channel information");
 	} else {
-		cout << "lenght = " << access.length() << endl;
-		cout << "Encoding channel information" << endl;
 		setFlags(profileItemVector[3], communicationProfileItem.channel);
-		cout << "channel = " << profileItemVector[3] << endl;
 	}
 
 	return communicationProfileItem;
@@ -196,7 +189,6 @@ bool CommunicationProfileManager::setFlags(const string& configuration, u_int8_t
 	vector<string>::iterator iterator = profileStrings.begin();
 
 	while (iterator != profileStrings.end()) {
-		cout << "Setting '" << *iterator << "' flag..." << endl;
 		Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator]));
 
 		++iterator;

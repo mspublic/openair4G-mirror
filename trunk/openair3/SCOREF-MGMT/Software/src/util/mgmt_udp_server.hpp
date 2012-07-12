@@ -51,6 +51,7 @@ using namespace std;
 using boost::asio::ip::udp;
 
 #include "../packets/mgmt_gn_packet.hpp"
+#include "../util/mgmt_log.hpp"
 
 /**
  * A wrapper container to maintain UDP socket connection
@@ -71,8 +72,9 @@ class UdpServer {
 		 * Constructor for UdpServer class
 		 *
 		 * @param portNumber UDP port number that will be listened for client connections
+		 * @param logger Logger object reference for logging purposes
 		 */
-		UdpServer(u_int16_t portNumber);
+		UdpServer(u_int16_t portNumber, Logger& logger);
 		/**
 		 * Destructor for UdpServer class
 		 */
@@ -115,9 +117,10 @@ class UdpServer {
 		 */
 		boost::asio::io_service ioService;
 		/**
-		 * Mutex to coordinate accesses to UDP server socket
+		 * Mutexes to coordinate I/O on UDP server socket
 		 */
-		boost::mutex mutex;
+		boost::mutex readMutex;
+		boost::mutex writeMutex;
 		/**
 		 * udp::socket of Boost library
 		 */
@@ -126,6 +129,10 @@ class UdpServer {
 		 * UDP client
 		 */
 		udp::endpoint client;
+		/**
+		 * Logger object reference for logging purposes
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_UDP_SERVER_H_ */

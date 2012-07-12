@@ -25,39 +25,60 @@
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1825568501" name="Assembly" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.565634738" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.4"/>
 									<listOptionValue builtIn="false" value="/usr/include/linux"/>
 									<listOptionValue builtIn="false" value="/usr/lib/gcc/i486-linux-gnu/4.4/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.4/i486-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="/usr/include/boost"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/"/>
+									<listOptionValue builtIn="false" value="/usr/include/x86_64-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/lib/gcc/x86_64-linux-gnu/4.6/include/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/x86_64-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1522413688" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1069615162" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1813440655" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.4"/>
 									<listOptionValue builtIn="false" value="/usr/include/linux"/>
 									<listOptionValue builtIn="false" value="/usr/lib/gcc/i486-linux-gnu/4.4/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.4/i486-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="/usr/include/boost"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/"/>
+									<listOptionValue builtIn="false" value="/usr/include/x86_64-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/lib/gcc/x86_64-linux-gnu/4.6/include/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/x86_64-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.982448758" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1854207819" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1738041884" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SCOREF-MGMT/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.4"/>
 									<listOptionValue builtIn="false" value="/usr/include/linux"/>
 									<listOptionValue builtIn="false" value="/usr/lib/gcc/i486-linux-gnu/4.4/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.4/i486-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="/usr/include/boost"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/"/>
+									<listOptionValue builtIn="false" value="/usr/include/x86_64-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/lib/gcc/x86_64-linux-gnu/4.6/include/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/x86_64-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1126765345" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>

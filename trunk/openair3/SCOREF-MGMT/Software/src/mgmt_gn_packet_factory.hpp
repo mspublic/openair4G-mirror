@@ -44,8 +44,9 @@
 
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet.hpp"
-#include "mgmt_gn_datatypes.hpp"
 #include "mgmt_information_base.hpp"
+#include "mgmt_gn_datatypes.hpp"
+#include "util/mgmt_log.hpp"
 
 /**
  * A container with necessary (mostly responses) packet generation functionality
@@ -56,8 +57,9 @@ class GeonetPacketFactory {
 		 * Constructor for GeonetPacketFactory class
 		 *
 		 * @param mib Management Information Base reference
+		 * @param logger Logger object reference
 		 */
-		GeonetPacketFactory(ManagementInformationBase& mib);
+		GeonetPacketFactory(ManagementInformationBase& mib, Logger& logger);
 
 	public:
 		/**
@@ -85,6 +87,10 @@ class GeonetPacketFactory {
 		 * to create certain messages/replies
 		 */
 		ManagementInformationBase& mib;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_GN_PACKET_FACTORY_HPP_ */

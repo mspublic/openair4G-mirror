@@ -42,8 +42,9 @@
 #ifndef MGMT_GN_PACKET_WIRELESS_STATE_RESPONSE_HPP_
 #define MGMT_GN_PACKET_WIRELESS_STATE_RESPONSE_HPP_
 
-#include "mgmt_gn_packet.hpp"
 #include "../mgmt_information_base.hpp"
+#include "../util/mgmt_log.hpp"
+#include "mgmt_gn_packet.hpp"
 
 /**
  * A container for Wireless State Event Response packet
@@ -56,8 +57,9 @@ class GeonetWirelessStateResponseEventPacket : public GeonetPacket {
 		 * @param mib Management Information Base reference to update it
 		 * with incoming information
 		 * @param packetBuffer Packet data as a vector
+		 * @param logger Logger object reference
 		 */
-		GeonetWirelessStateResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer);
+		GeonetWirelessStateResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer, Logger& logger);
 		/**
 		 * Destructor for GeonetWirelessStateEventPacket class
 		 */
