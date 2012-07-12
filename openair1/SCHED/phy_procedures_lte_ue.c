@@ -1269,7 +1269,8 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     
     // AGC
     
-    if ((mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
+    if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
+	(mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
       phy_adjust_gain (phy_vars_ue,0);
     
     eNB_id = 0;
@@ -1762,8 +1763,10 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  //mac_xface->macphy_exit("Connected. Exiting\n");
 	}
       }
-      else
-	LOG_E(PHY,"[UE  %d] Problem in DCI!\n",phy_vars_ue->Mod_id);
+      else {
+	LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Problem in DCI!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
+	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
+      }
     }
 
     else if ((dci_alloc_rx[i].rnti == SI_RNTI) && 
