@@ -126,6 +126,8 @@ static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
 			rate = r->bitrate;
 
 		switch (sband->band) {
+		case IEEE80211_BAND_5_9GHZ: break;
+		case IEEE80211_BAND_0_8GHZ: break;
 		case IEEE80211_BAND_2GHZ: {
 			u32 flag;
 			if (tx->sdata->flags & IEEE80211_SDATA_OPERATING_GMODE)
@@ -291,6 +293,7 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 		return TX_CONTINUE;
 
 	// check only if OCB is not activated
+
 	if (tx->sta && ((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)))
 		assoc = test_sta_flag(tx->sta, WLAN_STA_ASSOC);
 

@@ -1,1 +1,1 @@
-7ed03dab1bbd10749ac9d363808cbfe6  /home/training/OpenAir4G/openair4G/trunk/openairITS/openair2/ieee80211p/config.mk
+7ed03dab1bbd10749ac9d363808cbfe6  /homes/brizzola/workspace/11p/trunk/openairITS/openair2/ieee80211p/config.mk
