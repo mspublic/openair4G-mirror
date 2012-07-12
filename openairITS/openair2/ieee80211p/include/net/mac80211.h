@@ -987,6 +987,9 @@ enum set_key_cmd {
 	SET_KEY, DISABLE_KEY,
 };
 
+/*
+ * [PLATA] for the OCBMode, we should either be IEEE80211_STA_NONE or IEEE80211_STA_AUTHORIZED
+ */
 /**
  * enum ieee80211_sta_state - station state
  *
@@ -1175,7 +1178,7 @@ enum sta_notify_cmd {
  *	being idle (i.e. mac80211 doesn't have to go idle-off during the
  *	the scan).
  *
- * @WIPHY_FLAG_OCB_CAPABLE: the device supports operations related to the OCB
+ * @WIPHY_FLAG_OCB_SUPPORTED: the device supports operations related to the OCB
  * mode (IEEE 802.11p).
  */
 enum ieee80211_hw_flags {

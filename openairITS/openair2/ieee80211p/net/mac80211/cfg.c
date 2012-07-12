@@ -727,6 +727,9 @@ static void ieee80211_send_layer2_update(struct sta_info *sta)
 	netif_rx_ni(skb);
 }
 
+/*
+ * [PLATA] - should probably add a hook to directly go to the state associated if OCBActivated
+ */
 static int sta_apply_parameters(struct ieee80211_local *local,
 				struct sta_info *sta,
 				struct station_parameters *params)
@@ -1535,8 +1538,15 @@ static int ieee80211_scan(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
 	switch (ieee80211_vif_type_p2p(&sdata->vif)) {
-	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_ADHOC:
+		if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+		  /*
+		   * [PLATA] - we do not support the scan mode if we are configured with OCBActivated (mode 802.11p)
+		   */
+			return -EOPNOTSUPP;
+		}
+		break;
+	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_MESH_POINT:
 	case NL80211_IFTYPE_P2P_CLIENT:
 		break;
@@ -1566,6 +1576,13 @@ ieee80211_sched_scan_start(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+		/*
+		* [PLATA] - we do not support the scan mode if we are configured with OCBActivated (mode 802.11p)
+		*/
+		return -EOPNOTSUPP;
+	}
+
 	if (!sdata->local->ops->sched_scan_start)
 		return -EOPNOTSUPP;
 
@@ -1586,7 +1603,20 @@ ieee80211_sched_scan_stop(struct wiphy *wiphy, struct net_device *dev)
 static int ieee80211_auth(struct wiphy *wiphy, struct net_device *dev,
 			  struct cfg80211_auth_request *req)
 {
-	return ieee80211_mgd_auth(IEEE80211_DEV_TO_SUB_IF(dev), req);
+	/*
+	 * [PLATA] we should also check on the hw to see if the OCB is supported....
+	 */
+	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	  /*
+	   * [PLATA] - we do not support the authentication mode if we are configured with OCBActivated (mode 802.11p)
+	   */
+		return -EOPNOTSUPP;
+	}
+	else {
+		return ieee80211_mgd_auth(IEEE80211_DEV_TO_SUB_IF(dev), req);
+	}
 }
 
 static int ieee80211_assoc(struct wiphy *wiphy, struct net_device *dev,
@@ -1595,6 +1625,12 @@ static int ieee80211_assoc(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	  /*
+	   * [PLATA] - we do not support the association mode if we are configured with OCBActivated (mode 802.11p)
+	   */
+		return -EOPNOTSUPP;
+	}
 	switch (ieee80211_get_channel_mode(local, sdata)) {
 	case CHAN_MODE_HOPPING:
 		return -EBUSY;
@@ -1627,6 +1663,14 @@ static int ieee80211_join_ibss(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	  /*
+	   * [PLATA] - As the OCBMode is used here in ADHOC mode, we just want to be sure we do not try to
+	   * join an IBSS if wiht OCBActivated (mode 802.11p)
+	   */
+		return -EOPNOTSUPP;
+	}
+
 	switch (ieee80211_get_channel_mode(local, sdata)) {
 	case CHAN_MODE_HOPPING:
 		return -EBUSY;
@@ -1650,6 +1694,9 @@ static int ieee80211_leave_ibss(struct wiphy *wiphy, struct net_device *dev)
 	return ieee80211_ibss_leave(sdata);
 }
 
+/*
+ * [PLATA] - should we add something to allow the change from OCBActivated from 0 to 1 and back?
+ */
 static int ieee80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
@@ -1894,6 +1941,9 @@ static int ieee80211_set_bitrate_mask(struct wiphy *wiphy,
 	return 0;
 }
 
+/*
+ * [PLATA] This method could be called to guarantee that we stay on the CCH forever...
+ */
 static int ieee80211_remain_on_channel_hw(struct ieee80211_local *local,
 					  struct net_device *dev,
 					  struct ieee80211_channel *chan,
@@ -1925,6 +1975,9 @@ static int ieee80211_remain_on_channel_hw(struct ieee80211_local *local,
 	return ret;
 }
 
+/*
+ * [PLATA] This method could be called to guarantee that we stay on the CCH forever...
+ */
 static int ieee80211_remain_on_channel(struct wiphy *wiphy,
 				       struct net_device *dev,
 				       struct ieee80211_channel *chan,
@@ -2016,6 +2069,9 @@ ieee80211_offchan_tx_done(struct ieee80211_work *wk, struct sk_buff *skb)
 	return WORK_DONE_DESTROY;
 }
 
+/*
+ * [PLATA] - method starting/controlling the TX of Action frames...not required for this version
+ */
 static int ieee80211_mgmt_tx(struct wiphy *wiphy, struct net_device *dev,
 			     struct ieee80211_channel *chan, bool offchan,
 			     enum nl80211_channel_type channel_type,
@@ -2144,6 +2200,16 @@ static int ieee80211_mgmt_tx(struct wiphy *wiphy, struct net_device *dev,
 	 * wait is involved, we might otherwise not be on
 	 * the right channel for long enough!
 	 */
+	/*
+	 * [PLATA] either we guarantee we are always all three as true, or we set the flag for OCBActivated
+	 * trying the latter...
+	 * JHNOTE: we do not support action frames now: so we still block them
+	 */
+	/*if ((!is_offchan && !wait && !sdata->vif.bss_conf.idle)
+		|| ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
+		ieee80211_tx_skb(sdata, skb);
+		return 0;
+	}*/
 	if (!is_offchan && !wait && !sdata->vif.bss_conf.idle) {
 		ieee80211_tx_skb(sdata, skb);
 		return 0;

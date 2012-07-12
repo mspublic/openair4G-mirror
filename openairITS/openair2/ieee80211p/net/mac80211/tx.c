@@ -125,9 +125,21 @@ static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
 		if (tx->sdata->vif.bss_conf.basic_rates & BIT(i))
 			rate = r->bitrate;
 
+		/*
+		 * [PLATA] to check what to do with the two other bands. My feeling is that we should
+		 * 1) define a flag IEEE80211_RATE_MANDATORY_P to 6Mbps
+		 * 2) assigns it for the flag...
+		 * Note: to check the mandatory rate for 800MHz
+		 */
 		switch (sband->band) {
-		case IEEE80211_BAND_5_9GHZ: break;
-		case IEEE80211_BAND_0_8GHZ: break;
+		case IEEE80211_BAND_5_9GHZ:
+			if (r->flags & IEEE80211_RATE_MANDATORY_P)
+				mrate = r->bitrate;
+			break;
+		case IEEE80211_BAND_0_8GHZ:
+			if (r->flags & IEEE80211_RATE_MANDATORY_P)
+				mrate = r->bitrate;
+			break;
 		case IEEE80211_BAND_2GHZ: {
 			u32 flag;
 			if (tx->sdata->flags & IEEE80211_SDATA_OPERATING_GMODE)
