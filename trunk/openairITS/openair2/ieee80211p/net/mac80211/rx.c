@@ -254,7 +254,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 		return NULL;
 	}
 
-	if (!local->monitors) {
+	if ((!local->monitors) || ((local->hw.wiphy->dot11OCBActivated == 1) || (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
 		if (should_drop_frame(origskb, present_fcs_len)) {
 			dev_kfree_skb(origskb);
 			return NULL;
@@ -419,8 +419,8 @@ ieee80211_rx_h_passive_scan(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
 	struct sk_buff *skb = rx->skb;
 
-	if (likely(!(status->rx_flags & IEEE80211_RX_IN_SCAN) &&
-		   !local->sched_scanning))
+	if ((likely(!(status->rx_flags & IEEE80211_RX_IN_SCAN) &&
+		   !local->sched_scanning)) || (rx->local->hw.wiphy->dot11OCBActivated == 1) || (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))
 		return RX_CONTINUE;
 
 	if (test_bit(SCAN_HW_SCANNING, &local->scanning) ||
@@ -2671,13 +2671,19 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 		 * same TID from the same station
 		 */
 		rx->skb = skb;
-
-		CALL_RXH(ieee80211_rx_h_decrypt)  // JHNOTE: no use for 802.11p
-		CALL_RXH(ieee80211_rx_h_check_more_data)  // JHNOTE: no use as we do not POLL in 802.11p
-		CALL_RXH(ieee80211_rx_h_uapsd_and_pspoll)  // JHNOTE: no use as we do not poll (if AD_HOC, return)
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
+		{
+			CALL_RXH(ieee80211_rx_h_decrypt)  // JHNOTE: no use for 802.11p
+			CALL_RXH(ieee80211_rx_h_check_more_data)  // JHNOTE: no use as we do not POLL in 802.11p
+			CALL_RXH(ieee80211_rx_h_uapsd_and_pspoll)  // JHNOTE: no use as we do not poll (if AD_HOC, return)
+		}
 		CALL_RXH(ieee80211_rx_h_sta_process)  // JHNOTE: what is this method really doing?
+
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
+		{
 		CALL_RXH(ieee80211_rx_h_defragment) // can be either ignored (we do not fragement, or followed..as no change)
-		CALL_RXH(ieee80211_rx_h_michael_mic_verify) // JHNOTE: probably not necessary as no encryption
+		CALL_RXH(ieee80211_rx_h_michael_mic_verify) // JHNOTE: probably not necessary as no encryption	
+		}
 		/* must be after MMIC verify so header is counted in MPDU mic */
 #ifdef CONFIG_MAC80211_MESH
 		if (ieee80211_vif_is_mesh(&rx->sdata->vif))
@@ -2685,10 +2691,13 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 #endif
 		CALL_RXH(ieee80211_rx_h_amsdu)  // JHNOTE: can be left here..no change
 		CALL_RXH(ieee80211_rx_h_data)  // JHNOTE: to double check..important calls (to deliver_skb notably)
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
+		{
 		CALL_RXH(ieee80211_rx_h_ctrl); // JHNOTE: not important, we do not have control frames
 		CALL_RXH(ieee80211_rx_h_mgmt_check)  // JHNOTE: ignore as we do not have management frames
 		CALL_RXH(ieee80211_rx_h_action) // JHNOTE: not sure..probably not useful
 		CALL_RXH(ieee80211_rx_h_userspace_mgmt) // JHNOTE: can be ignored...we do not use managmenet at userspace yet
+		}
 		CALL_RXH(ieee80211_rx_h_action_return)
 		CALL_RXH(ieee80211_rx_h_mgmt) // JHNOTE: need to add a flag for not processing such frames if we are in 802.11p mode.
 
