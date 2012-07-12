@@ -34,13 +34,14 @@
  * 6.1 Protocol Data Units
  * 6.2.2 Control Plane PDCP Data PDU
  */
+#define PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE 1
+#define PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE 4
 typedef struct {
   u8 sn;      // PDCP sequence number will wrap around 2^5-1 so
               // reserved field is unnecessary here
-  u32 mac_i;  // Integration protection is not implemented (pad with 0)
+  u8 mac_i[PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE];  // Integration protection is not implemented (pad with 0)
 } pdcp_control_plane_data_pdu_header;
-#define PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE 1
-#define PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE 4
+
 /*
  * 6.2.3 User Plane PDCP Data PDU with long PDCP SN (12-bit)
  */
