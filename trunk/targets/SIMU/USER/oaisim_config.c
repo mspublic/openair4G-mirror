@@ -93,17 +93,10 @@ mapping otg_distribution_names[] =
     {NULL, -1}
 };
 
-mapping otg_background_names[] =
+mapping switch_names[] =
 {
-    {"disabled", 0},
-    {"enabled", 1},
-    {NULL, -1}
-};
-
-mapping otg_curve_names[] =
-{
-    {"disabled", 0},
-    {"enabled", 1},
+    {"disable", 0},
+    {"enable", 1},
     {NULL, -1}
 };
 
@@ -216,10 +209,10 @@ void init_oai_emulation() {
 	
 	oai_emulation.emulation_config.emulation_time_ms = 0;
         oai_emulation.emulation_config.curve = "disable";
-	oai_emulation.emulation_config.performance_metrics.throughput = 0;
-	oai_emulation.emulation_config.performance_metrics.latency = 0;
-	oai_emulation.emulation_config.performance_metrics.loss_rate = 0;
-	oai_emulation.emulation_config.performance_metrics.owd_radio_access = 0;
+	oai_emulation.emulation_config.performance_metrics.throughput = "disable";
+	oai_emulation.emulation_config.performance_metrics.latency ="disable";
+	oai_emulation.emulation_config.performance_metrics.loss_rate ="disable";
+	oai_emulation.emulation_config.performance_metrics.owd_radio_access = "disable";
 	oai_emulation.emulation_config.layer.phy = 0;
 	oai_emulation.emulation_config.layer.mac = 0;
 	oai_emulation.emulation_config.layer.rlc = 0;
@@ -491,11 +484,11 @@ int ocg_config_app(){
 	init_all_otg();
         g_otg->seed= oai_emulation.info.seed;
 	g_otg->num_nodes = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_ue_local;
-	g_otg->throughput_metric =oai_emulation.emulation_config.performance_metrics.throughput;
-        g_otg->latency_metric =oai_emulation.emulation_config.performance_metrics.latency;
-	g_otg->loss_metric =oai_emulation.emulation_config.performance_metrics.loss_rate;
-        g_otg->owd_radio_access =oai_emulation.emulation_config.performance_metrics.owd_radio_access;
-        g_otg->curve=map_str_to_int(otg_curve_names,oai_emulation.emulation_config.curve);
+	g_otg->throughput_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.throughput);
+        g_otg->latency_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.latency);
+	g_otg->loss_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.loss_rate);
+        g_otg->owd_radio_access =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.owd_radio_access);
+        g_otg->curve=map_str_to_int(switch_names,oai_emulation.emulation_config.curve);
 	printf("OTG g_otg->curve %d oai_emulation.emulation_config.curve %s",g_otg->curve, oai_emulation.emulation_config.curve);
 	for (i=0; i<g_otg->num_nodes; i++){
 		g_otg->duration[i]=oai_emulation.emulation_config.emulation_time_ms;
@@ -577,7 +570,7 @@ int ocg_config_app(){
 		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
 		  g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
 		  }
-			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(otg_background_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
+			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
 
 LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application = %d\n", source_id_start, source_id_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index]);
 
@@ -595,7 +588,7 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 		if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
 		  g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
 		}
-		  g_otg->background[source_id_index][destination_id_index] =map_str_to_int(otg_background_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
+		  g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
 		  per_source_id = strtok(NULL, comma);
 		
 	      }
@@ -621,7 +614,7 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
 		   g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
 		}
-			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(otg_background_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
+			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
 
 LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application = %d\n", source_id_start, source_id_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index]);
 		 
