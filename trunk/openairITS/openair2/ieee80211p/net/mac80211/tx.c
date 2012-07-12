@@ -291,12 +291,12 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 		return TX_CONTINUE;
 
 	// check only if OCB is not activated
-	if (tx->sta && ((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)))
+	if (tx->sta && ((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)))
 		assoc = test_sta_flag(tx->sta, WLAN_STA_ASSOC);
 
 	if (likely(tx->flags & IEEE80211_TX_UNICAST)) { // JHNOTE: change something here...as it will be very ' likely' and we should accept it
 		if (unlikely(!assoc &&
-			     ieee80211_is_data(hdr->frame_control) && ((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)))) {
+			     ieee80211_is_data(hdr->frame_control) && ((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)))) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 			printk(KERN_DEBUG "%s: dropped data frame to not "
 			       "associated station %pM\n",
@@ -1328,14 +1328,14 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	} while (0)
 
 	// no power saving mode when OCB is activated
-	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  CALL_TXH(ieee80211_tx_h_dynamic_ps); // JHNOTE: not necessary (we do not do Power saving so far)
     }
 
 	CALL_TXH(ieee80211_tx_h_check_assoc); // JHNOTE: check that scanning is false, check that if unicast and not assoc, we return true; for broadcast and AD_HOC, it is always true
 
 	// no power saving and no key management
-	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  CALL_TXH(ieee80211_tx_h_ps_buf); // JHNOTE: bypass as no PS
 	  CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // JHNOTE: ignoring with the right flags but not sure...
 	  CALL_TXH(ieee80211_tx_h_select_key); // bypass directly (test OCBActivated..)
@@ -1350,7 +1350,7 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 		goto txh_done;
 	}
 
-	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  CALL_TXH(ieee80211_tx_h_michael_mic_add); // JHNOTE: ignore
 	}
 	CALL_TXH(ieee80211_tx_h_sequence); // JHNOTE: keep it but no impact
@@ -1358,7 +1358,7 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	/* handlers after fragment must be aware of tx info fragmentation! */
 	CALL_TXH(ieee80211_tx_h_stats);  // JHNOTE: keep it: no impact
 
-	if((tx->local->hw->wiphy.dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOTOCB_CAPABLE)) {
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  CALL_TXH(ieee80211_tx_h_encrypt); // JHNOTE: bypass if with check on OCBActivated
 	}
 	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL))
