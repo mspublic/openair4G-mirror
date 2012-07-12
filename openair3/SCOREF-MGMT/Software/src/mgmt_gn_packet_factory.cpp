@@ -45,14 +45,14 @@
 #include <iostream>
 using namespace std;
 
-GeonetPacketFactory::GeonetPacketFactory(ManagementInformationBase& mib) :
-	mib(mib) {
+GeonetPacketFactory::GeonetPacketFactory(ManagementInformationBase& mib, Logger& logger) :
+	mib(mib), logger(logger) {
 }
 
 GeonetPacket* GeonetPacketFactory::createSetConfigurationEventPacket(ItsKeyID itsKeyID) {
-	return new GeonetSetConfigurationEventPacket(mib, itsKeyID);
+	return new GeonetSetConfigurationEventPacket(mib, logger, itsKeyID);
 }
 
 GeonetPacket* GeonetPacketFactory::createCommunicationProfileResponse(GeonetCommunicationProfileRequestPacket* request) {
-	return new GeonetCommunicationProfileResponsePacket(mib, request->getCommunicationProfileRequestSet());
+	return new GeonetCommunicationProfileResponsePacket(mib, request->getCommunicationProfileRequestSet(), logger);
 }

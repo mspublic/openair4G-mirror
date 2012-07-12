@@ -8,33 +8,51 @@
 <includepath>/usr/include</includepath>
 <includepath workspace_path="true">/SCOREF-MGMT/src</includepath>
 <includepath workspace_path="true">/SCOREF-MGMT/src/packets</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src/util</includepath>
 <includepath>/usr/include/c++/4.4</includepath>
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
 <includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
 <includepath>/usr/include/boost</includepath>
+<includepath>/usr/include/c++/4.6/</includepath>
+<includepath>/usr/include/x86_64-linux-gnu/</includepath>
+<includepath>/usr/lib/gcc/x86_64-linux-gnu/4.6/include/</includepath>
+<includepath>/usr/include/c++/4.6/x86_64-linux-gnu/</includepath>
+
 
 </language>
 <language name="GNU C++">
 <includepath>/usr/include</includepath>
 <includepath workspace_path="true">/SCOREF-MGMT/src</includepath>
 <includepath workspace_path="true">/SCOREF-MGMT/src/packets</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src/util</includepath>
 <includepath>/usr/include/c++/4.4</includepath>
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
 <includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
 <includepath>/usr/include/boost</includepath>
+<includepath>/usr/include/c++/4.6/</includepath>
+<includepath>/usr/include/x86_64-linux-gnu/</includepath>
+<includepath>/usr/lib/gcc/x86_64-linux-gnu/4.6/include/</includepath>
+<includepath>/usr/include/c++/4.6/x86_64-linux-gnu/</includepath>
+
 
 </language>
 <language name="GNU C">
 <includepath>/usr/include</includepath>
 <includepath workspace_path="true">/SCOREF-MGMT/src</includepath>
 <includepath workspace_path="true">/SCOREF-MGMT/src/packets</includepath>
+<includepath workspace_path="true">/SCOREF-MGMT/src/util</includepath>
 <includepath>/usr/include/c++/4.4</includepath>
 <includepath>/usr/include/linux</includepath>
 <includepath>/usr/lib/gcc/i486-linux-gnu/4.4/include</includepath>
 <includepath>/usr/include/c++/4.4/i486-linux-gnu/</includepath>
 <includepath>/usr/include/boost</includepath>
+<includepath>/usr/include/c++/4.6/</includepath>
+<includepath>/usr/include/x86_64-linux-gnu/</includepath>
+<includepath>/usr/lib/gcc/x86_64-linux-gnu/4.6/include/</includepath>
+<includepath>/usr/include/c++/4.6/x86_64-linux-gnu/</includepath>
+
 
 </language>
 </section>
@@ -53,3 +71,4 @@
 </language>
 </section>
 </cdtprojectproperties>
+

@@ -51,8 +51,10 @@ class GeonetWirelessStateRequestEventPacket : public GeonetPacket {
 	public:
 		/**
 		 * Constructor for GeonetWirelessStateRequestEventPacket class
+		 *
+		 * @param logger Logger object reference
 		 */
-		GeonetWirelessStateRequestEventPacket();
+		GeonetWirelessStateRequestEventPacket(Logger& logger);
 		/**
 		 * Destructor for GeonetWirelessStateRequestEventPacket class
 		 */

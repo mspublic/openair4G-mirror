@@ -42,6 +42,7 @@
 #ifndef MGMT_GN_PACKET_LOCATION_TABLE_REQUEST_HPP_
 #define MGMT_GN_PACKET_LOCATION_TABLE_REQUEST_HPP_
 
+#include "../util/mgmt_log.hpp"
 #include "mgmt_gn_packet.hpp"
 #include <string>
 using namespace std;
@@ -55,8 +56,9 @@ class GeonetLocationTableRequestEventPacket: public GeonetPacket {
 		 * Constructor of GeonetLocationTableRequestEventPacket class
 		 *
 		 * @param address GN Address that is going to be requested
+		 * @param logger Logger object reference
 		 */
-		GeonetLocationTableRequestEventPacket(GnAddress address);
+		GeonetLocationTableRequestEventPacket(GnAddress address, Logger& logger);
 
 	public:
 		/**

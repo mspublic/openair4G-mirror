@@ -1,5 +1,12 @@
 
-* InquiryThread class has been added for sending repetitive Wireless State Request (not tested)
+v1.1.0 (released on <enter_date>)
+
+v1.0.18
+* InquiryThread class has been added for sending repetitive Wireless State Request
+* Doxygen file has been renamed to SCOREF-MGMT.doxygen
+* README.BUILD.ECLIPSE.PATHS.xml file has been updated with new versions of used libraries
+* Standard I/O is no more used anywhere, instead Logger class has been utilised
+* Command-line parameter parser has been added but #ifdef'ed out to wait version 1.50.0 of Boost
 
 v1.0.17
 * SCOREF-MGMT_Configuration.pdf file has been added under Documentation/
@@ -60,7 +67,7 @@ v1.0.5
 * Makefile (and Makefile.sources) file added to remove development ties with
   Eclipse and README.BUILD file updated accordingly
 
-v1.0.4
+v1.0.4 (released on 23 May 2012)
 * ITS key values are updated and classified as FAC and NET
 * Wireless state and network state packets added
 * Location table is now asked and response is parsed

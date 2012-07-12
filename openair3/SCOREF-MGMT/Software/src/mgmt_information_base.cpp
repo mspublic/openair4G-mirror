@@ -43,7 +43,8 @@
 #include <iostream>
 using namespace std;
 
-ManagementInformationBase::ManagementInformationBase() {
+ManagementInformationBase::ManagementInformationBase(Logger& logger)
+	: communicationProfileManager(logger), logger(logger) {
 	initialize();
 }
 
@@ -81,7 +82,7 @@ bool ManagementInformationBase::initialize() {
 	itsKeyManager.addKey(MGMT_GN_FAC_ITSKEY_ID_DENM_BTP_PORT, "MIB_GN_FAC_DENM_BTP_PORT", ITS_KEY_TYPE_FAC, 3000);
 	itsKeyManager.addKey(MGMT_GN_FAC_ITSKEY_ID_LDM_GARBAGE_COLLECTION_INTERVAL, "MIB_GN_FAC_LDM_GARBAGE_COLLECTION_INTERVAL", ITS_KEY_TYPE_FAC, 1000);
 
-	cout << "Initialised configuration map with " << itsKeyManager.getNumberOfKeys() << " element(s)" << endl;
+	logger.info("Number of elements in configuration map is " + itsKeyManager.getNumberOfKeys());
 
 	return true;
 }

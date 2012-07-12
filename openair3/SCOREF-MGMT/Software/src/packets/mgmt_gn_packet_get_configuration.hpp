@@ -56,8 +56,9 @@ class GeonetGetConfigurationEventPacket: public GeonetPacket {
 		 * Constructor of GeonetGetConfigurationEventPacket class
 		 *
 		 * @param packetBuffer Incoming packet buffer that is going to be parsed
+		 * @param logger Logger object reference
 		 */
-		GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer);
+		GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer, Logger& logger);
 
 	public:
 		/**

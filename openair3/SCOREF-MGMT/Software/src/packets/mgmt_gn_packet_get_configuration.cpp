@@ -44,10 +44,10 @@
 #include <sstream>
 using namespace std;
 
-GeonetGetConfigurationEventPacket::GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer) :
-	GeonetPacket(packetBuffer) {
+GeonetGetConfigurationEventPacket::GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer, Logger& logger) :
+	GeonetPacket(packetBuffer, logger) {
 	parse(packetBuffer);
-	cout << toString() << endl;
+	logger.info(toString());
 }
 
 u_int16_t GeonetGetConfigurationEventPacket::getConfID() const {

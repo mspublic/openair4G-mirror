@@ -57,26 +57,28 @@ bool Util::copyBuffer(void* destinationBuffer, const void* sourceBuffer, size_t 
 	return true;
 }
 
-bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSize) {
+bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSize, Logger& logger) {
 	if (!buffer)
 		return false;
 
+	stringstream ss;
 	unsigned long octet_index = 0;
 
-	cout << "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |" << endl;
-	cout << "-----+-------------------------------------------------|" << endl;
-	cout << " 000 |";
+	ss << "\n";
+	ss << "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |" << endl;
+	ss << "-----+-------------------------------------------------|" << endl;
+	ss << " 000 |";
 	for (octet_index = 0; octet_index < bufferSize; ++octet_index) {
 		/*
 		 * Print every single octet in hexadecimal form
 		 */
-		cout << " " << setfill('0') << setw(2) << hex << (int) buffer[octet_index];
+		ss << " " << setfill('0') << setw(2) << hex << (int) buffer[octet_index];
 		/*
 		 * Align newline and pipes according to the octets in groups of 2
 		 */
 		if (octet_index != 0 && (octet_index + 1) % 16 == 0) {
-			cout << " |" << endl;
-			cout << " " << setfill('0') << setw(3) << octet_index << " |";
+			ss << " |" << endl;
+			ss << " " << setfill('0') << setw(3) << octet_index << " |";
 		}
 	}
 
@@ -85,30 +87,41 @@ bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSiz
 	 */
 	unsigned char index;
 	for (index = octet_index; index < 16; ++index)
-		cout << "   ";
-	cout << " |" << endl;
+		ss << "   ";
+	ss << " |" << endl;
 
-	cout << resetiosflags(ios_base::hex) << endl;
+	ss << resetiosflags(ios_base::hex) << endl;
 
+	logger.debug(ss.str());
 	return true;
 }
 
-void Util::printBinaryRepresentation(unsigned char* message, u_int8_t octet) {
+void Util::printBinaryRepresentation(unsigned char* message, u_int8_t octet, Logger& logger) {
+	stringstream ss;
 	unsigned char index = 0;
 	unsigned char mask = 0x80;
 
-	cout << message;
+	ss << message;
 
 	for (index = 0; index < 8; ++index) {
 		if (octet & mask) {
-			cout << "1";
+			ss << "1";
 		} else {
-			cout << "0";
+			ss << "0";
 		}
 
 		mask /= 2;
 	}
-	cout << endl;
+	ss << endl;
+
+	logger.debug(ss.str());
+}
+
+template <class T>
+string Util::stringify(T numerical) {
+	stringstream ss;
+	ss << numerical;
+	return ss.str();
 }
 
 bool Util::setBit(u_int8_t& octet, u_int8_t index) {

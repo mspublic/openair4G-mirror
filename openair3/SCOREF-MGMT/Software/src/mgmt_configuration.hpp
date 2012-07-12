@@ -43,6 +43,7 @@
 #define MGMT_CONFIGURATION_HPP_
 
 #include "mgmt_information_base.hpp"
+#include "util/mgmt_log.hpp"
 #include <string>
 using namespace std;
 
@@ -56,14 +57,20 @@ class Configuration {
 		 * Parameter string for UDP server port
 		 */
 		static const string CONF_SERVER_PORT_PARAMETER;
+		/**
+		 * Parameter string for repetition interval (in seconds)
+		 * for Wireless State Request message
+		 */
+		static const string CONF_WIRELESS_STATE_UPDATE_INTERVAL;
 
 	public:
 		/**
 		 * Constructor for Configuration class
 		 *
 		 * @param configurationFile Configuration file name
+		 * @param logger Logger object reference
 		 */
-		Configuration(string configurationFile);
+		Configuration(string configurationFile, Logger& logger);
 		/**
 		 * Destructor for Configuration class
 		 */
@@ -105,6 +112,19 @@ class Configuration {
 		 * @return none
 		 */
 		void setServerPort(int serverPort);
+		/**
+		 * Returns Wireless State Update interval (in seconds)
+		 *
+		 * @return Wireless State Update interval in seconds
+		 */
+		u_int8_t getWirelessStateUpdateInterval() const;
+		/**
+		 * Sets Wireless State Update interval
+		 *
+		 * @param interval Wireless State Update interval in seconds
+		 * @return none
+		 */
+		void setWirelessStateUpdateInterval(u_int8_t interval);
 
 	private:
 		/**
@@ -135,6 +155,14 @@ class Configuration {
 		 * UDP server port number
 		 */
 		int serverPort;
+		/**
+		 * Wireless State Update interval (in seconds)
+		 */
+		u_int8_t wirelessStateUpdateInterval;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_CONFIGURATION_HPP_ */

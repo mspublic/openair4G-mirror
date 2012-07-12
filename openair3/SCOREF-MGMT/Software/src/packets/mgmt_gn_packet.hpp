@@ -44,6 +44,7 @@
 
 #include "../mgmt_information_base.hpp"
 #include "../mgmt_gn_datatypes.hpp"
+#include "../util/mgmt_log.hpp"
 #include <string>
 #include <vector>
 using namespace std;
@@ -61,14 +62,16 @@ class GeonetPacket {
 		 * @param version Version number
 		 * @param priority Priority
 		 * @param eventType 16-bit Event Type and Event Subtype information
+		 * @param logger Logger object reference
 		 */
-		GeonetPacket(bool extendedMessage, bool validity, u_int8_t version, u_int8_t priority, u_int16_t eventType);
+		GeonetPacket(bool extendedMessage, bool validity, u_int8_t version, u_int8_t priority, u_int16_t eventType, Logger& logger);
 		/**
 		 * Buffer-parser constructor for GeonetPacket class
 		 *
 		 * @param packetBuffer Buffer carrying GeonetPacket
+		 * @param logger Logger object reference
 		 */
-		GeonetPacket(const vector<unsigned char>& packetBuffer);
+		GeonetPacket(const vector<unsigned char>& packetBuffer, Logger& logger);
 		/**
 		 * Virtual destructor for GeonetPacket class
 		 */
@@ -103,6 +106,10 @@ class GeonetPacket {
 		 * Header is kept in superclass for every Geonet* subclass
 		 */
 		MessageHeader header;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_GN_PACKET_HPP_ */

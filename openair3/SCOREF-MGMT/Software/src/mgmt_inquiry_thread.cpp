@@ -42,22 +42,24 @@
 #include "packets/mgmt_gn_packet_wireless_state_request.hpp"
 #include "mgmt_inquiry_thread.hpp"
 #include <boost/date_time.hpp>
+#include "util/mgmt_util.hpp"
 #include <boost/thread.hpp>
 #include <iostream>
 using namespace std;
 
-InquiryThread::InquiryThread(UdpServer& connection)
-	: connection(connection) {
+InquiryThread::InquiryThread(UdpServer& connection, u_int8_t wirelessStateUpdateInterval, Logger& logger)
+	: connection(connection), logger(logger) {
+	this->wirelessStateUpdateInterval = wirelessStateUpdateInterval;
 }
 
 InquiryThread::~InquiryThread() {
 }
 
 void InquiryThread::operator()() {
-	// todo this wait time will be configurable
-	boost::posix_time::seconds wait(5);
+	boost::posix_time::seconds wait(wirelessStateUpdateInterval);
 
 	while (true) {
+		// todo logger.info("Waiting for " + wirelessStateUpdateInterval + " second(s)...");
 		boost::this_thread::sleep(wait);
 
 		if (!requestWirelessStateUpdate())
@@ -66,14 +68,14 @@ void InquiryThread::operator()() {
 }
 
 bool InquiryThread::requestWirelessStateUpdate() {
-	GeonetWirelessStateRequestEventPacket request;
+	GeonetWirelessStateRequestEventPacket request(logger);
 
 	if (connection.send(request)) {
-		cout << "Wireless state request message has been sent" << endl;
+		logger.info("Wireless state request message has been sent");
 
 		return true;
 	} else {
-		cerr << "Wireless state request message cannot be sent!" << endl;
+		logger.error("Wireless state request message cannot be sent!");
 
 		return false;
 	}

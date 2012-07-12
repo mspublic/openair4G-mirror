@@ -43,10 +43,10 @@
 #include "../util/mgmt_util.hpp"
 #include <sstream>
 
-GeonetWirelessStateResponseEventPacket::GeonetWirelessStateResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer)
-	: GeonetPacket(packetBuffer), mib(mib) {
+GeonetWirelessStateResponseEventPacket::GeonetWirelessStateResponseEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer, Logger& logger)
+	: GeonetPacket(packetBuffer, logger), mib(mib) {
 	if (this->parse(packetBuffer)) {
-		cout << "MIB is updated with incoming wireless state information" << endl;
+		logger.info("MIB is updated with incoming wireless state information");
 	}
 }
 
@@ -65,7 +65,7 @@ bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char> p
 
 	// Parse interface count first
 	u_int8_t interfaceCount = packetBuffer.data()[sizeof(MessageHeader)];
-	cout << "There are " << interfaceCount << " interface(s)" << endl;
+	logger.info("Number of interfaces is " + interfaceCount);
 
 	// Then traverse the buffer to get the state for every interface...
 	u_int16_t itemIndex = sizeof(WirelessStateResponseMessage);
@@ -84,8 +84,8 @@ bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char> p
 		// Update MIB with this record
 		mib.wirelessStateMap.insert(mib.wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(item.interfaceId, item));
 
-		cout << "Management Information Base has been updated with following wireless state entry: " << endl;
-		cout << item.toString() << endl;
+		logger.info("Management Information Base has been updated with following wireless state entry: ");
+		logger.info(item.toString());
 
 		// itemIndex shows the next record now, if there's any
 	}

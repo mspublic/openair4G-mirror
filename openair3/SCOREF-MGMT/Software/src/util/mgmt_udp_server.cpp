@@ -45,9 +45,10 @@
 #include <iostream>
 using namespace std;
 
-UdpServer::UdpServer(u_int16_t portNumber) {
+UdpServer::UdpServer(u_int16_t portNumber, Logger& logger)
+	: logger(logger) {
 	socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
-	cout << "A UDP server socket created for port " << portNumber << endl;
+	logger.info("A UDP server socket created for port " + portNumber);
 }
 
 UdpServer::~UdpServer() {
@@ -61,13 +62,15 @@ unsigned UdpServer::receive(vector<unsigned char>& rxBuffer) {
 	/**
 	 * Ensure there's only one I/O method of UdpServer running at any given moment
 	 */
-	boost::lock_guard<boost::mutex> lock(mutex);
+	logger.debug("Locking read mutex in UdpServer::receive(vector)");
+	boost::lock_guard<boost::mutex> lock(readMutex);
+	logger.debug("Locked read mutex in UdpServer::receive(vector)");
 
 	try {
-		cout << "Reading..." << endl;
+		logger.info("Reading...");
 		bytesRead = socket->receive_from(boost::asio::buffer(rxBuffer), client, 0, error);
 	} catch (std::exception& e) {
-		cerr << e.what() << std::endl;
+		logger.error(e.what());
 		return 0;
 	}
 
@@ -76,8 +79,8 @@ unsigned UdpServer::receive(vector<unsigned char>& rxBuffer) {
 
 	rxBuffer.resize(bytesRead);
 
-	cout << bytesRead << " byte(s) received from " << client.address().to_string() << endl;
-	Util::printHexRepresentation(rxBuffer.data(), rxBuffer.size());
+	logger.info(bytesRead + " byte(s) received from " + client.address().to_string());
+	Util::printHexRepresentation(rxBuffer.data(), rxBuffer.size(), logger);
 
 	return bytesRead;
 }
@@ -88,15 +91,17 @@ bool UdpServer::send(vector<unsigned char>& txBuffer) {
 	/**
 	 * Ensure there's only one I/O method of UdpServer running at any given moment
 	 */
-	boost::lock_guard<boost::mutex> lock(mutex);
+	logger.debug("Locking write mutex in UdpServer::send(vector)");
+	boost::lock_guard<boost::mutex> lock(writeMutex);
+	logger.debug("Locked write mutex in UdpServer::send(vector)");
 
 	try {
-		cout << "Writing..." << endl;
+		logger.info("Writing...");
 		socket->send_to(boost::asio::buffer(txBuffer), client, 0, error);
-		cout << txBuffer.size() << " byte(s) sent" << endl;
-		Util::printHexRepresentation(txBuffer.data(), txBuffer.size());
+		logger.info(txBuffer.size() + " byte(s) sent");
+		Util::printHexRepresentation(txBuffer.data(), txBuffer.size(), logger);
 	} catch (std::exception& e) {
-		cerr << e.what() << std::endl;
+		logger.error(e.what());
 		return false;
 	}
 
@@ -107,10 +112,9 @@ bool UdpServer::send(const GeonetPacket& packet) {
 	vector<unsigned char> txBuffer(TX_BUFFER_SIZE);
 
 	/**
-	 * Ensure there's only one I/O method of UdpServer running at any given moment
+	 * There's already a check for mutex in the overloaded function so
+	 * we don't do it here
 	 */
-	boost::lock_guard<boost::mutex> lock(mutex);
-
 	if (packet.serialize(txBuffer))
 		return send(txBuffer);
 

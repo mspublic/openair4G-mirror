@@ -43,6 +43,7 @@
 #define MGMT_INQUIRY_THREAD_HPP_
 
 #include "util/mgmt_udp_server.hpp"
+#include "util/mgmt_log.hpp"
 
 class InquiryThread {
 	public:
@@ -50,8 +51,10 @@ class InquiryThread {
 		 * Constructor for InquiryThread class
 		 *
 		 * @param connection UdpServer object that the questions will be asked through
+		 * @param wirelessStateUpdateInterval Wireless State Update interval in seconds
+		 * @param logger Logger object reference
 		 */
-		InquiryThread(UdpServer& connection);
+		InquiryThread(UdpServer& connection, u_int8_t wirelessStateUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for InquiryThread class
 		 */
@@ -70,7 +73,18 @@ class InquiryThread {
 		bool requestWirelessStateUpdate();
 
 	private:
+		/**
+		 * UdpServer object reference to communicate with client
+		 */
 		UdpServer& connection;
+		/**
+		 * Wireless State Update interval in seconds
+		 */
+		u_int8_t wirelessStateUpdateInterval;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 

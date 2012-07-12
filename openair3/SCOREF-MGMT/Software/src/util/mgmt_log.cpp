@@ -73,3 +73,7 @@ void Logger::error(const string& message) {
 void Logger::log(const string& message, LOG_LEVEL level) {
 	cout << logLevelString[level] << ": " << message << endl;
 }
+
+void Logger::setLogLevel(Logger::LOG_LEVEL logLevel) {
+	this->logLevel = logLevel;
+}

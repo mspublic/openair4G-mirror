@@ -57,8 +57,10 @@ class ManagementInformationBase {
 	public:
 		/**
 		 * Constructor for ManagementInformationBase class
+		 *
+		 * @param Logger object reference
 		 */
-		ManagementInformationBase();
+		ManagementInformationBase(Logger& logger);
 		/**
 		 * Destructor for ManagementInformationBase class
 		 */
@@ -146,6 +148,10 @@ class ManagementInformationBase {
 		 * Communication profile manager
 		 */
 		CommunicationProfileManager communicationProfileManager;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_INFORMATION_BASE_HPP_ */
