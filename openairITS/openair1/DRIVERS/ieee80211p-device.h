@@ -2,7 +2,7 @@
  *
  * Copyright(c) EURECOM / Thales Communications & Security
  *
- * Portions of this file are derived from the ath5k project.
+ * Portions of this file are derived from the Atheros ath5k project.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
@@ -21,13 +21,19 @@
  * file called LICENSE.
  *
  * Contact Information:
- * Thales Communications & Seucrity <philippe.agostini@thalesgroup.com>
- * EURECOM EURECOM <marouane.amamou@eurecom.fr>
+ * Thales Communications & Security <philippe.agostini@thalesgroup.com>
+ * EURECOM <marouane.amamou@eurecom.fr>
  *
  *****************************************************************************/
 
 #ifndef __ieee80211p_device_h__
 #define __ieee80211p_device_h__
+
+/******************************************************************************
+ *
+ * Includes
+ *
+ *****************************************************************************/
 
 #include <linux/spinlock.h>
 #include <linux/list.h>
@@ -36,12 +42,17 @@
 #include <net/mac80211.h>
 #include <net/cfg80211.h>
 
+/******************************************************************************
+ *
+ * Macros
+ *
+ *****************************************************************************/
+
 #define ETH_ALEN 6
 #define IEEE80211P_NUM_TXQ 1
 #define IEEE80211P_TXQ_LEN_MAX 100
 #define FALSE 0
 #define TRUE 1
-#define RX_STATUS_LEN 11
 
 /******************************************************************************
  *
@@ -72,13 +83,12 @@ static struct ieee80211_channel channels = {
 /* Supported bitrate */
 static struct ieee80211_rate bitrates = {
 	.flags = 0,
-	/* bitrate in units of 100 Kbps */
-	.bitrate = 10,
+	.bitrate = 10, //bitrate in units of 100 Kbps
 	.hw_value = 0,
 	.hw_value_short = 0,
 };/* struct ieee80211_rate */
 
-/* Supported band (channel + bitrate) */
+/* Supported bands (channels + bitrates) */
 static struct ieee80211_supported_band bands = {
 	.channels = &channels,
 	.bitrates = &bitrates,
@@ -108,22 +118,26 @@ struct ieee80211p_txq {
  * RX path *
  ***********/
 
+enum ieee80211p_rx_flags {
+	IEEE80211P_MMIC_ERROR = 1 << 0,
+	IEEE80211P_FAILED_FCS_CRC = 1 << 1,
+	IEEE80211P_FAILED_PLCP_CRC = 1 << 2,
+	IEEE80211P_MACTIME_MPDU = 1 << 3,
+	IEEE80211P_NO_SIGNAL_VAL = 1 << 4,
+};
+
 struct ieee80211p_rx_status {
-	u16     rs_datalen;	//frame data lenght
-	u16     rs_tstamp;	//time stamp used to compute the MAC time
-	u8      rs_status;	//errors status (CRC, PHY, fifo, decryption, MIC errors) used to check if continue frame processing or not
-	u8      rs_phyerr;
-	s8      rs_rssi;
-	u8      rs_keyix;	//key index for the decryption check
-	u8      rs_rate;
-	u8      rs_antenna;
-	u8      rs_more;	//jumbo frame errors
+	u16	data_len;	//frame data length
+	u8	rssi; //received power
+	u8	rate; //reveived data rate in units og 100 kbps
+	enum ieee80211_band band;
+	u8	flags; //RX flags
 }; /* struct ieee80211p_rx_status */
 
 struct ieee80211p_rx_buf {
-	struct ieee80211p_rx_status rs;
+	struct ieee80211p_rx_status status;
 	char *buf;
-}; /* struct ieee80211p_rx_buf */
+};/* ieee80211_rx_buf */
 
 /*********************
  * Regulatory domain *									
@@ -136,8 +150,16 @@ static struct ieee80211_regdomain regd = {
 	.dfs_region = 0,
 	.reg_rules = {
 		/* start freq / end freq / bandwidth / gain / eirp / flags */
-		REG_RULE(0,5000,40,0,47,0),
+		REG_RULE(0,5000,40,3,47,0),
 	}
+};
+
+/************************************
+ * Virtual interface's private data *
+ ************************************/
+
+struct ieee80211p_vif_priv {
+	enum nl80211_iftype opmode;
 };
 
 /******************************************************************************
@@ -146,41 +168,39 @@ static struct ieee80211_regdomain regd = {
  *
  *****************************************************************************/
 
-struct ieee80211p_vif_priv {
-	enum nl80211_iftype opmode;
-};
-
 struct ieee80211p_device_priv {
 	
 	/* Configuration and hardware information for an 802.11 PHY */	
 	struct ieee80211_hw *hw;	
 		
-	/* The RX buffer DMA mapped */
-	/* Shall contain the physical address the DMA space allocated */
-	struct ieee80211p_rx_buf rx_buf; 
+	/* RX structure (DMA mapped buffer + RX parameters) */
+	struct ieee80211p_rx_buf rx_buf;
 	
 	/* TX */
-	spinlock_t txqlock; //Lock
+	spinlock_t txq_lock;
 	struct ieee80211p_txq txqs[IEEE80211P_NUM_TXQ];	
-	struct tasklet_struct txtq;
+	struct tasklet_struct tx_tq;
 	bool tx_pending; //TX tasklet pending
 	
 	/* RX */
-	spinlock_t rxqlock;	
-	struct tasklet_struct rxtq;
+	spinlock_t rxq_lock;
+	struct tasklet_struct rx_tq;
 	bool rx_pending; //RX tasklet pending
 
-	/* Lock */	
-	spinlock_t lock;
-
-	/* Virtual interfaces */
+	/* Nb of virtual interfaces */
 	int nvifs;
 
 	/* Current channel in use */
-	struct ieee80211_channel *curchan;
+	struct ieee80211_channel *cur_chan;
 
-	/* Requested power level in dBm */
-	int power_level;
+	/* Current power level in dBm */
+	int cur_power;
+
+	/* Current data rate in units of 100 kbps */
+	u16 cur_datarate;
+
+	/* Lock used for misc purposes */
+	spinlock_t lock;
 
 };/* ieee80211p_device_priv */
 

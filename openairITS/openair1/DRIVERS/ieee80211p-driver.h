@@ -2,7 +2,7 @@
  *
  * Copyright(c) EURECOM / Thales Communications & Security
  *
- * Portions of this file are derived from the ath5k project.
+ * Portions of this file are derived from the Atheros ath5k project.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
@@ -21,7 +21,7 @@
  * file called LICENSE.
  *
  * Contact Information:
- * Thales Communications & Seucrity <philippe.agostini@thalesgroup.com>
+ * Thales Communications & Security <philippe.agostini@thalesgroup.com>
  *
  *****************************************************************************/
 
@@ -34,6 +34,6 @@
  *
  *****************************************************************************/
 
-char *ieee80211p_driver_get_rx_addr(void);
+struct ieee80211p_device_priv *ieee80211p_driver_get_priv_data(void);
 
 #endif /* __ieee80211_device_h__ */
