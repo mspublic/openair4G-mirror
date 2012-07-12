@@ -430,10 +430,14 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
 #endif
 
 #ifndef OPENAIR2
-void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmission_mode) {
+void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
+
+  u8 cooperation_flag = phy_vars_eNB->cooperation_flag;
+  u8 transmission_mode = phy_vars_eNB->transmission_mode[0];
 
   u32 rballoc = 0x00F0;
   u32 rballoc2 = 0x000F;
+
   /*
     u32 rand = taus();
     if ((subframe==8) || (subframe==9) || (subframe==0))
@@ -527,16 +531,16 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
       DCI_pdu->dci_alloc[0].rnti       = 0x1235;
       DCI_pdu->dci_alloc[0].format     = format1E_2A_M10PRB;
       
-      DLSCH_alloc_pdu1E.tpmi             = 5; //use feedback
+      DLSCH_alloc_pdu1E.tpmi             = 5; //5=use feedback
       DLSCH_alloc_pdu1E.rv               = 0;
       DLSCH_alloc_pdu1E.ndi              = 1;
       DLSCH_alloc_pdu1E.mcs              = openair_daq_vars.target_ue_dl_mcs;
       DLSCH_alloc_pdu1E.harq_pid         = 1;
       DLSCH_alloc_pdu1E.dai              = 0;
       DLSCH_alloc_pdu1E.TPC              = 0;
-      DLSCH_alloc_pdu1E.rballoc          = rballoc;
+      DLSCH_alloc_pdu1E.rballoc          = openair_daq_vars.ue_dl_rb_alloc;
       DLSCH_alloc_pdu1E.rah              = 0;
-      DLSCH_alloc_pdu1E.dl_power_off     = 0;
+      DLSCH_alloc_pdu1E.dl_power_off     = 0; //0=second user present
       memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu1E,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
       
       DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t; 
@@ -545,7 +549,10 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
       DCI_pdu->dci_alloc[1].format     = format1E_2A_M10PRB;
       
       memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&DLSCH_alloc_pdu1E,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-    }
+
+      // set the precoder of the second UE orthogonal to the first
+      phy_vars_eNB->eNB_UE_stats[1].DL_pmi_single = (phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single ^ 0x1555); 
+     }
     break;
  
   case 9:
@@ -581,7 +588,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
 
       UL_alloc_pdu.type    = 0;
       UL_alloc_pdu.hopping = 0;
-      UL_alloc_pdu.rballoc = computeRIV(25,0,openair_daq_vars.ue_ul_nb_rb);
+      UL_alloc_pdu.rballoc = computeRIV(25,2,openair_daq_vars.ue_ul_nb_rb);
       UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
       UL_alloc_pdu.ndi     = 1;
       UL_alloc_pdu.TPC     = 0;
@@ -601,9 +608,9 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag, u8 transmissio
 	UL_alloc_pdu.type    = 0;
 	UL_alloc_pdu.hopping = 0;
 	if (cooperation_flag==0)
-	  UL_alloc_pdu.rballoc = computeRIV(25,openair_daq_vars.ue_ul_nb_rb,openair_daq_vars.ue_ul_nb_rb);
+	  UL_alloc_pdu.rballoc = computeRIV(25,2+openair_daq_vars.ue_ul_nb_rb,openair_daq_vars.ue_ul_nb_rb);
 	else 
-	  UL_alloc_pdu.rballoc = computeRIV(25,0,openair_daq_vars.ue_ul_nb_rb);
+	  UL_alloc_pdu.rballoc = computeRIV(25,2,openair_daq_vars.ue_ul_nb_rb);
 	UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
 	UL_alloc_pdu.ndi     = 1;
 	UL_alloc_pdu.TPC     = 0;
@@ -888,7 +895,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				     next_slot>>1);
 #else
     DCI_pdu = &DCI_pdu_tmp;
-    fill_dci(DCI_pdu,next_slot>>1,phy_vars_eNB->cooperation_flag,phy_vars_eNB->transmission_mode[0]);
+    fill_dci(DCI_pdu,next_slot>>1,phy_vars_eNB);
 #endif
 
 
