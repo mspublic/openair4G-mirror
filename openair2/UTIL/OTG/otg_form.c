@@ -7,10 +7,12 @@ extern unsigned char NB_UE_INST;
 
 FD_otg * form_dl, *form_ul;
 FL_FORM *fclock;
+unsigned int clear_cmpt_ul=0;
+unsigned int clear_cmpt_dl=0;
 
 FD_otg *create_form_otg(void)
 {
-  FL_OBJECT *obj;
+  FL_OBJECT *obj, *obj_ctime;
   FD_otg *fdui = (FD_otg *) fl_calloc(1, sizeof(*fdui));
 
   fdui->otg = fl_bgn_form(FL_NO_BOX, 550, 550);
@@ -23,6 +25,8 @@ FD_otg *create_form_otg(void)
   
    obj = fl_add_button(FL_NORMAL_BUTTON,250,510,50,30,"Exit");
    fl_set_object_callback(obj, exit_cb, 0);
+
+   //obj_ctime = fl_add_text(FL_NORMAL_TEXT, 150,510,50,30, "EURECOM");
 
   fl_end_form();
   fdui->otg->fdui = fdui;
@@ -58,7 +62,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
           fl_set_xyplot_ybounds(form_ul->owd,0,50);
         else
           fl_set_xyplot_ybounds(form_ul->owd,0,200);
-      fl_set_xyplot_ybounds(form_ul->throughput,0,100); 
+      fl_set_xyplot_ybounds(form_ul->throughput,0,50); 
 
     }
 
@@ -82,7 +86,7 @@ printf("values_forms src %d, dst %d, owd %f, th %f  \n", src, dst, owd, throughp
   }
 
 if (dst<NB_eNB_INST){ 
-    LOG_I(OTG,"direction: UL [src:%d, dst:%d] \n", src, dst);
+    LOG_D(OTG,"direction: UL [src:%d, dst:%d] \n", src, dst);
     otg_forms_info->data_owd_ul[src][dst][otg_forms_info->idx_ul[src][dst]]= owd;
     otg_forms_info->data_throughput_ul[src][dst][otg_forms_info->idx_ul[src][dst]]=throughput;
     otg_forms_info->data_ctime_ul[src][dst][otg_forms_info->idx_ul[src][dst]]= otg_forms_info->idx_ul[src][dst]; 
@@ -90,25 +94,26 @@ if (dst<NB_eNB_INST){
     plot_graphes_ul(src, dst);
   }
   else{
-    LOG_I(OTG,"direction: DL [src:%d, dst:%d] \n", src, dst);
+    LOG_D(OTG,"direction: DL [src:%d, dst:%d] \n", src, dst);
     otg_forms_info->data_owd_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= owd;
     otg_forms_info->data_throughput_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= throughput;
     otg_forms_info->data_ctime_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= otg_forms_info->idx_dl[src][dst]; 
     otg_forms_info->idx_dl[src][dst]++;
     plot_graphes_dl(src, dst);
   }
-  LOG_I(OTG,"OTG_forms[src %d, dst %d] owd %f TH %f \n", src, dst,  owd, throughput);	
-  LOG_I(OTG,"MAX_UE_eNB %d, %d \n:",  NB_UE_INST,  NB_eNB_INST);   
+  //LOG_D(OTG,"OTG_forms[src %d, dst %d] owd %f TH %f \n", src, dst,  owd, throughput);	
+  //LOG_D(OTG,"MAX_UE_eNB %d, %d \n:",  NB_UE_INST,  NB_eNB_INST);   
+
+printf("otg_counter: UL %d , DL %d \n", clear_cmpt_ul, clear_cmpt_dl);
 }
 
 
 void plot_graphes_ul(int src, int dst) //UE -->eNB
 {
 
-int max_samples=100;
 int i, src_idx=1, curve_id=1;
 
-if (otg_forms_info->idx_ul[src][dst]==max_samples-1){
+if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 
   fl_update_display(1); //the function flushes the X buffer so the drawing requests are on their way to the server
 
@@ -154,8 +159,6 @@ if (otg_forms_info->idx_ul[src][dst]==max_samples-1){
   otg_forms_info->idx_ul[src][dst]--;
 }
 
-   //fl_clear_browser(form_ul->owd);
-   //fl_clear_browser(form_ul->throughput);
    fl_check_forms();
 
 }
@@ -165,10 +168,9 @@ if (otg_forms_info->idx_ul[src][dst]==max_samples-1){
 void plot_graphes_dl(int src, int dst)  //eNB -->UE
 {
 
-int max_samples=100;
 int i, dst_idx=1, curve_id=1;
 
-if (otg_forms_info->idx_dl[src][dst]==max_samples-1){
+if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
 
   fl_update_display(1); //the function flushes the X buffer so the drawing requests are on their way to the server
 
@@ -217,8 +219,6 @@ if (otg_forms_info->idx_dl[src][dst]==max_samples-1){
   otg_forms_info->idx_dl[src][dst]--;
 }
 
-   //fl_clear_browser(form_ul->owd);
-   //fl_clear_browser(form_ul->throughput);
    fl_check_forms();
 
 }

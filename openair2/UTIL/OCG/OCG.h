@@ -508,11 +508,11 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
 
   typedef struct
   {
-    int throughput;
-    int latency;
-    int loss_rate;
+    char *throughput;
+    char *latency;
+    char *loss_rate;
     int signalling_overhead;
-    int owd_radio_access;
+    char *owd_radio_access;
   } Performance_Metrics;
 
   typedef struct

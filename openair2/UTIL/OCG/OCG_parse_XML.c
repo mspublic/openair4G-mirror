@@ -1091,13 +1091,13 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 		    oai_emulation.emulation_config.curve = strndup(ch, len);
 		  }else if (performance_metrics_) {
 		    if (throughput_) {
-		      oai_emulation.emulation_config.performance_metrics.throughput = atoi(ch);
+		      oai_emulation.emulation_config.performance_metrics.throughput = strndup(ch, len);
 		    } else if (latency_) {
-		      oai_emulation.emulation_config.performance_metrics.latency = atoi(ch);
+		      oai_emulation.emulation_config.performance_metrics.latency = strndup(ch, len);
 		    } else if (loss_rate_) {
-		      oai_emulation.emulation_config.performance_metrics.loss_rate = atoi(ch);
+		      oai_emulation.emulation_config.performance_metrics.loss_rate = strndup(ch, len);
 		    }else if (owd_radio_access_) {
-		      oai_emulation.emulation_config.performance_metrics.owd_radio_access = atoi(ch);
+		      oai_emulation.emulation_config.performance_metrics.owd_radio_access = strndup(ch, len);
 		    }
 		  } else if (layer_) {
 		    if (phy_) {
