@@ -73,6 +73,10 @@ typedef struct {
 	int SIZE_RXDATAF;
 	
 	u16 interCellId;
+	int n_adj_cells;
+	u8 dual_stream_UE;
+	
+	int perfect_ce;
 
 } options_t;
 

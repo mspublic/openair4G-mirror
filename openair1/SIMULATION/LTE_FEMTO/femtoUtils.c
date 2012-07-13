@@ -42,13 +42,16 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                {"c",    required_argument, 0, 'c'},
                {"e",    no_argument, 0, 'e'},
                {"m",    required_argument, 0, 'm'},
+               {"A",    required_argument, 0, 'A'},
+               {"D",    no_argument, 0, 'D'},
+               {"p",    no_argument, 0, 'p'},
                {0, 0, 0, 0}
              };
 
 
 		int option_index = 0;   
 		
-    while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:em:",long_options, &option_index)) != -1)
+    while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:em:A:Dp",long_options, &option_index)) != -1)
     {
 		printf("%c %s\n",c,optarg);
         switch (c)
@@ -58,12 +61,17 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                opts->channel_model=AWGN;
             sprintf(opts->parameters,"%s -a",opts->parameters);
             break;
+         case 'D':
+            opts->dual_stream_UE=1;             
+            sprintf(opts->parameters,"%s -D",opts->parameters);
+            break;
          case 'e':
             opts->dci_flag=1;               
             sprintf(opts->parameters,"%s -d",opts->parameters);
             break;
         case 's':
             opts->snr_init=atof(optarg);
+            opts->snr_max= opts->snr_init+5;
             sprintf(opts->parameters,"%s  -s%f",opts->parameters,opts->snr_init);
             break;
         case 'S':
@@ -175,6 +183,14 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                 exit(-1);
             }
             break;
+        case 'A':
+            opts->n_adj_cells=atoi(optarg);
+             sprintf(opts->parameters,"%s  -b%d",opts->parameters, opts->n_adj_cells);
+			break;
+		 case 'p':
+            opts->perfect_ce=1;               
+            sprintf(opts->parameters,"%s -p",opts->parameters);
+            break;
         default:
         case 'h':
             printf("-h    This message\n");
@@ -195,8 +211,8 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             printf("-f    Output filename (.txt format) for Pe/SNR results\n");
             printf("-a    Use AWGN channel and not multipath\n");
             printf("-b    Test Number\n");
-            printf("-C    CellId Number for interferer\n"
-            printf("-m    MCS\n");
+            printf("-C    CellId Number for interferer\n");
+            printf("-m    MCS\n");            
             exit (-1);
             break;
 
@@ -332,10 +348,14 @@ void _makeOutputDir(options_t *opts)
 
     status=chdir(auxDir);
     
-    sprintf(auxFile,"OutpuSimulation_%df_%dI_%sdB_%dch.m",opts->nframes,opts->nInterf,opts->interfLevels,opts->channel_model);
+    sprintf(auxFile,"OutpuSimulation_%df_%dI_%sdB_%dch_%d.m",opts->nframes,opts->nInterf,opts->interfLevels,opts->channel_model,opts->testNumber);
+    sprintf(auxFile,"xx.m");
 
     opts->outputFile =fopen(auxFile,"w");
-    opts->outputBler =fopen("OuputBler.svn","w");
+    
+      sprintf(auxFile,"OuputBler_%d.m",opts->testNumber);
+    
+    opts->outputBler =fopen(auxFile,"w");
     opts->outputBer =fopen("OuputBER.svn","w");
 
     controlFile=fopen("ControlTest.txt","w");
