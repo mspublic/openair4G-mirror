@@ -59,7 +59,7 @@ using boost::asio::ip::udp;
 #include "util/mgmt_log.hpp"
 
 void printHelp(string binaryName) {
-	cerr << binaryName << " <configurationFile>" << endl;
+	cerr << binaryName << " <configurationFile> <logFileName>" << endl;
 	// todo explain other commandline options here
 }
 
@@ -67,7 +67,21 @@ const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
 
 int main(int argc, char** argv) {
-	Logger logger(Logger::DEBUG);
+	/**
+	 * Configuration file name parameter is necessary, log file
+	 * name parameter is optional
+	 */
+	string logFileName = "";
+	if (argc == 2) {
+		logFileName = "SCOREF-MGMT.log";
+	} else if (argc == 3) {
+		logFileName = string(argv[2]);
+	} else {
+		printHelp(argv[0]);
+		exit(1);
+	}
+
+	Logger logger(logFileName, Logger::DEBUG);
 
 #ifdef BOOST_VERSION_1_50
 	/**
@@ -99,12 +113,6 @@ int main(int argc, char** argv) {
 	// todo this should be managed by ManagementClientState
 	bool locationTableUpdated = false;
 
-	// We expect the configuration file name as the only parameter
-	if (argc != 2) {
-		printHelp(argv[0]);
-		exit(1);
-	}
-
 	ManagementInformationBase mib(logger);
 	GeonetMessageHandler packetHandler(mib, logger);
 
@@ -112,7 +120,7 @@ int main(int argc, char** argv) {
 	logger.info("Reading configuration file...");
 
 	Configuration configuration(argv[1], logger);
-	if (!configuration.pars23 May 2012eConfigurationFile(mib)) {
+	if (!configuration.parseConfigurationFile(mib)) {
 		logger.error("Cannot open/parse configuration file, exiting...");
 		return -1;
 	}

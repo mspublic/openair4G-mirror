@@ -42,6 +42,8 @@
 #ifndef MGMT_LOG_HPP_
 #define MGMT_LOG_HPP_
 
+#include <boost/filesystem.hpp>
+#include <fstream>
 #include <string>
 #include <map>
 using namespace std;
@@ -62,9 +64,10 @@ class Logger {
 		/**
 		 * Constructor for Logger class
 		 *
+		 * @param logFileName Log file name
 		 * @param logLevel Initial log level (default is INFO)
 		 */
-		Logger(Logger::LOG_LEVEL logLevel = Logger::INFO);
+		Logger(const string& logFileName, Logger::LOG_LEVEL logLevel = Logger::INFO);
 		/**
 		 * Destructor for Logger class
 		 */
@@ -110,6 +113,18 @@ class Logger {
 		void setLogLevel(Logger::LOG_LEVEL logLevel);
 
 	private:
+		/**
+		 * Log file name
+		 */
+		string logFileName;
+		/**
+		 * Log file path of type boost::filesystem::path
+		 */
+		boost::filesystem::path logFilePath;
+		/**
+		 * Log file stream of type ofstream
+		 */
+		ofstream logFileStream;
 		/**
 		 * Configured log level
 		 */

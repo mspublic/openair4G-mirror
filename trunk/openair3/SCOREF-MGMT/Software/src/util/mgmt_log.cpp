@@ -39,12 +39,34 @@
  * \warning none
 */
 
+#include <boost/date_time.hpp>
 #include "mgmt_log.hpp"
 #include <iostream>
 using namespace std;
 
-Logger::Logger(Logger::LOG_LEVEL logLevel) {
+Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel) {
+	this->logFileName = logFileName;
 	this->logLevel = logLevel;
+
+	/**
+	 * Open log file stream, if the file already exists then rename
+	 * it appending the date and create a new one
+	 */
+	logFilePath = boost::filesystem::path(logFileName);
+
+	if (boost::filesystem::exists(logFilePath)) {
+		cout << "Log file already exists, renaming it..." << endl;
+
+		/**
+		 * Get the current date/time as string
+		 */
+
+		// boost::filesystem::rename(logFilePath, logFilePath + string("hede"));
+	}
+
+	if (logFileStream.open(logFileName.c_str(), ios_base::out)) {
+		cerr << "Cannot open log file!" << endl;
+	}
 
 	logLevelString.insert(logLevelString.end(), std::make_pair(DEBUG, "DEBUG"));
 	logLevelString.insert(logLevelString.end(), std::make_pair(INFO, "INFO"));
