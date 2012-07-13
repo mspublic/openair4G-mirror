@@ -24,8 +24,6 @@
 
 #include "femtoUtils.h"
 
-
-
 #define BW    7.68
 #define N_RB  25		//50 for 10MHz and 25 for 5 MHz
 
@@ -44,7 +42,7 @@ DCI1E_5MHz_2A_M10PRB_TDD_t  DLSCH_alloc_pdu2_1E;  //TODO:  what it's the use of 
 
 LTE_DL_FRAME_PARMS *frame_parms; //WARNING if you don't put this variable, some macros dosn't work
 
-int WRITE_FILES =1;
+int WRITE_FILES =0;
 int NOISE=1;
 
 int x=0;
@@ -144,14 +142,19 @@ void _initDefaults(options_t *opts) {
     opts->pilot2 = 7;
     opts->pilot3 = 11;
 
-    opts->num_rounds=4;
+    opts->num_rounds=1;
     opts->subframe=0; 
     opts->eNB_id = 0;
     opts->amp=1024;
     opts->dci_flag=0;
 
-    opts->testNumber=0;
-
+    opts->testNumber=0;	
+	sprintf(opts->interfLevels,"");
+	
+	opts->n_adj_cells=0;
+	opts->dual_stream_UE = 0;
+	
+	opts->perfect_ce=0;
 
 }
 
@@ -170,14 +173,15 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
     lte_frame_parms->N_RB_UL            = N_RB;
     lte_frame_parms->Ncp                = opts.extended_prefix_flag;
     lte_frame_parms->Nid_cell           = opts.Nid_cell;
-    lte_frame_parms->nushift            = 0;
+    lte_frame_parms->nushift            = (opts.Nid_cell)%6;
     lte_frame_parms->nb_antennas_tx     = opts.n_tx;
     lte_frame_parms->nb_antennas_rx     = opts.n_rx;
     lte_frame_parms->phich_config_common.phich_resource         = oneSixth;  //TODO Why??
     lte_frame_parms->tdd_config = 3;
     lte_frame_parms->frame_type         = opts.frame_type;
     lte_frame_parms->mode1_flag = (opts.transmission_mode == 1)? 1 : 0;
-
+  
+	srand(1);
     randominit(1);
     set_taus_seed(1);
 
@@ -197,8 +201,16 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
     phy_init_lte_top(lte_frame_parms);
     dump_frame_parms(lte_frame_parms); //print
 
+
+  PHY_vars_UE->PHY_measurements.n_adj_cells=opts.n_adj_cells;
+	 for(i=1;i<=opts.n_adj_cells;i++)
+	 {
+	  PHY_vars_UE->PHY_measurements.adj_cell_id[i] = (opts.Nid_cell+i)%6;	  
+	}
+  
+
     for (i=0; i<3; i++)
-        lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);   
+        lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],opts.Nid_cell+i);   
 
     phy_init_lte_ue(PHY_vars_UE,0);
     phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
@@ -511,6 +523,8 @@ void _applyInterference(options_t opts,data_t data,double sigma2,double iqim,int
 			{									
 				data.r_re[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_re[j][aa][i]);				
 				data.r_im[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_im[j][aa][i]);
+				/*data.r_re[aa][i] += (pow(10.0,.05*(-20))*data.ir_re[j][aa][i]);				
+				data.r_im[aa][i] += (pow(10.0,.05*(-20))*data.ir_im[j][aa][i]);*/
 			}
         }
     }
@@ -587,7 +601,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
     unsigned short input_buffer_length;
 	double raw_ber;
 	double rawberT;
-	int numresults;
+	int numresults,k,aarx;
 	
     //Index and counters
     int aa;				//Antennas index
@@ -613,8 +627,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
     
     u8 i_mod = 2;
     u8 num_pdcch_symbols=3,num_pdcch_symbols_2=0;
-    u8 dual_stream_UE = 0;
-    int eNB_id_i = NUMBER_OF_eNB_MAX;
+    
+    int eNB_id_i = 1;//NUMBER_OF_eNB_MAX;
     int idUser=0;    //index of  number of user, this program use just one user allowed in position 0 of  PHY_vars_eNB->dlsch_eNB
 					//Just allow transmision mode 1
     int numOFDMSymbSubcarrier;
@@ -798,14 +812,14 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                 }
 
 			   //Modulation
-               re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id],
+         re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id],
                                                 opts.amp,
                                                 opts.subframe,
                                                 &PHY_vars_eNB->lte_frame_parms,
                                                 num_pdcch_symbols,
                                                 PHY_vars_eNB->dlsch_eNB[idUser][0]);
                                                 
-               for(i=0;i<opts.nInterf;i++)
+              for(i=0;i<opts.nInterf;i++)
                 {
 					dlsch_modulation(interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
                                                 opts.amp,
@@ -827,7 +841,6 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 				{
 					generate_pilots(interf_PHY_vars_eNB[i],interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],opts.amp,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 				}
-                
                 
 				_writeTxData("3","pilots", 0, 2,opts,0,0);
 				
@@ -877,8 +890,9 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 					}
                     
                     write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id][0][0],opts.SIZE_TXDATAF ,1,1);                                     
+                    write_output("txsigF1.m","txsF1", &interf_PHY_vars_eNB[0]->lte_eNB_common_vars.txdataF[opts.eNB_id][0][0],opts.SIZE_TXDATAF ,1,1);                                     
                     if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-                        write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id][1][0],opts.SIZE_TXDATAF,1,1);                       
+                    write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.eNB_id][1][0],opts.SIZE_TXDATAF,1,1);                       
 					write_output("txsig0.m","txs0", &PHY_vars_eNB->lte_eNB_common_vars.txdata[opts.eNB_id][0][0],opts.SIZE_TXDATA,1,1);					
 																												
                 }
@@ -912,47 +926,55 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                 // Inner receiver scheduling for 3 slots
                 for (Ns=(2*opts.subframe); Ns<((2*opts.subframe)+3); Ns++)
                 {
-                    for (l=0; l<opts.pilot2; l++)
-                    {                   
-						
-                        slot_fep(PHY_vars_UE,l,Ns%20,0,0);
-
-#ifdef PERFECT_CE
-                        if (opts.awgn_flag==0) {
-                            // fill in perfect channel estimates
-                            freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
-
-                            for (k=0; k<NUMBER_OF_eNB_MAX; k++) {
-                                for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-                                {
-                                    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-                                    {
-                                        for (i=0; i<frame_parms->N_RB_DL*12; i++)
-                                        {
-                                            ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[idUser][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);											
-                                            ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[idUser][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else {
-                            for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-                            {
-                                for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-                                {
-                                    for (i=0; i<frame_parms->N_RB_DL*12; i++)
-                                    {
-                                        ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=AMP/2;
-                                        ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
-                                    }
-                                }
-                            }
-                        }
+                    for (l=0; l<opts.pilot2 ; l++)
+                    {  		            
+							slot_fep(PHY_vars_UE,l,Ns%20,0,0);									
+#ifdef PERFECT_CE							
+							if (opts.awgn_flag==0) {
+							// fill in perfect channel estimates
+								freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+								freq_channel(interf_eNB2UE[0],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+								
+								
+															
+									for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+									{
+										for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
+										{
+											for (i=0; i<frame_parms->N_RB_DL*12; i++)
+											{
+												((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[idUser][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);											
+												((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[idUser][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
+												
+												((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(interf_eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);											
+												((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(interf_eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
+											}
+										}
+									}								
+							}
+							else {
+								for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+								{
+									for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
+									{
+										for (i=0; i<frame_parms->N_RB_DL*12; i++)
+										{
+											((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=AMP/2;
+											((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+											
+											((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=AMP/2;
+											((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+																							
+										
+										}
+									}
+								}
+							}					
 #endif
-
-
-                        if ((Ns==(2+(2*opts.subframe))) && (l==0)) {
+                       
+						
+					    
+                        if ((Ns==((2*opts.subframe))) && (l==0)) {
                             lte_ue_measurements(PHY_vars_UE,opts.subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,0);
                         }
 
@@ -1051,7 +1073,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                  opts.subframe,
                                                  m,
                                                  (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
-                                                 dual_stream_UE,
+                                                 opts.dual_stream_UE,
                                                  i_mod))
                                     {
 										
@@ -1068,7 +1090,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                           opts.subframe,
                                                           m,
                                                           (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
-                                                          dual_stream_UE,
+                                                          opts.dual_stream_UE,
                                                           i_mod))
                                     {
                                         dlsch_active = 0;
@@ -1092,7 +1114,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                  opts.subframe,
                                                  m,
                                                  0,
-                                                 dual_stream_UE,
+                                                 opts.dual_stream_UE,
                                                  i_mod)==-1)
                                     {										
                                         dlsch_active=0;
@@ -1108,7 +1130,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                           opts.subframe,
                                                           m,
                                                           0,
-                                                          dual_stream_UE,
+                                                          opts.dual_stream_UE,
                                                           i_mod)==-1)
                                     {
                                         dlsch_active=0;
@@ -1131,7 +1153,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                  opts.subframe,
                                                  m,
                                                  0,
-                                                 dual_stream_UE,
+                                                 opts.dual_stream_UE,
                                                  i_mod)==-1)
                                     {										
                                         dlsch_active=0;
@@ -1147,7 +1169,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                           opts.subframe,
                                                           m,
                                                           0,
-                                                          dual_stream_UE,
+                                                         opts.dual_stream_UE,
                                                           i_mod)==-1)
                                     {
                                         dlsch_active=0;
@@ -1157,12 +1179,16 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                 }
                             }                           
                         }
+                        
                     }
                 }
 
 				if(opts.nframes==1)
 				{
 					_writeOuputOneFrame(opts,coded_bits_per_codeword,uncoded_ber_bit,tbs);
+
+								write_output("fch0e.m","ch0e",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[opts.eNB_id][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
+								write_output("fch1e.m","ch1e",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
 				}
 
 
@@ -1315,6 +1341,10 @@ void _apply_Multipath_Noise_Interference(options_t opts,data_t data,double sigma
 void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncoded_ber_bit,u32 tbs)
 {
 
+
+	write_output("rho.m","rho_0",PHY_vars_UE->lte_ue_pdsch_vars[0]->rho,300*((PHY_vars_UE->lte_frame_parms.Ncp == 0) ? 14 : 12),1,1);
+
+
     if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {    
         write_output("dlsch01_ch0.m","dl01_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[opts.eNB_id][1][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
         write_output("dlsch10_ch0.m","dl10_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[opts.eNB_id][2][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);        
@@ -1338,6 +1368,8 @@ void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncod
 	write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);
 	
 	
+	
+	
 	if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
 	{
 		write_output("ch1.m","ch1",eNB2UE->ch[PHY_vars_eNB->lte_frame_parms.nb_antennas_rx],eNB2UE->channel_length,1,8);		
@@ -1351,7 +1383,7 @@ void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncod
 	write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[opts.eNB_id]->llr,2400,1,4);
 	
 	dump_dlsch2(PHY_vars_UE,opts.eNB_id,coded_bits_per_codeword);
-	dump_dlsch2(PHY_vars_UE,NUMBER_OF_eNB_MAX,coded_bits_per_codeword);
+	dump_dlsch2(PHY_vars_UE,1,coded_bits_per_codeword);
 	
 	
     
