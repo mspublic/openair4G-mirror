@@ -174,6 +174,11 @@ class Util {
 		 * @return std::vector containing split parts
 		 */
 		static vector<string> split(const string& input, char delimiter);
+		/**
+		 * Returns current date/time as string
+		 * This is used for log file rotating and in log messages as a prefix
+		 */
+		static string getDateAndTime();
 };
 
 #endif /* MGMT_UTIL_HPP_ */

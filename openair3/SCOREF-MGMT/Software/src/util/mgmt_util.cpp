@@ -226,3 +226,13 @@ vector<string> Util::split(const string& input, char delimiter) {
 
 	return elements;
 }
+
+string Util::getDateAndTime() {
+	static std::locale loc(std::wcout.getloc(), new wtime_facet(L"%Y%m%d_%H%M%S"));
+
+	std::basic_stringstream<wchar_t> wss;
+	wss.imbue(loc);
+	wss << now;
+	return wss.str();
+
+}
