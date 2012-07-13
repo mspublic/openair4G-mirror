@@ -40,6 +40,7 @@
 */
 
 #include <boost/date_time.hpp>
+#include "mgmt_util.hpp"
 #include "mgmt_log.hpp"
 #include <iostream>
 using namespace std;
@@ -56,15 +57,14 @@ Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel) {
 
 	if (boost::filesystem::exists(logFilePath)) {
 		cout << "Log file already exists, renaming it..." << endl;
-
 		/**
-		 * Get the current date/time as string
+		 * Get the current date/time as string and prepend log file name with it
 		 */
-
-		// boost::filesystem::rename(logFilePath, logFilePath + string("hede"));
+		boost::filesystem::rename(logFilePath, logFilePath.string() + Util::getDateAndTime(false));
 	}
 
-	if (logFileStream.open(logFileName.c_str(), ios_base::out)) {
+	logFileStream.open(logFileName.c_str(), ios_base::out);
+	if (!logFileStream.is_open()){
 		cerr << "Cannot open log file!" << endl;
 	}
 
@@ -93,7 +93,8 @@ void Logger::error(const string& message) {
 }
 
 void Logger::log(const string& message, LOG_LEVEL level) {
-	cout << logLevelString[level] << ": " << message << endl;
+	this->logFileStream << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": " << message << endl;
+	cout << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": " << message << endl;
 }
 
 void Logger::setLogLevel(Logger::LOG_LEVEL logLevel) {
