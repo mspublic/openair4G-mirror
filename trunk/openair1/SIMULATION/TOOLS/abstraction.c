@@ -8,6 +8,60 @@
 #include "PHY/TOOLS/defs.h"
 #include "defs.h"
 
+/* // NEW code with lookup table for sin/cos based on delay profile (TO BE TESTED)
+
+double **cos_lut=NULL,**sin_lut=NULL;
+
+void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
+
+  double delta_f,freq;  // 90 kHz spacing
+  double delay;
+  s16 f;
+  u8 l;
+
+
+
+  cos_lut = (double **)malloc(n_samples*sizeof(double*));
+  sin_lut = (double **)malloc(n_samples*sizeof(double*));
+
+  delta_f = nb_rb*180000/(n_samples-1);
+
+  for (f=0;f<n_samples;f++) {
+    freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
+    cos_lut[f] = (double *)malloc((int)desc->nb_taps*sizeof(double));
+    sin_lut[f] = (double *)malloc((int)desc->nb_taps*sizeof(double));
+    for (l=0;l<(int)desc->nb_taps;l++) {
+      cos_lut[f][l] = cos(2*M_PI*freq*desc->delays[l]);
+      sin_lut[f][l] = sin(2*M_PI*freq*desc->delays[l]);
+    }
+  }
+
+}
+
+void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
+
+
+  s16 f;
+  u8 aarx,aatx,l;
+
+  for (f=0;f<n_samples;f++) {
+      for (aarx=0;aarx<desc->nb_rx;aarx++) {
+	for (aatx=0;aatx<desc->nb_tx;aatx++) {
+	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].x=0.0;
+	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].y=0.0;
+	  for (l=0;l<(int)desc->nb_taps;l++) {
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos_lut[f][l]+
+								  desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin_lut[f][l]);
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin_lut[f][l]+
+								  desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos_lut[f][l]);
+	  }
+	}
+      }
+  }
+}
+
+*/
+
 void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
   double delta_f,freq;  // 90 kHz spacing
