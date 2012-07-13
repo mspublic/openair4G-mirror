@@ -137,6 +137,9 @@ static void set_mandatory_flags_band(struct ieee80211_supported_band *sband,
 		}
 		WARN_ON(want != 0 && want != 3 && want != 6);
 		break;
+	case IEEE80211_BAND_5_9GHZ:
+	case IEEE80211_BAND_0_8GHZ:
+		break;
 	case IEEE80211_NUM_BANDS:
 		WARN_ON(1);
 		break;
