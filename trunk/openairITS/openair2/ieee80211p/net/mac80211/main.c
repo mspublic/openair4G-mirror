@@ -572,11 +572,6 @@ struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
 
 	wiphy->bss_priv_size = sizeof(struct ieee80211_bss);
 
-	/*
-	 * [PLATA] we activate OCBMode (IEEE 802.11p)
-	 */
-	wiphy.dot11OCBActivated = 1;
-
 	local = wiphy_priv(wiphy);
 
 	local->hw.wiphy = wiphy;
