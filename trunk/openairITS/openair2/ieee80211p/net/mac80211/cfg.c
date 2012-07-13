@@ -1543,6 +1543,7 @@ static int ieee80211_scan(struct wiphy *wiphy,
 		  /*
 		   * [PLATA] - we do not support the scan mode if we are configured with OCBActivated (mode 802.11p)
 		   */
+			printk(KERN_ERR "ieee80211_scan: no scan in 802.11p\n");
 			return -EOPNOTSUPP;
 		}
 		break;
@@ -1580,6 +1581,7 @@ ieee80211_sched_scan_start(struct wiphy *wiphy,
 		/*
 		* [PLATA] - we do not support the scan mode if we are configured with OCBActivated (mode 802.11p)
 		*/
+		printk(KERN_ERR "ieee80211_sched_scan_start: no scan in 802.11p");
 		return -EOPNOTSUPP;
 	}
 
@@ -1612,6 +1614,7 @@ static int ieee80211_auth(struct wiphy *wiphy, struct net_device *dev,
 	  /*
 	   * [PLATA] - we do not support the authentication mode if we are configured with OCBActivated (mode 802.11p)
 	   */
+		printk(KERN_ERR "ieee80211_auth: no auth in 802.11p");
 		return -EOPNOTSUPP;
 	}
 	else {
@@ -1629,6 +1632,7 @@ static int ieee80211_assoc(struct wiphy *wiphy, struct net_device *dev,
 	  /*
 	   * [PLATA] - we do not support the association mode if we are configured with OCBActivated (mode 802.11p)
 	   */
+		printk(KERN_ERR "ieee80211_assoc: no assoc in 802.11p");
 		return -EOPNOTSUPP;
 	}
 	switch (ieee80211_get_channel_mode(local, sdata)) {
@@ -1668,6 +1672,7 @@ static int ieee80211_join_ibss(struct wiphy *wiphy, struct net_device *dev,
 	   * [PLATA] - As the OCBMode is used here in ADHOC mode, we just want to be sure we do not try to
 	   * join an IBSS if wiht OCBActivated (mode 802.11p)
 	   */
+		printk(KERN_ERR "ieee80211_join_ibss: no ibss in 802.11p");
 		return -EOPNOTSUPP;
 	}
 
