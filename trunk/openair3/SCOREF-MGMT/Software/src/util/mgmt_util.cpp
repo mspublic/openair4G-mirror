@@ -39,8 +39,9 @@
  * \warning none
 */
 
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include "mgmt_util.hpp"
-
+#include <iostream>
 #include <sstream>
 using namespace std;
 
@@ -227,12 +228,17 @@ vector<string> Util::split(const string& input, char delimiter) {
 	return elements;
 }
 
-string Util::getDateAndTime() {
-	static std::locale loc(std::wcout.getloc(), new wtime_facet(L"%Y%m%d_%H%M%S"));
-
-	std::basic_stringstream<wchar_t> wss;
-	wss.imbue(loc);
-	wss << now;
-	return wss.str();
-
+string Util::getDateAndTime(bool withDelimiters) {
+	// todo Boost's damn date_time is too complex, figure it out and replace
+	// this with decent c++ code
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer [80];
+	time (&rawtime);
+	timeinfo = localtime (&rawtime);
+	if (withDelimiters)
+		strftime(buffer,80,"%Y/%m/%d-%H:%M:%S",timeinfo);
+	else
+		strftime(buffer,80,"%Y%m%d-%H%M%S",timeinfo);
+	return string(buffer);
 }

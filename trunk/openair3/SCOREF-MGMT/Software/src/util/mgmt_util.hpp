@@ -177,8 +177,11 @@ class Util {
 		/**
 		 * Returns current date/time as string
 		 * This is used for log file rotating and in log messages as a prefix
+		 *
+		 * @param withDelimiters true if asked with delimiters (like YYYY/mm/dd_HH:MM:SS), false otherwise
+		 * @return String representation of current date and time information
 		 */
-		static string getDateAndTime();
+		static string getDateAndTime(bool withDelimiters);
 };
 
 #endif /* MGMT_UTIL_HPP_ */
