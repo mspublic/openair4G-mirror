@@ -310,9 +310,16 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
   }
   else {  // TDD
 
+    if (prach_ConfigIndex>=64) {
+      LOG_E(PHY,"[PHY] Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
+      //mac_xface->macphy_exit("");
+      return(0);
+    }
+
     if (tdd_preamble_map[prach_ConfigIndex][tdd_config].num_prach==0) {
-      LOG_D(PHY,"[PHY] Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
-      mac_xface->macphy_exit("");
+      LOG_E(PHY,"[PHY] Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
+      //mac_xface->macphy_exit("");
+      return(0);
     } 
 
     t0_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t0_ra;
