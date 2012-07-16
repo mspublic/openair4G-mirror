@@ -464,7 +464,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 				  frame_parms->ofdm_symbol_size,
 				  14,
 				  PHY_vars_UE_g[UE_id]->tx_power_dBm);
-	  //				ue_data[UE_id]->tx_power_dBm); 
+	                          //ue_data[UE_id]->tx_power_dBm); 
 #ifdef DEBUG_SIM
 	  printf("[SIM][UL] UE %d tx_pwr %f dBm for slot %d (subframe %d, slot_offset %d, slot_offset_meas %d)\n",UE_id,10*log10(tx_pwr),next_slot,next_slot>>1,slot_offset,slot_offset_meas);
 #endif
