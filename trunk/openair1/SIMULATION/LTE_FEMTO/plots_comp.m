@@ -1,4 +1,4 @@
-close all
+#close all
 dlsch0_rxF_comp0
 dlsch1_rxF_comp0
 figure;
