@@ -1029,7 +1029,7 @@ main (int argc, char **argv)
       if (oai_emulation.info.transmission_mode == 5) 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						     (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
+						     (UE_id == 0)? Rayleigh1_corr : Rayleigh1_anticorr,
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
 						     0,
@@ -1212,13 +1212,18 @@ main (int argc, char **argv)
     }
 #endif 
 
+    for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) 
+      enb_data[eNB_id]->tx_power_dBm = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
+    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) 
+      ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id]->tx_power_dBm;
+    
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
        LOG_I(OMG," extracting position of eNb...\n");
       extract_position(enb_node_list, enb_data, NB_eNB_INST);
        LOG_I(OMG," extracting position of UE...\n");
       extract_position(ue_node_list, ue_data, NB_UE_INST); // JHNOTE: TODO MUST reflect the number of ACTIVE SUMO nodes (for example at the beginning, 1 node only is in SUMO...so, x others are just on standby...should not be considered).
-      
+
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
