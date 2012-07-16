@@ -269,7 +269,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
 	for (eNB_id=0;eNB_id<phy_vars_ue->n_connected_eNB;eNB_id++) {
 	  phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
-	    (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][(aatx<<1) + aarx][0],
+	    (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],
 				(frame_parms->nb_prefix_samples))*rx_power_correction) - 
 	    phy_vars_ue->PHY_measurements.n0_power[aarx];
 	
