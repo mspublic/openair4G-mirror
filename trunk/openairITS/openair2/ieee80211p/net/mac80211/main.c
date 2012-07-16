@@ -521,6 +521,9 @@ static const struct ieee80211_ht_cap mac80211_ht_capa_mod_mask = {
 	},
 };
 
+/*
+ * [PLATA] scan mode here?
+ */
 struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
 					const struct ieee80211_ops *ops)
 {
@@ -621,7 +624,11 @@ struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
 	skb_queue_head_init_class(&local->rx_skb_queue,
 				  &ieee80211_rx_skb_queue_class);
 
-	INIT_DELAYED_WORK(&local->scan_work, ieee80211_scan_work);
+	/*
+	 * [PLATA] scan_work called here. So we bypass it if OCB is activated
+	 */
+	if ((local->hw.wiphy->dot11OCBActivated == 0) || (local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
+	  INIT_DELAYED_WORK(&local->scan_work, ieee80211_scan_work);
 
 	ieee80211_work_init(local);
 

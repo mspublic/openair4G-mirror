@@ -113,6 +113,9 @@ struct sta_info *sta_info_get(struct ieee80211_sub_if_data *sdata,
 /*
  * Get sta info either from the specified interface
  * or from one of its vlans
+ *
+ * [PLATA] - checks that the interface BSS is the same as the BSS in the packet.
+ *         - here, if we have a BSS ID Wildcard BSSID in the sta AND in each packet, we should pass
  */
 struct sta_info *sta_info_get_bss(struct ieee80211_sub_if_data *sdata,
 				  const u8 *addr)

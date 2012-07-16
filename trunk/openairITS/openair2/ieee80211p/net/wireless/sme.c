@@ -75,6 +75,9 @@ static void disconnect_work(struct work_struct *work)
 
 static DECLARE_WORK(cfg80211_disconnect_work, disconnect_work);
 
+/*
+ * [PLATA] qui appelle cette fonction?
+ */
 static int cfg80211_conn_scan(struct wireless_dev *wdev)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_dev(wdev->wiphy);
@@ -755,6 +758,9 @@ void cfg80211_disconnected(struct net_device *dev, u16 reason,
 }
 EXPORT_SYMBOL(cfg80211_disconnected);
 
+/*
+ * [PLATA] is this method called? if so, need to follow the ops->connect...
+ */
 int __cfg80211_connect(struct cfg80211_registered_device *rdev,
 		       struct net_device *dev,
 		       struct cfg80211_connect_params *connect,

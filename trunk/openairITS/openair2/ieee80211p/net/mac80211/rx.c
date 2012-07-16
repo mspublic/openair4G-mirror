@@ -98,6 +98,8 @@ ieee80211_rx_radiotap_len(struct ieee80211_local *local,
  * ieee80211_add_rx_radiotap_header - add radiotap header
  *
  * add a radiotap header containing all the fields which the hardware provided.
+ *
+ * [PLATA] - check the harmonization with the PHY header from the driver...
  */
 static void
 ieee80211_add_rx_radiotap_header(struct ieee80211_local *local,
@@ -163,6 +165,12 @@ ieee80211_add_rx_radiotap_header(struct ieee80211_local *local,
 	if (status->band == IEEE80211_BAND_5GHZ)
 		put_unaligned_le16(IEEE80211_CHAN_OFDM | IEEE80211_CHAN_5GHZ,
 				   pos);
+	else if (status->band == IEEE80211_BAND_5_9GHZ)  // [PLATA] - the PHY header mentions OFDM for the 802.11p PHY mode
+			put_unaligned_le16(IEEE80211_CHAN_OFDM | IEEE80211_CHAN_5_9GHZ,
+					   pos);
+	else if (status->band == IEEE80211_BAND_0_8GHZ)  // [PLATA] - the PHY header mentions OFDM for the 802.11p PHY mode
+			put_unaligned_le16(IEEE80211_CHAN_OFDM | IEEE80211_CHAN_0_8GHZ,
+					   pos);
 	else if (status->flag & RX_FLAG_HT)
 		put_unaligned_le16(IEEE80211_CHAN_DYN | IEEE80211_CHAN_2GHZ,
 				   pos);
@@ -254,7 +262,10 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 		return NULL;
 	}
 
-	if ((!local->monitors) || ((local->hw.wiphy->dot11OCBActivated == 1) || (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
+	/*
+	 * [PLATA] - When OCBMode is activated, we do not monitor, so we should not enter here...(the SKB should NOT have monitoring info)
+	 */
+	if ((!local->monitors) || ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
 		if (should_drop_frame(origskb, present_fcs_len)) {
 			dev_kfree_skb(origskb);
 			return NULL;
@@ -294,6 +305,9 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 	}
 
 	/* prepend radiotap information */
+	/*
+	 * [PLATA] method is entered and used to build the PHY header - need to harmonize with the driver
+	 */
 	ieee80211_add_rx_radiotap_header(local, skb, rate, needed_headroom);
 
 	skb_reset_mac_header(skb);
@@ -301,6 +315,9 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 	skb->pkt_type = PACKET_OTHERHOST;
 	skb->protocol = htons(ETH_P_802_2);
 
+	/*
+	 * [PLATA] - check what it does...
+	 */
 	list_for_each_entry_rcu(sdata, &local->interfaces, list) {
 		if (sdata->vif.type != NL80211_IFTYPE_MONITOR)
 			continue;
@@ -362,6 +379,9 @@ static void ieee80211_parse_qos(struct ieee80211_rx_data *rx)
 		 *
 		 * We also use that counter for non-QoS STAs.
 		 */
+		/*
+		 * [PLATA] - NUM_RX_DATA_QUEUES is 1 for this version of PLATA. Must be harmonized with the driver.
+		 */
 		seqno_idx = NUM_RX_DATA_QUEUES;
 		security_idx = 0;
 		if (ieee80211_is_mgmt(hdr->frame_control))
@@ -419,8 +439,11 @@ ieee80211_rx_h_passive_scan(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
 	struct sk_buff *skb = rx->skb;
 
+	/*
+	 * [PLATA] - we exit immediately if OCB is activated
+	 */
 	if ((likely(!(status->rx_flags & IEEE80211_RX_IN_SCAN) &&
-		   !local->sched_scanning)) || (rx->local->hw.wiphy->dot11OCBActivated == 1) || (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))
+		   !local->sched_scanning)) || ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)))
 		return RX_CONTINUE;
 
 	if (test_bit(SCAN_HW_SCANNING, &local->scanning) ||
@@ -860,7 +883,7 @@ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
 		      ieee80211_is_pspoll(hdr->frame_control)) &&
 		     rx->sdata->vif.type != NL80211_IFTYPE_ADHOC &&
 		     rx->sdata->vif.type != NL80211_IFTYPE_WDS &&
-		     (!rx->sta || !test_sta_flag(rx->sta, WLAN_STA_ASSOC)))) { // JHnote: either data or BS poll and not ADHOC and either no station or not associated
+		     (!rx->sta || !test_sta_flag(rx->sta, WLAN_STA_ASSOC)))) { // [PLATA] - either data or PS poll and not ADHOC and either no station or not associated
 		/*
 		 * accept port control frames from the AP even when it's not
 		 * yet marked ASSOC to prevent a race where we don't set the
@@ -1575,8 +1598,11 @@ ieee80211_rx_h_defragment(struct ieee80211_rx_data *rx)
 static int
 ieee80211_802_1x_port_control(struct ieee80211_rx_data *rx)
 {
+	/*
+	 * [PLATA] allow frames here even if we are not authorized, under the condition we are in the OCB mode...
+	 */
 	if (unlikely(!rx->sta ||
-	    !test_sta_flag(rx->sta, WLAN_STA_AUTHORIZED)))
+	    (!test_sta_flag(rx->sta, WLAN_STA_AUTHORIZED) && !test_sta_flag(rx->sta, WLAN_STA_OCB)) ))
 		return -EACCES;
 
 	return 0;
@@ -1593,6 +1619,14 @@ ieee80211_drop_unencrypted(struct ieee80211_rx_data *rx, __le16 fc)
 	 * decrypted them already.
 	 */
 	if (status->flag & RX_FLAG_DECRYPTED)
+		return 0;
+
+	/*
+	 * [PLATA] Pass through unencrypted frames when the OCB is activated
+	 * first in this version of PLATA we do not support encryption
+	 * second, the encryption is done at a higher layer
+	 */
+	if ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))
 		return 0;
 
 	/* Drop unencrypted frames if key is set. */
@@ -1712,11 +1746,18 @@ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
 	 * Allow EAPOL frames to us/the PAE group address regardless
 	 * of whether the frame was encrypted or not.
 	 */
+	/*
+	 * [PLATA] - we need to initialize these values otherwise we might drop the frame
+	 *         - we keep it here, if the frame if for us
+	 */
 	if (ehdr->h_proto == rx->sdata->control_port_protocol &&
 	    (compare_ether_addr(ehdr->h_dest, rx->sdata->vif.addr) == 0 ||
 	     compare_ether_addr(ehdr->h_dest, pae_group_addr) == 0))
 		return true;
 
+	/*
+	 * [PLATA] added some flags - we allow the frame even if not in AUTHORIZED mode (but in the OCB mode) or if unencrypted but with OCB activated
+	 */
 	if (ieee80211_802_1x_port_control(rx) ||
 	    ieee80211_drop_unencrypted(rx, fc))
 		return false;
@@ -1726,6 +1767,8 @@ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
 
 /*
  * requires that rx->skb is a frame with ethernet header
+ *
+ * [PLATA] TODO - check what it means for the ADHOC mode with OCB activated
  */
 static void
 ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
@@ -2013,6 +2056,10 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 	/*
 	 * Send unexpected-4addr-frame event to hostapd. For older versions,
 	 * also drop the frame to cooked monitor interfaces.
+	 */
+	/*
+	 * [PLATA] when OCB is activated, we cannot use 4addr mode...(only three)
+	 *         - in this method, we configured the interface for NOT using 4-addr
 	 */
 	if (ieee80211_has_a4(hdr->frame_control) &&
 	    sdata->vif.type == NL80211_IFTYPE_AP) {
@@ -2673,33 +2720,39 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 		rx->skb = skb;
 		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
-			CALL_RXH(ieee80211_rx_h_decrypt)  // JHNOTE: no use for 802.11p
-			CALL_RXH(ieee80211_rx_h_check_more_data)  // JHNOTE: no use as we do not POLL in 802.11p
-			CALL_RXH(ieee80211_rx_h_uapsd_and_pspoll)  // JHNOTE: no use as we do not poll (if AD_HOC, return)
+			CALL_RXH(ieee80211_rx_h_decrypt)  // [PLATA] - no use for the OCB mode
+			CALL_RXH(ieee80211_rx_h_check_more_data)  // [PLATA] - no use as we do not POLL in OCB
+			CALL_RXH(ieee80211_rx_h_uapsd_and_pspoll)  // [PLATA] - no use as we do not poll (if AD_HOC, return)
 		}
 		CALL_RXH(ieee80211_rx_h_sta_process)  // JHNOTE: what is this method really doing?
 
+		CALL_RXH(ieee80211_rx_h_defragment) // [PLATA] - we keep it here, as we also allow fragmenting in the tx path  - but should be blocked with the right flags.
+
 		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
-		CALL_RXH(ieee80211_rx_h_defragment) // can be either ignored (we do not fragement, or followed..as no change)
-		CALL_RXH(ieee80211_rx_h_michael_mic_verify) // JHNOTE: probably not necessary as no encryption	
+		CALL_RXH(ieee80211_rx_h_michael_mic_verify) // [PLATA]: probably not necessary as no encryption
 		}
 		/* must be after MMIC verify so header is counted in MPDU mic */
 #ifdef CONFIG_MAC80211_MESH
 		if (ieee80211_vif_is_mesh(&rx->sdata->vif))
 			CALL_RXH(ieee80211_rx_h_mesh_fwding);
 #endif
-		CALL_RXH(ieee80211_rx_h_amsdu)  // JHNOTE: can be left here..no change
-		CALL_RXH(ieee80211_rx_h_data)  // JHNOTE: to double check..important calls (to deliver_skb notably)
+		CALL_RXH(ieee80211_rx_h_amsdu)  // [PLATA]: can be left here..no change
+		CALL_RXH(ieee80211_rx_h_data)  // [PLATA]: to double check..important calls (to deliver_skb notably - uncompleted part...TBC
+		/*
+		 * [PLATA] - in this version of PLATA, we do not support these frames...or the OCB activated ignores management frames
+		 */
 		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
-		CALL_RXH(ieee80211_rx_h_ctrl); // JHNOTE: not important, we do not have control frames
-		CALL_RXH(ieee80211_rx_h_mgmt_check)  // JHNOTE: ignore as we do not have management frames
-		CALL_RXH(ieee80211_rx_h_action) // JHNOTE: not sure..probably not useful
-		CALL_RXH(ieee80211_rx_h_userspace_mgmt) // JHNOTE: can be ignored...we do not use managmenet at userspace yet
+		CALL_RXH(ieee80211_rx_h_ctrl); // [PLATA] - not important, we do not have control frames
+		CALL_RXH(ieee80211_rx_h_mgmt_check)  // [PLATA] - if OCB is activated, ignore as we do not have management frames (we do not monitor using beacons..)
+		CALL_RXH(ieee80211_rx_h_action) // [PLATA] - not sure..probably not useful
+		CALL_RXH(ieee80211_rx_h_userspace_mgmt) // [PLATA] - can be ignored...we do not use managmenet at userspace yet
+
+		CALL_RXH(ieee80211_rx_h_action_return) // [PLATA] - linked to the action method..not useful here
+
+		CALL_RXH(ieee80211_rx_h_mgmt) // [PLATA] - when OCB is activated, we shall not enter this method (we do not process mgmt frames such as auth, beacons, assoc etc..
 		}
-		CALL_RXH(ieee80211_rx_h_action_return)
-		CALL_RXH(ieee80211_rx_h_mgmt) // JHNOTE: need to add a flag for not processing such frames if we are in 802.11p mode.
 
  rxh_next:
 		ieee80211_rx_handlers_result(rx, res);
@@ -2724,7 +2777,13 @@ static void ieee80211_invoke_rx_handlers(struct ieee80211_rx_data *rx)
 			goto rxh_next;  \
 	} while (0);
 
-	CALL_RXH(ieee80211_rx_h_passive_scan)  // JHNOTE: by maintaining the flag: IEEE80211_RX_IN_SCAN = false for 802.11p mode, we exit immediately
+	/*
+	 * [PLATA] - we exit immediately if OCB is activated
+	 */
+	CALL_RXH(ieee80211_rx_h_passive_scan)
+	/*
+	 * [PLATA] to check...if we are broadcast...
+	 */
 	CALL_RXH(ieee80211_rx_h_check)
 
 	ieee80211_rx_reorder_ampdu(rx);
@@ -2782,7 +2841,7 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 		if (!bssid && !sdata->u.mgd.use_4addr) // no BSSID and not using all 4 addresses (as we would not have a BSSID in that case)
 			return 0;
 		if (!multicast &&
-		    compare_ether_addr(sdata->vif.addr, hdr->addr1) != 0) { // ppacket NOT for me
+		    compare_ether_addr(sdata->vif.addr, hdr->addr1) != 0) { // packet NOT for me
 			if (!(sdata->dev->flags & IFF_PROMISC) ||
 			    sdata->u.mgd.use_4addr)  // if not Promi. mode OR if I use all four addresses
 				return 0;
@@ -2880,12 +2939,12 @@ static bool ieee80211_prepare_and_rx_handle(struct ieee80211_rx_data *rx,
 
 	rx->skb = skb;
 	status->rx_flags |= IEEE80211_RX_RA_MATCH;
-	prepares = prepare_for_handlers(rx, hdr);
+	prepares = prepare_for_handlers(rx, hdr); // [PLATA] - check to be completed..important filter flags
 
 	if (!prepares)
 		return false;
 
-	if (!consume) { // JHnote: first time we call it (we did not consume the SKB so far)
+	if (!consume) { // [PLATA] - first time we call it (we did not consume the SKB so far) - very likely in case of BROADCAST
 		skb = skb_copy(skb, GFP_ATOMIC);
 		if (!skb) {
 			if (net_ratelimit())
@@ -2942,13 +3001,19 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 	}
 
 	hdr = (struct ieee80211_hdr *)skb->data;
+	/*
+	 * [PLATA] even for non-QoS packet, we still need to get a queue priority (here 0 as we only have one queue)
+	 */
 	ieee80211_parse_qos(&rx);
 	ieee80211_verify_alignment(&rx);
 
 	if (ieee80211_is_data(fc)) {
 		prev_sta = NULL;
 
-		for_each_sta_info(local, hdr->addr2, sta, tmp) { // JHNote: check if this packet if for me
+		/*
+		 * [PLATA] - check if this packet is for me
+		 */
+		for_each_sta_info(local, hdr->addr2, sta, tmp) {
 			if (!prev_sta) {
 				prev_sta = sta;
 				continue;
@@ -3096,6 +3161,10 @@ void ieee80211_rx(struct ieee80211_hw *hw, struct sk_buff *skb)
 	 * all other frames are returned without radiotap header
 	 * if it was previously present.
 	 * Also, frames with less than 16 bytes are dropped.
+	 */
+	/*
+	 * [PLATA] - we do not support monitoring in this version of PLATA
+	 *         - we should bypass it...
 	 */
 	skb = ieee80211_rx_monitor(local, skb, rate);
 	if (!skb) {
