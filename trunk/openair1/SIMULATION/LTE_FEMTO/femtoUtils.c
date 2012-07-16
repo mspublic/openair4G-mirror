@@ -342,11 +342,11 @@ void _makeOutputDir(options_t *opts)
     FILE *controlFile;
 
     status=mkdir ("testResults",S_IRWXU | S_IRWXG | S_IRWXO);
-    status=chdir("testResults");
+  //  status=chdir("testResults");
     sprintf(auxDir,"%s",opts->folderName);
     status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);
 
-    status=chdir(auxDir);
+//status=chdir(auxDir);
     
     sprintf(auxFile,"OutpuSimulation_%df_%dI_%sdB_%dch_%d.m",opts->nframes,opts->nInterf,opts->interfLevels,opts->channel_model,opts->testNumber);
     sprintf(auxFile,"xx.m");
