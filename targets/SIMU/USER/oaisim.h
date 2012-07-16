@@ -33,7 +33,7 @@ void calculate_sinr(channel_desc_t *,  node_desc_t *, node_desc_t *, double *sin
 void get_beta_map(void); 
 int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs); //temporary testing for PHY abstraction
 
-void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *ch_desc, Environment_System_Config env_desc, double SF);
+void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *ch_desc, Environment_System_Config env_desc, double **SF);
 
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 

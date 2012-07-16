@@ -110,7 +110,11 @@ mapping small_scale_names[] =
     {"AWGN", 14},
     {NULL, -1}
 };
+
 static void *sigh(void *arg);
+void terminate(void);
+void exit_fun(const char* s);
+
 extern int transmission_mode_rrc;//FIXME!!!
 
 void 
@@ -371,22 +375,20 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti,"","","");
   //fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
+  */
   
 
-  // channel_t_im = rx_sig[0]
-  //if (frame_parms->nb_antennas_rx>1) {
-
+  // channel_t_re = rx_sig[0]
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
     sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
     time2[i] = (float) i;
   }
 
-  //fl_set_xyplot_ybounds(form->channel_t_im,0,100);
-  //fl_set_xyplot_data(form->channel_t_im,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
-  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  fl_set_xyplot_ybounds(form->channel_t_re,0,63);
+  //fl_set_xyplot_data(form->channel_t_re,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
   //}
-  */
 
 
   // PBCH LLR
@@ -1003,17 +1005,19 @@ main (int argc, char **argv)
     init_ue(ue_data[UE_id],oai_emulation.environment_system_config.antenna.UE_antenna);
   } 
 
-  // init SF map here!!!
-  map1 =(int)oai_emulation.topology_config.area.x_m;
-  map2 =(int)oai_emulation.topology_config.area.y_m;
-  //ShaF = createMat(map1,map2); -> memory is allocated within init_SF, shadow fading
-  //ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
-
-  // size of area to generate shadow fading map
-  LOG_D(EMU,"Simulation area x=%f, y=%f\n",
-	 oai_emulation.topology_config.area.x_m,
-	 oai_emulation.topology_config.area.y_m);
- 
+  if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 ) &&
+      (oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m>0) &&
+      (oai_emulation.environment_system_config.fading.shadowing.variance_dB>0)) {
+    // init SF map here!!!
+    map1 =(int)oai_emulation.topology_config.area.x_m;
+    map2 =(int)oai_emulation.topology_config.area.y_m;
+    ShaF = init_SF(map1,map2,oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m,oai_emulation.environment_system_config.fading.shadowing.variance_dB);
+    
+    // size of area to generate shadow fading map
+    LOG_D(EMU,"Simulation area x=%f, y=%f\n",
+	  oai_emulation.topology_config.area.x_m,
+	  oai_emulation.topology_config.area.y_m);
+  }
   
   if (abstraction_flag == 0 && Process_Flag==0 && Channel_Flag==0)
 	  init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
@@ -1022,18 +1026,16 @@ main (int argc, char **argv)
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
-      if (oai_emulation.info.transmission_mode == 5) {
+      if (oai_emulation.info.transmission_mode == 5) 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
 						     (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
-						     //(awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
 						     0,
 						     0);
-
-	}
-      else {
+      
+      else 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
 						     (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
@@ -1041,13 +1043,11 @@ main (int argc, char **argv)
 						     forgetting_factor,
 						     0,
 						     0);
-	}
       random_channel(eNB2UE[eNB_id][UE_id]);      
       LOG_D(OCM,"[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
 						   (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
-						   //Rayleigh1,
 						   oai_emulation.environment_system_config.system_bandwidth_MB,
 						   forgetting_factor,
 						   0,
@@ -1120,6 +1120,7 @@ main (int argc, char **argv)
       }
 #endif
 
+  mac_xface->macphy_exit = exit_fun;
 
   // time calibration for OAI 
   clock_gettime (CLOCK_REALTIME, &time_spec);
@@ -1220,13 +1221,12 @@ main (int argc, char **argv)
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
-	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
+	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
+	  //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
+	  LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f\n",
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
-		eNB2UE[eNB_id][UE_id]->path_loss_dB,0);
-		//ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+		eNB2UE[eNB_id][UE_id]->path_loss_dB);
 	}
       }
     }
@@ -1244,7 +1244,7 @@ main (int argc, char **argv)
 	    eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	    UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
 	  }
-	  LOG_D(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
+	  LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
 		PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
 	  //	  printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
 	}
@@ -1285,6 +1285,7 @@ main (int argc, char **argv)
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
+	  fflush(eNB_stats);
 	  //}
 #endif
       }
@@ -1334,6 +1335,7 @@ main (int argc, char **argv)
 	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
+	  fflush(UE_stats[UE_id]);
 #endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
@@ -1521,15 +1523,18 @@ main (int argc, char **argv)
 
   // stop OMG
   stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
-  if ((oai_emulation.info.omv_enabled == 1) ){
+  if (oai_emulation.info.omv_enabled == 1)
     omv_end(pfd[1],omv_data);
-  }
-  if ((oai_emulation.info.opt_enabled == 1) ){
+
+  if ((oai_emulation.info.ocm_enabled == 1) && (ethernet_flag == 0) && (ShaF != NULL)) 
+    destroyMat(ShaF,map1, map2);
+
+  if ((oai_emulation.info.opt_enabled == 1) )
     terminate_opt();
-  }
-  //destroyMat(ShaF,map1, map2);
+  
   if (oai_emulation.info.cli_enabled)
     cli_server_cleanup();
+
   //bring oai if down
   terminate();
   logClean();
@@ -1569,4 +1574,10 @@ void terminate(void) {
       sprintf(interfaceName, "oai%d", i);
       bringInterfaceUp(interfaceName,0);
     }
+}
+
+void exit_fun(const char* s)
+{
+  fprintf(stderr, "Error: %s. Exiting!\n",s);
+  exit (-1);
 }
