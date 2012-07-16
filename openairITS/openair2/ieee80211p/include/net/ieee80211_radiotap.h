@@ -213,11 +213,22 @@ enum ieee80211_radiotap_type {
 };
 
 /* Channel flags. */
+/*
+ * [PLATA] needto add the new bands
+ */
 #define	IEEE80211_CHAN_TURBO	0x0010	/* Turbo channel */
 #define	IEEE80211_CHAN_CCK	0x0020	/* CCK channel */
 #define	IEEE80211_CHAN_OFDM	0x0040	/* OFDM channel */
 #define	IEEE80211_CHAN_2GHZ	0x0080	/* 2 GHz spectrum channel. */
 #define	IEEE80211_CHAN_5GHZ	0x0100	/* 5 GHz spectrum channel */
+/*
+ * [PLATA] - new bands
+ */
+#define	IEEE80211_CHAN_5_9GHZ	0x0120 /* 5.9 GHz ITS spectrum channel */
+#define	IEEE80211_CHAN_0_8GHZ	0x0140 /* 800 MHz ITS spectrum channel */
+/*
+ * [PLATA] - end
+ */
 #define	IEEE80211_CHAN_PASSIVE	0x0200	/* Only passive scan allowed */
 #define	IEEE80211_CHAN_DYN	0x0400	/* Dynamic CCK-OFDM channel */
 #define	IEEE80211_CHAN_GFSK	0x0800	/* GFSK channel (FHSS PHY) */

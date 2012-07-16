@@ -709,6 +709,9 @@ struct ieee80211_sub_if_data {
 	u32 rc_rateidx_mask[IEEE80211_NUM_BANDS];
 	u8  rc_rateidx_mcs_mask[IEEE80211_NUM_BANDS][IEEE80211_HT_MCS_MASK_LEN];
 
+	/*
+	 * [PLATA] - TODO - check if we need to add a new struct as we need to be in one of the different states..and in OCB, none of them applies.
+	 */
 	union {
 		struct ieee80211_if_ap ap;
 		struct ieee80211_if_wds wds;

@@ -388,7 +388,7 @@ int ieee80211_data_to_8023(struct sk_buff *skb, const u8 *addr,
 			hdrlen += ieee80211_get_mesh_hdrlen(meshdr);
 		}
 		break;
-	case cpu_to_le16(0):
+	case cpu_to_le16(0):  // [PLATA] only ADHOC and STATION can have toDS and fromDS to 0. The OCB activated forces it to be so...no change needed here as long as we are STA or ADHOC
 		if (iftype != NL80211_IFTYPE_ADHOC &&
 		    iftype != NL80211_IFTYPE_STATION)
 				return -1;

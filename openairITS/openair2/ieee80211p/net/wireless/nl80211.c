@@ -3711,6 +3711,9 @@ static int validate_scan_freqs(struct nlattr *freqs)
 	return n_channels;
 }
 
+/*
+ * [PLATA] qui appelle cette fonction?
+ */
 static int nl80211_trigger_scan(struct sk_buff *skb, struct genl_info *info)
 {
 	struct cfg80211_registered_device *rdev = info->user_ptr[0];

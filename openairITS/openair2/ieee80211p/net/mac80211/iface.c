@@ -844,7 +844,11 @@ static void ieee80211_iface_work(struct work_struct *work)
 		ieee80211_sta_work(sdata);
 		break;
 	case NL80211_IFTYPE_ADHOC:
-		ieee80211_ibss_work(sdata);
+		/*
+		 * [PLATA] std work operation for the mounted ADHOC interface. We bypass it if OCB is activated
+		 */
+		if ((local->hw.wiphy->dot11OCBActivated == 0) || (local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
+			ieee80211_ibss_work(sdata);
 		break;
 	case NL80211_IFTYPE_MESH_POINT:
 		if (!ieee80211_vif_is_mesh(&sdata->vif))
