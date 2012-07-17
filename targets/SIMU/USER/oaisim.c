@@ -50,8 +50,6 @@
 #include "../PROC/Process.h"
 
 
-//#define dci_format1D 1
-
 #define RF
 
 #define DEBUG_SIM
@@ -113,10 +111,9 @@ mapping small_scale_names[] =
 };
 
 
-int dci_format1D = 1;
+
 
 extern int transmission_mode_rrc;//FIXME!!!
-extern int dci_format1D;
 
 #ifdef LINUX
 void
