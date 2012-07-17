@@ -42,8 +42,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mobility_parser.h"
-#include "hashtable.h"
-
+//#include "hashtable.h"
+#include "log.h"
+node_info* head_node_info;// head pointer to a linked list containing vid,vid_addr
+extern hash_table_t* table;
 //need to be removed , used only once (old code)
 struct Exnode* gen_list(){
 	struct Exnode* head = NULL;
@@ -110,11 +112,11 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      		if (Node_info==NULL){
 	      			Node_info=build_node_info(Node_info,node->vid,&(node->vid));
 	      			head_node_info=Node_info;
-
-	      		}
+				LOG_D(OMG,"TRACE head node info is %p\n",head_node_info);
+			}
 	      		else{
 	      			build_node_info(Node_info,node->vid,&(node->vid));
-
+			
 	      		}
 	      		keyholder[i]=&node->vid;
                         i++;
@@ -152,13 +154,13 @@ node_info*  build_node_info(node_info* headRef, int vid, int *vid_addr){
 		return headRef;
 	}
 	while(headRef->next!=NULL){
-			headRef = headRef->next;
-
-		}
-		if (headRef->next==NULL ){
-				headRef->next = newNode;
-
-			}
+	  headRef = headRef->next;
+	}
+	if (headRef->next==NULL ){
+	  headRef->next = newNode;
+	  
+	}
+	LOG_D(OMG,"TRACE node info next is %p\n", headRef->next);
 	return headRef;
 }
 

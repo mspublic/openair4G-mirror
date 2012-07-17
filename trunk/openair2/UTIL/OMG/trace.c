@@ -44,8 +44,10 @@
 #include <math.h>
 #include "trace.h"
 #include "omg.h"
+#include "mobility_parser.h"
 
-
+extern node_info* head_node_info;
+extern hash_table_t* table;
 
 int start_trace_generator(omg_global_param omg_param_list) {
 
@@ -53,12 +55,10 @@ int start_trace_generator(omg_global_param omg_param_list) {
   // MobilityPtr mobility = NULL;
 
   //read the mobility file here
-  //table=read_mobility_file(omg_param_list.mobility_file); // JHNOTE: in order to debug, please give and change name here...
-
-
   table=read_mobility_file(omg_param_list.mobility_file); // JHNOTE: in order to debug, please give and change name here...
+  LOG_W(OMG, "mobility file %s put in the table %p\n",omg_param_list.mobility_file, table );
   
-  sort_veh_movement(table);
+  //sort_veh_movement(table);
   
   if (omg_param_list.nodes <= 0){
     LOG_W(OMG, "Number of nodes has not been set\n");
@@ -76,27 +76,30 @@ int start_trace_generator(omg_global_param omg_param_list) {
   } else if (omg_param_list.nodes_type == UE) {
 	LOG_I(OMG, "Node type has been set to UE\n");
   }
- 	LOG_I(OMG, "Number of TRACE nodes has been set to %d\n", omg_param_list.nodes);
+  LOG_I(OMG, "Number of TRACE nodes has been set to %d\n", omg_param_list.nodes);
    
 
   int count = 0;
   node_info * head_node = head_node_info;
   while (head_node->next!=NULL){
-                if (count<omg_param_list.nodes){
- 		create_trace_node(node,head_node);
-                count++;
-                }
- 		head_node=head_node->next;
- 	}
-        if (count!=omg_param_list.nodes)
-  	        create_trace_node(node,head_node);
-
+    if (count<omg_param_list.nodes){
+      LOG_D(OMG,"TRACE head node %p for node id %d\n", head_node,count);
+      create_trace_node(node,head_node);
+      count++;
+      head_node=head_node->next;
+    }else
+      break;
+    
+  }
+  if (count!=omg_param_list.nodes)
+    create_trace_node(node,head_node);
+  
   return(0);
 }
 
 int create_trace_node(NodePtr node,node_info *head_node){
 	
-	double cur_time = .10;
+  double cur_time = 1;//.10;
 	MobilityPtr mobility = NULL;
 	node = (NodePtr) create_node();
 	mobility = (MobilityPtr) create_mobility();
@@ -178,7 +181,8 @@ Pair move_trace_node(NodePtr node, double cur_time) {
         
         Job_list tmp1 = Job_Vector;
         if (next_loc==NULL) {
-                return sleep_trace_node(node,cur_time,9999);                
+          printf("OMG sleeping\n");     
+	  return sleep_trace_node(node,cur_time,9999);                
                 
                 }//Option 1 : no job, I am done sleeping
 

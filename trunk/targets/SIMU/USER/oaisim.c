@@ -90,9 +90,9 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][9];
 
-//OAI_Emulation * emulation_scen;
-mapping small_scale_names[] =
-{
+
+// this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
+mapping small_scale_names[] = {
     {"custom", 0},
     {"SCM_A", 1},
     {"SCM_B", 2},
@@ -107,7 +107,9 @@ mapping small_scale_names[] =
     {"Rayleigh1_anticorr", 11},
     {"Rice8", 12},
     {"Rice1", 13},
-    {"AWGN", 14},
+    {"Rice1_corr", 14},
+    {"Rice1_anticorr", 15},
+    {"AWGN", 16},
     {NULL, -1}
 };
 
@@ -120,7 +122,7 @@ extern int transmission_mode_rrc;//FIXME!!!
 void 
 help (void) {
   printf
-    ("Usage: oaisim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A awgn_flag -z cooperation_flag -u nb_local_ue -U omg_model_ue -b nb_local_enb -B omg_model_enb -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable \n");
+    ("Usage: oaisim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A channel_model -z cooperation_flag -u nb_local_ue -U UE mobility -b nb_local_enb -B eNB_mobility -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable -T traffic model\n");
   printf ("-h provides this help message!\n");
   printf ("-a Activates PHY abstraction mode\n");
   printf ("-F Activates FDD transmission (TDD is default)\n");
@@ -135,7 +137,7 @@ help (void) {
   printf ("-k Set the Ricean factor (linear)\n");
   printf ("-t Set the delay spread (microseconds)\n");
   printf ("-f Set the forgetting factor for time-variation\n");
-  printf ("-A bypass the multipath channel simulation, just use AWGN and path loss\n");
+  printf ("-A set the multipath channel simulation,  options are: SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr,Rayleigh1_anticorr, Rice8,, Rice1, AWGN \n");
   printf ("-b Set the number of local eNB\n");
   printf ("-u Set the number of local UE\n");
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
@@ -147,8 +149,8 @@ help (void) {
   printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-T activate the traffic generator: 0 for NONE, 1 for CBR, 2 for M2M, 3 for FPS Gaming, 4 for mix\n");
-  printf ("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
-  printf ("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
+  printf ("-B Set the mobility model for eNB, options are: STATIC, RWP, RWALK, \n");
+  printf ("-U Set the mobility model for UE, options are: STATIC, RWP, RWALK \n");
   printf ("-E Random number generator seed\n"); 
   printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
@@ -650,7 +652,7 @@ main (int argc, char **argv)
   char frame_type[10];
   char tdd_config[10];
   
-  u8 awgn_flag = 0;
+  // u8 awgn_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
   FD_lte_scope *form_ul[NUMBER_OF_eNB_MAX];
@@ -688,7 +690,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haeoFvIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:AJ"))
+  while ((c = getopt (argc, argv, "haeoFvIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J"))
 	 != -1) {
 
     switch (c) {
@@ -778,7 +780,12 @@ main (int argc, char **argv)
       abstraction_flag = 1;
       break;
     case 'A':
-      awgn_flag = 1;
+      oai_emulation.info.ocm_enabled=1;
+      if (optarg == NULL)
+	oai_emulation.environment_system_config.fading.small_scale.selected_option="AWGN";
+      else
+	oai_emulation.environment_system_config.fading.small_scale.selected_option= optarg;
+      //awgn_flag = 1;
       break;
     case 'p':
       oai_emulation.info.nb_master = atoi (optarg);
@@ -804,12 +811,13 @@ main (int argc, char **argv)
       oai_emulation.info.multicast_group = atoi (optarg);
       break;
     case 'B':
-      oai_emulation.info.omg_model_enb = atoi (optarg);
+      oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = optarg;
+      //oai_emulation.info.omg_model_enb = atoi (optarg);
       break;
     case 'U':
-      oai_emulation.info.omg_model_ue = atoi (optarg);
+      oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = optarg;
+      /*oai_emulation.info.omg_model_ue = atoi (optarg);
       switch (oai_emulation.info.omg_model_ue){
-        
       case STATIC:
         oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
         break;
@@ -827,7 +835,7 @@ main (int argc, char **argv)
         break;
       default:
         LOG_N(OMG, "Unsupported generator %d \n", oai_emulation.info.omg_model_ue);
-      }
+	}*/
       break;
     case 'T':
       oai_emulation.info.otg_enabled = 1;
@@ -975,10 +983,10 @@ main (int argc, char **argv)
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
 #endif
       
-  LOG_I(EMU,"total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
-  LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
-  LOG_T(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, awgn_flag %d\n",
-  	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,awgn_flag);
+  LOG_I(EMU,"total number of UE %d (local %d, remote %d) mobility %s \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
+  LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) mobility %s \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote, oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option);
+  LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
+  	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
   
   if(set_seed){
     randominit (oai_emulation.info.seed);
@@ -1025,7 +1033,8 @@ main (int argc, char **argv)
   // initialize channel descriptors
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-      LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
+      LOG_D(OCM,"Initializing channel (%s, %d) from eNB %d to UE %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
+	    map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option), eNB_id, UE_id);
       if (oai_emulation.info.transmission_mode == 5) 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
@@ -1038,16 +1047,17 @@ main (int argc, char **argv)
       else 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						     (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
 						     0,
 						     0);
       random_channel(eNB2UE[eNB_id][UE_id]);      
-      LOG_D(OCM,"[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
+      LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
+	    map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
-						   (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						   oai_emulation.environment_system_config.system_bandwidth_MB,
 						   forgetting_factor,
 						   0,
@@ -1175,7 +1185,7 @@ main (int argc, char **argv)
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
-    if ((frame % 100) == 0 ) { // call OMG every 100ms 
+    if ((frame % 100) == 0 ) { // call OMG every 10ms 
       update_nodes(oai_emulation.info.time_s); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
@@ -1198,7 +1208,6 @@ main (int argc, char **argv)
     }
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time_s);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time_s);
-	
     // check if pipe is still open
     if ((oai_emulation.info.omv_enabled == 1) ){
       omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);

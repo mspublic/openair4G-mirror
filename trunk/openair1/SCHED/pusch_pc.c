@@ -79,10 +79,7 @@ void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j, u8 ab
   // P_opusch(0) = P_oPTR + deltaP_Msg3 if PUSCH is transporting Msg3
   // else
   // P_opusch(0) = PO_NOMINAL_PUSCH(j) + P_O_UE_PUSCH(j)
-  if (abstraction_flag!=0) // navid: fixme
-    PL=103;
-  else
-    PL = get_PL(phy_vars_ue->Mod_id,eNB_id);
+  PL = get_PL(phy_vars_ue->Mod_id,eNB_id);
   
   phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH = (hundred_times_log10_NPRB[nb_rb-1]+
 					     get_hundred_times_delta_IF(phy_vars_ue,eNB_id,harq_pid) +

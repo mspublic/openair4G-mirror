@@ -52,7 +52,7 @@
  * \param omg_param_list a structure that contains the main parameters needed to establish the random positions distribution
  */
 int start_trace_generator(omg_global_param omg_param_list) ;
-hash_table_t* table;
+
 /**
  * \fn int create_trace_node(node_info *head_node)
  * \brief Called by the function start_trace_generator(), it assigns position ((X,Y) coordinates)  for a node from mobility file and add it to the Node_Vector_Rwp
