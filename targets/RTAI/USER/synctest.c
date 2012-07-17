@@ -356,7 +356,7 @@ void do_forms2(FD_lte_scope *form,
 	    //sig2[i] = (float) ((rx_sig[0][2*i]));
 	    time2[i] = (float) i;
 	  }
-	//fl_set_xyplot_ybounds(form->channel_t_re,30,60);
+	fl_set_xyplot_ybounds(form->channel_t_re,40,70);
 	//fl_set_xyplot_data(form->channel_t_re,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
 	fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
       }
@@ -1052,12 +1052,12 @@ int main(int argc, char **argv) {
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
 #ifdef EXMIMO
-  u32 rxgain[4]={30,30,30,30};
+  u32 rxgain[4]={20,20,20,20};
 #endif
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
@@ -1180,7 +1180,7 @@ int main(int argc, char **argv) {
   frame_parms->Ncp_UL             = 0;
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx     = (UE_flag == 1) ? 1 : 2;
+  frame_parms->nb_antennas_tx     = 2;
   frame_parms->nb_antennas_rx     = ((UE_flag == 0) && (calibration_flag==1)) ? 2 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
@@ -1234,6 +1234,9 @@ int main(int argc, char **argv) {
     openair_daq_vars.manual_timing_advance = 0;
     openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
+    // if AGC is off, the following values will be used
+    for (i=0;i<4;i++) 
+      rxgain[i]=20;
 
     for (i=0;i<4;i++) {
       PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
@@ -1243,17 +1246,17 @@ int main(int argc, char **argv) {
   
     if ((mode == normal_txrx) || (mode == rx_calib_ue) || (mode == no_L2_connect) || (mode == debug_prach)) {
       for (i=0; i<4; i++) 
-	PHY_vars_UE_g[0]->rx_gain_mode[i]  = max;
+	PHY_vars_UE_g[0]->rx_gain_mode[i]  = max_gain;
       PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_max[0];
       }
     else if ((mode == rx_calib_ue_med)) {
       for (i=0; i<4; i++) 
-	PHY_vars_UE_g[0]->rx_gain_mode[i] = med;
+	PHY_vars_UE_g[0]->rx_gain_mode[i] = med_gain;
       PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_med[0];
     }
     else if ((mode == rx_calib_ue_byp)) {
       for (i=0; i<4; i++) 
-	PHY_vars_UE_g[0]->rx_gain_mode[i] = byp;
+	PHY_vars_UE_g[0]->rx_gain_mode[i] = byp_gain;
       PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0];
     }
   }

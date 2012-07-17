@@ -259,8 +259,9 @@ typedef struct
 //#define debug_msg msg
 
 typedef enum {
-  max=0,med,byp
+  max_gain=0,med_gain,byp_gain
 } rx_gain_t;
+
 /// Top-level PHY Data Structure for UE 
 typedef struct
 {
