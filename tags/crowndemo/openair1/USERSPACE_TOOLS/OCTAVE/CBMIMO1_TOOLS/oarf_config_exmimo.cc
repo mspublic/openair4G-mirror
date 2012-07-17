@@ -83,10 +83,10 @@ static bool any_bad_argument(const octave_value_list &args)
   v=args(4);
   if (v.columns() == 4) {
       for (i=0;i<v.columns();i++) {
-	if ((real(args(4).row_vector_value()(i))<0.0) || (real(args(4).row_vector_value()(i))>30.0))
+	if ((real(args(4).row_vector_value()(i))<0.0) || (real(args(4).row_vector_value()(i))>50.0))
 	  {
 	    error(FCNNAME);
-	    error("gain must be between 0 and 30. (got %f).",args(4).row_vector_value()(i));
+	    error("gain must be between 0 and 50. (got %f).",args(4).row_vector_value()(i));
 	    return true;
 	  }
       }
