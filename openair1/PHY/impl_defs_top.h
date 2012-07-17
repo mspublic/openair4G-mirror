@@ -322,7 +322,7 @@ typedef struct
   // RRC measurements
   int rssi;
   int n_adj_cells;
-  u16 adj_cell_id[6];
+  unsigned int adj_cell_id[6];
   int rsrq[7];
   int rsrp[7];
   // common measurements

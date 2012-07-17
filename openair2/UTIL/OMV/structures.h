@@ -44,9 +44,9 @@
 #define Maxneighbor 64
 #define NUMBER_OF_UE_MAX 64
 #define NUMBER_OF_eNB_MAX 3 
-#define NB_ANTENNAS_RX  3
+#define NB_ANTENNAS_RX  4
 #endif
-//#include "../../../openair1/PHY/impl_defs_top.h"
+//
 
 // how to add an underlying map as OMV background
 

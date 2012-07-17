@@ -68,7 +68,7 @@ typedef struct node_info {
 	//struct node_info* prev;
 }node_info;
 
-node_info* head_node_info;// head pointer to a linked list containing vid,vid_addr
+
 
 /**
  * function just to initialize the head of the linked list to NULL, this can be removed later(check).

@@ -55,7 +55,7 @@ void start_static_generator(omg_global_param omg_param_list) {
   
   if (omg_param_list.nodes <= 0){
     LOG_W(OMG, "Number of static nodes has not been set\n");
-   // return(-1);
+    return(-1);
   }
   LOG_D(OMG, "Start STATIC Mobility MODEL\n");
 

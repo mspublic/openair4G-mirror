@@ -44,6 +44,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "mobility_parser.h"
+
+extern node_info* head_node_info;
+hash_table_t* table;
+
 // element operations
 /**
  * Function to create a now hash_table element
