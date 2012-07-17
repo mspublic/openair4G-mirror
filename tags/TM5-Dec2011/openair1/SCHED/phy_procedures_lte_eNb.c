@@ -45,7 +45,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#define DEBUG_PHY_PROC
+//#define DEBUG_PHY_PROC
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -935,8 +935,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
 #ifdef DEBUG_PHY_PROC
-      msg("[PHY][eNB] Subframe %d : Doing DCI index %d/%d\n",next_slot>>1,i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci);
-      //if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50))
+      debug_msg("[PHY][eNB] Subframe %d : Doing DCI index %d/%d\n",next_slot>>1,i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci);
+      if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50))
 	dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 #endif
 
