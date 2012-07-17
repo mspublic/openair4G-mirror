@@ -63,7 +63,7 @@
 //#endif
 
 #ifndef OPENAIR2
-#define DIAG_PHY
+//#define DIAG_PHY
 #endif
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
@@ -1516,11 +1516,11 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     } // UE_id exists
   }
 #endif
-  /*
+
 #ifdef DEBUG_PHY_PROC
-  debug_LOG_D(PHY,"[UE  %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
+  LOG_D(PHY,"[UE  %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
 #endif
-  */
+
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
   /*
 #ifdef DEBUG_PHY_PROC
@@ -1652,9 +1652,9 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       }
     }
   
-    else if (phy_vars_ue->prach_resources[eNB_id]) {
-      if ((dci_alloc_rx[i].rnti == phy_vars_ue->prach_resources[eNB_id]->ra_RNTI) && 
-	  (dci_alloc_rx[i].format == format1A)) {
+    else if ((phy_vars_ue->prach_resources[eNB_id]) && 
+	     (dci_alloc_rx[i].rnti == phy_vars_ue->prach_resources[eNB_id]->ra_RNTI) && 
+	     (dci_alloc_rx[i].format == format1A)) {
 #ifdef DEBUG_PHY_PROC
 	LOG_D(PHY,"[UE  %d][RAPROC] subframe %d: Found RA rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
 	/*
@@ -1688,7 +1688,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	      phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc[0],phy_vars_ue->dlsch_ue_ra[eNB_id]);
 #endif
 	}
-      }
+    }
       else if( (dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) && 
 	       (dci_alloc_rx[i].format == format0)) {
 #ifdef DEBUG_PHY_PROC
@@ -1726,7 +1726,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  */
 	}
       }
-    }
+  
     else {
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[UE  %d] frame %d, subframe %d: received DCI %d with RNTI=%x (%x) and format %d!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,i,dci_alloc_rx[i].rnti,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_rx[i].format);
@@ -1839,7 +1839,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
 	    (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	  dual_stream_UE = 1;
-	  eNB_id_i = NUMBER_OF_CONNECTED_eNB_MAX;
+	  eNB_id_i = phy_vars_ue->n_connected_eNB;
 	  i_mod = get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
 	}
 	else {
@@ -2300,7 +2300,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
 		(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	      dual_stream_UE = 1;
-	      eNB_id_i = NUMBER_OF_CONNECTED_eNB_MAX;
+	      eNB_id_i = phy_vars_ue->n_connected_eNB;
 	      i_mod =  get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
 	    }
 	    else {
@@ -2356,7 +2356,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
 		(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	      dual_stream_UE = 1;
-	      eNB_id_i = NUMBER_OF_CONNECTED_eNB_MAX;
+	      eNB_id_i = phy_vars_ue->n_connected_eNB;
 	      i_mod = get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
 	    }
 	    else {
