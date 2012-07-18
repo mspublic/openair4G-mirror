@@ -54,7 +54,7 @@
 
 #define DEBUG_SIM
 
-#define MCS_COUNT 23//added for PHY abstraction
+#define MCS_COUNT 24//added for PHY abstraction
 #define N_TRIALS 1
 
 /*
@@ -88,7 +88,7 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 //Added for PHY abstraction
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
-double sinr_bler_map[MCS_COUNT][2][9];
+double sinr_bler_map[MCS_COUNT][2][16];
 
 
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
