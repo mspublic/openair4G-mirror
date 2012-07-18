@@ -570,6 +570,11 @@ static void ieee80211_rx_bss_info(struct ieee80211_sub_if_data *sdata,
 	ieee80211_rx_bss_put(local, bss);
 }
 
+/*
+ * [PLATA] - This method creates a IBSS station, in the case the STA did not exist upon reception of a packet
+ *         - Yet, this is only used in the context of BSS (iBSS), as when communicating in OCB mode, we do not maintain local sta info
+ *         - hint - the remote sta are also not created and stored when BSS or iBSS using a wildcard BSSID...
+ */
 void ieee80211_ibss_rx_no_sta(struct ieee80211_sub_if_data *sdata,
 			      const u8 *bssid, const u8 *addr,
 			      u32 supp_rates)
@@ -593,7 +598,7 @@ void ieee80211_ibss_rx_no_sta(struct ieee80211_sub_if_data *sdata,
 	if (ifibss->state == IEEE80211_IBSS_MLME_SEARCH)
 		return;
 
-	if (compare_ether_addr(bssid, sdata->u.ibss.bssid))
+	if (compare_ether_addr(bssid, sdata->u.ibss.bssid))  // [PLATA] if we guarantee a wildcard BSSID in packets and in the STA, we should exit here... - else, it means the IBSS sta does not exist
 		return;
 
 	sta = sta_info_alloc(sdata, addr, GFP_ATOMIC);

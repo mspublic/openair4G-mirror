@@ -849,6 +849,10 @@ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
 
 	/* Drop duplicate 802.11 retransmissions (IEEE 802.11 Chap. 9.2.9) */
+	/*
+	 * [PLATA] do not enter here (on the first reception as we do not have a rx->sta and probably for all other reception)..
+	 *
+	 */
 	if (rx->sta && !is_multicast_ether_addr(hdr->addr1)) {
 		if (unlikely(ieee80211_has_retry(hdr->frame_control) &&
 			     rx->sta->last_seq_ctrl[rx->seqno_idx] ==
@@ -879,6 +883,9 @@ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
 	if (ieee80211_vif_is_mesh(&rx->sdata->vif))
 		return ieee80211_rx_mesh_check(rx);
 
+	/*
+	 * [PLATA] we do not enter here, as we are in ADHOC mode
+	 */
 	if (unlikely((ieee80211_is_data(hdr->frame_control) ||
 		      ieee80211_is_pspoll(hdr->frame_control)) &&
 		     rx->sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -1769,6 +1776,8 @@ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
  * requires that rx->skb is a frame with ethernet header
  *
  * [PLATA] TODO - check what it means for the ADHOC mode with OCB activated
+ *              - as we only communicate directly, no relaying (no turn back to wireless)
+ *              - this method should not do anything. But we may have to bypass it
  */
 static void
 ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
@@ -2738,9 +2747,13 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 			CALL_RXH(ieee80211_rx_h_mesh_fwding);
 #endif
 		CALL_RXH(ieee80211_rx_h_amsdu)  // [PLATA]: can be left here..no change
+		// [PLATA] should probably avoid this method...as only used to put back a packet to the skb for AP relaying..
 		CALL_RXH(ieee80211_rx_h_data)  // [PLATA]: to double check..important calls (to deliver_skb notably - uncompleted part...TBC
 		/*
 		 * [PLATA] - in this version of PLATA, we do not support these frames...or the OCB activated ignores management frames
+		 *
+		 * !!!! IMPORTANT !!!! - the previous call will exist in case of data packets (it returns RX_QUEUED and as such jumps to rxh_next)
+		 *                     - so the rest of the code should always be ignored in this version of PLATA (we only support DATA packets)
 		 */
 		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
@@ -2782,7 +2795,8 @@ static void ieee80211_invoke_rx_handlers(struct ieee80211_rx_data *rx)
 	 */
 	CALL_RXH(ieee80211_rx_h_passive_scan)
 	/*
-	 * [PLATA] to check...if we are broadcast...
+	 * [PLATA] we do not do much in this part, as we do not do retransmission (and we most probably do not have a rx->sta) and we are ADHOC mode.
+	 *         - worst case: we update the receiving statistics..
 	 */
 	CALL_RXH(ieee80211_rx_h_check)
 
@@ -2826,6 +2840,9 @@ void ieee80211_release_reorder_timeout(struct sta_info *sta, int tid)
 }
 
 /* main receive path */
+/*
+ * [PLATA] - considering the ADHOC mode and OCB activated, we
+ */
 
 static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 				struct ieee80211_hdr *hdr)
@@ -2833,7 +2850,7 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 	struct ieee80211_sub_if_data *sdata = rx->sdata;
 	struct sk_buff *skb = rx->skb;
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
-	u8 *bssid = ieee80211_get_bssid(hdr, skb->len, sdata->vif.type);
+	u8 *bssid = ieee80211_get_bssid(hdr, skb->len, sdata->vif.type); // [PLATA] - should return the WildCard BSSID
 	int multicast = is_multicast_ether_addr(hdr->addr1);
 
 	switch (sdata->vif.type) {
@@ -2854,24 +2871,30 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 		if (ieee80211_is_beacon(hdr->frame_control)) {
 			return 1;
 		}
-		else if (!ieee80211_bssid_match(bssid, sdata->u.ibss.bssid)) {  // do not have the same BSSID
+		else if (!ieee80211_bssid_match(bssid, sdata->u.ibss.bssid)) {  // do not have the same BSSID  - [PLATA] - should not enter here as the wildcard BSSID makes it return true
 			if (!(status->rx_flags & IEEE80211_RX_IN_SCAN))  // not in SCAN MODE
 				return 0;
 			status->rx_flags &= ~IEEE80211_RX_RA_MATCH;
 		} else if (!multicast &&
 			   compare_ether_addr(sdata->vif.addr,
-					      hdr->addr1) != 0) {   // JHNote: not a multicast and packet is NOT for me
+					      hdr->addr1) != 0) {   // [PLATA]: not a multicast and packet is NOT for me  TODO what about broadcast??
 			if (!(sdata->dev->flags & IFF_PROMISC)) // not in Promisc Mode
 				return 0;
 			status->rx_flags &= ~IEEE80211_RX_RA_MATCH;
-		} else if (!rx->sta) {
+		} else if (!rx->sta) {  // [PLATA] do we enter here?? ...probably upon a first receive from an uknown IF, and if multicast, or broadcast or unicast and packet for me
 			int rate_idx;
-			if (status->flag & RX_FLAG_HT)
+			if (status->flag & RX_FLAG_HT)  // [PLATA] - we do not enter here...
 				rate_idx = 0; /* TODO: HT rates */
 			else
 				rate_idx = status->rate_idx;
+			/*
+			 *  [PLATA] In OCB Mode, as we do not use Beacon, there is a high chance that a receiving STA does not have a reference to the sender STA
+			 *          - we enter here, even though we will not do much
+			 *          - as in OCB (similary to the IBSS and BSS using a wildcard BSSID), we have spontaneous communication and as such do not create an entry for remote sta
+			 */
+
 			ieee80211_ibss_rx_no_sta(sdata, bssid, hdr->addr2,
-						 BIT(rate_idx));  // trigger an IBSS receive...
+						 BIT(rate_idx));  // trigger an IBSS receive...in case the local STA does not have a sta reference for the original sender in this IBSS (said differently, it means this sender was not part of the IBSS)...
 		}
 		break;
 	case NL80211_IFTYPE_MESH_POINT:
@@ -3011,7 +3034,7 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 		prev_sta = NULL;
 
 		/*
-		 * [PLATA] - check if this packet is for me
+		 * [PLATA] - hdr->addr2 is the source address - check if the STA has already been registered by this local sta
 		 */
 		for_each_sta_info(local, hdr->addr2, sta, tmp) {
 			if (!prev_sta) {
