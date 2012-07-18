@@ -160,7 +160,7 @@ void init_oai_emulation() {
 	oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x = 1;
 	oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y = 1;
 	oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file = (char*) malloc(256);
-	sprintf(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,"%s/UTIL/OMG/TRACE/mobility.txt",getenv("OPENAIR2_DIR"));
+	sprintf(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,"mobility.txt");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.command = (char*) malloc(20);
 	sprintf(oai_emulation.topology_config.mobility.UE_mobility.sumo_config.command,"sumo");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.file = (char*) malloc(256);

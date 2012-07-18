@@ -6,7 +6,7 @@
 	<PATHLOSS_EXPONENT>3.67</PATHLOSS_EXPONENT>
 	<PATHLOSS_0_dB>-128</PATHLOSS_0_dB><!--pathloss at 1km -->
       </FREE_SPACE_MODEL_PARAMETERS>
-      <SMALL_SCALE>Rayleigh1</SMALL_SCALE>
+      <SMALL_SCALE>AWGN</SMALL_SCALE>
     </FADING>
     <SYSTEM_BANDWIDTH_MB>7.68</SYSTEM_BANDWIDTH_MB>
     <SYSTEM_FREQUENCY_GHz>1.9</SYSTEM_FREQUENCY_GHz>
@@ -38,8 +38,8 @@
 	<RANDOM_UE_DISTRIBUTION>
 	  <NUMBER_OF_NODES>2</NUMBER_OF_NODES>
 	</RANDOM_UE_DISTRIBUTION>
-	<UE_MOBILITY_TYPE>TRACE</UE_MOBILITY_TYPE>
-	<TRACE_MOBILITY_FILE>static.txt</TRACE_MOBILITY_FILE> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
+	<UE_MOBILITY_TYPE>TRACE</UE_MOBILITY_TYPE> 
+<!--	<TRACE_MOBILITY_FILE>static.txt</TRACE_MOBILITY_FILE> --> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
       </UE_MOBILITY>
       <eNB_MOBILITY>
 	<eNB_INITIAL_DISTRIBUTION>random</eNB_INITIAL_DISTRIBUTION>
@@ -56,18 +56,19 @@
       <!-- DL -->
       <SOURCE_ID>0</SOURCE_ID> <!-- valid formats are: -->					
       <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
-      <DESTINATION_ID>1</DESTINATION_ID> <!-- valid formats are: -->
+      <DESTINATION_ID>1:2</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC> 
     <!-- UL -->
     <PREDEFINED_TRAFFIC>
-      <SOURCE_ID>1</SOURCE_ID> <!-- valid formats are: -->					
+      <SOURCE_ID>1:2</SOURCE_ID> <!-- valid formats are: -->					
       <APPLICATION_TYPE>scbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
       <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC>
+
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> 
+    <EMULATION_TIME_ms>90000</EMULATION_TIME_ms> 
     
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
