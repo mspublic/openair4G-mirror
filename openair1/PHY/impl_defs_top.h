@@ -446,7 +446,7 @@ typedef struct
 
 } PHY_MEASUREMENTS_eNB;
 
-#define MCS_COUNT 23
+#define MCS_COUNT 24
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
 /**@}

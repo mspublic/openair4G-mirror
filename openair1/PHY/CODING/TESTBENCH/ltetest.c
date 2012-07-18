@@ -613,7 +613,7 @@ int main(int argc, char *argv[]) {
 
 
 
-  for (SNR=-6;SNR<16;SNR+=.5) {
+  for (SNR=-3;SNR<16;SNR+=.1) {
 
 
     //    printf("\n\nSNR %f dB\n",SNR);

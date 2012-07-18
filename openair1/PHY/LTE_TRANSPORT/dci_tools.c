@@ -941,7 +941,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = mcs;
 
-    dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(mcs)][NPRB-1];
+    dlsch[0]->harq_processes[harq_pid]->TBS         =dlsch_tbs25[get_I_TBS(mcs)][NPRB-1];
 
     dlsch[0]->rnti = rnti;
 
@@ -1638,34 +1638,34 @@ u8 sinr2cqi(int sinr) {
  
 u8 sinr2cqi(int sinr) {
 
-  if (sinr<=-4)
+  if (sinr<=-8)
     return(0);
-  else if (sinr < -2)
-    return(1);
-  else if (sinr <= 0)
-    return(2);
-  else if (sinr < 2)
+  else if (sinr < -6)
     return(3);
-  else if (sinr < 3)
+  else if (sinr <= -4)
     return(4);
-  else if (sinr < 5)
+  else if (sinr <= -2)
     return(5);
-  else if (sinr < 6)
+  else if (sinr <= 0)
     return(6);
-  else if (sinr < 8)
+  else if (sinr <= 2)
     return(7);
-  else if (sinr < 9)
+  else if (sinr <= 4)
     return(8);
-  else if (sinr < 11)
+  else if (sinr <= 6.5)
     return(9);
-  else if (sinr < 13)
+  else if (sinr <= 7.5)
     return(10);
-  else if (sinr < 15)
+  else if (sinr <= 9.5)
     return(11);
-  else if (sinr < 16)
+  else if (sinr <= 11)
     return(12);
-  else if (sinr>=16)
+  else if (sinr <= 14)
     return(13);
+  else if (sinr <= 16)
+    return(14);
+  else if (sinr > 16)
+    return(15);
 
   return(0);
 }

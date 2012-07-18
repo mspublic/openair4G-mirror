@@ -188,9 +188,11 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 
   int len = l;
 
+  //  if(phy_vars_eNB->frame==0){
   phy_vars_eNB->total_dlsch_bitrate = 0;//phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
   phy_vars_eNB->total_transmitted_bits = 0;// phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits +  phy_vars_eNB->total_transmitted_bits;
   phy_vars_eNB->total_system_throughput = 0;//phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
+  // }
 
   for (eNB=0;eNB<number_of_cards;eNB++) {
     len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
@@ -217,7 +219,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 #ifdef OPENAIR2
       if (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti>0) {
 	phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
-	phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits +  phy_vars_eNB->total_transmitted_bits;
+	phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_transmitted_bits;
 	phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
 	if (phy_vars_eNB->eNB_UE_stats[UE_id].mode == PUSCH) 
 	  success = success + ((phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[0]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[1]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[2]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[3]) - (phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[0]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[1]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[2]+phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[3]));

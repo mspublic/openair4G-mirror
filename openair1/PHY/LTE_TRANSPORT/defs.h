@@ -465,6 +465,8 @@ typedef struct {
   MIMO_mode_t mimo_mode;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
   s16 w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
+  /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  double w_abs[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
   s16 *d[MAX_NUM_DLSCH_SEGMENTS];
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)   
