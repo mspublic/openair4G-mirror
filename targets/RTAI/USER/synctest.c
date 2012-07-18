@@ -1040,6 +1040,7 @@ int main(int argc, char **argv) {
   int i,j,aa;
 
   LTE_DL_FRAME_PARMS *frame_parms;
+#ifdef EXMIMO
   u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
   u32 rf_mode_max[4]     = {55759,55759,55759,55759};
   u32 rf_mode_med[4]     = {39375,39375,39375,39375};
@@ -1051,7 +1052,6 @@ int main(int argc, char **argv) {
 
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
-#ifdef EXMIMO
   u32 rxgain[4]={20,20,20,20};
 #endif
 
@@ -1072,6 +1072,10 @@ int main(int argc, char **argv) {
   FILE *rxg_fd=NULL;
   FILE *rflo_fd=NULL;
   unsigned int rxg_max[4]={133,133,133,133}, rxg_med[4]={127,127,127,127}, rxg_byp[4]={120,120,120,120};
+
+#ifdef EMOS
+  int error_code;
+#endif
 
   const struct option long_options[] = {
     {"calib-ue-rx", required_argument, NULL, 256},
