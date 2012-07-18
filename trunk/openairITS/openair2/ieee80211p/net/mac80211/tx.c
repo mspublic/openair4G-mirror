@@ -1976,7 +1976,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		memcpy(hdr.addr1, skb->data, ETH_ALEN);
 		memcpy(hdr.addr2, skb->data + ETH_ALEN, ETH_ALEN);
 		if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
-		  memcpy(hdr.addr3, 0xFFFFFFFFFFFF, ETH_ALEN); // [PLATA]: here, we add that we have a clause on the OCB; by default - wildcardBSSID on 48 bits
+		  memcpy(hdr.addr3, 0xFFFFFF, ETH_ALEN); // [PLATA]: here, we add that we have a clause on the OCB; by default - wildcardBSSID on 48 bits
 		  fc |=  cpu_to_le16(~IEEE80211_FCTL_FROMDS | ~IEEE80211_FCTL_TODS); // [PLATA] we make sure that FROMDS and TODS are both 0
 		}
 		else
