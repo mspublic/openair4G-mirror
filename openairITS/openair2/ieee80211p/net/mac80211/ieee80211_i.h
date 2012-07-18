@@ -235,6 +235,10 @@ enum ieee80211_rx_flags {
 	IEEE80211_RX_BEACON_REPORTED	= BIT(1),
 };
 
+/*
+ * struct ieee80211_rx_data - receiver structure
+ *
+ */
 struct ieee80211_rx_data {
 	struct sk_buff *skb;
 	struct ieee80211_local *local;
@@ -1176,7 +1180,9 @@ static inline struct ieee80211_local *hw_to_local(
 	return container_of(hw, struct ieee80211_local, hw);
 }
 
-
+/*
+ * checks if the BSS ID is identical OR if the wildcard BSSID has been used
+ */
 static inline int ieee80211_bssid_match(const u8 *raddr, const u8 *addr)
 {
 	return compare_ether_addr(raddr, addr) == 0 ||
