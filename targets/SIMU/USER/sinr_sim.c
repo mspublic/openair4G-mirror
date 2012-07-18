@@ -35,11 +35,14 @@
 
 #define PI 3.1416
 #define Am 20
-#define MCS_COUNT 23
+#define MCS_COUNT 24
 #define MCL (-70) /*minimum coupling loss (MCL) in dB*/
 //double sinr[NUMBER_OF_eNB_MAX][2*25];
-extern double sinr_bler_map[MCS_COUNT][2][9];
+extern double sinr_bler_map[MCS_COUNT][2][16];
 
+extern double MI_map_4qam[3][162];
+extern double MI_map_16qam[3][197];
+extern double MI_map_64qam[3][227];
 
 // Extract the positions of UE and ENB from the mobility model 
 
@@ -215,57 +218,123 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
 
 void get_beta_map() {
   char *file_path = NULL;
-  /*
-  char *file_name[] = {"bler_1.csv", "bler_2.csv", "bler_3.csv", "bler_4.csv", "bler_5.csv", "bler_6.csv", "bler_7.csv", "bler_8.csv",
-                    "bler_9.csv", "bler_10.csv", "bler_11.csv", "bler_12.csv", "bler_13.csv", "bler_14.csv", "bler_15.csv", "bler_16.csv",
-                    "bler_17.csv", "bler_18.csv", "bler_19.csv", "bler_20.csv", "bler_21.csv", "bler_22.csv"};
-  */
   int table_len = 0;
   int mcs = 0;
   char *sinr_bler;
-  char buffer[100];
+  char buffer[1000];
   FILE *fp;
 
-  /*
-  file_path_ptr = strcat(file_path_ptr,getenv("OPENAIR1_DIR"));
-  file_path_ptr = strcat(file_path_ptr,"/SIMULATION/LTE_PHY/Abstraction");
-  */
-  file_path = (char*) malloc(256);
+  file_path = (char*) malloc(512);
 
-  for (mcs = 0; mcs <= 4; mcs++) {
-    for (table_len = 0; table_len < 9; table_len++) {
-      sinr_bler_map[mcs][0][table_len] = 0.0;
-      sinr_bler_map[mcs][1][table_len] = 0.0;
-    }
-  }
-
-  for (mcs = 5; mcs < MCS_COUNT; mcs++) { 
-    // sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs); // navid 
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Real/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
-
+  for (mcs = 0; mcs < MCS_COUNT; mcs++) {
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/awgn_abst/awgn_snr_bler_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
       LOG_E(OCM,"ERROR: Unable to open the file %s\n", file_path);
       exit(-1);
     }
     else {
-      fgets(buffer, 100, fp);
+      fgets(buffer, 1000, fp);
       table_len=0;
       while (!feof(fp)) {
-        sinr_bler = strtok(buffer, ";");
+        sinr_bler = strtok(buffer, ",");
         sinr_bler_map[mcs][0][table_len] = atof(sinr_bler);
-        sinr_bler = strtok(NULL,";");
+        sinr_bler = strtok(NULL,",");
         sinr_bler_map[mcs][1][table_len] = atof(sinr_bler);
         table_len++;
-        fgets(buffer, 100, fp);
+        fgets(buffer, 1000, fp);
       }
       fclose(fp);
     }
     LOG_D(OCM," Print the table for mcs %d\n",mcs);
-    for (table_len = 0; table_len < 9; table_len++)
+    for (table_len = 0; table_len < 16; table_len++)
       LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
   free(file_path);
 }
+
+//this function reads and stores the Mutual information tables for the MIESM abstraction. 
+void get_MIESM_param() {
+  char *file_path = NULL;
+  char buffer[10000];
+  FILE *fp;
+  int qam[3] = {4,16,64};
+  int q,cnt;
+  char *result = NULL;
+  int table_length=0;
+  int table_len;
+  file_path = (char*) malloc(512);
+  for (q=0;q<3;q++)
+    {
+      sprintf(file_path,"%s/SIMU/USER/files/MI_%dqam.csv",getenv("OPENAIR_TARGETS"),qam[q]);
+      fp = fopen(file_path,"r");
+      if (fp == NULL) {
+	printf("ERROR: Unable to open the file %s\n", file_path);
+	exit(-1);
+      }
+      else {
+	cnt=-1;
+	switch(qam[q]) {
+	case 4: 	  
+	  while (!feof(fp)) {
+	    table_length =0;
+	    cnt++;
+	    fgets(buffer, 10000, fp);
+	    result = strtok(buffer, ",");
+	    while (result != NULL) {
+	      MI_map_4qam[cnt][table_length]= atof(result);
+	      result = strtok(NULL, ",");
+	      table_length++;
+	    }
+	  }
+       fclose(fp);
+       for (table_len = 0; table_len < 162; table_len++)
+	 printf("MIESM 4QAM Table: %lf  %lf  %1f\n ",MI_map_4qam[0][table_len],MI_map_4qam[1][table_len], MI_map_4qam[2][table_len]);
+       break;
+	case 16:
+	   while (!feof(fp)) {
+	    table_length =0;
+	    cnt++;
+	    fgets(buffer, 10000, fp);
+	    result = strtok(buffer, ",");
+	    while (result != NULL) {
+	      MI_map_16qam[cnt][table_length]= atof(result);
+	      result = strtok(NULL, ",");
+	      table_length++;
+	    }
+	  }
+       fclose(fp);
+ for (table_len = 0; table_len < 197; table_len++)
+	 printf("MIESM 16 QAM Table: %lf  %lf  %1f\n ",MI_map_16qam[0][table_len],MI_map_16qam[1][table_len], MI_map_16qam[2][table_len]);
+       break;
+	case 64:
+	   while (!feof(fp)) {
+	    table_length =0;
+	    cnt++;
+	    if(cnt==3)
+	      break;
+	    fgets(buffer, 10000, fp);
+	    result = strtok(buffer, ",");
+	    while (result != NULL) {
+	      MI_map_64qam[cnt][table_length]= atof(result);
+	      result = strtok(NULL, ",");
+	      table_length++;
+	    }
+	  }
+       fclose(fp);
+ for (table_len = 0; table_len < 227; table_len++)
+	 printf("MIESM 64QAM Table: %lf  %lf  %1f\n ",MI_map_64qam[0][table_len],MI_map_64qam[1][table_len], MI_map_64qam[2][table_len]);
+       break;
+       
+	default:
+	  msg("Error, bad input, quitting\n");
+	  break;
+	}
+
+      }
+    }
+  free(file_path);
+}
+
 
 

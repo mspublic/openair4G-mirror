@@ -205,7 +205,6 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	}
       }
       //dlsch_abstraction(PHY_vars_UE_g[UE_id]->sinr_dB, rb_alloc, 8);
-
       // fill in perfect channel estimates
       channel_desc_t *desc1;
       s32 **dl_channel_est = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0];
