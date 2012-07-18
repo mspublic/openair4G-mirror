@@ -65,7 +65,7 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
 #ifdef EXMIMO
 
   switch (phy_vars_ue->rx_gain_mode[0]) {
-  case max:
+  case max_gain:
     if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_max[0]) {
       phy_vars_ue->rx_total_gain_dB = phy_vars_ue->rx_gain_max[0];
       exmimo_pci_interface->rf.rx_gain00 = 50;
@@ -89,11 +89,11 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
       exmimo_pci_interface->rf.rx_gain10 = 50 - phy_vars_ue->rx_gain_max[1] + phy_vars_ue->rx_total_gain_dB;
     }
     break;
-  case med:
-  case byp:
+  case med_gain:
+  case byp_gain:
     if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_byp[0]) {
-      phy_vars_ue->rx_gain_mode[0]   = max;
-      phy_vars_ue->rx_gain_mode[1]   = max;
+      phy_vars_ue->rx_gain_mode[0]   = max_gain;
+      phy_vars_ue->rx_gain_mode[1]   = max_gain;
       exmimo_pci_interface->rf.rf_mode0 = 55759;
       exmimo_pci_interface->rf.rf_mode1 = 55759;
  
