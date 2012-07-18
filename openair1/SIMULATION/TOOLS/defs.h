@@ -312,6 +312,7 @@ double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
 double uniformrandom(void);
 void freq_channel(channel_desc_t *desc,u16 nb_rb, s16 n_samples);
+u8 multipath_channel_nosigconv(channel_desc_t *desc);
 
 /**@} */
 /**@} */
