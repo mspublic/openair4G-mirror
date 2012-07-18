@@ -74,12 +74,14 @@ int main (void)
 {
   char *fifo2file_buffer, *fifo2file_ptr;
 
-  int fifo, counter = 0;
+  int fifo, counter=0, bytes;
 
   FILE  *dumpfile_id;
   char  dumpfile_name[1024];
   time_t starttime_tmp;
   struct tm starttime;
+
+  fifo_dump_emos_eNB *fifo_dump_emos_eNB_ptr;
 
   // allocate memory for NO_FRAMES_DISK channes estimations
   fifo2file_buffer = malloc(NO_ESTIMATES_DISK*CHANNEL_BUFFER_SIZE);
@@ -114,8 +116,8 @@ int main (void)
 
   while (!end)
     {
-
-      printf("count %d, read: %d bytes from the fifo\n",counter, rtf_read_all_at_once(fifo, fifo2file_ptr, CHANNEL_BUFFER_SIZE));
+      bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, CHANNEL_BUFFER_SIZE);
+      printf("count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
       fifo2file_ptr += CHANNEL_BUFFER_SIZE;
       counter ++;
 
