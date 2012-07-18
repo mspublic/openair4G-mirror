@@ -200,8 +200,8 @@ int dlsch_encoding(unsigned char *a,
   unsigned char mod_order;
   unsigned int Kr,Kr_bytes,r,r_offset=0;
 
-  A = dlsch->harq_processes[harq_pid]->TBS;
-
+  A = dlsch->harq_processes[harq_pid]->TBS; //6228
+  // printf("Encoder: A: %d\n",A);
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
   G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
@@ -218,7 +218,6 @@ int dlsch_encoding(unsigned char *a,
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
 		 A)>>8;
-    
     a[A>>3] = ((u8*)&crc)[2];
     a[1+(A>>3)] = ((u8*)&crc)[1];
     a[2+(A>>3)] = ((u8*)&crc)[0];

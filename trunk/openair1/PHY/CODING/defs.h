@@ -199,7 +199,24 @@ int lte_rate_matching_turbo_rx(u32 RTC,
 			      u8 Nl, 
 			      u8 r,
 			      u32 *E_out);
+
+u32 lte_rate_matching_turbo_rx_abs(u32 RTC,
+			      u32 G, 
+			      double *w,
+			      u8 *dummy_w,
+			      double *soft_input, 
+			      u8 C, 
+			      u32 Nsoft, 
+			      u8 Mdlharq,
+			      u8 Kmimo,
+			      u8 rvidx,
+			      u8 clear,
+			      u8 Qm, 
+			      u8 Nl, 
+			      u8 r,
+			      u32 *E_out);
 /**     
+
 \brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
 \param RCC R^CC_subblock from subblock interleaver (number of rows in interleaving matrix)
 \param E This the number of coded bits allocated for channel

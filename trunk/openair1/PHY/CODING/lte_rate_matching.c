@@ -23,19 +23,19 @@ u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
   u32 RTC = (D>>5), ND, ND3;
   u32 row,col,Kpi,index;
   u32 index3,k;
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   u32 nulled=0;
-#endif
+  #endif
 
   if ((D&0x1f) > 0)
     RTC++;
   Kpi = (RTC<<5);
   //  Kpi3 = Kpi*3;
   ND = Kpi - D;
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
   printf("RTC = %d, Kpi=%d, ND=%d\n",RTC,Kpi,ND);
-#endif
+  #endif
   ND3 = ND*3;
 
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
@@ -68,9 +68,9 @@ u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
       k++;
     }      
   }
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("RM_TX: Nulled %d\n",nulled);
-#endif
+  #endif
   return(RTC);
 }
 
@@ -357,7 +357,7 @@ u32 generate_dummy_w_cc(u32 D, u8 *w){
 
 u32 lte_rate_matching_turbo(u32 RTC,
 				     u32 G, 
-				     u8 *w,
+			             u8 *w,
 				     u8 *e, 
 				     u8 C, 
 				     u32 Nsoft, 
@@ -370,11 +370,11 @@ u32 lte_rate_matching_turbo(u32 RTC,
   
   
   u32 Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
-
+  int cnt=0;
   u8 *e2;
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   u32 nulled=0;
-#endif
+  #endif
 
   Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
   Ncb = cmin(Nir/C,3*(RTC<<5));
@@ -386,9 +386,9 @@ u32 lte_rate_matching_turbo(u32 RTC,
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
 
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("lte_rate_matching_turbo: Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",3*(RTC<<5),rvidx, G, Qm,Nl,r);
-#endif
+  #endif
 
   if (r < (C-(GpmodC)))
     E = Nl*Qm * (Gp/C);
@@ -399,9 +399,9 @@ u32 lte_rate_matching_turbo(u32 RTC,
 
   ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
 
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("lte_rate_matching_turbo: E %d, k0 %d, Ncbmod %d, Ncb/(RTC<<3) %d\n",E,ind,Ncbmod,Ncb/(RTC<<3));
-#endif
+  #endif
 
   e2=e+(r*E);
 
@@ -409,28 +409,29 @@ u32 lte_rate_matching_turbo(u32 RTC,
 
 
     while(w[ind] == LTE_NULL) {
-#ifdef RM_DEBUG
+      #ifdef RM_DEBUG
       printf("RM_tx : ind %d, NULL\n",ind);
       nulled++;
-#endif
+      #endif
       ind++;
       if (ind==Ncb)
 	ind=0;
     }
 
     e2[k] = w[ind];
-#ifdef RM_DEBUG
+    cnt = cnt+1;
+    #ifdef RM_DEBUG
     //    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
-    printf("RM_TX %d (%d) Ind: %d (%d)\n",k,k+r*E,ind,e2[k]);
-#endif
+     printf("RM_TX %d (%d) Ind: %d (%d)\n",k,k+r*E,ind,e2[k]);
+    #endif
     ind++;
     if (ind==Ncb)
       ind=0;
   }
 
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("nulled %d\n",nulled);
-#endif
+  #endif
   return(E);
 }
 
@@ -576,6 +577,96 @@ int lte_rate_matching_turbo_rx(u32 RTC,
 
   *E_out = E;
   return(0);
+
+}
+
+u32 lte_rate_matching_turbo_rx_abs(u32 RTC,
+			       u32 G, 
+			       double *w,
+			       u8 *dummy_w,
+			       double *soft_input, 
+			       u8 C, 
+			       u32 Nsoft, 
+			       u8 Mdlharq,
+			       u8 Kmimo,
+			       u8 rvidx,
+			       u8 clear,
+			       u8 Qm, 
+			       u8 Nl, 
+			       u8 r,
+			       u32 *E_out) {
+  
+  
+  u32 Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k,start_ind;
+  double *soft_input2;
+  double w_tmp;
+  u32 nulled=0;
+  int stop_counting_null=0;
+  if (Kmimo==0 || Mdlharq==0 || C==0 || Qm==0 || Nl==0) {
+    msg("lte_rate_matching.c: invalid paramters\n");
+    return(-1);
+  }
+
+  Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
+  Ncb = cmin(Nir/C,3*(RTC<<5));
+  
+
+  Gp = G/Nl/Qm;
+  GpmodC = Gp%C;
+
+
+
+  if (r < (C-(GpmodC)))
+    E = Nl*Qm * (Gp/C);
+  else
+    E = Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
+
+  Ncbmod = Ncb%(RTC<<3);
+  
+  ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
+  start_ind=ind;
+#ifdef RM_DEBUG
+  printf("lte_rate_matching_turbo_rx: Clear %d, E %d, Ncb %d, Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",clear,E,Ncb,3*(RTC<<5),rvidx, G, Qm,Nl,r);
+#endif
+
+  if (clear==1)
+    memset(w,0,Ncb*sizeof(s16));
+ 
+  soft_input2 = soft_input + (r*E);
+ 
+  for (k=0;k<E;k++) {
+
+
+    while(dummy_w[ind] == LTE_NULL) {
+#ifdef RM_DEBUG
+      printf("RM_rx : ind %d, NULL\n",ind);
+#endif
+      if(stop_counting_null==0 || (ind<start_ind && stop_counting_null==1) ){
+      nulled++;
+      }
+      
+      ind++;
+      
+      
+      if (ind==Ncb){
+	ind=0;
+	stop_counting_null+=1;
+      }
+    }
+
+      w[ind] = w[ind] + soft_input2[k] - w[ind]*soft_input2[k];
+#ifdef RM_DEBUG
+      printf("RM_RX k%d Ind: %d (%d)\n",k,ind,w[ind]);
+#endif
+    ind++;
+    if (ind==Ncb){
+      ind=0;
+    stop_counting_null+=1;
+    }
+  }
+
+  *E_out = E;
+  return(start_ind);
 
 }
 

@@ -65,9 +65,20 @@ extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 #endif
 
-extern double sinr_bler_map[MCS_COUNT][2][9];
+extern double sinr_bler_map[MCS_COUNT][2][16];
 
-extern double beta_dlsch[MCS_COUNT];
+//for MU-MIMO abstraction using MIESM
+//this 2D arrarays contains SINR, MI and RBIR in rows 1, 2, and 3 respectively
+extern double MI_map_4qam[3][162];
+extern double MI_map_16qam[3][197];
+extern double MI_map_64qam[3][227];
+
+extern double beta1_dlsch_MI[6][MCS_COUNT];
+extern double beta2_dlsch_MI[6][MCS_COUNT];
+
+
+extern double beta1_dlsch[6][MCS_COUNT];
+extern double beta2_dlsch[6][MCS_COUNT];
 
 #endif /*__PHY_EXTERN_H__ */
  

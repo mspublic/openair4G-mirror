@@ -1237,6 +1237,12 @@ u8 Get_SB_size(u8 n_rb_dl);
 
 u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe);
 
+u32 dlsch_decoding_abstraction(double *dlsch_MIPB,
+		   LTE_DL_FRAME_PARMS *lte_frame_parms,
+		   LTE_UE_DLSCH_t *dlsch,
+		   u8 subframe,
+		   u8 num_pdcch_symbols);
+
 
 /**@}*/
 #endif
