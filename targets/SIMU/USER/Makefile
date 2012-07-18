@@ -38,6 +38,10 @@ ifndef OPENAIR_EMU
 export OPENAIR_EMU=1
 endif
 
+ifdef EMOS
+CFLAGS+=-DEMOS
+endif
+
 ifdef TRAFFIC_TM5
 CFLAGS += -DRLC_UM_TEST_TRAFFIC=1 #-DFULL_BUFFER=1
 endif

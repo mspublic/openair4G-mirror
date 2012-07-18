@@ -1302,7 +1302,7 @@ for(i=0;i<2;i++) {
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    if (frame>0) {
 	      PHY_vars_UE_g[UE_id]->frame = frame;
-	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
+	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
 	    }
 	  }
 	  else {

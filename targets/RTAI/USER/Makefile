@@ -63,6 +63,10 @@ ifeq ($(HARD_RT),1)
 CFLAGS += -DHARD_RT
 endif
 
+ifdef EMOS
+CFLAGS += -DEMOS
+endif
+
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)"  "4.4.3"
     CFLAGS += -Wno-packed-bitfield-compat
