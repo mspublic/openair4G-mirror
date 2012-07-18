@@ -1229,9 +1229,13 @@ main (int argc, char **argv)
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
        LOG_I(OMG," extracting position of eNb...\n");
-      extract_position(enb_node_list, enb_data, NB_eNB_INST);
+       extract_position(enb_node_list, enb_data, NB_eNB_INST);
        LOG_I(OMG," extracting position of UE...\n");
-      extract_position(ue_node_list, ue_data, NB_UE_INST); // JHNOTE: TODO MUST reflect the number of ACTIVE SUMO nodes (for example at the beginning, 1 node only is in SUMO...so, x others are just on standby...should not be considered).
+       if (oai_emulation.info.omg_model_ue == TRACE)
+	 extract_position_fixed_ue(ue_data, NB_UE_INST); // JHNOTE: TODO MUST reflect the number of ACTIVE SUMO nodes (for example at the beginning, 1 node only is in SUMO...so, x others are just on standby...should not be considered).
+       else 
+	 extract_position(ue_node_list, ue_data, NB_UE_INST); 
+      
 
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {

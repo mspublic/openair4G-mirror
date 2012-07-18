@@ -100,14 +100,15 @@ void init_mobility_generator(omg_global_param omg_param_list) {
     break;
 
   case TRACE:
-      start_trace_generator(omg_param_list);
+    /*  start_trace_generator(omg_param_list);
       LOG_D(OMG," --------DISPLAY JOB LIST-------- \n");
       display_job_list(Job_Vector);
       Job_Vector = quick_sort (Job_Vector);
       LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n");
       display_job_list(Job_Vector);
       LOG_D(OMG," --------OMG will load static mobility traces from user specified file-------- \n");
-      break; 
+    */
+    break; 
 
   case SUMO: 
     start_sumo_generator(omg_param_list);
@@ -164,7 +165,7 @@ void update_node_vector(int mobility_type, double cur_time){
     update_rwalk_nodes(cur_time);
     break;
   case TRACE:
-    update_trace_nodes(cur_time);
+    //    update_trace_nodes(cur_time);
     break;     
   case SUMO:  
    // printf("in SUMO case \n");
@@ -194,8 +195,8 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
       Vector = Node_Vector[RWALK];
       break;
     case TRACE:
-      get_trace_positions_updated(cur_time);
-      Vector = Node_Vector[TRACE];
+      //get_trace_positions_updated(cur_time);
+      //Vector = Node_Vector[TRACE];
       break;   
     case SUMO:
       LOG_I(OMG,"getting positions from SUMO\n");

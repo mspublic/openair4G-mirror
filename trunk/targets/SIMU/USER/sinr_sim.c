@@ -71,12 +71,12 @@ void extract_position_fixed_ue (node_desc_t **node_data, int nb_nodes) {
   int i;
   for (i=0;i<nb_nodes;i++) {
     if (i==0) {
-      node_data[i]->x = 1800;
+      node_data[i]->x = 1856;
       node_data[i]->y = 1813;
     }
     else {
       node_data[i]->x = 2106;
-      node_data[i]->y = 1500;
+      node_data[i]->y = 1563;
     }
   }
 }
