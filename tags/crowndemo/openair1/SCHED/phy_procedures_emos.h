@@ -1,8 +1,11 @@
 #ifndef __PHY_PROCEDURES_EMOS_H__
 #define __PHY_PROCEDURES_EMOS_H__
 
-#ifndef RTIME
+#ifdef NO_RTAI
 typedef long long unsigned int RTIME;
+#else
+#include <rtai.h>
+#include <rtai_fifos.h>
 #endif
 //#include "PHY/TOOLS/defs.h"
 #include "PHY/defs.h"
