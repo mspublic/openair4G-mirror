@@ -124,6 +124,12 @@ int free_multipath_channel(channel_desc_t *channel) {
 }
 */
 
+u8 multipath_channel_nosigconv(channel_desc_t *desc){
+  
+       random_channel(desc);
+       return(1);
+}
+
 //#define DEBUG_CH
 void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_re, 

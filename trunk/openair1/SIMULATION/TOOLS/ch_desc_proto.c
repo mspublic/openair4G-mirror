@@ -4,7 +4,7 @@
 #include "defs.h"
 #define PI 3.1416
 #define Am 20
-#define MCS_COUNT 22
+#define MCS_COUNT 24
 #define MCL 70 /*minimum coupling loss (MCL) in dB*/
 #define theta_3dB (65*PI/180)
 enum sector {SEC1, SEC2, SEC3};
