@@ -2733,7 +2733,7 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 			CALL_RXH(ieee80211_rx_h_check_more_data)  // [PLATA] - no use as we do not POLL in OCB
 			CALL_RXH(ieee80211_rx_h_uapsd_and_pspoll)  // [PLATA] - no use as we do not poll (if AD_HOC, return)
 		}
-		CALL_RXH(ieee80211_rx_h_sta_process)  // JHNOTE: what is this method really doing?
+		CALL_RXH(ieee80211_rx_h_sta_process)  // [PLATA]: does not do much but should not interfer..
 
 		CALL_RXH(ieee80211_rx_h_defragment) // [PLATA] - we keep it here, as we also allow fragmenting in the tx path  - but should be blocked with the right flags.
 
