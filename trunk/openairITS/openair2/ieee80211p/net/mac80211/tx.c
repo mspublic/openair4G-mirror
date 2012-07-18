@@ -341,7 +341,7 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 		 */
 		return TX_DROP;
 	}
-    // JHNOTE: to clarify here: if I read well, if I am AD-HOC and BROADCAST, no change are required (no need to be associated...)...,right?
+    // [PLATA]: to clarify here: if I read well, if I am AD-HOC and BROADCAST, no change are required (no need to be associated...)...,right?
 	return TX_CONTINUE;
 }
 
@@ -1778,6 +1778,9 @@ fail:
  * encapsulated packet will then be passed to master interface, wlan#.11, for
  * transmission (through low-level driver).
  */
+/*
+ * [PLATA] we start here...
+ */
 netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 				    struct net_device *dev)
 {
@@ -1972,7 +1975,12 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		/* DA SA BSSID */
 		memcpy(hdr.addr1, skb->data, ETH_ALEN);
 		memcpy(hdr.addr2, skb->data + ETH_ALEN, ETH_ALEN);
-		memcpy(hdr.addr3, sdata->u.ibss.bssid, ETH_ALEN); // JHNOTE: here, we can add that we have a clause on the OCB; by default: cpu_to_le16(~IEEE80211_FCTL_FROMDS | ~IEEE80211_FCTL_TODS) should be set
+		if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+		  memcpy(hdr.addr3, 0xFFFFFFFFFFFF, ETH_ALEN); // [PLATA]: here, we add that we have a clause on the OCB; by default - wildcardBSSID on 48 bits
+		  fc |=  cpu_to_le16(~IEEE80211_FCTL_FROMDS | ~IEEE80211_FCTL_TODS); // [PLATA] we make sure that FROMDS and TODS are both 0
+		}
+		else
+			memcpy(hdr.addr3, sdata->u.ibss.bssid, ETH_ALEN);
 		hdrlen = 24;
 		break;
 	default:
@@ -1990,8 +1998,21 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		rcu_read_lock();
 		sta = sta_info_get(sdata, hdr.addr1);
 		if (sta) {
-			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
-			wme_sta = test_sta_flag(sta, WLAN_STA_WME);
+			/*
+			 * [PLATA] if in OCB mode, we are implicitely authorized
+			 */
+			if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+				authorized = 1;
+				wme_sta = 0;  // [PLATA] on this version of PLATA, we do not support WME
+				set_sta_flag(sta,WLAN_STA_AUTHORIZED); // do we need these actually?
+				set_sta_flag(sta,WLAN_STA_AUTH);
+				set_sta_flag(sta,WLAN_STA_ASSOC);
+				set_sta_flag(sta,WLAN_STA_OCB); // [PLATA] we block the STA t be in the OCB mode (as not compatible with none of the other states) - we might have to put it to AUTHORIZED
+			}
+			else {
+				authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
+				wme_sta = test_sta_flag(sta, WLAN_STA_WME);
+			}
 		}
 		rcu_read_unlock();
 	}
@@ -2001,7 +2022,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		wme_sta = true;
 
 	/* receiver and we are QoS enabled, use a QoS type frame */
-	if (wme_sta && local->hw.queues >= 4) {  // JHNOTE: for 802.11p PLATA: just make sure wme_sta is FALSE
+	if (wme_sta && local->hw.queues >= 4) {  // [PLATA]: this version of PLATA does not support QoS data frames...with wme_sta 0 and 1 single queue, we cannot be QoS
 		fc |= cpu_to_le16(IEEE80211_STYPE_QOS_DATA);
 		hdrlen += 2;
 	}
@@ -2009,6 +2030,9 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	/*
 	 * Drop unicast frames to unauthorised stations unless they are
 	 * EAPOL frames from the local station.
+	 */
+	/*
+	 * [PLATA] - should pass here, as we are implicitly authorized.
 	 */
 	if (unlikely(!ieee80211_vif_is_mesh(&sdata->vif) &&
 		     !is_multicast_ether_addr(hdr.addr1) && !authorized &&
@@ -2147,7 +2171,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	}
 #endif
 
-	if (ieee80211_is_data_qos(fc)) {  //JHNOTE: be sure it is false
+	if (ieee80211_is_data_qos(fc)) {  //[PLATA] - this version of PLATA does not support QoS frame - MUST be false
 		__le16 *qos_control;
 
 		qos_control = (__le16*) skb_push(skb, 2);
@@ -2178,7 +2202,15 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 
 	dev->trans_start = jiffies;
 
-	info->flags = info_flags;  // JHNOTE: check info_flags HERE...(in particular be sure that encryption is disabled (IEEE80211_TX_INTFL_DONT_ENCRYPT) and other flags to bypass the statemachine
+	/*
+	 * [PLATA] - last flag adjustments to bypass the state machine (according to the PLATA Spec.)
+	 */
+	if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+		info_flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
+		info_flags |= IEEE80211_TX_CTL_DONTFRAG;
+		info_flags |= IEEE80211_TX_CTL_NO_ACK;
+	}
+	info->flags = info_flags;
 	info->ack_frame_id = info_id;
 
 	ieee80211_xmit(sdata, skb);
