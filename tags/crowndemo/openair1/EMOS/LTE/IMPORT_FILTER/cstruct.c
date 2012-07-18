@@ -5,6 +5,7 @@
 //   type compatibility when calling mxCreateStructMatrix();
 //--------------------------------------------------------------
 #include "mex.h"
+#include <stdio.h>
 #include <math.h>
 //#include <windows.h> jaj 05/25/2004 removed
 
