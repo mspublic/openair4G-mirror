@@ -108,10 +108,6 @@ int max_sect_id, max_sync_pos;
 
 //DCI_ALLOC_t dci_alloc[8];
 
-#ifdef EMOS
-fifo_dump_emos_eNB emos_dump_eNB;
-#endif
-
 #ifdef DIAG_PHY
 extern int rx_sig_fifo;
 #endif
@@ -286,6 +282,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 
 
 #ifdef EMOS
+/*
 void phy_procedures_emos_eNB_TX(unsigned char next_slot) {
 
   unsigned char sect_id,i;
@@ -298,16 +295,8 @@ void phy_procedures_emos_eNB_TX(unsigned char next_slot) {
     for (i=0; i<2; i++) 
       memcpy(&emos_dump_eNB.DCI_alloc[i][next_slot>>1], &CH_mac_inst[0].DCI_pdu.dci_alloc[i], sizeof(DCI_ALLOC_t));
   }
-  if (next_slot==19) {
-    LOG_D(PHY,"[eNB %d] Frame %d, slot %d, Writing EMOS data to FIFO\n",
-	  phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-    if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_eNB, sizeof(fifo_dump_emos_eNB))!=sizeof(fifo_dump_emos_eNB)) {
-      LOG_D(PHY,"[eNB %d] Frame %d, slot %d, Problem writing EMOS data to FIFO\n",
-	    phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-      return;
-    }
-  }
 }
+*/
 #endif
 
 void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
@@ -396,33 +385,45 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
 }
 
 #ifdef EMOS
-void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
+void phy_procedures_emos_eNB_RX(PHY_VARS_eNB *phy_vars_eNB,unsigned char last_slot) {
   
-  unsigned char sect_id,i,aa;
+  u8 aa;
+  u16 last_subframe_emos;
+  u16 pilot_pos1 = 3 - phy_vars_eNB->lte_frame_parms.Ncp, pilot_pos2 = 10 - 2*phy_vars_eNB->lte_frame_parms.Ncp;
 
-  if (last_slot%2==1) {
-    memcpy(&emos_dump_eNB.phy_vars_eNB->eNB_UE_stats[(last_slot>>1)-2],&PHY_vars_eNB_g->eNB_UE_stats,sizeof(PHY_vars_eNB_g->eNB_UE_stats));
+  if (last_slot > 3)
+    last_subframe_emos = (last_slot-4)>>1;
+  else 
+    mac_xface->macphy_exit("should never happen");
+
+  if (last_slot%2==1) 
+    for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
+	memcpy(&emos_dump_eNB.channel[aa][last_subframe_emos*2*phy_vars_eNB->lte_frame_parms.N_RB_UL*12],	       
+	       &phy_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][aa][phy_vars_eNB->lte_frame_parms.N_RB_UL*12*pilot_pos1],
+	       phy_vars_eNB->lte_frame_parms.N_RB_UL*12*sizeof(int));
+	memcpy(&emos_dump_eNB.channel[aa][(last_subframe_emos*2+1)*phy_vars_eNB->lte_frame_parms.N_RB_UL*12],	       
+	       &phy_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][aa][phy_vars_eNB->lte_frame_parms.N_RB_UL*12*pilot_pos2],
+	       phy_vars_eNB->lte_frame_parms.N_RB_UL*12*sizeof(int));
   }
 
-  if (last_slot==4) {
-    emos_dump_eNB.rx_total_gain_dB = PHY_vars_eNB_g->rx_total_gain_eNB_dB;
-    emos_dump_eNB.mimo_mode = openair_daq_vars.dlsch_transmission_mode;
-  }
 
-  if (last_slot==8) {
-    emos_dump_eNB.ulsch_errors = PHY_vars_eNB_g->eNB_UE_stats[1].ulsch_errors;
-    for (sect_id = 0; sect_id<3; sect_id++)  
-      memcpy(&emos_dump_eNB.PHY_measurements_eNB[sect_id],
-	     &PHY_vars_eNB_g->PHY_measurements_eNB[sect_id],
-	     sizeof(PHY_MEASUREMENTS_eNB));
+  if (last_slot==10) {
+    emos_dump_eNB.timestamp = rt_get_time_ns();
+    emos_dump_eNB.frame_tx = phy_vars_eNB->frame;
+    emos_dump_eNB.rx_total_gain_dB = phy_vars_eNB->rx_total_gain_eNB_dB;
+    emos_dump_eNB.mimo_mode = phy_vars_eNB->transmission_mode[0];
+    memcpy(&emos_dump_eNB.PHY_measurements_eNB,
+	   &phy_vars_eNB->PHY_measurements_eNB[0],
+	   sizeof(PHY_MEASUREMENTS_eNB));
+    memcpy(&emos_dump_eNB.eNB_UE_stats,&phy_vars_eNB->eNB_UE_stats[0],sizeof(LTE_eNB_UE_stats));
 
-  }
-
-  if (last_slot%2==1) {
-    for (sect_id = 0; sect_id<3; sect_id++)  
-      for (aa=0; aa<PHY_vars_eNB_g->lte_frame_parms.nb_antennas_rx; aa++) 
-	memcpy(&emos_dump_eNB.channel[(last_slot>>1)-2][sect_id][aa][0],	       PHY_vars_eNB_g->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
-	       PHY_vars_eNB_g->lte_frame_parms.ofdm_symbol_size*sizeof(int));
+    LOG_D(PHY,"[eNB %d] Frame %d, slot %d, Writing EMOS data to FIFO\n",
+	  phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
+    if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_eNB, sizeof(fifo_dump_emos_eNB))!=sizeof(fifo_dump_emos_eNB)) {
+      LOG_D(PHY,"[eNB %d] Frame %d, slot %d, Problem writing EMOS data to FIFO\n",
+	    phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
+      return;
+    }
   }
 
 }
@@ -914,7 +915,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     }
 
 #ifdef EMOS
-    emos_dump_eNB.dci_cnt[next_slot>>1] = DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci; //nb_dci_common+nb_dci_ue_spec;
+    //emos_dump_eNB.dci_cnt[next_slot>>1] = DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci; //nb_dci_common+nb_dci_ue_spec;
 #endif
     // clear previous allocation information for all UEs
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
@@ -1430,7 +1431,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   //*********************
 
 #ifdef EMOS
-  phy_procedures_emos_eNB_TX(next_slot);
+  //phy_procedures_emos_eNB_TX(next_slot);
 #endif
 }
   
@@ -2622,7 +2623,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   }
 
 #ifdef EMOS
-  phy_procedures_emos_eNB_RX(last_slot);
+  phy_procedures_emos_eNB_RX(phy_vars_eNB,last_slot);
 #endif
     
 }

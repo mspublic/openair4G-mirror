@@ -1389,6 +1389,11 @@ int main(int argc, char **argv) {
         }
     }
 
+#ifdef EMOS
+  error_code = rtf_create(CHANSOUNDER_FIFO_MINOR,CHANSOUNDER_FIFO_SIZE);
+  printk("[OPENAIR][SCHED][INIT] Created EMOS FIFO, error code %d\n",error_code);
+#endif
+
   // make main thread LXRT soft realtime
   task = rt_task_init_schmod(nam2num("MYTASK"), 9, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1514,6 +1519,12 @@ int main(int argc, char **argv) {
   fd = 0;
   ioctl(openair_fd,openair_STOP,&fd);
   munmap((void*)mem_base, BIGPHYS_NUMPAGES*4096);
+
+#ifdef EMOS
+  error_code = rtf_destroy(CHANSOUNDER_FIFO_MINOR);
+  printk("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
+#endif
+
 
 #ifdef XFORMS
   if (do_forms==1)

@@ -38,6 +38,7 @@
  * \warning
  */
 
+#include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/defs.h"
@@ -96,10 +97,6 @@ extern pthread_cond_t dlsch_cond[8];
 #endif
 
 DCI_ALLOC_t dci_alloc_rx[8];
-
-#ifdef EMOS
-fifo_dump_emos_UE emos_dump_UE;
-#endif
 
 #ifdef DIAG_PHY
 extern int rx_sig_fifo;
@@ -176,7 +173,7 @@ void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
   exit(-1);
 }
 
-unsigned int prach_gain_table[30] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
+unsigned int prach_gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
 
 unsigned int get_tx_amp(int gain_dB) {
 
@@ -521,6 +518,7 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 
 
 #ifdef EMOS
+/*
 void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
   u8 harq_pid;
   
@@ -548,6 +546,7 @@ void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
     }
   }
 }
+*/
 #endif
 
 int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
@@ -579,7 +578,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 
 #ifdef EMOS
-  phy_procedures_emos_UE_TX(next_slot);
+  //phy_procedures_emos_UE_TX(next_slot);
 #endif
 
   if ((next_slot%2)==0) {
@@ -1177,6 +1176,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
 
 #ifdef EMOS
+  /*
   u8 aa;
 
   // first slot in frame is special
@@ -1192,6 +1192,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 				       l,
 				       eNB_id);
   }
+  */
 #endif
 
   if (l==0) {
@@ -1301,56 +1302,63 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 }
 
 #ifdef EMOS
-void phy_procedures_emos_UE_RX(u8 last_slot,u8 eNB_id) {
+void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) {
 
-  u8 i;
-  memcpy(&emos_dump_UE.PHY_measurements[last_slot],&PHY_vars->PHY_measurements,sizeof(PHY_MEASUREMENTS));
+  u8 i,j;
+  u16 last_slot_emos;
+
+  if (last_slot<2)
+    last_slot_emos = last_slot;
+  else if (last_slot>9)
+    last_slot_emos = last_slot - 8;
+  else 
+    mac_xface->macphy_exit("should never happen");
+
+  for (i=0; i<1; i++)
+    for (j=0; j<2; j++) { 
+      // first OFDM symbol with pilots
+      memcpy(&emos_dump_UE.channel[j][last_slot_emos*2*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
+	     &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(j<<1) + i][0],
+	     phy_vars_ue->lte_frame_parms.ofdm_symbol_size*sizeof(int));
+      // second OFDM symbol with pilots
+      memcpy(&emos_dump_UE.channel[j][(last_slot_emos*2+1)*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
+	     &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(j<<1) + i][(phy_vars_ue->lte_frame_parms.Ncp == 0 ? 4 : 3)*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
+	     phy_vars_ue->lte_frame_parms.ofdm_symbol_size*sizeof(int));
+    }
+  
   if (last_slot==0) {
     emos_dump_UE.timestamp = rt_get_time_ns();
     emos_dump_UE.frame_rx = phy_vars_ue->frame;
-    emos_dump_UE.UE_mode = phy_vars_ue->UE_mode;
-    emos_dump_UE.freq_offset = lte_ue_common_vars->freq_offset;
+    emos_dump_UE.UE_mode = phy_vars_ue->UE_mode[eNB_id];
+    emos_dump_UE.freq_offset = phy_vars_ue->lte_ue_common_vars.freq_offset;
     emos_dump_UE.timing_advance = openair_daq_vars.timing_advance;
-    emos_dump_UE.timing_offset  = PHY_vars_eNB_g->rx_offset;
-    emos_dump_UE.rx_total_gain_dB = PHY_vars_eNB_g->rx_total_gain_dB;
-    emos_dump_UE.eNB_id = lte_ue_common_vars->eNB_id;
+    emos_dump_UE.timing_offset  = phy_vars_ue->rx_offset;
+    emos_dump_UE.rx_total_gain_dB = phy_vars_ue->rx_total_gain_dB;
+    emos_dump_UE.eNb_id = eNB_id;
+    memcpy(&emos_dump_UE.PHY_measurements,&phy_vars_ue->PHY_measurements,sizeof(PHY_MEASUREMENTS));
   }
   if (last_slot==1) {
-    for (eNB_id = 0; eNB_id<3; eNB_id++) { 
-      memcpy(emos_dump_UE.pbch_pdu[eNB_id],lte_ue_pbch_vars[eNB_id]->decoded_output,PBCH_PDU_SIZE);
-      emos_dump_UE.pbch_errors[eNB_id] = lte_ue_pbch_vars[eNB_id]->pdu_errors;
-      emos_dump_UE.pbch_errors_last[eNB_id] = lte_ue_pbch_vars[eNB_id]->pdu_errors_last;
-      emos_dump_UE.pbch_errors_conseq[eNB_id] = lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq;
-      emos_dump_UE.pbch_fer[eNB_id] = lte_ue_pbch_vars[eNB_id]->pdu_fer;
-    }
+    emos_dump_UE.pbch_errors = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors;
+    emos_dump_UE.pbch_errors_last = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_last;
+    emos_dump_UE.pbch_errors_conseq = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq;
+    emos_dump_UE.pbch_fer = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_fer;
   }
-  if (last_slot%2==0) {
-    for (i=0; i<2; i++) 
-      memcpy(&emos_dump_UE.DCI_alloc[i][last_slot>>1], &dci_alloc_rx[i], sizeof(DCI_ALLOC_t));
-  }
-  if (last_slot==0) {
-    eNB_id = lte_ue_common_vars->eNB_id;
-    emos_dump_UE.dci_errors = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors;
-    emos_dump_UE.dci_received = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received;
-    emos_dump_UE.dci_false = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false;
-    emos_dump_UE.dci_missed = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_missed;
-    emos_dump_UE.dlsch_errors = dlsch_errors;
-    emos_dump_UE.dlsch_errors_last = dlsch_errors_last;
-    emos_dump_UE.dlsch_received = dlsch_received;
-    emos_dump_UE.dlsch_received_last = dlsch_received_last;
-    emos_dump_UE.dlsch_fer = dlsch_fer;
-    emos_dump_UE.dlsch_cntl_errors = dlsch_cntl_errors;
-    emos_dump_UE.dlsch_ra_errors = dlsch_ra_errors;
-  }
-  /*
-  if (last_slot==0) {
-    debug_LOG_D(PHY,"[UE  %d] frame %d, slot %d, Writing EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+  if (last_slot==19) {
+    emos_dump_UE.dlsch_errors = phy_vars_ue->dlsch_errors[eNB_id];
+    emos_dump_UE.dlsch_errors_last = phy_vars_ue->dlsch_errors_last[eNB_id];
+    emos_dump_UE.dlsch_received = phy_vars_ue->dlsch_received[eNB_id];
+    emos_dump_UE.dlsch_received_last = phy_vars_ue->dlsch_received_last[eNB_id];
+    emos_dump_UE.dlsch_fer = phy_vars_ue->dlsch_fer[eNB_id];
+    emos_dump_UE.dlsch_cntl_errors = phy_vars_ue->dlsch_SI_errors[eNB_id];
+    emos_dump_UE.dlsch_ra_errors = phy_vars_ue->dlsch_ra_errors[eNB_id];
+
+    LOG_D(PHY,"[UE  %d] frame %d, slot %d, Writing EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
     if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE))!=sizeof(fifo_dump_emos_UE)) {
-      debug_LOG_D(PHY,"[UE  %d] frame %d, slot %d, Problem writing EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+      LOG_D(PHY,"[UE  %d] frame %d, slot %d, Problem writing EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
       return;
     }
   }
-  */
+  
 }
 #endif
 
@@ -1463,7 +1471,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
 
 #ifdef EMOS
-    emos_dump_UE.frame_tx = frame_tx;
+    //emos_dump_UE.frame_tx = frame_tx;
     //emos_dump_UE.mimo_mode = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1];
 #endif
 
@@ -1684,7 +1692,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
   */  
 #ifdef EMOS
-  emos_dump_UE.dci_cnt[last_slot>>1] = dci_cnt;
+  //emos_dump_UE.dci_cnt[last_slot>>1] = dci_cnt;
 #endif
 
   /*
@@ -2630,7 +2638,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     } // abstraction_flag==0   
   }// l loop
 #ifdef EMOS
-  phy_procedures_emos_UE_RX(last_slot);
+  phy_procedures_emos_UE_RX(phy_vars_ue,last_slot,eNB_id);
 #endif
 
   return (0);
