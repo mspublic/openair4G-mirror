@@ -52,7 +52,6 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 //#endif
 
-
 #define DEBUG_PHY_PROC 1
 
 #ifdef OPENAIR2
@@ -64,6 +63,10 @@
 #include "LAYER2/MAC/defs.h"
 #include "UTIL/LOG/log.h"
 //#endif
+
+#ifdef EMOS
+fifo_dump_emos_UE emos_dump_UE;
+#endif
 
 #ifndef OPENAIR2
 //#define DIAG_PHY
@@ -724,7 +727,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	
 	//#ifdef DEBUG_PHY_PROC
-	LOG_I(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, n_DMRS1 %d,n_DMRS2 %d,n_PRS %d, ACK (%d,%d)\n",
+	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, n_DMRS1 %d,n_DMRS2 %d,n_PRS %d, ACK (%d,%d)\n",
 	    phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,
 	    first_rb,nb_rb,
 	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->round,
@@ -1306,13 +1309,16 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
 
   u8 i,j;
   u16 last_slot_emos;
+  u32 bytes;
 
   if (last_slot<2)
     last_slot_emos = last_slot;
   else if (last_slot>9)
     last_slot_emos = last_slot - 8;
-  else 
+  else {
+    LOG_E(PHY,"emos rx last_slot_emos %d, last_slot %d\n", last_slot_emos,last_slot);
     mac_xface->macphy_exit("should never happen");
+  }
 
   for (i=0; i<1; i++)
     for (j=0; j<2; j++) { 
@@ -1352,10 +1358,14 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
     emos_dump_UE.dlsch_cntl_errors = phy_vars_ue->dlsch_SI_errors[eNB_id];
     emos_dump_UE.dlsch_ra_errors = phy_vars_ue->dlsch_ra_errors[eNB_id];
 
-    LOG_D(PHY,"[UE  %d] frame %d, slot %d, Writing EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
-    if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE))!=sizeof(fifo_dump_emos_UE)) {
-      LOG_D(PHY,"[UE  %d] frame %d, slot %d, Problem writing EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
-      return;
+    bytes = rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE));
+    if (bytes!=sizeof(fifo_dump_emos_UE)) {
+      LOG_W(PHY,"[UE  %d] frame %d, slot %d, Problem writing EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+    }
+    else {
+      if (phy_vars_ue->frame%100==0) {
+	LOG_I(PHY,"[UE  %d] frame %d, slot %d, Writing %d bytes EMOS data to FIFO\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, bytes);
+      }
     }
   }
   
@@ -1944,53 +1954,49 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     pilot3 = 9;
   }
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_S) {
-	    //if (calibration_flag == 0)
-	    //{
-	    	if ((last_slot%2)==0)
-	      	n_symb = 5;//3;
-	    	else
-	      	n_symb = 0;   	
-	    //} 
-	    //else
-	 if (eNB_id==0) //(calibration_flag == 1)
-	     {
-              //printf("BORIS\n");exit(-1);
-	     if ((last_slot%2)==0)
-	      n_symb = 1;//3;
-	     else
-	      n_symb = 0;	    	
-		//for (Ns=2;Ns<(2+1);Ns++) {	
-		for (l=0;l<n_symb;l++) {
-			 slot_fep_SS(phy_vars_ue,				   
-				     l,//slot 0 sym 0 (l)
-				     last_slot,
-#ifdef HW_PREFIX_REMOVAL
-		      		     1,
-#else
-			             0,
-#endif
-				     0);//including dl channel estimation an freq ofset fonction		               	    
-		  	}
-		  //}
-                //write_output("dlchest00.m","dl00",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][0],512,1,1);
-		//write_output("dlchest01.m","dl01",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][2],512,1,1);
-		do_quantization_UE(phy_vars_ue,
-			            nsymb, 
-			            pilot1-1, 
-				    quant_v, 
-				    dl_ch_estimates[1],
-				    dec_f);
-		doquantUE=1;
-
-	    } //eNB_id, (calibration_flag == 1)
-	}
-       else {
-	n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
-	}
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_S) {
+    if ((last_slot%2)==0)
+      n_symb = 5;//3;
+    else
+      n_symb = 0;   	
 
+    if ((eNB_id==0) && (calibration_flag == 1))
+      {
+	if ((last_slot%2)==0)
+	  n_symb = 1;//3;
+	else
+	  n_symb = 0;	    	
+
+	for (l=0;l<n_symb;l++) {
+	  slot_fep_SS(phy_vars_ue,				   
+		      l,//slot 0 sym 0 (l)
+		      last_slot,
+#ifdef HW_PREFIX_REMOVAL
+		      1,
+#else
+		      0,
+#endif
+		      0);//including dl channel estimation an freq ofset fonction		               	    
+	}
+	//}
+	//write_output("dlchest00.m","dl00",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][0],512,1,1);
+	//write_output("dlchest01.m","dl01",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[0][2],512,1,1);
+	do_quantization_UE(phy_vars_ue,
+			   nsymb, 
+			   pilot1-1, 
+			   quant_v, 
+			   dl_ch_estimates[1],
+			   dec_f);
+	doquantUE=1;
+	
+      } //eNB_id, (calibration_flag == 1)
+  }
+  else {
+    n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
+  }
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  
   // RX processing of symbols in last_slot
   for (l=0;l<n_symb;l++) {
     if (abstraction_flag == 0) {
@@ -2637,9 +2643,6 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       } // 3rd quarter of subframe
     } // abstraction_flag==0   
   }// l loop
-#ifdef EMOS
-  phy_procedures_emos_UE_RX(phy_vars_ue,last_slot,eNB_id);
-#endif
 
   return (0);
 }
@@ -2663,6 +2666,9 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
   if ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1)==SF_DL) ||
       (phy_vars_ue->lte_frame_parms.frame_type == 0)){
     phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
+#ifdef EMOS
+    phy_procedures_emos_UE_RX(phy_vars_ue,last_slot,eNB_id);
+#endif
   }
   if (subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1)==SF_S) {
      phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag);

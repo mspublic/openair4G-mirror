@@ -67,11 +67,11 @@ static void endme(int dummy)
 #define NO_OF_OFDM_CARRIERS 256
 #define CHANNEL_BUFFER_SIZE (NB_ANTENNAS*COMPLEX16_SIZE*NO_OF_OFDM_CARRIERS+TIMESTAMP_SIZE+PDU_ERRORS_SIZE+RX_RSSI_SIZE) //in bytes
 */
-#define CHANNEL_BUFFER_SIZE sizeof(fifo_dump_emos_eNB)
 #define NO_ESTIMATES_DISK 100 //No. of estimates that are aquired before dumped to disk
 
-int main (void)
+int main (int argc, char **argv)
 {
+  char c, eNB_flag=0;
   char *fifo2file_buffer, *fifo2file_ptr;
 
   int fifo, counter=0, bytes;
@@ -81,10 +81,29 @@ int main (void)
   time_t starttime_tmp;
   struct tm starttime;
 
-  fifo_dump_emos_eNB *fifo_dump_emos_eNB_ptr;
+  int channel_buffer_size;
+
+  while ((c = getopt (argc, argv, "he")) != -1) {
+    switch (c) {
+    case 'e':
+      eNB_flag=1;
+      break;
+    case 'h':
+      printf("EMOS FIFO to file dump.\n");
+      printf("Usage: %s -h(elp) -e(NB) (default=ue)\n",argv[0]);
+      exit(0);
+    default:
+      break;
+    }
+  }
+
+  if (eNB_flag==1)
+    channel_buffer_size = sizeof(fifo_dump_emos_eNB);
+  else
+    channel_buffer_size = sizeof(fifo_dump_emos_UE);
 
   // allocate memory for NO_FRAMES_DISK channes estimations
-  fifo2file_buffer = malloc(NO_ESTIMATES_DISK*CHANNEL_BUFFER_SIZE);
+  fifo2file_buffer = malloc(NO_ESTIMATES_DISK*channel_buffer_size);
   fifo2file_ptr = fifo2file_buffer;
 
   if (fifo2file_buffer == NULL)
@@ -102,7 +121,7 @@ int main (void)
 
   time(&starttime_tmp);
   localtime_r(&starttime_tmp,&starttime);
-  snprintf(dumpfile_name,1024,"data_%d%0.2d%0.2d_%0.2d%0.2d%0.2d.EMOS",1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
+  snprintf(dumpfile_name,1024,"/tmp/data_%d%0.2d%0.2d_%0.2d%0.2d%0.2d.EMOS",1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
 
   dumpfile_id = fopen(dumpfile_name,"w");
   if (dumpfile_id == NULL)
@@ -116,9 +135,13 @@ int main (void)
 
   while (!end)
     {
-      bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, CHANNEL_BUFFER_SIZE);
-      printf("count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
-      fifo2file_ptr += CHANNEL_BUFFER_SIZE;
+      bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, channel_buffer_size);
+      if (eNB_flag==1)
+	printf("eNB: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
+      else
+	printf("UE: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx,bytes);
+
+      fifo2file_ptr += channel_buffer_size;
       counter ++;
 
       if (counter == NO_ESTIMATES_DISK)
@@ -130,7 +153,7 @@ int main (void)
           //flush buffer to disk
           printf("flushing buffer to disk\n");
 
-          if (fwrite(fifo2file_buffer, sizeof(char), NO_ESTIMATES_DISK*CHANNEL_BUFFER_SIZE, dumpfile_id) != NO_ESTIMATES_DISK*CHANNEL_BUFFER_SIZE)
+          if (fwrite(fifo2file_buffer, sizeof(char), NO_ESTIMATES_DISK*channel_buffer_size, dumpfile_id) != NO_ESTIMATES_DISK*channel_buffer_size)
             {
               fprintf(stderr, "Error writing to dumpfile\n");
               exit(EXIT_FAILURE);

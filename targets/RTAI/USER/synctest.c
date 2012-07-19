@@ -413,8 +413,8 @@ void do_forms2(FD_lte_scope *form,
         }
 
       fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
-      //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
-      //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
+      fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+      fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
     }
 
 
@@ -430,8 +430,8 @@ void do_forms2(FD_lte_scope *form,
         }
 
       fl_set_xyplot_data(form->scatter_plot1,I,Q,12*25*1,"","","");
-      //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
-      //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
+      fl_set_xyplot_xbounds(form->scatter_plot1,-100,100);
+      fl_set_xyplot_ybounds(form->scatter_plot1,-100,100);
     }
 
   // DLSCH LLR
@@ -470,8 +470,8 @@ void do_forms2(FD_lte_scope *form,
         }
 
       fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-      //fl_set_xyplot_xbounds(form->scatter_plot,-2000,2000);
-      //fl_set_xyplot_ybounds(form->scatter_plot,-2000,2000);
+      fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
+      fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
     }
  fl_check_forms();
 
@@ -511,7 +511,12 @@ void *scope_thread(void *arg)
                   (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->llr[0],
                   (s16*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
                   (s8*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,
-                  1920,
+		  15000,
+		  /*get_G(&PHY_vars_UE_g[0]->lte_frame_parms,
+			PHY_vars_UE_g[0]->dlsch_ue[0][0]->nb_rb,
+			PHY_vars_UE_g[0]->dlsch_ue[0][0]->rb_alloc,
+			get_Qm(PHY_vars_UE_g[0]->dlsch_ue[0][0]->harq_processes[0]->mcs),  
+			PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,7),*/
 		  sync_corr_ue0,
 		  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10,		  
 		  dl_ch_estimates[1],
@@ -1057,7 +1062,7 @@ int main(int argc, char **argv) {
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
@@ -1285,7 +1290,7 @@ int main(int argc, char **argv) {
     if (calibration_flag == 1)
       PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=9;
+    openair_daq_vars.target_ue_dl_mcs=10;
     openair_daq_vars.ue_ul_nb_rb=12;
     openair_daq_vars.target_ue_ul_mcs=10;
   }
@@ -1395,7 +1400,7 @@ int main(int argc, char **argv) {
 
 #ifdef EMOS
   error_code = rtf_create(CHANSOUNDER_FIFO_MINOR,CHANSOUNDER_FIFO_SIZE);
-  printk("[OPENAIR][SCHED][INIT] Created EMOS FIFO, error code %d\n",error_code);
+  printf("[OPENAIR][SCHED][INIT] Created EMOS FIFO %d, error code %d\n",CHANSOUNDER_FIFO_MINOR,error_code);
 #endif
 
   // make main thread LXRT soft realtime
@@ -1526,7 +1531,7 @@ int main(int argc, char **argv) {
 
 #ifdef EMOS
   error_code = rtf_destroy(CHANSOUNDER_FIFO_MINOR);
-  printk("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
+  printf("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
 
 

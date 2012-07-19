@@ -1245,7 +1245,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
     }
     else {
       //#ifdef DEBUG_PHICH
-      LOG_I(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d\n",
+      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
 	  subframe,
@@ -1272,7 +1272,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
     }
     else {
       //#ifdef PHICH_DEBUG
-      LOG_I(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
+      LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
 	  subframe, HI16,

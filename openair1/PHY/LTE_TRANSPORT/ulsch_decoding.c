@@ -961,7 +961,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					harq_pid&3);
+					UE_id&3);
     
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    
