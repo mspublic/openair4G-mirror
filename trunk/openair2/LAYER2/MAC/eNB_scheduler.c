@@ -3656,17 +3656,72 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
 
-    eNB_UE_stats->dlsch_mcs1 = (eNB_UE_stats->DL_cqi[0]<<1);
-
-
+    switch(eNB_UE_stats->DL_cqi[0])
+      {
+      case 0:
+	eNB_UE_stats->dlsch_mcs1 = 0;
+	break;
+      case 1:
+	eNB_UE_stats->dlsch_mcs1 = 0;
+	break;
+      case 2:
+	eNB_UE_stats->dlsch_mcs1 = 0;
+	break;	
+      case 3:
+	eNB_UE_stats->dlsch_mcs1 = 2;
+	break;
+      case 4:
+	eNB_UE_stats->dlsch_mcs1 = 4;
+	  break;
+      case 5:
+	eNB_UE_stats->dlsch_mcs1 = 6;
+	break;
+      case 6:
+	eNB_UE_stats->dlsch_mcs1 = 8;
+	break;
+      case 7:
+	eNB_UE_stats->dlsch_mcs1 = 11;
+	break;
+      case 8:
+	eNB_UE_stats->dlsch_mcs1 = 13;
+	break;
+      case 9:
+	eNB_UE_stats->dlsch_mcs1 = 16;
+	break;
+      case 10:
+	eNB_UE_stats->dlsch_mcs1 = 18;
+	break;
+      case 11:
+	eNB_UE_stats->dlsch_mcs1 = 20;
+	break;
+      case 12:
+	eNB_UE_stats->dlsch_mcs1 = 22;
+	break;
+      case 13:
+	eNB_UE_stats->dlsch_mcs1 = 24;//25
+	break;
+      case 14:
+	eNB_UE_stats->dlsch_mcs1 = 24;//27
+	break;
+      case 15:
+	eNB_UE_stats->dlsch_mcs1 = 24;//28
+	break;
+      default:
+	printf("Invalid CQI");
+	exit(-1);
+	  }
+    
+    //   eNB_UE_stats->dlsch_mcs1 = (eNB_UE_stats->DL_cqi[0]<<2);
+    
+    
     ///TM5 only for QPSK-QPSK IA-receiver
-    /*
-    while(eNB_UE_stats->dlsch_mcs1 > 9){
+    
+    //while(eNB_UE_stats->dlsch_mcs1 > 9){
       //eNB_UE_stats->DL_cqi[0] = eNB_UE_stats->DL_cqi[0]-1;
       //eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0]<<1;
-      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1 - 1;
-    }
-    */
+      //eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1 - 1;
+    //}
+    
 
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
