@@ -28,8 +28,8 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packet_get_configuration.cpp
- * \brief A container for Get Configuration Event packet
+ * \file mgmt_exception.hpp
+ * \brief A basic exception class for error handling
  * \company EURECOM
  * \date 2012
  * \author Baris Demiray
@@ -39,46 +39,53 @@
  * \warning none
 */
 
-#include "mgmt_gn_packet_get_configuration.hpp"
-#include <iostream>
-#include <sstream>
+#ifndef MGMT_EXCEPTION_HPP_
+#define MGMT_EXCEPTION_HPP_
+
+#include "mgmt_log.hpp"
+#include <exception>
+#include <string>
+#include <vector>
 using namespace std;
 
-GeonetGetConfigurationEventPacket::GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer, Logger& logger) :
-	GeonetPacket(packetBuffer, logger) {
-	parse(packetBuffer);
-	logger.info(toString());
-}
+/**
+ * A basic exception class for error handling
+ */
+class Exception {
+	public:
+		/**
+		 * Constructor for Exception class
+		 *
+		 * @param message Error/warning message
+		 * @param logger Logger object reference
+		 */
+		Exception(const string& message, Logger& logger);
+		/**
+		 * Destructor for Exception class
+		 */
+		~Exception();
 
-u_int16_t GeonetGetConfigurationEventPacket::getConfID() const {
-	return packet.configurationId;
-}
+	public:
+		/**
+		 * Prints messages from every point the trace has been updated
+		 */
+		void printStackTrace();
+		/**
+		 * Adds given message to stack trace to be printed later by printStackTrace()
+		 *
+		 * @param message A message that stack trace will be updated with
+		 */
+		void updateStackTrace(const string& message);
 
-u_int16_t GeonetGetConfigurationEventPacket::getTxMode() const {
-	return packet.transmissionMode;
-}
+	private:
+		/**
+		 * String vector where stack trace messages are hold
+		 */
+		vector<string> stackTrace;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
+};
 
-string GeonetGetConfigurationEventPacket::toString() const {
-	stringstream ss;
-
-	ss << "[ConfID:" << packet.configurationId << ", txMode:" << packet.transmissionMode << "]";
-
-	return ss.str();
-}
-
-bool GeonetGetConfigurationEventPacket::parse(const vector<unsigned char>& packetBuffer) {
-	if (packetBuffer.size() < sizeof(ConfigurationRequestMessage))
-		return false;
-
-	u_int8_t payloadIndex = sizeof(MessageHeader);
-
-	packet.configurationId = packetBuffer[payloadIndex];
-	packet.configurationId <<= 8;
-	packet.configurationId |= packetBuffer[payloadIndex + 1];
-
-	packet.transmissionMode = packetBuffer[payloadIndex + 2];
-	packet.transmissionMode <<= 8;
-	packet.transmissionMode |= packetBuffer[payloadIndex + 3];
-
-	return true;
-}
+#endif /* MGMT_EXCEPTION_HPP_ */

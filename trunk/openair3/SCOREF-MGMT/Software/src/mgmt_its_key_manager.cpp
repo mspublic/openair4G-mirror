@@ -40,8 +40,11 @@
 */
 
 #include "mgmt_its_key_manager.hpp"
+#include "util/mgmt_exception.hpp"
+#include <boost/lexical_cast.hpp>
+#include <sstream>
 
-ItsKeyManager::ItsKeyManager() {}
+ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {}
 
 ItsKeyManager::~ItsKeyManager() {
 	itsKeyMap.empty();
@@ -75,11 +78,13 @@ map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
 	return subset;
 }
 
-bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value) {
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue) {
 	if (name.empty())
-		return false;
+		throw Exception("ITS key name is empty!", logger);
+	else if (value < minValue || value > maxValue)
+		throw Exception("ITS key value is out-of-range!", logger);
 
-	ItsKey itsKey = {name, type, value};
+	ItsKey itsKey = {name, type, value, minValue, maxValue};
 	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
 
 	return true;
@@ -89,11 +94,24 @@ ItsKeyValue ItsKeyManager::getKey(ItsKeyID id) {
 	return itsKeyMap[id].value;
 }
 
+#include <iostream>
+
 bool ItsKeyManager::setKey(const string& name, ItsKeyValue value) {
 	map<ItsKeyID, ItsKey>::iterator iterator = itsKeyMap.begin();
 
 	while (iterator != this->itsKeyMap.end()) {
-		if (!iterator->second.name.compare(name)) {
+		if (!name.compare(0, iterator->second.name.length(), iterator->second.name)) {
+			/**
+			 * Validate incoming value
+			 */
+			if (value < iterator->second.minValue || value > iterator->second.maxValue) {
+				stringstream exceptionMessage;
+				exceptionMessage << "ITS key '" << name << "' [range:" << boost::lexical_cast<string>(iterator->second.minValue)
+								 << "-" << boost::lexical_cast<string>(iterator->second.maxValue) << "] value '"
+								 << boost::lexical_cast<string>(value) << "' is out-of-range!";
+				throw Exception(exceptionMessage.str(), logger);
+			}
+
 			iterator->second.value = value;
 			return true;
 		}
@@ -105,6 +123,12 @@ bool ItsKeyManager::setKey(const string& name, ItsKeyValue value) {
 }
 
 bool ItsKeyManager::setKey(ItsKeyID id, ItsKeyValue value) {
+	/**
+	 * Validate incoming value
+	 */
+	if (value < itsKeyMap[id].minValue || value > itsKeyMap[id].maxValue)
+		throw Exception("ITS key '" + itsKeyMap[id].name + "' value '" + boost::lexical_cast<string>(value) + "' is out-of-range!", logger);
+
 	itsKeyMap[id].value = value;
 
 	return true;
@@ -115,6 +139,9 @@ u_int16_t ItsKeyManager::getNumberOfKeys(ItsKeyType type) const {
 	u_int16_t numberOfKeys = 0;
 
 	while (iterator != itsKeyMap.end()) {
+		/**
+		 * Count all `common' keys and those of type `type'
+		 */
 		if (type == ITS_KEY_TYPE_COMMON || iterator->second.type == type)
 			++numberOfKeys;
 

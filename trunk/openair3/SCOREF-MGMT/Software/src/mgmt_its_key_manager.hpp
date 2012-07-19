@@ -44,23 +44,41 @@
 
 #include <map>
 #include <string>
+#include <climits>
 using namespace std;
 
-#include <sys/types.h>
 #include "mgmt_gn_datatypes.hpp"
+#include "util/mgmt_log.hpp"
+#include <sys/types.h>
 
-typedef u_int32_t ItsKeyValue;
+/**
+ * ITS key types according to module they belong to
+ *
+ * ITS_KEY_TYPE_COMMON: ITS keys common for NETwork and FACilities,
+ * ITS_KEY_TYPE_NET: NETwork ITS keys,
+ * ITS_KEY_TYPE_FAC: FACilities ITS keys,
+ * ITS_KEY_TYPE_ALL: All ITS keys defined
+ */
 enum ItsKeyType {
 	ITS_KEY_TYPE_COMMON = 0,
 	ITS_KEY_TYPE_NET = 1,
 	ITS_KEY_TYPE_FAC = 2,
 	ITS_KEY_TYPE_ALL = 3
 };
-
+/**
+ * ITS key values are limited to 32-bit values so
+ * we define this name definition for readability
+ */
+typedef u_int32_t ItsKeyValue;
+/**
+ * ITS key structure holding every property of an ITS key
+ */
 struct ItsKey {
 	string name;
 	ItsKeyType type;
 	ItsKeyValue value;
+	ItsKeyValue minValue;
+	ItsKeyValue maxValue;
 };
 
 /**
@@ -70,8 +88,10 @@ class ItsKeyManager {
 	public:
 		/**
 		 * Constructor for ItsKeyManager class
+		 *
+		 * @param logger Logger object reference
 		 */
-		ItsKeyManager();
+		ItsKeyManager(Logger& logger);
 		/**
 		 * Destructor for ItsKeyManager class
 		 */
@@ -84,9 +104,11 @@ class ItsKeyManager {
 		 * @param id ITS key ID of new key to be added
 		 * @param name Name of new key to be added
 		 * @param value Value of new key to be added
+		 * @param minValue Minimum value of new key
+		 * @param maxValue Maximum value of new key
 		 * @return true on success, false otherwise
 		 */
-		bool addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value);
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value, ItsKeyValue minValue = 0, ItsKeyValue maxValue = INT_MAX);
 		/**
 		 * Returns value of the key with given ITS key ID
 		 *
@@ -142,6 +164,10 @@ class ItsKeyManager {
 		 * List of type std::map for 'ITS key ID to ITS key value' mapping
 		 */
 		map<ItsKeyID, ItsKey> itsKeyMap;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_ITS_KEY_MANAGER_HPP_ */

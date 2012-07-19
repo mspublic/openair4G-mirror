@@ -28,8 +28,8 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packet_get_configuration.cpp
- * \brief A container for Get Configuration Event packet
+ * \file mgmt_exception.cpp
+ * \brief A basic exception class for error handling
  * \company EURECOM
  * \date 2012
  * \author Baris Demiray
@@ -39,46 +39,26 @@
  * \warning none
 */
 
-#include "mgmt_gn_packet_get_configuration.hpp"
-#include <iostream>
-#include <sstream>
-using namespace std;
+#include "mgmt_exception.hpp"
 
-GeonetGetConfigurationEventPacket::GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer, Logger& logger) :
-	GeonetPacket(packetBuffer, logger) {
-	parse(packetBuffer);
-	logger.info(toString());
+Exception::Exception(const string& message, Logger& logger)
+	: logger(logger) {
+	updateStackTrace("~ ~ ~ ~ Stack Trace Information ~ ~ ~ ~");
+	updateStackTrace(message);
 }
 
-u_int16_t GeonetGetConfigurationEventPacket::getConfID() const {
-	return packet.configurationId;
+Exception::~Exception() {
+	stackTrace.empty();
 }
 
-u_int16_t GeonetGetConfigurationEventPacket::getTxMode() const {
-	return packet.transmissionMode;
+void Exception::printStackTrace() {
+	vector<string>::iterator it = stackTrace.begin();
+
+	while (it++ != stackTrace.end()) {
+		logger.error(" -> " + *it);
+	}
 }
 
-string GeonetGetConfigurationEventPacket::toString() const {
-	stringstream ss;
-
-	ss << "[ConfID:" << packet.configurationId << ", txMode:" << packet.transmissionMode << "]";
-
-	return ss.str();
-}
-
-bool GeonetGetConfigurationEventPacket::parse(const vector<unsigned char>& packetBuffer) {
-	if (packetBuffer.size() < sizeof(ConfigurationRequestMessage))
-		return false;
-
-	u_int8_t payloadIndex = sizeof(MessageHeader);
-
-	packet.configurationId = packetBuffer[payloadIndex];
-	packet.configurationId <<= 8;
-	packet.configurationId |= packetBuffer[payloadIndex + 1];
-
-	packet.transmissionMode = packetBuffer[payloadIndex + 2];
-	packet.transmissionMode <<= 8;
-	packet.transmissionMode |= packetBuffer[payloadIndex + 3];
-
-	return true;
+void Exception::updateStackTrace(const string& message) {
+	stackTrace.push_back(message);
 }

@@ -41,6 +41,7 @@
 
 #include "packets/mgmt_gn_packet_wireless_state_request.hpp"
 #include "mgmt_inquiry_thread.hpp"
+#include <boost/lexical_cast.hpp>
 #include <boost/date_time.hpp>
 #include "util/mgmt_util.hpp"
 #include <boost/thread.hpp>
@@ -59,7 +60,7 @@ void InquiryThread::operator()() {
 	boost::posix_time::seconds wait(wirelessStateUpdateInterval);
 
 	while (true) {
-		// todo logger.info("Waiting for " + wirelessStateUpdateInterval + " second(s)...");
+		logger.info("Waiting for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Update");
 		boost::this_thread::sleep(wait);
 
 		if (!requestWirelessStateUpdate())

@@ -28,8 +28,8 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packet_get_configuration.cpp
- * \brief A container for Get Configuration Event packet
+ * \file mgmt_client.cpp
+ * \brief A container to hold information about Management clients
  * \company EURECOM
  * \date 2012
  * \author Baris Demiray
@@ -37,48 +37,53 @@
  * \note none
  * \bug none
  * \warning none
-*/
+ */
 
-#include "mgmt_gn_packet_get_configuration.hpp"
-#include <iostream>
-#include <sstream>
-using namespace std;
+#include "mgmt_client.hpp"
 
-GeonetGetConfigurationEventPacket::GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer, Logger& logger) :
-	GeonetPacket(packetBuffer, logger) {
-	parse(packetBuffer);
-	logger.info(toString());
+ManagementClient::ManagementClient(UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, Logger& logger)
+	: logger(logger) {
+	this->client = client;
+
+	/**
+	 * Initialise InquiryThread object for Wireless State updates
+	 */
+	// todo who is going to join() this thread?
+	inquiryThreadObject = new InquiryThread(clientConnection, wirelessStateUpdateInterval, logger);
+	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
 
-u_int16_t GeonetGetConfigurationEventPacket::getConfID() const {
-	return packet.configurationId;
+ManagementClient::~ManagementClient() {
 }
 
-u_int16_t GeonetGetConfigurationEventPacket::getTxMode() const {
-	return packet.transmissionMode;
+boost::asio::ip::address ManagementClient::getAddress() const {
+	return client.address();
 }
 
-string GeonetGetConfigurationEventPacket::toString() const {
-	stringstream ss;
-
-	ss << "[ConfID:" << packet.configurationId << ", txMode:" << packet.transmissionMode << "]";
-
-	return ss.str();
+unsigned short int ManagementClient::getPort() const {
+	return client.port();
 }
 
-bool GeonetGetConfigurationEventPacket::parse(const vector<unsigned char>& packetBuffer) {
-	if (packetBuffer.size() < sizeof(ConfigurationRequestMessage))
-		return false;
+ManagementClient::ManagementClientState ManagementClient::getState() const {
+	return state;
+}
 
-	u_int8_t payloadIndex = sizeof(MessageHeader);
-
-	packet.configurationId = packetBuffer[payloadIndex];
-	packet.configurationId <<= 8;
-	packet.configurationId |= packetBuffer[payloadIndex + 1];
-
-	packet.transmissionMode = packetBuffer[payloadIndex + 2];
-	packet.transmissionMode <<= 8;
-	packet.transmissionMode |= packetBuffer[payloadIndex + 3];
-
+bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
+	// todo check state changes (state machine)
+	this->state = state;
 	return true;
+}
+
+bool ManagementClient::operator==(const ManagementClient& client) const {
+	if (this->client.address() == client.getAddress())
+		return true;
+
+	return false;
+}
+
+bool ManagementClient::operator<(const ManagementClient& client) const {
+	if (this->client.address() < client.getAddress())
+		return true;
+
+	return false;
 }

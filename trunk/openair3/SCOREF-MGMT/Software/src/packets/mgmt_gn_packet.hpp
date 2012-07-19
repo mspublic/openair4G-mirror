@@ -100,6 +100,21 @@ class GeonetPacket {
 		 * @return std::string representation
 		 */
 		virtual string toString() const;
+		/**
+		 * Utility method to get event type of a packet buffer
+		 *
+		 * @param buffer A packet buffer of type vector<unsigned char> reference
+		 * @return Event type
+		 */
+		static u_int16_t parseEventTypeOfPacketBuffer(const vector<unsigned char>& buffer) {
+			MessageHeader* header = (MessageHeader*) buffer.data();
+
+			u_int16_t eventType = header->eventType;
+			eventType <<= 8;
+			eventType |= header->eventSubtype;
+
+			return eventType;
+		}
 
 	protected:
 		/**

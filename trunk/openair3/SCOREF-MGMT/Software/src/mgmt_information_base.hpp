@@ -72,7 +72,7 @@ class ManagementInformationBase {
 		 *
 		 * @return true on success, false otherwise
 		 */
-		bool initialize();
+		bool initialise();
 		/**
 		 * Returns value of relevant ITS key through ItsKeyManager methods
 		 *

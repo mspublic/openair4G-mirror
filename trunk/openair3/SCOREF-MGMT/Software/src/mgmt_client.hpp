@@ -37,11 +37,15 @@
  * \note none
  * \bug none
  * \warning none
-*/
+ */
 
 #ifndef MGMT_CLIENT_HPP_
 #define MGMT_CLIENT_HPP_
 
+#include "mgmt_inquiry_thread.hpp"
+#include "util/mgmt_log.hpp"
+
+#include <boost/thread.hpp>
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
@@ -56,15 +60,15 @@ class ManagementClient {
 		 */
 		enum ManagementClientState {
 			/**
-			 * No client has been connected
+			 * Client is not connected
 			 */
 			OFFLINE = 0,
 			/**
-			 * A client has been connected but has not yet received configuration
+			 * A client is connected but has not yet received configuration
 			 */
 			ONLINE = 1,
 			/**
-			 * A client has been connected and has received configuration
+			 * A client is connected and has received configuration
 			 */
 			CONNECTED = 2
 		};
@@ -73,15 +77,15 @@ class ManagementClient {
 		/**
 		 * Constructor for ManagementClient class
 		 *
-		 * @param client Socket information of relevant client
+		 * @param clientConnection Connected socket for client connection
+		 * @param wirelessStateUpdateInterval Determines how frequent the wireless state update will be performed
+		 * @logger Logger object reference
 		 */
-		ManagementClient(const udp::endpoint& client) {
-			this->client = client;
-		}
+		ManagementClient(UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
-		~ManagementClient() {}
+		~ManagementClient();
 
 	public:
 		/**
@@ -89,48 +93,62 @@ class ManagementClient {
 		 *
 		 * @return IP address of this client
 		 */
-		boost::asio::ip::address getAddress() const {
-			return this->client.address();
-		}
+		boost::asio::ip::address getAddress() const;
 		/**
 		 * Getter for port number of this client
 		 *
 		 * @return Port number of this client
 		 */
-		unsigned short int getPort() const {
-			return this->client.port();
-		}
-
+		unsigned short int getPort() const;
+		/**
+		 * Returns the state of this client
+		 *
+		 * @return ManagementClientState value for this client
+		 */
+		ManagementClientState getState() const;
+		/**
+		 * Sets the state of this client with given state
+		 *
+		 * @param state New ManagementClientState for this client
+		 * @return true on success, false otherwise
+		 */
+		bool setState(ManagementClientState state);
 		/**
 		 * Overloaded == operator to use ManagementClient type as a std::map key
 		 *
 		 * @param client Client that is going to be compared with
 		 * @return true if clients are the same, false otherwise
 		 */
-		bool operator==(const ManagementClient& client) const {
-			if (this->client.address() == client.getAddress())
-				return true;
-
-			return false;
-		}
+		bool operator==(const ManagementClient& client) const;
 		/**
 		 * Overloaded < operator to use ManagementClient type as a std::map key
 		 *
 		 * @param client Client that is going to be compared with
 		 * @return true if host object's IP address is smaller, false otherwise
 		 */
-		bool operator<(const ManagementClient& client) const {
-			if (this->client.address() < client.getAddress())
-				return true;
-
-			return false;
-		}
+		bool operator<(const ManagementClient& client) const;
 
 	private:
 		/**
 		 * Client's UDP socket information
 		 */
 		udp::endpoint client;
+		/**
+		 * Client's connection state with Management module
+		 */
+		ManagementClientState state;
+		/**
+		 * InquiryThread object for Wireless State updates
+		 */
+		InquiryThread* inquiryThreadObject;
+		/**
+		 * InquiryThread runner for Wireless State updates
+		 */
+		boost::thread* inquiryThread;
+		/**
+		 * Logger object reference
+		 */
+		Logger& logger;
 };
 
 #endif /* MGMT_CLIENT_HPP_ */

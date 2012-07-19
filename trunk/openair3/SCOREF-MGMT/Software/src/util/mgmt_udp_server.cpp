@@ -39,6 +39,7 @@
  * \warning none
 */
 
+#include <boost/lexical_cast.hpp>
 #include "mgmt_udp_server.hpp"
 #include "mgmt_util.hpp"
 
@@ -48,7 +49,7 @@ using namespace std;
 UdpServer::UdpServer(u_int16_t portNumber, Logger& logger)
 	: logger(logger) {
 	socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
-	logger.info("A UDP server socket created for port " + portNumber);
+	logger.info("A UDP server socket created for port " + boost::lexical_cast<string>(portNumber));
 }
 
 UdpServer::~UdpServer() {
@@ -62,12 +63,10 @@ unsigned UdpServer::receive(vector<unsigned char>& rxBuffer) {
 	/**
 	 * Ensure there's only one I/O method of UdpServer running at any given moment
 	 */
-	logger.debug("Locking read mutex in UdpServer::receive(vector)");
 	boost::lock_guard<boost::mutex> lock(readMutex);
-	logger.debug("Locked read mutex in UdpServer::receive(vector)");
 
 	try {
-		logger.info("Reading...");
+		logger.info("Reading from socket...");
 		bytesRead = socket->receive_from(boost::asio::buffer(rxBuffer), client, 0, error);
 	} catch (std::exception& e) {
 		logger.error(e.what());
@@ -79,7 +78,7 @@ unsigned UdpServer::receive(vector<unsigned char>& rxBuffer) {
 
 	rxBuffer.resize(bytesRead);
 
-	logger.info(bytesRead + " byte(s) received from " + client.address().to_string());
+	logger.info(boost::lexical_cast<string>(bytesRead) + " byte(s) received from " + client.address().to_string() + ":" + boost::lexical_cast<string>(client.port()));
 	Util::printHexRepresentation(rxBuffer.data(), rxBuffer.size(), logger);
 
 	return bytesRead;
@@ -91,14 +90,12 @@ bool UdpServer::send(vector<unsigned char>& txBuffer) {
 	/**
 	 * Ensure there's only one I/O method of UdpServer running at any given moment
 	 */
-	logger.debug("Locking write mutex in UdpServer::send(vector)");
 	boost::lock_guard<boost::mutex> lock(writeMutex);
-	logger.debug("Locked write mutex in UdpServer::send(vector)");
 
 	try {
 		logger.info("Writing...");
 		socket->send_to(boost::asio::buffer(txBuffer), client, 0, error);
-		logger.info(txBuffer.size() + " byte(s) sent");
+		logger.info(boost::lexical_cast<string>(txBuffer.size()) + " byte(s) sent");
 		Util::printHexRepresentation(txBuffer.data(), txBuffer.size(), logger);
 	} catch (std::exception& e) {
 		logger.error(e.what());

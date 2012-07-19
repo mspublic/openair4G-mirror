@@ -28,8 +28,8 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packet_get_configuration.cpp
- * \brief A container for Get Configuration Event packet
+ * \file mgmt_gn_packet_location_update.cpp
+ * \brief A container for Location Update Event packet
  * \company EURECOM
  * \date 2012
  * \author Baris Demiray
@@ -39,46 +39,22 @@
  * \warning none
 */
 
-#include "mgmt_gn_packet_get_configuration.hpp"
-#include <iostream>
-#include <sstream>
-using namespace std;
+#include "mgmt_gn_packet_location_update.hpp"
+#include <boost/lexical_cast.hpp>
 
-GeonetGetConfigurationEventPacket::GeonetGetConfigurationEventPacket(const vector<unsigned char>& packetBuffer, Logger& logger) :
-	GeonetPacket(packetBuffer, logger) {
-	parse(packetBuffer);
-	logger.info(toString());
+GeonetLocationUpdateEventPacket::GeonetLocationUpdateEventPacket(ManagementInformationBase& mib, Logger& logger)
+	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_LOCATION_UPDATE, logger), mib(mib), logger(logger) {
 }
 
-u_int16_t GeonetGetConfigurationEventPacket::getConfID() const {
-	return packet.configurationId;
+GeonetLocationUpdateEventPacket::~GeonetLocationUpdateEventPacket() {
 }
 
-u_int16_t GeonetGetConfigurationEventPacket::getTxMode() const {
-	return packet.transmissionMode;
-}
-
-string GeonetGetConfigurationEventPacket::toString() const {
-	stringstream ss;
-
-	ss << "[ConfID:" << packet.configurationId << ", txMode:" << packet.transmissionMode << "]";
-
-	return ss.str();
-}
-
-bool GeonetGetConfigurationEventPacket::parse(const vector<unsigned char>& packetBuffer) {
-	if (packetBuffer.size() < sizeof(ConfigurationRequestMessage))
+bool GeonetLocationUpdateEventPacket::serialize(vector<unsigned char>& buffer) const {
+	if (buffer.size() < sizeof(LocationUpdateMessage)) {
+		logger.warning("Incoming buffer (size:" + boost::lexical_cast<string>(buffer.size()) + ") is not enough to carry a Location Update packet!");
 		return false;
+	}
 
-	u_int8_t payloadIndex = sizeof(MessageHeader);
-
-	packet.configurationId = packetBuffer[payloadIndex];
-	packet.configurationId <<= 8;
-	packet.configurationId |= packetBuffer[payloadIndex + 1];
-
-	packet.transmissionMode = packetBuffer[payloadIndex + 2];
-	packet.transmissionMode <<= 8;
-	packet.transmissionMode |= packetBuffer[payloadIndex + 3];
-
+	// todo serialise packet
 	return true;
 }

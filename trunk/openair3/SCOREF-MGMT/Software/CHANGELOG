@@ -1,6 +1,21 @@
 
 v1.1.0 (released on <enter_date>)
 
+v1.0.20
+* ManagementClient objects are now managed by ManagementClientManager
+* ManagementClient now has InquiryThread and ManagementClientState
+* Packet handler now sends replies itself
+* InquiryThread is now aware of UDP connection
+* Util::printHexRepresentation() is now in line with log format
+* TRACE level has been added as a log level
+
+v1.0.19
+* Bugfix for string + integer concatenation using boost::lexical_cast
+* util/Exception class has been added and utilised for stack trace printing
+* Min/max values are defined for ITS keys and checked using try/catch with new Exception class
+* c2x_update_gn_address_event structure has been removed since it's no more used
+* More doxygen comments have been added and more debug messages have been removed
+
 v1.0.18
 * InquiryThread class has been added for sending repetitive Wireless State Request
 * Doxygen file has been renamed to SCOREF-MGMT.doxygen
