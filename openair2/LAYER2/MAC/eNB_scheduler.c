@@ -1037,7 +1037,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 // output of scheduling, the UE numbers in RBs, where it is in the code???
 
-
+  // Collaborative Channel scheduling first, similar to below, but based on collaborative channel preprocessing
 
   // allocated UE_ids until nCCE
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > aggregation);UE_id++) {
@@ -1074,6 +1074,8 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	// Get candidate harq_pid from PHY
 	mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1); // where is this function ???
 	printf("Got harq_pid %d, round %d, next_ue %d\n",harq_pid,round,next_ue);
+
+	// Here check if ULSCH is regular or collaborative and choose appropriate DCI format
 
 	// Note this code is still for a specific DCI format
 	ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
@@ -3868,6 +3870,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
 
+	// Here we have the maximal mcs/TBS pair that satifies the RLC payload requirement
 
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
@@ -4270,6 +4273,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	// schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
 	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
     }
+    fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
     break;
   case 2:
     // TDD, nothing 
