@@ -534,6 +534,29 @@ void dlsch_channel_compensation(s32 **rxdataF_ext,
 				u8 output_shift,
 				PHY_MEASUREMENTS *phy_measurements);
 
+void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
+                                   unsigned char symbol,
+                                   unsigned short nb_rb,
+                                   int **dl_ch_estimates_ext,
+                                   int **dl_ch_estimates_ext_i,
+                                   int **dl_ch_rho_ext,
+                                   unsigned char output_shift);
+
+void dlsch_channel_compensation_prec(int **rxdataF_ext,
+				     int **dl_ch_estimates_ext,
+				     int **dl_ch_mag,
+				     int **dl_ch_magb,
+				     int **rxdataF_comp,
+				     unsigned char *pmi_ext,
+				     LTE_DL_FRAME_PARMS *frame_parms,
+				     PHY_MEASUREMENTS *phy_measurements,
+				     int eNB_id,
+				     unsigned char symbol,
+				     unsigned char mod_order,
+				     unsigned short nb_rb,
+				     unsigned char output_shift,
+                     unsigned char dl_power_off);
+
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
     @param dl_ch_estimates_ext Channel estimates in allocated RBs
     @param frame_parms Pointer to frame descriptor
@@ -546,6 +569,13 @@ void dlsch_channel_level(s32 **dl_ch_estimates_ext,
 			 s32 *avg,
 			 u8 pilots_flag,
 			 u16 nb_rb);
+
+void dlsch_channel_level_prec(s32 **dl_ch_estimates_ext,
+                              LTE_DL_FRAME_PARMS *frame_parms,
+                              unsigned char *pmi_ext,
+                              s32 *avg,
+                              u8 symbol_mod,
+                              u16 nb_rb);
 
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
     threads (on multi-core machines) corresponding to different HARQ processes. The routine first 
