@@ -47,7 +47,12 @@
 #include <string.h>
 #include <math.h>
 //#include <complex.h>
+#ifdef MEX
+#include "/packages/matlab_r2009b/extern/include/mex.h"
+#define msg mexPrintf
+#else
 #define msg printf   
+#endif
 //use msg in the real-time thread context
 #define msg_nrt printf   
 //use msg_nrt in the non real-time context (for initialization, ...)
