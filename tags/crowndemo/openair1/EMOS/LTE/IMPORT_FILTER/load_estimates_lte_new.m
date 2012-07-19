@@ -112,6 +112,8 @@ for n=1:NFiles
             estimates_tmp = binread(fid,fifo_dump_emos_struct_UE,1,4,'l'); 
         end
 
+	  printf("frame = %d\n",estimates_tmp.frame_tx);
+
         if (mod((k-1),decimation) == 0)
             estimates(((k-1)/decimation)+1) = estimates_tmp;
         end

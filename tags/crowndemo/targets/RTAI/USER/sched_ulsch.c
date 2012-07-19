@@ -179,7 +179,7 @@ static void * ulsch_thread(void *param) {
 
 int init_ulsch_threads(void) {
   
-  int error_code;
+  int error_code, return_code=0;
   struct sched_param p;
   int ulsch_thread_index;
 
@@ -210,13 +210,15 @@ int init_ulsch_threads(void) {
 
     if (error_code!= 0) {
       rt_printk("[openair][SCHED][ULSCH][INIT] Could not allocate ulsch_thread %d, error %d\n",ulsch_thread_index,error_code);
-      return(error_code);
+      return_code+=error_code;
+      //return(error_code);
     }
     else {
       rt_printk("[openair][SCHED][ULSCH][INIT] Allocate ulsch_thread %d successful\n",ulsch_thread_index);
-      return(0);
+      //return(0);
     }
   }
+  return(return_code);
 }
 
 void cleanup_ulsch_threads(void) {
