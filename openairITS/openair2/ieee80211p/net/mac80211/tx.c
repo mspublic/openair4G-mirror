@@ -278,6 +278,10 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx->skb);
 	bool assoc = false;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- handlers -- ieee80211_tx_h_check_assoc \n");
+#endif
+
 	if (unlikely(info->flags & IEEE80211_TX_CTL_INJECTED))
 		return TX_CONTINUE;
 
@@ -1166,6 +1170,10 @@ ieee80211_tx_prepare(struct ieee80211_sub_if_data *sdata,
 	int tid;
 	u8 *qc;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "--ieee80211_tx_prepare \n");
+#endif
+
 	memset(tx, 0, sizeof(*tx));
 	tx->skb = skb;
 	tx->local = local;
@@ -1249,6 +1257,10 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 	struct ieee80211_tx_info *info;
 	unsigned long flags;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- -- ieee80211_tx_frags \n");
+#endif
+
 	skb_queue_walk_safe(skbs, skb, tmp) {
 		int q = skb_get_queue_mapping(skb);
 
@@ -1277,6 +1289,10 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 		info->control.sta = sta;
 
 		__skb_unlink(skb, skbs);
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- TX Completed at MAC -- calling the Driver -- -- \n");
+#endif
 		drv_tx(local, skb);
 	}
 
@@ -1297,6 +1313,10 @@ static bool __ieee80211_tx(struct ieee80211_local *local,
 	struct sk_buff *skb;
 	bool result = true;
 	__le16 fc;
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- __ieee80211_tx \n");
+#endif
 
 	if (WARN_ON(skb_queue_empty(skbs)))
 		return true;
@@ -1352,6 +1372,10 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx->skb);
 	ieee80211_tx_result res = TX_DROP;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- invoke_tx_handlers \n");
+#endif
+
 #define CALL_TXH(txh) \
 	do {				\
 		res = txh(tx);		\
@@ -1375,7 +1399,7 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	// no power saving and no key management
 	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  CALL_TXH(ieee80211_tx_h_ps_buf); // [PLATA] - bypass as no PS
-	  CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // [PLATA]  ignoring with the right flags but not sure...(??)
+	  CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // [PLATA]  ignoring with the right flags...as we do not encrypt anyways
 	  CALL_TXH(ieee80211_tx_h_select_key); // [PLATA] -  directly (test OCBActivated..)
 	}
 
@@ -1438,6 +1462,10 @@ static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
 	}
 
 	rcu_read_lock();
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "--ieee80211_tx \n");
+#endif
 
 	/* initialises tx */
 	led_len = skb->len;
@@ -1507,6 +1535,10 @@ void ieee80211_xmit(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 	bool may_encrypt;
 
 	rcu_read_lock();
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- ieee80211_xmit \n");
+#endif
 
 	/*
 	 * [PLATA] - should be false - DONE in driver...
@@ -1813,6 +1845,10 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	ethertype = (skb->data[12] << 8) | skb->data[13];
 	fc = cpu_to_le16(IEEE80211_FTYPE_DATA | IEEE80211_STYPE_DATA);
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- ieee80211_subif_start_xmit \n");
+#endif
+
 	switch (sdata->vif.type) {
 	case NL80211_IFTYPE_AP_VLAN:
 		rcu_read_lock();
@@ -1975,7 +2011,13 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		/* DA SA BSSID */
 		memcpy(hdr.addr1, skb->data, ETH_ALEN);
 		memcpy(hdr.addr2, skb->data + ETH_ALEN, ETH_ALEN);
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+		printk(KERN_DEBUG "-- ieee80211_subif_start_xmit - ADHOC mode \n");
+#endif
 		if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+		  printk(KERN_DEBUG "-- -- ieee80211_subif_start_xmit - OCB Enable \n");
+#endif
 		  memcpy(hdr.addr3, 0xFFFFFF, ETH_ALEN); // [PLATA]: here, we add that we have a clause on the OCB; by default - wildcardBSSID on 48 bits
 		  fc |=  cpu_to_le16(~IEEE80211_FCTL_FROMDS | ~IEEE80211_FCTL_TODS); // [PLATA] we make sure that FROMDS and TODS are both 0
 		}
@@ -2002,6 +2044,9 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 			 * [PLATA] if in OCB mode, we are implicitely authorized
 			 */
 			if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+				printk(KERN_DEBUG "-- -- ieee80211_subif_start_xmit - TX Config for OCB Activated \n");
+#endif
 				authorized = 1;
 				wme_sta = 0;  // [PLATA] on this version of PLATA, we do not support WME
 				set_sta_flag(sta,WLAN_STA_AUTHORIZED); // do we need these actually?
