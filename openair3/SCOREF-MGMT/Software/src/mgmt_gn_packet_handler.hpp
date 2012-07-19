@@ -37,7 +37,7 @@
  * \note none
  * \bug none
  * \warning none
-*/
+ */
 
 #ifndef MGMT_GN_PACKET_HANDLER_HPP_
 #define MGMT_GN_PACKET_HANDLER_HPP_
@@ -52,6 +52,7 @@ using namespace boost;
 #include "packets/mgmt_gn_packet_network_state.hpp"
 #include "mgmt_gn_packet_factory.hpp"
 #include "mgmt_information_base.hpp"
+#include "util/mgmt_udp_server.hpp"
 #include "util/mgmt_log.hpp"
 #include "mgmt_client.hpp"
 
@@ -78,21 +79,22 @@ class GeonetMessageHandler {
 		 * Takes buffers of Geonet messages and dispatches them to relevant private
 		 * methods after building a GeonetPacket object out of them
 		 *
+		 * @param client Client that the packet to be handled has been received from
 		 * @param packetBuffer Buffer carrying Geonet message
-		 * @param client Socket information of sender client
 		 * @return pointer to the response of type GeonetMessage
 		 */
-		GeonetPacket* handleGeonetMessage(const vector<unsigned char>& packetBuffer, const udp::endpoint& client);
+		bool handleGeonetMessage(UdpServer& client, const vector<unsigned char>& packetBuffer);
 
 	private:
 		/**
 		 * Handles a Get Configuration message creating its reply utilizing relevant
 		 * PacketFactory method
 		 *
+		 * @param client Sender of GetConfiguration packet
 		 * @param packet Pointer to Get Configuration packet object
-		 * @return Reply to Get Configuration message
+		 * @return true on success, false otherwise
 		 */
-		GeonetPacket* handleGetConfigurationEvent(GeonetGetConfigurationEventPacket* packet);
+		bool handleGetConfigurationEvent(UdpServer& client, GeonetGetConfigurationEventPacket* packet);
 		/**
 		 * Handles a Network State message and triggers an update at MIB
 		 *
@@ -118,10 +120,11 @@ class GeonetMessageHandler {
 		 * Handles a Communication Profile Request event message and creates a
 		 * Communication Profile Response packet
 		 *
+		 * @param client Sender of CoummunicationProfileRequest packet
 		 * @param Pointer to a Communication Profile Request packet
-		 * @return Pointer to a Communication Profile Response packet
+		 * @return true on success, false otherwise
 		 */
-		GeonetPacket* handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* packet);
+		bool handleCommunicationProfileRequestEvent(UdpServer& client, GeonetCommunicationProfileRequestPacket* packet);
 
 	private:
 		/**
@@ -132,10 +135,6 @@ class GeonetMessageHandler {
 		 * ManagementInformationBase object to fetch necessary information when needed
 		 */
 		ManagementInformationBase& mib;
-		/**
-		 * State map holding clients' states
-		 */
-		map<ManagementClient, ManagementClient::ManagementClientState> clientState;
 		/**
 		 * Logger object reference
 		 */

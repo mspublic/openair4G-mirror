@@ -53,14 +53,14 @@ using boost::asio::ip::udp;
 #include "packets/mgmt_gn_packet_location_table_request.hpp"
 #include "mgmt_gn_packet_handler.hpp"
 #include "util/mgmt_udp_server.hpp"
-#include "mgmt_inquiry_thread.hpp"
+#include "mgmt_client_manager.hpp"
+#include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 
 void printHelp(string binaryName) {
 	cerr << binaryName << " <configurationFile> <logFileName>" << endl;
-	// todo explain other commandline options here
 }
 
 const string CONF_HELP_PARAMETER_STRING = "help";
@@ -114,62 +114,83 @@ int main(int argc, char** argv) {
 	bool locationTableUpdated = false;
 
 	ManagementInformationBase mib(logger);
-	GeonetMessageHandler packetHandler(mib, logger);
-
-	logger.info("Starting Management & GeoNetworking Interface...");
-	logger.info("Reading configuration file...");
-
+	GeonetMessageHandler* packetHandler = NULL;
 	Configuration configuration(argv[1], logger);
-	if (!configuration.parseConfigurationFile(mib)) {
-		logger.error("Cannot open/parse configuration file, exiting...");
-		return -1;
-	}
-
+	/**
+	 * Parse configuration file and create UDP server socket
+	 */
+	configuration.parseConfigurationFile(mib);
+	ManagementClientManager clientManager(configuration, logger);
 	UdpServer server(configuration.getServerPort(), logger);
 
-	/**
-	 * Initialise InquiryThread object for Wireless State updates
-	 */
-	InquiryThread inquiryThreadObject(server, configuration.getWirelessStateUpdateInterval(), logger);
-	boost::thread inquiryThread(inquiryThreadObject);
-
-	vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
-	vector<unsigned char> txBuffer(UdpServer::TX_BUFFER_SIZE);
-
 	try {
-		for (;;) {
-			if (server.receive(rxBuffer)) {
-				GeonetPacket* reply = NULL;
+		/**
+		 * Initialise MIB
+		 */
+		try {
+			mib.initialise();
+		} catch (Exception& e) {
+			e.updateStackTrace("Cannot initialise ManagementInformationBase!");
+			throw e;
+		}
 
-				try {
-					reply = packetHandler.handleGeonetMessage(rxBuffer, server.getClient());
-				} catch (std::exception& e) {
-					cerr << e.what() << endl;
+		/**
+		 * Allocate aGeonet packet handler
+		 */
+		try {
+			packetHandler = new GeonetMessageHandler(mib, logger);
+		} catch (std::bad_alloc& exception) {
+			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
+		} catch (Exception& e) {
+			e.updateStackTrace("Cannot initialise Geonet Message Handler!");
+			throw e;
+		}
+
+		logger.info("Starting Management & GeoNetworking Interface...");
+		logger.info("Reading configuration file...");
+
+		vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
+		vector<unsigned char> txBuffer(UdpServer::TX_BUFFER_SIZE);
+
+		try {
+			for (;;) {
+				if (server.receive(rxBuffer)) {
+					GeonetPacket* reply = NULL;
+					bool packetHandled = false;
+
+					/**
+					 * Inform Client Manager of this sender
+					 */
+					clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
+
+					try {
+						packetHandled = packetHandler->handleGeonetMessage(server, rxBuffer);
+					} catch (std::exception& e) {
+						cerr << e.what() << endl;
+					}
+
+					if (reply)
+						server.send(*reply);
 				}
 
-				if (reply)
-					server.send(*reply);
-			}
+				if (!locationTableUpdated) {
+					// Initialise location table
+					GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
+					server.send(locationTableRequest);
+					locationTableUpdated = true;
+				}
 
-			if (!locationTableUpdated) {
-				// Initialise location table
-				GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
-				server.send(locationTableRequest);
-				locationTableUpdated = true;
+				// Revert buffer sizes to initials
+				rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
+				txBuffer.reserve(UdpServer::TX_BUFFER_SIZE);
 			}
-
-			// Revert buffer sizes to initials
-			rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
-			txBuffer.reserve(UdpServer::TX_BUFFER_SIZE);
+		} catch (std::exception& e) {
+			logger.error(e.what());
 		}
-	} catch (std::exception& e) {
-		logger.error(e.what());
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot initialise SCOREF-MGMT module, exiting...");
+		e.printStackTrace();
 	}
-
-	/**
-	 * Wait for inquiry thread to finish its job
-	 */
-	inquiryThread.join();
 
 	return 0;
 }

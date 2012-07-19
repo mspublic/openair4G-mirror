@@ -59,15 +59,17 @@ bool Util::copyBuffer(void* destinationBuffer, const void* sourceBuffer, size_t 
 }
 
 bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSize, Logger& logger) {
-	if (!buffer)
+	if (!buffer) {
+		logger.warning("Incoming buffer is empty, won't write any hex data");
 		return false;
+	}
 
 	stringstream ss;
 	unsigned long octet_index = 0;
 
-	ss << "\n";
-	ss << "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |" << endl;
-	ss << "-----+-------------------------------------------------|" << endl;
+	logger.debug("");
+	logger.debug("     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |");
+	logger.debug("-----+-------------------------------------------------|");
 	ss << " 000 |";
 	for (octet_index = 0; octet_index < bufferSize; ++octet_index) {
 		/*
@@ -78,7 +80,14 @@ bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSiz
 		 * Align newline and pipes according to the octets in groups of 2
 		 */
 		if (octet_index != 0 && (octet_index + 1) % 16 == 0) {
-			ss << " |" << endl;
+			ss << " |";
+			/**
+			 * Print this line and reset std::stringstream afterwards
+			 */
+			logger.debug(ss.str());
+			ss.str(string());
+			ss.clear();
+
 			ss << " " << setfill('0') << setw(3) << octet_index << " |";
 		}
 	}
@@ -89,11 +98,11 @@ bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSiz
 	unsigned char index;
 	for (index = octet_index; index < 16; ++index)
 		ss << "   ";
-	ss << " |" << endl;
+	ss << " |";
 
-	ss << resetiosflags(ios_base::hex) << endl;
-
+	ss << resetiosflags(ios_base::hex);
 	logger.debug(ss.str());
+
 	return true;
 }
 

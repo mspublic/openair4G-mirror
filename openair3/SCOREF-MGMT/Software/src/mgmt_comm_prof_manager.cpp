@@ -40,6 +40,7 @@
 */
 
 #include "mgmt_comm_prof_manager.hpp"
+#include <boost/lexical_cast.hpp>
 #include "util/mgmt_util.hpp"
 
 #include <cstdlib>
@@ -59,7 +60,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 		return false;
 
 	u_int8_t profileID = atoi(profileIdString.substr(profileIdString.find("CP") + 2, profileIdString.length() - 2).c_str());
-	logger.info("Communication Profile ID = " + (int)profileID);
+	logger.info("Defining communication Profile ID = " + boost::lexical_cast<string>((int)profileID));
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(profileID, parse(profileDefinitionString)));
 
 	return true;

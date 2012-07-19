@@ -48,6 +48,14 @@ using namespace std;
 Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel) {
 	this->logFileName = logFileName;
 	this->logLevel = logLevel;
+	/**
+	 * If we have renamed log file because it exists
+	 */
+	bool renamed = false;
+	/**
+	 * New name for the log file
+	 */
+	string newLogFilePath = "";
 
 	/**
 	 * Open log file stream, if the file already exists then rename
@@ -56,45 +64,78 @@ Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel) {
 	logFilePath = boost::filesystem::path(logFileName);
 
 	if (boost::filesystem::exists(logFilePath)) {
-		cout << "Log file already exists, renaming it..." << endl;
 		/**
 		 * Get the current date/time as string and prepend log file name with it
 		 */
-		boost::filesystem::rename(logFilePath, logFilePath.string() + Util::getDateAndTime(false));
+		newLogFilePath = logFilePath.string() + Util::getDateAndTime(false);
+		boost::filesystem::rename(logFilePath, newLogFilePath);
+		renamed = true;
 	}
 
+	/**
+	 * Define string representations of log levels
+	 */
+	logLevelString.insert(logLevelString.end(), std::make_pair(TRACE, "TRACE"));
+	logLevelString.insert(logLevelString.end(), std::make_pair(DEBUG, "DEBUG"));
+	logLevelString.insert(logLevelString.end(), std::make_pair(INFO, "INFO"));
+	logLevelString.insert(logLevelString.end(), std::make_pair(WARNING, "WARNING"));
+	logLevelString.insert(logLevelString.end(), std::make_pair(ERROR, "ERROR"));
+
+	/**
+	 * Open log file stream
+	 */
 	logFileStream.open(logFileName.c_str(), ios_base::out);
 	if (!logFileStream.is_open()){
 		cerr << "Cannot open log file!" << endl;
 	}
 
-	logLevelString.insert(logLevelString.end(), std::make_pair(DEBUG, "DEBUG"));
-	logLevelString.insert(logLevelString.end(), std::make_pair(INFO, "INFO"));
-	logLevelString.insert(logLevelString.end(), std::make_pair(WARNING, "WARNING"));
-	logLevelString.insert(logLevelString.end(), std::make_pair(ERROR, "ERROR"));
+	if (renamed)
+		this->info("A log file with the same name exists, created one with name '" + newLogFilePath + "'");
 }
 
-Logger::~Logger() {}
-
-void Logger::debug(const string& message) {
-	log(message, DEBUG);
+Logger::~Logger() {
+	logFileStream.flush();
+	logFileStream.close();
 }
 
-void Logger::info(const string& message) {
-	log(message, INFO);
+void Logger::trace(const string& message, bool logFormatting) {
+	log(message, TRACE, logFormatting);
 }
 
-void Logger::warning(const string& message) {
-	log(message, WARNING);
+void Logger::debug(const string& message, bool logFormatting) {
+	log(message, DEBUG, logFormatting);
 }
 
-void Logger::error(const string& message) {
-	log(message, ERROR);
+void Logger::info(const string& message, bool logFormatting) {
+	log(message, INFO, logFormatting);
 }
 
-void Logger::log(const string& message, LOG_LEVEL level) {
-	this->logFileStream << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": " << message << endl;
-	cout << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": " << message << endl;
+void Logger::warning(const string& message, bool logFormatting) {
+	log(message, WARNING, logFormatting);
+}
+
+void Logger::error(const string& message, bool logFormatting) {
+	log(message, ERROR, logFormatting);
+}
+
+void Logger::log(const string& message, LOG_LEVEL level, bool logFormatting) {
+	/**
+	 * Write to log file first
+	 */
+	if (logFormatting)
+		logFileStream << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": ";
+	logFileStream << message;
+	if (logFormatting)
+		logFileStream << endl;
+
+	/**
+	 * And then to standard output
+	 */
+	if (logFormatting)
+		cout << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": ";
+	cout << message;
+	if (logFormatting)
+		cout << endl;
 }
 
 void Logger::setLogLevel(Logger::LOG_LEVEL logLevel) {

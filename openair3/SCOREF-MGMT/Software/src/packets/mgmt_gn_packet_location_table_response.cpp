@@ -40,6 +40,7 @@
 */
 
 #include "mgmt_gn_packet_location_table_response.hpp"
+#include <boost/lexical_cast.hpp>
 #include "../util/mgmt_util.hpp"
 #include <sstream>
 
@@ -60,7 +61,7 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 
 	// Parse LPV Count...
 	if (Util::parse2byteInteger(packetBuffer.data() + packetBufferIndex, &lpvCount)) {
-		logger.info("Location table response has following number of entr{y|ies}: " + lpvCount);
+		logger.info("Location table response has following number of entr{y|ies}: " + boost::lexical_cast<string>(lpvCount));
 	} else {
 		logger.error("Cannot parse location table entry count");
 		return false;

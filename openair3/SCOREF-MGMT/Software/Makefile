@@ -31,5 +31,5 @@ strip:
 	$(STRIP) $(EXE) &> /dev/null
 
 clean:
-	$(RM) -rf *.o src/*.o src/packets/*.o $(EXE)
+	$(RM) -rf *.o src/*.o src/packets/*.o src/util/*.o $(EXE)
 

@@ -40,9 +40,11 @@
 */
 
 #include "mgmt_gn_packet_handler.hpp"
+#include "util/mgmt_exception.hpp"
+#include <boost/lexical_cast.hpp>
 #include "mgmt_gn_datatypes.hpp"
 #include "util/mgmt_util.hpp"
-#include <arpa/inet.h>
+// todo #include <arpa/inet.h>
 #include <exception>
 #include <iostream>
 #include <cstring>
@@ -52,8 +54,8 @@ GeonetMessageHandler::GeonetMessageHandler(ManagementInformationBase& mib, Logge
 	mib(mib), logger(logger) {
 	try {
 		this->packetFactory = new GeonetPacketFactory(mib, logger);
-	} catch (std::exception& e) {
-		logger.error(e.what());
+	} catch (...) {
+		throw Exception("Cannot allocate a Geonet Packet Factory!", logger);
 	}
 }
 
@@ -61,29 +63,22 @@ GeonetMessageHandler::~GeonetMessageHandler() {
 	delete packetFactory;
 }
 
-GeonetPacket* GeonetMessageHandler::handleGeonetMessage(const vector<unsigned char>& packetBuffer, const udp::endpoint& client) {
+bool GeonetMessageHandler::handleGeonetMessage(UdpServer& client, const vector<unsigned char>& packetBuffer) {
 	if (packetBuffer.size() < sizeof(MessageHeader)) {
-		logger.error("Buffer size is not enough to carry a Geonet message!");
-		return NULL;
+		logger.error("Buffer size (" + boost::lexical_cast<string>(packetBuffer.size()) + " byte(s)) is not enough to carry a Geonet message!");
+		logger.warning("Discarding packet...");
+		return false;
 	}
 
-	logger.info("Incoming packet size in bytes is " + packetBuffer.size());
-
-	MessageHeader* header = (MessageHeader*) packetBuffer.data();
-
-	u_int16_t eventType = header->eventType;
-	eventType <<= 8;
-	eventType |= header->eventSubtype;
-
-	logger.info("Event field has the value " + eventType);
+	logger.info("Incoming packet size is " + boost::lexical_cast<string>(packetBuffer.size()) + " byte(s)");
+	u_int16_t eventType = GeonetPacket::parseEventTypeOfPacketBuffer(packetBuffer);
+	logger.info("Event field has the value " + boost::lexical_cast<string>(eventType));
 
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
-			clientState[ManagementClient(client)] = ManagementClient::CONNECTED;
-			return handleGetConfigurationEvent(new GeonetGetConfigurationEventPacket(packetBuffer, logger));
+			return handleGetConfigurationEvent(client, new GeonetGetConfigurationEventPacket(packetBuffer, logger));
 
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
-			clientState[ManagementClient(client)] = ManagementClient::ONLINE;
 			if (handleWirelessStateResponseEvent(new GeonetWirelessStateResponseEventPacket(mib, packetBuffer, logger))) {
 				logger.info("Wireless state event message processed");
 				return NULL;
@@ -94,42 +89,34 @@ GeonetPacket* GeonetMessageHandler::handleGeonetMessage(const vector<unsigned ch
 			if (handleNetworkStateEvent(new GeonetNetworkStateEventPacket(mib, packetBuffer, logger))) {
 				logger.info("Network state event message processed");
 				/**
+				 * todo this comment is no more functional, fix this!
 				 * If the first message we have received from the client is a
 				 * periodic network state then there was a configuration request
 				 * that has been lost (cause the client was started before the
 				 * server), so here we need to send them all
 				 */
-				if (clientState[ManagementClient(client)] == ManagementClient::OFFLINE) {
-					clientState[ManagementClient(client)] = ManagementClient::ONLINE;
-					return packetFactory->createSetConfigurationEventPacket(MGMT_GN_ITSKEY_ALL);
-				} else {
-					clientState[ManagementClient(client)] = ManagementClient::ONLINE;
-					return NULL;
-				}
 			}
 			break;
 
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
-			clientState[ManagementClient(client)] = ManagementClient::ONLINE;
-			return handleCommunicationProfileRequestEvent(new GeonetCommunicationProfileRequestPacket(packetBuffer, logger));
+			return handleCommunicationProfileRequestEvent(client, new GeonetCommunicationProfileRequestPacket(packetBuffer, logger));
 
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
 			if (handleLocationTableResponse(new GeonetLocationTableResponseEventPacket(mib, packetBuffer, logger))) {
 				logger.info("Location table response packet processed");
 			}
-			clientState[ManagementClient(client)] = ManagementClient::ONLINE;
 			break;
 
-			/*
-			 * Unexpected message handling
-			 */
+		/**
+		 * Handle unexpected packets as well
+		 */
 		case MGMT_GN_EVENT_LOCATION_TABLE_REQUEST:
 		case MGMT_GN_EVENT_CONF_UPDATE_AVAILABLE:
 		case MGMT_GN_EVENT_CONF_CONT_RESPONSE:
 		case MGMT_GN_EVENT_CONF_BULK_RESPONSE:
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE:
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST:
-			// todo logger.error("Unexpected packet (event: " + eventType + ") received, connected client is buggy");
+			logger.error("Unexpected packet (event: " + boost::lexical_cast<string>(eventType) + ") received, connected client is buggy");
 			logger.error("Ignoring...");
 			break;
 
@@ -142,16 +129,29 @@ GeonetPacket* GeonetMessageHandler::handleGeonetMessage(const vector<unsigned ch
 	return NULL;
 }
 
-GeonetPacket* GeonetMessageHandler::handleGetConfigurationEvent(GeonetGetConfigurationEventPacket* request) {
+bool GeonetMessageHandler::handleGetConfigurationEvent(UdpServer& client, GeonetGetConfigurationEventPacket* request) {
 	if (!request)
-		return NULL;
+		return false;
 
 	GeonetPacket* reply = NULL;
 
+	/**
+	 * Create a response according to the request and send to the client right away
+	 */
 	reply = this->packetFactory->createSetConfigurationEventPacket(static_cast<ItsKeyID> (request->getConfID()));
 
+	if (client.send(*reply))
+		logger.info("A reply for a Get Configuration packet has been sent");
+	else
+		logger.warning("Cannot send a Set Configuration in exchange for a Get Configuration!");
+
+	/**
+	 * Clean up
+	 */
 	delete request;
-	return reply;
+	delete reply;
+
+	return true;
 }
 
 bool GeonetMessageHandler::handleNetworkStateEvent(GeonetNetworkStateEventPacket* request) {
@@ -169,15 +169,27 @@ bool GeonetMessageHandler::handleLocationTableResponse(GeonetLocationTableRespon
 	return true;
 }
 
-GeonetPacket* GeonetMessageHandler::handleCommunicationProfileRequestEvent(
-		GeonetCommunicationProfileRequestPacket* request) {
+bool GeonetMessageHandler::handleCommunicationProfileRequestEvent(UdpServer& client, GeonetCommunicationProfileRequestPacket* request) {
 	if (!request)
-		return NULL;
+		return false;
 
 	GeonetPacket* reply = NULL;
 
+	/**
+	 * Create a response according to the request and send to the client right away
+	 */
 	reply = this->packetFactory->createCommunicationProfileResponse(request);
 
+	if (client.send(*reply))
+		logger.info("A reply for a Communication Profile Request has been sent");
+	else
+		logger.warning("Cannot send a Communication Profile Response in exchange for a Communication Profile Request!");
+
+	/**
+	 * Clean up
+	 */
 	delete request;
-	return reply;
+	delete reply;
+
+	return true;
 }

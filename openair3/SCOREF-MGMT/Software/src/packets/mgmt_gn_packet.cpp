@@ -83,7 +83,7 @@ bool GeonetPacket::parseHeaderBuffer(const vector<unsigned char>& headerBuffer, 
 }
 
 bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
-	logger.debug("Serializing header...");
+	logger.debug("Serialising header...");
 
 	buffer[0] = header.version;
 	buffer[0] |= 0x40; // encode Validity flag as 1
@@ -98,8 +98,8 @@ bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
 string GeonetPacket::toString() const {
 	stringstream ss;
 
-	ss << "Version: " << (int) header.version << endl << "Priority: " << (int) header.priority << endl << "Event Type: "
-	    << (int) (header.eventType * 100 + header.eventSubtype);
+	ss << "GeonetHeader[version:" << (int) header.version << ", priority:" << (int) header.priority
+		<< ", event:" << (int) (header.eventType * 100 + header.eventSubtype) << "]";
 
 	return ss.str();
 }

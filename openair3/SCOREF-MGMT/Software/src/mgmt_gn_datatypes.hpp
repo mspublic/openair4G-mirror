@@ -194,17 +194,17 @@ struct LocationTableItem {
 	string toString() const {
 		stringstream ss;
 
-		ss << "GN Address: " << gnAddress << endl
-			<< "Timestamp: " << timestamp << endl
-			<< "Latitude: " << latitude << endl
-			<< "Longitude: " << longitude << endl
-			<< "Speed: " << speed << endl
-			<< "Heading: " << heading << endl
-			<< "Altitude: " << altitude << endl
-			<< "Acceleration: " << acceleration << endl
-			<< "Sequence Number: " << sequenceNumber << endl
-			<< "LPV Flags: " << (int)lpvFlags << endl
-			<< "Reserved: " << (int)reserved << endl;
+		ss << "[gnAddr:" << gnAddress << ", "
+			<< "timestamp:" << timestamp << ", "
+			<< "lat.:" << latitude << ", "
+			<< "long.:" << longitude << ", "
+			<< "speed:" << speed << ", "
+			<< "heading:" << heading << ", "
+			<< "alt.:" << altitude << ", "
+			<< "accel.:" << acceleration << ", "
+			<< "seqNum:" << sequenceNumber << ", "
+			<< "lpvFlags:" << (int)lpvFlags << ", "
+			<< "res.:" << (int)reserved << "]";
 
 		return ss.str();
 	}
@@ -221,18 +221,6 @@ struct LocationTableResponse {
 	u_int8_t reserved;
 
 	// Location table items will follow
-} __attribute__((packed));
-
-/**
- * Update GN_Address Event
- *
- * todo Where did this go?
- * @direction MGMT to GN
- */
-struct c2x_update_gn_address_event {
-	MessageHeader header;
-
-	u_int64_t gnAddress;
 } __attribute__((packed));
 
 /**
@@ -343,7 +331,7 @@ struct ContinuousConfigurationResponse {
 /**
  * Set Configuration Event (Bulk)
  *
- * This struct is processed with a std::vector<c2x_configuration_item>
+ * This struct is processed with a std::vector<ConfigurationItem>
  * See GeonetSetConfigurationEventPacket.{hpp|cpp}
  */
 struct BulkConfigurationResponse {

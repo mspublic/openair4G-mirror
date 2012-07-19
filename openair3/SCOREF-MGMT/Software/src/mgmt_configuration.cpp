@@ -39,6 +39,7 @@
  * \warning none
 */
 
+#include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
 #include <boost/tokenizer.hpp>
 #include <fstream>
@@ -54,7 +55,9 @@ Configuration::Configuration(string configurationFile, Logger& logger)
 	: logger(logger) {
 	this->configurationFile = configurationFile;
 
-	// Set default values
+	/**
+	 * Set default values
+	 */
 	this->serverPort = 1402;
 	this->wirelessStateUpdateInterval = 10;
 }
@@ -86,7 +89,12 @@ bool Configuration::parseConfigurationFile(ManagementInformationBase& mib) {
 				if (!line.compare(0, netParameterPrefix.length(), netParameterPrefix) ||
 						!line.compare(0, facParameterPrefix.length(), facParameterPrefix) ||
 						!line.compare(0, commonParameterPrefix.length(), commonParameterPrefix)) {
-					mib.setValue(parameter, atoi(value.c_str()));
+					try {
+						mib.setValue(parameter, atoi(value.c_str()));
+					} catch (Exception& e) {
+						e.updateStackTrace("Cannot set MIB ITS key using value given in the configuration file");
+						throw e;
+					}
 				/*
 				 * General configuration parameters are handled locally in this class
 				 */
@@ -101,7 +109,7 @@ bool Configuration::parseConfigurationFile(ManagementInformationBase& mib) {
 			}
 		}
 	} else {
-		logger.error("Cannot open configuration file!");
+		logger.error("Cannot open configuration file '" + this->configurationFile + "'!");
 		return false;
 	}
 
@@ -147,7 +155,11 @@ int Configuration::getServerPort() const {
 }
 
 void Configuration::setServerPort(int serverPort) {
-	this->serverPort = serverPort;
+	if (serverPort > 0 && serverPort < 9000)
+		this->serverPort = serverPort;
+	/**
+	 * Keep default value otherwise
+	 */
 }
 
 u_int8_t Configuration::getWirelessStateUpdateInterval() const {
@@ -155,5 +167,9 @@ u_int8_t Configuration::getWirelessStateUpdateInterval() const {
 }
 
 void Configuration::setWirelessStateUpdateInterval(u_int8_t interval) {
-	wirelessStateUpdateInterval = interval;
+	if (interval > 0 && interval < 120)
+		wirelessStateUpdateInterval = interval;
+	/**
+	 * Keep default value otherwise
+	 */
 }
