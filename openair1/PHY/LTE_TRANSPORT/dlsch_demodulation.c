@@ -6255,6 +6255,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
 
+
     if (dual_stream_UE == 1) {
       rho128_i0 = (__m128i *) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
       rho128_i1 = (__m128i *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
@@ -6267,6 +6268,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       for (i=0;i<nb_rb*3;i++) {
 	rxdataF_comp128_i0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_i0[i],1),_mm_srai_epi16(rxdataF_comp128_i1[i],1));
 	rho128_i0[i]           = _mm_adds_epi16(_mm_srai_epi16(rho128_i0[i],1),_mm_srai_epi16(rho128_i1[i],1));
+
     dl_ch_mag128_i0[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_i0[i],1),_mm_srai_epi16(dl_ch_mag128_i1[i],1));
     dl_ch_mag128_i0b[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_i0b[i],1),_mm_srai_epi16(dl_ch_mag128_i1b[i],1));
       }
@@ -8388,7 +8390,6 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 				     PHY_MEASUREMENTS *phy_measurements,
 				     int eNB_id,
 				     unsigned char symbol,
-				     u8 first_symbol_flag,
 				     unsigned char mod_order,
 				     unsigned short nb_rb,
 				     unsigned char output_shift,
@@ -8442,7 +8443,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
     dl_ch128_0          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
     dl_ch128_1          = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol_mod*frame_parms->N_RB_DL*12];
 
-    
+
     dl_ch_mag128      = (__m128i *)&dl_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
     dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
@@ -8454,12 +8455,12 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 #ifdef DEBUG_DLSCH_DEMOD
       printf("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
 #endif
-	
+
       //print_shorts("ch0(0):",&dl_ch128_0[0]);
       //print_shorts("ch1(0):",&dl_ch128_1[0]);
       prec2A_128(pmi_ext[rb],&dl_ch128_0[0],&dl_ch128_1[0]);
       //print_shorts("prec(ch0,ch1):",&dl_ch128_0[0]);
-      
+
       //print_shorts("ch0(1):",&dl_ch128_0[1]);
       //print_shorts("ch1(1):",&dl_ch128_1[1]);
       prec2A_128(pmi_ext[rb],&dl_ch128_0[1],&dl_ch128_1[1]);
@@ -8471,7 +8472,8 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 	prec2A_128(pmi_ext[rb],&dl_ch128_0[2],&dl_ch128_1[2]); 
 	//print_shorts("prec(ch0,ch1):",&dl_ch128_0[2]);      
       }
-      
+
+     
 
       //#endif      
 
@@ -8524,7 +8526,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 	  dl_ch_mag128b[2] = _mm_slli_epi16(dl_ch_mag128b[2],1);	  
 	}
       }
-      
+
       // multiply by conjugated channel
       mmtmpD0 = _mm_madd_epi16(dl_ch128_0[0],rxdataF128[0]);
       //	print_ints("re",&mmtmpD0);
@@ -9978,7 +9980,7 @@ void dlsch_channel_level_prec(int **dl_ch_estimates_ext,
   short rb;
   unsigned char aatx,aarx,nre=12;
   __m128i *dl_ch128_0,*dl_ch128_1, dl_ch128_0_tmp, dl_ch128_1_tmp;
-  
+
   //clear average level
   avg128D = _mm_xor_si128(avg128D,avg128D);
   avg[0] = 0;
@@ -10028,10 +10030,10 @@ void dlsch_channel_level_prec(int **dl_ch_estimates_ext,
               dl_ch128_1+=3;
           }          
       }
-      avg[aarx] = (((int*)&avg128D)[0] + 
-                   ((int*)&avg128D)[1] + 
-                   ((int*)&avg128D)[2] + 
-                   ((int*)&avg128D)[3])/(nb_rb*nre);
+      avg[aarx] = (((int*)&avg128D)[0])/(nb_rb*nre) + 
+                     (((int*)&avg128D)[1])/(nb_rb*nre) + 
+                     (((int*)&avg128D)[2])/(nb_rb*nre) + 
+                     (((int*)&avg128D)[3])/(nb_rb*nre);
   }
   // choose maximum of the 2 effective channels
   avg[0] = cmax(avg[0],avg[1]);
@@ -10452,7 +10454,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
 
 #ifdef ENABLE_FXP
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, first_symbol_flag, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP
@@ -10566,7 +10568,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
 
 #ifdef ENABLE_FXP
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, first_symbol_flag, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
 #endif
       
 #ifdef COMPARE_FLP_AND_FXP      
@@ -10654,7 +10656,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				      phy_measurements,
 				      eNB_id,
 				      symbol,
-				      first_symbol_flag,
 				      get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
 				      nb_rb,
 				      lte_ue_pdsch_vars[eNB_id]->log2_maxh,
