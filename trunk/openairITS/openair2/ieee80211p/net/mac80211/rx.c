@@ -241,6 +241,10 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 	struct net_device *prev_dev = NULL;
 	int present_fcs_len = 0;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- ieee80211_rx_monitor \n");
+#endif
+
 	/*
 	 * First, we may need to make a copy of the skb because
 	 *  (1) we need to modify it for radiotap (if not present), and
@@ -271,6 +275,9 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 			return NULL;
 		}
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- OCBActivated  and Monitoring mode not supported - exiting here \n");
+#endif
 		return remove_monitor_info(local, origskb);
 	}
 
@@ -439,12 +446,19 @@ ieee80211_rx_h_passive_scan(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
 	struct sk_buff *skb = rx->skb;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- -- ieee80211_rx_h_passive_scan \n");
+#endif
 	/*
 	 * [PLATA] - we exit immediately if OCB is activated
 	 */
 	if ((likely(!(status->rx_flags & IEEE80211_RX_IN_SCAN) &&
-		   !local->sched_scanning)) || ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)))
+		   !local->sched_scanning)) || ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- ieee80211_rx_h_passive_scan OCB Activated...exiting immediately\n");
+#endif
 		return RX_CONTINUE;
+	}
 
 	if (test_bit(SCAN_HW_SCANNING, &local->scanning) ||
 	    test_bit(SCAN_SW_SCANNING, &local->scanning) ||
@@ -780,9 +794,12 @@ static void ieee80211_rx_reorder_ampdu(struct ieee80211_rx_data *rx)
 	u16 sc;
 	u8 tid, ack_policy;
 
-	if (!ieee80211_is_data_qos(hdr->frame_control))
+	if (!ieee80211_is_data_qos(hdr->frame_control)) {
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- ieee80211_rx_reorder_ampdu - OCBActivated -- exit immediately\n");
+#endif
 		goto dont_reorder;
-
+	}
 	/*
 	 * filter the QoS data rx stream according to
 	 * STA/TID and check if this STA/TID is on aggregation
@@ -848,6 +865,10 @@ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)rx->skb->data;
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- -- ieee80211_rx_h_check \n");
+#endif
+
 	/* Drop duplicate 802.11 retransmissions (IEEE 802.11 Chap. 9.2.9) */
 	/*
 	 * [PLATA] do not enter here (on the first reception as we do not have a rx->sta and probably for all other reception)..
@@ -891,6 +912,9 @@ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
 		     rx->sdata->vif.type != NL80211_IFTYPE_ADHOC &&
 		     rx->sdata->vif.type != NL80211_IFTYPE_WDS &&
 		     (!rx->sta || !test_sta_flag(rx->sta, WLAN_STA_ASSOC)))) { // [PLATA] - either data or PS poll and not ADHOC and either no station or not associated
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- -- OCB Activated...should not enter here..\n");
+#endif
 		/*
 		 * accept port control frames from the AP even when it's not
 		 * yet marked ASSOC to prevent a race where we don't set the
@@ -1293,6 +1317,10 @@ ieee80211_rx_h_sta_process(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- ieee80211_rx_h_sta_process \n");
+#endif
+
 	if (!sta)
 		return RX_CONTINUE;
 
@@ -1307,6 +1335,9 @@ ieee80211_rx_h_sta_process(struct ieee80211_rx_data *rx)
 		if (compare_ether_addr(bssid, rx->sdata->u.ibss.bssid) == 0) {
 			sta->last_rx = jiffies;
 			if (ieee80211_is_data(hdr->frame_control)) {
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	            printk(KERN_DEBUG "-- -- -- ADHOC and OCBActivated -- updating the RX statistics \n");
+#endif
 				sta->last_rx_rate_idx = status->rate_idx;
 				sta->last_rx_rate_flag = status->flag;
 			}
@@ -1792,6 +1823,10 @@ ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
 	skb = rx->skb;
 	xmit_skb = NULL;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- ieee80211_deliver_skb -- in case the MAC should relay it -- with OCBActivated, it should never... \n");
+#endif
+
 	if ((sdata->vif.type == NL80211_IFTYPE_AP ||
 	     sdata->vif.type == NL80211_IFTYPE_AP_VLAN) &&
 	    !(sdata->flags & IEEE80211_SDATA_DONT_BRIDGE_PACKETS) &&
@@ -2062,6 +2097,10 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 	if (unlikely(!ieee80211_is_data_present(hdr->frame_control)))
 		return RX_DROP_MONITOR;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- ieee80211_rx_h_data \n");
+#endif
+
 	/*
 	 * Send unexpected-4addr-frame event to hostapd. For older versions,
 	 * also drop the frame to cooked monitor interfaces.
@@ -2108,6 +2147,9 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 			 msecs_to_jiffies(local->hw.conf.dynamic_ps_timeout));
 	}
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- RX almost completed -- delivering the packet to SKB \n");
+#endif
 	ieee80211_deliver_skb(rx);
 
 	return RX_QUEUED;
@@ -2705,6 +2747,10 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 	ieee80211_rx_result res = RX_DROP_MONITOR;
 	struct sk_buff *skb;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- ieee80211_rx_handlers \n");
+#endif
+
 #define CALL_RXH(rxh)			\
 	do {				\
 		res = rxh(rx);		\
@@ -2735,7 +2781,10 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 		}
 		CALL_RXH(ieee80211_rx_h_sta_process)  // [PLATA]: does not do much but should not interfer..
 
-		CALL_RXH(ieee80211_rx_h_defragment) // [PLATA] - we keep it here, as we also allow fragmenting in the tx path  - but should be blocked with the right flags.
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
+		{
+		CALL_RXH(ieee80211_rx_h_defragment) // [PLATA] - fragmentation NOT supported so far..
+		}
 
 		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
@@ -2769,6 +2818,9 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 
  rxh_next:
 		ieee80211_rx_handlers_result(rx, res);
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- -- -- ieee80211_rx_handlers -- RX completed at MAC -- finishing process \n");
+#endif
 		spin_lock(&rx->local->rx_skb_queue.lock);
 #undef CALL_RXH
 	}
@@ -2782,6 +2834,10 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 static void ieee80211_invoke_rx_handlers(struct ieee80211_rx_data *rx)
 {
 	ieee80211_rx_result res = RX_DROP_MONITOR;
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- -- ieee80211_invoke_rx_handers \n");
+#endif
 
 #define CALL_RXH(rxh)			\
 	do {				\
@@ -2960,6 +3016,10 @@ static bool ieee80211_prepare_and_rx_handle(struct ieee80211_rx_data *rx,
 	struct ieee80211_hdr *hdr = (void *)skb->data;
 	int prepares;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- %s ieee80211_prepare_and_rx_handle \n", sdata->name);
+#endif
+
 	rx->skb = skb;
 	status->rx_flags |= IEEE80211_RX_RA_MATCH;
 	prepares = prepare_for_handlers(rx, hdr); // [PLATA] - check to be completed..important filter flags
@@ -3000,6 +3060,10 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 	struct ieee80211_sub_if_data *prev;
 	struct sta_info *sta, *tmp, *prev_sta;
 	int err = 0;
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- __ieee80211_rx_handle_packet \n");
+#endif
 
 	fc = ((struct ieee80211_hdr *)skb->data)->frame_control;
 	memset(&rx, 0, sizeof(rx));
@@ -3044,6 +3108,9 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 
 			rx.sta = prev_sta;
 			rx.sdata = prev_sta->sdata;
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	        printk(KERN_DEBUG "-- -- %s cycling over all known remote sta for address %pM \n", sdata->name, hdr->addr2);
+#endif
 			ieee80211_prepare_and_rx_handle(&rx, skb, false);
 
 			prev_sta = sta;
@@ -3053,6 +3120,9 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 			rx.sta = prev_sta;
 			rx.sdata = prev_sta->sdata;
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	        printk(KERN_DEBUG "-- -- %s LAST cycling over all known remote sta for address %pM \n", sdata->name, hdr->addr2);
+#endif
 			if (ieee80211_prepare_and_rx_handle(&rx, skb, true))
 				return;
 			goto out;
@@ -3080,6 +3150,10 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 			continue;
 		}
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	        printk(KERN_DEBUG "-- -- %s cycling over all interfaces attached \n", sdata->name);
+#endif
+
 		rx.sta = sta_info_get_bss(prev, hdr->addr2);
 		rx.sdata = prev;
 		ieee80211_prepare_and_rx_handle(&rx, skb, false);
@@ -3090,6 +3164,10 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 	if (prev) {
 		rx.sta = sta_info_get_bss(prev, hdr->addr2);
 		rx.sdata = prev;
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	        printk(KERN_DEBUG "-- -- %s LAST cycling over all interfaces attached \n", sdata->name);
+#endif
 
 		if (ieee80211_prepare_and_rx_handle(&rx, skb, true))
 			return;
@@ -3111,6 +3189,10 @@ void ieee80211_rx(struct ieee80211_hw *hw, struct sk_buff *skb)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 
 	WARN_ON_ONCE(softirq_count() == 0);
+
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "-- -- DRIVER Called ieee80211_rx - Entering MAC for RX mode -- \n");
+#endif
 
 	if (WARN_ON(status->band < 0 ||
 		    status->band >= IEEE80211_NUM_BANDS))
@@ -3202,6 +3284,9 @@ void ieee80211_rx(struct ieee80211_hw *hw, struct sk_buff *skb)
 
 	rcu_read_unlock();
 
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	    printk(KERN_DEBUG "-- RX Process at MAC -- Complete\n");
+#endif
 	return;
  drop:
 	kfree_skb(skb);
