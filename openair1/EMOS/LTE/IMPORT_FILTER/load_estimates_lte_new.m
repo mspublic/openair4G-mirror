@@ -1,4 +1,4 @@
-function [estimates, NFrames] = load_estimates_lte_new(filename, NFrames_max, decimation, is_eNb)
+function [H, estimates, NFrames] = load_estimates_lte_new(filename, NFrames_max, decimation, is_eNb)
 % 
 % EMOS Single User Import Filter
 %
@@ -93,8 +93,10 @@ NFrames = min(sum(NFrames_file), NFrames_max);
 
 if (is_eNb)
     estimates = repmat(fifo_dump_emos_struct_eNb,1,floor(NFrames/decimation));
+    H = complex(zeros(floor(NFrames/decimation),size(fifo_dump_emos_struct_eNb.channel,1)/2,size(fifo_dump_emos_struct_eNb.channel,2)));
 else
     estimates = repmat(fifo_dump_emos_struct_UE,1,floor(NFrames/decimation));
+    H = complex(zeros(floor(NFrames/decimation),size(fifo_dump_emos_struct_UE.channel,1)/2,size(fifo_dump_emos_struct_UE.channel,2)));
 end
 
 %gps_data = repmat(gps_data_struct,1,NFrames/100);
@@ -112,11 +114,10 @@ for n=1:NFiles
             estimates_tmp = binread(fid,fifo_dump_emos_struct_UE,1,4,'l'); 
         end
 
-	  printf("frame = %d\n",estimates_tmp.frame_tx);
-
         if (mod((k-1),decimation) == 0)
             estimates(((k-1)/decimation)+1) = estimates_tmp;
         end
+        H(k,:,:) = double(estimates_tmp.channel(1:2:end,:)) + 1j*double(estimates_tmp.channel(2:2:end,:));
         
         %read GPS data
         %if ((mod(k,NO_ESTIMATES_DISK)==0) && ~feof(fid))

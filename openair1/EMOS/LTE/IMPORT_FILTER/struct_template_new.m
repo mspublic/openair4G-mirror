@@ -9,13 +9,13 @@
 NUMBER_OF_OFDM_CARRIERS_EMOS = 512; 
 NUMBER_OF_USEFUL_CARRIERS_EMOS = 300;
 
-N_RB_UL_EMOS = 25
-N_PILOTS_DL_EMOS = 2  % ofdm symbols with pilots per slot
-N_PILOTS_UL_EMOS = 2  % ofdm symbols with pilots per subframe
-N_SLOTS_DL_EMOS = 12     % we take slots 0,1,10,11,12,13,14,15,16,17,18,19
-N_SUBFRAMES_UL_EMOS = 3     % we take subframes 2,3,4
-NB_ANTENNAS_TX_EMOS = 2
-NB_ANTENNAS_RX_EMOS = 2
+N_RB_UL_EMOS = 25;
+N_PILOTS_DL_EMOS = 2;  % ofdm symbols with pilots per slot
+N_PILOTS_UL_EMOS = 2;  % ofdm symbols with pilots per subframe
+N_SLOTS_DL_EMOS = 12;     % we take slots 0,1,10,11,12,13,14,15,16,17,18,19
+N_SUBFRAMES_UL_EMOS = 3;     % we take subframes 2,3,4
+NB_ANTENNAS_TX_EMOS = 2;
+NB_ANTENNAS_RX_EMOS = 2;
 
 
 MAX_DCI_PER_FRAME = 20;
