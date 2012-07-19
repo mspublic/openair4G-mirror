@@ -121,7 +121,9 @@ int main (int argc, char **argv)
 
   time(&starttime_tmp);
   localtime_r(&starttime_tmp,&starttime);
-  snprintf(dumpfile_name,1024,"/tmp/data_%d%0.2d%0.2d_%0.2d%0.2d%0.2d.EMOS",1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
+  snprintf(dumpfile_name,1024,"/tmp/%s_data_%d%02d%02d_%02d%02d%02d.EMOS",
+	   (eNB_flag==1) ? "eNB" : "UE",
+	   1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
 
   dumpfile_id = fopen(dumpfile_name,"w");
   if (dumpfile_id == NULL)
@@ -163,6 +165,7 @@ int main (int argc, char **argv)
 
   free(fifo2file_buffer);
   fclose(dumpfile_id);
+  close(fifo);
 
   return 0;
 
