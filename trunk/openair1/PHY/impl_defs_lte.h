@@ -452,6 +452,8 @@ typedef struct {
   u8 nb_antennas_tx;
   /// Number of Receive antennas in node
   u8 nb_antennas_rx;
+  /// Number of Transmit antennas in eNodeB
+  u8 nb_antennas_tx_eNB;
   /// Pointer to twiddle factors for FFT
   s16 *twiddle_fft;
   ///pointer to twiddle factors for IFFT
@@ -608,7 +610,11 @@ typedef struct {
   /// Pointers to llr vectors (2 TBs)
   s16 *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
-  u8 log2_maxh;
+  s16 log2_maxh;
+  /// LLR shifts for subband scaling
+  u8 *llr_shifts;
+  /// Pointer to LLR shifts
+  u8 *llr_shifts_p;
   /// Pointers to llr vectors (128-bit alignment)
   s16 **llr128;  
   //u32 *rb_alloc;
