@@ -342,21 +342,24 @@ void _makeOutputDir(options_t *opts)
     FILE *controlFile;
 
     status=mkdir ("testResults",S_IRWXU | S_IRWXG | S_IRWXO);
-  //  status=chdir("testResults");
+    status=chdir("testResults");
     sprintf(auxDir,"%s",opts->folderName);
-    status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);
-
-//status=chdir(auxDir);
+    //status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);
+	//status=chdir(auxDir);
     
     sprintf(auxFile,"OutpuSimulation_%df_%dI_%sdB_%dch_%d.m",opts->nframes,opts->nInterf,opts->interfLevels,opts->channel_model,opts->testNumber);
-    sprintf(auxFile,"xx.m");
+    sprintf(auxFile,"Bler_%d.m",opts->testNumber);
 
     opts->outputFile =fopen(auxFile,"w");
     
-      sprintf(auxFile,"OuputBler_%d.m",opts->testNumber);
+    sprintf(auxFile,"OuputBlerRound_%d.m",opts->testNumber);
     
     opts->outputBler =fopen(auxFile,"w");
-    opts->outputBer =fopen("OuputBER.svn","w");
+    sprintf(auxFile,"OuputBER_%d.m",opts->testNumber);
+    opts->outputBer =fopen(auxFile,"w");
+    
+    sprintf(auxFile,"Throughput_%d.m",opts->testNumber);
+    opts->outputTrougput =fopen(auxFile,"w");
 
     controlFile=fopen("ControlTest.txt","w");
 

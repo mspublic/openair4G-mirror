@@ -55,6 +55,7 @@ typedef struct {
     ///Pointer  to the output file errors and trials for each SNR 
     FILE *outputBler;
     FILE *outputBer;
+    FILE *outputTrougput;    
     
     u8 num_rounds;
     u8 subframe;
