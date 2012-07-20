@@ -1095,7 +1095,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     ue_pdsch_vars_flp[eNB_id]->llr128 = (short **)malloc16(sizeof(short **));
   }
   else { //abstraction == 1
-    phy_vars_ue->sinr_dB = (double*) malloc16(frame_parms->N_RB_DL*2*sizeof(double));
+    phy_vars_ue->sinr_dB = (double*) malloc16(frame_parms->N_RB_DL*12*sizeof(double));
   }
 
   phy_vars_ue->init_averaging = 1;
