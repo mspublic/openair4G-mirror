@@ -181,7 +181,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
 	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB - (thermal_noise + ue_data->rx_noise_level));
 
     //printf ("coupling factor is %lf\n", coupling); 
-    for (count = 0; count < (2 * nb_rb); count++) {
+    for (count = 0; count < (12 * nb_rb); count++) {
       sinr_dB[count] = enb_data->tx_power_dBm 
 	+ eNB2UE->path_loss_dB
 	- (thermal_noise + ue_data->rx_noise_level)  
@@ -204,7 +204,7 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
   thermal_noise = -174 + 10*log10(eNB2UE->BW*1e6); //value in dBm 
 
-  for (count = 0; count < 2 * nb_rb; count++) {
+  for (count = 0; count < 12 * nb_rb; count++) {
     sir = enb_data->tx_power_dBm 
       + eNB2UE->path_loss_dB
       - (thermal_noise + ue_data->rx_noise_level)  

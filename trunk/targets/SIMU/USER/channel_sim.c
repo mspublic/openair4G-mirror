@@ -160,7 +160,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	for (i=0;i<eNB2UE[eNB_id][UE_id]->nb_taps;i++)
 	  printf("eNB2UE[%d][%d]->a[0][%d] = (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->a[0][i].x,eNB2UE[eNB_id][UE_id]->a[0][i].y);
 	*/
-	freq_channel(eNB2UE[eNB_id][UE_id], frame_parms->N_RB_DL,51);
+	freq_channel(eNB2UE[eNB_id][UE_id], frame_parms->N_RB_DL,frame_parms->N_RB_DL*12+1);
       }
 
       // find out which eNB the UE is attached to
@@ -206,14 +206,12 @@ void do_DL_sig(double **r_re0,double **r_im0,
       }
       //dlsch_abstraction(PHY_vars_UE_g[UE_id]->sinr_dB, rb_alloc, 8);
       // fill in perfect channel estimates
-      channel_desc_t *desc1;
+      channel_desc_t *desc1 = eNB2UE[att_eNB_id][UE_id];
       s32 **dl_channel_est = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0];
-      s16 nb_samples=301;
       //      double scale = pow(10.0,(enb_data[att_eNB_id]->tx_power_dBm + eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
       double scale = pow(10.0,(PHY_vars_eNB_g[att_eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower+eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
       LOG_D(OCM,"scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
-      desc1 = eNB2UE[att_eNB_id][UE_id];
-      freq_channel(desc1,frame_parms->N_RB_DL,nb_samples);
+      // freq_channel(desc1,frame_parms->N_RB_DL,nb_samples);
       //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
       //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
       int count,count1,a_rx,a_tx;
