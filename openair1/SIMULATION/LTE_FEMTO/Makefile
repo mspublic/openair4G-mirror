@@ -63,9 +63,9 @@ CFLAGS += -DXFORMS
 LFLAGS += -lforms
 endif
 
-#ifdef PERFECT_CE
+ifdef PERFECT_CE
 CFLAGS += -DPERFECT_CE
-#endif
+endif
 
 ifdef BIT8_TX
 CFLAGS += -DBIT8_TX
@@ -130,7 +130,7 @@ all:  femtosim
 #$(OBJ)
 femtosim :   femtoUtils.o femtosim.c	
 	@echo "Compiling femtosim.c"
-	@$(CC) -o femtosim femtosim.c  femtoUtils.o $(CFLAGS) $(OBJ) $(LFLAGS) -DPERFECT_CE #-static -L/usr/lib/libblas #-lm -lblas
+	@$(CC) -o femtosim femtosim.c  femtoUtils.o $(CFLAGS) $(OBJ) $(LFLAGS)  #-static -L/usr/lib/libblas #-lm -lblas
 	
 
 
