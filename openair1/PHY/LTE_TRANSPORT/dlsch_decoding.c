@@ -564,7 +564,7 @@ u32  dlsch_decoding_abstraction(double *dlsch_MIPB,
 
  int dlsch_abstraction_EESM(double* sinr_dB, u8 TM, u32 rb_alloc[4], u8 mcs) {
 
-  int index;
+   int index,ii;
   double sinr_eff = 0;
   int rb_count = 0;
   int offset;
@@ -573,15 +573,18 @@ u32  dlsch_decoding_abstraction(double *dlsch_MIPB,
   for (offset = 0; offset <= 24; offset++) {
     if (rb_alloc[0] & (1<<offset)) {
       rb_count++;
-      sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[offset*2])))/beta1_dlsch[TM][mcs]);
-      //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
-
-      sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta1_dlsch[TM][mcs]);
-      //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
+      for(ii=0;ii<12;ii++)
+	{
+	  sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[(offset*12)+ii])))/beta1_dlsch[TM][mcs]);
+	  //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
+	  
+	  //  sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta1_dlsch[TM][mcs]);
+	  //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
+	}
     }
   }       
   //printf("sinr_eff1 = %f\n",sinr_eff);
-  sinr_eff =  -beta2_dlsch[TM][mcs]*log((sinr_eff)/(2*rb_count));
+  sinr_eff =  -beta2_dlsch[TM][mcs]*log((sinr_eff)/(12*rb_count));
   sinr_eff = 10 * log10(sinr_eff);
   LOG_I(OCM,"sinr_eff2 = %f\n",sinr_eff);
 
