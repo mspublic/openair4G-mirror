@@ -73,12 +73,12 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
 #ifdef DEBUG_DLSCH_FREE
 	msg("Freeing dlsch process %d (%p)\n",i,dlsch->harq_processes[i]);
 #endif
-	/*if (dlsch->harq_processes[i]->b) {
-	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
+	if (dlsch->harq_processes[i]->b) {
+        free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
 #ifdef DEBUG_DLSCH_FREE
 	  msg("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
 #endif
-}*/
+    }
 	if (dlsch->harq_processes[i]->c) {
 #ifdef DEBUG_DLSCH_FREE
 	  msg("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
@@ -117,12 +117,12 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
       //printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
       if (dlsch->harq_processes[i]) {
-	bzero(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
-    /*	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
-	if (!dlsch->harq_processes[i]->b) {
-	  msg("Can't get b\n");
-	  exit_flag=1;
-      }*/
+          bzero(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
+          dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
+          if (!dlsch->harq_processes[i]->b) {
+              msg("Can't get b\n");
+              exit_flag=1;
+          }
 	if (abstraction_flag==0) {
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
 	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
@@ -223,7 +223,8 @@ int dlsch_encoding(unsigned char *a,
     a[2+(A>>3)] = ((u8*)&crc)[0];
 
     dlsch->harq_processes[harq_pid]->B = A+24;
-    dlsch->harq_processes[harq_pid]->b = a;
+    //    dlsch->harq_processes[harq_pid]->b = a;
+    memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
     if (lte_segmentation(dlsch->harq_processes[harq_pid]->b,
 			 dlsch->harq_processes[harq_pid]->c,
 			 dlsch->harq_processes[harq_pid]->B,
