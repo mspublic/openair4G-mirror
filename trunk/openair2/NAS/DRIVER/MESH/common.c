@@ -209,6 +209,14 @@ void nas_COMMON_receive(u16 dlen,
 	
 #ifdef NAS_ADDRESS_FIX
 
+#ifdef NAS_DEBUG_RECEIVE
+  printk("NAS_COMMON_RECEIVE: dumping the packet before the csum recalculation\n",skb->len);
+  for (i=0;i<skb->len;i++)
+    printk("%2x ",((unsigned char *)(skb->data))[i]); 
+  printk("\n");
+#endif //NAS_DEBUG_RECEIVE
+
+
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
 	network_header->check = 0;
 	network_header->check = ip_fast_csum((unsigned char *) network_header,
@@ -239,20 +247,13 @@ void nas_COMMON_receive(u16 dlen,
 
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
 	    cksum  = (u16*)&(((struct tcphdr*)((network_header + (network_header->ihl<<2))))->check);
-	    check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));
 	    //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));	    
-	    //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_TCP, ~(*cksum));	    
 #else
 	    cksum  = (u16*)&(((struct tcphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
-	    check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,0,0, ~(*cksum));
 	    //check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
-	    // check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, dlen, IPPROTO_TCP, ~(*cksum));
 #endif
 
-	    *cksum = csum_tcpudp_magic(~osaddr, ~odaddr, 0, 0, ~check);
-	    //*cksum = csum_tcpudp_magic(~osaddr, ~odaddr, dlen, IPPROTO_TCP, ~check);
 #ifdef NAS_DEBUG_RECEIVE
-
 	    printk("[NAS][COMMON] Inst %d TCP packet calculated CS %x, CS = %x (before), SA (%x)%x, DA (%x)%x\n", 
 		   inst, 
 		   network_header->check,
@@ -261,30 +262,26 @@ void nas_COMMON_receive(u16 dlen,
 		   ((struct iphdr *)skb->data)->saddr,
 		   odaddr,
 		   ((struct iphdr *)skb->data)->daddr);
+#endif 
+	    check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,0,0, ~(*cksum));
+	    *cksum = csum_tcpudp_magic(~osaddr, ~odaddr, 0, 0, ~check);
 	    
+#ifdef NAS_DEBUG_RECEIVE
 	    printk("[NAS][COMMON] Inst %d TCP packet NEW CS %x\n",
 		   inst,
 		   *cksum);
 #endif
 	break;
-
+	
 	  case IPPROTO_UDP:
 
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
 	    cksum  = (u16*)&(((struct udphdr*)((network_header + (network_header->ihl<<2))))->check);
-	    check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));  
 	    // check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
-	    //check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_UDP, ~(*cksum));
 #else		
 	    cksum  = (u16*)&(((struct udphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
-	    check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, 0,0, ~(*cksum));
 	    //check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
-	    //check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, dlen, IPPROTO_UDP, ~(*cksum));
 #endif 
-	    *cksum= csum_tcpudp_magic(~osaddr, ~odaddr,0,0, ~check);
-	    //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,udp_hdr(skb)->len, IPPROTO_UDP, ~check);
-	    //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,dlen, IPPROTO_UDP, ~check);
-
 #ifdef NAS_DEBUG_RECEIVE
 	    printk("[NAS][COMMON] Inst %d UDP packet CS = %x (before), SA (%x)%x, DA (%x)%x\n", 
 		   inst, 
@@ -293,11 +290,16 @@ void nas_COMMON_receive(u16 dlen,
 		   ((struct iphdr *)skb->data)->saddr,
 		   odaddr,
 		   ((struct iphdr *)skb->data)->daddr);
-		
+#endif	
+	    check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, 0,0, ~(*cksum));
+	    *cksum= csum_tcpudp_magic(~osaddr, ~odaddr,0,0, ~check);
+	    //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,udp_hdr(skb)->len, IPPROTO_UDP, ~check);
+
+#ifdef NAS_DEBUG_RECEIVE
 	    printk("[NAS][COMMON] Inst %d UDP packet NEW CS %x\n",
 		   inst,
 		   *cksum);
-#endif		
+#endif	    	
 	    //		if ((check = *cksum) != 0) {
 	    // src, dst, len, proto, sum 
 
