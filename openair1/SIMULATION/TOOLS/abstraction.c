@@ -8,11 +8,14 @@
 #include "PHY/TOOLS/defs.h"
 #include "defs.h"
 
-/* // NEW code with lookup table for sin/cos based on delay profile (TO BE TESTED)
+// NEW code with lookup table for sin/cos based on delay profile (TO BE TESTED)
 
 double **cos_lut=NULL,**sin_lut=NULL;
 
+
+//#if 1
 void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
+
 
   double delta_f,freq;  // 90 kHz spacing
   double delay;
@@ -23,44 +26,63 @@ void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
   cos_lut = (double **)malloc(n_samples*sizeof(double*));
   sin_lut = (double **)malloc(n_samples*sizeof(double*));
+  
+
 
   delta_f = nb_rb*180000/(n_samples-1);
 
   for (f=0;f<n_samples;f++) {
     freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
+
     cos_lut[f] = (double *)malloc((int)desc->nb_taps*sizeof(double));
     sin_lut[f] = (double *)malloc((int)desc->nb_taps*sizeof(double));
-    for (l=0;l<(int)desc->nb_taps;l++) {
+
+
+  for (l=0;l<(int)desc->nb_taps;l++) {
       cos_lut[f][l] = cos(2*M_PI*freq*desc->delays[l]);
       sin_lut[f][l] = sin(2*M_PI*freq*desc->delays[l]);
+	//printf("values cos:%d, sin:%d\n", cos_lut[f][l], sin_lut[f][l]);
+
     }
   }
-
 }
 
+
+
+#if 0
 void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
 
   s16 f;
   u8 aarx,aatx,l;
+  double *clut,*slut;
 
-  for (f=0;f<n_samples;f++) {
+ // printf("no of samples:%d,",n_samples);
+ // printf("no of taps:%d,",(int)desc->nb_taps);
+  
+  for (f=-n_samples/2;f<n_samples/2;f++) {
+	clut = cos_lut[n_samples/2+f];
+        slut = sin_lut[n_samples/2+f];
+        
       for (aarx=0;aarx<desc->nb_rx;aarx++) {
 	for (aatx=0;aatx<desc->nb_tx;aatx++) {
 	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].x=0.0;
 	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].y=0.0;
 	  for (l=0;l<(int)desc->nb_taps;l++) {
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos_lut[f][l]+
-								  desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin_lut[f][l]);
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin_lut[f][l]+
-								  desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos_lut[f][l]);
+		
+	    desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*clut[l]+
+								  desc->a[l][aarx+(aatx*desc->nb_rx)].y*slut[l]);
+	    desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*slut[l]+
+								  desc->a[l][aarx+(aatx*desc->nb_rx)].y*clut[l]);
 	  }
 	}
       }
   }
 }
 
-*/
+#else
+
+
 
 void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
@@ -87,6 +109,7 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin(2*M_PI*freq*delay));
 	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*delay)+
 						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos(2*M_PI*freq*delay));
+
 	  }
 	  	  	  	// printf("chF(%d) => (%f,%f)\n",n_samples/2+f,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
 	}
@@ -94,6 +117,7 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
   }
 }
 
+#endif
 double compute_pbch_sinr(channel_desc_t *desc,
 			 channel_desc_t *desc_i1, 
 			 channel_desc_t *desc_i2,
