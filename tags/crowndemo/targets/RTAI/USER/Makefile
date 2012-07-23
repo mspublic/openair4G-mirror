@@ -56,14 +56,14 @@ ifdef CBMIMO1
 CFLAGS += -DFW2011 -DBIT8_TX -DCBMIMO1
 else
 #only for EXPRESS MIMO
-CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=230
+CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=275 #560 with PXB
 endif
 
 ifeq ($(HARD_RT),1)
 CFLAGS += -DHARD_RT
 endif
 
-ifdef EMOS
+ifeq ($(EMOS),1)
 CFLAGS += -DEMOS
 endif
 
@@ -122,6 +122,9 @@ run_UE0calibbyp: synctest
 
 run_UE1: synctest
 	rtai-load UE1 --verbose
+
+run_UE2: synctest
+	rtai-load UE2 --verbose
 
 run_eNB0: synctest
 	rtai-load eNB0 --verbose
