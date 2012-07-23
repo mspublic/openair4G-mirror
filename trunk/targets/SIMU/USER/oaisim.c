@@ -90,7 +90,6 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][16];
 
-
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = {
     {"custom", 0},
@@ -940,6 +939,7 @@ main (int argc, char **argv)
 
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
+
   if (oai_emulation.info.omv_enabled == 1) {
     
     if(pipe(pfd) == -1)
@@ -1066,6 +1066,9 @@ main (int argc, char **argv)
     }
   }
 
+  if (abstraction_flag==1)
+    init_freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
+  //freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
   number_of_cards = 1;
 
   openair_daq_vars.rx_rf_mode = 1;

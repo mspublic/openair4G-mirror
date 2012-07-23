@@ -28,7 +28,7 @@ typedef struct {
   u8 nb_taps; 
   ///linear amplitudes of taps
   double *amps; 
-  ///Delays of the taps. length(delays)=nb_taps. Has to be between 0 and t_max. 
+  ///Delays of the taps in mus. length(delays)=nb_taps. Has to be between 0 and Td. 
   double *delays; 
   ///length of impulse response. should be set to 11+2*bw*t_max 
   u8 channel_length; 
@@ -312,7 +312,9 @@ double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
 double uniformrandom(void);
 void freq_channel(channel_desc_t *desc,u16 nb_rb, s16 n_samples);
+void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples);
 u8 multipath_channel_nosigconv(channel_desc_t *desc);
+
 
 /**@} */
 /**@} */
