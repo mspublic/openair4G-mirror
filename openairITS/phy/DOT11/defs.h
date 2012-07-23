@@ -1,6 +1,8 @@
 #ifndef __DEFS_H__
 #define __DEFS_H__
 
+#include <stdint.h>
+
 #define MAX_SDU_SIZE 4095
 #define AMP 768
 
@@ -26,6 +28,16 @@ typedef struct {
   int service;
 } TX_VECTOR_t;
 
+typedef enum {
+  BUSY = 0,
+  IDLE = 1
+} CHANNEL_STATUS_t;
+
+typedef TX_VECTOR_t RX_VECTOR_t;
+
 int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,uint8_t *data_ind);
 int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_ind);
+
+CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *rx_frame,int rx_frame_length,int rx_frame_pos);
+int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int frame_length,int rx_offset,int (*wait(int,int)));
 #endif
