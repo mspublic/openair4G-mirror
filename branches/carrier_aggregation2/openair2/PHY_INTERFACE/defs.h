@@ -28,7 +28,7 @@ ________________________________________________________________*/
 typedef struct
   {
     /// Pointer function that reads params for the MAC interface - this function is called when an IOCTL passes parameters to the MAC
-    void (*macphy_init)(void);
+    int (*macphy_init)(void);
 
     /// Pointer function that stops the low-level scheduler due an exit condition        
     void (*macphy_exit)(const char *);          
@@ -38,7 +38,7 @@ typedef struct
     void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);
 
     /// Fill random access response sdu, passing timing advance
-    u16 (*fill_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
+    u16 (*fill_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 N_RB_UL);
 
     /// Terminate the RA procedure upon reception of l3msg on ulsch
     void (*terminate_ra_proc)(u8 Mod_id,u32 frame,u16 UE_id, u8 *l3msg);
@@ -66,17 +66,21 @@ typedef struct
 
     /// Configure Common PHY parameters from SIB1
     void (*phy_config_sib1_eNB)(u8 Mod_id,
+				u8 CC_id,
 				TDD_Config_t *tdd_config,
 				u8 SIwindowsize,
 				u16 SIperiod);
     
     /// Configure Common PHY parameters from SIB2
     void (*phy_config_sib2_eNB)(u8 Mod_id,
+				u8 CC_id,
 			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
     /// PHY-Config-Dedicated eNB
-    void (*phy_config_dedicated_eNB)(u8 Mod_id,u16 rnti,
-		      struct PhysicalConfigDedicated *physicalConfigDedicated);
+    void (*phy_config_dedicated_eNB)(u8 Mod_id,
+				     u8 CC_id,
+				     u16 rnti,
+				     struct PhysicalConfigDedicated *physicalConfigDedicated);
 
     /// PHY-Config-SCell-Dedicated UE
     void (*phy_config_dedicated_scell_eNB)(u8 Mod_id,u16 rnti,
@@ -144,25 +148,25 @@ typedef struct
     u16 (*get_TBS)(u8 mcs, u16 nb_rb);
 
     /// Function to retrieve the HARQ round index for a particular UL/DLSCH and harq_pid
-    void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
+    int (*get_ue_active_harq_pid)(u8 Mod_id, u8 CC_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
 
     /// Function to retrieve number of CCE
-    u16 (*get_nCCE_max)(u8 Mod_id);
+    u16 (*get_nCCE_max)(u8 Mod_id, u8 CC_id);
 
     /// Function to retrieve number of PRB in an rb_alloc
-    u16 (*get_nb_rb)(u8 ra_header,u32 rb_alloc);
+    u32 (*get_nb_rb)(u8 ra_header,u32 rb_alloc);
 
     /// Function to retrieve transmission mode for UE
     u8 (*get_transmission_mode)(u16 Mod_id,u16 rnti);
 
     /// Function to retrieve rb_alloc bitmap from dci rballoc field and VRB type
-    u32 (*get_rballoc)(u8 vrb_type,u8 rb_alloc_dci);
+    u32 (*get_rballoc)(u8 vrb_type,u16 rb_alloc_dci);
 
     /// Function for UE MAC to retrieve current PHY connectivity mode (PRACH,RA_RESPONSE,PUSCH)
     UE_MODE_t (*get_ue_mode)(u8 Mod_id,u8 eNB_index);
 
     /// Function for UE MAC to retrieve measured Path Loss
-    u16 (*get_PL)(u8 Mod_id,u8 eNB_index);
+    s16 (*get_PL)(u8 Mod_id,u8 eNB_index);
 
     /// Function for UE/eNB MAC to retrieve number of PRACH in TDD
     u8 (*get_num_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms);
@@ -171,7 +175,7 @@ typedef struct
     u8 (*get_fid_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 
     /// Function for eNB MAC to retrieve subframe direction
-    lte_subframe_t (*get_subframe_direction)(u8 Mod_id, u8 subframe);
+    lte_subframe_t (*get_subframe_direction)(u8 Mod_id, u8 CC_id, u8 subframe);
 
     // MAC Helper functions
     /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (Po_NOMINAL_PUSCH parameter)
@@ -181,7 +185,7 @@ typedef struct
     s8 (*get_deltaP_rampup)(u8 Mod_id);
 
 
-    LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
+    LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u8 CC_id, u16 rnti);
 
     unsigned char is_cluster_head;
     unsigned char is_primary_cluster_head;

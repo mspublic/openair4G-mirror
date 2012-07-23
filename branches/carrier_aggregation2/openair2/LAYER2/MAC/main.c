@@ -129,7 +129,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 
 
 /***********************************************************************/
-int mac_top_init(){
+int mac_top_init(void){
 /***********************************************************************/
   unsigned char  Mod_id,i,j;
   RA_TEMPLATE *RA_template;
@@ -317,15 +317,15 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_init_global_param();
 
 
-  mac_xface->macphy_init=(void (*)(void))mac_top_init;
+  mac_xface->macphy_init = mac_top_init;
 #ifndef USER_MODE
   mac_xface->macphy_exit = openair_sched_exit;
 #else
   mac_xface->macphy_exit=(void (*)(const char*)) exit;
 #endif
   LOG_I(MAC,"[MAIN] init eNB MAC functions  \n");
-  mac_xface->eNB_dlsch_ulsch_scheduler = (void *)eNB_dlsch_ulsch_scheduler;
-  mac_xface->get_dci_sdu               = (DCI_PDU* (*)(u8,u8))get_dci_sdu;
+  mac_xface->eNB_dlsch_ulsch_scheduler = eNB_dlsch_ulsch_scheduler;
+  mac_xface->get_dci_sdu               = get_dci_sdu;
   mac_xface->fill_rar                  = fill_rar;
   mac_xface->terminate_ra_proc         = terminate_ra_proc;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;
@@ -334,10 +334,10 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
   mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
-  mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;
-  mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
-  mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
-  mac_xface->get_SB_size	      	   = Get_SB_size;
+  mac_xface->get_transmission_mode     = get_transmission_mode;
+  mac_xface->get_rballoc               = get_rballoc;
+  mac_xface->get_nb_rb                 = conv_nprb;
+  mac_xface->get_SB_size	       = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
   mac_xface->ra_failed                 = ra_failed;
@@ -346,7 +346,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
   mac_xface->ue_get_SR                 = ue_get_SR;
-  mac_xface->ue_get_sdu                = (void *)ue_get_sdu;
+  mac_xface->ue_get_sdu                = ue_get_sdu;
   mac_xface->ue_get_rach               = ue_get_rach;
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;
@@ -366,7 +366,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_nCCE_max           = get_nCCE_max;
   mac_xface->get_ue_mode            = get_ue_mode;
   mac_xface->phy_config_sib1_eNB    = phy_config_sib1_eNB;
-  mac_xface->phy_config_sib1_ue    = phy_config_sib1_ue;
+  mac_xface->phy_config_sib1_ue     = phy_config_sib1_ue;
 
   mac_xface->phy_config_sib2_eNB        = phy_config_sib2_eNB;
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
@@ -375,7 +375,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 
   mac_xface->phy_config_dedicated_scell_eNB = phy_config_dedicated_scell_eNB;
-  mac_xface->phy_config_dedicated_scell_ue = phy_config_dedicated_scell_ue;
+  mac_xface->phy_config_dedicated_scell_ue  = phy_config_dedicated_scell_ue;
 
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
 
