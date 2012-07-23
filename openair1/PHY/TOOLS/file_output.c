@@ -77,6 +77,12 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
 	fprintf(fp,"%g + j*(%g)\n",((double *)data)[i], ((double *)data)[i+1]);
       }
       break;
+
+    case 9: // real unsigned 8-bit
+      for (i=0;i<length;i+=dec) {
+	   fprintf(fp,"%d\n",((unsigned char *)data)[i]);
+      }
+      break;
        
     }
 
