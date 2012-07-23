@@ -15,6 +15,8 @@
 
 #include "PHY/TOOLS/twiddle64.h"
 
+#include "UTIL/LOG/log.h"
+
 #define FRAME_LENGTH_SAMPLES_MAX 100000
 
 uint16_t rev64[64];
@@ -41,17 +43,16 @@ int main(int argc, char **argv) {
   SCM_t channel_model=AWGN;
   uint32_t sdu_length_samples;
   TX_VECTOR_t tx_vector;
-  int errors=0;
+  int errors=0,misdetected_errors=0,signal_errors=0;
   int symbols=0;
-  int rx_offset = 999;
-  uint8_t data_ind[4095+2+1];
+  int tx_offset = 99,rx_offset;
+  RX_VECTOR_t *rxv;
+  uint8_t *data_ind,*data_ind_rx;
 
-  init_fft(64,6,rev64);
-  init_interleavers();
-  ccodedot11_init();
-  init_crc32();
+  data_ind    = (uint8_t*)malloc(4095+2+1);
+  data_ind_rx = (uint8_t*)malloc(4095+2+1);
 
-  tx_vector.rate=4;
+  tx_vector.rate=1;
   tx_vector.sdu_length=256;
   tx_vector.service=0;
 
@@ -60,11 +61,20 @@ int main(int argc, char **argv) {
   randominit(0);
   set_taus_seed(0);
 
+  // Basic initializations
+  init_fft(64,6,rev64);
+  init_interleavers();
+  ccodedot11_init();
+  ccodedot11_init_inv();
+  phy_generate_viterbi_tables();
+
+  init_crc32();
 
   data_ind[0] = 0;
   data_ind[1] = 0;
 
-  while ((c = getopt (argc, argv, "hag:n:s:S:z:")) != -1) {
+
+  while ((c = getopt (argc, argv, "hag:n:s:S:z:r:p:")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -112,6 +122,20 @@ int main(int argc, char **argv) {
 	exit(-1);
       }
       break;
+    case 'p':
+      tx_vector.sdu_length = atoi(optarg);
+      if (atoi(optarg)>4095) {
+	printf("Illegal sdu_length %d\n",tx_vector.sdu_length);
+	exit(-1);
+      }
+      break;
+    case 'r':
+      tx_vector.rate = atoi(optarg);
+      if (atoi(optarg)>7) {
+	printf("Illegal rate %d\n",tx_vector.rate);
+	exit(-1);
+      }
+      break;
     case 'n':
       n_frames = atoi(optarg);
       break;
@@ -149,9 +173,10 @@ int main(int argc, char **argv) {
 
   if (n_frames==1)
     snr1 = snr0+.2;
-
+  else
+    snr1 = snr0+5;
   for (i=0;i<tx_vector.sdu_length;i++)
-    data_ind[i+2] = taus();  // randomize packet
+    data_ind[i+2] = i;//taus();  // randomize packet
   data_ind[tx_vector.sdu_length+2+4]=0;  // Tail byte
 
   // compute number of OFDM symbols in DATA period
@@ -165,8 +190,8 @@ int main(int argc, char **argv) {
 
   txdata = (uint32_t*)memalign(16,sdu_length_samples*sizeof(uint32_t));
   for (i=0;i<n_rx;i++) {
-    rxdata[i] = (uint32_t*)memalign(16,FRAME_LENGTH_SAMPLES_MAX*sizeof(uint32_t));
-    bzero(rxdata[i],FRAME_LENGTH_SAMPLES_MAX*sizeof(uint32_t));
+    rxdata[i] = (uint32_t*)memalign(16,(FRAME_LENGTH_SAMPLES_MAX+1280)*sizeof(uint32_t));
+    bzero(rxdata[i],(FRAME_LENGTH_SAMPLES_MAX+1280)*sizeof(uint32_t));
   }
   s_re[0] = (double *)malloc(sdu_length_samples*sizeof(double));
   bzero(s_re[0],sdu_length_samples*sizeof(double));
@@ -193,20 +218,18 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  
+
   phy_tx_start(&tx_vector,txdata,0,data_ind);
 
   tx_lev = signal_energy((int32_t*)txdata,320);
   tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
-    
-  write_output("txsig0.m","txs", txdata,sdu_length_samples,1,1);
+
+  //  write_output("txsig0.m","txs", txdata,sdu_length_samples,1,1);
 
     // multipath channel
 
   for (i=0;i<sdu_length_samples;i++) {
     s_re[0][i] = (double)(((short *)txdata)[(i<<1)]);
-    if (i<128)
-      printf("i %d: s_re %d => %f\n",i,((short *)txdata)[(i<<1)],s_re[0][i]);
     s_im[0][i] = (double)(((short *)txdata)[(i<<1)+1]);
   }
   
@@ -214,8 +237,10 @@ int main(int argc, char **argv) {
 
     printf("n_frames %d SNR %f\n",n_frames,SNR);
     errors=0;
+    misdetected_errors=0;
+    signal_errors=0;
     for (trial=0; trial<n_frames; trial++) {
-      
+      //      printf("Trial %d (errors %d), sdu_length_samples %d\n",trial,errors,sdu_length_samples);
       sigma2_dB = 10*log10((double)tx_lev) - SNR;
       if (n_frames==1)
 	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
@@ -227,7 +252,7 @@ int main(int argc, char **argv) {
 
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			sdu_length_samples,0);
-      
+
       if (n_frames==1) {
 	printf("rx_level data symbol %f, tx_lev %f\n",
 	       10*log10(signal_energy_fp(r_re,r_im,1,80,0)),
@@ -238,29 +263,65 @@ int main(int argc, char **argv) {
 	for (i=0; i<(sdu_length_samples+100); i++) {
 
 	  
-	  ((short*)&rxdata[aa][rx_offset])[(i<<1)]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  ((short*)&rxdata[aa][rx_offset])[1+(i<<1)] = (short) ((r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*)&rxdata[aa][tx_offset])[(i<<1)]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*)&rxdata[aa][tx_offset])[1+(i<<1)] = (short) ((r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 
 	  //	  if (i<128)
 	  //	    printf("i%d : rxdata %d, txdata %d\n",i,((short *)rxdata[aa])[rx_offset+(i<<1)],((short *)txdata)[i<<1]);
 	}
 	
-	for (i=0;i<rx_offset;i++) {
+	for (i=0;i<tx_offset;i++) {
 	  ((short*) rxdata[aa])[(i<<1)]   = (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	  ((short*) rxdata[aa])[1+(i<<1)] = (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	}	
-	for (i=(rx_offset+sdu_length_samples+100);i<FRAME_LENGTH_SAMPLES_MAX;i++) {
+	for (i=(tx_offset+sdu_length_samples+100);i<FRAME_LENGTH_SAMPLES_MAX;i++) {
 	  ((short*) rxdata[aa])[(i<<1)]   = (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	  ((short*) rxdata[aa])[1+(i<<1)] = (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	}	
 	
       }
       if (n_frames==1) {
-	write_output("rxsig0.m","rxs", &rxdata[0][0],rx_offset+sdu_length_samples,1,1);
+	write_output("rxsig0.m","rxs", &rxdata[0][0],tx_offset+sdu_length_samples,1,1);
+      }
+    
+      for (i=0;i<FRAME_LENGTH_SAMPLES_MAX;i+=640) {
+	//	printf("Calling initial sync: i %d,rxdata %p\n",i,&rxv,rxdata);
+	if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,i) == BUSY)) {
+	  //	  printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
+	  if (rxv) {
+	    //	    printf("Rate %d, SDU_LENGTH %d\n",rxv->rate,rxv->sdu_length);
+	    if ( (rxv->rate != tx_vector.rate)||(rxv->sdu_length != tx_vector.sdu_length))
+	      signal_errors++;
+	    
+	    else {
+	      memset(data_ind_rx,0,rxv->sdu_length+4+2+1);
+	      if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,NULL)) {
+		for (i=0;i<rxv->sdu_length+6;i++) {
+		  if (data_ind[i]!=data_ind_rx[i]) {
+		    //		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
+		    misdetected_errors++;
+		    errors++;
+		    break;
+		  }
+		}
+	      }
+	      else {
+		//	      printf("Bad CRC\n");
+		errors++;
+	      }
+	    }
+	  }
+	  break;
+	}
+	//	if (ret == BUSY)
       }
     }
-    printf("SNR %f dB: errors %d/%d\n",SNR,errors,n_frames);
+    printf("SNR %f dB: errors %d/%d, misdetected errors %d/%d,signal_errors %d/%d\n",SNR,errors,n_frames-signal_errors,misdetected_errors,n_frames-signal_errors,signal_errors,n_frames);
   }
+
+  free(data_ind);
+  free(data_ind_rx);
+  //  free_channel_desc_scm(ch);
 
   free(txdata);
   for (i=0;i<n_rx;i++) {
