@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "building ctags ..."
+ctags -e -R --exclude=/openair2/RRC/LITE/MESSAGES --exclude=openair3 --exclude=openair1/DOCS --exclude=openair2/DOCS --exclude=openair2/RRC/CELLULAR --exclude=openair2/NAS/DRIVER/CELLULAR --exclude=openair2/SIMULATION
