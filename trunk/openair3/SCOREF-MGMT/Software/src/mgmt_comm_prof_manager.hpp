@@ -43,6 +43,7 @@
 #define MGMT_COMM_PROF_MANAGER_HPP_
 
 #include "mgmt_gn_datatypes.hpp"
+#include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 #include <string>
 #include <map>
@@ -58,6 +59,30 @@ struct CommunicationProfileItem {
 	u_int8_t network;
 	u_int8_t access;
 	u_int8_t channel;
+
+	/**
+	 * Constructor for CommunicationProfileItem to
+	 * initialise variables
+	 */
+	CommunicationProfileItem() {
+		id = 0;
+		transport = 0;
+		network = 0;
+		access = 0;
+		channel = 0;
+	}
+
+	string toString() {
+		stringstream ss;
+
+		ss << "[id:" << id
+			<< " transport:" << Util::getBinaryRepresentation(transport)
+			<< " network:" << Util::getBinaryRepresentation(network)
+			<< " access:" << Util::getBinaryRepresentation(access)
+			<< " channel:" << Util::getBinaryRepresentation(channel) << "]";
+
+		return ss.str();
+	}
 } __attribute__((packed));
 
 /**
@@ -121,10 +146,11 @@ class CommunicationProfileManager {
 		 * Parses comma-separated Communication Profile string and returns
 		 * a CommunicationProfileItem structure filled accordingly
 		 *
-		 * @param profileString Comma-separated profile definition
+		 * @param profileIdString Profile ID string (CP1, CP2, etc.)
+		 * @param profileDefinitionString Comma-separated profile definition
 		 * @return CommunicationProfileItem having parsed information
 		 */
-		CommunicationProfileItem parse(const string& profileString);
+		CommunicationProfileItem parse(const string& profileIdString, const string& profileDefinitionString);
 		/**
 		 * A helper method to set any bits given in particular communication
 		 * profile string, e.g. if a string "IPv4/v6:DSMIPv4/v6" is given then

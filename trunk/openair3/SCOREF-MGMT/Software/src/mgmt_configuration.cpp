@@ -41,6 +41,7 @@
 
 #include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
+#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
 #include <iostream>
@@ -104,7 +105,12 @@ bool Configuration::parseConfigurationFile(ManagementInformationBase& mib) {
 				 * Communication profiles are sent to MIB
 				 */
 				} else if (!line.compare(0, communicationProfilePrefix.size(), communicationProfilePrefix)) {
-					mib.communicationProfileManager.insert(parameter, value);
+					try {
+						mib.communicationProfileManager.insert(parameter, value);
+					} catch (Exception& e) {
+						e.updateStackTrace("Cannot process communication profile string");
+						throw e;
+					}
 				}
 			}
 		}
@@ -167,9 +173,13 @@ u_int8_t Configuration::getWirelessStateUpdateInterval() const {
 }
 
 void Configuration::setWirelessStateUpdateInterval(u_int8_t interval) {
-	if (interval > 0 && interval < 120)
-		wirelessStateUpdateInterval = interval;
 	/**
-	 * Keep default value otherwise
+	 * Verify incoming value for wireless state update interval
+	 * Keep default value if incoming is invalid
 	 */
+	if (interval > 10 && interval <= 120) {
+		logger.info("Setting Wireless State Update Interval to " + boost::lexical_cast<string>((int)interval) + " seconds");
+		wirelessStateUpdateInterval = interval;
+	} else
+		logger.warning("Parsed value (" + boost::lexical_cast<string>((int)interval) + ") of Wireless State Update Interval is invalid [min:10,max=120], keeping default value (" + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + ")");
 }

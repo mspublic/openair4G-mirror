@@ -40,6 +40,7 @@
 */
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time.hpp>
 #include "mgmt_util.hpp"
 #include <iostream>
 #include <sstream>
@@ -58,7 +59,7 @@ bool Util::copyBuffer(void* destinationBuffer, const void* sourceBuffer, size_t 
 	return true;
 }
 
-bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSize, Logger& logger) {
+bool Util::printHexRepresentation(const unsigned char* buffer, unsigned long bufferSize, Logger& logger) {
 	if (!buffer) {
 		logger.warning("Incoming buffer is empty, won't write any hex data");
 		return false;
@@ -108,23 +109,27 @@ bool Util::printHexRepresentation(unsigned char* buffer, unsigned long bufferSiz
 
 void Util::printBinaryRepresentation(unsigned char* message, u_int8_t octet, Logger& logger) {
 	stringstream ss;
-	unsigned char index = 0;
-	unsigned char mask = 0x80;
 
-	ss << message;
+	ss << message << getBinaryRepresentation(octet) << endl;
+
+	logger.debug(ss.str());
+}
+
+string Util::getBinaryRepresentation(u_int8_t octet) {
+	u_int8_t index = 0;
+	u_int8_t mask = 0x80;
+	stringstream ss;
 
 	for (index = 0; index < 8; ++index) {
-		if (octet & mask) {
+		if (octet & mask)
 			ss << "1";
-		} else {
+		else
 			ss << "0";
-		}
 
 		mask /= 2;
 	}
-	ss << endl;
 
-	logger.debug(ss.str());
+	return ss.str();
 }
 
 template <class T>
@@ -237,17 +242,50 @@ vector<string> Util::split(const string& input, char delimiter) {
 	return elements;
 }
 
+string Util::trim(const string& str, char character) {
+	string trimmedString = str;
+	/**
+	 * todo this is not the `proper' trim() method, should be revised
+	 */
+	if (trimmedString.find_last_of(character) != string::npos)
+		trimmedString.resize(trimmedString.length() - 1);
+
+	return trimmedString;
+}
+
 string Util::getDateAndTime(bool withDelimiters) {
+#if 1
 	// todo Boost's damn date_time is too complex, figure it out and replace
 	// this with decent c++ code
 	time_t rawtime;
-	struct tm * timeinfo;
+	struct tm* timeinfo;
 	char buffer [80];
 	time (&rawtime);
 	timeinfo = localtime (&rawtime);
 	if (withDelimiters)
-		strftime(buffer,80,"%Y/%m/%d-%H:%M:%S",timeinfo);
+		strftime(buffer, 80, "%Y/%m/%d-%H:%M:%S", timeinfo);
 	else
-		strftime(buffer,80,"%Y%m%d-%H%M%S",timeinfo);
+		strftime(buffer, 80, "%Y%m%d-%H%M%S", timeinfo);
 	return string(buffer);
+#else
+	local_time_facet* output_facet = new local_time_facet();
+	local_time_input_facet* input_facet = new local_time_input_facet();
+	ss.imbue(locale(locale::classic(), output_facet));
+	ss.imbue(locale(ss.getloc(), input_facet));
+
+	output_facet->format("%a %b %d, %H:%M %z");
+	ss.str("");
+	ss << ldt;
+	cout << ss.str() << endl; // "Sun Feb 29, 12:34 EDT"
+
+	output_facet->format(local_time_facet::iso_time_format_specifier);
+	ss.str("");
+	ss << ldt;
+	cout << ss.str() << endl; // "20040229T123456.000789-0500"
+
+	output_facet->format(local_time_facet::iso_time_format_extended_specifier);
+	ss.str("");
+	ss << ldt;
+	cout << ss.str() << endl; // "2004-02-29 12:34:56.000789-05:00"
+#endif
 }

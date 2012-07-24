@@ -50,7 +50,6 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "packets/mgmt_gn_packet_location_table_request.hpp"
 #include "mgmt_gn_packet_handler.hpp"
 #include "util/mgmt_udp_server.hpp"
 #include "mgmt_client_manager.hpp"
@@ -109,17 +108,20 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-	// Location table update will be done at the beginning for once
-	// todo this should be managed by ManagementClientState
-	bool locationTableUpdated = false;
-
 	ManagementInformationBase mib(logger);
 	GeonetMessageHandler* packetHandler = NULL;
 	Configuration configuration(argv[1], logger);
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
-	configuration.parseConfigurationFile(mib);
+	try {
+		configuration.parseConfigurationFile(mib);
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot parse configuration file");
+		e.printStackTrace();
+		exit(-1);
+	}
+
 	ManagementClientManager clientManager(configuration, logger);
 	UdpServer server(configuration.getServerPort(), logger);
 
@@ -150,18 +152,11 @@ int main(int argc, char** argv) {
 		logger.info("Reading configuration file...");
 
 		vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
-		vector<unsigned char> txBuffer(UdpServer::TX_BUFFER_SIZE);
 
 		try {
 			for (;;) {
 				if (server.receive(rxBuffer)) {
-					GeonetPacket* reply = NULL;
 					bool packetHandled = false;
-
-					/**
-					 * Inform Client Manager of this sender
-					 */
-					clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
 
 					try {
 						packetHandled = packetHandler->handleGeonetMessage(server, rxBuffer);
@@ -169,20 +164,15 @@ int main(int argc, char** argv) {
 						cerr << e.what() << endl;
 					}
 
-					if (reply)
-						server.send(*reply);
+					if (packetHandled)
+						/**
+						 * Inform Client Manager of this sender
+						 */
+						clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
 				}
 
-				if (!locationTableUpdated) {
-					// Initialise location table
-					GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
-					server.send(locationTableRequest);
-					locationTableUpdated = true;
-				}
-
-				// Revert buffer sizes to initials
+				// Revert buffer size to initial
 				rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
-				txBuffer.reserve(UdpServer::TX_BUFFER_SIZE);
 			}
 		} catch (std::exception& e) {
 			logger.error(e.what());

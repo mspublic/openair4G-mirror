@@ -98,6 +98,7 @@ bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
 string GeonetPacket::toString() const {
 	stringstream ss;
 
+	// todo write extended message and validity fields here as well
 	ss << "GeonetHeader[version:" << (int) header.version << ", priority:" << (int) header.priority
 		<< ", event:" << (int) (header.eventType * 100 + header.eventSubtype) << "]";
 

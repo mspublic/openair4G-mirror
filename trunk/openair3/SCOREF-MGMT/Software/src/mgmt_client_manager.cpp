@@ -56,11 +56,14 @@ ManagementClientManager::~ManagementClientManager() {
 bool ManagementClientManager::updateManagementClientState(UdpServer& clientConnection, EventType eventType) {
 	vector<ManagementClient*>::iterator it = clientVector.begin();
 	bool clientExists = false;
-	ManagementClient* client;
+	ManagementClient* client = NULL;
 
 	while (it++ != clientVector.end()) {
+		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getClient().address().to_string());
+		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getClient().port()));
+
 		if ((*it)->getAddress() == clientConnection.getClient().address() && (*it)->getPort() == clientConnection.getClient().port()) {
-			logger.trace("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " if found");
+			logger.trace("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is found");
 			client = *it;
 			clientExists = true;
 		}
@@ -72,6 +75,7 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 	if (!clientExists) {
 		ManagementClient* newClient = new ManagementClient(clientConnection, configuration.getWirelessStateUpdateInterval(), logger);
 		clientVector.push_back(newClient);
+		logger.trace("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is created");
 
 		client = newClient;
 	}
