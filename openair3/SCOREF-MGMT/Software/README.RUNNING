@@ -1,11 +1,14 @@
 ~ Management GeoNetworking Interface Implementation ~
 
-IF.MGMT is a server application handling messages sent from 
+SCOREF-MGMT is a server application handling messages sent from 
 GN (GeoNetworking) module. Since SCOREF-MGMT is the server it has 
-to be started before GN module. SCOREF-MGMT expects only one 
-command line parameter and it's the configuration file's name.
+to be started before GN module. SCOREF-MGMT expects two arguments
+having one optional, and they are configuration file and optional
+log file name, respectively. If there is a log file with the same
+name it will be renamed appending date and time and a new file 
+will be created.
 
-[demiray@leynes test]$  ./SCOREF-MGMT IF.MGMT.conf
+[demiray@leynes test]$  ./SCOREF-MGMT IF.MGMT.conf [LogFileName]
 
 After SCOREF-MGMT is started it'll read the configuration file,
 update local configuration (such as UDP server port) and MIB
@@ -22,6 +25,6 @@ Started to listen on UDP port 1402
 Ready to receive data...
 
 At this point `hc2xnwt' utility (which can be found under INRIA's
-SVN server) can be started.
+SVN server at Software/SoftwareComponents/NWT) can be started.
 
 - Baris Demiray <baris.demiray@eurecom.fr>

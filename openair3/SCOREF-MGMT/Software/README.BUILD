@@ -7,17 +7,17 @@ through the Makefile. These three configurations are,
    Definition: Debug flags are on, optimisation is off, to be 
    run inside GDB, etc.
 
-   Command: Use make target `debug_binary' as 
-   $ make debug_binary
-   and binary will be created in bin/
+   Command: Define make variable `BUILD_DEBUG' as 
+   $ make BUILD_DEBUG=1
+   and relevant binary will be created in bin/
 
 2) Dynamic Configuration
 
    Definition: Optimisation flags are on, dynamic linkage, for 
    deployment (along with necessary libraries) or local use
 
-   Command: Use make target `dynamic_binary' as
-   $ make dynamic_binary
+   Command: Define make variable `BUILD_DYNAMIC' as
+   $ make BUILD_DYNAMIC=1
    and binary will be created in bin/
 
 3) Static Configuration
@@ -26,8 +26,8 @@ through the Makefile. These three configurations are,
    and/or companies whom may not have necessary libraries 
    installed
 
-   Command: Use make target `static_binary' as
-   $ make static_binary
+   Command: Define make variable `BUILD_STATIC' as
+   $ make BUILD_STATIC=1
    and binary will be created in bin/
 
 For Dynamic and Static configurations the make target `strip' may be used 

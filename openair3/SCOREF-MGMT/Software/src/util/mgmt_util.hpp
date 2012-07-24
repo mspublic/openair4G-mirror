@@ -81,7 +81,7 @@ class Util {
 		 * @param logger Logger object reference
 		 * @return true on success, false otherwise
 		 */
-		static bool printHexRepresentation(unsigned char* buffer, unsigned long bufferSize, Logger& logger);
+		static bool printHexRepresentation(const unsigned char* buffer, unsigned long bufferSize, Logger& logger);
 		/**
 		 * Prints binary representation of given octet
 		 *
@@ -91,6 +91,13 @@ class Util {
 		 * @return none
 		 */
 		static void printBinaryRepresentation(unsigned char* message, u_int8_t octet, Logger& logger);
+		/**
+		 * Returns binary representation of given octet in a string form
+		 *
+		 * @param octet Octet to be stringified
+		 * @return std::string form of binary representation
+		 */
+		static string getBinaryRepresentation(u_int8_t octet);
 		/**
 		 * Returns string representation of given numeric value
 		 *
@@ -174,6 +181,14 @@ class Util {
 		 * @return std::vector containing split parts
 		 */
 		static vector<string> split(const string& input, char delimiter);
+		/**
+		 * Removes non-printable characters from the end of a string, ie. trims it
+		 *
+		 * @param str std::string that is going to be trimmed
+		 * @param character Character to be trimmed off
+		 * @return trimmed string of type std::string
+		 */
+		static string trim(const string& str, char character);
 		/**
 		 * Returns current date/time as string
 		 * This is used for log file rotating and in log messages as a prefix

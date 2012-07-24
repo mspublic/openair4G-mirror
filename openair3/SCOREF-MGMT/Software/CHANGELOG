@@ -1,6 +1,22 @@
 
 v1.1.0 (released on <enter_date>)
 
+v1.0.22
+* Eclipse project file updated to use multiple g++ instances to build faster
+* Communication profile parsing error fixed (NULL at the end is now trimmed to match std::map key)
+* Communication profile off-by-one error fixed (profile item indexes were calculated as +1)
+* Location Table Request is now sent by ManagementClient in its constructor
+* State changes has been revised to make one more state valid
+* Incoming packets are now passed to ManagementClientManager to update its state
+* Util::getBinaryRepresentation() and Util::trim() methods added
+* Makefile now compiles each file separately, which makes build faster for re-compilation
+* Makefile parameters has been updated and README.BUILD file has been updated accordingly
+* Makefile.sources file is no more used, files are found by shell command in Makefile
+
+v1.0.21
+* Location Table Request is now handled by ManagementClient
+* State changes are now verified in ManagementClient
+
 v1.0.20
 * ManagementClient objects are now managed by ManagementClientManager
 * ManagementClient now has InquiryThread and ManagementClientState

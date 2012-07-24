@@ -44,7 +44,6 @@
 #include <boost/lexical_cast.hpp>
 #include "mgmt_gn_datatypes.hpp"
 #include "util/mgmt_util.hpp"
-// todo #include <arpa/inet.h>
 #include <exception>
 #include <iostream>
 #include <cstring>

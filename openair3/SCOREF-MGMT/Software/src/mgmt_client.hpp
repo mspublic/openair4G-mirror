@@ -49,6 +49,9 @@
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
+#include <string>
+#include <map>
+
 /**
  * A container to hold information about Management clients, mostly used
  * in Message Handler code
@@ -127,6 +130,12 @@ class ManagementClient {
 		 * @return true if host object's IP address is smaller, false otherwise
 		 */
 		bool operator<(const ManagementClient& client) const;
+		/**
+		 * Returns string representation of this client
+		 *
+		 * @return std::string representation of this client
+		 */
+		string toString();
 
 	private:
 		/**
@@ -136,7 +145,7 @@ class ManagementClient {
 		/**
 		 * Client's connection state with Management module
 		 */
-		ManagementClientState state;
+		ManagementClient::ManagementClientState state;
 		/**
 		 * InquiryThread object for Wireless State updates
 		 */
@@ -149,6 +158,10 @@ class ManagementClient {
 		 * Logger object reference
 		 */
 		Logger& logger;
+		/**
+		 * String representations for Management Client states
+		 */
+		map<ManagementClient::ManagementClientState, string> clientStateStringMap;
 };
 
 #endif /* MGMT_CLIENT_HPP_ */

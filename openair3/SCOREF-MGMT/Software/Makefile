@@ -1,35 +1,44 @@
 
 CPP=g++
 RM=rm
-CPPFLAGS=-Wall
 ECHO=echo
 STRIP=strip
+CPP_FILES:=$(shell find . -iname '*.cpp')
+OBJ_FILES=$(CPP_FILES:.cpp=.o)
+EXE_FILE=bin/SCOREF-MGMT
+CPPFLAGS=-Wall
 LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread
+INCLUDE=-Isrc/ -Isrc/packets/ -Isrc/util/
+
 OPT_FLAGS=-O3
 DEBUG_FLAGS=-O0 -g3
 STATIC_FLAGS=-static
-INCLUDES=-Isrc/ -Isrc/packets/ -Isrc/util/
-EXE=bin/SCOREF-MGMT
 
--include Makefile.sources
+# Default is dynamic build
+BUILD_FLAGS=$(OPT_FLAGS)
 
-all: dynamic_binary
+ifdef BUILD_DEBUG
+	BUILD_FLAGS=$(DEBUG_FLAGS)
+endif
+ifdef BUILD_STATIC
+	BUILD_FLAGS=$(STATIC_FLAGS)
+	LDFLAGS=-static -lboost_system -lboost_filesystem -lboost_thread -pthread
+endif
+ifdef BUILD_DYNAMIC
+	BUILD_FLAGS=$(OPT_FLAGS)
+endif
 
-debug_binary:
-	$(ECHO) Building debug binary...
-	$(CPP) $(DEBUG_FLAGS) $(CPPFLAGS) $(SOURCES) -o $(EXE) $(LDFLAGS)
+all: $(CPP_FILES) binary
 
-dynamic_binary:
-	$(ECHO) Building dynamic binary...
-	$(CPP) $(CPPFLAGS) $(SOURCES) -o $(EXE) $(LDFLAGS)
-
-static_binary:
-	$(ECHO) Building static binary...
-	$(CPP) $(STATIC_FLAGS) $(CPPFLAGS) $(SOURCES) -o $(EXE) $(LDFLAGS)
+binary: $(CPP_FILES) $(OBJ_FILES)
+	$(CPP) $(OBJ_FILES) -o $(EXE_FILE) $(LDFLAGS)
 
 strip:
-	$(STRIP) $(EXE) &> /dev/null
+	$(STRIP) $(EXE_FILE) &> /dev/null
 
 clean:
-	$(RM) -rf *.o src/*.o src/packets/*.o src/util/*.o $(EXE)
+	$(RM) -fv $(EXE_FILE)
+	find . -iname "*.o" -exec rm -fv {} \;
 
+.cpp.o:
+	$(CPP) -c $(BUILD_FLAGS) $(CPPFLAGS) $< -o $@
