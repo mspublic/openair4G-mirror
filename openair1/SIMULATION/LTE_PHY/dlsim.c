@@ -729,6 +729,7 @@ int main(int argc, char **argv) {
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf);  
 
+  eNB_id_i = PHY_vars_UE->n_connected_eNB;
   
   printf("Setting mcs = %d\n",mcs);
   printf("NPRB = %d\n",NB_RB);
@@ -1797,7 +1798,7 @@ int main(int argc, char **argv) {
 		    
 		  //pdsch_vars
 		  dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
-		  dump_dlsch2(PHY_vars_UE,eNB_id_i,coded_bits_per_codeword);
+          dump_dlsch2(PHY_vars_UE,eNB_id_i,coded_bits_per_codeword);
 		  write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
 
 		  //pdcch_vars
