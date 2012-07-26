@@ -10198,7 +10198,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				   frame_parms);
 
     if (dual_stream_flag==1) {
-      if (eNB_id_i!=NUMBER_OF_CONNECTED_eNB_MAX)
+      if (eNB_id_i!=phy_vars_ue->n_connected_eNB)
 	nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				       lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
 				       lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
