@@ -43,6 +43,8 @@
 #include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 ManagementInformationBase::ManagementInformationBase(Logger& logger)
@@ -137,6 +139,42 @@ WirelessStateResponseItem& ManagementInformationBase::getWirelessState(Interface
 	return wirelessStateMap[interfaceId];
 }
 
+bool ManagementInformationBase::updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem wirelessState) {
+	wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(interfaceId, wirelessState));
+
+	return true;
+}
+
 NetworkStateMessage& ManagementInformationBase::getNetworkState() {
 	return networkState;
+}
+
+CommunicationProfileManager& ManagementInformationBase::getCommunicationProfileManager() {
+	return communicationProfileManager;
+}
+
+bool ManagementInformationBase::updateLocationTable(LocationTableItem& locationTableItem) {
+	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem>(locationTableItem.gnAddress, locationTableItem));
+
+	return true;
+}
+
+LocationInformation ManagementInformationBase::getLocation() {
+	/**
+	 * todo this is temporary, location information will be received somewhere else later on
+	 */
+	srand(time(NULL));
+	location.latitude = rand() % 20 + 10;
+	location.longitude = rand() % 10 + 5;
+	location.speed = rand() % 20;
+	location.heading = 0;
+	location.altitude = rand() % 1000 + 10;
+
+	return location;
+}
+
+bool ManagementInformationBase::setNetworkFlags(const u_int8_t& networkFlags) {
+	this->networkFlags = networkFlags;
+
+	return true;
 }

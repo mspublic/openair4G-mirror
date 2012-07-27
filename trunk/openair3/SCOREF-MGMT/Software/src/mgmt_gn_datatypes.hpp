@@ -145,11 +145,9 @@ struct MessageHeader {
 } __attribute__((packed));
 
 /**
- * Update Location Event
+ * Location Information
  */
-struct LocationUpdateMessage {
-	MessageHeader header;
-
+struct LocationInformation {
 	u_int32_t timestamp; /* Time in milliseconds */
 	u_int32_t latitude;  /* Latitude in 1/10 micro-degree */
 	u_int32_t longitude; /* Longitude in 1/10 micro-degree */
@@ -162,6 +160,15 @@ struct LocationUpdateMessage {
 	unsigned SAcc:2;
 	unsigned Hacc:3;
 	unsigned AltAcc:3;
+} __attribute__((packed));
+
+/**
+ * Update Location Event
+ */
+struct LocationUpdateMessage {
+	MessageHeader header;
+
+	LocationInformation location;
 } __attribute__((packed));
 
 typedef u_int64_t GnAddress;

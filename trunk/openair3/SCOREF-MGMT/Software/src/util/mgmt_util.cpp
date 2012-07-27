@@ -142,10 +142,21 @@ string Util::stringify(T numerical) {
 bool Util::setBit(u_int8_t& octet, u_int8_t index) {
 	u_int8_t mask = 0x80;
 
-	/*
+	/**
 	 * Set relevant bit
 	 */
 	octet |= (mask >>= index);
+
+	return true;
+}
+
+bool Util::unsetBit(u_int8_t& octet, u_int8_t index) {
+	u_int8_t mask = 0x7f;
+
+	/**
+	 * Unset relevant bit
+	 */
+	octet &= (mask >>= index);
 
 	return true;
 }
@@ -227,6 +238,27 @@ bool Util::encode2byteInteger(vector<unsigned char>& buffer, u_int16_t bufferInd
 
 	buffer[bufferIndex] = ((data >> 8) & 0xff);
 	buffer[bufferIndex + 1] = (data & 0xff);
+
+	return true;
+}
+
+bool Util::encodeBits(u_int8_t& octet, u_int8_t index, u_int8_t data, u_int8_t dataSize) {
+	/**
+	 * Do boundary check
+	 */
+	if (index + dataSize > 8)
+		return false;
+
+	/**
+	 * Start from the last bit and encode till the first bit
+	 */
+	u_int8_t bit = index + dataSize - 1;
+	while (dataSize--) {
+		if (isBitSet(data, bit))
+			setBit(octet, bit);
+		else
+			unsetBit(octet, bit);
+	}
 
 	return true;
 }

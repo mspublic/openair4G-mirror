@@ -59,10 +59,11 @@ class ManagementClientManager {
 		/**
 		 * Constructor for ManagementClientManager class
 		 *
+		 * @param mib Management Information Base reference
 		 * @param configuration Management configuration to pass to/to manage client objects
 		 * @param logger Logger object reference
 		 */
-		ManagementClientManager(Configuration& configuration, Logger& logger);
+		ManagementClientManager(ManagementInformationBase& mib, Configuration& configuration, Logger& logger);
 		/**
 		 * Destructor for ManagementClientManager class
 		 */
@@ -81,6 +82,10 @@ class ManagementClientManager {
 		bool updateManagementClientState(UdpServer& clientConnection, EventType eventType);
 
 	private:
+		/**
+		 * Management Information Base reference
+		 */
+		ManagementInformationBase& mib;
 		/**
 		 * Client vector holding clients of connected/online (see ManagementClientState) state
 		 */

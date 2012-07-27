@@ -50,11 +50,13 @@ class InquiryThread {
 		/**
 		 * Constructor for InquiryThread class
 		 *
+		 * @param mib Management Information Base reference
 		 * @param connection UdpServer object that the questions will be asked through
 		 * @param wirelessStateUpdateInterval Wireless State Update interval in seconds
+		 * @param locationUpdateInterval Location Update interval in seconds
 		 * @param logger Logger object reference
 		 */
-		InquiryThread(UdpServer& connection, u_int8_t wirelessStateUpdateInterval, Logger& logger);
+		InquiryThread(ManagementInformationBase& mib, UdpServer& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for InquiryThread class
 		 */
@@ -63,6 +65,8 @@ class InquiryThread {
 	public:
 		/**
 		 * () operator overload to pass this method to boost::thread
+		 *
+		 * todo this method is too complex and prone to errors, should be revised
 		 */
 		void operator()();
 		/**
@@ -71,6 +75,12 @@ class InquiryThread {
 		 * accordingly by GeonetMessageHandler class
 		 */
 		bool requestWirelessStateUpdate();
+		/**
+		 * Sends a request for Location Update
+		 * Incoming message will be handled and MIB will be updated
+		 * accordingly by GeonetMessageHandler class
+		 */
+		bool requestLocationUpdate();
 
 	private:
 		/**
@@ -81,6 +91,14 @@ class InquiryThread {
 		 * Wireless State Update interval in seconds
 		 */
 		u_int8_t wirelessStateUpdateInterval;
+		/**
+		 * Location Update interval in seconds
+		 */
+		u_int8_t locationUpdateInterval;
+		/**
+		 * Management Information Base reference
+		 */
+		ManagementInformationBase& mib;
 		/**
 		 * Logger object reference
 		 */

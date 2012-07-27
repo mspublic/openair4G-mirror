@@ -80,11 +80,13 @@ class ManagementClient {
 		/**
 		 * Constructor for ManagementClient class
 		 *
+		 * @param mib Management Information Base reference
 		 * @param clientConnection Connected socket for client connection
 		 * @param wirelessStateUpdateInterval Determines how frequent the wireless state update will be performed
+		 * @param locationUpdateInterval Determines how frequent the location update will be performed
 		 * @logger Logger object reference
 		 */
-		ManagementClient(UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, Logger& logger);
+		ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
@@ -138,6 +140,10 @@ class ManagementClient {
 		string toString();
 
 	private:
+		/**
+		 * Management Information Base reference
+		 */
+		ManagementInformationBase& mib;
 		/**
 		 * Client's UDP socket information
 		 */

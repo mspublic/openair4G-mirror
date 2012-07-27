@@ -43,8 +43,8 @@
 #include <boost/lexical_cast.hpp>
 #include "mgmt_client.hpp"
 
-ManagementClient::ManagementClient(UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, Logger& logger)
-	: logger(logger) {
+ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+	: mib(mib), logger(logger) {
 	this->client = client;
 
 	/**
@@ -67,7 +67,7 @@ ManagementClient::ManagementClient(UdpServer& clientConnection, u_int8_t wireles
 	 * Initialise InquiryThread object for Wireless State updates
 	 */
 	// todo who is going to join() this thread?
-	inquiryThreadObject = new InquiryThread(clientConnection, wirelessStateUpdateInterval, logger);
+	inquiryThreadObject = new InquiryThread(mib, clientConnection, wirelessStateUpdateInterval, locationUpdateInterval, logger);
 	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
 

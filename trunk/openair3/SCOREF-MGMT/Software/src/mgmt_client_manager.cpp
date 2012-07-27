@@ -42,8 +42,8 @@
 #include "mgmt_client_manager.hpp"
 #include <boost/lexical_cast.hpp>
 
-ManagementClientManager::ManagementClientManager(Configuration& configuration, Logger& logger)
-	: configuration(configuration), logger(logger) {
+ManagementClientManager::ManagementClientManager(ManagementInformationBase& mib, Configuration& configuration, Logger& logger)
+	: mib(mib), configuration(configuration), logger(logger) {
 }
 
 ManagementClientManager::~ManagementClientManager() {
@@ -58,6 +58,9 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
+	/**
+	 * Traverse client list and check if we already have this client
+	 */
 	while (it++ != clientVector.end()) {
 		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getClient().address().to_string());
 		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getClient().port()));
@@ -73,9 +76,9 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 	 * Create a new client object if we couldn't find one
 	 */
 	if (!clientExists) {
-		ManagementClient* newClient = new ManagementClient(clientConnection, configuration.getWirelessStateUpdateInterval(), logger);
+		ManagementClient* newClient = new ManagementClient(mib, clientConnection, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
 		clientVector.push_back(newClient);
-		logger.trace("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is created");
+		logger.info("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is created");
 
 		client = newClient;
 	}

@@ -83,7 +83,7 @@ bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char> p
 		item.reserved = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
 
 		// Update MIB with this record
-		mib.wirelessStateMap.insert(mib.wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(item.interfaceId, item));
+		mib.updateWirelessState(item.interfaceId, item);
 
 		logger.info("Management Information Base has been updated with following wireless state entry: ");
 		logger.info(item.toString());

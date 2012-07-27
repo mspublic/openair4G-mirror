@@ -51,8 +51,9 @@ using namespace std;
 // Initialise configuration parameter strings
 const string Configuration::CONF_SERVER_PORT_PARAMETER("CONF_SERVER_PORT");
 const string Configuration::CONF_WIRELESS_STATE_UPDATE_INTERVAL("CONF_WIRELESS_STATE_UPDATE_INTERVAL");
+const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_INTERVAL");
 
-Configuration::Configuration(string configurationFile, Logger& logger)
+Configuration::Configuration(const string& configurationFile, Logger& logger)
 	: logger(logger) {
 	this->configurationFile = configurationFile;
 
@@ -61,6 +62,7 @@ Configuration::Configuration(string configurationFile, Logger& logger)
 	 */
 	this->serverPort = 1402;
 	this->wirelessStateUpdateInterval = 10;
+	this->locationUpdateInterval = 20;
 }
 
 Configuration::~Configuration() {
@@ -106,7 +108,7 @@ bool Configuration::parseConfigurationFile(ManagementInformationBase& mib) {
 				 */
 				} else if (!line.compare(0, communicationProfilePrefix.size(), communicationProfilePrefix)) {
 					try {
-						mib.communicationProfileManager.insert(parameter, value);
+						mib.getCommunicationProfileManager().insert(parameter, value);
 					} catch (Exception& e) {
 						e.updateStackTrace("Cannot process communication profile string");
 						throw e;
@@ -143,6 +145,8 @@ bool Configuration::setValue(const string& parameter, const string& value) {
 		setServerPort(atoi(value.c_str()));
 	} else if (!parameter.compare(0, CONF_WIRELESS_STATE_UPDATE_INTERVAL.length(), CONF_WIRELESS_STATE_UPDATE_INTERVAL)) {
 		setWirelessStateUpdateInterval(atoi(value.c_str()));
+	} else if (!parameter.compare(0, CONF_LOCATION_UPDATE_INTERVAL.length(), CONF_LOCATION_UPDATE_INTERVAL)) {
+		setLocationUpdateInterval(atoi(value.c_str()));
 	}
 
 	return true;
@@ -177,9 +181,25 @@ void Configuration::setWirelessStateUpdateInterval(u_int8_t interval) {
 	 * Verify incoming value for wireless state update interval
 	 * Keep default value if incoming is invalid
 	 */
-	if (interval > 10 && interval <= 120) {
+	if (interval >= 10 && interval <= 120) {
 		logger.info("Setting Wireless State Update Interval to " + boost::lexical_cast<string>((int)interval) + " seconds");
 		wirelessStateUpdateInterval = interval;
 	} else
-		logger.warning("Parsed value (" + boost::lexical_cast<string>((int)interval) + ") of Wireless State Update Interval is invalid [min:10,max=120], keeping default value (" + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + ")");
+		logger.warning("Parsed value (" + boost::lexical_cast<string>((int)interval) + ") of Wireless State Update Interval is invalid [min=10,max=120], keeping default value (" + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + ")");
+}
+
+u_int8_t Configuration::getLocationUpdateInterval() const {
+	return locationUpdateInterval;
+}
+
+void Configuration::setLocationUpdateInterval(u_int8_t interval) {
+	/**
+	 * Verify incoming value for location update interval
+	 * Keep default value if incoming is invalid
+	 */
+	if (interval >= 20 && interval <= 120) {
+		logger.info("Setting Location Update Interval to " + boost::lexical_cast<string>((int)interval) + " seconds");
+		locationUpdateInterval = interval;
+	} else
+		logger.warning("Parsed value (" + boost::lexical_cast<string>((int)interval) + ") of Location Update Interval is invalid [min=20,max=120], keeping default value (" + boost::lexical_cast<string>((int)locationUpdateInterval) + ")");
 }

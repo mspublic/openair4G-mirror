@@ -115,6 +115,14 @@ class Util {
 		 */
 		static bool setBit(u_int8_t& octet, u_int8_t index);
 		/**
+		 * Unsets Nth bit of given octet
+		 *
+		 * @param octet Pointer to the octet
+		 * @param index Index that'll be unset
+		 * @return true on success, false otherwise
+		 */
+		static bool unsetBit(u_int8_t& octet, u_int8_t index);
+		/**
 		 * Checks if Nth bit of given octet is set
 		 *
 		 * @param octet Octet
@@ -179,6 +187,24 @@ class Util {
 		 * @param input Input string that is going to be split
 		 * @param delimiter Delimiter character
 		 * @return std::vector containing split parts
+		 */
+		/**
+		 * Encodes given bits starting from given index into given octet
+		 *
+		 * @param octet Octet that given bits will be encoded into
+		 * @param index Index that this method starts encoding at (indexes are 0 to 7)
+		 * @param data Data to be encoded
+		 * @param dataSize Number of data bits to be encoded
+		 * @return true on success, false otherwise
+		 */
+		static bool encodeBits(u_int8_t& octet, u_int8_t index, u_int8_t data, u_int8_t dataSize);
+		/**
+		 * Splits given string according to given delimiter and return the
+		 * string list as a vector
+		 *
+		 * @param input Input string that'll be delimited
+		 * @param delimiter Delimiter character
+		 * @return List of delimited sub-strings as a vector<string>
 		 */
 		static vector<string> split(const string& input, char delimiter);
 		/**

@@ -59,7 +59,7 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	GeonetPacket::serialize(buffer);
 	// ...then append communication profile item count
 	u_int8_t payloadIndex = sizeof(MessageHeader);
-	Util::encode2byteInteger(buffer, payloadIndex, mib.communicationProfileManager.getProfileCount());
+	Util::encode2byteInteger(buffer, payloadIndex, mib.getCommunicationProfileManager().getProfileCount());
 	payloadIndex += 2;
 	// ...and `reserved' field
 	Util::encode2byteInteger(buffer, payloadIndex, 0x0000);
@@ -67,7 +67,7 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 
 	// ...and communication profile item(s)
 	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
-	while (iterator != mib.communicationProfileManager.getProfileMap().end()) {
+	while (iterator != mib.getCommunicationProfileManager().getProfileMap().end()) {
 		Util::encode4byteInteger(buffer, payloadIndex, iterator->second.id);
 		payloadIndex += 4;
 
@@ -81,7 +81,7 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	}
 
 	// Resize incoming buffer
-	buffer.resize(sizeof(CommunicationProfileResponse) + mib.communicationProfileManager.getProfileCount()
+	buffer.resize(sizeof(CommunicationProfileResponse) + mib.getCommunicationProfileManager().getProfileCount()
 			* sizeof(CommunicationProfileItem));
 
 	return true;
@@ -91,7 +91,7 @@ string GeonetCommunicationProfileResponsePacket::toString() const {
 	stringstream ss;
 
 	ss << GeonetPacket::toString() << endl;
-	ss << mib.communicationProfileManager.toString() << endl;
+	ss << mib.getCommunicationProfileManager().toString() << endl;
 
 	return ss.str();
 }

@@ -52,7 +52,8 @@ GeonetWirelessStateRequestEventPacket::~GeonetWirelessStateRequestEventPacket() 
 bool GeonetWirelessStateRequestEventPacket::serialize(vector<unsigned char>& buffer) const {
 	/* This packet is an only-header packet */
 	if (!GeonetPacket::serialize(buffer)) {
-		cerr << "Cannot serialise packet header!" << endl;
+		logger.error("Cannot serialise packet header!");
+		return false;
 	}
 
 	buffer.resize(sizeof(MessageHeader));

@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 		exit(-1);
 	}
 
-	ManagementClientManager clientManager(configuration, logger);
+	ManagementClientManager clientManager(mib, configuration, logger);
 	UdpServer server(configuration.getServerPort(), logger);
 
 	try {
