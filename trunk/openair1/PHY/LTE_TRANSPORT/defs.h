@@ -230,8 +230,12 @@ typedef struct {
   u8 Mdlharq;  
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   u8 Kmimo;
-  // downlink power offset field
+  /// downlink power offset field
   u8 dl_power_off;
+  /// amplitude of PDSCH (compared to RS) in symbols without pilots 
+  s16 sqrt_rho_a;
+  /// amplitude of PDSCH (compared to RS) in symbols containing pilots
+  s16 sqrt_rho_b;
 } LTE_eNB_DLSCH_t;
 
 #define PUSCH_x 2
@@ -561,8 +565,12 @@ typedef struct {
   u8 active;
   /// Transmission mode
   u8 mode1_flag;
-  // downlink power offset field
+  /// downlink power offset field
   u8 dl_power_off;
+  /// amplitude of PDSCH (compared to RS) in symbols without pilots 
+  s16 sqrt_rho_a;
+  /// amplitude of PDSCH (compared to RS) in symbols containing pilots
+  s16 sqrt_rho_b;
   /// Current HARQ process id
   u8 current_harq_pid;
   /// Current RB allocation
