@@ -67,7 +67,7 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 		return false;
 	}
 	// ...and Network Flags
-	mib.networkFlags = packetBuffer[2];
+	mib.setNetworkFlags(packetBuffer[2]);
 
 	u_int16_t itemIndex = packetBufferIndex;
 	for (; lpvCount != 0; lpvCount--) {
@@ -86,7 +86,7 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 		item.reserved = packetBuffer.data()[itemIndex++];
 
 		// Update MIB with this record
-		mib.locationTable.insert(mib.locationTable.end(), pair<GnAddress, LocationTableItem>(item.gnAddress, item));
+		mib.updateLocationTable(item);
 
 		logger.info("Management Information Base has been updated with following location table entry: ");
 		logger.info(item.toString());

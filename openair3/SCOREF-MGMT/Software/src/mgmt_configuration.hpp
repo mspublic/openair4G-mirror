@@ -62,6 +62,11 @@ class Configuration {
 		 * for Wireless State Request message
 		 */
 		static const string CONF_WIRELESS_STATE_UPDATE_INTERVAL;
+		/**
+		 * Parameter string for repetition interval (in seconds)
+		 * for Location Update message
+		 */
+		static const string CONF_LOCATION_UPDATE_INTERVAL;
 
 	public:
 		/**
@@ -70,7 +75,7 @@ class Configuration {
 		 * @param configurationFile Configuration file name
 		 * @param logger Logger object reference
 		 */
-		Configuration(string configurationFile, Logger& logger);
+		Configuration(const string& configurationFile, Logger& logger);
 		/**
 		 * Destructor for Configuration class
 		 */
@@ -125,6 +130,19 @@ class Configuration {
 		 * @return none
 		 */
 		void setWirelessStateUpdateInterval(u_int8_t interval);
+		/**
+		 * Returns Location Update interval (in seconds)
+		 *
+		 * @return Location Update interval in seconds
+		 */
+		u_int8_t getLocationUpdateInterval() const;
+		/**
+		 * Sets Location Update interval
+		 *
+		 * @param interval Location Update interval in seconds
+		 * @return none
+		 */
+		void setLocationUpdateInterval(u_int8_t interval);
 
 	private:
 		/**
@@ -159,6 +177,10 @@ class Configuration {
 		 * Wireless State Update interval (in seconds)
 		 */
 		u_int8_t wirelessStateUpdateInterval;
+		/**
+		 * Location Update interval (in seconds)
+		 */
+		u_int8_t locationUpdateInterval;
 		/**
 		 * Logger object reference
 		 */

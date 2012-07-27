@@ -87,7 +87,7 @@ bool GeonetSetConfigurationEventPacket::serialize(vector<unsigned char>& buffer)
 	// ...and then the packet-specific fields
 	if (isBulk) {
 		// Fetch relevant (sub)set..
-		map<ItsKeyID, ItsKeyValue> keyset = mib.itsKeyManager.getSubset(requestedItsKeyType);
+		map<ItsKeyID, ItsKeyValue> keyset = mib.getItsKeyManager().getSubset(requestedItsKeyType);
 		map<ItsKeyID, ItsKeyValue>::const_iterator iterator = keyset.begin();
 
 		while (iterator != keyset.end()) {
@@ -162,7 +162,7 @@ string GeonetSetConfigurationEventPacket::toString() const {
 	stringstream ss;
 
 	if (isBulk) {
-		ss << "Key count: " << ((isBulk) ? mib.itsKeyManager.getNumberOfKeys(requestedItsKeyType) : 1) << endl;
+		ss << "Key count: " << ((isBulk) ? mib.getItsKeyManager().getNumberOfKeys(requestedItsKeyType) : 1) << endl;
 	} else {
 		ss << "Configuration ID: " << requestedItsKey << endl << "Length: " << mib.getLength(requestedItsKey) << endl
 		    << "Value: " << mib.getValue(requestedItsKey) << endl;

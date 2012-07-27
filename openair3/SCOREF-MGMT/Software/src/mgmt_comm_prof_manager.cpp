@@ -76,6 +76,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 	}
 
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(communicationProfileItem.id, communicationProfileItem));
+	logger.debug("Communication profile: " + profileIdString + ":" + profileDefinitionString);
 	logger.info("Communication profile: " + communicationProfileItem.toString());
 
 	return true;
@@ -214,8 +215,15 @@ bool CommunicationProfileManager::setFlags(const string& configuration, u_int8_t
 
 	while (iterator != profileStrings.end()) {
 		/**
-		 * Bit indexes start from 1 in 'MNGT to CM-GN Interface' paper so here we
-		 * subtract 1 to find index against 0 as the first
+		 * Verify incoming communication profile definition string item
+		 */
+		if (communicationProfileStringMap[*iterator] == 0)
+			logger.warning("Communication profile definition string '" + *iterator + "' is not valid! Check SCOREF-MGMT_Configuration.pdf file.");
+
+		/**
+		 * Bit indexes start from 1 in 'MNGT to CM-GN Interface' paper but it
+		 * corresponds to bit 0 for Util::setBit() so here we subtract 1 to
+		 * find index against 0 as the first
 		 */
 		Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator] - 1));
 

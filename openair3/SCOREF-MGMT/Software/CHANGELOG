@@ -1,6 +1,11 @@
 
 v1.1.0 (released on <enter_date>)
 
+v1.0.23
+* OpenDocument format of configuration manual has been added
+* Location Update (0x100) packet and a corresponding configuration parameter has been added
+  Now both Wireless State Update and Location Update can be sent on different time intervals
+
 v1.0.22
 * Eclipse project file updated to use multiple g++ instances to build faster
 * Communication profile parsing error fixed (NULL at the end is now trimmed to match std::map key)
