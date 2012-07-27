@@ -2592,6 +2592,10 @@ static struct mh_handler mn_be_handler = {
 int mn_init(void)
 {
 	struct list_head *l, *n;
+	
+	if (conf.SendRouterSolicitation) {
+	    send_rs();
+	}
 
 	if (conf.DoRouteOptimizationMN &&
 	    ipsec_policy_entry_check(NULL, NULL, IPSEC_F_TNL_ANY)) {
