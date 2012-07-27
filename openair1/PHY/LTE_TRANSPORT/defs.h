@@ -567,10 +567,12 @@ typedef struct {
   u8 mode1_flag;
   /// downlink power offset field
   u8 dl_power_off;
-  /// amplitude of PDSCH (compared to RS) in symbols without pilots 
+  /// amplitude of PDSCH (compared to RS) in symbols without pilots
   s16 sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   s16 sqrt_rho_b;
+  /// ratio sqrt_rho_a/sqrt_rho_b
+  s16 sqrt_rho_aob;
   /// Current HARQ process id
   u8 current_harq_pid;
   /// Current RB allocation
