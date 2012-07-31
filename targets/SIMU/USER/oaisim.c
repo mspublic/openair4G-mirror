@@ -1259,9 +1259,11 @@ init_bypass ();
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);	
 #ifndef NAS_NETLINK
 	//if ((frame % 10) == 0) {
-	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
+	  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id][CC_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
+	  }
 	  //}
 #endif
       }

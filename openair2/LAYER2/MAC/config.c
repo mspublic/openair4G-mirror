@@ -8,6 +8,8 @@
 #include "extern.h"
 #include "UTIL/LOG/log.h"
 
+#define CC_id 0
+
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
@@ -36,7 +38,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       (SIperiod!=NULL)){
 
     if (eNB_flag==1)
-      mac_xface->phy_config_sib1_eNB(Mod_id,tdd_Config,*SIwindowsize,*SIperiod);
+      mac_xface->phy_config_sib1_eNB(Mod_id,CC_id,tdd_Config,*SIwindowsize,*SIperiod);
     else
       mac_xface->phy_config_sib1_ue(Mod_id,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
   } 
@@ -65,7 +67,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       
       LOG_I(MAC,"[CONFIG]pusch_config_common.cyclicShift  = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift); 
       
-      mac_xface->phy_config_sib2_eNB(Mod_id,radioResourceConfigCommon);
+      mac_xface->phy_config_sib2_eNB(Mod_id,CC_id,radioResourceConfigCommon);
     }
     else {
       UE_mac_inst[Mod_id].radioResourceConfigCommon = radioResourceConfigCommon;
@@ -121,7 +123,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
   }
   if (physicalConfigDedicated != NULL) {
     if (eNB_flag==1){
-      mac_xface->phy_config_dedicated_eNB(Mod_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
+      mac_xface->phy_config_dedicated_eNB(Mod_id,CC_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
     }else{
       mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc

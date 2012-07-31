@@ -56,6 +56,8 @@
 
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 0
+#define CC_id 0
+
 //#define DEBUG_PACKET_TRACE 1
 
 //#define ICIC 0
@@ -313,7 +315,7 @@ s8 find_active_UEs(unsigned char Mod_id){
 
     if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0){
 
-      if (mac_xface->get_eNB_UE_stats(Mod_id,rnti) != NULL){ // check at the phy enb_ue state for this rnti
+      if (mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti) != NULL){ // check at the phy enb_ue state for this rnti
 	nb_active_ue++;
       }
       else { // this ue is removed at the phy => remove it at the mac as well
@@ -978,8 +980,9 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   u32 buffer_occupancy;
   u32 tmp_bsr;
 
+
   granted_UEs = find_ulgranted_UEs(Mod_id);
-  nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
+  nCCE_available = mac_xface->get_nCCE_max(Mod_id,CC_id) - *nCCE;
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 2; // set to maximum aggregation level
 
@@ -1007,7 +1010,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
       aggregation = process_ue_cqi(Mod_id,next_ue);
       //    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
 
-      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
       if (eNB_UE_stats==NULL)
 	mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -1016,7 +1019,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
       if (eNB_UE_stats->mode == PUSCH) {
 
 	// Get candidate harq_pid from PHY
-	mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1);
+	mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid,&round,1);
 
 	// Note this code is still for a specific DCI format
 	ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
@@ -1355,7 +1358,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	LOG_D(MAC,"[eNB %d] Frame %d, subframe %d: Checking if Msg4 was acknowledged :",
 	    Mod_id,frame,subframe);
 	// Get candidate harq_pid from PHY
-	mac_xface->get_ue_active_harq_pid(Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
+	mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
 	if (round>0) {
 	  // we have to schedule a retransmission
 	  ((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->ndi=0;
@@ -1406,7 +1409,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
       // clear scheduling flag
       eNB_dlsch_info[Mod_id][UE_id].status = S_DL_WAITING;
       rnti = find_UE_RNTI(Mod_id,UE_id);
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid,&round,0);
       nb_rb = eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb[harq_pid];
 
       DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[UE_id].DLSCH_DCI[harq_pid];
@@ -1571,7 +1574,7 @@ void tm5_pre_processor (unsigned char Mod_id,
   u8 MIMO_mode_indicator[7]= {2,2,2,2,2,2,2};
   u8 total_DL_cqi_MUMIMO = 0,total_DL_cqi_SUMIMO = 0;
   u16 total_TBS_SUMIMO = 0,total_TBS_MUMIMO = 0; 
-  int CC_id;
+
   /// Initialization
   for(i=0;i<256;i++)
     {
@@ -1595,7 +1598,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
   // set current available nb_rb and nCCE to maximum
   nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
-  nCCE = mac_xface->get_nCCE_max(Mod_id) - nCCE_used;
+  nCCE = mac_xface->get_nCCE_max(Mod_id,CC_id) - nCCE_used;
 
   //********************* Pre-processing for Scheduling UEs**************************///////
 
@@ -1610,14 +1613,14 @@ void tm5_pre_processor (unsigned char Mod_id,
 
       // This is an allocated UE_id
       rnti = find_UE_RNTI(Mod_id,next_ue);
-      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
       if (eNB_UE_stats==NULL)
 	mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
 
       // Get candidate harq_pid from PHY
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 
       switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
@@ -1635,14 +1638,14 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti_temp = find_UE_RNTI(Mod_id,next_ue_temp);
-	  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+	  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 
 	  if (eNB_UE_stats_temp==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
 
 	  // Get candidate harq_pid from PHY
-	  mac_xface->get_ue_active_harq_pid(Mod_id,rnti_temp,subframe,&harq_pid_k,&round_k,0);
+	  mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti_temp,subframe,&harq_pid_k,&round_k,0);
 
 
 
@@ -1660,8 +1663,8 @@ void tm5_pre_processor (unsigned char Mod_id,
 		    rnti_k[1][0] = find_UE_RNTI(Mod_id,ue[1][0]);
 
 
-		    eNB_UE_stats_k[0][0] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][0]);
-		    eNB_UE_stats_k[1][0] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][0]);
+		    eNB_UE_stats_k[0][0] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[0][0]);
+		    eNB_UE_stats_k[1][0] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[1][0]);
 
 		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][0]->DL_cqi[0]+eNB_UE_stats_k[1][0]->DL_cqi[0]))
 		      {
@@ -1694,8 +1697,8 @@ void tm5_pre_processor (unsigned char Mod_id,
 		    rnti_k[1][1] = find_UE_RNTI(Mod_id,ue[1][1]);
 
 
-		    eNB_UE_stats_k[0][1] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][1]);
-		    eNB_UE_stats_k[1][1] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][1]);
+		    eNB_UE_stats_k[0][1] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[0][1]);
+		    eNB_UE_stats_k[1][1] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[1][1]);
 
 		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][1]->DL_cqi[0]+eNB_UE_stats_k[1][1]->DL_cqi[0]))
 		      {
@@ -1728,8 +1731,8 @@ void tm5_pre_processor (unsigned char Mod_id,
 		    rnti_k[1][2] = find_UE_RNTI(Mod_id,ue[1][2]);
 
 
-		    eNB_UE_stats_k[0][2] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][2]);
-		    eNB_UE_stats_k[1][2] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][2]);
+		    eNB_UE_stats_k[0][2] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[0][2]);
+		    eNB_UE_stats_k[1][2] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[1][2]);
 
 		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][2]->DL_cqi[0]+eNB_UE_stats_k[1][2]->DL_cqi[0]))
 		      {
@@ -1761,8 +1764,8 @@ void tm5_pre_processor (unsigned char Mod_id,
 		    rnti_k[1][3] = find_UE_RNTI(Mod_id,ue[1][3]);
 
 
-		    eNB_UE_stats_k[0][3] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][3]);
-		    eNB_UE_stats_k[1][3] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][3]);
+		    eNB_UE_stats_k[0][3] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[0][3]);
+		    eNB_UE_stats_k[1][3] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[1][3]);
 
 		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][3]->DL_cqi[0]+eNB_UE_stats_k[1][3]->DL_cqi[0]))
 		      {
@@ -1795,8 +1798,8 @@ void tm5_pre_processor (unsigned char Mod_id,
 		    rnti_k[1][4] = find_UE_RNTI(Mod_id,ue[1][4]);
 
 
-		    eNB_UE_stats_k[0][4] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][4]);
-		    eNB_UE_stats_k[1][4] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][4]);
+		    eNB_UE_stats_k[0][4] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[0][4]);
+		    eNB_UE_stats_k[1][4] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[1][4]);
 
 		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][4]->DL_cqi[0]+eNB_UE_stats_k[1][4]->DL_cqi[0]))
 		      {
@@ -1829,8 +1832,8 @@ void tm5_pre_processor (unsigned char Mod_id,
 		    rnti_k[1][5] = find_UE_RNTI(Mod_id,ue[1][5]);
 
 
-		    eNB_UE_stats_k[0][5] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][5]);
-		    eNB_UE_stats_k[1][5] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][5]);
+		    eNB_UE_stats_k[0][5] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[0][5]);
+		    eNB_UE_stats_k[1][5] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[1][5]);
 
 		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][5]->DL_cqi[0]+eNB_UE_stats_k[1][5]->DL_cqi[0]))
 		      {
@@ -1861,8 +1864,8 @@ void tm5_pre_processor (unsigned char Mod_id,
 		    rnti_k[1][6] = find_UE_RNTI(Mod_id,ue[1][6]);
 
 
-		    eNB_UE_stats_k[0][6] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][6]);
-		    eNB_UE_stats_k[1][6] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][6]);
+		    eNB_UE_stats_k[0][6] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[0][6]);
+		    eNB_UE_stats_k[1][6] = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_k[1][6]);
 
 		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][6]->DL_cqi[0]+eNB_UE_stats_k[1][6]->DL_cqi[0]))
 		      {
@@ -2580,7 +2583,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -2593,7 +2596,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  case 4:break;
 	  case 5:
 	    // Get candidate harq_pid from PHY
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+	    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 	    // if(round_temp>0)
 	    // break;
@@ -2603,7 +2606,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	      if(i0 == 1)
 		{
 		  rnti_temp = find_UE_RNTI(Mod_id,ue[0][0]);
-		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 		  if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 		    ue[0][0] = next_ue;
 		}
@@ -2644,7 +2647,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -2656,7 +2659,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  case 5:
 
 	    // Get candidate harq_pid from PHY
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+	    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 	    //   if(round_temp>0)
 	    //  break;
@@ -2666,7 +2669,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	      if(i1 == 1)
 		{
 		  rnti_temp = find_UE_RNTI(Mod_id,ue[0][1]);
-		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 		  if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 		    ue[0][1] = next_ue;
 		}
@@ -2710,7 +2713,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -2723,7 +2726,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  case 5:
 
 	    // Get candidate harq_pid from PHY
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+	    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 	    //    if(round_temp>0)
 	    // break;
@@ -2733,7 +2736,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	      if(i2 == 1)
 		{
 		  rnti_temp = find_UE_RNTI(Mod_id,ue[0][2]);
-		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 		  if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 		    ue[0][2] = next_ue;
 		}
@@ -2776,7 +2779,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -2788,7 +2791,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  case 5:
 
 	    // Get candidate harq_pid from PHY
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+	    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 	    //    if(round_temp>0)
 	    //  break;
@@ -2798,7 +2801,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	      if(i3 == 1)
 		{
 		  rnti_temp = find_UE_RNTI(Mod_id,ue[0][3]);
-		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 		  if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 		    ue[0][3] = next_ue;
 		}
@@ -2857,7 +2860,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -2868,7 +2871,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  case 4:break;
 	  case 5:
 	    // Get candidate harq_pid from PHY
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+	    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 	    //   if(round_temp>0)
 	    // break;
@@ -2878,7 +2881,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	      if(i4 == 1)
 		{
 		  rnti_temp = find_UE_RNTI(Mod_id,ue[0][4]);
-		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 		  if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 		    ue[0][4] = next_ue;
 		}
@@ -2956,7 +2959,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -2968,7 +2971,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  case 5:
 
 	    // Get candidate harq_pid from PHY
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+	    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 	    //  if(round_temp>0)
 	    // break;
@@ -2978,7 +2981,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	      if(i5 == 1)
 		{
 		  rnti_temp = find_UE_RNTI(Mod_id,ue[0][5]);
-		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 		  if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 		    ue[0][5] = next_ue;
 		}
@@ -3087,7 +3090,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -3099,7 +3102,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  case 5:
 
 	    // Get candidate harq_pid from PHY
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+	    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 	    //  if(round_temp>0)
 	    //  break;
@@ -3109,7 +3112,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	      if(i6 == 1)
 		{
 		  rnti_temp = find_UE_RNTI(Mod_id,ue[0][6]);
-		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+		  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 		  if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 		    ue[0][6] = next_ue;
 		}
@@ -3299,7 +3302,7 @@ void tm5_pre_processor (unsigned char Mod_id,
     for( UE_id = 0; UE_id < granted_UEs; UE_id++){
       next_ue = UE_id;
       rnti = find_UE_RNTI(Mod_id, next_ue);
-      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
       TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],pre_nb_available_rbs[next_ue]);
       total_TBS_MUMIMO = TBS + total_TBS_MUMIMO;
     }
@@ -3314,7 +3317,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	
 	// This is an allocated UE_id
 	rnti = find_UE_RNTI(Mod_id,next_ue);
-	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
 	if (eNB_UE_stats==NULL)
 	  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -3327,7 +3330,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	  if(check == 1)
 	    {
 	      rnti_temp = find_UE_RNTI(Mod_id,UE_SU_MIMO);
-	      eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+	      eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti_temp);
 	      if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0]){
 		UE_SU_MIMO = next_ue;
 	      }
@@ -3345,7 +3348,7 @@ void tm5_pre_processor (unsigned char Mod_id,
       }
     
     rnti = find_UE_RNTI(Mod_id,UE_SU_MIMO);
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
     total_TBS_SUMIMO = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_available_rb);
     if(total_TBS_SUMIMO >= total_TBS_MUMIMO){
       
@@ -3372,7 +3375,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	}
     }
   }
-for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
+//for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
 {
   if((MIMO_mode_indicator[0] == 1)&& (MIMO_mode_indicator[1] == 1) && (MIMO_mode_indicator[2] == 1) && (MIMO_mode_indicator[3] == 1) &&
      (MIMO_mode_indicator[4] == 1)&& (MIMO_mode_indicator[5] == 1) && (MIMO_mode_indicator[6] == 1))
@@ -3447,7 +3450,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
   // set current available nb_rb and nCCE to maximum
   nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
-  nCCE = mac_xface->get_nCCE_max(Mod_id) - nCCE_used;
+  nCCE = mac_xface->get_nCCE_max(Mod_id,CC_id) - nCCE_used;
 
 
   /// CALLING Pre_Processor for tm5
@@ -3459,13 +3462,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     rnti = find_UE_RNTI(Mod_id,UE_id);
 
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
     // Get candidate harq_pid from PHY
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid,&round,0);
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
     if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
@@ -3518,7 +3521,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     if (rnti==0)
       continue;
 
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
@@ -3538,7 +3541,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     */
 
     // Get candidate harq_pid from PHY
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid,&round,0);
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
     // Note this code is for a specific DCI format

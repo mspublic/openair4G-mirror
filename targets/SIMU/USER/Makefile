@@ -1,6 +1,6 @@
 CC = gcc
 
-CPUFLAGS = -mmmx -msse -msse2 -m32  #-msse4
+CPUFLAGS = -mmmx -msse -msse2 -m32 #-msse4
 CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ; else echo ""; fi)
 CPUFLAGS += $(shell if grep --silent sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
 linux = $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)

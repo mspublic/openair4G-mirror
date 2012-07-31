@@ -1203,8 +1203,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       crnti = mac_xface->fill_rar(phy_vars_eNB->Mod_id,
 				  phy_vars_eNB->frame,
 				  dlsch_input_buffer,
-				  phy_vars_eNB->lte_frame_parms.N_RB_UL,
-				  input_buffer_length);
+				  phy_vars_eNB->lte_frame_parms.N_RB_UL);
+				  //input_buffer_length);
       /*
       for (i=0;i<input_buffer_length;i++)
 	msg("%x.",dlsch_input_buffer[i]);
