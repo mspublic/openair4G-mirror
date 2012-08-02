@@ -59,7 +59,7 @@ typedef struct {
     
     u8 num_rounds;
     u8 subframe;
-    int eNB_id;
+ //   int eNB_id;
     ///	Amplitude of QPSK symbols
     s16 amp;			
     ///1- Analysis  of errors on DCI, 0- No analysis of errors in DCI
@@ -78,6 +78,12 @@ typedef struct {
 	u8 dual_stream_UE;
 	
 	int perfect_ce;
+	
+	PA_t p_a;
+	u8 	 p_b;	
+	s8 d_offset;
+	
+	char power[50];
 
 } options_t;
 
@@ -98,6 +104,9 @@ void _parseOptions(options_t *opts, int argc, char ** argv);
 void _printOptions(options_t *opts);
 /// Interference Levels are recivend in form  num,num,num this function parse the string and fill dbInterf array 
 void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf);
+
+
+void _parsePower(options_t *opts);
 /// Allocate memory  for signal data arrays 
 void _allocData(options_t opts,data_t *data, u8 n_tx,u8 n_rx,int Frame_length_complex_samples);
 /// Generate output dir with the prefix specified in testNumber
@@ -135,6 +144,9 @@ void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncod
 void _dumpTransportBlockSegments(u32 C,u32 Cminus,u32 Kminus,u32 Kplus,  u8 ** c_UE,u8 ** c_eNB);
 void _applyInterference(options_t opts,data_t data,double sigma2,double iqim,int numSubFrames);
 double compute_ber_soft(u8* ref, s16* rec, int n);
+void _fillPerfectChannelDescription(options_t opts,u8 l);
 
 void _writeTxData(char *num,char *desc, int init, int numframes,options_t opts, int output,int senial);
+
+
 #endif
