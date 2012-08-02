@@ -50,7 +50,7 @@ DCI1E_5MHz_2A_M10PRB_TDD_t  DLSCH_alloc_pdu2_1E;  //TODO:  what it's the use of 
 LTE_DL_FRAME_PARMS *frame_parms; 				  //WARNING if you don't put this variable, some macros dosn't work
 
 int WRITE_FILES =1;
-int NOISE=0;
+int NOISE=1;
 
 int x=0;
 int totErrors=0;
@@ -242,7 +242,7 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
   PHY_vars_UE->PHY_measurements.n_adj_cells=opts.n_adj_cells;
 	 for(i=1;i<=opts.n_adj_cells;i++)
 	 {
-	  PHY_vars_UE->PHY_measurements.adj_cell_id[i] = (opts.Nid_cell+i)%6;	  
+	  PHY_vars_UE->PHY_measurements.adj_cell_id[i-1] = (opts.Nid_cell+i)%6;	  
 	}
   
 
@@ -270,8 +270,8 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
             interf_PHY_vars_eNB[i]=malloc(sizeof(PHY_VARS_eNB));
             
             memcpy(&interf_PHY_vars_eNB[i]->lte_frame_parms,lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));            
-            interf_PHY_vars_eNB[i]->lte_frame_parms.Nid_cell=3;//opts.Nid_cell+i+1;
-            interf_PHY_vars_eNB[i]->lte_frame_parms.nushift=3;//(opts.Nid_cell+i+1)%6;
+            interf_PHY_vars_eNB[i]->lte_frame_parms.Nid_cell=opts.Nid_cell+i+1;
+            interf_PHY_vars_eNB[i]->lte_frame_parms.nushift=(opts.Nid_cell+i+1)%6;
             
             //printf("NRB: %d\n", interf_PHY_vars_eNB[i]->lte_frame_parms.N_RB_DL);
                       
@@ -572,7 +572,7 @@ void _fillData(options_t opts,data_t data,int numSubFrames)
             for(j=0;j<opts.nInterf;j++)
             {
 					data.is_re[j][aa][i] = ((double)(((short *)interf_PHY_vars_eNB[j]->lte_eNB_common_vars.txdata[0][aa]))[aux + (i<<1)]);
-					data.is_im[j][aa][i] = ((double)(((short *)interf_PHY_vars_eNB[j]->lte_eNB_common_vars.txdata[0][aa]))[aux +(i<<1)+1]);													
+					data.is_im[j][aa][i] = ((double)(((short *)interf_PHY_vars_eNB[j]->lte_eNB_common_vars.txdata[0][aa]))[aux +(i<<1)+1]);																	
 			}
         }
     }
@@ -589,8 +589,7 @@ void _applyInterference(options_t opts,data_t data,double sigma2,double iqim,int
         for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) 
         {
 			for(j=0;j<opts.nInterf;j++)
-			{							
-			//	printf("opts.dbInterf[j]=%f",		(pow(10.0,.05*opts.dbInterf[j])));
+			{										
 				data.r_re[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_re[j][aa][i]);				
 				data.r_im[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_im[j][aa][i]);						
 			}
@@ -631,7 +630,7 @@ u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_all
                                           num_common_dci,
                                           dci_alloc,
                                           0,
-                                         0,// (s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
+                                         (s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
                                           &PHY_vars_eNB->lte_frame_parms,
                                           PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
                                           opts.subframe);
@@ -647,7 +646,7 @@ u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_all
                                           num_common_dci,
                                           dci_alloc,
                                           0,
-                                         0,// (s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
+                                        0,//  (s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
                                           &PHY_vars_eNB->lte_frame_parms,
                                           interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
                                           opts.subframe);
@@ -887,16 +886,16 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 			   //Modulation
 				re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
-                                              0,// opts.amp,
+                                               opts.amp,
                                                 opts.subframe,
                                                 &PHY_vars_eNB->lte_frame_parms,
                                                 num_pdcch_symbols,
                                                 PHY_vars_eNB->dlsch_eNB[idUser][0]);
                                                 
-              for(i=0;i<opts.nInterf;i++)
+          for(i=0;i<opts.nInterf;i++)
                 {
 					dlsch_modulation(interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
-                                               0,// opts.amp,
+                                               opts.amp,
                                                 opts.subframe,
                                                 &(interf_PHY_vars_eNB[i])->lte_frame_parms,
                                                 num_pdcch_symbols,
