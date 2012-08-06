@@ -8,7 +8,6 @@ NOSTDINC_FLAGS := -I$(M)/../../openair2/ieee80211p/include/ \
 
 obj-$(CONFIG_IEEE80211P) += ieee80211p.o
 ieee80211p-y += ieee80211p-driver.o
-ieee80211p-y += ieee80211p-device.o
 
 default :
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
