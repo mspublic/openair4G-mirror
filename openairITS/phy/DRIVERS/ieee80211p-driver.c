@@ -31,11 +31,6 @@
  *
  *****************************************************************************/
 
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/skbuff.h>
-
-#include "ieee80211p-device.h"
 #include "ieee80211p-driver.h"
 
 /******************************************************************************
@@ -45,7 +40,7 @@
  *****************************************************************************/
 
 #define DRV_DESCRIPTION	"IEEE 802.11p driver"
-#define DRV_VERSION "V0.1"
+#define DRV_VERSION "V1.0"
 #define DRV_AUTHOR "EURECOM / THALES COMMUNICATIONS & SECURITY"
 
 MODULE_LICENSE("GPL");
@@ -53,14 +48,303 @@ MODULE_VERSION(DRV_VERSION);
 MODULE_DESCRIPTION(DRV_DESCRIPTION);
 MODULE_AUTHOR(DRV_AUTHOR);
 
-/******************************************************************************
- *
- * Global variables
+/****************************************************************************** 
+ * 
+ * Driver's private data 
  *
  *****************************************************************************/
 
-/* Driver's private data */	
-static struct ieee80211p_device_priv priv;
+static struct ieee80211p_priv drv_priv_data;
+
+/******************************************************************************
+ * 
+ * Driver's private data related routines : Init / Exit / RX path 
+ *
+ *****************************************************************************/
+
+/*********** 
+ * RX path *
+ ***********/
+
+u16 find_rate_idx(struct ieee80211p_priv *priv,
+							enum ieee80211_band band, u16 bitrate) {
+
+	/* Data rate index  */
+	int rate_idx = -1;
+
+	/* Loop variable */
+	int i;
+
+	struct wiphy *wiphy = priv->hw->wiphy;
+
+	/* We look for the idx of the RX bitrate in the bitrates of the band */
+	for (i=0;i<wiphy->bands[band]->n_bitrates;i++) {
+		if (wiphy->bands[band]-> bitrates[i].bitrate == bitrate) {
+			rate_idx = i;
+		}
+	}
+
+	return rate_idx;
+
+} /* ieee80211p_find_rate_idx */
+
+/**************
+ * RX tasklet *
+ **************/
+
+static void ieee80211p_tasklet_rx(unsigned long data) {
+	
+	/* Driver's private data */	
+	struct ieee80211p_priv *priv = (void *)data;
+
+	/* RX skb */
+	struct sk_buff *skb = priv->rx_skb;
+
+	/* RX status */	
+	struct ieee80211_rx_status *rxs;
+	struct ieee80211p_rx_status *rs ;
+
+	/* Netlink header */
+	struct nlmsghdr *nlh = NULL;
+	
+		/* Netlink command */
+	char *nlcmd;
+
+	/* lock */	
+	spin_lock(&priv->rxq_lock);
+
+    /************************
+	 * Netlink skb handling *
+	 ************************/
+
+	if (skb == NULL) {
+        	printk(KERN_ERR "ieee80211_tasklet_rx: received skb == NULL\n");
+        	goto error;
+    }
+
+	/* Get the netlink message header */
+	nlh = (struct nlmsghdr *)skb->data;
+
+	/* Keep track of the softmodem pid if not already done */
+	priv->pid_softmodem = (int)nlh->nlmsg_pid;
+ 
+	/* Check the command of the received msg */
+	nlcmd = (char *)NLMSG_DATA(nlh);	
+	if ((*nlcmd == NLCMD_INIT) || (*nlcmd != NLCMD_DATA)) {
+		printk(KERN_ERR "ieee80211_tasklet_rx: NLCMD received / softmodem pid = %d\n",priv->pid_softmodem);
+		goto error;
+	}
+
+	/* Remove the nlmsg header + netlink command */
+	rs = (struct ieee80211p_rx_status *)skb_pull(skb,sizeof(struct nlmsghdr)+NLCMD_SIZE);
+
+	/*********
+	 * Stats *
+	 *********/
+
+	rxs = IEEE80211_SKB_RXCB(skb);
+
+	rxs->freq = priv->cur_chan->center_freq;	//center frequency in MHz
+	rxs->signal = rs->rssi;	//rssi provided by the board in dBm
+	rxs->band = rs->band;
+	rxs->flag = 0;
+	rxs->rate_idx = find_rate_idx(priv,rxs->band,rs->rate);
+
+	if (rxs->rate_idx == -1) {
+		printk(KERN_ERR "ieee80211_tasklet_rx: unknown data rate\n");
+		dev_kfree_skb_any(skb);
+		goto error;
+	}
+
+	if (rs->flags & IEEE80211P_MMIC_ERROR) {
+		rxs->flag |= RX_FLAG_MMIC_ERROR;
+	}
+	if (rs->flags & IEEE80211P_FAILED_FCS_CRC) {
+		rxs->flag |= RX_FLAG_FAILED_FCS_CRC;
+	}
+	if (rs->flags & IEEE80211P_FAILED_PLCP_CRC) {
+		rxs->flag |= RX_FLAG_FAILED_PLCP_CRC;
+	}
+	if (rs->flags & IEEE80211P_MACTIME_MPDU) {
+		rxs->flag |= RX_FLAG_MACTIME_MPDU;
+	}
+	if (rs->flags & IEEE80211P_NO_SIGNAL_VAL) {
+		rxs->flag |= RX_FLAG_NO_SIGNAL_VAL;
+	}
+
+	/* Remove the rx status from the skb */
+	skb_pull(skb,sizeof(struct ieee80211p_rx_status));
+
+	/* Give skb to the mac80211 driver */
+	ieee80211_rx(priv->hw, skb);
+
+error:
+	/* unlock */
+	spin_unlock(&priv->rxq_lock);
+
+} /* ieee80211p_tasklet_rx */
+
+/**************
+ * RX handler *
+ **************/
+
+static void ieee80211p_rx(struct sk_buff *skb) {
+
+	/* We keep track of the received netlink skb */
+	drv_priv_data.rx_skb = skb;
+
+	/* Schedule a tasklet to handle the receivded skb */
+	tasklet_schedule(&drv_priv_data.rx_tq);
+}
+
+/********
+ * Init *
+ ********/
+
+static int reg_copy_regd(const struct ieee80211_regdomain **dst_regd,
+			const struct ieee80211_regdomain *src_regd) {
+
+	struct ieee80211_regdomain *regd;
+	int size_of_regd = 0;
+	int ret = 0;
+	int i = 0;
+
+	size_of_regd = sizeof(struct ieee80211_regdomain) + ((src_regd->n_reg_rules + 1)*(sizeof(struct ieee80211_reg_rule)));
+
+	regd = kzalloc(size_of_regd, GFP_KERNEL);
+
+	if (!regd) {
+		ret = -1;
+		goto error;
+	}
+
+	memcpy(regd,src_regd,sizeof(struct ieee80211_regdomain));
+
+	for (i=0;i<src_regd->n_reg_rules;i++) {
+		memcpy(&regd->reg_rules[i],&src_regd->reg_rules[i],
+			sizeof(struct ieee80211_reg_rule));
+	}
+
+	*dst_regd = regd;
+
+error:
+	return ret;
+
+} /* reg_copy_regd */
+
+int ieee80211p_priv_init(struct ieee80211p_priv *priv) {	
+
+	/* Configuration and hardware information for an 802.11 PHY */	
+	struct ieee80211_hw *hw = priv->hw;
+	struct wiphy *wiphy = hw->wiphy; 	
+
+	/* Return value */
+	int ret = 0;
+
+	/* Test MAC address */	
+	char mac_address[ETH_ALEN] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+
+	/******************************
+	 * Initializing hardware data *
+	 ******************************/
+	
+	/* Received signal power is given in dBm */	
+	hw->flags = IEEE80211_HW_SIGNAL_DBM | IEEE80211_HW_DOT11OCB_SUPPORTED;
+
+	/* Headroom to reserve in each transmit skb */	
+	hw->extra_tx_headroom = 0;
+
+	/* Number of available hardware queues */
+	hw->queues = IEEE80211P_NUM_TXQ;
+
+	/* Virtual interface's private data size */
+	hw->vif_data_size = sizeof(struct ieee80211p_vif_priv);
+
+	/***************************
+	 * Initializing wiphy data *
+	 ***************************/
+	
+	/* We have our own regulatory domain */
+	//ret = reg_copy_regd(&wiphy->regd,&regd);
+
+	//if (ret == -1) {
+	//	printk(KERN_ERR "ieee80211p_priv_init: reg domain copy failed\n");
+	//	goto error;
+	//}
+	
+	/* Set MAC address to hw->wiphy->perm_addr */
+	SET_IEEE80211_PERM_ADDR(hw,&mac_address[0]);
+
+	/* Set interface mode */
+	wiphy->interface_modes = BIT(NL80211_IFTYPE_ADHOC);
+	
+	/* Describes the frequency bands a wiphy is able to operate in */
+	wiphy->bands[IEEE80211_BAND_2GHZ] = &bands;
+
+	/* Enable ieee 80211.p mode */
+	wiphy->dot11OCBActivated = 1;
+
+	/***********************************
+	 * Initilizing driver private data *
+	 ***********************************/
+	
+	/* Lock */
+	spin_lock_init(&priv->lock);
+
+	/* RX queues setup */
+	spin_lock_init(&priv->rxq_lock);
+	tasklet_init(&priv->rx_tq,ieee80211p_tasklet_rx,(unsigned long)priv);
+
+	/* Virtual interfaces init */
+	priv->nvifs = 0;
+
+	/* Current channel init */
+	/* The default current channel is the 1st one in the band */
+	priv->cur_chan = &bands.channels[0];
+
+	/* Power level init */
+	/* Default value =  max power level in the default curent channel */
+	priv->cur_power = priv->cur_chan->max_power;
+
+	/* Data rate init */
+	/* Default value = first bitrate of the band */
+	priv->cur_datarate = bands.bitrates[0].bitrate;
+
+	/* Netlink socket init */
+	priv->nl_sock = netlink_kernel_create(&init_net,NETLINK_80211P,0,ieee80211p_rx,NULL,THIS_MODULE);
+	if (priv->nl_sock == NULL) {
+		printk(KERN_ERR "ieee80211p_priv_init: netlink_kernel_create failed\n");
+		ret = -1;
+		goto error;	
+	}
+
+	priv->pid_softmodem = 0;
+	priv->rx_skb = NULL;
+
+error:
+	return ret;
+
+} /* ieee80211p_priv_init */
+
+/********
+ * Exit *
+ ********/
+
+void ieee80211p_priv_exit(struct ieee80211p_priv *priv) {
+
+	/*********************************
+	 * Freeing driver's private data *
+	 *********************************/
+
+	tasklet_kill(&priv->rx_tq);
+
+	if (priv->rx_skb != NULL) {
+		kfree(priv->rx_skb);
+	}
+
+	sock_release(priv->nl_sock->sk_socket);
+
+} /* ieee80211_priv_exit */
 
 /******************************************************************************
  * 
@@ -68,98 +352,27 @@ static struct ieee80211p_device_priv priv;
  *
  *****************************************************************************/
 
-int tx_buf_setup(struct ieee80211p_skbqueue *buf, struct sk_buff *skb) {
-	
-	/* Return value */	
-	int ret = 0;	
-
-	/* Element allocation */
-	buf = kzalloc(sizeof(struct ieee80211p_skbqueue),GFP_KERNEL);
-
-	if (!buf) {
-		ret = -1;
-		goto error;
-	}
-
-	/* Clone the skb */
-	buf->skb = skb_clone(skb,GFP_KERNEL);
-
-	if (!buf->skb) {
-		ret = -1;
-		goto error;
-	}
-
-error:
-	return ret;
-
-} /* tx_buf_setup */
-
-void tx_queue(struct ieee80211_hw *hw, struct sk_buff *skb,
-					struct ieee80211p_txq *txq) {	
-
-	/* Return value */
-	int ret = 0;	
-
-	/* New buffered frame */
-	struct ieee80211p_skbqueue *buf;
-
-	/* Get driver's private data */
-	struct ieee80211p_device_priv *priv = hw->priv;
-
-	/* TODO : If needed add padding after the header */
-
-	/* TODO : Send the skb to the hw */
-	
-	/* If the hw is busy, put the skb in queue */
-	if (ret == -1) {
-		/* Check if there's space in the queue */
-		/* If there's not, stop mac80211 queues and drop the frame */	
-		if (txq->queue_len >= txq->queue_max) {
-			ieee80211_stop_queue(hw, txq->queue_num);
-			dev_kfree_skb_any(skb);
-			printk(KERN_ERR "ieee80211p_tx_queue: frame dropped\n");
-			return;
-		}
-
-		/* Lock */	
-		spin_lock(&priv->txq_lock);
-		
-		/* Create a new ieee80211p_skbqueue element */
-		ret = tx_buf_setup(buf,skb);
-
-		if(ret == -1) {
-			dev_kfree_skb_any(skb);
-			printk(KERN_ERR "tx_queue: tx buf setup failed\n");
-			return;
-		}
-
-		/* Add ieee80211p_skbqueue element to the queue */		
-		list_add_tail(&buf->list,&txq->queue.list);
-		txq->queue_len++;
-
-		/* Schedule the TX tasklet for delayed TX */
-		tasklet_schedule(&priv->tx_tq);
-		priv->tx_pending = TRUE;
-
-		/* Unlock */ 
-		spin_unlock(&priv->txq_lock);
-	} 
-	
-	/* Else the transmission went fine */	
-	else {
-	
-		ieee80211_tx_status(hw,skb);
-	}
-	
-} /* tx_queue */
-
 static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 	
+	/* Netlink message header */
+	struct nlmsghdr *nlh = NULL;
+
+	/* Netlink skb */
+	struct sk_buff *nlskb = NULL;
+
+	/* The size of the skb */	
+	int skblen;
+
 	/* Get driver's private data */
-	struct ieee80211p_device_priv *priv = hw->priv;
+	struct ieee80211p_priv *priv = hw->priv;
 
 	/* Get the number of the TX queue */
 	int qnum = skb_get_queue_mapping(skb);
+
+	/* Return value */
+	int ret = 0;
+
+	int i = 0;
 
 	if (qnum >= IEEE80211P_NUM_TXQ) {
 		printk(KERN_ERR "ieee80211p_tx: wrong queue number\n");
@@ -167,7 +380,59 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 		return;
 	}
 
-	tx_queue(hw,skb,&priv->txqs[qnum]);
+	if (priv->pid_softmodem == 0) {
+		printk(KERN_ERR "ieee80211_tx: softmodem pid unknown\n");
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
+	/* Get the size of the skb */
+	if (skb->data_len == 0) {
+		skblen = skb->len;
+	}
+	else {
+		printk(KERN_ERR "ieee80211p_tx: skb not linear\n");
+		dev_kfree_skb_any(skb);
+		return;	
+	}	
+
+	/* Allocate nlskb */
+	nlskb = alloc_skb(NLMSG_SPACE(skblen), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+
+	if (nlskb == NULL) {
+		printk(KERN_ERR "ieee80211p_tx: alloc nlskb failed\n");
+	}    
+
+	/* Add room for the nlmsg header */
+	skb_put(nlskb, NLMSG_SPACE(skblen));
+
+    /* Configure the nlmsg header */
+	nlh = (struct nlmsghdr *)nlskb->data;
+    nlh->nlmsg_len = NLMSG_SPACE(skblen);
+    nlh->nlmsg_pid = priv->pid_softmodem;
+    nlh->nlmsg_flags = 0;
+
+    NETLINK_CB(nlskb).pid = 0; // nlmsg sent from kernel
+    NETLINK_CB(nlskb).dst_group = NETLINK_80211P_GROUP;
+
+	/* Copy the data from the skb to the nlskb */
+	memcpy(NLMSG_DATA(nlh),skb->data,skb->len);
+
+	/* DEBUG */
+	for (i=0;i<skb->len;i++) {
+		printk(KERN_ERR "%02X ",skb->data[i]);
+	}
+	printk(KERN_ERR "\n");
+
+	/* Free the old skb */
+	dev_kfree_skb_any(skb);
+
+    ret = netlink_unicast(priv->nl_sock,nlskb,priv->pid_softmodem,NETLINK_80211P_GROUP);
+
+    if (ret <= 0) {
+    	printk(KERN_ERR "ieee80211p_tx: netlink mesg not sent\n");
+		return;
+    }
 
 } /* ieee80211p_tx */
 
@@ -191,7 +456,7 @@ static int ieee80211p_add_interface(struct ieee80211_hw *hw,
 		struct ieee80211_vif *vif) {
 	
 	/* Get driver's private data */
-	struct ieee80211p_device_priv *priv = hw->priv;
+	struct ieee80211p_priv *priv = hw->priv;
 	struct ieee80211p_vif_priv *vif_priv = (void *)vif->drv_priv;
 
 	/* Return value */
@@ -222,7 +487,7 @@ static void ieee80211p_remove_interface(struct ieee80211_hw *hw,
 		struct ieee80211_vif *vif) {
 
 	/* Get driver's private data */
-	struct ieee80211p_device_priv *priv = hw->priv;
+	struct ieee80211p_priv *priv = hw->priv;
 
 	spin_lock(&priv->lock);
 	
@@ -237,7 +502,7 @@ static void ieee80211p_remove_interface(struct ieee80211_hw *hw,
 static int ieee80211p_config(struct ieee80211_hw *hw, u32 changed) {
 	
 	/* Get driver's private data */
-	struct ieee80211p_device_priv *priv = hw->priv;
+	struct ieee80211p_priv *priv = hw->priv;
 
 	/* Get device configuration */
 	struct ieee80211_conf *conf = &hw->conf;
@@ -274,7 +539,10 @@ static void ieee80211p_configure_filter(struct ieee80211_hw *hw,
 	*new_flags &= SUPPORTED_FIF_FLAGS;	
 } /* ieee80211p_configure_filter */
 
-/* Only the mandatory callbacks from ieee80211p_ops are implemented */
+/**************************************************************************
+ * Only the mandatory callbacks from ieee80211p_ops have been implemented *
+ **************************************************************************/
+
 const struct ieee80211_ops ieee80211p_driver_ops = {		
 	.tx = ieee80211p_tx,
 	.start = ieee80211p_start,
@@ -287,23 +555,15 @@ const struct ieee80211_ops ieee80211p_driver_ops = {
 
 /******************************************************************************
  *
- * Driver's exported functions
+ * Driver's entry point
  *
  *****************************************************************************/
 
-struct ieee80211p_device_priv *ieee80211p_driver_get_priv_data(void) {
-	return &priv;
-}
+/******************
+ * Start function *
+ ******************/
 
-EXPORT_SYMBOL(ieee80211p_driver_get_priv_data);
-
-/******************************************************************************
- *
- * Driver's initialization and release functions
- *
- *****************************************************************************/
-
-static int ieee80211p_driver_start(struct ieee80211p_device_priv *priv) {
+static int ieee80211p_driver_start(struct ieee80211p_priv *priv) {
 
 	/* Return value */	
 	int ret = 0;
@@ -316,7 +576,7 @@ static int ieee80211p_driver_start(struct ieee80211p_device_priv *priv) {
 	 * and priv (driver private data)          *
 	 *******************************************/
 
-	hw = ieee80211_alloc_hw(sizeof(struct ieee80211p_device_priv),&ieee80211p_driver_ops);
+	hw = ieee80211_alloc_hw(sizeof(struct ieee80211p_priv),&ieee80211p_driver_ops);
 
 	if (hw == NULL) {
 		ret = -1;
@@ -325,15 +585,16 @@ static int ieee80211p_driver_start(struct ieee80211p_device_priv *priv) {
 	}	
 
 	priv->hw = hw;
+	hw->priv = priv;
 
 	/*************************************************
 	 * Initializing hardware and driver private data *
 	 *************************************************/
 
-	ret = ieee80211p_device_init(priv);
+	ret = ieee80211p_priv_init(priv);
 
 	if (ret == -1) {
-		printk(KERN_ERR "ieee80211p_driver_start: can't init device hw\n");		
+		printk(KERN_ERR "ieee80211p_driver_start: can't init priv data hw\n");		
 		goto error;
 	}
 
@@ -355,7 +616,11 @@ error:
 
 } /* ieee80211p_driver_start */
 
-static void ieee80211p_driver_stop(struct ieee80211p_device_priv *priv) {
+/*****************
+ * Stop function *
+ *****************/
+
+static void ieee80211p_driver_stop(struct ieee80211p_priv *priv) {
 	
 	/********************
 	 * Freeing hardware *
@@ -370,24 +635,21 @@ static void ieee80211p_driver_stop(struct ieee80211p_device_priv *priv) {
  	 * Freeing driver's private data *
 	 *********************************/
 
-	ieee80211p_device_exit(priv);
+	ieee80211p_priv_exit(priv);
 
 } /* ieee80211p_driver_stop */
 
-/******************************************************************************
- *
- * Driver entry point
- *
- *****************************************************************************/
+/*******************************************
+ * Driver's init function called at insmod *
+ *******************************************/
 
-/* Called at insmod */
 static int __init ieee80211p_init(void)
 {
 	int ret = 0;	
 
 	printk(KERN_DEBUG "ieee80211p_init: ieee80211p module inserted\n");
 
-	ret = ieee80211p_driver_start(&priv);
+	ret = ieee80211p_driver_start(&drv_priv_data);
 
 	if (ret == -1) {
 		printk(KERN_ERR "ieee80211p_init: can't start ieee80211p driver\n");
@@ -397,15 +659,17 @@ static int __init ieee80211p_init(void)
 
 } /* ieee80211p_init */
 
-/* Called at rmmod */
+/******************************************
+ * Driver's exit function called at rmmod *
+ ******************************************/
+
 static void __exit ieee80211p_exit(void)
 {
-	ieee80211p_driver_stop(&priv);	
+	ieee80211p_driver_stop(&drv_priv_data);	
 
 	printk(KERN_DEBUG "ieee80211p_init: ieee80211p module removed\n");
 
 } /* ieee80211p_exit */
-
 
 module_exit(ieee80211p_exit);
 module_init(ieee80211p_init);
