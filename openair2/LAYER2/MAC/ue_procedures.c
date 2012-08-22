@@ -853,6 +853,14 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 }
 
 // called at each subframe
+// Performs :
+// 1. Trigger PDCP every 5ms
+// 2. Call RRC for link status return to PHY
+// 3. Perform SR/BSR procedures for scheduling feedback
+// 4. Perform PHR procedures
+
+
+
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index) {
 
   int lcid; // lcid index
@@ -889,7 +897,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   }
 #endif 
 
-  // Check timers
+  // Check Contention resolution timer (put in a function later)
   if (UE_mac_inst[Mod_id].RA_contention_resolution_timer_active == 1) {
     if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
       rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
@@ -911,6 +919,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 
   // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
   // outlined in Sections 5.4.4 an 5.4.5 of 36.321
+  // Put this in another function
 
     // Get RLC status info and update Bj for all lcids that are active
   for (lcid=CCCH; lcid <= DTCH; lcid++ ) {
@@ -970,6 +979,8 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
     LOG_D(MAC,"[MAC][UE %d] Release all SRs \n", Mod_id);
   }
+
+  // Put this in a function
   // Call PHR procedure as described in Section 5.4.6 in 36.321 
   if (UE_mac_inst[Mod_id].PHR_state == MAC_MainConfig__phr_Config_PR_setup ){ // normal operation 
     if (UE_mac_inst[Mod_id].PHR_reconfigured == 1){ // upon (re)configuration of the power headroom reporting functionality by upper layers 

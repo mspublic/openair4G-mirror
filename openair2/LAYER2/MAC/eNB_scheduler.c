@@ -1039,7 +1039,11 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 
 
+
+
   // allocated UE_ids until nCCE
+
+
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > aggregation);UE_id++) {
 
     if ((UE_is_to_be_scheduled(Mod_id,UE_id)>0) && ((UE_id+subframe)%2==0)) { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes.
@@ -1113,7 +1117,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 	printf("Ndi %d, mcs %d, coop %d\n",ULSCH_dci->ndi,ULSCH_dci->mcs,cooperation_flag);
 
-	// schedule 4 RBs for UL
+
 	if((cooperation_flag > 0) && (next_ue == 1))// Allocation on same set of RBs
 	  {
 	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c
@@ -3919,10 +3923,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  mcs--;
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
+
 	if (TBS < (sdu_length_total + header_len_dcch + header_len_dtch)) {
 	  mcs++;
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
+
 
 
 #ifdef DEBUG_eNB_SCHEDULER
@@ -4326,6 +4332,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	// schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
 	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
     }
+    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
     break;
   case 2:
     // TDD, nothing 

@@ -438,7 +438,7 @@ typedef struct{
   /// Number of adjacent cells to measure
   u8  n_adj_cells;
   /// Array of adjacent physical cell ids
-  u16 adj_cell_id[6];
+  u32 adj_cell_id[6];
   /// Pointer to RRC MAC configuration
   MAC_MainConfig_t *macConfig;
   /// Pointer to RRC Measurement gap configuration
@@ -772,6 +772,13 @@ void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
 
+/* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.  
+@param Mod_id Instance id of UE in machine
+@param eNB_id Index of eNB that UE is attached to
+@param rnti C_RNTI of UE
+@param subframe subframe number
+@returns 0 for no SR, 1 for SR
+*/
 void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
@@ -847,7 +854,7 @@ s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
 /*! \fn  UE_L2_state_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index)
-   \brief UE scehdular where all the ue background tasks are done
+   \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.  
 \param[in] Mod_id instance of the UE
 \param[in] subframe the subframe number
 \param[in] direction subframe direction
