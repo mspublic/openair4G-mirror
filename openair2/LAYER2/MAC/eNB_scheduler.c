@@ -1042,7 +1042,8 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   // allocated UE_ids until nCCE
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > aggregation);UE_id++) {
 
-    if (UE_is_to_be_scheduled(Mod_id,UE_id)>0) { // if there is information on bsr of DCCH, DTCH or if there is UL_SR
+    if ((UE_is_to_be_scheduled(Mod_id,UE_id)>0) && ((UE_id+subframe)%2==0)) { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes.
+
 
 
       // find next ue to schedule
@@ -1051,7 +1052,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
       //    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
       rnti = find_UE_RNTI(Mod_id,next_ue); // radio network temp id is obtained
 
-      LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE (SR %d)\n",Mod_id,rnti,frame,subframe,
+      LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE %d (SR %d)\n",Mod_id,rnti,frame,subframe,UE_id,
 	    eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
 
       eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0; //// why =0 ???
