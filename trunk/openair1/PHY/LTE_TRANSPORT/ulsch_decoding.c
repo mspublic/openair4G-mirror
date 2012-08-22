@@ -845,9 +845,9 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     for (i=0;i<1+((8+ulsch->Or1)/8);i++)
       msg("ulsch_decoding: O[%d] %d\n",i,ulsch->o[i]);
     if (ulsch->cqi_crc_status == 1)
-      msg("RX CQI CRC OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
+      msg("RX CQI CRC OK (%x)\n",extract_cqi_crc(o_flip,ulsch->Or1));
     else
-      msg("RX CQI CRC NOT OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
+      msg("RX CQI CRC NOT OK (%x)\n",extract_cqi_crc(o_flip,ulsch->Or1));
 #endif
   }
 

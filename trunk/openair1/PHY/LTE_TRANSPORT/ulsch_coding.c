@@ -241,10 +241,10 @@ u32 ulsch_encoding(u8 *a,
   for (i=0;i<ulsch->O_RI;i++)
     msg("ulsch_coding: O_RI[%d] %d\n",i,ulsch->o_RI[i]);
   msg("ulsch_coding: O=%d\n",ulsch->O);
-
-  for (i=0;i<1+((ulsch->O)/8);i++) {
+  
+  for (i=0;i<1+((8+ulsch->O)/8);i++) {
     //    ulsch->o[i] = i;
-    //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
+    msg("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
   }
   if ((tmode != 4))
     print_CQI(ulsch->o,wideband_cqi_rank1_2A,0);
@@ -660,7 +660,7 @@ u32 ulsch_encoding(u8 *a,
     if (i<Qprime_CQI) {
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*j)] = ulsch->q[q+(Q_m*i)];
-	//	printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
+	//printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
       }
     }
     else {

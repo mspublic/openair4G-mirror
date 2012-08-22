@@ -4,12 +4,12 @@
    date: 10.2009 
 */
 #include "defs.h"
-#include "lte_interleaver_inline.h"
+//#include "lte_interleaver_inline.h"
 
 
 //#define DEBUG_TURBO_ENCODER 1
 
-unsigned short threegpplte_interleaver_output;
+unsigned int threegpplte_interleaver_output;
 unsigned int threegpplte_interleaver_tmp;
 
 inline void threegpplte_interleaver_reset() {
@@ -26,8 +26,7 @@ inline unsigned short threegpplte_interleaver(unsigned short f1,
   threegpplte_interleaver_output = (threegpplte_interleaver_output + threegpplte_interleaver_tmp + f1 - f2)%K;
 
 #ifdef DEBUG_TURBO_ENCODER
-
-  //  printf("Interleaver output %d\n",threegpplte_interleaver_output);
+  printf("pi(i) %d : 2*f2 * i = %d, f1 %d f2 %d, K %d, pi(i-1) %d \n",threegpplte_interleaver_output,threegpplte_interleaver_tmp,f1,f2,K,threegpplte_interleaver_output);
 #endif
   return(threegpplte_interleaver_output);
 }
@@ -73,14 +72,14 @@ void threegpplte_turbo_encoder(unsigned char *input,
   for (i=0;i<input_length_bytes;i++) {
     
 #ifdef DEBUG_TURBO_ENCODER
-    printf("\n****input %x : %x\n",i,input[i]);
+    printf("\n****input %d  : %x\n",i,input[i]);
 #endif //DEBUG_TURBO_ENCODER
 
     for (b=0;b<8;b++) {
       *x = (input[i]&(1<<(7-b)))>>(7-b);
 
 #ifdef DEBUG_TURBO_ENCODER
-      printf("bit %d: %d\n",b,*x);
+      printf("bit %d/%d: %d\n",b,b+(i<<3),*x);
 #endif //DEBUG_TURBO_ENCODER
 
 #ifdef DEBUG_TURBO_ENCODER

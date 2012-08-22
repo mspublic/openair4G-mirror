@@ -189,6 +189,7 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
   while (trial++ < ntrials) {
 
     //    printf("encoding\n");
+    //    test_input[0] = 0x80;
     for (i=0;i<block_length;i++) {
       
       test_input[i] = (unsigned char)(taus()&0xff);
@@ -211,7 +212,7 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
   
     
     //    memset(decoded_output,0,16);
-    //    printf("decoding\n");
+    //    printf("decoding %d\n",trial);
     ret = dlsch_decoding(channel_output,
 			 &PHY_vars_UE->lte_frame_parms,
 			 PHY_vars_UE->dlsch_ue[0][0],
@@ -240,33 +241,57 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
     //	   dlsch_ue->harq_processes[0]->c[0][0],
     //	   (dlsch_ue->harq_processes[0]->F>>3));
     
-    if (ret < MAX_TURBO_ITERATIONS+1)
+    if (ret < MAX_TURBO_ITERATIONS+1) {
       *iterations = (*iterations) + ret;
+      //      if (ret>1)
+      //	printf("ret %d\n",ret);
+    }
     else
       *iterations = (*iterations) + (ret-1);
-
+    
     if (uerr==1)
       *uerrors = (*uerrors) + 1;
     
     for (i=0;i<block_length;i++) {
             
       if (dlsch_ue->harq_processes[0]->b[i] != test_input[i]) {
-	//	printf("i %d/%d : Input %x, Output %x (%x, F %d)\n",i,block_length,test_input[i],
-	//	       dlsch_ue->harq_processes[0]->b[i],
-	//	       dlsch_ue->harq_processes[0]->c[0][i],
-	//	       (dlsch_ue->harq_processes[0]->F>>3));
-
+	/*		
+		printf("i %d/%d : Input %x, Output %x (%x, F %d)\n",i,block_length,test_input[i],
+		       dlsch_ue->harq_processes[0]->b[i],
+		       dlsch_ue->harq_processes[0]->c[0][i],
+		       (dlsch_ue->harq_processes[0]->F>>3));
+	*/
 	*errors = (*errors) + 1;
-//	printf("*%d\n",*errors);	
+	//	printf("*%d, ret %d\n",*errors,ret);	
 
-
+	
 	
 	if (ret < MAX_TURBO_ITERATIONS+1)
 	  *crc_misses = (*crc_misses)+1;
 	break;
+
+      }
+
+    
+    }
+    
+    if (ret == MAX_TURBO_ITERATIONS+1) {
+      //      exit(-1);
+    }
+      /*
+      for (i=0;i<block_length;i++) {
+	
+	if (dlsch_ue->harq_processes[0]->b[i] != test_input[i]) {
+	  printf("i %d/%d : Input %x, Output %x (%x, F %d)\n",i,block_length,test_input[i],
+		 dlsch_ue->harq_processes[0]->b[i],
+		 dlsch_ue->harq_processes[0]->c[0][i],
+		 (dlsch_ue->harq_processes[0]->F>>3));
+	  
+	}
 	
       }
     }
+    */
     if (*errors == 100) {
       //printf("\n");
       break;
@@ -278,249 +303,7 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
   return(0);
 }
 
-/*
-int test_logmapexmimo(double rate,
-		      double sigma,
-		      unsigned char qbits,
-		      unsigned int block_length,
-		      unsigned short f1,
-		      unsigned short f2,
-		      unsigned char crc_len,
-		      unsigned int ntrials,
-		      unsigned int *errors,
-		      unsigned int *trials) {
-
-
-  unsigned char test_input[block_length+1];
-  //_declspec(align(16))  char channel_output[512];
-  //_declspec(align(16))  unsigned char output[512],decoded_output[16], *inPtr, *outPtr;
-
-  char channel_output[(3*8*block_length)+12];
-  unsigned int coded_bits;
-  unsigned char output[(3*8*block_length)+12],decoded_output[block_length];
-  short decoded_output16[(8*block_length)+12];
-  unsigned int i,trial=0;
-  unsigned int crc;
-  unsigned char decoded_byte=0,err=0;
-
-  *errors=0;
-
-  while (trial++ < ntrials) {
-
-    for (i=0;i<block_length-crc_len;i++) {
-      
-      test_input[i] = (unsigned char)(taus()&0xff);
-    }
-    
-    switch (crc_len) {
-      
-    case 1:
-      crc = crc8(test_input,
-		 (block_length-1)<<3)>>24;
-      break;
-    case 2:
-      crc = crc16(test_input,
-		  (block_length-2)<<3)>>16;
-      break;
-    case 3:
-      crc = crc24a(test_input,
-		  (block_length-3)<<3)>>8;
-      break;
-    default:
-      break;
-      
-    }
-    
-    if (crc_len > 0)
-      *(unsigned int*)(&test_input[block_length-crc_len]) = crc;
-    
-    
-    
-    threegpplte_turbo_encoder(test_input,
-			      block_length, 
-			      output,
-			      0,
-			      f1,
-			      f2);
-
-    coded_bits = (unsigned int)((12.0+(3.0*8.0*block_length))/(3.0*rate));
-    
-    rate_matching(coded_bits,(3*8*block_length)+12,output,1,trial);
-
-    for (i = 0; i < (3*8*block_length)+12; i++){
-      if ((output[i]&0x80) != 0) {
-	output[i]&=0x7f;
-	channel_output[i] = quantize(sigma/4.0,(2.0*output[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
-      }
-      else
-	channel_output[i]=0;
-
-      //    printf("Position %d : %d\n",i,channel_output[i]);
-    }
-
-    // Puncture termination bits
-    for (i=(3*8*block_length);i<(3*8*block_length)+12;i++)
-      channel_output[i]=0;
-
-    memset(decoded_output16,0,sizeof(short)*(8*6144));
-    lte_turbo_decoding((8*block_length),8,channel_output,decoded_output16);
-
-    //convert decoded output to bytes
-
-    decoded_byte = 0;
-    for (i=0;i<block_length*8;i++) {
-
-      //      printf("decoded_output %d:%d\n",i,decoded_output16[i]);
-      if (decoded_output16[i]>0) {
-	//	printf("*\n");
-	decoded_byte |= (1<<(i%8));
-      }
-      err=0;
-
-      if ((i%8)==7) {
-	//	printf("Position %d (%x,%x)\n",i>>3,test_input[i>>3],decoded_byte);
-	if (decoded_byte != test_input[i>>3]) {
-	  *errors = (*errors)+ 1;
-	  err=1;
-//	  	  printf("Trials %d, Errors %d --> position %d (byte %x, decoded %x)\n",trial,*errors,i>>3,test_input[i>>3],decoded_byte);
-
-	}
-
-	decoded_byte = 0;
-      }
-
-
-      if (err==1) {
-	break;
-      }
-    }
-
-    if (*errors == 100)
-      break;
-  }
-
-  *trials = trial;
-  //  printf("lte: trials %d, errors %d\n",trial,*errors);
-  return(0);
-}
-
-
-void test_encoder(unsigned int block_length,
-		  unsigned short f1,
-		  unsigned short f2,
-		  unsigned char crc_len) {
-  
-  unsigned char test_input[block_length+1];
-  unsigned char output[(3*8*block_length)+12];
-  unsigned int i;
-  unsigned int crc;
-
-  int size = block_length*8;
-
-  char * encoder_input = (char*) malloc(sizeof(char) * size);
-  char * encoder_output = (char*) malloc(sizeof(char) * (3*size+TAIL));
-  char * parity0 = (char*) malloc(sizeof(char) * size);
-  char * parity1 = (char*) malloc(sizeof(char) * size);
-  char * tail0 = (char*) malloc(sizeof(char) * (TAIL/2));
-  char * tail1 = (char*) malloc(sizeof(char) * (TAIL/2));
-  char * intlv_output = (char*) malloc(sizeof(char) * size);
-  short * interleaver_buffer = (short*) malloc(sizeof(short) * size);
-  short * deinterleaver_buffer = (short*) malloc(sizeof(short) * size);
-
-  unsigned short pi=0;
-
-  generate_permutation_table_lte(((size <= MAX_BLOCK_LENGTH_UMTS) ?
-				  size : MAX_BLOCK_LENGTH_UMTS),
-				 (unsigned short*)interleaver_buffer,
-				 (unsigned short*)deinterleaver_buffer);
-
-  threegpplte_interleaver_reset();
-  pi = 0;
-
-  for (i=0;i<size;i++) {
-    printf("Interleaver i %d : %d\n", interleaver_buffer[i],pi);
-    pi = threegpplte_interleaver(f1,f2,size);
-  }
-  printf("Generating data ...\n");
-  for (i=0;i<block_length-crc_len;i++) {
-    
-
-    test_input[i] = i;//(unsigned char)(taus()&0xff);
-
-    printf("i %d : %x\n",i,test_input[i]);
-  }
-  printf("Generating CRC %d\n",crc_len);
-  switch (crc_len) {
-    
-  case 1:
-    crc = crc8(test_input,
-	       (block_length-1)<<3)>>24;
-    break;
-  case 2:
-    crc = crc16(test_input,
-		(block_length-2)<<3)>>16;
-    break;
-  case 3:
-    crc = crc24a(test_input,
-		(block_length-3)<<3)>>8;
-    break;
-  default:
-    break;
-    
-  }
-  
-  if (crc_len > 0)
-    *(unsigned int*)(&test_input[block_length-crc_len]) = crc;
-  
-  printf("Encoding\n");
-  
-  threegpplte_turbo_encoder(test_input,
-			    block_length, 
-			    output,
-			    0,
-			    f1,
-			    f2);
-  
-
-
-
-    
-    for (i=0;i<size;i++) {
-      if ((test_input[i>>3]&(1<<(i%8)))>0)
-	encoder_input[i]=1;
-      else
-	encoder_input[i]=0;
-    }
-    // RSC turbo encoding #0
-    rsc_encoder(size, encoder_input, parity0, tail0);
-    
-    // interleaving
-    permute(size, encoder_input, intlv_output, (unsigned short*)interleaver_buffer, 1, "char");
-    //    for (i=0;i<size;i++)
-    //      printf("intelv_output %d (%d): %d (%d)\n",i,interleaver_buffer[i],intlv_output[i],encoder_input[interleaver_buffer[i]]);
-
-    // RSC turbo encoding #1
-    rsc_encoder(size, intlv_output, parity1, tail1);
-    
-    // multiplexing encoder output
-    for (i=0; i<size; i++) {
-      encoder_output[3*i] = encoder_input[i];
-      encoder_output[3*i+1] = parity0[i];
-      encoder_output[3*i+2] = parity1[i];
-      printf("i %d : %d,%d,%d (%d,%d,%d)\n",i,encoder_input[i],parity0[i],parity1[i],output[3*i],output[(3*i)+1],output[(3*i)+2]);
-    }
-    for (i=0; i<TAIL; i++) {
-      if (i < TAIL/2)
-	encoder_output[i+3*size] = tail0[i];
-      else
-	encoder_output[i+3*size] = tail1[i-(TAIL/2)];
-      printf("i %d(TAIL) : %d,%d\n",i,encoder_output[i+(3*size)],output[i+(3*size)]);
-    }
-
-}
-*/
-
-#define NTRIALS 10000
+#define NTRIALS 1000
 #define DLSCH_RB_ALLOC 0x1fff//0x1fbf // igore DC component,RB13
 
 int main(int argc, char *argv[]) {
@@ -534,7 +317,6 @@ int main(int argc, char *argv[]) {
   char done1=1;
   char done2=1;
 
-  unsigned short iind;
   unsigned int coded_bits;
   unsigned char NB_RB=25;
 
@@ -599,9 +381,9 @@ int main(int argc, char *argv[]) {
   printf("Coded_bits (G) = %d\n",coded_bits);
 
   block_length =  dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]>>3;
-  printf("Block_length = %d bytes (%d bits, rate %f), mcs %d, I_TBS %d, NB_RB %d\n",block_length,
+  printf("Block_length = %d bytes (%d bits, rate %f), mcs %d, I_TBS %d, F %d, NB_RB %d\n",block_length,
 	 dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1],(double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/coded_bits,
-	 mcs,get_I_TBS(mcs),NB_RB);
+	 mcs,get_I_TBS(mcs),PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->F,NB_RB);
 
   // Test Openair0 3GPP encoder
 /*
@@ -613,7 +395,7 @@ int main(int argc, char *argv[]) {
 
 
 
-  for (SNR=-3;SNR<16;SNR+=.1) {
+  for (SNR=-5;SNR<5;SNR+=.1) {
 
 
     //    printf("\n\nSNR %f dB\n",SNR);

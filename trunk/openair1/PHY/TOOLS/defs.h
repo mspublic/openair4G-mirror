@@ -7,14 +7,22 @@
 * @{
 
 */
-
+ 
+#ifndef NO_OPENAIR1
 #include "PHY/defs.h"
+#else
+#include <stdint.h>
+#define u32 uint32_t
+#define s32 int32_t
+#define u16 uint16_t
+#define s16 int16_t
+#define u8 uint8_t
+#define s8 int8_t
+#define msg printf
+#endif
 
-#ifndef EXPRESSMIMO_TARGET
 #include <emmintrin.h>
-#else //EXPRESSMIMO_TARGET
-#include "express-mimo/simulator/baseband/C/defs.h"
-#endif //EXPRESSMIMO_TARGET
+#include <tmmintrin.h>
 
 //defined in rtai_math.h
 #ifndef _RTAI_MATH_H

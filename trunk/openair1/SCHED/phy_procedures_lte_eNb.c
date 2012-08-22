@@ -1980,10 +1980,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
       
       if (phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status == 1) {
-#ifdef DEBUG_PHY_PROC
+	//#ifdef DEBUG_PHY_PROC
 	if (((phy_vars_eNB->frame%10) == 0) || (phy_vars_eNB->frame < 50)) 
 	  print_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,0);
-#endif
+	//#endif
 	extract_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,&phy_vars_eNB->eNB_UE_stats[i]);
 	phy_vars_eNB->eNB_UE_stats[i].rank = phy_vars_eNB->ulsch_eNB[i]->o_RI[0];
       }

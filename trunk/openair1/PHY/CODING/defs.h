@@ -6,7 +6,17 @@
 #ifndef __CODING_DEFS__H__
 #define __CODING_DEFS__H__
 
-#include "PHY/defs.h" 
+#ifndef NO_OPENAIR1
+#include "PHY/defs.h"
+#else
+#include <stdint.h>
+#define u32 uint32_t
+#define s32 int32_t
+#define u16 uint16_t
+#define s16 int16_t
+#define u8 uint8_t
+#define s8 int8_t
+#endif 
 
 #define CRC24_A 0
 #define CRC24_B 1
@@ -139,17 +149,17 @@ u32 generate_dummy_w_cc(u32 D, u8 *w);
 
 
 u32 lte_rate_matching_turbo(u32 RTC,
-				     u32 G, 
-				     u8 *w,
-				     u8 *e, 
-				     u8 C, 
-				     u32 Nsoft, 
-				     u8 Mdlharq,
-				     u8 Kmimo,
-				     u8 rvidx,
-				     u8 Qm, 
-				     u8 Nl, 
-				     u8 r);
+			    u32 G, 
+			    u8 *w,
+			    u8 *e, 
+			    u8 C, 
+			    u32 Nsoft, 
+			    u8 Mdlharq,
+			    u8 Kmimo,
+			    u8 rvidx,
+			    u8 Qm, 
+			    u8 Nl, 
+			    u8 r);
 
 /** 
 \brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
@@ -339,11 +349,14 @@ u32 crc12 (u8 *inPtr, s32 bitlen);
 @param bitlen length of inputs in bits*/
 u32 crc8  (u8 *inPtr, s32 bitlen);
 
-/*!\fn void phy_viterbi_dot11_sse2(s8 *y, u8 *decoded_bytes, u16 n)
-\brief This routine performs a SIMD optmized Viterbi decoder for the 802.11 64-state convolutional code.
+/*!\fn void phy_viterbi_dot11_sse2(s8 *y, u8 *decoded_bytes, u16 n,int offset,int traceback)
+\brief This routine performs a SIMD optmized Viterbi decoder for the 802.11 64-state convolutional code. It can be
+run in segments with final trace back after last segment.
 @param y Pointer to soft input (coded on 8-bits but should be limited to 4-bit precision to avoid overflow)
 @param decoded_bytes Pointer to decoded output
-@param n Length of input/trellis depth in bits*/
+@param n Length of input/trellis depth in bits for this run
+@param offset offset in receive buffer for segment on which to operate
+@param traceback flag to indicate that traceback should be performed*/
 void phy_viterbi_dot11_sse2(s8 *y,u8 *decoded_bytes,u16 n);
 
 /*!\fn void phy_viterbi_lte_sse2(s8 *y, u8 *decoded_bytes, u16 n)
