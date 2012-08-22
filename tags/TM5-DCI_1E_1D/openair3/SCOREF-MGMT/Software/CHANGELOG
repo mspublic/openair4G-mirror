@@ -1,0 +1,130 @@
+
+v1.1.0 (released on <enter_date>)
+
+v1.0.23
+* OpenDocument format of configuration manual has been added
+* Location Update (0x100) packet and a corresponding configuration parameter has been added
+  Now both Wireless State Update and Location Update can be sent on different time intervals
+
+v1.0.22
+* Eclipse project file updated to use multiple g++ instances to build faster
+* Communication profile parsing error fixed (NULL at the end is now trimmed to match std::map key)
+* Communication profile off-by-one error fixed (profile item indexes were calculated as +1)
+* Location Table Request is now sent by ManagementClient in its constructor
+* State changes has been revised to make one more state valid
+* Incoming packets are now passed to ManagementClientManager to update its state
+* Util::getBinaryRepresentation() and Util::trim() methods added
+* Makefile now compiles each file separately, which makes build faster for re-compilation
+* Makefile parameters has been updated and README.BUILD file has been updated accordingly
+* Makefile.sources file is no more used, files are found by shell command in Makefile
+
+v1.0.21
+* Location Table Request is now handled by ManagementClient
+* State changes are now verified in ManagementClient
+
+v1.0.20
+* ManagementClient objects are now managed by ManagementClientManager
+* ManagementClient now has InquiryThread and ManagementClientState
+* Packet handler now sends replies itself
+* InquiryThread is now aware of UDP connection
+* Util::printHexRepresentation() is now in line with log format
+* TRACE level has been added as a log level
+
+v1.0.19
+* Bugfix for string + integer concatenation using boost::lexical_cast
+* util/Exception class has been added and utilised for stack trace printing
+* Min/max values are defined for ITS keys and checked using try/catch with new Exception class
+* c2x_update_gn_address_event structure has been removed since it's no more used
+* More doxygen comments have been added and more debug messages have been removed
+
+v1.0.18
+* InquiryThread class has been added for sending repetitive Wireless State Request
+* Doxygen file has been renamed to SCOREF-MGMT.doxygen
+* README.BUILD.ECLIPSE.PATHS.xml file has been updated with new versions of used libraries
+* Standard I/O is no more used anywhere, instead Logger class has been utilised
+* Command-line parameter parser has been added but #ifdef'ed out to wait version 1.50.0 of Boost
+
+v1.0.17
+* SCOREF-MGMT_Configuration.pdf file has been added under Documentation/
+
+v1.0.16
+* Openair source file template has been prepended to every source file
+* README.HEADER_TEMPLATE file has been added
+* 'CM-GN Interface Definition_v4.pdf' and 
+  'ITS Station Management Core - Low Level Description.pdf' files has been
+  added under Documentation/ and Documentation/README file has been updated
+* Doxygen documentation has been added for mgmt_its_key_manager.hpp file
+
+v1.0.15
+* README.BUILD.ECLIPSE.PATHS.xml file updated with Boost path
+* Communication profiles defined in L221-4.1.3 are entered into conf. file
+* Communication profiles are now parsed from configuration file
+* UdpServer and Util classes are moved into util/ directory
+* A primitive Log class has been added
+
+v1.0.14
+* Wireless State response/request is now separate (not tested)
+
+v1.0.13
+* Compilation error fixed in main.cpp
+* Doxygen comments for UdpServer class has been added
+
+v1.0.12
+* Forgotten UDP server class committed and version numbers are corrected
+
+v1.0.11
+* Missing Doxygen tags added
+
+v1.0.10
+* ManagementClient added and client state is now kept per-client basis
+
+v1.0.9
+* Communication profile request and response packets added
+* README.BUILD.ECLISE and README.BUILD.ECLIPSE.CODING_STYLE.xml
+  files added for Eclipse development instructions
+* GeonetMessageHandler now keeps client state and sends bulk configuration 
+  if corresponding request has been lost
+
+v1.0.8
+* ITS parameters are now classified and processed accordingly
+* ItsKeyManager class added to split ITS configuration code
+* Linkage parameters are re-ordered in Makefile
+
+v1.0.7
+* UdpServer.{cpp|hpp} updated and main() code clarified
+
+v1.0.6
+* Parameter parsing error fixed
+* FAC_ parameters added into configuration file
+* Wireless State response parser added (not tested)
+* README.BUILD.ECLIPSE file added
+
+v1.0.5
+* Makefile (and Makefile.sources) file added to remove development ties with
+  Eclipse and README.BUILD file updated accordingly
+
+v1.0.4 (released on 23 May 2012)
+* ITS key values are updated and classified as FAC and NET
+* Wireless state and network state packets added
+* Location table is now asked and response is parsed
+
+v1.0.3
+* Doxygen file added (IF.MGMT.doxyfile)
+
+v1.0.2
+* Configuration file added
+* Configuration file is no more hard-coded but read as a command-line parameter
+* UDP server port number is no more hard-coded but read from configuration file
+* All 22 parameters are encoded into Set Configuration bulk message
+* Comment lines written for most header files/classes/methods
+* Faulty `key count' field encode fixed 
+
+v1.0.1
+* `Get Configuration' message is parsed and replied with a "partial" 
+  bulk Set Configuration message
+
+v1.0.0
+* Initial version
+* Mostly structural code, almost nothing functional
+
+- Baris Demiray <baris.demiray@eurecom.fr>

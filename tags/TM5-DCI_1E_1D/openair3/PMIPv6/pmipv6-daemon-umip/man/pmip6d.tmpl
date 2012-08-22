@@ -1,0 +1,47 @@
+.\" $Id: pmip6d.tmpl 1.4 05/05/16 13:13:41+03:00 anttit@tcs.hut.fi $
+.TH pmip6d 1 "June 30, 2011" "" "Proxy Mobile IPv6 Daemon"
+.SH NAME
+pmip6d \- Proxy Mobile IPv6 protocol implementation based on MIPL
+.SH SYNOPSIS
+.B pmip6d [options]
+.sp
+.SH DESCRIPTION
+
+Proxy Mobile IPv6 implementation
+
+.SH OPTIONS
+.IP "\fB\-V, \-\-version\fP"
+Display version information and copyright
+.IP "\fB\-?, \-h, \-\-help\fP"
+Display this help text
+.IP "\fB\-c <file>\fP"
+Read configuration from <file>.  If option is not present, default
+path (%etc%/pmip6d.conf) is used.
+
+.PP
+These options override values read from config file:
+.IP "\fB\-d <number>\fP"
+Set debug level (0-10)
+.IP "\fB\-l <file>\fP"
+Write debug log to <file> instead of stderr
+.IP "\fB\-C, \-\-correspondent-node\fP"
+Node is CN
+.IP "\fB\-H, \-\-home-agent\fP"
+Node is HA
+.IP "\fB\-M, \-\-mobile-node\fP"
+Node is MN
+
+.SH FILES
+
+%etc%/pmip6d.conf
+
+.SH SEE ALSO
+.BR pmip6d.conf (5),
+.BR mipv6 (7),
+.PP
+RFC3775: Mobility Support in IPv6,
+.PP
+RFC3776: Using IPsec to Protect Mobile IPv6 Signaling Between Mobile
+Nodes and Home Agents,
+.PP
+RFC5213: Proxy Mobile IPv6.
