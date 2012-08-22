@@ -54,7 +54,12 @@
 
 #define DEBUG_SIM
 
+
+#define PRINT_STATS
+
+
 #define MCS_COUNT 24//added for PHY abstraction
+
 #define N_TRIALS 1
 
 /*
@@ -117,6 +122,7 @@ void terminate(void);
 void exit_fun(const char* s);
 
 extern int transmission_mode_rrc;//FIXME!!!
+extern int dci_format1D; // Selecting between DCI format 1D and 1E for tmode 5
 
 void 
 help (void) {
@@ -898,6 +904,8 @@ main (int argc, char **argv)
     LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
     exit (-1);
   }
+
+  dci_format1D = 1;// 1 for 1D,0 for 1E in tmode 5
       
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
@@ -1038,6 +1046,7 @@ main (int argc, char **argv)
       if (oai_emulation.info.transmission_mode == 5) 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     //map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     (UE_id == 0)? Rayleigh1_corr : Rayleigh1_anticorr,
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,

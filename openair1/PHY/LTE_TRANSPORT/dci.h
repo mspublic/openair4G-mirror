@@ -416,7 +416,7 @@ struct DCI1D_5MHz_2A_FDD {
 typedef struct DCI1D_5MHz_2A_FDD DCI1D_5MHz_2A_FDD_t;
 #define sizeof_DCI1D_5MHz_2A_FDD_t 27
 
-/// DCI Format Type 1D (5 MHz, TDD, 2 Antenna Ports, 30 bits)
+/// DCI Format Type 1D (5 MHz, TDD, 2 Antenna Ports, 29 bits)
 struct DCI1D_5MHz_2A_TDD {
   /// Localized/Distributed VRB
   unsigned char vrb_type:1;
@@ -426,13 +426,13 @@ struct DCI1D_5MHz_2A_TDD {
   /// TPMI information for precoding
   unsigned char tpmi:2;
   /// TMI confirmation for precoding
-  unsigned char pmi:1;
+  //unsigned char pmi:1;
   /// Downlink Power Offset
   unsigned char dl_power_off:1;
 } __attribute__ ((__packed__));
 
 typedef struct DCI1D_5MHz_2A_TDD DCI1D_5MHz_2A_TDD_t;
-#define sizeof_DCI1D_5MHz_2A_TDD_t 30
+#define sizeof_DCI1D_5MHz_2A_TDD_t 29
 
 /// DCI Format Type 1D (5 MHz, FDD, 4 Antenna Ports, 29 bits)
 struct DCI1D_5MHz_4A_FDD {

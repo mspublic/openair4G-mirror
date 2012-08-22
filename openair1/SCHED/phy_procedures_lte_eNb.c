@@ -1446,6 +1446,11 @@ void process_HARQ_feedback(u8 UE_id,
 	    }
 	  }
 	  else {
+
+	    ue_stats->total_TBS = ue_stats->total_TBS + dlsch->harq_processes[dl_harq_pid[m]]->TBS;
+	    ue_stats->total_transmitted_bits = dlsch->harq_processes[dl_harq_pid[m]]->TBS + ue_stats->total_transmitted_bits;
+
+
 #ifdef DEBUG_PHY_PROC	
 	    LOG_D(PHY,"[eNB %d][PDSCH %x/%d] ACK Received in round %d, resetting process\n",phy_vars_eNB->Mod_id,
 		dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
@@ -1455,8 +1460,6 @@ void process_HARQ_feedback(u8 UE_id,
 	    dlsch_harq_proc->status = SCH_IDLE; 
 	    dlsch->harq_ids[dl_subframe] = dlsch->Mdlharq;
 
-	    ue_stats->total_TBS = ue_stats->total_TBS + phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
-	    ue_stats->total_transmitted_bits = phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS + ue_stats->total_transmitted_bits;
 	  }
 	  
 	  // Do fine-grain rate-adaptation for DLSCH 

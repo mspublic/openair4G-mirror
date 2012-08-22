@@ -256,6 +256,7 @@ typedef struct
   unsigned int total_dlsch_bitrate;
   unsigned int total_transmitted_bits;
   unsigned int total_system_throughput;
+  unsigned int subband[7];
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg

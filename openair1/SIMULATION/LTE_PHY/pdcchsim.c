@@ -22,6 +22,7 @@
 #define BW 10.0
 #define N_TRIALS 100
 
+
 PHY_VARS_eNB *PHY_vars_eNB,*PHY_vars_eNB1,*PHY_vars_eNB2;
 PHY_VARS_UE *PHY_vars_UE;
 
@@ -29,6 +30,10 @@ PHY_VARS_UE *PHY_vars_UE;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
+//int dci_format1D = 1;
+//extern int dci_format1D;
+
+extern int transmission_mode_rrc;
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 tdd_config,u8 N_RB_DL,u8 osf) {
 
@@ -78,7 +83,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
 
-
   memcpy(&PHY_vars_UE->lte_frame_parms,lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
 
   
@@ -105,12 +109,13 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_UE->PHY_measurements.n_adj_cells=2;
   PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
   PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
+
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
-  
+
   generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
   generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
- 
+
   printf("Done lte_param_init\n");
 
   CCCH_alloc_pdu.type               = 1;
@@ -123,6 +128,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 }
 
 int main(int argc, char **argv) {
+
 
   char c;
 
@@ -171,7 +177,7 @@ int main(int argc, char **argv) {
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
   void* dlsch_pdu = NULL;
-  //  int ret;
+  //int ret;
 
   u8 harq_pid;
 
@@ -253,7 +259,8 @@ int main(int argc, char **argv) {
 	transmission_mode=atoi(optarg);
 	if ((transmission_mode!=1) &&
 	    (transmission_mode!=2) &&
-	    (transmission_mode!=6)) {
+	    (transmission_mode!=6) &&
+	    (transmission_mode!=5)) {
 	  msg("Unsupported transmission mode %d\n",transmission_mode);
 	  exit(-1);
 	}
@@ -329,7 +336,7 @@ int main(int argc, char **argv) {
 	printf("-r Ricean factor (dB, 0 means Rayleigh, 100 is almost AWGN\n");
 	printf("-s Starting SNR, runs from SNR to SNR + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
 	printf("-t Delay spread for multipath channel\n");
-	printf("-x Transmission mode (1,2,6 for the moment)\n");
+	printf("-x Transmission mode (1,2,5,6 for the moment)\n");
 	printf("-y Number of TX antennas used in eNB\n");
 	printf("-z Number of RX antennas used in UE\n");
 	printf("-P Number of interfering PHICH\n");
@@ -359,6 +366,10 @@ int main(int argc, char **argv) {
 	break;
       }
   }
+
+
+  transmission_mode_rrc = transmission_mode;
+  //dci_format1D = 0;
 
   switch(format_selector) {
   case 0:
@@ -395,6 +406,7 @@ int main(int argc, char **argv) {
     dci_length_bytes = sizeof(DCI1C_5MHz_t);
     break;
   case 5:
+    dlsch_pdu = (void*) &DLSCH_alloc_pdu1D;
     format     = format1D;
     dci_length = sizeof_DCI1D_5MHz_2A_TDD_t;
     dci_length_bytes = sizeof(DCI1D_5MHz_2A_TDD_t);
@@ -695,7 +707,6 @@ int main(int argc, char **argv) {
 
 	  generate_phich_top(PHY_vars_eNB,
 			     subframe,1024,0,0);
-	  
 	  // generate 3 interfering PHICH
 	  if (num_phich_interf>0) {
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 4;
@@ -704,7 +715,7 @@ int main(int argc, char **argv) {
 			       1024,
 			       0,0);
 	  }
-	  
+
 	  if (num_phich_interf>1) {
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 8;
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS = 1;
@@ -717,10 +728,9 @@ int main(int argc, char **argv) {
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS = 1;
 	    generate_phich_top(PHY_vars_eNB,
 			       subframe,
-			       1024,0,0);
-	    
+			       1024,0,0);	    
 	  }
-	  
+
 	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 0;
 
 	}
@@ -882,13 +892,11 @@ int main(int argc, char **argv) {
 	    rx_phich(PHY_vars_UE,
 		     subframe,
 		     0);
-	  }
 	  //	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
 	  //	    break;
 	  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
 					   dci_alloc_rx,
 					   0,subframe);
-
 	  common_rx=0;
 	  ul_rx=0;
 	  dl_rx=0;

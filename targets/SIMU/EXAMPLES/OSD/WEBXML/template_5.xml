@@ -74,7 +74,7 @@
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> <!--set to infinity--> 
+    <EMULATION_TIME_ms>20000</EMULATION_TIME_ms> <!--set to infinity--> 
     
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
