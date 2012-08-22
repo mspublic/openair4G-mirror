@@ -33,6 +33,9 @@ one_eNB_one_UE : oaisim
 one_eNB_four_UE : oaisim
 	../../USER/oaisim -n60 -u4 | egrep "\[RRC\]"	
 
+one_eNB_one_UE_PHY : oaisim_nas nasmesh
+	./start_one_eNB_two_UE_PHY_nas 2
+
 clean:
 	(cd $(OPENAIR_TARGETS)/SIMU/USER && make clean)
 
