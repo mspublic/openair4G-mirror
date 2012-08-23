@@ -59,7 +59,7 @@
 #include "UTIL/OCG/OCG_extern.h"
 #endif
 
-//#define DEBUG_ULSCH_DECODING
+#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
 
@@ -814,7 +814,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 				&ulsch->o_d[96], 
 				&ulsch->o_w[0]); 
     
-    memset(o_flip,0,1+(ulsch->Or1/8));
+    memset(o_flip,0,1+((8+ulsch->Or1)/8));
     phy_viterbi_lte_sse2(ulsch->o_d+96,o_flip,8+ulsch->Or1);
     
     if (extract_cqi_crc(o_flip,ulsch->Or1) == (crc8(o_flip,ulsch->Or1)>>24))
