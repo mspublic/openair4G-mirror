@@ -59,7 +59,7 @@ using boost::asio::ip::udp;
 #include "util/mgmt_log.hpp"
 
 void printHelp(string binaryName) {
-	cerr << binaryName << " <configurationFile> <logFileName>" << endl;
+	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
 }
 
 const string CONF_HELP_PARAMETER_STRING = "help";

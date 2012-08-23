@@ -1,12 +1,26 @@
-~ Management GeoNetworking Interface Implementation (SCOREF-MGMT) ~
+~ SCOREF Management Module Implementation (SCOREF-MGMT) ~
 
-SCOREF-MGMT is a server application handling messages sent from 
-GN (GeoNetworking) module.
+SCOREF-MGMT is a server application currently consisting the interface to
+GN (GeoNetworking) module. Further developments are scheduled.
+
+Currently, following messages exchanged between MGMT and GN modules are 
+supported and utilised,
+
+100 LOCATION_UPDATE
+101 LOCATION_TABLE_REQ
+102 LOCATION_TABLE_RES
+301 CONFIGURATION_REQ
+302 CONFIGURATION_RES_CONT
+303 CONFIGURATION_RES_BULK
+304 COMM_PROF_REQ
+402 WIRELESS_STATE_REQ
+403 WIRELESS_STATE_RES
+404 NETWORK_STATE
 
 Please refer to following files for further information,
 
-- README.BUILD
-- README.DOCUMENTATION
+- README.BUILD (not available in releases, check OpenAirInterface SVN)
+- README.DOCUMENTATION (not available in releases check OpenAirInterface SVN)
 - README.RUNNING
 
 - Baris Demiray <baris.demiray@eurecom.fr>

@@ -87,7 +87,7 @@ ManagementClient::ManagementClientState ManagementClient::getState() const {
 }
 
 bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
-	logger.info("State has changed to " + clientStateStringMap[state] + " from " + clientStateStringMap[this->state]);
+	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
 
 	/**
 	 * Verify state change

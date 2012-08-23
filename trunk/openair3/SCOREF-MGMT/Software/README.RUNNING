@@ -1,12 +1,14 @@
-~ Management GeoNetworking Interface Implementation ~
+~ SCOREF Management Module Implementation ~
 
-SCOREF-MGMT is a server application handling messages sent from 
+SCOREF-MGMT is a server application that handles messages sent from 
 GN (GeoNetworking) module. Since SCOREF-MGMT is the server it has 
-to be started before GN module. SCOREF-MGMT expects two arguments
-having one optional, and they are configuration file and optional
-log file name, respectively. If there is a log file with the same
-name it will be renamed appending date and time and a new file 
-will be created.
+to be started before GN module. SCOREF-MGMT expects two command-line
+arguments having one optional, and they are configuration file and 
+optional log file name, respectively. If there is a log file with the 
+same name it will be renamed (appending date and time to its current 
+name) and a new file will be created. All the output is directed to 
+this file and to standard output only for debugging purposes. Further 
+versions will write to the log file only.
 
 [demiray@leynes test]$  ./SCOREF-MGMT IF.MGMT.conf [LogFileName]
 
@@ -14,15 +16,14 @@ After SCOREF-MGMT is started it'll read the configuration file,
 update local configuration (such as UDP server port) and MIB
 (Management Information Base) parameters, then it'll start
 listening for incoming connections on UDP port defined by 
-CONF_SERVER_PORT parameter in configuration file. Output of a 
+CONF_SERVER_PORT parameter in the configuration file. Output of a 
 sample run is given below:
 
 [demiray@leynes test]$  ./SCOREF-MGMT IF.MGMT.conf
-Initialized configuration map with 22 element(s)
-Starting Management & GeoNetworking Interface...
-Reading configuration file...
-Started to listen on UDP port 1402
-Ready to receive data...
+2012/08/13-16:51:48   INFO: Management Information Base has been created
+2012/08/13-16:51:48   INFO: Setting Wireless State Update Interval to 120 seconds
+2012/08/13-16:51:48   INFO: Setting Location Update Interval to 60 seconds
+...
 
 At this point `hc2xnwt' utility (which can be found under INRIA's
 SVN server at Software/SoftwareComponents/NWT) can be started.
