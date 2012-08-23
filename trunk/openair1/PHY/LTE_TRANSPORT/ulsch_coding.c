@@ -49,7 +49,7 @@
 #include "extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 
-#define DEBUG_ULSCH_CODING 
+//#define DEBUG_ULSCH_CODING 
 //#define DEBUG_ULSCH_FREE 1
 
 /*
