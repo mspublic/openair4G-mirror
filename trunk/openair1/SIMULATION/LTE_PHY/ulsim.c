@@ -406,7 +406,7 @@ int main(int argc, char **argv) {
 
   int eNB_id = 0;
   int UE_id = 0;
-  unsigned char nb_rb=2,first_rb=0,mcs=4,round=0,bundling_flag=1;
+  unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
   unsigned char l;
   SCM_t channel_model=Rayleigh1_corr;
 
@@ -444,7 +444,7 @@ int main(int argc, char **argv) {
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
   u8 tdd_config=3,frame_type=0;
 
-  u8 N0=40;
+  u8 N0=30;
   double tx_gain=1.0;
 
   logInit();
