@@ -473,7 +473,9 @@ u32 ulsch_encoding(u8 *a,
     // add 8-bit CRC
     crc = crc8(o_flip,
 	       ulsch->O)>>24;
-    //    printf("crc(cqi) tx : %x\n",crc);
+#ifdef DEBUG_ULSCH_CODING
+    printf("crc(cqi) tx : %x\n",crc);
+#endif
     memset((void *)&ulsch->o_d[0],LTE_NULL,96);
     
     ccodelte_encode(ulsch->O,
