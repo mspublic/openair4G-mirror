@@ -1,4 +1,7 @@
 
+* Util::printHexRepresentation() off-by-one index error fixed
+* FAC message type & subtypes have been added
+
 v1.1.0 (released on 13 Aug 2012)
 * README.* files have been updated and version elevated to 1.1.0
 

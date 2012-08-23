@@ -50,7 +50,7 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "mgmt_gn_packet_handler.hpp"
+#include "mgmt_packet_handler.hpp"
 #include "util/mgmt_udp_server.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
 #endif
 
 	ManagementInformationBase mib(logger);
-	GeonetMessageHandler* packetHandler = NULL;
+	PacketHandler* packetHandler = NULL;
 	Configuration configuration(argv[1], logger);
 	/**
 	 * Parse configuration file and create UDP server socket
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
 		 * Allocate aGeonet packet handler
 		 */
 		try {
-			packetHandler = new GeonetMessageHandler(mib, logger);
+			packetHandler = new PacketHandler(mib, logger);
 		} catch (std::bad_alloc& exception) {
 			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
 		} catch (Exception& e) {
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
 					bool packetHandled = false;
 
 					try {
-						packetHandled = packetHandler->handleGeonetMessage(server, rxBuffer);
+						packetHandled = packetHandler->handle(server, rxBuffer);
 					} catch (std::exception& e) {
 						cerr << e.what() << endl;
 					}

@@ -89,7 +89,7 @@ bool Util::printHexRepresentation(const unsigned char* buffer, unsigned long buf
 			ss.str(string());
 			ss.clear();
 
-			ss << " " << setfill('0') << setw(3) << octet_index << " |";
+			ss << " " << setfill('0') << setw(3) << octet_index + 1 << " |";
 		}
 	}
 
