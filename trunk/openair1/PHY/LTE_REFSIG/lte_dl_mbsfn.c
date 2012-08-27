@@ -9,14 +9,13 @@
 #include "PHY/defs.h"
 
 //extern unsigned int lte_gold_table[10][3][42];
-//#define DEBUG_DL_CELL_SPEC
+#define DEBUG_DL_MBSFN
 
 int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
-		     short amp,
-		     unsigned char Ns,
-		     unsigned char l,
-		     unsigned char p)
-   {
+		 short amp,
+		 unsigned char Ns,
+		 unsigned char l,
+		 unsigned char p) {
 
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k,a;
@@ -44,51 +43,29 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
   
 #endif
 
+  mprime = 3*(110 - phy_vars_eNB->lte_frame_parms.N_RB_DL);
 
-for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL*6; m++) 
+  for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL*6; m++) {	
 
-	{	
+    if ((Ns % 2 == 0)  && (l!=0)) 
+      
+      k = m*2;
+    
+    else if ((Ns % 2 == 1)  && (l==0))  
+      
+      k = (m*2)+1;
+    
+    else {
+      msg("lte_dl_mbsfn: l %d -> ERROR\n",l);
+      return(-1);
+    }
 
-if ((Ns % 2 == 0)  && (l!=0)) 
+#ifdef IFFT_FPGA
+    k+=phy_vars_eNB->lte_frame_parms.N_RB_DL*6;
+#else  
+    k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+#endif   
 
-	k = m*2;
-	
-else if ((Ns % 2 == 1)  && (l==0))  
-	   
-	k = (m*2)+1;
-	
-else 
-  {
-    msg("lte_dl_mbsfn: l %d -> ERROR\n",l);
-    return(-1);
-  }
-		
-mprime = 3*(110 - phy_vars_eNB->lte_frame_parms.N_RB_DL);
-	
-	mprime_dword     = mprime>>4;
-    mprime_qpsk_symb = mprime&0xf;   
-	
-	}
-
-  
-
-     output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
-    //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
-	
-	
-#ifdef DEBUG_DL_MBSFN
-    msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
-#endif 
-
-    mprime++;
-	
-#ifdef DEBUG_DL_MBSFN
-    if (m<4)
-    printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
-#endif
-    k+=6;
 #ifdef IFFT_FPGA
     if (k >= phy_vars_eNB->lte_frame_parms.N_RB_DL*12) {
       k-=phy_vars_eNB->lte_frame_parms.N_RB_DL*12;
@@ -99,19 +76,48 @@ mprime = 3*(110 - phy_vars_eNB->lte_frame_parms.N_RB_DL);
       k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
     }
 #endif
-    //    printf("** k %d\n",k);
-   return(0);
-  }
  
+
+    
+    mprime_dword     = mprime>>4;
+    mprime_qpsk_symb = mprime&0xf;   
+    
+
+  
+  
+    
+    output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
+    
+    
+#ifdef DEBUG_DL_MBSFN
+    msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+	Ns,l,m,mprime_dword,mprime_qpsk_symb);
+    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+#endif     
+    mprime++;
+    
+#ifdef DEBUG_DL_MBSFN
+    if (m<4)
+      printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
+#endif
+
+
+
+    //    printf("** k %d\n",k);
+  }
+  return(0);
+}
+
 
 
 int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue, u8 eNB_offset,
-			int *output,
-			unsigned char Ns,
-			unsigned char l,
-			unsigned char p) 
+		    int *output,
+		    unsigned char Ns,
+		    unsigned char l,
+		    unsigned char p) 
 	
-	{
+{
   
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0;
@@ -141,13 +147,13 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue, u8 eNB_offset,
 #ifdef DEBUG_DL_MBSFN
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
 	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_mbsfn_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif 
 
     mprime++;
 #ifdef DEBUG_DL_MBSFN
     if (m<4)
-    printf("Ns %d l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
+      printf("Ns %d l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k++;
     //    printf("** k %d\n",k);
