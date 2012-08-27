@@ -1,6 +1,7 @@
 PHY_OBJS =  $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/sss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots_mbsfn.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o
@@ -44,6 +45,8 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
 endif
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold_mbsfn.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_mbsfn.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_segmentation.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte.o
