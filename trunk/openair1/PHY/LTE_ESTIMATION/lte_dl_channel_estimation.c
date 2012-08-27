@@ -19,7 +19,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   unsigned char nu,aarx,aa;
   unsigned short k;
   unsigned int rb,pilot_cnt;
-  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2,*fl,*f2l2,*fr,*f2r2,*f2_dc,*f_dc;
+  short ch[2],ic[3],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2,*fl,*f2l2,*fr,*f2r2,*f2_dc,*f_dc;
   int ch_offset,symbol_offset;
   //  unsigned int n;
   //  int i;
@@ -570,36 +570,49 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     
     dl_ch = (short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
     if (ch_offset == 0) {
-      //      printf("Interpolating %d->0\n",4-phy_vars_ue->lte_frame_parms.Ncp);
-      dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][(4-phy_vars_ue->lte_frame_parms.Ncp)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
-      
-      multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      
-      multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        // compute interpolation coefficients
+        ic[0] = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_aob*21845)>>12); // (a/b)*(2/3)
+        ic[1] = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_aob*10923)>>12); // (a/b)*(1/3)
+
+        //      printf("Interpolating %d->0\n",4-phy_vars_ue->lte_frame_parms.Ncp);
+        dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][(4-phy_vars_ue->lte_frame_parms.Ncp)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
+        
+        multadd_complex_vector_real_scalar(dl_ch_prev,ic[0],dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        multadd_complex_vector_real_scalar(dl_ch,ic[1],dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        
+        multadd_complex_vector_real_scalar(dl_ch_prev,ic[1],dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        multadd_complex_vector_real_scalar(dl_ch,ic[0],dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
     } // this is 1/3,2/3 combination for pilots spaced by 3 symbols
     
     else {
       //      printf("Interpolating 0->%d\n",4-phy_vars_ue->lte_frame_parms.Ncp);
       
-      dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][0];
-      if (phy_vars_ue->lte_frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
-	multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	
-	multadd_complex_vector_real_scalar(dl_ch_prev,16384,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	multadd_complex_vector_real_scalar(dl_ch,16384,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	
-	multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	multadd_complex_vector_real_scalar(dl_ch,24576,dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-      }
-      else {
-	multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	
-	multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][0];
+        if (phy_vars_ue->lte_frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
+            // compute interpolation coefficients
+            ic[0] = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_aob*24576)>>12); // (a/b)*(3/4)
+            ic[1] = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_aob*16384)>>12); // (a/b)*(1/2)
+            ic[2] = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_aob*8192)>>12); // (a/b)*(1/4)
+
+            multadd_complex_vector_real_scalar(dl_ch_prev,ic[0],dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+            multadd_complex_vector_real_scalar(dl_ch,ic[2],dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+            
+            multadd_complex_vector_real_scalar(dl_ch_prev,ic[1],dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+            multadd_complex_vector_real_scalar(dl_ch,ic[1],dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+            
+            multadd_complex_vector_real_scalar(dl_ch_prev,ic[2],dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+            multadd_complex_vector_real_scalar(dl_ch,ic[0],dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        }
+        else {
+        // compute interpolation coefficients
+        ic[0] = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_aob*21845)>>12); // (a/b)*(2/3)
+        ic[1] = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_aob*10923)>>12); // (a/b)*(1/3)
+
+        multadd_complex_vector_real_scalar(dl_ch_prev,ic[1],dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        multadd_complex_vector_real_scalar(dl_ch,ic[0],dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        
+        multadd_complex_vector_real_scalar(dl_ch_prev,ic[0],dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+        multadd_complex_vector_real_scalar(dl_ch,ic[1],dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
       } // pilot spacing 3 symbols (1/3,2/3 combination)
     }
 #endif
@@ -609,7 +622,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   }
 
   // do ifft of channel estimate
-  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
+  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB;aa++) {
     if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa])
       fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][LTE_CE_OFFSET],
 	  (short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
