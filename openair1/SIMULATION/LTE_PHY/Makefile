@@ -133,7 +133,7 @@ ifdef STATIC
 LFLAGS += -static -L/usr/lib/libblas
 endif
 
-all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim
+all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim mbmssim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
@@ -154,6 +154,10 @@ framegen: $(OBJ) framegen.c
 pbchsim : $(OBJ) pbchsim.c
 	@echo "Compiling pbchsim.c"
 	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
+
+mbmssim : $(OBJ) mbmssim.c
+	@echo "Compiling mbmssim.c"
+	@$(CC) mbmssim.c  -o mbmssim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 pdcchsim : $(OBJ) pdcchsim.c
 	@echo "Compiling pdcchsim.c"
