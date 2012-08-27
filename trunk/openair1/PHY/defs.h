@@ -28,14 +28,14 @@
 *******************************************************************************/
 
 /*! \file PHY/defs.h
-* \brief Top-level defines and structure definitions
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
-* \note
-* \warning
+ \brief Top-level defines and structure definitions
+ \author R. Knopp, F. Kaltenberger
+ \date 2011
+ \version 0.1
+ \company Eurecom
+ \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+ \note
+ \warning
 */
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
@@ -167,7 +167,9 @@ typedef struct
 
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
-
+  
+  /// mbsfn reference symbols
+  unsigned int lte_gold_mbsfn_table[10][3][42];
   
   s16 X_u[64][2*839];
 
@@ -296,7 +298,9 @@ typedef struct
   /// cell-specific reference symbols
   unsigned int lte_gold_table[7][20][2][14];
 
-
+/// mbsfn reference symbols
+  unsigned int lte_gold_mbsfn_table[10][3][42];
+  
   s16 X_u[64][2*839];
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
