@@ -215,17 +215,33 @@ bool CommunicationProfileManager::setFlags(const string& configuration, u_int8_t
 
 	while (iterator != profileStrings.end()) {
 		/**
-		 * Verify incoming communication profile definition string item
+		 * Verify incoming communication profile definition string item and handle "BTP" exception
 		 */
-		if (communicationProfileStringMap[*iterator] == 0)
-			logger.warning("Communication profile definition string '" + *iterator + "' is not valid! Check SCOREF-MGMT_Configuration.pdf file.");
+		if (iterator->compare("BTP") == 0) {
+			logger.debug("Communication profile string 'BTP' has found, both BTP_A and BTP_B flags will be set");
 
-		/**
-		 * Bit indexes start from 1 in 'MNGT to CM-GN Interface' paper but it
-		 * corresponds to bit 0 for Util::setBit() so here we subtract 1 to
-		 * find index against 0 as the first
-		 */
-		Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator] - 1));
+			/**
+			 * If communication profile includes BTP then we should set both BTP_A and BTP_B
+			 * bits since they'll both be defined and available
+			 *
+			 * Bit indexes start from 1 in 'MNGT to CM-GN Interface' paper but it
+			 * corresponds to bit 0 for Util::setBit() so here we subtract 1 to
+			 * find index against 0 as the first
+			 */
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap["BTP_A"] - 1));
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap["BTP_B"] - 1));
+		} else if (communicationProfileStringMap[*iterator] != 0) {
+			/*
+			 * If index is valid than set the bit at that index
+			 */
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator] - 1));
+		} else if (communicationProfileStringMap[*iterator] == 0) {
+			/*
+			 * Invalid strings are ignored
+			 */
+			logger.warning("Communication profile definition string '" + *iterator + "' is not valid!");
+			logger.info("Check SCOREF-MGMT_Configuration.pdf file for valid configuration settings");
+		}
 
 		++iterator;
 	}
