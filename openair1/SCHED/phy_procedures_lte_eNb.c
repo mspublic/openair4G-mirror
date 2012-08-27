@@ -1091,14 +1091,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			   next_slot);      
 	  for (sect_id=0;sect_id<number_of_cards;sect_id++) {
 	    
-	      if ((phy_vars_eNB->transmission_mode[(u8)UE_id] == 5) &&
+          /*          if ((phy_vars_eNB->transmission_mode[(u8)UE_id] == 5) &&
 		  (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->dl_power_off == 0)) 
-		amp = (s16)(((s32)AMP*(s32)ONE_OVER_SQRT2_Q15)>>15);
-	      else
-		amp = AMP;
+              amp = (s16)(((s32)AMP*(s32)ONE_OVER_SQRT2_Q15)>>15);
+              else*/
+          //              amp = AMP;
 
 	    re_allocated = dlsch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-					    amp,
+					    AMP,
 					    next_slot/2,
 					    &phy_vars_eNB->lte_frame_parms,
 					    num_pdcch_symbols,
