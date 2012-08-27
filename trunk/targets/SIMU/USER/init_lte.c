@@ -47,6 +47,11 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	LOG_E(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB->dlsch_eNB[i][j]);
 	PHY_vars_eNB->dlsch_eNB[i][j]->rnti=0;
       }
+      // compute DL power control parameters
+      (transmission_mode==5) ? (PHY_vars_eNB->dlsch_eNB[i][j]->dl_power_off = 0) : (PHY_vars_eNB->dlsch_eNB[i][j]->dl_power_off = 1);
+      PHY_vars_eNB->pdsch_config_dedicated->p_a = 4;
+      computeRhoA_eNB(PHY_vars_eNB->pdsch_config_dedicated, PHY_vars_eNB->dlsch_eNB[i][j]);
+      computeRhoB_eNB(PHY_vars_eNB->pdsch_config_dedicated, &(PHY_vars_eNB->lte_frame_parms.pdsch_config_common),PHY_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB,PHY_vars_eNB->dlsch_eNB[i][j]);
     }
     PHY_vars_eNB->ulsch_eNB[1+i] = new_eNB_ulsch(8,abstraction_flag);
     if (!PHY_vars_eNB->ulsch_eNB[1+i]) {
@@ -72,6 +77,13 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
   printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
   
+  // Set DL power offset parameters
+  PHY_vars_eNB->dlsch_eNB_SI->sqrt_rho_a  = PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_a;
+  PHY_vars_eNB->dlsch_eNB_SI->sqrt_rho_b  = PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b;
+
+  PHY_vars_eNB->dlsch_eNB_ra->sqrt_rho_a  = PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_a;
+  PHY_vars_eNB->dlsch_eNB_ra->sqrt_rho_b  = PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b;
+
   PHY_vars_eNB->rx_total_gain_eNB_dB=150;
   
   for(i=0;i<NUMBER_OF_UE_MAX;i++)
@@ -107,7 +119,16 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
       }
       else
 	LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch_ue[i][j]);//navid
+
+      // compute DL power control parameters 
+      (transmission_mode==5) ? (PHY_vars_UE->dlsch_ue[i][j]->dl_power_off = 0) : (PHY_vars_UE->dlsch_ue[i][j]->dl_power_off = 1);
+      PHY_vars_UE->pdsch_config_dedicated->p_a = 4;
+    computeRhoA_UE(PHY_vars_UE->pdsch_config_dedicated, PHY_vars_UE->dlsch_ue[i][j]);
+    computeRhoB_UE(PHY_vars_UE->pdsch_config_dedicated,&(PHY_vars_UE->lte_frame_parms.pdsch_config_common),PHY_vars_UE->lte_frame_parms.nb_antennas_tx_eNB,PHY_vars_UE->dlsch_ue[i][j]);
+     compute_sqrt_RhoAoRhoB(PHY_vars_UE->pdsch_config_dedicated,&(PHY_vars_UE->lte_frame_parms.pdsch_config_common),PHY_vars_UE->lte_frame_parms.nb_antennas_tx_eNB,PHY_vars_UE->dlsch_ue[i][j]);
+
     }
+
     
     
     PHY_vars_UE->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
@@ -119,6 +140,13 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
     PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
     PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
     
+    // DL power control parameters
+    PHY_vars_UE->dlsch_ue_SI[i]->sqrt_rho_a = PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_a;
+    PHY_vars_UE->dlsch_ue_SI[i]->sqrt_rho_b = PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_b;
+
+    PHY_vars_UE->dlsch_ue_ra[i]->sqrt_rho_a = PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_a;
+    PHY_vars_UE->dlsch_ue_ra[i]->sqrt_rho_b = PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_b;
+
     PHY_vars_UE->transmission_mode[i] = transmission_mode;
   }
   return (PHY_vars_UE);
@@ -151,6 +179,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
+  (*frame_parms)->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_rx     = 1;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
   (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
