@@ -1092,9 +1092,13 @@ int dlsch_modulation(mod_sym_t **txdataF,
   u8 pilots=0;
   u8 skip_dc,skip_half;
   u8 mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+  s16 amp_rho_a, amp_rho_b;
 
   nsymb = (frame_parms->Ncp==0) ? 14:12;
   
+  amp_rho_a = (s16)(((s32)amp*dlsch->sqrt_rho_a)>>13);
+  amp_rho_b = (s16)(((s32)amp*dlsch->sqrt_rho_b)>>13);
+
   //Modulation mapping (difference w.r.t. LTE specs)
   
   jj=0;
@@ -1265,7 +1269,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     pilots,
 			     mod_order,
 			     get_pmi_5MHz(dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->pmi_alloc,rb),
-			     amp,
+                 ((pilots) ? amp_rho_b : amp_rho_a),
 			     &re_allocated,
 			     skip_dc,
 			     skip_half,
