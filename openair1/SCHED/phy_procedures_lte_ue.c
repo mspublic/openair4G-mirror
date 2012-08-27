@@ -1068,7 +1068,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
   if (((last_slot==0) || (last_slot==1) || (last_slot==12) || (last_slot==13)) && 
       ((l==0) || (l==4-frame_parms->Ncp))) {
     for (eNB_id=0; eNB_id<3; eNB_id++) 
-      for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+      for (aa=0;aa<frame_parms->nb_antennas_tx_eNB;aa++)
 	lte_dl_channel_estimation_emos(emos_dump_UE.channel[eNB_id],
 				       phy_vars_ue->lte_ue_common_vars->rxdataF,
 				       &phy_vars_ue->lte_frame_parms,
@@ -1343,7 +1343,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     }
     else 
       if (((frame_tx & 0x03FF) != (phy_vars_ue->frame & 0x03FF)) || 
-	  (pbch_tx_ant != phy_vars_ue->lte_frame_parms.nb_antennas_tx)) {
+	  (pbch_tx_ant != phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB)) {
 	  LOG_D(PHY,"[UE  %d] frame %d, slot %d: Re-adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d).\n",
 	  phy_vars_ue->Mod_id, 
 	  phy_vars_ue->frame,
