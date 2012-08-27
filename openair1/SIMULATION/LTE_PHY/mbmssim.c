@@ -92,8 +92,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
   PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
 
-  for (i=0;i<3;i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);    
+  lte_gold_mbsfn(lte_frame_parms,PHY_vars_UE->lte_gold_mbsfn_table,Nid_cell);    
+  lte_gold_mbsfn(lte_frame_parms,PHY_vars_eNB->lte_gold_mbsfn_table,Nid_cell);    
 
   phy_init_lte_ue(PHY_vars_UE,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
 	       frame_parms->rev,           // bit-reversal permutation
 	       CYCLIC_PREFIX);
   
-  write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/10,1,1);
-  write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES/10,1,1);
+  write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
 }
