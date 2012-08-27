@@ -121,17 +121,22 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0;
   unsigned int qpsk[4];
+  short pamp;
+  
+  // Compute the correct pilot amplitude, sqrt_rho_b = Q3.13
+  pamp = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_b*ONE_OVER_SQRT2_Q15)>>13);
+  //pamp = ONE_OVER_SQRT2_Q15;
 
   // This includes complex conjugate for channel estimation
 
-  ((short *)&qpsk[0])[0] = ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[0])[1] = -ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[1])[0] = -ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[1])[1] = -ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[2])[0] = ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[2])[1] = ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[3])[0] = -ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[3])[1] = ONE_OVER_SQRT2_Q15;
+  ((short *)&qpsk[0])[0] = pamp;
+  ((short *)&qpsk[0])[1] = -pamp;
+  ((short *)&qpsk[1])[0] = -pamp;
+  ((short *)&qpsk[1])[1] = -pamp;
+  ((short *)&qpsk[2])[0] = pamp;
+  ((short *)&qpsk[2])[1] = pamp;
+  ((short *)&qpsk[3])[0] = -pamp;
+  ((short *)&qpsk[3])[1] = pamp;
 
   mprime = 110 - phy_vars_ue->lte_frame_parms.N_RB_DL;
   
