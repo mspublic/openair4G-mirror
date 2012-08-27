@@ -49,7 +49,7 @@ void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
 
 
-#if 0
+#if 1
 void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
 

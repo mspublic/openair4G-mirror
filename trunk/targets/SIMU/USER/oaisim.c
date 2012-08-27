@@ -660,8 +660,10 @@ main (int argc, char **argv)
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
 
-  FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats;
+  FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr;
+  
   char UE_stats_filename[255];
+ 
   int len;
 #ifdef ICIC
   remove ("dci.txt");
@@ -981,6 +983,9 @@ main (int argc, char **argv)
   }
   eNB_stats = fopen ("eNB_stats.txt", "w");
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
+
+ eNB_avg_thr = fopen ("eNB_stats_th.txt", "w");
+ 
 #endif
       
   LOG_I(EMU,"total number of UE %d (local %d, remote %d) mobility %s \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
@@ -1309,6 +1314,11 @@ main (int argc, char **argv)
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
 	  fflush(eNB_stats);
+
+	  printf("[eNBPRINT] Average System Throughput %dKbps\n",(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
+	  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) 
+	    printf("[eNBPRINT] Transmission Mode on DL for UE %d: %d\n", UE_id, PHY_vars_eNB_g[eNB_id]->transmission_mode[UE_id]);
+	  fprintf(eNB_avg_thr,"%d %d\n",PHY_vars_eNB_g[eNB_id]->frame,(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
 	  //}
 #endif
       }
@@ -1364,6 +1374,7 @@ main (int argc, char **argv)
 #endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
+      
       
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
@@ -1544,6 +1555,7 @@ main (int argc, char **argv)
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
     fclose (UE_stats[UE_id]);
   fclose (eNB_stats);
+  fclose (eNB_avg_thr);
 #endif
 
   // stop OMG

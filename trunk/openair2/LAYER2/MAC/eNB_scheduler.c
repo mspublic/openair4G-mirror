@@ -3703,13 +3703,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	eNB_UE_stats->dlsch_mcs1 = 22;
 	break;
       case 13:
-	eNB_UE_stats->dlsch_mcs1 = 24;//25
+	eNB_UE_stats->dlsch_mcs1 = 22;//25
 	break;
       case 14:
-	eNB_UE_stats->dlsch_mcs1 = 24;//27
+	eNB_UE_stats->dlsch_mcs1 = 22;//27
 	break;
       case 15:
-	eNB_UE_stats->dlsch_mcs1 = 24;//28
+	eNB_UE_stats->dlsch_mcs1 = 22;//28
 	break;
       default:
 	printf("Invalid CQI");
@@ -3720,12 +3720,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     
     
     ///TM5 only for QPSK-QPSK IA-receiver
-    
-    //while(eNB_UE_stats->dlsch_mcs1 > 9){
+    if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
+    while(eNB_UE_stats->dlsch_mcs1 > 16){
       //eNB_UE_stats->DL_cqi[0] = eNB_UE_stats->DL_cqi[0]-1;
       //eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0]<<1;
-      //eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1 - 1;
-    //}
+      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1 - 1;
+    }
     
 
     // Get candidate harq_pid from PHY

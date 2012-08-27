@@ -160,14 +160,15 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
 
 
 
-void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0) {
+void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0, u8 transmission_mode, u16 q) {
 
   int return_value;
   u16 nb_rb = 25; //No. of resource blocks
-  double thermal_noise;
+  double thermal_noise,abs_channel,channelx, channely,channelx_i, channely_i ;
   int count;
-  int aarx;
-      
+  int aarx,aatx;
+  u8 qq;
+    
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
   thermal_noise = -174 + 10*log10(eNB2UE->BW*1e6); //value in dBm 
 
@@ -178,17 +179,201 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
 	 eNB2UE->path_loss_dB, 
 	 thermal_noise + ue_data->rx_noise_level,
 	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB,
-	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB - (thermal_noise + ue_data->rx_noise_level));
+	  enb_data->tx_power_dBm + eNB2UE->path_loss_dB - (thermal_noise + ue_data->rx_noise_level));
+    
+    switch(transmission_mode){
+    case 1:
+      //printf ("coupling factor is %lf\n", coupling); 
+      for (count = 0; count < (12 * nb_rb); count++) {
+	sinr_dB[count] = enb_data->tx_power_dBm 
+	  + eNB2UE->path_loss_dB
+	  - (thermal_noise + ue_data->rx_noise_level)  
+	  + 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
+			+ pow(eNB2UE->chF[0][count].y, 2));
+	//printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+	//printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
+      }
+    break;
+    case 2:
+      
+       for (count = 0; count < (12 * nb_rb); count++) {
+	 abs_channel=0;
+	 for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+	   for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+	     abs_channel += (pow(eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x, 2) + pow(eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y, 2));
+	   }
+	 }
+	 sinr_dB[count] = enb_data->tx_power_dBm 
+	   + eNB2UE->path_loss_dB
+	   - (thermal_noise + ue_data->rx_noise_level)  
+	   + 10 * log10 (abs_channel/2);
+	 // printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+       }
+       break;
+    case 5:
+        for (count = 0; count < (12 * nb_rb); count++) {
+	channelx=0;
+	channely=0;
+	channelx_i=0;
+	channely_i=0;
+	qq = (q>>(((count/12)>>2)<<1))&3;
+	//printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
+	
+	
 
-    //printf ("coupling factor is %lf\n", coupling); 
-    for (count = 0; count < (12 * nb_rb); count++) {
-      sinr_dB[count] = enb_data->tx_power_dBm 
-	+ eNB2UE->path_loss_dB
-	- (thermal_noise + ue_data->rx_noise_level)  
-	+ 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
-		      + pow(eNB2UE->chF[0][count].y, 2));
-      //printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
-    } 
+	//	qq = q;
+	for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+	  for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+	    switch(qq){
+	    case 0:
+	      if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channelx_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      break;
+	    case 1:
+	       if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channelx_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      break;
+	    case 2:
+	      if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channelx_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channely_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+
+	      }
+	      break;
+	    case 3:
+	      if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channelx_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channely_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+	      }
+	      break;
+
+	    default:
+	      msg("Problem in SINR Calculation for TM5 \n");
+	      break;
+	      
+	    }//switch(q)
+	    
+	  }//aatx
+	}//aarx
+	sinr_dB[count] = enb_data->tx_power_dBm 
+	   + eNB2UE->path_loss_dB
+	  - (thermal_noise + ue_data->rx_noise_level)  
+	  + 10 * log10 ((pow(channelx,2) + pow(channely,2))/2) - 10 * log10 ((pow(channelx_i,2) + pow(channely_i,2))/2);
+      
+	// printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+      }
+      break;
+    
+    case 6:
+      for (count = 0; count < (12 * nb_rb); count++) {
+	channelx=0;
+	channely=0;
+	qq = (q>>(((count/12)>>2)<<1))&3;
+	//printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
+	
+	
+
+	//	qq = q;
+	for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+	  for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+	    switch(qq){
+	    case 0:
+	      if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      break;
+	    case 1:
+	       if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      break;
+	    case 2:
+	      if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+	      }
+	      break;
+	    case 3:
+	      if (channelx==0 || channely==0){
+		channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+		channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+	      }
+	      else{
+		channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+		channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+	      }
+	      break;
+
+	    default:
+	      msg("Problem in SINR Calculation for TM6 \n");
+	      break;
+	      
+	    }//switch(q)
+	    
+	  }//aatx
+	}//aarx
+	sinr_dB[count] = enb_data->tx_power_dBm 
+	   + eNB2UE->path_loss_dB
+	  - (thermal_noise + ue_data->rx_noise_level)  
+	  + 10 * log10 ((pow(channelx,2) + pow(channely,2))/2);
+      
+	// printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+      }
+      break;
+    default:
+      msg("Problem in SINR Initialization in sinr_sim.c\n");
+      break;
+    }//switch
 }//function ends
 
 

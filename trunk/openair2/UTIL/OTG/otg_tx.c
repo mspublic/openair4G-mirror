@@ -486,15 +486,15 @@ int j;
      case BCBR :
        g_otg->trans_proto[i] = 1;
        g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = FIXED;
+       g_otg->idt_dist[i][j][0] = FIXED;// main param in this mode
        g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  100;
+       g_otg->idt_min[i][j][0] =  100; // main param in this mode
        g_otg->idt_min[i][j][1] =  10;
        g_otg->idt_max[i][j][0] =  10;
        g_otg->idt_max[i][j][1] =  10;
-       g_otg->size_dist[i][j][0] = FIXED;
+       g_otg->size_dist[i][j][0] = FIXED; // main param in this mode
        g_otg->size_dist[i][j][1] = FIXED;
-       g_otg->size_min[i][j][0] =  1024;
+       g_otg->size_min[i][j][0] =  1024;// main param in this mode
        g_otg->size_min[i][j][1] =  1024;
        g_otg->size_max[i][j][0] =  1024;
        g_otg->size_max[i][j][1] =  1024;

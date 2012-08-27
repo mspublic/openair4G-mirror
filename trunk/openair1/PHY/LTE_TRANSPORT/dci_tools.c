@@ -1524,6 +1524,7 @@ u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
 	pmiq = PMI_2A_1m1;
       else if ((pmi_re > pmi_im) && (pmi_re < -pmi_im))
 	pmiq = PMI_2A_1mj;
+      //      printf("subband %d, pmi%d \n",i,pmiq);
       pmivect |= (pmiq<<(2*i));
     }
     else {

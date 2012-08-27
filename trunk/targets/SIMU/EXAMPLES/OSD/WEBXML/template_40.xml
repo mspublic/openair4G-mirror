@@ -6,11 +6,11 @@
 	<PATHLOSS_EXPONENT>3.67</PATHLOSS_EXPONENT>
 	<PATHLOSS_0_dB>-128</PATHLOSS_0_dB><!--pathloss at 1km -->
       </FREE_SPACE_MODEL_PARAMETERS>
-      <SMALL_SCALE>AWGN</SMALL_SCALE>
+      <SMALL_SCALE>Rice8</SMALL_SCALE>
     </FADING>
     <SYSTEM_BANDWIDTH_MB>7.68</SYSTEM_BANDWIDTH_MB>
     <SYSTEM_FREQUENCY_GHz>1.9</SYSTEM_FREQUENCY_GHz>
-    <TRANSMISSION_MODE>2</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
+    <TRANSMISSION_MODE>5</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
     <ANTENNA>
       <eNB_ANTENNA>
 	<RX_NOISE_LEVEL_dB>0</RX_NOISE_LEVEL_dB>
@@ -55,21 +55,15 @@
     <PREDEFINED_TRAFFIC>
       <!-- DL -->
       <SOURCE_ID>0</SOURCE_ID> <!-- valid formats are: -->					
-      <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
+      <APPLICATION_TYPE>bcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
       <DESTINATION_ID>1:2</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC> 
-    <!-- UL -->
-    <PREDEFINED_TRAFFIC>
-      <SOURCE_ID>1:2</SOURCE_ID> <!-- valid formats are: -->					
-      <APPLICATION_TYPE>scbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
-      <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
-    </PREDEFINED_TRAFFIC>
 
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>90000</EMULATION_TIME_ms> 
-    
+    <EMULATION_TIME_ms>4000</EMULATION_TIME_ms> 
+    <CURVE>disable</CURVE>
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>
