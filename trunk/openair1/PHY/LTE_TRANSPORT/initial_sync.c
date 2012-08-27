@@ -130,7 +130,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   
   if (pbch_decoded) {
     
-    frame_parms->nb_antennas_tx = pbch_tx_ant;
+    frame_parms->nb_antennas_tx_eNB = pbch_tx_ant;
     
     // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
     frame_parms->mode1_flag = (pbch_tx_ant==1);
