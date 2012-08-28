@@ -47,7 +47,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 
   for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL*6; m++) {	
 
-    if ((Ns % 2 == 0)  && (l!=0)) 
+    if (((Ns % 2 == 0)  && (l!=0)) || ((Ns % 2 == 1)  && (l!=0)))
       
       k = m*2;
     
@@ -98,7 +98,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
     mprime++;
     
 #ifdef DEBUG_DL_MBSFN
-    if (m<4)
+    if (m<18)
       printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
 
@@ -152,7 +152,7 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue, u8 eNB_offset,
 
     mprime++;
 #ifdef DEBUG_DL_MBSFN
-    if (m<4)
+    if (m<18)
       printf("Ns %d l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k++;
