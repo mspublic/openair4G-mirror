@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   u8 write_output_file=0;
   int result;
   int freq_offset;
-  int subframe_offset;
+  int subframe=6,subframe_offset;
   char fname[40], vname[40];
   int trial, n_trials, ntrials=1, n_errors,n_errors2,n_alamouti;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
 	  break;
 	  */
 	case 'p':
-	  extended_prefix_flag=1;
+	  subframe=atoi(optarg);
 	  break;
 	  /*
 	case 'r':
@@ -349,6 +349,15 @@ int main(int argc, char **argv) {
 	}
     }
 
+  // check that subframe is legal for eMBMS
+
+  if ((subframe == 0) || (subframe == 5) || // TDD and FDD SFn 0,5
+      ((frame_type == 0) && ((subframe==4)||(subframe==9))) // FDD SFn 4,9
+      ((frame_type == 1) && ((subframe<3)||(subframe==6)))) {  // TDD SFn 1,2,6
+	printf("Illegal subframe %d for eMBMS transmission (frame_type %d)\n",subframe,frame_type);
+	exit(-1);
+  }
+	
   if (transmission_mode==2)
     n_tx=2;
 
@@ -428,7 +437,7 @@ int main(int argc, char **argv) {
   generate_mbsfn_pilot(PHY_vars_eNB,
 			PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
 			AMP,
-			6);
+			subframe);
 
   
   PHY_ofdm_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],        // input,
