@@ -941,23 +941,23 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                         unsigned char first_symbol_flag,
                         unsigned short nb_rb,
                         u16 pbch_pss_sss_adjust,
-                        short **llr128p) {
+                        short **llr16p) {
     
-    __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-    __m128i *rxF_i=(__m128i*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-    __m128i *rho=(__m128i*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-    __m128i *llr128;
+    s16 *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+    s16 *rxF_i=(__m128i*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
+    s16 *rho=(__m128i*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
+    s16 *llr16;
     int len;
     u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
     
     if (first_symbol_flag == 1) {
-        llr128 = (__m128i*)dlsch_llr;
+        llr16 = (s16*)dlsch_llr;
     }
     else {
-        llr128 = (__m128i*)(*llr128p);
+        llr16 = (s16*)(*llr16p);
     }
     
-    if (!llr128) {
+    if (!llr16) {
         msg("dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
         return -1;
     }
@@ -978,12 +978,12 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     
     qpsk_qpsk((short *)rxF,
               (short *)rxF_i,
-              (short *)llr128,
+              (short *)llr16,
               (short *)rho,
               len);
     
-    llr128 += (len>>2);
-    *llr128p = (short *)llr128;
+    llr16 += (len<<1);
+    *llr16p = (short *)llr16;
     
     return(0);
 }
