@@ -386,9 +386,9 @@ void _makeOutputDir(options_t *opts)
     FILE *controlFile;
 
     status=mkdir ("testResults",S_IRWXU | S_IRWXG | S_IRWXO);
-    //status=chdir("testResults");
+   // status=chdir("testResults");
     sprintf(auxDir,"%s",opts->folderName);
-    //status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);
+    //status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);	
 	//status=chdir(auxDir);
     
     sprintf(auxFile,"OutpuSimulation_%df_%dI_%sdB_%dch_%d.m",opts->nframes,opts->nInterf,opts->interfLevels,opts->channel_model,opts->testNumber);
@@ -399,6 +399,8 @@ void _makeOutputDir(options_t *opts)
     sprintf(auxFile,"OuputBlerRound_%d.m",opts->testNumber);
     
     opts->outputBler =fopen(auxFile,"w");
+    fprintf( opts->outputBler,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
+    
     sprintf(auxFile,"OuputBER_%d.m",opts->testNumber);
     opts->outputBer =fopen(auxFile,"w");
     
@@ -445,21 +447,28 @@ void _parsePower(options_t *opts)
       opts->p_a=atoi(pch);
       pch=strtok (NULL,",");
       opts->p_b=atoi(pch);
-      pch=strtok (NULL,",");
-      opts->d_offset=atoi(pch);     
+       opts->d_offset=0;
+   /*   pch=strtok (NULL,",");
+      opts->d_offset=atoi(pch);     */
+    }
+    
+     if(opts->p_a< 0 || opts->p_a>7) 
+    {
+       msg("Error -> PA  (0...7) (dBm6, 	dBm477 	,dBm3 	,dBm177 	,dB0 	,dB1 	,dB2 	,dB3 )\n");
+       exit(1);
     }
     
     if(opts->p_b< 0 || opts->p_b>3) 
     {
-       msg("Error -> PB  (0...3\n");
+       msg("Error -> PB  (0...3)\n");
        exit(1);
     }
     
-    if(opts->d_offset< -6 || opts->d_offset>12) 
+  /*  if(opts->d_offset< -6 || opts->d_offset>12) 
     {
        msg("Error -> Offset  (-6...12)\n");
        exit(1);
-    }
+    }*/
     
 
 }
