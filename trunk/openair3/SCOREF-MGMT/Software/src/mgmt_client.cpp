@@ -54,6 +54,11 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& cl
 	clientStateStringMap.insert(std::make_pair(ManagementClient::ONLINE, "ONLINE"));
 	clientStateStringMap.insert(std::make_pair(ManagementClient::CONNECTED, "CONNECTED"));
 	/**
+	 * Initialise type strings map
+	 */
+	clientTypeStringMap.insert(std::make_pair(ManagementClient::GN, "GeoNetworking"));
+	clientTypeStringMap.insert(std::make_pair(ManagementClient::FAC, "Facilities"));
+	/**
 	 * Initialise this client's state
 	 */
 	state = ManagementClient::OFFLINE;

@@ -43,7 +43,7 @@
 #define MGMT_GN_PACKET_HPP_
 
 #include "../mgmt_information_base.hpp"
-#include "../mgmt_gn_datatypes.hpp"
+#include "../mgmt_types.hpp"
 #include "../util/mgmt_log.hpp"
 #include <string>
 #include <vector>

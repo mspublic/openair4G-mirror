@@ -44,7 +44,7 @@
 
 #include "mgmt_comm_prof_manager.hpp"
 #include "mgmt_its_key_manager.hpp"
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include <sys/types.h>
 #include <string>
 #include <map>
