@@ -317,7 +317,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				 first_symbol_flag,
 				 i_mod,
 				 nb_rb,
-				 lte_ue_pdsch_vars[eNB_id_i]->log2_maxh,
+				 lte_ue_pdsch_vars[eNB_id]->log2_maxh,
 				 phy_measurements); // log2_maxh+I0_shift
 #ifdef DEBUG_PHY
       if (symbol == 5) {
