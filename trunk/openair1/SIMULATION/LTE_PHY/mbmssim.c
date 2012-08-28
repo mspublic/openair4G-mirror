@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   u8 write_output_file=0;
   int result;
   int freq_offset;
-  int subframe=6,subframe_offset;
+  int subframe=9,subframe_offset;
   char fname[40], vname[40];
   int trial, n_trials, ntrials=1, n_errors,n_errors2,n_alamouti;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
 
   int openair_fd,rx_sig_fifo_fd,get_frame=0;
   int frequency=0,fc=0;
-  unsigned char frame_type = 0;
+  unsigned char frame_type = 1;
   unsigned char pbch_phase = 0;
 
 #ifdef XFORMS
@@ -351,10 +351,14 @@ int main(int argc, char **argv) {
 
   // check that subframe is legal for eMBMS
 
-	if ((subframe == 0) || (subframe == 5) ||    // TDD and FDD SFn 0,5;
-      ((frame_type == 0 ) && ((subframe==4) || (subframe==9))) // FDD SFn 4,9;
-      ((frame_type == 1 ) && ((subframe<3) || (subframe==6)))) 
-	  {  // TDD SFn 1,2,6;
+  if ((subframe == 0) || (subframe == 5) ||    // TDD and FDD SFn 0,5;
+      ((frame_type == 0) && ((subframe == 4) || (subframe == 9))) || // FDD SFn 4,9;
+	  ((frame_type == 1 ) && ((subframe<3) || (subframe==6)))) 	  {  // TDD SFn 1,2,6;*/
+	  
+	 /*if ((subframe == 0) || (subframe == 5))   // TDD and FDD SFn 0,5;
+      else if ((frame_type == 0) && ((subframe == 4) || (subframe == 9)))// FDD SFn 4,9;
+	  else if ((frame_type == 1 ) && ((subframe<3) || (subframe==6))) 
+	  else	  {  // TDD SFn 1,2,6; */
 	printf("Illegal subframe %d for eMBMS transmission (frame_type %d)\n",subframe,frame_type);
 	exit(-1);
   }
