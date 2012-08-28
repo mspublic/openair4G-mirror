@@ -607,11 +607,16 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
   context->round_hop1 = 0;
   context->round_hop2 = 0;
 
+  for(k = 0; k < args->n_relays; k++) {
+    context->channels_hop1[k]->channel->first_run = 1;
+    context->channels_hop2[k]->channel->first_run = 1;
+  }
+
   for(frame = 0; frame < MAX_FRAMES; frame++) {
     for(subframe = 0; subframe < 10; subframe++) {
       if(schedule[frame][subframe].pdsch) {
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: PDSCH CH0->MRs, round %d\n", frame, subframe, context->round_hop1);
+          printf("Frame %d, subframe %d: PDSCH CH0->MRs, round %d\n", frame, subframe, context->round_hop1);
         }
 
         results->tx[pdu].hop1.round[context->round_hop1].frame = frame;
@@ -630,17 +635,17 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
                 schedule[f][s].bsr = true;
         }
         else {
-          fprintf(stderr, "Increase MAX_FRAMES\n");
+          printf("Increase MAX_FRAMES\n");
           exit(1);
         }
 
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: PDSCH decoded at these MRs:", frame, subframe);
+          printf("Frame %d, subframe %d: PDSCH decoded at these MRs:", frame, subframe);
           for(k = 0; k < args->n_relays; k++) {
             if(context->hop1_decoded_pdsch[k])
-              fprintf(stderr, " %d", k);
+              printf(" %d", k);
           }
-          fprintf(stderr, "\n");
+          printf("\n");
         }
       }
 
@@ -658,14 +663,14 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         }
 
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: PDSCH HARQ", frame, subframe);
+          printf("Frame %d, subframe %d: PDSCH HARQ", frame, subframe);
           for(k = 0; k < args->n_relays; k++) {
-            fprintf(stderr, " %d(%s)", k, 
+            printf(" %d(%s)", k, 
                 context->hop1_harq_response[k] == hop1_harq_eack ? "EACK" :
                 (context->hop1_harq_response[k] == hop1_harq_nack ? "NACK" :
                 (context->hop1_harq_response[k] == hop1_harq_ack ? "ACK" : "INVALID")));
           }
-          fprintf(stderr, "\n");
+          printf("\n");
         }
 
         if(args->comm_mode == comm_mode_full) {
@@ -690,23 +695,23 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         // Decide whether to schedule a retransmission based on the received HARQ ack/nack
         if(context->hop1_harq_received == hop1_harq_eack) {
           if(args->verbose > 0) {
-            fprintf(stderr, "Frame %d, subframe %d: CH0 received EACK, hop 1 finished\n", frame, subframe);
+            printf("Frame %d, subframe %d: CH0 received EACK, hop 1 finished\n", frame, subframe);
           }
         }
         else if(context->hop1_harq_received == hop1_harq_ack) {
           if(args->verbose > 0) {
-            fprintf(stderr, "Frame %d, subframe %d: CH0 received ACK, hop 1 finished\n", frame, subframe);
+            printf("Frame %d, subframe %d: CH0 received ACK, hop 1 finished\n", frame, subframe);
           }
         }
         else if(context->hop1_harq_received == hop1_harq_nack) {
           if(context->round_hop1 == args->n_harq) {
             if(args->verbose > 0) {
-              fprintf(stderr, "Frame %d, subframe %d: CH0 received NACK, maximum HARQ round reached\n", frame, subframe);
+              printf("Frame %d, subframe %d: CH0 received NACK, maximum HARQ round reached\n", frame, subframe);
             }
           }
           else {
             if(args->verbose > 0) {
-              fprintf(stderr, "Frame %d, subframe %d: CH0 received NACK, scheduling retransmission\n", frame, subframe);
+              printf("Frame %d, subframe %d: CH0 received NACK, scheduling retransmission\n", frame, subframe);
             }
             // Determine next PDSCH subframe
             if(context->subframe_pdsch > subframe) {
@@ -720,7 +725,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
             if(f < MAX_FRAMES)
               schedule[f][s].pdsch = true;
             else {
-              fprintf(stderr, "Increase MAX_FRAMES\n");
+              printf("Increase MAX_FRAMES\n");
               exit(1);
             }
           }
@@ -729,12 +734,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
       if(schedule[frame][subframe].bsr) {
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: BSR MRs->CH1 from MRs", frame, subframe);
+          printf("Frame %d, subframe %d: BSR MRs->CH1 from MRs", frame, subframe);
           for(k = 0; k < args->n_relays; k++) {
             if(context->hop1_decoded_pdsch[k])
-              fprintf(stderr, " %d", k);
+              printf(" %d", k);
           }
-          fprintf(stderr, "\n");
+          printf("\n");
         }
 
         if(args->comm_mode == comm_mode_full) {
@@ -746,12 +751,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         }
 
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: CH1, received BSR from MRs", frame, subframe);
+          printf("Frame %d, subframe %d: CH1, received BSR from MRs", frame, subframe);
           for(k = 0; k < args->n_relays; k++) {
             if(context->hop2_received_bsr[k])
-              fprintf(stderr, " %d", k);
+              printf(" %d", k);
           }
-          fprintf(stderr, "\n");
+          printf("\n");
         }
 
         // Determine if hop 2 should be started
@@ -771,7 +776,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           }
           if(context->hop2_active) {
             if(args->verbose > 0) {
-              fprintf(stderr, "Frame %d, subframe %d: starting hop 2\n", frame, subframe);
+              printf("Frame %d, subframe %d: starting hop 2\n", frame, subframe);
             }
           }
         }
@@ -785,13 +790,13 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
           if(b) {
             if(args->verbose > 0) {
-              //fprintf(stderr, "Frame %d, subframe %d: received BSR, scheduling PUSCH DCI\n", frame, subframe);
+              //printf("Frame %d, subframe %d: received BSR, scheduling PUSCH DCI\n", frame, subframe);
             }
             determine_pusch_dci_subframe(context->frame_parms, frame+1, subframe, &f, &s);
             if(f < MAX_FRAMES)
               schedule[f][s].pusch_dci = true;
             else {
-              fprintf(stderr, "Increase MAX_FRAMES\n");
+              printf("Increase MAX_FRAMES\n");
               exit(1);
             }
           }
@@ -800,12 +805,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
       if(schedule[frame][subframe].pusch) {
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: PUSCH MRs->CH1, HARQ round %d, active MRs:", frame, subframe, context->round_hop2);
+          printf("Frame %d, subframe %d: PUSCH MRs->CH1, HARQ round %d, active MRs:", frame, subframe, context->round_hop2);
           for(k = 0; k < args->n_relays; k++) {
             if(context->hop2_received_pusch_dci[k])
-              fprintf(stderr, " %d", k);
+              printf(" %d", k);
           }
-          fprintf(stderr, "\n");
+          printf("\n");
         }
 
         results->tx[pdu].hop2.round[context->round_hop2].frame = frame;
@@ -819,7 +824,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         if(f < MAX_FRAMES)
           schedule[f][s].pusch_harq = true;
         else {
-          fprintf(stderr, "Increase MAX_FRAMES\n");
+          printf("Increase MAX_FRAMES\n");
           exit(1);
         }
 
@@ -829,21 +834,21 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           if(f < MAX_FRAMES)
             schedule[f][s].pusch_dci = true;
           else {
-            fprintf(stderr, "Increase MAX_FRAMES\n");
+            printf("Increase MAX_FRAMES\n");
             exit(1);
           }
         }
 
         if(args->verbose > 0) {
           if(context->hop2_decoded_at_ch) {
-            fprintf(stderr, "Frame %d, subframe %d: successfully decoded at CH1\n", frame, subframe);
+            printf("Frame %d, subframe %d: successfully decoded at CH1\n", frame, subframe);
           }
         }
       }
 
       if(schedule[frame][subframe].pusch_harq) {
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: PHICH CH1->MRs\n", frame, subframe);
+          printf("Frame %d, subframe %d: PHICH CH1->MRs\n", frame, subframe);
         }
 
         if(args->comm_mode == comm_mode_full) {
@@ -855,12 +860,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
         }
 
         if(args->verbose > 0) {
-          fprintf(stderr, "Frame %d, subframe %d: received CH1 PHICH at MRs:", frame, subframe);
+          printf("Frame %d, subframe %d: received CH1 PHICH at MRs:", frame, subframe);
           for(k = 0; k < args->n_relays; k++) {
             if(context->hop2_harq_received[k] == hop2_harq_ack || context->hop2_harq_received[k] == hop2_harq_nack)
-              fprintf(stderr, " %d(%s)", k, context->hop2_harq_received[k] == hop2_harq_ack ? "ACK" : "NACK");
+              printf(" %d(%s)", k, context->hop2_harq_received[k] == hop2_harq_ack ? "ACK" : "NACK");
           }
-          fprintf(stderr, "\n");
+          printf("\n");
         }
 
         /*
@@ -874,7 +879,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           if(f < MAX_FRAMES)
             schedule[f][s].pusch = true;
           else {
-            fprintf(stderr, "Increase MAX_FRAMES\n");
+            printf("Increase MAX_FRAMES\n");
             exit(1);
           }
         }
@@ -884,12 +889,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
       if(schedule[frame][subframe].pusch_dci) {
         if(context->round_hop2 < args->n_harq) {
           if(args->verbose > 0) {
-            fprintf(stderr, "Frame %d, subframe %d: PDCCH DCI CH1->MRs, HARQ round %d, scheduling MRs", frame, subframe, context->round_hop2);
+            printf("Frame %d, subframe %d: PDCCH DCI CH1->MRs, HARQ round %d, scheduling MRs", frame, subframe, context->round_hop2);
             for(k = 0; k < args->n_relays; k++) {
               if(context->hop2_received_bsr[k])
-                fprintf(stderr, " %d", k);
+                printf(" %d", k);
             }
-            fprintf(stderr, "\n");
+            printf("\n");
           }
 
           if(args->comm_mode == comm_mode_full) {
@@ -903,7 +908,7 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
           if(f < MAX_FRAMES)
             schedule[f][s].pusch = true;
           else {
-            fprintf(stderr, "Increase MAX_FRAMES\n");
+            printf("Increase MAX_FRAMES\n");
             exit(1);
           }
         }
@@ -1239,8 +1244,8 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
     // Compute number of resource elements from coded bits and modulation order
     n_re = context->n_coded_bits_hop2/get_Qm(mcs);
     if(args->verbose > 1)
-      printf("Hop 2, HARQ round %d: %d coded bits, Modulated %d REs\n", 
-          context->round_hop2, context->n_coded_bits_hop2, n_re);
+      printf("Hop 2, MR%d, HARQ round %d: %d coded bits, Modulated %d REs\n", 
+          k, context->round_hop2, context->n_coded_bits_hop2, n_re);
 
     if(args->verbose > 2)
       print_ulsch_ue_stats(ulsch_ue);
@@ -1287,7 +1292,7 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
 
   // Compute uncoded bit error rate
   k = 0;
-  while(!context->hop1_decoded_pdsch[k])
+  while(!context->hop2_received_pusch_dci[k])
     k++;
   results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits = correct_bits_soft(
       context->phy_vars_mr[k]->ulsch_ue[0]->b_tilde,
@@ -1295,7 +1300,8 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
   raw_ber = (double)(context->n_coded_bits_hop2-results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits)/
     (double)context->n_coded_bits_hop2;
   if(args->verbose > 1) {
-    printf("Received %d bits at dest CH, raw BER: %f\n", context->n_coded_bits_hop2, raw_ber);
+    printf("Received %d bits at dest CH, raw BER: %f (%d/%d)\n", context->n_coded_bits_hop2, raw_ber, 
+        context->n_coded_bits_hop2-results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits, context->n_coded_bits_hop2);
   }
 
   // Decode ULSCH data
@@ -2051,17 +2057,6 @@ void transmit_subframe(sh_channel_t* channel, s32** src, LTE_DL_FRAME_PARMS* fra
   for(k = 0; k < nsamples; k++) {
     channel->cvars->s_re[0][k] = (double)((s16*)src[0])[2*subframe*frame_parms->samples_per_tti + (k<<1)];
     channel->cvars->s_im[0][k] = (double)((s16*)src[0])[2*subframe*frame_parms->samples_per_tti + (k<<1) + 1];
-    /*
-    if(accumulate) {
-      channel->cvars->r_re_t[0][k] = channel->cvars->s_re[0][k];
-      channel->cvars->r_im_t[0][k] = channel->cvars->s_im[0][k];
-    } else {
-      channel->cvars->r_re[0][k] = channel->cvars->s_re[0][k];
-      channel->cvars->r_im[0][k] = channel->cvars->s_im[0][k];
-    }
-    */
-    //channel->cvars->s_re[1][k] = 0;
-    //channel->cvars->s_im[1][k] = 0;
   }
 
   if(accumulate) {
@@ -2089,7 +2084,6 @@ void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* fram
   int nsamples = 0;
 
   for(k = 0; k < nsymb; k++) {
-    //    printf("deliver_subframe symbol k %d\n",k);
     if(k % symbols_per_slot == 0)
       nsamples += frame_parms->nb_prefix_samples0;
     else
@@ -2688,12 +2682,12 @@ void determine_pdsch_harq_subframe(LTE_DL_FRAME_PARMS* frame_parms, int frame, i
           *s = 3;
           break;
         default:
-          fprintf(stderr, "illegal subframe %d\n", subframe);
+          printf("illegal subframe %d\n", subframe);
           exit(1);
       }
       break;
     default:
-      fprintf(stderr, "TDD mode %d not implemented\n", frame_parms->tdd_config);
+      printf("TDD mode %d not implemented\n", frame_parms->tdd_config);
       exit(1);
   }
 }
