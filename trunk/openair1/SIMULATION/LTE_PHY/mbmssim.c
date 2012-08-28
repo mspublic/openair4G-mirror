@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
 	  Td= atof(optarg);
 	  break;
 	  */
-	case 'p':
+	case 'p': // subframe no;
 	  subframe=atoi(optarg);
 	  break;
 	  /*
@@ -351,9 +351,10 @@ int main(int argc, char **argv) {
 
   // check that subframe is legal for eMBMS
 
-  if ((subframe == 0) || (subframe == 5) || // TDD and FDD SFn 0,5
-      ((frame_type == 0) && ((subframe==4)||(subframe==9))) // FDD SFn 4,9
-      ((frame_type == 1) && ((subframe<3)||(subframe==6)))) {  // TDD SFn 1,2,6
+	if ((subframe == 0) || (subframe == 5) ||    // TDD and FDD SFn 0,5;
+      ((frame_type == 0 ) && ((subframe==4) || (subframe==9))) // FDD SFn 4,9;
+      ((frame_type == 1 ) && ((subframe<3) || (subframe==6)))) 
+	  {  // TDD SFn 1,2,6;
 	printf("Illegal subframe %d for eMBMS transmission (frame_type %d)\n",subframe,frame_type);
 	exit(-1);
   }
