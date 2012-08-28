@@ -47,7 +47,7 @@
 #include <climits>
 using namespace std;
 
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include "util/mgmt_log.hpp"
 #include <sys/types.h>
 

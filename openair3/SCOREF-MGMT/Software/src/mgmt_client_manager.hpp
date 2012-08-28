@@ -44,7 +44,7 @@
 
 #include "util/mgmt_udp_server.hpp"
 #include "mgmt_configuration.hpp"
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include "util/mgmt_log.hpp"
 #include "mgmt_client.hpp"
 

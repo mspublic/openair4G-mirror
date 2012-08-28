@@ -42,7 +42,7 @@
 #ifndef MGMT_COMM_PROF_MANAGER_HPP_
 #define MGMT_COMM_PROF_MANAGER_HPP_
 
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 #include <string>

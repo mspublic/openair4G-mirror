@@ -2,6 +2,8 @@
 * Util::printHexRepresentation() off-by-one index error fixed
 * FAC message type & subtypes have been added
 * Now both BTP_A and BTP_B flags are set upon finding BTP in a communication profile definition
+* mgmt_gn_datatypes.h file has been renamed as mgmt_types.h
+* Type property added for management clients (now they also may be Facilities client)
 
 v1.1.0 (released on 13 Aug 2012)
 * README.* files have been updated and version elevated to 1.1.0
