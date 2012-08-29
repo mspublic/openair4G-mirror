@@ -57,10 +57,7 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
   }
 
   Nsymb = 6;
-  
-
-  
-
+ 
 #ifdef IFFT_FPGA
   subframe_offset = subframe*frame_parms->N_RB_DL*12*Nsymb<<1;
   samples_per_symbol = frame_parms->N_RB_DL*12;
