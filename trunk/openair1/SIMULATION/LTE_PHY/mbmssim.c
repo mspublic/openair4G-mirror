@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   u8 write_output_file=0;
   int result;
   int freq_offset;
-  int subframe=8,subframe_offset;
+  int subframe=1,subframe_offset; // Valid Subframe FDD - 1,2,3,6,7,8.  TDD - 3,4,7,8,9 ;
   char fname[40], vname[40];
   int trial, n_trials, ntrials=1, n_errors,n_errors2,n_alamouti;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
 
   int openair_fd,rx_sig_fifo_fd,get_frame=0;
   int frequency=0,fc=0;
-  unsigned char frame_type = 0;
+  unsigned char frame_type = 0; // 0 - FDD, 1 - TDD;
   unsigned char pbch_phase = 0;
 
 #ifdef XFORMS
