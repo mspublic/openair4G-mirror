@@ -48,7 +48,6 @@
 #include <math.h>
 //#include <complex.h>
 #ifdef MEX
-#include "/packages/matlab_r2009b/extern/include/mex.h"
 #define msg mexPrintf
 #else
 #define msg printf   
