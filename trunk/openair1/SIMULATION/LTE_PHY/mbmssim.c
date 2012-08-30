@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
 
   int openair_fd,rx_sig_fifo_fd,get_frame=0;
   int frequency=0,fc=0;
-  unsigned char frame_type = 0; // 0 - FDD, 1 - TDD;
+  unsigned char frame_type = 0; // Frame Type: 0 - FDD, 1 - TDD;
   unsigned char pbch_phase = 0;
 
 #ifdef XFORMS

@@ -77,14 +77,10 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
     }
 #endif
  
-
-    
+  
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;   
     
-
-  
-  
     
     output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
