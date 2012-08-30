@@ -409,7 +409,9 @@ typedef struct {
   /// Number of resource blocks (RB) in UL
   u8 N_RB_UL;
   /// Cell ID                 
-  u8 Nid_cell;               
+  u16 Nid_cell;               
+  /// MBSFN Area ID
+  u16 Nid_cell_mbsfn;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   u8 Ncp;
   /// Cyclic Prefix for UL (0=Normal CP, 1=Extended CP)
