@@ -50,7 +50,7 @@ DCI1E_5MHz_2A_M10PRB_TDD_t  DLSCH_alloc_pdu2_1E;  //TODO:  what it's the use of 
 LTE_DL_FRAME_PARMS *frame_parms; 				  //WARNING if you don't put this variable, some macros dosn't work
 
 int WRITE_FILES =1;
-int NOISE=0;
+int NOISE=1;
 
 int x=0;
 int totErrors=0;
@@ -179,7 +179,7 @@ void _initDefaults(options_t *opts) {
     opts->pilot3 = 11;
 
     opts->num_rounds=4;
-    opts->subframe=7;     
+    opts->subframe=0;     
     opts->amp=AMP;					//1024
     opts->dci_flag=0;
 
