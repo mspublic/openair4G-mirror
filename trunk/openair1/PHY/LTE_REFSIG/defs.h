@@ -45,10 +45,10 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 		     unsigned char p);
 
 int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
-		     short amp,
-		     unsigned char Ns,
-		     unsigned char l,
-		     unsigned char p);
+		 short amp,
+		 int subframe,
+		 unsigned char l,
+		 unsigned char p);
 
 
 /*!\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1) for channel estimation upon reception
@@ -66,11 +66,11 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
 			unsigned char l,
 			unsigned char p);
 
-int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue, u8 eNB_offset,
-			int *output,
-			unsigned char Ns,
-			unsigned char l,
-			unsigned char p); 
+int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
+		    int *output,
+		    int subframe,
+		    unsigned char l);
+
 
 
 
