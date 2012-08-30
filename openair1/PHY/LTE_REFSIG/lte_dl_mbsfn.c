@@ -13,7 +13,7 @@
 
 int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 		 short amp,
-		 unsigned char Ns,
+		 int subframe,
 		 unsigned char l,
 		 unsigned char p) {
 
@@ -47,14 +47,10 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 
   for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL*6; m++) {	
 
-    if (((Ns % 2 == 0)  && (l!=0)) || ((Ns % 2 == 1)  && (l!=0)))
-      
-      k = m*2;
-    
-    else if ((Ns % 2 == 1)  && (l==0))  
-      
-      k = (m*2)+1;
-    
+    if ((l==2) || (l==10)) 
+      k = m<<1;
+    else if (l==6)
+      k = 1+(m<<1);
     else {
       msg("lte_dl_mbsfn: l %d -> ERROR\n",l);
       return(-1);
@@ -82,20 +78,20 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
     mprime_qpsk_symb = mprime&0xf;   
     
     
-    output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
-    //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
+    output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    //output[k] = (lte_gold_table[eNB_offset][subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
     
     
 #ifdef DEBUG_DL_MBSFN
-    msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-	Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    msg("subframe %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+	subframe,l,m,mprime_dword,mprime_qpsk_symb);
+    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif     
     mprime++;
     
 #ifdef DEBUG_DL_MBSFN
     if (m<18)
-      printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
+      printf("subframe %d, l %d output[%d] = (%d,%d)\n",subframe,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
 
 
@@ -107,13 +103,10 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 
 
 
-int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue, u8 eNB_offset,
+int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
 		    int *output,
-		    unsigned char Ns,
-		    unsigned char l,
-		    unsigned char p) 
-	
-{
+		    int subframe,
+		    unsigned char l) {
   
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0;
@@ -138,18 +131,18 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue, u8 eNB_offset,
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2 
-    output[k] = qpsk[(phy_vars_ue->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
 	
 #ifdef DEBUG_DL_MBSFN
-    printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_mbsfn_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("subframe %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+	   subframe,l,m,mprime_dword,mprime_qpsk_symb);
+    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif 
 
     mprime++;
 #ifdef DEBUG_DL_MBSFN
     if (m<18)
-      printf("Ns %d l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
+      printf("subframe %d l %d output[%d] = (%d,%d)\n",subframe,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k++;
     //    printf("** k %d\n",k);
