@@ -79,7 +79,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
 int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 				    u8 eNB_id,
-				    int subframe
+				    int subframe,
 				    unsigned char l,
 				    unsigned char symbol);
 
