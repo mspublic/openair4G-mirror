@@ -233,6 +233,7 @@ char openair_rrc_lite_eNB_init(u8 Mod_id);
 char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag);
+void rrc_top_cleanup(void);
 
 /** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
 @param Mod_id Instance of UE/eNB

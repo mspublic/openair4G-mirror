@@ -222,7 +222,7 @@ clean:
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe*
-
+	rm $(ASN1_MSG_INC)/asn1_msg.o
 cleanl1:
 	rm -f oaisim
 	rm -f $(PHY_OBJS) $(SCHED_OBJS)
@@ -231,7 +231,7 @@ cleanl1:
 
 cleanl2:
 	rm -f $(L2_OBJS)
-
+	rm $(ASN1_MSG_INC)/asn1_msg.o	
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated

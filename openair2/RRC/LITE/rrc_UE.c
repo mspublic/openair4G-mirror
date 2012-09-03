@@ -218,12 +218,12 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index) {
 int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
   /*------------------------------------------------------------------------------*/
 
-  DL_CCCH_Message_t dlccchmsg;
-  DL_CCCH_Message_t *dl_ccch_msg=&dlccchmsg;
+  //DL_CCCH_Message_t dlccchmsg;
+  DL_CCCH_Message_t *dl_ccch_msg=NULL;//&dlccchmsg;
   asn_dec_rval_t dec_rval;
-  int i;
+  int i,rval=0;
 
-  memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
+  //memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
 
   //  LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",Mod_id,Srb_info->Rx_buffer.payload_size,
   //	UE_rrc_inst[Mod_id].Info[eNB_index].State);
@@ -250,27 +250,27 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
       case DL_CCCH_MessageType__c1_PR_NOTHING :
 
 	LOG_I(RRC,"[UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",Mod_id,frame);
-	return 0;
+	rval= 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReestablishment ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
 	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n",Mod_id,frame);
-	return 0;
+	rval= 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (RRCConnectionReestablishmentReject ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n",Mod_id,frame);
-	return 0;
+	rval= 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReject ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
 	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",Mod_id,frame);
-	return 0;
+	rval= 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionSetup ENB %d) --->][RRC_UE][MOD %02d][]\n",
@@ -286,16 +286,16 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 
 	rrc_ue_generate_RRCConnectionSetupComplete(Mod_id,frame, eNB_index);
 
-	return 0;
+	rval= 0;
 	break;
       default:
 	LOG_I(RRC,"[UE%d] Frame %d : Unknown message\n",Mod_id,frame);
-	return -1;
+	rval= -1;
       }
     }
   }
-
-  return 0;
+  
+  return rval;
 }
 
 
@@ -736,8 +736,8 @@ void	rrc_ue_process_mobilityControlInfo(u8 Mod_id,u8 eNB_index,struct MobilityCo
 void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/
 
-  DL_DCCH_Message_t dldcchmsg;
-  DL_DCCH_Message_t *dl_dcch_msg=&dldcchmsg;
+  //DL_DCCH_Message_t dldcchmsg;
+  DL_DCCH_Message_t *dl_dcch_msg=NULL;//&dldcchmsg;
   //  asn_dec_rval_t dec_rval;
   int i;
 
@@ -746,7 +746,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
     return;
   }
 
-  memset(dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+  //memset(dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
 
   // decode messages
   //  LOG_D(RRC,"[UE %d] Decoding DL-DCCH message\n",Mod_id);
@@ -760,8 +760,9 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	      (void**)&dl_dcch_msg,
 	      (uint8_t*)Buffer,
 	      100,0,0);
-
+  
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
+
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
     if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_CONNECTED) {
@@ -821,47 +822,51 @@ const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","
 
 int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_len) {
 
-  BCCH_DL_SCH_Message_t bcch_message;
-  BCCH_DL_SCH_Message_t *bcch_message_ptr=&bcch_message;
+  //BCCH_DL_SCH_Message_t bcch_message;
+  BCCH_DL_SCH_Message_t *bcch_message=NULL;//_ptr=&bcch_message;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   SystemInformation_t **si=UE_rrc_inst[Mod_id].si[eNB_index];
   asn_dec_rval_t dec_rval;
-  u32 si_window;
+  u32 si_window, sib1_decoded=0, si_decoded=0;
 
-  memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
+  //memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
   //  LOG_D(RRC,"[UE %d] Decoding DL_BCCH_DLSCH_Message\n",Mod_id)
   dec_rval = uper_decode_complete(NULL,
 				  &asn_DEF_BCCH_DL_SCH_Message,
-				  (void **)&bcch_message_ptr,
+				  (void **)&bcch_message,
 				  (const void *)Sdu,
 				  Sdu_len);//,0,0);
-
+  
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
     LOG_E(RRC,"[UE %d] Failed to decode BCCH_DLSCH_MESSAGE (%d bits)\n",Mod_id,dec_rval.consumed);
+    //free the memory  
+    SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 1);   
     return -1;
   }  
   //  xer_fprint(stdout,  &asn_DEF_BCCH_DL_SCH_Message, (void*)&bcch_message);
 
-  if (bcch_message.message.present == BCCH_DL_SCH_MessageType_PR_c1) {
-    switch (bcch_message.message.choice.c1.present) {
+  if (bcch_message->message.present == BCCH_DL_SCH_MessageType_PR_c1) {
+    switch (bcch_message->message.choice.c1.present) {
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
       if ((frame %2) == 0) {
 	if (UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 0) {
 	  memcpy((void*)*sib1,
-		 (void*)&bcch_message.message.choice.c1.choice.systemInformationBlockType1,
+		 (void*)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
 		 sizeof(SystemInformationBlockType1_t));
-	  LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
-	  decode_SIB1(Mod_id,eNB_index);
 	}
-	break;
+	LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
+	decode_SIB1(Mod_id,eNB_index);
+      }
+      break;
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
-
-	si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
-	memcpy((void*)si[si_window],
-	       (void*)&bcch_message.message.choice.c1.choice.systemInformation,
-	       sizeof(SystemInformation_t));
+	if ((frame %8) == 1) { 
+	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
+	  memcpy((void*)si[si_window],
+		 (void*)&bcch_message->message.choice.c1.choice.systemInformation,
+		 sizeof(SystemInformation_t));
+	}
 	LOG_D(RRC,"[UE %d] Decoding SI for frame %d, si_window %d\n",Mod_id,frame,si_window);
 	decode_SI(Mod_id,frame,eNB_index,si_window);
       }
@@ -870,7 +875,10 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	break;
       }
     }
-  }
+  
+  if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
+      (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1) && (frame >= Mod_id * 20 + 10)) 
+    SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 0);
 }	    
 	    
 
@@ -878,7 +886,8 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   int i;
-
+  
+  
   LOG_D(RRC,"[UE %d] : Dumping SIB 1 (%d bits)\n",Mod_id,dec_rval.consumed);
 
   //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);
