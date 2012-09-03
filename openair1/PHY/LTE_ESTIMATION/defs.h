@@ -76,6 +76,14 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 			      u8 l,
 			      u8 symbol);
 
+
+int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+				    u8 eNB_id,
+				    int subframe
+				    unsigned char l,
+				    unsigned char symbol);
+
+
 #ifdef EMOS
 int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS],
 				   int **rxdataF,
