@@ -239,6 +239,15 @@ void openair_rrc_top_init(void){
 
 }
 
+void rrc_top_cleanup(void){
+
+ if (NB_UE_INST>0)
+   free(UE_rrc_inst);
+ if (NB_eNB_INST>0)
+   free(eNB_rrc_inst);
+
+}
+
 int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
   if(eNB_flag == 1)
     return(eNB_rrc_inst[Mod_id].Info.Status[index]);

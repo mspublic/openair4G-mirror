@@ -1550,6 +1550,10 @@ main (int argc, char **argv)
     for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++)
       free(ue_data[UE_id]); 
   } //End of PHY abstraction changes
+
+#ifdef OPENAIR2
+  mac_top_cleanup();
+#endif 
   
 #ifdef PRINT_STATS
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++)

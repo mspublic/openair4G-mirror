@@ -303,7 +303,11 @@ void mac_top_cleanup(void){
 #ifndef USER_MODE
   pdcp_module_cleanup ();
 #endif
-
+  if (NB_UE_INST>0)
+    free (UE_mac_inst);
+  if (NB_eNB_INST>0)
+    free(eNB_mac_inst);
+  free( Mac_rlc_xface);
 }
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {

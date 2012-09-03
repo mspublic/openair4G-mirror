@@ -409,7 +409,10 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
 	    n_dci++) {
 	 total_tbs +=eNB_transport_info[n_enb].tbs[n_dci];
        }
-       total_size = sizeof(eNB_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
+       if (total_tbs <= MAX_TRANSPORT_BLOCKS_BUFFER_SIZE)
+	 total_size = sizeof(eNB_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
+       else 
+	 LOG_E(EMU,"[eNB]running out of memory for the eNB emulation transport buffer of size %d\n", MAX_TRANSPORT_BLOCKS_BUFFER_SIZE);
        memcpy(&bypass_tx_buffer[byte_tx_count], (char*)&eNB_transport_info[n_enb], total_size);
        byte_tx_count +=total_size;
      }
@@ -418,12 +421,15 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
     //LOG_T(EMU,"[TX_DATA] UE TRANSPORT\n");
     messg->Message_type = UE_TRANSPORT_INFO;
     total_size=0;
-    for (n_ue = oai_emulation.info.first_ue_local; n_ue < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);n_ue++){
       total_tbs=0; // compute the actual size of transport_blocks
-      for (n_enb=0;n_enb<UE_transport_info[n_ue].num_eNB;n_enb++) {
+      for (n_ue = oai_emulation.info.first_ue_local; n_ue < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);n_ue++){
+	for (n_enb=0;n_enb<UE_transport_info[n_ue].num_eNB;n_enb++) {
 	total_tbs+=UE_transport_info[n_ue].tbs[n_enb];
       }
-      total_size = sizeof(UE_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
+      if (total_tbs <= MAX_TRANSPORT_BLOCKS_BUFFER_SIZE)
+	total_size = sizeof(UE_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
+       else
+	 LOG_E(EMU,"[UE]running out of memory for the UE emulation transport buffer of size %d\n", MAX_TRANSPORT_BLOCKS_BUFFER_SIZE);
       memcpy(&bypass_tx_buffer[byte_tx_count], (char*)&UE_transport_info[n_ue], total_size);
       byte_tx_count +=total_size;
     }

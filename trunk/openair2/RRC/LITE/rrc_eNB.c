@@ -228,15 +228,15 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
   /*------------------------------------------------------------------------------*/
 
   asn_dec_rval_t dec_rval;
-  UL_DCCH_Message_t uldcchmsg;
-  UL_DCCH_Message_t *ul_dcch_msg=&uldcchmsg;
+  //UL_DCCH_Message_t uldcchmsg;
+  UL_DCCH_Message_t *ul_dcch_msg=NULL;//&uldcchmsg;
   int i;
 
   if (Srb_id != 1) {
     LOG_E(RRC,"[eNB %d] Frame %d: Received message on SRB%d, should not have ...\n",Mod_id,frame,Srb_id);
   }
 
-  memset(ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
+  //memset(ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
 
   LOG_D(RRC,"[eNB %d] Frame %d: Decoding UL-DCCH Message\n",
       Mod_id,frame);
@@ -324,6 +324,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
     LOG_E(RRC,"[UE %d] Frame %d : Unknown error\n",Mod_id,frame);
     return -1;
   }
+
 }
 
 
@@ -334,13 +335,13 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
   u16 Idx,UE_index;
 
   asn_dec_rval_t dec_rval;
-  UL_CCCH_Message_t ulccchmsg;
-  UL_CCCH_Message_t *ul_ccch_msg=&ulccchmsg;
+  //UL_CCCH_Message_t ulccchmsg;
+  UL_CCCH_Message_t *ul_ccch_msg=NULL; //&ulccchmsg;
   RRCConnectionRequest_r8_IEs_t *rrcConnectionRequest;
-  int i;
+  int i,rval;
 
 
-  memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
+  //memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
 
   LOG_D(RRC,"[eNB %d] Frame %d: Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n", Mod_id,frame,
       ((uint8_t*)Srb_info->Rx_buffer.Payload)[0],
@@ -445,15 +446,15 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 
     default:
       LOG_E(RRC,"[eNB %d] Frame %d : Unknown message\n",Mod_id,frame);
-      return -1;
+      rval = -1;
     }
-    return 0;
+    rval = 0;
   }
   else{
     LOG_E(RRC,"[eNB %d] Frame %d : Unknown error \n",Mod_id,frame);
-      return -1;
+      rval = -1;
   }
-
+  return rval;
 }
 
 
