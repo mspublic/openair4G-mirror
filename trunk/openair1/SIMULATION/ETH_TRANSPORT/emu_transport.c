@@ -61,22 +61,24 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
   
   if (ethernet_flag == 0)
     return;
-  
+
   if ((frame_type == 1) &&  (direction == SF_S)){
     if (next_slot%2==0)
       emu_transport_DL(frame, last_slot,next_slot);
     else 
       emu_transport_UL(frame, last_slot , next_slot);
   //DL
-  }   
-  if ( ( (frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
-    emu_transport_DL(frame, last_slot,next_slot);
+  }else {   
+    if (next_slot%2 == 0 )
+      if ( ((frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
+      emu_transport_DL(frame, last_slot,next_slot);
+    }
+    // UL
+    if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ){
+      emu_transport_UL(frame, last_slot , next_slot);
+    }
+    
   }
-  // UL
-  if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ){
-    emu_transport_UL(frame, last_slot , next_slot);
-  }
-  
 }
 
 

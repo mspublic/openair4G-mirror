@@ -4482,7 +4482,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       case 5:
 	
 	//	schedule_RA(Mod_id,subframe,&nprb,&nCCE);
-	//	schedule_ulsch(Mod_id,frame,cooperation_flag,frame,subframe,&nCCE);
+	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,&nCCE);
 	schedule_ue_spec(Mod_id,frame,subframe,0,0);
 	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
 	break;
