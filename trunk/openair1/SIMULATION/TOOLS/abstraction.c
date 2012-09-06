@@ -14,6 +14,9 @@ double **cos_lut=NULL,**sin_lut=NULL;
 
 
 //#if 1
+
+int freq_channel_init=0;
+
 void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
 
@@ -23,6 +26,7 @@ void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
   u8 l;
 
 
+  freq_channel_init = 1;
 
   cos_lut = (double **)malloc(n_samples*sizeof(double*));
   sin_lut = (double **)malloc(n_samples*sizeof(double*));
@@ -31,25 +35,27 @@ void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
   delta_f = nb_rb*180000/(n_samples-1);
 
-  for (f=0;f<n_samples;f++) {
+  for (f=-(n_samples>>1);f<(n_samples>>1);f++) {
     freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
 
-    cos_lut[f] = (double *)malloc((int)desc->nb_taps*sizeof(double));
-    sin_lut[f] = (double *)malloc((int)desc->nb_taps*sizeof(double));
+    cos_lut[f+(n_samples>>1)] = (double *)malloc((int)desc->nb_taps*sizeof(double));
+    sin_lut[f+(n_samples>>1)] = (double *)malloc((int)desc->nb_taps*sizeof(double));
 
 
-  for (l=0;l<(int)desc->nb_taps;l++) {
-      cos_lut[f][l] = cos(2*M_PI*freq*desc->delays[l]);
-      sin_lut[f][l] = sin(2*M_PI*freq*desc->delays[l]);
-	//printf("values cos:%d, sin:%d\n", cos_lut[f][l], sin_lut[f][l]);
+    for (l=0;l<(int)desc->nb_taps;l++) {
+      if (desc->nb_taps==1) 
+	delay = desc->delays[l];
+      else
+	delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->BW;
 
+      cos_lut[f+(n_samples>>1)][l] = cos(2*M_PI*freq*delay);
+      sin_lut[f+(n_samples>>1)][l] = sin(2*M_PI*freq*delay);
+      //printf("values cos:%d, sin:%d\n", cos_lut[f][l], sin_lut[f][l]);
+      
     }
   }
 }
 
-
-
-#if 1
 void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
 
@@ -59,7 +65,10 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
  // printf("no of samples:%d,",n_samples);
  // printf("no of taps:%d,",(int)desc->nb_taps);
-  
+
+  if (freq_channel_init == 0)
+    init_freq_channel(desc,nb_rb,n_samples);
+    
   for (f=-n_samples/2;f<n_samples/2;f++) {
 	clut = cos_lut[n_samples/2+f];
         slut = sin_lut[n_samples/2+f];
@@ -80,44 +89,6 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
   }
 }
 
-#else
-
-
-
-void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
-
-  double delta_f,freq;  // 90 kHz spacing
-  double delay;
-  s16 f;
-  u8 aarx,aatx,l;
-
-  delta_f = nb_rb*180000/(n_samples-1);
-  //write_output("channel.m","a",desc->a[0],desc->nb_taps,1,8);
-  for (f=-n_samples/2;f<n_samples/2;f++) {
-    freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
-
-      for (aarx=0;aarx<desc->nb_rx;aarx++) {
-	for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].x=0.0;
-	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].y=0.0;
-	  for (l=0;l<(int)desc->nb_taps;l++) {
-	    if (desc->nb_taps==1) 
-	      delay = desc->delays[l];
-	    else
-	      delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->BW;
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos(2*M_PI*freq*delay)+
-						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin(2*M_PI*freq*delay));
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*delay)+
-						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos(2*M_PI*freq*delay));
-
-	  }
-	  	  	  	// printf("chF(%d) => (%f,%f)\n",n_samples/2+f,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
-	}
-      }
-  }
-}
-
-#endif
 double compute_pbch_sinr(channel_desc_t *desc,
 			 channel_desc_t *desc_i1, 
 			 channel_desc_t *desc_i2,
