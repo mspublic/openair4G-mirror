@@ -504,7 +504,7 @@ rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)];
 	
 	dl_ch_prev = (short *)&dl_ch_estimates[aarx][0];
 		
-	if (phy_vars_ue->lte_frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
+	if (phy_vars_ue->lte_frame_parms.Ncp==1) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
 	  multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	  multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	  
