@@ -7,7 +7,8 @@
 //#define DEBUG_CH 
 int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 				    u8 eNB_id,
-				    int subframe
+					u8 eNB_offset,
+				    int subframe,
 				    unsigned char l,
 				    unsigned char symbol){
   
@@ -17,8 +18,9 @@ int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   unsigned char aarx,aa;
   unsigned short k;
   unsigned int rb,pilot_cnt;
-  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev;
+  short channel[24],*ch,*pil,*rxF,*dl_ch,*dl_ch_prev;
   int ch_offset,symbol_offset;
+  int c,p;
   //  unsigned int n;
   //  int i;
   u16 Nid_cell_mbsfn = phy_vars_ue->lte_frame_parms.Nid_cell_mbsfn;
@@ -35,12 +37,12 @@ int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     if ((l==2)||(l==6)||(l==10)) {
       lte_dl_mbsfn_rx(phy_vars_ue,
 			   &pilot[0],
-			   subframe
+			   subframe,
 			   l>>2);  // if symbol==2, return 0 else if symbol = 6, return 1, else if symbol=10 return 2
       
       
       
-      
+      ch	= (short *)&channel[0];
       pil   = (short *)&pilot[0];
       rxF   = (short *)&rxdataF[aarx][((symbol_offset+k+phy_vars_ue->lte_frame_parms.first_carrier_offset)<<1)]; 
       dl_ch = (short *)&dl_ch_estimates[aarx][ch_offset];
@@ -84,7 +86,7 @@ int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 	  
 	  ch[c] = (short)(((int)pil[p]*rxF[c] - (int)pil[p+1]*rxF[c+1])>>15);
 	  ch[c+1] = (short)(((int)pil[p]*rxF[c+1] + (int)pil[p+1]*rxF[c])>>15);
-	  if (rb=phy_vars_ue->lte_frame_parms.N_RB_DL){
+	  if (rb=phy_vars_ue->lte_frame_parms.N_RB_DL) {
 	  ch[c+2]= (ch[c]>>1)*3- ch[c-2];
 	  ch[c+3]= (ch[c+1]>>1)*3- ch[c-1];
       }
@@ -105,7 +107,8 @@ rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)];
 		}
 	
 }
-      //pil+=12;
+}   
+	  //pil+=12;
 	  //ch+=24;
 	  //rxF+=24;
 //*********************************************************************	  
