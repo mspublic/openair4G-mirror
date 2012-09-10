@@ -559,7 +559,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 	dl_ch+=16;
 	
       }
-    } else {
+    }
+	 else {
       msg("channel estimation not implemented for phy_vars_ue->lte_frame_parms.N_RB_DL = %d\n",phy_vars_ue->lte_frame_parms.N_RB_DL);
     }
     
