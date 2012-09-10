@@ -3,7 +3,7 @@
 #endif
 #include "defs.h"
 #include "PHY/defs.h"
-#include "filt96_32.h"
+
 //#define DEBUG_CH 
 int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 				    u8 eNB_id,
