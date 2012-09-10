@@ -5,7 +5,7 @@
 #include "PHY/defs.h"
 #include "filt96_32.h"
 //#define DEBUG_CH 
-int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 				    u8 eNB_id,
 					u8 eNB_offset,
 				    int subframe,
@@ -18,7 +18,7 @@ int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   unsigned char aarx,aa;
   unsigned short k;
   unsigned int rb,pilot_cnt;
-  short channel[24],*ch,*pil,*rxF,*dl_ch,*dl_ch_prev;
+  short ic[3],*pil,*rxF,*ch,*ch_prev;
   int ch_offset,symbol_offset;
   int c,p;
   //  unsigned int n;
@@ -38,17 +38,17 @@ int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       lte_dl_mbsfn_rx(phy_vars_ue,
 			   &pilot[0],
 			   subframe,
-			   l>>2);  // if symbol==2, return 0 else if symbol = 6, return 1, else if symbol=10 return 2
+			   l>>2); 
+			   } // if symbol==2, return 0 else if symbol = 6, return 1, else if symbol=10 return 2
       
       
       
-      ch	= (short *)&channel[0];
       pil   = (short *)&pilot[0];
       rxF   = (short *)&rxdataF[aarx][((symbol_offset+k+phy_vars_ue->lte_frame_parms.first_carrier_offset)<<1)]; 
-      dl_ch = (short *)&dl_ch_estimates[aarx][ch_offset];
+      ch = (short *)&dl_ch_estimates[aarx][ch_offset];
       
       //    if (eNb_id==0)
-      memset(dl_ch,0,4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
+      memset(ch,0,4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
 //***********************************************************************      
       if ((phy_vars_ue->lte_frame_parms.N_RB_DL==6)  || 
 	  (phy_vars_ue->lte_frame_parms.N_RB_DL==50) || 
@@ -475,12 +475,64 @@ rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)];
 }
       }
       else if (phy_vars_ue->lte_frame_parms.N_RB_DL==15) {
+	// Interpolation  and extrapolation;	  
+	for (rb=0; rb<phy_vars_ue->lte_frame_parms.N_RB_DL; rb++) {
+		
+		if (l==6) {  // l=6;
+	  ch+=2;
+	  rxF+=4;
+	  for (c=0; c< 24; c+=4) { // total no of real and img channels in a RB;
+		  for (p=0; p< 12; p+=2) { // total no of real and img pilots in a RB;
+	  
+	  ch[c] = (short)(((int)pil[p]*rxF[c] - (int)pil[p+1]*rxF[c+1])>>15);
+	  ch[c+1] = (short)(((int)pil[p]*rxF[c+1] + (int)pil[p+1]*rxF[c])>>15);
+	  ch[c+2] = ch[c]>>1;
+	  ch[c+3] = ch[c+1]>>1;
+	   if (rb>0) {
+	  ch[c-2] += ch[c+2];
+	  ch[c-1] += ch[c+3];
+	  }
+	  else
+	  {
+	  ch[c-2]= (ch[c]>>1)*3- ch[c+4];
+	  ch[c-1]= (ch[c+1]>>1)*3- ch[c+5];  
+	  }
+	}
+ }
+}
+	  	  
+	  else  { // l=2 or 10; 
+		for (c=0; c< 24; c+=4) {
+		  for (p=0; p< 12; p+=2) {
+	  
+	  ch[c] = (short)(((int)pil[p]*rxF[c] - (int)pil[p+1]*rxF[c+1])>>15);
+	  ch[c+1] = (short)(((int)pil[p]*rxF[c+1] + (int)pil[p+1]*rxF[c])>>15);
+	  if (rb=phy_vars_ue->lte_frame_parms.N_RB_DL) {
+	  ch[c+2]= (ch[c]>>1)*3- ch[c-2];
+	  ch[c+3]= (ch[c+1]>>1)*3- ch[c-1];
+      }
+	  else {
+	  ch[c+2] = ch[c]>>1;
+	  ch[c+3] = ch[c+1]>>1;
+	  ch[c-2] += ch[c+2];
+	  ch[c-1] += ch[c+3];
+	    
+      }
+	}
+   }
+ }
+if ( rb= phy_vars_ue->lte_frame_parms.N_RB_DL>>1) {
+rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)]; 
+	ch+=2;
+	rxF+=2;
+		}
 	
+}
       } 
       else {
 	msg("channel estimation not implemented for phy_vars_ue->lte_frame_parms.N_RB_DL = %d\n",phy_vars_ue->lte_frame_parms.N_RB_DL);
       }
-   }
+   
       
 #ifndef PERFECT_CE    
       // Temporal Interpolation
@@ -502,17 +554,17 @@ rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)];
 	//      printf("Interpolating 0->%d\n",4-phy_vars_ue->lte_frame_parms.Ncp);*/
 	
 	
-	dl_ch_prev = (short *)&dl_ch_estimates[aarx][0];
+	ch_prev = (short *)&dl_ch_estimates[aarx][0];
 		
 	if (phy_vars_ue->lte_frame_parms.Ncp==1) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
-	  multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	  multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+	  multadd_complex_vector_real_scalar( ch_prev,24576,ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+	  multadd_complex_vector_real_scalar( ch,8192,ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	  
-	  multadd_complex_vector_real_scalar(dl_ch_prev,16384,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	  multadd_complex_vector_real_scalar(dl_ch,16384,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+	  multadd_complex_vector_real_scalar( ch_prev,16384,ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+	  multadd_complex_vector_real_scalar( ch,16384,ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	  
-	  multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-	  multadd_complex_vector_real_scalar(dl_ch,24576,dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+	  multadd_complex_vector_real_scalar( ch_prev,8192,ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
+	  multadd_complex_vector_real_scalar( ch,24576,ch_prev+(3*2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	}
 	/*else {
 	  multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
@@ -523,7 +575,7 @@ rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)];
 	} // pilot spacing 3 symbols (1/3,2/3 combination)
       }*/
 #endif          
-    
+   } 
   
   // do ifft of channel estimate
   for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
@@ -539,4 +591,8 @@ rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)];
   
   return(0); 
 }
+
+
+
+
 
