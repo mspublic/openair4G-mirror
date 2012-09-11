@@ -7,7 +7,7 @@ CPP_FILES:=$(shell find . -iname '*.cpp')
 OBJ_FILES=$(CPP_FILES:.cpp=.o)
 EXE_FILE=bin/SCOREF-MGMT
 CPPFLAGS=-Wall
-LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread
+LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread -lboost_program_options
 INCLUDE=-Isrc/ -Isrc/packets/ -Isrc/util/
 
 OPT_FLAGS=-O3

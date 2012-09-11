@@ -216,6 +216,13 @@ class Util {
 		 */
 		static string trim(const string& str, char character);
 		/**
+		 * Checks if incoming string is numerical or not
+		 *
+		 * @param str std::string to be checked
+		 * @return true if it's numerical, false otherwise
+		 */
+		static bool isNumeric(const string& str);
+		/**
 		 * Returns current date/time as string
 		 * This is used for log file rotating and in log messages as a prefix
 		 *

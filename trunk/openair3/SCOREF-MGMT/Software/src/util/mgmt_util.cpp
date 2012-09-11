@@ -285,6 +285,14 @@ string Util::trim(const string& str, char character) {
 	return trimmedString;
 }
 
+bool Util::isNumeric(const string& str) {
+	string::const_iterator it = str.begin();
+
+	while (it != str.end() && std::isdigit(*it)) ++it;
+
+	return !str.empty() && it == str.end();
+}
+
 string Util::getDateAndTime(bool withDelimiters) {
 #if 1
 	// todo Boost's damn date_time is too complex, figure it out and replace

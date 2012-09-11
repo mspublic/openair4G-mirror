@@ -99,7 +99,7 @@ bool ManagementInformationBase::initialise() {
 
 bool ManagementInformationBase::setValue(ItsKeyID id, ItsKeyValue value) {
 	try {
-		itsKeyManager.setKey(id, value);
+		itsKeyManager.setKeyValue(id, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its ID");
 		throw e;
@@ -113,7 +113,7 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 		throw Exception("Incoming parameter name is empty!", logger);
 
 	try {
-		itsKeyManager.setKey(name, value);
+		itsKeyManager.setKeyValue(name, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its name");
 		throw e;
@@ -122,8 +122,8 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 	return true;
 }
 
-ItsKeyValue ManagementInformationBase::getValue(ItsKeyID id) {
-	return itsKeyManager.getKey(id);
+ItsKeyValue ManagementInformationBase::getItsKeyIntegerValue(ItsKeyID id) {
+	return itsKeyManager.getKeyIntegerValue(id);
 }
 
 u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {
