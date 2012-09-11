@@ -399,6 +399,7 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 u8 *pucch_payload,
 			 u8 sr,
 			 u8 subframe) {
+  //TODO: include pucch_sel here
 
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_flag    = format;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_Ncs1    = ncs1;
@@ -416,10 +417,9 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
     UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_payload = pucch_payload[0] + (pucch_payload[1]<<1);
   }
   else if (format == pucch_format1) {
-    LOG_D(PHY,"[UE %d] Frame %d subframe %d Generating PUCCH for SR %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,sr);
-  }
+ 
   phy_vars_ue->sr[subframe] = sr;
-
+ }
 }
 
 s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
@@ -922,11 +922,10 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 
 
 s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
-		  u8 UE_index,
-		  PUCCH_FMT_t fmt,
-		  u8 n1_pucch_sel,
-		  u8 *payload,
-		  u8 subframe) {
+		   u8 UE_index,
+		   PUCCH_FMT_t fmt,
+		   u8 *payload,
+		   u8 subframe) {
   u8 UE_id;
   u16 rnti;
 
@@ -953,8 +952,5 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
   else 
     LOG_E(PHY,"[eNB] Frame %d: Can't handle formats 2/2a/2b\n",phy_vars_eNB->frame);
 
-  if (PHY_vars_UE_g[UE_id]->pucch_sel[subframe] == n1_pucch_sel)
-    return(99);
-  else
-    return(0);
+  return(0);
 }

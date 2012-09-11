@@ -403,7 +403,7 @@ int main(int argc, char **argv) {
   double iqim=0.0;
   u8 extended_prefix_flag=0;
   int cqi_flag=0,cqi_error,cqi_errors,cqi_crc_falsepositives,cqi_crc_falsenegatives;
-
+  int ack_errors=0;
   int eNB_id = 0;
   int UE_id = 0;
   unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
@@ -449,7 +449,7 @@ int main(int argc, char **argv) {
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:Q")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:OQ")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -568,6 +568,9 @@ int main(int argc, char **argv) {
 	printf("beta_ri must be in (0..13)\n");
 	exit(-1);
       }
+      break;
+    case 'O':
+      control_only_flag=1;
       break;
     case 'Q':
       cqi_flag=1;
@@ -820,6 +823,7 @@ int main(int argc, char **argv) {
     round_trials[2] = 0;
     round_trials[3] = 0;
     cqi_errors=0;
+    ack_errors=0;
     cqi_crc_falsepositives=0;
     cqi_crc_falsenegatives=0;
     round=0;
@@ -1128,8 +1132,8 @@ int main(int argc, char **argv) {
 	      cqi_crc_falsenegatives++;
 	  }
 	}
-    //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
-      
+
+	ack_errors += PHY_vars_UE->ulsch_ue[0]->o_ACK[0] ^ PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0];
 	
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
@@ -1202,6 +1206,8 @@ int main(int argc, char **argv) {
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
     
+    printf("ACK errors %d\n",ack_errors);
+
     if (cqi_flag >0) {
       printf("CQI errors %d/%d,false positives %d/%d, CQI false negatives %d/%d\n",
 	     cqi_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],

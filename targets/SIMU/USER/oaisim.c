@@ -781,7 +781,7 @@ main (int argc, char **argv)
       abstraction_flag = 1;
       break;
     case 'A':
-      oai_emulation.info.ocm_enabled=1;
+      //oai_emulation.info.ocm_enabled=1;
       if (optarg == NULL)
 	oai_emulation.environment_system_config.fading.small_scale.selected_option="AWGN";
       else
@@ -1044,14 +1044,14 @@ main (int argc, char **argv)
       if (oai_emulation.info.transmission_mode == 5) 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						     (UE_id == 0)? Rayleigh1_corr : Rayleigh1_anticorr,
+						     (UE_id == 0)? Rice1_corr : Rice1_anticorr,
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
 						     0,
 						     0);
       
       else
-      */ 
+      */
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
 						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
@@ -1323,7 +1323,7 @@ main (int argc, char **argv)
 #endif
       }
       // Call ETHERNET emulation here
-      //emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
+      emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
       
       if ((next_slot % 2) == 0)
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
@@ -1375,7 +1375,7 @@ main (int argc, char **argv)
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
       
-      if (ethernet_flag == 0){
+      
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
@@ -1396,7 +1396,7 @@ main (int argc, char **argv)
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
 	}
       }
-      }
+    
       if ((last_slot == 1) && (frame == 0)
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
@@ -1550,10 +1550,6 @@ main (int argc, char **argv)
     for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++)
       free(ue_data[UE_id]); 
   } //End of PHY abstraction changes
-
-#ifdef OPENAIR2
-  mac_top_cleanup();
-#endif 
   
 #ifdef PRINT_STATS
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++)

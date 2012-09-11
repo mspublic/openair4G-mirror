@@ -221,10 +221,11 @@ u32 ulsch_encoding(u8 *a,
     o_flip[6] = ulsch->o[1];
     o_flip[7] = ulsch->o[0];
   }
-  if (control_only_flag == 0) {
-    A=ulsch->harq_processes[harq_pid]->TBS;
-    Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
+  A=ulsch->harq_processes[harq_pid]->TBS;
+  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  
+  if (control_only_flag == 0) {
     ulsch->harq_processes[harq_pid]->control_only = 0;
     
 #ifdef DEBUG_ULSCH_CODING

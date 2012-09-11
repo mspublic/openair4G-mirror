@@ -541,7 +541,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 		   r_im,
 		   nb_antennas_rx,
 		   frame_parms->samples_per_tti>>1,
-		   1e3/UE2eNB[0][eNB_id]->BW,  // sampling time (ns) 
+		   1e9, //1e3/UE2eNB[0][eNB_id]->BW,  // sampling time (ns) 
 		   (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 
       rx_pwr = signal_energy_fp(r_re,r_im,nb_antennas_rx,frame_parms->samples_per_tti>>1,0);

@@ -122,7 +122,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
 
       // compute DL power control parameters 
       (transmission_mode==5) ? (PHY_vars_UE->dlsch_ue[i][j]->dl_power_off = 0) : (PHY_vars_UE->dlsch_ue[i][j]->dl_power_off = 1);
-      PHY_vars_UE->pdsch_config_dedicated->p_a = 4;
+      PHY_vars_UE->pdsch_config_dedicated->p_a = 4; // 
     computeRhoA_UE(PHY_vars_UE->pdsch_config_dedicated, PHY_vars_UE->dlsch_ue[i][j]);
     computeRhoB_UE(PHY_vars_UE->pdsch_config_dedicated,&(PHY_vars_UE->lte_frame_parms.pdsch_config_common),PHY_vars_UE->lte_frame_parms.nb_antennas_tx_eNB,PHY_vars_UE->dlsch_ue[i][j]);
      compute_sqrt_RhoAoRhoB(PHY_vars_UE->pdsch_config_dedicated,&(PHY_vars_UE->lte_frame_parms.pdsch_config_common),PHY_vars_UE->lte_frame_parms.nb_antennas_tx_eNB,PHY_vars_UE->dlsch_ue[i][j]);
