@@ -1073,9 +1073,6 @@ main (int argc, char **argv)
     }
   }
 
-  if (abstraction_flag==1)
-    init_freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
-  //freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
   number_of_cards = 1;
 
   openair_daq_vars.rx_rf_mode = 1;
