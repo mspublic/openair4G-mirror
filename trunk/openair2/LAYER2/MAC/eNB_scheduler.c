@@ -1100,10 +1100,7 @@ void schedule_ulsch_tdd16(unsigned char Mod_id,u32 frame,unsigned char cooperati
 	  ULSCH_dci->cqi_req = 1;
 
 	ULSCH_dci->type=0;
-	if (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[sched_subframe] == 0)
-	  ULSCH_dci->dai = 3;
-	else
-	  ULSCH_dci->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[sched_subframe]-1)&3;
+	ULSCH_dci->dai = eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[sched_subframe];
 
 	if (round > 0) {
 	  ULSCH_dci->ndi = 0; // if round != 0, it means the data is not new. ndi:new data indicator
@@ -3546,6 +3543,19 @@ void tm5_pre_processor (unsigned char Mod_id,
 }
 
 
+void update_ul_dci(u8 Mod_id,u16 rnti,u8 dai) {
+
+  DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
+  int i;
+  DCI0_5MHz_TDD_1_6_t *ULSCH_dci;
+
+  for (i=0;i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci;i++) {
+    ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)DCI_pdu->dci_alloc[i].dci_pdu;
+    if ((DCI_pdu->dci_alloc[i].format == format0) && (DCI_pdu->dci_alloc[i].rnti == rnti))
+      ULSCH_dci->dai = (dai-1)&3;
+  }
+  //  printf("Update UL DCI: DAI %d\n",dai);
+}
 
 void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16 nb_rb_used0,unsigned char nCCE_used) {
 
@@ -3747,6 +3757,9 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     if (round > 0) {
 
       eNB_mac_inst[Mod_id].UE_template[next_ue].DAI++;
+      printf("DAI update: subframe %d: UE %d, DAI %d\n",subframe,next_ue,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
+
+      update_ul_dci(Mod_id,rnti,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
 
       // get freq_allocation
       nb_rb = eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid];
@@ -4007,6 +4020,9 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 			  subframe,
 			  S_DL_SCHEDULED);
 	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI++;
+	printf("DAI update: subframe %d: UE %d, DAI %d\n",subframe,next_ue,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
+
+	update_ul_dci(Mod_id,rnti,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
 
 	switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
 	case 1:
@@ -4064,7 +4080,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     }
 
     DAI = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
-    LOG_T(MAC,"[eNB %d] Frame %d: DAI %d for UE %d\n",Mod_id,frame,DAI,next_ue);
+    LOG_D(MAC,"[eNB %d] Frame %d: DAI %d for UE %d\n",Mod_id,frame,DAI,next_ue);
     // Save DAI for Format 0 DCI
     switch (mac_xface->lte_frame_parms->tdd_config) {
     case 0:
@@ -4091,8 +4107,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       //	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul = DAI;
       break;
     case 3:
-      if ((subframe==6)||(subframe==8)||(subframe==0))
+      if ((subframe==6)||(subframe==8)||(subframe==0)) {
+	printf("schedule_ue_spec: setting UL DAI to %d for subframe %d => %d\n",DAI,subframe, ((subframe+8)%10)>>1);
 	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[((subframe+8)%10)>>1] = DAI;
+      }
       break;
     case 4:
       //      if ((subframe==8)||(subframe==9))
