@@ -142,7 +142,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 
   double min_path_loss=-200;
   u8 hold_channel=0;
-  u8 aatx,aarx;
+  //  u8 aatx,aarx;
   u8 nb_antennas_rx = eNB2UE[0][0]->nb_rx; // number of rx antennas at UE
   u8 nb_antennas_tx = eNB2UE[0][0]->nb_tx; // number of tx antennas at eNB
 
@@ -417,7 +417,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   u32 slot_offset,slot_offset_meas;
 
   u8 hold_channel=1;
-  u8 aatx,aarx;
+  //  u8 aatx,aarx;
 
   if (next_slot==4) {
     hold_channel = 0;
