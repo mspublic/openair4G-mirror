@@ -57,13 +57,22 @@ using namespace std;
  * ITS_KEY_TYPE_COMMON: ITS keys common for NETwork and FACilities,
  * ITS_KEY_TYPE_NET: NETwork ITS keys,
  * ITS_KEY_TYPE_FAC: FACilities ITS keys,
+ * ITS_KEY_TYPE_IHM: PCVE IHM keys,
  * ITS_KEY_TYPE_ALL: All ITS keys defined
  */
 enum ItsKeyType {
 	ITS_KEY_TYPE_COMMON = 0,
 	ITS_KEY_TYPE_NET = 1,
 	ITS_KEY_TYPE_FAC = 2,
-	ITS_KEY_TYPE_ALL = 3
+	ITS_KEY_TYPE_IHM = 3,
+	ITS_KEY_TYPE_ALL = 4
+};
+/**
+ * ITS data type
+ */
+enum ItsDataType {
+	ITS_DATA_TYPE_INTEGER = 0,
+	ITS_DATA_TYPE_STRING = 1
 };
 /**
  * ITS key values are limited to 32-bit values so
@@ -75,7 +84,9 @@ typedef u_int32_t ItsKeyValue;
  */
 struct ItsKey {
 	string name;
-	ItsKeyType type;
+	ItsKeyType keyType;
+	ItsDataType dataType;
+	string stringValue;
 	ItsKeyValue value;
 	ItsKeyValue minValue;
 	ItsKeyValue maxValue;
@@ -103,19 +114,52 @@ class ItsKeyManager {
 		 *
 		 * @param id ITS key ID of new key to be added
 		 * @param name Name of new key to be added
+		 * @param keyType ITS key type
 		 * @param value Value of new key to be added
 		 * @param minValue Minimum value of new key
 		 * @param maxValue Maximum value of new key
 		 * @return true on success, false otherwise
 		 */
-		bool addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value, ItsKeyValue minValue = 0, ItsKeyValue maxValue = INT_MAX);
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsKeyValue value, ItsKeyValue minValue = 0, ItsKeyValue maxValue = INT_MAX);
 		/**
-		 * Returns value of the key with given ITS key ID
+		 * Enqueues given ITS key, name and value to ITS keys map
+		 *
+		 * @param id ITS key ID of new key to be added
+		 * @param name Name of new key to be added
+		 * @param keyType ITS key type
+		 * @param value String value of new key to be added
+		 * @return true on success, false otherwise
+		 */
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, const string& value);
+
+		/**
+		 * Returns integer value of the key with given ITS key ID
 		 *
 		 * @param id ITS key ID of the key
 		 * @return Value of ITS key
 		 */
-		ItsKeyValue getKey(ItsKeyID id);
+		ItsKeyValue getKeyIntegerValue(ItsKeyID id);
+		/**
+		 * Returns string value of the key of given ID
+		 *
+		 * @param id ITS key ID of the key
+		 * @return Value of ITS key
+		 */
+		string getKeyStringValue(ItsKeyID id);
+		/**
+		 * Returns ITS key type
+		 *
+		 * @param id ITS key ID of the key
+		 * @return ITS key type
+		 */
+		ItsKeyType getKeyType(ItsKeyID id);
+		/**
+		 * Returns ITS data type (integer or string)
+		 *
+		 * @param id ITS key ID of the key
+		 * @return ITS key type
+		 */
+		ItsDataType getDataType(ItsKeyID id);
 		/**
 		 * Sets the value of ITS key given its name
 		 *
@@ -123,7 +167,7 @@ class ItsKeyManager {
 		 * @param value Value to be set as the new value of relevant ITS key
 		 * @return true on success, false otherwise
 		 */
-		bool setKey(const string& name, ItsKeyValue value);
+		bool setKeyValue(const string& name, ItsKeyValue value);
 		/**
 		 * Sets the value of ITS key given its ITS key ID
 		 *
@@ -131,7 +175,7 @@ class ItsKeyManager {
 		 * @param value Value to be set as the new value of relevant ITS key
 		 * @return true on success, false otherwise
 		 */
-		bool setKey(ItsKeyID id, ItsKeyValue value);
+		bool setKeyValue(ItsKeyID id, ItsKeyValue value);
 		/**
 		 * Returns ITS key ID of ITS key given its name
 		 *

@@ -67,20 +67,19 @@ const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
 
 int main(int argc, char** argv) {
 	/**
-	 * Configuration file name parameter is necessary, log file
-	 * name parameter is optional
+	 * Log file name parameter is optional
 	 */
 	string logFileName = "";
-	if (argc == 2) {
+	if (argc == 1) {
 		logFileName = "SCOREF-MGMT.log";
-	} else if (argc == 3) {
-		logFileName = string(argv[2]);
+	} else if (argc == 2) {
+		logFileName = string(argv[1]);
 	} else {
 		printHelp(argv[0]);
 		exit(1);
 	}
 
-	Logger logger(logFileName, Logger::DEBUG);
+	Logger logger(logFileName, Logger::TRACE);
 
 #ifdef BOOST_VERSION_1_50
 	/**
@@ -110,14 +109,21 @@ int main(int argc, char** argv) {
 
 	ManagementInformationBase mib(logger);
 	PacketHandler* packetHandler = NULL;
-	Configuration configuration(argv[1], logger);
+
+	/**
+	 * Prepare the list of configuration files that are going to be parsed
+	 */
+	vector<string> configurationFileVector;
+	configurationFileVector.push_back("IF.MGMT.conf");
+	configurationFileVector.push_back("IF.IHM.conf");
+	Configuration configuration(configurationFileVector, logger);
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
 	try {
-		configuration.parseConfigurationFile(mib);
+		configuration.parseConfigurationFiles(mib);
 	} catch (Exception& e) {
-		e.updateStackTrace("Cannot parse configuration file");
+		e.updateStackTrace("Cannot parse a configuration file");
 		e.printStackTrace();
 		exit(-1);
 	}

@@ -44,7 +44,8 @@
 #include <boost/lexical_cast.hpp>
 #include <sstream>
 
-ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {}
+ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {
+}
 
 ItsKeyManager::~ItsKeyManager() {
 	itsKeyMap.empty();
@@ -69,7 +70,7 @@ map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
 
 	while (iterator != this->itsKeyMap.end()) {
 		// Add every ITS key which is common and is of requested type into the map
-		if (iterator->second.type == keyType || iterator->second.type == ITS_KEY_TYPE_COMMON || keyType == ITS_KEY_TYPE_ALL)
+		if (iterator->second.keyType == keyType || iterator->second.keyType == ITS_KEY_TYPE_COMMON || keyType == ITS_KEY_TYPE_ALL)
 			subset.insert(subset.end(), std::make_pair(iterator->first, iterator->second.value));
 
 		++iterator;
@@ -78,25 +79,55 @@ map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
 	return subset;
 }
 
-bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue) {
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue) {
 	if (name.empty())
 		throw Exception("ITS key name is empty!", logger);
 	else if (value < minValue || value > maxValue)
-		throw Exception("ITS key value is out-of-range!", logger);
+		throw Exception("ITS key '" + name + "'s value (" + boost::lexical_cast<string>(value) + ") is out-of-range!", logger);
 
-	ItsKey itsKey = {name, type, value, minValue, maxValue};
+	ItsKey itsKey;
+	itsKey.name = name;
+	itsKey.keyType = keyType;
+	itsKey.dataType = ITS_DATA_TYPE_INTEGER;
+	itsKey.value = value;
+	itsKey.minValue = minValue;
+	itsKey.maxValue = maxValue;
 	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
 
 	return true;
 }
 
-ItsKeyValue ItsKeyManager::getKey(ItsKeyID id) {
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, const string& value) {
+	if (name.empty())
+		throw Exception("ITS key name is empty!", logger);
+
+	ItsKey itsKey;
+	itsKey.name = name;
+	itsKey.keyType = keyType;
+	itsKey.dataType = ITS_DATA_TYPE_STRING;
+	itsKey.stringValue = value;
+	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
+
+	return true;
+}
+
+ItsKeyValue ItsKeyManager::getKeyIntegerValue(ItsKeyID id) {
 	return itsKeyMap[id].value;
 }
 
-#include <iostream>
+string ItsKeyManager::getKeyStringValue(ItsKeyID id) {
+	return itsKeyMap[id].stringValue;
+}
 
-bool ItsKeyManager::setKey(const string& name, ItsKeyValue value) {
+ItsKeyType ItsKeyManager::getKeyType(ItsKeyID id) {
+	return itsKeyMap[id].keyType;
+}
+
+ItsDataType ItsKeyManager::getDataType(ItsKeyID id) {
+	return itsKeyMap[id].dataType;
+}
+
+bool ItsKeyManager::setKeyValue(const string& name, ItsKeyValue value) {
 	map<ItsKeyID, ItsKey>::iterator iterator = itsKeyMap.begin();
 
 	while (iterator != this->itsKeyMap.end()) {
@@ -122,7 +153,7 @@ bool ItsKeyManager::setKey(const string& name, ItsKeyValue value) {
 	return false;
 }
 
-bool ItsKeyManager::setKey(ItsKeyID id, ItsKeyValue value) {
+bool ItsKeyManager::setKeyValue(ItsKeyID id, ItsKeyValue value) {
 	/**
 	 * Validate incoming value
 	 */
@@ -142,7 +173,7 @@ u_int16_t ItsKeyManager::getNumberOfKeys(ItsKeyType type) const {
 		/**
 		 * Count all `common' keys and those of type `type'
 		 */
-		if (type == ITS_KEY_TYPE_COMMON || iterator->second.type == type)
+		if (type == ITS_KEY_TYPE_COMMON || iterator->second.keyType == type)
 			++numberOfKeys;
 
 		++iterator;

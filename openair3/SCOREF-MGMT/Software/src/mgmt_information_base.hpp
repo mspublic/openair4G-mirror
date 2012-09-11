@@ -79,7 +79,7 @@ class ManagementInformationBase {
 		 * @param itsKeyId ITS key ID
 		 * @return Value of relevant ITS key
 		 */
-		ItsKeyValue getValue(ItsKeyID itsKeyId);
+		ItsKeyValue getItsKeyIntegerValue(ItsKeyID itsKeyId);
 		/**
 		 * Sets value of relevant ITS key through ItsKeyManager methods
 		 *

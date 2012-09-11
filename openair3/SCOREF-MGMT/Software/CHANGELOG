@@ -1,4 +1,11 @@
 
+v1.1.2
+* Configuration class now can handle more than one configuration file
+* IF.IHM.conf file added for PCVE IHM parameters
+* <parameterName|parameterId> format parsing has been added for IHM parameters
+* ItsKey can also hold string values of configuration items
+* Configuration file name is hardcoded now, the only parameter there is optional log file name
+
 v1.1.1
 * Util::printHexRepresentation() off-by-one index error fixed
 * FAC message type & subtypes have been added
