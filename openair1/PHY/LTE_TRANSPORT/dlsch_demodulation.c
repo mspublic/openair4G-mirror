@@ -232,6 +232,13 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     msg("dlsch_modulation.c: nb_rb=0\n");
     return(-1);
   }
+
+    // DL power control: Scaling of Channel estimates for PDSCH
+    dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                        frame_parms,
+                        dlsch_ue,
+                        symbol_mod,
+                        nb_rb);
     
   if (first_symbol_flag==1) {
     dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -342,7 +349,13 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     //    if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_CONNECTED_eNB_MAX)) {
     if ((dual_stream_flag==1) && (eNB_id_i==phy_vars_ue->n_connected_eNB)) {
 
-      
+        // Scale the channel estimates for interfering stream
+        dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+                            frame_parms,
+                            dlsch_ue,
+                            symbol_mod,
+                            nb_rb);      
+
       /* compute new log2_maxh for effective channel */
       if (first_symbol_flag==1) {
 	// effective channel of desired user is always stronger than interfering eff. channel
@@ -816,6 +829,9 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
 void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
   
+    __m128i amp;
+    amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
+
   switch (pmi) {
         
   case 0 :   // +1 +1
@@ -843,6 +859,9 @@ void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
     ch0[0] = _mm_adds_epi16(ch0[0],ch1[0]);
     break;
   }
+
+  ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
+  ch0[0] = _mm_slli_epi16(ch0[0],1);
     
   _mm_empty();
   _m_empty();
@@ -1219,6 +1238,50 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   }
   _mm_empty();
   _m_empty();
+}
+
+void dlsch_scale_channel(int **dl_ch_estimates_ext,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         LTE_UE_DLSCH_t **dlsch_ue,
+                         u8 symbol_mod,
+                         unsigned short nb_rb){
+
+    short rb, ch_amp;
+    unsigned char aatx,aarx,pilots=0;
+    __m128i *dl_ch128, ch_amp128;    
+    
+    if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
+        pilots=1;
+    
+    // Determine scaling amplitude based the symbol
+    ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
+    
+    //    msg("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
+
+    ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
+
+        for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++) {
+            for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
+
+                dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+                
+                for (rb=0;rb<nb_rb;rb++) {
+                    dl_ch128[0] = _mm_mulhi_epi16(dl_ch128[0],ch_amp128);
+                    dl_ch128[0] = _mm_slli_epi16(dl_ch128[0],3);
+
+                    dl_ch128[1] = _mm_mulhi_epi16(dl_ch128[1],ch_amp128);
+                    dl_ch128[1] = _mm_slli_epi16(dl_ch128[1],3);
+
+                    if (pilots) {
+                        dl_ch128+=2;
+                    } else {
+                        dl_ch128[2] = _mm_mulhi_epi16(dl_ch128[2],ch_amp128);
+                        dl_ch128[2] = _mm_slli_epi16(dl_ch128[2],3);
+                        dl_ch128+=3;
+                    }	
+                }                
+            }
+        }
 }
 
 //compute average channel_level on each (TX,RX) antenna pair
