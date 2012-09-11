@@ -1,7 +1,7 @@
 #include "PHY/defs.h"
 #include "MAC_INTERFACE/extern.h"
 #include "defs.h"
-//#define DEBUG_FEP
+#define DEBUG_FEP
 
 #define SOFFSET 0
 

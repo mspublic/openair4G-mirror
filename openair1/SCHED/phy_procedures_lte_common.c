@@ -50,6 +50,9 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 		    unsigned int current_frame,
 		    unsigned int *frame,
 		    unsigned char *subframe) {
+
+  // Fill in other TDD Configuration!!!!
+
   if (frame_parms->frame_type == 0) {
     *subframe = current_subframe+6;
     if (*subframe>9) {
@@ -328,22 +331,20 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
   else {
     switch (frame_parms->tdd_config) {
     case 1:
-      if (subframe == 2) {  // ACK subframes 5 and 6
+      if (subframe == 2) {  // ACK subframes 5 (forget 6)
 	o_ACK[0] = harq_ack[5].ack;  
-	o_ACK[1] = harq_ack[6].ack;
-	status = harq_ack[5].send_harq_status + harq_ack[6].send_harq_status;
+	status = harq_ack[5].send_harq_status;
       }
-      else if (subframe == 3) {   // ACK subframe0
+      else if (subframe == 3) {   // ACK subframe 9
 	o_ACK[0] = harq_ack[9].ack;
 	status = harq_ack[9].send_harq_status;
       }
       else if (subframe == 4) {  // nothing
 	status = 0;
       }
-      else if (subframe == 7) {  // ACK subframes 0 and 1
+      else if (subframe == 7) {  // ACK subframes 0 (forget 1)
 	o_ACK[0] = harq_ack[0].ack;  
-	o_ACK[1] = harq_ack[1].ack;
-	status = harq_ack[0].send_harq_status + harq_ack[1].send_harq_status;
+	status = harq_ack[0].send_harq_status;
       }
       else if (subframe == 8) {   // ACK subframes 4
 	o_ACK[0] = harq_ack[4].ack;
@@ -357,19 +358,36 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
       break;
     case 3:
       if (subframe == 2) {  // ACK subframes 5 and 6
-	o_ACK[0] = harq_ack[5].ack;  
-	o_ACK[1] = harq_ack[6].ack;
+	if (harq_ack[5].send_harq_status == 1) {
+	  o_ACK[0] = harq_ack[5].ack; 
+	  if (harq_ack[6].send_harq_status == 1)
+	    o_ACK[1] = harq_ack[6].ack;
+	} 
+	else if (harq_ack[6].send_harq_status == 1)
+	  o_ACK[0] = harq_ack[6].ack;
 	status = harq_ack[5].send_harq_status + (harq_ack[6].send_harq_status<<1);
       }
       else if (subframe == 3) {   // ACK subframes 7 and 8
-	o_ACK[0] = harq_ack[7].ack;
-	o_ACK[1] = harq_ack[8].ack;
+	if (harq_ack[7].send_harq_status == 1) {
+	  o_ACK[0] = harq_ack[7].ack; 
+	  if (harq_ack[8].send_harq_status == 1)
+	    o_ACK[1] = harq_ack[8].ack;
+	} 
+	else if (harq_ack[8].send_harq_status == 1)
+	  o_ACK[0] = harq_ack[8].ack;
+
 	status = harq_ack[7].send_harq_status + (harq_ack[8].send_harq_status<<1);
 	//printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
       }
       else if (subframe == 4) {  // ACK subframes 9 and 0
-	o_ACK[0] = harq_ack[9].ack;
-	o_ACK[1] = harq_ack[0].ack;
+	if (harq_ack[9].send_harq_status == 1) {
+	  o_ACK[0] = harq_ack[9].ack; 
+	  if (harq_ack[0].send_harq_status == 1)
+	    o_ACK[1] = harq_ack[0].ack;
+	} 
+	else if (harq_ack[8].send_harq_status == 1)
+	  o_ACK[0] = harq_ack[8].ack;
+
 	status = harq_ack[9].send_harq_status + (harq_ack[0].send_harq_status<<1);
       }
       else {

@@ -336,7 +336,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);    
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
   

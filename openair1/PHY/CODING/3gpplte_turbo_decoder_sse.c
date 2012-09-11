@@ -4,15 +4,15 @@
    date: 21.10.2009 
 
    Note: This routine currently requires SSE2,SSSE3 and SSE4.1 equipped computers.  IT WON'T RUN OTHERWISE!
-
+  
    Changelog: 17.11.2009 FK SSE4.1 not required anymore
+              Aug. 2012 new parallelization options for higher speed
 */
 
 ///
 ///
 
 #include "emmintrin.h"
-
 #ifdef __SSE3__
 #include "pmmintrin.h"
 #include "tmmintrin.h"
@@ -42,8 +42,7 @@ static short zero[8]  __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0} ;
 #include <string.h>
 #endif
 
-typedef short llr_t; // internal decoder data is 16-bit fixed
-typedef short channel_t;
+
 
 
 #define MAX 256//16383
@@ -56,8 +55,15 @@ typedef short channel_t;
 
 //#define DEBUG_LOGMAP
 
-#define OLD_IMPL 0 
-
+#define NEW_IMPL 1
+ 
+#if NEW_IMPL==2
+typedef char llr_t; // internal decoder data is 16-bit fixed
+typedef char channel_t;
+#else
+typedef short llr_t; // internal decoder data is 16-bit fixed
+typedef short channel_t;
+#endif
 void log_map (llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,unsigned char inst);
 void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic, channel_t* y_parity, unsigned short frame_length,unsigned char term_flag);
 void compute_alpha(llr_t*alpha,llr_t *beta, llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F,unsigned char inst,unsigned char rerun_flag);
@@ -105,7 +111,7 @@ void log_map(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short fr
   compute_alpha(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,0);
 
   //  printf("Alpha 2\n");
-  if (OLD_IMPL==0)  
+  if (NEW_IMPL>0)  
     compute_alpha(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,1);
 
   //  printf("beta (term): %d,%d, %d,%d, %d,%d\n",m11_g[inst][frame_length],m10_g[inst][frame_length],m11_g[inst][1+frame_length],m10_g[inst][1+frame_length],m11_g[inst][2+frame_length],m10_g[inst][2+frame_length]);
@@ -113,7 +119,7 @@ void log_map(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short fr
   compute_beta(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,0);
   
   //  printf("beta (term): %d,%d, %d,%d, %d,%d\n",m11_g[inst][frame_length],m10_g[inst][frame_length],m11_g[inst][1+frame_length],m10_g[inst][1+frame_length],m11_g[inst][2+frame_length],m10_g[inst][2+frame_length]);
-  if (OLD_IMPL==0)  
+  if (NEW_IMPL>0)  
     compute_beta(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,1);
   
 
@@ -189,7 +195,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
   llr_t m11,m10;
 
 
-  if (OLD_IMPL) { //(frame_length < SHORT_LENGTH_CW) {
+  if (NEW_IMPL == 0) { 
 #ifdef DEBUG_LOGMAP
     msg("compute_alpha(%x,%x,%x,%d,%d,%d)\n",alpha,m_11,m10,frame_length,F,inst);
 #endif
@@ -496,7 +502,7 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta,m_11,m_10,alpha,frame_length,F,inst);
 #endif
 
-  if (OLD_IMPL) { //(frame_length < SHORT_LENGTH_CW) {
+  if (NEW_IMPL==0) { //(frame_length < SHORT_LENGTH_CW) {
     THRES128 = _mm_set1_epi16(THRES);
     
     beta128   = (__m128i*)&beta[(frame_length+3)*STATES];
@@ -763,7 +769,7 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
   //  msg("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m11,m10,ext,systematic,framelength);
 
-  if (OLD_IMPL) {
+  if (NEW_IMPL==0) {
     for (k=0;k<(frame_length+3);k+=8)
       {
 	
@@ -1154,40 +1160,40 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
 }
 
-short systematic0_0[6144+16] __attribute__ ((aligned(16)));
-short systematic1_0[6144+16] __attribute__ ((aligned(16)));
-short systematic2_0[6144+16]__attribute__ ((aligned(16)));
-short yparity1_0[6144+8] __attribute__ ((aligned(16)));
-short yparity2_0[6144+8] __attribute__ ((aligned(16)));
-short systematic0_1[6144+16] __attribute__ ((aligned(16)));
-short systematic1_1[6144+16] __attribute__ ((aligned(16)));
-short systematic2_1[6144+16]__attribute__ ((aligned(16)));
-short yparity1_1[6144+8] __attribute__ ((aligned(16)));
-short yparity2_1[6144+8] __attribute__ ((aligned(16)));
-short systematic0_2[6144+16] __attribute__ ((aligned(16)));
-short systematic1_2[6144+16] __attribute__ ((aligned(16)));
-short systematic2_2[6144+16]__attribute__ ((aligned(16)));
-short yparity1_2[6144+8] __attribute__ ((aligned(16)));
-short yparity2_2[6144+8] __attribute__ ((aligned(16)));
-short systematic0_3[6144+16] __attribute__ ((aligned(16)));
-short systematic1_3[6144+16] __attribute__ ((aligned(16)));
-short systematic2_3[6144+16]__attribute__ ((aligned(16)));
-short yparity1_3[6144+8] __attribute__ ((aligned(16)));
-short yparity2_3[6144+8] __attribute__ ((aligned(16)));
-short systematic0_4[6144+16] __attribute__ ((aligned(16)));
-short systematic1_4[6144+16] __attribute__ ((aligned(16)));
-short systematic2_4[6144+16]__attribute__ ((aligned(16)));
-short yparity1_4[6144+8] __attribute__ ((aligned(16)));
-short yparity2_4[6144+8] __attribute__ ((aligned(16)));
-short *systematic0_g[MAX_DECODING_THREADS] = { systematic0_0, systematic0_1, systematic0_2, systematic0_3, systematic0_4};
-short *systematic1_g[MAX_DECODING_THREADS] = { systematic1_0, systematic1_1, systematic1_2, systematic1_3, systematic1_4};
-short *systematic2_g[MAX_DECODING_THREADS] = { systematic2_0, systematic2_1, systematic2_2, systematic2_3, systematic2_4};
-short *yparity1_g[MAX_DECODING_THREADS] = {yparity1_0, yparity1_1, yparity1_2, yparity1_3, yparity1_4};
-short *yparity2_g[MAX_DECODING_THREADS] = {yparity2_0, yparity2_1, yparity2_2, yparity2_3, yparity2_4};
+llr_t systematic0_0[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic1_0[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic2_0[6144+16]__attribute__ ((aligned(16)));
+llr_t yparity1_0[6144+8] __attribute__ ((aligned(16)));
+llr_t yparity2_0[6144+8] __attribute__ ((aligned(16)));
+llr_t systematic0_1[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic1_1[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic2_1[6144+16]__attribute__ ((aligned(16)));
+llr_t yparity1_1[6144+8] __attribute__ ((aligned(16)));
+llr_t yparity2_1[6144+8] __attribute__ ((aligned(16)));
+llr_t systematic0_2[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic1_2[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic2_2[6144+16]__attribute__ ((aligned(16)));
+llr_t yparity1_2[6144+8] __attribute__ ((aligned(16)));
+llr_t yparity2_2[6144+8] __attribute__ ((aligned(16)));
+llr_t systematic0_3[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic1_3[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic2_3[6144+16]__attribute__ ((aligned(16)));
+llr_t yparity1_3[6144+8] __attribute__ ((aligned(16)));
+llr_t yparity2_3[6144+8] __attribute__ ((aligned(16)));
+llr_t systematic0_4[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic1_4[6144+16] __attribute__ ((aligned(16)));
+llr_t systematic2_4[6144+16]__attribute__ ((aligned(16)));
+llr_t yparity1_4[6144+8] __attribute__ ((aligned(16)));
+llr_t yparity2_4[6144+8] __attribute__ ((aligned(16)));
+llr_t *systematic0_g[MAX_DECODING_THREADS] = { systematic0_0, systematic0_1, systematic0_2, systematic0_3, systematic0_4};
+llr_t *systematic1_g[MAX_DECODING_THREADS] = { systematic1_0, systematic1_1, systematic1_2, systematic1_3, systematic1_4};
+llr_t *systematic2_g[MAX_DECODING_THREADS] = { systematic2_0, systematic2_1, systematic2_2, systematic2_3, systematic2_4};
+llr_t *yparity1_g[MAX_DECODING_THREADS] = {yparity1_0, yparity1_1, yparity1_2, yparity1_3, yparity1_4};
+llr_t *yparity2_g[MAX_DECODING_THREADS] = {yparity2_0, yparity2_1, yparity2_2, yparity2_3, yparity2_4};
 
 unsigned char decoder_in_use[MAX_DECODING_THREADS] = {0,0,0,0,0};
 
-unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
+unsigned char phy_threegpplte_turbo_decoder(short *y,
 					    unsigned char *decoded_bytes,
 					    unsigned short n,
 					    unsigned short f1,
@@ -1200,16 +1206,16 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   /*  y is a pointer to the input
       decoded_bytes is a pointer to the decoded output
       n is the size in bits of the coded block, with the tail */
-  short ext[n+128],ext2[n+128]  __attribute__((aligned(16)));
-  unsigned short pi[n],*pi_p,*pi2_p,*pi3_p,pi2[n],pi3[n];
+  llr_t ext[n+128],ext2[n+128]  __attribute__((aligned(16)));
+  unsigned int pi[n],*pi_p,*pi2_p,*pi3_p,pi2[n],pi3[n];
   //  short systematic0[n],systematic1[n],systematic2[n],yparity1[n],yparity2[n];
   llr_t *yp = y;
-  unsigned short i,j;//,pi;
+  unsigned int i,j;//,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
   u8 temp;
-  llr_t tmp2[n];
-
+  llr_t tmp2[n],*t_p,*s_p;;
+  int byte_pos[n],bit_pos[n],*byte_pos_p,*bit_pos_p;
   if (crc_type > 3) {
     msg("Illegal crc length!\n");
     return 255;
@@ -1244,9 +1250,14 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
   threegpplte_interleaver_reset();
   pi[0] = 0;
-  for (i=1;i<n;i++)
-    pi[i] = threegpplte_interleaver(f1,f2,n);
+  bit_pos[0] = 128;
+  byte_pos[0] = 0;
 
+  for (i=1;i<n;i++) {
+    pi[i] = (unsigned int)threegpplte_interleaver(f1,f2,n);
+    bit_pos[i] = 128>>(pi[i]&7);
+    byte_pos[i] = pi[i]>>3;
+  }
   for (j=0,i=0;i<n;i++,j+=8) {
 
     if (j>=n)
@@ -1275,23 +1286,69 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     crc_len=3;
   }
 
-  if (OLD_IMPL) {
+  if (NEW_IMPL==0) {
     for (i=0;i<n;i++) {
       systematic0_g[inst][i] = *yp; yp++;
       yparity1_g[inst][i] = *yp; yp++;
       yparity2_g[inst][i] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-      msg("Position %d: (%d,%d,%d)\n",i,systematic0_g[inst][i],yparity1_g[inst][i],yparity2_g[inst][i]);
+      msg("Position %d: (%d,%d,%d)\n",i,systematic0_g[inst][i],yparity1_g[inst][i],yparity2_g[inst][i]) ;
 #endif //DEBUG_LOGMAP
       
     }
   }
-  else {  // interleave input 8-way
-    for (i=0;i<n;i++) {
-      j=pi2[i];
+  else {  // interleave input 8/16-way
+    for (i=0;i<n;i+=8) {
+      pi2_p = &pi2[i];
+
+      j=pi2_p[0];
+      /*
       systematic0_g[inst][j] = *yp; yp++;
       yparity1_g[inst][j] = *yp; yp++;
       yparity2_g[inst][j] = *yp; yp++;
+      */
+
+
+      systematic0_g[inst][j] = yp[0]; 
+      yparity1_g[inst][j] = yp[1]; 
+      yparity2_g[inst][j] = yp[2];
+
+      j=pi2_p[1];
+      systematic0_g[inst][j] = yp[3]; 
+      yparity1_g[inst][j] = yp[4]; 
+      yparity2_g[inst][j] = yp[5];
+
+      j=pi2_p[2];
+      systematic0_g[inst][j] = yp[6]; 
+      yparity1_g[inst][j] = yp[7]; 
+      yparity2_g[inst][j] = yp[8];
+
+      j=pi2_p[3];
+      systematic0_g[inst][j] = yp[9]; 
+      yparity1_g[inst][j] = yp[10]; 
+      yparity2_g[inst][j] = yp[11];
+
+      j=pi2_p[4];
+      systematic0_g[inst][j] = yp[12]; 
+      yparity1_g[inst][j] = yp[13]; 
+      yparity2_g[inst][j] = yp[14];
+
+      j=pi2_p[5];
+      systematic0_g[inst][j] = yp[15]; 
+      yparity1_g[inst][j] = yp[16]; 
+      yparity2_g[inst][j] = yp[17];
+
+      j=pi2_p[6];
+      systematic0_g[inst][j] = yp[18]; 
+      yparity1_g[inst][j] = yp[19];
+      yparity2_g[inst][j] = yp[20];
+
+      j=pi2_p[7];
+      systematic0_g[inst][j] = yp[21]; 
+      yparity1_g[inst][j] = yp[22]; 
+      yparity2_g[inst][j] = yp[23];
+
+      yp+=24;
 #ifdef DEBUG_LOGMAP
       msg("Position %d (%d): (%d,%d,%d)\n",i,j,systematic0_g[inst][j],yparity1_g[inst][j],yparity2_g[inst][j]);
 #endif //DEBUG_LOGMAP
@@ -1339,14 +1396,31 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     //    threegpplte_interleaver_reset();
     //    pi=0;
 
-    if (OLD_IMPL) {
+    if (NEW_IMPL==0) {
       pi_p=&pi[0];
       // compute input to second encoder by interleaving extrinsic info
       
-      for (i=0;i<n;i++) { // steady-state portion
-	systematic2_g[inst][i] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+      for (i=0;i<n;i+=8) { // steady-state portion
+	s_p = &systematic2_g[inst][i];
+	//	systematic2_g[inst][i] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
 	//      pi              = threegpplte_interleaver(f1,f2,n);
+	s_p[0] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
 	pi_p++;
+	s_p[1] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+	pi_p++;
+	s_p[2] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+	pi_p++;
+	s_p[3] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+	pi_p++;
+	s_p[4] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+	pi_p++;
+	s_p[5] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+	pi_p++;
+	s_p[6] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+	pi_p++;
+	s_p[7] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
+	pi_p++;
+
       }
       for (i=n;i<n+3;i++) { // termination
 	systematic2_g[inst][i] = (systematic0_g[inst][i+8]);
@@ -1354,8 +1428,25 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     }
     else {
       pi2_p=&pi2[0];
-      for (i=0;i<n;i++){
-	tmp2[i] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+      for (i=0;i<n;i+=8){
+	t_p = &tmp2[i];
+	//	tmp2[i] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+
+	t_p[0] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+	pi2_p++;
+	t_p[1] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+	pi2_p++;
+	t_p[2] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+	pi2_p++;
+	t_p[3] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+	pi2_p++;
+	t_p[4] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+	pi2_p++;
+	t_p[5] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+	pi2_p++;
+	t_p[6] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
+	pi2_p++;
+	t_p[7] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
 	pi2_p++;
       }
       pi3_p=&pi3[0];
@@ -1381,7 +1472,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
     //    threegpplte_interleaver_reset();
     //    pi=0;
-    if (OLD_IMPL) {
+    if (NEW_IMPL==0) {
       pi_p=&pi[0];
       for (i=0;i<n>>3;i++)
 	decoded_bytes[i]=0;
@@ -1414,14 +1505,17 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     else {  //new implementation
 
 
-      for (i=0;i<(n>>3);i++)
-	decoded_bytes[i]=0;
+      //    for (i=0;i<(n>>3);i++)
+      //	decoded_bytes[i]=0;
+      memset(decoded_bytes,0,n>>3);
       // compute input to first encoder and output
 
 
       pi_p=&pi[0];
       pi2_p=&pi2[0];
       pi3_p=&pi3[0];
+      byte_pos_p=&byte_pos[0];
+      bit_pos_p=&bit_pos[0];
       for (i=0;i<n;i++) {
 	//	systematic1_g[inst][*pi3_p] = (ext2[i] + systematic0_g[inst][*pi3_p]);
 	systematic1_g[inst][*pi3_p] = ext2[*pi2_p]+systematic0_g[inst][*pi3_p];
@@ -1430,14 +1524,18 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 	if ((systematic2_g[inst][i]*ext2[i])<=0)
 	  printf("+++++\n");
 	else
-	  printf("\n");
+	  printf("\n"); 
 #endif //DEBUG_LOGMAP
 	
-	if ((systematic2_g[inst][*pi2_p] + ext2[*pi2_p]) > 0)
-	  decoded_bytes[*pi_p>>3] += (1 << (7-(*pi_p&7)));
+	if (systematic2_g[inst][*pi2_p] > -ext2[*pi2_p])
+	  //	  decoded_bytes[*pi_p>>3] += (1 << (7-(*pi_p&7)));
+	  //	  	  decoded_bytes[*pi_p>>3] |= (128 >> (*pi_p&7));
+	  decoded_bytes[*byte_pos_p] |= *bit_pos_p;
 	pi3_p++;
 	pi2_p++;
 	pi_p++;
+	byte_pos_p++;
+	bit_pos_p++;
       }      
 
     }

@@ -104,7 +104,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
       for (l=0,nu=0;l<=(4-phy_vars_ue->lte_frame_parms.Ncp);l+=(4-phy_vars_ue->lte_frame_parms.Ncp),nu=3) {
 	k = (nu + nushift)%6;
-	//      printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, Nid2 %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,Nid2,nushift,eNB_offset,k);
+	      printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,nushift,eNB_offset,k);
 	for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
 	  rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1];
 	  
