@@ -52,7 +52,7 @@
 
 #define RF
 
-#define DEBUG_SIM
+//#define DEBUG_SIM
 
 #define MCS_COUNT 24//added for PHY abstraction
 #define N_TRIALS 1
@@ -613,8 +613,8 @@ main (int argc, char **argv)
   s32 slot, last_slot, next_slot;
 
   // variables/flags which are set by user on command-line
-  double snr_dB, sinr_dB,snr_direction,sinr_direction;
-  u8 set_snr=0,set_sinr=0;
+  double snr_dB, sinr_dB,snr_direction;//,sinr_direction;
+  u8 set_sinr=0;//,set_snr=0;
   u8 ue_connection_test=0;
   u8 set_seed=0;
   u8 cooperation_flag;		// for cooperative communication
@@ -678,8 +678,8 @@ main (int argc, char **argv)
 //ALU
 
   int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
-  double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
-  double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
+  //double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
+  //double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
   //default parameters
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -743,7 +743,7 @@ main (int argc, char **argv)
       break;
     case 's':
       snr_dB = atoi (optarg);
-      set_snr = 1;
+      //      set_snr = 1;
       oai_emulation.info.ocm_enabled=0;
       break;
     case 'S':
@@ -1002,7 +1002,11 @@ main (int argc, char **argv)
   }
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
-  //printf ("Nid_cell %d\n", frame_parms->Nid_cell);
+  printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("AFTER init: frame_type %d,tdd_config %d\n", 
+	  PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
+	  PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
+
 
   /* Added for PHY abstraction */
   if (abstraction_flag) 
@@ -1073,6 +1077,11 @@ main (int argc, char **argv)
     }
   }
 
+// Not needed anymore, done automatically in init_freq_channel upon first call to the function
+
+//  if (abstraction_flag==1)
+//    init_freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
+  freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
   number_of_cards = 1;
 
   openair_daq_vars.rx_rf_mode = 1;
@@ -1126,9 +1135,21 @@ main (int argc, char **argv)
   }
 #endif
 
+  printf ("before L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("before L2 init: frame_type %d,tdd_config %d\n", 
+	  PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
+	  PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
+
+
 
 #ifdef OPENAIR2
   l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
+  printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("after L2 init: frame_type %d,tdd_config %d\n", 
+	  PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
+	  PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
+
+
   for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
@@ -1154,10 +1175,14 @@ main (int argc, char **argv)
 #endif 
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+  printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("after init: frame_type %d,tdd_config %d\n", 
+	  PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
+	  PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
+
 
   if (ue_connection_test == 1) {
     snr_direction = -1;
-    sinr_direction = 1;
     snr_dB=20;
     sinr_dB=-20;
   }
@@ -1177,11 +1202,9 @@ main (int argc, char **argv)
       }
       if (snr_dB == -20) {
 	snr_direction=1;
-	sinr_direction=-1;
       }
       else if (snr_dB==20) {
 	snr_direction=-1;
-	sinr_direction=1;
       }
     }
       
@@ -1297,6 +1320,8 @@ main (int argc, char **argv)
       for (eNB_id=oai_emulation.info.first_enb_local;
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
+	printf ("debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+	printf ("debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
 	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
 	      eNB_id, frame, slot, next_slot >> 1,
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
