@@ -119,6 +119,10 @@ void layer1prec2A(s32 *antenna0_sample, s32 *antenna1_sample, u8 precoding_index
     break;
   }
 
+  // normalize
+  /*  ((s16 *)antenna0_sample)[0] = (s16)((((s16 *)antenna0_sample)[0]*ONE_OVER_SQRT2_Q15)>>15);  
+  ((s16 *)antenna0_sample)[1] = (s16)((((s16 *)antenna0_sample)[1]*ONE_OVER_SQRT2_Q15)>>15);  ((s16 *)antenna1_sample)[0] = (s16)((((s16 *)antenna1_sample)[0]*ONE_OVER_SQRT2_Q15)>>15);  
+  ((s16 *)antenna1_sample)[1] = (s16)((((s16 *)antenna1_sample)[1]*ONE_OVER_SQRT2_Q15)>>15);  */
 } 
 
 int allocate_REs_in_RB(mod_sym_t **txdataF,
@@ -149,6 +153,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   u8 first_re,last_re;
   s32 tmp_sample1,tmp_sample2;
+  s16 tmp_amp=amp;
 
   /*
   switch (mod_order) {
@@ -271,24 +276,33 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       }
             
       else if (mimo_mode == ALAMOUTI){
-	
+
+          // normalization for 2 tx antennas
+          amp = (s16)(((s32)tmp_amp*ONE_OVER_SQRT2_Q15)>>15);
+
 	switch (mod_order) {
 	case 2:  //QPSK
 	  
 	  // first antenna position n -> x0
 	  
-	  ((s16*)&txdataF[0][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+      ((s16*)&tmp_sample1)[0] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
-	  ((s16*)&txdataF[0][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&tmp_sample1)[1] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
 	  
 	  // second antenna position n -> -x1*
 	  
-	  ((s16*)&txdataF[1][tti_offset])[0] += (output[*jj]==1) ? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((s16*)&tmp_sample2)[0] = (output[*jj]==1) ? (gain_lin_QPSK) : -gain_lin_QPSK;
 	  *jj=*jj+1;
-	  ((s16*)&txdataF[1][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((s16*)&tmp_sample2)[1] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
 	  
+      // normalization for 2 tx antennas
+      ((s16*)&txdataF[0][tti_offset])[0] += (s16)((((s16*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+	  ((s16*)&txdataF[0][tti_offset])[1] += (s16)((((s16*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
+      ((s16*)&txdataF[1][tti_offset])[0] += (s16)((((s16*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+      ((s16*)&txdataF[1][tti_offset])[1] += (s16)((((s16*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
+
 	  break;
 	  
 	case 4:  //16QAM
@@ -477,6 +491,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
        
       else if ((mimo_mode >= UNIFORM_PRECODING11)&&(mimo_mode <= PUSCH_PRECODING1)) {
 	// this is for transmission modes 4-6 (1 layer)
+         
+          amp = (s16)(((s32)tmp_amp*ONE_OVER_SQRT2_Q15)>>15);
 
 	switch (mod_order) {
 	case 2:  //QPSK
@@ -486,13 +502,14 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  ((s16*)&tmp_sample1)[1] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 
-	  ((s16*)&txdataF[0][tti_offset])[0] += ((s16*)&tmp_sample1)[0];
-	  ((s16*)&txdataF[0][tti_offset])[1] += ((s16*)&tmp_sample1)[1];
+      // normalization for 2 tx antennas
+	  ((s16*)&txdataF[0][tti_offset])[0] += (s16)((((s16*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
+	  ((s16*)&txdataF[0][tti_offset])[1] += (s16)((((s16*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
 	  if (frame_parms->nb_antennas_tx == 2) {
 	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
-	    ((s16*)&txdataF[1][tti_offset])[0] += ((s16*)&tmp_sample2)[0];
-	    ((s16*)&txdataF[1][tti_offset])[1] += ((s16*)&tmp_sample2)[1];
+        ((s16*)&txdataF[1][tti_offset])[0] += (s16)((((s16*)&tmp_sample2)[0]*ONE_OVER_SQRT2_Q15)>>15);
+        ((s16*)&txdataF[1][tti_offset])[1] += (s16)((((s16*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
 	  }
 
 	  break;
