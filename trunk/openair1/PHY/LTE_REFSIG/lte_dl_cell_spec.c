@@ -124,8 +124,7 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
   short pamp;
   
   // Compute the correct pilot amplitude, sqrt_rho_b = Q3.13
-  pamp = (short)(((int)phy_vars_ue->dlsch_ue[0][0]->sqrt_rho_b*ONE_OVER_SQRT2_Q15)>>13);
-  //pamp = ONE_OVER_SQRT2_Q15;
+  pamp = ONE_OVER_SQRT2_Q15;
 
   // This includes complex conjugate for channel estimation
 
