@@ -6,6 +6,10 @@ double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
 					  
 double pa_values[8]={-6.0,-4.77,-3.0,-1.77,0.0,1.0,2.0,3.0};
 
+double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated) {
+    return(pa_values[pdsch_config_dedicated->p_a]);
+} 
+
 double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,  
                        LTE_eNB_DLSCH_t *dlsch_eNB ){		    	
 	double rho_a_dB;
