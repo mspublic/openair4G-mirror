@@ -260,7 +260,7 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
     for (i=0; i<3; i++)
         lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],opts.Nid_cell+i);          
     
-    phy_init_lte_ue(PHY_vars_UE,0);
+    phy_init_lte_ue(PHY_vars_UE,2,0);
     phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
 	// Set  p_a and p_b

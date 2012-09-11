@@ -1270,10 +1270,11 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	     u8 pucch1_thres);
 
 s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
-		   u8 UE_index,
-		   PUCCH_FMT_t fmt,
-		   u8 *payload,
-		   u8 subframe);
+		  u8 UE_index,
+		  PUCCH_FMT_t fmt,
+		  u8 n1_pucch_sel,
+		  u8 *payload,
+		  u8 subframe);
 
 
 /*!

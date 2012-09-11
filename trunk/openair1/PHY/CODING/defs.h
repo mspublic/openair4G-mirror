@@ -416,24 +416,24 @@ s32 rate_matching_lte(u32 N_coded,
 @returns number of iterations used (this is 1+max if incorrect crc or if crc_len=0)
 */
 u8 phy_threegpplte_turbo_decoder(s16 *y,
-					    u8 *decoded_bytes,
-					    u16 n,			       
-					    u16 interleaver_f1,
-					    u16 interleaver_f2,
-					    u8 max_iterations,
-					    u8 crc_type,
-					    u8 F,
-					    u8 inst);
+				 u8 *decoded_bytes,
+				 u16 n,			       
+				 u16 interleaver_f1,
+				 u16 interleaver_f2,
+				 u8 max_iterations,
+				 u8 crc_type,
+				 u8 F,
+				 u8 inst);
 
 u8 phy_threegpplte_turbo_decoder_scalar(s16 *y,
-                                            u8 *decoded_bytes,
-                                            u16 n,
-                                            u16 interleaver_f1,
-                                            u16 interleaver_f2,
-                                            u8 max_iterations,
-                                            u8 crc_type,
-                                            u8 F,
-                                            u8 inst);
+					u8 *decoded_bytes,
+					u16 n,
+					u16 interleaver_f1,
+					u16 interleaver_f2,
+					u8 max_iterations,
+					u8 crc_type,
+					u8 F,
+					u8 inst);
 
 
 

@@ -294,6 +294,11 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
   u8 nCCE0,nCCE1,harq_ack1,harq_ack0;
   ANFBmode_t bundling_flag;
   u16 n1_pucch0=0,n1_pucch1=0;
+  int subframe_offset;
+
+  // clear this, important for case where n1_pucch selection is not used
+
+  phy_vars_ue->pucch_sel[subframe] = 0;
 
   if (frame_parms->frame_type ==0 ) { // FDD
     if (SR == 0) 
@@ -306,184 +311,143 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
     bundling_flag = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
 #ifdef DEBUG_PHY_PROC
     if (bundling_flag==bundling){
-      LOG_D(PHY,"[UE%d] Frame %d subframe %d : get_n1_pucch, bundling\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe);
+      LOG_D(PHY,"[UE%d] Frame %d subframe %d : get_n1_pucch, bundling, SR %d/%d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,SR,
+	    phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
     }
     else {
-      LOG_D(PHY,"[UE%d] Frame %d subframe %d : get_n1_pucch, multiplexing\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe);
+      LOG_D(PHY,"[UE%d] Frame %d subframe %d : get_n1_pucch, multiplexing, SR %d/%d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,SR,
+	    phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
     }
 #endif
     switch (frame_parms->tdd_config) {
     case 1:  // DL:S:UL:UL:DL:DL:S:UL:UL:DL
-      if (subframe == 2) {  // ACK subframes 5 and 6
-	//	harq_ack[5].nCCE;  
-	//harq_ack[6].nCCE;
-	
+
+      harq_ack0 = 2; // DTX
+      // This is the offset for a particular subframe (2,3,4) => (0,2,4)
+      if (subframe == 2) {  // ACK subframes 5 (forget 6)
+	subframe_offset = 5;
       }
-      else if (subframe == 3) {   // ACK subframe0
-	//harq_ack[9].nCCE;
-	
+      else if (subframe == 3) {   // ACK subframe 9
+	subframe_offset = 9;	
       }
-      else if (subframe == 4) {  // nothing
-	
-      }
-      else if (subframe == 7) {  // ACK subframes 0 and 1
-	//harq_ack[0].nCCE;  
-	//harq_ack[1].nCCE;
-	
+      else if (subframe == 7) {  // ACK subframes 0 (forget 1)
+	subframe_offset = 0;
       }
       else if (subframe == 8) {   // ACK subframes 4
-	//harq_ack[4].nCCE;
+	subframe_offset = 4;
       }
       else {
 	LOG_D(PHY,"[UE%d] : Frame %d phy_procedures_lte.c: get_n1pucch, illegal subframe %d for tdd_config %d\n",
 	    phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,frame_parms->tdd_config);
 	return(0);
       }
+
+
+      // i=0
+      nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[subframe_offset];
+      n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0+ frame_parms->pucch_config_common.n1PUCCH_AN; 
+
+      // set ACK/NAK to values if not DTX
+      if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[subframe_offset].send_harq_status>0)  // n-6 // subframe 5 is to be ACK/NAKed
+	harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[subframe_offset].ack; 
+      
+
+      if (harq_ack0!=2) {// n-7  // subframe 5,7,9 only is to be ACK/NAKed
+	if (SR == 0) {  // last paragraph pg 68 from 36.213 (v8.6), m=0
+	  b[0]=1-harq_ack0;
+	  b[1]=harq_ack0;   // in case we use pucch format 1b (subframes 2,7)
+	  phy_vars_ue->pucch_sel[subframe] = 0;
+	  return(n1_pucch0);
+	}
+	else { // SR and only 0 or 1 ACKs (first 2 entries in Table 7.3-1 of 36.213)
+	  b[0]=harq_ack0;
+	  return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
+	}
+      }
+
+
       break;
     case 3:  // DL:S:UL:UL:UL:DL:DL:DL:DL:DL
+      // in this configuration we have M=2 from pg 68 of 36.213 (v8.6)
+      // Note: this doesn't allow using subframe 1 for PDSCH transmission!!! (i.e. SF 1 cannot be acked in SF 2)
+      // set ACK/NAKs to DTX
       harq_ack1 = 2; // DTX
       harq_ack0 = 2; // DTX
-      if (subframe == 2) {  // ACK subframes 5,6 and 1 (S in frame-2), forget about n-11 for the moment (S-subframe)
-	
-	if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].send_harq_status>0) { // n-6 
+      // This is the offset for a particular subframe (2,3,4) => (0,2,4)
+      subframe_offset = (subframe-2)<<1;
+      // i=0
+      nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[5+subframe_offset];
+      n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0+ frame_parms->pucch_config_common.n1PUCCH_AN; 
+      // i=1
+      nCCE1 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[(6+subframe_offset)%10];
+      n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN; 
+
+      // set ACK/NAK to values if not DTX
+      if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[(6+subframe_offset)%10].send_harq_status>0)  // n-6 // subframe 6 is to be ACK/NAKed
+	harq_ack1 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[(6+subframe_offset)%10].ack;
+      if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5+subframe_offset].send_harq_status>0)  // n-6 // subframe 5 is to be ACK/NAKed
+	harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5+subframe_offset].ack; 
+      
+
+      if (harq_ack1!=2) { // n-6 // subframe 6,8,0 and maybe 5,7,9 is to be ACK/NAKed
 	  
-	  nCCE1 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[6];
-	  n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if ((bundling_flag==bundling)&&(SR == 0)) {
-	    b[0] = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack;
-	    if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].send_harq_status>0)
-	      b[0]=b[0]&phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
-	    return(n1_pucch1);
-	  }
-	  else { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
-	    b[0]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack | phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
-	    b[1]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack ^ phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
-	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
-	  }
-	  harq_ack1 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack;
+	if ((bundling_flag==bundling)&&(SR == 0)) {  // This is for bundling without SR, 
+	                                             // n1_pucch index takes value of smallest element in set {0,1} 
+	                                             // i.e. 0 if harq_ack0 is not DTX, otherwise 1
+	  b[0] = harq_ack1;
+	  if (harq_ack0!=2)
+	    b[0]=b[0]&harq_ack0;
+	  phy_vars_ue->pucch_sel[subframe] = 1;
+	  return(n1_pucch1);
+	  
 	}
-	else if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].send_harq_status>0) {// n-7
-	  nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[5];
-	  n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0+ frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if ((bundling_flag==bundling)&&(SR == 0)) {
-	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
-	    return(n1_pucch0);
-	  }
-	  else { // SR and only 0 or 1 ACKs (first 2 entries in Table 7.3-1 of 36.213)
-	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
-	    b[1]=b[0];
-	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
-	  }
-	  harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
-	}
-
-      }
-      else if (subframe == 3) {   // ACK subframes 7 and 8
-
-	if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].send_harq_status>0) { // n-6 
-	  nCCE1 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[8];
-	  n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN;
-	  //	  msg("nCCE1 %d, n1_pucch1 %d\n",nCCE1,n1_pucch1);
-	  if ((bundling_flag==bundling)&&(SR==0)) {
-	    b[0] = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
-	    if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].send_harq_status>0)
-	      b[0]=b[0]&phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
-	    return(n1_pucch1);
-	  }
-	  else { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
-	    b[0]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack | phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
-	    b[1]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack ^ phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
-	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
-	  }
-	  harq_ack1 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
-	  //	  msg("harq_ack1 %d\n",harq_ack1);
-	}
-	else if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].send_harq_status>0) {// n-7
-	  nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[7];
-	  n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0 +frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  //msg("nCCE0 %d, n1_pucch0 %d\n",nCCE0,n1_pucch0);
-	  if ((bundling_flag==bundling)&&(SR==0)) {
-	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
-	    return(n1_pucch0);
-	  }
-	  else { // SR and only 0 or 1 ACKs (first 2 entries in Table 7.3-1 of 36.213)
-	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
-	    b[1]=b[0];
-	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
-	  }
-	  harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
-	  //	  msg("harq_ack0 %d\n",harq_ack0);
-	}
-      }
-      else if (subframe == 4) {  // ACK subframes 9 and 0
-	if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].send_harq_status>0) { // n-6 
-	  nCCE1 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[0];
-	  n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if ((bundling_flag==bundling) && (SR==0)) {
-	    b[0] = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
-	    if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].send_harq_status>0)
-	      b[0]=b[0]&phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
-	    return(n1_pucch1);
-	  }
-	  else { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
-	    b[0]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack | phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
-	    b[1]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack ^ phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
-	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
-	  }
-	  harq_ack1 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
-	}
-	else if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].send_harq_status>0) {// n-7
-	  nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[9];
-	  n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0 +frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if ((bundling_flag==bundling)&&(SR==0)) {
-	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
+	else if ((bundling_flag==multiplexing)&&(SR==0)) {  // Table 10.1
+	  if (harq_ack0 == 2)
+	    harq_ack0 = 0;
+	  b[1] = harq_ack0;
+	  b[0] = (harq_ack0!=harq_ack1)?0:1;
+	  if ((harq_ack0 == 1) && (harq_ack1 == 0)) {
+	    phy_vars_ue->pucch_sel[subframe] = 0;
 	    return(n1_pucch0);
 	  }
 	  else {
-	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
-	    b[1]=b[0];
-	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
+	    phy_vars_ue->pucch_sel[subframe] = 1;
+	    return(n1_pucch1);
 	  }
-	  harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
+	}
+	else if (SR==1) { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
+	  // this should be number of ACKs (including
+	  if (harq_ack0 == 2)
+	    harq_ack0 = 0;
+	  b[0]= harq_ack1 | harq_ack0;
+	  b[1]= harq_ack1 ^ harq_ack0;
+	  return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
 	}
       }
-      else {
-	LOG_D(PHY,"[UE%d] Frame %d: phy_procedures_lte.c: get_n1pucch, illegal subframe %d for tdd_config %d\n",
-	    phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,frame_parms->tdd_config);
-	return(0);
+      else if (harq_ack0!=2) {// n-7  // subframe 5,7,9 only is to be ACK/NAKed
+	if ((bundling_flag==bundling)&&(SR == 0)) {  // last paragraph pg 68 from 36.213 (v8.6), m=0
+	  b[0]=harq_ack0;
+	  phy_vars_ue->pucch_sel[subframe] = 0;
+	  return(n1_pucch0);
+	}
+	else if ((bundling_flag==multiplexing)&&(SR==0)) {  // Table 10.1 with i=1 set to DTX
+	  b[0] = harq_ack0;
+	  b[1] = 1-b[0];
+	  phy_vars_ue->pucch_sel[subframe] = 0;
+	  return(n1_pucch0);
+	}
+	else if (SR==1) { // SR and only 0 or 1 ACKs (first 2 entries in Table 7.3-1 of 36.213)
+	  b[0]=harq_ack0;
+	  b[1]=b[0];
+	  return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
+	}
       }
       break;
-    }  // switch tdd_config     
-    // Now fill b(0),b(1) fields (assume single TB for now).  
-    // If there is no SR and multiplexing. This is Table 10.1.2 from 36.213.
-    //    msg("harq_ack0 %d, harq_ack1 %d\n",harq_ack0,harq_ack1);
-    if ((harq_ack0 == 1) && (harq_ack1 == 1)) {
-      b[0] = 1; b[1]=1;
-      return(n1_pucch1);
-    }
-    else if ((harq_ack0 == 1) && (harq_ack1 != 1)) {
-      b[0] = 0; b[1]=1;
-      return(n1_pucch0);
-    }
-    else if ((harq_ack0 != 1) && (harq_ack1 == 1)) {
-      b[0] = 0; b[1]=0;
-      return(n1_pucch1);
-    } 
-    else if ((harq_ack0 != 1) && (harq_ack1 == 0)) {
-      b[0] = 1; b[1]=0;
-      return(n1_pucch1);
-    } 
-    else if ((harq_ack0 == 0) && (harq_ack1 == 2)) {
-      b[0] = 1; b[1]=0;
-      return(n1_pucch0);
-    } 
-    else
-      return(0);
-    
-  
 
-    
+    }  // switch tdd_config     
   }
+  LOG_E(PHY,"[UE%d] : Frame %d phy_procedures_lte.c: get_n1pucch, exit without proper return\n",phy_vars_ue->frame);
+  return(-1);
 }
 
 
@@ -811,7 +775,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//      debug_LOG_D(PHY,"[UE%d] Frame %d, subframe %d: Checking for PUCCH 1a/1b\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
 	bundling_flag = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
 	
-	if ((frame_parms->frame_type==0) || (bundling_flag==bundling)) {
+	if ((frame_parms->frame_type==0) || 
+	    (bundling_flag==bundling)    || 
+	    ((frame_parms->frame_type==1)&&(frame_parms->tdd_config==1)&&((next_slot!=4)||(next_slot!=14)))) {
 	  format = pucch_format1a;
 	  //	debug_msg("PUCCH 1a\n");
 	}
@@ -855,11 +821,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				  next_slot>>1,
 				  pucch_ack_payload,
 				  SR_payload); 
-	  LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d\n",
-	      phy_vars_ue->Mod_id, 
-	      phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
-	      phy_vars_ue->frame, next_slot>>1,
-	      n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1]);
+	  LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d)\n",
+		phy_vars_ue->Mod_id, 
+		phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
+		phy_vars_ue->frame, next_slot>>1,
+		n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],SR_payload);
 	  if (SR_payload>0) {
 	    LOG_D(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b (with SR for PUSCH), n1_pucch %d\n",
 		phy_vars_ue->Mod_id, 

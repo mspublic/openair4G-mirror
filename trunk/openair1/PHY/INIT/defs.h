@@ -33,10 +33,12 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation
 @param phy_vars_ue Pointer to UE Variables
+@param nb_connected_eNB Number of eNB that UE can process in one PDSCH demodulation subframe
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 */
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
+		    int nb_connected_eNB,
 		    u8 abstraction_flag);
 
 /*!
@@ -135,7 +137,7 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 void phy_config_meas_ue(u8 Mod_id,
 			u8 eNB_index,
 			u8 n_adj_cells,
-			u16 *adj_cell_id);
+			u32 *adj_cell_id);
 
 /*!
 \fn void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
