@@ -15,7 +15,7 @@ double **cos_lut=NULL,**sin_lut=NULL;
 
 //#if 1
 
-int freq_channel_init=0;
+
 
 void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
@@ -25,8 +25,6 @@ void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
   s16 f;
   u8 l;
 
-
-  freq_channel_init = 1;
 
   cos_lut = (double **)malloc(n_samples*sizeof(double*));
   sin_lut = (double **)malloc(n_samples*sizeof(double*));
@@ -62,12 +60,15 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
   s16 f;
   u8 aarx,aatx,l;
   double *clut,*slut;
+  static int freq_channel_init=0;
 
  // printf("no of samples:%d,",n_samples);
  // printf("no of taps:%d,",(int)desc->nb_taps);
 
-  if (freq_channel_init == 0)
+  if (freq_channel_init == 0) {
     init_freq_channel(desc,nb_rb,n_samples);
+    freq_channel_init=1;
+  }
     
   for (f=-n_samples/2;f<n_samples/2;f++) {
 	clut = cos_lut[n_samples/2+f];
