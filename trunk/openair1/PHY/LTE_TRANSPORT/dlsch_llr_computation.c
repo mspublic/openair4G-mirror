@@ -943,9 +943,9 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                         u16 pbch_pss_sss_adjust,
                         short **llr16p) {
     
-    s16 *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-    s16 *rxF_i=(__m128i*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-    s16 *rho=(__m128i*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
+    s16 *rxF=(s16*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+    s16 *rxF_i=(s16*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
+    s16 *rho=(s16*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
     s16 *llr16;
     int len;
     u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
