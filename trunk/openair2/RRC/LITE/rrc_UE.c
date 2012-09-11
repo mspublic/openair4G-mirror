@@ -827,7 +827,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   SystemInformation_t **si=UE_rrc_inst[Mod_id].si[eNB_index];
   asn_dec_rval_t dec_rval;
-  u32 si_window, sib1_decoded=0, si_decoded=0;
+  uint32_t si_window;//, sib1_decoded=0, si_decoded=0;
 
   //memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
   //  LOG_D(RRC,"[UE %d] Decoding DL_BCCH_DLSCH_Message\n",Mod_id)
@@ -853,9 +853,9 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	  memcpy((void*)*sib1,
 		 (void*)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
 		 sizeof(SystemInformationBlockType1_t));
+	  LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
+	  decode_SIB1(Mod_id,eNB_index);
 	}
-	LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
-	decode_SIB1(Mod_id,eNB_index);
       }
       break;
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
