@@ -1556,6 +1556,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    dci_alloc_rx[i].format,
 					    phy_vars_ue->dlsch_ue[eNB_id],
 					    &phy_vars_ue->lte_frame_parms,
+                        phy_vars_ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
 					    P_RNTI)==0) {
@@ -1607,6 +1608,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    format1A,
 					    &phy_vars_ue->dlsch_ue_SI[eNB_id], 
 					    &phy_vars_ue->lte_frame_parms,
+                        phy_vars_ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
 					    P_RNTI)==0) {
@@ -1644,6 +1646,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					      format1A,
 					      &phy_vars_ue->dlsch_ue_ra[eNB_id], 
 					      &phy_vars_ue->lte_frame_parms,
+                          phy_vars_ue->pdsch_config_dedicated,
 					      SI_RNTI,
 					      phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
 					      P_RNTI)==0) {
