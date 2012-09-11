@@ -2038,7 +2038,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 #endif
 
 
-    ulsch->O_ACK                               = (((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai+1)&3;
+    ulsch->O_ACK                                 = (((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai+1)&3;
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;
@@ -2085,7 +2085,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     msg("Format 0 DCI :ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("Format 0 DCI :ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
     msg("Format 0 DCI :ulsch (ue): O           %d\n",ulsch->O);
-    msg("Format 0 DCI :ulsch (ue): O_ACK (DAI) %d\n",ulsch->O_ACK);
+    msg("Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->O_ACK,((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai);
     msg("Format 0 DCI :ulsch (ue): Nsymb_pusch %d\n",ulsch->Nsymb_pusch);
     msg("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->n_DMRS2);
     //#endif
