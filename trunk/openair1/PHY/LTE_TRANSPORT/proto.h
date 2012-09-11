@@ -661,6 +661,12 @@ void dlsch_channel_level_prec(s32 **dl_ch_estimates_ext,
                               u8 symbol_mod,
                               u16 nb_rb);
 
+void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         LTE_UE_DLSCH_t **dlsch_ue,
+                         u8 symbol_mod,
+                         u16 nb_rb);
+
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
     threads (on multi-core machines) corresponding to different HARQ processes. The routine first 
     computes the segmentation information, followed by rate dematching and sub-block deinterleaving the of the
@@ -984,6 +990,7 @@ s32 generate_ue_dlsch_params_from_dci(u8 subframe,
 				      DCI_format_t dci_format,
 				      LTE_UE_DLSCH_t **dlsch_ue,
 				      LTE_DL_FRAME_PARMS *frame_parms,
+                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti);
@@ -994,6 +1001,7 @@ s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       DCI_format_t dci_format,
 				       LTE_eNB_DLSCH_t **dlsch_eNB,
 				       LTE_DL_FRAME_PARMS *frame_parms,
+                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -1359,6 +1367,8 @@ u32 dlsch_decoding_abstraction(double *dlsch_MIPB,
 		   u8 num_pdcch_symbols);
 
 // DL power control functions
+double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated);
+
 double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,  
                        LTE_eNB_DLSCH_t *dlsch_eNB );
 
