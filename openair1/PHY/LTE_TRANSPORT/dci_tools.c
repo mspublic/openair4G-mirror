@@ -240,6 +240,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       DCI_format_t dci_format,
 				       LTE_eNB_DLSCH_t **dlsch,
 				       LTE_DL_FRAME_PARMS *frame_parms,
+                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -665,7 +666,8 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch0->rnti = rnti;
     //dlsch1->rnti = rnti;
 
-    dlsch0->dl_power_off = 1;
+    //    dlsch0->dl_power_off = 1;
+    dlsch0->dl_power_off = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
     //dlsch1->dl_power_off = 1;
 
     break;
@@ -688,6 +690,12 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     msg("dlsch0 eNB: mimo_mode %d\n",dlsch0->harq_processes[harq_pid]->mimo_mode);
   }
 #endif
+
+  // compute DL power control parameters   
+  computeRhoA_eNB(pdsch_config_dedicated, dlsch[0]);
+  
+  computeRhoB_eNB(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0]);
+
   return(0);
 }
 
@@ -840,6 +848,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 				      DCI_format_t dci_format,
 				      LTE_UE_DLSCH_t **dlsch,
 				      LTE_DL_FRAME_PARMS *frame_parms,
+                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti) {
@@ -1354,6 +1363,12 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   }
 #endif
   dlsch[0]->active=1;
+
+  // compute DL power control parameters   
+  computeRhoA_UE(pdsch_config_dedicated, dlsch[0]);
+
+  computeRhoB_UE(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0]);
+
   return(0);
 }
 
