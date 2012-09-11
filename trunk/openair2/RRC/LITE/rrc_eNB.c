@@ -82,6 +82,13 @@ void init_SI(u8 Mod_id) {
 
   eNB_rrc_inst[Mod_id].SIB1 = (u8 *)malloc16(32);
 
+  /*
+  printf ("before SIB1 init : Nid_cell %d\n", mac_xface->lte_frame_parms->Nid_cell);
+  printf ("before SIB1 init : frame_type %d,tdd_config %d\n", 
+	  mac_xface->lte_frame_parms->frame_type,
+	  mac_xface->lte_frame_parms->tdd_config);
+  */
+
   if (eNB_rrc_inst[Mod_id].SIB1)
     eNB_rrc_inst[Mod_id].sizeof_SIB1 = do_SIB1(mac_xface->lte_frame_parms,
 					       (uint8_t *)eNB_rrc_inst[Mod_id].SIB1,
@@ -91,7 +98,12 @@ void init_SI(u8 Mod_id) {
     LOG_E(RRC,"[eNB] init_SI: FATAL, no memory for SIB1 allocated\n");
     mac_xface->macphy_exit("");
   }
-
+  /*
+  printf ("after SIB1 init : Nid_cell %d\n", mac_xface->lte_frame_parms->Nid_cell);
+  printf ("after SIB1 init : frame_type %d,tdd_config %d\n", 
+	  mac_xface->lte_frame_parms->frame_type,
+	  mac_xface->lte_frame_parms->tdd_config);
+  */
   if (eNB_rrc_inst[Mod_id].sizeof_SIB1 == 255)
     mac_xface->macphy_exit("");
 

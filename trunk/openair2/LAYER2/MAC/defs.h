@@ -282,7 +282,7 @@ typedef struct{
   u8 DAI;
 
   /// UL DAI
-  u8 DAI_ul;
+  u8 DAI_ul[10];
 
   /// UL Scheduling Request Received
   u8 ul_SR;
@@ -572,14 +572,14 @@ void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 *nprb,u8 *nCCE);
 */
 void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,u8 *nCCE);
 
-/** \brief ULSCH Scheduling.
+/** \brief ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
+@param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 @param nCCE Pointer to current nCCE count
-@param calibration_flag Flag to indicate that TDD auto-calibration PUSCH should be scheduled.
 */
-void schedule_ulsch(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe,u8 *nCCE);//,int calibration_flag);
+void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, u8 sched_subframe, u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 @param Mod_id Instance of eNB

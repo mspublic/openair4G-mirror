@@ -98,6 +98,9 @@ void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH
   if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_lite_eNB_init(Mod_id)==-1)){
     //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
     }
+
+
+
 }
 
 /***********************************************************************/
