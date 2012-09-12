@@ -1,19 +1,32 @@
 #!bin/sh
 
-#Modules compilation
-OPENAIRITS_DIR=/home/training/OpenAir4G/openair4G/trunk/openairITS
+## INSTRUCTIONS
+## - check the coherence of the OPENAIRITS_DIR and MOD_DIR with YOUR platform
+## - configure the module dependencies by running the following command:
+##       sudo depmod -a 
+## - install 'iw' by the following command:
+##      sudo apt-get install iw
+## - allow Ubuntu to reply to a PING in Broadcast by the following command:
+##      echo 0 | sudo tee /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+## run the following shell
+## voila !!
 
+#Path configuration
+OPENAIRITS_DIR=/home/training/OpenAir4G/trunk/openairITS
+MOD_DIR=/lib/modules/2.6.32-38-generic/kernel
+
+#Modules compilation
 cd ${OPENAIRITS_DIR}/mac/DOT11/
 make clean
 make MAC=1
 
-rm /lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates/compat/compat.ko
-rm /lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates/net/wireless/cfg80211.ko
-rm /lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates/net/mac80211/mac80211_eurecom.ko
+rm ${MOD_DIR}/compat/compat.ko
+rm ${MOD_DIR}/net/wireless/cfg80211.ko
+rm ${MOD_DIR}/net/mac80211/mac80211_eurecom.ko
 
-cp ${OPENAIRITS_DIR}/mac/DOT11/compat/compat.ko /lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates/compat/compat.ko
-cp ${OPENAIRITS_DIR}/mac/DOT11/net/wireless/cfg80211.ko /lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates/net/wireless/cfg80211.ko
-cp ${OPENAIRITS_DIR}/mac/DOT11/net/mac80211/mac80211_eurecom.ko /lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates/net/mac80211/mac80211_eurecom.ko
+cp ${OPENAIRITS_DIR}/mac/DOT11/compat/compat.ko ${MOD_DIR}/compat/compat.ko
+cp ${OPENAIRITS_DIR}/mac/DOT11/net/wireless/cfg80211.ko ${MOD_DIR}/net/wireless/cfg80211.ko
+cp ${OPENAIRITS_DIR}/mac/DOT11/net/mac80211/mac80211_eurecom.ko ${MOD_DIR}/net/mac80211/mac80211_eurecom.ko
 
 cd ${OPENAIRITS_DIR}/phy/DRIVERS/
 make clean
