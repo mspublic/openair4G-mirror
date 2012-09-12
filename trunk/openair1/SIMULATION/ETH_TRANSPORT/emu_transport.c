@@ -326,7 +326,10 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      else if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
        PHY_vars_UE_g[ue_id]->pucch_payload[0] = ue_cntl_delay[ue_id][last_slot%2].pucch_payload;//UE_transport_info[ue_id].cntl.pucch_payload;
      } 
-   }
+     PHY_vars_UE_g[ue_id]->pucch_sel[subframe] = ue_cntl_delay[ue_id][last_slot%2].pucch_sel;
+   } 
+   
+
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
     
      //LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
@@ -335,8 +338,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
      
      PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
-     
-     
+         
      harq_pid = UE_transport_info[ue_id].harq_pid[n_enb];
      
      ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
