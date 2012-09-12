@@ -516,11 +516,12 @@ typedef struct {
   /// 
   u32 dlsch_sliding_cnt;
   ///
+  u32 dlsch_ACK[8];
   u32 dlsch_NAK[8];
   ///
   u32 dlsch_l2_errors;
   ///
-  u32 dlsch_trials[4];
+  u32 dlsch_trials[8];
   ///
   u32 ulsch_errors[3];
   ///

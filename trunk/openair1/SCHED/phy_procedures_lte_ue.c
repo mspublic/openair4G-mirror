@@ -196,7 +196,8 @@ void ra_failed(u8 Mod_id,u8 eNB_index) {
 
   // if contention resolution fails, go back to PRACH
   PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index] = PRACH;
-  LOG_D(PHY,"[UE %d] Frame %d Random-access procedure fails, going back to PRACH\n",PHY_vars_UE_g[Mod_id]->frame);
+  LOG_D(PHY,"[UE %d] Frame %d Random-access procedure fails, going back to PRACH\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame);
+  mac_xface->macphy_exit("");
   //  exit(-1);
 }
 
@@ -710,20 +711,20 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 #else //OPENAIR2
 	  //	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0) {
-	  for (i=0;i<input_buffer_length;i++)
-	    ulsch_input_buffer[i]= i;
+	  for (i=0;i<input_buffer_length;i++) 
+	    ulsch_input_buffer[i]= (u8)(taus()&0xff);
 	  //}
 	  /*
 	  else {
 	    // Get calibration information from TDD procedures
 	    }*/
 
+	  /* // the following lines were necessary for the collaborative UL in PUCCO
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o    ,0,MAX_CQI_BYTES*sizeof(u8));
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_RI ,0,2*sizeof(u8));
 	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_ACK,0,4*sizeof(u8));
-	  /*
-	    for (i=0;i<input_buffer_length;i++) 
-	    ulsch_input_buffer[i]= (u8)(taus()&0xff);
+	  for (i=0;i<input_buffer_length;i++)
+	    ulsch_input_buffer[i]= i;
 	  */
 	  
 #endif //OPENAIR2
@@ -1193,50 +1194,52 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
   u8 last_slot;
 
-    LOG_D(PHY,"[UE  %d] frame %d, slot %d, restarting PHY!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame);
-    //   first_run = 1;
-
-    if (abstraction_flag ==0 ) {
-      openair_daq_vars.mode = openair_NOT_SYNCHED;
-      phy_vars_ue->UE_mode[eNB_id] = NOT_SYNCHED;
-      openair_daq_vars.sync_state=0;
-    }else {
-      phy_vars_ue->UE_mode[eNB_id] = PRACH;
-    }
+  LOG_D(PHY,"[UE  %d] frame %d, slot %d, restarting PHY!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame);
+  mac_xface->macphy_exit("");
+  //   first_run = 1;
+  
+  if (abstraction_flag ==0 ) {
+    openair_daq_vars.mode = openair_NOT_SYNCHED;
+    phy_vars_ue->UE_mode[eNB_id] = NOT_SYNCHED;
+    openair_daq_vars.sync_state=0;
+  }
+  else {
+    phy_vars_ue->UE_mode[eNB_id] = PRACH;
+  }
 #ifdef CBMIMO1
 #ifdef USER_MODE
-    // TODO: send IOCTL
+  // TODO: send IOCTL
 #else
-    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+  openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 #endif
 #endif //CBMIMO1
-    phy_vars_ue->frame = -1;
-    openair_daq_vars.synch_wait_cnt=0;
-    openair_daq_vars.sched_cnt=-1;
-    openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
-    
-    
-    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
-    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors=0;
-    
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors = 0;
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_missed = 0;
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false  = 0;    
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received = 0;    
-    
-    phy_vars_ue->dlsch_errors[eNB_id] = 0;
-    phy_vars_ue->dlsch_errors_last[eNB_id] = 0;
-    phy_vars_ue->dlsch_received[eNB_id] = 0;
-    phy_vars_ue->dlsch_received_last[eNB_id] = 0;
-    phy_vars_ue->dlsch_fer[eNB_id] = 0;
-    phy_vars_ue->dlsch_SI_received[eNB_id] = 0;
-    phy_vars_ue->dlsch_ra_received[eNB_id] = 0;
-    phy_vars_ue->dlsch_SI_errors[eNB_id] = 0;
-    phy_vars_ue->dlsch_ra_errors[eNB_id] = 0;
-    //phy_vars_ue->total_TBS[eNB_id] = 0;
-    //phy_vars_ue->total_TBS_last[eNB_id] = 0;
-    //phy_vars_ue->bitrate[eNB_id] = 0;
-    //phy_vars_ue->total_received_bits[eNB_id] = 0;
+  phy_vars_ue->frame = -1;
+  openair_daq_vars.synch_wait_cnt=0;
+  openair_daq_vars.sched_cnt=-1;
+  openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+  
+  
+  phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
+  phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors=0;
+  
+  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors = 0;
+  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_missed = 0;
+  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false  = 0;    
+  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received = 0;    
+  
+  phy_vars_ue->dlsch_errors[eNB_id] = 0;
+  phy_vars_ue->dlsch_errors_last[eNB_id] = 0;
+  phy_vars_ue->dlsch_received[eNB_id] = 0;
+  phy_vars_ue->dlsch_received_last[eNB_id] = 0;
+  phy_vars_ue->dlsch_fer[eNB_id] = 0;
+  phy_vars_ue->dlsch_SI_received[eNB_id] = 0;
+  phy_vars_ue->dlsch_ra_received[eNB_id] = 0;
+  phy_vars_ue->dlsch_SI_errors[eNB_id] = 0;
+  phy_vars_ue->dlsch_ra_errors[eNB_id] = 0;
+  //phy_vars_ue->total_TBS[eNB_id] = 0;
+  //phy_vars_ue->total_TBS_last[eNB_id] = 0;
+  //phy_vars_ue->bitrate[eNB_id] = 0;
+  //phy_vars_ue->total_received_bits[eNB_id] = 0;
 }
 
 
@@ -1556,7 +1559,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    dci_alloc_rx[i].format,
 					    phy_vars_ue->dlsch_ue[eNB_id],
 					    &phy_vars_ue->lte_frame_parms,
-                        phy_vars_ue->pdsch_config_dedicated,
+					    phy_vars_ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
 					    P_RNTI)==0) {
@@ -1936,8 +1939,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 	    //	    if (phy_vars_ue->current_dlsch_cqi[eNB_id] <28)
 	    //	      phy_vars_ue->current_dlsch_cqi[eNB_id]++;
-	    phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS + phy_vars_ue->total_TBS[eNB_id];
-	    phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_received_bits[eNB_id] + phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS;
+	    phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->total_TBS[eNB_id] +
+	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS;
+	    phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_TBS[eNB_id] +
+	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS;
 	  }
 	}
       
@@ -2418,7 +2423,7 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
       LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",phy_vars_ue->Mod_id,
 	    phy_vars_ue->frame,next_slot>>1);
       phy_vars_ue->UE_mode[eNB_id] = PRACH;
-      //mac_xface->macphy_exit("");
+      mac_xface->macphy_exit("");
       //exit(-1);
     }
     else if (ret == PHY_RESYNCH) {
@@ -2426,7 +2431,7 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 	    phy_vars_ue->Mod_id,
 	    phy_vars_ue->frame,next_slot>>1);
       phy_vars_ue->UE_mode[eNB_id] = RESYNCH;
-      //mac_xface->macphy_exit("");
+      mac_xface->macphy_exit("");
       //exit(-1);
     }
   }

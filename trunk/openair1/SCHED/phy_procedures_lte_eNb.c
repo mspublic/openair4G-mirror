@@ -1026,18 +1026,19 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
 
 #ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[eNB %d][PDSCH %x/%d] Frame %d, slot %d: Generating PDSCH/DLSCH with input size = %d, G %d, nb_rb %d, mcs %d, Ndi %d, rv %d \n",
-	    phy_vars_eNB->Mod_id, phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti,harq_pid,
-	    phy_vars_eNB->frame, next_slot, input_buffer_length,
-	    get_G(&phy_vars_eNB->lte_frame_parms,
-		  phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
-		  phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rb_alloc,
-		  get_Qm(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
-		  num_pdcch_symbols,next_slot>>1),
-	    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
-	    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs,
-	    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->Ndi,
-	    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->rvidx);
+	LOG_D(PHY,"[eNB %d][PDSCH %x/%d] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %d, G %d, nb_rb %d, mcs %d, Ndi %d, rv %d (round %d)\n",
+	      phy_vars_eNB->Mod_id, phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti,harq_pid,
+	      phy_vars_eNB->frame, next_slot>>1, input_buffer_length,
+	      get_G(&phy_vars_eNB->lte_frame_parms,
+		    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
+		    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rb_alloc,
+		    get_Qm(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
+		    num_pdcch_symbols,next_slot>>1),
+	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
+	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs,
+	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->Ndi,
+	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->rvidx,
+	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->round);
 #endif
 
 	phy_vars_eNB->eNB_UE_stats[(u8)UE_id].dlsch_sliding_cnt++;
@@ -1066,7 +1067,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	}
 	else {
-	  phy_vars_eNB->eNB_UE_stats[(u32)UE_id].dlsch_trials[0]++;	
+	  phy_vars_eNB->eNB_UE_stats[(u32)UE_id].dlsch_trials[phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->round]++;	
 #ifdef DEBUG_PHY_PROC
 #ifdef DEBUG_DLSCH  
 	  LOG_D(PHY,"[eNB] This DLSCH is a retransmission\n");
@@ -1501,6 +1502,10 @@ void process_HARQ_feedback(u8 UE_id,
 	  //	  msg("[PHY] eNB %d Process %d is active (%d)\n",phy_vars_eNB->Mod_id,dl_harq_pid[m],dlsch_ACK[m]);
 	  if ( dlsch_ACK[mp]==0) {
 	    // Received NAK 
+#ifdef DEBUG_PHY_PROC	
+	    LOG_D(PHY,"[eNB %d][PDSCH %x/%d] NAK Received in round %d, requesting retransmission\n",phy_vars_eNB->Mod_id,
+		dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
+#endif
 	    
 	    //	    if (dlsch_harq_proc->round == 0)
 	    ue_stats->dlsch_NAK[dlsch_harq_proc->round]++;
@@ -1510,6 +1515,10 @@ void process_HARQ_feedback(u8 UE_id,
 	    
 	    if (dlsch_harq_proc->round == dlsch->Mdlharq) {
 	      // This was the last round for DLSCH so reset round and increment l2_error counter
+#ifdef DEBUG_PHY_PROC	
+	      LOG_D(PHY,"[eNB %d][PDSCH %x/%d] DLSCH retransmissions exhausted, dropping packet\n",phy_vars_eNB->Mod_id,
+		    dlsch->rnti,dl_harq_pid[m]);
+#endif
 	      dlsch_harq_proc->round = 0;
 	      ue_stats->dlsch_l2_errors++;
 	      dlsch_harq_proc->status = SCH_IDLE;
@@ -1521,13 +1530,17 @@ void process_HARQ_feedback(u8 UE_id,
 	    LOG_D(PHY,"[eNB %d][PDSCH %x/%d] ACK Received in round %d, resetting process\n",phy_vars_eNB->Mod_id,
 		dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
 #endif
+	    ue_stats->dlsch_ACK[dlsch_harq_proc->round]++;
+
 	    // Received ACK so set round to 0 and set dlsch_harq_pid IDLE
 	    dlsch_harq_proc->round  = 0;
 	    dlsch_harq_proc->status = SCH_IDLE; 
 	    dlsch->harq_ids[dl_subframe] = dlsch->Mdlharq;
 
-	    ue_stats->total_TBS = ue_stats->total_TBS + phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
-	    ue_stats->total_transmitted_bits = phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS + ue_stats->total_transmitted_bits;
+	    ue_stats->total_TBS = ue_stats->total_TBS + 
+	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
+	    ue_stats->total_transmitted_bits = ue_stats->total_transmitted_bits +
+	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
 	  }
 	  
 	  // Do fine-grain rate-adaptation for DLSCH 
@@ -2051,10 +2064,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
       
       if (phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status == 1) {
-	//#ifdef DEBUG_PHY_PROC
-	if (((phy_vars_eNB->frame%10) == 0) || (phy_vars_eNB->frame < 50)) 
+#ifdef DEBUG_PHY_PROC
+	//if (((phy_vars_eNB->frame%10) == 0) || (phy_vars_eNB->frame < 50)) 
 	  print_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,0);
-	//#endif
+#endif
 	extract_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,&phy_vars_eNB->eNB_UE_stats[i]);
 	phy_vars_eNB->eNB_UE_stats[i].rank = phy_vars_eNB->ulsch_eNB[i]->o_RI[0];
       }
@@ -2211,7 +2224,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
       // process HARQ feedback
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d] Processing HARQ feedback for UE %d\n",phy_vars_eNB->Mod_id,i);
+      LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d, Processing HARQ feedback for UE %d\n",phy_vars_eNB->Mod_id,
+	    phy_vars_eNB->dlsch_eNB[i][0]->rnti,
+	    phy_vars_eNB->frame,last_slot>>1,
+	    i);
 #endif
       process_HARQ_feedback(i,
 			    last_slot>>1,
@@ -2221,7 +2237,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			    0,
 			    0);
       
-
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %d] Frame %d subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n", 
 	    phy_vars_eNB->Mod_id,
@@ -2256,12 +2271,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[harq_pid][round];
       }
 
-      if(phy_vars_eNB->frame % 10 == 0) {
-	phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*10;
-	
-	phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
-      }
     }
   
 
@@ -2333,7 +2342,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  } 
 	}// do_SR==1
 	if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
-	  
 	}
 	else if (phy_vars_eNB->lte_frame_parms.frame_type==0) { // FDD
 	  // if SR was detected, use the n1_pucch from SR, else use n1_pucch0
@@ -2494,6 +2502,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     } // PUCCH processing
     
 #endif
+
+    if (last_slot==0) {
+      phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
+						     phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*100;
+      
+      phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
+    }
+    
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 
   if (((last_slot&1) == 1 ) &&

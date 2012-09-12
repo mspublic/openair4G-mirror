@@ -3812,7 +3812,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 			  subframe,
 			  S_DL_SCHEDULED);
 
-	eNB_UE_stats->dlsch_trials[round]++;
+	//eNB_UE_stats->dlsch_trials[round]++;
 
       }
       else { // don't schedule this UE, its retransmission takes more resources than we have
