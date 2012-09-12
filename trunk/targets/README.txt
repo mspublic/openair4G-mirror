@@ -44,6 +44,7 @@ The 3 folders have the following structures
     export OPENAIR1_DIR=$OPENAIR_HOME/openair4G/openair1
     export OPENAIR2_DIR=$OPENAIR_HOME/openair4G/openair2
     export OPENAIR3_DIR=$OPENAIR_HOME/openair4G/openair3
+    export OPENAIRITS_DIR=$OPENAIR_HOME/openair4G/openairITS
     export OPENAIR_TARGETS=$OPENAIR_HOME/openair4G/targets/
     
    - checkout and compile the asn1 messages 
