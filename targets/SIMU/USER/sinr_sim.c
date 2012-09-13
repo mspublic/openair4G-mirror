@@ -415,10 +415,17 @@ void get_beta_map() {
     sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/awgn_abst/awgn_snr_bler_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
-      LOG_E(OCM,"ERROR: Unable to open the file %s\n", file_path);
+      LOG_W(OCM,"ERROR: Unable to open the file %s, try an alternative path\n", file_path);
+      memset(file_path, 0, 512);
+      sprintf(file_path,"AWGN/awgn_snr_bler_mcs%d.csv",mcs);
+      LOG_I(OCM,"Opening the alternative path %s\n", file_path);
+      fp = fopen(file_path,"r");
+      if (fp == NULL) {
+      LOG_E(OCM,"ERROR: Unable to open the file %s, exisitng\n", file_path);
       exit(-1);
+      }
     }
-    else {
+    // else {
       fgets(buffer, 1000, fp);
       table_len=0;
       while (!feof(fp)) {
@@ -430,8 +437,8 @@ void get_beta_map() {
         fgets(buffer, 1000, fp);
       }
       fclose(fp);
-    }
-    LOG_D(OCM," Print the table for mcs %d\n",mcs);
+      //   }
+    LOG_D(OCM,"Print the table for mcs %d\n",mcs);
     for (table_len = 0; table_len < 16; table_len++)
       LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
