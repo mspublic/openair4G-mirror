@@ -321,10 +321,10 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	   unsigned char subframe,
 	   unsigned char *o_ACK) {
 
-  //  printf("get_ack: SF %d\n",subframe);
+    printf("get_ack: SF %d\n",subframe);
   u8 status=0;
   
-  if (frame_parms->frame_type == 0) {
+  if (frame_parms->frame_type == FDD) {
     o_ACK[0] = harq_ack[(subframe-4)%10].ack;
     status = harq_ack[(subframe-4)%10].send_harq_status;
   }
@@ -399,7 +399,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
     
     }
   }
-  //printf("status %d\n",status);
+  printf("status %d\n",status);
 
   return(status);
 }
