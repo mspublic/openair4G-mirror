@@ -473,7 +473,7 @@ void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
       memcpy(emos_dump_UE.UCI_data[0][next_slot>>1].o_RI,ulsch_ue[eNB_id]->o_RI,2*sizeof(char));
       emos_dump_UE.UCI_data[0][next_slot>>1].O_RI = ulsch_ue[eNB_id]->O_RI;
       memcpy(emos_dump_UE.UCI_data[0][next_slot>>1].o_ACK,ulsch_ue[eNB_id]->o_ACK,4*sizeof(char));
-      emos_dump_UE.UCI_data[0][next_slot>>1].O_ACK = ulsch_ue[eNB_id]->O_ACK;
+      emos_dump_UE.UCI_data[0][next_slot>>1].O_ACK = ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK;
     }
     else {
       emos_dump_UE.uci_cnt[next_slot>>1] = 0;
@@ -608,23 +608,25 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	
 #ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, n_DMRS1 %d,n_DMRS2 %d,n_PRS %d, ACK (%d,%d)\n",
-	    phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,
-	    first_rb,nb_rb,
-	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->round,
-	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi,
-	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->mcs,
-	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rvidx,
-	    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
-	    phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2,
-	    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[next_slot],
-	    phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1]);
+	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, n_DMRS1 %d,n_DMRS2 %d,n_PRS %d, ACK (%d,%d), O_ACK %d\n",
+	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,
+	      first_rb,nb_rb,
+	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->round,
+	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi,
+	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->mcs,
+	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rvidx,
+	      frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
+	      phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2,
+	      frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[next_slot],
+	      phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
+	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
 	if (ack_status > 0) {
-	  LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) on PUSCH\n",
-	      phy_vars_ue->Mod_id,
-	      phy_vars_ue->ulsch_ue[eNB_id]->rnti,
-	      phy_vars_ue->frame,next_slot>>1,
-	      phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1]);
+	  LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
+		phy_vars_ue->Mod_id,
+		phy_vars_ue->ulsch_ue[eNB_id]->rnti,
+		phy_vars_ue->frame,next_slot>>1,
+		phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
+		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
 	}
 #endif
 	
@@ -658,7 +660,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 	  msg("\n"); */
 	  if (abstraction_flag==0) {
-	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
+	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,
+			       &phy_vars_ue->lte_frame_parms,
+			       phy_vars_ue->ulsch_ue[eNB_id],
+			       harq_pid,
+			       phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	      mac_xface->macphy_exit("");
 	      return;
@@ -733,7 +739,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->ulsch_ue[eNB_id],
 			       harq_pid,
-			       phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
+			       phy_vars_ue->transmission_mode[eNB_id],0,
+			       0  //  Nbundled, to be updated!!!!
+			       )!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	      return;
 	    }
@@ -1989,7 +1997,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       // SI_DLSCH
       if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
 #ifdef DEBUG_PHY_PROC
-	//debug_msg("SI is active\n");
+	LOG_D(PHY,"SI is active\n");
 #endif
 	
 	// process symbols 10,11,12 and trigger DLSCH decoding

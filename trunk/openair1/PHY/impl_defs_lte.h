@@ -62,6 +62,7 @@
 
 #define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
 
+typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {
   normal=0,
@@ -419,7 +420,7 @@ typedef struct {
   /// shift of pilot position in one RB
   u8 nushift;                
 /// Frame type (0 FDD, 1 TDD)
-  u8 frame_type;
+  lte_frame_type_t frame_type;
   /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   u8 tdd_config;
   /// TDD S-subframe configuration (0-9) 
@@ -759,6 +760,8 @@ typedef enum {
   PUSCH=3,
   RESYNCH=4
 } UE_MODE_t;
+
+
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 

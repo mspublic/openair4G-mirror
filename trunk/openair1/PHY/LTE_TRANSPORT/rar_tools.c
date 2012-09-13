@@ -83,7 +83,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
   ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
   ulsch->O_RI                                  = 1;
-  ulsch->O_ACK                                 = 2;
+  ulsch->harq_processes[harq_pid]->O_ACK                                 = 2;
   ulsch->beta_offset_cqi_times8                = 18;
   ulsch->beta_offset_ri_times8                 = 10;
   ulsch->beta_offset_harqack_times8            = 16;
@@ -182,7 +182,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
-    ulsch->O_ACK                                  = 2;
+    ulsch->harq_processes[harq_pid]->O_ACK                                  = 2;
 
     ulsch->beta_offset_cqi_times8                  = 18;
     ulsch->beta_offset_ri_times8                   = 10;
