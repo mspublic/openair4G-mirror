@@ -2,11 +2,13 @@
 #define __INIT_DEFS__H__
 
 #include "PHY/defs.h"
+
+#ifdef OPENAIR_LTE
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#else
 
-#ifndef OPENAIR_LTE
 /**
 \fn int phy_init(unsigned char nb_antennas_tx)
 \brief Allocate and Initialize the PHY variables after receiving static configuration

@@ -645,6 +645,8 @@ typedef struct {
   u8 dci_length;
   /// Aggregation level 
   u8 L;
+  /// Position of first CCE of the dci
+  unsigned int nCCE;
   /// flag to indicate that this is a RA response
   u8 ra_flag;
   /// rnti
