@@ -133,6 +133,7 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 
+#ifdef OPENAIR_LTE
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
 
@@ -388,22 +389,17 @@ typedef struct
 
 } PHY_VARS_UE;
 
+
+
 #include "PHY/INIT/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"
 #include "PHY/MODULATION/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
-
-#ifndef OPENAIR_LTE
-#include "PHY/TRANSPORT/defs.h"
-#include "PHY/ESTIMATION/defs.h"
-#else //OPENAIR_LTE
 #include "PHY/LTE_ESTIMATION/defs.h"
-  //#include "PHY/LTE_REFSIG/defs.h"
-  //#include "PHY/LTE_TRANSPORT/defs.h"
-#endif //OPENAIR_LTE
-//#ifdef USER_MODE
+
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-  //#endif
+#endif //OPENAIR_LTE
+
 #endif //  __PHY_DEFS__H__
 
 
