@@ -177,7 +177,8 @@ typedef struct {
 
 typedef struct {
   u8 Num_ue_spec_dci ; 
-  u8 Num_common_dci  ; 
+  u8 Num_common_dci  ;
+  unsigned int nCCE;
   DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;
 } DCI_PDU;
 
@@ -561,7 +562,7 @@ for the message.
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 *nprb,u8 *nCCE);
+void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 *nprb,unsigned int *nCCE);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
@@ -570,7 +571,7 @@ void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 *nprb,u8 *nCCE);
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,u8 *nCCE);
+void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,unsigned int *nCCE);
 
 /** \brief ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
@@ -579,7 +580,7 @@ void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,u8 *nCCE);
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 @param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, u8 sched_subframe, u8 *nCCE);
+void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, u8 sched_subframe, unsigned int *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 @param Mod_id Instance of eNB
@@ -597,7 +598,7 @@ void fill_DLSCH_dci(u8 Mod_id,u32 frame,u8 subframe,u32 rballoc,u8 RA_scheduled)
 @param nb_rb_used0 Number of PRB used by SI/RA
 @param nCCE_used Number of CCE used by SI/RA
 */
-void schedule_ue_spec(u8 Mod_id,u32 frame,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
+void schedule_ue_spec(u8 Mod_id,u32 frame,u8 subframe,u16 nb_rb_used0,unsigned int *nCCE_used);
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE
