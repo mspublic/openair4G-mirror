@@ -1836,8 +1836,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	msg("[PHY] Generating common DCI %d/%d of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].dci_length,1<<dci_alloc[i].L,*(unsigned int*)dci_alloc[i].dci_pdu);
 	dump_dci(frame_parms,&dci_alloc[i]);
 #endif
+
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-			      e_ptr,
+			      e+(72*dci_alloc[i].nCCE),
 			      dci_alloc[i].dci_length,
 			      dci_alloc[i].L,
 			      dci_alloc[i].rnti);    
@@ -1851,8 +1852,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	msg("[PHY] Generating UE (rnti %x) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,dci_alloc[i].dci_pdu);
 	dump_dci(frame_parms,&dci_alloc[i]);
 #endif
+
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-			      e_ptr,
+			      e+(72*dci_alloc[i].nCCE),
 			      dci_alloc[i].dci_length,
 			      dci_alloc[i].L,
 			      dci_alloc[i].rnti);        
