@@ -68,11 +68,18 @@ extern EMULATION_VARS *Emul_vars;
 #endif
 extern eNB_MAC_INST *eNB_mac_inst;
 extern UE_MAC_INST *UE_mac_inst;
+extern RSRP_meas_mapping[100];
+extern RSRQ_meas_mapping[33];
+
+//extern PHY_VARS_eNB **PHY_vars_eNB_g;
 #ifdef BIGPHYSAREA
 extern void *bigphys_malloc(int);
 #endif
 
 extern inline unsigned int taus(void);
+
+extern timeToTrigger_ms[16];
+extern **PHY_vars_UE_g;
 
 void init_SI_UE(u8 Mod_id,u8 eNB_index) {
 
@@ -126,6 +133,59 @@ char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
   return 0;
 }
 
+long binary_search_int(int elements[], long numElem, int value) {
+	long first, last, middle, search;
+	first = 0;
+	last = numElem-1;
+	middle = (first+last)/2;
+	if(value < elements[0])
+		return first;
+	if(value > elements[last])
+		return last;
+
+	while (first <= last) {
+		if (elements[middle] < value)
+			first = middle+1;
+		else if (elements[middle] == value) {
+			search = middle+1;
+			break;
+		}
+		else
+			last = middle -1;
+
+		middle = (first+last)/2;
+	}
+	if (first > last)
+		LOG_E(RRC,"Error in binary search!");
+	return search;
+}
+
+/* This is a binary search routine which operates on an array of floating
+   point numbers and returns the index of the range the value lies in
+   Used for RSRP and RSRQ measurement mapping. Can potentially be used for other things
+*/
+long binary_search_float(float elements[], long numElem, float value) {
+	long first, last, middle, search;
+	first = 0;
+	last = numElem-1;
+	middle = (first+last)/2;
+	if(value <= elements[0])
+		return first;
+	if(value >= elements[last])
+		return last;
+
+	while (last - first > 1) {
+		if (elements[middle] > value)
+			last = middle;
+		else
+			first = middle;
+
+		middle = (first+last)/2;
+	}
+	if (first < 0 || first >= numElem)
+		LOG_E(RRC,"\n Error in binary search float!");
+	return first;
+}
 
 /*------------------------------------------------------------------------------*/
 void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u32 frame, u8 eNB_index){
@@ -202,28 +262,78 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
 }
 
 
-void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index) {
+void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_vars_ue) {
 
   u8 buffer[32], size;
+  u8 i;
+  u8 bestCell,bestCell1;
+  MeasId_t measId;
+  PhysCellId_t cellId;
+  long rsrq_s,rsrp_t,rsrq_t;
+  long rsrp_s, nElem, nElem1;
+  float tmp, tmp1;
+  nElem = 100;
+  nElem1 = 33;
+  for (i=0;i<MAX_MEAS_ID;i++) {
+	  if (UE_rrc_inst[Mod_id].measReportList[0][i] != NULL) {
+		  measId = UE_rrc_inst[Mod_id].measReportList[0][i]->measId;
 
-  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
+		  // Note: Values in the meas report have to be the mapped values...to implement binary search for LUT
+		  tmp = phy_vars_ue->PHY_measurements.rsrp_filtered[phy_vars_ue->lte_frame_parms.Nid_cell];
+		  rsrp_s = binary_search_float(RSRP_meas_mapping,nElem,tmp); //mapped RSRP of serving cell
+		  //rsrq_s = binary_search(phy_vars_ue->PHY_measurements.rsrq_filtered[phy_vars_ue->lte_frame_parms.Nid_cell]; //RSRQ of serving cell
+		  tmp1 = phy_vars_ue->PHY_measurements.rsrq_filtered[phy_vars_ue->lte_frame_parms.Nid_cell]; //RSRQ of serving cell
+		  rsrq_s = binary_search_float(RSRQ_meas_mapping,nElem1,tmp1);//mapped RSRQ of serving cell
 
-  size = do_MeasurementReport(buffer,1,0,3,4,5,6);
+		  LOG_D(RRC,"\n binsearch:rsrp_s: %d rsrq_s: %d tmp: %f tmp1: %f \n",rsrp_s,rsrq_s,tmp,tmp1);
+		  bestCell = phy_vars_ue->lte_frame_parms.Nid_cell; // Init:  bestCell = currentCell
+		  bestCell1 = bestCell;
 
-  //rrc_rlc_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer);
-  pdcp_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+		  for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
+			  if (i != phy_vars_ue->lte_frame_parms.Nid_cell && \
+					  phy_vars_ue->PHY_measurements.rsrp_filtered[i]>phy_vars_ue->PHY_measurements.rsrp_filtered[bestCell]) {
+				  rsrp_t = binary_search_float(RSRP_meas_mapping,nElem,phy_vars_ue->PHY_measurements.rsrp_filtered[i]); //RSRP of target cell
+				  bestCell = i;
+				  break;
+			  }
+		  }
+		  for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
+			  if (i != phy_vars_ue->lte_frame_parms.Nid_cell && \
+					  phy_vars_ue->PHY_measurements.rsrq_filtered[i]>phy_vars_ue->PHY_measurements.rsrq_filtered[bestCell]) {
+				  rsrq_t = binary_search_float(RSRQ_meas_mapping,nElem1,phy_vars_ue->PHY_measurements.rsrq_filtered[i]); //RSRP of target cell
+				  bestCell1 = i;
+				  break;
+			  }
+		  }
+
+		  if (bestCell != bestCell1) // Handle this case later
+			  LOG_D(RRC,"Better cell for RSRP(%d) is different from RSRQ(%d)",bestCell,bestCell1);
+
+		  cellId = get_adjacent_cell_id(Mod_id,0); //PhycellId of serving cell
+		  LOG_D(RRC,"Sending MeasReport: servingCell(%d) targetCell(%d) rsrp_s(%d) rsrq_s(%d) rsrp_t(%d) rsrq_t(%d) \n", \
+				  cellId,get_adjacent_cell_id(Mod_id,i),rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+
+		  size = do_MeasurementReport(buffer,measId,cellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+		  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
+
+		  //rrc_rlc_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer);
+		  LOG_W(PDCP, "Sending MeasReport to PDCP Mod_id: %d NB_eNB_INST: %d...\n",Mod_id,NB_eNB_INST);
+		  pdcp_data_req(Mod_id+NB_eNB_INST,frame,0,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+	  }
+  }
+
 }
 
 /*------------------------------------------------------------------------------*/
 int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
   /*------------------------------------------------------------------------------*/
 
-  //DL_CCCH_Message_t dlccchmsg;
-  DL_CCCH_Message_t *dl_ccch_msg=NULL;//&dlccchmsg;
+  DL_CCCH_Message_t dlccchmsg;
+  DL_CCCH_Message_t *dl_ccch_msg=&dlccchmsg;
   asn_dec_rval_t dec_rval;
-  int i,rval=0;
+  int i;
 
-  //memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
+  memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
 
   //  LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",Mod_id,Srb_info->Rx_buffer.payload_size,
   //	UE_rrc_inst[Mod_id].Info[eNB_index].State);
@@ -250,27 +360,27 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
       case DL_CCCH_MessageType__c1_PR_NOTHING :
 
 	LOG_I(RRC,"[UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",Mod_id,frame);
-	rval= 0;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReestablishment ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
 	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n",Mod_id,frame);
-	rval= 0;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (RRCConnectionReestablishmentReject ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n",Mod_id,frame);
-	rval= 0;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionReject ENB %d) --->][RRC_UE][MOD %02d][]\n",
             frame,  Mod_id+NB_eNB_INST, eNB_index,  Mod_id+NB_eNB_INST);
 
 	LOG_I(RRC,"[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",Mod_id,frame);
-	rval= 0;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
           LOG_D(RRC, "[MSC_MSG][FRAME %05d][MAC_UE][MOD %02d][][--- MAC_DATA_IND (rrcConnectionSetup ENB %d) --->][RRC_UE][MOD %02d][]\n",
@@ -286,16 +396,16 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 
 	rrc_ue_generate_RRCConnectionSetupComplete(Mod_id,frame, eNB_index);
 
-	rval= 0;
+	return 0;
 	break;
       default:
 	LOG_I(RRC,"[UE%d] Frame %d : Unknown message\n",Mod_id,frame);
-	rval= -1;
+	return -1;
       }
     }
   }
-  
-  return rval;
+
+  return 0;
 }
 
 
@@ -415,7 +525,7 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
   if (measConfig->measObjectToRemoveList != NULL) {
     for (i=0;i<measConfig->measObjectToRemoveList->list.count;i++) {
       ind   = *measConfig->measObjectToRemoveList->list.array[i];
-      free(UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind]);
+      free(UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind-1]);
     }
   }
   if (measConfig->measObjectToAddModList != NULL) {
@@ -426,7 +536,7 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 
       if (UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind-1]) {
 	LOG_I(RRC,"Modifying measurement object %d\n",ind);
-	memcpy((char*)UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind],
+	memcpy((char*)UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind-1],
 	       (char*)measObj,
 	       sizeof(MeasObjectToAddMod_t));
       }
@@ -444,6 +554,7 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 	}
       }
     }
+
     rrc_mac_config_req(Mod_id,0,0,eNB_index,
 		       (RadioResourceConfigCommonSIB_t *)NULL,
 		       (struct PhysicalConfigDedicated *)NULL,
@@ -459,49 +570,38 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
   if (measConfig->reportConfigToRemoveList != NULL) {
     for (i=0;i<measConfig->reportConfigToRemoveList->list.count;i++) {
       ind   = *measConfig->reportConfigToRemoveList->list.array[i];
-      free(UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind]);
+      free(UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind-1]);
     }
   }
   if (measConfig->reportConfigToAddModList != NULL) {
     LOG_I(RRC,"Report Configuration List is present\n");
     for (i=0;i<measConfig->reportConfigToAddModList->list.count;i++) {
       ind   = measConfig->reportConfigToAddModList->list.array[i]->reportConfigId;
-      if (UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind]) {
+
+      if (UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind-1]) {
 	LOG_I(RRC,"Modifying Report Configuration %d\n",ind);
 	memcpy((char*)UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind-1],
 	       (char*)measConfig->reportConfigToAddModList->list.array[i],
 	       sizeof(ReportConfigToAddMod_t));
       }
       else {
-	LOG_I(RRC,"Adding Report Configuration %d\n",ind);
-	UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind] = measConfig->reportConfigToAddModList->list.array[i];
+	LOG_I(RRC,"Adding Report Configuration %d\n",ind-1);
+	UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
       }
-    }
-  }
-
-  if (measConfig->quantityConfig != NULL) {
-    if (UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]) {
-      LOG_I(RRC,"Modifying Quantity Configuration \n");
-      memcpy((char*)UE_rrc_inst[Mod_id].QuantityConfig[eNB_index],(char*)measConfig->quantityConfig,
-	     sizeof(QuantityConfig_t));
-    }
-    else {
-      LOG_I(RRC,"Adding Quantity configuration\n");
-      UE_rrc_inst[Mod_id].QuantityConfig[eNB_index] = measConfig->quantityConfig;
     }
   }
 
   if (measConfig->measIdToRemoveList != NULL) {
     for (i=0;i<measConfig->measIdToRemoveList->list.count;i++) {
       ind   = *measConfig->measIdToRemoveList->list.array[i];
-      free(UE_rrc_inst[Mod_id].MeasId[eNB_index][ind]);
+      free(UE_rrc_inst[Mod_id].MeasId[eNB_index][ind-1]);
     }
   }
 
   if (measConfig->measIdToAddModList != NULL) {
     for (i=0;i<measConfig->measIdToAddModList->list.count;i++) {
       ind   = measConfig->measIdToAddModList->list.array[i]->measId;
-      if (UE_rrc_inst[Mod_id].MeasId[eNB_index][ind]) {
+      if (UE_rrc_inst[Mod_id].MeasId[eNB_index][ind-1]) {
 	LOG_I(RRC,"Modifying Measurement ID %d\n",ind);
 	memcpy((char*)UE_rrc_inst[Mod_id].MeasId[eNB_index][ind-1],
 	       (char*)measConfig->measIdToAddModList->list.array[i],
@@ -509,7 +609,7 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
       }
       else {
 	LOG_I(RRC,"Adding Measurement ID %d\n",ind);
-	UE_rrc_inst[Mod_id].MeasId[eNB_index][ind] = measConfig->measIdToAddModList->list.array[i];
+	UE_rrc_inst[Mod_id].MeasId[eNB_index][ind-1] = measConfig->measIdToAddModList->list.array[i];
       }
     }
   }
@@ -524,10 +624,39 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
     }
   }
 
+  if (measConfig->quantityConfig != NULL) {
+    if (UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]) {
+      LOG_I(RRC,"Modifying Quantity Configuration \n");
+      memcpy((char*)UE_rrc_inst[Mod_id].QuantityConfig[eNB_index],(char*)measConfig->quantityConfig,
+	     sizeof(QuantityConfig_t));
+    }
+    else {
+      LOG_I(RRC,"Adding Quantity configuration\n");
+      UE_rrc_inst[Mod_id].QuantityConfig[eNB_index] = measConfig->quantityConfig;
+    }
+
+    UE_rrc_inst[Mod_id].filter_coeff_rsrp = 1./pow(2,(*UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRP)/4);
+    UE_rrc_inst[Mod_id].filter_coeff_rsrq = 1./pow(2,(*UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRQ)/4);
+
+    LOG_I(RRC,"UE %d rsrp-coeff: %d rsrq-coeff: %d rsrp_factor: %f rsrq_factor: %f \n",
+    		UE_rrc_inst[Mod_id].Info[eNB_index].UE_index,
+    		*UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRP,
+    		*UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRQ,
+    		UE_rrc_inst[Mod_id].filter_coeff_rsrp, UE_rrc_inst[Mod_id].filter_coeff_rsrp,
+    		UE_rrc_inst[Mod_id].filter_coeff_rsrp, UE_rrc_inst[Mod_id].filter_coeff_rsrq);
+  }
+
   if (measConfig->s_Measure != NULL) {
     UE_rrc_inst[Mod_id].s_measure = *measConfig->s_Measure;
   }
 
+  if (measConfig->speedStatePars != NULL) {
+	  if (UE_rrc_inst[Mod_id].speedStatePars)
+		  memcpy((char*)UE_rrc_inst[Mod_id].speedStatePars,(char*)measConfig->speedStatePars,sizeof(struct MeasConfig__speedStatePars));
+	  else
+		  UE_rrc_inst[Mod_id].speedStatePars = measConfig->speedStatePars;
+	  LOG_I(RRC,"Configuring mobility optimization params for UE %d \n",UE_rrc_inst[Mod_id].Info[0].UE_index);
+  }
 }
 
 
@@ -736,8 +865,8 @@ void	rrc_ue_process_mobilityControlInfo(u8 Mod_id,u8 eNB_index,struct MobilityCo
 void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/
 
-  //DL_DCCH_Message_t dldcchmsg;
-  DL_DCCH_Message_t *dl_dcch_msg=NULL;//&dldcchmsg;
+  DL_DCCH_Message_t dldcchmsg;
+  DL_DCCH_Message_t *dl_dcch_msg=&dldcchmsg;
   //  asn_dec_rval_t dec_rval;
   int i;
 
@@ -746,7 +875,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
     return;
   }
 
-  //memset(dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+  memset(dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
 
   // decode messages
   //  LOG_D(RRC,"[UE %d] Decoding DL-DCCH message\n",Mod_id);
@@ -760,9 +889,8 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	      (void**)&dl_dcch_msg,
 	      (uint8_t*)Buffer,
 	      100,0,0);
-  
-  xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
 
+  xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
     if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_CONNECTED) {
@@ -822,51 +950,47 @@ const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","
 
 int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_len) {
 
-  //BCCH_DL_SCH_Message_t bcch_message;
-  BCCH_DL_SCH_Message_t *bcch_message=NULL;//_ptr=&bcch_message;
+  BCCH_DL_SCH_Message_t bcch_message;
+  BCCH_DL_SCH_Message_t *bcch_message_ptr=&bcch_message;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   SystemInformation_t **si=UE_rrc_inst[Mod_id].si[eNB_index];
   asn_dec_rval_t dec_rval;
-  uint32_t si_window;//, sib1_decoded=0, si_decoded=0;
+  u32 si_window;
 
-  //memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
+  memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
   //  LOG_D(RRC,"[UE %d] Decoding DL_BCCH_DLSCH_Message\n",Mod_id)
   dec_rval = uper_decode_complete(NULL,
 				  &asn_DEF_BCCH_DL_SCH_Message,
-				  (void **)&bcch_message,
+				  (void **)&bcch_message_ptr,
 				  (const void *)Sdu,
 				  Sdu_len);//,0,0);
-  
+
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
     LOG_E(RRC,"[UE %d] Failed to decode BCCH_DLSCH_MESSAGE (%d bits)\n",Mod_id,dec_rval.consumed);
-    //free the memory  
-    SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 1);   
     return -1;
   }  
   //  xer_fprint(stdout,  &asn_DEF_BCCH_DL_SCH_Message, (void*)&bcch_message);
 
-  if (bcch_message->message.present == BCCH_DL_SCH_MessageType_PR_c1) {
-    switch (bcch_message->message.choice.c1.present) {
+  if (bcch_message.message.present == BCCH_DL_SCH_MessageType_PR_c1) {
+    switch (bcch_message.message.choice.c1.present) {
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
       if ((frame %2) == 0) {
 	if (UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 0) {
 	  memcpy((void*)*sib1,
-		 (void*)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
+		 (void*)&bcch_message.message.choice.c1.choice.systemInformationBlockType1,
 		 sizeof(SystemInformationBlockType1_t));
 	  LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
 	  decode_SIB1(Mod_id,eNB_index);
 	}
-      }
-      break;
+	break;
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
-	if ((frame %8) == 1) { 
-	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
-	  memcpy((void*)si[si_window],
-		 (void*)&bcch_message->message.choice.c1.choice.systemInformation,
-		 sizeof(SystemInformation_t));
-	}
+
+	si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
+	memcpy((void*)si[si_window],
+	       (void*)&bcch_message.message.choice.c1.choice.systemInformation,
+	       sizeof(SystemInformation_t));
 	LOG_D(RRC,"[UE %d] Decoding SI for frame %d, si_window %d\n",Mod_id,frame,si_window);
 	decode_SI(Mod_id,frame,eNB_index,si_window);
       }
@@ -875,10 +999,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	break;
       }
     }
-  
-  if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
-      (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1) && (frame >= Mod_id * 20 + 10)) 
-    SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 0);
+  }
 }	    
 	    
 
@@ -886,8 +1007,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   int i;
-  
-  
+
   LOG_D(RRC,"[UE %d] : Dumping SIB 1 (%d bits)\n",Mod_id,dec_rval.consumed);
 
   //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);
@@ -1166,7 +1286,209 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
   return 0;
 }
 
+// layer 3 filtering only for EUTRA measurements: 36.331, Sec. 5.5.3.2
+void ue_meas_filtering(s32 UE_id, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_vars_ue, u8 abstraction_flag) {
+	float a = UE_rrc_inst->filter_coeff_rsrp; // 'a' in 36.331 Sec. 5.5.3.2
+	float a1 = UE_rrc_inst->filter_coeff_rsrq;
+	float rsrp_db, rsrq_db;
+	u8 eNB_offset;
 
+    if(UE_rrc_inst->QuantityConfig[0] != NULL) { // Only consider 1 serving cell (index: 0)
+    	if (UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA != NULL) {
+    		if(UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRP != NULL) {
+
+    		for (eNB_offset = 0;eNB_offset<1+phy_vars_ue->PHY_measurements.n_adj_cells;eNB_offset++) {
+    			//filter_factor = 1/power(2,*UE_rrc_inst[phy_vars_ue->Mod_id].QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRP/4);
+    			if (abstraction_flag == 0) {
+    				rsrp_db = (dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12);
+    				//(dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12)
+        			/*
+        			 *
+        			 phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] = (1.0-a)*phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] + \
+        					a*phy_vars_ue->PHY_measurements.rsrp[eNB_offset];
+        			 */
+    				phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] = (1.0-a)*phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] + \
+    				        					a*rsrp_db;
+
+    			}
+    			LOG_I(PHY,"UE RRC meas RSRP: eNB_offset: %d rsrp_coef: %3.2f filter_coef: %d before L3 filtering: rsrp: %3.1f \t after L3 filtering: rsrp: %3.1f \n ",
+    					eNB_offset,
+    					a,
+    					*UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRP,
+    					/*phy_vars_ue->PHY_measurements.rsrp[eNB_offset],*/
+    					rsrp_db,
+    					phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset]);
+    		}
+    	}
+    	}
+    	else
+        	memcpy((void *)phy_vars_ue->PHY_measurements.rsrp_filtered, (void *)phy_vars_ue->PHY_measurements.rsrp, 7*sizeof(int));
+
+    	if (UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA != NULL) {
+    		if(UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRQ != NULL) {
+
+    		for (eNB_offset = 0;eNB_offset<1+phy_vars_ue->PHY_measurements.n_adj_cells;eNB_offset++) {
+    			if (abstraction_flag == 0) {
+    				rsrq_db = (10*log10(phy_vars_ue->PHY_measurements.rsrq[eNB_offset]))-20;
+    				phy_vars_ue->PHY_measurements.rsrq_filtered[eNB_offset] = (1-a1)*phy_vars_ue->PHY_measurements.rsrq_filtered[eNB_offset] + \
+    					a1*rsrq_db;
+    			}
+    			LOG_I(PHY,"UE RRC meas RSRQ: eNB_offset: %d rsrq_coef: %f3.2 filter_coef: %d before L3 filtering: rsrq: %3.1f \t after L3 filtering: rsrq: %3.1f \n ",
+    					eNB_offset,
+    					a1,
+    					*UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRQ,
+    					rsrq_db,
+    					/* phy_vars_ue->PHY_measurements.rsrq[eNB_offset], */
+    					phy_vars_ue->PHY_measurements.rsrq_filtered[eNB_offset]);
+    		}
+    }
+    }
+    else
+    	memcpy((void *)phy_vars_ue->PHY_measurements.rsrq_filtered, (void *)phy_vars_ue->PHY_measurements.rsrq, 7*sizeof(int));
+
+  }
+}
+
+
+u8 check_trigger_meas_event(u8 i, u8 j, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_vars_ue, Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys, Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt) {
+	u8 eNB_offset;
+	PHY_MEASUREMENTS *phy_meas = &phy_vars_ue->PHY_measurements;
+	u8 currentCellIndex = phy_vars_ue->lte_frame_parms.Nid_cell;
+
+	LOG_I(RRC,"ofn(%d) ocn(%d) hys(%d) ofs(%d) ocs(%d) a3_offset(%d) ttt(%d) \n", \
+				ofn,ocn,hys,ofs,ocs,a3_offset,ttt);
+
+	for (eNB_offset = 0;eNB_offset<1+phy_meas->n_adj_cells;eNB_offset++) {
+
+		if(eNB_offset != currentCellIndex) {
+			if(phy_meas->rsrp_filtered[eNB_offset]+ofn+ocn-hys >= phy_meas->rsrp_filtered[currentCellIndex]+ofs+ocs+a3_offset) {
+				UE_rrc_inst->measTimer[i][j] += 1;
+				LOG_D(RRC,"Entry measTimer[%d][%d]: %d currentCell: %d betterCell: %d \n", \
+						i,j,UE_rrc_inst->measTimer[i][j],currentCellIndex,eNB_offset);
+			}
+			else {
+				UE_rrc_inst->measTimer[i][j] = 0; //Exit condition: Resetting the measurement timer
+				LOG_D(RRC,"Exit measTimer[%d][%d]: %d currentCell: %d betterCell: %d \n", \
+						i,j,UE_rrc_inst->measTimer[i][j],currentCellIndex,eNB_offset);
+			}
+	 		if (UE_rrc_inst->measTimer[i][j] >= ttt)
+	 			return 1;
+		}
+ 	}
+	return 0;
+}
+// Measurement report triggering, described in 36.331 Section 5.5.4.1
+void ue_measurement_report_triggering(u8 Mod_id, u32 frame, UE_RRC_INST *UE_rrc_inst) {
+	u8 i,j;
+	Hysteresis_t	 hys;
+	TimeToTrigger_t	 ttt_ms;
+	Q_OffsetRange_t ofn;
+	Q_OffsetRange_t ocn;
+	Q_OffsetRange_t ofs;
+	Q_OffsetRange_t ocs;
+	long			a3_offset;
+	MeasObjectToAddMod_t measObj;
+	//MeasId_t	 measId;
+	MeasObjectId_t	 measObjId;
+	ReportConfigId_t	 reportConfigId;
+
+	for(i=0 ; i<NB_CNX_UE ; i++) {
+		for(j=0 ; j<MAX_MEAS_ID ; j++) {
+			if(UE_rrc_inst[Mod_id].MeasId[i][j] != NULL) {
+			measObjId = UE_rrc_inst[Mod_id].MeasId[i][j]->measObjectId;
+			reportConfigId = UE_rrc_inst[Mod_id].MeasId[i][j]->reportConfigId;
+			if( /* UE_rrc_inst[Mod_id].MeasId[i][j] != NULL && */ UE_rrc_inst[Mod_id].MeasObj[i][measObjId-1] != NULL) {
+				if(UE_rrc_inst[Mod_id].MeasObj[i][measObjId-1]->measObject.present == MeasObjectToAddMod__measObject_PR_measObjectEUTRA) {
+
+					/* consider any neighboring cell detected on the associated frequency to be
+					 * applicable when the concerned cell is not included in the blackCellsToAddModList
+					 * defined within the VarMeasConfig for this measId */
+
+					//if()
+					if(UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.present == ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA && \
+							UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.present == \
+								ReportConfigEUTRA__triggerType_PR_event) {
+							hys = UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
+							//Check below line for segfault :)
+							ttt_ms = timeToTrigger_ms[UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger];
+							// Freq specific offset of neighbor cell freq
+							ofn = (UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL ? \
+									*UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15 /* Default */);
+							// cellIndividualOffset of neighbor cell - not defined yet
+							ocn = 0;
+							// Freq specific offset of serving cell freq
+							ofs = (UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL ? \
+									*UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15 /* Default */);
+							// cellIndividualOffset of serving cell - not defined yet
+							ocs = 0;
+							a3_offset = UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
+
+							switch (UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present) {
+								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA1:
+									break;
+								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA2:
+									break;
+								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3:
+									if (check_trigger_meas_event(i,j,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id],ofn,ocn,hys,ofs,ocs,a3_offset,ttt_ms) && \
+											UE_rrc_inst[Mod_id].Info[0].State == RRC_CONNECTED) {
+										//trigger measurement reporting procedure (36.331, section 5.5.5)
+										UE_rrc_inst[Mod_id].measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
+										UE_rrc_inst[Mod_id].measReportList[i][j]->measId = UE_rrc_inst[Mod_id].MeasId[i][j]->measId;
+										UE_rrc_inst[Mod_id].measReportList[i][j]->numberOfReportsSent = 0;
+										rrc_ue_generate_MeasurementReport(Mod_id,0,frame,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id]);
+									}
+									else {
+										if(UE_rrc_inst[Mod_id].measReportList[i][j] != NULL)
+											free(UE_rrc_inst[Mod_id].measReportList[i][j]);
+									}
+									LOG_I(RRC,"\n A3 event detected for UE %d in state: %d \n", (int)Mod_id, UE_rrc_inst[Mod_id].Info[0].State);
+									break;
+								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4:
+									break;
+								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA5:
+									break;
+								default:
+									LOG_D(RRC,"Invalid ReportConfigEUTRA__triggerType__event__eventId: %d", \
+											UE_rrc_inst[Mod_id].ReportConfig[i][j]->reportConfig.choice.reportConfigEUTRA.triggerType.present);
+									break;
+							}
+
+					}
+				}
+			}
+			}
+		}
+	}
+
+}
+
+//Below routine implements Measurement Reporting procedure from 36.331 Section 5.5.5
+
+
+
+/*
+ *
+first = 0;
+  last = n - 1;
+  middle = (first+last)/2;
+
+  while( first <= last )
+  {
+     if ( array[middle] < search )
+        first = middle + 1;
+     else if ( array[middle] == search )
+     {
+        printf("%d found at location %d.\n", search, middle+1);
+        break;
+     }
+     else
+        last = middle - 1;
+
+     middle = (first + last)/2;
+  }
+  if ( first > last )
+     printf("Not found! %d is not present in the list.\n", search);
+  */
 
 #ifndef USER_MODE
 EXPORT_SYMBOL(Rlc_info_am_config);

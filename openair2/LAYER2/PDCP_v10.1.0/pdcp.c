@@ -142,7 +142,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
      * Validate incoming sequence number, there might be a problem with PDCP initialization
      */
     if (current_sn > pdcp_calculate_max_seq_num_for_given_size(pdcp->seq_num_size)) {
-      LOG_E(PDCP, "Generated sequence number (%lu) is greater than a sequence number could ever be!\n", current_sn);
+      LOG_E(PDCP, "Generated sequence number (%lu) is greater than a sequence number could ever be! pdcp_array[%d][%d]->seq_num_size: %d\n", current_sn,module_id,rab_id,pdcp->seq_num_size);
       LOG_E(PDCP, "There must be a problem with PDCP initialization, ignoring this PDU...\n");
 
       free_mem_block(pdcp_pdu);

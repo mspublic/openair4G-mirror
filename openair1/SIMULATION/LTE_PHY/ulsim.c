@@ -32,14 +32,14 @@ extern short *ul_ref_sigs[30][2][33];
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
 
-#define MCS_COUNT 24//added for PHY abstraction
+#define MCS_COUNT 23//added for PHY abstraction
 
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 //Added for PHY abstraction
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
-//double sinr_bler_map[MCS_COUNT][2][16];
+double sinr_bler_map[MCS_COUNT][2][9];
 
 extern u16 beta_ack[16],beta_ri[16],beta_cqi[16];
 
@@ -402,11 +402,10 @@ int main(int argc, char **argv) {
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
   u8 extended_prefix_flag=0;
-  int cqi_flag=0,cqi_error,cqi_errors,cqi_crc_falsepositives,cqi_crc_falsenegatives;
 
   int eNB_id = 0;
   int UE_id = 0;
-  unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
+  unsigned char nb_rb=2,first_rb=0,mcs=4,round=0,bundling_flag=1;
   unsigned char l;
   SCM_t channel_model=Rayleigh1_corr;
 
@@ -444,12 +443,12 @@ int main(int argc, char **argv) {
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
   u8 tdd_config=3,frame_type=0;
 
-  u8 N0=30;
+  u8 N0=40;
   double tx_gain=1.0;
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:Q")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -568,9 +567,6 @@ int main(int argc, char **argv) {
 	printf("beta_ri must be in (0..13)\n");
 	exit(-1);
       }
-      break;
-    case 'Q':
-      cqi_flag=1;
       break;
     case 'h':
     default:
@@ -748,7 +744,7 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.mcs     = mcs;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
-  UL_alloc_pdu.cqi_req = cqi_flag&1;
+  UL_alloc_pdu.cqi_req = 0;
   UL_alloc_pdu.cshift  = 0;
   UL_alloc_pdu.dai     = 1;
 
@@ -819,9 +815,7 @@ int main(int argc, char **argv) {
     round_trials[1] = 0;
     round_trials[2] = 0;
     round_trials[3] = 0;
-    cqi_errors=0;
-    cqi_crc_falsepositives=0;
-    cqi_crc_falsenegatives=0;
+
     round=0;
 
     randominit(0);
@@ -907,13 +901,7 @@ int main(int argc, char **argv) {
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb,
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
 #endif	
-
-	  if ((cqi_flag == 1) && (n_frames == 1) ) {
-	    printf("CQI information (O %d) %d %d\n",PHY_vars_UE->ulsch_ue[0]->O,
-		   PHY_vars_UE->ulsch_ue[0]->o[0],PHY_vars_UE->ulsch_ue[0]->o[1]);
-	    print_CQI(PHY_vars_UE->ulsch_ue[0]->o,PHY_vars_UE->ulsch_ue[0]->uci_format,0);
-	  }
-
+	  
 	  if (ulsch_encoding(input_buffer,
 			     &PHY_vars_UE->lte_frame_parms,
 			     PHY_vars_UE->ulsch_ue[0],
@@ -1105,32 +1093,7 @@ int main(int argc, char **argv) {
 			    control_only_flag,
 			    1  // Nbundled 
 			    );
-
-	if (cqi_flag > 0) {
-	  cqi_error = 0;
-	  if (PHY_vars_eNB->ulsch_eNB[0]->Or1 < 32) {
-	    for (i=2;i<4;i++) {
-	      //	      printf("cqi %d : %d (%d)\n",i,PHY_vars_eNB->ulsch_eNB[0]->o[i],PHY_vars_UE->ulsch_ue[0]->o[i]);
-	      if (PHY_vars_eNB->ulsch_eNB[0]->o[i] != PHY_vars_UE->ulsch_ue[0]->o[i])
-		cqi_error = 1;
-	    }
-	  }
-	  else {
-
-	  }
-	  if (cqi_error == 1) {
-	    cqi_errors++;
-	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 1)
-	      cqi_crc_falsepositives++;
-	  }
-	  else {
-	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 0)
-	      cqi_crc_falsenegatives++;
-	  }
-	}
-    //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
       
-	
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
 	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
@@ -1202,12 +1165,6 @@ int main(int argc, char **argv) {
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
     
-    if (cqi_flag >0) {
-      printf("CQI errors %d/%d,false positives %d/%d, CQI false negatives %d/%d\n",
-	     cqi_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
-	     cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
-	     cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
-    }
     fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
 	    SNR,
 	    mcs,

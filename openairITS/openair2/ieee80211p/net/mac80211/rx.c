@@ -269,7 +269,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 	/*
 	 * [PLATA] - When OCBMode is activated, we do not monitor, so we should not enter here...(the SKB should NOT have monitoring info)
 	 */
-	if ((!local->monitors) || ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))) {
+	if ((!local->monitors) || ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
 		if (should_drop_frame(origskb, present_fcs_len)) {
 			dev_kfree_skb(origskb);
 			return NULL;
@@ -453,7 +453,7 @@ ieee80211_rx_h_passive_scan(struct ieee80211_rx_data *rx)
 	 * [PLATA] - we exit immediately if OCB is activated
 	 */
 	if ((likely(!(status->rx_flags & IEEE80211_RX_IN_SCAN) &&
-		   !local->sched_scanning)) || ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))) {
+		   !local->sched_scanning)) || ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 	    printk(KERN_DEBUG "-- -- -- ieee80211_rx_h_passive_scan OCB Activated...exiting immediately\n");
 #endif
@@ -1664,7 +1664,7 @@ ieee80211_drop_unencrypted(struct ieee80211_rx_data *rx, __le16 fc)
 	 * first in this version of PLATA we do not support encryption
 	 * second, the encryption is done at a higher layer
 	 */
-	if ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))
+	if ((rx->local->hw.wiphy->dot11OCBActivated == 1) && (rx->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))
 		return 0;
 
 	/* Drop unencrypted frames if key is set. */
@@ -2119,17 +2119,11 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 	}
 
 	err = __ieee80211_data_to_8023(rx, &port_control);
-	if (unlikely(err)) {
+	if (unlikely(err))
 		return RX_DROP_UNUSABLE;
-	}
 
-	/* [PLATA] Don't need to check for authorization when OCB mode is activated */
-	if ((local->hw.wiphy->dot11OCBActivated == 0) && !(local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
-
-		if (!ieee80211_frame_allowed(rx, fc)) {
-			return RX_DROP_MONITOR;
-		}
-	}
+	if (!ieee80211_frame_allowed(rx, fc))
+		return RX_DROP_MONITOR;
 
 	if (rx->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
 	    unlikely(port_control) && sdata->bss) {
@@ -2779,7 +2773,7 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 		 * same TID from the same station
 		 */
 		rx->skb = skb;
-		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || !(rx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
 			CALL_RXH(ieee80211_rx_h_decrypt)  // [PLATA] - no use for the OCB mode
 			CALL_RXH(ieee80211_rx_h_check_more_data)  // [PLATA] - no use as we do not POLL in OCB
@@ -2787,12 +2781,12 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 		}
 		CALL_RXH(ieee80211_rx_h_sta_process)  // [PLATA]: does not do much but should not interfer..
 
-		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || !(rx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
 		CALL_RXH(ieee80211_rx_h_defragment) // [PLATA] - fragmentation NOT supported so far..
 		}
 
-		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || !(rx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
 		CALL_RXH(ieee80211_rx_h_michael_mic_verify) // [PLATA]: probably not necessary as no encryption
 		}
@@ -2810,7 +2804,7 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx)
 		 * !!!! IMPORTANT !!!! - the previous call will exist in case of data packets (it returns RX_QUEUED and as such jumps to rxh_next)
 		 *                     - so the rest of the code should always be ignored in this version of PLATA (we only support DATA packets)
 		 */
-		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || !(rx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))
+		if((rx->local->hw.wiphy->dot11OCBActivated == 0) || (rx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 		{
 		CALL_RXH(ieee80211_rx_h_ctrl); // [PLATA] - not important, we do not have control frames
 		CALL_RXH(ieee80211_rx_h_mgmt_check)  // [PLATA] - if OCB is activated, ignore as we do not have management frames (we do not monitor using beacons..)
@@ -3277,11 +3271,11 @@ void ieee80211_rx(struct ieee80211_hw *hw, struct sk_buff *skb)
 	 * [PLATA] - we do not support monitoring in this version of PLATA
 	 *         - we should bypass it...
 	 */
-	/*skb = ieee80211_rx_monitor(local, skb, rate);
+	skb = ieee80211_rx_monitor(local, skb, rate);
 	if (!skb) {
 		rcu_read_unlock();
 		return;
-	}*/
+	}
 
 	ieee80211_tpt_led_trig_rx(local,
 			((struct ieee80211_hdr *)skb->data)->frame_control,
@@ -3295,7 +3289,6 @@ void ieee80211_rx(struct ieee80211_hw *hw, struct sk_buff *skb)
 #endif
 	return;
  drop:
-	printk(KERN_DEBUG "-- RX Process at MAC -- Drop\n");
 	kfree_skb(skb);
 }
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32))

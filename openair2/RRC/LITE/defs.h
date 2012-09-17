@@ -66,9 +66,9 @@ typedef enum  {
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n) 
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s ) 
 
-#define MAX_MEAS_OBJ 3
-#define MAX_MEAS_CONFIG 3
-#define MAX_MEAS_ID 3
+#define MAX_MEAS_OBJ 6
+#define MAX_MEAS_CONFIG 6
+#define MAX_MEAS_ID 6
 
 #define PAYLOAD_SIZE_MAX 1024
 
@@ -149,6 +149,11 @@ typedef struct{
 u32 Next_check_frame;
 }SRB_INFO_TABLE_ENTRY;
 
+typedef struct {
+	MeasId_t	 measId;
+	//CellsTriggeredList	cellsTriggeredList;//OPTIONAL
+	u32			 numberOfReportsSent;
+} MEAS_REPORT_LIST;
 
 
 
@@ -195,6 +200,8 @@ typedef struct{
   u8 sizeof_SI[NB_CNX_UE];
   u8 SIB1Status[NB_CNX_UE];
   u8 SIStatus[NB_CNX_UE];
+  double  filter_coeff_rsrp;
+  double filter_coeff_rsrq;
   SystemInformationBlockType1_t *sib1[NB_CNX_UE];
   SystemInformation_t *si[NB_CNX_UE][8];
   SystemInformationBlockType2_t *sib2[NB_CNX_UE];
@@ -218,7 +225,10 @@ typedef struct{
   struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
   struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
   struct MeasIdToAddMod           *MeasId[NB_CNX_UE][MAX_MEAS_ID];
+  MEAS_REPORT_LIST				  *measReportList[NB_CNX_UE][MAX_MEAS_ID];
+  u32							  measTimer[NB_CNX_UE][MAX_MEAS_ID];
   RSRP_Range_t                    s_measure;
+  struct MeasConfig__speedStatePars	  *speedStatePars;
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
   struct SPS_Config               *sps_Config[NB_CNX_UE];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
@@ -233,7 +243,6 @@ char openair_rrc_lite_eNB_init(u8 Mod_id);
 char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag);
-void rrc_top_cleanup(void);
 
 /** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
 @param Mod_id Instance of UE/eNB

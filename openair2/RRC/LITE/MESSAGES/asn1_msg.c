@@ -1279,6 +1279,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
 
   RSRP_Range_t *rsrp;
   struct MeasConfig__speedStatePars *Sparams;
+  QuantityConfig_t	*quantityConfig;
   CellsToAddMod_t *CellToAdd;
   CellsToAddModList_t *CellsToAddModList;
   int i;
@@ -1573,8 +1574,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   ReportConfig_A3->reportConfig.present                                                        = ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.present                                    = ReportConfigEUTRA__triggerType_PR_event;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present              = ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 10;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 0; //Change this
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.reportOnLeave = 1;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger = TimeToTrigger_ms0; // Change this
 
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity                       = ReportConfigEUTRA__triggerQuantity_rsrp;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportQuantity                        = ReportConfigEUTRA__reportQuantity_both;
@@ -1604,7 +1606,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.present                                    = ReportConfigEUTRA__triggerType_PR_event;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present              = ReportConfigEUTRA__triggerType__event__eventId_PR_eventA5;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold1.present = ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold2.present = ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold2.present = ThresholdEUTRA_PR_threshold_RSRQ;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold1.choice.threshold_RSRP = 10;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold2.choice.threshold_RSRP = 10;
 
@@ -1617,10 +1619,20 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_A5);
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;  
  
-  /*
+  quantityConfig = CALLOC(1,sizeof(QuantityConfig_t));
+  memset((void *)quantityConfig,0,sizeof(*quantityConfig));
+  quantityConfig->quantityConfigEUTRA = CALLOC(1,sizeof(struct QuantityConfigEUTRA));
+  memset((void *)quantityConfig->quantityConfigEUTRA,0,sizeof(*quantityConfig->quantityConfigEUTRA));
+  quantityConfig->quantityConfigCDMA2000 = NULL;
+  quantityConfig->quantityConfigGERAN = NULL;
+  quantityConfig->quantityConfigUTRA = NULL;
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = CALLOC(1,sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP)));
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = CALLOC(1,sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
+  *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = FilterCoefficient_fc4;
+  *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = FilterCoefficient_fc4;
+
   rsrp=CALLOC(1,sizeof(RSRP_Range_t));
   *rsrp=20;
-  
 
   Sparams = CALLOC(1,sizeof(*Sparams));
   Sparams->present=MeasConfig__speedStatePars_PR_setup;
@@ -1631,11 +1643,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   Sparams->choice.setup.mobilityStateParameters.t_Evaluation=MobilityStateParameters__t_Evaluation_s60;
   Sparams->choice.setup.mobilityStateParameters.t_HystNormal=MobilityStateParameters__t_HystNormal_s120;
   
-  speedStatePars=Sparams;
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->speedStatePars = Sparams;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure=rsrp;
-  
-  */
-
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->quantityConfig = quantityConfig;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
@@ -1776,8 +1786,11 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult=rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult=rsrq_s;
 #else
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrpResult=rsrp_s;
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrqResult=rsrq_s;
+/*  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrpResult= (long)rsrp_s;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrqResult= (long)rsrq_s;
+  */
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrpResult= 45;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultServCell.rsrqResult= 4;
 #endif
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells=CALLOC(1,sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells));
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->present=MeasResults__measResultNeighCells_PR_measResultListEUTRA;
@@ -1828,15 +1841,19 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
     measresulteutra2->cgi_Info=measresult_cgi2;
     struct MeasResultEUTRA__measResult meas2;
     int rsrp_va=10;
-    meas2.rsrpResult=&rsrp_t;
-    		//&rsrp_va;
-    meas2.rsrqResult=&rsrq_t;
+//    meas2.rsrpResult=(long*)&rsrp_t;
+//    meas2.rsrqResult=(long*)&rsrq_t;
+    //Change this!
+    meas2.rsrpResult = CALLOC(1,sizeof(*meas2.rsrpResult));
+    meas2.rsrqResult = CALLOC(1,sizeof(*meas2.rsrqResult));
+    *meas2.rsrpResult=50;
+    *meas2.rsrqResult=5;
 
     measresulteutra2->measResult=meas2;
 
     ASN_SEQUENCE_ADD(&measResultListEUTRA2->list,measresulteutra2);
 
-    measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
+    measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*measResultListEUTRA2;
 
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,

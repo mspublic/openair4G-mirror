@@ -4,7 +4,6 @@
 #include "PHY/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
-
 #include "emmintrin.h"
 
 #ifdef __SSE3__
@@ -19,6 +18,8 @@ __m128i zeroPMI;
 //#define k1 1000
 #define k1 ((long long int) 512)
 #define k2 ((long long int) (1024-k1))
+
+//extern *UE_RRC_INST = UE_rrc_inst;
 
 #ifdef USER_MODE
 void print_shorts(char *s,__m128i *x) {
@@ -70,7 +71,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
   u8 eNB_offset,nu,l,nushift,k;
   u16 off,off2;
   s16 rx_power_correction;
-
+  PHY_VARS_UE *phyVarsUE = &phy_vars_ue;
 
   // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
   if ( (abstraction_flag==0) && ((phy_vars_ue->lte_frame_parms.ofdm_symbol_size == 128) ||
@@ -104,7 +105,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
       for (l=0,nu=0;l<=(4-phy_vars_ue->lte_frame_parms.Ncp);l+=(4-phy_vars_ue->lte_frame_parms.Ncp),nu=3) {
 	k = (nu + nushift)%6;
-	      printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,nushift,eNB_offset,k);
+	//      printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, Nid2 %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,Nid2,nushift,eNB_offset,k);
 	for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
 	  rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1];
 	  
@@ -160,6 +161,11 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
 
     }
+
+    // A3 event entry condition check
+
+
+
     if (((phy_vars_ue->frame %10) == 0) && 
 	(slot == 1)) {
       if (eNB_offset == 0)
@@ -266,7 +272,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 
     // signal measurements  
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+      for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
 	for (eNB_id=0;eNB_id<phy_vars_ue->n_connected_eNB;eNB_id++) {
 	  phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
 	    (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],

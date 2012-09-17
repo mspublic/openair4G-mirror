@@ -337,7 +337,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
   }
 }
 
-void phy_config_meas_ue(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,unsigned int *adj_cell_id) {
+void phy_config_meas_ue(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u16 *adj_cell_id) {
   
   PHY_MEASUREMENTS *phy_meas = &PHY_vars_UE_g[Mod_id]->PHY_measurements;
   int i;
@@ -348,8 +348,7 @@ void phy_config_meas_ue(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,unsigned int *adj_
     lte_gold(&PHY_vars_UE_g[Mod_id]->lte_frame_parms,PHY_vars_UE_g[Mod_id]->lte_gold_table[i+1],adj_cell_id[i]); 
   }
   phy_meas->n_adj_cells = n_adj_cells;
-  memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
-
+  memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(u16));
 }
 
 void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
@@ -507,7 +506,6 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 }
 
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
-		    int nb_connected_eNB,
 		    u8 abstraction_flag) {
 
   LTE_DL_FRAME_PARMS *frame_parms     = &phy_vars_ue->lte_frame_parms;
@@ -525,7 +523,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 
   msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
 
-  phy_vars_ue->n_connected_eNB = nb_connected_eNB;
+  phy_vars_ue->n_connected_eNB = 1;
 
   for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++){
     phy_vars_ue->total_TBS[eNB_id] = 0;
@@ -696,7 +694,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   
   
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<4; j++) {//frame_parms->nb_antennas_tx; j++) {
+      for (j=0; j<frame_parms->nb_antennas_tx; j++) {//frame_parms->nb_antennas_tx; j++) {
 	ue_common_vars->dl_ch_estimates_time[eNB_id][(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
 	if (ue_common_vars->dl_ch_estimates_time[eNB_id][(j<<1)+i]) {
 #ifdef DEBUG_PHY

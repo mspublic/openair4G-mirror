@@ -46,8 +46,6 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "UTIL/LOG/log.h"
 #define DEBUG_RRC 1
-extern eNB_MAC_INST *eNB_mac_inst;
-extern UE_MAC_INST *UE_mac_inst;
 
 //configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag){
@@ -236,15 +234,6 @@ void openair_rrc_top_init(void){
 #endif //NO_RRM
   Data_to_read=0;
 #endif //USER_MODE
-
-}
-
-void rrc_top_cleanup(void){
-
- if (NB_UE_INST>0)
-   free(UE_rrc_inst);
- if (NB_eNB_INST>0)
-   free(eNB_rrc_inst);
 
 }
 

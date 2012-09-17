@@ -627,7 +627,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
 	/*
 	 * [PLATA] scan_work called here. So we bypass it if OCB is activated
 	 */
-	if ((local->hw.wiphy->dot11OCBActivated == 0) || !(local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))
+	if ((local->hw.wiphy->dot11OCBActivated == 0) || (local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 	  INIT_DELAYED_WORK(&local->scan_work, ieee80211_scan_work);
 
 	ieee80211_work_init(local);

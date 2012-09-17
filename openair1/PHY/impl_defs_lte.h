@@ -62,7 +62,6 @@
 
 #define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
 
-typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {
   normal=0,
@@ -410,9 +409,7 @@ typedef struct {
   /// Number of resource blocks (RB) in UL
   u8 N_RB_UL;
   /// Cell ID                 
-  u16 Nid_cell;               
-  /// MBSFN Area ID
-  u16 Nid_cell_mbsfn;
+  u8 Nid_cell;               
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   u8 Ncp;
   /// Cyclic Prefix for UL (0=Normal CP, 1=Extended CP)
@@ -420,7 +417,7 @@ typedef struct {
   /// shift of pilot position in one RB
   u8 nushift;                
 /// Frame type (0 FDD, 1 TDD)
-  lte_frame_type_t frame_type;
+  u8 frame_type;
   /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   u8 tdd_config;
   /// TDD S-subframe configuration (0-9) 
@@ -760,8 +757,6 @@ typedef enum {
   PUSCH=3,
   RESYNCH=4
 } UE_MODE_t;
-
-
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 

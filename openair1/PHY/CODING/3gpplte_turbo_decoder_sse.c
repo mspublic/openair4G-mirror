@@ -4,15 +4,15 @@
    date: 21.10.2009 
 
    Note: This routine currently requires SSE2,SSSE3 and SSE4.1 equipped computers.  IT WON'T RUN OTHERWISE!
-  
+
    Changelog: 17.11.2009 FK SSE4.1 not required anymore
-              Aug. 2012 new parallelization options for higher speed
 */
 
 ///
 ///
 
 #include "emmintrin.h"
+
 #ifdef __SSE3__
 #include "pmmintrin.h"
 #include "tmmintrin.h"
@@ -42,56 +42,48 @@ static short zero[8]  __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0} ;
 #include <string.h>
 #endif
 
+typedef short llr_t; // internal decoder data is 16-bit fixed
+typedef short channel_t;
 
 
-
-#define MAX 256//16383
+#define MAX 16383
 #define THRES 8192
 
-#define FRAME_LENGTH_MAX 6144+16
+#define FRAME_LENGTH_MAX 6144
 #define STATES 8
 
 #define MAX_DECODING_THREADS 5 //4 for DLSCH, 1 for PBCH
 
 //#define DEBUG_LOGMAP
 
-#define NEW_IMPL 1
- 
-#if NEW_IMPL==2
-typedef char llr_t; // internal decoder data is 16-bit fixed
-typedef char channel_t;
-#else
-typedef short llr_t; // internal decoder data is 16-bit fixed
-typedef short channel_t;
-#endif
 void log_map (llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,unsigned char inst);
 void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic, channel_t* y_parity, unsigned short frame_length,unsigned char term_flag);
-void compute_alpha(llr_t*alpha,llr_t *beta, llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F,unsigned char inst,unsigned char rerun_flag);
-void compute_beta(llr_t*alpha, llr_t* beta,llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F,unsigned char inst,unsigned char rerun_flag);
+void compute_alpha(llr_t*alpha,llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F,unsigned char inst);
+void compute_beta(llr_t* beta,llr_t* m11,llr_t* m10,llr_t* alpha, unsigned short frame_length,unsigned char F,unsigned char inst);
 void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m11,llr_t* m10,llr_t* extrinsic, llr_t* ap, unsigned short frame_length,unsigned char inst);
 
 // global variables
 //
-llr_t alpha_0[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t beta_0[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t m11_0[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t m10_0[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t alpha_1[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t beta_1[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t m11_1[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t m10_1[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t alpha_2[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t beta_2[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t m11_2[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t m10_2[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t alpha_3[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t beta_3[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t m11_3[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t m10_3[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t alpha_4[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t beta_4[(FRAME_LENGTH_MAX)*8] __attribute__ ((aligned(16)));
-llr_t m11_4[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
-llr_t m10_4[(FRAME_LENGTH_MAX)] __attribute__ ((aligned(16)));
+llr_t alpha_0[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_0[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_0[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_0[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_1[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_1[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_1[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_1[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_2[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_2[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_2[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_2[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_3[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_3[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_3[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_3[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_4[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_4[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_4[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_4[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
 llr_t *alpha_g[MAX_DECODING_THREADS] = {alpha_0, alpha_1, alpha_2, alpha_3, alpha_4};
 llr_t *beta_g[MAX_DECODING_THREADS] = {beta_0, beta_1, beta_2, beta_3, beta_4};
 llr_t *m11_g[MAX_DECODING_THREADS] = {m11_0, m11_1, m11_2, m11_3, m11_4};
@@ -101,37 +93,23 @@ llr_t *m10_g[MAX_DECODING_THREADS] = {m10_0, m10_1, m10_2, m10_3, m10_4};
 void log_map(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,unsigned char inst) {
 
 #ifdef DEBUG_LOGMAP
-  msg("log_map, frame_length %d\n",frame_length);
+  msg("log_map\n");
 #endif
-
 
   compute_gamma(m11_g[inst],m10_g[inst],systematic,y_parity,frame_length,term_flag);
 
-  //  printf("Alpha 1\n");
-  compute_alpha(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,0);
+  compute_alpha(alpha_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst);
 
-  //  printf("Alpha 2\n");
-  if (NEW_IMPL>0)  
-    compute_alpha(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,1);
-
-  //  printf("beta (term): %d,%d, %d,%d, %d,%d\n",m11_g[inst][frame_length],m10_g[inst][frame_length],m11_g[inst][1+frame_length],m10_g[inst][1+frame_length],m11_g[inst][2+frame_length],m10_g[inst][2+frame_length]);
-
-  compute_beta(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,0);
-  
-  //  printf("beta (term): %d,%d, %d,%d, %d,%d\n",m11_g[inst][frame_length],m10_g[inst][frame_length],m11_g[inst][1+frame_length],m10_g[inst][1+frame_length],m11_g[inst][2+frame_length],m10_g[inst][2+frame_length]);
-  if (NEW_IMPL>0)  
-    compute_beta(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst,1);
-  
+  compute_beta(beta_g[inst],m11_g[inst],m10_g[inst],alpha_g[inst],frame_length,F,inst);
 
   compute_ext(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],ext,systematic,frame_length,inst);
-
 
 }
 
 void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
 		   unsigned short frame_length,unsigned char term_flag)
 {
-  int k;
+  int k; 
   __m128i *systematic128 = (__m128i *)systematic;
   __m128i *y_parity128   = (__m128i *)y_parity;
   __m128i *m10_128        = (__m128i *)m10;
@@ -142,16 +120,15 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
 #endif
 
   for (k=0;k<frame_length>>3;k++) {
-    m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k],y_parity128[k]),1);
-    m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k],y_parity128[k]),1);
-    
-    //      msg("gamma %d : (%d,%d) -> (%d,%d)\n",k,systematic[k],y_parity[k],m11[k],m10[k]);
+      m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k],y_parity128[k]),1);
+      m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k],y_parity128[k]),1);
+
+      //      msg("gamma %d : (%d,%d) -> (%d,%d)\n",k,systematic[k],y_parity[k],m11[k],m10[k]);
   }
   // Termination
   m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k+term_flag],y_parity128[k]),1);
   m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k+term_flag],y_parity128[k]),1);
 
-  //  printf("gamma (term): %d,%d, %d,%d, %d,%d\n",m11[k<<3],m10[k<<3],m11[1+(k<<3)],m10[1+(k<<3)],m11[2+(k<<3)],m10[2+(k<<3)]);
   _mm_empty();
   _m_empty();
   
@@ -176,14 +153,20 @@ __m128i TOP,BOT,THRES128;
 
 #define L 40
 
-void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,unsigned char inst,unsigned char rerun_flag)
+void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,unsigned char inst)
 {
-  int k,K1;
+  int k,K1,K2,K3,K4,K5,K6,K7;
   __m128i *alpha128=(__m128i *)alpha,*alpha_ptr;
-  __m128i m11_0,m10_0;
+  __m128i m11_0,m10_0,m11_0tmp,m10_0tmp;
+  __m128i m11_1,m10_1,m11_1tmp,m10_1tmp;
+  __m128i m11_2,m10_2,m11_2tmp,m10_2tmp;
+  __m128i m11_3,m10_3,m11_3tmp,m10_3tmp;
+  __m128i m11_4,m10_4,m11_4tmp,m10_4tmp;
+  __m128i m11_5,m10_5,m11_5tmp,m10_5tmp;
+  __m128i m11_6,m10_6,m11_6tmp,m10_6tmp;
+  __m128i m11_7,m10_7,m11_7tmp,m10_7tmp;
   __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
   __m128i new0,new1,new2,new3,new4,new5,new6,new7;
-  __m128i alpha_max;
   //  __m128i mtmp,mtmp2,lsw,msw,new,mb,newcmp;
   //  __m128i TOP,BOT,THRES128;
 
@@ -195,7 +178,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
   llr_t m11,m10;
 
 
-  if (NEW_IMPL == 0) { 
+  if (1) { //(frame_length < SHORT_LENGTH_CW) {
 #ifdef DEBUG_LOGMAP
     msg("compute_alpha(%x,%x,%x,%d,%d,%d)\n",alpha,m_11,m10,frame_length,F,inst);
 #endif
@@ -323,100 +306,114 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
 	  
   }
   else {
+    alpha128[0] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
+    alpha128[1] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[2] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[3] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[4] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[5] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[6] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+    alpha128[7] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
 
     K1 = (frame_length>>3);
-    
-    if (rerun_flag == 0) {
-      alpha128[0] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
-      alpha128[1] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[2] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[3] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[4] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[5] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[6] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[7] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-    }
-    else { 
-      /*
-      alpha128[0] = beta128[0];
-      alpha128[1] = beta128[1];
-      alpha128[2] = beta128[2];
-      alpha128[3] = beta128[3];
-      alpha128[4] = beta128[4];
-      alpha128[5] = beta128[5];
-      alpha128[6] = beta128[6];
-      alpha128[7] = beta128[7];
-      */
-      //      alpha[0] = 0;
-      
+    K2 = K1<<1;
+    K3 = 3*K1;
+    K4 = K1<<2;
+    K5 = 5*K1;
+    K6 = 6*K1;
+    K7 = 7*K1;
 
-      alpha128[0] = _mm_slli_si128(alpha128[frame_length],2);
-      alpha128[1] = _mm_slli_si128(alpha128[1+frame_length],2);
-      alpha128[2] = _mm_slli_si128(alpha128[2+frame_length],2);
-      alpha128[3] = _mm_slli_si128(alpha128[3+frame_length],2);
-      alpha128[4] = _mm_slli_si128(alpha128[4+frame_length],2);
-      alpha128[5] = _mm_slli_si128(alpha128[5+frame_length],2);
-      alpha128[6] = _mm_slli_si128(alpha128[6+frame_length],2);
-      alpha128[7] = _mm_slli_si128(alpha128[7+frame_length],2);
-      alpha[8] = -MAX/2;
-      alpha[16] = -MAX/2;
-      alpha[24] = -MAX/2;
-      alpha[32] = -MAX/2;
-      alpha[40] = -MAX/2;
-      alpha[48] = -MAX/2;
-      alpha[56] = -MAX/2;
-      /*
-      printf("alpha (init, frame_length %d) alpha128[frame_length) = %p\n",frame_length,&alpha128[frame_length]);
-      print_shorts("a0:",&alpha128[0]);
-      print_shorts("a1:",&alpha128[1]);
-      print_shorts("a2:",&alpha128[2]);
-      print_shorts("a3:",&alpha128[3]);
-      print_shorts("a4:",&alpha128[4]);
-      print_shorts("a5:",&alpha128[5]);
-      print_shorts("a6:",&alpha128[6]);
-      print_shorts("a7:",&alpha128[7]);      
-      */
-    }
+    for (k=0;k<(K1+L);k+=8){
 
-    alpha_ptr = &alpha128[0];
-    /*
-    printf("alpha k %d\n",-1);
-    print_shorts("a0:",&alpha_ptr[0]);
-    print_shorts("a1:",&alpha_ptr[1]);
-    print_shorts("a2:",&alpha_ptr[2]);
-    print_shorts("a3:",&alpha_ptr[3]);
-    print_shorts("a4:",&alpha_ptr[4]);
-    print_shorts("a5:",&alpha_ptr[5]);
-    print_shorts("a6:",&alpha_ptr[6]);
-    print_shorts("a7:",&alpha_ptr[7]);
-*/
-    for (k=0;
-	 k<((rerun_flag == 0) ? K1 : L);
-	 k++){
-
-      m11_0=((__m128i*)m_11)[k];  
+      m11_0=((__m128i*)m_11)[k];  // [00 01 02 03 04 05 06 07]
       m10_0=((__m128i*)m_10)[k];
+      m11_1=((__m128i*)m_11)[k+K1];  // [10 11 12 13 14 15 16 17]
+      m10_1=((__m128i*)m_10)[k+K1];
+      m11_2=((__m128i*)m_11)[k+K2];  // [20 21 22 23 24 25 26 27]
+      m10_2=((__m128i*)m_10)[k+K2];
+      m11_3=((__m128i*)m_11)[k+K3];  // [30 31 32 33 34 35 36 37]
+      m10_3=((__m128i*)m_10)[k+K3];
+      m11_4=((__m128i*)m_11)[k+K4];  // [40 41 42 43 44 45 46 47]
+      m10_4=((__m128i*)m_10)[k+K4];
+      m11_5=((__m128i*)m_11)[k+K5];  // [50 51 52 53 54 55 56 57]
+      m10_5=((__m128i*)m_10)[k+K5];
+      m11_6=((__m128i*)m_11)[k+K6];  // [60 61 62 63 64 65 66 67] 
+      m10_6=((__m128i*)m_10)[k+K6];
+      m11_7=((__m128i*)m_11)[k+K7];  // [70 71 72 73 74 75 76 77]
+      m10_7=((__m128i*)m_10)[k+K7];
 
+      m11_0tmp = _mm_unpacklo_epi16(m11_0,m11_1); // [00 10 01 11 02 12 03 13]
+      m11_1    = _mm_unpackhi_epi16(m11_0,m11_1); // [04 14 05 15 06 16 07 17]
+      m11_2tmp = _mm_unpacklo_epi16(m11_2,m11_3); // [20 30 21 31 22 32 23 33]
+      m11_3    = _mm_unpackhi_epi16(m11_2,m11_3); // [24 34 25 35 26 36 27 37]
+      m11_4tmp = _mm_unpacklo_epi16(m11_4,m11_5); // [40 50 41 51 42 52 43 53]
+      m11_5    = _mm_unpackhi_epi16(m11_4,m11_5); // [44 54 45 55 46 56 47 57]
+      m11_6tmp = _mm_unpacklo_epi16(m11_6,m11_7); // [60 70 61 71 62 72 63 73]
+      m11_7    = _mm_unpackhi_epi16(m11_6,m11_7); // [64 74 65 75 66 76 67 77]
 
-      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_0);  // m11
-      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_0);  // m00=-m11    
-      m_b1 = _mm_subs_epi16(alpha_ptr[3],m10_0);  // m01=-m10
-      m_b5 = _mm_adds_epi16(alpha_ptr[3],m10_0);  // m10
-      m_b2 = _mm_adds_epi16(alpha_ptr[5],m10_0);  // m10
-      m_b6 = _mm_subs_epi16(alpha_ptr[5],m10_0);  // m01=-m10
-      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_0);  // m00=-m11
-      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_0);  // m11
+      m11_0      = _mm_unpacklo_epi32(m11_0tmp,m11_2tmp);  // [00 10 20 30 01 11 21 31]
+      m11_2      = _mm_unpackhi_epi32(m11_0tmp,m11_2tmp);  // [02 12 22 32 03 13 23 33]
+      m11_1tmp   = _mm_unpacklo_epi32(m11_1,m11_3);  // [04 14 24 34 05 15 25 35]
+      m11_3      = _mm_unpackhi_epi32(m11_1,m11_3);  // [06 16 26 36 07 17 27 37]
+      m11_4      = _mm_unpacklo_epi32(m11_4tmp,m11_6tmp);  // [40 50 60 70 41 51 61 71]
+      m11_6      = _mm_unpackhi_epi32(m11_4tmp,m11_6tmp);  // [42 52 62 72 43 53 63 73]
+      m11_5tmp   = _mm_unpacklo_epi32(m11_5,m11_7);  // [44 54 64 74 45 55 65 75]
+      m11_7      = _mm_unpackhi_epi32(m11_5,m11_7);  // [46 56 66 76 47 57 67 77]
 
-      new0 = _mm_subs_epi16(alpha_ptr[0],m11_0);  // m00=-m11
-      new4 = _mm_adds_epi16(alpha_ptr[0],m11_0);  // m11
-      new1 = _mm_adds_epi16(alpha_ptr[2],m10_0);  // m10
-      new5 = _mm_subs_epi16(alpha_ptr[2],m10_0);  // m01=-m10
-      new2 = _mm_subs_epi16(alpha_ptr[4],m10_0);  // m01=-m10
-      new6 = _mm_adds_epi16(alpha_ptr[4],m10_0);  // m10
-      new3 = _mm_adds_epi16(alpha_ptr[6],m11_0);  // m11
-      new7 = _mm_subs_epi16(alpha_ptr[6],m11_0);  // m00=-m11
+      m11_0tmp   = _mm_unpacklo_epi64(m11_0,m11_4); // [00 10 20 30 40 50 60 70]
+      m11_1      = _mm_unpackhi_epi64(m11_0,m11_4); // [01 11 21 31 41 51 61 71]
+      m11_2tmp   = _mm_unpacklo_epi64(m11_2,m11_6); // [02 12 22 32 42 52 62 72]
+      m11_3tmp   = _mm_unpackhi_epi64(m11_2,m11_6); // [03 13 23 33 43 53 63 73]
+      m11_4      = _mm_unpacklo_epi64(m11_1tmp,m11_5tmp); // [04 14 24 34 44 54 64 74]
+      m11_5      = _mm_unpackhi_epi64(m11_1tmp,m11_5tmp); // [05 15 25 35 45 55 65 75]
+      m11_6      = _mm_unpacklo_epi64(m11_3,m11_7); // [06 16 26 36 46 56 66 76]
+      m11_7      = _mm_unpackhi_epi64(m11_3,m11_7); // [07 17 27 37 47 57 67 77]
 
-      alpha_ptr += 8;
+      m11_0tmp = _mm_unpacklo_epi16(m11_0,m11_1); // [00 10 01 11 02 12 03 13]
+      m11_1    = _mm_unpackhi_epi16(m11_0,m11_1); // [04 14 05 15 06 16 07 17]
+      m11_2tmp = _mm_unpacklo_epi16(m11_2,m11_3); // [20 30 21 31 22 32 23 33]
+      m11_3    = _mm_unpackhi_epi16(m11_2,m11_3); // [24 34 25 35 26 36 27 37]
+      m11_4tmp = _mm_unpacklo_epi16(m11_4,m11_5); // [40 50 41 51 42 52 43 53]
+      m11_5    = _mm_unpackhi_epi16(m11_4,m11_5); // [44 54 45 55 46 56 47 57]
+      m11_6tmp = _mm_unpacklo_epi16(m11_6,m11_7); // [60 70 61 71 62 72 63 73]
+      m11_7    = _mm_unpackhi_epi16(m11_6,m11_7); // [64 74 65 75 66 76 67 77]
+
+      m10_0      = _mm_unpacklo_epi32(m10_0tmp,m10_2tmp);  // [00 10 20 30 01 11 21 31]
+      m10_2      = _mm_unpackhi_epi32(m10_0tmp,m10_2tmp);  // [02 12 22 32 03 13 23 33]
+      m10_1tmp   = _mm_unpacklo_epi32(m10_1,m10_3);  // [04 14 24 34 05 15 25 35]
+      m10_3      = _mm_unpackhi_epi32(m10_1,m10_3);  // [06 16 26 36 07 17 27 37]
+      m10_4      = _mm_unpacklo_epi32(m10_4tmp,m10_6tmp);  // [40 50 60 70 41 51 61 71]
+      m10_6      = _mm_unpackhi_epi32(m10_4tmp,m10_6tmp);  // [42 52 62 72 43 53 63 73]
+      m10_5tmp   = _mm_unpacklo_epi32(m10_5,m10_7);  // [44 54 64 74 45 55 65 75]
+      m10_7      = _mm_unpackhi_epi32(m10_5,m10_7);  // [46 56 66 76 47 57 67 77]
+
+      m10_0tmp   = _mm_unpacklo_epi64(m10_0,m10_4); // [00 10 20 30 40 50 60 70]
+      m10_1      = _mm_unpackhi_epi64(m10_0,m10_4); // [01 11 21 31 41 51 61 71]
+      m10_2tmp   = _mm_unpacklo_epi64(m10_2,m10_6); // [02 12 22 32 42 52 62 72]
+      m10_3tmp   = _mm_unpackhi_epi64(m10_2,m10_6); // [03 13 23 33 43 53 63 73]
+      m10_4      = _mm_unpacklo_epi64(m10_1tmp,m10_5tmp); // [04 14 24 34 44 54 64 74]
+      m10_5      = _mm_unpackhi_epi64(m10_1tmp,m10_5tmp); // [05 15 25 35 45 55 65 75]
+      m10_6      = _mm_unpacklo_epi64(m10_3,m10_7); // [06 16 26 36 46 56 66 76]
+      m10_7      = _mm_unpackhi_epi64(m10_3,m10_7); // [07 17 27 37 47 57 67 77]
+
+      alpha_ptr = &alpha128[k<<3];
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_0);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_0);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_0);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_0);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_0);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_0);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_0);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_0);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_0);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_0);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_0);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_0);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_0);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_0);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_0);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_0);
 
       alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
       alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
@@ -426,51 +423,202 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
       alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
       alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
- 
-            
-      // compute and subtract maxima
-      alpha_max = _mm_max_epi16(alpha_ptr[0],alpha_ptr[1]);
-      alpha_max = _mm_max_epi16(alpha_max,alpha_ptr[2]);
-      alpha_max = _mm_max_epi16(alpha_max,alpha_ptr[3]);
-      alpha_max = _mm_max_epi16(alpha_max,alpha_ptr[4]);
-      alpha_max = _mm_max_epi16(alpha_max,alpha_ptr[5]);
-      alpha_max = _mm_max_epi16(alpha_max,alpha_ptr[6]);
-      alpha_max = _mm_max_epi16(alpha_max,alpha_ptr[7]);
 
-      alpha_ptr[0] = _mm_subs_epi16(alpha_ptr[0],alpha_max);
-      alpha_ptr[1] = _mm_subs_epi16(alpha_ptr[1],alpha_max);
-      alpha_ptr[2] = _mm_subs_epi16(alpha_ptr[2],alpha_max);
-      alpha_ptr[3] = _mm_subs_epi16(alpha_ptr[3],alpha_max);
-      alpha_ptr[4] = _mm_subs_epi16(alpha_ptr[4],alpha_max);
-      alpha_ptr[5] = _mm_subs_epi16(alpha_ptr[5],alpha_max);
-      alpha_ptr[6] = _mm_subs_epi16(alpha_ptr[6],alpha_max);
-      alpha_ptr[7] = _mm_subs_epi16(alpha_ptr[7],alpha_max);
-      
-                  
-      //      printf("alpha k %d (%d) (%p)\n",k,k<<3,alpha_ptr);
-      /*
-      print_shorts("m11:",&m11_0);
-      print_shorts("m10:",&m10_0);
-      print_shorts("a0:",&alpha_ptr[0]);
-      print_shorts("a1:",&alpha_ptr[1]);
-      print_shorts("a2:",&alpha_ptr[2]);
-      print_shorts("a3:",&alpha_ptr[3]);
-      print_shorts("a4:",&alpha_ptr[4]);
-      print_shorts("a5:",&alpha_ptr[5]);
-      print_shorts("a6:",&alpha_ptr[6]);
-      print_shorts("a7:",&alpha_ptr[7]);      
-      */
-      /*
-      if (rerun_flag == 1) {
-	int i,j;
-	for (j=0;j<8;j++) {
-	  for (i=0;i<8;i++) {
-	    if (((int16_t*)&alpha_ptr[i])[j] == 0)
-	      printf("state %d in pos %d, alpha %d\n", i, k+(j*K1),((int16_t*)&alpha_ptr[i])[j]);
-	  }
-	}
-      }
-      */
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_1);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_1);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_1);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_1);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_1);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_1);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_1);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_1);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_1);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_1);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_1);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_1);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_1);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_1);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_1);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_1);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_2);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_2);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_2);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_2);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_2);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_2);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_2);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_2);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_2);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_2);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_2);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_2);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_2);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_2);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_2);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_2);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr    += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_3);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_3);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_3);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_3);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_3);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_3);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_3);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_3);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_3);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_3);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_3);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_3);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_3);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_3);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_3);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_3);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_4);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_4);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_4);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_4);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_4);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_4);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_4);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_4);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_4);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_4);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_4);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_4);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_4);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_4);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_4);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_4);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_5);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_5);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_5);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_5);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_5);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_5);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_5);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_5);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_5);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_5);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_5);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_5);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_5);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_5);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_5);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_5);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_6);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_6);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_6);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_6);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_6);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_6);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_6);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_6);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_6);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_6);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_6);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_6);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_6);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_6);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_6);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_6);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
+
+      alpha_ptr += 8;
+      m_b0 = _mm_adds_epi16(alpha_ptr[1],m11_7);
+      m_b4 = _mm_subs_epi16(alpha_ptr[1],m11_7);      
+      m_b1 = _mm_adds_epi16(alpha_ptr[3],m10_7);
+      m_b5 = _mm_subs_epi16(alpha_ptr[3],m10_7);
+      m_b2 = _mm_subs_epi16(alpha_ptr[5],m10_7);
+      m_b6 = _mm_adds_epi16(alpha_ptr[5],m10_7);
+      m_b3 = _mm_subs_epi16(alpha_ptr[7],m11_7);
+      m_b7 = _mm_adds_epi16(alpha_ptr[7],m11_7);
+
+      new0 = _mm_subs_epi16(alpha_ptr[0],m11_7);
+      new4 = _mm_adds_epi16(alpha_ptr[0],m11_7);
+      new1 = _mm_subs_epi16(alpha_ptr[2],m10_7);
+      new5 = _mm_adds_epi16(alpha_ptr[2],m10_7);
+      new2 = _mm_adds_epi16(alpha_ptr[4],m10_7);
+      new6 = _mm_subs_epi16(alpha_ptr[4],m10_7);
+      new3 = _mm_adds_epi16(alpha_ptr[6],m11_7);
+      new7 = _mm_subs_epi16(alpha_ptr[6],m11_7);
+
+      alpha_ptr[0] = _mm_max_epi16(m_b0,new0);
+      alpha_ptr[1] = _mm_max_epi16(m_b1,new1);
+      alpha_ptr[2] = _mm_max_epi16(m_b2,new2);
+      alpha_ptr[3] = _mm_max_epi16(m_b3,new3);
+      alpha_ptr[4] = _mm_max_epi16(m_b4,new4);
+      alpha_ptr[5] = _mm_max_epi16(m_b5,new5);
+      alpha_ptr[6] = _mm_max_epi16(m_b6,new6);
+      alpha_ptr[7] = _mm_max_epi16(m_b7,new7);
     }
   }
   _mm_empty();
@@ -479,18 +627,12 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
 
 __m128i new[MAX_DECODING_THREADS],mb[MAX_DECODING_THREADS],oldh[MAX_DECODING_THREADS],oldl[MAX_DECODING_THREADS],THRES128,newcmp[MAX_DECODING_THREADS];
 
-void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,unsigned char inst,unsigned char rerun_flag) {
-  
+void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F,unsigned char inst)
+{
   int k;
-  __m128i m11_128,m10_128;
-  __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  __m128i new0,new1,new2,new3,new4,new5,new6,new7;
 
-  __m128i *beta128,*alpha128,*beta128_i,*beta_ptr;
-  //  __m128i new,mb,oldh,oldl,THRES128,newcp;
-  __m128i beta_max; 
-  llr_t m11,m10,beta0,beta1,beta2,beta3,beta4,beta5,beta6,beta7,beta0_2,beta1_2,beta2_2,beta3_2,beta_m; 
- 
+  __m128i *beta128,*beta128_i;
+  //  __m128i new,mb,oldh,oldl,THRES128,newcmp;
 
 #ifndef __SSE4_1__
   int* newcmp_int;
@@ -502,245 +644,51 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta,m_11,m_10,alpha,frame_length,F,inst);
 #endif
 
-  if (NEW_IMPL==0) { //(frame_length < SHORT_LENGTH_CW) {
-    THRES128 = _mm_set1_epi16(THRES);
-    
-    beta128   = (__m128i*)&beta[(frame_length+3)*STATES];
-    beta128_i = (__m128i*)&beta[0];
-    
-    *beta128 = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
-    // Initialise zero state because of termination
-    
-    
-    // set filler bit positions to 0 zero-state
-    
-    for (k=0;k<F;k++)
-      beta128_i[k] = *beta128;
-    
-    // For from termination bits (same trellis for BETA) downto first filler bit
-    for (k=(frame_length+2);k>=F;k--)
-      {
-	
-	oldh[inst] = _mm_unpackhi_epi16(*beta128,*beta128);
-	oldl[inst] = _mm_unpacklo_epi16(*beta128,*beta128);
-	
-	mb[inst]   = _mm_adds_epi16(oldh[inst],mbot_g[inst][k]);
-	new[inst]  = _mm_adds_epi16(oldl[inst],mtop_g[inst][k]);
-	
-	beta128--;
-	//      *beta128= _mm_max_epi16(new,mb);
-	
-	new[inst] = _mm_max_epi16(new[inst],mb[inst]);
-	//      print_shorts("alpha128",alpha128);
-	
-	newcmp[inst] = _mm_cmpgt_epi16(new[inst],THRES128);
-	
-#ifndef __SSE4_1__
-	newcmp_int = (int*) &newcmp[inst];
-	if (newcmp_int[0]==0 && newcmp_int[1]==0 && newcmp_int[2]==0 && newcmp_int[3]==0) // if any states above THRES normalize
-#else
-	  if (_mm_testz_si128(newcmp[inst],newcmp[inst]))
-#endif
-	    *beta128 = new[inst];
-	  else{
-	    *beta128 = _mm_subs_epi16(new[inst],THRES128);
-	    //	msg("Beta overflow : %d\n",k);
-	  }
-	/*
-	printf("k: %d (m11 %d, m10 %d)\n",k,m_11[k],m_10[k]);
-	print_shorts("mbot:",&mbot_g[inst][k]);
-	print_shorts("mtop:",&mtop_g[inst][k]);
-	print_shorts("beta:",beta128);
-	*/
-      }
-  }
-  else {
+  THRES128 = _mm_set1_epi16(THRES);
 
-    // termination for beta initialization
+  beta128   = (__m128i*)&beta[(frame_length+3)*STATES];
+  beta128_i = (__m128i*)&beta[0];
 
- 
-    m11=m_11[2+frame_length];
-    m10=m_10[2+frame_length];
+  *beta128 = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
+  // Initialise zero state because of termination
 
-    beta0 = -m11;//M0T_TERM;
-    beta1 = m11;//M1T_TERM;
-    m11=m_11[1+frame_length];
-    m10=m_10[1+frame_length];
 
-    beta0_2 = beta0-m11;//+M0T_TERM;
-    beta1_2 = beta0+m11;//+M1T_TERM;
-    beta2_2 = beta1+m10;//M2T_TERM;
-    beta3_2 = beta1-m10;//+M3T_TERM;
-    m11=m_11[frame_length];
-    m10=m_10[frame_length];
+  // set filler bit positions to 0 zero-state
 
-    beta0 = beta0_2-m11;//+M0T_TERM;
-    beta1 = beta0_2+m11;//+M1T_TERM;
-    beta2 = beta1_2+m10;//+M2T_TERM;
-    beta3 = beta1_2-m10;//+M3T_TERM;
-    beta4 = beta2_2-m10;//+M4T_TERM;
-    beta5 = beta2_2+m10;//+M5T_TERM;
-    beta6 = beta3_2+m11;//+M6T_TERM;
-    beta7 = beta3_2-m11;//+M7T_TERM;
-    beta_m = (beta0>beta1) ? beta0 : beta1;
-    beta_m = (beta_m>beta2) ? beta_m : beta2;
-    beta_m = (beta_m>beta3) ? beta_m : beta3;
-    beta_m = (beta_m>beta4) ? beta_m : beta4;
-    beta_m = (beta_m>beta5) ? beta_m : beta5;
-    beta_m = (beta_m>beta6) ? beta_m : beta6;
-    beta_m = (beta_m>beta7) ? beta_m : beta7;
-    beta0=beta0-beta_m;
-    beta1=beta1-beta_m;
-    beta2=beta2-beta_m;
-    beta3=beta3-beta_m;
-    beta4=beta4-beta_m;
-    beta5=beta5-beta_m;
-    beta6=beta6-beta_m;
-    beta7=beta7-beta_m;
-    //    printf("After term, beta %d,%d,%d,%d,%d,%d,%d,%d\n",beta0,beta1,beta2,beta3,beta4,beta5,beta6,beta7);
-    beta_ptr   = (__m128i*)&beta[frame_length<<3];
-    alpha128   = (__m128i*)&alpha[0];
-    if (rerun_flag == 0) {
-      beta_ptr[0] = alpha128[(frame_length)];
-      beta_ptr[1] = alpha128[1+(frame_length)];
-      beta_ptr[2] = alpha128[2+(frame_length)];
-      beta_ptr[3] = alpha128[3+(frame_length)];
-      beta_ptr[4] = alpha128[4+(frame_length)];
-      beta_ptr[5] = alpha128[5+(frame_length)];
-      beta_ptr[6] = alpha128[6+(frame_length)];
-      beta_ptr[7] = alpha128[7+(frame_length)];
-    }
-    else {
-      beta128 = (__m128i*)&beta[0];
-      beta_ptr[0] = _mm_srli_si128(beta128[0],2);
-      beta_ptr[1] = _mm_srli_si128(beta128[1],2);
-      beta_ptr[2] = _mm_srli_si128(beta128[2],2);
-      beta_ptr[3] = _mm_srli_si128(beta128[3],2);
-      beta_ptr[4] = _mm_srli_si128(beta128[4],2);
-      beta_ptr[5] = _mm_srli_si128(beta128[5],2);
-      beta_ptr[6] = _mm_srli_si128(beta128[6],2);
-      beta_ptr[7] = _mm_srli_si128(beta128[7],2);
-    }
-    
-    beta[7+(frame_length<<3)] = beta0;
-    beta[15+(frame_length<<3)] = beta1;
-    beta[23+(frame_length<<3)] = beta2;
-    beta[31+(frame_length<<3)] = beta3;
-    beta[39+(frame_length<<3)] = beta4;
-    beta[47+(frame_length<<3)] = beta5;
-    beta[55+(frame_length<<3)] = beta6;
-    beta[63+(frame_length<<3)] = beta7;
-    /*
-    beta[(frame_length<<3)] = beta0;
-    beta[8+(frame_length<<3)] = beta1;
-    beta[16+(frame_length<<3)] = beta2;
-    beta[24+(frame_length<<3)] = beta3;
-    beta[32+(frame_length<<3)] = beta4;
-    beta[40+(frame_length<<3)] = beta5;
-    beta[48+(frame_length<<3)] = beta6;
-    beta[56+(frame_length<<3)] = beta7;
-    */
-    /*
-    printf("beta k %d (alpha %p)\n",frame_length>>3,&alpha128[(frame_length)]);
-    print_shorts("b0:",&beta_ptr[0]);
-    print_shorts("b1:",&beta_ptr[1]);
-    print_shorts("b2:",&beta_ptr[2]);
-    print_shorts("b3:",&beta_ptr[3]);
-    print_shorts("b4:",&beta_ptr[4]);
-    print_shorts("b5:",&beta_ptr[5]);
-    print_shorts("b6:",&beta_ptr[6]);
-    print_shorts("b7:",&beta_ptr[7]);      
-    */
+  for (k=0;k<F;k++)
+    beta128_i[k] = *beta128;
 
-    
-    for (k=(frame_length>>3)-1;k>=((rerun_flag==0)?0:((frame_length-L)>>3));k--){
-      m11_128=((__m128i*)m_11)[k];  
-      m10_128=((__m128i*)m_10)[k];
 
-      m_b0 = _mm_adds_epi16(beta_ptr[4],m11_128);  //m11
-      m_b1 = _mm_subs_epi16(beta_ptr[4],m11_128);  //m00
-      m_b2 = _mm_subs_epi16(beta_ptr[5],m10_128);  //m01
-      m_b3 = _mm_adds_epi16(beta_ptr[5],m10_128);  //m10
-      m_b4 = _mm_adds_epi16(beta_ptr[6],m10_128);  //m10   
-      m_b5 = _mm_subs_epi16(beta_ptr[6],m10_128);  //m01
-      m_b6 = _mm_subs_epi16(beta_ptr[7],m11_128);  //m00
-      m_b7 = _mm_adds_epi16(beta_ptr[7],m11_128);  //m11
+  for (k=(frame_length+2);k>=F;k--)
+    {
 
-      new0 = _mm_subs_epi16(beta_ptr[0],m11_128);  //m00
-      new1 = _mm_adds_epi16(beta_ptr[0],m11_128);  //m11
-      new2 = _mm_adds_epi16(beta_ptr[1],m10_128);  //m10
-      new3 = _mm_subs_epi16(beta_ptr[1],m10_128);  //m01
-      new4 = _mm_subs_epi16(beta_ptr[2],m10_128);  //m01
-      new5 = _mm_adds_epi16(beta_ptr[2],m10_128);  //m10
-      new6 = _mm_adds_epi16(beta_ptr[3],m11_128);  //m11
-      new7 = _mm_subs_epi16(beta_ptr[3],m11_128);  //m00
+      oldh[inst] = _mm_unpackhi_epi16(*beta128,*beta128);
+      oldl[inst] = _mm_unpacklo_epi16(*beta128,*beta128);
 
-      beta_ptr-=8;
-      
-      beta_ptr[0] = _mm_max_epi16(m_b0,new0);
-      beta_ptr[1] = _mm_max_epi16(m_b1,new1);
-      beta_ptr[2] = _mm_max_epi16(m_b2,new2);
-      beta_ptr[3] = _mm_max_epi16(m_b3,new3);
-      beta_ptr[4] = _mm_max_epi16(m_b4,new4);
-      beta_ptr[5] = _mm_max_epi16(m_b5,new5);
-      beta_ptr[6] = _mm_max_epi16(m_b6,new6);
-      beta_ptr[7] = _mm_max_epi16(m_b7,new7);
+      mb[inst]   = _mm_adds_epi16(oldh[inst],mbot_g[inst][k]);
+      new[inst]  = _mm_adds_epi16(oldl[inst],mtop_g[inst][k]);
+
+      beta128--;
+      //      *beta128= _mm_max_epi16(new,mb);
             
-      beta_max = _mm_max_epi16(beta_ptr[0],beta_ptr[1]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[2]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[3]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[4]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[5]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[6]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[7]);
+      new[inst] = _mm_max_epi16(new[inst],mb[inst]);
+      //      print_shorts("alpha128",alpha128);
 
-      beta_ptr[0] = _mm_subs_epi16(beta_ptr[0],beta_max);
-      beta_ptr[1] = _mm_subs_epi16(beta_ptr[1],beta_max);
-      beta_ptr[2] = _mm_subs_epi16(beta_ptr[2],beta_max);
-      beta_ptr[3] = _mm_subs_epi16(beta_ptr[3],beta_max);
-      beta_ptr[4] = _mm_subs_epi16(beta_ptr[4],beta_max);
-      beta_ptr[5] = _mm_subs_epi16(beta_ptr[5],beta_max);
-      beta_ptr[6] = _mm_subs_epi16(beta_ptr[6],beta_max);
-      beta_ptr[7] = _mm_subs_epi16(beta_ptr[7],beta_max);
-      /*
-      printf("\nbeta k %d (%d)\n",k,(unsigned int)beta_ptr-(unsigned int)beta);
-      if (rerun_flag == 1) {
-	int i,j;
-	for (j=0;j<8;j++) {
-	  for (i=0;i<8;i++) {
-	    if (((int16_t*)&beta_ptr[i])[j] == 0)
-	      printf("state %d in pos %d, beta %d\n", i, k+(j*(frame_length>>3)),((int16_t*)&beta_ptr[i])[j]);
-	  }
-	}
-      } 
-      */     
-      /*
-      printf("beta k %d (%d)\n",k,(unsigned int)beta_ptr-(unsigned int)beta);
-      print_shorts("m11:",&m11_128);
-      print_shorts("m10:",&m10_128);
-      print_shorts("b0:",&beta_ptr[0]);
-      print_shorts("b1:",&beta_ptr[1]);
-      print_shorts("b2:",&beta_ptr[2]);
-      print_shorts("b3:",&beta_ptr[3]);
-      print_shorts("b4:",&beta_ptr[4]);
-      print_shorts("b5:",&beta_ptr[5]);
-      print_shorts("b6:",&beta_ptr[6]);
-      print_shorts("b7:",&beta_ptr[7]);            
+      newcmp[inst] = _mm_cmpgt_epi16(new[inst],THRES128);
 
-      printf("beta k %d (%d)\n",k,(unsigned int)beta_ptr-(unsigned int)beta);
-      print_shorts("m11:",&m11_128);
-      print_shorts("m10:",&m10_128);
-      print_shorts("b0:",&beta_ptr[0]);
-      print_shorts("b1:",&beta_ptr[1]);
-      print_shorts("b2:",&beta_ptr[2]);
-      print_shorts("b3:",&beta_ptr[3]);
-      print_shorts("b4:",&beta_ptr[4]);
-      print_shorts("b5:",&beta_ptr[5]);
-      print_shorts("b6:",&beta_ptr[6]);
-      print_shorts("b7:",&beta_ptr[7]);      
-      */
+#ifndef __SSE4_1__
+      newcmp_int = (int*) &newcmp[inst];
+      if (newcmp_int[0]==0 && newcmp_int[1]==0 && newcmp_int[2]==0 && newcmp_int[3]==0) // if any states above THRES normalize
+#else
+      if (_mm_testz_si128(newcmp[inst],newcmp[inst]))
+#endif
+	*beta128 = new[inst];
+      else{
+	*beta128 = _mm_subs_epi16(new[inst],THRES128);
+	//	msg("Beta overflow : %d\n",k);
+      }
+      
     }
-  }
   _mm_empty();
   _m_empty();
 }
@@ -752,285 +700,282 @@ __m128i m00_max[MAX_DECODING_THREADS],m01_max[MAX_DECODING_THREADS],m10_max[MAX_
 
 void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length,unsigned char inst)
 {
+  int k;
+
+  //  __m128i alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
+  //  __m128i alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
+  //  __m128i tmp0,tmp1,tmp2,tmp3,tmp00,tmp10,tmp20,tmp30;
+  //  __m128i m00_max,m01_max,m10_max,m11_max;
   __m128i *alpha128=(__m128i *)alpha;
   __m128i *alpha128_ptr,*beta128_ptr;
   __m128i *beta128=(__m128i *)beta;
   __m128i *m11_128,*m10_128,*ext_128,*systematic_128;
-  __m128i *alpha_ptr,*beta_ptr;
-  __m128i m00_1,m00_2,m00_3,m00_4;
-  __m128i m01_1,m01_2,m01_3,m01_4;
-  __m128i m10_1,m10_2,m10_3,m10_4;
-  __m128i m11_1,m11_2,m11_3,m11_4;
-  int k;
 
   //
   // LLR computation, 8 consequtive bits per loop
   //
 
   //  msg("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m11,m10,ext,systematic,framelength);
+  for (k=0;k<(frame_length+3);k+=8)
+    {
 
-  if (NEW_IMPL==0) {
-    for (k=0;k<(frame_length+3);k+=8)
-      {
-	
-	alpha128_ptr = &alpha128[k];
-	beta128_ptr  = &beta128[k+1];
-	
-	alpha128_ptr[0] = _mm_shufflelo_epi16(alpha128_ptr[0],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[0] = _mm_shufflehi_epi16(alpha128_ptr[0],_MM_SHUFFLE(1,3,0,2));
-	alpha128_ptr[4]   = _mm_shufflelo_epi16(alpha128_ptr[4],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[4]   = _mm_shufflehi_epi16(alpha128_ptr[4],_MM_SHUFFLE(1,3,0,2));
-	// these are [0 2 1 3 6 4 7 5] 
-	//      print_shorts("a_km1",&alpha128_ptr[0]);
-	
-	alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[0],alpha128_ptr[0]);
-	alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[0],alpha128_ptr[0]);
-	alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[4],alpha128_ptr[4]);
-	alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[4],alpha128_ptr[4]);
-	// these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
-	//      print_shorts("a_km1_top",&alpha_km1_top);      
-	//      print_shorts("a_km1_top",&alpha_km1_bot);      
-	
-	alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	//      print_shorts("a_1",&alpha_1);      
-	//      print_shorts("a_2",&alpha_2);      
-	//      print_shorts("a_3",&alpha_3);      
-	//      print_shorts("a_4",&alpha_4);      
-	
-	beta128_ptr[0] = _mm_shuffle_epi32(beta128_ptr[0],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[0] = _mm_shufflehi_epi16(beta128_ptr[0],_MM_SHUFFLE(2,3,0,1));
-	beta128_ptr[4] = _mm_shuffle_epi32(beta128_ptr[4],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[4] = _mm_shufflehi_epi16(beta128_ptr[4],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 7 6 3 2]
-	//      print_shorts("b",&beta128_ptr[0]);
-	
-	alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[0],beta128_ptr[4]);
-	//      print_shorts("ab_1",&alpha_beta_1);
-	alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
-	//      print_shorts("ab_2",&alpha_beta_2);
-	alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[0],beta128_ptr[4]);
-	alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-	alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
-	alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
-	alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
-	alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
-	
-	
-	
-	
-	/*
-	  print_shorts("alpha_beta_1",&alpha_beta_1);
-	  print_shorts("alpha_beta_2",&alpha_beta_2);
-	  print_shorts("alpha_beta_3",&alpha_beta_3);
-	  print_shorts("alpha_beta_4",&alpha_beta_4);
-	  msg("m00: %d %d %d %d\n",m00_1,m00_2,m00_3,m00_4);
-	  msg("m10: %d %d %d %d\n",m10_1,m10_2,m10_3,m10_4);
-	  msg("m11: %d %d %d %d\n",m11_1,m11_2,m11_3,m11_4);
-	  msg("m01: %d %d %d %d\n",m01_1,m01_2,m01_3,m01_4);
-	*/
-	alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
-	alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_max04[inst],alpha_beta_3[inst]);
-	alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_max04[inst],alpha_beta_4[inst]);
-	// these are the 4 mxy_1 below for k and k+4
-	
-	
-	/*
-	  print_shorts("alpha_beta_max04",&alpha_beta_max04);
-	  msg("%d %d %d %d\n",m00_1,m10_1,m11_1,m01_1);
-	*/
-	
-	
-	// bits 1 + 5
-	
-	alpha128_ptr[1] = _mm_shufflelo_epi16(alpha128_ptr[1],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[1] = _mm_shufflehi_epi16(alpha128_ptr[1],_MM_SHUFFLE(1,3,0,2));
-	alpha128_ptr[5]   = _mm_shufflelo_epi16(alpha128_ptr[5],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[5]   = _mm_shufflehi_epi16(alpha128_ptr[5],_MM_SHUFFLE(1,3,0,2));
-	// these are [0 2 1 3 6 4 7 5] 
-	
-	alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[1],alpha128_ptr[1]);
-	alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[1],alpha128_ptr[1]);
-	alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[5],alpha128_ptr[5]);
-	alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[5],alpha128_ptr[5]);
-	// these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
-	
-	
-	alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	
-	beta128_ptr[1] = _mm_shuffle_epi32(beta128_ptr[1],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[1] = _mm_shufflehi_epi16(beta128_ptr[1],_MM_SHUFFLE(2,3,0,1));
-	beta128_ptr[5] = _mm_shuffle_epi32(beta128_ptr[5],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[5] = _mm_shufflehi_epi16(beta128_ptr[5],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 7 6 3 2]
-	
-	alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[1],beta128_ptr[5]);
-	alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
-	alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[1],beta128_ptr[5]);
-	alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-	alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
-	alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
-	alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
-	alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
-	
-	
-	alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
-	alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_max15[inst],alpha_beta_3[inst]);
-	alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_max15[inst],alpha_beta_4[inst]);
-	
-	// bits 2 + 6
-	
-	
-	alpha128_ptr[2] = _mm_shufflelo_epi16(alpha128_ptr[2],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[2] = _mm_shufflehi_epi16(alpha128_ptr[2],_MM_SHUFFLE(1,3,0,2));
-	alpha128_ptr[6]   = _mm_shufflelo_epi16(alpha128_ptr[6],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[6]   = _mm_shufflehi_epi16(alpha128_ptr[6],_MM_SHUFFLE(1,3,0,2));
-	// these are [0 2 1 3 6 4 7 5] 
-	
-	alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[2],alpha128_ptr[2]);
-	alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[2],alpha128_ptr[2]);
-	alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[6],alpha128_ptr[6]);
-	alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[6],alpha128_ptr[6]);
-	// these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
-	
-	
-	alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	
-	beta128_ptr[2] = _mm_shuffle_epi32(beta128_ptr[2],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[2] = _mm_shufflehi_epi16(beta128_ptr[2],_MM_SHUFFLE(2,3,0,1));
-	beta128_ptr[6] = _mm_shuffle_epi32(beta128_ptr[6],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[6] = _mm_shufflehi_epi16(beta128_ptr[6],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 7 6 3 2]
-	
-	alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[2],beta128_ptr[6]);
-	alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
-	alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[2],beta128_ptr[6]);
-	alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-	alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
-	alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
-	alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
-	alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
-	/*
-	  print_shorts("alpha_beta_1",&alpha_beta_1);
-	  print_shorts("alpha_beta_2",&alpha_beta_2);
-	  print_shorts("alpha_beta_3",&alpha_beta_3);
-	  print_shorts("alpha_beta_4",&alpha_beta_4);
-	*/
-	alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
-	alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_max26[inst],alpha_beta_3[inst]);
-	alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_max26[inst],alpha_beta_4[inst]);
-	
-	
-	//      print_shorts("alpha_beta_max26",&alpha_beta_max26);
-	
-	// bits 3 + 7
-	
-	alpha128_ptr[3] = _mm_shufflelo_epi16(alpha128_ptr[3],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[3] = _mm_shufflehi_epi16(alpha128_ptr[3],_MM_SHUFFLE(1,3,0,2));
-	alpha128_ptr[7]   = _mm_shufflelo_epi16(alpha128_ptr[7],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[7]   = _mm_shufflehi_epi16(alpha128_ptr[7],_MM_SHUFFLE(1,3,0,2));
-	// these are [0 2 1 3 6 4 7 5] 
-	
-	alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[3],alpha128_ptr[3]);
-	alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[3],alpha128_ptr[3]);
-	alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[7],alpha128_ptr[7]);
-	alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[7],alpha128_ptr[7]);
-	// these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
-	
-	
-	alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
-	alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
-	
-	beta128_ptr[3] = _mm_shuffle_epi32(beta128_ptr[3],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[3] = _mm_shufflehi_epi16(beta128_ptr[3],_MM_SHUFFLE(2,3,0,1));
-	beta128_ptr[7] = _mm_shuffle_epi32(beta128_ptr[7],_MM_SHUFFLE(1,3,2,0));
-	beta128_ptr[7] = _mm_shufflehi_epi16(beta128_ptr[7],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 7 6 3 2]
-	
-	alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[3],beta128_ptr[7]);
-	alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
-	alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[3],beta128_ptr[7]);
-	alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
-	// these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-	alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
-	alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
-	alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
-	alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
-	
-	
-	alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
-	alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_max37[inst],alpha_beta_3[inst]);
-	alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_max37[inst],alpha_beta_4[inst]);
-	
-	// transpose alpha_beta matrix
-	/*
-	  print_shorts("alpha_beta_max04",&alpha_beta_max04);
-	  print_shorts("alpha_beta_max15",&alpha_beta_max15);
-	  print_shorts("alpha_beta_max26",&alpha_beta_max26);
-	  print_shorts("alpha_beta_max37",&alpha_beta_max37);
-	*/
-	tmp0[inst] = _mm_unpacklo_epi16(alpha_beta_max04[inst],alpha_beta_max15[inst]);
-	tmp1[inst] = _mm_unpackhi_epi16(alpha_beta_max04[inst],alpha_beta_max15[inst]);
-	tmp2[inst] = _mm_unpacklo_epi16(alpha_beta_max26[inst],alpha_beta_max37[inst]);
-	tmp3[inst] = _mm_unpackhi_epi16(alpha_beta_max26[inst],alpha_beta_max37[inst]);
-	
-	
-	tmp00[inst] = _mm_unpacklo_epi32(tmp0[inst],tmp2[inst]);
-	tmp10[inst] = _mm_unpackhi_epi32(tmp0[inst],tmp2[inst]);
-	tmp20[inst] = _mm_unpacklo_epi32(tmp1[inst],tmp3[inst]);
-	tmp30[inst] = _mm_unpackhi_epi32(tmp1[inst],tmp3[inst]);
-	
-	
-	m00_max[inst] = _mm_unpacklo_epi64(tmp00[inst],tmp20[inst]);
-	m10_max[inst] = _mm_unpackhi_epi64(tmp00[inst],tmp20[inst]);
-	m11_max[inst] = _mm_unpacklo_epi64(tmp10[inst],tmp30[inst]);
-	m01_max[inst] = _mm_unpackhi_epi64(tmp10[inst],tmp30[inst]);
-	
-	/*
-	  print_shorts("m00_max",&m00_max);
-	  print_shorts("m01_max",&m01_max);
-	  print_shorts("m11_max",&m11_max);
-	  print_shorts("m10_max",&m10_max);
-	*/
-	
-	
-	// compute extrinsics for 8 consecutive bits
-	
-	m11_128        = (__m128i*)&m_11[k];
-	m10_128        = (__m128i*)&m_10[k];
-	ext_128        = (__m128i*)&ext[k];
-	systematic_128 = (__m128i*)&systematic[k];
-	
-	m11_max[inst] = _mm_adds_epi16(m11_max[inst],*m11_128);
-	m10_max[inst] = _mm_adds_epi16(m10_max[inst],*m10_128);
-	m00_max[inst] = _mm_subs_epi16(m00_max[inst],*m11_128);
-	m01_max[inst] = _mm_subs_epi16(m01_max[inst],*m10_128);
-	
-	m01_max[inst] = _mm_max_epi16(m01_max[inst],m00_max[inst]);
-	m10_max[inst] = _mm_max_epi16(m11_max[inst],m10_max[inst]);
-	
-	//      print_shorts("m01_max",&m01_max);
-	//      print_shorts("m10_max",&m10_max);
-	
-	
-	
-	*ext_128 = _mm_subs_epi16(m10_max[inst],_mm_adds_epi16(m01_max[inst],*systematic_128));
-	//	print_shorts("ext:",ext_128);
-	/*
-	  if ((((short *)ext_128)[0] > 8192) ||
+      alpha128_ptr = &alpha128[k];
+      beta128_ptr  = &beta128[k+1];
+      
+      alpha128_ptr[0] = _mm_shufflelo_epi16(alpha128_ptr[0],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[0] = _mm_shufflehi_epi16(alpha128_ptr[0],_MM_SHUFFLE(1,3,0,2));
+      alpha128_ptr[4]   = _mm_shufflelo_epi16(alpha128_ptr[4],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[4]   = _mm_shufflehi_epi16(alpha128_ptr[4],_MM_SHUFFLE(1,3,0,2));
+      // these are [0 2 1 3 6 4 7 5] 
+      //      print_shorts("a_km1",&alpha128_ptr[0]);
+      
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[0],alpha128_ptr[0]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[0],alpha128_ptr[0]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[4],alpha128_ptr[4]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[4],alpha128_ptr[4]);
+      // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
+      //      print_shorts("a_km1_top",&alpha_km1_top);      
+      //      print_shorts("a_km1_top",&alpha_km1_bot);      
+
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      //      print_shorts("a_1",&alpha_1);      
+      //      print_shorts("a_2",&alpha_2);      
+      //      print_shorts("a_3",&alpha_3);      
+      //      print_shorts("a_4",&alpha_4);      
+
+      beta128_ptr[0] = _mm_shuffle_epi32(beta128_ptr[0],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[0] = _mm_shufflehi_epi16(beta128_ptr[0],_MM_SHUFFLE(2,3,0,1));
+      beta128_ptr[4] = _mm_shuffle_epi32(beta128_ptr[4],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[4] = _mm_shufflehi_epi16(beta128_ptr[4],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 7 6 3 2]
+      //      print_shorts("b",&beta128_ptr[0]);
+
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[0],beta128_ptr[4]);
+      //      print_shorts("ab_1",&alpha_beta_1);
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
+      //      print_shorts("ab_2",&alpha_beta_2);
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[0],beta128_ptr[4]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
+
+
+
+
+      /*
+	print_shorts("alpha_beta_1",&alpha_beta_1);
+	print_shorts("alpha_beta_2",&alpha_beta_2);
+	print_shorts("alpha_beta_3",&alpha_beta_3);
+	print_shorts("alpha_beta_4",&alpha_beta_4);
+	msg("m00: %d %d %d %d\n",m00_1,m00_2,m00_3,m00_4);
+	msg("m10: %d %d %d %d\n",m10_1,m10_2,m10_3,m10_4);
+	msg("m11: %d %d %d %d\n",m11_1,m11_2,m11_3,m11_4);
+	msg("m01: %d %d %d %d\n",m01_1,m01_2,m01_3,m01_4);
+      */
+      alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_max04[inst],alpha_beta_3[inst]);
+      alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_max04[inst],alpha_beta_4[inst]);
+      // these are the 4 mxy_1 below for k and k+4
+      
+
+      /*
+	print_shorts("alpha_beta_max04",&alpha_beta_max04);
+	msg("%d %d %d %d\n",m00_1,m10_1,m11_1,m01_1);
+      */
+      
+
+      // bits 1 + 5
+
+      alpha128_ptr[1] = _mm_shufflelo_epi16(alpha128_ptr[1],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[1] = _mm_shufflehi_epi16(alpha128_ptr[1],_MM_SHUFFLE(1,3,0,2));
+      alpha128_ptr[5]   = _mm_shufflelo_epi16(alpha128_ptr[5],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[5]   = _mm_shufflehi_epi16(alpha128_ptr[5],_MM_SHUFFLE(1,3,0,2));
+      // these are [0 2 1 3 6 4 7 5] 
+
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[1],alpha128_ptr[1]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[1],alpha128_ptr[1]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[5],alpha128_ptr[5]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[5],alpha128_ptr[5]);
+      // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
+
+
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+
+      beta128_ptr[1] = _mm_shuffle_epi32(beta128_ptr[1],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[1] = _mm_shufflehi_epi16(beta128_ptr[1],_MM_SHUFFLE(2,3,0,1));
+      beta128_ptr[5] = _mm_shuffle_epi32(beta128_ptr[5],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[5] = _mm_shufflehi_epi16(beta128_ptr[5],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 7 6 3 2]
+
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[1],beta128_ptr[5]);
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[1],beta128_ptr[5]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
+
+
+      alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_max15[inst],alpha_beta_3[inst]);
+      alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_max15[inst],alpha_beta_4[inst]);
+
+      // bits 2 + 6
+
+
+      alpha128_ptr[2] = _mm_shufflelo_epi16(alpha128_ptr[2],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[2] = _mm_shufflehi_epi16(alpha128_ptr[2],_MM_SHUFFLE(1,3,0,2));
+      alpha128_ptr[6]   = _mm_shufflelo_epi16(alpha128_ptr[6],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[6]   = _mm_shufflehi_epi16(alpha128_ptr[6],_MM_SHUFFLE(1,3,0,2));
+      // these are [0 2 1 3 6 4 7 5] 
+
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[2],alpha128_ptr[2]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[2],alpha128_ptr[2]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[6],alpha128_ptr[6]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[6],alpha128_ptr[6]);
+      // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
+
+
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+
+      beta128_ptr[2] = _mm_shuffle_epi32(beta128_ptr[2],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[2] = _mm_shufflehi_epi16(beta128_ptr[2],_MM_SHUFFLE(2,3,0,1));
+      beta128_ptr[6] = _mm_shuffle_epi32(beta128_ptr[6],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[6] = _mm_shufflehi_epi16(beta128_ptr[6],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 7 6 3 2]
+
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[2],beta128_ptr[6]);
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[2],beta128_ptr[6]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
+      /*
+	print_shorts("alpha_beta_1",&alpha_beta_1);
+	print_shorts("alpha_beta_2",&alpha_beta_2);
+	print_shorts("alpha_beta_3",&alpha_beta_3);
+	print_shorts("alpha_beta_4",&alpha_beta_4);
+      */
+      alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_max26[inst],alpha_beta_3[inst]);
+      alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_max26[inst],alpha_beta_4[inst]);
+
+      
+      //      print_shorts("alpha_beta_max26",&alpha_beta_max26);
+
+      // bits 3 + 7
+
+      alpha128_ptr[3] = _mm_shufflelo_epi16(alpha128_ptr[3],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[3] = _mm_shufflehi_epi16(alpha128_ptr[3],_MM_SHUFFLE(1,3,0,2));
+      alpha128_ptr[7]   = _mm_shufflelo_epi16(alpha128_ptr[7],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[7]   = _mm_shufflehi_epi16(alpha128_ptr[7],_MM_SHUFFLE(1,3,0,2));
+      // these are [0 2 1 3 6 4 7 5] 
+
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[3],alpha128_ptr[3]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[3],alpha128_ptr[3]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[7],alpha128_ptr[7]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[7],alpha128_ptr[7]);
+      // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
+
+
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+
+      beta128_ptr[3] = _mm_shuffle_epi32(beta128_ptr[3],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[3] = _mm_shufflehi_epi16(beta128_ptr[3],_MM_SHUFFLE(2,3,0,1));
+      beta128_ptr[7] = _mm_shuffle_epi32(beta128_ptr[7],_MM_SHUFFLE(1,3,2,0));
+      beta128_ptr[7] = _mm_shufflehi_epi16(beta128_ptr[7],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 7 6 3 2]
+
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[3],beta128_ptr[7]);
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[3],beta128_ptr[7]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
+      // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
+
+
+      alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_max37[inst],alpha_beta_3[inst]);
+      alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_max37[inst],alpha_beta_4[inst]);
+
+      // transpose alpha_beta matrix
+      /*
+	print_shorts("alpha_beta_max04",&alpha_beta_max04);
+	print_shorts("alpha_beta_max15",&alpha_beta_max15);
+	print_shorts("alpha_beta_max26",&alpha_beta_max26);
+	print_shorts("alpha_beta_max37",&alpha_beta_max37);
+      */
+      tmp0[inst] = _mm_unpacklo_epi16(alpha_beta_max04[inst],alpha_beta_max15[inst]);
+      tmp1[inst] = _mm_unpackhi_epi16(alpha_beta_max04[inst],alpha_beta_max15[inst]);
+      tmp2[inst] = _mm_unpacklo_epi16(alpha_beta_max26[inst],alpha_beta_max37[inst]);
+      tmp3[inst] = _mm_unpackhi_epi16(alpha_beta_max26[inst],alpha_beta_max37[inst]);
+
+
+      tmp00[inst] = _mm_unpacklo_epi32(tmp0[inst],tmp2[inst]);
+      tmp10[inst] = _mm_unpackhi_epi32(tmp0[inst],tmp2[inst]);
+      tmp20[inst] = _mm_unpacklo_epi32(tmp1[inst],tmp3[inst]);
+      tmp30[inst] = _mm_unpackhi_epi32(tmp1[inst],tmp3[inst]);
+
+
+      m00_max[inst] = _mm_unpacklo_epi64(tmp00[inst],tmp20[inst]);
+      m10_max[inst] = _mm_unpackhi_epi64(tmp00[inst],tmp20[inst]);
+      m11_max[inst] = _mm_unpacklo_epi64(tmp10[inst],tmp30[inst]);
+      m01_max[inst] = _mm_unpackhi_epi64(tmp10[inst],tmp30[inst]);
+
+      /*
+	print_shorts("m00_max",&m00_max);
+	print_shorts("m01_max",&m01_max);
+	print_shorts("m11_max",&m11_max);
+	print_shorts("m10_max",&m10_max);
+      */
+
+
+      // compute extrinsics for 8 consecutive bits
+
+      m11_128        = (__m128i*)&m_11[k];
+      m10_128        = (__m128i*)&m_10[k];
+      ext_128        = (__m128i*)&ext[k];
+      systematic_128 = (__m128i*)&systematic[k];
+
+      m11_max[inst] = _mm_adds_epi16(m11_max[inst],*m11_128);
+      m10_max[inst] = _mm_adds_epi16(m10_max[inst],*m10_128);
+      m00_max[inst] = _mm_subs_epi16(m00_max[inst],*m11_128);
+      m01_max[inst] = _mm_subs_epi16(m01_max[inst],*m10_128);
+
+      m01_max[inst] = _mm_max_epi16(m01_max[inst],m00_max[inst]);
+      m10_max[inst] = _mm_max_epi16(m11_max[inst],m10_max[inst]);
+
+      //      print_shorts("m01_max",&m01_max);
+      //      print_shorts("m10_max",&m10_max);
+
+       
+   
+      *ext_128 = _mm_subs_epi16(m10_max[inst],_mm_adds_epi16(m01_max[inst],*systematic_128));
+      /*
+      if ((((short *)ext_128)[0] > 8192) ||
 	  (((short *)ext_128)[1] > 8192) ||
 	  (((short *)ext_128)[2] > 8192) ||
 	  (((short *)ext_128)[3] > 8192) ||
@@ -1038,162 +983,52 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 	  (((short *)ext_128)[5] > 8192) ||
 	  (((short *)ext_128)[6] > 8192) ||
 	  (((short *)ext_128)[7] > 8192)) {
-	  msg("ext overflow %d:",k);
-	  print_shorts("**ext_128",ext_128);
-	  }
-	*/
-
+	msg("ext overflow %d:",k);
+	print_shorts("**ext_128",ext_128);
       }
-  }
-  else {
-
-
-    alpha_ptr = alpha128;
-    beta_ptr = &beta128[8];
-
-
-    for (k=0;k<(frame_length>>3);k++){
-
-      m11_128        = (__m128i*)&m_11[k<<3];
-      m10_128        = (__m128i*)&m_10[k<<3];
-      ext_128        = (__m128i*)&ext[k<<3];
-      systematic_128 = (__m128i*)&systematic[k<<3];
-      /*
-      printf("EXT %d\n",k);
-      print_shorts("a0:",&alpha_ptr[0]);
-      print_shorts("a1:",&alpha_ptr[1]);
-      print_shorts("a2:",&alpha_ptr[2]);
-      print_shorts("a3:",&alpha_ptr[3]);
-      print_shorts("a4:",&alpha_ptr[4]);
-      print_shorts("a5:",&alpha_ptr[5]);
-      print_shorts("a6:",&alpha_ptr[6]);
-      print_shorts("a7:",&alpha_ptr[7]);
-      print_shorts("b0:",&beta_ptr[0]);
-      print_shorts("b1:",&beta_ptr[1]);
-      print_shorts("b2:",&beta_ptr[2]);
-      print_shorts("b3:",&beta_ptr[3]);
-      print_shorts("b4:",&beta_ptr[4]);
-      print_shorts("b5:",&beta_ptr[5]);
-      print_shorts("b6:",&beta_ptr[6]);
-      print_shorts("b7:",&beta_ptr[7]);
-      */      
-      m00_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
-      m11_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
-      m00_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
-      m11_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[3]); //ALPHA_BETA_3m11;
-      m00_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[4]); //ALPHA_BETA_2m00;
-      m11_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[0]); //ALPHA_BETA_2m11;
-      m11_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[4]); //ALPHA_BETA_1m11;
-      m00_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[0]); //ALPHA_BETA_1m00;
-      m01_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[6]); //ALPHA_BETA_4m01;
-      m10_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[2]); //ALPHA_BETA_4m10;
-      m01_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[2]); //ALPHA_BETA_3m01;
-      m10_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[6]); //ALPHA_BETA_3m10;
-      m01_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[1]); //ALPHA_BETA_2m01;
-      m10_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
-      m10_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
-      m01_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
-      /*
-      print_shorts("m11_1:",&m11_1);
-      print_shorts("m11_2:",&m11_2);
-      print_shorts("m11_3:",&m11_3);
-      print_shorts("m11_4:",&m11_4);
-      print_shorts("m00_1:",&m00_1);
-      print_shorts("m00_2:",&m00_2);
-      print_shorts("m00_3:",&m00_3);
-      print_shorts("m00_4:",&m00_4);
-      print_shorts("m10_1:",&m10_1);
-      print_shorts("m10_2:",&m10_2);
-      print_shorts("m10_3:",&m10_3);
-      print_shorts("m10_4:",&m10_4);
-      print_shorts("m01_1:",&m01_1);
-      print_shorts("m01_2:",&m01_2);
-      print_shorts("m01_3:",&m01_3);
-      print_shorts("m01_4:",&m01_4);
-      */
-      m01_1 = _mm_max_epi16(m01_1,m01_2);
-      m01_1 = _mm_max_epi16(m01_1,m01_3);
-      m01_1 = _mm_max_epi16(m01_1,m01_4);
-      m00_1 = _mm_max_epi16(m00_1,m00_2);
-      m00_1 = _mm_max_epi16(m00_1,m00_3);
-      m00_1 = _mm_max_epi16(m00_1,m00_4);
-      m10_1 = _mm_max_epi16(m10_1,m10_2);
-      m10_1 = _mm_max_epi16(m10_1,m10_3);
-      m10_1 = _mm_max_epi16(m10_1,m10_4);
-      m11_1 = _mm_max_epi16(m11_1,m11_2);
-      m11_1 = _mm_max_epi16(m11_1,m11_3);
-      m11_1 = _mm_max_epi16(m11_1,m11_4);
-
-      //      print_shorts("m11_1:",&m11_1);
-      
-      m01_1 = _mm_subs_epi16(m01_1,*m10_128);
-      m00_1 = _mm_subs_epi16(m00_1,*m11_128);
-      m10_1 = _mm_adds_epi16(m10_1,*m10_128);
-      m11_1 = _mm_adds_epi16(m11_1,*m11_128);
-
-      //      print_shorts("m10_1:",&m10_1);
-      //      print_shorts("m11_1:",&m11_1);
-      m01_1 = _mm_max_epi16(m01_1,m00_1);
-      m10_1 = _mm_max_epi16(m10_1,m11_1);
-      //      print_shorts("m01_1:",&m01_1);
-      //      print_shorts("m10_1:",&m10_1);
-
-      *ext_128 = _mm_subs_epi16(m10_1,_mm_adds_epi16(m01_1,*systematic_128));
-      
-      /*
-      print_shorts("ext:",ext_128);
-      print_shorts("m11:",m11_128);
-      print_shorts("m10:",m10_128);
-      print_shorts("m10_1:",&m10_1);
-      print_shorts("m01_1:",&m01_1);
-      print_shorts("syst:",systematic_128);
       */
 
-      alpha_ptr+=8;
-      beta_ptr+=8;
     }
 
-
-  }
   _mm_empty();
   _m_empty();
 
 }
 
-llr_t systematic0_0[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic1_0[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic2_0[6144+16]__attribute__ ((aligned(16)));
-llr_t yparity1_0[6144+8] __attribute__ ((aligned(16)));
-llr_t yparity2_0[6144+8] __attribute__ ((aligned(16)));
-llr_t systematic0_1[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic1_1[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic2_1[6144+16]__attribute__ ((aligned(16)));
-llr_t yparity1_1[6144+8] __attribute__ ((aligned(16)));
-llr_t yparity2_1[6144+8] __attribute__ ((aligned(16)));
-llr_t systematic0_2[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic1_2[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic2_2[6144+16]__attribute__ ((aligned(16)));
-llr_t yparity1_2[6144+8] __attribute__ ((aligned(16)));
-llr_t yparity2_2[6144+8] __attribute__ ((aligned(16)));
-llr_t systematic0_3[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic1_3[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic2_3[6144+16]__attribute__ ((aligned(16)));
-llr_t yparity1_3[6144+8] __attribute__ ((aligned(16)));
-llr_t yparity2_3[6144+8] __attribute__ ((aligned(16)));
-llr_t systematic0_4[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic1_4[6144+16] __attribute__ ((aligned(16)));
-llr_t systematic2_4[6144+16]__attribute__ ((aligned(16)));
-llr_t yparity1_4[6144+8] __attribute__ ((aligned(16)));
-llr_t yparity2_4[6144+8] __attribute__ ((aligned(16)));
-llr_t *systematic0_g[MAX_DECODING_THREADS] = { systematic0_0, systematic0_1, systematic0_2, systematic0_3, systematic0_4};
-llr_t *systematic1_g[MAX_DECODING_THREADS] = { systematic1_0, systematic1_1, systematic1_2, systematic1_3, systematic1_4};
-llr_t *systematic2_g[MAX_DECODING_THREADS] = { systematic2_0, systematic2_1, systematic2_2, systematic2_3, systematic2_4};
-llr_t *yparity1_g[MAX_DECODING_THREADS] = {yparity1_0, yparity1_1, yparity1_2, yparity1_3, yparity1_4};
-llr_t *yparity2_g[MAX_DECODING_THREADS] = {yparity2_0, yparity2_1, yparity2_2, yparity2_3, yparity2_4};
+short systematic0_0[6144+16] __attribute__ ((aligned(16)));
+short systematic1_0[6144+16] __attribute__ ((aligned(16)));
+short systematic2_0[6144+16]__attribute__ ((aligned(16)));
+short yparity1_0[6144+8] __attribute__ ((aligned(16)));
+short yparity2_0[6144+8] __attribute__ ((aligned(16)));
+short systematic0_1[6144+16] __attribute__ ((aligned(16)));
+short systematic1_1[6144+16] __attribute__ ((aligned(16)));
+short systematic2_1[6144+16]__attribute__ ((aligned(16)));
+short yparity1_1[6144+8] __attribute__ ((aligned(16)));
+short yparity2_1[6144+8] __attribute__ ((aligned(16)));
+short systematic0_2[6144+16] __attribute__ ((aligned(16)));
+short systematic1_2[6144+16] __attribute__ ((aligned(16)));
+short systematic2_2[6144+16]__attribute__ ((aligned(16)));
+short yparity1_2[6144+8] __attribute__ ((aligned(16)));
+short yparity2_2[6144+8] __attribute__ ((aligned(16)));
+short systematic0_3[6144+16] __attribute__ ((aligned(16)));
+short systematic1_3[6144+16] __attribute__ ((aligned(16)));
+short systematic2_3[6144+16]__attribute__ ((aligned(16)));
+short yparity1_3[6144+8] __attribute__ ((aligned(16)));
+short yparity2_3[6144+8] __attribute__ ((aligned(16)));
+short systematic0_4[6144+16] __attribute__ ((aligned(16)));
+short systematic1_4[6144+16] __attribute__ ((aligned(16)));
+short systematic2_4[6144+16]__attribute__ ((aligned(16)));
+short yparity1_4[6144+8] __attribute__ ((aligned(16)));
+short yparity2_4[6144+8] __attribute__ ((aligned(16)));
+short *systematic0_g[MAX_DECODING_THREADS] = { systematic0_0, systematic0_1, systematic0_2, systematic0_3, systematic0_4};
+short *systematic1_g[MAX_DECODING_THREADS] = { systematic1_0, systematic1_1, systematic1_2, systematic1_3, systematic1_4};
+short *systematic2_g[MAX_DECODING_THREADS] = { systematic2_0, systematic2_1, systematic2_2, systematic2_3, systematic2_4};
+short *yparity1_g[MAX_DECODING_THREADS] = {yparity1_0, yparity1_1, yparity1_2, yparity1_3, yparity1_4};
+short *yparity2_g[MAX_DECODING_THREADS] = {yparity2_0, yparity2_1, yparity2_2, yparity2_3, yparity2_4};
 
 unsigned char decoder_in_use[MAX_DECODING_THREADS] = {0,0,0,0,0};
 
-unsigned char phy_threegpplte_turbo_decoder(short *y,
+unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 					    unsigned char *decoded_bytes,
 					    unsigned short n,
 					    unsigned short f1,
@@ -1206,16 +1041,15 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   /*  y is a pointer to the input
       decoded_bytes is a pointer to the decoded output
       n is the size in bits of the coded block, with the tail */
-  llr_t ext[n+128],ext2[n+128]  __attribute__((aligned(16)));
-  unsigned int pi[n],*pi_p,*pi2_p,*pi3_p,pi2[n],pi3[n];
+  short ext[n],ext2[n];
+
   //  short systematic0[n],systematic1[n],systematic2[n],yparity1[n],yparity2[n];
   llr_t *yp = y;
-  unsigned int i,j;//,pi;
+  unsigned short i,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
   u8 temp;
-  llr_t tmp2[n],*t_p,*s_p;;
-  int byte_pos[n],bit_pos[n],*byte_pos_p,*bit_pos_p;
+
   if (crc_type > 3) {
     msg("Illegal crc length!\n");
     return 255;
@@ -1235,10 +1069,10 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   }
   
   // zero out all global variables
-  bzero(alpha_g[inst],(FRAME_LENGTH_MAX)*8*sizeof(llr_t));
-  bzero(beta_g[inst],(FRAME_LENGTH_MAX)*8*sizeof(llr_t));
-  bzero(m11_g[inst],(FRAME_LENGTH_MAX)*sizeof(llr_t));
-  bzero(m10_g[inst],(FRAME_LENGTH_MAX)*sizeof(llr_t));
+  bzero(alpha_g[inst],(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
+  bzero(beta_g[inst],(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
+  bzero(m11_g[inst],(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
+  bzero(m10_g[inst],(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
   bzero(systematic0_g[inst],(6144+16)*sizeof(short));
   bzero(systematic1_g[inst],(6144+16)*sizeof(short));
   bzero(systematic2_g[inst],(6144+16)*sizeof(short));
@@ -1247,29 +1081,6 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 
   bzero(mtop_g[inst],6144*sizeof(__m128i));
   bzero(mbot_g[inst],6144*sizeof(__m128i));
-
-  threegpplte_interleaver_reset();
-  pi[0] = 0;
-  bit_pos[0] = 128;
-  byte_pos[0] = 0;
-
-  for (i=1;i<n;i++) {
-    pi[i] = (unsigned int)threegpplte_interleaver(f1,f2,n);
-    bit_pos[i] = 128>>(pi[i]&7);
-    byte_pos[i] = pi[i]>>3;
-  }
-  for (j=0,i=0;i<n;i++,j+=8) {
-
-    if (j>=n)
-      j-=(n-1);
-  
-    pi2[i] = j;
-    //    printf("pi2[%d] = %d\n",i,j);
-  }
-
-  for (i=0;i<n;i++) {
-    pi3[i] = pi2[pi[i]];
-  }
 
   switch (crc_type) {
   case CRC24_A:
@@ -1285,77 +1096,15 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   default:
     crc_len=3;
   }
-
-  if (NEW_IMPL==0) {
-    for (i=0;i<n;i++) {
-      systematic0_g[inst][i] = *yp; yp++;
-      yparity1_g[inst][i] = *yp; yp++;
-      yparity2_g[inst][i] = *yp; yp++;
+  for (i=0;i<n;i++) {
+    systematic0_g[inst][i] = *yp; yp++;
+    yparity1_g[inst][i] = *yp; yp++;
+    yparity2_g[inst][i] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-      msg("Position %d: (%d,%d,%d)\n",i,systematic0_g[inst][i],yparity1_g[inst][i],yparity2_g[inst][i]) ;
+    msg("Position %d: (%d,%d,%d)\n",i,systematic0_g[inst][i],yparity1_g[inst][i],yparity2_g[inst][i]);
 #endif //DEBUG_LOGMAP
-      
-    }
-  }
-  else {  // interleave input 8/16-way
-    for (i=0;i<n;i+=8) {
-      pi2_p = &pi2[i];
-
-      j=pi2_p[0];
-      /*
-      systematic0_g[inst][j] = *yp; yp++;
-      yparity1_g[inst][j] = *yp; yp++;
-      yparity2_g[inst][j] = *yp; yp++;
-      */
-
-
-      systematic0_g[inst][j] = yp[0]; 
-      yparity1_g[inst][j] = yp[1]; 
-      yparity2_g[inst][j] = yp[2];
-
-      j=pi2_p[1];
-      systematic0_g[inst][j] = yp[3]; 
-      yparity1_g[inst][j] = yp[4]; 
-      yparity2_g[inst][j] = yp[5];
-
-      j=pi2_p[2];
-      systematic0_g[inst][j] = yp[6]; 
-      yparity1_g[inst][j] = yp[7]; 
-      yparity2_g[inst][j] = yp[8];
-
-      j=pi2_p[3];
-      systematic0_g[inst][j] = yp[9]; 
-      yparity1_g[inst][j] = yp[10]; 
-      yparity2_g[inst][j] = yp[11];
-
-      j=pi2_p[4];
-      systematic0_g[inst][j] = yp[12]; 
-      yparity1_g[inst][j] = yp[13]; 
-      yparity2_g[inst][j] = yp[14];
-
-      j=pi2_p[5];
-      systematic0_g[inst][j] = yp[15]; 
-      yparity1_g[inst][j] = yp[16]; 
-      yparity2_g[inst][j] = yp[17];
-
-      j=pi2_p[6];
-      systematic0_g[inst][j] = yp[18]; 
-      yparity1_g[inst][j] = yp[19];
-      yparity2_g[inst][j] = yp[20];
-
-      j=pi2_p[7];
-      systematic0_g[inst][j] = yp[21]; 
-      yparity1_g[inst][j] = yp[22]; 
-      yparity2_g[inst][j] = yp[23];
-
-      yp+=24;
-#ifdef DEBUG_LOGMAP
-      msg("Position %d (%d): (%d,%d,%d)\n",i,j,systematic0_g[inst][j],yparity1_g[inst][j],yparity2_g[inst][j]);
-#endif //DEBUG_LOGMAP
-    }
 
   }
-  // Termination
   for (i=n;i<n+3;i++) {
     systematic0_g[inst][i]= *yp; yp++;
     yparity1_g[inst][i] = *yp; yp++;
@@ -1373,171 +1122,57 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 #ifdef DEBUG_LOGMAP
   msg("\n");
 #endif //DEBUG_LOGMAP
-  
-  // do log_map from first parity bit
-  // initial state for alpha (initialized from beta values after the initial state so ...)
-  beta_g[inst][1] = -MAX/2;
-  beta_g[inst][2] = -MAX/2;
-  beta_g[inst][3] = -MAX/2;
-  beta_g[inst][4] = -MAX/2;
-  beta_g[inst][5] = -MAX/2;
-  beta_g[inst][6] = -MAX/2;
-  beta_g[inst][7] = -MAX/2;
 
-  //  printf("LOG_MAP 0\n");
+
+
+  // do log_map from first parity bit
   log_map(systematic0_g[inst],yparity1_g[inst],ext,n,0,F,inst);
 
   while (iteration_cnt++ < max_iterations) {
 
 #ifdef DEBUG_LOGMAP
-    msg("\n*******************ITERATION %d (n %d), ext %p\n\n",iteration_cnt,n,ext);
+   msg("\n*******************ITERATION %d\n\n",iteration_cnt);
 #endif //DEBUG_LOGMAP
 
-    //    threegpplte_interleaver_reset();
-    //    pi=0;
+    threegpplte_interleaver_reset();
+    pi=0;
 
-    if (NEW_IMPL==0) {
-      pi_p=&pi[0];
-      // compute input to second encoder by interleaving extrinsic info
-      
-      for (i=0;i<n;i+=8) { // steady-state portion
-	s_p = &systematic2_g[inst][i];
-	//	systematic2_g[inst][i] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	//      pi              = threegpplte_interleaver(f1,f2,n);
-	s_p[0] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-	s_p[1] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-	s_p[2] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-	s_p[3] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-	s_p[4] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-	s_p[5] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-	s_p[6] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-	s_p[7] = (ext[*pi_p] + systematic0_g[inst][*pi_p]);
-	pi_p++;
-
-      }
-      for (i=n;i<n+3;i++) { // termination
-	systematic2_g[inst][i] = (systematic0_g[inst][i+8]);
-      }
+    // compute input to second encoder by interleaving extrinsic info
+    for (i=0;i<n;i++) { // steady-state portion
+      systematic2_g[inst][i] = (ext[pi] + systematic0_g[inst][pi]);
+      pi              = threegpplte_interleaver(f1,f2,n);
     }
-    else {
-      pi2_p=&pi2[0];
-      for (i=0;i<n;i+=8){
-	t_p = &tmp2[i];
-	//	tmp2[i] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-
-	t_p[0] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-	t_p[1] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-	t_p[2] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-	t_p[3] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-	t_p[4] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-	t_p[5] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-	t_p[6] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-	t_p[7] = (ext[*pi2_p] + systematic0_g[inst][*pi2_p]);
-	pi2_p++;
-      }
-      pi3_p=&pi3[0];
-      pi2_p=&pi2[0];
-      pi_p=&pi[0];
-      for (i=0;i<n;i++) { // steady-state portion
-	systematic2_g[inst][*pi2_p++] = tmp2[*pi_p++];
-	//	systematic2_g[inst][*pi2_p] = (ext[*pi3_p] + systematic0_g[inst][*pi3_p]);  // ext[*pi2[i]] = ext[i]
-#ifdef DEBUG_LOGMAP
-	msg("First half %d: ext %d, systematic0 %d, %d ",i,ext[i],systematic0_g[inst][i],*(pi_p-1));
-	//	    ext[*pi3_p]+systematic0_g[inst][*pi3_p]);
-	if (ext[i]*systematic0_g[inst][i]<=0)
-	  printf("+++++\n");
-	else
-	  printf("\n");
-#endif //DEBUG_LOGMAP
-      }      
+    for (i=n;i<n+3;i++) { // termination
+      systematic2_g[inst][i] = (systematic0_g[inst][i+8]);
     }
     // do log_map from second parity bit    
-    //    printf("LOG_MAP 1\n");
     log_map(systematic2_g[inst],yparity2_g[inst],ext2,n,1,0,inst);
 
 
-    //    threegpplte_interleaver_reset();
-    //    pi=0;
-    if (NEW_IMPL==0) {
-      pi_p=&pi[0];
-      for (i=0;i<n>>3;i++)
-	decoded_bytes[i]=0;
-      // compute input to first encoder and output
-      for (i=0;i<n;i++) {
-	systematic1_g[inst][*pi_p] = (ext2[i] + systematic0_g[inst][*pi_p]);
+    threegpplte_interleaver_reset();
+    pi=0;
+    for (i=0;i<n>>3;i++)
+      decoded_bytes[i]=0;
+    // compute input to first encoder and output
+    for (i=0;i<n;i++) {
+      systematic1_g[inst][pi] = (ext2[i] + systematic0_g[inst][pi]);
 #ifdef DEBUG_LOGMAP
-	msg("Second half %d: ext2[i] %d, systematic2[i] %d (e+s %d)",i,ext2[i],systematic2_g[inst][i],
-	    ext2[i]+systematic2_g[inst][i]);
-	if (systematic2_g[inst][i]*ext2[i]<=0)
-	  printf("+++++\n");
-	else
-	  printf("\n");
+      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0_g[inst][pi],
+	     ext2[i]+systematic2_g[inst][i]);
 #endif //DEBUG_LOGMAP
-	
-	if ((systematic2_g[inst][i] + ext2[i]) > 0)
-	  decoded_bytes[*pi_p>>3] += (1 << (7-(*pi_p&7)));
-      
-	pi_p++;
-      }
-      
-      for (i=n;i<n+3;i++) {
-	systematic1_g[inst][i] = (systematic0_g[inst][i]);
-#ifdef DEBUG_LOGMAP
-	//      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0_g[inst][i],
-	//	     ext2[i]+systematic2_g[inst][i]);
-#endif //DEBUG_LOGMAP
-      }
+
+      if ((systematic2_g[inst][i] + ext2[i]) > 0)
+	decoded_bytes[pi>>3] += (1 << (7-(pi&7)));
+
+      pi              = threegpplte_interleaver(f1,f2,n);
     }
-    else {  //new implementation
-
-
-      //    for (i=0;i<(n>>3);i++)
-      //	decoded_bytes[i]=0;
-      memset(decoded_bytes,0,n>>3);
-      // compute input to first encoder and output
-
-
-      pi_p=&pi[0];
-      pi2_p=&pi2[0];
-      pi3_p=&pi3[0];
-      byte_pos_p=&byte_pos[0];
-      bit_pos_p=&bit_pos[0];
-      for (i=0;i<n;i++) {
-	//	systematic1_g[inst][*pi3_p] = (ext2[i] + systematic0_g[inst][*pi3_p]);
-	systematic1_g[inst][*pi3_p] = ext2[*pi2_p]+systematic0_g[inst][*pi3_p];
+    
+    for (i=n;i<n+3;i++) {
+      systematic1_g[inst][i] = (systematic0_g[inst][i]);
 #ifdef DEBUG_LOGMAP
-	msg("Second half %d: ext2[i] %d, systematic2[i] %d, systmatic0[i] %d",i,ext2[i],systematic2_g[inst][i],systematic0_g[inst][*pi3_p]);
-	if ((systematic2_g[inst][i]*ext2[i])<=0)
-	  printf("+++++\n");
-	else
-	  printf("\n"); 
+      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0_g[inst][i],
+	     ext2[i]+systematic2_g[inst][i]);
 #endif //DEBUG_LOGMAP
-	
-	if (systematic2_g[inst][*pi2_p] > -ext2[*pi2_p])
-	  //	  decoded_bytes[*pi_p>>3] += (1 << (7-(*pi_p&7)));
-	  //	  	  decoded_bytes[*pi_p>>3] |= (128 >> (*pi_p&7));
-	  decoded_bytes[*byte_pos_p] |= *bit_pos_p;
-	pi3_p++;
-	pi2_p++;
-	pi_p++;
-	byte_pos_p++;
-	bit_pos_p++;
-      }      
-
     }
     
 
@@ -1554,7 +1189,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       ((u8 *)&crc)[2] = ((u8 *)&crc)[0];
       ((u8 *)&crc)[0] = temp;
 
-      //      msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
+      //           msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
 
       break;
     case CRC24_B:
@@ -1586,16 +1221,12 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       return(iteration_cnt);
     }
 
-
     // do log_map from first parity bit
-    if (iteration_cnt < max_iterations) {
-      //      printf("LOG_MAP 0\n");
+    if (iteration_cnt < max_iterations)
       log_map(systematic1_g[inst],yparity1_g[inst],ext,n,0,F,inst);
-    }
   }
 
   decoder_in_use[inst] = 0;
-
   return(iteration_cnt);
 }
 
@@ -1648,7 +1279,7 @@ int test_logmap8()
 				      0,        // filler bits
 				      0);       // decoder instance
 
-
+  printf("Number of iterations %d\n",ret);
   for (i=0;i<8;i++)
     printf("output %d => %x (input %x)\n",i,decoded_output[i],test[i]);
 }

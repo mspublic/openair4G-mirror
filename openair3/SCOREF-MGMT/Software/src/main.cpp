@@ -50,7 +50,7 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "mgmt_packet_handler.hpp"
+#include "mgmt_gn_packet_handler.hpp"
 #include "util/mgmt_udp_server.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
@@ -59,7 +59,7 @@ using boost::asio::ip::udp;
 #include "util/mgmt_log.hpp"
 
 void printHelp(string binaryName) {
-	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
+	cerr << binaryName << " <configurationFile> <logFileName>" << endl;
 }
 
 const string CONF_HELP_PARAMETER_STRING = "help";
@@ -67,19 +67,20 @@ const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
 
 int main(int argc, char** argv) {
 	/**
-	 * Log file name parameter is optional
+	 * Configuration file name parameter is necessary, log file
+	 * name parameter is optional
 	 */
 	string logFileName = "";
-	if (argc == 1) {
+	if (argc == 2) {
 		logFileName = "SCOREF-MGMT.log";
-	} else if (argc == 2) {
-		logFileName = string(argv[1]);
+	} else if (argc == 3) {
+		logFileName = string(argv[2]);
 	} else {
 		printHelp(argv[0]);
 		exit(1);
 	}
 
-	Logger logger(logFileName, Logger::TRACE);
+	Logger logger(logFileName, Logger::DEBUG);
 
 #ifdef BOOST_VERSION_1_50
 	/**
@@ -108,22 +109,15 @@ int main(int argc, char** argv) {
 #endif
 
 	ManagementInformationBase mib(logger);
-	PacketHandler* packetHandler = NULL;
-
-	/**
-	 * Prepare the list of configuration files that are going to be parsed
-	 */
-	vector<string> configurationFileVector;
-	configurationFileVector.push_back("IF.MGMT.conf");
-	configurationFileVector.push_back("IF.IHM.conf");
-	Configuration configuration(configurationFileVector, logger);
+	GeonetMessageHandler* packetHandler = NULL;
+	Configuration configuration(argv[1], logger);
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
 	try {
-		configuration.parseConfigurationFiles(mib);
+		configuration.parseConfigurationFile(mib);
 	} catch (Exception& e) {
-		e.updateStackTrace("Cannot parse a configuration file");
+		e.updateStackTrace("Cannot parse configuration file");
 		e.printStackTrace();
 		exit(-1);
 	}
@@ -146,7 +140,7 @@ int main(int argc, char** argv) {
 		 * Allocate aGeonet packet handler
 		 */
 		try {
-			packetHandler = new PacketHandler(mib, logger);
+			packetHandler = new GeonetMessageHandler(mib, logger);
 		} catch (std::bad_alloc& exception) {
 			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
 		} catch (Exception& e) {
@@ -165,7 +159,7 @@ int main(int argc, char** argv) {
 					bool packetHandled = false;
 
 					try {
-						packetHandled = packetHandler->handle(server, rxBuffer);
+						packetHandled = packetHandler->handleGeonetMessage(server, rxBuffer);
 					} catch (std::exception& e) {
 						cerr << e.what() << endl;
 					}

@@ -60,7 +60,7 @@
 #define NETLINK_80211P_GROUP 1
 #define NLCMD_INIT 1
 #define NLCMD_DATA 2
-#define NLCMD_SIZE 1
+#define NLCMD_SIZE 4
 
 /******************************************************************************
  *
@@ -74,13 +74,13 @@
 
 /* Supported channel */
 static struct ieee80211_channel channels = {
-	.band = IEEE80211_BAND_0_8GHZ,
-	.center_freq = 800,
+	.band = IEEE80211_BAND_2GHZ,
+	.center_freq = 2437,
 	.hw_value = 0,
 	.flags = 0,
 	.max_antenna_gain = 3,
-	.max_power = 10,
-	.max_reg_power = 10,
+	.max_power = 20,
+	.max_reg_power = 20,
 	.beacon_found = FALSE,
 	.orig_flags = 0,
 	.orig_mag = 0,
@@ -91,7 +91,7 @@ static struct ieee80211_channel channels = {
 /* Supported bitrate */
 static struct ieee80211_rate bitrates = {
 	.flags = 0,
-	.bitrate = 60, //bitrate in units of 100 Kbps
+	.bitrate = 10, //bitrate in units of 100 Kbps
 	.hw_value = 0,
 	.hw_value_short = 0,
 };/* struct ieee80211_rate */
@@ -100,7 +100,7 @@ static struct ieee80211_rate bitrates = {
 static struct ieee80211_supported_band bands = {
 	.channels = &channels,
 	.bitrates = &bitrates,
-	.band = IEEE80211_BAND_0_8GHZ,
+	.band = IEEE80211_BAND_2GHZ,
 	.n_channels = 1,
 	.n_bitrates = 1,
 	.ht_cap.ht_supported = FALSE,
@@ -119,12 +119,17 @@ enum ieee80211p_rx_flags {
 };
 
 struct ieee80211p_rx_status {
-	u16	data_len;		//frame data length
-	u8	rssi; 			//received power
-	u8	rate; 			//reveived data rate in units of 100 kbps
+	u16	data_len;	//frame data length
+	u8	rssi; //received power
+	u8	rate; //reveived data rate in units og 100 kbps
 	enum ieee80211_band band;
-	u8	flags; 			//RX flags
+	u8	flags; //RX flags
 }; /* struct ieee80211p_rx_status */
+
+struct ieee80211p_rx_buf {
+	struct ieee80211p_rx_status status;
+	char data[IEEE80211_MAX_FRAME_LEN];
+};/* ieee80211_rx_buf */
 
 /*********************
  * Regulatory domain *									
@@ -137,7 +142,7 @@ static struct ieee80211_regdomain regd = {
 	.dfs_region = 0,
 	.reg_rules = {
 		/* start freq / end freq / bandwidth / gain / eirp / flags */
-		REG_RULE(0,6000,40,3,47,0),
+		REG_RULE(0,5000,40,3,47,0),
 	}
 };
 
@@ -163,6 +168,7 @@ struct ieee80211p_priv {
 	/* RX */
 	spinlock_t rxq_lock;
 	struct tasklet_struct rx_tq;
+	bool rx_pending; //RX tasklet pending
 
 	/* Nb of virtual interfaces */
 	int nvifs;

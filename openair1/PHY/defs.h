@@ -28,14 +28,14 @@
 *******************************************************************************/
 
 /*! \file PHY/defs.h
- \brief Top-level defines and structure definitions
- \author R. Knopp, F. Kaltenberger
- \date 2011
- \version 0.1
- \company Eurecom
- \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
- \note
- \warning
+* \brief Top-level defines and structure definitions
+* \author R. Knopp, F. Kaltenberger
+* \date 2011
+* \version 0.1
+* \company Eurecom
+* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+* \note
+* \warning
 */
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
@@ -48,6 +48,7 @@
 #include <math.h>
 //#include <complex.h>
 #ifdef MEX
+#include "/packages/matlab_r2009b/extern/include/mex.h"
 #define msg mexPrintf
 #else
 #define msg printf   
@@ -133,7 +134,6 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 
-#ifdef OPENAIR_LTE
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
 
@@ -167,9 +167,7 @@ typedef struct
 
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
-  
-  /// mbsfn reference symbols
-  unsigned int lte_gold_mbsfn_table[10][3][42];
+
   
   s16 X_u[64][2*839];
 
@@ -290,9 +288,7 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
   LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
-  // For abstraction-purposes only
   u8               sr[10];
-  u8               pucch_sel[10];
   u8               pucch_payload[22];
 
   UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -300,9 +296,7 @@ typedef struct
   /// cell-specific reference symbols
   unsigned int lte_gold_table[7][20][2][14];
 
-/// mbsfn reference symbols
-  unsigned int lte_gold_mbsfn_table[10][3][42];
-  
+
   s16 X_u[64][2*839];
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -389,17 +383,22 @@ typedef struct
 
 } PHY_VARS_UE;
 
-
-
 #include "PHY/INIT/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"
 #include "PHY/MODULATION/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
+
+#ifndef OPENAIR_LTE
+#include "PHY/TRANSPORT/defs.h"
+#include "PHY/ESTIMATION/defs.h"
+#else //OPENAIR_LTE
 #include "PHY/LTE_ESTIMATION/defs.h"
-
-#include "SIMULATION/ETH_TRANSPORT/defs.h"
+  //#include "PHY/LTE_REFSIG/defs.h"
+  //#include "PHY/LTE_TRANSPORT/defs.h"
 #endif //OPENAIR_LTE
-
+//#ifdef USER_MODE
+#include "SIMULATION/ETH_TRANSPORT/defs.h"
+  //#endif
 #endif //  __PHY_DEFS__H__
 
 

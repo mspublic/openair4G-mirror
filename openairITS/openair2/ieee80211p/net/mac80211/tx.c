@@ -285,6 +285,9 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 	if (unlikely(info->flags & IEEE80211_TX_CTL_INJECTED))
 		return TX_CONTINUE;
 
+	/*
+	 * [PLATA] - ensure that we are NEVER scanning in OCB mode.
+	 */
 	if (unlikely(test_bit(SCAN_SW_SCANNING, &tx->local->scanning)) &&
 	    test_bit(SDATA_STATE_OFFCHANNEL, &tx->sdata->state) &&
 	    !ieee80211_is_probe_req(hdr->frame_control) &&
@@ -308,33 +311,40 @@ ieee80211_tx_h_check_assoc(struct ieee80211_tx_data *tx)
 	if (tx->sdata->vif.type == NL80211_IFTYPE_MESH_POINT)
 		return TX_CONTINUE;
 
+	/*
+	 * [PLATA] - double check here..not sure..
+	 */
 	if (tx->flags & IEEE80211_TX_PS_BUFFERED)
 		return TX_CONTINUE;
 
-	if (tx->sta)
+	// check only if OCB is not activated
+
+	if (tx->sta && ((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)))
 		assoc = test_sta_flag(tx->sta, WLAN_STA_ASSOC);
 
+	/*
+	 * [PLATA] - in UNICAST MODE (only) - it will be very ' likely' and we should accept it
+	 */
 	if (likely(tx->flags & IEEE80211_TX_UNICAST)) {
 		if (unlikely(!assoc &&
-			     ieee80211_is_data(hdr->frame_control))) {
+			     ieee80211_is_data(hdr->frame_control) && ((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)))) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
-				printk(KERN_DEBUG "%s: dropped data frame to not "
+			printk(KERN_DEBUG "%s: dropped data frame to not "
 			       "associated station %pM\n",
 			       tx->sdata->name, hdr->addr1);
 #endif /* CONFIG_MAC80211_VERBOSE_DEBUG */
-				I802_DEBUG_INC(tx->local->tx_handlers_drop_not_assoc);
-				return TX_DROP;
+			I802_DEBUG_INC(tx->local->tx_handlers_drop_not_assoc);
+			return TX_DROP;
 		}
 	} else if (unlikely(tx->sdata->vif.type == NL80211_IFTYPE_AP &&
-			    	ieee80211_is_data(hdr->frame_control) &&
-			    	!atomic_read(&tx->sdata->u.ap.num_sta_authorized))) {
+			    ieee80211_is_data(hdr->frame_control) &&
+			    !atomic_read(&tx->sdata->u.ap.num_sta_authorized))) {
 		/*
 		 * No associated STAs - no need to send multicast
 		 * frames.
 		 */
 		return TX_DROP;
 	}
-
     // [PLATA]: to clarify here: if I read well, if I am AD-HOC and BROADCAST, no change are required (no need to be associated...)...,right?
 	return TX_CONTINUE;
 }
@@ -1371,10 +1381,10 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 		res = txh(tx);		\
 		if (res != TX_CONTINUE)	\
 			goto txh_done;	\
-	} while (0)	
+	} while (0)
 
 	// no power saving mode when OCB is activated
-	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || !(tx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  /*
 	   * [PLATA] - not necessary (we do not do Power saving so far)
 	   */
@@ -1384,20 +1394,17 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	/*
 	 * [PLATA] - check that scanning is false, check that if unicast and not assoc, we return true; for broadcast and AD_HOC, it is always true
 	 */
-	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || !(tx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {	
-		CALL_TXH(ieee80211_tx_h_check_assoc);
-	}
+	CALL_TXH(ieee80211_tx_h_check_assoc);
 
 	// no power saving and no key management
-	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || !(tx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {	  
-		CALL_TXH(ieee80211_tx_h_ps_buf); // [PLATA] - bypass as no PS
-	  	CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // [PLATA]  ignoring with the right flags...as we do not encrypt anyways
-	  	CALL_TXH(ieee80211_tx_h_select_key); // [PLATA] -  directly (test OCBActivated..)
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	  CALL_TXH(ieee80211_tx_h_ps_buf); // [PLATA] - bypass as no PS
+	  CALL_TXH(ieee80211_tx_h_check_control_port_protocol); // [PLATA]  ignoring with the right flags...as we do not encrypt anyways
+	  CALL_TXH(ieee80211_tx_h_select_key); // [PLATA] -  directly (test OCBActivated..)
 	}
 
-	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL)) {		
-		CALL_TXH(ieee80211_tx_h_rate_ctrl);	
-	}
+	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL))
+		CALL_TXH(ieee80211_tx_h_rate_ctrl);
 
 	if (unlikely(info->flags & IEEE80211_TX_INTFL_RETRANSMISSION)) {
 		__skb_queue_tail(&tx->skbs, tx->skb);
@@ -1405,7 +1412,7 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 		goto txh_done;
 	}
 
-	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || !(tx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  CALL_TXH(ieee80211_tx_h_michael_mic_add); // [PLATA] - ignore
 	}
 	CALL_TXH(ieee80211_tx_h_sequence); // [PLATA] - keep it for statistics, as no impact
@@ -1413,7 +1420,7 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	/* handlers after fragment must be aware of tx info fragmentation! */
 	CALL_TXH(ieee80211_tx_h_stats);  // [PLATA] - keep it for statistics: no impact
 
-	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || !(tx->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if((tx->local->hw.wiphy->dot11OCBActivated == 0) || (tx->local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  CALL_TXH(ieee80211_tx_h_encrypt); // [PLATA] - bypass if with check on OCBActivated
 	}
 	if (!(tx->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL))
@@ -1457,7 +1464,7 @@ static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
 	rcu_read_lock();
 
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
-	printk(KERN_DEBUG "--ieee80211_tx\n");
+	printk(KERN_DEBUG "--ieee80211_tx \n");
 #endif
 
 	/* initialises tx */
@@ -1827,7 +1834,6 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	bool multicast;
 	u32 info_flags = 0;
 	u16 info_id = 0;
-	char wildcard_bssid_init = 0xFF;
 
 	if (unlikely(skb->len < ETH_HLEN)) {
 		ret = NETDEV_TX_OK;
@@ -2008,14 +2014,12 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 		printk(KERN_DEBUG "-- ieee80211_subif_start_xmit - ADHOC mode \n");
 #endif
-		//[PLATA]: bug fix, & IEEE80211_HW_DOT11OCB_SUPPORTED insted of &= and 
-		//[PLATA]: changes made in tx.c, rx.c, iface.c, cfg.c and main.c
-		if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+		if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 		  printk(KERN_DEBUG "-- -- ieee80211_subif_start_xmit - OCB Enable \n");
 #endif
-		memset(hdr.addr3,wildcard_bssid_init,ETH_ALEN); //[PLATA]: bug fix, memset to be used instead of memcpy  		
-		//fc |=  cpu_to_le16(~IEEE80211_FCTL_FROMDS | ~IEEE80211_FCTL_TODS); // [PLATA] we make sure that FROMDS and TODS are both 0
+		  memcpy(hdr.addr3, 0xFFFFFF, ETH_ALEN); // [PLATA]: here, we add that we have a clause on the OCB; by default - wildcardBSSID on 48 bits
+		  fc |=  cpu_to_le16(~IEEE80211_FCTL_FROMDS | ~IEEE80211_FCTL_TODS); // [PLATA] we make sure that FROMDS and TODS are both 0
 		}
 		else
 			memcpy(hdr.addr3, sdata->u.ibss.bssid, ETH_ALEN);
@@ -2039,7 +2043,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 			/*
 			 * [PLATA] if in OCB mode, we are implicitely authorized
 			 */
-			if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+			if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 				printk(KERN_DEBUG "-- -- ieee80211_subif_start_xmit - TX Config for OCB Activated \n");
 #endif
@@ -2048,7 +2052,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 				set_sta_flag(sta,WLAN_STA_AUTHORIZED); // do we need these actually?
 				set_sta_flag(sta,WLAN_STA_AUTH);
 				set_sta_flag(sta,WLAN_STA_ASSOC);
-				set_sta_flag(sta,WLAN_STA_OCB); // [PLATA] we block the STA to be in the OCB mode (as not compatible with none of the other states) - we might have to put it to AUTHORIZED
+				set_sta_flag(sta,WLAN_STA_OCB); // [PLATA] we block the STA t be in the OCB mode (as not compatible with none of the other states) - we might have to put it to AUTHORIZED
 			}
 			else {
 				authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
@@ -2075,25 +2079,21 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	/*
 	 * [PLATA] - should pass here, as we are implicitly authorized.
 	 */
-	/* [PLATA] - Bug fix, unicast frames to unauthorised stations dropped only when OCB is not activated */
-	if ((local->hw.wiphy->dot11OCBActivated == 0) && !(local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
-
-		if (unlikely(!ieee80211_vif_is_mesh(&sdata->vif) &&
-		     	!is_multicast_ether_addr(hdr.addr1) && !authorized &&
-		     	(cpu_to_be16(ethertype) != sdata->control_port_protocol ||
-		      	compare_ether_addr(sdata->vif.addr, skb->data + ETH_ALEN)))) {
+	if (unlikely(!ieee80211_vif_is_mesh(&sdata->vif) &&
+		     !is_multicast_ether_addr(hdr.addr1) && !authorized &&
+		     (cpu_to_be16(ethertype) != sdata->control_port_protocol ||
+		      compare_ether_addr(sdata->vif.addr, skb->data + ETH_ALEN)))) {
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
-			if (net_ratelimit())
-				printk(KERN_DEBUG "%s: dropped frame to %pM"
-			       	" (unauthorized port)\n", dev->name,
-			       		hdr.addr1);
+		if (net_ratelimit())
+			printk(KERN_DEBUG "%s: dropped frame to %pM"
+			       " (unauthorized port)\n", dev->name,
+			       hdr.addr1);
 #endif
 
-			I802_DEBUG_INC(local->tx_handlers_drop_unauth_port);
+		I802_DEBUG_INC(local->tx_handlers_drop_unauth_port);
 
-			ret = NETDEV_TX_OK;
-			goto fail;
-		}
+		ret = NETDEV_TX_OK;
+		goto fail;
 	}
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0))
@@ -2250,7 +2250,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	/*
 	 * [PLATA] - last flag adjustments to bypass the state machine (according to the PLATA Spec.)
 	 */
-	if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 		info_flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
 		info_flags |= IEEE80211_TX_CTL_DONTFRAG;
 		info_flags |= IEEE80211_TX_CTL_NO_ACK;

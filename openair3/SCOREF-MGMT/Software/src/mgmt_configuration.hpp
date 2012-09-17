@@ -72,10 +72,10 @@ class Configuration {
 		/**
 		 * Constructor for Configuration class
 		 *
-		 * @param configurationFileNameList Configuration files that shall be parsed
+		 * @param configurationFile Configuration file name
 		 * @param logger Logger object reference
 		 */
-		Configuration(const vector<string>& confgurationFileNameVector, Logger& logger);
+		Configuration(const string& configurationFile, Logger& logger);
 		/**
 		 * Destructor for Configuration class
 		 */
@@ -83,26 +83,26 @@ class Configuration {
 
 	public:
 		/**
-		 * Parses given set of configuration files and updates MIB accordingly
+		 * Parses configuration file and updates MIB thru passed reference
 		 *
 		 * @param mib Management Information Base reference
 		 * @return true on success, false otherwise
 		 */
-		bool parseConfigurationFiles(ManagementInformationBase& mib);
+		bool parseConfigurationFile(ManagementInformationBase& mib);
 		/**
-		 * Returns configuration file name vector
+		 * Returns configuration file name
 		 *
 		 * @param none
-		 * @return Configuration file name vector
+		 * @return Configuration file name
 		 */
-		const vector<string>& getConfigurationFileVector() const;
+		string getConfigurationFile() const;
 		/**
-		 * Adds a configuration file name to the vector
+		 * Sets configuration file name
 		 *
-		 * @param configurationFileName New configuration file's name
+		 * @param New configuration file name
 		 * @return none
 		 */
-		void addConfigurationFile(const string& configurationFileName);
+		void setConfigurationFile(string configurationFile);
 		/**
 		 * Returns UDP server port number
 		 *
@@ -156,15 +156,6 @@ class Configuration {
 		 */
 		bool parseLine(const string& line, string& parameter, string& value);
 		/**
-		 * Parses IHM configuration IDs of type <configurationItemName|configurationItemID>
-		 *
-		 * @param param Parameter string (input)
-		 * @param parameterString "configurationItemName" part of the parameter string (output)
-		 * @param parameterID "configurationItemID" part of the parameter string (output)
-		 * @return bool true on success, false otherwise
-		 */
-		bool parseParameterId(const string& param, string& parameterString, u_int16_t& parameterId);
-		/**
 		 * Sets configuration parameter's value with given value
 		 *
 		 * @param parameter Parameter name
@@ -175,9 +166,9 @@ class Configuration {
 
 	private:
 		/**
-		 * Configuration files name vector
+		 * Configuration file name
 		 */
-		vector<string> configurationFileNameVector;
+		string configurationFile;
 		/**
 		 * UDP server port number
 		 */

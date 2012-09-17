@@ -10,7 +10,7 @@
     </FADING>
     <SYSTEM_BANDWIDTH_MB>7.68</SYSTEM_BANDWIDTH_MB>
     <SYSTEM_FREQUENCY_GHz>1.9</SYSTEM_FREQUENCY_GHz>
-    <TRANSMISSION_MODE>5</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
+    <TRANSMISSION_MODE>2</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
     <ANTENNA>
       <eNB_ANTENNA>
 	<RX_NOISE_LEVEL_dB>0</RX_NOISE_LEVEL_dB>
@@ -52,31 +52,24 @@
   </TOPOLOGY_CONFIG>
  
   <APPLICATION_CONFIG>
-    <!--DL-->
-    <CUSTOMIZED_TRAFFIC>  	
-      <SOURCE_ID>0</SOURCE_ID>		
-      <DESTINATION_ID>1:2</DESTINATION_ID>
-      <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <IDT_MIN_ms>10</IDT_MIN_ms>
-      <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <SIZE_MIN_byte>2362</SIZE_MIN_byte>
-    </CUSTOMIZED_TRAFFIC>  
+    <PREDEFINED_TRAFFIC>
+      <!-- DL -->
+      <SOURCE_ID>0</SOURCE_ID> <!-- valid formats are: -->					
+      <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
+      <DESTINATION_ID>1:2</DESTINATION_ID> <!-- valid formats are: -->
+    </PREDEFINED_TRAFFIC> 
+    <!-- UL -->
+    <PREDEFINED_TRAFFIC>
+      <SOURCE_ID>1:2</SOURCE_ID> <!-- valid formats are: -->					
+      <APPLICATION_TYPE>scbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
+      <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
+    </PREDEFINED_TRAFFIC>
 
-    <!--UL-->
-    <CUSTOMIZED_TRAFFIC>  	
-      <SOURCE_ID>1:2</SOURCE_ID>		
-      <DESTINATION_ID>0</DESTINATION_ID>
-      <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <IDT_MIN_ms>10</IDT_MIN_ms>
-      <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <SIZE_MIN_byte>1000</SIZE_MIN_byte>
-   </CUSTOMIZED_TRAFFIC>  
   </APPLICATION_CONFIG>
   
-
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>2000</EMULATION_TIME_ms> 
-    <CURVE>disable</CURVE>
+    <EMULATION_TIME_ms>90000</EMULATION_TIME_ms> 
+    
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>

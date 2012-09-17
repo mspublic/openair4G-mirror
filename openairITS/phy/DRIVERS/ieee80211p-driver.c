@@ -66,7 +66,7 @@ static struct ieee80211p_priv drv_priv_data;
  * RX path *
  ***********/
 
-int find_rate_idx(struct ieee80211p_priv *priv,
+u16 find_rate_idx(struct ieee80211p_priv *priv,
 							enum ieee80211_band band, u16 bitrate) {
 
 	/* Data rate index  */
@@ -79,7 +79,7 @@ int find_rate_idx(struct ieee80211p_priv *priv,
 
 	/* We look for the idx of the RX bitrate in the bitrates of the band */
 	for (i=0;i<wiphy->bands[band]->n_bitrates;i++) {
-		if (wiphy->bands[band]->bitrates[i].bitrate == bitrate) {
+		if (wiphy->bands[band]-> bitrates[i].bitrate == bitrate) {
 			rate_idx = i;
 		}
 	}
@@ -101,17 +101,14 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 	struct sk_buff *skb = priv->rx_skb;
 
 	/* RX status */	
-	struct ieee80211_rx_status *rxs = NULL;
-	struct ieee80211p_rx_status *rs = NULL;
+	struct ieee80211_rx_status *rxs;
+	struct ieee80211p_rx_status *rs ;
 
 	/* Netlink header */
 	struct nlmsghdr *nlh = NULL;
 	
-	/* Netlink command */
-	char *nlcmd = NULL;
-
-	/* Received data rate index */
-	int rate_idx = -1;
+		/* Netlink command */
+	char *nlcmd;
 
 	/* lock */	
 	spin_lock(&priv->rxq_lock);
@@ -121,32 +118,25 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 	 ************************/
 
 	if (skb == NULL) {
-        printk(KERN_ERR "ieee80211_tasklet_rx: received skb == NULL\n");
-        goto error;
-    }	
+        	printk(KERN_ERR "ieee80211_tasklet_rx: received skb == NULL\n");
+        	goto error;
+    }
 
 	/* Get the netlink message header */
 	nlh = (struct nlmsghdr *)skb->data;
 
-	/* Keep track of the softmodem pid */
+	/* Keep track of the softmodem pid if not already done */
 	priv->pid_softmodem = (int)nlh->nlmsg_pid;
  
 	/* Check the command of the received msg */
 	nlcmd = (char *)NLMSG_DATA(nlh);	
-	if (*nlcmd == NLCMD_INIT) {
-		//printk(KERN_ERR "ieee80211_tasklet_rx: NLCMD_INIT received / softmodem pid = %d\n",priv->pid_softmodem);
-		dev_kfree_skb_any(skb);	
+	if ((*nlcmd == NLCMD_INIT) || (*nlcmd != NLCMD_DATA)) {
+		printk(KERN_ERR "ieee80211_tasklet_rx: NLCMD received / softmodem pid = %d\n",priv->pid_softmodem);
 		goto error;
 	}
 
 	/* Remove the nlmsg header + netlink command */
 	rs = (struct ieee80211p_rx_status *)skb_pull(skb,sizeof(struct nlmsghdr)+NLCMD_SIZE);
-
-	if (rs == NULL) {
-		printk(KERN_ERR "ieee80211_tasklet_rx: rx status == NULL\n");
-		dev_kfree_skb_any(skb);
-		goto error;
-	}
 
 	/*********
 	 * Stats *
@@ -154,25 +144,16 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 
 	rxs = IEEE80211_SKB_RXCB(skb);
 
-	if (rxs == NULL) {
-		printk(KERN_ERR "ieee80211_tasklet_rx: rx status == NULL\n");
-		dev_kfree_skb_any(skb);
-		goto error;
-	}
-
-	/* Keep track of the stats sent by the softmodem */	
-	rxs->freq = priv->cur_chan->center_freq;
-	rxs->signal = rs->rssi;
+	rxs->freq = priv->cur_chan->center_freq;	//center frequency in MHz
+	rxs->signal = rs->rssi;	//rssi provided by the board in dBm
 	rxs->band = rs->band;
 	rxs->flag = 0;
-	rate_idx = find_rate_idx(priv,rxs->band,rs->rate);
+	rxs->rate_idx = find_rate_idx(priv,rxs->band,rs->rate);
 
-	if (rate_idx == -1) {
+	if (rxs->rate_idx == -1) {
 		printk(KERN_ERR "ieee80211_tasklet_rx: unknown data rate\n");
-		dev_kfree_skb_any(skb);		
+		dev_kfree_skb_any(skb);
 		goto error;
-	} else {
-		rxs->rate_idx = rate_idx; 
 	}
 
 	if (rs->flags & IEEE80211P_MMIC_ERROR) {
@@ -192,7 +173,7 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 	}
 
 	/* Remove the rx status from the skb */
-	skb_pull(skb,sizeof(struct ieee80211p_rx_status));	
+	skb_pull(skb,sizeof(struct ieee80211p_rx_status));
 
 	/* Give skb to the mac80211 driver */
 	ieee80211_rx(priv->hw, skb);
@@ -209,8 +190,8 @@ error:
 
 static void ieee80211p_rx(struct sk_buff *skb) {
 
-	/* We copy the received buffer since we need to modify it */
-	drv_priv_data.rx_skb = skb_copy(skb,GFP_ATOMIC);
+	/* We keep track of the received netlink skb */
+	drv_priv_data.rx_skb = skb;
 
 	/* Schedule a tasklet to handle the receivded skb */
 	tasklet_schedule(&drv_priv_data.rx_tq);
@@ -261,14 +242,13 @@ int ieee80211p_priv_init(struct ieee80211p_priv *priv) {
 	int ret = 0;
 
 	/* Test MAC address */	
-	//char mac_address[ETH_ALEN] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+	char mac_address[ETH_ALEN] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 
 	/******************************
 	 * Initializing hardware data *
 	 ******************************/
 	
-	/* Received signal power is given in dBm */
-	/* hw supports 11.p */	
+	/* Received signal power is given in dBm */	
 	hw->flags = IEEE80211_HW_SIGNAL_DBM | IEEE80211_HW_DOT11OCB_SUPPORTED;
 
 	/* Headroom to reserve in each transmit skb */	
@@ -285,22 +265,21 @@ int ieee80211p_priv_init(struct ieee80211p_priv *priv) {
 	 ***************************/
 	
 	/* We have our own regulatory domain */
-	ret = reg_copy_regd(&wiphy->regd,&regd);
+	//ret = reg_copy_regd(&wiphy->regd,&regd);
 
-	if (ret == -1) {
-		printk(KERN_ERR "ieee80211p_priv_init: reg domain copy failed\n");
-		goto error;
-	}
+	//if (ret == -1) {
+	//	printk(KERN_ERR "ieee80211p_priv_init: reg domain copy failed\n");
+	//	goto error;
+	//}
 	
 	/* Set MAC address to hw->wiphy->perm_addr */
-	//SET_IEEE80211_PERM_ADDR(hw,&mac_address[0]);
+	SET_IEEE80211_PERM_ADDR(hw,&mac_address[0]);
 
 	/* Set interface mode */
-	/* For now the only supported type of interface is adhoc */
 	wiphy->interface_modes = BIT(NL80211_IFTYPE_ADHOC);
 	
 	/* Describes the frequency bands a wiphy is able to operate in */
-	wiphy->bands[IEEE80211_BAND_0_8GHZ] = &bands;
+	wiphy->bands[IEEE80211_BAND_2GHZ] = &bands;
 
 	/* Enable ieee 80211.p mode */
 	wiphy->dot11OCBActivated = 1;
@@ -308,13 +287,12 @@ int ieee80211p_priv_init(struct ieee80211p_priv *priv) {
 	/***********************************
 	 * Initilizing driver private data *
 	 ***********************************/
-
+	
 	/* Lock */
 	spin_lock_init(&priv->lock);
 
 	/* RX queues setup */
 	spin_lock_init(&priv->rxq_lock);
-
 	tasklet_init(&priv->rx_tq,ieee80211p_tasklet_rx,(unsigned long)priv);
 
 	/* Virtual interfaces init */
@@ -341,7 +319,6 @@ int ieee80211p_priv_init(struct ieee80211p_priv *priv) {
 	}
 
 	priv->pid_softmodem = 0;
-
 	priv->rx_skb = NULL;
 
 error:
@@ -361,10 +338,9 @@ void ieee80211p_priv_exit(struct ieee80211p_priv *priv) {
 
 	tasklet_kill(&priv->rx_tq);
 
-	/*TODO: check if needed */	
-	/*if (priv->rx_skb != NULL) {
+	if (priv->rx_skb != NULL) {
 		kfree(priv->rx_skb);
-	}*/
+	}
 
 	sock_release(priv->nl_sock->sk_socket);
 
@@ -372,7 +348,7 @@ void ieee80211p_priv_exit(struct ieee80211p_priv *priv) {
 
 /******************************************************************************
  * 
- * Callbacks from mac80211 to the driver
+ * Callbacks from mac80211p to the driver
  *
  *****************************************************************************/
 
@@ -395,7 +371,9 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 
 	/* Return value */
 	int ret = 0;
-	
+
+	int i = 0;
+
 	if (qnum >= IEEE80211P_NUM_TXQ) {
 		printk(KERN_ERR "ieee80211p_tx: wrong queue number\n");
 		dev_kfree_skb_any(skb);
@@ -423,7 +401,6 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 
 	if (nlskb == NULL) {
 		printk(KERN_ERR "ieee80211p_tx: alloc nlskb failed\n");
-		return;
 	}    
 
 	/* Add room for the nlmsg header */
@@ -440,6 +417,12 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 
 	/* Copy the data from the skb to the nlskb */
 	memcpy(NLMSG_DATA(nlh),skb->data,skb->len);
+
+	/* DEBUG */
+	for (i=0;i<skb->len;i++) {
+		printk(KERN_ERR "%02X ",skb->data[i]);
+	}
+	printk(KERN_ERR "\n");
 
 	/* Free the old skb */
 	dev_kfree_skb_any(skb);
@@ -459,7 +442,6 @@ static int ieee80211p_start(struct ieee80211_hw *hw) {
 	/* Nothing to be done here */	
 	
 	return 0;
-
 } /* ieee80211p_start */
 
 
@@ -554,12 +536,11 @@ static void ieee80211p_configure_filter(struct ieee80211_hw *hw,
 	FIF_PLCPFAIL | FIF_CONTROL | FIF_OTHER_BSS | \
 	FIF_BCN_PRBRESP_PROMISC)	
 	
-	*new_flags &= SUPPORTED_FIF_FLAGS;
-	
+	*new_flags &= SUPPORTED_FIF_FLAGS;	
 } /* ieee80211p_configure_filter */
 
 /**************************************************************************
- * Only the mandatory callbacks of ieee80211p_ops have been implemented *
+ * Only the mandatory callbacks from ieee80211p_ops have been implemented *
  **************************************************************************/
 
 const struct ieee80211_ops ieee80211p_driver_ops = {		
@@ -647,11 +628,7 @@ static void ieee80211p_driver_stop(struct ieee80211p_priv *priv) {
 
 	struct ieee80211_hw *hw = priv->hw;
 	
-	/* TODO: check if needed */	
-	//kfree(hw->wiphy->regd);
-
 	ieee80211_unregister_hw(hw);
-
 	ieee80211_free_hw(hw);
 
 	/*********************************

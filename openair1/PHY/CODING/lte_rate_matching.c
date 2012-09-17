@@ -552,13 +552,12 @@ int lte_rate_matching_turbo_rx(u32 RTC,
       printf("repetition %d (%d,%d,%d)\n",ind,rvidx,E,Ncb);
     */
     // Maximum-ratio combining of repeated bits and retransmissions
-    /*
     w_tmp = (int) w[ind] + (int) soft_input2[k];
-    if (w_tmp > 32767) {
+    if (w_tmp > 32768) {
 #ifdef DEBUG_RM
       printf("OVERFLOW!!!!!, w_tmp = %d\n",w_tmp);
 #endif
-      w[ind] = 32767;
+      w[ind] = 32768;
     }
     else if (w_tmp < -32768) {
 #ifdef DEBUG_RM
@@ -567,8 +566,7 @@ int lte_rate_matching_turbo_rx(u32 RTC,
       w[ind] = -32768;
     }
     else
-    */
-    w[ind] += soft_input2[k];
+      w[ind] += soft_input2[k];
 #ifdef RM_DEBUG
       printf("RM_RX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif

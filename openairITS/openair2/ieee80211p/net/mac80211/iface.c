@@ -297,7 +297,7 @@ static int ieee80211_do_open(struct net_device *dev, bool coming_up)
 		 * [PLATA] we should still check that the driver supports the OCBMode...
 		 */
 		//if (sdata->vif.type == NL80211_IFTYPE_STATION ||
-		//    (sdata->vif.type == NL80211_IFTYPE_ADHOC) && ((local->hw->wiphy.dot11OCBActivated == 0) || !(local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)))
+		//    (sdata->vif.type == NL80211_IFTYPE_ADHOC) && ((local->hw->wiphy.dot11OCBActivated == 0) || (local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED)))
 		if ((sdata->vif.type == NL80211_IFTYPE_STATION)||((sdata->vif.type == NL80211_IFTYPE_ADHOC)&&(local->hw.wiphy->dot11OCBActivated==0)))
 			netif_carrier_off(dev);
 		else
@@ -847,7 +847,7 @@ static void ieee80211_iface_work(struct work_struct *work)
 		/*
 		 * [PLATA] std work operation for the mounted ADHOC interface. We bypass it if OCB is activated
 		 */
-		if ((local->hw.wiphy->dot11OCBActivated == 0) || !(local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))
+		if ((local->hw.wiphy->dot11OCBActivated == 0) || (local->hw.flags &= ~IEEE80211_HW_DOT11OCB_SUPPORTED))
 			ieee80211_ibss_work(sdata);
 		break;
 	case NL80211_IFTYPE_MESH_POINT:

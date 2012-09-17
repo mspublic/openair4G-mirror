@@ -145,8 +145,6 @@ typedef struct {
   u32 TBS;
   /// The payload + CRC size in bits, "B" from 36-212 
   u16 B;  
-  /// Length of ACK information (bits)
-  u8 O_ACK;
   /// Pointer to the payload
   u8 *b;             
   /// Pointers to transport block segments
@@ -262,6 +260,8 @@ typedef struct {
   u8 O_RI;
   /// Pointer to ACK
   u8 o_ACK[4];
+  /// Length of ACK information (bits)
+  u8 O_ACK;
   /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)
   u8 O_CQI_MIN;
   /// ACK/NAK Bundling flag
@@ -335,8 +335,6 @@ typedef struct {
   u32 TBS;
   /// The payload + CRC size in bits  
   u16 B; 
-  /// Length of ACK information (bits)
-  u8 O_ACK;
   /// Pointer to the payload
   u8 *b;  
   /// Pointers to transport block segments
@@ -406,6 +404,8 @@ typedef struct {
   u8 O_RI;
   /// Pointer to ACK
   u8 o_ACK[4];
+  /// Length of ACK information (bits)
+  u8 O_ACK;
   /// ACK/NAK Bundling flag
   u8 bundling;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
@@ -516,12 +516,11 @@ typedef struct {
   /// 
   u32 dlsch_sliding_cnt;
   ///
-  u32 dlsch_ACK[8];
   u32 dlsch_NAK[8];
   ///
   u32 dlsch_l2_errors;
   ///
-  u32 dlsch_trials[8];
+  u32 dlsch_trials[4];
   ///
   u32 ulsch_errors[3];
   ///

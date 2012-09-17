@@ -89,7 +89,7 @@ bool Util::printHexRepresentation(const unsigned char* buffer, unsigned long buf
 			ss.str(string());
 			ss.clear();
 
-			ss << " " << setfill('0') << setw(3) << octet_index + 1 << " |";
+			ss << " " << setfill('0') << setw(3) << octet_index << " |";
 		}
 	}
 
@@ -283,14 +283,6 @@ string Util::trim(const string& str, char character) {
 		trimmedString.resize(trimmedString.length() - 1);
 
 	return trimmedString;
-}
-
-bool Util::isNumeric(const string& str) {
-	string::const_iterator it = str.begin();
-
-	while (it != str.end() && std::isdigit(*it)) ++it;
-
-	return !str.empty() && it == str.end();
 }
 
 string Util::getDateAndTime(bool withDelimiters) {

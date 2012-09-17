@@ -6,7 +6,7 @@
 
 /** @ingroup _PHY_REF_SIG
  * @{
-*/
+ */
 
 /*! \brief gold sequenquence generator
 \param x1 
@@ -24,9 +24,6 @@ unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char 
 
 void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_table[20][2][14],u16 Nid_cell);
 
-void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_mbsfn_table[10][3][42],u16 Nid_MBSFN);
-
-
 /*! \brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1)
 @param phy_vars_eNB Pointer to eNB variables
 @param output Output vector for OFDM symbol (Frequency Domain)
@@ -35,21 +32,12 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_mbsfn_table[10]
 @param l symbol (0,1) - Note 1 means 3!
 @param p antenna intex
 */
-
-
 int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 		     mod_sym_t *output,
 		     short amp,
 		     unsigned char Ns,
 		     unsigned char l,
 		     unsigned char p);
-
-int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
-		 short amp,
-		 int subframe,
-		 unsigned char l,
-		 unsigned char p);
-
 
 /*!\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1) for channel estimation upon reception
 @param phy_vars_ue Pointer to UE variables
@@ -65,14 +53,6 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
 			unsigned char Ns,
 			unsigned char l,
 			unsigned char p);
-
-int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
-		    int *output,
-		    int subframe,
-		    unsigned char l);
-
-
-
 
 void generate_ul_ref_sigs(void);
 void generate_ul_ref_sigs_rx(void);

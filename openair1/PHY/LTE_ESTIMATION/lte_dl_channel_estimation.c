@@ -559,8 +559,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 	dl_ch+=16;
 	
       }
-    }
-	 else {
+    } else {
       msg("channel estimation not implemented for phy_vars_ue->lte_frame_parms.N_RB_DL = %d\n",phy_vars_ue->lte_frame_parms.N_RB_DL);
     }
     
@@ -604,11 +603,13 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       } // pilot spacing 3 symbols (1/3,2/3 combination)
     }
 #endif
+
+
     
   }
 
   // do ifft of channel estimate
-  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB;aa++) {
+  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
     if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa])
       fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][LTE_CE_OFFSET],
 	  (short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],

@@ -76,20 +76,6 @@ class ManagementClient {
 			CONNECTED = 2
 		};
 
-		/**
-		 * Client type
-		 */
-		enum ManagementClientType {
-			/**
-			 * GeoNetworking client
-			 */
-			GN = 0,
-			/**
-			 * Facilities client
-			 */
-			FAC = 1
-		};
-
 	public:
 		/**
 		 * Constructor for ManagementClient class
@@ -125,7 +111,6 @@ class ManagementClient {
 		 * @return ManagementClientState value for this client
 		 */
 		ManagementClientState getState() const;
-		// XXX setType() and getType()
 		/**
 		 * Sets the state of this client with given state
 		 *
@@ -168,10 +153,6 @@ class ManagementClient {
 		 */
 		ManagementClient::ManagementClientState state;
 		/**
-		 * Client type
-		 */
-		ManagementClient::ManagementClientType type;
-		/**
 		 * InquiryThread object for Wireless State updates
 		 */
 		InquiryThread* inquiryThreadObject;
@@ -187,10 +168,6 @@ class ManagementClient {
 		 * String representations for Management Client states
 		 */
 		map<ManagementClient::ManagementClientState, string> clientStateStringMap;
-		/**
-		 * String representations for Management Client types
-		 */
-		map<ManagementClient::ManagementClientType, string> clientTypeStringMap;
 };
 
 #endif /* MGMT_CLIENT_HPP_ */

@@ -293,6 +293,7 @@ void nas_COMMON_receive(u16 dlen,
 #endif	
 	    check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, 0,0, ~(*cksum));
 	    *cksum= csum_tcpudp_magic(~osaddr, ~odaddr,0,0, ~check);
+	    //*cksum= 0x0000;
 	    //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,udp_hdr(skb)->len, IPPROTO_UDP, ~check);
 
 #ifdef NAS_DEBUG_RECEIVE

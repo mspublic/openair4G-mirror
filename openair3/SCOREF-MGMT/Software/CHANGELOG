@@ -1,22 +1,5 @@
 
-v1.1.2
-* Configuration class now can handle more than one configuration file
-* IF.IHM.conf file added for PCVE IHM parameters
-* <parameterName|parameterId> format parsing has been added for IHM parameters
-* ItsKey can also hold string values of configuration items
-* Configuration file name is hardcoded now, the only parameter there is optional log file name
-
-v1.1.1
-* Util::printHexRepresentation() off-by-one index error fixed
-* FAC message type & subtypes have been added
-* Now both BTP_A and BTP_B flags are set upon finding BTP in a communication profile definition
-* mgmt_gn_datatypes.h file has been renamed as mgmt_types.h
-* Type property added for management clients (now they also may be Facilities client)
-* FacCommunicationProfileSelectionRequestPacket and FacCommunicationProfileSelectionResponsePacket
-  packets have been added
-
-v1.1.0 (released on 13 Aug 2012)
-* README.* files have been updated and version elevated to 1.1.0
+v1.1.0 (released on <enter_date>)
 
 v1.0.23
 * OpenDocument format of configuration manual has been added

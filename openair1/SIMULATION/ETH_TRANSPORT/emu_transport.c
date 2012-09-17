@@ -61,23 +61,14 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
   
   if (ethernet_flag == 0)
     return;
-
-  if ((frame_type == 1) &&  (direction == SF_S)){
-    if (next_slot%2==0)
-      emu_transport_DL(frame, last_slot,next_slot);
-    else 
-      emu_transport_UL(frame, last_slot , next_slot);
+ 
   //DL
-  }else {   
-    if (next_slot%2 == 0 )
-      if ( ((frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
-      emu_transport_DL(frame, last_slot,next_slot);
-    }
-    // UL
-    if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ){
-      emu_transport_UL(frame, last_slot , next_slot);
-    }
-    
+  if ( ( (frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
+    emu_transport_DL(frame, last_slot,next_slot);
+  }
+  // UL
+  if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ){
+    emu_transport_UL(frame, last_slot , next_slot);
   }
 }
 
@@ -95,13 +86,11 @@ void emu_transport_DL(unsigned int frame, unsigned int last_slot, unsigned int n
   }
   else { // I am the master
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
-   
+    bypass_rx_data(frame,last_slot, next_slot);
     if (oai_emulation.info.nb_enb_local>0) // send in DL if 
       bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
-
-    bypass_rx_data(frame,last_slot, next_slot);
   }   
 
 }
@@ -115,17 +104,15 @@ void emu_transport_UL(unsigned int frame, unsigned int last_slot, unsigned int n
       bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
-    
     bypass_rx_data(frame,last_slot, next_slot);
   }
   else {  
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
+    bypass_rx_data(frame,last_slot, next_slot);
     if (oai_emulation.info.nb_ue_local>0)
       bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
-
-    bypass_rx_data(frame,last_slot, next_slot);
   }
   
 }
@@ -326,10 +313,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      else if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
        PHY_vars_UE_g[ue_id]->pucch_payload[0] = ue_cntl_delay[ue_id][last_slot%2].pucch_payload;//UE_transport_info[ue_id].cntl.pucch_payload;
      } 
-     PHY_vars_UE_g[ue_id]->pucch_sel[subframe] = ue_cntl_delay[ue_id][last_slot%2].pucch_sel;
-   } 
-   
-
+   }
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
     
      //LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
@@ -338,7 +322,8 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
      
      PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
-         
+     
+     
      harq_pid = UE_transport_info[ue_id].harq_pid[n_enb];
      
      ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];

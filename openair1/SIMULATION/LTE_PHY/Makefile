@@ -80,6 +80,24 @@ CFLAGS += -DNO_RRM -DOPENAIR1 #-DOPENAIR2 #-DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
+ifdef ENABLE_FXP
+CFLAGS += -DENABLE_FXP # Fxp only
+else
+ ifdef ENABLE_FLP
+ CFLAGS += -DENABLE_FLP # dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() are flp (independently)	
+ else
+  ifdef ENABLE_FULL_FLP
+  CFLAGS += -DENABLE_FULL_FLP # Flp inside of rx_pdsch() (dlsch_detection_mrc(), dual_stream_correlation(), channel_compensation_prec(), qam16_qam16_mu_mimo() and dlsch_16qam_16qam_llr)
+  else
+  CFLAGS += -DENABLE_FXP # Fxp only by default
+  endif
+ endif
+endif
+
+ifdef COMPARE_FLP_AND_FXP
+CFLAGS += -DCOMPARE_FLP_AND_FXP
+endif
+
 ifdef RTAI
 CFLAGS += -DRTAI_ENABLED  -D__IN_RTAI__ $(shell rtai-config --lxrt-cflags)
 LFLAGS += $(shell rtai-config --lxrt-ldflags) -llxrt
@@ -115,7 +133,7 @@ ifdef STATIC
 LFLAGS += -static -L/usr/lib/libblas
 endif
 
-all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim mbmssim
+all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
@@ -136,10 +154,6 @@ framegen: $(OBJ) framegen.c
 pbchsim : $(OBJ) pbchsim.c
 	@echo "Compiling pbchsim.c"
 	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
-
-mbmssim : $(OBJ) mbmssim.c
-	@echo "Compiling mbmssim.c"
-	@$(CC) mbmssim.c  -o mbmssim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 pdcchsim : $(OBJ) pdcchsim.c
 	@echo "Compiling pdcchsim.c"

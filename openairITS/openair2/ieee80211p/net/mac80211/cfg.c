@@ -1539,7 +1539,7 @@ static int ieee80211_scan(struct wiphy *wiphy,
 
 	switch (ieee80211_vif_type_p2p(&sdata->vif)) {
 	case NL80211_IFTYPE_ADHOC:
-		if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+		if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 		  /*
 		   * [PLATA] - we do not support the scan mode if we are configured with OCBActivated (mode 802.11p)
 		   */
@@ -1577,7 +1577,7 @@ ieee80211_sched_scan_start(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
-	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 		/*
 		* [PLATA] - we do not support the scan mode if we are configured with OCBActivated (mode 802.11p)
 		*/
@@ -1610,7 +1610,7 @@ static int ieee80211_auth(struct wiphy *wiphy, struct net_device *dev,
 	 */
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
-	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  /*
 	   * [PLATA] - we do not support the authentication mode if we are configured with OCBActivated (mode 802.11p)
 	   */
@@ -1628,7 +1628,7 @@ static int ieee80211_assoc(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
-	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  /*
 	   * [PLATA] - we do not support the association mode if we are configured with OCBActivated (mode 802.11p)
 	   */
@@ -1667,7 +1667,7 @@ static int ieee80211_join_ibss(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
-	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED)) {
+	if((sdata->local->hw.wiphy->dot11OCBActivated == 1) && (sdata->local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED)) {
 	  /*
 	   * [PLATA] - As the OCBMode is used here in ADHOC mode, we just want to be sure we do not try to
 	   * join an IBSS if wiht OCBActivated (mode 802.11p)
@@ -2211,7 +2211,7 @@ static int ieee80211_mgmt_tx(struct wiphy *wiphy, struct net_device *dev,
 	 * JHNOTE: we do not support action frames now: so we still block them
 	 */
 	/*if ((!is_offchan && !wait && !sdata->vif.bss_conf.idle)
-		|| ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags & IEEE80211_HW_DOT11OCB_SUPPORTED))) {
+		|| ((local->hw.wiphy->dot11OCBActivated == 1) && (local->hw.flags &= IEEE80211_HW_DOT11OCB_SUPPORTED))) {
 		ieee80211_tx_skb(sdata, skb);
 		return 0;
 	}*/

@@ -375,8 +375,8 @@ int ocg_config_topo() {
 	omg_param_list.min_Y = 0;
 	omg_param_list.max_Y = oai_emulation.topology_config.area.y_m;
 	// init values
-	omg_param_list.min_speed = 0.1;
-	omg_param_list.max_speed = 20.0;
+	omg_param_list.min_speed = 500.0;
+	omg_param_list.max_speed = 800.0;
 	omg_param_list.min_journey_time = 0.1;
 	omg_param_list.max_journey_time = 10.0;
 	omg_param_list.min_azimuth = 0; // ???

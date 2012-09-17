@@ -162,6 +162,16 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	}
 	mac_xface->phy_config_meas_ue(Mod_id,eNB_index,UE_mac_inst[Mod_id].n_adj_cells,UE_mac_inst[Mod_id].adj_cell_id);
       }
+
+    /*
+    if (quantityConfig != NULL) {
+    	if (quantityConfig[0] != NULL) {
+    		UE_mac_inst[Mod_id].quantityConfig = quantityConfig[0];
+    		LOG_I(MAC,"UE %d configured filterCoeff.",UE_mac_inst[Mod_id].crnti);
+    		mac_xface->phy_config_meas_ue
+    	}
+    }
+    */
   }
   return(0);
 }

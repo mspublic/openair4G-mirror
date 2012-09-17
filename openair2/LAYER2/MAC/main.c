@@ -98,9 +98,6 @@ void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH
   if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_lite_eNB_init(Mod_id)==-1)){
     //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
     }
-
-
-
 }
 
 /***********************************************************************/
@@ -306,11 +303,7 @@ void mac_top_cleanup(void){
 #ifndef USER_MODE
   pdcp_module_cleanup ();
 #endif
-  if (NB_UE_INST>0)
-    free (UE_mac_inst);
-  if (NB_eNB_INST>0)
-    free(eNB_mac_inst);
-  free( Mac_rlc_xface);
+
 }
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {

@@ -193,9 +193,9 @@ u32 ulsch_encoding(u8 *a,
     return(-1);
   }
     
-  if (ulsch->harq_processes[harq_pid]->O_ACK > 2)
+  if (ulsch->O_ACK > 2)
     {
-    msg("ulsch_coding.c: Illegal O_ACK %d\n",ulsch->harq_processes[harq_pid]->O_ACK);
+    msg("ulsch_coding.c: Illegal O_ACK %d\n",ulsch->O_ACK);
     return(-1);
   }
 
@@ -236,15 +236,15 @@ u32 ulsch_encoding(u8 *a,
       ulsch->harq_processes[harq_pid]->Ndi,
       ulsch->harq_processes[harq_pid]->rvidx);
 
-  for (i=0;i<ulsch->harq_processes[harq_pid]->O_ACK;i++)
+  for (i=0;i<ulsch->O_ACK;i++)
     msg("ulsch_coding: O_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
   for (i=0;i<ulsch->O_RI;i++)
     msg("ulsch_coding: O_RI[%d] %d\n",i,ulsch->o_RI[i]);
   msg("ulsch_coding: O=%d\n",ulsch->O);
-  
-  for (i=0;i<1+((8+ulsch->O)/8);i++) {
+
+  for (i=0;i<1+((ulsch->O)/8);i++) {
     //    ulsch->o[i] = i;
-    msg("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
+    //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
   }
   if ((tmode != 4))
     print_CQI(ulsch->o,wideband_cqi_rank1_2A,0);
@@ -370,7 +370,7 @@ u32 ulsch_encoding(u8 *a,
   Qprime_RI = Qprime;
 
   // Compute Q_ack (p. 23 36-212)
-  Qprime = ulsch->harq_processes[harq_pid]->O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_harqack_times8;
+  Qprime = ulsch->O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_harqack_times8;
   if (Qprime > 0) {
     if ((Qprime % (8*sumKr)) > 0)
       Qprime = 1+(Qprime/(8*sumKr));
@@ -473,9 +473,7 @@ u32 ulsch_encoding(u8 *a,
     // add 8-bit CRC
     crc = crc8(o_flip,
 	       ulsch->O)>>24;
-#ifdef DEBUG_ULSCH_CODING
-    printf("crc(cqi) tx : %x\n",crc);
-#endif
+    //    printf("crc(cqi) tx : %x\n",crc);
     memset((void *)&ulsch->o_d[0],LTE_NULL,96);
     
     ccodelte_encode(ulsch->O,
@@ -534,7 +532,7 @@ u32 ulsch_encoding(u8 *a,
       ulsch->bundling,Nbundled,wACK_idx);
 #endif
   // 1-bit ACK/NAK
-  if (ulsch->harq_processes[harq_pid]->O_ACK == 1) {
+  if (ulsch->O_ACK == 1) {
     switch (Q_m) {
     case 2:
       ulsch->q_ACK[0] = (ulsch->o_ACK[0]+wACK[wACK_idx][0])&1;
@@ -560,7 +558,7 @@ u32 ulsch_encoding(u8 *a,
     }
   }
   // two-bit ACK/NAK
-  if (ulsch->harq_processes[harq_pid]->O_ACK == 2) {
+  if (ulsch->O_ACK == 2) {
     ack_parity = (ulsch->o_ACK[0]+ulsch->o_ACK[1])&1;
     switch (Q_m) {
     case 2:
@@ -613,7 +611,7 @@ u32 ulsch_encoding(u8 *a,
       break;
     }
   }
-  if (ulsch->harq_processes[harq_pid]->O_ACK > 2) {
+  if (ulsch->O_ACK > 2) {
     msg("ulsch_coding: FATAL, ACK cannot be more than 2 bits yet\n");
     return(-1);
   }
@@ -662,7 +660,7 @@ u32 ulsch_encoding(u8 *a,
     if (i<Qprime_CQI) {
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*j)] = ulsch->q[q+(Q_m*i)];
-	//printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
+	//	printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
       }
     }
     else {
