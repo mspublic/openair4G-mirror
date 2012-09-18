@@ -279,7 +279,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
     return;
   }
 
-  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  Q_m = get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs);
 
   G = ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 

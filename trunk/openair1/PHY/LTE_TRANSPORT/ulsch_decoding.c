@@ -230,7 +230,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
 
     
-  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  Q_m = get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs);
   G = nb_rb * (12 * Q_m) * ulsch->Nsymb_pusch;
 
 
@@ -908,7 +908,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 				   1,
 				   ulsch->harq_processes[harq_pid]->rvidx,
 				   ulsch->harq_processes[harq_pid]->Ndi,
-				   get_Qm(ulsch->harq_processes[harq_pid]->mcs),
+				   get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs),
 				   1,
 				   r,
 				   &E)==-1) {
