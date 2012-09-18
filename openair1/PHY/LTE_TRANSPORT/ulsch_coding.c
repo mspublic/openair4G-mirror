@@ -223,7 +223,7 @@ u32 ulsch_encoding(u8 *a,
   }
   if (control_only_flag == 0) {
     A=ulsch->harq_processes[harq_pid]->TBS;
-    Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+    Q_m = get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs);
 
     ulsch->harq_processes[harq_pid]->control_only = 0;
     
@@ -447,7 +447,7 @@ u32 ulsch_encoding(u8 *a,
 					  ulsch->Mdlharq,
 					  1,
 					  ulsch->harq_processes[harq_pid]->rvidx,
-					  get_Qm(ulsch->harq_processes[harq_pid]->mcs),
+					  get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs),
 					  1,
 					  r);                       // r
 #ifdef DEBUG_ULSCH_CODING

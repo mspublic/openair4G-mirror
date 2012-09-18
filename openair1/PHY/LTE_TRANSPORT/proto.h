@@ -857,15 +857,19 @@ u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				DCI_ALLOC_t *dci_alloc_rx,
 				s16 eNB_id);
 
-/** \brief Compute Q (modulation order) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
+/** \brief Compute Q (modulation order) based on I_MCS PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 u8 get_Qm(u8 I_MCS);
 
-/** \brief Compute I_TBS (transport-block size) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
+/** \brief Compute Q (modulation order) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
+    @param I_MCS */
+u8 get_Qm(u8 I_MCS);
+
+/** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 u8 get_I_TBS(u8 I_MCS);
 
-/** \brief Compute I_TBS (transport-block size) based on I_MCS for UL.  Implements table 8.6.1-1 from 36.213.
+/** \brief Compute I_TBS (transport-block size) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
     @param I_MCS */
 unsigned char get_I_TBS_UL(unsigned char I_MCS);
 

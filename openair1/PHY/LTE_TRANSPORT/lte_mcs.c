@@ -52,6 +52,17 @@ unsigned char get_Qm(unsigned char I_MCS) {
     
 }
 
+unsigned char get_Qm_ul(unsigned char I_MCS) {
+
+  if (I_MCS < 11)
+    return(2);
+  else if (I_MCS < 21)
+    return(4);
+  else
+    return(6);
+    
+}
+
 unsigned char get_I_TBS(unsigned char I_MCS) {
 
   if (I_MCS < 10)

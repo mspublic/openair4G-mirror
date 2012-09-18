@@ -360,7 +360,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
 
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
@@ -627,11 +627,11 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
   
-  coded_bits_per_codeword = nb_rb * (12 * get_Qm(mcs)) * nsymb;
+  coded_bits_per_codeword = nb_rb * (12 * get_Qm_ul(mcs)) * nsymb;
 
   rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
 
-  printf("Rate = %f (mod %d)\n",rate,get_Qm(mcs));
+  printf("Rate = %f (mod %d)\n",rate,get_Qm_ul(mcs));
   
 
   sprintf(bler_fname,"bler_%d.m",mcs);
