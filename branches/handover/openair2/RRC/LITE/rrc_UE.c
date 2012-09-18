@@ -274,6 +274,7 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
   float tmp, tmp1;
   nElem = 100;
   nElem1 = 33;
+  static cframe=0;
   for (i=0;i<MAX_MEAS_ID;i++) {
 	  if (UE_rrc_inst[Mod_id].measReportList[0][i] != NULL) {
 		  measId = UE_rrc_inst[Mod_id].measReportList[0][i]->measId;
@@ -317,8 +318,11 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
 		  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
 
 		  //rrc_rlc_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer);
-		  LOG_W(PDCP, "Sending MeasReport to PDCP Mod_id: %d NB_eNB_INST: %d...\n",Mod_id,NB_eNB_INST);
+		  LOG_W(PDCP, "[UE %d] Frame %d Sending MeasReport (%d bytes) through DCCH%d to PDCP \n",Mod_id,frame, size, DCCH);
+		  if (frame != cframe){
 		  pdcp_data_req(Mod_id+NB_eNB_INST,frame,0,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+		  cframe=frame;
+		  }
 	  }
   }
 
