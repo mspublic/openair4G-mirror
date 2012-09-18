@@ -279,7 +279,8 @@ int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rn
 	}
       }
       if (search_space_free == 1) {
-	memset((void*)(CCE_table+(m*L)),1,L*sizeof(int));
+	for (l=0;l<L;l++)
+	  CCE_table[(m*L)+l]=1;
 	return(m*L);
       }
     }
@@ -316,7 +317,8 @@ int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rn
 	}
       }
       if (search_space_free == 1) {
-	memset((void*)(CCE_table+((Yk+m)*L)),1,L*sizeof(int));
+	for (l=0;l<L;l++)
+	  CCE_table[((Yk+m)*L)+l]=1;
 	return((Yk+m)*L);
       }
     }
