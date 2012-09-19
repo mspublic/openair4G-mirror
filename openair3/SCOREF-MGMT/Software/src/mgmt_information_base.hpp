@@ -79,7 +79,7 @@ class ManagementInformationBase {
 		 * @param itsKeyId ITS key ID
 		 * @return Value of relevant ITS key
 		 */
-		ItsKeyValue getItsKeyIntegerValue(ItsKeyID itsKeyId);
+		ItsKeyValue getItsKeyValue(ItsKeyID itsKeyId);
 		/**
 		 * Sets value of relevant ITS key through ItsKeyManager methods
 		 *
@@ -88,6 +88,14 @@ class ManagementInformationBase {
 		 * @return true on success, false otherwise
 		 */
 		bool setValue(ItsKeyID itsKeyId, ItsKeyValue value);
+		/**
+		 * Sets value of relevant ITS key through ItsKeyManager methods
+		 *
+		 * @param itsKeyId ITS key ID
+		 * @param value Value to be set
+		 * @return true on success, false otherwise
+		 */
+		bool setValue(ItsKeyID itsKeyId, const vector<unsigned char>& value);
 		/**
 		 * Sets value of relevant ITS key through ItsKeyManager methods
 		 *

@@ -108,6 +108,12 @@ bool PacketHandler::handle(UdpServer& client, const vector<unsigned char>& packe
 			}
 			break;
 
+		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
+			if (handleConfigurationNotification(new FacConfigurationNotificationPacket(mib, packetBuffer, logger))) {
+				logger.info("An incoming Configuration Notification packet has been processed");
+			}
+			break;
+
 		/**
 		 * Handle unexpected packets as well
 		 */
@@ -170,6 +176,11 @@ bool PacketHandler::handleWirelessStateResponseEvent(GeonetWirelessStateResponse
 
 bool PacketHandler::handleLocationTableResponse(GeonetLocationTableResponseEventPacket* packet) {
 	// Creation of a GeonetLocationTableResponseEventPacket is enough for processing...
+	return true;
+}
+
+bool PacketHandler::handleConfigurationNotification(FacConfigurationNotificationPacket* packet) {
+	// Creation of a FacConfigurationNotificationPacket is enough to handle it
 	return true;
 }
 

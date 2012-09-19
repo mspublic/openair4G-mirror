@@ -72,13 +72,18 @@ enum ItsKeyType {
  */
 enum ItsDataType {
 	ITS_DATA_TYPE_INTEGER = 0,
-	ITS_DATA_TYPE_STRING = 1
+	ITS_DATA_TYPE_FLOAT = 1,
+	ITS_DATA_TYPE_STRING = 2
 };
 /**
- * ITS key values are limited to 32-bit values so
- * we define this name definition for readability
+ * ITS key value container that can contain
+ * integer, float, and string values
  */
-typedef u_int32_t ItsKeyValue;
+struct ItsKeyValue {
+	string stringValue;
+	float floatValue;
+	u_int32_t intValue;
+};
 /**
  * ITS key structure holding every property of an ITS key
  */
@@ -86,7 +91,6 @@ struct ItsKey {
 	string name;
 	ItsKeyType keyType;
 	ItsDataType dataType;
-	string stringValue;
 	ItsKeyValue value;
 	ItsKeyValue minValue;
 	ItsKeyValue maxValue;
@@ -115,37 +119,42 @@ class ItsKeyManager {
 		 * @param id ITS key ID of new key to be added
 		 * @param name Name of new key to be added
 		 * @param keyType ITS key type
+		 * @param dataType ITS key's data type
 		 * @param value Value of new key to be added
 		 * @param minValue Minimum value of new key
 		 * @param maxValue Maximum value of new key
 		 * @return true on success, false otherwise
 		 */
-		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsKeyValue value, ItsKeyValue minValue = 0, ItsKeyValue maxValue = INT_MAX);
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsDataType dataType, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue);
 		/**
 		 * Enqueues given ITS key, name and value to ITS keys map
 		 *
 		 * @param id ITS key ID of new key to be added
 		 * @param name Name of new key to be added
 		 * @param keyType ITS key type
-		 * @param value String value of new key to be added
+		 * @param value Value of new key to be added
+		 * @param minValue Minimum value of new key
+		 * @param maxValue Maximum value of new key
+		 * @return true on success, false otherwise
+		 */
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, u_int32_t value, u_int32_t minValue = 0, u_int32_t maxValue = INT_MAX);
+		/**
+		 * Enqueues given ITS key, name and value to ITS keys map
+		 *
+		 * @param id ITS key ID of new key to be added
+		 * @param name Name of new key to be added
+		 * @param keyType ITS key type
+		 * @param value Value of new key to be added
 		 * @return true on success, false otherwise
 		 */
 		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, const string& value);
-
 		/**
-		 * Returns integer value of the key with given ITS key ID
+		 * Returns the value container of the key with given ITS key ID
 		 *
 		 * @param id ITS key ID of the key
 		 * @return Value of ITS key
 		 */
-		ItsKeyValue getKeyIntegerValue(ItsKeyID id);
-		/**
-		 * Returns string value of the key of given ID
-		 *
-		 * @param id ITS key ID of the key
-		 * @return Value of ITS key
-		 */
-		string getKeyStringValue(ItsKeyID id);
+		ItsKeyValue& getKeyValue(ItsKeyID id);
 		/**
 		 * Returns ITS key type
 		 *

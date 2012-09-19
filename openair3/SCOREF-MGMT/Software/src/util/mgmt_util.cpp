@@ -209,6 +209,10 @@ bool Util::parse2byteInteger(const unsigned char* buffer, u_int16_t* integer) {
 	return true;
 }
 
+float Util::parse4byteFloat(const vector<unsigned char>& floatBuffer) {
+	return *((float*)floatBuffer.data());
+}
+
 bool Util::encode8byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int64_t data) {
 	if (buffer.size() < (unsigned)(bufferIndex - 1))
 		return false;

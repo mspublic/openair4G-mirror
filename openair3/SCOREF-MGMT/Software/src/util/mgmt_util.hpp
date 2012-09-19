@@ -155,6 +155,13 @@ class Util {
 		 */
 		static bool parse2byteInteger(const unsigned char* buffer, u_int16_t* integer);
 		/**
+		 * Parses 4-byte floating point data from given buffer
+		 *
+		 * @param buffer Buffer that 4-byte float will be parsed from
+		 * @return Float value
+		 */
+		static float parse4byteFloat(const vector<unsigned char>& floatBuffer);
+		/**
 		 * Encodes given 8-byte integer data into buffer at given index
 		 *
 		 * @param buffer Vector that 8-byte integer will be encoded into

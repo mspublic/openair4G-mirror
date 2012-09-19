@@ -66,6 +66,7 @@ const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
 
 int main(int argc, char** argv) {
+	cout << "Size: " << sizeof(ConfigurationNotification) << endl;
 	/**
 	 * Log file name parameter is optional
 	 */

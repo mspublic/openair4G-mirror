@@ -97,7 +97,11 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 				getline(configurationFileStream, line);
 
 				if (parseLine(line, parameter, value)) {
-					value = Util::trim(value, '\0');
+					/**
+					 * Trim value if it's not a string
+					 */
+					if (value.find('"') == string::npos)
+						value = Util::trim(value, '\0');
 
 					/*
 					 * NETwork and FACilities parameters are sent to MIB
@@ -106,7 +110,9 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 							!line.compare(0, facParameterPrefix.length(), facParameterPrefix) ||
 							!line.compare(0, commonParameterPrefix.length(), commonParameterPrefix)) {
 						try {
-							mib.setValue(parameter, atoi(value.c_str()));
+							ItsKeyValue valueContainer;
+							valueContainer.intValue = atoi(value.c_str());
+							mib.setValue(parameter, valueContainer);
 						} catch (Exception& e) {
 							e.updateStackTrace("Cannot set MIB ITS key using value given in the configuration file");
 							throw e;
@@ -144,8 +150,20 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 						if (Util::isNumeric(value)) {
 							logger.info("Adding IHM integer parameter [name:" + parameterName + ", id:" + boost::lexical_cast<string>(parameterId) + ", value:" + value + "]");
 							mib.getItsKeyManager().addKey(static_cast<ItsKeyID>(parameterId), parameterName, ITS_KEY_TYPE_IHM, atoi(value.c_str()));
+						} else if (value.find('.') != string::npos) {
+							logger.info("Adding IHM float parameter [name:" + parameterName + ", id:" + boost::lexical_cast<string>(parameterId) + ", value:" + value + "]");
+							mib.getItsKeyManager().addKey(static_cast<ItsKeyID>(parameterId), parameterName, ITS_KEY_TYPE_IHM, boost::lexical_cast<float>(value));
 						} else {
 							logger.info("Adding IHM string parameter [name:" + parameterName + ", id:" + boost::lexical_cast<string>(parameterId) + ", value:" + value + "]");
+							/**
+							 * Parse value trimming '"' characters and whitespace if it's not "NULL"
+							 */
+							if (value.find("NULL") == string::npos) {
+								value = value.substr(value.find('"') + 1, value.length() - value.find('"') - 2);
+							} else {
+								// Since NULL actually means empty string
+								value = "";
+							}
 							mib.getItsKeyManager().addKey(static_cast<ItsKeyID>(parameterId), parameterName, ITS_KEY_TYPE_IHM, value);
 						}
 					} else {
@@ -168,13 +186,18 @@ bool Configuration::parseLine(const string& line, string& parameter, string& val
 	if (line.find('=') == string::npos)
 		return false;
 
-	// parse the line according to the place of equal sign
+	/**
+	 * Parse the line according to the place of equal sign
+	 */
 	parameter = line.substr(0, line.find("="));
 	value = line.substr(line.find("=") + 1, line.length());
 
-	// trim strings
+	/**
+	 * Trim value string if there's no '"' character
+	 */
 	remove(parameter.begin(), parameter.end() + 1, ' ');
-	remove(value.begin(), value.end() + 1, ' ');
+	if (value.find('"') == string::npos)
+		remove(value.begin(), value.end() + 1, ' ');
 
 	return true;
 }
