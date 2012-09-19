@@ -95,7 +95,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_gold_mbsfn(lte_frame_parms,PHY_vars_UE->lte_gold_mbsfn_table,Nid_cell);    
   lte_gold_mbsfn(lte_frame_parms,PHY_vars_eNB->lte_gold_mbsfn_table,Nid_cell);    
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,0,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
   
@@ -108,8 +108,11 @@ int main(int argc, char **argv) {
 
   char c;
 
-  int i,l,aa,aarx;
-  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
+
+  int s,Kr,Kr_bytes;
+
+  int i,k,l,aa,aarx, aatx;
+  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1,rate,saving_bler=1;
   u8 snr1set=0;
   //mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -130,6 +133,14 @@ int main(int argc, char **argv) {
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
 
+
+  int eNB_id = 0, eNB_id_i = NUMBER_OF_eNB_MAX;
+  unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
+  unsigned char i_mod = 2;
+  unsigned char Ns,m;
+  u16 n_rnti=0x1234;
+  int n_users = 1;
+  
   int n_frames=1;
   channel_desc_t *eNB2UE;
   u32 nsymb,tx_lev,tx_lev1,tx_lev2,tx_lev_dB;
@@ -149,11 +160,50 @@ int main(int argc, char **argv) {
   
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
+
+  unsigned char *input_buffer[2];
+  unsigned short input_buffer_length;
+  unsigned int ret;
+  unsigned int coded_bits_per_codeword,dci_cnt,tbs;
+ 
+  unsigned int trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
+  int re_allocated;
+  FILE *bler_fd;
+  char bler_fname[256];
+  FILE *tikz_fd;
+  char tikz_fname[256];
+  
+  
+  FILE *input_trch_fd;
+  unsigned char input_trch_file=0;
+  unsigned char input_file=0;
+  char input_trch_val[16];
+  double pilot_sinr, abs_channel,channelx,channely;
+
+
+  
   DCI_ALLOC_t dci_alloc[8];
   u8 abstraction_flag=0,calibration_flag=0;
   double pbch_sinr;
   int pbch_tx_ant;
   u8 N_RB_DL=25,osf=1;
+  
+   //int len;
+  u8 num_rounds = 4,fix_rounds=0;
+  int u;
+  int abstx=0;
+  int iii;
+  FILE *csv_fd;
+  char csv_fname[512];
+  int ch_realization;
+  int pmi_feedback=0;
+  int hold_channel=0; 
+  // void *data;
+  // int ii;
+  // int bler;
+  double blerr,uncoded_ber,avg_ber;
+  short *uncoded_ber_bit;
+  
 
   int openair_fd,rx_sig_fifo_fd,get_frame=0;
   int frequency=0,fc=0;
@@ -452,4 +502,94 @@ int main(int argc, char **argv) {
   write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
   write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
-}
+// }
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  //Multipath channel
+	  if (awgn_flag == 0) {	
+	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+			      2*frame_parms->samples_per_tti,hold_channel);
+	  }
+	  
+	  if(abstx){
+	    if(saving_bler==0)
+	    if (trials==0 && round==0) {
+	      // calculate freq domain representation to compute SINR
+	      freq_channel(eNB2UE, NB_RB,12*NB_RB + 1);
+	      // snr=pow(10.0,.1*SNR);
+	      fprintf(csv_fd,"%f,",SNR);
+	      
+	      for (u=0;u<12*NB_RB;u++){
+		for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+		  for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+		    // abs_channel = (eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x + eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y);
+		    channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x;
+		    channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y;
+		    // if(transmission_mode==5){
+		    fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
+		    // }
+		    // else{
+		    //	pilot_sinr = 10*log10(snr*abs_channel);
+		    //	fprintf(csv_fd,"%e,",pilot_sinr);
+		    // }
+		  }
+		}
+	      }
+	    }
+	  }
+
+	 
+	  
+	  //AWGN
+	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
+	  sigma2 = pow(10,sigma2_dB/10);
+	  if (n_frames==1)
+	    printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
+
+	  for (i=0; i<2*frame_parms->samples_per_tti; i++) {
+	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+	      //printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
+	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = 
+		(short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = 
+		(short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+	    }
+	  }   
+
+	  //    lte_sync_time_init(PHY_vars_eNB->lte_frame_parms,lte_ue_common_vars);
+	  //    lte_sync_time(lte_ue_common_vars->rxdata, PHY_vars_eNB->lte_frame_parms);
+	  //    lte_sync_time_free();
+	  
+	  /*
+	  // optional: read rx_frame from file
+	  if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
+	  {
+	  printf("Cannot open rx_frame.m data file\n");
+	  exit(0);
+	  }
+	    
+	  result = fread((void *)PHY_vars->rx_vars[0].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
+	  printf("Read %d bytes\n",result);
+	  result = fread((void *)PHY_vars->rx_vars[1].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
+	  printf("Read %d bytes\n",result);
+	    
+	  fclose(rx_frame_file);
+	  */
+	  
+	  /*//if (n_frames==1) {
+	    //printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
+	    //printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
+	    //printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
+
+	    //printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
+	  }*/
+	  slot_fep_mbsfn(PHY_vars_UE,
+		       l,
+		       subframe%10,
+		       0,
+		       0);
+
+ }
+	
