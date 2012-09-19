@@ -46,6 +46,12 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	     int sample_offset,
 	     int no_prefix);
 
+int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
+	     unsigned char l,
+	     int subframe,
+	     int sample_offset,
+	     int no_prefix);
+
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,
 		unsigned char l,
