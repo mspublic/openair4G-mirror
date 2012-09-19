@@ -136,8 +136,8 @@ femtoUtils.o: $(OBJ)  femtoUtils.h femtoUtils.c
 	@echo "Compiling femtoUtils.c"
 	@$(CC) -c femtoUtils.c $(CFLAGS) $(OBJ) $(LFLAGS)  -L/usr/lib/libblas #-lm -lblas -DPERFECT_CE
 
-Tester: Tester.c
-	@$(CC) Tester.c -o Tester	
+Tester: Tester.c 
+	@$(CC) Tester.c -o Tester	$(CFLAGS)
 
 ComparaFile: ComparaFile.c
 	@$(CC) ComparaFile.c -o ComparaFile

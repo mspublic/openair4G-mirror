@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -44,9 +45,6 @@ u64 DLSCH_RB_ALLOC = 0x1fff;  	 //TODO:  why this value?
 PHY_VARS_eNB   *PHY_vars_eNB;
 PHY_VARS_UE    *PHY_vars_UE;
 PHY_VARS_eNB   **interf_PHY_vars_eNB;
-
-PDSCH_CONFIG_COMMON *pdsch_config_common;
-PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated;
 
 
 channel_desc_t *eNB2UE;
@@ -184,7 +182,7 @@ void _initDefaults(options_t *opts) {
     opts->pilot3 = 11;
 
     opts->num_rounds=4;
-    opts->subframe=0;     
+    opts->subframe=7;     
     opts->amp=AMP;					//1024
     opts->dci_flag=0;
 
@@ -209,9 +207,6 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
     PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
     mac_xface = malloc(sizeof(MAC_xface));
     
-    pdsch_config_common = malloc(sizeof(PDSCH_CONFIG_COMMON));
-	pdsch_config_dedicated = malloc(sizeof(PDSCH_CONFIG_DEDICATED));
-
     LTE_DL_FRAME_PARMS *lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
 
 
@@ -264,12 +259,14 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
     phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
 	// Set  p_a and p_b
-   /* PHY_vars_eNB->lte_frame_parms.pdsch_config_common.p_b=opts.p_b;
-    PHY_vars_eNB->pdsch_config_dedicated[0].p_a=opts.p_a;    
+    PHY_vars_eNB->lte_frame_parms.pdsch_config_common.p_b=opts.p_b;
+    PHY_vars_eNB->pdsch_config_dedicated->p_a=opts.p_a;    
 
     PHY_vars_UE->lte_frame_parms.pdsch_config_common.p_b=opts.p_b;
-    PHY_vars_UE->pdsch_config_dedicated[0].p_a=opts.p_a;*/
+    PHY_vars_UE->pdsch_config_dedicated->p_a=opts.p_a;
+PHY_vars_UE->n_connected_eNB=2;
 
+	  
 
     //Init interference nodes
 	interf_PHY_vars_eNB=null;
@@ -289,16 +286,16 @@ LTE_DL_FRAME_PARMS* _lte_param_init(options_t opts) {
             interf_PHY_vars_eNB[i]->Mod_id=i+1;
             phy_init_lte_eNB(interf_PHY_vars_eNB[i],0,0,0);            		
             
-          /*  interf_PHY_vars_eNB[i]->lte_frame_parms.pdsch_config_common.p_b=opts.p_b;
-            interf_PHY_vars_eNB[i]->pdsch_config_dedicated[0].p_a=opts.p_a;  */  
+            interf_PHY_vars_eNB[i]->lte_frame_parms.pdsch_config_common.p_b=opts.p_b;
+            interf_PHY_vars_eNB[i]->pdsch_config_dedicated->p_a=opts.p_a;  
 
         }
     }
     
 
     // DL power control init
-	pdsch_config_dedicated->p_a = opts.p_a; // 4 = 0dB
-	pdsch_config_common->p_b = opts.p_b;
+	/*pdsch_config_dedicated->p_a = opts.p_a; // 4 = 0dB
+	pdsch_config_common->p_b = opts.p_b;*/
     
     
 
@@ -393,8 +390,8 @@ void _allocDLSChannel(options_t opts) {
 		
         PHY_vars_eNB->dlsch_eNB[0][i]->rnti = opts.n_rnti;
         
-		computeRhoA_eNB(pdsch_config_dedicated,PHY_vars_eNB->dlsch_eNB[0][i]);
-		computeRhoB_eNB(pdsch_config_dedicated,pdsch_config_common,PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,PHY_vars_eNB->dlsch_eNB[0][i]);
+		//computeRhoA_eNB(PHY_vars_eNB->pdsch_config_dedicated,PHY_vars_eNB->dlsch_eNB[0][i]);
+	//	computeRhoB_eNB(PHY_vars_eNB->pdsch_config_dedicated,&PHY_vars_eNB->lte_frame_parms.pdsch_config_common,PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,PHY_vars_eNB->dlsch_eNB[0][i]);
     
         
         for(j=0;j<opts.nInterf;j++)
@@ -408,8 +405,8 @@ void _allocDLSChannel(options_t opts) {
 			
 			interf_PHY_vars_eNB[j]->dlsch_eNB[0][i]->rnti = opts.n_rnti;
 			
-			computeRhoA_eNB(pdsch_config_dedicated,interf_PHY_vars_eNB[j]->dlsch_eNB[0][i]);
-			computeRhoB_eNB(pdsch_config_dedicated,pdsch_config_common,interf_PHY_vars_eNB[j]->lte_frame_parms.nb_antennas_tx,interf_PHY_vars_eNB[j]->dlsch_eNB[0][i]);
+		//	computeRhoA_eNB(interf_PHY_vars_eNB[j]->pdsch_config_dedicated,interf_PHY_vars_eNB[j]->dlsch_eNB[0][i]);
+		//	computeRhoB_eNB(interf_PHY_vars_eNB[j]->pdsch_config_dedicated,&interf_PHY_vars_eNB[j]->lte_frame_parms.pdsch_config_common,interf_PHY_vars_eNB[j]->lte_frame_parms.nb_antennas_tx,interf_PHY_vars_eNB[j]->dlsch_eNB[0][i]);
 		}
                 
         //UE
@@ -420,8 +417,8 @@ void _allocDLSChannel(options_t opts) {
         }
         PHY_vars_UE->dlsch_ue[0][i]->rnti   = opts.n_rnti; 
         
-        computeRhoA_UE(pdsch_config_dedicated,PHY_vars_UE->dlsch_ue[0][i]);
-		computeRhoB_UE(pdsch_config_dedicated,pdsch_config_common,PHY_vars_UE->lte_frame_parms.nb_antennas_tx,PHY_vars_UE->dlsch_ue[0][i]);
+      //  computeRhoA_UE(PHY_vars_UE->pdsch_config_dedicated,PHY_vars_UE->dlsch_ue[0][i]);
+	//	computeRhoB_UE(PHY_vars_UE->pdsch_config_dedicated,&PHY_vars_UE->lte_frame_parms.pdsch_config_common,PHY_vars_UE->lte_frame_parms.nb_antennas_tx,PHY_vars_UE->dlsch_ue[0][i]);
         
     }
 
@@ -431,8 +428,8 @@ void _allocDLSChannel(options_t opts) {
     else
         PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single = 0;
 
-	compute_sqrt_RhoAoRhoB(pdsch_config_dedicated,
-                   pdsch_config_common,opts.n_tx,PHY_vars_UE->dlsch_ue[0][0]);
+//	compute_sqrt_RhoAoRhoB( PHY_vars_eNB->pdsch_config_dedicated,
+ //                  &PHY_vars_eNB->lte_frame_parms.pdsch_config_common,opts.n_tx,PHY_vars_UE->dlsch_ue[0][0]);
 
 }
 
@@ -446,7 +443,7 @@ void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_r
                                        opts.n_rnti,
                                        format1E_2A_M10PRB,		
                                        PHY_vars_eNB->dlsch_eNB[0],
-                                       &PHY_vars_eNB->lte_frame_parms,   
+                                       &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
                                        SI_RNTI,
                                        0,
                                        P_RNTI,
@@ -467,7 +464,7 @@ void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_r
                                        opts.n_rnti,
                                        format1E_2A_M10PRB,		
                                        interf_PHY_vars_eNB[i]->dlsch_eNB[0],
-                                       &(interf_PHY_vars_eNB[i])->lte_frame_parms,   
+                                       &(interf_PHY_vars_eNB[i])->lte_frame_parms,   PHY_vars_eNB->pdsch_config_dedicated,
                                        SI_RNTI,
                                        0,
                                        P_RNTI,
@@ -1005,8 +1002,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
  
 
                 _fillData(opts,data,2);
-        
-                sigma2_dB = 10*log10((double)tx_lev) +10*log10(numOFDMSymbSubcarrier) - SNR;
+                
+                sigma2_dB = 10*log10((double)tx_lev) +10*log10(numOFDMSymbSubcarrier) - SNR- get_pa_dB(PHY_vars_eNB->pdsch_config_dedicated);
                 sigma2 = pow(10,sigma2_dB/10);
                 
 				//Noise and Interference
@@ -1078,7 +1075,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                 {                                    
                                     status =generate_ue_dlsch_params_from_dci(0,dci_alloc_rx[i].dci_pdu,
                                                                                dci_alloc_rx[i].rnti,dci_alloc_rx[i].format,
-                                                                               PHY_vars_UE->dlsch_ue[0],&PHY_vars_UE->lte_frame_parms,
+                                                                               PHY_vars_UE->dlsch_ue[0],&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->pdsch_config_dedicated,
                                                                                SI_RNTI,0,P_RNTI);                                                                                                            
                                                                                
                                     if ((dci_alloc_rx[i].rnti == opts.n_rnti) && (status==0)) {
@@ -1115,7 +1112,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                                                                   C_RNTI,
                                                                   format1E_2A_M10PRB,
                                                                   PHY_vars_UE->dlsch_ue[0],
-                                                                  &PHY_vars_UE->lte_frame_parms,
+                                                                  &PHY_vars_UE->lte_frame_parms,PHY_vars_UE->pdsch_config_dedicated,
                                                                   SI_RNTI,
                                                                   0,
                                                                   P_RNTI);                            
