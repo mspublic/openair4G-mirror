@@ -17,6 +17,7 @@
 void _parseOptions(options_t *opts, int argc, char ** argv) {
     char c;
     char aux[100];
+    int prob_flag=0;
     
      static struct option long_options[] =
              {                             
@@ -30,15 +31,16 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                {"t",    required_argument, 0, 't'},
                {"y",    required_argument, 0, 'y'},
                {"z",    required_argument, 0, 'z'},
-               {"I",    required_argument, 0, 'I'},
+               {"I",    required_argument, 0, 'I'},               
                {"j",    required_argument, 0, 'j'},
                {"N",    required_argument, 0, 'N'},
                {"o",    required_argument, 0, 'o'},
                {"g",    required_argument, 0, 'g'},
-               {"f",    required_argument, 0, 'f'},
+               {"f",    no_argument, 0, 'f'},
                {"a",    no_argument, 	  0, 'a'},
                {"b",    required_argument, 0, 'b'},
                {"w",    required_argument, 0, 'w'},
+               {"k",    required_argument, 0, 'k'},
                {"c",    required_argument, 0, 'c'},
                {"e",    no_argument, 0, 'e'},
                {"m",    required_argument, 0, 'm'},
@@ -53,7 +55,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 
 		int option_index = 0;   
 		
-    while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:em:A:Dp:",long_options, &option_index)) != -1)
+    while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:fab:w:c:em:A:Dp:k:",long_options, &option_index)) != -1)
     {
 		//printf("%c %s\n",c,optarg);
         switch (c)
@@ -62,6 +64,10 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             opts->awgn_flag=1;
                opts->channel_model=AWGN;
             sprintf(opts->parameters,"%s -a",opts->parameters);
+            break;
+          case 'f':
+            opts->fixed_channel_flag=1;               
+            sprintf(opts->parameters,"%s -f",opts->parameters);
             break;
          case 'D':
             if(opts->n_adj_cells==0 )
@@ -149,6 +155,18 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             sprintf(aux,"%s",optarg);
             strcpy(opts->interfLevels,aux);
             sprintf(opts->parameters,"%s  -w%s", opts->parameters,opts->interfLevels);
+           
+            break;
+        case 'k':			
+			if(opts->nInterf==0 )
+            {
+				msg("First  specify the number of interferer with -I#  \n");                
+                exit(-1);
+			}
+            sprintf(aux,"%s",optarg);
+            strcpy(opts->interfProbability,aux);
+            sprintf(opts->parameters,"%s  -k%s", opts->parameters,opts->interfProbability);
+             prob_flag=1;
             break;
         case 'N':
             opts->Nid_cell = atoi(optarg);
@@ -193,9 +211,27 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                 break;
             case 'G':
                 opts->channel_model=ETU;
-                break;
+                break;                
+			case 'H':
+			  opts->channel_model=Rayleigh8;
+			  break;
+			case 'I':
+			  opts->channel_model=Rayleigh1;
+			  break;
+			case 'J':
+			  opts->channel_model=Rayleigh1_corr;
+			  break;
+			case 'K':
+			  opts->channel_model=Rayleigh1_anticorr;
+			  break;
+			case 'L':
+			  opts->channel_model=Rice8;
+			  break;
+			case 'M':
+			  opts->channel_model=Rice1;
+			  break;
             default:
-                msg("Unsupported channel model! [A,B,C,D,E,F,G]\n");                
+                msg("Unsupported channel model! [A,B,C,D,E,F,G,H,I,J,K,L,M]\n");                
                 exit(-1);
             }
             break;
@@ -244,6 +280,8 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             printf("-e    Enable verification of DCI\n"); 
             printf("-A    Indicates  number of interfering  to estimate, by default does not estimate the channel from the interfering\n"); 
             printf("-r    Number of rounds\n"); 
+            printf("-k    Probability of each interferer list (0-100)  separeted by ',' \n");
+            printf("-f    Use fixed data and channel\n");
             exit (-1);
             break;
 
@@ -253,7 +291,10 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 
     sprintf(opts->folderName,"%d_resp",opts->testNumber);
     if (opts->nInterf>0)
-        _parseInterferenceLevels(opts,opts->interfLevels,opts->nInterf);
+    {
+        _parseInterferenceLevels(opts,opts->interfLevels,opts->nInterf);        
+			_parseInterferenceProbability(opts,opts->interfProbability,opts->nInterf,prob_flag);
+	}
 
 }
 
@@ -279,16 +320,43 @@ void _printOptions(options_t *opts)
 
     for (i=0; i<opts->nInterf; i++)
     {
-        printf("\n\tInterference n%d:%f",i+1,opts->dbInterf[i]);
+        printf("\n\tInterference n%d:%f (%d\%)",i+1,opts->dbInterf[i],opts->probabilityInterf[i]);
     }
-
-
+ 
 
 
     printf("\n");
 
 
 }
+
+
+
+void _parseInterferenceProbability(options_t *opts, char *interfProbability,int nInterf,int prob_flag)
+{
+    int i;
+    char * pch;
+
+    opts->probabilityInterf=(double*)malloc(sizeof(double)*nInterf);
+    for (i=0; i<nInterf; i++)
+    {        
+        opts->probabilityInterf[i]=100;
+	}
+	if(prob_flag)
+	{
+		pch = strtok (interfProbability,",");
+		i=0;
+		while (pch != NULL)
+		{
+			 opts->probabilityInterf[i]=atoi(pch);
+			i++;
+			pch = strtok (NULL,",");
+		}
+		
+	}
+
+}
+
 
 void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf)
 {
@@ -374,6 +442,20 @@ void _allocData(options_t opts, data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_
 		}
         
     }
+
+}
+
+void copyDataFixed(data_t * origin,data_t * destination,options_t  *opts, int Frame_length_complex_samples)
+{
+	
+    int i,j;
+                                                    
+    int sizeData=4*opts->nInterf*sizeof(double**)+    
+				(opts->nInterf+1)*2*(opts->n_tx+opts->n_rx)*(sizeof(double*)+Frame_length_complex_samples*sizeof(double));
+    
+    printf("Copying sizeData: %d\n",sizeData);
+    
+    opts->fixed_data_set=1;
 
 }
 

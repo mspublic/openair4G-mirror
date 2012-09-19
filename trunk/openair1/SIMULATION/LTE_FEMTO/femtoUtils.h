@@ -23,7 +23,10 @@ typedef struct {
     double snr_max;
     double snr_step;
     int nframes;
+    int fixed_channel_flag;
+    int fixed_data_set;
     int extended_prefix_flag;
+    
     ///Frame type (0 FDD, 1 TDD).
     u8 frame_type;				
     ///Transmission mode (1 for the moment)
@@ -36,7 +39,9 @@ typedef struct {
     int nInterf;
     ///Array with interference  level in dB 
     double *dbInterf;
+    int *probabilityInterf;
     char interfLevels[150];
+    char interfProbability[150];
     
     u16 Nid_cell;
     u8 oversampling;
@@ -104,11 +109,14 @@ void _parseOptions(options_t *opts, int argc, char ** argv);
 void _printOptions(options_t *opts);
 /// Interference Levels are recivend in form  num,num,num this function parse the string and fill dbInterf array 
 void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf);
+void _parseInterferenceProbability(options_t *opts, char *interfLevels,int nInterf,int prob_flag);
 
 
 void _parsePower(options_t *opts);
 /// Allocate memory  for signal data arrays 
 void _allocData(options_t opts,data_t *data, u8 n_tx,u8 n_rx,int Frame_length_complex_samples);
+
+void copyDataFixed(data_t *origin,data_t *destination,options_t  *opts, int Frame_length_complex_samples);	
 /// Generate output dir with the prefix specified in testNumber
 void _makeOutputDir(options_t *opts);
 
@@ -139,6 +147,7 @@ void _fillData(options_t opts,data_t data,int numSubFrames);
 void _applyNoise(options_t opts,data_t data,double sigma2,double iqim,int numSubFrames);
 u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_alloc,options_t opts,u8 num_pdcch_symbols);
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms);
+//void _apply_Multipath_Noise_Interference(options_t opts,data_t data,data_t data_fixed,double sigma2_dB,double sigma2,int numSubFrames);
 void _apply_Multipath_Noise_Interference(options_t opts,data_t data,double sigma2_dB,double sigma2,int numSubFrames);
 void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncoded_ber_bit,u32 tbs);
 void _dumpTransportBlockSegments(u32 C,u32 Cminus,u32 Kminus,u32 Kplus,  u8 ** c_UE,u8 ** c_eNB);
