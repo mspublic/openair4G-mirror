@@ -117,10 +117,11 @@ bool GeonetSetConfigurationEventPacket::serialize(vector<unsigned char>& buffer)
 		packetBody[2] = ((mib.getLength(requestedItsKey) & 0xff00) >> 8);
 		packetBody[3] = (mib.getLength(requestedItsKey) & 0xff);
 		// `conf value' field
-		packetBody[4] = (mib.getItsKeyIntegerValue(requestedItsKey) >> 24) & 0xff;
-		packetBody[5] = (mib.getItsKeyIntegerValue(requestedItsKey) >> 16) & 0xff;
-		packetBody[6] = (mib.getItsKeyIntegerValue(requestedItsKey) >> 8) & 0xff;
-		packetBody[7] = (mib.getItsKeyIntegerValue(requestedItsKey) & 0xff);
+		u_int32_t configurationValue = mib.getItsKeyValue(requestedItsKey).intValue;
+		packetBody[4] = (configurationValue >> 24) & 0xff;
+		packetBody[5] = (configurationValue >> 16) & 0xff;
+		packetBody[6] = (configurationValue >> 8) & 0xff;
+		packetBody[7] = (configurationValue & 0xff);
 
 		buffer.resize(sizeof(ContinuousConfigurationResponse));
 
@@ -153,7 +154,7 @@ ConfigurationItem GeonetSetConfigurationEventPacket::buildConfigurationItem(ItsK
 
 	confItem.configurationId = itsKey;
 	confItem.length = mib.getLength(itsKey);
-	confItem.configurationValue = mib.getItsKeyIntegerValue(itsKey);
+	confItem.configurationValue = mib.getItsKeyValue(itsKey).intValue;
 
 	return confItem;
 }
@@ -165,7 +166,7 @@ string GeonetSetConfigurationEventPacket::toString() const {
 		ss << "Key count: " << ((isBulk) ? mib.getItsKeyManager().getNumberOfKeys(requestedItsKeyType) : 1) << endl;
 	} else {
 		ss << "Configuration ID: " << requestedItsKey << endl << "Length: " << mib.getLength(requestedItsKey) << endl
-		    << "Value: " << mib.getItsKeyIntegerValue(requestedItsKey) << endl;
+		    << "Value: " << mib.getItsKeyValue(requestedItsKey).intValue << endl;
 	}
 
 	return ss.str();

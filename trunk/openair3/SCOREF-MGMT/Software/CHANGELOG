@@ -1,4 +1,13 @@
 
+v1.1.3
+* FacConfigurationNotification class has been added to get configuration updates from 
+  FACilities thru UDP socket
+* ItsKeyValue become a struct to support float and string values
+* ItsKeyManager now can handle float and string values
+* Configuration class now can parse float and string values (given with quotes)
+* mgmt_types.hpp file's symbolic constants have been fixed
+* VariableSizeConfigurationItem is introduced to support string-type configuration values
+
 v1.1.2
 * Configuration class now can handle more than one configuration file
 * IF.IHM.conf file added for PCVE IHM parameters

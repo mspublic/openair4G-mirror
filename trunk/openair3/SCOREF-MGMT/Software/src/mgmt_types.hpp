@@ -28,7 +28,7 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packets.h
+ * \file mgmt_types.h
  * \brief Definitions of common data types used in SCOREF Management Module
  * \company EURECOM
  * \date 2012
@@ -39,12 +39,13 @@
  * \warning none
 */
 
-#ifndef MGMT_GN_DATATYPES_HPP_
-#define MGMT_GN_DATATYPES_HPP_
+#ifndef MGMT_TYPES_HPP_
+#define MGMT_TYPES_HPP_
 
 #include <sys/types.h>
 #include <sstream>
 #include <string>
+#include <vector>
 using namespace std;
 
 /**
@@ -121,12 +122,13 @@ enum EventType {
 	MGMT_FAC_EVENT_CONF_CONT_RESPONSE = 0x312,
 	MGMT_GN_EVENT_CONF_BULK_RESPONSE = 0x303,
 	MGMT_FAC_EVENT_CONF_BULK_RESPONSE = 0x313,
+	MGMT_FAC_EVENT_CONF_NOTIFICATION = 0x314,
 	MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST = 0x304,
-	MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST = 0x314,
+	MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST = 0x315,
 	MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE = 0x305,
-	MGMT_FAC_EVENT_CONF_COMM_PROFILE_RESPONSE = 0x315,
-	MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST = 0x316,
-	MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_RESPONSE = 0x317,
+	MGMT_FAC_EVENT_CONF_COMM_PROFILE_RESPONSE = 0x316,
+	MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST = 0x317,
+	MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_RESPONSE = 0x318,
 	/**
 	 * State
 	 */
@@ -326,7 +328,7 @@ struct ConfigurationRequestMessage {
 /**
  * Configuration Item
  *
- * This struct holds the common "configuration item" fields of
+ * This structure holds the common "configuration item" fields of
  * continuous and bulk configuration set messages
  */
 struct ConfigurationItem {
@@ -334,6 +336,18 @@ struct ConfigurationItem {
 	u_int16_t length; /* # of DWORDs */
 	u_int32_t configurationValue;
 } __attribute__((packed));
+
+/**
+ * Variable-size Configuration Item
+ *
+ * This structure holds the variable-size "configuration item" field
+ * of FAC Configuration Notification
+ */
+struct VariableSizeConfigurationItem {
+	u_int16_t configurationId;
+	u_int16_t length; /* # of DWORDS */
+	vector<unsigned char> configurationBuffer;
+};
 
 /**
  * Set Configuration Event (Continuous)
@@ -357,4 +371,13 @@ struct BulkConfigurationResponse {
 	u_int16_t keyCount;
 } __attribute__((packed));
 
-#endif /* MGMT_GN_DATATYPES_HPP_ */
+/**
+ * FAC Configuration Notification
+ */
+struct ConfigurationNotification {
+	MessageHeader header;
+
+	VariableSizeConfigurationItem configurationItem;
+};
+
+#endif /* MGMT_TYPES_HPP_ */

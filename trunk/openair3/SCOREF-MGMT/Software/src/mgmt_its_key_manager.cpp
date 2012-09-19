@@ -42,6 +42,7 @@
 #include "mgmt_its_key_manager.hpp"
 #include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
+#include "util/mgmt_util.hpp"
 #include <sstream>
 
 ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {
@@ -79,16 +80,21 @@ map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
 	return subset;
 }
 
-bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue) {
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsDataType dataType, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue) {
+	/**
+	 * Validate incoming values
+	 */
 	if (name.empty())
 		throw Exception("ITS key name is empty!", logger);
-	else if (value < minValue || value > maxValue)
-		throw Exception("ITS key '" + name + "'s value (" + boost::lexical_cast<string>(value) + ") is out-of-range!", logger);
+	else if (dataType == ITS_DATA_TYPE_INTEGER && (value.intValue < minValue.intValue || value.intValue > maxValue.intValue))
+		throw Exception("ITS key '" + name + "'s value (" + boost::lexical_cast<string>(value.intValue) + ") is out-of-range!", logger);
+	else if (dataType == ITS_DATA_TYPE_FLOAT && (value.floatValue < minValue.floatValue || value.floatValue > maxValue.floatValue))
+		throw Exception("ITS key '" + name + "'s value (" + boost::lexical_cast<string>(value.floatValue) + ") is out-of-range!", logger);
 
 	ItsKey itsKey;
 	itsKey.name = name;
 	itsKey.keyType = keyType;
-	itsKey.dataType = ITS_DATA_TYPE_INTEGER;
+	itsKey.dataType = dataType;
 	itsKey.value = value;
 	itsKey.minValue = minValue;
 	itsKey.maxValue = maxValue;
@@ -97,26 +103,41 @@ bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, 
 	return true;
 }
 
-bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, const string& value) {
-	if (name.empty())
-		throw Exception("ITS key name is empty!", logger);
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, u_int32_t value, u_int32_t minValue, u_int32_t maxValue) {
+	ItsKeyValue valueContainer, minValueContainer, maxValueContainer;
+
+	valueContainer.intValue = value;
+	minValueContainer.intValue = minValue;
+	maxValueContainer.intValue = maxValue;
 
 	ItsKey itsKey;
 	itsKey.name = name;
 	itsKey.keyType = keyType;
-	itsKey.dataType = ITS_DATA_TYPE_STRING;
-	itsKey.stringValue = value;
+	itsKey.dataType = ITS_DATA_TYPE_INTEGER;
+	itsKey.value = valueContainer;
+	itsKey.minValue = minValueContainer;
+	itsKey.maxValue = maxValueContainer;
 	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
 
 	return true;
 }
 
-ItsKeyValue ItsKeyManager::getKeyIntegerValue(ItsKeyID id) {
-	return itsKeyMap[id].value;
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, const string& value) {
+	ItsKeyValue valueContainer;
+	valueContainer.stringValue = Util::trim(value, '"');
+
+	ItsKey itsKey;
+	itsKey.name = name;
+	itsKey.keyType = keyType;
+	itsKey.dataType = ITS_DATA_TYPE_STRING;
+	itsKey.value = valueContainer;
+	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
+
+	return true;
 }
 
-string ItsKeyManager::getKeyStringValue(ItsKeyID id) {
-	return itsKeyMap[id].stringValue;
+ItsKeyValue& ItsKeyManager::getKeyValue(ItsKeyID id) {
+	return itsKeyMap[id].value;
 }
 
 ItsKeyType ItsKeyManager::getKeyType(ItsKeyID id) {
@@ -132,17 +153,6 @@ bool ItsKeyManager::setKeyValue(const string& name, ItsKeyValue value) {
 
 	while (iterator != this->itsKeyMap.end()) {
 		if (!name.compare(0, iterator->second.name.length(), iterator->second.name)) {
-			/**
-			 * Validate incoming value
-			 */
-			if (value < iterator->second.minValue || value > iterator->second.maxValue) {
-				stringstream exceptionMessage;
-				exceptionMessage << "ITS key '" << name << "' [range:" << boost::lexical_cast<string>(iterator->second.minValue)
-								 << "-" << boost::lexical_cast<string>(iterator->second.maxValue) << "] value '"
-								 << boost::lexical_cast<string>(value) << "' is out-of-range!";
-				throw Exception(exceptionMessage.str(), logger);
-			}
-
 			iterator->second.value = value;
 			return true;
 		}
@@ -154,12 +164,6 @@ bool ItsKeyManager::setKeyValue(const string& name, ItsKeyValue value) {
 }
 
 bool ItsKeyManager::setKeyValue(ItsKeyID id, ItsKeyValue value) {
-	/**
-	 * Validate incoming value
-	 */
-	if (value < itsKeyMap[id].minValue || value > itsKeyMap[id].maxValue)
-		throw Exception("ITS key '" + itsKeyMap[id].name + "' value '" + boost::lexical_cast<string>(value) + "' is out-of-range!", logger);
-
 	itsKeyMap[id].value = value;
 
 	return true;

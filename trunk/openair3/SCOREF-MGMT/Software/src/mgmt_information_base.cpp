@@ -108,6 +108,39 @@ bool ManagementInformationBase::setValue(ItsKeyID id, ItsKeyValue value) {
 	return true;
 }
 
+bool ManagementInformationBase::setValue(ItsKeyID id, const vector<unsigned char>& value) {
+	/**
+	 * Set the value according to its data type
+	 */
+	switch (itsKeyManager.getDataType(id)) {
+		case ITS_DATA_TYPE_FLOAT:
+			if (value.size() != 4) {
+				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has float type but incompatible size");
+				return false;
+			}
+			itsKeyManager.getKeyValue(id).floatValue = Util::parse4byteFloat(value);
+			break;
+
+		case ITS_DATA_TYPE_INTEGER:
+			if (value.size() != 4) {
+				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has integer type but incompatible size");
+				return false;
+			}
+			Util::parse4byteInteger(value.data(), &itsKeyManager.getKeyValue(id).intValue);
+			break;
+
+		case ITS_DATA_TYPE_STRING:
+			itsKeyManager.getKeyValue(id).stringValue = string(value.begin(), value.end());
+			break;
+
+		default:
+			logger.warning("Invalid data type for an ITS key");
+			return false;
+	}
+
+	return true;
+}
+
 bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) {
 	if (name.empty())
 		throw Exception("Incoming parameter name is empty!", logger);
@@ -122,8 +155,8 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 	return true;
 }
 
-ItsKeyValue ManagementInformationBase::getItsKeyIntegerValue(ItsKeyID id) {
-	return itsKeyManager.getKeyIntegerValue(id);
+ItsKeyValue ManagementInformationBase::getItsKeyValue(ItsKeyID id) {
+	return itsKeyManager.getKeyValue(id);
 }
 
 u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {

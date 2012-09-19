@@ -45,10 +45,11 @@
 #include <boost/array.hpp>
 using namespace boost;
 
-#include "packets/mgmt_gn_packet_comm_profile_request.hpp"
+#include "packets/mgmt_fac_packet_configuration_notification.hpp"
 #include "packets/mgmt_gn_packet_location_table_response.hpp"
-#include "packets/mgmt_gn_packet_get_configuration.hpp"
 #include "packets/mgmt_gn_packet_wireless_state_response.hpp"
+#include "packets/mgmt_gn_packet_comm_profile_request.hpp"
+#include "packets/mgmt_gn_packet_get_configuration.hpp"
 #include "packets/mgmt_gn_packet_network_state.hpp"
 #include "mgmt_gn_packet_factory.hpp"
 #include "mgmt_information_base.hpp"
@@ -115,6 +116,13 @@ class PacketHandler {
 		 * @return true on success, false otherwise
 		 */
 		bool handleLocationTableResponse(GeonetLocationTableResponseEventPacket* packet);
+		/**
+		 * Handles a Configuration Notification packet
+		 *
+		 * @param Pointer to a Configuration Notification packet
+		 * @return true on success, false otherwise
+		 */
+		bool handleConfigurationNotification(FacConfigurationNotificationPacket* packet);
 		/**
 		 * Handles a Communication Profile Request event message and creates a
 		 * Communication Profile Response packet
