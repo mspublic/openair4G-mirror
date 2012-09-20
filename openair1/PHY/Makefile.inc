@@ -31,7 +31,6 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/initial_sync.o
 #PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_transport_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
-PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_mbsfn.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_ul.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ul_7_5_kHz.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/freq_equalization.o
