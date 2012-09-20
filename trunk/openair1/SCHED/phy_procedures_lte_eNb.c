@@ -267,6 +267,7 @@ int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rn
   int search_space_free,m,nb_candidates,l,i;
   unsigned int Yk;
 
+  
   if (common_dci == 1) {
     // check CCE(0 ... L-1)
     nb_candidates = (L==4) ? 4 : 2;
@@ -923,7 +924,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					   P_RNTI,
 					   phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
 
-	if ((phy_vars_eNB->dlsch_eNB_SI->nCCE[next_slot>>1] = get_nCCE_offset(DCI_pdu->dci_alloc[i].L,
+	if ((phy_vars_eNB->dlsch_eNB_SI->nCCE[next_slot>>1] = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
 									      DCI_pdu->dci_alloc[i].nCCE,
 									      1,
 									      SI_RNTI,
@@ -931,8 +932,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  LOG_E(PHY,"[eNB %d] Frame %d subframe %d : No available CCE resources for common DCI (SI)!!!\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1);
       	} 
 	else {
-	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resource for common DCI (SI)  => %d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,
-		phy_vars_eNB->dlsch_eNB_SI->nCCE[next_slot>>1]);
+	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resource for common DCI (SI)  => %d/%d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,
+		phy_vars_eNB->dlsch_eNB_SI->nCCE[next_slot>>1],DCI_pdu->nCCE);
 	}
 	DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB_SI->nCCE[next_slot>>1];
 
@@ -954,7 +955,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					   phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
 
 
-	if ((phy_vars_eNB->dlsch_eNB_ra->nCCE[next_slot>>1] = get_nCCE_offset(DCI_pdu->dci_alloc[i].L,
+	if ((phy_vars_eNB->dlsch_eNB_ra->nCCE[next_slot>>1] = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
 									      DCI_pdu->nCCE,
 									      1,
 									      DCI_pdu->dci_alloc[i].rnti,
@@ -962,8 +963,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  LOG_E(PHY,"[eNB %d] Frame %d subframe %d : No available CCE resources for common DCI (RA) !!!\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1);
 	}
 	else {
-	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resource for common DCI (RA)  => %d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,
-		phy_vars_eNB->dlsch_eNB_ra->nCCE[next_slot>>1]);
+	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resource for common DCI (RA)  => %d/%d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,
+		phy_vars_eNB->dlsch_eNB_ra->nCCE[next_slot>>1],DCI_pdu->nCCE);
 	}
 	DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB_ra->nCCE[next_slot>>1];
       }
@@ -992,25 +993,25 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					     P_RNTI,
 					     phy_vars_eNB->eNB_UE_stats[(u8)UE_id].DL_pmi_single);
 
-	if ((phy_vars_eNB->dlsch_eNB_SI->nCCE[next_slot>>1] = get_nCCE_offset(DCI_pdu->dci_alloc[i].L,
-									      DCI_pdu->nCCE,
-									      0,
-									      DCI_pdu->dci_alloc[i].rnti,
-									      next_slot>>1)) == -1) {
+	  if ((phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1] = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
+											   DCI_pdu->nCCE,
+											   0,
+											   DCI_pdu->dci_alloc[i].rnti,
+											   next_slot>>1)) == -1) {
 	  LOG_E(PHY,"[eNB %d] Frame %d subframe %d : No available CCE resources for UE spec DCI (PDSCH %x) !!!\n",
 		phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,DCI_pdu->dci_alloc[i].rnti);
 	}
 	else {
-	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %x)  => %d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,
-		DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1]);
+	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %x)  => %d/%d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,
+		DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1],DCI_pdu->nCCE);
 	}
-	DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1];
 #ifdef DEBUG_PHY_PROC      
+	DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1];
 	  LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d UE_id %d Generated DCI format %d, aggregation %d\n",
 	      phy_vars_eNB->Mod_id, DCI_pdu->dci_alloc[i].rnti,
 	      phy_vars_eNB->frame, next_slot>>1,UE_id,
 	      DCI_pdu->dci_alloc[i].format,
-	      DCI_pdu->dci_alloc[i].L);
+	      1<<DCI_pdu->dci_alloc[i].L);
 #endif
 	}
 	else {
@@ -1061,7 +1062,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    next_slot>>1,DCI_pdu->dci_alloc[i].rnti,
 	    *(unsigned int *)&DCI_pdu->dci_alloc[i].dci_pdu[0],
 	    i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci,
-	    DCI_pdu->dci_alloc[i].L);
+	    1<<DCI_pdu->dci_alloc[i].L);
 #endif
 	
 	generate_eNB_ulsch_params_from_dci(&DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1075,10 +1076,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					   P_RNTI,
 					   0);  // do_srs
 
-	if ((DCI_pdu->dci_alloc[i].nCCE=get_nCCE_offset(DCI_pdu->dci_alloc[i].L,
-						       DCI_pdu->nCCE,
+	if ((DCI_pdu->dci_alloc[i].nCCE=get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
+							DCI_pdu->nCCE,
 							0,
-						       DCI_pdu->dci_alloc[i].rnti,
+							DCI_pdu->dci_alloc[i].rnti,
 							next_slot>>1)) == -1) {
 	  LOG_E(PHY,"[eNB %d] Frame %d subframe %d : No available CCE resources for UE spec DCI (PUSCH %x) !!!\n",
 		phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,DCI_pdu->dci_alloc[i].rnti);
@@ -1531,6 +1532,7 @@ void process_HARQ_feedback(u8 UE_id,
 
        dlsch_ACK[0] = phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[0];
        dlsch_ACK[1] = phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[1];
+       //      printf("UE %d: ACK %d,%d\n",UE_id,dlsch_ACK[0],dlsch_ACK[1]);
     }
 
     else {  // PUCCH ACK/NAK
@@ -2208,8 +2210,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round++;
 	//	printf("[UE][PUSCH %d] Increasing to round %d\n",harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round);
 
-	phy_vars_eNB->ulsch_eNB[i]->o_ACK[0] = 0;
-	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1] = 0;
+	//	phy_vars_eNB->ulsch_eNB[i]->o_ACK[0] = 0;
+	//	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1] = 0;
 
 
 
@@ -2255,11 +2257,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  }
 	} // This is Msg3 error
 	else {
-	  LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d\n",
-	      phy_vars_eNB->Mod_id,harq_pid,
-	      phy_vars_eNB->frame,last_slot>>1, i,
-	      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round-1,
-	      phy_vars_eNB->ulsch_eNB[i]->Mdlharq);
+	  LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
+		phy_vars_eNB->Mod_id,harq_pid,
+		phy_vars_eNB->frame,last_slot>>1, i,
+		phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round-1,
+		phy_vars_eNB->ulsch_eNB[i]->Mdlharq,
+		phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],
+		phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
 
 	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round==
 	      phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
