@@ -192,12 +192,22 @@ int mac_top_init(){
 
     RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].RA_template[0];
     for (j=0;j<NB_RA_PROC_MAX;j++) {
-      memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      if (mac_xface->lte_frame_parms->frame_type == TDD) {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      }
+      else {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_FDD_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_FDD_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_FDD_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_FDD_t;
+      }
       RA_template[j].RA_dci_fmt1        = format1A;
       RA_template[j].RA_dci_fmt2        = format1A;
     }
