@@ -621,7 +621,7 @@ int main(int argc, char **argv) {
 	    //printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 	  }*/
 	  
-   if (n_frames==1) {
+  /* if (n_frames==1) {
 	    printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	    printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	    printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
@@ -631,8 +631,8 @@ int main(int argc, char **argv) {
 	  if (PHY_vars_eNB->lte_frame_parms.Ncp == 1) {  // extended prefix
 	    pilot1 = 2;
 	    pilot2 = 6;
-	    pilot3 = 10;
-	  }
+	    pilot3 = 10; 
+	  } */
 	  //else {  // extended prefix
 	    //pilot1 = 3;
 	    //pilot2 = 6;
