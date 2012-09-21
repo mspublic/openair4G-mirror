@@ -268,7 +268,7 @@ int mag_kickoff_ra(pmip_entry_t * bce)
     if (err < 0) {
         dbg("Error: couldn't send a RA message ...\n");
     } else {
-        dbg("RA LL ADDRESS sent\n");
+        dbg("RA LL ADDRESS sent on bce link %d\n", bce->link);
     }
     return err;
 }
@@ -326,6 +326,7 @@ int mag_get_ingress_info(int *if_index, char *dev_name_mn_link)
             strncpy(dev_name_mn_link, devname, 32);
             *if_index = if_idx;
             dbg("The interface name of the device that is used for communicate with MNs is %s\n", dev_name_mn_link);
+            dbg("The interface index of the device that is used for communicate with MNs is %d\n", *if_index);
             fclose(fp);
             return 1;
         }
@@ -455,7 +456,11 @@ int mag_pmip_md(msg_info_t * info, pmip_entry_t * bce)
         struct in6_addr *link_local = link_local_addr(&bce->mn_suffix);
         bce->mn_link_local_addr = *link_local;  // link local address of MN
         bce->type               = BCE_TEMP;
-        dbg("Making BCE entry in MAG with HN prefix  %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix));
+        dbg("Making BCE entry in MAG with HN prefix        %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix));
+        dbg("                             Suffix           %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_suffix));
+        dbg("                             Link local addr  %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_link_local_addr));
+        dbg("                             Serv mag addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_mag_addr));
+        dbg("                             Serv lma addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_lma_addr));
         dbg("New attachment detected! Start Location Registration procedure...\n");
         mag_start_registration(bce);
     }
