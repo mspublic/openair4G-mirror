@@ -518,6 +518,8 @@ rlc_am_data_req (void *rlcP, u32_t frame, mem_block_t * sduP)
   u16_t             data_size;
   u8_t              conf;
 
+  LOG_I(RLC, "RLC_AM_SDU_CONTROL_BUFFER_SIZE %d %d %d \n", RLC_AM_SDU_CONTROL_BUFFER_SIZE, rlc->next_sdu_index,
+  rlc->current_sdu_index);
 
   if ((rlc->input_sdus[rlc->next_sdu_index].mem_block == NULL) &&
       (rlc->input_sdus[rlc->next_sdu_index].flags.segmented == 0) &&

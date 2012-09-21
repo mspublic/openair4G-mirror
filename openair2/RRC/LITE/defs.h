@@ -35,6 +35,8 @@ ________________________________________________________________*/
 #include "RRCConnectionRequest.h"
 #include "BCCH-DL-SCH-Message.h"
 #include "BCCH-BCH-Message.h"
+#include "AS-Config.h"
+#include "AS-Context.h"
 
 //#include "L3_rrc_defs.h"
 #ifndef NO_RRM
@@ -108,8 +110,11 @@ union{
  }Info;
 }RRC_INFO;
 
-
-
+/* Intermediate structure for Hanodver management. Associated per-UE in RRC */
+typedef struct{
+	AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
+	AS_Context_t as_context; /* They are mandatory for HO */
+}HANDOVER_INFO;
 
 #define RRC_HEADER_SIZE_MAX 64
 #define RRC_BUFFER_SIZE_MAX 1024
@@ -186,6 +191,11 @@ typedef struct{
   SRB_INFO                          Srb0;
   SRB_INFO_TABLE_ENTRY              Srb1[NUMBER_OF_UE_MAX+1];
   SRB_INFO_TABLE_ENTRY              Srb2[NUMBER_OF_UE_MAX+1];
+  MeasConfig_t						*measConfig[NUMBER_OF_UE_MAX];
+
+//#ifdef X2_SIM
+  HANDOVER_INFO						*handover_info[NUMBER_OF_UE_MAX];
+//#endif
 } eNB_RRC_INST;
 
 

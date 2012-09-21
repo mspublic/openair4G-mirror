@@ -117,6 +117,7 @@ void terminate(void);
 void exit_fun(const char* s);
 
 extern int transmission_mode_rrc;//FIXME!!!
+u8 measFlag = 0; //temporary flag to control frequency of MeasReport msgs
 
 void 
 help (void) {
@@ -1272,6 +1273,8 @@ main (int argc, char **argv)
       }
     }
 
+    measFlag = 1; //Setting measFlag to allow 1 MeasReport msg to be sent
+
     for (slot=0 ; slot<20 ; slot++) {
 
       last_slot = (slot - 1)%20;
@@ -1330,12 +1333,14 @@ main (int argc, char **argv)
 	      if(frame==20)
 		printf("stop here for debugging!");
 
+	      /*
 	      // Layer 3 filtering of RRC measurements
 	      if (UE_rrc_inst[UE_id].QuantityConfig[0] != NULL) {
 	    	  ue_meas_filtering(UE_id,&UE_rrc_inst[UE_id],PHY_vars_UE_g[UE_id],abstraction_flag);
 	      }
 
 	      ue_measurement_report_triggering(UE_id, frame, UE_rrc_inst);
+	      */
 
 	      phy_procedures_UE_lte(last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 	    }

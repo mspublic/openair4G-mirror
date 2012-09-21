@@ -47,6 +47,8 @@
 #include "UTIL/LOG/log.h"
 #define DEBUG_RRC 1
 
+extern PHY_VARS_UE **PHY_vars_UE_g;
+
 //configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag){
   unsigned short i;
@@ -322,6 +324,12 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       }
       UE_rrc_inst[Mod_id].Info[index].T310_cnt++;
     }
+    // Layer 3 filtering of RRC measurements
+    if (UE_rrc_inst[Mod_id].QuantityConfig[0] != NULL) {
+  	  ue_meas_filtering(Mod_id,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id], 0 /* abstraction_flag */);
+    }
+
+    ue_measurement_report_triggering(Mod_id, frame, UE_rrc_inst);
   }
 
   return(RRC_OK);

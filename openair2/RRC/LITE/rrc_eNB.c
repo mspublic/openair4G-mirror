@@ -72,6 +72,7 @@ extern void *bigphys_malloc(int);
 #endif
 
 extern inline unsigned int taus(void);
+
 void init_SI(u8 Mod_id) {
 
   u8 SIwindowsize=1;
@@ -513,6 +514,9 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
   LOG_I(RRC,"RSRQ of Source %d\n",measResults2->measResultServCell.rsrqResult);
 #endif   
   
+  //void fill_handover_info(u8 Mod_id, u8 UE_index, PhysCellId_t targetPhyId, eNB_RRC_INST *rrc_inst, HANDOVER_INFO *handover_info)
+  fill_handover_info(Mod_id,UE_index,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId,&eNB_rrc_inst[Mod_id],&eNB_rrc_inst[Mod_id].handover_info[Mod_id]);
+
   //Look for IP address of the target eNB
   //Send Handover Request -> target eNB
   //Wait for Handover Acknowledgement <- target eNB
@@ -527,6 +531,39 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 //	  send_check_message((char*)buffer,size);
   //send_handover_command();
   
+
+
+}
+
+/* AS-Config */
+/*
+typedef struct AS_Config {
+	MeasConfig_t	 sourceMeasConfig;
+	RadioResourceConfigDedicated_t	 sourceRadioResourceConfig;
+	SecurityAlgorithmConfig_t	 sourceSecurityAlgorithmConfig;
+	C_RNTI_t	 sourceUE_Identity;
+	MasterInformationBlock_t	 sourceMasterInformationBlock;
+	SystemInformationBlockType1_t	 sourceSystemInformationBlockType1;
+	SystemInformationBlockType2_t	 sourceSystemInformationBlockType2;
+	AntennaInfoCommon_t	 antennaInfoCommon;
+	ARFCN_ValueEUTRA_t	 sourceDl_CarrierFreq;
+*/
+
+void fill_handover_info(u8 Mod_id, u8 UE_index, PhysCellId_t targetPhyId, eNB_RRC_INST *rrc_inst, HANDOVER_INFO *handover_info) {
+
+	HANDOVER_INFO *handoverInfo = CALLOC(1,sizeof(*handover_info));
+	struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
+	RadioResourceConfigDedicated_t *radioResourceConfigDedicated = CALLOC(1,sizeof(RadioResourceConfigDedicated_t));
+
+//	RadioResourceConfigDedicated_t
+	handoverInfo->as_config.antennaInfoCommon.antennaPortsCount =  0; //Not used
+	handoverInfo->as_config.sourceDl_CarrierFreq = 36090; //Verify!
+	memcpy((void*) &handoverInfo->as_config.sourceMasterInformationBlock, (void*)&rrc_inst->mib,sizeof(MasterInformationBlock_t));
+	memcpy((void*) &handoverInfo->as_config.sourceMeasConfig, (void*)&rrc_inst->measConfig[UE_index],sizeof(MeasConfig_t));
+	//memcpy((void*) &handoverInfo->as_config.sourceRadioResourceConfig, (void*)&rrc_inst->,sizeof(RadioResourceConfigDedicated_t));
+	memcpy((void*) &handoverInfo->as_config.sourceMeasConfig, (void*)&rrc_inst->measConfig[UE_index],sizeof(MeasConfig_t));
+	//handoverInfo->as_config.sourceMeasConfig = (MeasConfig_t)*(&rrc_inst->measConfig[UE_index]);
+
 }
 
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete){

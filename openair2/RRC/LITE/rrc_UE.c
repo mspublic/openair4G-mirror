@@ -81,6 +81,8 @@ extern inline unsigned int taus(void);
 extern timeToTrigger_ms[16];
 extern **PHY_vars_UE_g;
 
+extern u8 measFlag;
+
 void init_SI_UE(u8 Mod_id,u8 eNB_index) {
 
   int i;
@@ -268,7 +270,7 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
   u8 i;
   u8 bestCell,bestCell1;
   MeasId_t measId;
-  PhysCellId_t cellId;
+  PhysCellId_t cellId, targetCellId;
   long rsrq_s,rsrp_t,rsrq_t;
   long rsrp_s, nElem, nElem1;
   float tmp, tmp1;
@@ -310,22 +312,26 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
 		  if (bestCell != bestCell1) // Handle this case later
 			  LOG_D(RRC,"Better cell for RSRP(%d) is different from RSRQ(%d)",bestCell,bestCell1);
 
-		  cellId = get_adjacent_cell_id(Mod_id,0); //PhycellId of serving cell
-		  LOG_D(RRC,"Sending MeasReport: servingCell(%d) targetCell(%d) rsrp_s(%d) rsrq_s(%d) rsrp_t(%d) rsrq_t(%d) \n", \
-				  cellId,get_adjacent_cell_id(Mod_id,i),rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+		  if (measFlag == 1) {
+			  cellId = get_adjacent_cell_id(Mod_id,0); //PhycellId of serving cell
+			  targetCellId = get_adjacent_cell_id(Mod_id,bestCell); //PhycellId of target cell
+			  LOG_D(RRC,"Sending MeasReport: servingCell(%d) targetCell(%d) rsrp_s(%d) rsrq_s(%d) rsrp_t(%d) rsrq_t(%d) \n", \
+					  cellId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
 
-		  size = do_MeasurementReport(buffer,measId,cellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
-		  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
+			  size = do_MeasurementReport(buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+			  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
 
-		  //rrc_rlc_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer);
-		  LOG_W(PDCP, "[UE %d] Frame %d Sending MeasReport (%d bytes) through DCCH%d to PDCP \n",Mod_id,frame, size, DCCH);
 		  if (frame != cframe){
 		  pdcp_data_req(Mod_id+NB_eNB_INST,frame,0,DCCH,rrc_mui++,0,size,(char*)buffer,1);
 		  cframe=frame;
+		  LOG_W(PDCP, "[UE %d] Frame %d Sending MeasReport (%d bytes) through DCCH%d to PDCP \n",Mod_id,frame, size, DCCH);
 		  }
-	  }
+
+		  measFlag = 0; //re-setting measFlag so that no more MeasReports are sent in this frame
+		  }
   }
 
+}
 }
 
 /*------------------------------------------------------------------------------*/
@@ -1305,12 +1311,7 @@ void ue_meas_filtering(s32 UE_id, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_var
     			//filter_factor = 1/power(2,*UE_rrc_inst[phy_vars_ue->Mod_id].QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRP/4);
     			if (abstraction_flag == 0) {
     				rsrp_db = (dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12);
-    				//(dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12)
-        			/*
-        			 *
-        			 phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] = (1.0-a)*phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] + \
-        					a*phy_vars_ue->PHY_measurements.rsrp[eNB_offset];
-        			 */
+
     				phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] = (1.0-a)*phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset] + \
     				        					a*rsrp_db;
 
@@ -1319,7 +1320,6 @@ void ue_meas_filtering(s32 UE_id, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_var
     					eNB_offset,
     					a,
     					*UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRP,
-    					/*phy_vars_ue->PHY_measurements.rsrp[eNB_offset],*/
     					rsrp_db,
     					phy_vars_ue->PHY_measurements.rsrp_filtered[eNB_offset]);
     		}
@@ -1456,14 +1456,12 @@ void ue_measurement_report_triggering(u8 Mod_id, u32 frame, UE_RRC_INST *UE_rrc_
 											UE_rrc_inst[Mod_id].ReportConfig[i][j]->reportConfig.choice.reportConfigEUTRA.triggerType.present);
 									break;
 							}
-
+						}
 					}
 				}
 			}
-			}
 		}
 	}
-
 }
 
 //Below routine implements Measurement Reporting procedure from 36.331 Section 5.5.5
