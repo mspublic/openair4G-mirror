@@ -203,7 +203,7 @@ static void conf_default(struct mip6_config *c)
 	c->DefaultBindingAclPolicy = IP6_MH_BAS_ACCEPTED;
 
 	/* IPsec options */
-	c->UseMnHaIPsec = 1;
+	c->UseMnHaIPsec = 0;
 	INIT_LIST_HEAD(&c->ipsec_policies);
 
 	/* MN options */
