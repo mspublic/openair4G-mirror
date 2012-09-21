@@ -1205,6 +1205,8 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
+
+
 #ifdef Rel10
   betaOffset_CA_Index = CALLOC(1,sizeof(long));
   cShift = CALLOC(1,sizeof(long));
@@ -1245,7 +1247,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   
   struct SRB_ToAddMod **SRB2_config                         = &rrc_inst->SRB2_config[UE_id];
   struct DRB_ToAddMod **DRB_config                          = &rrc_inst->DRB_config[UE_id][0];
-  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_id]; 
+  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_id];
+  MeasConfig_t **measConfigRRC 								= &rrc_inst->measConfig[UE_id];
 
 
   struct SRB_ToAddMod *SRB2_config2;
@@ -1265,6 +1268,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   ReportConfigToAddMod_t *ReportConfig_per,*ReportConfig_A1,*ReportConfig_A2,*ReportConfig_A3,*ReportConfig_A4,*ReportConfig_A5;
   MeasIdToAddModList_t *MeasId_list;
   MeasIdToAddMod_t *MeasId0,*MeasId1,*MeasId2,*MeasId3,*MeasId4,*MeasId5;
+  MeasConfig_t *measConfig2;
 #if Rel10
   long * sr_ProhibitTimer_r9;
   struct PUSCH_CAConfigDedicated_vlola  *pusch_CAConfigDedicated_vlola;
@@ -1291,6 +1295,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
 
   // RRCConnectionReconfiguration
+  //measConfig init
+  *measConfigRRC = CALLOC(1,sizeof(**measConfigRRC));
+
   // Configure SRB2
 
   SRB_list = CALLOC(1,sizeof(*SRB_list));
@@ -1643,12 +1650,44 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
   Sparams->choice.setup.mobilityStateParameters.t_Evaluation=MobilityStateParameters__t_Evaluation_s60;
   Sparams->choice.setup.mobilityStateParameters.t_HystNormal=MobilityStateParameters__t_HystNormal_s120;
   
+  /*
+  // Handover Command
+    struct MobilityControlInfo	*mobilityControlInfo2;
+
+    mobilityControlInfo2=CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo));
+
+    mobilityControlInfo2->radioResourceConfigCommon.prach_Config.rootSequenceIndex=384;
+
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB=1;
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode=PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset=0;
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM=0;
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled=1;
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH=0;
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled=0;
+    mobilityControlInfo2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift=0;
+    mobilityControlInfo2->radioResourceConfigCommon.ul_CyclicPrefixLength=UL_CyclicPrefixLength_len1;
+
+    mobilityControlInfo2->t304=1;
+    mobilityControlInfo2->targetPhysCellId=1;
+    mobilityControlInfo2->newUE_Identity.bits_unused=0;
+    mobilityControlInfo2->newUE_Identity.size=2;
+
+    mobilityControlInfo2->newUE_Identity.buf=MALLOC(1);
+    mobilityControlInfo2->newUE_Identity.buf[0]=0xBEEF;
+
+  */
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
+
+
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->speedStatePars = Sparams;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure=rsrp;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->quantityConfig = quantityConfig;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
+
+  //RRC Book-keeping
+  memcpy((void*)*measConfigRRC,(void*)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig,sizeof(MeasConfig_t));
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
 				   (void*)&dl_dcch_msg,
@@ -1841,13 +1880,16 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
     measresulteutra2->cgi_Info=measresult_cgi2;
     struct MeasResultEUTRA__measResult meas2;
     int rsrp_va=10;
-//    meas2.rsrpResult=(long*)&rsrp_t;
-//    meas2.rsrqResult=(long*)&rsrq_t;
+
     //Change this!
     meas2.rsrpResult = CALLOC(1,sizeof(*meas2.rsrpResult));
     meas2.rsrqResult = CALLOC(1,sizeof(*meas2.rsrqResult));
-    *meas2.rsrpResult=50;
-    *meas2.rsrqResult=5;
+    meas2.rsrpResult=(long*)&rsrp_t;
+    meas2.rsrqResult=(long*)&rsrq_t;
+
+    //*meas2.rsrpResult=50;
+    //*meas2.rsrqResult=5;
+
 
     measresulteutra2->measResult=meas2;
 
