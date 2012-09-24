@@ -505,7 +505,7 @@ int main(int argc, char **argv) {
 // }
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
-  tx_lev = 0;
+  /tx_lev = 0;
 	    for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
 	      tx_lev += signal_energy(&PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]
 				      [subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
@@ -515,9 +515,9 @@ int main(int argc, char **argv) {
 	  
 	    if (n_frames==1) {
 	      printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
-	      write_output("txsig0.m","txs0", &PHY_vars_eNB->lte_eNB_common_vars.txdata[0][0][subframe* PHY_vars_eNB->lte_frame_parms.samples_per_tti],
+	  //    write_output("txsig0.m","txs0", &PHY_vars_eNB->lte_eNB_common_vars.txdata[0][0][subframe* PHY_vars_eNB->lte_frame_parms.samples_per_tti],
 			   
-			   PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
+		//	   PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
 	    }
  
   for (i=0;i<2*frame_parms->samples_per_tti;i++) {
@@ -621,7 +621,7 @@ int main(int argc, char **argv) {
 	    //printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 	  }*/
 	  
-  /* if (n_frames==1) {
+     if (n_frames==1) {
 	    printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	    printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	    printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
@@ -632,28 +632,28 @@ int main(int argc, char **argv) {
 	    pilot1 = 2;
 	    pilot2 = 6;
 	    pilot3 = 10; 
-	  } */
+	  } 
 	  //else {  // extended prefix
 	    //pilot1 = 3;
 	    //pilot2 = 6;
 	    //pilot3 = 9;
-	  /*}
+	  }
 	  
-	 // i_mod = get_Qm(mcs); */
+	 // i_mod = get_Qm(mcs); 
 	  
 	  // Inner receiver scheduling for 3 slots
 	  //for (Ns=(2*subframe);Ns<((2*subframe)+3);Ns++) {
-	//for (subframe=0;subframe<10;subframe++) {
-	    //for (l=0;l<pilot3;l++) {
-	      //if (n_frames==1)
-		//printf("subframe %d, l %d\n",subframe,l);
+	for (subframe=0;subframe<10;subframe++) {
+	    for (l=0;l<pilot2;l++) {
+	      if (n_frames==1)
+		printf("subframe %d, l %d\n",subframe,l);
 		
 	  slot_fep_mbsfn(PHY_vars_UE,
 		       l,
 		       subframe%10,
 		       0,
 		       0);
-/*			   
+		   
 #ifdef PERFECT_CE
 	      if (awgn_flag==0) {
 		// fill in perfect channel estimates
@@ -689,7 +689,9 @@ int main(int argc, char **argv) {
 	      }
 #endif
  
-*/
+
        }
     
- 
+ }
+}
+
