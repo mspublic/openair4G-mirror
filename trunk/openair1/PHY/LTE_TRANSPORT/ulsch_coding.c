@@ -747,7 +747,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   // msg("\nphy_vars_ue->Mod_id%d\n",phy_vars_ue->Mod_id);
   
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_flag = 1;
-  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u8 *)ulsch->o;
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u32 *)ulsch->o;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
   //msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);

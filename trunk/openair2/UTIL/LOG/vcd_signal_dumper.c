@@ -96,6 +96,10 @@ const char* eurecomFunctionsNames[] = {
     "lte_ue_pbcch_procedures",
     "phy_procedures_ue_tx",
     "phy_procedures_ue_rx",
+    "phy_procedures_eNB_lte",
+    "phy_procedures_UE_lte",
+    "emu_transport",
+    "log_record",
 };
 
 struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {

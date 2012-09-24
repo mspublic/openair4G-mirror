@@ -332,7 +332,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 *DLSCH_pdu,
 			 LTE_eNB_DLSCH_t *dlsch) {
 
-  // int payload_offset = 0;
+  //int payload_offset = 0;
   unsigned char harq_pid = dlsch->current_harq_pid;
   unsigned short i;
 
@@ -340,16 +340,17 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     memcpy(dlsch->harq_processes[harq_pid]->b,
 	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d\n", 
+    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d harq pid %d \n", 
 	phy_vars_eNB->Mod_id,
-	dlsch->harq_processes[harq_pid]->TBS>>3);
+	  dlsch->harq_processes[harq_pid]->TBS>>3,
+	  harq_pid);
 
     for (i=0;i<dlsch->harq_processes[harq_pid]->TBS>>3;i++)
       msg("%x.",DLSCH_pdu[i]);
     msg("\n");
 
     memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]],
-	   //memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
+	   //	    memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
     	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
   }  

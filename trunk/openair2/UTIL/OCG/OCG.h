@@ -607,6 +607,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char opt_mode; 
     unsigned char otg_enabled; 
     unsigned char omv_enabled;
+    unsigned char vcd_enabled;
     unsigned char otg_traffic;
     unsigned char omg_model_enb;
     unsigned char omg_model_ue;
