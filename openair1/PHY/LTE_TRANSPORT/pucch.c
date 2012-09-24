@@ -406,8 +406,10 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 
   UE_transport_info[phy_vars_ue->Mod_id].cntl.sr            = sr;
   // the value of phy_vars_ue->pucch_sel[subframe] is set by get_n1_pucch
-  UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_sel            = phy_vars_ue->pucch_sel[subframe];
-
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_sel      = phy_vars_ue->pucch_sel[subframe];
+  
+  // LOG_I(PHY,"subframe %d emu tx pucch_sel is %d sr is %d \n", subframe, UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_sel, sr);
+  
   if (format == pucch_format1a) {
     
     phy_vars_ue->pucch_payload[0] = pucch_payload[0];
