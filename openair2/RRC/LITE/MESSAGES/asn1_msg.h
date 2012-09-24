@@ -93,14 +93,34 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
 @param UE_id UE index for this message
 @param Transaction_id Transaction_ID for this message
-@param rrc_inst Pointer to eNB RRC top-level structure
+@param SRB_list Pointer to SRB List to be added/modified (NULL if no additions/modifications)
+@param DRB_list Pointer to DRB List to be added/modified (NULL if no additions/modifications)
+@param DRB_list2 Pointer to DRB List to be released      (NULL if none to be released)
+@param sps_Config Pointer to sps_Config to be modified (NULL if no modifications, or default if initial configuration)
+@param physicalConfigDedicated Pointer to PhysicalConfigDedicated to be modified (NULL if no modifications)
+@param MeasObj_list Pointer to MeasObj List to be added/modified (NULL if no additions/modifications)
+@param ReportConfig_list Pointer to ReportConfig List (NULL if no additions/modifications)
+@param QuantityConfig Pointer to QuantityConfig to be modified (NULL if no modifications)
+@param MeasId_list Pointer to MeasID List (NULL if no additions/modifications)
+@param mac_MainConfig Pointer to Mac_MainConfig(NULL if no modifications)
+@param measGapConfig Pointer to MeasGapConfig (NULL if no modifications)
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
-					uint8_t *buffer,
-					uint8_t UE_id,
-					uint8_t Transaction_id,
-					eNB_RRC_INST *rrc_inst);
 
+uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id,
+					uint8_t                           *buffer,
+					uint8_t                           UE_id,
+					uint8_t                           Transaction_id,
+					SRB_ToAddModList_t                *SRB_list,
+					DRB_ToAddModList_t                *DRB_list,
+					DRB_ToReleaseList_t               *DRB_list2,
+					struct SPS_Config                 *sps_Config,
+					struct PhysicalConfigDedicated    *physicalConfigDedicated,
+					MeasObjectToAddModList_t          *MeasObj_list,
+					ReportConfigToAddModList_t        *ReportConfig_list,
+					QuantityConfig_t                  *QuantityConfig,
+					MeasIdToAddModList_t              *MeasId_list,
+					MAC_MainConfig_t                  *mac_MainConfig,
+					MeasGapConfig_t                   *measGapConfig);
 
 /**
 \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
