@@ -252,7 +252,8 @@ void init_oai_emulation() {
   oai_emulation.info.opt_enabled=0; // P flag
   oai_emulation.info.opt_mode=-1; // arg for P flag
   oai_emulation.info.cli_enabled=0;// I flag
-  oai_emulation.info.omv_enabled =0; // v flag
+  oai_emulation.info.omv_enabled =0; // v flag 
+  oai_emulation.info.vcd_enabled=0;
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
@@ -317,6 +318,9 @@ void oaisim_config() {
   ocg_config_topo(); // packet tracer using wireshark
  	// if T is set or ocg enabled 
   if (oai_emulation.info.otg_enabled ) {
+    g_log->log_component[OTG].filelog=1;
+    g_log->log_component[OTG_LATENCY].filelog=1;
+    g_log->log_component[OTG_OWD].filelog = 1;
     ocg_config_app(); // packet generator 
     oai_emulation.info.frame_type=1;
 }
@@ -326,8 +330,7 @@ void oaisim_config() {
 int olg_config() {
   int comp;
   int ocg_log_level = map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
-  oai_emulation.info.g_log_level = ((oai_emulation.info.ocg_enabled == 1) && (ocg_log_level != -1)) ? ocg_log_level :
-    oai_emulation.info.g_log_level;
+  oai_emulation.info.g_log_level = ((oai_emulation.info.ocg_enabled == 1) && (ocg_log_level != -1)) ? ocg_log_level : oai_emulation.info.g_log_level;
   oai_emulation.info.g_log_verbosity = map_str_to_int(log_verbosity_names, oai_emulation.emulation_config.log_emu.verbosity);
   LOG_N(EMU,"global log level is set to (%s,%d) with vebosity (%s, 0x%x) and frequency %d\n", 
 	map_int_to_str (log_level_names, oai_emulation.info.g_log_level), 
