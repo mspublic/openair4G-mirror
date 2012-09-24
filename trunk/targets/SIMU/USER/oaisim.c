@@ -50,6 +50,8 @@
 #include "../PROC/Process.h"
 //#endif
 
+#include "UTIL/LOG/vcd_signal_dumper.h"
+
 #define RF
 
 //#define DEBUG_SIM
@@ -121,7 +123,7 @@ extern int transmission_mode_rrc;//FIXME!!!
 void 
 help (void) {
   printf
-    ("Usage: oaisim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A channel_model -z cooperation_flag -u nb_local_ue -U UE mobility -b nb_local_enb -B eNB_mobility -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable -T traffic model\n");
+    ("Usage: oaisim -h -a -F -C tdd_config -V -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A channel_model -z cooperation_flag -u nb_local_ue -U UE mobility -b nb_local_enb -B eNB_mobility -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable -T traffic model\n");
   printf ("-h provides this help message!\n");
   printf ("-a Activates PHY abstraction mode\n");
   printf ("-F Activates FDD transmission (TDD is default)\n");
@@ -153,6 +155,7 @@ help (void) {
   printf ("-E Random number generator seed\n"); 
   printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
+  printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
 }
 
 #ifdef XFORMS
@@ -691,7 +694,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haeoFvIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J"))
+  while ((c = getopt (argc, argv, "haeoFvVIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J"))
 	 != -1) {
 
     switch (c) {
@@ -870,6 +873,9 @@ main (int argc, char **argv)
     case 'v':
       oai_emulation.info.omv_enabled = 1;
       break;
+    case 'V':
+        ouput_vcd = 1;
+      break;
     default:
       help ();
       exit (-1);
@@ -891,6 +897,8 @@ main (int argc, char **argv)
     }*/
    // configure oaisim with OCG
   oaisim_config(); // config OMG and OCG, OPT, OTG, OLG
+  // Initialize VCD LOG module
+  vcd_signal_dumper_init();
   
   if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX ) {
     LOG_E(EMU,"Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
