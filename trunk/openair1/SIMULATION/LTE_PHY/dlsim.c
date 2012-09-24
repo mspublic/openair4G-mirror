@@ -1023,7 +1023,7 @@ int main(int argc, char **argv) {
       dci_alloc[num_dci].L          = 2;
       dci_alloc[num_dci].rnti       = n_rnti+k;
       dci_alloc[num_dci].format     = format1E_2A_M10PRB;
-
+      dci_alloc[num_dci].nCCE       = 4*k;
       dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);
 
       num_dci++;
