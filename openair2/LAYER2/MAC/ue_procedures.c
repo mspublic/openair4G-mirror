@@ -48,6 +48,7 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LITE/extern.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 #ifdef PHY_EMUL
@@ -242,6 +243,8 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
   unsigned short rx_lengths[MAX_NUM_RB];
   unsigned char *tx_sdu;
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
+
   printf("sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
@@ -270,6 +273,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	    if (tx_sdu[i] != payload_ptr[i]) {
 	      LOG_D(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
 	      mac_xface->ra_failed(Mod_id,eNB_index);
+              vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 	      return;
 	    }
 	  UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 0;
@@ -344,12 +348,13 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
     }
 
   }
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 }
 
 void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
   int i;
-  
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
   //LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
   mac_rrc_data_ind(Mod_id,
@@ -359,7 +364,7 @@ void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 		   len,
 		   0,
 		   eNB_index);
-
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
 }
 
 
@@ -627,6 +632,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   int j; // used for padding
   // Compute header length
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
+
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   // hypo length,in case of long header skip the padding byte
@@ -849,7 +856,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 	  Mod_id,payload_offset, sdu_length_total);
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
     UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER=0;
-     
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
 }
 
 // called at each subframe
