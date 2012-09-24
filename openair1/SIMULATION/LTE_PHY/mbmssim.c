@@ -637,7 +637,7 @@ int main(int argc, char **argv) {
 	    //pilot1 = 3;
 	    //pilot2 = 6;
 	    //pilot3 = 9;
-	  }
+	  
 	  
 	 // i_mod = get_Qm(mcs); 
 	  
@@ -693,5 +693,5 @@ int main(int argc, char **argv) {
        }
     
  }
-}
+
 
