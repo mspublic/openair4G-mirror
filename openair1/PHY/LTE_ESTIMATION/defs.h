@@ -108,6 +108,11 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 			int l,
 			int* freq_offset);
 
+int lte_mbsfn_est_freq_offset(int **dl_ch_estimates,
+			LTE_DL_FRAME_PARMS *frame_parms,
+			int l,
+			int* freq_offset);
+
 /*! \brief Tracking of timing for LTE
 This function computes the time domain channel response, finds the peak and adjusts the timing in pci_interface.offset accordingly.
 \param frame_parms LTE DL frame parameter structure
