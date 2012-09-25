@@ -14,5 +14,5 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.2 -t 10.0
 
 echo "to see UE stats, pleasae run : watch_ue script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2  > /dev/null"
-$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 > /dev/null
+nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3 > /dev/null
 echo "End"
