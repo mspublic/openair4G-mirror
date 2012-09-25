@@ -505,7 +505,7 @@ int main(int argc, char **argv) {
 // }
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
-  /tx_lev = 0;
+  tx_lev = 0;
 	    for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
 	      tx_lev += signal_energy(&PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]
 				      [subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
@@ -643,8 +643,8 @@ int main(int argc, char **argv) {
 	  
 	  // Inner receiver scheduling for 3 slots
 	  //for (Ns=(2*subframe);Ns<((2*subframe)+3);Ns++) {
-	for (subframe=0;subframe<10;subframe++) {
-	    for (l=0;l<pilot2;l++) {
+//	for (subframe=0;subframe<10;subframe++) {
+	    for (l=0;l<12;l++) {
 	      if (n_frames==1)
 		printf("subframe %d, l %d\n",subframe,l);
 		
