@@ -253,8 +253,8 @@ void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_si
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
   u8 DCCH_index = Srb_id % MAX_NUM_RB;
 
-  LOG_D(RRC,"RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
-      DCCH_index,UE_index,sdu_size);
+  LOG_D(RRC,"[SRB %d]RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
+	Srb_id-1, DCCH_index,UE_index,sdu_size);
   if (eNB_flag ==1)
     rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
