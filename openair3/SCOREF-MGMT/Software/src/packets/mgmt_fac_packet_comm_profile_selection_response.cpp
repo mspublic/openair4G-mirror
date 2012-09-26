@@ -48,6 +48,7 @@ FacCommunicationProfileSelectionResponsePacket::FacCommunicationProfileSelection
 	packet.latency = latency;
 	packet.relevance = relevance;
 	packet.reliability = reliability;
+	packet.reserved = 0x00;
 }
 
 FacCommunicationProfileSelectionResponsePacket::~FacCommunicationProfileSelectionResponsePacket() {}
@@ -63,11 +64,12 @@ bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned c
 	buffer[payloadIndex++] = packet.latency;
 	buffer[payloadIndex++] = packet.relevance;
 	buffer[payloadIndex++] = packet.reliability;
+	buffer[payloadIndex++] = packet.reserved;
 	/*
 	 * todo here most suitable communication profile will be found
 	 * by an intelligent code that'll be added later on
 	 */
-	buffer[payloadIndex] = packet.communicationProfileId;
+	Util::encode4byteInteger(buffer, payloadIndex, packet.communicationProfileId);
 
 	// Resize incoming buffer
 	buffer.resize(sizeof(CommunicationProfileSelectionResponse));

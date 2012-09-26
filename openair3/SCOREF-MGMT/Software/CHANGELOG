@@ -1,4 +1,9 @@
 
+v1.1.4
+* Communication Profile ID field of Communication Profile Selection Response packet 
+  has been resized to 4 bytes and a 1-byte reserved field has been added
+* FacCommunicationProfileSelectionResponsePacket::serialize() updated accordingly
+
 v1.1.3
 * FacConfigurationNotification class has been added to get configuration updates from 
   FACilities thru UDP socket
