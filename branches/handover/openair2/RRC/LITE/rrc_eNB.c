@@ -515,7 +515,7 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 #endif   
   
   //void fill_handover_info(u8 Mod_id, u8 UE_index, PhysCellId_t targetPhyId, eNB_RRC_INST *rrc_inst, HANDOVER_INFO *handover_info)
-  fill_handover_info(Mod_id,UE_index,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId,&eNB_rrc_inst[Mod_id],&eNB_rrc_inst[Mod_id].handover_info[Mod_id]);
+  rrc_eNB_generate_HandoverCommand(Mod_id,UE_index,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId,&eNB_rrc_inst[Mod_id],&eNB_rrc_inst[Mod_id].handover_info[Mod_id]);
 
   //Look for IP address of the target eNB
   //Send Handover Request -> target eNB
@@ -535,21 +535,8 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 
 }
 
-/* AS-Config */
-/*
-typedef struct AS_Config {
-	MeasConfig_t	 sourceMeasConfig;
-	RadioResourceConfigDedicated_t	 sourceRadioResourceConfig;
-	SecurityAlgorithmConfig_t	 sourceSecurityAlgorithmConfig;
-	C_RNTI_t	 sourceUE_Identity;
-	MasterInformationBlock_t	 sourceMasterInformationBlock;
-	SystemInformationBlockType1_t	 sourceSystemInformationBlockType1;
-	SystemInformationBlockType2_t	 sourceSystemInformationBlockType2;
-	AntennaInfoCommon_t	 antennaInfoCommon;
-	ARFCN_ValueEUTRA_t	 sourceDl_CarrierFreq;
-*/
 
-void fill_handover_info(u8 Mod_id, u8 UE_index, PhysCellId_t targetPhyId, eNB_RRC_INST *rrc_inst, HANDOVER_INFO *handover_info) {
+void rrc_eNB_generate_HandoverCommand (u8 Mod_id, u8 UE_index, PhysCellId_t targetPhyId, eNB_RRC_INST *rrc_inst, HANDOVER_INFO *handover_info) {
 
 	HANDOVER_INFO *handoverInfo = CALLOC(1,sizeof(*handover_info));
 	struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];

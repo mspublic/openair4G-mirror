@@ -1296,7 +1296,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
   return 0;
 }
 
-// layer 3 filtering only for EUTRA measurements: 36.331, Sec. 5.5.3.2
+// layer 3 filtering of RSRP (EUTRA) measurements: 36.331, Sec. 5.5.3.2
 void ue_meas_filtering(s32 UE_id, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_vars_ue, u8 abstraction_flag) {
 	float a = UE_rrc_inst->filter_coeff_rsrp; // 'a' in 36.331 Sec. 5.5.3.2
 	float a1 = UE_rrc_inst->filter_coeff_rsrq;
