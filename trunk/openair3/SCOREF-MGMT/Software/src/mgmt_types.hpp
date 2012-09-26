@@ -52,12 +52,12 @@ using namespace std;
  * Configuration Item IDs
  */
 enum ItsKeyID {
-	/*
+	/**
 	 * Common ITS keys
 	 */
 	MGMT_GN_ALL_ITSKEY_ID_STATION_TYPE 						= 0,
 	MGMT_GN_ALL_ITSKEY_ID_STATION_SUBTYPE					= 1,
-	/*
+	/**
 	 * Network ITS keys
 	 */
 	MGMT_GN_NET_ITSKEY_ID_GN_LOCAL_ADD_CONF_METHOD			= 1000,
@@ -80,7 +80,7 @@ enum ItsKeyID {
 	MGMT_GN_NET_ITSKEY_ID_SEC_ALLOW_UNSECURE				= 2000,
 	MGMT_GN_NET_ITSKEY_ID_SEC_END_2_END						= 2001,
 	MGMT_GN_NET_ITSKEY_ID_SEC_PSEUDONYM						= 2002,
-	/*
+	/**
 	 * FACilities ITS keys
 	 */
 	MGMT_GN_FAC_ITSKEY_ID_VEHICLE_WIDTH						= 2,
@@ -88,7 +88,7 @@ enum ItsKeyID {
 	MGMT_GN_FAC_ITSKEY_ID_CAM_BTP_PORT						= 3010,
 	MGMT_GN_FAC_ITSKEY_ID_DENM_BTP_PORT						= 3011,
 	MGMT_GN_FAC_ITSKEY_ID_LDM_GARBAGE_COLLECTION_INTERVAL	= 3020,
-	/*
+	/**
 	 * Configuration set ITS keys
 	 */
 	MGMT_GN_ITSKEY_SET_NET									= 0xaaaa,

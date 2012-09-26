@@ -53,7 +53,8 @@ struct CommunicationProfileSelectionResponse {
 	u_int8_t latency;
 	u_int8_t relevance;
 	u_int8_t reliability;
-	u_int8_t communicationProfileId;
+	u_int8_t reserved;
+	u_int32_t communicationProfileId;
 } __attribute__((packed));
 
 /**
