@@ -111,6 +111,7 @@ void init_SI(u8 Mod_id) {
   if (eNB_rrc_inst[Mod_id].SIB23) {
     
     eNB_rrc_inst[Mod_id].sizeof_SIB23 = do_SIB23(Mod_id,
+						 mac_xface->lte_frame_parms,
 						 eNB_rrc_inst[Mod_id].SIB23,
 						 &eNB_rrc_inst[Mod_id].systemInformation,
 						 &eNB_rrc_inst[Mod_id].sib2,
