@@ -469,6 +469,7 @@ uint8_t do_SIB2_AT4(uint8_t Mod_id,
 }
 
 uint8_t do_SIB23(uint8_t Mod_id,
+		 LTE_DL_FRAME_PARMS *frame_parms,
 		 uint8_t *buffer,
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
@@ -563,7 +564,11 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // PDSCH-Config
   (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=15;
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0;
+  if (frame_parms->mode1_flag==1)
+    (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0;
+  else
+    (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=1;
+
 
   // PUSCH-Config
   (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB=1;
@@ -1006,6 +1011,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //	      PDSCH_ConfigDedicated__p_a_dB0);
   physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.choice.release=0;

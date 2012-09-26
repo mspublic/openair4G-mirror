@@ -1101,6 +1101,9 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 
   phy_vars_ue->init_averaging = 1;
 
+  phy_vars_ue->pdsch_config_dedicated->p_a = PDSCH_ConfigDedicated__p_a_dB0; //defaul value until overwritten by RRCConnectionReconfiguration
+
+
   return(0);
 }
 
@@ -1915,6 +1918,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++)
     phy_vars_eNB->eNB_UE_stats_ptr[UE_id] = &phy_vars_eNB->eNB_UE_stats[UE_id];
+
+  phy_vars_eNB->pdsch_config_dedicated->p_a = PDSCH_ConfigDedicated__p_a_dB0; //defaul value until overwritten by RRCConnectionReconfiguration
 
   return (0);  
 }

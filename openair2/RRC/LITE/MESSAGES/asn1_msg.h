@@ -37,6 +37,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB23(uint8_t Mod_id,
+		 LTE_DL_FRAME_PARMS *frame_parms,
 		 uint8_t *buffer,
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
