@@ -1910,6 +1910,10 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
   return((enc_rval.encoded+7)/8);
 }
 
+uint8_t do_HandoverPreparationInformation() {
+
+}
+
 #ifndef USER_MODE
 int init_module(void)
 {
