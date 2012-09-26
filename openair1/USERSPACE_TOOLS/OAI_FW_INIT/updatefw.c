@@ -39,8 +39,7 @@ static unsigned int rebootflag = SWITCH_IS_OFF;
 static FILE* p_elfimage;
 static Elf32_Ehdr elf_Ehdr;
 static Elf32_Shdr elf_Shdr;
-static Elf32_Phdr elf_Phdr;
-long Shdr_pos, Phdr_pos, StringSec_pos, StringSec_size;
+long Shdr_pos, StringSec_pos, StringSec_size;
 //char section_name[MAX_SIZE_SECTION_NAME];
 char SecNameStnTable[MAX_SIZE_STRING_TABLE];
 unsigned int ioctl_params[4];
@@ -122,30 +121,6 @@ int get_elf_header(Elf32_Ehdr* p_Elf32_hdr, FILE* p_file) {
           && (p_Elf32_hdr->e_ident[EI_VERSION] == EV_CURRENT);
 }
 
-int get_elf_program_header(Elf32_Phdr* p_Elf32_Phdr, FILE* p_file, unsigned int p_ndx) {
-  int nbread;
-  /* retrieve the position of the section header table */
-  fseek(p_file, Phdr_pos + (p_ndx * elf_Ehdr.e_phentsize), 0);
-  /* set file pointer to the position of the section header section_ndx */
-  // seekrst = fseek(p_file, (long), 0);
-  nbread = fread(p_Elf32_Phdr, sizeof(elf_Phdr), 1, p_file);
-  if (nbread != 1) {
-    fprintf(stderr, "Error : while reading elf program header (fread() returned %d)\n", nbread);
-    exit(-1);
-  }
-
-  invert4(p_Elf32_Phdr->p_type);
-  invert4(p_Elf32_Phdr->p_offset);
-  invert4(p_Elf32_Phdr->p_vaddr);
-  invert4(p_Elf32_Phdr->p_paddr);
-  invert4(p_Elf32_Phdr->p_filesz);
-  invert4(p_Elf32_Phdr->p_memsz);
-  invert4(p_Elf32_Phdr->p_flags);
-  invert4(p_Elf32_Phdr->p_align);
-
-  return nbread;
-}
-
 int get_elf_section_header(Elf32_Shdr* p_Elf32_Shdr, FILE* p_file, unsigned int section_ndx) {
   int nbread;
   /* retrieve the position of the section header table */
@@ -177,55 +152,56 @@ void find_and_transfer_section(unsigned int verboselevel) {
   /* Interface with driver */
   int ioctlretval;
   int ifile;
-  char* program_content;
+  char* section_content;
   int nbread;
-  unsigned int pnb = 0;
+  unsigned int secnb = 0;
 
-  for (pnb = 0 ; pnb < elf_Ehdr.e_phnum; pnb++) {
-    //    get_elf_section_header(&elf_Shdr, p_elfimage, secnb);
-    get_elf_program_header(&elf_Phdr, p_elfimage, pnb);
+  for (secnb = 0 ; secnb < elf_Ehdr.e_shnum; secnb++) {
+    get_elf_section_header(&elf_Shdr, p_elfimage, secnb);
     //    if (!strcmp(SecNameStnTable + elf_Shdr.sh_name, section_name)) {
-    //if ((elf_Shdr.sh_flags&SHF_ALLOC) > 0) {
+    if ((elf_Shdr.sh_flags&SHF_ALLOC) > 0) {
       if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
-        printf("Info: ok, found program header %x length %d\n", elf_Phdr.p_paddr, elf_Phdr.p_memsz);
+        printf("Info: ok, found section %s (as section nb. %d)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
       /* Check that section size is a multiple of 4 bytes. */
-      if (elf_Phdr.p_memsz % 4) {
-        fprintf(stderr, "Error: program header %d has a non-multiple-of-4-bytes size (%d).\n",
-                pnb, elf_Phdr.p_memsz);
+      if (elf_Shdr.sh_size % 4) {
+        fprintf(stderr, "Error: section %s has a non-multiple-of-4-bytes size (%d).\n",
+                SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
         fclose(p_elfimage);
         exit(-1);
-      } 
-
+      } else if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS) {
+        printf("Info: ok, section %s at %x has size %d bytes (multiple of 4 bytes).\n",
+               SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_addr,elf_Shdr.sh_size);
+      }
       /* Dynamically allocate a chunk of memory to store the section into. */
-      program_content = (char*)malloc(elf_Phdr.p_memsz);
-      if (!program_content) {
-        fprintf(stderr, "Error: could not dynamically allocate %d bytes for program %d.\n",
-                elf_Phdr.p_memsz, pnb);
+      section_content = (char*)malloc(elf_Shdr.sh_size);
+      if (!section_content) {
+        fprintf(stderr, "Error: could not dynamically allocate %d bytes for section %s.\n",
+                elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
         fclose(p_elfimage);
         exit(-1);
       } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
-        printf("Info: ok, dynamically allocated a %d bytes buffer for program %d.\n",
-               elf_Phdr.p_memsz, pnb);
+        printf("Info: ok, dynamically allocated a %d bytes buffer for section %s.\n",
+               elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
       }
       /* Position the file cursor at the begining of proper section. */
-      fseek(p_elfimage, (long)(elf_Phdr.p_offset), 0);
+      fseek(p_elfimage, (long)(elf_Shdr.sh_offset), 0);
       /* Copy the section's content into this temporary buffer. */
-      nbread = fread(program_content, elf_Phdr.p_memsz, 1, p_elfimage);
+      nbread = fread(section_content, elf_Shdr.sh_size, 1, p_elfimage);
       if (nbread != 1) {
-        fprintf(stderr, "Error: could not read %d bytes from ELF file into dynamic buffer.\n", elf_Phdr.p_memsz);
-        free(program_content);
+        fprintf(stderr, "Error: could not read %d bytes from ELF file into dynamic buffer.\n", elf_Shdr.sh_size);
+        free(section_content);
         fclose(p_elfimage);
         exit(-1);
       } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
-        printf("Info: ok, copied content of program %d into dynamic buffer (%d bytes copied).\n",
-               pnb, elf_Phdr.p_memsz);
+        printf("Info: ok, copied content of section %s into dynamic buffer (%d bytes copied).\n",
+               SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
       }
       /* Open the special device file. */
       if (!pflag) {
         ifile = open(DEVICE_NAME, ACCESS_MODE, 0);
         if (ifile<0) {
           fprintf(stderr, "Error: could not open %s (open() returned %d, errno=%u)\n", DEVICE_NAME, ifile, errno);
-          free(program_content);
+          free(section_content);
           fclose(p_elfimage);
           exit(-1);
         } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
@@ -233,9 +209,9 @@ void find_and_transfer_section(unsigned int verboselevel) {
         }
         /* Collect control data for ioctl. */
         ioctl_params[0] = UPDATE_FIRMWARE_TRANSFER_BLOCK;
-        ioctl_params[1] = elf_Phdr.p_paddr;
-        ioctl_params[2] = elf_Phdr.p_memsz / 4;
-        ioctl_params[3] = (unsigned int)((unsigned int*)program_content);
+        ioctl_params[1] = elf_Shdr.sh_addr;
+        ioctl_params[2] = elf_Shdr.sh_size / 4;
+        ioctl_params[3] = (unsigned int)((unsigned int*)section_content);
         //invert4(ioctl_params[1]);
         //invert4(ioctl_params[2]);
         /* Call ioctl driver */
@@ -243,18 +219,18 @@ void find_and_transfer_section(unsigned int verboselevel) {
         if (ioctlretval) {
           fprintf(stderr, "Error: ioctl on %s failed.\n", DEVICE_NAME);
           close(ifile);
-          free(program_content);
+          free(section_content);
           fclose(p_elfimage);
           exit(-1);
         } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
-          printf("Info: ok, successful ioctl on %s for section %d.\n",
-                 DEVICE_NAME, pnb);
+          printf("Info: ok, successful ioctl on %s for section %s.\n",
+                 DEVICE_NAME, SecNameStnTable + elf_Shdr.sh_name);
         }
         close(ifile);
       } /* pflag */
-      free(program_content);
-  } /* section_name */
-   /* for secnb */
+      free(section_content);
+    } /* section_name */
+  } /* for secnb */
 }
 
 void find_and_clear_section_bss(unsigned int verboselevel) {
@@ -421,8 +397,6 @@ int main(int argc, char** argv) {
   /* record the position of the section header table in the file */
   fseek(p_elfimage, (long)(elf_Ehdr.e_shoff), 0);
   Shdr_pos = ftell(p_elfimage);
-  fseek(p_elfimage, (long)(elf_Ehdr.e_phoff), 0);
-  Phdr_pos = ftell(p_elfimage);
   /* record the position of the section name string table */
   get_elf_section_header(&elf_Shdr, p_elfimage, elf_Ehdr.e_shstrndx);
   fseek(p_elfimage, (long)(elf_Shdr.sh_offset), 0);
@@ -494,7 +468,7 @@ int main(int argc, char** argv) {
     printf("Info: action #1 done.\n");
 
   /* Action 2: Find the .text section */
-  if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #2 (Transfer program headers).\n");
+  if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #2 (Transfer .text section).\n");
   find_and_transfer_section(verboselevel);
   //  sleep(1);
 
