@@ -170,9 +170,16 @@
 #define SLOT_TIME_NS         (SLOT_LENGTH_SAMPLES*(1e3)/7.68)            // slot time in ns
 
 
+#ifdef EXMIMO
+#define TARGET_RX_POWER 40		// Target digital power for the AGC
+#define TARGET_RX_POWER_MAX 65		// Maximum digital power, such that signal does not saturate (value found by simulation)
+#define TARGET_RX_POWER_MIN 30		// Minimum digital power, anything below will be discarded (value found by simulation)
+#else
 #define TARGET_RX_POWER 50		// Target digital power for the AGC
 #define TARGET_RX_POWER_MAX 65		// Maximum digital power, such that signal does not saturate (value found by simulation)
 #define TARGET_RX_POWER_MIN 35		// Minimum digital power, anything below will be discarded (value found by simulation)
+#endif
+
 //the min and max gains have to match the calibrated gain table
 //#define MAX_RF_GAIN 160
 //#define MIN_RF_GAIN 96
@@ -229,7 +236,7 @@
 #ifdef BIT8_TX
 #define AMP 128 
 #else
-#define AMP 1024
+#define AMP 1024 //4096
 #endif
 
 
@@ -308,9 +315,14 @@ typedef struct {
 } TX_RX_VARS;
 
 /// Measurement Variables
+#if defined(CBMIMO1) || defined(EXMIMO)
+#define NUMBER_OF_eNB_MAX 1
+#define NUMBER_OF_UE_MAX 2
+#else
 #define NUMBER_OF_eNB_MAX 7
-#define NUMBER_OF_CONNECTED_eNB_MAX 3
 #define NUMBER_OF_UE_MAX 16
+#endif
+#define NUMBER_OF_CONNECTED_eNB_MAX 3
 #define NUMBER_OF_SUBBANDS 7
 
 typedef struct
@@ -389,7 +401,8 @@ typedef struct
   /// Number of RX Antennas                                            
   unsigned char  nb_antennas_rx;                                           
   /// DLSCH error counter
-  // short          dlsch_errors;                                                        
+  // short          dlsch_errors;
+                                                    
 } PHY_MEASUREMENTS;
 
 typedef struct

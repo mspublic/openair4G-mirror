@@ -881,6 +881,13 @@ int main(int argc, char **argv) {
 		  &PHY_vars_eNb->lte_frame_parms,
 		  pbch_pdu,
 		  pbch_phase);
+    generate_pbch(&PHY_vars_eNb->lte_eNB_pbch,
+		  PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		  AMP,
+		  &PHY_vars_eNb->lte_frame_parms,
+		  pbch_pdu,
+		  1);
+
 
     if (interf1>-20) {
       /*

@@ -124,6 +124,7 @@ void
 help (void) {
   printf
     ("Usage: oaisim -h -a -F -C tdd_config -V -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A channel_model -z cooperation_flag -u nb_local_ue -U UE mobility -b nb_local_enb -B eNB_mobility -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable -T traffic model\n");
+
   printf ("-h provides this help message!\n");
   printf ("-a Activates PHY abstraction mode\n");
   printf ("-F Activates FDD transmission (TDD is default)\n");
@@ -877,6 +878,7 @@ main (int argc, char **argv)
       ouput_vcd = 1;
       oai_emulation.info.vcd_enabled = 1;
       break;
+
     default:
       help ();
       exit (-1);
@@ -1030,6 +1032,7 @@ main (int argc, char **argv)
     ue_data[UE_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
     init_ue(ue_data[UE_id],oai_emulation.environment_system_config.antenna.UE_antenna);
   } 
+
 
   if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 ) &&
       (oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m>0) &&
@@ -1329,8 +1332,8 @@ main (int argc, char **argv)
       for (eNB_id=oai_emulation.info.first_enb_local;
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
-	printf ("debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
-	printf ("debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
+                    //printf ("debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+                    //printf ("debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
 	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
 	      eNB_id, frame, slot, next_slot >> 1,
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
@@ -1346,10 +1349,12 @@ main (int argc, char **argv)
 	  fwrite (stats_buffer, 1, len, eNB_stats);
 	  fflush(eNB_stats);
 
+                    /*
 	  printf("[eNBPRINT] Average System Throughput %dKbps\n",(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
 	  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) 
 	    printf("[eNBPRINT] Transmission Mode on DL for UE %d: %d\n", UE_id, PHY_vars_eNB_g[eNB_id]->transmission_mode[UE_id]);
 	  fprintf(eNB_avg_thr,"%d %d\n",PHY_vars_eNB_g[eNB_id]->frame,(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
+                    */
 	  //}
 #endif
       }
@@ -1370,9 +1375,7 @@ main (int argc, char **argv)
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    if (frame>0) {
 	      PHY_vars_UE_g[UE_id]->frame = frame;
-	      if(frame==20)
-		printf("stop here for debugging!");
-	      phy_procedures_UE_lte(last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
+                                phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
 	    }
 	  }
 	  else {
@@ -1398,13 +1401,12 @@ main (int argc, char **argv)
 	    }
  	  }
 #ifdef PRINT_STATS
-	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
+                        len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
 	  fflush(UE_stats[UE_id]);
 #endif
 	}
-
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
       
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
@@ -1459,6 +1461,8 @@ main (int argc, char **argv)
 	td = (int) (time_now - time_last);
 	if (td>0) {
 	  td_avg = (int)(((K*(long)td) + (((1<<3)-K)*((long)td_avg)))>>3); // in us
+                        LOG_D(EMU,"sleep frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",
+                              frame, time_now,time_last,td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
 	}  
 	if (td_avg<(TARGET_SF_TIME_NS - SF_DEVIATION_OFFSET_NS)){
 	  sleep_time_us += SLEEP_STEP_US; 
@@ -1487,7 +1491,7 @@ main (int argc, char **argv)
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       do_forms2(form_dl[UE_id],
-		frame_parms,  
+                      &PHY_vars_UE_g[UE_id]->lte_frame_parms,  
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
 		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
@@ -1503,7 +1507,7 @@ main (int argc, char **argv)
 
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
       do_forms2(form_ul[eNB_id],
-		frame_parms,  
+                      &PHY_vars_eNB_g[eNB_id]->lte_frame_parms,  
 		NULL,
 		NULL,
 		PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],

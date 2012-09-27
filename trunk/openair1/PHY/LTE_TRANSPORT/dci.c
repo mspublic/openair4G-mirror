@@ -2764,9 +2764,9 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   }
   else { // This is MU-MIMO
   // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 1
-    //#ifdef DEBUG_DCI_DECODING
+#ifdef DEBUG_DCI_DECODING
     msg("[PHY] MU-MIMO check UE_SPEC format 1E_2A_M10PRB\n");
-    //#endif 
+#endif 
     dci_decoding_procedure0(lte_ue_pdcch_vars,
 			    subframe,
 			    dci_alloc,

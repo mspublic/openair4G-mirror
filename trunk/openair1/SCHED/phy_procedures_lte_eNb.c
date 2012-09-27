@@ -353,6 +353,7 @@ void phy_procedures_emos_eNB_TX(unsigned char next_slot) {
 }
 #endif
 
+/*
 void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
 
   int sect_id = 0, aa;
@@ -369,13 +370,6 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,
 	for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
 	  
 	  
-	  /*
-	    #ifdef DEBUG_PHY
-	    printf("Clearing TX buffer %d at %p, length %d \n",aa,
-	    &phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
-	    (phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)*sizeof(mod_sym_t));
-	    #endif
-	  */
 #ifdef IFFT_FPGA
 	  memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
 		 0,(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)*sizeof(mod_sym_t));
@@ -408,7 +402,8 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,
     }
   }
 }
- 
+*/ 
+
 void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
 
   unsigned char sect_id=0; 
@@ -475,6 +470,7 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
 #ifndef OPENAIR2
 void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
 
+  int i;
   //u32 rballoc = (((1<<(openair_daq_vars.target_ue_ul_mcs/2))-1)<<(openair_daq_vars.target_ue_dl_mcs/2)) & 0x1FFF;
   u32 rballoc = 0x00F0;
   u32 rballoc2 = 0x000F;
@@ -627,6 +623,10 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
 
   default:
     break;
+  }
+
+  for (i=0;i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci;i++) {
+    DCI_pdu->nCCE += (1<<(DCI_pdu->dci_alloc[i].L));
   }
 
 }
@@ -794,14 +794,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	
       if (abstraction_flag==0) {
 	
-	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-	  //	  printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
-	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       4*AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       2,
-		       next_slot);
-	}
+          if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
+              //	  printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
+              generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+                           4*AMP,
+                           &phy_vars_eNB->lte_frame_parms,
+                           2,
+                           next_slot);
+          }
       }
     } 
 
@@ -1913,6 +1913,12 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
     }
   }
 }
+
+void ulsch_decoding_procedures(unsigned char last_slot, unsigned int i, PHY_VARS_eNB *phy_vars_eNB, unsigned char abstraction_flag)
+{
+    LOG_D(PHY,"ulsch_decoding_procedures not yet implemented. should not be called");
+}
+
 
 void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
   //RX processing

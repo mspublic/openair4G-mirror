@@ -21,8 +21,14 @@
 #define msg printf
 #endif
 
+#ifdef __SSE2__
 #include <emmintrin.h>
+#include <xmmintrin.h>
+#endif
+#ifdef __SSE3__
+#include <pmmintrin.h>
 #include <tmmintrin.h>
+#endif
 
 //defined in rtai_math.h
 #ifndef _RTAI_MATH_H

@@ -770,7 +770,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       switch (dl_dcch_msg->message.choice.c1.present) {
 
       case DL_DCCH_MessageType__c1_PR_NOTHING :
-	LOG_I("[UE %d] Frame %d : Received PR_NOTHING on DL-DCCH-Message\n",Mod_id,frame);
+	LOG_I(RRC,"[UE %d] Frame %d : Received PR_NOTHING on DL-DCCH-Message\n",Mod_id,frame);
 	return;
 	break;
       case DL_DCCH_MessageType__c1_PR_csfbParametersResponseCDMA2000:

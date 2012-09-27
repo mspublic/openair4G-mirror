@@ -1,7 +1,7 @@
 PHY_OBJS =  $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/sss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots_mbsfn.o
+#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots_mbsfn.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o
@@ -31,22 +31,19 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/initial_sync.o
 #PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_transport_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
-PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_mbsfn.o
+#PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_mbsfn.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_ul.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ul_7_5_kHz.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/freq_equalization.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_mbsfn_channel_estimation.o
+#PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_mbsfn_channel_estimation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_eNB_measurements.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/adjust_gain.o
-ifeq ($(EMOS),1) 
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
-endif
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold_mbsfn.o

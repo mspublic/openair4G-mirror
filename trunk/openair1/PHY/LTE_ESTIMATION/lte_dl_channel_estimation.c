@@ -23,6 +23,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   int ch_offset,symbol_offset;
   //  unsigned int n;
   //  int i;
+
   u16 Nid_cell = (eNB_offset == 0) ? phy_vars_ue->lte_frame_parms.Nid_cell : phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1];
 
   u8 nushift;

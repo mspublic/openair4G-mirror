@@ -143,6 +143,8 @@
 
 #define NUMBER_OF_eNB_SECTORS_MAX 3
 
+typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5} runmode_t;
+
 /// Top-level PHY Data Structure for eNB 
 typedef struct
 {
@@ -263,6 +265,10 @@ typedef struct
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 //#define debug_msg msg
 
+typedef enum {
+  max_gain=0,med_gain,byp_gain
+} rx_gain_t;
+
 /// Top-level PHY Data Structure for UE 
 typedef struct
 {
@@ -271,12 +277,17 @@ typedef struct
   u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
+  rx_gain_t rx_gain_mode[4];
+  unsigned int rx_gain_max[4];
+  unsigned int rx_gain_med[4];
+  unsigned int rx_gain_byp[4];
   s8 tx_power_dBm;
   u32 frame;
   u8 n_connected_eNB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
+
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -290,6 +301,7 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
   LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+
   // For abstraction-purposes only
   u8               sr[10];
   u8               pucch_sel[10];
@@ -363,8 +375,9 @@ typedef struct
   PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
   /// PUCCH variables
+
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
-  
+
   u8 ncs_cell[20][7];
 
   /// UL-POWER-Control

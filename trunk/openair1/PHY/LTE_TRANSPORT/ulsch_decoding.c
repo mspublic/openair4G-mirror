@@ -823,6 +823,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     else
       ulsch->cqi_crc_status = 0;
 
+    //printf("crc(cqi) rx: %x\n",(crc8(o_flip,ulsch->Or1)>>24));
+
     if (ulsch->Or1<=32) {
       ulsch->o[3] = o_flip[0] ;
       ulsch->o[2] = o_flip[1] ;
@@ -960,7 +962,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					harq_pid&3);
+					UE_id&3);
     
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    

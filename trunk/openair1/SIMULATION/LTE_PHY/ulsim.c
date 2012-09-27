@@ -408,7 +408,7 @@ int main(int argc, char **argv) {
   int UE_id = 0;
   unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
   unsigned char l;
-  SCM_t channel_model=Rayleigh1_corr;
+  SCM_t channel_model=Rice1;
 
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
@@ -824,7 +824,7 @@ int main(int argc, char **argv) {
     cqi_crc_falsenegatives=0;
     round=0;
 
-    randominit(0);
+    //randominit(0);
       
     PHY_vars_UE->frame=1;
     PHY_vars_eNB->frame=1;
@@ -999,8 +999,8 @@ int main(int argc, char **argv) {
 				frame_parms);
 	    
 #ifndef OFDMA_ULSCH
-	    apply_7_5_kHz(PHY_vars_UE,subframe<<1);
-	    apply_7_5_kHz(PHY_vars_UE,1+(subframe<<1));
+	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],subframe<<1);
+	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],1+(subframe<<1));
 #endif
 	    
 	    tx_lev += signal_energy(&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
@@ -1137,7 +1137,9 @@ int main(int argc, char **argv) {
 	
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
-	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
+	    printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
+	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
+	      print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
 	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }

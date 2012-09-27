@@ -16,6 +16,7 @@ extern unsigned short rev[1024],rev_times4[4096],rev_half[512],rev1024[1024],rev
 #include "MAC_INTERFACE/extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 
+extern unsigned int DAQ_MBOX;
 
 //extern PHY_CONFIG *PHY_config;
 //extern PHY_VARS *PHY_vars;
