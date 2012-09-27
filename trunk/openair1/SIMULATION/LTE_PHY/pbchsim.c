@@ -270,7 +270,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chan
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,unsigned char frame_type, u16 Nid_cell,u8 N_RB_DL,u8 osf) {
 
-  unsigned int ind;
+  //  unsigned int ind;
   LTE_DL_FRAME_PARMS *lte_frame_parms;
   int i;
 
@@ -322,7 +322,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);    
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
 
   phy_init_lte_eNB(PHY_vars_eNb,0,0,0);
 
@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
 
   char c;
 
-  int i,l,aa,aarx;
+  int i,l,aa;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
   u8 snr1set=0;
   //mod_sym_t **txdataF;
@@ -369,20 +369,21 @@ int main(int argc, char **argv) {
   double **s_re,**s_im,**s_re1,**s_im1,**s_re2,**s_im2,**r_re,**r_im,**r_re1,**r_im1,**r_re2,**r_im2;
   double iqim = 0.0;
   unsigned char pbch_pdu[6];
-  int sync_pos, sync_pos_slot;
-  FILE *rx_frame_file,*output_fd;
+  //  int sync_pos, sync_pos_slot;
+  //  FILE *rx_frame_file;
+  FILE *output_fd;
   u8 write_output_file=0;
   int result;
   int freq_offset;
-  int subframe_offset;
-  char fname[40], vname[40];
+  //  int subframe_offset;
+  //  char fname[40], vname[40];
   int trial, n_trials, ntrials=1, n_errors,n_errors2,n_alamouti;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
 
   int n_frames=1;
   channel_desc_t *eNB2UE,*eNB2UE1,*eNB2UE2;
-  u32 nsymb,tx_lev,tx_lev1,tx_lev2,tx_lev_dB;
+  u32 nsymb,tx_lev,tx_lev1,tx_lev2;
   u8 extended_prefix_flag=0;
   s8 interf1=-21,interf2=-21;
   LTE_DL_FRAME_PARMS *frame_parms;
@@ -392,15 +393,15 @@ int main(int argc, char **argv) {
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
   char input_val_str[50],input_val_str2[50];
-  double input_val1,input_val2;
-  u16 amask=0;
+  //  double input_val1,input_val2;
+  //  u16 amask=0;
   u8 frame_mod4,num_pdcch_symbols;
   u16 NB_RB=25;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
   DCI_ALLOC_t dci_alloc[8];
-  u8 abstraction_flag=0,calibration_flag=0;
+  u8 abstraction_flag=0;//,calibration_flag=0;
   double pbch_sinr;
   int pbch_tx_ant;
   u8 N_RB_DL=25,osf=1;
@@ -433,7 +434,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hA:Cpf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:dP:")) != -1)
+  while ((c = getopt (argc, argv, "hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:dP:")) != -1)
     {
       switch (c)
 	{
@@ -551,10 +552,10 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	  break;
-	case 'C':
-	  calibration_flag=1;
-	  msg("Running Abstraction calibration for Bias removal\n");
-	  break;
+	  //	case 'C':
+	  //	  calibration_flag=1;
+	  //	  msg("Running Abstraction calibration for Bias removal\n");
+	  //	  break;
 	case 'N':
 	  Nid_cell = atoi(optarg);
 	  break;
@@ -596,7 +597,7 @@ int main(int argc, char **argv) {
 	  printf("-R N_RB_DL\n");
 	  printf("-O oversampling factor (1,2,4,8,16)\n");
 	  printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-	  printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
+	  //	  printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
 	  printf("-f Output filename (.txt format) for Pe/SNR results\n");
 	  printf("-F Input filename (.txt format) for RX conformance testing\n");
 	  exit (-1);
@@ -736,7 +737,7 @@ int main(int argc, char **argv) {
     r_im2[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     bzero(r_im2[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
-
+  /*
   switch (frame_parms->nb_antennas_tx) {
   case 1:
     amask = 0x0000;
@@ -747,7 +748,7 @@ int main(int argc, char **argv) {
   case 4:
     amask = 0x5555;
   }
-
+  */
   if (pbch_file_fd!=NULL) {
     load_pbch_desc(pbch_file_fd);
   }
@@ -829,6 +830,7 @@ int main(int argc, char **argv) {
     dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
     dci_alloc[0].L          = 2;
     dci_alloc[0].rnti       = 0x1234;
+    dci_alloc[0].nCCE       = 0;
     /*    
     memcpy(&dci_alloc[1].dci_pdu[1],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
     dci_alloc[1].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
@@ -853,15 +855,15 @@ int main(int argc, char **argv) {
 					 1024,
 					 &PHY_vars_eNb->lte_frame_parms,
 					 PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
-					 					 0);
+					 0);
     
 
-    /*
+    
     if (num_pdcch_symbols<3) {
       printf("Less than 3 pdcch symbols\n");
-      exit(-1);
+      //  exit(-1);
     }
-    */
+    
     if (pbch_phase>0) {
       dummybuf[0] = dummy0;
       dummybuf[1] = dummy1;
@@ -1078,7 +1080,7 @@ int main(int argc, char **argv) {
 #endif
     
     
-    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
+    //    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
     
     write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     if (frame_parms->nb_antennas_tx>1)
@@ -1110,7 +1112,7 @@ int main(int argc, char **argv) {
     //    write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     tx_lev = signal_energy(&txdata[0][0],
 			   OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
+    //    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
   }
 
 
@@ -1247,7 +1249,7 @@ int main(int argc, char **argv) {
 	
 	for (l=0;l<PHY_vars_eNb->lte_frame_parms.symbols_per_tti;l++) {
 	  
-	  subframe_offset = (l/PHY_vars_eNb->lte_frame_parms.symbols_per_tti)*PHY_vars_eNb->lte_frame_parms.samples_per_tti;
+	  //	  subframe_offset = (l/PHY_vars_eNb->lte_frame_parms.symbols_per_tti)*PHY_vars_eNb->lte_frame_parms.samples_per_tti;
 	  //	    printf("subframe_offset = %d\n",subframe_offset);
 	  
 	  slot_fep(PHY_vars_UE,
