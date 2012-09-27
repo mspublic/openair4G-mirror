@@ -17,7 +17,7 @@ static s32 temp_in_ifft_1[2048*2] __attribute__((aligned(16)));
 static s32 temp_in_fft_0[2048*2] __attribute__((aligned(16)));
 static s32 temp_in_fft_1[2048*2] __attribute__((aligned(16)));
 
-#define SCALE 0x7FFF
+#define SCALE 0x3FFF
 
 s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 			      u8 eNB_id,
