@@ -76,7 +76,7 @@ static int bypass_log_hdr;
 
 //extern MAC_xface *mac_xface;
 
-void logInit (void) {
+int logInit (void) {
   
 #ifdef USER_MODE
   int i;
@@ -86,8 +86,13 @@ void logInit (void) {
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
   if (g_log == NULL) {
+#ifdef USER_MODE
     perror ("cannot allocated memory for log generation modeul \n");
     exit(-1);
+#else
+    printk("cannot allocated memory for log generation modeul \n");
+    return(-1);
+#endif
   }
   
   g_log->log_component[PHY].name = "PHY";
@@ -271,8 +276,12 @@ void logInit (void) {
   printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
-  
+
+#ifdef USER_MODE  
   printf("log init done\n");
+#else
+  printk("log init done\n");
+#endif
 
 }
 

@@ -457,7 +457,7 @@ int main(int argc, char **argv) {
   u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
 
-  int eNB_id = 0, eNB_id_i = NUMBER_OF_eNB_MAX;
+  int eNB_id = 0, eNB_id_i = 1;
   unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
   unsigned char i_mod = 2;
   unsigned short NB_RB;

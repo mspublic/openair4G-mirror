@@ -461,7 +461,7 @@ u32 ulsch_encoding(u8 *a,
     H = Q_CQI;
     Hprime = H/Q_m;
   }
-  
+
 
   //  Do CQI coding
   if ((ulsch->O>1) && (ulsch->O < 12)) {
@@ -469,7 +469,6 @@ u32 ulsch_encoding(u8 *a,
     return(-1);
   }
   else {
-
     // add 8-bit CRC
     crc = crc8(o_flip,
 	       ulsch->O)>>24;

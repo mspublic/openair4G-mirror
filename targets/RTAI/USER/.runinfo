@@ -1,7 +1,17 @@
-synctest:lxrt+sem+mbx+msg+smi:!sudo ./synctest;   sleep 1;popall:control_c
-condtest:lxrt+sem+mbx+msg+smi:!sudo ./condtest;   sleep 1;popall:control_c
-msg_test:lxrt+sem+mbx+msg+smi:!sudo ./msg_test;   sleep 1;popall:control_c
-msg_many:lxrt+sem+mbx+msg+smi:!sudo ./msg_test;   sleep 1;popall:control_c
-eNB:     lxrt+sem+mbx+msg+smi:!sudo ./synctest;   sleep 1;popall:control_c
+synctest:lxrt+sem+mbx+msg:!./synctest ;sleep 1;popall:control_c
+condtest:lxrt+sem+mbx+msg:!sudo ./condtest;sleep 1;popall:control_c
+msg_test:lxrt+sem+mbx+msg:!sudo ./msg_test;sleep 1;popall:control_c
+msg_many:lxrt+sem+mbx+msg:!sudo ./msg_test;sleep 1;popall:control_c
+eNB:lxrt+sem+mbx+msg:!sudo ./synctest;sleep 1;popall:control_c
 eNB_test:lxrt+sem+mbx+msg+smi:!sudo ./synctest -S;sleep 1;popall:control_c
-UE:      lxrt+sem+mbx+msg+smi:!sudo ./synctest -U -T 108 -d;sleep 1;popall:control_c
+UE:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -T 108;sleep 1;popall:control_c
+UE0:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606252 -F zepto;sleep 1;popall:control_c
+UE0prach:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606252 -F zepto --debug-ue-prach;sleep 1;popall:control_c
+UE0noL2:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606252 -F zepto --no-L2-connect;sleep 1;popall:control_c
+UE0calib:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606002 --calib-ue-rx -80 ;sleep 1;popall:control_c
+UE0calibmed:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606002 --calib-ue-rx-med -80 ;sleep 1;popall:control_c
+UE0calibbyp:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606002 --calib-ue-rx-byp -60 ;sleep 1;popall:control_c
+UE1:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907600000 -F ue1 ;sleep 1;popall:control_c
+UE2:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907600384 -F ue2;sleep 1;popall:control_c
+eNB0:lxrt+sem+mbx+msg:!sudo ./synctest -C 1907600000 -F enb4tx -d;sleep 1;popall:control_c
+

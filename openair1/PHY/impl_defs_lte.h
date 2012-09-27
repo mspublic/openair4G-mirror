@@ -419,7 +419,7 @@ typedef struct {
   u8 Ncp_UL;                   
   /// shift of pilot position in one RB
   u8 nushift;                
-/// Frame type (0 FDD, 1 TDD)
+  /// Frame type (0 FDD, 1 TDD)
   lte_frame_type_t frame_type;
   /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   u8 tdd_config;
@@ -429,17 +429,27 @@ typedef struct {
   u8 node_id;
   /// Frequency index of CBMIMO1 card
   u8 freq_idx;
-  /// Frequency for ExpressMIMO/LIME
+  /// RX Frequency for ExpressMIMO/LIME
   u32 carrier_freq[4];
+  /// TX Frequency for ExpressMIMO/LIME
+  u32 carrier_freqtx[4];
   /// RX gain for ExpressMIMO/LIME
   u32 rxgain[4];
+  /// RF mode for ExpressMIMO/LIME
+  u32 rfmode[4];
+  /// RF RX DC Calibration for ExpressMIMO/LIME
+  u32 rxdc[4];
+  /// RF TX DC Calibration for ExpressMIMO/LIME
+  u32 rflocal[4];
+  /// RF VCO calibration for ExpressMIMO/LIME
+  u32 rfvcolocal[4];
   /// Turns on second TX of CBMIMO1 card
   u8 dual_tx;                
-/// flag to indicate SISO transmission
+  /// flag to indicate SISO transmission
   u8 mode1_flag;           
-/// Size of FFT  
+  /// Size of FFT  
   u16 ofdm_symbol_size;
-/// log2(Size of FFT)  
+  /// log2(Size of FFT)  
   u8 log2_symbol_size;
   /// Number of prefix samples in all but first symbol of slot
   u16 nb_prefix_samples;

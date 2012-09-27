@@ -42,15 +42,22 @@
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
+#ifdef EXMIMO
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+#else
 extern u8 number_of_cards;
+#endif
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
   u8 eNB=0;
 
   if (phy_vars_ue==NULL)
     return 0;
 
+  if ((mode == normal_txrx) || (mode == no_L2_connect)) {
   len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
   len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
 		 phy_vars_ue->frame,
@@ -66,7 +73,13 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 		 phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		 phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		 phy_vars_ue->PHY_measurements.n0_power_dB[1]);
-  len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
+#ifdef CBMIMO1
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
+#else
+#ifdef EXMIMO
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],exmimo_pci_interface->rf.rx_gain00);
+#endif
+#endif
   len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
   len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
   len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",openair_daq_vars.timing_advance);
@@ -169,6 +182,18 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
     len += sprintf(&buffer[len], "[UE PROC] Total Received Bits %dkbits\n",(phy_vars_ue->total_received_bits[0]/1000));
 
   }
+
+  }
+  else {
+    len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\nRSSI %3.2f dB Gain %3.2f \nN0 %d dBm (%d dB, %d dB)\n",
+		   phy_vars_ue->frame,
+		   10*log10(phy_vars_ue->PHY_measurements.rssi),
+		   10*log10(phy_vars_ue->PHY_measurements.rssi)-input_level_dBm,
+		   phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+		   phy_vars_ue->PHY_measurements.n0_power_dB[0],
+		   phy_vars_ue->PHY_measurements.n0_power_dB[1]);
+  }
+
   len += sprintf(&buffer[len],"EOF\n");
   len += sprintf(&buffer[len],"\0");
 

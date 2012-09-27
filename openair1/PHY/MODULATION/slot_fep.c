@@ -21,6 +21,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   unsigned int subframe_offset,subframe_offset_F;
   unsigned int slot_offset;
   int i;
+  unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
 
   if (no_prefix) {
     subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
@@ -43,7 +44,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   }
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d\n", Ns, symbol, nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset);
+  //  if (phy_vars_ue->frame <100)
+    msg("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d\n", phy_vars_ue->frame,Ns, symbol, nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset);
 #endif
   
 
@@ -51,11 +53,19 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
     memset(&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],0,2*frame_parms->ofdm_symbol_size*sizeof(int));
 
     if (l==0) {
-      fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
-					       slot_offset +
-					       nb_prefix_samples0 + 
-					       subframe_offset -
-					       SOFFSET],
+      if ((sample_offset +
+	  slot_offset +
+	  nb_prefix_samples0 + 
+	  subframe_offset -
+	   SOFFSET) > (frame_length_samples - frame_parms->ofdm_symbol_size))
+	memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
+	       (short *)&ue_common_vars->rxdata[aa][0],
+	       frame_parms->ofdm_symbol_size);
+	fft((short *)&ue_common_vars->rxdata[aa][(sample_offset +
+						slot_offset +
+						nb_prefix_samples0 + 
+						subframe_offset -
+						SOFFSET) % frame_length_samples],
 	  (short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
@@ -64,13 +74,22 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	  0);
     }
     else {
-
-      fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
+      if ((sample_offset +
+	   slot_offset +
+	   (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
+	   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
+	   subframe_offset-
+	   SOFFSET) > (frame_length_samples - frame_parms->ofdm_symbol_size))
+	memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
+	       (short *)&ue_common_vars->rxdata[aa][0],
+	       frame_parms->ofdm_symbol_size);
+ 
+      fft((short *)&ue_common_vars->rxdata[aa][(sample_offset +
 					       slot_offset +
 					       (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
 					       (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
 					       subframe_offset-
-					       SOFFSET],
+						SOFFSET) % frame_length_samples],
 	  (short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
@@ -97,6 +116,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				aa,
 				l,
 				symbol);
+
       for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
 	lte_dl_channel_estimation(phy_vars_ue,eNB_id,i+1,
 				  Ns,
@@ -104,6 +124,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				  l,
 				  symbol);
       }
+
 #endif
 
       // do frequency offset estimation here!
