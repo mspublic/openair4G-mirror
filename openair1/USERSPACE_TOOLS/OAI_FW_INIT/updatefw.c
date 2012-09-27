@@ -148,7 +148,7 @@ int get_elf_section_header(Elf32_Shdr* p_Elf32_Shdr, FILE* p_file, unsigned int 
   return nbread;
 }
 
-void find_and_transfer_section(unsigned int verboselevel) {
+void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
   /* Interface with driver */
   int ioctlretval;
   int ifile;
@@ -158,8 +158,7 @@ void find_and_transfer_section(unsigned int verboselevel) {
 
   for (secnb = 0 ; secnb < elf_Ehdr.e_shnum; secnb++) {
     get_elf_section_header(&elf_Shdr, p_elfimage, secnb);
-    //    if (!strcmp(SecNameStnTable + elf_Shdr.sh_name, section_name)) {
-    if ((elf_Shdr.sh_flags&SHF_ALLOC) > 0) {
+    if (!strcmp(SecNameStnTable + elf_Shdr.sh_name, section_name)) {
       if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
         printf("Info: ok, found section %s (as section nb. %d)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
       /* Check that section size is a multiple of 4 bytes. */
@@ -169,8 +168,8 @@ void find_and_transfer_section(unsigned int verboselevel) {
         fclose(p_elfimage);
         exit(-1);
       } else if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS) {
-        printf("Info: ok, section %s at %x has size %d bytes (multiple of 4 bytes).\n",
-               SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_addr,elf_Shdr.sh_size);
+        printf("Info: ok, section %s has size %d bytes (multiple of 4 bytes).\n",
+               SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
       }
       /* Dynamically allocate a chunk of memory to store the section into. */
       section_content = (char*)malloc(elf_Shdr.sh_size);
@@ -469,9 +468,18 @@ int main(int argc, char** argv) {
 
   /* Action 2: Find the .text section */
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #2 (Transfer .text section).\n");
-  find_and_transfer_section(verboselevel);
-  //  sleep(1);
+  find_and_transfer_section(".text", verboselevel);
+  sleep(1);
+  if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #2 done.\n");
 
+  /* Action 3 : Find the .data section */
+  if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #3 (Transfer .data section).\n");
+  find_and_transfer_section(".data", verboselevel);
+  sleep(1);
+  if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #3 done.\n");
+
+  /* Action 4 : Find the .bss  section */
+  if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #4 (Clear .bss section).\n");
   find_and_clear_section_bss(verboselevel);
   sleep(1);
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #4 done.\n");
