@@ -65,6 +65,7 @@ __m128i zero;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over
 #define NOCYGWIN_STATIC 
 #endif
 
+//#define DEBUG_PHY 1
 __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b,avg128D;
 int avg[4];
 
@@ -284,7 +285,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     */
 
 #ifdef DEBUG_PHY
-    msg("[DLSCH] log2_maxh = %d (%d,%d,%d)\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs,K);
+    msg("[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
     msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);
 #endif
   }
