@@ -17,6 +17,7 @@ static s32 temp_in_ifft_1[2048*2] __attribute__((aligned(16)));
 static s32 temp_in_fft_0[2048*2] __attribute__((aligned(16)));
 static s32 temp_in_fft_1[2048*2] __attribute__((aligned(16)));
 
+#define SCALE 0x7FFF
 
 s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 			      u8 eNB_id,
@@ -36,9 +37,9 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
 
   u16 N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
-  u16 aa,k,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
+  u16 aa,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
   u16 * Msc_idx_ptr;
-  u16 pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
+  int k,pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
   s16 alpha, beta;
   s32 *ul_ch1=NULL, *ul_ch2=NULL;
   s32 *ul_ch1_0=NULL,*ul_ch2_0=NULL,*ul_ch1_1=NULL,*ul_ch2_1=NULL;
@@ -143,7 +144,8 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 #endif
       alpha_ind = 0;
       if((cyclic_shift != 0)){
-	// Compensating for the phase shift introduced at the transmitter
+	// Compensating for the phase shift introduced at the transmitte
+	//	write_output("drs_est_pre.m","drsest_pre",ul_ch_estimates[0],300*12,1,1);
 	for(i=symbol_offset;i<symbol_offset+Msc_RS;i++){
 	  ul_ch_estimates_re = ((s16*) ul_ch_estimates[aa])[i<<1];
 	  ul_ch_estimates_im = ((s16*) ul_ch_estimates[aa])[(i<<1)+1];
@@ -161,6 +163,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	  if (alpha_ind>11)
 	    alpha_ind-=12;
 	}
+	//	write_output("drs_est_post.m","drsest_post",ul_ch_estimates[0],300*12,1,1);
       }
 
       if(cooperation_flag == 2) {
@@ -290,7 +293,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 #ifdef USER_MODE
 	  if((aa == 0)&& (cooperation_flag == 2)){
 	    write_output("test1.m","t1",temp_in_ifft_0,512,1,1);
-	    write_output("test2.m","t2",temp_out_ifft,512*2,2,1);
+	    write_output("test2.m","t2",temp_out_ifft_0,512*2,2,1);
 	    //	    write_output("test2.m","t2",ul_ch_estimates_time[aa],512*2,2,1);
 	    write_output("test3.m","t3",temp_in_fft_0,512,1,1);  
 	    write_output("test4.m","t4",temp_out_fft_0,512,1,1);
@@ -323,9 +326,9 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 #endif
 	for (k=0;k<frame_parms->symbols_per_tti;k++) {
 
-	  // we scale alpha and beta by 0x3FFF (instead of 0x7FFF) to avoid overflows 
-	  alpha = (s16) (((s32) 0x3FFF * (s32) (pilot_pos2-k))/(pilot_pos2-pilot_pos1));
-	  beta  = (s16) (((s32) 0x3FFF * (s32) (k-pilot_pos1))/(pilot_pos2-pilot_pos1));
+	  // we scale alpha and beta by SCALE (instead of 0x7FFF) to avoid overflows 
+	  alpha = (s16) (((s32) SCALE * (s32) (pilot_pos2-k))/(pilot_pos2-pilot_pos1));
+	  beta  = (s16) (((s32) SCALE * (s32) (k-pilot_pos1))/(pilot_pos2-pilot_pos1));
 	  
 #ifdef DEBUG_CH
 	  msg("lte_ul_channel_estimation: k=%d, alpha = %d, beta = %d\n",k,alpha,beta); 
@@ -334,9 +337,13 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 
 	  // interpolate between estimates
 	  if ((k != pilot_pos1) && (k != pilot_pos2))  {
-	    multadd_complex_vector_real_scalar((s16*) ul_ch1,alpha,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((s16*) ul_ch2,beta ,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
-	 
+	    
+	    //	    multadd_complex_vector_real_scalar((s16*) ul_ch1,alpha,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+	    //multadd_complex_vector_real_scalar((s16*) ul_ch2,beta ,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+
+	    multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+	    //	    memcpy(&ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],ul_ch1,N_rb_alloc*12*sizeof(s32));
 	    if(cooperation_flag == 2)// For Distributed Alamouti
 	      {
 		multadd_complex_vector_real_scalar((s16*) ul_ch1_0,beta ,(s16*) &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
@@ -350,16 +357,17 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	} //for(k=...
 
 	// because of the scaling of alpha and beta we also need to scale the final channel estimate at the pilot positions 
-	multadd_complex_vector_real_scalar((s16*) ul_ch1,0x3FFF,(s16*) ul_ch1,1,N_rb_alloc*12);
-	multadd_complex_vector_real_scalar((s16*) ul_ch2,0x3FFF,(s16*) ul_ch2,1,N_rb_alloc*12);
-
+	
+	multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE,(s16*) ul_ch1,1,N_rb_alloc*12);
+	multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE,(s16*) ul_ch2,1,N_rb_alloc*12);
+	
 	if(cooperation_flag == 2)// For Distributed Alamouti
 	  {
-	    multadd_complex_vector_real_scalar((s16*) ul_ch1_0,0x3FFF,(s16*) ul_ch1_0,1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((s16*) ul_ch2_0,0x3FFF,(s16*) ul_ch2_0,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch1_0,SCALE,(s16*) ul_ch1_0,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch2_0,SCALE,(s16*) ul_ch2_0,1,N_rb_alloc*12);
 
-	    multadd_complex_vector_real_scalar((s16*) ul_ch1_1,0x3FFF,(s16*) ul_ch1_1,1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((s16*) ul_ch2_1,0x3FFF,(s16*) ul_ch2_1,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch1_1,SCALE,(s16*) ul_ch1_1,1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch2_1,SCALE,(s16*) ul_ch2_1,1,N_rb_alloc*12);
 	  }
 
 	//write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
