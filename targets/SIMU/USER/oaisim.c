@@ -1225,14 +1225,15 @@ main (int argc, char **argv)
       }
     }
       
-    oai_emulation.info.frame = frame;   
+    oai_emulation.info.frame = frame; 
+    //oai_emulation.info.time_ms += 1;  
     oai_emulation.info.time_s += 0.1; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
     // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
     if ( (oai_emulation.info.n_frames_flag == 0) || (oai_emulation.info.n_frames >= 0xffff) ){ 
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
-    if ((frame % 100) == 0 ) { // call OMG every 10ms 
+    if ((frame % 10) == 0 ) { // call OMG every 10ms 
       update_nodes(oai_emulation.info.time_s); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
@@ -1275,15 +1276,12 @@ main (int argc, char **argv)
     
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
-       LOG_I(OMG," extracting position of eNb...\n");
+      //LOG_D(OMG," extracting position of eNb...\n");
        extract_position(enb_node_list, enb_data, NB_eNB_INST);
-       LOG_I(OMG," extracting position of UE...\n");
+       //LOG_D(OMG," extracting position of UE...\n");
        if (oai_emulation.info.omg_model_ue == TRACE)
-	 extract_position_fixed_ue(ue_data, NB_UE_INST); // JHNOTE: TODO MUST reflect the number of ACTIVE SUMO nodes (for example at the beginning, 1 node only is in SUMO...so, x others are just on standby...should not be considered).
-       else 
 	 extract_position(ue_node_list, ue_data, NB_UE_INST); 
       
-
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);

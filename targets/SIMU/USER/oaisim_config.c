@@ -180,7 +180,7 @@ void init_oai_emulation() {
 	sprintf(oai_emulation.topology_config.mobility.UE_mobility.sumo_config.hip,"127.0.1.1");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.hport = 8883;
 
-	oai_emulation.application_config.packet_gen_type = "repeat_string";
+	oai_emulation.application_config.packet_gen_type = "substract_string";
 	for (i = 0; i < NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++) {
 		oai_emulation.application_config.predefined_traffic.source_id[i] = "1:10"; 
 		oai_emulation.application_config.predefined_traffic.application_type[i] = "no_predefined_traffic";
