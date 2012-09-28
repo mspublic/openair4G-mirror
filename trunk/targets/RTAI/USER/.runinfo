@@ -11,7 +11,7 @@ UE0noL2:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606252 -F zepto --no-L2-c
 UE0calib:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606002 --calib-ue-rx -80 ;sleep 1;popall:control_c
 UE0calibmed:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606002 --calib-ue-rx-med -80 ;sleep 1;popall:control_c
 UE0calibbyp:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907606002 --calib-ue-rx-byp -60 ;sleep 1;popall:control_c
-UE1:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907600000 -F ue1 ;sleep 1;popall:control_c
-UE2:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1907600384 -F ue2;sleep 1;popall:control_c
-eNB0:lxrt+sem+mbx+msg:!sudo ./synctest -C 1907600000 -F enb4tx -d;sleep 1;popall:control_c
+UE1:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600000 -F ue1 ;sleep 1;popall:control_c
+UE2:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600384 -F ue2;sleep 1;popall:control_c
+eNB0:lxrt+sem+mbx+msg:!sudo ./synctest_eNB -C 1907600000 -F enb4tx -d;sleep 1;popall:control_c
 
