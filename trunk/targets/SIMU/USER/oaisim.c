@@ -1344,7 +1344,7 @@ main (int argc, char **argv)
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	
-	PHY_vars_eNB_g[eNB_id]->frame = frame;
+	//PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	
 #ifdef PRINT_STATS
