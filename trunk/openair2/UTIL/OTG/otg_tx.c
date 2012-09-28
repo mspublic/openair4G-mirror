@@ -42,10 +42,13 @@
 #include "otg_tx.h" 
 #include "otg_vars.h"
 
+// char string for payload gen
+const char HEADER_STRING[] = "048717272261061594909177115977673656394812939088509638561159848103044447631759621785741859753883189837913087874397230808338408049820398430984093477437879374893649639479575023646394693665969273071047";
+const char PAYLOAD_STRING[] = "UVk5miARQfZGDFKf1wS0dt57kHigd0fXNrUZCjIhpyOS4pZWMHOP1GPdgXmlPtarLUjd3Rmkg05bhUZWtDDmdhrl5EzMZz6DkhIg0Uq7NlaU8ZGrt9EzgVLdr9SiBOLLXiTN3aMInMrlDYFYZ8n5WYbfZTnpz13lbMY4OBE4eWfIMLvBLLyzzzEqjUGILBVMfKGVccPi0VSCyg28RqAiR3z1P6zryk4FWFp0G78AUT1hZWhGcGOTDcKj9bCzny592m1Dj123KWczIm5KVLupO7AP83flqamimfLz6GtHrz5ZN2BAEVQjUhYSc35s5jDhofIlL2U4qPT3Ilsd7amTjaCl5zE0L89ZeIcPCWKSEuNdH5gG8sojuSvph1hU0gG4QOLhCk15IE8eCeMCz2LTL68U0hEQqeM6UmgmA9j7Eid7oPzQHbzj8A30HzGXGhWpt4CT3MSwWVvcCWSbYjkYGgOhHj5csTsONWyGAh5l3qquf8v3jGRSRu0nGXqYILCkw1SX9Na46qodrN6BnPl49djH2AuAaYKAStoR9oL7I1aZG6rVLFPMIZiAqF1tuDVcX9VWnyTVpTMXR6GtBp5bgfDyKuT4ZE9MDUASikGA5hoMfX5Gf2Ml7eLGBtEqZF4rouczHI0DRfgX4ev967n6dYFFkaXbFTvWdykN5bfMinzcrWeqVrmZhTvtUkvq3Rc9enM9qTNz6cDo0HHM0VD8EYtpaPH3yG2CYGDgogHlkaCcHaOyViyq8RH8wf4WQWoHuTNG1kWdkpgTrWic5Gv5p24O9YAPMOn6A1IsdvwpOF85qj8nPvj4nfIo385HOjGfadzfBXueruaKEa0lvbhLgS1bQWKv5fE7k2cMPzQ8USIpUyBhBGUHsLKaykvsr1qDTueAUWAGH8VqyozZZkyhWahjmFEEwU6hhcK1Z9wv9jOAAeqopQvbQFm4aQzzBwGIAhBqhZMiarIBwYPOFdPmK1hKHIa94GGtQbMZ0n83IGt6w8K3dqfOhmpQWqSRZscFwPuo4uhC0ByoC9hFpnizCBfoRZ7Gj9cGOzVLT2eMtD0XC8rUnDiR3p7Ke4ho6lWMLHmtCr7VWYIpY19dtiWoyU0FQ7VMlHoWeBhIUfuG54WVVX0h5Mvvvo0cnLQzh4knysVhAfQw9EhXq94mLrI9GydUaTihOvydQikfq2CrvLeNK81msBlYYoK0aT7OewTUI51YYufj7kYGkPVDf7t5n3VnMV3ShMERKwFyTNHQZyo9ccFibYdoT1FyMAfVeMDO89bUMKAD7RFaT9kUZpaIiH5W7dIbPcPPdSBSr1krKPtuQEeHVgf4OcQLfpOWtsEya4ftXpNw76RPCXmp4rjKt1mCh0pBiTYkQ5GDnj2khLZMzb1uua6R1ika8ACglrs1n0vDbnNjZEVpIMK4OGLFOXIOn9UBserI4Pa63PhUl49TGLNjiqQWdnAsolTKrcjnSklN1swcmyVU8B5gTO4Y3vhkG2U2";
+const char FIXED_STRING[]="ABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCD";
 //may be put in vars
 //packet_t *packet=NULL;
 int type_header=0;
-otg_hdr_t *otg_hdr_p;
 
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
@@ -166,9 +169,6 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
 
   int size;
   unsigned int flow_id=1;
-  char *buffer_tx=NULL;
-  otg_hdr_info_t *otg_hdr_info_p;
-  unsigned int  byte_tx_count=0; 
   unsigned char state=ON_STATE; // default traffic state 
   int state_transition_prob=0;
   int hdr_size;
@@ -181,6 +181,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   unsigned int seq_num;
   unsigned int flow_id_background=1;
   unsigned int flag;
+  unsigned int hdr_type =1;//fixme 
   char *payload=NULL;
   char *header=NULL;
 	
@@ -242,9 +243,8 @@ else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][st
     otg_info->idt[src][dst]=time_dist(src, dst, state); // update the idt for the next otg_tx
     gen_pkts=1;
   }  //check if there is background traffic to generate
-  else if  ((background_gen(src, dst, ctime) != 0) && (gen_pkts==0) && (g_otg->background[src][dst]==1)) {
-    background_ok=1;
-    LOG_I(OTG,"BACKGROUND :: Time To Transmit [SRC %d][DST %d] \n", src, dst);
+  else if ((gen_pkts==0) && (g_otg->background[src][dst]==1)){ // the gen_pkts condition could be relaxed here
+    background_ok= background_gen(src, dst, ctime);
   }
   else{  
     // LOG_D(OTG,"Time To Transmit::NO (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]);
@@ -257,7 +257,7 @@ else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][st
 else if (((g_otg->application_type[src][dst]==0)||(g_otg->idt_dist[src][dst][state]==0))&&(g_otg->background[src][dst]==1)){ //The case when we configure only background between src and dst, without data traffic
 	if (background_gen(src, dst, ctime)!=0){
 	    background_ok=1;
-	    LOG_I(OTG,"(only) BACKGROUND :: Time To Transmit [SRC %d][DST %d] \n", src, dst);
+	    LOG_D(OTG,"(only) BACKGROUND :: Time To Transmit [SRC %d][DST %d] \n", src, dst);
 	}
 	else 
 	return NULL;
@@ -265,8 +265,10 @@ else if (((g_otg->application_type[src][dst]==0)||(g_otg->idt_dist[src][dst][sta
 
 
 if (background_ok==0){
-  header=header_gen(header_size_gen(src));
-  payload=payload_pkts(size) ;
+  //header=header_gen(header_size_gen(src));
+  // payload=payload_pkts(size) ;
+  header =random_string(header_size_gen(src),  g_otg->packet_gen_type, HEADER_ALPHABET);
+  payload = random_string(size,   g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xffff;
   flow=flow_id;
   seq_num=otg_info->seq_num[src][dst];
@@ -274,53 +276,33 @@ if (background_ok==0){
   otg_info->seq_num[src][dst]+=1;
   otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
   otg_info->tx_num_pkt[src][dst]+=1;
-if (size!=strlen(payload))
-  LOG_I(OTG,"data to send : size %d, strlen %d, %s \n", size, strlen(payload), payload);
-  }
-else{
-  header=header_gen(header_size_gen_background(src)); 
-  payload=payload_pkts(otg_info->size_background[src][dst]);
+  if (size!=strlen(payload))
+    LOG_E(OTG,"The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", size, strlen(payload), seq_num, header, payload);
+  else 
+    LOG_T(OTG,"The packet size is %d with seq num %d : |%s|%s| \n", size, seq_num, header, payload);
+  
+ } else {
+  //header=header_gen(header_size_gen_background(src)); 
+  //payload=payload_pkts(otg_info->size_background[src][dst]);
+  header =random_string(header_size_gen_background(src),  g_otg->packet_gen_type, HEADER_ALPHABET);
+  payload = random_string(otg_info->size_background[src][dst],  g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xbbbb;
   flow=flow_id_background;
   seq_num=otg_info->seq_num_background[src][dst];
   otg_info->tx_num_bytes_background[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
   otg_info->tx_num_pkt_background[src][dst]+=1;
   otg_info->seq_num_background[src][dst]+=1;
-if (otg_info->size_background[src][dst]!=strlen(payload))
-  LOG_I(OTG,"data to send : size %d, strlen %d, %s \n", otg_info->size_background[src][dst], strlen(payload), payload);
+  
+  if (otg_info->size_background[src][dst]!=strlen(payload))
+    LOG_E(OTG,"The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
+  else
+    LOG_T(OTG,"The packet size is %d with seq num %d : |%s|%s| \n", size, seq_num, header, payload);
 }
-
-
-// Serialization
+ 
  buffer_size = hdr_size + strlen(header) + strlen(payload);
-  buffer_tx= (char*)malloc(buffer_size);
-  otg_hdr_info_p = (otg_hdr_info_t *) (&buffer_tx[byte_tx_count]);
-  otg_hdr_info_p->size = buffer_size;
-  otg_hdr_info_p->flag = flag; // (background_ok==0)? 0xffff : 0xbbbb;
-  byte_tx_count = sizeof(otg_hdr_info_t);
-  otg_hdr_p = (otg_hdr_t *) (&buffer_tx[byte_tx_count]);
-  otg_header_gen(flow, ctime, seq_num,1, state); //???? Fix HDR Type 
-  byte_tx_count += sizeof(otg_hdr_t);
-  memcpy(&buffer_tx[byte_tx_count], header, strlen(header));
-  byte_tx_count += strlen(header);
-  memcpy(&buffer_tx[byte_tx_count], payload, strlen(payload));
-  byte_tx_count +=strlen(payload);
-  LOG_I(OTG,"PACKET SIZE TX [SRC %d][DST %d]: Flag (0%x), time(%d), Seq num (%d), Total size (%d)\n", src, dst, flag, ctime, seq_num, byte_tx_count);
+ *pkt_size = buffer_size;
  
-
-
-if (buffer_tx[byte_tx_count-1]=='F'){ 
- LOG_I(OTG, "BAD_PACKET TX %c ctime %d \n", buffer_tx[byte_tx_count-1], ctime);}
-else 
- LOG_I(OTG, "BAD_PACKET TX ERROR %c ctime %d \n", buffer_tx[byte_tx_count-1], ctime);
- 
-  *pkt_size = buffer_size;
-  if (payload!=NULL)
-    free(payload);
-  if (header!=NULL)
-    free(header); 
-
-  return buffer_tx;
+ return serialize_buffer(header, payload, buffer_size, flag, flow, ctime, seq_num, hdr_type, state);
 
 }
 
@@ -350,7 +332,7 @@ type_header=0;
 		size_header+= HDR_TCP;
 		type_header+=2;
 	}
-LOG_I(OTG,"version_ %d, %d \n", type_header, size_header);
+LOG_D(OTG,"Header size is %d \n",  size_header);
 
 return size_header;
 
@@ -358,71 +340,111 @@ return size_header;
 
 
 // Generate a random string[size]
-char *random_string(int size, ALPHABET data_type, char *data_string) {
-
+char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type) {
   char *data=NULL;
-  int i, pos;
-  data=(char*)malloc(size*sizeof(char));
-  switch (data_type){
-  case STATIC_STRING:
+  int i=0,start=0;
+  switch (mode){
+  case REPEAT_STRING:
+    start = uniform_dist (0, abs(strlen(FIXED_STRING)- size - 1));
+    return str_sub (FIXED_STRING, start, start + size -1);
+    break;
+  case SUBSTRACT_STRING:
     //data=strndup(data_string + (strlen(data_string) - size), strlen(data_string));
-      data=strndup(data_string + (strlen(data_string) - size), size);	
+    //data=strndup(data_string + (strlen(data_string) - size), size);	
+    if (data_type == HEADER_ALPHABET){
+      start = uniform_dist (0, abs(strlen(HEADER_STRING)- size - 1));
+      return str_sub (HEADER_STRING, start, start + size -1);
+    }else if (data_type == PAYLOAD_ALPHABET) {
+      start = uniform_dist (0, abs(strlen(PAYLOAD_STRING)- size - 1));
+      return str_sub (PAYLOAD_STRING, start, start+size - 1 );
+    }else 
+      LOG_E(OTG, "unsupported alphabet data type \n");
     break;
-  case RANDOM_STRING:
-    for(i=0;i<size;i++){
-      pos = rand()%(strlen(data_string));		
-      data[i]=data_string[pos];
+  case RANDOM_POSITION:
+    data=(char*)malloc((size+1)*sizeof(char));
+    for(i=0;i<=size;i++){
+      if (data_type == HEADER_ALPHABET)
+	data[i]=HEADER_STRING [(int)uniform_dist(0, 128)];
+      else if (data_type == PAYLOAD_ALPHABET) 
+	data[i]=PAYLOAD_STRING [(int)uniform_dist(0, 1500)];
+      else
+	LOG_E(OTG,"unsupported alphabet data type \n");
+	//pos = rand()%(strlen(data_string));               
+      //data[i]=data_string[pos];
+      //data[i]= taus(OTG) % (126 - 33 + 1) + 33;
     }
-    break;
-  } 
-
-  return data;
+    data[size] = '\0';  
+    break; 
+ case RANDOM_STRING:
+   data=(char*)malloc((size+1)*sizeof(char));
+   for(i=0;i<=size;i++){
+     if (data_type == HEADER_ALPHABET)
+       data[i]= (char) uniform_dist(48,57); // take only the numbers 
+     else if (data_type == PAYLOAD_ALPHABET) 
+       data[i]= (char) uniform_dist(48,126); // take all the ascii chars 
+     else
+       LOG_E(OTG,"unsupported alphabet data type \n");
+   }
+   data[size] = '\0';  
+   break;
+  default:
+   LOG_E(OTG,"not supported string generation");
+   break;
+  }
+   return data;
 }
 
+unsigned int header_size(int hdr_size){
 
-char *header_gen(int hdr_size){
-
-
-  char *hdr=NULL;
-  
+  int size = hdr_size;
   if (hdr_size>(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t)))
-    hdr_size-=(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t));
+    size-=(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t));
   else
     LOG_W(OTG,"OTG Header not included inside packet header (OTG header:%d, Header%d)\n", hdr_size, sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) );
   
-  hdr=(char*)malloc(hdr_size*sizeof(char));
+  //hdr=(char*)malloc(hdr_size*sizeof(char));
   // if (generate_static_string)
-  hdr=random_string(hdr_size,STATIC_STRING, HEADER_STRING);
+  //hdr=random_string(hdr_size,STATIC_STRING, HEADER_STRING);
   //hdr=random_string(hdr_size,RANDOM_STRING, HEADER_STRING);
-return(hdr);
+return(size);
 
 }
 
 
-char *payload_pkts(int payload_size){
-	
-	char *payload=NULL;	
-	payload=(char*)malloc(payload_size*sizeof(char));
-	payload=random_string(payload_size, STATIC_STRING, PAYLOAD_STRING);
-	//payload=random_string(payload_size, RANDOM_STRING, PAYLOAD_STRING);
-return (payload);
-
-}
-
-
-void otg_header_gen(int flow_id, int ctime, int seq_num, int hdr_type, int state){
-
-
+char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state){
+ 
+  char *tx_buffer=NULL;
+  otg_hdr_info_t *otg_hdr_info_p=NULL;
+  otg_hdr_t *otg_hdr_p=NULL;
+  unsigned int  byte_tx_count=0; 
+  
+  if (header == NULL || payload == NULL)
+    return NULL;
+  // allocate memory for the tx_buffer
+  tx_buffer= (char*)malloc(buffer_size);
+  // add otg control information first for decoding and computing the statistics 
+  otg_hdr_info_p = (otg_hdr_info_t *) (&tx_buffer[byte_tx_count]);
+  otg_hdr_info_p->size = buffer_size;
+  otg_hdr_info_p->flag = flag; // (background_ok==0)? 0xffff : 0xbbbb;
+  byte_tx_count = sizeof(otg_hdr_info_t);
+  otg_hdr_p = (otg_hdr_t *) (&tx_buffer[byte_tx_count]);
   otg_hdr_p->flow_id =flow_id;
   otg_hdr_p->time =ctime;
   otg_hdr_p->seq_num =seq_num;
   otg_hdr_p->hdr_type=hdr_type;
   otg_hdr_p->state = state;
-  //otg_hdr_p->pkts_size = size;
-
-  LOG_D(OTG, " otg_hdr: HDR TYPE %i FLOW ID %i TIME %i  NUM SEQUENCE %i SIZE (PAYLOAD) %i \n",
-	otg_hdr_p->hdr_type, otg_hdr_p->flow_id, otg_hdr_p->time, otg_hdr_p->seq_num,otg_hdr_p->pkts_size);
+  byte_tx_count += sizeof(otg_hdr_t);
   
+  // copy the header first 
+  memcpy(&tx_buffer[byte_tx_count], header, strlen(header));
+  byte_tx_count += strlen(header);
+  free(header); 
+  // now append the payload 
+  memcpy(&tx_buffer[byte_tx_count], payload, strlen(payload));
+  byte_tx_count +=strlen(payload);
+  free(payload);
+  
+  return tx_buffer;
 }
 
 
@@ -654,7 +676,7 @@ int background_gen(int src, int dst, int ctime){
    otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));  
 }*/
   if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) ||  (otg_info->idt_background[src][dst]==0)){
-     LOG_I(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
+     LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
 
 	otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
    	if (otg_info->size_background[src][dst]>1500)

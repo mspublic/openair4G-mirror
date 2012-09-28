@@ -21,7 +21,7 @@
     </MOBILITY>
   </TOPOLOGY_CONFIG>
   <APPLICATION_CONFIG>
-
+    <PACKET_GEN_TYPE>substract_string</PACKET_GEN_TYPE>
 <!-- BACKGROUND TRAFFIC  -->
 <PREDEFINED_TRAFFIC>
       <SOURCE_ID>0</SOURCE_ID>					
@@ -65,7 +65,7 @@
   
   <EMULATION_CONFIG>
     <EMULATION_TIME_ms>0</EMULATION_TIME_ms> <!--if0 set to infinity--> 
-    <CURVE>enable</CURVE> <!-- option: enabled, disabled. If CURVE is enabled, graphes are ploted in real time (UL and DL) of WOD and throughput measurement for each packet -->
+    <CURVE>enabled</CURVE> <!-- option: enabled, disabled. If CURVE is enabled, graphes are ploted in real time (UL and DL) of WOD and throughput measurement for each packet -->
     <PERFORMANCE_METRICS>
       	<THROUGHPUT>disable</THROUGHPUT>
       	<LATENCY>disable</LATENCY>

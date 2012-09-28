@@ -124,9 +124,10 @@ extern "C" {
  *  @brief Macro used to call tr_log_full_ex with file, function and line information
  * @{*/
 #ifdef USER_MODE
-#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+  //#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+#define logIt(component, level, format, args...) logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
 #else
-#define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+#define logIt(component, level, format, args...) logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args)
 #endif
 /* @}*/
 
