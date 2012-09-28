@@ -130,4 +130,6 @@ Exnode* get_next_position(hash_table_t *table,int node_id);
 
 void reset_visit_status(hash_table_t *table, float time, int node_id);
 
+void clear_llist();
+
 #endif /* MOBILITY_PARSER_H_ */

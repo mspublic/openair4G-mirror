@@ -46,6 +46,7 @@
 #include "log.h"
 node_info* head_node_info;// head pointer to a linked list containing vid,vid_addr
 extern hash_table_t* table;
+extern void hash_table_delete(hash_table_t * table);
 //need to be removed , used only once (old code)
 struct Exnode* gen_list(){
 	struct Exnode* head = NULL;
@@ -55,7 +56,7 @@ struct Exnode* gen_list(){
 //read the mobility file and generates a hashtable of linked list with key pointing to vehicle id
 hash_table_t* read_mobility_file(char* mobility_file[]){
 		FILE *fp;
-	    char str[128];
+	    char str[128],*p;
 	    hash_table_t *table = hash_table_new(MODE_ALLREF);
 	    if((fp=fopen(mobility_file, "r"))==NULL) {
 	      printf("Cannot open file %s\n", mobility_file);
@@ -72,8 +73,11 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      if(fgets(str, 126, fp)) { // happy go for small mobility file :-)
 	    	  char * pch;
 	      	  int fmt=0;
-
-	      	  pch = strtok (str," "); // the separator between the items in the list is a space
+                  p=str;
+                  while(*p==' ' || *p=='\t') p++; // skip whitespaces
+		  if(*p=='\r') p++;
+		  if (*p!='\n') {
+	      	  pch = strtok (p," "); // the separator between the items in the list is a space
 	      	  Exnode* node = malloc(sizeof(Exnode));
 
 	      	  while (pch != NULL)
@@ -112,12 +116,14 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      		if (Node_info==NULL){
 	      			Node_info=build_node_info(Node_info,node->vid,&(node->vid));
 	      			head_node_info=Node_info;
-				LOG_D(OMG,"TRACE head node info is %p\n",head_node_info);
 			}
 	      		else{
-	      			build_node_info(Node_info,node->vid,&(node->vid));
+			  Node_info=build_node_info(Node_info,node->vid,&(node->vid));
 			
 	      		}
+			Node_info->next=NULL;
+			LOG_D(OMG,"[TRACE] build info for node %d %d head %p node %p next %p\n", 
+			      Node_info->vid, node->vid, head_node_info,  Node_info, Node_info->next);
 	      		keyholder[i]=&node->vid;
                         i++;
 	      		hash_table_add(table, &(node->vid), sizeof(node->vid), node, sizeof(node));
@@ -135,7 +141,7 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      		  	  AppendNode(headRef, node);
 	      	  	  	 }
 
-	      }
+	      }}
 	    }
 
 	    fclose(fp);
@@ -160,8 +166,7 @@ node_info*  build_node_info(node_info* headRef, int vid, int *vid_addr){
 	  headRef->next = newNode;
 	  
 	}
-	LOG_D(OMG,"TRACE node info next is %p\n", headRef->next);
-	return headRef;
+	return headRef->next;
 }
 
 void AppendNode(struct Exnode* headRef, struct Exnode* newNode) {
@@ -364,6 +369,43 @@ void quicksortlist(Exnode *pLeft, Exnode *pRight){
 	quicksortlist(pStart->next,pCurrent);
 
 }
+
+void clear_llist(){
+
+        node_info* TempNode=NULL;
+        node_info* tmp=NULL;
+	TempNode=head_node_info;
+	
+	while(TempNode->next!=NULL){
+          int *value1 = NULL;
+	  value1 = (int *) HT_LOOKUP(table, TempNode->vid_addr);
+	  Exnode* TempMob = (Exnode *)value1;
+          
+          while (TempMob->next!=NULL){
+                Exnode* tmp=NULL;
+                tmp=TempMob;
+                TempMob=TempMob->next;
+                free(tmp);
+                tmp=NULL;
+          }
+          if (TempMob->next == NULL){
+                free(TempMob);
+                TempMob=NULL;
+                }
+          tmp=TempNode;
+          TempNode=TempNode->next;
+          free(tmp);
+          tmp=NULL;
+	}
+	if (TempNode->next==NULL ){
+	  free(TempNode);
+          TempNode=NULL;
+	  
+	}
+
+        hash_table_delete(table);
+}
+        
 /*
 int main(){
 	Exnode* next_loc=NULL;

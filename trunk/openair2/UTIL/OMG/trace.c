@@ -53,12 +53,12 @@ int start_trace_generator(omg_global_param omg_param_list) {
 
   NodePtr node = NULL;
   // MobilityPtr mobility = NULL;
-
+  
   //read the mobility file here
   table=read_mobility_file(omg_param_list.mobility_file); // JHNOTE: in order to debug, please give and change name here...
-  LOG_W(OMG, "mobility file %s put in the table %p\n",omg_param_list.mobility_file, table );
+  LOG_I(OMG, "mobility file %s put in the table %p\n",omg_param_list.mobility_file, table );
   
-  //sort_veh_movement(table);
+  sort_veh_movement(table);
   
   if (omg_param_list.nodes <= 0){
     LOG_W(OMG, "Number of nodes has not been set\n");
@@ -72,18 +72,16 @@ int start_trace_generator(omg_global_param omg_param_list) {
   }*/
 
   if (omg_param_list.nodes_type == eNB) {
-	LOG_I(OMG, "Node type has been set to eNB\n");
+    LOG_I(OMG, "Start trace driven mobility gen for %d eNBs\n",omg_param_list.nodes);
   } else if (omg_param_list.nodes_type == UE) {
-	LOG_I(OMG, "Node type has been set to UE\n");
+    LOG_I(OMG, "Start trace driven mobility gen for %d UEs\n",omg_param_list.nodes);
   }
-  LOG_I(OMG, "Number of TRACE nodes has been set to %d\n", omg_param_list.nodes);
-   
+    
 
   int count = 0;
   node_info * head_node = head_node_info;
   while (head_node->next!=NULL){
     if (count<omg_param_list.nodes){
-      LOG_D(OMG,"TRACE head node %p for node id %d\n", head_node,count);
       create_trace_node(node,head_node);
       count++;
       head_node=head_node->next;
@@ -99,7 +97,7 @@ int start_trace_generator(omg_global_param omg_param_list) {
 
 int create_trace_node(NodePtr node,node_info *head_node){
 	
-  double cur_time = 1;//.10;
+  double cur_time = 0.10;
 	MobilityPtr mobility = NULL;
 	node = (NodePtr) create_node();
 	mobility = (MobilityPtr) create_mobility();
@@ -112,7 +110,9 @@ int create_trace_node(NodePtr node,node_info *head_node){
 	place_trace_node(node);	//initial positions
 
 	Pair pair = malloc (sizeof(Pair));
-	pair = sleep_trace_node(node,cur_time,0); //sleep , assumed that initial node position exist in mobility file with speed 0
+        Exnode* next_loc=NULL;
+	next_loc=get_next_position(table,node->ID);
+	pair = sleep_trace_node(node,cur_time,next_loc->time); //sleep , assumed that initial node position exist in mobility file with speed 0
 
 	Job_Vector = add_job(pair, Job_Vector);
 	Job_Vector_len ++;
@@ -132,9 +132,11 @@ void place_trace_node(NodePtr node) {
 	node->Y_pos = next_loc->y;
 	node->mob->Y_from = node->Y_pos;
 	node->mob->Y_to = node->Y_pos;
-
+       
 	node->mob->speed = next_loc->speed;
 	node->mob->journey_time = 0.0;
+        reset_visit_status(table,next_loc->time,node->ID);
+        
 
 	LOG_D(OMG,"--------INITIALIZE TRACE NODE-------- \n ");
   	LOG_I(OMG,"Initial position of node ID: %d type: %d (X = %.2f, Y = %.2f) speed = 0.0\n ", node->ID, node->type, node->X_pos, node->Y_pos);
@@ -171,35 +173,47 @@ Pair move_trace_node(NodePtr node, double cur_time) {
         
 	Exnode* next_loc=NULL;
 	next_loc=get_next_position(table,node->ID);
-
-	/* Trace defined time varies with OAI time :(
-        if ((next_loc->time - cur_time) >= eps){ // this is for broken mobility description where node has to begin trip at some later time from same current position
-		reset_visit_status(table,next_loc->time,node->ID);
-		float sleep_duration=(next_loc->time-cur_time-eps);
-		return sleep_trace_node(node,cur_time,sleep_duration); // correct this send the duration of sleep
-	}*/
-        
-        Job_list tmp1 = Job_Vector;
-        if (next_loc==NULL) {
-          printf("OMG sleeping\n");     
+	if (next_loc==NULL) {
 	  return sleep_trace_node(node,cur_time,9999);                
                 
-                }//Option 1 : no job, I am done sleeping
+	}//Option 1 : no job, I am done sleeping
+	Job_list tmp1 = Job_Vector;
+	 LOG_D(OMG, "Location fetch : (%.2f, %.2f)\n", next_loc->x, next_loc->y);
 
-        while((next_loc->x==tmp1->pair->b->mob->X_to && next_loc->y==tmp1->pair->b->mob->Y_to) || next_loc->speed==0)
-              next_loc=get_next_position(table,node->ID);  
+        double X_next;
+	double Y_next;
+        double journeyTime_next;
+        // This was used to remove duplicate entries, vehicle stays in the same position
+        //while((next_loc->x==tmp1->pair->b->mob->X_to && next_loc->y==tmp1->pair->b->mob->Y_to) )//|| next_loc->speed==0)
+        //      next_loc=get_next_position(table,node->ID);  
+
+        //Trace defined time varies with current time so put to sleep till the next specified time in mobility file:(
+        if (( node->mob->target_time - cur_time) >= eps){ 
+                // this is for broken mobility description where node has to begin trip at some later time from same current position
+		reset_visit_status(table,next_loc->time,node->ID);
+		float sleep_duration=(node->mob->target_time-cur_time);
+		return sleep_trace_node(node,cur_time,sleep_duration); // correct this send the duration of sleep
+	}
         
-
+        
 	Pair pair = malloc(sizeof(Pair));
 	LOG_D(OMG, "MOVE TRACE NODE\n");
 	LOG_D(OMG, "node: %d\n",node->ID );
 	node->mob->X_from = node->X_pos;
 	node->mob->Y_from = node->Y_pos;
-	LOG_I(OMG, "Current Position: (%.2f, %.2f)\n", node->mob->X_from, node->mob->Y_from);
-	
+	LOG_D(OMG, "Current Position: (%.2f, %.2f)\n", node->mob->X_from, node->mob->Y_from);
+
+        if (!(next_loc->x==node->X_pos && next_loc->y==node->Y_pos) && (next_loc->speed==0. && node->mob->speed==0.0) ){
+        node->mob->X_to = node->X_pos;
+        node->mob->Y_to = node->Y_pos;
+        node->mob->speed = next_loc->speed;
+        journeyTime_next = next_loc->time-cur_time;
+        reset_visit_status(table,next_loc->time,node->ID);
+        }else
+	{
+        
 	node->mobile = 0;
-	double X_next;
-	double Y_next;
+	
 	if (next_loc!=NULL) X_next = next_loc->x;// veh finished travelling
 	else X_next = node->X_pos; //no description ..stay at the last loc
 	node->mob->X_to = X_next;
@@ -211,12 +225,21 @@ Pair move_trace_node(NodePtr node, double cur_time) {
 	if (next_loc!=NULL) speed_next = next_loc->speed;
 	else speed_next = 0.0; //no mobility description available
 	node->mob->speed = speed_next;
+        double target_time;
+        if (next_loc!=NULL) target_time = next_loc->time;
+        else target_time = 9999.;
+        node->mob->target_time= target_time;
     	LOG_D(OMG, "speed_next %.2f\n", speed_next); //m/s
-
+        
 	double distance = (double) ((int)(sqrtf(pow(node->mob->X_from - X_next, 2) + pow(node->mob->Y_from - Y_next, 2))*100))/ 100;
 	LOG_D(OMG, "distance %.2f\n", distance); //m
         
-        double journeyTime_next =  (double) ((int)(distance/speed_next*100))/ 100;   //duration to get to dest ;
+        
+        LOG_D(OMG,"next_loc->time %f",next_loc->time);
+        
+        journeyTime_next =  (double) ((int)(distance/speed_next*100))/ 100;  
+        } //duration to get to dest ;
+        
         
 	////node->mob->journey_time = journeyTime_next;
 	node->mobile = 1;
@@ -229,6 +252,8 @@ Pair move_trace_node(NodePtr node, double cur_time) {
 	LOG_D(OMG, "when to reach the destination: pair->a= start journey + journey_time next =%.2f\n", pair->a);
 
 	pair->b = node;
+        //}
+
 	return pair;
 	
 }
@@ -239,6 +264,7 @@ void update_trace_nodes(double cur_time) {
    Job_list tmp = Job_Vector;
    int done = 0; //
    
+   display_job_list(Job_Vector);
    while ((tmp != NULL) && (done == 0)){
      //  if 	(tmp->pair == NULL){LOG_E(OMG, "UPDATE TRACE : tmp->pair ==NULL\n" );}
      //  if 	(tmp->pair != NULL){LOG_E(OMG, "UPDATE TRACE : tmp->pair !=NULL\n" );}
@@ -248,11 +274,23 @@ void update_trace_nodes(double cur_time) {
      if((tmp->pair !=NULL) && ( (double)tmp->pair->a >= cur_time - eps) && ( (double)tmp->pair->a <= cur_time + eps) ) {
        if (tmp->pair->b->generator == TRACE){
 	 LOG_D(OMG, " (first_job_time) %.2f == %.2f (cur_time) \n ",tmp->pair->a, cur_time );
+          
+         // update to a new location
+         if((tmp->pair->b->mob->speed == 0.0) && tmp->pair->b->mobile == 1){
+                        Exnode* next_loc=NULL;
+                        
+                        next_loc=get_next_position(table,tmp->pair->b->ID);
+                        if (next_loc !=NULL){
+                        tmp->pair->b->X_pos = next_loc->x ;
+                        tmp->pair->b->Y_pos = next_loc->y ;
+                        
+                        }  } 
 	 LOG_D(OMG, " UPDATE TRACE \n ");
 	 NodePtr my_node = (NodePtr)tmp->pair->b;
 
 	 if (my_node->mobile == 1 || my_node->mobile == 0) { //only move no stop , put to sleep in move_trace_node() only for disconnected mobility
 	   LOG_D(OMG, " node %d ready to move to next destination \n",  my_node->ID);
+           
 	   my_node->mobile = 1;
 	   Pair pair = malloc(sizeof(Pair));
 	   pair = move_trace_node(my_node, cur_time);
@@ -293,12 +331,15 @@ void get_trace_positions_updated(double cur_time){
 
   double X_now=0.0;
   double Y_now=0.0;
-  LOG_D(OMG, "--------GET TRACE POSITIONS--------\n");
+  //LOG_D(OMG, "--------GET TRACE POSITIONS--------\n");
 
   Pair my_pair = Job_Vector->pair;
+  
   if ( (my_pair !=NULL) && (cur_time <= my_pair->a )){
-    LOG_D(OMG, "%.2f <= %.2f\n ",cur_time, my_pair->a);
+    // LOG_D(OMG, "%.2f <= %.2f\n ",cur_time, my_pair->a);
     Job_list tmp = Job_Vector;
+    
+    
     while (tmp != NULL){
       if (tmp->pair->b->generator == TRACE){
         if (tmp->pair->b->mobile == 0){ //node is sleeping
@@ -308,7 +349,16 @@ void get_trace_positions_updated(double cur_time){
         else if (tmp->pair->b->mobile == 1){ //node is moving
           LOG_T(OMG, "Node_number %d\n", tmp->pair->b->ID);
           LOG_T(OMG, "destination not yet reached\tfrom (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n", tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
-
+          double check=0.0;
+          double step=0.20;
+          if (tmp->pair->b->mob->speed == check ){
+                       
+                // needed ?
+                //tmp->pair->b->X_pos = tmp->pair->b->mob->X_from + 0.0;
+                //tmp->pair->b->Y_pos = tmp->pair->b->mob->Y_from + 0.0;
+                
+                }
+          else {
           double len = sqrtf(pow(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to,2)+pow(tmp->pair->b->mob->Y_from - tmp->pair->b->mob->Y_to,2));
           double dx = fabs(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to) / len;
 
@@ -334,6 +384,7 @@ void get_trace_positions_updated(double cur_time){
           //tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
           //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
 	  //tmp->pair->b->mob->start_journey = cur_time;
+        }
           LOG_I(OMG, "Updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
         }
         else{
@@ -343,6 +394,7 @@ void get_trace_positions_updated(double cur_time){
       }
       tmp = tmp->next;
     }
+    
  }
  else {
    LOG_E(OMG, "ERROR (current time) %f > %f (first job_time) \n", cur_time ,my_pair->a );
