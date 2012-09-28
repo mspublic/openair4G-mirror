@@ -74,14 +74,17 @@ int time_dist(int src, int dst, int state);
 */
 int size_dist(int src, int dst, int state);
 
-/*! \fn char *random_string(int size, ALPHABET data_type, char *data_string)
+/*! \fn char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type);
 * \brief return a random string[size]
-* \param[in] size  of the string to generate, data : numeric or letters + numeric, a static string used to generate the output  random string 
+* \param[in] size  of the string to generate, 
+* \param[in] ALPHABET_GEN  : static or random string
+* \param[in] ALPHABET_TYPE : numeric or letters + numeric
 * \param[out] string of a random char
 * \note 
 * @ingroup  _otg
 */
-char *random_string(int size, ALPHABET data_type, char *data_string);
+char * random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type);
+//char *random_string(int size, ALPHABET data_type, char *data_string);
 
 /*! \fn int packet_gen(int src, int dst, int state, int ctime)
 * \brief return int= 1 if the packet is generated: OTG header + header + payload, else 0
@@ -113,14 +116,24 @@ char *header_gen(int hdr_size);
 char *payload_pkts(int payload_size);
 
 
-/*! \fn void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type);
-* \brief generate OTG header 
-* \param[in]  flow id, simulation time, , sequence number, header type (to know the transport/ip version in the RX)  
-* \param[out] otg header
-* \note 
+/*! \fn 
+char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state)
+* \brief serilize the packet and add otg control information
+* \param[in] char* header pointer to the header
+* \param[in] char* payload pointer to the payload
+* \param[in] buffer_size size of the serilized tx buffer
+* \param[in] flag for regular and background traffic 
+* \param[in] flow_id 
+* \param[in] ctime time of the transmission 
+* \param[in] seq_num sequence number of the packet used to calculate the loss rate
+* \param[in] hdr_type indicatting the ip protocol version and transport protocol
+* \param[in] state indicate in which state (PU, ED, PE) the packet is generated when generating M2M traffic 
+flow id, simulation time, , sequence number, header type (to know the transport/ip version in the RX)  
+* \param[out] tx_buffer the serilized packet
 * @ingroup  _otg
 */
-void otg_header_gen(int flow_id, int time, int seq_num,int hdr_type, int state);
+
+char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state);
 
 
 /*! \fn int adjust_size(int size);

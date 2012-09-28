@@ -264,7 +264,7 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_I(OTG,"RTT MAX (one way)ms= %d \n", max_owd_ul);
   LOG_I(OTG,"TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_ul/otg_info->ctime);
   LOG_I(OTG,"RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_ul/otg_info->ctime);
-  
+  /*  
   LOG_F(OTG,"**************** TOTAL DL RESULTS ******************\n");
   LOG_F(OTG,"Total Time= %d \n", otg_info->ctime);
   LOG_F(OTG,"Total packets(TX)= %d \n", tx_total_pkts_dl);
@@ -285,6 +285,7 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_F(OTG,"RTT MAX (one way)ms= %d \n", max_owd_ul);
   LOG_F(OTG,"TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_ul/otg_info->ctime);
   LOG_F(OTG,"RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_ul/otg_info->ctime);
+  */
 #endif
 }
 

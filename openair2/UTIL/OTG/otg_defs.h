@@ -144,9 +144,15 @@ typedef enum {
 *
 */
 typedef enum {  
-	STATIC_STRING=0,
-	RANDOM_STRING, 
-}ALPHABET;
+  REPEAT_STRING=0, // repeat the same set of characters 
+  SUBSTRACT_STRING, // substract the string from the know character string 
+  RANDOM_POSITION, // take the char from the known character string randomly
+  RANDOM_STRING, // rake the charcters randomly 
+}ALPHABET_GEN;
+typedef enum {  
+  HEADER_ALPHABET=0,
+  PAYLOAD_ALPHABET, 
+}ALPHABET_TYPE;
 
 
 
@@ -179,7 +185,8 @@ typedef struct {
 	int ip_v[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Ip version */
 	//int header_compression; 				/*!\brief Specify if header compression is used or not */
 	int num_nodes; 						/*!\brief Number of used nodes in the simulation */
-	int background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief enable or disable background traffic  */
+  int packet_gen_type;			       /*!\brief define how the payload is generated: fixed, predefined, random position, random see  ALPHABET_GEN */
+  int background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief enable or disable background traffic  */
 
 	// src id , dst id, and state  						// think to the case of several streams per node !!!!!
 	int idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE];	/*!\brief Inter Departure Time distribution */	

@@ -157,6 +157,7 @@ help (void) {
   printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
   printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
+  printf ("-G Enable background traffic \n");
 }
 
 #ifdef XFORMS
@@ -695,8 +696,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haeoFvVIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J"))
-	 != -1) {
+  while ((c = getopt (argc, argv, "haeoFvVIGt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J")) != -1) {
 
     switch (c) {
 
@@ -878,7 +878,9 @@ main (int argc, char **argv)
       ouput_vcd = 1;
       oai_emulation.info.vcd_enabled = 1;
       break;
-
+    case 'G' :
+      oai_emulation.info.otg_bg_traffic_enabled = 1;
+      break;
     default:
       help ();
       exit (-1);
@@ -1011,6 +1013,7 @@ main (int argc, char **argv)
     randominit (0);
     set_taus_seed (0);
   }
+  // change the nb_connected_eNB
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
@@ -1113,8 +1116,10 @@ main (int argc, char **argv)
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
-    else
+    else {
+      // 0 is the index of the connected eNB
       PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
+    }
     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 10;
 
@@ -1375,7 +1380,7 @@ main (int argc, char **argv)
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    if (frame>0) {
 	      PHY_vars_UE_g[UE_id]->frame = frame;
-                                phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
+	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
 	    }
 	  }
 	  else {
