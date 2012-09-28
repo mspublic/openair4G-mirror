@@ -267,8 +267,8 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
 void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_vars_ue) {
 
   u8 buffer[32], size;
-  u8 i;
-  u8 bestCell,bestCell1;
+  u8 i,j;
+  u8 target_eNB_offset;
   MeasId_t measId;
   PhysCellId_t cellId, targetCellId;
   long rsrq_s,rsrp_t,rsrq_t;
@@ -277,6 +277,8 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
   nElem = 100;
   nElem1 = 33;
   static cframe=0;
+  target_eNB_offset = UE_rrc_inst->Info[0].handoverTarget;
+
   for (i=0;i<MAX_MEAS_ID;i++) {
 	  if (UE_rrc_inst[Mod_id].measReportList[0][i] != NULL) {
 		  measId = UE_rrc_inst[Mod_id].measReportList[0][i]->measId;
@@ -289,32 +291,14 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
 		  rsrq_s = binary_search_float(RSRQ_meas_mapping,nElem1,tmp1);//mapped RSRQ of serving cell
 
 		  LOG_D(RRC,"\n binsearch:rsrp_s: %d rsrq_s: %d tmp: %f tmp1: %f \n",rsrp_s,rsrq_s,tmp,tmp1);
-		  bestCell = phy_vars_ue->lte_frame_parms.Nid_cell; // Init:  bestCell = currentCell
-		  bestCell1 = bestCell;
 
-		  for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
-			  if (i != phy_vars_ue->lte_frame_parms.Nid_cell && \
-					  phy_vars_ue->PHY_measurements.rsrp_filtered[i]>phy_vars_ue->PHY_measurements.rsrp_filtered[bestCell]) {
-				  rsrp_t = binary_search_float(RSRP_meas_mapping,nElem,phy_vars_ue->PHY_measurements.rsrp_filtered[i]); //RSRP of target cell
-				  bestCell = i;
-				  break;
-			  }
-		  }
-		  for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {
-			  if (i != phy_vars_ue->lte_frame_parms.Nid_cell && \
-					  phy_vars_ue->PHY_measurements.rsrq_filtered[i]>phy_vars_ue->PHY_measurements.rsrq_filtered[bestCell]) {
-				  rsrq_t = binary_search_float(RSRQ_meas_mapping,nElem1,phy_vars_ue->PHY_measurements.rsrq_filtered[i]); //RSRP of target cell
-				  bestCell1 = i;
-				  break;
-			  }
-		  }
 
-		  if (bestCell != bestCell1) // Handle this case later
-			  LOG_D(RRC,"Better cell for RSRP(%d) is different from RSRQ(%d)",bestCell,bestCell1);
+		  rsrp_t = binary_search_float(RSRP_meas_mapping,nElem,phy_vars_ue->PHY_measurements.rsrp_filtered[target_eNB_offset]); //RSRP of target cell
+		  rsrq_t = binary_search_float(RSRQ_meas_mapping,nElem1,phy_vars_ue->PHY_measurements.rsrq_filtered[target_eNB_offset]); //RSRQ of target cell
 
 		  if (measFlag == 1) {
 			  cellId = get_adjacent_cell_id(Mod_id,0); //PhycellId of serving cell
-			  targetCellId = get_adjacent_cell_id(Mod_id,bestCell); //PhycellId of target cell
+			  targetCellId = get_adjacent_cell_id(Mod_id,target_eNB_offset); //PhycellId of target cell
 			  LOG_D(RRC,"Sending MeasReport: servingCell(%d) targetCell(%d) rsrp_s(%d) rsrq_s(%d) rsrp_t(%d) rsrq_t(%d) \n", \
 					  cellId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
 
@@ -1337,7 +1321,7 @@ void ue_meas_filtering(s32 UE_id, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_var
     				phy_vars_ue->PHY_measurements.rsrq_filtered[eNB_offset] = (1-a1)*phy_vars_ue->PHY_measurements.rsrq_filtered[eNB_offset] + \
     					a1*rsrq_db;
     			}
-    			LOG_I(PHY,"UE RRC meas RSRQ: eNB_offset: %d rsrq_coef: %f3.2 filter_coef: %d before L3 filtering: rsrq: %3.1f \t after L3 filtering: rsrq: %3.1f \n ",
+    			LOG_I(PHY,"UE RRC meas RSRQ: eNB_offset: %d rsrq_coef: %3.2f filter_coef: %d before L3 filtering: rsrq: %3.1f \t after L3 filtering: rsrq: %3.1f \n ",
     					eNB_offset,
     					a1,
     					*UE_rrc_inst->QuantityConfig[0]->quantityConfigEUTRA->filterCoefficientRSRQ,
@@ -1362,21 +1346,21 @@ u8 check_trigger_meas_event(u8 i, u8 j, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *p
 	LOG_I(RRC,"ofn(%d) ocn(%d) hys(%d) ofs(%d) ocs(%d) a3_offset(%d) ttt(%d) \n", \
 				ofn,ocn,hys,ofs,ocs,a3_offset,ttt);
 
-	for (eNB_offset = 0;eNB_offset<1+phy_meas->n_adj_cells;eNB_offset++) {
+	for (eNB_offset = 1;eNB_offset<1+phy_meas->n_adj_cells;eNB_offset++) {
 
-		if(eNB_offset != currentCellIndex) {
-			if(phy_meas->rsrp_filtered[eNB_offset]+ofn+ocn-hys >= phy_meas->rsrp_filtered[currentCellIndex]+ofs+ocs+a3_offset) {
-				UE_rrc_inst->measTimer[i][j] += 1;
-				LOG_D(RRC,"Entry measTimer[%d][%d]: %d currentCell: %d betterCell: %d \n", \
-						i,j,UE_rrc_inst->measTimer[i][j],currentCellIndex,eNB_offset);
-			}
-			else {
-				UE_rrc_inst->measTimer[i][j] = 0; //Exit condition: Resetting the measurement timer
-				LOG_D(RRC,"Exit measTimer[%d][%d]: %d currentCell: %d betterCell: %d \n", \
-						i,j,UE_rrc_inst->measTimer[i][j],currentCellIndex,eNB_offset);
-			}
-	 		if (UE_rrc_inst->measTimer[i][j] >= ttt)
-	 			return 1;
+		if(phy_meas->rsrp_filtered[eNB_offset]+ofn+ocn-hys >= phy_meas->rsrp_filtered[currentCellIndex]+ofs+ocs+a3_offset) {
+			UE_rrc_inst->measTimer[i][j] += 2; //Called every subframe = 2ms
+			LOG_D(RRC,"Entry measTimer[%d][%d]: %d currentCell: %d betterCell: %d \n", \
+					i,j,UE_rrc_inst->measTimer[i][j],currentCellIndex,eNB_offset);
+		}
+		else {
+			UE_rrc_inst->measTimer[i][j] = 0; //Exit condition: Resetting the measurement timer
+			LOG_D(RRC,"Exit measTimer[%d][%d]: %d currentCell: %d betterCell: %d \n", \
+					i,j,UE_rrc_inst->measTimer[i][j],currentCellIndex,eNB_offset);
+		}
+		if (UE_rrc_inst->measTimer[i][j] >= ttt) {
+			UE_rrc_inst->Info[0].handoverTarget = eNB_offset;
+			return 1;
 		}
  	}
 	return 0;

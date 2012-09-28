@@ -144,7 +144,6 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
       }
 
 
-
       phy_vars_ue->PHY_measurements.rsrp[eNB_offset]/=(24*phy_vars_ue->lte_frame_parms.N_RB_DL);
       phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*=rx_power_correction;
 
