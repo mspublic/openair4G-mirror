@@ -625,6 +625,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
     break;
   }
 
+  DCI_pdu->nCCE = 0;
   for (i=0;i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci;i++) {
     DCI_pdu->nCCE += (1<<(DCI_pdu->dci_alloc[i].L));
   }
@@ -1083,8 +1084,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 							0,
 							DCI_pdu->dci_alloc[i].rnti,
 							next_slot>>1)) == -1) {
-	  LOG_E(PHY,"[eNB %d] Frame %d subframe %d : No available CCE resources for UE spec DCI (PUSCH %x) !!!\n",
-		phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,DCI_pdu->dci_alloc[i].rnti);
+	  LOG_E(PHY,"[eNB %d] Frame %d subframe %d : No available CCE resources (%d) for UE spec DCI (PUSCH %x) !!!\n",
+		phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,DCI_pdu->nCCE,DCI_pdu->dci_alloc[i].rnti);
 	}
 	else {
 	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resources for UE spec DCI (PUSCH %x) => %d/%d\n",
@@ -2717,5 +2718,9 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     phy_procedures_eNB_S_RX(last_slot,phy_vars_eNB,abstraction_flag);
   }
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_LTE,0);
+
+  if (next_slot == 19)
+    phy_vars_eNB->frame++;
+
 }
 
