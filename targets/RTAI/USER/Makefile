@@ -28,6 +28,7 @@ include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 OBJ += $(LOG_OBJS) #$(OTG_OBJS) $(MATH_OBJS)
+#OBJ += $(LOG_DIR)/log.o
 
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
@@ -90,6 +91,12 @@ condtest: condtest.c
 synctest: $(OBJ) $(ASN1_MSG_OBJS1)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -o synctest
 
+synctest_eNB: synctest
+	mv synctest synctest_eNB
+
+synctest_UE: synctest
+	mv synctest synctest_UE
+
 run: condtest
 	rtai-load condtest --verbose
 
@@ -120,13 +127,13 @@ run_UE0calibmed: synctest
 run_UE0calibbyp: synctest
 	rtai-load UE0calibbyp --verbose
 
-run_UE1: synctest
+run_UE1: 
 	rtai-load UE1 --verbose
 
-run_UE2: synctest
+run_UE2: 
 	rtai-load UE2 --verbose
 
-run_eNB0: synctest
+run_eNB0:
 	rtai-load eNB0 --verbose
 
 clean:
