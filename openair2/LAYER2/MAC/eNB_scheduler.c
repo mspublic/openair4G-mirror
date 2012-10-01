@@ -4341,7 +4341,10 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   DCI_pdu->Num_common_dci  = 0;
   DCI_pdu->Num_ue_spec_dci = 0;
   eNB_mac_inst[Mod_id].bcch_active = 0;
-  
+
+  eNB_mac_inst[Mod_id].frame = frame;
+  eNB_mac_inst[Mod_id].subframe = subframe;
+
   //if (subframe%5 == 0)
     pdcp_run(frame, 1, 0, Mod_id);
 
