@@ -34,7 +34,7 @@ irqreturn_t openair_irq_handler(int irq, void *cookie) {
   
   // get AHBPCIE interrupt line
   irqval = ioread32(bar[0]);
-  printk("irq hndl called:%i\n", irqval);
+  //  printk("irq hndl called:%i\n", irqval);
 
   if ((irqval&0x80) != 0) {
     // clear PCIE interrupt bit (bit 7 of register 0x0)

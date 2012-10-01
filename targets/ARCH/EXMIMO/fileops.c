@@ -101,7 +101,12 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
 
 
 //-----------------------------------------------------------------------------
-int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
+int openair_device_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) 
+#else
+int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg) 
+#endif
+{
   /* arg is not meaningful if no arg is passed in user space */
   //-----------------------------------------------------------------------------
   //  int ret=-1;
