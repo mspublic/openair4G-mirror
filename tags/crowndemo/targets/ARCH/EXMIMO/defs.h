@@ -51,7 +51,13 @@
 int openair_device_open    (struct inode *inode,struct file *filp);
 int openair_device_release (struct inode *inode,struct file *filp);
 int openair_device_mmap    (struct file *filp, struct vm_area_struct *vma);
-int openair_device_ioctl   (struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
+int openair_device_ioctl(struct file *filp, unsigned int cmd, unsigned long arg); 
+#else
+int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg); 
+#endif
+
 
 void openair_get_frame(unsigned char card_id);
 
