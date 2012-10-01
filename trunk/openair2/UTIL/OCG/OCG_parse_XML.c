@@ -1012,7 +1012,9 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 							oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y = atoi(ch);
 							oai_emulation.info.nb_enb_local = oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x * oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y;
 						}
-					}
+					} else if (trace_mobility_file_) {
+					    oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file=strndup(ch,len);
+					  }
 				} 
 			}else if (omv_) {
 			  oai_emulation.topology_config.omv=atoi(ch);

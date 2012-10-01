@@ -426,6 +426,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     Random_eNB_Distribution random_eNB_distribution;
     Hexagonal_eNB_Distribution hexagonal_eNB_distribution;
     Grid_eNB_Distribution grid_eNB_distribution;
+    Trace_Configuration trace_config;
   } eNB_Mobility;
 
   typedef struct

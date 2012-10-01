@@ -167,8 +167,10 @@ void init_oai_emulation() {
 	oai_emulation.topology_config.mobility.eNB_mobility.hexagonal_eNB_distribution.inter_eNB_distance_km = 1;
 	oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x = 1;
 	oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y = 1;
+	oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file = (char*) malloc(256);
+	sprintf(oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file,"static_1enb.tr");
 	oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file = (char*) malloc(256);
-	sprintf(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,"mobility.txt");
+	sprintf(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,"static_2ues.tr");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.command = (char*) malloc(20);
 	sprintf(oai_emulation.topology_config.mobility.UE_mobility.sumo_config.command,"sumo");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.file = (char*) malloc(256);
@@ -398,18 +400,28 @@ int ocg_config_topo() {
 	omg_param_list.max_sleep = 8.0;
 	
 
-	// init OMG for eNBs
-	if (!strcmp(oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option, "RWP")) {
-	  oai_emulation.info.omg_model_enb = RWP; // set eNB to be random waypoint
-	} else { // if (!strcmp(oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option, "STATIC")) 
-	  oai_emulation.info.omg_model_enb = STATIC;
+	// init OMG for eNBs	
+	if ((oai_emulation.info.omg_model_enb = map_str_to_int(omg_model_names, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option))== -1)
+	  oai_emulation.info.omg_model_ue = STATIC; 
+	LOG_I(OMG,"eNB mobility model is (%s, %d)\n", 
+	      oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option,
+	      oai_emulation.info.omg_model_enb);
+
+	if (oai_emulation.info.omg_model_enb == TRACE) {
+	  omg_param_list.mobility_file = (char*) malloc(256);// user-specific trace file "%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")
+	  //memset(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,0,256);
+	  //sprintf(omg_param_list.mobility_file,"%s",oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file); 
+	  sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/TRACE/%s",
+		  getenv("OPENAIR2_DIR"), 
+		  oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file); 
+	  LOG_I(OMG,"TRACE file at %s\n", omg_param_list.mobility_file);
 	}
+
 	omg_param_list.mobility_type = oai_emulation.info.omg_model_enb; 
-		
 	omg_param_list.nodes_type = eNB;  //eNB
 	omg_param_list.nodes = oai_emulation.info.nb_enb_local;
  	omg_param_list.seed = oai_emulation.info.seed; // specific seed for enb and ue to avoid node overlapping
-	
+
 	// at this moment, we use the above moving dynamics for mobile eNB
 	if (omg_param_list.nodes >0 ) 
 	  init_mobility_generator(omg_param_list);
