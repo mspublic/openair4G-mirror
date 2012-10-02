@@ -995,7 +995,7 @@ int main(int argc, char **argv) {
 					 format1E_2A_M10PRB,
 					 PHY_vars_eNB->dlsch_eNB[k],
 					 &PHY_vars_eNB->lte_frame_parms,
-                     PHY_vars_eNB->pdsch_config_dedicated,
+					 PHY_vars_eNB->pdsch_config_dedicated,
 					 SI_RNTI,
 					 0,
 					 P_RNTI,
