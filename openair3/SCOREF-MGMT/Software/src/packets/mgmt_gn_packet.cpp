@@ -47,7 +47,7 @@ using namespace std;
 
 GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version, u_int8_t priority,
     u_int16_t eventType, Logger& logger) : logger(logger) {
-	Util::resetBuffer(&header, sizeof(MessageHeader));
+	Util::resetBuffer(reinterpret_cast<unsigned char*>(&header), sizeof(MessageHeader));
 
 	if (extendedMessage)
 		this->header.version |= 0x80;

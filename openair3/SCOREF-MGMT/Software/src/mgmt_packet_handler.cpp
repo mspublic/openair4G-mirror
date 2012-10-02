@@ -52,7 +52,7 @@ using namespace std;
 PacketHandler::PacketHandler(ManagementInformationBase& mib, Logger& logger) :
 	mib(mib), logger(logger) {
 	try {
-		this->packetFactory = new GeonetPacketFactory(mib, logger);
+		this->packetFactory = new ManagementPacketFactory(mib, logger);
 	} catch (...) {
 		throw Exception("Cannot allocate a Geonet Packet Factory!", logger);
 	}

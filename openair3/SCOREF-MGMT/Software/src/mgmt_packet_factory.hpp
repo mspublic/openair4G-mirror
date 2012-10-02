@@ -28,7 +28,7 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_gn_packet_factory.hpp
+ * \file mgmt_packet_factory.hpp
  * \brief A container with necessary (mostly responses) packet generation functionality
  * \company EURECOM
  * \date 2012
@@ -39,27 +39,27 @@
  * \warning none
 */
 
-#ifndef MGMT_GN_PACKET_FACTORY_HPP_
-#define MGMT_GN_PACKET_FACTORY_HPP_
+#ifndef MGMT_PACKET_FACTORY_HPP_
+#define MGMT_PACKET_FACTORY_HPP_
 
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet.hpp"
 #include "mgmt_information_base.hpp"
-#include "mgmt_types.hpp"
 #include "util/mgmt_log.hpp"
+#include "mgmt_types.hpp"
 
 /**
  * A container with necessary (mostly responses) packet generation functionality
  */
-class GeonetPacketFactory {
+class ManagementPacketFactory {
 	public:
 		/**
-		 * Constructor for GeonetPacketFactory class
+		 * Constructor for ManagementPacketFactory class
 		 *
 		 * @param mib Management Information Base reference
 		 * @param logger Logger object reference
 		 */
-		GeonetPacketFactory(ManagementInformationBase& mib, Logger& logger);
+		ManagementPacketFactory(ManagementInformationBase& mib, Logger& logger);
 
 	public:
 		/**
@@ -93,4 +93,4 @@ class GeonetPacketFactory {
 		Logger& logger;
 };
 
-#endif /* MGMT_GN_PACKET_FACTORY_HPP_ */
+#endif /* MGMT_PACKET_FACTORY_HPP_ */
