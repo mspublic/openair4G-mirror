@@ -3,7 +3,7 @@ CPP=g++
 RM=rm
 ECHO=echo
 STRIP=strip
-CPP_FILES:=$(shell find . -iname '*.cpp')
+CPP_FILES:=$(shell find ./src/ -iname '*.cpp')
 OBJ_FILES=$(CPP_FILES:.cpp=.o)
 EXE_FILE=bin/SCOREF-MGMT
 CPPFLAGS=-Wall

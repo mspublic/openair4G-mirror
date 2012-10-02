@@ -51,9 +51,9 @@ using namespace boost;
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet_get_configuration.hpp"
 #include "packets/mgmt_gn_packet_network_state.hpp"
-#include "mgmt_gn_packet_factory.hpp"
 #include "mgmt_information_base.hpp"
 #include "util/mgmt_udp_server.hpp"
+#include "mgmt_packet_factory.hpp"
 #include "util/mgmt_log.hpp"
 #include "mgmt_client.hpp"
 
@@ -137,7 +137,7 @@ class PacketHandler {
 		/**
 		 * GeonetPacketFactory object to hide packet generation details from PacketHandler class
 		 */
-		GeonetPacketFactory* packetFactory;
+		ManagementPacketFactory* packetFactory;
 		/**
 		 * ManagementInformationBase object to fetch necessary information when needed
 		 */

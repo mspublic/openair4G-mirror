@@ -46,11 +46,11 @@
 #include <sstream>
 using namespace std;
 
-void Util::resetBuffer(void* buffer, size_t bufferSize) {
+void Util::resetBuffer(unsigned char* buffer, const size_t bufferSize) {
 	memset(buffer, 0x00, bufferSize);
 }
 
-bool Util::copyBuffer(void* destinationBuffer, const void* sourceBuffer, size_t copySize) {
+bool Util::copyBuffer(unsigned char* destinationBuffer, const unsigned char* sourceBuffer, size_t copySize) {
 	if (!destinationBuffer || !sourceBuffer)
 		return false;
 
@@ -214,7 +214,7 @@ float Util::parse4byteFloat(const vector<unsigned char>& floatBuffer) {
 }
 
 bool Util::encode8byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int64_t data) {
-	if (buffer.size() < (unsigned)(bufferIndex - 1))
+	if (buffer.capacity() < bufferIndex + sizeof(data))
 		return false;
 
 	u_int32_t dataHigherPart = ((data >> 32) & 0xffffffff);
@@ -225,7 +225,7 @@ bool Util::encode8byteInteger(vector<unsigned char>& buffer, u_int16_t bufferInd
 }
 
 bool Util::encode4byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int32_t data) {
-	if (buffer.size() < (unsigned)(bufferIndex - 1))
+	if (buffer.capacity() < bufferIndex + sizeof(data))
 		return false;
 
 	buffer[bufferIndex] = ((data >> 24) & 0xff);
@@ -237,7 +237,7 @@ bool Util::encode4byteInteger(vector<unsigned char>& buffer, u_int16_t bufferInd
 }
 
 bool Util::encode2byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int16_t data) {
-	if (buffer.size() < (unsigned)(bufferIndex - 1))
+	if (buffer.capacity() < bufferIndex + sizeof(data))
 		return false;
 
 	buffer[bufferIndex] = ((data >> 8) & 0xff);

@@ -1,7 +1,21 @@
 
+v1.1.5
+* GeonetPacketFactory class has been renamed as ManagementPacketFactory
+* Google C++ Testing Framework has been utilised
+  - test/ directory and test codes added
+  - README.TEST has been added
+* Util::resetBuffer()'s and copyBuffer()'s parameters has been changed to 
+  unsigned char* since size parameter is given in "bytes" and this could lead 
+  to errors if resetBuffer() is given an array with elements greater than byte in size
+* In Util class, boundary check errors have been fixed in encode8byteInteger(), 
+  encode4byteInteger(), and encode2byteInteger() methods
+* Redundant comment block has been removed from mgmt_util.hpp
+* Software/Makefile has been modified after adding test/main.cpp to skip test
+  code's main() method
+
 v1.1.4
 * Communication Profile ID field of Communication Profile Selection Response packet 
-  has been resized to 4 bytes and a 1-byte reserved field has been added
+  has been resized to 4 bytes and a 1-byte reserved field has been added to keep the alignment
 * FacCommunicationProfileSelectionResponsePacket::serialize() updated accordingly
 
 v1.1.3
