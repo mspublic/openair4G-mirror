@@ -14,3 +14,7 @@ default :
 
 clean :
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+
+show :
+	@echo $(KERNELDIR)
+	@echo $(NOSTDINC_FLAGS)
