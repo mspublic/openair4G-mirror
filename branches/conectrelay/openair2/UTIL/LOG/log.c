@@ -46,6 +46,7 @@
 
 #include "log.h"
 #include "log_vars.h"
+#include "vcd_signal_dumper.h"
 
 #ifdef USER_MODE
 //#include "UTIL/OCG/OCG.h"
@@ -75,7 +76,7 @@ static int bypass_log_hdr;
 
 //extern MAC_xface *mac_xface;
 
-void logInit (void) {
+int logInit (void) {
   
 #ifdef USER_MODE
   int i;
@@ -85,8 +86,13 @@ void logInit (void) {
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
   if (g_log == NULL) {
+#ifdef USER_MODE
     perror ("cannot allocated memory for log generation modeul \n");
     exit(-1);
+#else
+    printk("cannot allocated memory for log generation modeul \n");
+    return(-1);
+#endif
   }
   
   g_log->log_component[PHY].name = "PHY";
@@ -102,7 +108,7 @@ void logInit (void) {
     g_log->log_component[MAC].flag =  LOG_MED;
     g_log->log_component[MAC].interval =  1;
     g_log->log_component[MAC].fd = 0;
-    g_log->log_component[MAC].filelog = 1;
+    g_log->log_component[MAC].filelog = 0;
     g_log->log_component[MAC].filelog_name = "/tmp/mac.log";
     
     g_log->log_component[OPT].name = "OPT";
@@ -158,7 +164,7 @@ void logInit (void) {
     g_log->log_component[OTG].flag =  LOG_MED;
     g_log->log_component[OTG].interval =  1;
     g_log->log_component[OTG].fd = 0;
-    g_log->log_component[OTG].filelog = 1;
+    g_log->log_component[OTG].filelog = 0;
     g_log->log_component[OTG].filelog_name = "/tmp/otg.log";
 
     g_log->log_component[OTG_LATENCY].name = "OTG_LATENCY";
@@ -166,7 +172,7 @@ void logInit (void) {
     g_log->log_component[OTG_LATENCY].flag =  LOG_MED;
     g_log->log_component[OTG_LATENCY].interval =  1;
     g_log->log_component[OTG_LATENCY].fd = 0;
-    g_log->log_component[OTG_LATENCY].filelog = 1;
+    g_log->log_component[OTG_LATENCY].filelog = 0;
     g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
 
 
@@ -175,7 +181,7 @@ void logInit (void) {
     g_log->log_component[OTG_OWD].flag =  LOG_MED;
     g_log->log_component[OTG_OWD].interval =  1;
     g_log->log_component[OTG_OWD].fd = 0;
-    g_log->log_component[OTG_OWD].filelog = 1;
+    g_log->log_component[OTG_OWD].filelog = 0;
     g_log->log_component[OTG_OWD].filelog_name = "/tmp/otg_owd.log";
 
     g_log->log_component[OCG].name = "OCG";
@@ -215,7 +221,7 @@ void logInit (void) {
     g_log->log_component[MSC].flag =  LOG_MED;
     g_log->log_component[MSC].interval =  1;
     g_log->log_component[MSC].fd = 0;
-    g_log->log_component[MSC].filelog =  1;
+    g_log->log_component[MSC].filelog =  0;
     g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
  
     g_log->log_component[OCM].name = "OCM";
@@ -270,8 +276,12 @@ void logInit (void) {
   printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
-  
+
+#ifdef USER_MODE  
   printf("log init done\n");
+#else
+  printk("log init done\n");
+#endif
 
 }
 
@@ -280,7 +290,9 @@ void logRecord( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
-  int len, i;
+ vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
+
+ int len, i;
   va_list args;
   log_component_t *c;
 #ifdef USER_MODE
@@ -300,6 +312,7 @@ void logRecord( const char *file, const char *func,
   // only log messages which are enabled and are below the global log level and component's level threshold
   if ( (level != LOG_FILE) && ( (c->level > g_log->level) || (level > c->level) || (level > g_log->level)) ){
     //  || ((mac_xface->frame % c->interval) != 0)) { 
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
     return;
    }
    // adjust syslog level for TRACE messages
@@ -398,11 +411,11 @@ void logRecord( const char *file, const char *func,
   if (len > MAX_LOG_TOTAL) {
     rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
   }
-  if (len <= 0) {
-    return ;
+  if (len > 0) {
+   rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
   }
-  rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
 #endif
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
 
 }
 int  set_log(int component, int level, int interval) {

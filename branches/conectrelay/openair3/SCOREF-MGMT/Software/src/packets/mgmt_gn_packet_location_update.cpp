@@ -41,6 +41,7 @@
 
 #include "mgmt_gn_packet_location_update.hpp"
 #include <boost/lexical_cast.hpp>
+#include <ctime>
 
 GeonetLocationUpdateEventPacket::GeonetLocationUpdateEventPacket(ManagementInformationBase& mib, Logger& logger)
 	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_LOCATION_UPDATE, logger), mib(mib), logger(logger) {
@@ -55,6 +56,42 @@ bool GeonetLocationUpdateEventPacket::serialize(vector<unsigned char>& buffer) c
 		return false;
 	}
 
-	// todo serialise packet
+	/**
+	 * Serialise header first..
+	 */
+	if (!GeonetPacket::serialize(buffer)) {
+		logger.error("Cannot serialise packet header");
+		return false;
+	}
+
+	/**
+	 * ..and then the body
+	 */
+	u_int8_t payloadIndex = sizeof(MessageHeader);
+	LocationInformation location = mib.getLocation();
+	/**
+	 * Update time-stamp
+	 */
+	location.timestamp = time(NULL); // todo timestamp's calculation is explained in lot 3 slides
+
+	Util::encode4byteInteger(buffer, payloadIndex, location.timestamp); payloadIndex += 4;
+	Util::encode4byteInteger(buffer, payloadIndex, location.latitude); payloadIndex += 4;
+	Util::encode4byteInteger(buffer, payloadIndex, location.longitude); payloadIndex += 4;
+	Util::encode2byteInteger(buffer, payloadIndex, location.speed); payloadIndex += 2;
+	Util::encode2byteInteger(buffer, payloadIndex, location.heading); payloadIndex += 2;
+	Util::encode2byteInteger(buffer, payloadIndex, location.altitude); payloadIndex += 2;
+	/**
+	 * Encode last two octets carrying 5 flags
+	 */
+	u_int8_t octet = 0x00;
+	Util::encodeBits(octet, 0, location.TAcc, 4);
+	Util::encodeBits(octet, 4, location.PosAcc, 4);
+	buffer[payloadIndex++] = octet;
+	Util::encodeBits(octet, 0, location.SAcc, 2);
+	Util::encodeBits(octet, 2, location.Hacc, 3);
+	Util::encodeBits(octet, 5, location.AltAcc, 3);
+	buffer[payloadIndex] = octet;
+
+	buffer.resize(sizeof(LocationUpdateMessage));
 	return true;
 }

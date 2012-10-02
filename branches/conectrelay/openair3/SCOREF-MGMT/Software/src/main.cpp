@@ -50,8 +50,7 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "packets/mgmt_gn_packet_location_table_request.hpp"
-#include "mgmt_gn_packet_handler.hpp"
+#include "mgmt_packet_handler.hpp"
 #include "util/mgmt_udp_server.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
@@ -60,28 +59,28 @@ using boost::asio::ip::udp;
 #include "util/mgmt_log.hpp"
 
 void printHelp(string binaryName) {
-	cerr << binaryName << " <configurationFile> <logFileName>" << endl;
+	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
 }
 
 const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
 
 int main(int argc, char** argv) {
+	cout << "Size: " << sizeof(ConfigurationNotification) << endl;
 	/**
-	 * Configuration file name parameter is necessary, log file
-	 * name parameter is optional
+	 * Log file name parameter is optional
 	 */
 	string logFileName = "";
-	if (argc == 2) {
+	if (argc == 1) {
 		logFileName = "SCOREF-MGMT.log";
-	} else if (argc == 3) {
-		logFileName = string(argv[2]);
+	} else if (argc == 2) {
+		logFileName = string(argv[1]);
 	} else {
 		printHelp(argv[0]);
 		exit(1);
 	}
 
-	Logger logger(logFileName, Logger::DEBUG);
+	Logger logger(logFileName, Logger::TRACE);
 
 #ifdef BOOST_VERSION_1_50
 	/**
@@ -109,18 +108,28 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-	// Location table update will be done at the beginning for once
-	// todo this should be managed by ManagementClientState
-	bool locationTableUpdated = false;
-
 	ManagementInformationBase mib(logger);
-	GeonetMessageHandler* packetHandler = NULL;
-	Configuration configuration(argv[1], logger);
+	PacketHandler* packetHandler = NULL;
+
+	/**
+	 * Prepare the list of configuration files that are going to be parsed
+	 */
+	vector<string> configurationFileVector;
+	configurationFileVector.push_back("IF.MGMT.conf");
+	configurationFileVector.push_back("IF.IHM.conf");
+	Configuration configuration(configurationFileVector, logger);
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
-	configuration.parseConfigurationFile(mib);
-	ManagementClientManager clientManager(configuration, logger);
+	try {
+		configuration.parseConfigurationFiles(mib);
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot parse a configuration file");
+		e.printStackTrace();
+		exit(-1);
+	}
+
+	ManagementClientManager clientManager(mib, configuration, logger);
 	UdpServer server(configuration.getServerPort(), logger);
 
 	try {
@@ -138,7 +147,7 @@ int main(int argc, char** argv) {
 		 * Allocate aGeonet packet handler
 		 */
 		try {
-			packetHandler = new GeonetMessageHandler(mib, logger);
+			packetHandler = new PacketHandler(mib, logger);
 		} catch (std::bad_alloc& exception) {
 			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
 		} catch (Exception& e) {
@@ -150,39 +159,27 @@ int main(int argc, char** argv) {
 		logger.info("Reading configuration file...");
 
 		vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
-		vector<unsigned char> txBuffer(UdpServer::TX_BUFFER_SIZE);
 
 		try {
 			for (;;) {
 				if (server.receive(rxBuffer)) {
-					GeonetPacket* reply = NULL;
 					bool packetHandled = false;
 
-					/**
-					 * Inform Client Manager of this sender
-					 */
-					clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
-
 					try {
-						packetHandled = packetHandler->handleGeonetMessage(server, rxBuffer);
+						packetHandled = packetHandler->handle(server, rxBuffer);
 					} catch (std::exception& e) {
 						cerr << e.what() << endl;
 					}
 
-					if (reply)
-						server.send(*reply);
+					if (packetHandled)
+						/**
+						 * Inform Client Manager of this sender
+						 */
+						clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
 				}
 
-				if (!locationTableUpdated) {
-					// Initialise location table
-					GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
-					server.send(locationTableRequest);
-					locationTableUpdated = true;
-				}
-
-				// Revert buffer sizes to initials
+				// Revert buffer size to initial
 				rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
-				txBuffer.reserve(UdpServer::TX_BUFFER_SIZE);
 			}
 		} catch (std::exception& e) {
 			logger.error(e.what());

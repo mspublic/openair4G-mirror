@@ -332,10 +332,17 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);    
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
   
+  // DL power control init
+  PHY_vars_eNB->pdsch_config_dedicated->p_a  = 4; // 4 = 0dB
+  ((PHY_vars_eNB->lte_frame_parms).pdsch_config_common).p_b = (lte_frame_parms->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_a = rhob
+
+  PHY_vars_UE->pdsch_config_dedicated->p_a  = 4; // 4 = 0dB
+  ((PHY_vars_UE->lte_frame_parms).pdsch_config_common).p_b = (lte_frame_parms->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_a = rhob
+
   printf("Done lte_param_init\n");
 
 
@@ -450,7 +457,7 @@ int main(int argc, char **argv) {
   u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
 
-  int eNB_id = 0, eNB_id_i = NUMBER_OF_eNB_MAX;
+  int eNB_id = 0, eNB_id_i = 1;
   unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
   unsigned char i_mod = 2;
   unsigned short NB_RB;
@@ -515,7 +522,6 @@ int main(int argc, char **argv) {
   double blerr,uncoded_ber,avg_ber;
   short *uncoded_ber_bit;
   u8 N_RB_DL=25,osf=1;
-  s16 amp;
   u8 fdd_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form;
@@ -729,6 +735,7 @@ int main(int argc, char **argv) {
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf);  
 
+  eNB_id_i = PHY_vars_UE->n_connected_eNB;
   
   printf("Setting mcs = %d\n",mcs);
   printf("NPRB = %d\n",NB_RB);
@@ -988,6 +995,7 @@ int main(int argc, char **argv) {
 					 format1E_2A_M10PRB,
 					 PHY_vars_eNB->dlsch_eNB[k],
 					 &PHY_vars_eNB->lte_frame_parms,
+                     PHY_vars_eNB->pdsch_config_dedicated,
 					 SI_RNTI,
 					 0,
 					 P_RNTI,
@@ -1015,7 +1023,7 @@ int main(int argc, char **argv) {
       dci_alloc[num_dci].L          = 2;
       dci_alloc[num_dci].rnti       = n_rnti+k;
       dci_alloc[num_dci].format     = format1E_2A_M10PRB;
-
+      dci_alloc[num_dci].nCCE       = 4*k;
       dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);
 
       num_dci++;
@@ -1228,16 +1236,10 @@ int main(int argc, char **argv) {
 	      }
 	      // printf("Did not Crash here 2\n");
 	  
-	      if (transmission_mode == 5) {
-		amp = (s16)(((s32)1024*ONE_OVER_SQRT2_Q15)>>15);
-	      }
-	      else
-		amp = 1024;
-
 	      //	      if (k==1)
-	      //	amp=0;
+
 	      re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
-					      amp,
+					      AMP,
 					      subframe,
 					      &PHY_vars_eNB->lte_frame_parms,
 					      num_pdcch_symbols,
@@ -1392,7 +1394,8 @@ int main(int argc, char **argv) {
 	 
 	  
 	  //AWGN
-	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
+      // This is the SNR on the PDSCH for OFDM symbols without pilots -> rho_A
+	  sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR - get_pa_dB(PHY_vars_eNB->pdsch_config_dedicated);
 	  sigma2 = pow(10,sigma2_dB/10);
 	  if (n_frames==1)
 	    printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
@@ -1482,9 +1485,9 @@ int main(int argc, char **argv) {
 		      for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 			{
 			  for (i=0;i<frame_parms->N_RB_DL*12;i++)
-			    { 
-			      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
-			      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
+                  { 
+                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
+                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2);
 			    }
 			}
 		    }
@@ -1497,7 +1500,7 @@ int main(int argc, char **argv) {
 		      {
 			for (i=0;i<frame_parms->N_RB_DL*12;i++)
 			  { 
-			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=AMP/2;
+			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(((int)AMP*PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_b)>>13)/2;
 			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
 			  }
 		      }
@@ -1588,6 +1591,7 @@ int main(int argc, char **argv) {
 							   dci_alloc_rx[i].format,
 							   PHY_vars_UE->dlsch_ue[0],
 							   &PHY_vars_UE->lte_frame_parms,
+                               PHY_vars_UE->pdsch_config_dedicated,
 							   SI_RNTI,
 							   0,
 							   P_RNTI)==0)) {
@@ -1635,6 +1639,7 @@ int main(int argc, char **argv) {
 						    format1E_2A_M10PRB,
 						    PHY_vars_UE->dlsch_ue[0],
 						    &PHY_vars_UE->lte_frame_parms,
+                            PHY_vars_UE->pdsch_config_dedicated,
 						    SI_RNTI,
 						    0,
 						    P_RNTI);
@@ -1649,8 +1654,6 @@ int main(int argc, char **argv) {
 		       m<pilot2;
 		       m++) 
 		    {
-#if defined ENABLE_FXP || ENABLE_FLP
-		      //		      printf("fxp or flp release used\n");
 		      if (rx_pdsch(PHY_vars_UE,
 				   PDSCH,
 				   eNB_id,
@@ -1664,23 +1667,6 @@ int main(int argc, char **argv) {
 			  dlsch_active = 0;
 			  break;
 			}
-#endif
-#ifdef ENABLE_FULL_FLP
-		      // printf("Full flp release used\n");
-		      if (rx_pdsch_full_flp(PHY_vars_UE,
-					    PDSCH,
-					    eNB_id,
-					    eNB_id_i,
-					    subframe,
-					    m,
-					    (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
-					    dual_stream_UE,
-					    i_mod)==-1)
-			{
-			  dlsch_active = 0;
-			  break;
-			  }
-#endif
 		    }
 		}
 		  
@@ -1690,8 +1676,6 @@ int main(int argc, char **argv) {
 			 m<pilot3;
 			 m++)
 		      {
-#if defined ENABLE_FXP || ENABLE_FLP
-			//			printf("fxp or flp release used\n");
 			if (rx_pdsch(PHY_vars_UE,
 				     PDSCH,
 				     eNB_id,
@@ -1705,23 +1689,6 @@ int main(int argc, char **argv) {
 			    dlsch_active=0;
 			    break;
 			  }
-#endif
-#ifdef ENABLE_FULL_FLP
-			// printf("Full flp release used\n");
-		      if (rx_pdsch_full_flp(PHY_vars_UE,
-					    PDSCH,
-					    eNB_id,
-					    eNB_id_i,
-					    subframe,
-					    m,
-					    0,
-					    dual_stream_UE,
-					    i_mod)==-1)
-			{
-			  dlsch_active=0;
-			  break;
-			}
-#endif
 		      }
 		  }
 		
@@ -1731,8 +1698,6 @@ int main(int argc, char **argv) {
 			 m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
 			 m++)
 		      {
-#if defined ENABLE_FXP || ENABLE_FLP
-			//			printf("fxp or flp release used\n");
 			if (rx_pdsch(PHY_vars_UE,
 				     PDSCH,
 				     eNB_id,
@@ -1746,23 +1711,6 @@ int main(int argc, char **argv) {
 			    dlsch_active=0;
 			    break;
 			  }
-#endif
-#ifdef ENABLE_FULL_FLP
-			// printf("Full flp release used\n");
-		      if (rx_pdsch_full_flp(PHY_vars_UE,
-					    PDSCH,
-					    eNB_id,
-					    eNB_id_i,
-					    subframe,
-					    m,
-					    0,
-					    dual_stream_UE,
-					    i_mod)==-1)
-			{
-			  dlsch_active=0;
-			  break;
-			}
-#endif
 		      }
 		  }
 		
@@ -1797,7 +1745,7 @@ int main(int argc, char **argv) {
 		    
 		  //pdsch_vars
 		  dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
-		  dump_dlsch2(PHY_vars_UE,eNB_id_i,coded_bits_per_codeword);
+          dump_dlsch2(PHY_vars_UE,eNB_id_i,coded_bits_per_codeword);
 		  write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
 
 		  //pdcch_vars
@@ -1848,12 +1796,12 @@ int main(int argc, char **argv) {
 	  */
 
 	  // clip the llrs
-	  for (i=0; i<coded_bits_per_codeword; i++) {
+      /*	  for (i=0; i<coded_bits_per_codeword; i++) {
 	    if (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i]>127)
 	      PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i] = 127;
 	    else if (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i]<-128)
 	      PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0][i] = -128;
-	  }
+          }*/
 
 	  PHY_vars_UE->dlsch_ue[0][0]->rnti = n_rnti;
 	  dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,

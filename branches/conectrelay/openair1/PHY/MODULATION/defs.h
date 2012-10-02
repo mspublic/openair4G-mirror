@@ -46,6 +46,12 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	     int sample_offset,
 	     int no_prefix);
 
+int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
+	     unsigned char l,
+	     int subframe,
+	     int sample_offset,
+	     int no_prefix);
+
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,
 		unsigned char l,
@@ -57,7 +63,7 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 
 void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 subframe);
 
-void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 subframe);
+void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,s32*txdata,u8 subframe);
 
 void init_prach625(LTE_DL_FRAME_PARMS *frame_parms);
 

@@ -43,6 +43,8 @@
 #include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 ManagementInformationBase::ManagementInformationBase(Logger& logger)
@@ -97,10 +99,43 @@ bool ManagementInformationBase::initialise() {
 
 bool ManagementInformationBase::setValue(ItsKeyID id, ItsKeyValue value) {
 	try {
-		itsKeyManager.setKey(id, value);
+		itsKeyManager.setKeyValue(id, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its ID");
 		throw e;
+	}
+
+	return true;
+}
+
+bool ManagementInformationBase::setValue(ItsKeyID id, const vector<unsigned char>& value) {
+	/**
+	 * Set the value according to its data type
+	 */
+	switch (itsKeyManager.getDataType(id)) {
+		case ITS_DATA_TYPE_FLOAT:
+			if (value.size() != 4) {
+				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has float type but incompatible size");
+				return false;
+			}
+			itsKeyManager.getKeyValue(id).floatValue = Util::parse4byteFloat(value);
+			break;
+
+		case ITS_DATA_TYPE_INTEGER:
+			if (value.size() != 4) {
+				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has integer type but incompatible size");
+				return false;
+			}
+			Util::parse4byteInteger(value.data(), &itsKeyManager.getKeyValue(id).intValue);
+			break;
+
+		case ITS_DATA_TYPE_STRING:
+			itsKeyManager.getKeyValue(id).stringValue = string(value.begin(), value.end());
+			break;
+
+		default:
+			logger.warning("Invalid data type for an ITS key");
+			return false;
 	}
 
 	return true;
@@ -111,7 +146,7 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 		throw Exception("Incoming parameter name is empty!", logger);
 
 	try {
-		itsKeyManager.setKey(name, value);
+		itsKeyManager.setKeyValue(name, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its name");
 		throw e;
@@ -120,8 +155,8 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 	return true;
 }
 
-ItsKeyValue ManagementInformationBase::getValue(ItsKeyID id) {
-	return itsKeyManager.getKey(id);
+ItsKeyValue ManagementInformationBase::getItsKeyValue(ItsKeyID id) {
+	return itsKeyManager.getKeyValue(id);
 }
 
 u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {
@@ -137,6 +172,42 @@ WirelessStateResponseItem& ManagementInformationBase::getWirelessState(Interface
 	return wirelessStateMap[interfaceId];
 }
 
+bool ManagementInformationBase::updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem wirelessState) {
+	wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(interfaceId, wirelessState));
+
+	return true;
+}
+
 NetworkStateMessage& ManagementInformationBase::getNetworkState() {
 	return networkState;
+}
+
+CommunicationProfileManager& ManagementInformationBase::getCommunicationProfileManager() {
+	return communicationProfileManager;
+}
+
+bool ManagementInformationBase::updateLocationTable(LocationTableItem& locationTableItem) {
+	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem>(locationTableItem.gnAddress, locationTableItem));
+
+	return true;
+}
+
+LocationInformation ManagementInformationBase::getLocation() {
+	/**
+	 * todo this is temporary, location information will be received somewhere else later on
+	 */
+	srand(time(NULL));
+	location.latitude = rand() % 20 + 10;
+	location.longitude = rand() % 10 + 5;
+	location.speed = rand() % 20;
+	location.heading = 0;
+	location.altitude = rand() % 1000 + 10;
+
+	return location;
+}
+
+bool ManagementInformationBase::setNetworkFlags(const u_int8_t& networkFlags) {
+	this->networkFlags = networkFlags;
+
+	return true;
 }

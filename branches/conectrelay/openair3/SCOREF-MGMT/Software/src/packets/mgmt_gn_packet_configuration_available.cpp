@@ -40,6 +40,7 @@
 */
 
 #include "mgmt_gn_packet_configuration_available.hpp"
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <sstream>
 using namespace std;
@@ -53,13 +54,13 @@ GeonetConfigurationAvailableEventPacket::~GeonetConfigurationAvailableEventPacke
 
 bool GeonetConfigurationAvailableEventPacket::serialize(vector<unsigned char>& buffer) {
 	if (buffer.size() < sizeof(ConfigureAvailableMessage)) {
-		cerr << "Incoming buffer' size is not sufficient!" << endl;
+		logger.error("Incoming buffer' size is not sufficient!");
 		return false;
 	}
 
 	// Get some help from superclass to place header into given buffer
 	if (!GeonetPacket::serialize(buffer)) {
-		cerr << "Cannot serialise header into given buffer!" << endl;
+		logger.error("Cannot serialise header into given buffer!");
 		return false;
 	}
 
@@ -77,10 +78,6 @@ bool GeonetConfigurationAvailableEventPacket::serialize(vector<unsigned char>& b
 }
 
 string GeonetConfigurationAvailableEventPacket::toString() const {
-	stringstream ss;
-
-	ss << "Key count: " << mib.getItsKeyManager().getNumberOfKeys() << endl;
-
-	return ss.str();
+	return string("Key count: " + boost::lexical_cast<string>(mib.getItsKeyManager().getNumberOfKeys()));
 }
 

@@ -49,10 +49,10 @@ extern unsigned short Master_id;
 #define MULTICAST_LINK_NUM_GROUPS 4
 
 char           *multicast_group_list[MULTICAST_LINK_NUM_GROUPS] = { 
-  "224.0.0.161\0",
-  "224.0.0.162\0",
-  "224.0.0.163\0",
-  "224.0.0.164\0"
+  "239.0.0.161\0",
+  "239.0.0.162\0",
+  "239.0.0.163\0",
+  "239.0.0.164\0"
 };
 
 static multicast_group_t group_list[MULTICAST_LINK_NUM_GROUPS];

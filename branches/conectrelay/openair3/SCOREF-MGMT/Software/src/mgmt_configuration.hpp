@@ -62,15 +62,20 @@ class Configuration {
 		 * for Wireless State Request message
 		 */
 		static const string CONF_WIRELESS_STATE_UPDATE_INTERVAL;
+		/**
+		 * Parameter string for repetition interval (in seconds)
+		 * for Location Update message
+		 */
+		static const string CONF_LOCATION_UPDATE_INTERVAL;
 
 	public:
 		/**
 		 * Constructor for Configuration class
 		 *
-		 * @param configurationFile Configuration file name
+		 * @param configurationFileNameList Configuration files that shall be parsed
 		 * @param logger Logger object reference
 		 */
-		Configuration(string configurationFile, Logger& logger);
+		Configuration(const vector<string>& confgurationFileNameVector, Logger& logger);
 		/**
 		 * Destructor for Configuration class
 		 */
@@ -78,26 +83,26 @@ class Configuration {
 
 	public:
 		/**
-		 * Parses configuration file and updates MIB thru passed reference
+		 * Parses given set of configuration files and updates MIB accordingly
 		 *
 		 * @param mib Management Information Base reference
 		 * @return true on success, false otherwise
 		 */
-		bool parseConfigurationFile(ManagementInformationBase& mib);
+		bool parseConfigurationFiles(ManagementInformationBase& mib);
 		/**
-		 * Returns configuration file name
+		 * Returns configuration file name vector
 		 *
 		 * @param none
-		 * @return Configuration file name
+		 * @return Configuration file name vector
 		 */
-		string getConfigurationFile() const;
+		const vector<string>& getConfigurationFileVector() const;
 		/**
-		 * Sets configuration file name
+		 * Adds a configuration file name to the vector
 		 *
-		 * @param New configuration file name
+		 * @param configurationFileName New configuration file's name
 		 * @return none
 		 */
-		void setConfigurationFile(string configurationFile);
+		void addConfigurationFile(const string& configurationFileName);
 		/**
 		 * Returns UDP server port number
 		 *
@@ -125,6 +130,19 @@ class Configuration {
 		 * @return none
 		 */
 		void setWirelessStateUpdateInterval(u_int8_t interval);
+		/**
+		 * Returns Location Update interval (in seconds)
+		 *
+		 * @return Location Update interval in seconds
+		 */
+		u_int8_t getLocationUpdateInterval() const;
+		/**
+		 * Sets Location Update interval
+		 *
+		 * @param interval Location Update interval in seconds
+		 * @return none
+		 */
+		void setLocationUpdateInterval(u_int8_t interval);
 
 	private:
 		/**
@@ -138,6 +156,15 @@ class Configuration {
 		 */
 		bool parseLine(const string& line, string& parameter, string& value);
 		/**
+		 * Parses IHM configuration IDs of type <configurationItemName|configurationItemID>
+		 *
+		 * @param param Parameter string (input)
+		 * @param parameterString "configurationItemName" part of the parameter string (output)
+		 * @param parameterID "configurationItemID" part of the parameter string (output)
+		 * @return bool true on success, false otherwise
+		 */
+		bool parseParameterId(const string& param, string& parameterString, u_int16_t& parameterId);
+		/**
 		 * Sets configuration parameter's value with given value
 		 *
 		 * @param parameter Parameter name
@@ -148,9 +175,9 @@ class Configuration {
 
 	private:
 		/**
-		 * Configuration file name
+		 * Configuration files name vector
 		 */
-		string configurationFile;
+		vector<string> configurationFileNameVector;
 		/**
 		 * UDP server port number
 		 */
@@ -159,6 +186,10 @@ class Configuration {
 		 * Wireless State Update interval (in seconds)
 		 */
 		u_int8_t wirelessStateUpdateInterval;
+		/**
+		 * Location Update interval (in seconds)
+		 */
+		u_int8_t locationUpdateInterval;
 		/**
 		 * Logger object reference
 		 */

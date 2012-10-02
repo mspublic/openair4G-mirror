@@ -76,7 +76,17 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 			      u8 l,
 			      u8 symbol);
 
+
+int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+				    u8 eNB_id,
+					u8 eNB_offset,
+				    int subframe,
+				    unsigned char l,
+				    unsigned char symbol);
+
+
 #ifdef EMOS
+/*
 int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS],
 				   int **rxdataF,
 				   LTE_DL_FRAME_PARMS *frame_parms,
@@ -84,6 +94,7 @@ int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_AN
 				   unsigned char p,
 				   unsigned char l,
 				   unsigned char sector);
+*/
 #endif
 
 /*!
@@ -95,6 +106,11 @@ We estimate the frequency offset by calculating the phase difference between cha
 \param freq_offset pointer to the returned frequency offset
 */
 int lte_est_freq_offset(int **dl_ch_estimates,
+			LTE_DL_FRAME_PARMS *frame_parms,
+			int l,
+			int* freq_offset);
+
+int lte_mbsfn_est_freq_offset(int **dl_ch_estimates,
 			LTE_DL_FRAME_PARMS *frame_parms,
 			int l,
 			int* freq_offset);

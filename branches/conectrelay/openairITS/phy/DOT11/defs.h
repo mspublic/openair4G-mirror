@@ -4,11 +4,11 @@
 #include <stdint.h>
 
 #define MAX_SDU_SIZE 4095
-#define AMP 768
+#define AMP 1024
 
 #define ONE_OVER_SQRT_2 23170
 #define ONE_OVER_SQRT_10 10362
-#define ONE_OVER_SQRT_42 5056
+#define ONE_OVER_SQRT_42 7150
 
 typedef enum {
   BPSK_1_2=0,

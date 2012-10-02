@@ -36,6 +36,9 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_vars_eNB->lte_frame_parms.nushift = PHY_vars_eNB->lte_frame_parms.Nid_cell%6;
   phy_init_lte_eNB(PHY_vars_eNB,0,cooperation_flag,abstraction_flag);
 
+  printf ("init eNB: Nid_cell %d\n", frame_parms->Nid_cell);
+  printf ("init eNB: frame_type %d,tdd_config %d\n", frame_parms->frame_type,frame_parms->tdd_config);
+
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
     for (j=0;j<2;j++) {
       PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,abstraction_flag);
@@ -97,7 +100,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
   PHY_vars_UE->Mod_id=UE_id; 
   memcpy(&(PHY_vars_UE->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-  phy_init_lte_ue(PHY_vars_UE,abstraction_flag);
+  phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
   for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
     for (j=0;j<2;j++) {
       PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
@@ -108,6 +111,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
       else
 	LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch_ue[i][j]);//navid
     }
+
     
     
     PHY_vars_UE->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
@@ -118,7 +122,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
     
     PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
     PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
-    
+        
     PHY_vars_UE->transmission_mode[i] = transmission_mode;
   }
   return (PHY_vars_UE);
@@ -151,6 +155,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
+  (*frame_parms)->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_rx     = 1;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
   (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
@@ -165,6 +170,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){ 
     PHY_vars_eNB_g[eNB_id] = init_lte_eNB(*frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
   }
+
 
 
   // init all UE vars

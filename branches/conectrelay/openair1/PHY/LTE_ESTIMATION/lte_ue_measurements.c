@@ -104,7 +104,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
       for (l=0,nu=0;l<=(4-phy_vars_ue->lte_frame_parms.Ncp);l+=(4-phy_vars_ue->lte_frame_parms.Ncp),nu=3) {
 	k = (nu + nushift)%6;
-	//      printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, Nid2 %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,Nid2,nushift,eNB_offset,k);
+	      printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,nushift,eNB_offset,k);
 	for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
 	  rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1];
 	  
@@ -152,7 +152,10 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	phy_vars_ue->PHY_measurements.rssi/=(24*phy_vars_ue->lte_frame_parms.N_RB_DL);
 	phy_vars_ue->PHY_measurements.rssi*=rx_power_correction;
       }
-      phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = 100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi;
+      if (phy_vars_ue->PHY_measurements.rssi>0)
+	phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = 100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi;
+      else
+	phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = -12000;
       
       //((200*phy_vars_ue->PHY_measurements.rsrq[eNB_offset]) + ((1024-200)*100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi))>>10;
     }
@@ -247,7 +250,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     else if (N0_symbol != 0) {
       phy_vars_ue->PHY_measurements.n0_power_tot = 0;
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-#ifdef USER_MODE
+#ifdef HW_PREFIX_REMOVAL
 	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
 	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size);
@@ -266,7 +269,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 
     // signal measurements  
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
+      for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
 	for (eNB_id=0;eNB_id<phy_vars_ue->n_connected_eNB;eNB_id++) {
 	  phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
 	    (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],

@@ -17,6 +17,7 @@
 void _parseOptions(options_t *opts, int argc, char ** argv) {
     char c;
     char aux[100];
+    int prob_flag=0;
     
      static struct option long_options[] =
              {                             
@@ -30,30 +31,33 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                {"t",    required_argument, 0, 't'},
                {"y",    required_argument, 0, 'y'},
                {"z",    required_argument, 0, 'z'},
-               {"I",    required_argument, 0, 'I'},
+               {"I",    required_argument, 0, 'I'},               
                {"j",    required_argument, 0, 'j'},
                {"N",    required_argument, 0, 'N'},
                {"o",    required_argument, 0, 'o'},
                {"g",    required_argument, 0, 'g'},
-               {"f",    required_argument, 0, 'f'},
+               {"f",    no_argument, 0, 'f'},
                {"a",    no_argument, 	  0, 'a'},
                {"b",    required_argument, 0, 'b'},
                {"w",    required_argument, 0, 'w'},
+               {"k",    required_argument, 0, 'k'},
                {"c",    required_argument, 0, 'c'},
                {"e",    no_argument, 0, 'e'},
                {"m",    required_argument, 0, 'm'},
                {"A",    required_argument, 0, 'A'},
                {"D",    no_argument, 0, 'D'},
                {"p",    no_argument, 0, 'p'},
+               {"r",    required_argument, 0, 'r'},
+               {"p",    required_argument, 0, 'p'},
                {0, 0, 0, 0}
              };
 
 
 		int option_index = 0;   
 		
-    while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:f:ab:w:c:em:A:Dp",long_options, &option_index)) != -1)
+    while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:fab:w:c:em:A:Dp:k:",long_options, &option_index)) != -1)
     {
-		printf("%c %s\n",c,optarg);
+		//printf("%c %s\n",c,optarg);
         switch (c)
         {
         case 'a':
@@ -61,7 +65,16 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                opts->channel_model=AWGN;
             sprintf(opts->parameters,"%s -a",opts->parameters);
             break;
+          case 'f':
+            opts->fixed_channel_flag=1;               
+            sprintf(opts->parameters,"%s -f",opts->parameters);
+            break;
          case 'D':
+            if(opts->n_adj_cells==0 )
+            {
+				msg("First  specify the number of  adjuncts cells to estimate channel using -A #!\n");                
+                exit(-1);
+			}
             opts->dual_stream_UE=1;             
             sprintf(opts->parameters,"%s -D",opts->parameters);
             break;
@@ -127,12 +140,33 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
         case 'I':
             opts->nInterf=atoi(optarg);
             sprintf(opts->parameters,"%s  -I%d",opts->parameters, opts->nInterf);
+            if(opts->nInterf>5 )
+            {
+				msg("Max num interferer = 5 \n");                
+                exit(-1);
+			}
             break;
-        case 'w':
-			//TODO : fix this to set de interference level differents             			
+        case 'w':			
+			if(opts->nInterf==0 )
+            {
+				msg("First  specify the number of interferer with -I#  \n");                
+                exit(-1);
+			}
             sprintf(aux,"%s",optarg);
             strcpy(opts->interfLevels,aux);
             sprintf(opts->parameters,"%s  -w%s", opts->parameters,opts->interfLevels);
+           
+            break;
+        case 'k':			
+			if(opts->nInterf==0 )
+            {
+				msg("First  specify the number of interferer with -I#  \n");                
+                exit(-1);
+			}
+            sprintf(aux,"%s",optarg);
+            strcpy(opts->interfProbability,aux);
+            sprintf(opts->parameters,"%s  -k%s", opts->parameters,opts->interfProbability);
+             prob_flag=1;
             break;
         case 'N':
             opts->Nid_cell = atoi(optarg);
@@ -177,19 +211,48 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
                 break;
             case 'G':
                 opts->channel_model=ETU;
-                break;
+                break;                
+			case 'H':
+			  opts->channel_model=Rayleigh8;
+			  break;
+			case 'I':
+			  opts->channel_model=Rayleigh1;
+			  break;
+			case 'J':
+			  opts->channel_model=Rayleigh1_corr;
+			  break;
+			case 'K':
+			  opts->channel_model=Rayleigh1_anticorr;
+			  break;
+			case 'L':
+			  opts->channel_model=Rice8;
+			  break;
+			case 'M':
+			  opts->channel_model=Rice1;
+			  break;
             default:
-                msg("Unsupported channel model!\n");                
+                msg("Unsupported channel model! [A,B,C,D,E,F,G,H,I,J,K,L,M]\n");                
                 exit(-1);
             }
             break;
-        case 'A':
+         case 'A':
             opts->n_adj_cells=atoi(optarg);
              sprintf(opts->parameters,"%s  -b%d",opts->parameters, opts->n_adj_cells);
 			break;
-		 case 'p':
-            opts->perfect_ce=1;               
-            sprintf(opts->parameters,"%s -p",opts->parameters);
+		 case 'r':
+            opts->num_rounds=atoi(optarg);
+             sprintf(opts->parameters,"%s  -r%d",opts->parameters, opts->num_rounds);
+             if(opts->num_rounds>4 )
+            {
+				msg("Max num round = 4 \n");                
+                exit(-1);
+			}
+			break;
+		 case 'p':		 
+            sprintf(aux,"%s",optarg);
+            strcpy(opts->power,aux);
+            sprintf(opts->parameters,"%s  -w%s", opts->parameters,opts->power);
+                _parsePower(opts);
             break;
         default:
         case 'h':
@@ -204,15 +267,21 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
             printf("-y    Number of TX antennas used in eNB, default value is %d\n",opts->n_tx);
             printf("-z    Number of RX antennas used in UE, default value is %d\n",opts->n_rx);
             printf("-I    Number of interference to apply, default value is %d \n",opts->nInterf);
-            printf("-w    Relative strength of  inteference list (in dB) \n");
+            printf("-w    Relative strength of  inteference list (in dB)  separeted by ',' \n");
             printf("-N    Nid_cell, default value is %d \n",opts->Nid_cell);
             printf("-o    Oversampling factor (1,2,4,8,16), default value is %d \n",opts->oversampling);
             printf("-g    [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor), default value is AWGN\n");
-            printf("-f    Output filename (.txt format) for Pe/SNR results\n");
+        //    printf("-f    Output filename (.txt format) for Pe/SNR results\n");
             printf("-a    Use AWGN channel and not multipath\n");
             printf("-b    Test Number\n");
-            printf("-C    CellId Number for interferer\n");
+            printf("-c    CellId Number for interferer\n");
             printf("-m    MCS\n");            
+            printf("-D    Enable interference cancellation\n"); 
+            printf("-e    Enable verification of DCI\n"); 
+            printf("-A    Indicates  number of interfering  to estimate, by default does not estimate the channel from the interfering\n"); 
+            printf("-r    Number of rounds\n"); 
+            printf("-k    Probability of each interferer list (0-100)  separeted by ',' \n");
+            printf("-f    Use fixed data and channel\n");
             exit (-1);
             break;
 
@@ -222,7 +291,11 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 
     sprintf(opts->folderName,"%d_resp",opts->testNumber);
     if (opts->nInterf>0)
-        _parseInterferenceLevels(opts,opts->interfLevels,opts->nInterf);
+    {
+        _parseInterferenceLevels(opts,opts->interfLevels,opts->nInterf);        
+			_parseInterferenceProbability(opts,opts->interfProbability,opts->nInterf,prob_flag);
+	}
+
 }
 
 void _printOptions(options_t *opts)
@@ -247,16 +320,43 @@ void _printOptions(options_t *opts)
 
     for (i=0; i<opts->nInterf; i++)
     {
-        printf("\n\tInterference n%d:%f",i+1,opts->dbInterf[i]);
+        printf("\n\tInterference n%d:%f (%d\%)",i+1,opts->dbInterf[i],opts->probabilityInterf[i]);
     }
-
-
+ 
 
 
     printf("\n");
 
 
 }
+
+
+
+void _parseInterferenceProbability(options_t *opts, char *interfProbability,int nInterf,int prob_flag)
+{
+    int i;
+    char * pch;
+
+    opts->probabilityInterf=(double*)malloc(sizeof(double)*nInterf);
+    for (i=0; i<nInterf; i++)
+    {        
+        opts->probabilityInterf[i]=100;
+	}
+	if(prob_flag)
+	{
+		pch = strtok (interfProbability,",");
+		i=0;
+		while (pch != NULL)
+		{
+			 opts->probabilityInterf[i]=atoi(pch);
+			i++;
+			pch = strtok (NULL,",");
+		}
+		
+	}
+
+}
+
 
 void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf)
 {
@@ -279,6 +379,7 @@ void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf)
 
 }
 
+
 void _allocData(options_t opts, data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_complex_samples)
 {
     int i,j;
@@ -297,8 +398,8 @@ void _allocData(options_t opts, data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_
 		{
 			data->is_re[i]=(double**)malloc(n_tx*sizeof(double*));
 			data->is_im[i]=(double**)malloc(n_tx*sizeof(double*));
-			data->ir_re[i]=(double**)malloc(n_tx*sizeof(double*));
-			data->ir_im[i]=(double**)malloc(n_tx*sizeof(double*));
+			data->ir_re[i]=(double**)malloc(n_rx*sizeof(double*));
+			data->ir_im[i]=(double**)malloc(n_rx*sizeof(double*));
 		}
 	}
 
@@ -306,30 +407,55 @@ void _allocData(options_t opts, data_t *data ,u8 n_tx,u8 n_rx, int Frame_length_
     {
 
         data->s_re[i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
-        data->s_im[i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
-        data->r_re[i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
-        data->r_im[i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
+        data->s_im[i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));        
         
         bzero(data->s_re[i],Frame_length_complex_samples*sizeof(double));        
-        bzero(data->s_im[i],Frame_length_complex_samples*sizeof(double));
-        bzero(data->r_re[i],Frame_length_complex_samples*sizeof(double));       
-        bzero(data->r_im[i],Frame_length_complex_samples*sizeof(double));
+        bzero(data->s_im[i],Frame_length_complex_samples*sizeof(double));        
         
         for(j=0;j<opts.nInterf;j++)
         {
 			data->is_re[j][i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
-			data->is_im[j][i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
-			data->ir_re[j][i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
-			data->ir_im[j][i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
+			data->is_im[j][i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));			
 			
 			bzero(data->is_re[j][i],Frame_length_complex_samples*sizeof(double));        
-			bzero(data->is_im[j][i],Frame_length_complex_samples*sizeof(double));
+			bzero(data->is_im[j][i],Frame_length_complex_samples*sizeof(double));			
+		}
+        
+    }
+
+	for (i=0; i<n_rx; i++)
+    {
+        
+        data->r_re[i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
+        data->r_im[i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
+        
+        bzero(data->r_re[i],Frame_length_complex_samples*sizeof(double));       
+        bzero(data->r_im[i],Frame_length_complex_samples*sizeof(double));
+        
+        for(j=0;j<opts.nInterf;j++)
+        {		
+			data->ir_re[j][i] =(double*)malloc(Frame_length_complex_samples*sizeof(double));
+			data->ir_im[j][i] = (double*)malloc(Frame_length_complex_samples*sizeof(double));
+					
 			bzero(data->ir_re[j][i],Frame_length_complex_samples*sizeof(double));       
 			bzero(data->ir_im[j][i],Frame_length_complex_samples*sizeof(double));
 		}
         
     }
 
+}
+
+void copyDataFixed(data_t * origin,data_t * destination,options_t  *opts, int Frame_length_complex_samples)
+{
+	
+    int i,j;
+                                                    
+    int sizeData=4*opts->nInterf*sizeof(double**)+    
+				(opts->nInterf+1)*2*(opts->n_tx+opts->n_rx)*(sizeof(double*)+Frame_length_complex_samples*sizeof(double));
+    
+    printf("Copying sizeData: %d\n",sizeData);
+    
+    opts->fixed_data_set=1;
 
 }
 
@@ -342,9 +468,9 @@ void _makeOutputDir(options_t *opts)
     FILE *controlFile;
 
     status=mkdir ("testResults",S_IRWXU | S_IRWXG | S_IRWXO);
-    status=chdir("testResults");
+   // status=chdir("testResults");
     sprintf(auxDir,"%s",opts->folderName);
-    //status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);
+    //status=mkdir(auxDir,S_IRWXU | S_IRWXG | S_IRWXO);	
 	//status=chdir(auxDir);
     
     sprintf(auxFile,"OutpuSimulation_%df_%dI_%sdB_%dch_%d.m",opts->nframes,opts->nInterf,opts->interfLevels,opts->channel_model,opts->testNumber);
@@ -355,6 +481,8 @@ void _makeOutputDir(options_t *opts)
     sprintf(auxFile,"OuputBlerRound_%d.m",opts->testNumber);
     
     opts->outputBler =fopen(auxFile,"w");
+    fprintf( opts->outputBler,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
+    
     sprintf(auxFile,"OuputBER_%d.m",opts->testNumber);
     opts->outputBer =fopen(auxFile,"w");
     
@@ -371,9 +499,9 @@ void _makeOutputDir(options_t *opts)
     fprintf(controlFile,"testNumber:\t\t\n",opts->testNumber);
 
     fprintf(controlFile,"awgn_flag:\t\t%d\n",opts->awgn_flag);
-    fprintf(controlFile,"snr_init:\t\t%d\n",opts->snr_init);
-    fprintf(controlFile,"snr_max;\t\t%d\n",opts->snr_max);
-    fprintf(controlFile,"snr_step:\t\t%d\n",opts->snr_step);
+    fprintf(controlFile,"snr_init:\t\t%f\n",opts->snr_init);
+    fprintf(controlFile,"snr_max;\t\t%f\n",opts->snr_max);
+    fprintf(controlFile,"snr_step:\t\t%f\n",opts->snr_step);
     fprintf(controlFile,"nframes:\t\t%d\n",opts->nframes);
     fprintf(controlFile,"extended_prefix_flag:\t\t%d\n",opts->extended_prefix_flag);
     fprintf(controlFile,"frame_type:\t\t%d\n",opts->frame_type);
@@ -390,3 +518,39 @@ void _makeOutputDir(options_t *opts)
 }
 
 
+void _parsePower(options_t *opts)
+{
+	//printf("opts->power:%s\n",opts->power);
+    int i;
+    char * pch;    
+    pch=strtok (opts->power,",");
+    if (pch != NULL)
+    {
+      opts->p_a=atoi(pch);
+      pch=strtok (NULL,",");
+      opts->p_b=atoi(pch);
+       opts->d_offset=0;
+   /*   pch=strtok (NULL,",");
+      opts->d_offset=atoi(pch);     */
+    }
+    
+     if(opts->p_a< 0 || opts->p_a>7) 
+    {
+       msg("Error -> PA  (0...7) (dBm6, 	dBm477 	,dBm3 	,dBm177 	,dB0 	,dB1 	,dB2 	,dB3 )\n");
+       exit(1);
+    }
+    
+    if(opts->p_b< 0 || opts->p_b>3) 
+    {
+       msg("Error -> PB  (0...3)\n");
+       exit(1);
+    }
+    
+  /*  if(opts->d_offset< -6 || opts->d_offset>12) 
+    {
+       msg("Error -> Offset  (-6...12)\n");
+       exit(1);
+    }*/
+    
+
+}

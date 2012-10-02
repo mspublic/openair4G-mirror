@@ -85,13 +85,22 @@ void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j, u8 ab
 					     get_hundred_times_delta_IF(phy_vars_ue,eNB_id,harq_pid) +
 					     100*phy_vars_ue->ulsch_ue[eNB_id]->f_pusch)/100; 
   
-  if( phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
-    
-  }else if (j==0) {  // SPS PUSCH
+  if( phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {  // Msg3 PUSCH
 
+    phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += (mac_xface->get_Po_NOMINAL_PUSCH(phy_vars_ue->Mod_id) + PL);
+
+    LOG_D(PHY,"[UE  %d][RAPROC] frame %d, subframe %d: Msg3 Po_PUSCH %d dBm (%d,%d,%d,%d,%d)\n",
+          phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH,
+          100*mac_xface->get_Po_NOMINAL_PUSCH(phy_vars_ue->Mod_id),
+          hundred_times_log10_NPRB[nb_rb-1],
+          100*PL,
+          get_hundred_times_delta_IF(phy_vars_ue,eNB_id,harq_pid),
+          100*phy_vars_ue->ulsch_ue[eNB_id]->f_pusch);
+  }
+  else if (j==0) {  // SPS PUSCH
   }
   else if (j==1) {  // Normal PUSCH
-    
+      
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += 	((alpha_lut[phy_vars_ue->lte_frame_parms.ul_power_control_config_common.alpha]*PL)/100);
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH += 	phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
     phy_vars_ue->ulsch_ue[eNB_id]->PHR       =  15-phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;  // 15 dBm, FIX ME
@@ -101,7 +110,7 @@ void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j, u8 ab
     else if (phy_vars_ue->ulsch_ue[eNB_id]->PHR > 40)
       phy_vars_ue->ulsch_ue[eNB_id]->PHR = 40;
 
-    msg("[PHY][UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
+    LOG_D(PHY,"[UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
 	phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe,
 	phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH,
 	phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH,

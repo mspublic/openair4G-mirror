@@ -1836,8 +1836,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	msg("[PHY] Generating common DCI %d/%d of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].dci_length,1<<dci_alloc[i].L,*(unsigned int*)dci_alloc[i].dci_pdu);
 	dump_dci(frame_parms,&dci_alloc[i]);
 #endif
+
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-			      e_ptr,
+			      e+(72*dci_alloc[i].nCCE),
 			      dci_alloc[i].dci_length,
 			      dci_alloc[i].L,
 			      dci_alloc[i].rnti);    
@@ -1851,8 +1852,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	msg("[PHY] Generating UE (rnti %x) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,dci_alloc[i].dci_pdu);
 	dump_dci(frame_parms,&dci_alloc[i]);
 #endif
+
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-			      e_ptr,
+			      e+(72*dci_alloc[i].nCCE),
 			      dci_alloc[i].dci_length,
 			      dci_alloc[i].L,
 			      dci_alloc[i].rnti);        
@@ -2120,7 +2122,7 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 	eNB_transport_info[phy_vars_eNB->Mod_id].harq_pid[n_dci_dl] = dlsch_eNB->current_harq_pid;
 	eNB_transport_info[phy_vars_eNB->Mod_id].ue_id[n_dci_dl] = ue_id;
 	eNB_transport_info[phy_vars_eNB->Mod_id].tbs[n_dci_dl] = dlsch_eNB->harq_processes[dlsch_eNB->current_harq_pid]->TBS>>3;
-	//	msg("[PHY][DCI] tbs is %d\n", eNB_transport_info[phy_vars_eNB->Mod_id].tbs[n_dci_dl]);
+	//	msg("[PHY][DCI] tbs is %d and dci index %d harq pid is %d \n",eNB_transport_info[phy_vars_eNB->Mod_id].tbs[n_dci_dl],n_dci_dl, eNB_transport_info[phy_vars_eNB->Mod_id].harq_pid[n_dci_dl]);
 	// check for TB1 later
 	
       }
@@ -2762,9 +2764,9 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   }
   else { // This is MU-MIMO
   // Now check UE_SPEC format 1E_2A_M10PRB search spaces aggregation 1
-    //#ifdef DEBUG_DCI_DECODING
+#ifdef DEBUG_DCI_DECODING
     msg("[PHY] MU-MIMO check UE_SPEC format 1E_2A_M10PRB\n");
-    //#endif 
+#endif 
     dci_decoding_procedure0(lte_ue_pdcch_vars,
 			    subframe,
 			    dci_alloc,

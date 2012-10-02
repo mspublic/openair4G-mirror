@@ -98,6 +98,9 @@ void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH
   if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_lite_eNB_init(Mod_id)==-1)){
     //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
     }
+
+
+
 }
 
 /***********************************************************************/
@@ -189,12 +192,22 @@ int mac_top_init(){
 
     RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].RA_template[0];
     for (j=0;j<NB_RA_PROC_MAX;j++) {
-      memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      if (mac_xface->lte_frame_parms->frame_type == TDD) {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      }
+      else {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_FDD_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_FDD_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_FDD_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_FDD_t;
+      }
       RA_template[j].RA_dci_fmt1        = format1A;
       RA_template[j].RA_dci_fmt2        = format1A;
     }
@@ -303,7 +316,11 @@ void mac_top_cleanup(void){
 #ifndef USER_MODE
   pdcp_module_cleanup ();
 #endif
-
+  if (NB_UE_INST>0)
+    free (UE_mac_inst);
+  if (NB_eNB_INST>0)
+    free(eNB_mac_inst);
+  free( Mac_rlc_xface);
 }
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {

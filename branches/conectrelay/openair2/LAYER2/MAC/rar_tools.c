@@ -67,7 +67,7 @@ unsigned short fill_rar(u8 Mod_id,
   rarh->T                     = 0; // Preamble ID RAR
   rarh->RAPID                 = eNB_mac_inst[Mod_id].RA_template[0].preamble_index; // Respond to Preamble 0 only for the moment
   rar->R                      = 0;
-  rar->Timing_Advance_Command = eNB_mac_inst[Mod_id].RA_template[0].timing_offset;
+  rar->Timing_Advance_Command = eNB_mac_inst[Mod_id].RA_template[0].timing_offset/4;
   rar->hopping_flag           = 0;
   rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,0,2);  // 2 RB
   rar->mcs                    = 2;                                   // mcs 2

@@ -364,12 +364,6 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   s16 *prachF           = phy_vars_ue->lte_ue_prach_vars[eNB_id]->prachF;
   s16 *prach            = (s16*)prach_tmp;
   s16 *prach2;
-  s16 subframe_offset   = subframe*phy_vars_ue->lte_frame_parms.samples_per_tti;
-#ifdef BIT8_TX
-  s8 *prach_out         = (s8*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe_offset>>1];
-#else
-  s16 *prach_out        = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe_offset];
-#endif
   s16 amp               = phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp;
   s16 Ncp;
   u8 n_ra_prb;
@@ -383,14 +377,29 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   u8 f_ra,t1_ra;
   u16 N_ZC = (prach_fmt <4)?839:139;
   u8 not_found;
-  //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  //  u16 subframe_offset;
   s16 k;
   s16 *Xu,*e;
   s32 Xu_re,Xu_im;
   u16 offset,offset2;
-  u32 i, prach_len;
+  int prach_start;
+  int overflow;
+  int i,j, prach_len;
 
+  //LOG_I(PHY,"[PRACH] prach_start=%d\n",prach_start);
+
+#ifdef BIT8_TX
+  prach_start = (subframe*phy_vars_ue->lte_frame_parms.samples_per_tti)<<1;
+#else
+#ifdef EXMIMO
+  prach_start =  (phy_vars_ue->rx_offset+subframe*phy_vars_ue->lte_frame_parms.samples_per_tti-TIMING_ADVANCE_HW);
+  if (prach_start<0)
+    prach_start+=(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+  if (prach_start>=(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
+    prach_start-=(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+#else //normal case (simulation)
+  prach_start = subframe*phy_vars_ue->lte_frame_parms.samples_per_tti;
+#endif
+#endif
 
     // First compute physical root sequence
   if (restricted_set == 0) {
@@ -598,6 +607,8 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     }
     else {
       ifft6144(prachF,prach2);
+      for (i=0;i<6144*2;i++)
+	prach2[i]<<=1;
       memcpy((void*)prach,(void*)(prach+12288),Ncp<<2);
       prach_len = 6144+Ncp;
       if (prach_fmt>1){
@@ -659,23 +670,40 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     break;
   }
 
-  LOG_D(PHY,"prach_len=%d\n",prach_len);
-
-  for (i=0; i<prach_len; i++) {
-    if (prach_fmt==4) {
-      //TODO: account for repeated format in fft output
-    }
-    else {
-#ifdef BIT8_TX
-      prach_out[2*i] = (char) prach[2*i];
-      prach_out[2*i+1] = (char) prach[2*i+1];
-#else
-      prach_out[2*i] = prach[2*i];
-      prach_out[2*i+1] = prach[2*i+1];
-#endif
-    }
+  //LOG_D(PHY,"prach_len=%d\n",prach_len);
+  
+  if (prach_fmt==4) {
+    //TODO: account for repeated format in fft output
+    LOG_E(PHY,"prach_fmt4 not fully implemented");
+    mac_xface->macphy_exit("");
   }
-
+  else {
+#ifdef BIT8_TX
+    for (i=0; i<prach_len; i++) {
+      ((s8*)(&phy_vars_ue->lte_ue_common_vars.txdata[aa][prach_start]))[2*i] = (s8)(prach[2*i]);
+      ((s8*)(&phy_vars_ue->lte_ue_common_vars.txdata[aa][prach_start]))[2*i+1] = (s8)(prach[2*i+1]);
+    }
+#else
+#ifdef EXMIMO
+    overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_ue->lte_frame_parms.samples_per_tti;
+    LOG_I(PHY,"prach_start=%d, overflow=%d\n",prach_start,overflow);
+    for (i=prach_start,j=0; i<min(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
+      ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i] = prach[2*j]<<4;
+      ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+    }
+    for (i=0;i<overflow;i++,j++) {
+      ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i] = prach[2*j]<<4;
+      ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+    }
+#else
+    for (i=0; i<prach_len; i++) {
+      ((s16*)(&phy_vars_ue->lte_ue_common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
+      ((s16*)(&phy_vars_ue->lte_ue_common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
+    }
+#endif
+#endif
+  }
+  
   //  apply_625_Hz(phy_vars_ue,prach);
   return(signal_energy((int*)prach,256));
 }

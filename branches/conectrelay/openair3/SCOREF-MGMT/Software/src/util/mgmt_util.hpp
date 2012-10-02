@@ -81,7 +81,7 @@ class Util {
 		 * @param logger Logger object reference
 		 * @return true on success, false otherwise
 		 */
-		static bool printHexRepresentation(unsigned char* buffer, unsigned long bufferSize, Logger& logger);
+		static bool printHexRepresentation(const unsigned char* buffer, unsigned long bufferSize, Logger& logger);
 		/**
 		 * Prints binary representation of given octet
 		 *
@@ -91,6 +91,13 @@ class Util {
 		 * @return none
 		 */
 		static void printBinaryRepresentation(unsigned char* message, u_int8_t octet, Logger& logger);
+		/**
+		 * Returns binary representation of given octet in a string form
+		 *
+		 * @param octet Octet to be stringified
+		 * @return std::string form of binary representation
+		 */
+		static string getBinaryRepresentation(u_int8_t octet);
 		/**
 		 * Returns string representation of given numeric value
 		 *
@@ -107,6 +114,14 @@ class Util {
 		 * @return true on success, false otherwise
 		 */
 		static bool setBit(u_int8_t& octet, u_int8_t index);
+		/**
+		 * Unsets Nth bit of given octet
+		 *
+		 * @param octet Pointer to the octet
+		 * @param index Index that'll be unset
+		 * @return true on success, false otherwise
+		 */
+		static bool unsetBit(u_int8_t& octet, u_int8_t index);
 		/**
 		 * Checks if Nth bit of given octet is set
 		 *
@@ -139,6 +154,13 @@ class Util {
 		 * @return true on success, false otherwise
 		 */
 		static bool parse2byteInteger(const unsigned char* buffer, u_int16_t* integer);
+		/**
+		 * Parses 4-byte floating point data from given buffer
+		 *
+		 * @param buffer Buffer that 4-byte float will be parsed from
+		 * @return Float value
+		 */
+		static float parse4byteFloat(const vector<unsigned char>& floatBuffer);
 		/**
 		 * Encodes given 8-byte integer data into buffer at given index
 		 *
@@ -173,7 +195,40 @@ class Util {
 		 * @param delimiter Delimiter character
 		 * @return std::vector containing split parts
 		 */
+		/**
+		 * Encodes given bits starting from given index into given octet
+		 *
+		 * @param octet Octet that given bits will be encoded into
+		 * @param index Index that this method starts encoding at (indexes are 0 to 7)
+		 * @param data Data to be encoded
+		 * @param dataSize Number of data bits to be encoded
+		 * @return true on success, false otherwise
+		 */
+		static bool encodeBits(u_int8_t& octet, u_int8_t index, u_int8_t data, u_int8_t dataSize);
+		/**
+		 * Splits given string according to given delimiter and return the
+		 * string list as a vector
+		 *
+		 * @param input Input string that'll be delimited
+		 * @param delimiter Delimiter character
+		 * @return List of delimited sub-strings as a vector<string>
+		 */
 		static vector<string> split(const string& input, char delimiter);
+		/**
+		 * Removes non-printable characters from the end of a string, ie. trims it
+		 *
+		 * @param str std::string that is going to be trimmed
+		 * @param character Character to be trimmed off
+		 * @return trimmed string of type std::string
+		 */
+		static string trim(const string& str, char character);
+		/**
+		 * Checks if incoming string is numerical or not
+		 *
+		 * @param str std::string to be checked
+		 * @return true if it's numerical, false otherwise
+		 */
+		static bool isNumeric(const string& str);
 		/**
 		 * Returns current date/time as string
 		 * This is used for log file rotating and in log messages as a prefix

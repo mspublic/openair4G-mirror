@@ -48,6 +48,7 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LITE/extern.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 #ifdef PHY_EMUL
@@ -242,6 +243,8 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
   unsigned short rx_lengths[MAX_NUM_RB];
   unsigned char *tx_sdu;
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
+
   printf("sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
@@ -260,7 +263,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
       switch (rx_ces[i]) {
       case UE_CONT_RES:
 
-	LOG_D(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n",
+	LOG_I(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n",
 	      Mod_id,frame,payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
 	  UE_mac_inst[Mod_id].RA_active=0;
@@ -268,8 +271,9 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[1];//1=sizeof(SCH_SUBHEADER_FIXED);
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
-	      LOG_D(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
+	      LOG_I(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
 	      mac_xface->ra_failed(Mod_id,eNB_index);
+              vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 	      return;
 	    }
 	  UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 0;
@@ -344,12 +348,13 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
     }
 
   }
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 }
 
 void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
   int i;
-  
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
   //LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
   mac_rrc_data_ind(Mod_id,
@@ -359,7 +364,7 @@ void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 		   len,
 		   0,
 		   eNB_index);
-
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
 }
 
 
@@ -627,6 +632,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   int j; // used for padding
   // Compute header length
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
+
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   // hypo length,in case of long header skip the padding byte
@@ -849,10 +856,18 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 	  Mod_id,payload_offset, sdu_length_total);
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
     UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER=0;
-     
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
 }
 
 // called at each subframe
+// Performs :
+// 1. Trigger PDCP every 5ms
+// 2. Call RRC for link status return to PHY
+// 3. Perform SR/BSR procedures for scheduling feedback
+// 4. Perform PHR procedures
+
+
+
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index) {
 
   int lcid; // lcid index
@@ -865,8 +880,10 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   
   //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
-  if (subframe%5 == 0)
-    pdcp_run(frame, 0, Mod_id, 0);  
+  //if (subframe%5 == 0)
+  pdcp_run(frame, 0, Mod_id, 0);  
+  UE_mac_inst[Mod_id].frame = frame;
+  UE_mac_inst[Mod_id].subframe = subframe;
 
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, eNB_index);
@@ -889,7 +906,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   }
 #endif 
 
-  // Check timers
+  // Check Contention resolution timer (put in a function later)
   if (UE_mac_inst[Mod_id].RA_contention_resolution_timer_active == 1) {
     if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
       rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
@@ -904,13 +921,14 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       UE_mac_inst[Mod_id].RA_active = 0;
       // Signal PHY to quit RA procedure
       mac_xface->ra_failed(Mod_id,eNB_index);
-      LOG_D(MAC,"Counter resolution timer expired, RA failed\n");
+      LOG_I(MAC,"Counter resolution timer expired, RA failed\n");
     }
   }
 
 
   // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
   // outlined in Sections 5.4.4 an 5.4.5 of 36.321
+  // Put this in another function
 
     // Get RLC status info and update Bj for all lcids that are active
   for (lcid=CCCH; lcid <= DTCH; lcid++ ) {
@@ -970,6 +988,8 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
     LOG_D(MAC,"[MAC][UE %d] Release all SRs \n", Mod_id);
   }
+
+  // Put this in a function
   // Call PHR procedure as described in Section 5.4.6 in 36.321 
   if (UE_mac_inst[Mod_id].PHR_state == MAC_MainConfig__phr_Config_PR_setup ){ // normal operation 
     if (UE_mac_inst[Mod_id].PHR_reconfigured == 1){ // upon (re)configuration of the power headroom reporting functionality by upper layers 
