@@ -86,7 +86,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   
   phy_init_lte_top(lte_frame_parms);
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
   printf("Done lte_param_init\n");
@@ -192,7 +192,7 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
     //    test_input[0] = 0x80;
     for (i=0;i<block_length;i++) {
       
-      test_input[i] = (unsigned char)(taus()&0xff);
+      test_input[i] = i&0xff;//(unsigned char)(taus()&0xff);
     }
 
     dlsch_encoding(test_input,
@@ -205,10 +205,17 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
 
 
     for (i = 0; i < coded_bits; i++){
+#ifdef DEBUG_CODER
+      if ((i&0xf)==0) 
+	printf("\ne %d..%d:    ",i,i+15);
+      printf("%d.",PHY_vars_eNB->dlsch_eNB[0][0]->e[i]);
+#endif
       channel_output[i] = (short)quantize(sigma/4.0,(2.0*PHY_vars_eNB->dlsch_eNB[0][0]->e[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
     }
-
-
+#ifdef DEBUG_CODER
+    printf("\n");
+    exit(-1);
+#endif
   
     
     //    memset(decoded_output,0,16);
@@ -361,6 +368,7 @@ int main(int argc, char *argv[]) {
 				     format2_2A_M10PRB,
 				     PHY_vars_eNB->dlsch_eNB[0],
 				     &PHY_vars_eNB->lte_frame_parms,
+				     PHY_vars_eNB->pdsch_config_dedicated,
 				     SI_RNTI,
 				     0,
 				     P_RNTI,
@@ -371,6 +379,7 @@ int main(int argc, char *argv[]) {
 				    format2_2A_M10PRB,
 				    PHY_vars_UE->dlsch_ue[0],
 				    &PHY_vars_UE->lte_frame_parms,
+				    PHY_vars_UE->pdsch_config_dedicated,
 				    SI_RNTI,
 				    0,
 				    P_RNTI);
