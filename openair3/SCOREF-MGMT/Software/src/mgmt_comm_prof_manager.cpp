@@ -40,10 +40,8 @@
 */
 
 #include "mgmt_comm_prof_manager.hpp"
+#include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
-#include "util/mgmt_util.hpp"
-
-#include <cstdlib>
 
 CommunicationProfileManager::CommunicationProfileManager(Logger& logger)
 	: logger(logger) {
@@ -59,9 +57,27 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 	if (profileIdString.empty() || profileDefinitionString.empty())
 		return false;
 
-	u_int8_t profileID = atoi(profileIdString.substr(profileIdString.find("CP") + 2, profileIdString.length() - 2).c_str());
-	logger.info("Defining communication Profile ID = " + boost::lexical_cast<string>((int)profileID));
-	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(profileID, parse(profileDefinitionString)));
+	/**
+	 * Parse communication profiles defined in the configuration file and
+	 * insert them into the communication profile map
+	 */
+	CommunicationProfileItem communicationProfileItem;
+	/**
+	 * std::string as a map key should not have a NULL at
+	 * the end so here we trim it
+	 */
+	string trimmedProfileDefinitionString = Util::trim(profileDefinitionString, '\0');
+
+	try {
+		communicationProfileItem = parse(profileIdString, trimmedProfileDefinitionString);
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot parse Communication Profile definitions");
+		throw e;
+	}
+
+	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(communicationProfileItem.id, communicationProfileItem));
+	logger.debug("Communication profile: " + profileIdString + ":" + profileDefinitionString);
+	logger.info("Communication profile: " + communicationProfileItem.toString());
 
 	return true;
 }
@@ -145,13 +161,21 @@ void CommunicationProfileManager::initialise() {
 	communicationProfileStringMap.insert(communicationProfileStringMap.end(), std::make_pair("SCH4", 5));
 }
 
-CommunicationProfileItem CommunicationProfileManager::parse(const string& profileString) {
+CommunicationProfileItem CommunicationProfileManager::parse(const string& profileIdString, const string& profileDefinitionString) {
 	CommunicationProfileItem communicationProfileItem;
+	u_int8_t profileID = 0x00;
+
+	try {
+		profileID = (u_int8_t)boost::lexical_cast<unsigned short>(profileIdString.substr(profileIdString.find("CP") + 2, profileIdString.length() - 2).c_str());
+		communicationProfileItem.id = profileID;
+	} catch (...) {
+		throw Exception("Cannot parse Communication Profile ID string '" + profileIdString + "' in configuration file", logger);
+	}
 
 	/*
 	 * Parse communication profile string and get tokens for each layer
 	 */
-	vector<string> profileItemVector = Util::split(profileString, ',');
+	vector<string> profileItemVector = Util::split(profileDefinitionString, ',');
 	const string transport = profileItemVector[0];
 	const string network = profileItemVector[1];
 	const string access = profileItemVector[2];
@@ -190,7 +214,34 @@ bool CommunicationProfileManager::setFlags(const string& configuration, u_int8_t
 	vector<string>::iterator iterator = profileStrings.begin();
 
 	while (iterator != profileStrings.end()) {
-		Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator]));
+		/**
+		 * Verify incoming communication profile definition string item and handle "BTP" exception
+		 */
+		if (iterator->compare("BTP") == 0) {
+			logger.debug("Communication profile string 'BTP' has found, both BTP_A and BTP_B flags will be set");
+
+			/**
+			 * If communication profile includes BTP then we should set both BTP_A and BTP_B
+			 * bits since they'll both be defined and available
+			 *
+			 * Bit indexes start from 1 in 'MNGT to CM-GN Interface' paper but it
+			 * corresponds to bit 0 for Util::setBit() so here we subtract 1 to
+			 * find index against 0 as the first
+			 */
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap["BTP_A"] - 1));
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap["BTP_B"] - 1));
+		} else if (communicationProfileStringMap[*iterator] != 0) {
+			/*
+			 * If index is valid than set the bit at that index
+			 */
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator] - 1));
+		} else if (communicationProfileStringMap[*iterator] == 0) {
+			/*
+			 * Invalid strings are ignored
+			 */
+			logger.warning("Communication profile definition string '" + *iterator + "' is not valid!");
+			logger.info("Check SCOREF-MGMT_Configuration.pdf file for valid configuration settings");
+		}
 
 		++iterator;
 	}

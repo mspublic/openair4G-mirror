@@ -240,6 +240,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       DCI_format_t dci_format,
 				       LTE_eNB_DLSCH_t **dlsch,
 				       LTE_DL_FRAME_PARMS *frame_parms,
+                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -665,7 +666,8 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch0->rnti = rnti;
     //dlsch1->rnti = rnti;
 
-    dlsch0->dl_power_off = 1;
+    //    dlsch0->dl_power_off = 1;
+    dlsch0->dl_power_off = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
     //dlsch1->dl_power_off = 1;
 
     break;
@@ -688,6 +690,12 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     msg("dlsch0 eNB: mimo_mode %d\n",dlsch0->harq_processes[harq_pid]->mimo_mode);
   }
 #endif
+
+  // compute DL power control parameters   
+  computeRhoA_eNB(pdsch_config_dedicated, dlsch[0]);
+  
+  computeRhoB_eNB(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0]);
+
   return(0);
 }
 
@@ -696,7 +704,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 
   switch (dci->format) {
 
-  case format0:   // This is an UL SACH allocation so nothing here, inform MAC
+  case format0:   // This is an UL SCH allocation so nothing here, inform MAC
     if ((frame_parms->frame_type == 1) &&
 	(frame_parms->tdd_config>0))
       msg("DCI format0 (TDD, 5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
@@ -840,6 +848,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 				      DCI_format_t dci_format,
 				      LTE_UE_DLSCH_t **dlsch,
 				      LTE_DL_FRAME_PARMS *frame_parms,
+                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti) {
@@ -859,6 +868,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 #ifdef DEBUG_DCI
   msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
 #endif
+
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
@@ -1354,6 +1364,12 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   }
 #endif
   dlsch[0]->active=1;
+
+  // compute DL power control parameters   
+  computeRhoA_UE(pdsch_config_dedicated, dlsch[0]);
+
+  computeRhoB_UE(pdsch_config_dedicated,&(frame_parms->pdsch_config_common),frame_parms->nb_antennas_tx_eNB,dlsch[0]);
+
   return(0);
 }
 
@@ -1524,6 +1540,7 @@ u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
 	pmiq = PMI_2A_1m1;
       else if ((pmi_re > pmi_im) && (pmi_re < -pmi_im))
 	pmiq = PMI_2A_1mj;
+      //      printf("subband %d, pmi%d \n",i,pmiq);
       pmivect |= (pmiq<<(2*i));
     }
     else {
@@ -2010,22 +2027,19 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
-    //    print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
+    //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
     // save PUSCH pmi for later (transmission modes 4,5,6)
 
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
     dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
 
-#ifdef DEBUG_PHY
-    if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10))
+    //#ifdef DEBUG_PHY
+    if (((phy_vars_ue->frame % 100) == 0)) //|| (phy_vars_ue->frame < 10))
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
-#endif
+    //#endif
 
-    if (AckNackFBMode == multiplexing)
-      ulsch->O_ACK                               = ((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai;
-    else  // bundling
-      ulsch->O_ACK                               =((transmission_mode == 3)||(transmission_mode == 4)) ? 2 : 1;
 
+    ulsch->harq_processes[harq_pid]->O_ACK                                 = (((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai+1)&3;
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;
@@ -2064,17 +2078,18 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
-#ifdef DEBUG_DCI
-    msg("ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    msg("ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
-    msg("ulsch (ue): harq_pid    %d\n",harq_pid);
-    msg("ulsch (ue): Ndi         %d\n",ulsch->harq_processes[harq_pid]->Ndi);
-    msg("ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
-    msg("ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
-    msg("ulsch (ue): O           %d\n",ulsch->O);
-    msg("ulsch (ue): Nsymb_pusch %d\n",ulsch->Nsymb_pusch);
-    msg("ulsch (ue): cshift        %d\n",ulsch->n_DMRS2);
-#endif
+    //#ifdef DEBUG_DCI
+    msg("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    msg("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
+    msg("Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
+    msg("Format 0 DCI :ulsch (ue): Ndi         %d\n",ulsch->harq_processes[harq_pid]->Ndi);
+    msg("Format 0 DCI :ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    msg("Format 0 DCI :ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    msg("Format 0 DCI :ulsch (ue): O           %d\n",ulsch->O);
+    msg("Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->harq_processes[harq_pid]->O_ACK,((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai);
+    msg("Format 0 DCI :ulsch (ue): Nsymb_pusch %d\n",ulsch->Nsymb_pusch);
+    msg("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->n_DMRS2);
+    //#endif
     return(0);
   }
   else {
@@ -2189,10 +2204,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     }
 
 
-    if (AckNackFBMode == multiplexing)
-      ulsch->O_ACK                               = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->dai;
-    else  // bundling
-      ulsch->O_ACK                               =((transmission_mode == 3)||(transmission_mode == 4)) ? 2 : 1;
+    ulsch->harq_processes[harq_pid]->O_ACK                                 = (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->dai+1)&3;
+
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index];//10;

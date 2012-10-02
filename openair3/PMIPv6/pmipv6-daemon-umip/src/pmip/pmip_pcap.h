@@ -44,12 +44,29 @@
 \brief PCAP descriptor for capturing packets on MAG ingress interface.
 */
 public_pmip_pcap(pcap_t * pcap_descr);
-/*! \fn void pmip_pcap_loop(char *, int )
+/*! \var char* g_pcap_devname
+\brief PCAP device name on which the capture of packets is done.
+*/
+public_pmip_pcap(char g_pcap_devname[32]);
+/*! \var int   g_pcap_iif
+\brief PCAP device interface index on which the capture of packets is done.
+*/
+public_pmip_pcap(int   g_pcap_iif);
+/*! \fn int pmip_pcap_loop_start(void)
+* \brief Start the PCAP listener thread.
+* \return 0 on success.
+*/
+public_pmip_pcap(int pmip_pcap_loop_start(void);)
+/*! \fn void pmip_pcap_loop_stop(void)
+* \brief Stop the PCAP listener thread.
+*/
+public_pmip_pcap(void pmip_pcap_loop_stop(void);)
+/*! \fn void* pmip_pcap_loop(void*)
 * \brief
 * \param[in]  devname The name of the device (ex "eth1") that will be listened for capturing packets.
 * \param[in]  iif     The interface identifier that will be listened for capturing packets.
 */
-public_pmip_pcap(void pmip_pcap_loop(char *devname, int iif);)
+public_pmip_pcap(void* pmip_pcap_loop(void*);)
 /*! \fn void pmip_pcap_msg_handler_associate(struct in6_addr , int )
 * \brief  Construct amessage event telling that a mobile node is associated with the radio technology of the MAG, and send it to the MAG FSM.
 * \param[in]  mn_iidP  The MAC address of the mobile node.
@@ -64,4 +81,5 @@ private_pmip_pcap(void pmip_pcap_msg_handler_associate(struct in6_addr mn_iidP, 
 private_pmip_pcap(void pmip_pcap_msg_handler_deassociate(struct in6_addr mn_iidP, int iifP);)
 #endif
 /** @}*/
+
 

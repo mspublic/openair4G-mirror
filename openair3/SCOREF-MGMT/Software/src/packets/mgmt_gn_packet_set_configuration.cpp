@@ -87,7 +87,7 @@ bool GeonetSetConfigurationEventPacket::serialize(vector<unsigned char>& buffer)
 	// ...and then the packet-specific fields
 	if (isBulk) {
 		// Fetch relevant (sub)set..
-		map<ItsKeyID, ItsKeyValue> keyset = mib.itsKeyManager.getSubset(requestedItsKeyType);
+		map<ItsKeyID, ItsKeyValue> keyset = mib.getItsKeyManager().getSubset(requestedItsKeyType);
 		map<ItsKeyID, ItsKeyValue>::const_iterator iterator = keyset.begin();
 
 		while (iterator != keyset.end()) {
@@ -117,10 +117,11 @@ bool GeonetSetConfigurationEventPacket::serialize(vector<unsigned char>& buffer)
 		packetBody[2] = ((mib.getLength(requestedItsKey) & 0xff00) >> 8);
 		packetBody[3] = (mib.getLength(requestedItsKey) & 0xff);
 		// `conf value' field
-		packetBody[4] = (mib.getValue(requestedItsKey) >> 24) & 0xff;
-		packetBody[5] = (mib.getValue(requestedItsKey) >> 16) & 0xff;
-		packetBody[6] = (mib.getValue(requestedItsKey) >> 8) & 0xff;
-		packetBody[7] = (mib.getValue(requestedItsKey) & 0xff);
+		u_int32_t configurationValue = mib.getItsKeyValue(requestedItsKey).intValue;
+		packetBody[4] = (configurationValue >> 24) & 0xff;
+		packetBody[5] = (configurationValue >> 16) & 0xff;
+		packetBody[6] = (configurationValue >> 8) & 0xff;
+		packetBody[7] = (configurationValue & 0xff);
 
 		buffer.resize(sizeof(ContinuousConfigurationResponse));
 
@@ -153,7 +154,7 @@ ConfigurationItem GeonetSetConfigurationEventPacket::buildConfigurationItem(ItsK
 
 	confItem.configurationId = itsKey;
 	confItem.length = mib.getLength(itsKey);
-	confItem.configurationValue = mib.getValue(itsKey);
+	confItem.configurationValue = mib.getItsKeyValue(itsKey).intValue;
 
 	return confItem;
 }
@@ -162,10 +163,10 @@ string GeonetSetConfigurationEventPacket::toString() const {
 	stringstream ss;
 
 	if (isBulk) {
-		ss << "Key count: " << ((isBulk) ? mib.itsKeyManager.getNumberOfKeys(requestedItsKeyType) : 1) << endl;
+		ss << "Key count: " << ((isBulk) ? mib.getItsKeyManager().getNumberOfKeys(requestedItsKeyType) : 1) << endl;
 	} else {
 		ss << "Configuration ID: " << requestedItsKey << endl << "Length: " << mib.getLength(requestedItsKey) << endl
-		    << "Value: " << mib.getValue(requestedItsKey) << endl;
+		    << "Value: " << mib.getItsKeyValue(requestedItsKey).intValue << endl;
 	}
 
 	return ss.str();

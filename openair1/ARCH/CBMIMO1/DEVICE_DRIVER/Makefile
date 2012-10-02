@@ -171,7 +171,7 @@ else
 openair_rf-objs += $(MAC_XFACE_OBJS)
 endif
 
-openair_rf-objs += $(LOG_OBJS)
+#openair_rf-objs += $(LOG_DIR)/log.o
 
 test:
 	echo $(openair_rf-objs)

@@ -52,6 +52,17 @@ unsigned char get_Qm(unsigned char I_MCS) {
     
 }
 
+unsigned char get_Qm_ul(unsigned char I_MCS) {
+
+  if (I_MCS < 11)
+    return(2);
+  else if (I_MCS < 21)
+    return(4);
+  else
+    return(6);
+    
+}
+
 unsigned char get_I_TBS(unsigned char I_MCS) {
 
   if (I_MCS < 10)
@@ -305,7 +316,7 @@ u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u
   // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
   // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
   // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->mode1_flag==0) // SISO 
       return((nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj);
     else
       return((nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*10)) - G_adj);

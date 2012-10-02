@@ -100,14 +100,14 @@ void init_mobility_generator(omg_global_param omg_param_list) {
     break;
 
   case TRACE:
-    /*  start_trace_generator(omg_param_list);
-      LOG_D(OMG," --------DISPLAY JOB LIST-------- \n");
-      display_job_list(Job_Vector);
-      Job_Vector = quick_sort (Job_Vector);
-      LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n");
-      display_job_list(Job_Vector);
-      LOG_D(OMG," --------OMG will load static mobility traces from user specified file-------- \n");
-    */
+    start_trace_generator(omg_param_list);
+    LOG_D(OMG," --------DISPLAY JOB LIST-------- \n");
+    display_job_list(Job_Vector);
+    Job_Vector = quick_sort (Job_Vector);
+    LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n");
+    display_job_list(Job_Vector);
+    LOG_D(OMG," --------OMG will load static mobility traces from user specified file-------- \n");
+    
     break; 
 
   case SUMO: 
@@ -127,9 +127,8 @@ void stop_mobility_generator(int mobility_type) {
   case RWP: 
   case RWALK: 
   case TRACE:
-      //LOG_D(OMG," --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
-    LOG_D(OMG," --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
-  break; 
+    clear_llist();
+   break; 
 
   case SUMO: 
     stop_sumo_generator();
@@ -165,7 +164,7 @@ void update_node_vector(int mobility_type, double cur_time){
     update_rwalk_nodes(cur_time);
     break;
   case TRACE:
-    //    update_trace_nodes(cur_time);
+    update_trace_nodes(cur_time);
     break;     
   case SUMO:  
    // printf("in SUMO case \n");
@@ -183,8 +182,7 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
   if (Node_Vector[mobility_type] != NULL){
     switch (mobility_type) {
    case STATIC:
-      LOG_D(OMG,"get_static_positions\n");
-      Vector = (Node_list)Node_Vector[STATIC];
+     Vector = (Node_list)Node_Vector[STATIC];
       break; 
    case RWP:
       get_rwp_positions_updated(cur_time);
@@ -195,8 +193,8 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
       Vector = Node_Vector[RWALK];
       break;
     case TRACE:
-      //get_trace_positions_updated(cur_time);
-      //Vector = Node_Vector[TRACE];
+      get_trace_positions_updated(cur_time);
+      Vector = Node_Vector[TRACE];
       break;   
     case SUMO:
       LOG_I(OMG,"getting positions from SUMO\n");

@@ -90,19 +90,10 @@ void pmip_cleanup(void)
     dbg("Release pmip_cache...\n");
     pmip_cache_iterate(pmip_cache_delete_each, NULL);
 
-//#undef HAVE_PCAP_BREAKLOOP
-#define HAVE_PCAP_BREAKLOOP
-#ifdef HAVE_PCAP_BREAKLOOP
-    /*
-    * We have "pcap_breakloop()"; use it, so that we do as little
-    * as possible in the signal handler (it's probably not safe
-    * to do anything with standard I/O streams in a signal handler -
-    * the ANSI C standard doesn't say it is).
-    */
     if (is_mag()) {
-        pcap_breakloop(pcap_descr);
+        pmip_pcap_loop_stop();
     }
-#endif
+    dbg("pmip_cleanup end\n");
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -204,12 +195,8 @@ int pmip_mag_init(void)
         exit (-1);
     }
 
-    char devname[32];
-    int iif;
-    dbg("Getting ingress informations\n");
-    mag_get_ingress_info(&iif, devname);
     dbg("Starting capturing AP messages for incoming MNs detection\n");
-    pmip_pcap_loop(devname, iif);
+    pmip_pcap_loop_start();
     return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------

@@ -244,8 +244,8 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 	Size16 = (u16)Size;
 	
 	//	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
-    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
-             frame, Mod_id, eNB_index, Mod_id);
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
+	      frame, Mod_id, eNB_index, Mod_id);
 	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
 
 	if (Size>0) {
@@ -323,6 +323,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 	    LOG_D(MAC,"[UE %d] Frame %d: Maximum number of RACH attempts (%d)\n",Mod_id,frame,rach_ConfigCommon->ra_SupervisionInfo.preambleTransMax);
 	    // send message to RRC
 	    UE_mac_inst[Mod_id].RA_PREAMBLE_TRANSMISSION_COUNTER=1;
+	    UE_mac_inst[Mod_id].RA_prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER = get_Po_NOMINAL_PUSCH(Mod_id);
 	  }
 	  UE_mac_inst[Mod_id].RA_window_cnt                    = 2+ rach_ConfigCommon->ra_SupervisionInfo.ra_ResponseWindowSize;
 	  UE_mac_inst[Mod_id].RA_backoff_cnt                   = 0;

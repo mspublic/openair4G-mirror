@@ -9,7 +9,7 @@
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
 #ifdef USER_MODE
-#    define NB_MODULES_MAX 64 // 32
+#    define NB_MODULES_MAX 32
 #else
 #    define NB_MODULES_MAX 1
 #endif //PHY_EMUL
@@ -18,7 +18,7 @@
 #    define MAX_MODULES                NB_MODULES_MAX
 #    define MAX_RG                     2
 
-#    define MAX_MOBILES_PER_RG         16 
+#    define MAX_MOBILES_PER_RG         8 
 #    define MAX_MANAGED_RG_PER_MOBILE  2
 
 #    define NB_RB_MAX  11

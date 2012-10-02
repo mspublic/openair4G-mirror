@@ -45,7 +45,7 @@
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet.hpp"
 #include "mgmt_information_base.hpp"
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include "util/mgmt_log.hpp"
 
 /**

@@ -44,7 +44,7 @@
 
 #include "mgmt_comm_prof_manager.hpp"
 #include "mgmt_its_key_manager.hpp"
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include <sys/types.h>
 #include <string>
 #include <map>
@@ -79,7 +79,7 @@ class ManagementInformationBase {
 		 * @param itsKeyId ITS key ID
 		 * @return Value of relevant ITS key
 		 */
-		ItsKeyValue getValue(ItsKeyID itsKeyId);
+		ItsKeyValue getItsKeyValue(ItsKeyID itsKeyId);
 		/**
 		 * Sets value of relevant ITS key through ItsKeyManager methods
 		 *
@@ -88,6 +88,14 @@ class ManagementInformationBase {
 		 * @return true on success, false otherwise
 		 */
 		bool setValue(ItsKeyID itsKeyId, ItsKeyValue value);
+		/**
+		 * Sets value of relevant ITS key through ItsKeyManager methods
+		 *
+		 * @param itsKeyId ITS key ID
+		 * @param value Value to be set
+		 * @return true on success, false otherwise
+		 */
+		bool setValue(ItsKeyID itsKeyId, const vector<unsigned char>& value);
 		/**
 		 * Sets value of relevant ITS key through ItsKeyManager methods
 		 *
@@ -117,13 +125,47 @@ class ManagementInformationBase {
 		 */
 		WirelessStateResponseItem& getWirelessState(InterfaceID interfaceId);
 		/**
+		 * Adds a new wireless state information for an interface
+		 *
+		 * @param interfaceId Interface ID of type InterfaceID
+		 * @param wirelessState Wireless State information
+		 * @return true on success, false otherwise
+		 */
+		bool updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem wirelessState);
+		/**
 		 * Returns the network state of this MIB
 		 *
 		 * @return A reference to the NetworkStateMessage object of this MIB
 		 */
 		NetworkStateMessage& getNetworkState();
+		/**
+		 * Returns Communication Profile Manager reference
+		 *
+		 * @return Communication Profile Manager reference
+		 */
+		CommunicationProfileManager& getCommunicationProfileManager();
+		/**
+		 * Updates Location Table with given information
+		 *
+		 * @param locationTableItem Location Table Item
+		 * @return true on success, false otherwise
+		 */
+		bool updateLocationTable(LocationTableItem& locationTableItem);
+		/**
+		 * Returns location information
+		 *
+		 * @return LocationInformation structure
+		 */
+		LocationInformation getLocation();
+		/**
+		 * Sets network flags
+		 *
+		 * @param networkFlags Network flags of type u_int8_t
+		 * @return true on success, false otherwise
+		 */
+		bool setNetworkFlags(const u_int8_t& networkFlags);
 
-	public:
+	private:
 		/**
 		 * An object of ItsKeyManager class to keep track of ITS keys and their values
 		 */
@@ -148,6 +190,10 @@ class ManagementInformationBase {
 		 * Communication profile manager
 		 */
 		CommunicationProfileManager communicationProfileManager;
+		/**
+		 * Location information
+		 */
+		LocationInformation location;
 		/**
 		 * Logger object reference
 		 */

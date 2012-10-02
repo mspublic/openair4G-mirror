@@ -41,6 +41,10 @@ ifndef OPENAIR_EMU
 export OPENAIR_EMU=1
 endif
 
+ifdef EMOS
+CFLAGS+=-DEMOS
+endif
+
 ifdef TRAFFIC_TM5
 CFLAGS += -DRLC_UM_TEST_TRAFFIC=1 #-DFULL_BUFFER=1
 endif
@@ -150,7 +154,10 @@ OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o 
 OAISIM_OBJS += cor_SF_sim.o
 OAISIM_OBJS += phy_procedures_sim_form.o
+ifdef XFORMS
 OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
+#OAISIM_OBJS += lte_scope.o
+endif 
 
 ifdef PROC
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
@@ -187,6 +194,11 @@ oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c
 	echo "Compiling oaisim.c ..."
 	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
 
+oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c  
+	@echo "Compiling oaisimCROWN.c ..."
+	@$(CC)  oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+
+
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
 endif
@@ -222,7 +234,7 @@ clean:
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe*
-
+	rm $(ASN1_MSG_INC)/asn1_msg.o
 cleanl1:
 	rm -f oaisim
 	rm -f $(PHY_OBJS) $(SCHED_OBJS)
@@ -231,7 +243,7 @@ cleanl1:
 
 cleanl2:
 	rm -f $(L2_OBJS)
-
+	rm $(ASN1_MSG_INC)/asn1_msg.o	
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated

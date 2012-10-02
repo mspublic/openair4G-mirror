@@ -22,11 +22,11 @@ pci_printk_fifo_clean_up (void)
 void exmimo_firmware_init() {
   size_t size=0;
 
-  // increase exmimo_pci_interface_bot to multiple of 64 bytes 
+  // increase exmimo_pci_interface_bot to multiple of 128 bytes 
   size = sizeof(exmimo_pci_interface_bot);
-  size = size >> 6;
+  size = size >> 7;
   size++;
-  size = size << 6;
+  size = size << 7;
 
   exmimo_pci_bot = (exmimo_pci_interface_bot *)bigphys_malloc(size);
   printk("Intializing EXMIMO firmware support (exmimo_pci_bot at %p)\n",exmimo_pci_bot);

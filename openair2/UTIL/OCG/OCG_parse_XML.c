@@ -174,6 +174,7 @@ static double size_scale_;
 static double size_shape_;
 static int stream_;
 static int destination_port_;
+static int packet_gen_type_;
 
 static int emulation_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
 static int emulation_time_ms_;
@@ -423,6 +424,8 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		destination_id_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "APPLICATION_TYPE")) {
 		application_type_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PACKET_GEN_TYPE")) {
+		packet_gen_type_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "BACKGROUND_TRAFFIC")) {
 	        background_traffic_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "TRAFFIC")) {
@@ -724,6 +727,8 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		destination_id_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "APPLICATION_TYPE")) {
 		application_type_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PACKET_GEN_TYPE")) {
+		packet_gen_type_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "BACKGROUND_TRAFFIC")) {
 	        background_traffic_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "TRAFFIC")) {
@@ -1007,14 +1012,18 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 							oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y = atoi(ch);
 							oai_emulation.info.nb_enb_local = oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x * oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y;
 						}
-					}
+					} else if (trace_mobility_file_) {
+					    oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file=strndup(ch,len);
+					  }
 				} 
 			}else if (omv_) {
 			  oai_emulation.topology_config.omv=atoi(ch);
 			}
 
 		} else if (application_config_) {
-			if (predefined_traffic_) {
+		           if (packet_gen_type_){
+			     oai_emulation.application_config.packet_gen_type=strndup(ch, len);
+			     } else if (predefined_traffic_) {
 				if (source_id_) {
 					oai_emulation.application_config.predefined_traffic.source_id[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
 				} else if (destination_id_) {

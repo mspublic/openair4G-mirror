@@ -134,7 +134,7 @@ typedef struct
     void (*Msg3_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
 
     /// Function to pass inter-cell measurement parameters to PHY (cell Ids)
-    void (*phy_config_meas_ue)(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u16 *adj_cell_id);
+    void (*phy_config_meas_ue)(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u32 *adj_cell_id);
 
     // PHY Helper Functions
 

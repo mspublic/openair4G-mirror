@@ -39,17 +39,40 @@
  * \warning none
  */
 
+#include "packets/mgmt_gn_packet_location_table_request.hpp"
+#include <boost/lexical_cast.hpp>
 #include "mgmt_client.hpp"
 
-ManagementClient::ManagementClient(UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, Logger& logger)
-	: logger(logger) {
+ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+	: mib(mib), logger(logger) {
 	this->client = client;
+
+	/**
+	 * Initialise state strings map
+	 */
+	clientStateStringMap.insert(std::make_pair(ManagementClient::OFFLINE, "OFFLINE"));
+	clientStateStringMap.insert(std::make_pair(ManagementClient::ONLINE, "ONLINE"));
+	clientStateStringMap.insert(std::make_pair(ManagementClient::CONNECTED, "CONNECTED"));
+	/**
+	 * Initialise type strings map
+	 */
+	clientTypeStringMap.insert(std::make_pair(ManagementClient::GN, "GeoNetworking"));
+	clientTypeStringMap.insert(std::make_pair(ManagementClient::FAC, "Facilities"));
+	/**
+	 * Initialise this client's state
+	 */
+	state = ManagementClient::OFFLINE;
+	/**
+	 * Update location table
+	 */
+	GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
+	clientConnection.send(locationTableRequest);
 
 	/**
 	 * Initialise InquiryThread object for Wireless State updates
 	 */
 	// todo who is going to join() this thread?
-	inquiryThreadObject = new InquiryThread(clientConnection, wirelessStateUpdateInterval, logger);
+	inquiryThreadObject = new InquiryThread(mib, clientConnection, wirelessStateUpdateInterval, locationUpdateInterval, logger);
 	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
 
@@ -69,7 +92,19 @@ ManagementClient::ManagementClientState ManagementClient::getState() const {
 }
 
 bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
-	// todo check state changes (state machine)
+	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
+
+	/**
+	 * Verify state change
+	 */
+	if ((this->state == OFFLINE && state == ONLINE)
+			|| (this->state == OFFLINE && state == CONNECTED)
+			|| (this->state == ONLINE && state == CONNECTED)) {
+		logger.debug("State change is valid");
+	} else {
+		logger.error("State change is invalid!");
+	}
+
 	this->state = state;
 	return true;
 }
@@ -86,4 +121,14 @@ bool ManagementClient::operator<(const ManagementClient& client) const {
 		return true;
 
 	return false;
+}
+
+string ManagementClient::toString() {
+	stringstream ss;
+
+	ss << "ManagementClient[ip:" << client.address().to_string()
+		<< ", port:" << boost::lexical_cast<string>(client.port())
+		<< ", state:" << clientStateStringMap[state] << "]" << endl;
+
+	return ss.str();
 }

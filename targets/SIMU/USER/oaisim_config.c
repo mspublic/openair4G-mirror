@@ -100,6 +100,14 @@ mapping switch_names[] =
     {NULL, -1}
 };
 
+mapping packet_gen_names[] =
+{
+    {"repeat_string", 0},
+    {"substract_string", 1},
+    {"random_position", 2},
+    {"random_string", 3},
+    {NULL, -1}
+};
 
 void init_oai_emulation() {
 
@@ -159,8 +167,10 @@ void init_oai_emulation() {
 	oai_emulation.topology_config.mobility.eNB_mobility.hexagonal_eNB_distribution.inter_eNB_distance_km = 1;
 	oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x = 1;
 	oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y = 1;
+	oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file = (char*) malloc(256);
+	sprintf(oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file,"static_1enb.tr");
 	oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file = (char*) malloc(256);
-	sprintf(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,"mobility.txt");
+	sprintf(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,"static_2ues.tr");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.command = (char*) malloc(20);
 	sprintf(oai_emulation.topology_config.mobility.UE_mobility.sumo_config.command,"sumo");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.file = (char*) malloc(256);
@@ -171,13 +181,14 @@ void init_oai_emulation() {
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.hip = (char*) malloc(40);
 	sprintf(oai_emulation.topology_config.mobility.UE_mobility.sumo_config.hip,"127.0.1.1");
 	oai_emulation.topology_config.mobility.UE_mobility.sumo_config.hport = 8883;
-	
+
+	oai_emulation.application_config.packet_gen_type = "substract_string";
 	for (i = 0; i < NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++) {
 		oai_emulation.application_config.predefined_traffic.source_id[i] = "1:10"; 
 		oai_emulation.application_config.predefined_traffic.application_type[i] = "no_predefined_traffic";
                 oai_emulation.application_config.predefined_traffic.background[i] = "disable";
 		oai_emulation.application_config.predefined_traffic.destination_id[i] = 0;
-	
+		
 		oai_emulation.application_config.customized_traffic.source_id[i] = "1";
 		oai_emulation.application_config.customized_traffic.destination_id[i] = "2";
 		oai_emulation.application_config.customized_traffic.transport_protocol[i] = "udp";
@@ -252,11 +263,13 @@ void init_oai_emulation() {
   oai_emulation.info.opt_enabled=0; // P flag
   oai_emulation.info.opt_mode=-1; // arg for P flag
   oai_emulation.info.cli_enabled=0;// I flag
-  oai_emulation.info.omv_enabled =0; // v flag
+  oai_emulation.info.omv_enabled =0; // v flag 
+  oai_emulation.info.vcd_enabled=0;
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
-  oai_emulation.info.otg_enabled=0;// T flag
+  oai_emulation.info.otg_enabled=0;// T flag with arg
+  oai_emulation.info.otg_bg_traffic_enabled = 0; // G flag 
   oai_emulation.info.frame = 0; // frame counter of emulation 
   oai_emulation.info.time_s = 0; // time of emulation  
   oai_emulation.info.time_ms = 0; // time of emulation 
@@ -317,6 +330,9 @@ void oaisim_config() {
   ocg_config_topo(); // packet tracer using wireshark
  	// if T is set or ocg enabled 
   if (oai_emulation.info.otg_enabled ) {
+    g_log->log_component[OTG].filelog=1;
+    g_log->log_component[OTG_LATENCY].filelog=1;
+    g_log->log_component[OTG_OWD].filelog = 1;
     ocg_config_app(); // packet generator 
     oai_emulation.info.frame_type=1;
 }
@@ -326,8 +342,7 @@ void oaisim_config() {
 int olg_config() {
   int comp;
   int ocg_log_level = map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
-  oai_emulation.info.g_log_level = ((oai_emulation.info.ocg_enabled == 1) && (ocg_log_level != -1)) ? ocg_log_level :
-    oai_emulation.info.g_log_level;
+  oai_emulation.info.g_log_level = ((oai_emulation.info.ocg_enabled == 1) && (ocg_log_level != -1)) ? ocg_log_level : oai_emulation.info.g_log_level;
   oai_emulation.info.g_log_verbosity = map_str_to_int(log_verbosity_names, oai_emulation.emulation_config.log_emu.verbosity);
   LOG_N(EMU,"global log level is set to (%s,%d) with vebosity (%s, 0x%x) and frequency %d\n", 
 	map_int_to_str (log_level_names, oai_emulation.info.g_log_level), 
@@ -385,18 +400,28 @@ int ocg_config_topo() {
 	omg_param_list.max_sleep = 8.0;
 	
 
-	// init OMG for eNBs
-	if (!strcmp(oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option, "RWP")) {
-	  oai_emulation.info.omg_model_enb = RWP; // set eNB to be random waypoint
-	} else { // if (!strcmp(oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option, "STATIC")) 
-	  oai_emulation.info.omg_model_enb = STATIC;
+	// init OMG for eNBs	
+	if ((oai_emulation.info.omg_model_enb = map_str_to_int(omg_model_names, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option))== -1)
+	  oai_emulation.info.omg_model_ue = STATIC; 
+	LOG_I(OMG,"eNB mobility model is (%s, %d)\n", 
+	      oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option,
+	      oai_emulation.info.omg_model_enb);
+
+	if (oai_emulation.info.omg_model_enb == TRACE) {
+	  omg_param_list.mobility_file = (char*) malloc(256);// user-specific trace file "%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")
+	  //memset(oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file,0,256);
+	  //sprintf(omg_param_list.mobility_file,"%s",oai_emulation.topology_config.mobility.UE_mobility.trace_config.trace_mobility_file); 
+	  sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/TRACE/%s",
+		  getenv("OPENAIR2_DIR"), 
+		  oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file); 
+	  LOG_I(OMG,"TRACE file at %s\n", omg_param_list.mobility_file);
 	}
+
 	omg_param_list.mobility_type = oai_emulation.info.omg_model_enb; 
-		
 	omg_param_list.nodes_type = eNB;  //eNB
 	omg_param_list.nodes = oai_emulation.info.nb_enb_local;
  	omg_param_list.seed = oai_emulation.info.seed; // specific seed for enb and ue to avoid node overlapping
-	
+
 	// at this moment, we use the above moving dynamics for mobile eNB
 	if (omg_param_list.nodes >0 ) 
 	  init_mobility_generator(omg_param_list);
@@ -501,7 +526,8 @@ int ocg_config_app(){
 	g_otg->loss_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.loss_rate);
         g_otg->owd_radio_access =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.owd_radio_access);
         g_otg->curve=map_str_to_int(switch_names,oai_emulation.emulation_config.curve);
-	printf("OTG g_otg->curve %d oai_emulation.emulation_config.curve %s",g_otg->curve, oai_emulation.emulation_config.curve);
+	g_otg->packet_gen_type=map_str_to_int(packet_gen_names,oai_emulation.application_config.packet_gen_type);
+	
 	for (i=0; i<g_otg->num_nodes; i++){
 		g_otg->duration[i]=oai_emulation.emulation_config.emulation_time_ms;
 		
@@ -897,12 +923,12 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 	  for (i=0; i<g_otg->num_nodes; i++){
 	    for (j=0; j<g_otg->num_nodes; j++){ 
 	      g_otg->application_type[i][j] = oai_emulation.info.otg_traffic;
+	      g_otg->background[i][j]=oai_emulation.info.otg_bg_traffic_enabled;
+	      g_otg->packet_gen_type=SUBSTRACT_STRING;
 	      init_predef_traffic();
 	    }
 	  }
 	}
-	
-	printf("OCG_config_OTG done! \n");
 	return 1;
 }
 
@@ -936,7 +962,7 @@ int ocg_config_emu(){
   if (oai_emulation.info.opt_enabled == 1 ){
     if (init_opt(oai_emulation.info.opt_mode,
 		 "pcap.dump","127.0.0.1","1234") == -1)
-      LOG_E(OPT,"failed to run OPT \n")
+      LOG_E(OPT,"failed to run OPT \n");
     }
   
   return 1;  
