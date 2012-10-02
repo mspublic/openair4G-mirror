@@ -125,11 +125,11 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
       msg("Frequency offset estimation\n");
 #endif   
      // if ((l == 0) || (l==(4-frame_parms->Ncp))) 
-	  if ((l==2)||(l==6)||(l==10)) 
+/*	  if ((l==2)||(l==6)||(l==10)) 
 	lte_mbsfn_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
 			    frame_parms,
 			    l,
-			    &ue_common_vars->freq_offset);
+			    &ue_common_vars->freq_offset); */
     }
   }
 #ifdef DEBUG_FEP

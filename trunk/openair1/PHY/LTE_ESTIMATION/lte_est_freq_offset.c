@@ -182,9 +182,9 @@ int lte_mbsfn_est_freq_offset(int **dl_ch_estimates,
     
     dl_ch = (s16 *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12) + ch_offset];
     if (ch_offset == 0)
-      dl_ch_prev = (s16 *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12)+(4-frame_parms->Ncp)*(frame_parms->ofdm_symbol_size)];
+      dl_ch_prev = (s16 *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12)+10*(frame_parms->ofdm_symbol_size)];
     else
-      dl_ch_prev = (s16 *)&dl_ch_estimates[aa][((frame_parms->N_RB_DL/2) + 1)*12];
+      dl_ch_prev = (s16 *)&dl_ch_estimates[aa][((frame_parms->N_RB_DL/2) + 1)*12+6];
     
     // calculate omega = angle(conj(dl_ch)*dl_ch_prev))
     omega = dot_product(dl_ch,dl_ch_prev,((frame_parms->N_RB_DL/2) - 1)*12,dl_ch_shift);
