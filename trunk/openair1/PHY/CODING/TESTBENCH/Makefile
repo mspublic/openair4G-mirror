@@ -4,7 +4,7 @@ SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`)
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
 CPUFLAGS = -mmmx -msse -msse2 #-mssse3 -msse4 -m32 
 CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
-#CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
+CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 
 TOP_DIR = $(OPENAIR1_DIR)
@@ -13,7 +13,7 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
 
-CFLAGS += -Wall -O3 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -DOPENAIR_LTE -g $(CPUFLAGS)
+CFLAGS += -Wall -O3 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DOPENAIR_LTE -g $(CPUFLAGS)
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
@@ -63,7 +63,7 @@ $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -Wall -I$(TOP_DIR) -I$(TOP_DIR)/PHY/CODING -I$(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder -o $@ $<
 
 ltetest: $(OBJ) ltetest.c
-	$(CC) ltetest.c -O2 -I$(TOP_DIR) -I$(TOP_DIR)/PHY/CODING -I$(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder -o ltetest $(CFLAGS) $(OBJ) -lm -DOPENAIR_LTE -lblas
+	$(CC) ltetest.c -O2 -I$(TOP_DIR) -I$(TOP_DIR)/PHY/CODING -I$(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder -o ltetest $(CFLAGS) $(OBJ) -lm -DOPENAIR_LTE -lblas -lrt
 
 pdcch_test: $(OBJ) pdcch_test.c
 	$(CC) pdcch_test.c -I$(TOP_DIR) -o pdcch_test $(CFLAGS) $(PHY_OBJS) -lm -lblas
