@@ -180,12 +180,12 @@ printvars:
 	@echo UE_flag is $(UE_flag)
 
 $(OBJ) $(ASN1_MSG_OBJS1) : %.o : %.c
-	@echo Compiling $<
-	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
+	echo Compiling $<
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c  
-	@echo "Compiling oaisim.c ..."
-	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	echo "Compiling oaisim.c ..."
+	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -242,13 +242,13 @@ cleancell:
 	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
 
 print:
-	@echo $(cygwin)
-	@echo $(OCG_FLAG)
-	@echo $(CFLAGS)
-	@echo $(EXTRA_CFLAGS)
-	@echo $(OBJ)
-	@echo $(IS_REL10)
-	@echo $(IS_REL8)
+	echo $(cygwin)
+	echo $(OCG_FLAG)
+	echo $(CFLAGS)
+	echo $(EXTRA_CFLAGS)
+	echo $(OBJ)
+	echo $(IS_REL10)
+	echo $(IS_REL8)
 
 showcflags:
 	@echo $(CFLAGS)
