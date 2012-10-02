@@ -224,7 +224,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
   A = ulsch->harq_processes[harq_pid]->TBS;
 
-  if (A > 2*6144) {
+  if (A > 3*6144) {
     msg("ulsch_decoding.c: FATAL ERROR: illegal TBS %d\n",A);
     return(-1);
   }
@@ -882,7 +882,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     }
     
 #ifdef DEBUG_ULSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? ulsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch->harq_processes[harq_pid]->F : 0);
 #endif
     
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
@@ -957,8 +957,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     ret = phy_threegpplte_turbo_decoder(&ulsch->harq_processes[harq_pid]->d[r][96],
 					ulsch->harq_processes[harq_pid]->c[r],
 					Kr,
-					f1f2mat[iind*2],   
-					f1f2mat[(iind*2)+1], 
+					f1f2mat_old[iind*2],   
+					f1f2mat_old[(iind*2)+1], 
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,

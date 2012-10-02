@@ -230,7 +230,7 @@ u32  dlsch_decoding(short *dlsch_llr,
     }
   
 #ifdef DEBUG_DLSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
@@ -318,8 +318,8 @@ u32  dlsch_decoding(short *dlsch_llr,
 					  &dlsch->harq_processes[harq_pid]->d[r][96],
 					  dlsch->harq_processes[harq_pid]->c[r],
 					  Kr,
-					  f1f2mat[iind*2],   
-					  f1f2mat[(iind*2)+1], 
+					  f1f2mat_old[iind*2],   
+					  f1f2mat_old[(iind*2)+1], 
 					  MAX_TURBO_ITERATIONS,
 					  crc_type,
 					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
@@ -523,7 +523,7 @@ u32  dlsch_decoding_abstraction(double *dlsch_MIPB,
     }
   
 #ifdef DEBUG_DLSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
