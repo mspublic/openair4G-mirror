@@ -1326,14 +1326,16 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 			  l,
 			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
 #ifndef OFDMA_ULSCH
-    freq_equalization(frame_parms,
-		      eNB_pusch_vars->rxdataF_comp[eNB_id],
-		      eNB_pusch_vars->ul_ch_mag[eNB_id],
-		      eNB_pusch_vars->ul_ch_magb[eNB_id],
-		      l,
-		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12,
-		      Qm);
-		      
+    if ((phy_vars_eNB->PHY_measurements_eNB->n0_power_dB[0]+3)<eNB_pusch_vars->ulsch_power[0])
+
+      freq_equalization(frame_parms,
+			eNB_pusch_vars->rxdataF_comp[eNB_id],
+			eNB_pusch_vars->ul_ch_mag[eNB_id],
+			eNB_pusch_vars->ul_ch_magb[eNB_id],
+			l,
+			ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12,
+			Qm);
+    
 #endif
   }
 

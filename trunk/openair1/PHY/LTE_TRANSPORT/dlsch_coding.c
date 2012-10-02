@@ -270,15 +270,15 @@ int dlsch_encoding(unsigned char *a,
       
       
 #ifdef DEBUG_DLSCH_CODING    
-      msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
+      msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
       
       threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
 				Kr>>3, 
 				&dlsch->harq_processes[harq_pid]->d[r][96],
 				(r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-				f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
-				f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
+				f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+				f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
 				);
 #ifdef DEBUG_DLSCH_CODING
       if (r==0)
