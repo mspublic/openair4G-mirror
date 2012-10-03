@@ -121,11 +121,6 @@
 #define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
 #endif //EXPRESSMiMO_TARGET
 
-
-#define MAX_NUM_CCs 5
-
- 
-
 #include "spec_defs_top.h"
 #include "impl_defs_top.h"
 #include "impl_defs_lte.h"
@@ -141,7 +136,7 @@
 #define NUM_DCI_MAX 32
 
 #ifdef Rel10
-#define MAX_NUM_CCs 5
+#define MAX_NUM_CCs 1
 #endif
 
 /// Top-level PHY Data Structure for eNB 
