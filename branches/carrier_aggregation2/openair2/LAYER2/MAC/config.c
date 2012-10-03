@@ -7,8 +7,7 @@
 #include "defs.h"
 #include "extern.h"
 #include "UTIL/LOG/log.h"
-
-#define CC_id 0
+#define NUMBER_OF_CC_MAX 1
 
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
@@ -21,6 +20,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod) {
+u8 CC_id;
+  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
   
   if (eNB_flag==0) {
     LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_id,eNB_index);
@@ -141,6 +142,6 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	}
   }
 #endif
-
+}//loop over CC_id
   return(0);
 }

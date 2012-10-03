@@ -37,10 +37,8 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
-
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
@@ -48,15 +46,10 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
-
 #include "RRC/LITE/extern.h"
-
-
-
-
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 0
-#define CC_id 0
+#define NUMBER_OF_CC_MAX 1
 
 //#define DEBUG_PACKET_TRACE 1
 
@@ -310,7 +303,9 @@ s8 find_active_UEs(unsigned char Mod_id){
   unsigned char UE_id;
   u16 rnti;
   unsigned char nb_active_ue=0;
+  u8 CC_id;
 
+  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
 
     if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0){
@@ -323,6 +318,7 @@ s8 find_active_UEs(unsigned char Mod_id){
       }
     }
   }
+}//loop over CC_id
   return(nb_active_ue);
 }
 
@@ -979,8 +975,10 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   u16 TBS,first_rb=0,i;
   u32 buffer_occupancy;
   u32 tmp_bsr;
+  u8 CC_id;
 
-
+  
+  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id,CC_id) - *nCCE;
   //weight = get_ue_weight(Mod_id,UE_id);
@@ -1168,6 +1166,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
       } // UE is in PUSCH
     } // UE_is_to_be_scheduled
   } // loop over UE_id
+}// loop over CC_id
 }
 u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
 
@@ -1234,7 +1233,10 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   void *DLSCH_dci=NULL;
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   int i;
+  u8 CC_id;
   //  u8 status=0;
+
+  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
 #ifdef ICIC
   FILE *DCIi;
   DCIi = fopen("dci.txt","a");
@@ -1527,6 +1529,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   fclose(DCIi);
 #endif
 
+}//loop over CC_id
 }
 
 //***************************PRE_PROCESSOR for MU-MIMO IN TM5*********************************//
@@ -1574,7 +1577,10 @@ void tm5_pre_processor (unsigned char Mod_id,
   u8 MIMO_mode_indicator[7]= {2,2,2,2,2,2,2};
   u8 total_DL_cqi_MUMIMO = 0,total_DL_cqi_SUMIMO = 0;
   u16 total_TBS_SUMIMO = 0,total_TBS_MUMIMO = 0; 
+  u8 CC_id;
 
+
+  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
   /// Initialization
   for(i=0;i<256;i++)
     {
@@ -3406,8 +3412,8 @@ void tm5_pre_processor (unsigned char Mod_id,
     //msg("Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
   }
 }
+}//loop over CC_id
 }
-
 
 void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16 nb_rb_used0,unsigned char nCCE_used) {
 
@@ -3437,6 +3443,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 2; // set to the maximum aggregation level
   int mcs;
+  u8 CC_id;
+
+
+  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
 
   for(i=0;i<256;i++)
     pre_nb_available_rbs[i] = 0;
@@ -3896,6 +3906,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     }
 
   }
+}//loop over CC_id
 }
 
 #ifdef ICIC
