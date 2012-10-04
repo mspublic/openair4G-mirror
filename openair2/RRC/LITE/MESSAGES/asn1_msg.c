@@ -76,6 +76,14 @@ uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index) {
   return(two_tier_hexagonal_adjacent_cellIds[Mod_id][index]);
 }
 
+uint16_t get_adjacent_cell_mod_id(uint16_t phyCellId) {
+	u8 i;
+	for(i=0;i<7;i++) {
+		if(two_tier_hexagonal_cellIds[i] == phyCellId)
+			return i;
+	}
+	return 0xFFFF; //error!
+}
 /*
 uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 		SystemInformationBlockType1_t *sib1) {
@@ -1197,7 +1205,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 					QuantityConfig_t                  *QuantityConfig,
 					MeasIdToAddModList_t              *MeasId_list,
 					MAC_MainConfig_t                  *mac_MainConfig,
-					MeasGapConfig_t                   *measGapConfig) {
+					MeasGapConfig_t                   *measGapConfig,
+					MobilityControlInfo_t 			  *mobilityInfo) {
 
 
   asn_enc_rval_t enc_rval;
@@ -1674,7 +1683,13 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->speedStatePars = NULL;
   */
 
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
+  if (mobilityInfo) {
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo = CALLOC(1,sizeof(MobilityControlInfo_t));
+	  memcpy((void *)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo, (void *)mobilityInfo,sizeof(MobilityControlInfo_t));
+  }
+  else
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
+
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
@@ -1683,7 +1698,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
 				   (void*)&dl_dcch_msg,
 				   buffer,
-				   100);
+				   120);
   
 
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
