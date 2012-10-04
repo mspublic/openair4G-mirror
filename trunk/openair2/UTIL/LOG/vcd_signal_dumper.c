@@ -110,7 +110,7 @@ struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {
 
 FILE *vcd_fd = NULL;
 
-#if defined (ENABLE_USE_CPU_EXECUTION_TIME)
+#if defined(ENABLE_USE_CPU_EXECUTION_TIME)
 struct timespec     g_time_start;
 #endif
 
@@ -123,7 +123,7 @@ void vcd_signal_dumper_init(void)
             perror("vcd_signal_dumper_init: cannot open file");
             return;
         }
-#if defined (ENABLE_USE_CPU_EXECUTION_TIME)
+#if defined(ENABLE_USE_CPU_EXECUTION_TIME)
         clock_gettime(CLOCK_MONOTONIC, &g_time_start);
 #endif
         vcd_signal_dumper_create_header();
@@ -143,7 +143,7 @@ void vcd_signal_dumper_close(void)
 
 static inline void vcd_signal_dumper_print_time_since_start(void)
 {
-#if defined (ENABLE_USE_CPU_EXECUTION_TIME)
+#if defined(ENABLE_USE_CPU_EXECUTION_TIME)
     if (vcd_fd != NULL)
     {
         struct timespec time;

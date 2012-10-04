@@ -60,21 +60,30 @@ unsigned short fill_rar(u8 Mod_id,
 			u8 input_buffer_length) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
-  
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
+  int i,ra_idx;
+
+  for (i=0;i<NB_RA_PROC_MAX;i++) {
+    if (eNB_mac_inst[Mod_id].RA_template[i].generate_rar == 1) {
+      ra_idx=i;
+      eNB_mac_inst[Mod_id].RA_template[i].generate_rar = 0;
+      break;
+    }
+  }
+
   // subheader fixed 
   rarh->E                     = 0; // First and last RAR
   rarh->T                     = 0; // Preamble ID RAR
-  rarh->RAPID                 = eNB_mac_inst[Mod_id].RA_template[0].preamble_index; // Respond to Preamble 0 only for the moment
+  rarh->RAPID                 = eNB_mac_inst[Mod_id].RA_template[ra_idx].preamble_index; // Respond to Preamble 0 only for the moment
   rar->R                      = 0;
-  rar->Timing_Advance_Command = eNB_mac_inst[Mod_id].RA_template[0].timing_offset/4;
+  rar->Timing_Advance_Command = eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset/4;
   rar->hopping_flag           = 0;
   rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,0,2);  // 2 RB
   rar->mcs                    = 2;                                   // mcs 2
   rar->TPC                    = 4;   // 2 dB power adjustment
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
-  rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;
+  rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti;
 
   LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Generating RAR for CRNTI %x,preamble %d/%d\n",Mod_id,frame,rar->t_crnti,rarh->RAPID,eNB_mac_inst[Mod_id].RA_template[0].preamble_index);
 

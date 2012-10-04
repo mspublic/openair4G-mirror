@@ -961,9 +961,10 @@ int ocg_config_emu(){
   oai_emulation.info.opt_enabled = ( oai_emulation.emulation_config.packet_trace.enabled == 0) ? oai_emulation.info.opt_enabled :  oai_emulation.emulation_config.packet_trace.enabled;
   if (oai_emulation.info.opt_enabled == 1 ){
     if (init_opt(oai_emulation.info.opt_mode,
-		 "pcap.dump","127.0.0.1","1234") == -1)
+		 "pcap.dump","127.0.0.1","1234") == -1) {
       LOG_E(OPT,"failed to run OPT \n");
     }
+  }
   
   return 1;  
 

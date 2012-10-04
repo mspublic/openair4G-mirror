@@ -231,7 +231,7 @@
 #define BIT8_TX_SHIFT 2
 #define BIT8_TX_SHIFT_DB 12
 
-#define CHBCH_RSSI_MIN -75
+//#define CHBCH_RSSI_MIN -75
 
 #ifdef BIT8_TX
 #define AMP 128 
@@ -239,6 +239,7 @@
 #define AMP 1024 //4096
 #endif
 
+#define MAX_TX_POWER (-20) //dBm
 
 #ifndef OPENAIR_LTE
 ///
