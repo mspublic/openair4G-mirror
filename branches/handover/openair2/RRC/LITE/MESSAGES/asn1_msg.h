@@ -121,7 +121,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 					QuantityConfig_t                  *QuantityConfig,
 					MeasIdToAddModList_t              *MeasId_list,
 					MAC_MainConfig_t                  *mac_MainConfig,
-					MeasGapConfig_t                   *measGapConfig
+					MeasGapConfig_t                   *measGapConfig,
+					MobilityControlInfo_t			  *mobilityInfo
 					/*, struct MeasConfig__speedStatePars	  	  *speedStatePars*/
 					);
 

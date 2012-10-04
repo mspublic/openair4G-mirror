@@ -113,8 +113,16 @@ union{
 
 /* Intermediate structure for Hanodver management. Associated per-UE in RRC */
 typedef struct{
+	u8 ho_prepare;
+	u8 ho_complete;
+	u8 modid_s; //Mod_id of serving cell
+	u8 modid_t; //Mod_id of target cell
+	u8 ueid_s; //UE_id of serving cell
+	u8 ueid_t; //UE_id of target cell
 	AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
 	AS_Context_t as_context; /* They are mandatory for HO */
+	uint8_t buf[100];	/* ASN.1 encoded handoverCommandMessage */
+	int size;		/* size of above message in bytes(I think..) */
 }HANDOVER_INFO;
 
 #define RRC_HEADER_SIZE_MAX 64
@@ -197,7 +205,6 @@ typedef struct{
   SRB_INFO_TABLE_ENTRY              Srb1[NUMBER_OF_UE_MAX+1];
   SRB_INFO_TABLE_ENTRY              Srb2[NUMBER_OF_UE_MAX+1];
   MeasConfig_t						*measConfig[NUMBER_OF_UE_MAX];
-
 //#ifdef X2_SIM
   HANDOVER_INFO						*handover_info[NUMBER_OF_UE_MAX];
 //#endif
