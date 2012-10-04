@@ -1318,11 +1318,12 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
     if (ulsch_eNB[UE_id]) {
-      /*
-      msg("[PHY][eNB][PUSCH %x/%d] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
-	  ulsch_eNB[UE_id]->rnti,harq_pid,phy_vars_eNB->frame,subframe,pusch_subframe,pusch_frame,ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active);
-      */
+      
       if (ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active == 1) {
+
+      LOG_D(PHY,"[eNB][PUSCH %x/%d] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
+	  ulsch_eNB[UE_id]->rnti,harq_pid,phy_vars_eNB->frame,subframe,pusch_subframe,pusch_frame,ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active);
+      
 	ngroup_PHICH = (ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb + 
 			ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS)%Ngroup_PHICH;
 	if ((frame_parms->tdd_config == 0) && (frame_parms->frame_type == 1) ) {

@@ -472,8 +472,8 @@ void do_forms2(FD_lte_scope *form,
         }
 
       fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-      fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
-      fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
+      //fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
+      //fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
     }
  fl_check_forms();
 
@@ -1059,7 +1059,7 @@ int main(int argc, char **argv) {
 
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
-  u32 rxgain[4]={20,20,20,20};
+  u32 rxgain[4]={30,30,30,30};
 #endif
 
   u8  eNB_id=0,UE_id=0;
@@ -1222,7 +1222,7 @@ int main(int argc, char **argv) {
   if (UE_flag==1) {
     g_log->log_component[PHY].level = LOG_INFO;
     g_log->log_component[PHY].flag = LOG_HIGH;
-    g_log->log_component[MAC].level = LOG_DEBUG;
+    g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag = LOG_HIGH;
     frame_parms->node_id = NODE;
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
@@ -1244,10 +1244,10 @@ int main(int argc, char **argv) {
     
     openair_daq_vars.manual_timing_advance = 0;
     openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
-    openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
+    openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
     // if AGC is off, the following values will be used
     for (i=0;i<4;i++) 
-      rxgain[i]=20;
+      rxgain[i]=50;
 
     for (i=0;i<4;i++) {
       PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
@@ -1256,18 +1256,24 @@ int main(int argc, char **argv) {
     }
   
     if ((mode == normal_txrx) || (mode == rx_calib_ue) || (mode == no_L2_connect) || (mode == debug_prach)) {
-      for (i=0; i<4; i++) 
+      for (i=0; i<4; i++) {
 	PHY_vars_UE_g[0]->rx_gain_mode[i]  = max_gain;
+	frame_parms->rfmode[i] = rf_mode_max[i];
+      }
       PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_max[0];
       }
     else if ((mode == rx_calib_ue_med)) {
-      for (i=0; i<4; i++) 
+      for (i=0; i<4; i++) {
 	PHY_vars_UE_g[0]->rx_gain_mode[i] = med_gain;
+	frame_parms->rfmode[i] = rf_mode_med[i];
+      }
       PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_med[0];
     }
     else if ((mode == rx_calib_ue_byp)) {
-      for (i=0; i<4; i++) 
+      for (i=0; i<4; i++) {
 	PHY_vars_UE_g[0]->rx_gain_mode[i] = byp_gain;
+	frame_parms->rfmode[i] = rf_mode_byp[i];
+      }
       PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0];
     }
   }
@@ -1289,12 +1295,23 @@ int main(int argc, char **argv) {
     
     NB_eNB_INST=1;
     NB_INST=1;
-    if (calibration_flag == 1)
-      PHY_vars_eNB_g[0]->is_secondary_eNB = 1;
+
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=10;
+    openair_daq_vars.target_ue_dl_mcs=9;
     openair_daq_vars.ue_ul_nb_rb=12;
     openair_daq_vars.target_ue_ul_mcs=10;
+
+    // if AGC is off, the following values will be used
+    for (i=0;i<4;i++) 
+      rxgain[i]=40;
+
+    // set eNB to max gain
+    PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB =  rxg_max[0]-10;
+    for (i=0; i<4; i++) {
+      frame_parms->rfmode[i] = rf_mode_max[i];
+    }
+
+
   }
  
   // for Express MIMO
@@ -1302,15 +1319,7 @@ int main(int argc, char **argv) {
     frame_parms->carrier_freq[i] = carrier_freq[i];
     frame_parms->carrier_freqtx[i] = carrier_freq[i];
     frame_parms->rxgain[i]       = rxgain[i];
-    if ((mode == normal_txrx) || (mode == rx_calib_ue) || (mode == no_L2_connect) || (mode == debug_prach)) {
-      frame_parms->rfmode[i]       = rf_mode_max[i];
-    }
-    else if ((mode == rx_calib_ue_med)) {
-      frame_parms->rfmode[i]       = rf_mode_med[i];
-    }
-    else if ((mode == rx_calib_ue_byp)) {
-      frame_parms->rfmode[i]       = rf_mode_byp[i];
-    }
+    //frame_parms->rf_mode is set above (individually for UE and eNB)
     frame_parms->rflocal[i]      = rf_local[i];
     frame_parms->rfvcolocal[i]   = rf_vcocal[i];
     frame_parms->rxdc[i]         = rf_rxdc[i];
@@ -1369,6 +1378,16 @@ int main(int argc, char **argv) {
           for (i=0; i<frame_parms->samples_per_tti*10; i++)
             for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
               PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
+
+	  // Set the last OFDM symbol of subframe 4 to TX to allow enough time for switch to settle
+	  // (that's ok since the last symbol can be configured as SRS)
+	  /*
+          for (i=frame_parms->samples_per_tti*5-0*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples); 
+	       i<frame_parms->samples_per_tti*5; i++)
+            for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+              PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x0; 
+	  */
+
 #endif
         }
       else
@@ -1519,14 +1538,16 @@ int main(int argc, char **argv) {
   rt_sleep(nano2count(FRAME_PERIOD));
 
   // cleanup
-  if (UE_flag == 1) 
+  if (UE_flag == 1) {
 #ifdef DLSCH_THREAD
     cleanup_dlsch_threads();
 #endif
-  else
+  }
+  else {
 #ifdef ULSCH_THREAD
     cleanup_ulsch_threads();
 #endif
+  }
   stop_rt_timer();
 
   fd = 0;

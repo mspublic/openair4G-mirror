@@ -40,7 +40,7 @@
 #ifndef VCD_SIGNAL_DUMPER_H_
 #define VCD_SIGNAL_DUMPER_H_
 
-#define ENABLE_USE_CPU_EXECUTION_TIME
+//#define ENABLE_USE_CPU_EXECUTION_TIME
 
 /* WARNING: if you edit the enums below, update also string definitions in vcd_signal_dumper.c */
 typedef enum

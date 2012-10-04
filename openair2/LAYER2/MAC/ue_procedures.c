@@ -920,8 +920,8 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 	((1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3)) {
       UE_mac_inst[Mod_id].RA_active = 0;
       // Signal PHY to quit RA procedure
-      mac_xface->ra_failed(Mod_id,eNB_index);
       LOG_I(MAC,"Counter resolution timer expired, RA failed\n");
+      mac_xface->ra_failed(Mod_id,eNB_index);
     }
   }
 
