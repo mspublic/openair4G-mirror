@@ -70,6 +70,14 @@ Configuration::~Configuration() {
 }
 
 bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
+	/**
+	 * Verify there is at least one configuration file given to be parsed
+	 */
+	if (configurationFileNameVector.size() == 0) {
+		logger.warning("No configuration file name is given to be parsed");
+		return false;
+	}
+
 	ifstream configurationFileStream;
 	string parameter, value;
 	string line;
@@ -246,7 +254,7 @@ int Configuration::getServerPort() const {
 }
 
 void Configuration::setServerPort(int serverPort) {
-	if (serverPort > 0 && serverPort < 9000)
+	if (serverPort > 0 && serverPort < 65535)
 		this->serverPort = serverPort;
 	/**
 	 * Keep default value otherwise

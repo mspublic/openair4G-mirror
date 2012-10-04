@@ -151,12 +151,12 @@ bool Util::setBit(u_int8_t& octet, u_int8_t index) {
 }
 
 bool Util::unsetBit(u_int8_t& octet, u_int8_t index) {
-	u_int8_t mask = 0x7f;
+	u_int8_t mask = 0x80;
 
 	/**
 	 * Unset relevant bit
 	 */
-	octet &= (mask >>= index);
+	octet &= ~(mask >>= index);
 
 	return true;
 }
@@ -254,14 +254,17 @@ bool Util::encodeBits(u_int8_t& octet, u_int8_t index, u_int8_t data, u_int8_t d
 		return false;
 
 	/**
-	 * Start from the last bit and encode till the first bit
+	 * Set/unset bits one by one using setBit() and unsetBit()
 	 */
-	u_int8_t bit = index + dataSize - 1;
-	while (dataSize--) {
-		if (isBitSet(data, bit))
-			setBit(octet, bit);
-		else
-			unsetBit(octet, bit);
+	u_int8_t sourceIndex = 7 - dataSize, destinationIndex = index;
+	while (sourceIndex++ != 8) {
+		if (Util::isBitSet(data, sourceIndex)) {
+			setBit(octet, destinationIndex);
+		} else {
+			unsetBit(octet, destinationIndex);
+		}
+
+		destinationIndex++;
 	}
 
 	return true;
@@ -279,14 +282,11 @@ vector<string> Util::split(const string& input, char delimiter) {
 }
 
 string Util::trim(const string& str, char character) {
-	string trimmedString = str;
-	/**
-	 * todo this is not the `proper' trim() method, should be revised
-	 */
-	if (trimmedString.find_last_of(character) != string::npos)
-		trimmedString.resize(trimmedString.length() - 1);
+	string trimmed = str;
 
-	return trimmedString;
+	trimmed.erase(remove(trimmed.begin(), trimmed.end(), character), trimmed.end());
+
+	return trimmed;
 }
 
 bool Util::isNumeric(const string& str) {

@@ -9,6 +9,8 @@ EXE_FILE=bin/SCOREF-MGMT
 CPPFLAGS=-Wall
 LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread -lboost_program_options
 INCLUDE=-Isrc/ -Isrc/packets/ -Isrc/util/
+TEST_DIR=test/
+TEST_EXE=TEST-SCOREF-MGMT
 
 OPT_FLAGS=-O3
 DEBUG_FLAGS=-O0 -g3
@@ -36,8 +38,16 @@ binary: $(CPP_FILES) $(OBJ_FILES)
 strip:
 	$(STRIP) $(EXE_FILE) &> /dev/null
 
+test: binary
+	echo "Building test code..."
+	cd $(TEST_DIR)
+	make -f Makefile
+	cd -
+	echo "Unit tests are ready to be run under test/ directory"
+
 clean:
 	$(RM) -fv $(EXE_FILE)
+	$(RM) -fv $(TEST_DIR)/$(TEST_EXE)
 	find . -iname "*.o" -exec rm -fv {} \;
 
 .cpp.o:
