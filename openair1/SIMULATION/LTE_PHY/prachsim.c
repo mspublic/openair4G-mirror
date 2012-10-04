@@ -76,7 +76,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
 
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
@@ -133,6 +133,8 @@ int main(int argc, char **argv) {
   PRACH_RESOURCES_t prach_resources;
   u8 prach_fmt;
   int N_ZC;
+  int delay = 0;
+  double delay_avg=0;
 
   logInit();
 
@@ -150,7 +152,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "haA:Cr:p:g:i:j:n:s:S:t:x:y:z:N:F:")) != -1)
+  while ((c = getopt (argc, argv, "haA:Cr:p:g:i:j:n:s:S:t:x:y:z:N:F:d:")) != -1)
     {
       switch (c)
 	{
@@ -158,6 +160,9 @@ int main(int argc, char **argv) {
 	  printf("Running AWGN simulation\n");
 	  awgn_flag = 1;
 	  ntrials=1;
+	  break;
+	case 'd':
+	  delay = atoi(optarg);
 	  break;
 	case 'g':
 	  switch((char)*optarg) {
@@ -341,7 +346,7 @@ int main(int argc, char **argv) {
 				channel_model,
 				BW,
 				0.0,
-				0,
+				delay,
 				0);
   
 
@@ -432,7 +437,7 @@ int main(int argc, char **argv) {
 
 
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
-
+    delay_avg = 0.0;
     printf("n_frames %d SNR %f\n",n_frames,SNR);
     prach_errors=0;
     for (trial=0; trial<n_frames; trial++) {
@@ -475,14 +480,21 @@ int main(int argc, char **argv) {
       for (i=1;i<64;i++) {
 	if (preamble_energy_max < preamble_energy_list[i]) {
 	  //	  printf("preamble %d => %d\n",i,preamble_energy_list[i]);
-	
 	  preamble_energy_max = preamble_energy_list[i];
 	  preamble_max = i;
 	}
       }
       if (preamble_max!=preamble_tx)
 	prach_errors++;
+      else {
+	delay_avg += (double)preamble_delay_list[preamble_max];
+      }
       if (n_frames==1) {
+	for (i=0;i<63;i++)
+	  if (i==preamble_tx)
+	    printf("****** preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
+	  else
+	    printf("preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
 	write_output("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
 	write_output("prachF0.m","prachF0", &PHY_vars_UE->lte_ue_prach_vars[0]->prachF[0],6144,1,1);
 	write_output("rxsig0.m","rxs0", 
@@ -492,7 +504,7 @@ int main(int argc, char **argv) {
 	write_output("prach_preamble.m","prachp",&PHY_vars_eNB->X_u[0],839,1,1);
       }
     }
-    printf("SNR %f dB: errors %d/%d\n",SNR,prach_errors,n_frames);
+    printf("SNR %f dB: errors %d/%d (delay %f)\n",SNR,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
   }
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
