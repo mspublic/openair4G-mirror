@@ -746,7 +746,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   u8 new_dft=0;
   u8 aa;
   s8 lev;
-  
+  int fft_size,log2_ifft_size;
+
   for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
     prach[aa] = (s16*)&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti];
     //    remove_625_Hz(phy_vars_eNB,prach[aa]);
@@ -798,6 +799,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   }
 
   //    printf("NCS %d\n",NCS);
+  NCS2 = (N_ZC==839) ? ((NCS<<10)/839) : ((NCS<<8)/139);
+
   switch (prach_fmt) {
   case 0:
     Ncp = 3168;
@@ -832,11 +835,12 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	preamble_offset_old = preamble_offset;
 	new_dft = 1;
 	// This is the \nu corresponding to the preamble index 
-	preamble_shift = 0;
+	preamble_shift  = 0;
       }
-      else
-	preamble_shift += NCS;
-      
+      else {
+	preamble_shift  += NCS;
+
+      }
       // This is the offset in the root sequence table (5.7.2-4 from 36.211)
       //      preamble_offset += rootSequenceIndex;
     }
@@ -921,11 +925,13 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	case 25:
 	  if (prach_fmt == 4) {
 	    fft(prach2,rxsigF[aa],twiddle_fft1024,rev1024,10,5,0);
+	    fft_size = 1024;
 	  }
 	  else {
 	    fft6144(prach2,rxsigF[aa]);
 	    if (prach_fmt>1)
 	      fft6144(prach2+12288,rxsigF[aa]+12288);
+	    fft_size = 6144;
 	  }
 	  break;
 	case 50:
@@ -989,10 +995,16 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	    k=0;
 	}
 	// Now do IFFT of size 1024 (N_ZC=839) or 256 (N_ZC=139)
-	if (N_ZC == 839)
+	if (N_ZC == 839) {
+	  log2_ifft_size = 10;
 	  fft(prachF,prach_ifft[aa],twiddle_ifft1024,rev1024,10,10,0);
-	else
+
+	}
+	else {
 	  fft(prachF,prach_ifft[aa],twiddle_ifft256,rev256,8,8,0);
+	  log2_ifft_size = 8;
+
+	}
       }
 
       //write_output("prach_rxF_comp0.m","prach_rxF_comp",prachF,1024,1,1);
@@ -1000,25 +1012,17 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
     }
     // check energy in nth time shift
 
-    if (N_ZC == 839) {
-      preamble_shift2 = (preamble_shift<<10)/839;
-      NCS2 = ((NCS<<10)/839);
-    }
-    else {
-      preamble_shift2 = (preamble_shift<<8)/139;
-      NCS2 = ((NCS<<8)/139);
-    }
-
+    preamble_shift2 = (preamble_shift<<log2_ifft_size)/N_ZC;
     preamble_energy_list[preamble_index]  = 0;
     for (i=0;i<NCS2;i++) {
       lev = dB_fixed((s32)prach_ifft[0][(preamble_shift2+i)<<2]*prach_ifft[0][(preamble_shift2+i)<<2]+
 		     (s32)prach_ifft[0][1+((preamble_shift2+i)<<2)]*prach_ifft[0][1+((preamble_shift2+i)<<2)]);
       if (lev>preamble_energy_list[preamble_index] ) {
 	preamble_energy_list[preamble_index]  = lev;
-	preamble_delay_list[preamble_index]   = i;
+	preamble_delay_list[preamble_index]   = (i*fft_size)>>log2_ifft_size;
       }
     }
-    //    printf("[RAPROC] Preamble %d => %d (shift %d, NCS2 %d, Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_shift2,NCS2,Ncp);
+    //    printf("[RAPROC] Preamble %d => %d dB, %d (shift %d (%d), NCS2 %d(%d), Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_delay_list[preamble_index],preamble_shift2,preamble_shift, NCS2,NCS,Ncp);
     //    exit(-1);
   }
 }
