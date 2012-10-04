@@ -108,6 +108,7 @@ class Util {
 		static string stringify(T numerical);
 		/**
 		 * Sets Nth bit of given octet
+		 * `index' takes value from 0 to 7
 		 *
 		 * @param octet Pointer to the octet
 		 * @param index Index that'll be set
@@ -115,7 +116,8 @@ class Util {
 		 */
 		static bool setBit(u_int8_t& octet, u_int8_t index);
 		/**
-		 * Unsets Nth bit of given octet
+		 * Unsets `index'th bit of given octet
+		 * `index' takes value from 0 to 7
 		 *
 		 * @param octet Pointer to the octet
 		 * @param index Index that'll be unset
@@ -123,7 +125,8 @@ class Util {
 		 */
 		static bool unsetBit(u_int8_t& octet, u_int8_t index);
 		/**
-		 * Checks if Nth bit of given octet is set
+		 * Checks if `index'th bit of given octet is set
+		 * `index' takes value from 0 to 7
 		 *
 		 * @param octet Octet
 		 * @param index Index that'll be checked

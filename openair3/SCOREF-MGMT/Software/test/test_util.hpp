@@ -189,12 +189,8 @@ void testUtilEncodeBits(Logger& logger) {
 	u_int8_t octetDestination = 0xCC;
 	u_int8_t octetExpected = 0xF0;
 
-	logger.debug("Source: " + Util::getBinaryRepresentation(octetSource));
-	logger.debug("Destination: " + Util::getBinaryRepresentation(octetDestination));
-	logger.debug("Expected: " + Util::getBinaryRepresentation(octetExpected));
-
-	EXPECT_TRUE(Util::encodeBits(octetDestination, 3, octetSource, 4));
-	EXPECT_EQ(octetExpected, octetDestination) << "Unexpected value: " << Util::getBinaryRepresentation(octetDestination);
+	EXPECT_TRUE(Util::encodeBits(octetDestination, 2, octetSource, 4));
+	EXPECT_EQ(octetExpected, octetDestination);
 }
 
 void testUtilSplit(Logger& logger) {
@@ -223,7 +219,10 @@ void testUtilTrim(Logger& logger) {
 	 */
 	string testInput = "|test|";
 	string testOutput = Util::trim(testInput, '|');
+	EXPECT_STREQ("test", testOutput.c_str());
 
+	testInput = "     test  ";
+	testOutput = Util::trim(testInput, ' ');
 	EXPECT_STREQ("test", testOutput.c_str());
 }
 

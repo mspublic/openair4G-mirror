@@ -1,4 +1,19 @@
 
+v1.1.6
+* Logger::LOG_OUTPUT_CHANNEL enumeration added to control log output channel as
+  FILE, STDOUT, BOTH, or NONE
+* Unit tests for all Configuration class methods have been added
+* Number of all the ITS keys is now calculated correctly in ItsKeyManager::getNumberOfKeys()
+* Configuration::parseConfigurationFiles() now verifies if there's any configuration file to parse
+* Configuration::setServerPort() now checks incoming port number against the real max value
+* Bugfix in Util::unsetBit()
+* Bugfix in Util::encodeBits()
+* Bugfix in Util::trim()
+* test/test_configuration_util.hpp added for utility methods of Configuration class' test
+* test/data directory and test configuration files have been added
+* OO code in test/main.cpp moved to test/main.hpp
+* test/README updated according to new installation of Google C++ Testing Framework on Ubuntu 12.04
+
 v1.1.5
 * GeonetPacketFactory class has been renamed as ManagementPacketFactory
 * Google C++ Testing Framework has been utilised

@@ -75,7 +75,7 @@ class Configuration {
 		 * @param configurationFileNameList Configuration files that shall be parsed
 		 * @param logger Logger object reference
 		 */
-		Configuration(const vector<string>& confgurationFileNameVector, Logger& logger);
+		Configuration(const vector<string>& configurationFileNameVector, Logger& logger);
 		/**
 		 * Destructor for Configuration class
 		 */

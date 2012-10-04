@@ -8,6 +8,15 @@
    to link this code against Google's library. Refer to relevant 
    documentation on other systems.
    
+   On Ubuntu 12.04, though, you cannot find binary libraries and 
+   you have to build them yourself. Do following in order to build
+   the binary (this directory is installed by libgtest-dev package)
+   
+   $ cd /usr/src/gtest
+   # sudo cmake .
+   # sudo make
+   # sudo mv libg* /usr/lib/
+
 2. Building
    In this directory, running make is enough. Please let me know
    if you encounter any compile-time or run-time errors.

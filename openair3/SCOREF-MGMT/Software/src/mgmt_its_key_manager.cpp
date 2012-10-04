@@ -170,6 +170,12 @@ bool ItsKeyManager::setKeyValue(ItsKeyID id, ItsKeyValue value) {
 }
 
 u_int16_t ItsKeyManager::getNumberOfKeys(ItsKeyType type) const {
+	/**
+	 * If we're asked for all, return the size of the ITS key map
+	 */
+	if (type == ITS_KEY_TYPE_ALL)
+		return itsKeyMap.size();
+
 	map<ItsKeyID, ItsKey>::const_iterator iterator = itsKeyMap.begin();
 	u_int16_t numberOfKeys = 0;
 
