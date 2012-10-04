@@ -28,7 +28,7 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_packet_factory.cpp
+ * \file mgmt_gn_packet_factory.cpp
  * \brief A container with necessary (mostly responses) packet generation functionality
  * \company EURECOM
  * \date 2012
@@ -41,18 +41,18 @@
 
 #include "packets/mgmt_gn_packet_comm_profile_response.hpp"
 #include "packets/mgmt_gn_packet_set_configuration.hpp"
-#include "mgmt_packet_factory.hpp"
+#include "mgmt_gn_packet_factory.hpp"
 #include <iostream>
 using namespace std;
 
-ManagementPacketFactory::ManagementPacketFactory(ManagementInformationBase& mib, Logger& logger) :
+GeonetPacketFactory::GeonetPacketFactory(ManagementInformationBase& mib, Logger& logger) :
 	mib(mib), logger(logger) {
 }
 
-GeonetPacket* ManagementPacketFactory::createSetConfigurationEventPacket(ItsKeyID itsKeyID) {
+GeonetPacket* GeonetPacketFactory::createSetConfigurationEventPacket(ItsKeyID itsKeyID) {
 	return new GeonetSetConfigurationEventPacket(mib, logger, itsKeyID);
 }
 
-GeonetPacket* ManagementPacketFactory::createCommunicationProfileResponse(GeonetCommunicationProfileRequestPacket* request) {
+GeonetPacket* GeonetPacketFactory::createCommunicationProfileResponse(GeonetCommunicationProfileRequestPacket* request) {
 	return new GeonetCommunicationProfileResponsePacket(mib, request->getCommunicationProfileRequestSet(), logger);
 }

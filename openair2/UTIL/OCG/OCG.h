@@ -426,7 +426,6 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     Random_eNB_Distribution random_eNB_distribution;
     Hexagonal_eNB_Distribution hexagonal_eNB_distribution;
     Grid_eNB_Distribution grid_eNB_distribution;
-    Trace_Configuration trace_config;
   } eNB_Mobility;
 
   typedef struct
@@ -471,7 +470,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
 	double holding_time_off_ed;
 	int ed;
 	double holding_time_off_pe;
-    
+
     char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
@@ -502,7 +501,6 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
  * @{*/
   typedef struct
   {
-    char *packet_gen_type;
     Predefined_Traffic predefined_traffic;
     Customized_Traffic customized_traffic;
   } Application_Config;
@@ -611,7 +609,6 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char omv_enabled;
     unsigned char vcd_enabled;
     unsigned char otg_traffic;
-    unsigned char otg_bg_traffic_enabled;
     unsigned char omg_model_enb;
     unsigned char omg_model_ue;
     unsigned char omg_model_ue_current;	// when mixed mbility is used 

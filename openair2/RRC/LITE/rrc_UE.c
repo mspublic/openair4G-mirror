@@ -829,6 +829,12 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
   asn_dec_rval_t dec_rval;
   uint32_t si_window;//, sib1_decoded=0, si_decoded=0;
 
+if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
+    (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
+  // Avoid decoding to prevent memory bloating
+  return 0;
+ } else {
+
   //memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
   //  LOG_D(RRC,"[UE %d] Decoding DL_BCCH_DLSCH_Message\n",Mod_id)
   dec_rval = uper_decode_complete(NULL,
@@ -875,10 +881,10 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	break;
       }
     }
-  
-  if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
+ }
+  /*  if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
       (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1) && (frame >= Mod_id * 20 + 10)) 
-    SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 0);
+      SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 0);*/
 }	    
 	    
 

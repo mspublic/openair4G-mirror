@@ -2078,7 +2078,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
-    //#ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
     msg("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
@@ -2089,7 +2089,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     msg("Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->harq_processes[harq_pid]->O_ACK,((DCI0_5MHz_TDD_1_6_t*)dci_pdu)->dai);
     msg("Format 0 DCI :ulsch (ue): Nsymb_pusch %d\n",ulsch->Nsymb_pusch);
     msg("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->n_DMRS2);
-    //#endif
+#endif
     return(0);
   }
   else {

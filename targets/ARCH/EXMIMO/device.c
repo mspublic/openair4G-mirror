@@ -20,6 +20,15 @@ static int   openair_init_module( void );
 static void  openair_cleanup_module(void);
 extern irqreturn_t openair_irq_handler(int irq, void *cookie);
 
+/*------------------------------------------------*/
+/*   Prototypes                                   */
+/*------------------------------------------------*/
+int openair_device_open    (struct inode *inode,struct file *filp);
+int openair_device_release (struct inode *inode,struct file *filp);
+int openair_device_mmap    (struct file *filp, struct vm_area_struct *vma);
+int openair_device_ioctl   (struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg)
+;
+
 static void openair_cleanup(void);
 
 #ifdef BIGPHYSAREA
@@ -30,12 +39,7 @@ extern int intr_in;
 /*------------------------------------------------*/
 
 static struct file_operations openair_fops = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
-unlocked_ioctl:openair_device_ioctl
-#else
-ioctl:openair_device_ioctl
-#endif
-,
+ioctl:openair_device_ioctl,
 open: openair_device_open,
 release:openair_device_release,
 mmap: openair_device_mmap
