@@ -18,7 +18,7 @@
 <includepath>/usr/include/x86_64-linux-gnu/</includepath>
 <includepath>/usr/lib/gcc/x86_64-linux-gnu/4.6/include/</includepath>
 <includepath>/usr/include/c++/4.6/x86_64-linux-gnu/</includepath>
-
+<includepath>/usr/include/i386-linux-gnu/</includepath>
 
 </language>
 <language name="GNU C++">
@@ -35,7 +35,7 @@
 <includepath>/usr/include/x86_64-linux-gnu/</includepath>
 <includepath>/usr/lib/gcc/x86_64-linux-gnu/4.6/include/</includepath>
 <includepath>/usr/include/c++/4.6/x86_64-linux-gnu/</includepath>
-
+<includepath>/usr/include/i386-linux-gnu/</includepath>
 
 </language>
 <language name="GNU C">
@@ -52,7 +52,7 @@
 <includepath>/usr/include/x86_64-linux-gnu/</includepath>
 <includepath>/usr/lib/gcc/x86_64-linux-gnu/4.6/include/</includepath>
 <includepath>/usr/include/c++/4.6/x86_64-linux-gnu/</includepath>
-
+<includepath>/usr/include/i386-linux-gnu/</includepath>
 
 </language>
 </section>
@@ -71,4 +71,3 @@
 </language>
 </section>
 </cdtprojectproperties>
-

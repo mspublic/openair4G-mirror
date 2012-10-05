@@ -48,7 +48,6 @@
 #include <sys/types.h>
 #include <string>
 #include <map>
-using namespace std;
 
 /**
  * A container to hold configuration parameters of Management entity

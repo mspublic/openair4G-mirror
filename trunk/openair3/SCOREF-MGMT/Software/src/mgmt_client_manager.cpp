@@ -47,10 +47,7 @@ ManagementClientManager::ManagementClientManager(ManagementInformationBase& mib,
 }
 
 ManagementClientManager::~ManagementClientManager() {
-	while(!clientVector.empty()) {
-		delete clientVector.back();
-		clientVector.pop_back();
-	}
+	clientVector.clear();
 }
 
 bool ManagementClientManager::updateManagementClientState(UdpServer& clientConnection, EventType eventType) {

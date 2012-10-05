@@ -88,7 +88,7 @@ bool ManagementInformationBase::initialise() {
 		itsKeyManager.addKey(MGMT_GN_FAC_ITSKEY_ID_LDM_GARBAGE_COLLECTION_INTERVAL, "MIB_GN_FAC_LDM_GARBAGE_COLLECTION_INTERVAL", ITS_KEY_TYPE_FAC, 1000);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot define ITS key");
-		throw e;
+		throw;
 	}
 
 	logger.info("Management Information Base has been initialised");
@@ -102,7 +102,7 @@ bool ManagementInformationBase::setValue(ItsKeyID id, ItsKeyValue value) {
 		itsKeyManager.setKeyValue(id, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its ID");
-		throw e;
+		throw;
 	}
 
 	return true;
@@ -149,7 +149,7 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 		itsKeyManager.setKeyValue(name, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its name");
-		throw e;
+		throw;
 	}
 
 	return true;
