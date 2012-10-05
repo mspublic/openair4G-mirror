@@ -32,7 +32,7 @@ for o,p in opts:
      g_path = p
 
 ############################################################################################
-g_file_config=g_path+"/extras/example-lma.conf"
+g_file_config=g_path+"/extras/example-ha-lma.conf"
 ############################################################################################
 
 
@@ -69,7 +69,7 @@ for line in lines:
     elif 'RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks' in line:
         print line
         g_RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks = element
-    elif 'LmaAddress' in line:
+    elif 'LmaPmipNetworkAddress' in line:
         print line
         g_LmaAddress = IPAddress(element)
     elif 'LmaPmipNetworkDevice' in line:
