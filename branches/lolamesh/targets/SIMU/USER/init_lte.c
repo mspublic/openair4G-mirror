@@ -90,6 +90,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
 PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms, 
 			 u8 UE_id,
+			 u8 nb_connected_eNB,
 			 u8 abstraction_flag,
 			 u8 transmission_mode) {
 
@@ -97,8 +98,9 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
   PHY_vars_UE->Mod_id=UE_id; 
   memcpy(&(PHY_vars_UE->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-  phy_init_lte_ue(PHY_vars_UE,abstraction_flag);
-  for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
+  phy_init_lte_ue(PHY_vars_UE,abstraction_flag, nb_connected_eNB); // apaposto insert nb_connected_eNB
+  //for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) { // NUMBER_OF_CONNECTED_eNB_MAX is a definition
+  for (i=0;i<nb_connected_eNB;i++) { // apaposto 
     for (j=0;j<2;j++) {
       PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
       if (!PHY_vars_UE->dlsch_ue[i][j]) {
@@ -124,14 +126,20 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   return (PHY_vars_UE);
 }
 
+
 void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
-		   u8 frame_type,
-		   u8 tdd_config,
-		   u8 tdd_config_S,
-		   u8 extended_prefix_flag, 
-		   u8 N_RB_DL,
-		   u16 Nid_cell,
-		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
+	u8 frame_type,
+	u8 tdd_config,
+	u8 tdd_config_S,
+	u8 extended_prefix_flag, 
+	u8 N_RB_DL,
+	u16 Nid_cell,
+	u8 nb_connected_eNB, //apaposto
+	u8 cooperation_flag,
+	u8 transmission_mode,
+	u8 abstraction_flag){
+
+
 
   u8 eNB_id,UE_id;
 
@@ -208,7 +216,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
-    PHY_vars_UE_g[UE_id] = init_lte_UE(*frame_parms, UE_id,abstraction_flag,transmission_mode);
+    PHY_vars_UE_g[UE_id] = init_lte_UE(*frame_parms, UE_id, nb_connected_eNB, abstraction_flag,transmission_mode);//apaposto
 
   }
 

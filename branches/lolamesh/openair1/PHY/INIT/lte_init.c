@@ -507,7 +507,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 }
 
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
-		    u8 abstraction_flag) {
+		    u8 abstraction_flag, u8 nb_connected_eNB){ // apaposto
 
   LTE_DL_FRAME_PARMS *frame_parms     = &phy_vars_ue->lte_frame_parms;
   LTE_UE_COMMON *ue_common_vars       = &phy_vars_ue->lte_ue_common_vars;
@@ -524,7 +524,8 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 
   msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
 
-  phy_vars_ue->n_connected_eNB = 1;
+//  phy_vars_ue->n_connected_eNB = 1;  // apaposto
+  phy_vars_ue->n_connected_eNB = nb_connected_eNB;    //apaposto  
 
   for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++){
     phy_vars_ue->total_TBS[eNB_id] = 0;
