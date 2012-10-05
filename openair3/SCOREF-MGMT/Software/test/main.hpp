@@ -9,7 +9,7 @@
 #define MAIN_HPP_
 
 #include <boost/lexical_cast.hpp>
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "../src/mgmt_configuration.hpp"
 
@@ -23,7 +23,26 @@ namespace ScorefTest {
 	class ScorefManagementTest: public ::testing::Test {
 		protected:
 			ScorefManagementTest() {
-				// You can do set-up work for each test here.
+				try {
+					logger = new Logger("test.log", Logger::TRACE, Logger::STDOUT);
+				} catch (...) {
+					cerr << "Cannot create a Logger object!" << endl;
+					throw;
+				}
+				try {
+					vector<string> configurationNameVector;
+					configuration = new Configuration(configurationNameVector, *logger);
+				} catch (...) {
+					cerr << "Cannot create a Configuration object!" << endl;
+					throw;
+				}
+				try {
+					managementInformationBase = new ManagementInformationBase(*logger);
+				} catch (...) {
+					cerr << "Cannot create a ManagementInformationBase object!" << endl;
+					throw;
+				}
+
 			}
 
 			virtual ~ScorefManagementTest() {
@@ -40,15 +59,6 @@ namespace ScorefTest {
 			 * @return none
 			 */
 			virtual void SetUp() {
-				try {
-					logger = new Logger("test.log", Logger::TRACE, Logger::STDOUT);
-
-					vector<string> configurationNameVector;
-					configuration = new Configuration(configurationNameVector, *logger);
-					managementInformationBase = new ManagementInformationBase(*logger);
-				} catch (...) {
-					cerr << "Cannot create Logger and/or Configuration object" << endl;
-				}
 			}
 
 			/**

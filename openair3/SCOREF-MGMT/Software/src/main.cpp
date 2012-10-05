@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
 			mib.initialise();
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot initialise ManagementInformationBase!");
-			throw e;
+			throw;
 		}
 
 		/**
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
 			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot initialise Geonet Message Handler!");
-			throw e;
+			throw;
 		}
 
 		logger.info("Starting Management & GeoNetworking Interface...");

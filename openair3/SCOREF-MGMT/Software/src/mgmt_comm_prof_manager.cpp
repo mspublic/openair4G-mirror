@@ -49,8 +49,8 @@ CommunicationProfileManager::CommunicationProfileManager(Logger& logger)
 }
 
 CommunicationProfileManager::~CommunicationProfileManager() {
-	communicationProfileMap.empty();
-	communicationProfileStringMap.empty();
+	communicationProfileMap.clear();
+	communicationProfileStringMap.clear();
 }
 
 bool CommunicationProfileManager::insert(const string& profileIdString, const string& profileDefinitionString) {
@@ -72,7 +72,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 		communicationProfileItem = parse(profileIdString, trimmedProfileDefinitionString);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot parse Communication Profile definitions");
-		throw e;
+		throw;
 	}
 
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(communicationProfileItem.id, communicationProfileItem));

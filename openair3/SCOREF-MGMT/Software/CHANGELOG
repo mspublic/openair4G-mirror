@@ -1,4 +1,13 @@
 
+v1.1.7
+* TODO.cppcheck file added for static analysis (currently empty since all the notifications 
+  have been fixed)
+* Bugfix:cppcheck: Unnecessary copy creation for exceptions
+* Bugfix:cppcheck: Inefficient vector size check
+* Bugfix:cppcheck: Uninitialised members
+* Bugfix:cppcheck: Redundant wide scopes of some variables have been reduced
+* New include path has been added for sys/types.h and README.BUILD.ECLIPSE.PATHS.xml updated
+
 v1.1.6
 * Logger::LOG_OUTPUT_CHANNEL enumeration added to control log output channel as
   FILE, STDOUT, BOTH, or NONE

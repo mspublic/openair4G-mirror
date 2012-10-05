@@ -73,7 +73,7 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 	/**
 	 * Verify there is at least one configuration file given to be parsed
 	 */
-	if (configurationFileNameVector.size() == 0) {
+	if (configurationFileNameVector.empty()) {
 		logger.warning("No configuration file name is given to be parsed");
 		return false;
 	}
@@ -123,7 +123,7 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 							mib.setValue(parameter, valueContainer);
 						} catch (Exception& e) {
 							e.updateStackTrace("Cannot set MIB ITS key using value given in the configuration file");
-							throw e;
+							throw;
 						}
 					/*
 					 * General configuration parameters are handled locally in this class
@@ -138,7 +138,7 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 							mib.getCommunicationProfileManager().insert(parameter, value);
 						} catch (Exception& e) {
 							e.updateStackTrace("Cannot process communication profile string");
-							throw e;
+							throw;
 						}
 					/**
 					 * Point de Charge Vehicule Electrique (PCVE) IHM Parameters

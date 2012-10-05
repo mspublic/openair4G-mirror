@@ -59,9 +59,10 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& cl
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::GN, "GeoNetworking"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::FAC, "Facilities"));
 	/**
-	 * Initialise this client's state
+	 * Initialise this client's state and type
 	 */
 	state = ManagementClient::OFFLINE;
+	type = ManagementClient::UNKNOWN;
 	/**
 	 * Update location table
 	 */
@@ -77,6 +78,10 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& cl
 }
 
 ManagementClient::~ManagementClient() {
+	clientTypeStringMap.clear();
+
+	delete inquiryThreadObject;
+	delete inquiryThread;
 }
 
 boost::asio::ip::address ManagementClient::getAddress() const {

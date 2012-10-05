@@ -171,6 +171,14 @@ struct LocationInformation {
 	unsigned SAcc:2;
 	unsigned Hacc:3;
 	unsigned AltAcc:3;
+
+	/**
+	 * Initialize everything to zero
+	 */
+	LocationInformation() {
+		timestamp = latitude = longitude = speed = heading = altitude = 0;
+		TAcc = PosAcc = SAcc = Hacc = AltAcc = 0;
+	}
 } __attribute__((packed));
 
 /**

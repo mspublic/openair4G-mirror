@@ -16,7 +16,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration buildProperties="" description="" id="0.1691293236" name="Default" parent="org.eclipse.cdt.build.core.prefbase.cfg">
+				<configuration artifactName="SCOREF-MGMT" buildProperties="" description="" id="0.1691293236" name="Default" parent="org.eclipse.cdt.build.core.prefbase.cfg">
 					<folderInfo id="0.1691293236." name="/" resourcePath="">
 						<toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.1329950294" name="No ToolChain" resourceTypeBasedDiscovery="false" superClass="org.eclipse.cdt.build.core.prefbase.toolchain">
 							<targetPlatform id="org.eclipse.cdt.build.core.prefbase.toolchain.1329950294.880574658" name=""/>
@@ -39,6 +39,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/x86_64-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/include/i386-linux-gnu/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1522413688" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -57,6 +58,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/x86_64-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="/usr/lib/gcc/x86_64-linux-gnu/4.6/include/"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/x86_64-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/include/i386-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
 								</option>
@@ -79,6 +81,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/x86_64-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/include/i386-linux-gnu/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1126765345" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -122,4 +125,5 @@
 			</target>
 		</buildTargets>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>
