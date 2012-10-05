@@ -4273,7 +4273,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	// schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
 	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
     }
-    fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+    fill_DLSCH_dci(Mod_id,frame, subframe,RBalloc,0);
     break;
   case 2:
     // TDD, nothing 

@@ -144,8 +144,7 @@ help (void) {
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
   printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error) \n");
-  printf
-    ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
+  printf ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-T activate the traffic generator: 0 for NONE, 1 for CBR, 2 for M2M, 3 for FPS Gaming, 4 for mix\n");
@@ -635,6 +634,7 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
+  u8 nb_connected_eNB=0; // apaposto
   // omv related info
   //pid_t omv_pid;
   char full_name[200];
@@ -690,7 +690,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haeoFvIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J"))
+  while ((c = getopt (argc, argv, "haeoFvIt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J:H:"))
 	 != -1) {
 
     switch (c) {
@@ -736,7 +736,7 @@ main (int argc, char **argv)
       rate_adaptation_flag = 1;
       break;
     case 'n':
-      oai_emulation.info.n_frames = atoi (optarg);
+		 	oai_emulation.info.n_frames = atoi (optarg);
       //n_frames = (n_frames >1024) ? 1024: n_frames; // adjust the n_frames if higher that 1024
       oai_emulation.info.n_frames_flag = 1;
       break;
@@ -869,6 +869,9 @@ main (int argc, char **argv)
     case 'v':
       oai_emulation.info.omv_enabled = 1;
       break;
+    case 'H': 
+			nb_connected_eNB = atoi(optarg);
+      break;
     default:
       help ();
       exit (-1);
@@ -995,7 +998,7 @@ main (int argc, char **argv)
     randominit (0);
     set_taus_seed (0);
   }
-  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
+  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, nb_connected_eNB, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   //printf ("Nid_cell %d\n", frame_parms->Nid_cell);
 
@@ -1083,14 +1086,16 @@ main (int argc, char **argv)
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
     // update UE_mode for each eNB_id not just 0
+    for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ // apaposto
     if (abstraction_flag == 0)
-      PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
-    else
-      PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
-    PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 10;
-
-    LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0] );
+      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = NOT_SYNCHED;
+    else // later if phy supports simultanious RA, then this could be set to PRACH
+      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = (eNB_id == 0) ? PRACH : NOT_SYNCHED ;
+    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1235 + UE_id;
+    PHY_vars_UE_g[UE_id]->current_dlsch_cqi[eNB_id] = 10;
+    
+    LOG_I(EMU, "UE %d mode to eNB %d, is initialized to %d\n", UE_id, eNB_id, PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] );
+    }
   }
 
   
@@ -1126,7 +1131,8 @@ main (int argc, char **argv)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);	//UE_id%NB_eNB_INST);
+      for (eNB_id =0 ; eNB_id < nb_connected_eNB; eNB_id++)//apostolos 
+	mac_xface->dl_phy_sync_success (UE_id, 0, eNB_id,1);	//UE_id%NB_eNB_INST);
       }
 #endif
 
@@ -1316,19 +1322,23 @@ main (int argc, char **argv)
 
 	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, frame, slot, next_slot >> 1);
-
-	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
-	    if (frame>0) {
-	      PHY_vars_UE_g[UE_id]->frame = frame;
-	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
-	    }
-	  }
-	  else {
-	    if (abstraction_flag==1){
-	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
-	      exit(-1);
-	    }
-	    if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
+	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)
+		{ // apaposto
+	    if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] != NOT_SYNCHED) 
+			{
+	      if (frame>0) 
+				{
+								PHY_vars_UE_g[UE_id]->frame = frame;
+								phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
+			 	}
+		 	}
+	  else 
+		{
+	    if ((PHY_vars_UE_g[UE_id]->UE_mode[eNB_id-1] == PUSCH) && (eNB_id < nb_connected_eNB)) 
+	      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id]=PRACH;
+	    
+	    if ((abstraction_flag ==0)&&(frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) 
+			{
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
@@ -1345,6 +1355,7 @@ main (int argc, char **argv)
 	      */
 	    }
  	  }
+   }
 #ifdef PRINT_STATS
 	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
