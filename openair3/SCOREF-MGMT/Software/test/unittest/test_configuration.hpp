@@ -9,9 +9,9 @@
 #include "test_configuration_util.hpp"
 #include <gtest/gtest.h>
 
-#define TEST_CONFIGURATION_FILE_1 "../data/testConfFile1.conf"
-#define TEST_CONFIGURATION_FILE_2 "../data/testConfFile2.conf"
-#define TEST_CONFIGURATION_FILE_3 "../data/testConfFile3.conf"
+#define TEST_CONFIGURATION_FILE_1 "../data/confFiles/testConfFile1.conf"
+#define TEST_CONFIGURATION_FILE_2 "../data/confFiles/testConfFile2.conf"
+#define TEST_CONFIGURATION_FILE_3 "../data/confFiles/testConfFile3.conf"
 
 void testParseConfigurationFiles(Configuration& configuration, ManagementInformationBase& mib, Logger& logger) {
 	logger.info("Testing Configuration::parseConfigurationFiles() method");
@@ -87,7 +87,7 @@ void testGetConfigurationFileVector(Configuration& configuration, Logger& logger
 void testAddConfigurationFile(Configuration& configuration, Logger& logger) {
 	logger.info("Testing Configuration::addConfigurationFile() method");
 
-	string newConfigurationFile = "data/testConfFile3.conf";
+	string newConfigurationFile = "../data/confFiles/testConfFile3.conf";
 	configuration.addConfigurationFile(newConfigurationFile);
 
 	vector<string> configurationFileNameVector = configuration.getConfigurationFileVector();
