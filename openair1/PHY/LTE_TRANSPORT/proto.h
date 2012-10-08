@@ -1346,17 +1346,13 @@ u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type);
 u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 
 /*!
-  \brief Compute DFT of PRACH ZC sequence.  Used for generation of prach in UE and reception of PRACH in eNB.
-  @param u Target root sequence index of prach
-  @param N_ZC Prime number (839,139)
-  @param Xu DFT output
+  \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB.
+  @param prach_config_common Pointer to prachConfigCommon structure
+  @param Xu DFT output 
 */
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
-
-/*!
-  \brief Initialize multiplicative inverse tables for PRACH as well as roots-of-unity vectors.
-*/
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
+void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
+		       lte_frame_type_t frame_type,
+		       u32 X_u[64][839]);
 
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);

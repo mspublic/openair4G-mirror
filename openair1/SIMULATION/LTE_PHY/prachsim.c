@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
   channel_desc_t *UE2eNB;
   u32 nsymb,tx_lev,tx_lev_dB;
   u8 extended_prefix_flag=0;
-  s8 interf1=-19,interf2=-19;
+  //  s8 interf1=-19,interf2=-19;
   LTE_DL_FRAME_PARMS *frame_parms;
 #ifdef EMOS
   fifo_dump_emos emos_dump;
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 
   SCM_t channel_model=Rayleigh1_corr;
 
-  u8 abstraction_flag=0,calibration_flag=0;
+  //  u8 abstraction_flag=0,calibration_flag=0;
   //  double prach_sinr;
   u8 osf=1,N_RB_DL=25;
   u32 prach_errors=0;
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
   int N_ZC;
   int delay = 0;
   double delay_avg=0;
-
+  int NCS_config = 1,rootSequenceIndex=0;
   logInit();
 
   channel_length = (int) 11+2*BW*Td;
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "haA:Cr:p:g:i:j:n:s:S:t:x:y:z:N:F:d:")) != -1)
+  while ((c = getopt (argc, argv, "haA:Cr:p:g:n:s:S:t:x:y:z:N:F:d:Z:L:")) != -1)
     {
       switch (c)
 	{
@@ -205,12 +205,6 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	break;
-	case 'i':
-	  interf1=atoi(optarg);
-	  break;
-	case 'j':
-	  interf2=atoi(optarg);
-	  break;
 	case 'n':
 	  n_frames = atoi(optarg);
 	  break;
@@ -228,6 +222,16 @@ int main(int argc, char **argv) {
 	  break;
 	case 'p':
 	  preamble_tx=atoi(optarg);
+	  break;
+	case 'Z':
+	  NCS_config = atoi(optarg);
+	  if ((NCS_config > 15) || (NCS_config < 0))
+	    printf("Illegal NCS_config %d, (should be 0-15)\n",NCS_config);
+	  break;
+	case 'L':
+	  rootSequenceIndex = atoi(optarg);
+	  if ((rootSequenceIndex < 0) || (rootSequenceIndex > 837))
+	    printf("Illegal rootSequenceNumber %d, (should be 0-837)\n",rootSequenceIndex);
 	  break;
 	case 'r':
 	  ricean_factor = pow(10,-.1*atof(optarg));
@@ -259,15 +263,6 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	  break;
-	case 'A':
-	  abstraction_flag=1;
-	  ntrials=10000;
-	  msg("Running Abstraction test\n");
-	  break;
-	case 'C':
-	  calibration_flag=1;
-	  msg("Running Abstraction calibration for Bias removal\n");
-	  break;
 	case 'N':
 	  Nid_cell = atoi(optarg);
 	  break;
@@ -284,24 +279,16 @@ int main(int argc, char **argv) {
 	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -r Ricean_FactordB -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",argv[0]);
 	  printf("-h This message\n");
 	  printf("-a Use AWGN channel and not multipath\n");
-	  printf("-p Use extended prefix mode\n");
 	  printf("-n Number of frames to simulate\n");
-	  printf("-r Ricean factor (dB, 0 means Rayleigh, 100 is almost AWGN\n");
 	  printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
 	  printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-	  printf("-t Delay spread for multipath channel\n");
 	  printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
-	  printf("-x Transmission mode (1,2,6 for the moment)\n");
-	  printf("-y Number of TX antennas used in eNB\n");
-	  printf("-z Number of RX antennas used in UE\n");
-	  printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-	  printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+	  printf("-z Number of RX antennas used in eNB\n");
 	  printf("-N Nid_cell\n");
-	  printf("-R N_RB_DL\n");
 	  printf("-O oversampling factor (1,2,4,8,16)\n");
-	  printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-	  printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
 	  printf("-f PRACH format (0=1,1=2,2=3,3=4)\n");
+	  printf("-L rootSequenceIndex (0-837)\n");
+	  printf("-Z NCS_config (ZeroCorrelationZone) (0-15)\n");
 	  printf("-F Input filename (.txt format) for RX conformance testing\n");
 	  exit (-1);
 	  break;
@@ -368,16 +355,16 @@ int main(int argc, char **argv) {
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
  
-  PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex=1; 
+  PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex; 
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
-  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
 
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex=1; 
+  PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex; 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
@@ -385,9 +372,9 @@ int main(int argc, char **argv) {
 			    PHY_vars_eNB->lte_frame_parms.frame_type);
   N_ZC = (prach_fmt <4)?839:139;
   
-  compute_prach_seq(prach_root_sequence_map0_3[PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex],N_ZC, PHY_vars_eNB->X_u);
+  compute_prach_seq(&PHY_vars_eNB->lte_frame_parms.prach_config_common,PHY_vars_eNB->lte_frame_parms.frame_type,PHY_vars_eNB->X_u);
 
-  compute_prach_seq(prach_root_sequence_map0_3[PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex],N_ZC, PHY_vars_UE->X_u);
+  compute_prach_seq(&PHY_vars_UE->lte_frame_parms.prach_config_common,PHY_vars_UE->lte_frame_parms.frame_type,PHY_vars_UE->X_u);
 
   PHY_vars_UE->lte_ue_prach_vars[0]->amp = AMP;
 

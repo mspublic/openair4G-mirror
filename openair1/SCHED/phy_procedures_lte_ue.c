@@ -981,20 +981,20 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    phy_vars_ue->tx_power_dBm = 0;
 #endif
 	    generate_pucch(phy_vars_ue->lte_ue_common_vars.txdataF,
-                       &phy_vars_ue->lte_frame_parms,
-                       phy_vars_ue->ncs_cell,
-                       format,
-                       &phy_vars_ue->pucch_config_dedicated[eNB_id],
-                       n1_pucch,
-                       0,  // n2_pucch
-                       1,  // shortened format
-                       pucch_ack_payload,
+			   &phy_vars_ue->lte_frame_parms,
+			   phy_vars_ue->ncs_cell,
+			   format,
+			   &phy_vars_ue->pucch_config_dedicated[eNB_id],
+			   n1_pucch,
+			   0,  // n2_pucch
+			   1,  // shortened format
+			   pucch_ack_payload,
 #ifdef EXMIMO
-                       get_tx_amp(Po_PUCCH),
+			   get_tx_amp(Po_PUCCH),
 #else
-                       AMP,
+			   AMP,
 #endif
-                       next_slot>>1);
+			   next_slot>>1);
 
 	  }
 	  else {

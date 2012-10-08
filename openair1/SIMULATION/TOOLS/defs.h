@@ -55,7 +55,7 @@ typedef struct {
   ///path loss including shadow fading in dB 
   double path_loss_dB;
   ///additional delay of channel in samples. 
-  s8 channel_offset; 
+  s32 channel_offset; 
   ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
   double forgetting_factor;
   ///needs to be set to 1 for the first call, 0 otherwise.

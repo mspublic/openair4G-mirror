@@ -32,6 +32,8 @@
 
 #define sgn(a) (((a)<0) ? 0 : 1)
 
+//#define DEBUG_CODER 1
+
 int current_dlsch_cqi;
 
 PHY_VARS_eNB *PHY_vars_eNB;

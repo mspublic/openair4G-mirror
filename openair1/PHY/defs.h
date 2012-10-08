@@ -173,7 +173,7 @@ typedef struct
   /// mbsfn reference symbols
   unsigned int lte_gold_mbsfn_table[10][3][42];
   
-  s16 X_u[64][2*839];
+  u32 X_u[64][839];
 
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
@@ -315,7 +315,7 @@ typedef struct
 /// mbsfn reference symbols
   unsigned int lte_gold_mbsfn_table[10][3][42];
   
-  s16 X_u[64][2*839];
+  u32 X_u[64][839];
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
