@@ -1,14 +1,15 @@
-/* file: 3gpplte.c
+/* file: 3gpplte_sse.c
    purpose: Encoding routines for implementing Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
-   author: raymond.knopp@eurecom.fr
-   date: 10.2009 
+   author: Laurent Thomas
+   maintainer: raymond.knopp@eurecom.fr
+   date: 09.2012
 */
 #include "defs.h"
 #include "extern_3GPPinterleaver.h"
 #include <stdlib.h>
 #include "smmintrin.h"
 
-//#define DEBUG_TURBO_ENCODER 1
+#define DEBUG_TURBO_ENCODER 1
 
 unsigned short threegpplte_interleaver_output;
 unsigned long long threegpplte_interleaver_tmp;
@@ -132,7 +133,10 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
   __m128i tmp;
   int input_length_words=n>>1;
   unsigned short * systematic2_ptr=(unsigned short *) output;
+  int j;
   for ( i=0; i<  input_length_words ; i ++ ) {
+    for (j=0;j<16;j++) printf("%d(%d).",ptr_intl[j],expandInput[ptr_intl[j]]);
+    printf("\n");
     tmp=_mm_insert_epi8(tmp,expandInput[*ptr_intl++],7);
     tmp=_mm_insert_epi8(tmp,expandInput[*ptr_intl++],6);
     tmp=_mm_insert_epi8(tmp,expandInput[*ptr_intl++],5);
