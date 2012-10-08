@@ -11,7 +11,7 @@
 #include <boost/lexical_cast.hpp>
 #include <gtest/gtest.h>
 
-#include "../src/mgmt_configuration.hpp"
+#include "../../src/mgmt_configuration.hpp"
 
 #include "test_configuration.hpp"
 #include "test_util.hpp"

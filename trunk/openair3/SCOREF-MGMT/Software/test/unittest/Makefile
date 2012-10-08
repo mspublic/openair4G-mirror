@@ -12,7 +12,7 @@ OBJ_SCOREF_FILES=$(CPP_SCOREF_FILES:.cpp=.o)
 EXE_FILE=TEST-SCOREF-MGMT
 CPPFLAGS=-Wall
 LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread -lboost_program_options -lgtest
-INCLUDE=-Isrc/ -Isrc/packets/ -Isrc/util/
+INCLUDE=-I../../src/ -I../../src/packets/ -I../../src/util/
 
 BUILD_FLAGS=-O3
 

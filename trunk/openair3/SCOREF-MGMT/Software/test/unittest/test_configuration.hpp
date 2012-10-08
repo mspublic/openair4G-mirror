@@ -5,13 +5,13 @@
  *      Author: demiray
  */
 
-#include "../src/mgmt_configuration.hpp"
+#include "../../src/mgmt_configuration.hpp"
 #include "test_configuration_util.hpp"
 #include <gtest/gtest.h>
 
-#define TEST_CONFIGURATION_FILE_1 "data/testConfFile1.conf"
-#define TEST_CONFIGURATION_FILE_2 "data/testConfFile2.conf"
-#define TEST_CONFIGURATION_FILE_3 "data/testConfFile3.conf"
+#define TEST_CONFIGURATION_FILE_1 "../data/testConfFile1.conf"
+#define TEST_CONFIGURATION_FILE_2 "../data/testConfFile2.conf"
+#define TEST_CONFIGURATION_FILE_3 "../data/testConfFile3.conf"
 
 void testParseConfigurationFiles(Configuration& configuration, ManagementInformationBase& mib, Logger& logger) {
 	logger.info("Testing Configuration::parseConfigurationFiles() method");
