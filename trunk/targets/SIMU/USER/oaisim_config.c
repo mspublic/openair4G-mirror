@@ -334,9 +334,9 @@ void oaisim_config() {
     g_log->log_component[OTG_LATENCY].filelog=1;
     g_log->log_component[OTG_OWD].filelog = 1;
     ocg_config_app(); // packet generator 
-    oai_emulation.info.frame_type=1;
-}
-     
+    //    oai_emulation.info.frame_type=1;
+  }
+  
 }
 
 int olg_config() {
