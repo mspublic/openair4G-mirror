@@ -701,6 +701,7 @@ main (int argc, char **argv)
     switch (c) {
 
     case 'F':			// set FDD
+      printf("Setting Frame to FDD\n");
       oai_emulation.info.frame_type = 0;
       break;
     case 'C':
