@@ -5,7 +5,7 @@
  *      Author: demiray
  */
 
-#include "../src/mgmt_configuration.hpp"
+#include "../../src/mgmt_configuration.hpp"
 
 #include <gtest/gtest.h>
 
