@@ -921,6 +921,7 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete){
   int i;
   int oip_ifup=0;
+  int dest_ip_offset=0;
   // Loop through DRBs and establish if necessary
   for (i=0;i<8;i++) { // num max DRB (11-3-8)
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
@@ -939,25 +940,31 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n", 
 	      Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity);
 #ifdef NAS_NETLINK
-	LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d\n", Mod_id, Mod_id);
+	LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, Mod_id,
+	      Mod_id+1,Mod_id+1);
 	oip_ifup = nas_config(Mod_id,// interface index
 		   Mod_id+1, // thrid octet
 		   Mod_id+1);// fourth octet
 
 	 if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
+#ifdef OAI_EMU
 	  oai_emulation.info.oai_ifup[Mod_id]=1;
+	  dest_ip_offset=NB_eNB_INST;
+#else
+	  dest_ip_offset=8;
+#endif
 	  LOG_I(OIP,"[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",  
-		  Mod_id,
-		  Mod_id,
-		  (UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
-	    rb_conf_ipv4(0,//add
-		     UE_index, //cx
-		     Mod_id,//inst
-		     (UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
-		     0,//dscp
-		     ipv4_address(Mod_id+1,Mod_id+1),//saddr
-		     ipv4_address(Mod_id+1,NB_eNB_INST+UE_index+1));//daddr
-	   
+		Mod_id,
+		Mod_id,
+		(UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
+	  rb_conf_ipv4(0,//add
+		       UE_index, //cx
+		       Mod_id,//inst
+		       (UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
+		       0,//dscp
+		       ipv4_address(Mod_id+1,Mod_id+1),//saddr
+		       ipv4_address(Mod_id+1,dest_ip_offset+UE_index+1));//daddr
+	  
 	   LOG_D(RRC,"[eNB %d] State = Attached (UE %d)\n",Mod_id,UE_index);
 	 }
 #endif

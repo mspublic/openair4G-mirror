@@ -1,6 +1,3 @@
-CFLAGS = $(shell rtai-config --lxrt-cflags)
-LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
-
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)"  "4.4.3"
     CFLAGS += -Wno-packed-bitfield-compat
@@ -12,27 +9,32 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
+CFLAGS += -O2
+
 SRC = synctest.c condtest.c
 
-OBJ = synctest.o $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o sched_dlsch.o sched_ulsch.o
+RTAI_OBJ = synctest.o sched_dlsch.o sched_ulsch.o
+OBJ = $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
 
 TOP_DIR = $(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 
-OBJ += $(PHY_OBJS) $(SCHED_OBJS)
+OBJ += $(PHY_OBJS) 
+RTAI_OBJ += $(SCHED_OBJS)
 
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
+include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
 
-OBJ += $(LOG_OBJS) #$(OTG_OBJS) $(MATH_OBJS)
-#OBJ += $(LOG_DIR)/log.o
+OBJ += $(LOG_OBJS) 
 
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
-OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) 
+OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) #$(OTG_OBJS) $(MATH_OBJS) 
+OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
 CFLAGS += -DOPENAIR2 -DNO_RRM -DMAC_CONTEXT=1
 endif
 
@@ -68,18 +70,19 @@ ifeq ($(EMOS),1)
 CFLAGS += -DEMOS
 endif
 
-GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
-ifeq "$(GCCVERSION)"  "4.4.3"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-ifeq "$(GCCVERSION)" "4.5.2"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-ifeq "$(GCCVERSION)" "4.6.1"
-    CFLAGS += -Wno-packed-bitfield-compat
+ifeq ($(NAS),1)
+CFLAGS += -DNAS_NETLINK -DLINUX
+OBJ += $(NAS_OBJS)
 endif
 
+RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags)
+LDFLAGS += $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
+
 all: condtest synctest
+
+$(RTAI_OBJ): %.o : %.c
+	@echo Compiling $< ...
+	@$(CC) -c $(CFLAGS) $(RTAI_CFLAGS) -o $@ $<
 
 $(OBJ) $(ASN1_MSG_OBJS1): %.o : %.c
 	@echo Compiling $< ...
@@ -88,14 +91,14 @@ $(OBJ) $(ASN1_MSG_OBJS1): %.o : %.c
 condtest: condtest.c 
 	$(CC) $(CFLAGS) $(LDFLAGS) condtest.c -o condtest
 
-synctest: $(OBJ) $(ASN1_MSG_OBJS1)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -o synctest
+synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o synctest
 
 synctest_eNB: synctest
-	mv synctest synctest_eNB
+	cp synctest synctest_eNB
 
 synctest_UE: synctest
-	mv synctest synctest_UE
+	cp synctest synctest_UE
 
 run: condtest
 	rtai-load condtest --verbose
@@ -138,7 +141,7 @@ run_eNB0:
 
 clean:
 	rm -rf condtest synctest
-	rm -rf $(OBJ)
+	rm -rf $(OBJ) $(RTAI_OBJ)
 
 cleanall: clean
 	rm -rf $(ASN1_MSG_OBJS1)

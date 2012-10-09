@@ -46,7 +46,7 @@
 #include "local.h"
 #include "proto_extern.h"
 
-//#define NETLINK_DEBUG 1
+#define NETLINK_DEBUG 1
 
 
 #define NAS_NETLINK_ID 31
@@ -225,7 +225,7 @@ int nas_netlink_send(unsigned char *data,unsigned int len) {
 
   NETLINK_CB(nl_skb).pid = 0;
 
-#ifdef DEBUG_NETLINK
+#ifdef NETLINK_DEBUG
   printk("[NAS][NETLINK] In nas_netlink_send, nl_skb %p, nl_sk %x, nlh %p, nlh->nlmsg_len %d\n",nl_skb,nas_nl_sk,nlh,nlh->nlmsg_len);
 #endif //DEBUG_NETLINK
 
@@ -240,8 +240,10 @@ int nas_netlink_send(unsigned char *data,unsigned int len) {
 	return(0);
     }
     else {
-      //printk("[NAS][NETLINK] SEND status is %d\n",status);
-	return len;
+#ifdef NETLINK_DEBUG
+      printk("[NAS][NETLINK] SEND status is %d\n",status);
+#endif
+      return len;
     }
   }
   else {
