@@ -16,6 +16,7 @@
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#include "LAYER2/MAC/extern.h"
 
 //#define DEBUG_PHY
 
@@ -511,7 +512,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   unsigned char eNB_id;
 
   msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
-
+  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02d][]\n", phy_vars_ue->Mod_id+NB_eNB_INST);
   for (i=0;i<4;i++) {
     phy_vars_ue->rx_gain_max[i] = 135;
     phy_vars_ue->rx_gain_med[i] = 128;
@@ -1123,7 +1124,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
       phy_vars_eNB->Mod_id,
       frame_parms->N_RB_DL,frame_parms->phich_config_common.phich_resource,
       frame_parms->phich_config_common.phich_duration);
-
+  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02d][]\n", phy_vars_eNB->Mod_id);
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,frame_parms->Nid_cell);
   generate_pcfich_reg_mapping(frame_parms);
   generate_phich_reg_mapping(frame_parms);
