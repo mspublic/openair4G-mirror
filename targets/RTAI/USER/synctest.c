@@ -696,8 +696,10 @@ static void *eNB_thread(void *arg)
       //PHY_vars_eNB_g[0]->frame = frame;
       if (frame>5)
         {
+	  /*
           if (frame%100==0)
             rt_printk("frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
+	  */
           if (fs4_test==0)
             {
               phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
@@ -883,8 +885,10 @@ static void *UE_thread(void *arg)
       if (diff2>8) 
 	rt_printk("UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
 
+      /*
       if (frame%100==0)
 	rt_printk("frame %d (%d), slot %d, hw_slot %d, rx_offset_mbox %d, mbox_target %d, mbox_current %d, diff %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,rx_offset_mbox,mbox_target,mbox_current,diff2);
+      */
       timing_info[slot].time0 = rt_get_time_ns();
       timing_info[slot].mbox0 = ((unsigned int *)DAQ_MBOX)[0];
 
@@ -923,8 +927,10 @@ static void *UE_thread(void *arg)
 
       if (is_synchronized)
         {
+	  /*
           if (frame%100==0)
             rt_printk("frame %d (%d), slot %d, hw_slot %d, last_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,last_slot,DAQ_MBOX[0]);
+	  */
           in = rt_get_time_ns();
           phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0,mode);
           out = rt_get_time_ns();
@@ -1180,6 +1186,10 @@ int main(int argc, char **argv) {
   // initialize the log (see log.h for details)
   logInit();
 
+#ifdef NAS_NETLINK
+  netlink_init();
+#endif
+
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
 
@@ -1220,10 +1230,15 @@ int main(int argc, char **argv) {
 
 
   if (UE_flag==1) {
-    g_log->log_component[PHY].level = LOG_INFO;
-    g_log->log_component[PHY].flag = LOG_HIGH;
+    g_log->log_component[PHY].level = LOG_WARNING;
+    g_log->log_component[PHY].flag  = LOG_HIGH;
     g_log->log_component[MAC].level = LOG_INFO;
-    g_log->log_component[MAC].flag = LOG_HIGH;
+    g_log->log_component[MAC].flag  = LOG_HIGH;
+    g_log->log_component[RLC].level = LOG_INFO;
+    g_log->log_component[RLC].flag  = LOG_HIGH;
+    g_log->log_component[PDCP].level = LOG_INFO;
+    g_log->log_component[PDCP].flag  = LOG_HIGH;
+
     frame_parms->node_id = NODE;
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
     PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
@@ -1278,10 +1293,15 @@ int main(int argc, char **argv) {
     }
   }
   else {
-    g_log->log_component[PHY].level = LOG_INFO;
-    g_log->log_component[PHY].flag = LOG_HIGH;
+    g_log->log_component[PHY].level = LOG_WARNING;
+    g_log->log_component[PHY].flag  = LOG_HIGH;
     g_log->log_component[MAC].level = LOG_INFO;
-    g_log->log_component[MAC].flag = LOG_HIGH;
+    g_log->log_component[MAC].flag  = LOG_HIGH;
+    g_log->log_component[RLC].level = LOG_DEBUG;
+    g_log->log_component[RLC].flag  = LOG_HIGH;
+    g_log->log_component[PDCP].level = LOG_INFO;
+    g_log->log_component[PDCP].flag  = LOG_HIGH;
+
 
     frame_parms->node_id = PRIMARY_CH;
     PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
@@ -1339,15 +1359,18 @@ int main(int argc, char **argv) {
 
 
   mac_xface->macphy_exit = &exit_fun;
+
   /*
-  init_all_otg();
-  g_otg->seed = 0;
-  init_seeds(g_otg->seed);
-  g_otg->num_nodes = 1;
-  for (i=0; i<g_otg->num_nodes; i++){
-    for (j=0; j<g_otg->num_nodes; j++){ 
-      g_otg->application_type[i][j] = SCBR;
-      init_predef_traffic();
+  if (otg_enabled) {
+    init_all_otg();
+    g_otg->seed = 0;
+    init_seeds(g_otg->seed);
+    g_otg->num_nodes = 1;
+    for (i=0; i<g_otg->num_nodes; i++){
+      for (j=0; j<g_otg->num_nodes; j++){ 
+	g_otg->application_type[i][j] = SCBR;
+	init_predef_traffic();
+      }
     }
   }
   */

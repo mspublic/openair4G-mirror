@@ -489,7 +489,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
   int ii;
   for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
-  LOG_D(MAC,"[eNB %d] Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,rnti,UE_id);
+  LOG_I(MAC,"[eNB %d] Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,rnti,UE_id);
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
   // control element
@@ -556,8 +556,8 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 	  for (j=0;j<32;j++)
 	  printf("%x ",payload_ptr[j]);
 	  printf("\n"); */
-      LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d \n",
-	      Mod_id,frame, rx_lengths[i], UE_id);
+      LOG_I(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
+	    Mod_id,frame, rx_lengths[i], UE_id,rx_lcids[i]);
       if (rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) {   // MAX SIZE OF transport block
 	mac_rlc_data_ind(Mod_id,frame,1,
 			 DTCH+(UE_id)*MAX_NUM_RB,
@@ -3919,13 +3919,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
       if (rlc_status.bytes_in_buffer > 0) {
 	
-	LOG_D(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, Requesting %d bytes from RLC (hdr len dtch %d)\n",
+	LOG_I(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, Requesting %d bytes from RLC (hdr len dtch %d)\n",
 	      Mod_id,frame,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
 	sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,
 						 DTCH+(MAX_NUM_RB*next_ue),
 						 (char*)&dlsch_buffer[sdu_length_total]);
 	
-	LOG_D(MAC,"[eNB %d] Got %d bytes for DTCH %d \n",Mod_id,sdu_lengths[num_sdus],DTCH+(MAX_NUM_RB*next_ue));
+	LOG_I(MAC,"[eNB %d] Got %d bytes for DTCH %d \n",Mod_id,sdu_lengths[num_sdus],DTCH+(MAX_NUM_RB*next_ue));
 	sdu_lcids[num_sdus] = DTCH;
 	sdu_length_total += sdu_lengths[num_sdus];
 	if (sdu_lengths[num_sdus] < 128)

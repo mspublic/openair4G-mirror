@@ -50,7 +50,7 @@
 */
 int NAS_config(char *interfaceName, char *ipAddress, char *networkMask, char *broadcastAddress);
 
-/*! \fn int  NAS_config(char*, int, int)
+/*! \fn int  nas_config(char*, int, int)
 * \brief This function initializes the nasmesh interface using the basic values, 
 * basic address, network mask and broadcast address, as the default configured 
 * ones  

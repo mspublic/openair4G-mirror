@@ -32,7 +32,10 @@ int netlink_init(void) {
 
   
   nas_sock_fd = socket(PF_NETLINK, SOCK_RAW,GRAAL_NETLINK_ID);
-  
+  if (nas_sock_fd==-1) {
+    printf("[NETLINK] Error opening socket %d\n",nas_sock_fd);
+    return(-1);
+  }  
   printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd);
 
   ret = fcntl(nas_sock_fd,F_SETFL,O_NONBLOCK);

@@ -528,7 +528,7 @@ int
 pdcp_module_init ()
 {
 //-----------------------------------------------------------------------------
-#ifndef USER_MODE
+#ifdef NAS_FIFO
   int ret;
 
   ret=rtf_create(PDCP2NAS_FIFO,32768);
@@ -567,7 +567,7 @@ void
 pdcp_module_cleanup ()
 //-----------------------------------------------------------------------------
 {
-#ifndef USER_MODE
+#ifdef NAS_FIFO
   rtf_destroy(NAS2PDCP_FIFO);
   rtf_destroy(PDCP2NAS_FIFO);
 #endif
@@ -635,6 +635,6 @@ pdcp_layer_cleanup ()
   list_free (&pdcp_sdu_list);
 }
 
-#ifndef USER_MODE
+#ifdef NAS_FIFO
   EXPORT_SYMBOL(pdcp_2_nas_irq);
-#endif //USER_MODE
+#endif //NAS_FIFO
