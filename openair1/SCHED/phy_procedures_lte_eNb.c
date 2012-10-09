@@ -161,7 +161,8 @@ s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB, u8 abstraction_flag) {
 	//msg("[PHY] UE_id %d\n",i);
 	clean_eNb_dlsch(phy_vars_eNB->dlsch_eNB[i][0], abstraction_flag);
 	clean_eNb_ulsch(phy_vars_eNB->ulsch_eNB[i],abstraction_flag);
-	phy_vars_eNB->eNB_UE_stats[i].crnti = 0;
+	//phy_vars_eNB->eNB_UE_stats[i].crnti = 0;
+	memset(&phy_vars_eNB->eNB_UE_stats[i],0,sizeof(LTE_eNB_UE_stats));
 	return(i);
       }
     }
@@ -624,6 +625,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
     UL_alloc_pdu.dai     = 0;
     UL_alloc_pdu.cqi_req = 1;
     memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
+
     break;
 
   default:
@@ -914,8 +916,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB] Subframe %d : Doing DCI index %d/%d\n",next_slot>>1,i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci);
-      if (phy_vars_eNB->frame == 1)
-	dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+      //if (phy_vars_eNB->frame == 1)
+      //dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 #endif
 
       if (DCI_pdu->dci_alloc[i].rnti == SI_RNTI) {
@@ -1054,11 +1056,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	if (UE_id<0) {
 	  LOG_E(PHY,"[eNB %d] Frame %d: Unknown UE_id for rnti %x\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,(s16)DCI_pdu->dci_alloc[i].rnti);
-#ifdef USER_MODE
-	  exit(-1);
-#else
-	  exit_openair=1;
-#endif
+	  mac_xface->macphy_exit("");
 	}
 #ifdef DEBUG_PHY_PROC
 	LOG_I(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d Generated format0 DCI (rnti %x, dci %x) (DCI pos %d/%d), aggregation %d\n",
@@ -1071,6 +1069,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    *(unsigned int *)&DCI_pdu->dci_alloc[i].dci_pdu[0],
 	    i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci,
 	    1<<DCI_pdu->dci_alloc[i].L);
+	//dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 #endif
 	
 	generate_eNB_ulsch_params_from_dci(&DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1243,9 +1242,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       */
       UE_id = add_ue(crnti,phy_vars_eNB);
       if (UE_id==-1) {
-	mac_xface->macphy_exit("[PHY][eNB] Max user count reached.\n");
+	//mac_xface->macphy_exit("[PHY][eNB] Max user count reached.\n");
+	LOG_W(PHY,"[eNB] Max user count reached.\n");
       }
-
+      else {
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].mode = RA_RESPONSE;
       // Initialize indicator for first SR (to be cleared after ConnectionSetup is acknowledged)
       phy_vars_eNB->first_sr[(u32)UE_id] = 1;
@@ -1305,11 +1305,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
 #ifdef PHY_ABSTRACTION
       else {
-//#ifdef PHY_ABSTRACTION
 	dlsch_encoding_emul(phy_vars_eNB,
 			    dlsch_input_buffer,
 			    phy_vars_eNB->dlsch_eNB_ra);
-//#endif
       }
 #endif
       LOG_D(PHY,"[eNB %d][RAPROC] Frame %d subframe %d Deactivating DLSCH RA\n",phy_vars_eNB->Mod_id,
@@ -1319,6 +1317,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef DEBUG_PHY_PROC    
       LOG_D(PHY,"[eNB %d] Frame %d, slot %d, DLSCH (RA) re_allocated = %d\n",phy_vars_eNB->Mod_id,
 	  phy_vars_eNB->frame, next_slot, re_allocated);
+#endif
+
+#ifdef OPENAIR2
+      } //max user count
 #endif
     }
 
@@ -1914,8 +1916,8 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
 				  0,subframe,0);
     }
     else {
-      LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Unable to add user, max user count reached\n", phy_vars_eNB->Mod_id,
-	  phy_vars_eNB->frame, subframe);
+      LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Unable to add user, max user count reached\n", 
+	    phy_vars_eNB->Mod_id,phy_vars_eNB->frame, subframe);
     }
   }
 }
@@ -2078,6 +2080,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	(phy_vars_eNB->ulsch_eNB[i]->rnti>0) &&
 	(phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && 
 	((last_slot%2)==1)) {
+ 
       pusch_active = 1;
       round = phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round;
 
@@ -2163,7 +2166,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d][PUSCH %d][RAPROC] frame %d subframe %d RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
+      LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
 	  phy_vars_eNB->Mod_id,harq_pid,
 	  phy_vars_eNB->frame,last_slot>>1,
 	  dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[0]),
@@ -2467,9 +2470,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			       &SR_payload,
 			       last_slot>>1,
 			       PUCCH1_THRES);
-	  else {
 #ifdef PHY_ABSTRACTION
-
+	  else {
 	    metric0 = rx_pucch_emul(phy_vars_eNB,
 				    i,
 				    pucch_format1,
@@ -2478,9 +2480,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				    last_slot>>1);
 	    LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR (UE SR %d/%d)\n",phy_vars_eNB->Mod_id,
 		  phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1,SR_payload,phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex);
-
 #endif
 	  }
+
 	  if (SR_payload == 1) {
 	    LOG_I(PHY,"[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n",phy_vars_eNB->Mod_id,
 		phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1);
@@ -2658,7 +2660,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
     } // PUCCH processing
     
-#endif
+#endif //PUCCH
 
     if (last_slot==0) {
       phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
@@ -2697,6 +2699,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
     
 }
+
+#undef DEBUG_PHY_PROC
 
 void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
 
