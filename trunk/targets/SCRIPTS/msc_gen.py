@@ -62,7 +62,7 @@ g_messages         = []
 
 # g_display_order_dic is a dictionnary where the order of the display of entities sharing the same module identifier is hardcoded
 #MAC and PHY valus have to be above num max radio bearer value
-g_display_order_dic  = {'IP': 0, 'RRC_eNB': 1, 'RRC_UE': 1, 'PDCP': 32, 'RLC_AM': 33, 'RLC_UM': 33, 'RLC_TM': 33, 'MAC_eNB': 1024, 'MAC_UE': 1024, 'PHY': 2048}
+g_display_order_dic  = {'IP': 0, 'RRC_eNB': 1, 'RRC_UE': 1, 'PDCP': 32, 'RLC_AM': 33, 'RLC_UM': 33, 'RLC_TM': 33, 'MAC_eNB': 1024, 'MAC_UE': 1024, 'PHY_UE': 2048, 'PHY_eNB': 2048}
 
 # Display color of messages of sending entities
 g_display_color  = {'IP':      '\"teal\"',
@@ -94,7 +94,7 @@ def sequence_number_generator():
 # This has been written because for example when the RRC send a message to a RLC entity, it may not know if it is for a UM, AM, or TM
 def getEntityNames( entity_name = 'unknown',  module_id = -1, other_id = -1):
     global g_entities_dic
-    #print ("## getEntityNames( entity_name %s module_id %d other_id %d)" % (entity_name , module_id, other_id))
+    print ("## getEntityNames( entity_name %s module_id %d other_id %d)" % (entity_name , module_id, other_id))
 
     entity_main_name  = entity_name.partition('_')[0]
 
@@ -147,7 +147,7 @@ def parse_oai_log_file():
         if MSC_NEW_STR in line:
             partition = line.rpartition(MSC_NEW_STR)
             msc_log_string = partition[2]
-            #print (" %s " % msc_log_string)
+            print (" %s " % msc_log_string)
             partition = msc_log_string.split('[')
             #print ("\n\n %s \n" % partition)
             if len(partition) == 5:
@@ -205,9 +205,9 @@ def parse_oai_log_file():
         elif MSC_MSG_STR in line:
             partition = line.strip().rpartition(MSC_MSG_STR)
             msc_log_string = partition[2].strip()
-            #print (" %s " % msc_log_string)
+            print (" %s " % msc_log_string)
             partition = msc_log_string.split('[')
-            #print (" %s " % partition)
+            print (" %s " % partition)
 
             if len(partition) == 9:
                 system_frame_number  = partition[1].strip().split(' ')[-1].strip(']')
@@ -219,6 +219,7 @@ def parse_oai_log_file():
 
 
                 entity_name_src      = partition[2].strip().split(' ')[-1].strip(']')
+                print ("entity_name_src = %s " % entity_name_src)
                 entity_dic = getEntityNames(entity_name_src, int(module_id), int(radio_bearer_id))
                 protocol_entity_src  = entity_dic['full_name']
                 entity_name_main_src = entity_dic['name_main']
@@ -304,7 +305,8 @@ def parse_oai_log_file():
                 message_dic['entity_src']       = protocol_entity_src
                 message_dic['entity_dst']       = protocol_entity_dest
                 message_dic['box']              = box
-                message_dic['box_type']         = 'note'
+                #note does not work
+                message_dic['box_type']         = 'rbox'
                 message_dic['text_color']       = '\"#000000\"'
                 message_dic['textbg_color']     = g_display_color[entity_tuple_name_src]
                 message_dic['time']             = system_frame_number
@@ -342,8 +344,8 @@ def parse_oai_log_file():
 
 def msc_chart_write_header(fileP):
     global g_final_display_order_list
-    fileP.write("msc {")
-    fileP.write("width = \"2048\";")
+    fileP.write("msc {\n")
+    fileP.write("width = \"2048\";\n")
 
     entity_line_list_str = ''
     for entity in g_final_display_order_list:
@@ -354,10 +356,11 @@ def msc_chart_write_header(fileP):
 
 
 def msc_chart_write_footer(fileP):
-    fileP.write("}")
+    fileP.write("}\n")
 
 def msc_chart_generate(file_nameP):
     global  MSCGEN_OUTPUT_TYPE
+    print "Generating sequence diagram for ",file_nameP
     command_line = "mscgen -T " + MSCGEN_OUTPUT_TYPE + " -i " + file_nameP
     fi,fo,fe=os.popen3(command_line)
     for i in fe.readlines():
@@ -391,9 +394,10 @@ msc_chart_write_header(g_file)
 for message in g_messages:
 
     if 'msg' in message:
-        g_file.write("  %s=>%s [ label = \"(%d) Frm%s %s\", linecolour=%s , textcolour=%s ] ;" % (message['entity_src'], message['entity_dst'], message['seq_no'], message['time'], message['msg'], message['line_color'], message['text_color']))
+        g_file.write("  %s=>%s [ label = \"(%d) Frm%s %s\", linecolour=%s , textcolour=%s ] ;\n" % (message['entity_src'], message['entity_dst'], message['seq_no'], message['time'], message['msg'], message['line_color'], message['text_color']))
     elif 'box' in message:
-        g_file.write("  %s %s %s [ label = \"%s\", textbgcolour=%s , textcolour=%s ] ;" % (message['entity_src'], message['box_type'], message['entity_dst'], message['box'], message['textbg_color'], message['text_color']))
+        #g_file.write("  %s %s %s [ label = \"%s\", textbgcolour=%s , textcolour=%s ] ;\n" % (message['entity_src'], message['box_type'], message['entity_dst'], message['box'], message['textbg_color'], message['text_color']))
+        g_file.write("  %s %s %s [ label = \"%s\", textcolour=%s ] ;\n" % (message['entity_src'], message['box_type'], message['entity_dst'], message['box'], message['text_color']))
 
     g_message_index = g_message_index + 1
 
