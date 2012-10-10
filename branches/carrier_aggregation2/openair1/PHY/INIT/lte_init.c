@@ -52,8 +52,7 @@ void phy_config_sib1_eNB(u8 Mod_id,
   lte_frame_parms->SIPeriod      = SIPeriod;
 }
 
-void phy_config_sib1_ue(u8 Mod_id,
-			u8 CH_index,
+void phy_config_sib1_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
 			 TDD_Config_t *tdd_Config,
 			 u8 SIwindowsize,
 			 u16 SIperiod) {
@@ -166,7 +165,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 }
 
 
-void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
+void phy_config_sib2_ue(u8 Mod_id, u8 CC_id ,u8 CH_index,
 			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;

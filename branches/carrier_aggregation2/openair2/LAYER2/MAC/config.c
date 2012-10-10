@@ -9,6 +9,7 @@
 #include "UTIL/LOG/log.h"
 #define NUMBER_OF_CC_MAX 1
 
+
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
@@ -20,6 +21,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod) {
+
 u8 CC_id;
   for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
   
@@ -41,7 +43,8 @@ u8 CC_id;
     if (eNB_flag==1)
       mac_xface->phy_config_sib1_eNB(Mod_id,CC_id,tdd_Config,*SIwindowsize,*SIperiod);
     else
-      mac_xface->phy_config_sib1_ue(Mod_id,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
+for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++){
+      mac_xface->phy_config_sib1_ue(Mod_id,CC_id,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);}
   } 
 
   if (radioResourceConfigCommon) {
@@ -72,7 +75,8 @@ u8 CC_id;
     }
     else {
       UE_mac_inst[Mod_id].radioResourceConfigCommon = radioResourceConfigCommon;
-      mac_xface->phy_config_sib2_ue(Mod_id,eNB_index,radioResourceConfigCommon);
+for (CC_id=0;CC_id<MAX_NUM_CCs; CC_id++){
+      mac_xface->phy_config_sib2_ue(Mod_id,CC_id,eNB_index,radioResourceConfigCommon);}
     }
   }
   
@@ -126,7 +130,8 @@ u8 CC_id;
     if (eNB_flag==1){
       mac_xface->phy_config_dedicated_eNB(Mod_id,CC_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
     }else{
-      mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
+for (CC_id=0;CC_id<MAX_NUM_CCs; CC_id++){
+      mac_xface->phy_config_dedicated_ue(Mod_id,CC_id,eNB_index,physicalConfigDedicated);}
       UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
       //memcpy(UE_mac_inst[Mod_id].physicalConfigDedicated,physicalConfigDedicated,sizeof(PhysicalConfigDedicated_t));
     }
