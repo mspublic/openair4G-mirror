@@ -73,7 +73,7 @@ extern void *bigphys_malloc(int);
 #endif
 #ifdef Rel10
 #include <SCellToAddMod-r10.h>
-#define MAX_NUM_CCs 5
+#define MAX_NUM_CCs 2
 #endif
 
 extern inline unsigned int taus(void);

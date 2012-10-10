@@ -116,7 +116,7 @@ typedef struct
     UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u32 frame,u8 subframe, lte_subframe_t direction,u8 eNB_id);
 
     /// PHY-Config-Dedicated UE
-    void (*phy_config_dedicated_ue)(u8 Mod_id,u8 CH_index,
+    void (*phy_config_dedicated_ue)(u8 Mod_id, u8 CC_id,u8 CH_index,
 				    struct PhysicalConfigDedicated *physicalConfigDedicated);
 
     /// PHY-Config-SCell-Dedicated UE
@@ -124,13 +124,15 @@ typedef struct
     			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
 
     /// Configure Common PHY parameters from SIB1
-    void (*phy_config_sib1_ue)(u8 Mod_id,u8 CH_index,
+    void (*phy_config_sib1_ue)(u8 Mod_id,
+				u8 CC_id,						       
+				u8 CH_index,
 			       TDD_Config_t *tdd_config,
 			       u8 SIwindowsize,
 			       u16 SIperiod);
     
     /// Configure Common PHY parameters from SIB2
-    void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
+    void (*phy_config_sib2_ue)(u8 Mod_id, u8 CC_id,u8 CH_index,
 			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
     /// Function to indicate failure of contention resolution or RA procedure

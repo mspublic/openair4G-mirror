@@ -43,7 +43,7 @@ ________________________________________________________________*/
 #endif
 
 #ifdef Rel10
-#define MAX_NUM_CCs 5
+#define MAX_NUM_CCs 2
 #define MAX_U8 0xFF
 #endif
 
