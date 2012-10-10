@@ -368,7 +368,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
 	  sdu_sizeP,
           rb_idP);
 #endif //DEBUG_RLC_PDCP_INTERFACE
-      /*switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
+      switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
          case RLC_AM:
              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][PDCP][MOD %02d][RB %02d]\n",frame, module_idP,rb_idP,sdu_sizeP, module_idP,rb_idP);
              break;
@@ -378,8 +378,8 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
          case RLC_TM:
              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][PDCP][MOD %02d][RB %02d]\n",frame, module_idP,rb_idP,sdu_sizeP, module_idP,rb_idP);
              break;
-      }*/
-         pdcp_data_ind (module_idP, frame, eNB_flag, rb_idP, sdu_sizeP, sduP, is_data_planeP);
+      }
+      pdcp_data_ind (module_idP, frame, eNB_flag, rb_idP, sdu_sizeP, sduP, is_data_planeP);
       /*     } else {
         if (rlc_rrc_data_ind != NULL) {
 #ifdef DEBUG_RLC_PDCP_INTERFACE
