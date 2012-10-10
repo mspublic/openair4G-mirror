@@ -6,7 +6,6 @@
  */
 
 #include "../../src/mgmt_configuration.hpp"
-
 #include <gtest/gtest.h>
 
 bool testParseConfigurationFilesNonexistentFile(Configuration& configuration, Logger& logger) {

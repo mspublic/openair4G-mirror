@@ -1,0 +1,86 @@
+
+import sys
+import time
+from packet import * # Packet generator and sender
+
+# Check command-line parameters
+if len(sys.argv) == 1:
+	print "Usage: ", sys.argv[0], " <scenario-file>"
+	sys.exit()
+else:
+	print "Running scenario file: ", sys.argv[1]
+
+scenarioFile = open(sys.argv[1])
+
+# State checks
+startLineRead = False
+endLineRead = False
+# Server information
+serverPort = 1402
+serverAddress = "127.0.0.1"
+# Client information
+clientType = ""
+clientPacketType = ""
+clientPort = 8000
+
+# Traverse scenario file line by line
+line = scenarioFile.readline()
+line = line.strip('\n')
+
+while line:
+	commands = line.split()
+	print commands
+	# Every scenario file has to start with "START" command
+	if commands[0] == "START":
+		startLineRead = True
+
+	# We are asked to SEND a packet
+	elif commands[0] == "SEND":
+		clientPacketType = commands[1]
+		print clientPacketType, "packet is going to be sent"
+		# Configuration Request Packet
+		if clientPacketType == "GET_CONFIGURATION":
+			if Packet.sendConfigurationRequest(serverAddress, serverPort):
+				print "CONFIGURATION_REQUEST packet sent successfully"
+			else:
+				print "ERROR: Cannot send CONFIGURATION_REQUEST"
+		# Network State Packet
+		elif clientPacketType == "NETWORK_STATE":
+			if Packet.sendNetworkState(serverAddress, serverPort):
+				print "NETWORK_STATE packet sent successfully"
+			else:
+				print "ERROR: Cannot send NETWORK_STATE"
+
+	# Wait command
+	elif commands[0] == "WAIT":
+		howManySeconds = int(commands[1])
+		print "Waiting for", howManySeconds, "seconds"
+		time.sleep(howManySeconds)
+
+	# Server port is being defined
+	elif commands[0] == "DEFINE_PORT":
+		serverPort = int(commands[1])
+		print "Server port defined as", serverPort
+
+	# Server address is being defined
+	elif commands[0] == "DEFINE_ADDRESS":
+		serverAddress = commands[1]
+		print "Server address defined as", serverAddress
+
+	# Client type is being defined
+	elif commands[0] == "DEFINE_TYPE":
+		clientType = commands[1]
+		print "Client type defined as", clientType
+
+	# Scenario ends with an END command
+	elif commands[0] == "END":
+		if not startLineRead:
+			print "Syntax error: No START command given"
+			sys.exit()
+		endLineRead = True
+
+	# Read a new line and remove newline
+	line = scenarioFile.readline()
+	line = line.strip('\n')
+
+sys.exit()
