@@ -1,4 +1,9 @@
 
+v1.1.8
+* test/ directory reorganised and simulation/ and unittest/ directories have been added
+* A basic simulator reading files under simulation/scenarios and doing what's written 
+  has been added
+
 v1.1.7
 * TODO.cppcheck file added for static analysis (currently empty since all the notifications 
   have been fixed)
