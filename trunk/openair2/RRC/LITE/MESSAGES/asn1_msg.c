@@ -60,8 +60,6 @@ int errno;
 #define msg printf
 #endif
 
-int transmission_mode_rrc;
-
 uint16_t two_tier_hexagonal_cellIds[7] = {0,1,2,4,5,7,8};
 uint16_t two_tier_hexagonal_adjacent_cellIds[7][6] = {{1,2,4,5,7,8},    // CellId 0
 				                      {11,18,2,0,8,15}, // CellId 1
@@ -566,7 +564,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // PDSCH-Config
 #ifdef EXMIMO
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=-20;
+  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=3;
 #else
   (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=15;
 #endif
@@ -1104,11 +1102,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
   //     AntennaInfoDedicated__transmissionMode_tm2);
 
-  // TODO: set transmission mode based on some external config
-  // for the moment use transmission_mode_rrc
-  //physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
-
-  switch (transmission_mode_rrc){
+  switch (transmission_mode){
   case 1:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;
