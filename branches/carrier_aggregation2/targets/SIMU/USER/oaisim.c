@@ -996,7 +996,7 @@ init_bypass ();
   // initialize channel descriptors
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
       LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
       if (oai_emulation.info.transmission_mode == 5) {
 	eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
@@ -1194,7 +1194,7 @@ init_bypass ();
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id][CC_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	  UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB;
 	  LOG_D(OCM,"Path loss bandwidth for eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
@@ -1208,7 +1208,7 @@ init_bypass ();
     else {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 
 	  //UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
 	  if (eNB_id == (UE_id % NB_eNB_INST)) {
@@ -1254,12 +1254,12 @@ init_bypass ();
 	      PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.frame_type,
 	      PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.Nid_cell);
 	
-	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) 
 	  PHY_vars_eNB_g[eNB_id][CC_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);	
 #ifndef NAS_NETLINK
 	//if ((frame % 10) == 0) {
-	  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id][CC_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
@@ -1321,18 +1321,18 @@ init_bypass ();
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
 #endif
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
-	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
       }
       }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
-	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
 	}
       }
       if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
 	}
 	  /*
@@ -1343,7 +1343,7 @@ init_bypass ();
 	  */
 	}
 	else {// UL part
-	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
 	}
 	}
