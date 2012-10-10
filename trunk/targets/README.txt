@@ -4,10 +4,11 @@
 
 This directory contains different targets for OpenAirInterface.org implementations
 
-CBMIMO1 - CardBus MIMO1 hardware target for x86/RTAI
-EXMIMO  - ExpressMIMO Hardware target for x86/RTAI
+ARCH/EXMIMO - Kernel driver for EXMIMO1+2 
+RTAI/USER   - Target to run .11p (uses openairITS) or LTE modem (uses openair1 and openair2) for x86 in RTAI user-space
 SIMU    - Simulator/Emulator target for x86
 DOCS    - Doxygen documentation generation for openair1/openair2
+
 
 First, you must have all four openair SW directories, openair1, openair2, openair3, and targets at the same hierarchical level as this directory.
 
