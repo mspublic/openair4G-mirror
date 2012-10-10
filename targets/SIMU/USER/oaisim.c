@@ -118,8 +118,6 @@ static void *sigh(void *arg);
 void terminate(void);
 void exit_fun(const char* s);
 
-extern int transmission_mode_rrc;//FIXME!!!
-
 void 
 help (void) {
   printf
@@ -458,7 +456,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
     }
 
     fl_set_xyplot_data(form->demod_out,llr_time,llr,coded_bits_per_codeword,"","","");
-    fl_set_xyplot_ybounds(form->demod_out,-1000,1000);
+    fl_set_xyplot_ybounds(form->demod_out,-200,200);
   }
 
   // DLSCH I/Q
@@ -786,7 +784,7 @@ main (int argc, char **argv)
       abstraction_flag = 1;
       break;
     case 'A':
-      oai_emulation.info.ocm_enabled=1;
+      //oai_emulation.info.ocm_enabled=1;
       if (optarg == NULL)
 	oai_emulation.environment_system_config.fading.small_scale.selected_option="AWGN";
       else
@@ -1064,14 +1062,14 @@ main (int argc, char **argv)
       if (oai_emulation.info.transmission_mode == 5) 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						     (UE_id == 0)? Rayleigh1_corr : Rayleigh1_anticorr,
+						     (UE_id == 0)? Rice1_corr : Rice1_anticorr,
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
 						     0,
 						     0);
       
       else
-      */ 
+      */
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
 						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
@@ -1105,7 +1103,6 @@ main (int argc, char **argv)
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
 
   openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode;
-  transmission_mode_rrc = oai_emulation.info.transmission_mode;//FIXME!!!
 
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
