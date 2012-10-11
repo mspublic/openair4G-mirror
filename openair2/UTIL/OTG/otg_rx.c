@@ -104,7 +104,8 @@ int header_size;
         }
 
 
-       
+	LOG_D(OTG,"[%d][%d] AGGREGATION LEVEL (RX) %d \n", src, dst, otg_hdr_rx->aggregation_level);
+
 	/* Loss and out of sequence data management */
 	if ((otg_hdr_rx->seq_num)==seq_num_rx+1) {
 	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);

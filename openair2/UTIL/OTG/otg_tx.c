@@ -42,6 +42,9 @@
 #include "otg_tx.h" 
 #include "otg_vars.h"
 
+extern unsigned char NB_eNB_INST;
+extern unsigned char NB_UE_INST;
+
 // char string for payload gen
 const char HEADER_STRING[] = "048717272261061594909177115977673656394812939088509638561159848103044447631759621785741859753883189837913087874397230808338408049820398430984093477437879374893649639479575023646394693665969273071047";
 const char PAYLOAD_STRING[] = "UVk5miARQfZGDFKf1wS0dt57kHigd0fXNrUZCjIhpyOS4pZWMHOP1GPdgXmlPtarLUjd3Rmkg05bhUZWtDDmdhrl5EzMZz6DkhIg0Uq7NlaU8ZGrt9EzgVLdr9SiBOLLXiTN3aMInMrlDYFYZ8n5WYbfZTnpz13lbMY4OBE4eWfIMLvBLLyzzzEqjUGILBVMfKGVccPi0VSCyg28RqAiR3z1P6zryk4FWFp0G78AUT1hZWhGcGOTDcKj9bCzny592m1Dj123KWczIm5KVLupO7AP83flqamimfLz6GtHrz5ZN2BAEVQjUhYSc35s5jDhofIlL2U4qPT3Ilsd7amTjaCl5zE0L89ZeIcPCWKSEuNdH5gG8sojuSvph1hU0gG4QOLhCk15IE8eCeMCz2LTL68U0hEQqeM6UmgmA9j7Eid7oPzQHbzj8A30HzGXGhWpt4CT3MSwWVvcCWSbYjkYGgOhHj5csTsONWyGAh5l3qquf8v3jGRSRu0nGXqYILCkw1SX9Na46qodrN6BnPl49djH2AuAaYKAStoR9oL7I1aZG6rVLFPMIZiAqF1tuDVcX9VWnyTVpTMXR6GtBp5bgfDyKuT4ZE9MDUASikGA5hoMfX5Gf2Ml7eLGBtEqZF4rouczHI0DRfgX4ev967n6dYFFkaXbFTvWdykN5bfMinzcrWeqVrmZhTvtUkvq3Rc9enM9qTNz6cDo0HHM0VD8EYtpaPH3yG2CYGDgogHlkaCcHaOyViyq8RH8wf4WQWoHuTNG1kWdkpgTrWic5Gv5p24O9YAPMOn6A1IsdvwpOF85qj8nPvj4nfIo385HOjGfadzfBXueruaKEa0lvbhLgS1bQWKv5fE7k2cMPzQ8USIpUyBhBGUHsLKaykvsr1qDTueAUWAGH8VqyozZZkyhWahjmFEEwU6hhcK1Z9wv9jOAAeqopQvbQFm4aQzzBwGIAhBqhZMiarIBwYPOFdPmK1hKHIa94GGtQbMZ0n83IGt6w8K3dqfOhmpQWqSRZscFwPuo4uhC0ByoC9hFpnizCBfoRZ7Gj9cGOzVLT2eMtD0XC8rUnDiR3p7Ke4ho6lWMLHmtCr7VWYIpY19dtiWoyU0FQ7VMlHoWeBhIUfuG54WVVX0h5Mvvvo0cnLQzh4knysVhAfQw9EhXq94mLrI9GydUaTihOvydQikfq2CrvLeNK81msBlYYoK0aT7OewTUI51YYufj7kYGkPVDf7t5n3VnMV3ShMERKwFyTNHQZyo9ccFibYdoT1FyMAfVeMDO89bUMKAD7RFaT9kUZpaIiH5W7dIbPcPPdSBSr1krKPtuQEeHVgf4OcQLfpOWtsEya4ftXpNw76RPCXmp4rjKt1mCh0pBiTYkQ5GDnj2khLZMzb1uua6R1ika8ACglrs1n0vDbnNjZEVpIMK4OGLFOXIOn9UBserI4Pa63PhUl49TGLNjiqQWdnAsolTKrcjnSklN1swcmyVU8B5gTO4Y3vhkG2U2";
@@ -193,7 +196,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
 
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
   if ((g_otg->application_type[src][dst]==0) && (g_otg->idt_dist[src][dst][state]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
-    LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d: no app type and/or idt are defined\n", src, dst); 
+    //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d: no app type and/or idt are defined\n", src, dst); 
     return NULL;	 
   }
 
@@ -251,7 +254,7 @@ else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][st
    return NULL; // do not generate the packet, and keep the idt
   }
   size=size_dist(src, dst, state);
-  hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
+
 }
 
 else if (((g_otg->application_type[src][dst]==0)||(g_otg->idt_dist[src][dst][state]==0))&&(g_otg->background[src][dst]==1)){ //The case when we configure only background between src and dst, without data traffic
@@ -263,10 +266,19 @@ else if (((g_otg->application_type[src][dst]==0)||(g_otg->idt_dist[src][dst][sta
 	return NULL;
 }
 
+  hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
 
 if (background_ok==0){
   //header=header_gen(header_size_gen(src));
   // payload=payload_pkts(size) ;
+
+/* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
+	if ((g_otg->aggregation_level[src][dst]*size)<=PAYLOAD_MAX)
+		size=(g_otg->aggregation_level[src][dst])*size;
+	else{
+		size=PAYLOAD_MAX;
+    LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
+	}
   header =random_string(header_size_gen(src),  g_otg->packet_gen_type, HEADER_ALPHABET);
   payload = random_string(size,   g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xffff;
@@ -284,6 +296,14 @@ if (background_ok==0){
  } else {
   //header=header_gen(header_size_gen_background(src)); 
   //payload=payload_pkts(otg_info->size_background[src][dst]);
+	if ((g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
+		otg_info->size_background[src][dst]=g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst];
+	else{
+		otg_info->size_background[src][dst]=PAYLOAD_MAX;
+    LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
+	}
+
+
   header =random_string(header_size_gen_background(src),  g_otg->packet_gen_type, HEADER_ALPHABET);
   payload = random_string(otg_info->size_background[src][dst],  g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xbbbb;
@@ -296,13 +316,13 @@ if (background_ok==0){
   if (otg_info->size_background[src][dst]!=strlen(payload))
     LOG_E(OTG,"The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
   else
-    LOG_T(OTG,"The packet size is %d with seq num %d : |%s|%s| \n", size, seq_num, header, payload);
+    LOG_T(OTG,"The packet size is %d with seq num %d : |%s|%s| \n", otg_info->size_background[src][dst], seq_num, header, payload);
 }
  
  buffer_size = hdr_size + strlen(header) + strlen(payload);
  *pkt_size = buffer_size;
  
- return serialize_buffer(header, payload, buffer_size, flag, flow, ctime, seq_num, hdr_type, state);
+ return serialize_buffer(header, payload, buffer_size, flag, flow, ctime, seq_num, hdr_type, state, g_otg->aggregation_level[src][dst]);
 
 }
 
@@ -411,7 +431,7 @@ return(size);
 }
 
 
-char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state){
+char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level){
  
   char *tx_buffer=NULL;
   otg_hdr_info_t *otg_hdr_info_p=NULL;
@@ -433,6 +453,7 @@ char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, i
   otg_hdr_p->seq_num =seq_num;
   otg_hdr_p->hdr_type=hdr_type;
   otg_hdr_p->state = state;
+  otg_hdr_p->aggregation_level=aggregation_level;
   byte_tx_count += sizeof(otg_hdr_t);
   
   // copy the header first 
@@ -668,27 +689,35 @@ int j;
 
 
 int background_gen(int src, int dst, int ctime){ 
-/*if (otg_info->idt_background[src][dst]==0){
-  //size=ceil(lognormal_dist(5.46,0.85));
-   otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
-   if (otg_info->size_background[src][dst]>1500)
-       otg_info->size_background[src][dst]=1500;
-   otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));  
-}*/
-  if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) ||  (otg_info->idt_background[src][dst]==0)){
-     LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
 
-	otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
-   	if (otg_info->size_background[src][dst]>1500)
-       		otg_info->size_background[src][dst]=1500;
-   LOG_I(OTG,"BACKGROUND TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
-   otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
-     otg_info->ptime_background=ctime;	
-     return 1;
+/*check if it is time to transmit the background traffic
+- we have different distributions for packet size and idt for the UL and DL */
+
+	if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) 
+	||  (otg_info->idt_background[src][dst]==0)){
+		LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
+	/* Distinguish between the UL and DL case*/
+	if (src<NB_eNB_INST) // DL case
+		otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
+	else //UL case
+    otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); 
+
+
+		if (otg_info->size_background[src][dst]>1500)
+    	otg_info->size_background[src][dst]=1500;
+    if (otg_info->size_background[src][dst]<=0)
+    	otg_info->size_background[src][dst]=10;
+
+   	LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
+
+/* Compute the corresponding IDT*/
+		otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
+  	otg_info->ptime_background=ctime;	
+    return 1;
   }
-   else {
-     // LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
-     return 0;
+	else {
+		//LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
+    return 0;
    }
 
 }
