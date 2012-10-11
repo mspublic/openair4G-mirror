@@ -233,6 +233,20 @@ class Util {
 		 * @return String representation of current date and time information
 		 */
 		static string getDateAndTime(bool withDelimiters);
+		/**
+		 * Returns the list of files in given directory
+		 *
+		 * @param directory Directory that'll be traversed
+		 * @return Vector of std::string carrying directory content
+		 */
+		static vector<string> getListOfFiles(const string& directory);
+		/**
+		 * Returns the file extension of given file name
+		 *
+		 * @param fileName File name of type std::string
+		 * @return File extension of type std::string
+		 */
+		static string getFileExtension(const string& fileName);
 };
 
 #endif /* MGMT_UTIL_HPP_ */

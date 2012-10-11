@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -56,7 +56,20 @@ const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_
 Configuration::Configuration(const vector<string>& configurationFileNameVector, Logger& logger)
 	: logger(logger) {
 	this->configurationFileNameVector = configurationFileNameVector;
-	logger.info("There are " + boost::lexical_cast<string>(configurationFileNameVector.size()) + " configuration file(s) to parse");
+
+	/**
+	 * Write given configuration files' names
+	 */
+	stringstream ss;
+	vector<string>::const_iterator it = configurationFileNameVector.begin();
+	while (it != configurationFileNameVector.end())
+		/**
+		 * Following is a nasty-looking one-liner not to put a comma at the end
+		 */
+		ss << *it++ << ((it+1 == configurationFileNameVector.end()) ? "" : ", ");
+
+	logger.info("Following " + boost::lexical_cast<string>(configurationFileNameVector.size()) + \
+			" file(s) have been found (only those with .conf extension will be parsed): " + ss.str());
 
 	/**
 	 * Set default values
@@ -73,10 +86,8 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 	/**
 	 * Verify there is at least one configuration file given to be parsed
 	 */
-	if (configurationFileNameVector.empty()) {
-		logger.warning("No configuration file name is given to be parsed");
-		return false;
-	}
+	if (configurationFileNameVector.empty())
+		throw Exception("No configuration file name is given to be parsed", logger);
 
 	ifstream configurationFileStream;
 	string parameter, value;
@@ -93,7 +104,22 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 	 * every single parameter/[parameterID/]value pair we find
 	 */
 	for (vector<string>::const_iterator it = configurationFileNameVector.begin(); it != configurationFileNameVector.end(); ++it) {
+		/**
+		 * Check file name extension and do not parse if it's not '.conf'
+		 */
+		string fileExtension = Util::getFileExtension(*it);
+		if (fileExtension.compare(".conf") != 0) {
+			logger.warning("There is a file named '" + *it + "' without .conf extension in given list");
+			continue;
+		}
+
 		string configurationFile = *it;
+		/**
+		 * Add directory name if a FACilities configuration file is being parsed
+		 */
+		if (configurationFile.compare("MGMT.conf") != 0)
+			configurationFile = facilitiesConfigurationDirectory + configurationFile;
+
 		logger.info("Parsing configuration file '" + configurationFile + "'");
 		configurationFileStream.open(configurationFile.c_str());
 
@@ -247,6 +273,10 @@ const vector<string>& Configuration::getConfigurationFileVector() const {
 
 void Configuration::addConfigurationFile(const string& configurationFileName) {
 	this->configurationFileNameVector.push_back(configurationFileName);
+}
+
+void Configuration::setFacilitiesConfigurationDirectory(const string& directory) {
+	facilitiesConfigurationDirectory = directory;
 }
 
 int Configuration::getServerPort() const {

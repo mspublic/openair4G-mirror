@@ -1,4 +1,16 @@
 
+v1.1.9
+* Documentation/SCOREF-MGMT_Configuration.{odt|pdf} files have been updated according 
+  to the new scheme introduced by FACilities configuration files
+* bin/IF.MGMT.conf file renamed as bin/MGMT.conf
+* New header and instructions have been added into bin/configuration/MGMT.IHM.conf file
+* README.RUNNING and bin/valgrind.sh files updated according to configuration file name change
+* Now Configuration class is able to parse any .conf extensioned file under some certain directory
+* Exceptions thrown by unit test methods handled
+* Unit tests written for new Util methods
+* EURECOM's address has been updated in every file's header
+* Bugfix for Exception::printStackTrace() code causing SIGSEGV
+
 v1.1.8
 * test/ directory reorganised and simulation/ and unittest/ directories have been added
 * A basic simulator reading files under simulation/scenarios and doing what's written 

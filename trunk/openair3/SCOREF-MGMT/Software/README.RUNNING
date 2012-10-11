@@ -10,7 +10,7 @@ name) and a new file will be created. All the output is directed to
 this file and to standard output only for debugging purposes. Further 
 versions will write to the log file only.
 
-[demiray@leynes test]$  ./SCOREF-MGMT IF.MGMT.conf [LogFileName]
+[demiray@leynes test]$  ./SCOREF-MGMT MGMT.conf [LogFileName]
 
 After SCOREF-MGMT is started it'll read the configuration file,
 update local configuration (such as UDP server port) and MIB
@@ -19,7 +19,7 @@ listening for incoming connections on UDP port defined by
 CONF_SERVER_PORT parameter in the configuration file. Output of a 
 sample run is given below:
 
-[demiray@leynes test]$  ./SCOREF-MGMT IF.MGMT.conf
+[demiray@leynes test]$  ./SCOREF-MGMT MGMT.conf
 2012/08/13-16:51:48   INFO: Management Information Base has been created
 2012/08/13-16:51:48   INFO: Setting Wireless State Update Interval to 120 seconds
 2012/08/13-16:51:48   INFO: Setting Location Update Interval to 60 seconds

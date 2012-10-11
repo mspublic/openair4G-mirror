@@ -40,6 +40,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/include/i386-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/lib/gcc/i686-linux-gnu/4.6/include/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/i686-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/ext/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1522413688" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -61,6 +64,9 @@
 									<listOptionValue builtIn="false" value="/usr/include/i386-linux-gnu/"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/lib/gcc/i686-linux-gnu/4.6/include/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/i686-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/ext/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.982448758" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -82,6 +88,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/IF.MGMT/src/packets}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/include/i386-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/lib/gcc/i686-linux-gnu/4.6/include/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/i686-linux-gnu/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.6/ext/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1126765345" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>

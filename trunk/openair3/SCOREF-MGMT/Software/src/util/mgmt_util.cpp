@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -40,7 +40,10 @@
 */
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/date_time.hpp>
+using namespace boost::filesystem;
+
 #include "mgmt_util.hpp"
 #include <iostream>
 #include <sstream>
@@ -332,4 +335,32 @@ string Util::getDateAndTime(bool withDelimiters) {
 	ss << ldt;
 	cout << ss.str() << endl; // "2004-02-29 12:34:56.000789-05:00"
 #endif
+}
+
+vector<string> Util::getListOfFiles(const string& directory) {
+	boost::filesystem::path directoryPath(directory);
+	vector<string> fileList;
+
+	/**
+	 * First check if it exists and then if it really is a directory
+	 */
+	if (!exists(directory) && !is_directory(directoryPath))
+		return fileList;
+
+	directory_iterator endIterator;
+	for (directory_iterator directoryIterator(directoryPath); directoryIterator != endIterator; ++directoryIterator)
+		fileList.push_back(directoryIterator->path().filename().c_str());
+
+	return fileList;
+}
+
+string Util::getFileExtension(const string& fileName) {
+	/**
+	 * If there is no dots then do not let this method to throw an
+	 * exception, just return an empty string
+	 */
+	if (fileName.find('.') == string::npos)
+		return "";
+
+	return fileName.substr(fileName.rfind('.'), fileName.length() - fileName.rfind('.'));
 }
