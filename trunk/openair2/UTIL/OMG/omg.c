@@ -124,8 +124,11 @@ void stop_mobility_generator(int mobility_type) {
   switch (mobility_type) {
 
   case STATIC: 
+    break;
   case RWP: 
+    break;
   case RWALK: 
+    break;
   case TRACE:
     clear_llist();
    break; 
