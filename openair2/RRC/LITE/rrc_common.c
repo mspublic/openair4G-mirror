@@ -248,13 +248,6 @@ void rrc_top_cleanup(void){
 
 }
 
-int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
-  if(eNB_flag == 1)
-    return(eNB_rrc_inst[Mod_id].Info.Status[index]);
-  else
-    return(UE_rrc_inst[Mod_id].Info[index].State);
-}
-
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
 u16 T310[8] = {0,50,100,200,500,1000,2000};
 u16 N310[8] = {1,2,3,4,6,8,10,20};

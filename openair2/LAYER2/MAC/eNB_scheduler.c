@@ -1152,12 +1152,10 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	//	printf("Got harq_pid %d, round %d, next_ue %d\n",harq_pid,round,next_ue);
 
 
+	status = mac_get_rrc_status(Mod_id,1,next_ue);
 
 
-	status = get_rrc_status(Mod_id,1,next_ue);
-
-
-	if (status < RRC_CONNECTED) // what is the value ???
+	if (status < RRC_CONNECTED) 
 	  cqi_req = 0;
 	else
 	  cqi_req = 1;
