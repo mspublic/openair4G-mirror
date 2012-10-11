@@ -193,6 +193,7 @@ void init_oai_emulation() {
 		oai_emulation.application_config.customized_traffic.destination_id[i] = "2";
 		oai_emulation.application_config.customized_traffic.transport_protocol[i] = "udp";
 		oai_emulation.application_config.customized_traffic.ip_version[i] = "ipv4";
+    oai_emulation.application_config.customized_traffic.aggregation_level[i] = 1;
 		oai_emulation.application_config.customized_traffic.idt_dist[i] = "uniform";
 		oai_emulation.application_config.customized_traffic.idt_min_ms[i] = 100;
 		oai_emulation.application_config.customized_traffic.idt_max_ms[i] = 1000;
@@ -219,7 +220,8 @@ void init_oai_emulation() {
 	oai_emulation.application_config.customized_traffic.holding_time_off_pe = 0;
 	
 	oai_emulation.emulation_config.emulation_time_ms = 0;
-        oai_emulation.emulation_config.curve = "disable";
+  oai_emulation.emulation_config.curve = "disable";
+  oai_emulation.emulation_config.background_stats = "disable";
 	oai_emulation.emulation_config.performance_metrics.throughput = "disable";
 	oai_emulation.emulation_config.performance_metrics.latency ="disable";
 	oai_emulation.emulation_config.performance_metrics.loss_rate ="disable";
@@ -519,13 +521,15 @@ int ocg_config_app(){
 	int customized_traffic_config_index;
 
 	init_all_otg();
-        g_otg->seed= oai_emulation.info.seed;
+  g_otg->seed= oai_emulation.info.seed;
 	g_otg->num_nodes = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_ue_local;
 	g_otg->throughput_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.throughput);
-        g_otg->latency_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.latency);
+  g_otg->latency_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.latency);
 	g_otg->loss_metric =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.loss_rate);
-        g_otg->owd_radio_access =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.owd_radio_access);
-        g_otg->curve=map_str_to_int(switch_names,oai_emulation.emulation_config.curve);
+  g_otg->owd_radio_access =map_str_to_int(switch_names,oai_emulation.emulation_config.performance_metrics.owd_radio_access);
+  g_otg->curve=map_str_to_int(switch_names,oai_emulation.emulation_config.curve);
+  g_otg->background_stats=map_str_to_int(switch_names,oai_emulation.emulation_config.background_stats);
+
 	g_otg->packet_gen_type=map_str_to_int(packet_gen_names,oai_emulation.application_config.packet_gen_type);
 	
 	for (i=0; i<g_otg->num_nodes; i++){
@@ -539,6 +543,7 @@ int ocg_config_app(){
 		for (j=0; j<g_otg->num_nodes; j++){
 
 			g_otg->application_type[i][j]=map_str_to_int(otg_app_type_names, "no_predefined_traffic");
+ 			g_otg->aggregation_level[i][j]=oai_emulation.application_config.customized_traffic.aggregation_level[i];
 			for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
 
 				g_otg->idt_dist[i][j][k]=map_str_to_int(otg_distribution_names, "no_customized_traffic");
@@ -707,7 +712,7 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst	
 g_otg->trans_proto[source_id_index] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
 		g_otg->ip_v[source_id_index] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
-		
+		g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
 		g_otg->idt_dist[source_id_index][destination_id_index][0] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
 		g_otg->idt_dist[source_id_index][destination_id_index][1] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
 		
@@ -768,7 +773,8 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 		if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst	
 		g_otg->trans_proto[source_id_index] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
 		g_otg->ip_v[source_id_index] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
-		
+		g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
+
 		g_otg->idt_dist[source_id_index][destination_id_index][0] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
 		g_otg->idt_dist[source_id_index][destination_id_index][1] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
 
@@ -845,6 +851,8 @@ LOG_I(OTG,"custom:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, dist 
 
 	      g_otg->trans_proto[source_id_index] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
 	      g_otg->ip_v[source_id_index] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
+				g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
+
 	      g_otg->idt_dist[source_id_index][destination_id_index][0] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
 	      g_otg->idt_dist[source_id_index][destination_id_index][1] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
 	      
