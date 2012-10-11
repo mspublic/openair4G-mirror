@@ -494,6 +494,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     double size_shape[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int stream[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int destination_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   } Customized_Traffic;
 
 /** @defgroup _app_config Application Configuration
@@ -562,6 +563,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     Packet_Trace packet_trace;
     Seed seed;
     char * curve;
+    char * background_stats;
     // CLI tags are in Info 
     //char g_log_level[20];
   } Emulation_Config;
