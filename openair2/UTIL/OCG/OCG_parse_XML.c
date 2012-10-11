@@ -158,6 +158,7 @@ static int destination_id_;
 static int traffic_;		/*!< \brief indicating that the parsing position is now within Traffic_*/
 static int transport_protocol_;	/*!< \brief indicating that the parsing position is now within Transport_Protocol_*/
 static int ip_version_;
+static unsigned int aggregation_level_;
 static int idt_dist_;
 static int idt_min_ms_;
 static int idt_max_ms_;
@@ -179,6 +180,7 @@ static int packet_gen_type_;
 static int emulation_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
 static int emulation_time_ms_;
 static int curve_;
+static int background_stats_;
 static int performance_metrics_;		/*!< \brief indicating that the parsing position is now within Performance_*/
 static int throughput_;
 static int latency_;
@@ -434,6 +436,8 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		transport_protocol_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IP_VERSION")) {
 		ip_version_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "AGGREGATION_LEVEL")) {
+		aggregation_level_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IDT_DIST")) {
 		idt_dist_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IDT_MIN_ms")) {
@@ -473,6 +477,8 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		emulation_time_ms_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "CURVE")) {
 		curve_ = 1;
+	} else if (!xmlStrcmp(name,(unsigned char*) "BACKGROUND_STATS")) {
+		background_stats_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -735,6 +741,8 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		traffic_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "AGGREGATION_LEVEL")) {
+		aggregation_level_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IP_VERSION")) {
 		ip_version_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IDT_DIST")) {
@@ -776,6 +784,8 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		emulation_time_ms_ = 0;
 	}else if (!xmlStrcmp(name,(unsigned char*) "CURVE")) {
 		curve_ = 0;
+	}else if (!xmlStrcmp(name,(unsigned char*) "BACKGROUND_STATS")) {
+		background_stats_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -1065,6 +1075,8 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					oai_emulation.application_config.customized_traffic.transport_protocol[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (ip_version_) {
 					oai_emulation.application_config.customized_traffic.ip_version[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+	      } else if (aggregation_level_) {
+					oai_emulation.application_config.customized_traffic.aggregation_level[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
 				} else if (idt_dist_) {
 					oai_emulation.application_config.customized_traffic.idt_dist[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (idt_min_ms_) {
@@ -1105,6 +1117,8 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 		    oai_emulation.emulation_config.emulation_time_ms = atof(ch);
 		  } else if (curve_) {
 		    oai_emulation.emulation_config.curve = strndup(ch, len);
+ 			} else if (background_stats_) {
+		    oai_emulation.emulation_config.background_stats = strndup(ch, len);
 		  }else if (performance_metrics_) {
 		    if (throughput_) {
 		      oai_emulation.emulation_config.performance_metrics.throughput = strndup(ch, len);
