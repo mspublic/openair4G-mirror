@@ -104,6 +104,14 @@ class Configuration {
 		 */
 		void addConfigurationFile(const string& configurationFileName);
 		/**
+		 * Sets the directory name where Configuration class is going to
+		 * look for FACilities configuration files
+		 *
+		 * @param directory Directory name (relative to ./)
+		 * @return none
+		 */
+		void setFacilitiesConfigurationDirectory(const string& directory);
+		/**
 		 * Returns UDP server port number
 		 *
 		 * @param none
@@ -174,6 +182,10 @@ class Configuration {
 		bool setValue(const string& parameter, const string& value);
 
 	private:
+		/**
+		 * Directory where FACilities configuration files reside
+		 */
+		string facilitiesConfigurationDirectory;
 		/**
 		 * Configuration files name vector
 		 */

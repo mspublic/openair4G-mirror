@@ -81,43 +81,53 @@ namespace ScorefTest {
 	 * Util class tests
 	 */
 	TEST_F(ScorefManagementTest, UtilTest) {
-		testUtilResetBuffer(*logger);
-		testUtilCopyBuffer(*logger);
-		testUtilGetBinaryRepresentation(*logger);
-		testUtilSetBit(*logger);
-		testUtilUnsetBit(*logger);
-		testUtilIsBitSet(*logger);
-		testUtilParse8byteInteger(*logger);
-		testUtilParse4byteInteger(*logger);
-		testUtilParse2byteInteger(*logger);
-		testUtilEncode8ByteInteger(*logger);
-		testUtilEncode4ByteInteger(*logger);
-		testUtilEncode2ByteInteger(*logger);
-		testUtilEncodeBits(*logger);
-		testUtilSplit(*logger);
-		testUtilTrim(*logger);
-		testUtilIsNumeric(*logger);
+		try {
+			testUtilResetBuffer(*logger);
+			testUtilCopyBuffer(*logger);
+			testUtilGetBinaryRepresentation(*logger);
+			testUtilSetBit(*logger);
+			testUtilUnsetBit(*logger);
+			testUtilIsBitSet(*logger);
+			testUtilParse8byteInteger(*logger);
+			testUtilParse4byteInteger(*logger);
+			testUtilParse2byteInteger(*logger);
+			testUtilEncode8ByteInteger(*logger);
+			testUtilEncode4ByteInteger(*logger);
+			testUtilEncode2ByteInteger(*logger);
+			testUtilEncodeBits(*logger);
+			testUtilSplit(*logger);
+			testUtilTrim(*logger);
+			testUtilIsNumeric(*logger);
+			testGetListOfFiles(*logger);
+			testGetFileExtension(*logger);
+		} catch (std::exception& e) {
+			cerr << "std::exception.what() = '" << e.what() << "'" << endl;
+		}
 	}
 
 	/**
 	 * Configuration class tests
 	 */
 	TEST_F(ScorefManagementTest, ConfigurationTest) {
-		testParseConfigurationFiles(*configuration, *managementInformationBase, *logger);
+		try {
+			testParseConfigurationFiles(*configuration, *managementInformationBase, *logger);
 #ifdef PRIVATE
-		testParseLine(*configuration, *logger);
-		testParseParameterId(*configuration, *logger);
-		testSetValue(*configuration, *logger);
+			testParseLine(*configuration, *logger);
+			testParseParameterId(*configuration, *logger);
+			testSetValue(*configuration, *logger);
 #endif
-		testGetConfigurationFileVector(*configuration, *logger);
-		testAddConfigurationFile(*configuration, *logger);
-		testGetServerPort(*configuration, *logger);
-		testSetServerPort(*configuration, *logger);
-		testGetWirelessStateUpdateInterval(*configuration, *logger);
-		testSetWirelessStateUpdateInterval(*configuration, *logger);
-		testGetLocationUpdateInterval(*configuration, *logger);
-		testSetLocationUpdateInterval(*configuration, *logger);
-		testConfiguration(*configuration, *managementInformationBase, *logger);
+			testGetConfigurationFileVector(*configuration, *logger);
+			testAddConfigurationFile(*configuration, *logger);
+			testGetServerPort(*configuration, *logger);
+			testSetServerPort(*configuration, *logger);
+			testGetWirelessStateUpdateInterval(*configuration, *logger);
+			testSetWirelessStateUpdateInterval(*configuration, *logger);
+			testGetLocationUpdateInterval(*configuration, *logger);
+			testSetLocationUpdateInterval(*configuration, *logger);
+			testConfiguration(*configuration, *managementInformationBase, *logger);
+		} catch (std::exception& e) {
+				cerr << "std::exception.what() = '" << e.what() << "'" << endl;
+		}
 	}
 }
 
