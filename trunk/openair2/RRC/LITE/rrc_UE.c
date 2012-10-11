@@ -793,7 +793,9 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
 	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
-	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
+	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index); 
+	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED; 
+	LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;
