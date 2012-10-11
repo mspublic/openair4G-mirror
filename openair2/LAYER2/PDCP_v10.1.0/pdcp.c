@@ -81,7 +81,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   u8 pdcp_header_len=0, pdcp_tailer_len=0;
   u16 pdcp_pdu_size=0, current_sn;
   mem_block_t* pdcp_pdu = NULL;
-  
+
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "Handed SDU is of size 0! Ignoring...\n");
     return FALSE;
@@ -89,14 +89,14 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   /*
    * XXX MAX_IP_PACKET_SIZE is 4096, shouldn't this be MAX SDU size, which is 8188 bytes?
    */
-  
+
   if (sdu_buffer_size > MAX_IP_PACKET_SIZE) {
     LOG_E(PDCP, "Requested SDU size (%d) is bigger than that can be handled by PDCP!\n", sdu_buffer_size);
     // XXX What does following call do?
     mac_xface->macphy_exit("");
   }
 
-  // calculate the pdcp header and trailer size 
+  // calculate the pdcp header and trailer size
   if ((rab_id % MAX_NUM_RB) < DTCH) {
     pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
     pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
@@ -105,9 +105,9 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     pdcp_tailer_len = 0;
   }
   pdcp_pdu_size= sdu_buffer_size + pdcp_header_len + pdcp_tailer_len;
-  
+
   LOG_I(PDCP, "Data request notification for PDCP entity with module ID %d and radio bearer ID %d pdu size %d (header%d, trailer%d)\n", module_id, rab_id,pdcp_pdu_size, pdcp_header_len,pdcp_tailer_len);
-  
+
   /*
    * Allocate a new block for the new PDU (i.e. PDU header and SDU payload)
    */
@@ -120,7 +120,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
      *
      * Place User Plane PDCP Data PDU header first
      */
-    
+
     if ((rab_id % MAX_NUM_RB) < DTCH) { // this Control plane PDCP Data PDU
       pdcp_control_plane_data_pdu_header pdu_header;
       pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
@@ -155,13 +155,13 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 
      /* Then append data... */
     memcpy(&pdcp_pdu->data[pdcp_header_len], sdu_buffer, sdu_buffer_size);
-    //For control plane data that are not integrity protected, 
+    //For control plane data that are not integrity protected,
     // the MAC-I field is still present and should be padded with padding bits set to 0.
     for (i=0;i<pdcp_tailer_len;i++)
       pdcp_pdu->data[pdcp_header_len + sdu_buffer_size + i] = 0x00;// pdu_header.mac_i[i];
 
     /* Print octets of outgoing data in hexadecimal form */
-    LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n", 
+    LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n",
 	  pdcp_pdu_size);
     //util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
     util_flush_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
@@ -244,7 +244,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   int src_id, dst_id,ctime; // otg param
   u8 pdcp_header_len=0, pdcp_tailer_len=0;
   u16 sequence_number;
-  
+
   LOG_I(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rab_id, sdu_buffer_size);
 
   if (sdu_buffer_size == 0) {
@@ -254,7 +254,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 
   /*
    * Check if incoming SDU is long enough to carry a PDU header
-   */ 
+   */
   if ((rab_id % MAX_NUM_RB) < DTCH) {
     pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
     pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
@@ -262,7 +262,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
     pdcp_tailer_len = 0;
   }
-  
+
   if (sdu_buffer_size < pdcp_header_len + pdcp_tailer_len ) {
     LOG_W(PDCP, "Incoming (from RLC) SDU is short of size (size:%d)! Ignoring...\n", sdu_buffer_size);
 #ifndef PDCP_UNIT_TEST
@@ -270,12 +270,12 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 #endif
     return FALSE;
   }
-  
+
   /*
    * Parse the PDU placed at the beginning of SDU to check
    * if incoming SN is in line with RX window
-   */ 
-  
+   */
+
   if (pdcp_header_len == PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) { // DRB
     sequence_number =     pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer->data);
     u8 dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer->data);
@@ -291,7 +291,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   } else {
     LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
     /*
-     * XXX Till we implement in-sequence delivery and duplicate discarding 
+     * XXX Till we implement in-sequence delivery and duplicate discarding
      * mechanism all out-of-order packets will be delivered to RRC/IP
      */
 #if 0
@@ -302,24 +302,24 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
 #endif
   }
-   // SRB1/2: control-plane data  
-  if ( (rab_id % MAX_NUM_RB) <  DTCH ){ 
+   // SRB1/2: control-plane data
+  if ( (rab_id % MAX_NUM_RB) <  DTCH ){
     /*new_sdu = get_free_mem_block(sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
     if (new_sdu) {
-      memcpy(new_sdu->data, 
-	     &sdu_buffer->data[pdcp_header_len], 
+      memcpy(new_sdu->data,
+	     &sdu_buffer->data[pdcp_header_len],
 	     sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
-      rrc_lite_data_ind(module_id, 
-			frame, 
-			eNB_flag, 
-			rab_id, 
+      rrc_lite_data_ind(module_id,
+			frame,
+			eNB_flag,
+			rab_id,
 			sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
 			new_sdu->data);
 			}*/
-    rrc_lite_data_ind(module_id, 
-			frame, 
-			eNB_flag, 
-			rab_id, 
+    rrc_lite_data_ind(module_id,
+			frame,
+			eNB_flag,
+			rab_id,
 			sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
 			&sdu_buffer->data[pdcp_header_len]);
     free_mem_block(sdu_buffer);
@@ -329,11 +329,11 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ){
   src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + 1 :  ((rab_id - DTCH) / MAX_NUM_RB);
-  dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;  
+  dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;
   ctime = oai_emulation.info.time_ms; // avg current simulation time in ms : we may get the exact time through OCG?
   LOG_I(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rab_id, src_id, dst_id);
-  if (otg_rx_pkt(src_id, dst_id,ctime,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], 
-		 sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) { 
+  if (otg_rx_pkt(src_id, dst_id,ctime,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE],
+		 sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) {
      free_mem_block(sdu_buffer);
      return TRUE;
   }
@@ -377,7 +377,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 	  sdu_buffer_size  - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
     //util_print_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size  - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof(pdcp_data_ind_header_t));
     util_flush_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size  - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof(pdcp_data_ind_header_t));
-    
+
     /*
      * Update PDCP statistics
      * XXX Following two actions are identical, is there a merge error?
@@ -387,7 +387,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
       Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size;
     } else {
       Pdcp_stats_rx[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH]++;
-      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size; 
+      Pdcp_stats_rx_bytes[module_id][(rab_id & RAB_OFFSET2) >> RAB_SHIFT2][(rab_id & RAB_OFFSET) - DTCH] += sdu_buffer_size;
     }
   }
 
@@ -414,7 +414,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
   int pkt_size=0;
   unsigned int ctime=0;
   /*
-  if ((frame % 128) == 0) { 
+  if ((frame % 128) == 0) {
     for (i=0; i < NB_UE_INST; i++) {
       for (j=0; j < NB_CNX_CH; j++) {
         for (k=0; k < NB_RAB_MAX; k++) {
@@ -436,7 +436,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     module_id = (eNB_flag == 1) ?  eNB_index : /*NB_eNB_INST +*/ UE_index ;
     //rab_id    = (eNB_flag == 1) ? eNB_index * MAX_NUM_RB + DTCH : (NB_eNB_INST + UE_index -1 ) * MAX_NUM_RB + DTCH ;
     ctime = oai_emulation.info.time_ms; // current simulation time in ms
-    if (eNB_flag == 1) { // search for DL traffic 
+    if (eNB_flag == 1) { // search for DL traffic
       for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
 	if (mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/ ) { 
@@ -463,25 +463,25 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
       } //else LOG_D(OTG,"frame %d ue %d-> enb %d link not yet established \n", frame, UE_index, eNB_index);
     }
   }
-#endif  
+#endif
   // NAS -> PDCP traffic
   pdcp_fifo_read_input_sdus(frame,eNB_flag);
 
   // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus(frame,eNB_flag);
- 
-//OTG 
+
+//OTG
 /*
   if ( eNB_flag == 0){
     char *rx_packet_out;
     rx_packet_out=check_packet(0, 0, frame, packet_gen(0, 0, 0, frame));
-    if (rx_packet_out!=NULL){ 
-      rx_packet_out=NULL;  					
+    if (rx_packet_out!=NULL){
+      rx_packet_out=NULL;
       free(rx_packet_out);
     }
   }
 */
- 
+
 }
 
 //-----------------------------------------------------------------------------
@@ -499,15 +499,15 @@ rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  actio
     pdcp_array[module_id][rab_id].rx_hfn = 0;
     /* SN of the last PDCP SDU delivered to upper layers */
     pdcp_array[module_id][rab_id].last_submitted_pdcp_rx_sn = 4095;
-    
+
     if ( (rab_id % MAX_NUM_RB) < DTCH) // SRB
       pdcp_array[module_id][rab_id].seq_num_size = 5;
     else // DRB
       pdcp_array[module_id][rab_id].seq_num_size = 12;
     pdcp_array[module_id][rab_id].first_missing_pdu = -1;
-    LOG_I(PDCP,"[%s %d] Config request : Action ADD: Frame %d radio bearer id %d configured\n", 
+    LOG_I(PDCP,"[%s %d] Config request : Action ADD: Frame %d radio bearer id %d configured\n",
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rab_id);
-    
+    LOG_D(PDCP,  "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_id,rab_id);
     break;
   case ACTION_MODIFY:
     break;
@@ -519,14 +519,14 @@ rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  actio
   pdcp_array[module_id][rab_id].last_submitted_pdcp_rx_sn = 4095;
   pdcp_array[module_id][rab_id].seq_num_size = 0;
   pdcp_array[module_id][rab_id].first_missing_pdu = -1;
-  LOG_I(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n", 
+  LOG_I(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n",
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rab_id);
-    
+
     break;
   default:
     break;
   }
-  
+
 }
 
 // TODO PDCP module initialization code might be removed
@@ -615,7 +615,7 @@ pdcp_layer_init ()
       pdcp_config_req(i, j * MAX_NUM_RB + DTCH, DTCH ); // default DRB
     }
     }*/
-  
+
   for (i=0;i<NB_UE_INST;i++) { // ue
     for (k=0;k<NB_eNB_INST;k++) { // enb
       for(j=0;j<NB_RAB_MAX;j++) {//rb
