@@ -1,7 +1,14 @@
-
 import sys
+import signal
 import time
-from packet import * # Packet generator and sender
+from packet import * # Packet generator for MGMT -> CLIENT packets
+from responder import * # Responder for CLIENT -> MGMT packets
+
+# Handle SIGINT to exit nicely
+def signal_handler(signal, frame):
+	print 'CTRL+C caught, exiting...'
+	sys.exit(0)
+signal.signal(signal.SIGINT, signal_handler)
 
 # Check command-line parameters
 if len(sys.argv) == 1:
@@ -22,6 +29,10 @@ serverAddress = "127.0.0.1"
 clientType = ""
 clientPacketType = ""
 clientPort = 8000
+# If incoming packets are going to be replied with 
+# corresponding response packets or simply ignored
+# False: Ignore, True: Process and Reply
+clientReply = False
 
 # Traverse scenario file line by line
 line = scenarioFile.readline()
@@ -29,7 +40,7 @@ line = line.strip('\n')
 
 while line:
 	commands = line.split()
-	print commands
+	print "DEBUG = ", commands
 	# Every scenario file has to start with "START" command
 	if commands[0] == "START":
 		startLineRead = True
@@ -71,6 +82,16 @@ while line:
 	elif commands[0] == "DEFINE_TYPE":
 		clientType = commands[1]
 		print "Client type defined as", clientType
+
+	# Are incoming packets going to be responded
+	elif commands[0] == "DEFINE_REPLY":
+		clientReply = True if commands[1] == "TRUE" else False
+		if clientReply:
+			print "Those incoming messages that require a response will be handled and a response will be sent"
+			responder = Responder()
+			responder.start()
+		else:
+			print "Those incoming messages that require a response will be ignored"
 
 	# Scenario ends with an END command
 	elif commands[0] == "END":
