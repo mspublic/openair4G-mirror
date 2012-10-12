@@ -7,6 +7,7 @@ TX_LO_LEAKAGE_MIN1 = 99999;
 freq_rx = 1907600000*[1 1 1 1];
 freq_tx = freq_rx+1920000;
 rxgain = 30*[1 1 1 1];
+txgain = 25*[1 1 1 1];
 
 for txdc_I=0:4:63
   for txdc_Q=0:4:63
@@ -18,7 +19,7 @@ for txdc_I=0:4:63
         rf_rxdc   = ((128+rxdc_I) + (128+rxdc_Q)*(2^8))*[1 1 1 1];
         rf_vcocal = (((0xE)*(2^6)) + (0xE))*[1 1 1 1];
 
-        oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
 
         s=oarf_get_frame(0);
         sF0 = 20*log10(abs(fftshift(fft(s(:,1)))));
@@ -81,7 +82,7 @@ for deltaI = -3:3,
      rf_local(1)  = txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18); 
      rf_local(2)  = txdc_I_min1 + (txdc_Q_min1)*(2^6) + 31*(2^12) + 31*(2^18);
 
-     oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
      s=oarf_get_frame(0);
      sF0 = 20*log10(abs(fftshift(fft(s(:,1)))));
      spec0 = sF0;
@@ -125,7 +126,7 @@ for deltaI = -3:3,
       rf_local(1)  = txdc_I_min02 + (txdc_Q_min02)*(2^6) + 31*(2^12) + 31*(2^18);
       rf_local(2)  = txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18);
 
-      oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+      oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
 
       s=oarf_get_frame(0);
       sF1 = 20*log10(abs(fftshift(fft(s(:,2)))));
@@ -166,7 +167,7 @@ rf_local(1)  = txdc_I_min02 + (txdc_Q_min02)*(2^6) + 31*(2^12) + 31*(2^18);
 rf_local(2)  = txdc_I_min12 + (txdc_Q_min12)*(2^6) + 31*(2^12) + 31*(2^18);
 
 
-oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
 
 s=oarf_get_frame(0);
 sF0 = 20*log10(abs(fftshift(fft(s(:,1)))));

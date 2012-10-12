@@ -37,10 +37,10 @@ static bool any_bad_argument(const octave_value_list &args)
   octave_value v,w;
   int i;
 
-  if (args.length()!=10)
+  if (args.length()!=11)
   {
     error(FCNNAME);
-    error("syntax: oarf_config_exmimo(freq,freq_tx,tdd,dual_tx,rxgain,eNB_flag,rf_mode,rx_dc,rf_local,rf_vcolocal)");
+    error("syntax: oarf_config_exmimo(freq,freq_tx,tdd,dual_tx,rxgain,txgain,eNB_flag,rf_mode,rx_dc,rf_local,rf_vcolocal)");
     return true;
   }
 
@@ -86,7 +86,7 @@ static bool any_bad_argument(const octave_value_list &args)
 	if ((real(args(4).row_vector_value()(i))<0.0) || (real(args(4).row_vector_value()(i))>50.0))
 	  {
 	    error(FCNNAME);
-	    error("gain must be between 0 and 50. (got %f).",args(4).row_vector_value()(i));
+	    error("rx gain must be between 0 and 50. (got %f).",args(4).row_vector_value()(i));
 	    return true;
 	  }
       }
@@ -95,15 +95,32 @@ static bool any_bad_argument(const octave_value_list &args)
     error(FCNNAME);
     error("number of columns for rxgain must be 4 (got %d)\n",v.columns());
   }
-  
-  if ((!args(5).is_real_scalar()) || (args(5).scalar_value()<0.0) || (args(5).scalar_value()>1)) {
+
+  v=args(5);
+  if (v.columns() == 4) {
+      for (i=0;i<v.columns();i++) {
+	if ((real(args(5).row_vector_value()(i))<0.0) || (real(args(5).row_vector_value()(i))>25.0))
+	  {
+	    error(FCNNAME);
+	    error("tx gain must be between 0 and 25. (got %f).",args(5).row_vector_value()(i));
+	    return true;
+	  }
+      }
+  }
+  else {
     error(FCNNAME);
-    error("eNB_flag must be between 0 and 1 (got %f).",args(5).scalar_value());
+    error("number of columns for txgain must be 4 (got %d)\n",v.columns());
+  }
+
+  
+  if ((!args(6).is_real_scalar()) || (args(6).scalar_value()<0.0) || (args(6).scalar_value()>1)) {
+    error(FCNNAME);
+    error("eNB_flag must be between 0 and 1 (got %f).",args(6).scalar_value());
     return true;
   }
   
 
-  v = args(6);
+  v = args(7);
   if (v.columns() == 4) {
     for (i=0;i<v.columns();i++) {
       if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>(double)((uint32_t)(1<<21)))) {
@@ -118,7 +135,7 @@ static bool any_bad_argument(const octave_value_list &args)
     error("number of columns for rf_mode must be 4\n");
   }
 
-  v = args(7);
+  v = args(8);
   if (v.columns() == 4) {
     for (i=0;i<v.columns();i++) {
       if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>(double)((uint32_t)(1<<16)))) {
@@ -133,7 +150,7 @@ static bool any_bad_argument(const octave_value_list &args)
     error("number of columns for rf_mode must be 4\n");
   }  
 
-  v = args(8);
+  v = args(9);
   if (v.columns() == 4) {
     for (i=0;i<v.columns();i++) {
       if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>(double)((uint32_t)(1<<24)))) {
@@ -148,7 +165,7 @@ static bool any_bad_argument(const octave_value_list &args)
     error("number of columns for rf_local must be 4\n");
   }
 
-  v = args(9);
+  v = args(10);
   if (v.columns() == 4) {
     for (i=0;i<v.columns();i++) {
       if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>(double)((uint32_t)(1<<12)))) {
@@ -179,25 +196,17 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
   if (any_bad_argument(args))
        return octave_value_list();
        
-  //  const int freqrx = args(0).int_value();  
-  //  const int freqtx = args(1).int_value();  
-  //const std::string configfile = args(1).string_value();
-  //const std::string scenariofile = args(2).string_value();
-  const int tdd = args(2).int_value();
-  const int dual_tx = args(3).int_value();  
-  //  const int rxgain = args(4).int_value();
-  const int eNB_flag = args(5).int_value();
-  //  const int rf_mode0 = args(6).int_value();
-  //  const int rf_dc0 = args(7).int_value();
-  //  const int rf_local0 = args(8).int_value();
-  //  const int rf_vcocal0 = args(9).int_value();
   RowVector freqrx     = args(0).row_vector_value();
   RowVector freqtx     = args(1).row_vector_value();
+  const int tdd        = args(2).int_value();
+  const int dual_tx    = args(3).int_value();  
   RowVector rxgain     = args(4).row_vector_value();
-  RowVector rf_mode    = args(6).row_vector_value();
-  RowVector rf_dc      = args(7).row_vector_value();
-  RowVector rf_local   = args(8).row_vector_value();
-  RowVector rf_vcocal  = args(9).row_vector_value();
+  RowVector txgain     = args(5).row_vector_value();
+  const int eNB_flag   = args(6).int_value();
+  RowVector rf_mode    = args(7).row_vector_value();
+  RowVector rf_dc      = args(8).row_vector_value();
+  RowVector rf_local   = args(9).row_vector_value();
+  RowVector rf_vcocal  = args(10).row_vector_value();
 
   octave_value returnvalue;
   int openair_fd;
@@ -249,15 +258,19 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
   frame_parms->carrier_freq[0]    = freqrx(0);
   frame_parms->carrier_freqtx[0]  = freqtx(0);
   frame_parms->rxgain[0]          = rxgain(0);
+  frame_parms->txgain[0]          = txgain(0);
   frame_parms->carrier_freq[1]    = freqrx(1);
   frame_parms->carrier_freqtx[1]  = freqtx(1);
   frame_parms->rxgain[1]          = rxgain(1);
+  frame_parms->txgain[1]          = txgain(1);
   frame_parms->carrier_freq[2]    = freqrx(2);
   frame_parms->carrier_freqtx[2]  = freqtx(2);
   frame_parms->rxgain[2]          = rxgain(2);
+  frame_parms->txgain[2]          = txgain(2);
   frame_parms->carrier_freq[3]    = freqrx(3);
   frame_parms->carrier_freqtx[3]  = freqtx(3);
   frame_parms->rxgain[3]          = rxgain(3);
+  frame_parms->txgain[3]          = txgain(3);
   frame_parms->rfmode[0]          = rf_mode(0);
   frame_parms->rflocal[0]         = rf_local(0);
   frame_parms->rfvcolocal[0]      = rf_vcocal(0);

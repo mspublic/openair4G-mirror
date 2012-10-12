@@ -3,7 +3,8 @@ fidx=1;
 tdd=1;
 dual_tx=1;
 cbmimo1=0;
-gain=30;
+rxgain=30;
+txgain=25;
 eNB_flag = 0;
 
 off = 0; % -994;
@@ -19,11 +20,12 @@ else
   rf_local  = rf_local * ones(1,4);
   rf_rxdc = rf_rxdc * ones(1,4);
   rf_vcocal = rf_vcocal * ones(1,4);
-  gain = gain*ones(1,4);
+  rxgain = rxgain*ones(1,4);
+  txgain = txgain*ones(1,4);
   freq_rx = fc*[1 1 1 1];
   freq_tx = freq_rx+1920000;
 
-  oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,gain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+  oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
   amp = pow2(13)-1;
   n_bit = 16;
 end

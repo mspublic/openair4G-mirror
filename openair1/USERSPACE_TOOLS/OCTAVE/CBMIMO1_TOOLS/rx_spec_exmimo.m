@@ -3,12 +3,14 @@ limeparms;
 rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*[1 1 1 1];
 freq_rx = 1907600000*[1 1 1 1];
 freq_tx = freq_rx+1920000;
-rx_gain = 30*[1 1 1 1];
-rf_local=rf_local*[1 1 1 1];
-rf_rxdc =rf_rxdc*[1 1 1 1];
+tx_gain = 25*[1 1 1 1];
+rx_gain = 15*[1 1 1 1];
+rf_local= [8254744   8255063   8257340   8257340]; %rf_local*[1 1 1 1];
+rf_rxdc = rf_rxdc*[1 1 1 1];
 rf_vcocal=rf_vcocal*[1 1 1 1];
+eNBflag = 1;
 
-oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rx_gain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal)
+oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal)
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System
