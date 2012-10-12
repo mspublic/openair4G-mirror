@@ -273,7 +273,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
     return -1;
   }
 
-#ifdef X2_SIM
+//#ifdef X2_SIM
   for (i=0;i<NUMBER_OF_UE_MAX && eNB_rrc_inst[Mod_id].handover_info[i] != NULL;i++) {
 
 	  if(eNB_rrc_inst[Mod_id].handover_info[i]->ho_prepare == 0xFF) {
@@ -290,7 +290,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 		  pdcp_data_req(Mod_id,frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[Mod_id].handover_info[i]->buf,1);
 	  }
   }
-#endif
+//#endif
 
   if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_c1) {
 
@@ -1179,13 +1179,14 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,u16 UE_index) {
 
   u8 buffer[120];
-  u8 size;
+  int size;
   int i;
-  u8 rv[5];
+  uint8_t rv[2];
 
-  for (i=0;i<5;i++) {
+  LOG_D(RRC,"\n HO newSourceUEIdentity (C-RNTI): ");
+  for (i=0;i<2;i++) {
     rv[i]=taus()&0xff;
-    LOG_D(RRC,"HO newSourceUEIdentity %x.",rv[i]);
+    LOG_D(RRC," %x.",rv[i]);
   }
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
@@ -1575,24 +1576,55 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   mobilityInfo = CALLOC(1,sizeof(*mobilityInfo));
   memset((void *)mobilityInfo,0,sizeof(*mobilityInfo));
   mobilityInfo->targetPhysCellId = (PhysCellId_t) rrc_inst->physCellId;
-  mobilityInfo->t304 = 0; // need to configure an appropriate value here
 
-  // New UE identity
-  mobilityInfo->newUE_Identity.size = 5;
+  mobilityInfo->additionalSpectrumEmission = CALLOC(1,sizeof(*mobilityInfo->additionalSpectrumEmission));
+  *mobilityInfo->additionalSpectrumEmission = 1; //Check this value!
+
+  mobilityInfo->t304 = MobilityControlInfo__t304_ms50; // need to configure an appropriate value here
+
+  // New UE Identity (C-RNTI) to identify an UE uniquely in a cell
+  mobilityInfo->newUE_Identity.size = 2;
   mobilityInfo->newUE_Identity.bits_unused = 0;
   mobilityInfo->newUE_Identity.buf = rv;
   mobilityInfo->newUE_Identity.buf[0] = rv[0];
   mobilityInfo->newUE_Identity.buf[1] = rv[1];
-  mobilityInfo->newUE_Identity.buf[2] = rv[2];
-  mobilityInfo->newUE_Identity.buf[3] = rv[3];
-  mobilityInfo->newUE_Identity.buf[4] = rv[4];
 
-  memcpy((void *)&mobilityInfo->radioResourceConfigCommon,(void *)&rrc_inst->sib2->radioResourceConfigCommon,sizeof(RadioResourceConfigCommon_t));
- // memset((void *)&mobilityInfo->radioResourceConfigCommon,0,sizeof(RadioResourceConfigCommon_t));
-  mobilityInfo->carrierFreq = NULL; //CALLOC(1,sizeof(CarrierFreqEUTRA_t)); 36090
-  mobilityInfo->carrierBandwidth = NULL; //CALLOC(1,sizeof(struct CarrierBandwidthEUTRA));  AllowedMeasBandwidth_mbw25
+  //memset((void *)&mobilityInfo->radioResourceConfigCommon,(void *)&rrc_inst->sib2->radioResourceConfigCommon,sizeof(RadioResourceConfigCommon_t));
+  //memset((void *)&mobilityInfo->radioResourceConfigCommon,0,sizeof(RadioResourceConfigCommon_t));
+
+  // Configuring radioResourceConfigCommon
+  mobilityInfo->radioResourceConfigCommon.rach_ConfigCommon = CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.rach_ConfigCommon));
+  memcpy((void *)mobilityInfo->radioResourceConfigCommon.rach_ConfigCommon, (void *)&rrc_inst->sib2->radioResourceConfigCommon.rach_ConfigCommon,sizeof(RACH_ConfigCommon_t));
+  mobilityInfo->radioResourceConfigCommon.prach_Config.prach_ConfigInfo = CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.prach_Config.prach_ConfigInfo));
+  memcpy((void *)mobilityInfo->radioResourceConfigCommon.prach_Config.prach_ConfigInfo, (void *)&rrc_inst->sib2->radioResourceConfigCommon.prach_Config.prach_ConfigInfo,sizeof(PRACH_ConfigInfo_t));
+  mobilityInfo->radioResourceConfigCommon.prach_Config.rootSequenceIndex = rrc_inst->sib2->radioResourceConfigCommon.prach_Config.rootSequenceIndex;
+  mobilityInfo->radioResourceConfigCommon.pdsch_ConfigCommon = CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.pdsch_ConfigCommon));
+  memcpy((void *)mobilityInfo->radioResourceConfigCommon.pdsch_ConfigCommon, (void *)&rrc_inst->sib2->radioResourceConfigCommon.pdsch_ConfigCommon,sizeof(PDSCH_ConfigCommon_t));
+  memcpy((void *)&mobilityInfo->radioResourceConfigCommon.pusch_ConfigCommon,(void *)&rrc_inst->sib2->radioResourceConfigCommon.pusch_ConfigCommon,sizeof(PUSCH_ConfigCommon_t));
+  mobilityInfo->radioResourceConfigCommon.phich_Config = NULL;
+  mobilityInfo->radioResourceConfigCommon.pucch_ConfigCommon = CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.pucch_ConfigCommon));
+  memcpy((void *)mobilityInfo->radioResourceConfigCommon.pucch_ConfigCommon, (void *)&rrc_inst->sib2->radioResourceConfigCommon.pucch_ConfigCommon,sizeof(PUCCH_ConfigCommon_t));
+  mobilityInfo->radioResourceConfigCommon.soundingRS_UL_ConfigCommon = CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.soundingRS_UL_ConfigCommon));
+  memcpy((void *)mobilityInfo->radioResourceConfigCommon.soundingRS_UL_ConfigCommon, (void *)&rrc_inst->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon,sizeof(SoundingRS_UL_ConfigCommon_t));
+  mobilityInfo->radioResourceConfigCommon.uplinkPowerControlCommon = CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.uplinkPowerControlCommon));
+  memcpy((void *)mobilityInfo->radioResourceConfigCommon.uplinkPowerControlCommon, (void *)&rrc_inst->sib2->radioResourceConfigCommon.uplinkPowerControlCommon,sizeof(UplinkPowerControlCommon_t));
+  mobilityInfo->radioResourceConfigCommon.antennaInfoCommon = NULL;
+  mobilityInfo->radioResourceConfigCommon.p_Max = NULL; // CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.p_Max));
+  //memcpy((void *)mobilityInfo->radioResourceConfigCommon.p_Max,(void *)rrc_inst->sib1->p_Max,sizeof(P_Max_t));
+  mobilityInfo->radioResourceConfigCommon.tdd_Config = NULL; //CALLOC(1,sizeof(TDD_Config_t));
+  //memcpy((void *)mobilityInfo->radioResourceConfigCommon.tdd_Config,(void *)rrc_inst->sib1->tdd_Config,sizeof(TDD_Config_t));
+  mobilityInfo->radioResourceConfigCommon.ul_CyclicPrefixLength = rrc_inst->sib2->radioResourceConfigCommon.ul_CyclicPrefixLength;
+  //End of configuration of radioResourceConfigCommon
+
+  mobilityInfo->carrierFreq = CALLOC(1,sizeof(*mobilityInfo->carrierFreq)); //CALLOC(1,sizeof(CarrierFreqEUTRA_t)); 36090
+  mobilityInfo->carrierFreq->dl_CarrierFreq = 36090;
+  mobilityInfo->carrierFreq->ul_CarrierFreq = NULL;
+
+  mobilityInfo->carrierBandwidth = CALLOC(1,sizeof(*mobilityInfo->carrierBandwidth)); //CALLOC(1,sizeof(struct CarrierBandwidthEUTRA));  AllowedMeasBandwidth_mbw25
+  mobilityInfo->carrierBandwidth->dl_Bandwidth = CarrierBandwidthEUTRA__dl_Bandwidth_n6;
+  mobilityInfo->carrierBandwidth->ul_Bandwidth = NULL;
   mobilityInfo->rach_ConfigDedicated = NULL;
-  mobilityInfo->additionalSpectrumEmission = NULL;
+
 
   // Check if below needs to be done at target eNB
   /*
@@ -1604,7 +1636,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   memcpy((void *)rrc_inst->handover_info[UE_index]->as_config.sourceRadioResourceConfig.sps_Config,(void *)rrc_inst->sps_Config[UE_index],sizeof(SPS_Config_t));
  */
 
-  /*
+
   size = do_RRCConnectionReconfiguration(Mod_id,
 					 buffer,
 					 UE_index,
@@ -1622,9 +1654,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
 					 NULL,
 					 mobilityInfo); //*measGapConfig
 
-*/
-
-
+/*
   size = do_RRCConnectionReconfiguration(Mod_id,
 					 buffer,
 					 UE_index,
@@ -1642,6 +1672,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
 					 NULL,
 					 NULL); //*measGapConfig
 
+*/
 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration HO (bytes %d, UE id %d)\n",
 	Mod_id,frame, size, UE_index);
@@ -1655,6 +1686,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
 //#ifdef X2_SIM
 
   memcpy(eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->buf,(void *)buffer,size);
+  eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->size = size;
   eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->ho_complete = 0xFF;
   eNB_rrc_inst[Mod_id].handover_info[UE_index]->ho_complete = 0xFF;
 
