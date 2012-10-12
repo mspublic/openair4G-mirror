@@ -60,7 +60,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	   SOFFSET) > (frame_length_samples - frame_parms->ofdm_symbol_size))
 	memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
 	       (short *)&ue_common_vars->rxdata[aa][0],
-	       frame_parms->ofdm_symbol_size);
+	       frame_parms->ofdm_symbol_size*sizeof(int));
 	fft((short *)&ue_common_vars->rxdata[aa][(sample_offset +
 						slot_offset +
 						nb_prefix_samples0 + 
@@ -82,7 +82,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	   SOFFSET) > (frame_length_samples - frame_parms->ofdm_symbol_size))
 	memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
 	       (short *)&ue_common_vars->rxdata[aa][0],
-	       frame_parms->ofdm_symbol_size);
+	       frame_parms->ofdm_symbol_size*sizeof(int));
  
       fft((short *)&ue_common_vars->rxdata[aa][(sample_offset +
 					       slot_offset +
