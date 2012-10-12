@@ -202,6 +202,7 @@ fc=fopen("/tmp/otg.log","w");;
 		if (otg_info->rx_loss_rate[i][j]>0){
 	  	fprintf(file,"Loss rate(percentage)= %lf \n", (otg_info->rx_loss_rate[i][j]*100));
 	  	fprintf(file,"NB Lost  packets=%d \n", otg_info->nb_loss_pkts[i][j]);
+	  	fprintf(file,"NB Lost [OTG] packets=%d \n", otg_info->nb_loss_pkts_otg[i][j]);
 		}
   if (g_otg->background_stats==1){
     fprintf(file,"[Background] Total packets(TX)= %d \n", otg_info->tx_num_pkt_background[i][j]);
@@ -231,6 +232,7 @@ fc=fopen("/tmp/otg.log","w");;
 	if (otg_info->rx_loss_rate[i][j]>0){
 	  LOG_I(OTG,"Loss rate(percentage)= %lf \n", (otg_info->rx_loss_rate[i][j]*100));
 	  LOG_I(OTG,"NB Lost  packets= %d \n", otg_info->nb_loss_pkts[i][j]);
+	  LOG_I(OTG,"NB Lost [OTG] packets=%d \n", otg_info->nb_loss_pkts_otg[i][j]);
 	}
   if (g_otg->background_stats==1){
     LOG_I(OTG,"[Background] Total packets(TX)= %d \n", otg_info->tx_num_pkt_background[i][j]);
@@ -257,6 +259,7 @@ fc=fopen("/tmp/otg.log","w");;
 	if (otg_info->rx_loss_rate[i][j]>0){
 	  LOG_F(OTG,"Loss rate(percentage)= %lf \n", (otg_info->rx_loss_rate[i][j]*100));
 	  LOG_F(OTG,"NB Lost  packets= %d \n", otg_info->nb_loss_pkts[i][j]);
+    LOG_I(OTG,"NB Lost [OTG] packets=%d \n", otg_info->nb_loss_pkts_otg[i][j]);
 	}
   if (g_otg->background_stats==1){
   	LOG_F(OTG,"[Background] Total packets(TX)= %d \n", otg_info->tx_num_pkt_background[i][j]);
