@@ -188,11 +188,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   char *payload=NULL;
   char *header=NULL;
 	
-
-  //LOG_I(OTG,"num_nodes_tx:: %d , seed:: %d \n", g_otg->num_nodes, g_otg->seed);
-  //if (g_otg->idt_dist[src][dst][0]>0)
-  //LOG_D(OTG,"NODE_INFO (Source= %d, Destination= %d,idt= %d) ctime %d \n", src, dst, g_otg->idt_dist[src][dst][0], otg_info->ctime);
-    
+   
 
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
   if ((g_otg->application_type[src][dst]==0) && (g_otg->idt_dist[src][dst][state]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
@@ -211,6 +207,7 @@ else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][st
   //end pre-config
 #endif 
   
+/*
   if (g_otg->num_state[src] > ON_STATE ){  // statefull traffic case, determine if we should do a state transition   
     switch (otg_info->state[src]) {
       state_transition_prob = uniform_dist(0,1);
@@ -237,8 +234,8 @@ else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][st
       break;
     }
   }
-    state =  otg_info->state[src];
-//  LOG_D(OTG,"INFO_SIM (src=%d, dst=%d) application=%d, idt dist =%d, pkts dist= %d\n", src, dst, g_otg->application_type[src][dst], g_otg->idt_dist[src][dst][state], g_otg->size_dist[src][dst][state]);
+    state =  otg_info->state[src];*/
+
   
   if ((otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) >= otg_info->idt[src][dst] ) )) {
   LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
