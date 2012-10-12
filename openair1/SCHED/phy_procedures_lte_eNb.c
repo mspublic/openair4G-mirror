@@ -2423,7 +2423,8 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_TX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
 #ifdef OPENAIR2
     if ((next_slot % 2)==0) {
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[0]->Mod_id,0,phy_vars_eNB[0]->frame,next_slot>>1);
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[CC_id]->Mod_id,0,phy_vars_eNB[CC_id]->frame,next_slot>>1);}
     }
 #endif
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -2442,7 +2443,8 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_TX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
 #ifdef OPENAIR2
     if ((next_slot % 2)==0) {
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[0]->Mod_id,0,phy_vars_eNB[0]->frame,next_slot>>1);
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[CC_id]->Mod_id,0,phy_vars_eNB[CC_id]->frame,next_slot>>1);}
     }
 #endif
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
