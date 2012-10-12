@@ -23,6 +23,7 @@ rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+
 freq_rx = fc*[1 1 1 1];
 freq_tx = freq_rx+1920000;
 rx_gain = 30*[1 1 1 1];
+tx_gain = 25*[1 1 1 1];
 rf_local=rf_local*[1 1 1 1];
 rf_rxdc =rf_rxdc*[1 1 1 1];
 rf_vcocal=rf_vcocal*[1 1 1 1];
@@ -46,7 +47,7 @@ do
   fc
   freq_rx = fc*[1 1 1 1];
   freq_tx = freq_rx+1920000;
-  oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rx_gain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal)
+  oarf_config_exmimo(freq_rx,freq_tx,1,dual_tx,rx_gain,tx_gain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal)
 
   i=i+1;
   sleep(1);

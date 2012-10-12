@@ -435,6 +435,8 @@ typedef struct {
   u32 carrier_freqtx[4];
   /// RX gain for ExpressMIMO/LIME
   u32 rxgain[4];
+  /// TX gain for ExpressMIMO/LIME
+  u32 txgain[4];
   /// RF mode for ExpressMIMO/LIME
   u32 rfmode[4];
   /// RF RX DC Calibration for ExpressMIMO/LIME
