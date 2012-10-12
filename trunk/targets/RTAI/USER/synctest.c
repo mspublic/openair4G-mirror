@@ -1066,6 +1066,7 @@ int main(int argc, char **argv) {
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   u32 rxgain[4]={30,30,30,30};
+  u32 txgain[4]={25,25,25,25};
 #endif
 
   u8  eNB_id=0,UE_id=0;
@@ -1339,7 +1340,8 @@ int main(int argc, char **argv) {
     frame_parms->carrier_freq[i] = carrier_freq[i];
     frame_parms->carrier_freqtx[i] = carrier_freq[i];
     frame_parms->rxgain[i]       = rxgain[i];
-    //frame_parms->rf_mode is set above (individually for UE and eNB)
+    frame_parms->txgain[i]       = txgain[i];
+   //frame_parms->rf_mode is set above (individually for UE and eNB)
     frame_parms->rflocal[i]      = rf_local[i];
     frame_parms->rfvcolocal[i]   = rf_vcocal[i];
     frame_parms->rxdc[i]         = rf_rxdc[i];
