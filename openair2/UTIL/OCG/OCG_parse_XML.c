@@ -1067,7 +1067,9 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					if (holding_time_off_pe_) {
 						oai_emulation.application_config.customized_traffic.holding_time_off_pe = atof(ch);
 					}
-				} else if (source_id_) {
+				} else if (background_traffic_) {
+					oai_emulation.application_config.customized_traffic.background[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
+				}else if (source_id_) {
 					oai_emulation.application_config.customized_traffic.source_id[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (destination_id_) {
 					oai_emulation.application_config.customized_traffic.destination_id[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
@@ -1075,7 +1077,7 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					oai_emulation.application_config.customized_traffic.transport_protocol[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (ip_version_) {
 					oai_emulation.application_config.customized_traffic.ip_version[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
-	      } else if (aggregation_level_) {
+				} else if (aggregation_level_) {
 					oai_emulation.application_config.customized_traffic.aggregation_level[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
 				} else if (idt_dist_) {
 					oai_emulation.application_config.customized_traffic.idt_dist[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
