@@ -478,6 +478,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     char *traffic[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *transport_protocol[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *ip_version[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+    char *background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int idt_min_ms[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int idt_max_ms[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
@@ -494,7 +495,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     double size_shape[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int stream[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int destination_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
-		unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+    unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   } Customized_Traffic;
 
 /** @defgroup _app_config Application Configuration
