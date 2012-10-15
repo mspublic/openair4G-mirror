@@ -1,4 +1,12 @@
 
+v1.1.10
+* Bugfix for sample configuration lines given inside comments in a .conf file
+* Bugfix Simulator now binds on a port to keep source port constant
+* DEFINE_CLIENT_PORT command added for scenario files
+* Bugfix Address copying error causing creation of bogus client objects in ManagementClient fixed
+* Bugfix State comparison inside ManagementClient::setState() fixed
+* Bugfix Stupid increment operator usage has been fixed for ManagementClientManager::updateMan...
+
 v1.1.9
 * Documentation/SCOREF-MGMT_Configuration.{odt|pdf} files have been updated according 
   to the new scheme introduced by FACilities configuration files

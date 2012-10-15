@@ -51,14 +51,13 @@ ManagementClientManager::~ManagementClientManager() {
 }
 
 bool ManagementClientManager::updateManagementClientState(UdpServer& clientConnection, EventType eventType) {
-	vector<ManagementClient*>::iterator it = clientVector.begin();
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
 	/**
 	 * Traverse client list and check if we already have this client
 	 */
-	while (it++ != clientVector.end()) {
+	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
 		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getClient().address().to_string());
 		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getClient().port()));
 
@@ -103,5 +102,18 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 			break;
 	}
 
+	logger.info(toString());
+
 	return true;
+}
+
+string ManagementClientManager::toString() {
+	stringstream ss;
+
+	ss << "Current status of client(s):" << endl;
+	ss << "Client count is " << clientVector.size() << endl;
+	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it)
+		ss << (*it)->toString();
+
+	return ss.str();
 }

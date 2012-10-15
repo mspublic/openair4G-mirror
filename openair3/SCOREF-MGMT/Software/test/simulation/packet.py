@@ -7,7 +7,7 @@ from copy_reg import pickle
 
 class Packet:
 	@staticmethod
-	def sendConfigurationRequest(address, port):
+	def sendConfigurationRequest(serverAddress, serverPort, clientPort):
 		# Build the packet
 		configurationRequestPacket = array.array('B')
 		configurationRequestPacket.append(0x40) # Validity=1, version=0
@@ -21,16 +21,17 @@ class Packet:
 
 		# Create the socket to send to MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sentByteCount = managementSocket.sendto(configurationRequestPacket, (address, port))
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(configurationRequestPacket, (serverAddress, serverPort))
 		print sentByteCount, "bytes sent"
 
-		receivedBytes, address = managementSocket.recvfrom(1024)
-		print receivedBytes.encode('hex'), "bytes received from", address
+		receivedBytes, sourceAddress = managementSocket.recvfrom(1024)
+		print receivedBytes.encode('hex'), "bytes received from", sourceAddress
 
 		return True
 
 	@staticmethod
-	def sendNetworkState(address, port):
+	def sendNetworkState(serverAddress, serverPort, clientPort):
 		# Build the packet
 		networkStatePacket = array.array('B')
 		networkStatePacket.append(0x40) # Validity=1, version=0
@@ -72,7 +73,8 @@ class Packet:
 
 		# Create the socket to send to MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sentByteCount = managementSocket.sendto(networkStatePacket, (address, port))
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(networkStatePacket, (serverAddress, serverPort))
 		print sentByteCount, "bytes sent"
 
 		return True
