@@ -1086,13 +1086,17 @@ init_bypass ();
 
 
 #ifdef OPENAIR2
-  l2_init (&PHY_vars_eNB_g[0][0]->lte_frame_parms);
+  for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+    for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+  l2_init (&PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms);
   for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
       mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);	//UE_id%NB_eNB_INST);
       }
+}//CC_id loop 
+}//enb_id
 #endif
 
 
