@@ -170,7 +170,7 @@ int adjust_size(int size){
 char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, ctime = frame cnt
 
 
-  int size;
+  int size=0;
   unsigned int flow_id=1;
   unsigned char state=ON_STATE; // default traffic state 
   int state_transition_prob=0;
@@ -187,8 +187,8 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   unsigned int hdr_type =1;//fixme 
   char *payload=NULL;
   char *header=NULL;
-	
-   
+	unsigned int i;
+
 
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
   if ((g_otg->application_type[src][dst]==0) && (g_otg->idt_dist[src][dst][state]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
@@ -250,7 +250,8 @@ else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][st
     // LOG_D(OTG,"Time To Transmit::NO (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]);
    return NULL; // do not generate the packet, and keep the idt
   }
-  size=size_dist(src, dst, state);
+
+ // 	size+=size_dist(src, dst, state);
 
 }
 
@@ -265,19 +266,19 @@ else if (((g_otg->application_type[src][dst]==0)||(g_otg->idt_dist[src][dst][sta
 
   hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
 
+int tmp=0;
+
 if (background_ok==0){
-  //header=header_gen(header_size_gen(src));
-  // payload=payload_pkts(size) ;
+	for(i=1;i<=g_otg->aggregation_level[src][dst];i++)
+  	size+=size_dist(src, dst, state);
 
 /* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
-	if ((g_otg->aggregation_level[src][dst]*size)<=PAYLOAD_MAX)
-		size=(g_otg->aggregation_level[src][dst])*size;
-	else{
+	if (size>PAYLOAD_MAX){
 		size=PAYLOAD_MAX;
     LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
 	}
-  header =random_string(header_size_gen(src),  g_otg->packet_gen_type, HEADER_ALPHABET);
-  payload = random_string(size,   g_otg->packet_gen_type, PAYLOAD_ALPHABET);
+  header =random_string(header_size_gen(src), g_otg->packet_gen_type, HEADER_ALPHABET);
+  payload = random_string(size, g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xffff;
   flow=flow_id;
   seq_num=otg_info->seq_num[src][dst];
@@ -291,8 +292,7 @@ if (background_ok==0){
     LOG_T(OTG,"The packet size is %d with seq num %d : |%s|%s| \n", size, seq_num, header, payload);
   
  } else {
-  //header=header_gen(header_size_gen_background(src)); 
-  //payload=payload_pkts(otg_info->size_background[src][dst]);
+
 	if ((g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
 		otg_info->size_background[src][dst]=g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst];
 	else{
