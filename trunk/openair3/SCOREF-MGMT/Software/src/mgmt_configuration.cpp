@@ -48,7 +48,9 @@
 using namespace boost;
 using namespace std;
 
-// Initialise configuration parameter strings
+/**
+ * Initialise configuration parameter name strings
+ */
 const string Configuration::CONF_SERVER_PORT_PARAMETER("CONF_SERVER_PORT");
 const string Configuration::CONF_WIRELESS_STATE_UPDATE_INTERVAL("CONF_WIRELESS_STATE_UPDATE_INTERVAL");
 const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_INTERVAL");
@@ -80,6 +82,7 @@ Configuration::Configuration(const vector<string>& configurationFileNameVector, 
 }
 
 Configuration::~Configuration() {
+	configurationFileNameVector.clear();
 }
 
 bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
@@ -217,14 +220,25 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 }
 
 bool Configuration::parseLine(const string& line, string& parameter, string& value) {
-	if (line.find('=') == string::npos)
+	/**
+	 * Get the substring till '#' character if there's one
+	 */
+	string configurationLine = line;
+	if (line.find('#') != string::npos) {
+		configurationLine.erase(0, configurationLine.length() - configurationLine.find('#'));
+	}
+
+	/**
+	 * Ignore this line if it's empty or there's no equal sign in it
+	 */
+	if (configurationLine.empty() || configurationLine.find('=') == string::npos)
 		return false;
 
 	/**
 	 * Parse the line according to the place of equal sign
 	 */
-	parameter = line.substr(0, line.find("="));
-	value = line.substr(line.find("=") + 1, line.length());
+	parameter = configurationLine.substr(0, configurationLine.find("="));
+	value = configurationLine.substr(configurationLine.find("=") + 1, configurationLine.length());
 
 	/**
 	 * Trim value string if there's no '"' character

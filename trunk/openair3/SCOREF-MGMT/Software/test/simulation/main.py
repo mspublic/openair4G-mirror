@@ -51,13 +51,13 @@ while line:
 		print clientPacketType, "packet is going to be sent"
 		# Configuration Request Packet
 		if clientPacketType == "GET_CONFIGURATION":
-			if Packet.sendConfigurationRequest(serverAddress, serverPort):
+			if Packet.sendConfigurationRequest(serverAddress, serverPort, clientPort):
 				print "CONFIGURATION_REQUEST packet sent successfully"
 			else:
 				print "ERROR: Cannot send CONFIGURATION_REQUEST"
 		# Network State Packet
 		elif clientPacketType == "NETWORK_STATE":
-			if Packet.sendNetworkState(serverAddress, serverPort):
+			if Packet.sendNetworkState(serverAddress, serverPort, clientPort):
 				print "NETWORK_STATE packet sent successfully"
 			else:
 				print "ERROR: Cannot send NETWORK_STATE"
@@ -69,9 +69,14 @@ while line:
 		time.sleep(howManySeconds)
 
 	# Server port is being defined
-	elif commands[0] == "DEFINE_PORT":
+	elif commands[0] == "DEFINE_SERVER_PORT":
 		serverPort = int(commands[1])
 		print "Server port defined as", serverPort
+
+	# Client port is being defined
+	elif commands[0] == "DEFINE_CLIENT_PORT":
+		clientPort = int(commands[1])
+		print "Client port defined as", clientPort
 
 	# Server address is being defined
 	elif commands[0] == "DEFINE_ADDRESS":
@@ -89,7 +94,7 @@ while line:
 		if clientReply:
 			print "Those incoming messages that require a response will be handled and a response will be sent"
 			responder = Responder()
-			responder.start()
+# TODO			responder.start()
 		else:
 			print "Those incoming messages that require a response will be ignored"
 

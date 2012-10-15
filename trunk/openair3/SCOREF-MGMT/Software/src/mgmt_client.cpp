@@ -45,7 +45,7 @@
 
 ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
 	: mib(mib), logger(logger) {
-	this->client = client;
+	this->client = clientConnection.getClient();
 
 	/**
 	 * Initialise state strings map
@@ -97,7 +97,10 @@ ManagementClient::ManagementClientState ManagementClient::getState() const {
 }
 
 bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
-	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
+	if (this->state == state) {
+		logger.info("State change is not necessary, client is already " + clientStateStringMap[state]);
+		return true;
+	}
 
 	/**
 	 * Verify state change
@@ -107,10 +110,14 @@ bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
 			|| (this->state == ONLINE && state == CONNECTED)) {
 		logger.debug("State change is valid");
 	} else {
-		logger.error("State change is invalid!");
+		logger.error("Requested state change from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state] + " is invalid!");
+		logger.info("Ignoring state change request...");
+		return false;
 	}
 
 	this->state = state;
+	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
+
 	return true;
 }
 
@@ -133,7 +140,7 @@ string ManagementClient::toString() {
 
 	ss << "ManagementClient[ip:" << client.address().to_string()
 		<< ", port:" << boost::lexical_cast<string>(client.port())
-		<< ", state:" << clientStateStringMap[state] << "]" << endl;
+		<< ", state:" << clientStateStringMap[state] << "]";
 
 	return ss.str();
 }
