@@ -105,6 +105,7 @@ int header_size;
 
 
 	LOG_D(OTG,"[%d][%d] AGGREGATION LEVEL (RX) %d \n", src, dst, otg_hdr_rx->aggregation_level);
+  otg_info->aggregation_level[src][dst]=otg_hdr_rx->aggregation_level;
 
 	/* Loss and out of sequence data management */
 	if ((otg_hdr_rx->seq_num)==seq_num_rx+1) {
@@ -181,12 +182,10 @@ int header_size;
 	otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
 	LOG_W(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size mis-matche (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
   otg_info->nb_loss_pkts_otg[src][dst]++;
-
       }
       return(0);
     } else{
       LOG_W(OTG,"RX: Not an OTG pkt, forward to upper layer (flag %x, size %d, pdcp_size %d) FIX ME \n", otg_hdr_info_rx->flag, otg_hdr_info_rx->size, size);	
-      otg_info->nb_loss_pkts_otg[src][dst]++;
       return(0); //????? have to be fixed on the real case to one 
     }
    
