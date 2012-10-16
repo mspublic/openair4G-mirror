@@ -1243,31 +1243,35 @@ init_bypass ();
 #endif 
 
      if(Channel_Flag==0){
-      if((next_slot %2) ==0)
+       if((next_slot %2) ==0) {
 #ifdef PHY_ABSTRACTION
 
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
 #endif      
-      for (eNB_id=oai_emulation.info.first_enb_local;
-	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
-	   eNB_id++) 
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
-	      eNB_id, frame, slot, next_slot >> 1,
-	      PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.frame_type,
-	      PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.Nid_cell); 	
-	      PHY_vars_eNB_g[eNB_id][CC_id]->frame = frame;
-	      phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);	
+       }
+       for (eNB_id=oai_emulation.info.first_enb_local;
+	    (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
+	    eNB_id++) { 
+	 LOG_I(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
+	       eNB_id, frame, slot, next_slot >> 1,
+	       PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.frame_type,
+	       PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.tdd_config,
+	       PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.Nid_cell); 	
+	 for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
+	   PHY_vars_eNB_g[eNB_id][CC_id]->frame = frame;
+	 
+	 phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);	
 #ifndef NAS_NETLINK
-	//if ((frame % 10) == 0) {
-	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id][CC_id], stats_buffer, 0);
-	  rewind (eNB_stats);
-	  fwrite (stats_buffer, 1, len, eNB_stats);
-	  }
-	  //}
+	 //if ((frame % 10) == 0) {
+	 for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	   len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id][CC_id], stats_buffer, 0);
+	   rewind (eNB_stats);
+	   fwrite (stats_buffer, 1, len, eNB_stats);
+	 }
+	 //}
 #endif
-      }
+       }
+     
 #ifdef PHY_ABSTRACTION
       emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
 

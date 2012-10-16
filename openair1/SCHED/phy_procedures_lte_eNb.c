@@ -391,8 +391,9 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
   if (last_slot%2==1) {
     for (sect_id = 0; sect_id<3; sect_id++)  
       for (aa=0; aa<PHY_vars_eNB_g->lte_frame_parms.nb_antennas_rx; aa++) 
-	memcpy(&emos_dump_eNB.channel[(last_slot>>1)-2][sect_id][aa][0],	       PHY_vars_eNB_g->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
-	       PHY_vars_eNB_g->lte_frame_parms.ofdm_symbol_size*sizeof(int));
+	memcpy(&emos_dump_eNB.channel[(last_slot>>1)-2][sect_id][aa][0],
+	PHY_vars_eNB_g->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
+PHY_vars_eNB_g->lte_frame_parms.ofdm_symbol_size*sizeof(int));
   }
 
 }
@@ -599,6 +600,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	}
       }
+      LOG_I(PHY,"Calling generate_pilots_slot : %d\n",next_slot);
       generate_pilots_slot(phy_vars_eNB,
 			   phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 			   AMP,
@@ -675,6 +677,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       if (abstraction_flag==0) {
 	
 	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
+	  LOG_I(PHY,"Calling generate_sss : %d\n",next_slot);
 	  generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 		       AMP,
 		       &phy_vars_eNB->lte_frame_parms,
@@ -700,7 +703,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
       
       if (abstraction_flag==0) {
-	
+	LOG_I(PHY,"Calling generate_pbch : %d\n",next_slot);
 	generate_pbch(&phy_vars_eNB->lte_eNB_pbch,
 		      phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 		      AMP,
@@ -727,6 +730,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	
 	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
 	  //	  printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
+	  LOG_I(PHY,"Calling generate_pss : %d\n",next_slot);
 	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 		       4*AMP,
 		       &phy_vars_eNB->lte_frame_parms,
@@ -1666,7 +1670,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max];
       //phy_vars_eNb->eNB_UE_stats[(u32)UE_id].mode = PRACH;
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].sector = 0;
-      LOG_D(PHY,"[eNB %d][RAPROC] Initiating RA procedure with preamble %d, energy %d, delay %d\n",
+      LOG_I(PHY,"[eNB %d][RAPROC] Initiating RA procedure with preamble %d, energy %d, delay %d\n",
 	  phy_vars_eNB->Mod_id,
 	  preamble_max,
 	  preamble_energy_max,
@@ -1679,7 +1683,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
 				  0,subframe,0);
     }
     else {
-      LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Unable to add user, max user count reached\n", phy_vars_eNB->Mod_id,
+      LOG_I(PHY,"[eNB %d] frame %d, subframe %d: Unable to add user, max user count reached\n", phy_vars_eNB->Mod_id,
 	  phy_vars_eNB->frame, subframe);
     }
   }
@@ -2420,7 +2424,7 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
 
   if (((phy_vars_eNB[0]->lte_frame_parms.frame_type == 1)&&(subframe_select(&phy_vars_eNB[0]->lte_frame_parms,next_slot>>1)==SF_DL))||
       (phy_vars_eNB[0]->lte_frame_parms.frame_type == 0)){
-    //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_TX(%d)\n", phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
+
 #ifdef OPENAIR2
     if ((next_slot % 2)==0) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -2428,6 +2432,7 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     }
 #endif
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      LOG_I(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_TX(%d) CC_id %d\n", phy_vars_eNB[0]->Mod_id,phy_vars_eNB[0]->frame, next_slot,CC_id);
       phy_procedures_eNB_TX(next_slot,phy_vars_eNB[CC_id],abstraction_flag);
     }
   }
