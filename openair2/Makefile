@@ -11,6 +11,7 @@
 #export LM_LICENSE_FILE
 
 KERNEL_NAME=$(shell uname -r)
+NUM_CORES=$(shell cat /proc/cpuinfo | grep processor | wc -l)
 
 export IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
 
@@ -120,20 +121,20 @@ remove_emul:
 
 
 nasmesh_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)
+	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)
 
 nasmesh.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) V=1 -C /usr/src/linux M=`pwd`)
+	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 -C /usr/src/linux M=`pwd`)
 
 # automatically detect the linux header files for driver compilation
 nasmesh_netlink.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
-nasmesh_netlink_ether.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+naslite_netlink_ether.ko:
+	(cd NAS/DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 nasmesh_netlink_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 
 nasmesh_netlink_loopback.ko:
