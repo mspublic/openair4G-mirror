@@ -74,7 +74,8 @@ g_display_color  = {'IP':      '\"teal\"',
                     'RLC_TM':  '\"navy\"',
                     'MAC_UE':  '\"indigo\"',
                     'MAC_eNB': '\"indigo\"',
-                    'PHY':     '\"purple\"'}
+                    'PHY_eNB': '\"indigo\"',
+                    'PHY_UE':     '\"purple\"'}
 
 
 g_final_display_order_list = []
@@ -143,6 +144,7 @@ def parse_oai_log_file():
         entity_name_type_dest = 'unknown'
         entity_tuple_name_dest= 'unknown'
 
+        print ("INPUT LINE:  %s " % line)
         # if line is a trace of the creation of a new protocol instance
         if MSC_NEW_STR in line:
             partition = line.rpartition(MSC_NEW_STR)
@@ -248,6 +250,7 @@ def parse_oai_log_file():
 
                 message_dic = {}
                 #print ('%s' % protocol_entity)
+                print ('entity_tuple_name_src %s' % entity_tuple_name_src)
                 message_dic['entity_src']      = protocol_entity_src
                 message_dic['entity_dst']      = protocol_entity_dest
                 message_dic['msg']             = message
