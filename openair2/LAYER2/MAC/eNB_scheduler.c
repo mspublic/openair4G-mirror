@@ -1152,10 +1152,12 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	//	printf("Got harq_pid %d, round %d, next_ue %d\n",harq_pid,round,next_ue);
 
 
-	status = mac_get_rrc_status(Mod_id,1,next_ue);
 
 
-	if (status < RRC_CONNECTED) 
+	status = get_rrc_status(Mod_id,1,next_ue);
+
+
+	if (status < RRC_CONNECTED) // what is the value ???
 	  cqi_req = 0;
 	else
 	  cqi_req = 1;
@@ -1770,301 +1772,301 @@ void tm5_pre_processor (unsigned char Mod_id,
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
     if ((nb_available_rb == 0) || (nCCE < (1<<aggregation)))
-	break;
-      next_ue = UE_id;
+      break;
+    next_ue = UE_id;
 
-      // If nobody is left, exit while loop and go to next step
-      if (next_ue == 255)
-	break;
+    // If nobody is left, exit while loop and go to next step
+    if (next_ue == 255)
+      break;
 
-      // This is an allocated UE_id
-      rnti = find_UE_RNTI(Mod_id,next_ue);
-      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    // This is an allocated UE_id
+    rnti = find_UE_RNTI(Mod_id,next_ue);
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 
-      if (eNB_UE_stats==NULL)
-	mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+    if (eNB_UE_stats==NULL)
+      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
 
-      // Get candidate harq_pid from PHY
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
+    // Get candidate harq_pid from PHY
+    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 
 
-      switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
-      case 1:break;
-      case 2:break;
-      case 4:break;
-      case 5:
-	for (UE_id_temp = UE_id+1;UE_id_temp < granted_UEs;UE_id_temp++) {
+    switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+    case 1:break;
+    case 2:break;
+    case 4:break;
+    case 5:
+      for (UE_id_temp = UE_id+1;UE_id_temp < granted_UEs;UE_id_temp++) {
 
 
-	  next_ue_temp = UE_id_temp;
-	  // If nobody is left, exit while loop and go to next step
-	  if (next_ue_temp == 255)
-	    break;
+	next_ue_temp = UE_id_temp;
+	// If nobody is left, exit while loop and go to next step
+	if (next_ue_temp == 255)
+	  break;
 
-	  // This is an allocated UE_id
-	  rnti_temp = find_UE_RNTI(Mod_id,next_ue_temp);
-	  eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+	// This is an allocated UE_id
+	rnti_temp = find_UE_RNTI(Mod_id,next_ue_temp);
+	eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
 
-	  if (eNB_UE_stats_temp==NULL)
-	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	if (eNB_UE_stats_temp==NULL)
+	  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
 
-	  // Get candidate harq_pid from PHY
-	  mac_xface->get_ue_active_harq_pid(Mod_id,rnti_temp,subframe,&harq_pid_k,&round_k,0);
+	// Get candidate harq_pid from PHY
+	mac_xface->get_ue_active_harq_pid(Mod_id,rnti_temp,subframe,&harq_pid_k,&round_k,0);
 
 
 
-	  switch (mac_xface->get_transmission_mode(Mod_id,rnti_temp)) {
-	  case 1:break;
-	  case 2:break;
-	  case 4:break;
-	  case 5:
-	    if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)<<14)&0xc000)== 0x4000)
-	      {
+	switch (mac_xface->get_transmission_mode(Mod_id,rnti_temp)) {
+	case 1:break;
+	case 2:break;
+	case 4:break;
+	case 5:
+	  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)<<14)&0xc000)== 0x4000)
+	    {
 
-		if(k0 == 1)
-		  {
-		    rnti_k[0][0] = find_UE_RNTI(Mod_id,ue[0][0]);
-		    rnti_k[1][0] = find_UE_RNTI(Mod_id,ue[1][0]);
+	      if(k0 == 1)
+		{
+		  rnti_k[0][0] = find_UE_RNTI(Mod_id,ue[0][0]);
+		  rnti_k[1][0] = find_UE_RNTI(Mod_id,ue[1][0]);
 
 
-		    eNB_UE_stats_k[0][0] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][0]);
-		    eNB_UE_stats_k[1][0] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][0]);
+		  eNB_UE_stats_k[0][0] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][0]);
+		  eNB_UE_stats_k[1][0] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][0]);
 
-		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][0]->DL_cqi[0]+eNB_UE_stats_k[1][0]->DL_cqi[0]))
-		      {
+		  if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][0]->DL_cqi[0]+eNB_UE_stats_k[1][0]->DL_cqi[0]))
+		    {
 
 
-			ue[0][0] = next_ue;
-			ue[1][0] = next_ue_temp;
+		      ue[0][0] = next_ue;
+		      ue[1][0] = next_ue_temp;
 
 
-		      }
-		  }
-		else
-		  {
-		    ue[0][0] = next_ue;
-		    ue[1][0] = next_ue_temp;
+		    }
+		}
+	      else
+		{
+		  ue[0][0] = next_ue;
+		  ue[1][0] = next_ue_temp;
 
 
-		    k0 = 1;
-		  }
-	      }
+		  k0 = 1;
+		}
+	    }
 
 
-	    if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>2)<<14)&0xc000)== 0x4000)
-	      {
+	  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>2)<<14)&0xc000)== 0x4000)
+	    {
 
 
-		if(k1 == 1)
-		  {
-		    rnti_k[0][1] = find_UE_RNTI(Mod_id,ue[0][1]);
-		    rnti_k[1][1] = find_UE_RNTI(Mod_id,ue[1][1]);
+	      if(k1 == 1)
+		{
+		  rnti_k[0][1] = find_UE_RNTI(Mod_id,ue[0][1]);
+		  rnti_k[1][1] = find_UE_RNTI(Mod_id,ue[1][1]);
 
 
-		    eNB_UE_stats_k[0][1] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][1]);
-		    eNB_UE_stats_k[1][1] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][1]);
+		  eNB_UE_stats_k[0][1] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][1]);
+		  eNB_UE_stats_k[1][1] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][1]);
 
-		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][1]->DL_cqi[0]+eNB_UE_stats_k[1][1]->DL_cqi[0]))
-		      {
-			ue[0][1] = next_ue;
-			ue[1][1] = next_ue_temp;
+		  if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][1]->DL_cqi[0]+eNB_UE_stats_k[1][1]->DL_cqi[0]))
+		    {
+		      ue[0][1] = next_ue;
+		      ue[1][1] = next_ue_temp;
 
 
-		      }
-		  }
-		else
-		  {
-		    ue[0][1] = next_ue;
-		    ue[1][1] = next_ue_temp;
+		    }
+		}
+	      else
+		{
+		  ue[0][1] = next_ue;
+		  ue[1][1] = next_ue_temp;
 
 
 
-		    k1 = 1;
-		  }
-	      }
+		  k1 = 1;
+		}
+	    }
 
 
 
-	    if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>4)<<14)&0xc000)== 0x4000)
-	      {
+	  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>4)<<14)&0xc000)== 0x4000)
+	    {
 
 
-		if(k2 == 1)
-		  {
-		    rnti_k[0][2] = find_UE_RNTI(Mod_id,ue[0][2]);
-		    rnti_k[1][2] = find_UE_RNTI(Mod_id,ue[1][2]);
+	      if(k2 == 1)
+		{
+		  rnti_k[0][2] = find_UE_RNTI(Mod_id,ue[0][2]);
+		  rnti_k[1][2] = find_UE_RNTI(Mod_id,ue[1][2]);
 
 
-		    eNB_UE_stats_k[0][2] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][2]);
-		    eNB_UE_stats_k[1][2] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][2]);
+		  eNB_UE_stats_k[0][2] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][2]);
+		  eNB_UE_stats_k[1][2] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][2]);
 
-		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][2]->DL_cqi[0]+eNB_UE_stats_k[1][2]->DL_cqi[0]))
-		      {
-			ue[0][2] = next_ue;
-			ue[1][2] = next_ue_temp;
+		  if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][2]->DL_cqi[0]+eNB_UE_stats_k[1][2]->DL_cqi[0]))
+		    {
+		      ue[0][2] = next_ue;
+		      ue[1][2] = next_ue_temp;
 
-		      }
-		  }
-		else
-		  {
-		    ue[0][2] = next_ue;
-		    ue[1][2] = next_ue_temp;
+		    }
+		}
+	      else
+		{
+		  ue[0][2] = next_ue;
+		  ue[1][2] = next_ue_temp;
 
 
 
-		    k2 = 1;
-		  }
-	      }
+		  k2 = 1;
+		}
+	    }
 
 
 
 
-	    if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>6)<<14)&0xc000)== 0x4000)
-	      {
+	  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>6)<<14)&0xc000)== 0x4000)
+	    {
 
-		if(k3 == 1)
-		  {
-		    rnti_k[0][3] = find_UE_RNTI(Mod_id,ue[0][3]);
-		    rnti_k[1][3] = find_UE_RNTI(Mod_id,ue[1][3]);
+	      if(k3 == 1)
+		{
+		  rnti_k[0][3] = find_UE_RNTI(Mod_id,ue[0][3]);
+		  rnti_k[1][3] = find_UE_RNTI(Mod_id,ue[1][3]);
 
 
-		    eNB_UE_stats_k[0][3] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][3]);
-		    eNB_UE_stats_k[1][3] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][3]);
+		  eNB_UE_stats_k[0][3] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][3]);
+		  eNB_UE_stats_k[1][3] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][3]);
 
-		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][3]->DL_cqi[0]+eNB_UE_stats_k[1][3]->DL_cqi[0]))
-		      {
-			ue[0][3] = next_ue;
-			ue[1][3] = next_ue_temp;
+		  if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][3]->DL_cqi[0]+eNB_UE_stats_k[1][3]->DL_cqi[0]))
+		    {
+		      ue[0][3] = next_ue;
+		      ue[1][3] = next_ue_temp;
 
 
-		      }
-		  }
-		else
-		  {
-		    ue[0][3] = next_ue;
-		    ue[1][3] = next_ue_temp;
+		    }
+		}
+	      else
+		{
+		  ue[0][3] = next_ue;
+		  ue[1][3] = next_ue_temp;
 
 
 
-		    k3 = 1;
-		  }
-	      }
+		  k3 = 1;
+		}
+	    }
 
 
 
-	    if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>8)<<14)&0xc000)== 0x4000)
-	      {
+	  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>8)<<14)&0xc000)== 0x4000)
+	    {
 
 
-		if(k4 == 1)
-		  {
-		    rnti_k[0][4] = find_UE_RNTI(Mod_id,ue[0][4]);
-		    rnti_k[1][4] = find_UE_RNTI(Mod_id,ue[1][4]);
+	      if(k4 == 1)
+		{
+		  rnti_k[0][4] = find_UE_RNTI(Mod_id,ue[0][4]);
+		  rnti_k[1][4] = find_UE_RNTI(Mod_id,ue[1][4]);
 
 
-		    eNB_UE_stats_k[0][4] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][4]);
-		    eNB_UE_stats_k[1][4] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][4]);
+		  eNB_UE_stats_k[0][4] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][4]);
+		  eNB_UE_stats_k[1][4] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][4]);
 
-		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][4]->DL_cqi[0]+eNB_UE_stats_k[1][4]->DL_cqi[0]))
-		      {
-			ue[0][4] = next_ue;
-			ue[1][4]= next_ue_temp;
+		  if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][4]->DL_cqi[0]+eNB_UE_stats_k[1][4]->DL_cqi[0]))
+		    {
+		      ue[0][4] = next_ue;
+		      ue[1][4]= next_ue_temp;
 
 
-		      }
-		  }
-		else
-		  {
-		    ue[0][4] = next_ue;
-		    ue[1][4] = next_ue_temp;
+		    }
+		}
+	      else
+		{
+		  ue[0][4] = next_ue;
+		  ue[1][4] = next_ue_temp;
 
 
 
-		    k4= 1;
-		  }
-	      }
+		  k4= 1;
+		}
+	    }
 
 
 
-	    if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>10)<<14)&0xc000)== 0x4000)
-	      {
+	  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>10)<<14)&0xc000)== 0x4000)
+	    {
 
 
-		if(k5 == 1)
-		  {
-		    rnti_k[0][5] = find_UE_RNTI(Mod_id,ue[0][5]);
-		    rnti_k[1][5] = find_UE_RNTI(Mod_id,ue[1][5]);
+	      if(k5 == 1)
+		{
+		  rnti_k[0][5] = find_UE_RNTI(Mod_id,ue[0][5]);
+		  rnti_k[1][5] = find_UE_RNTI(Mod_id,ue[1][5]);
 
 
-		    eNB_UE_stats_k[0][5] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][5]);
-		    eNB_UE_stats_k[1][5] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][5]);
+		  eNB_UE_stats_k[0][5] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][5]);
+		  eNB_UE_stats_k[1][5] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][5]);
 
-		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][5]->DL_cqi[0]+eNB_UE_stats_k[1][5]->DL_cqi[0]))
-		      {
-			ue[0][5] = next_ue;
-			ue[1][5]= next_ue_temp;
+		  if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][5]->DL_cqi[0]+eNB_UE_stats_k[1][5]->DL_cqi[0]))
+		    {
+		      ue[0][5] = next_ue;
+		      ue[1][5]= next_ue_temp;
 
 
-		      }
-		  }
-		else
-		  {
-		    ue[0][5] = next_ue;
-		    ue[1][5] = next_ue_temp;
+		    }
+		}
+	      else
+		{
+		  ue[0][5] = next_ue;
+		  ue[1][5] = next_ue_temp;
 
 
-		    k5= 1;
-		  }
-	      }
+		  k5= 1;
+		}
+	    }
 
 
 
-	    if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>12)<<14)&0xc000)== 0x4000)
-	      {
+	  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>12)<<14)&0xc000)== 0x4000)
+	    {
 
-		if(k6 == 1)
-		  {
-		    rnti_k[0][6] = find_UE_RNTI(Mod_id,ue[0][6]);
-		    rnti_k[1][6] = find_UE_RNTI(Mod_id,ue[1][6]);
+	      if(k6 == 1)
+		{
+		  rnti_k[0][6] = find_UE_RNTI(Mod_id,ue[0][6]);
+		  rnti_k[1][6] = find_UE_RNTI(Mod_id,ue[1][6]);
 
 
-		    eNB_UE_stats_k[0][6] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][6]);
-		    eNB_UE_stats_k[1][6] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][6]);
+		  eNB_UE_stats_k[0][6] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[0][6]);
+		  eNB_UE_stats_k[1][6] = mac_xface->get_eNB_UE_stats(Mod_id,rnti_k[1][6]);
 
-		    if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][6]->DL_cqi[0]+eNB_UE_stats_k[1][6]->DL_cqi[0]))
-		      {
-			ue[0][6] = next_ue;
-			ue[1][6]= next_ue_temp;
+		  if((eNB_UE_stats->DL_cqi[0]+eNB_UE_stats_temp->DL_cqi[0])>(eNB_UE_stats_k[0][6]->DL_cqi[0]+eNB_UE_stats_k[1][6]->DL_cqi[0]))
+		    {
+		      ue[0][6] = next_ue;
+		      ue[1][6]= next_ue_temp;
 
 
-		      }
-		  }
-		else
-		  {
-		    ue[0][6] = next_ue;
-		    ue[1][6] = next_ue_temp;
+		    }
+		}
+	      else
+		{
+		  ue[0][6] = next_ue;
+		  ue[1][6] = next_ue_temp;
 
 
 
-		    k6= 1;
-		  }
-	      }
-	    break;
-	  case 6: break;
-	  case 7: break;
-	  default: break;
-	  }
+		  k6= 1;
+		}
+	    }
+	  break;
+	case 6: break;
+	case 7: break;
+	default: break;
 	}
-	break;
-      case 6:break;
-      case 7:
-	break;
-      default:
-	break;
       }
+      break;
+    case 6:break;
+    case 7:
+      break;
+    default:
+      break;
     }
+  }
 
 
 
@@ -3440,22 +3442,22 @@ void tm5_pre_processor (unsigned char Mod_id,
   
     
   /*    
-  for(i=0;i<7;i++){
+	for(i=0;i<7;i++){
 
-    if(MIMO_mode_indicator[i] == 0){
-      rnti0 = find_UE_RNTI(Mod_id,ue[0][i]);
-      rnti1 = find_UE_RNTI(Mod_id,ue[1][i]);
-      eNB_UE_stats0 = mac_xface->get_eNB_UE_stats(Mod_id,rnti0);
-      eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
-      TBS0 = mac_xface->get_TBS(eNB_UE_stats0->DL_cqi[0],nb_available_rb);
-      total_DL_cqi_MUMIMO = total_DL_cqi_MUMIMO + eNB_UE_stats0->DL_cqi[0] + eNB_UE_stats1->DL_cqi[0];
-    }
-    else if (MIMO_mode_indicator[i] == 1){
-      rnti0 = find_UE_RNTI(Mod_id,ue[0][i]);
-      eNB_UE_stats0 = mac_xface->get_eNB_UE_stats(Mod_id,rnti0);
-      total_DL_cqi_SUMIMO = total_DL_cqi_SUMIMO + eNB_UE_stats0->DL_cqi[0];
-    }
-  }
+	if(MIMO_mode_indicator[i] == 0){
+	rnti0 = find_UE_RNTI(Mod_id,ue[0][i]);
+	rnti1 = find_UE_RNTI(Mod_id,ue[1][i]);
+	eNB_UE_stats0 = mac_xface->get_eNB_UE_stats(Mod_id,rnti0);
+	eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
+	TBS0 = mac_xface->get_TBS(eNB_UE_stats0->DL_cqi[0],nb_available_rb);
+	total_DL_cqi_MUMIMO = total_DL_cqi_MUMIMO + eNB_UE_stats0->DL_cqi[0] + eNB_UE_stats1->DL_cqi[0];
+	}
+	else if (MIMO_mode_indicator[i] == 1){
+	rnti0 = find_UE_RNTI(Mod_id,ue[0][i]);
+	eNB_UE_stats0 = mac_xface->get_eNB_UE_stats(Mod_id,rnti0);
+	total_DL_cqi_SUMIMO = total_DL_cqi_SUMIMO + eNB_UE_stats0->DL_cqi[0];
+	}
+	}
   */
 
 
@@ -3554,22 +3556,22 @@ void tm5_pre_processor (unsigned char Mod_id,
      (MIMO_mode_indicator[4] == 0)&& (MIMO_mode_indicator[5] == 0) && (MIMO_mode_indicator[6] == 0))
     PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions + 1;
   
-      PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions + 1;
+  PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions + 1;
 
 
 
 
   for(UE_id=0;UE_id<granted_UEs;UE_id++){
     PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].dl_pow_off = dl_pow_off[UE_id];
-    //msg("******************Scheduling Information for UE%d ************************\n",UE_id);
-    //msg("dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
-    //msg("***********RB Alloc for every subband for UE%d ***********\n",UE_id);
+    LOG_D(PHY,"******************Scheduling Information for UE%d ************************\n",UE_id);
+    LOG_D(PHY,"dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
+    LOG_D(PHY,"***********RB Alloc for every subband for UE%d ***********\n",UE_id);
     for(i=0;i<7;i++){
       PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub[UE_id][i];
-      //msg("RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
+      LOG_D(PHY,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
     }
     PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[UE_id];
-    //msg("Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
+    LOG_D(PHY,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
   }
 }
 

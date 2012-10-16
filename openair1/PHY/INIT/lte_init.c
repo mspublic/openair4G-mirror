@@ -16,7 +16,6 @@
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "LAYER2/MAC/extern.h"
 
 //#define DEBUG_PHY
 
@@ -36,7 +35,7 @@ void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
   lte_frame_parms->nushift                            = Nid_cell%6;
   lte_frame_parms->Ncp                                = Ncp;
   lte_frame_parms->frame_type                         = frame_type;
-  lte_frame_parms->nb_antennas_tx                     = p_eNB;
+  lte_frame_parms->nb_antennas_tx_eNB                 = p_eNB;
   lte_frame_parms->phich_config_common.phich_resource = phich_config->phich_resource;
   lte_frame_parms->phich_config_common.phich_duration = phich_config->phich_duration;
 }
@@ -72,6 +71,9 @@ void phy_config_sib2_eNB(u8 Mod_id,
 			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+  int N_ZC;
+  u8 prach_fmt;
+  int u;
 
   msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,PHY_vars_eNB_g[Mod_id]->frame);
 
@@ -82,8 +84,12 @@ void phy_config_sib2_eNB(u8 Mod_id,
   lte_frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
   lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
   
-  compute_prach_seq(&lte_frame_parms->prach_config_common,lte_frame_parms->frame_type,
-		    PHY_vars_eNB_g[Mod_id]->X_u);
+  prach_fmt = get_prach_fmt(radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex,lte_frame_parms->frame_type);
+  N_ZC = (prach_fmt <4)?839:139;
+  u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
+    prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
+
+  compute_prach_seq(u,N_ZC, PHY_vars_eNB_g[Mod_id]->X_u);
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
   lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
@@ -165,6 +171,9 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
+  int N_ZC;
+  u8 prach_fmt;
+  int u;
 
   LOG_I(PHY,"[UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame,CH_index);
 
@@ -176,8 +185,12 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
   lte_frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
   lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
   
- 
-  compute_prach_seq(&lte_frame_parms->prach_config_common,lte_frame_parms->frame_type,PHY_vars_UE_g[Mod_id]->X_u);
+  prach_fmt = get_prach_fmt(radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex,lte_frame_parms->frame_type);
+  N_ZC = (prach_fmt <4)?839:139;
+  u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
+    prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
+  
+  compute_prach_seq(u,N_ZC, PHY_vars_UE_g[Mod_id]->X_u);
 
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
@@ -244,7 +257,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
     physicalConfigDedicated = phy_vars_eNB->physicalConfigDedicated[UE_id];
     if (physicalConfigDedicated != NULL) {
-      msg("[PHY][eNB %d] Frame %d: Sent physicalConfigDedicated for UE %d\n",phy_vars_eNB->Mod_id, phy_vars_eNB->frame,UE_id);
+      LOG_I(PHY,"[eNB %d] Frame %d: Sent physicalConfigDedicated=%p for UE %d\n",phy_vars_eNB->Mod_id, phy_vars_eNB->frame,physicalConfigDedicated,UE_id);
       msg("------------------------------------------------------------------------\n");
       
       if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -350,6 +363,7 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
   
   if (physicalConfigDedicated) {
     phy_vars_eNB->physicalConfigDedicated[UE_id] = physicalConfigDedicated;
+    LOG_I(PHY,"phy_config_dedicated_eNB: physicalConfigDedicated=%p\n",physicalConfigDedicated);
   }  
   else {
     msg("[PHY][eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, phy_vars_eNB->frame,UE_id);
@@ -512,7 +526,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   unsigned char eNB_id;
 
   msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
-  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02d][]\n", phy_vars_ue->Mod_id+NB_eNB_INST);
+
   for (i=0;i<4;i++) {
     phy_vars_ue->rx_gain_max[i] = 135;
     phy_vars_ue->rx_gain_med[i] = 128;
@@ -997,6 +1011,8 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   }
   //initialization for the last instance of ue_pdsch_vars (used for MU-MIMO)
   ue_pdsch_vars[eNB_id]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
+  ue_pdsch_vars_SI[eNB_id]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
+  ue_pdsch_vars_ra[eNB_id]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
   ue_pdsch_vars_flp[eNB_id] = (LTE_UE_PDSCH_FLP *)malloc16(sizeof(LTE_UE_PDSCH_FLP));
 #ifdef DEBUG_PHY
   msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars[%d] = %p\n",    eNB_id,ue_pdsch_vars[eNB_id]);
@@ -1124,7 +1140,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
       phy_vars_eNB->Mod_id,
       frame_parms->N_RB_DL,frame_parms->phich_config_common.phich_resource,
       frame_parms->phich_config_common.phich_duration);
-  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02d][]\n", phy_vars_eNB->Mod_id);
+
   lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,frame_parms->Nid_cell);
   generate_pcfich_reg_mapping(frame_parms);
   generate_phich_reg_mapping(frame_parms);

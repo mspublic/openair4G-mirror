@@ -73,7 +73,7 @@ int header_size;
 
 
 
-    if (((otg_hdr_info_rx->flag == 0xffff)||(otg_hdr_info_rx->flag == 0xbbbb)) && (otg_hdr_info_rx->size ==size )){ //data traffic
+    if ((otg_hdr_info_rx->flag == 0xffff)||(otg_hdr_info_rx->flag == 0xbbbb)){ //data traffic
       /*is_size_ok= 0;
       if (( otg_hdr_info_rx->size ) == size ) {*/
       is_size_ok= 1;
@@ -104,9 +104,7 @@ int header_size;
         }
 
 
-	LOG_D(OTG,"[%d][%d] AGGREGATION LEVEL (RX) %d \n", src, dst, otg_hdr_rx->aggregation_level);
-  otg_info->aggregation_level[src][dst]=otg_hdr_rx->aggregation_level;
-
+       
 	/* Loss and out of sequence data management */
 	if ((otg_hdr_rx->seq_num)==seq_num_rx+1) {
 	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
@@ -152,7 +150,7 @@ int header_size;
 	}
 	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
 	
-	/* xforms part: add metrics  */	
+	// xforms part	
 	if (g_otg->curve==1){ 
           if (g_otg->owd_radio_access==0)
             add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  ctime);
@@ -180,12 +178,11 @@ int header_size;
 
       if (is_size_ok == 0) {
 	otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
-	LOG_W(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size mis-matche (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
-  otg_info->nb_loss_pkts_otg[src][dst]++;
+	LOG_I(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size mis-matche (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
       }
       return(0);
     } else{
-      LOG_W(OTG,"RX: Not an OTG pkt, forward to upper layer (flag %x, size %d, pdcp_size %d) FIX ME \n", otg_hdr_info_rx->flag, otg_hdr_info_rx->size, size);	
+      LOG_I(OTG,"RX: Not an OTG pkt, forward to upper layer (flag %x, size %d, pdcp_size %d) FIX ME \n", otg_hdr_info_rx->flag, otg_hdr_info_rx->size, size);	
       return(0); //????? have to be fixed on the real case to one 
     }
    

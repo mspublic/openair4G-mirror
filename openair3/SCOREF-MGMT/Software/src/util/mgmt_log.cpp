@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -45,10 +45,9 @@
 #include <iostream>
 using namespace std;
 
-Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel, Logger::LOG_OUTPUT_CHANNEL logOutputChannel) {
+Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel) {
 	this->logFileName = logFileName;
 	this->logLevel = logLevel;
-	this->logOutputChannel = logOutputChannel;
 	/**
 	 * If we have renamed log file because it exists
 	 */
@@ -57,6 +56,22 @@ Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel, Logger::LO
 	 * New name for the log file
 	 */
 	string newLogFilePath = "";
+
+	/**
+	 * Open log file stream, if the file already exists then rename
+	 * it appending the date and create a new one
+	 */
+	logFilePath = boost::filesystem::path(logFileName);
+
+	if (boost::filesystem::exists(logFilePath)) {
+		/**
+		 * Get the current date/time as string and prepend log file name with it
+		 */
+		newLogFilePath = logFilePath.string() + Util::getDateAndTime(false);
+		boost::filesystem::rename(logFilePath, newLogFilePath);
+		renamed = true;
+	}
+
 	/**
 	 * Define string representations of log levels
 	 */
@@ -67,32 +82,15 @@ Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel, Logger::LO
 	logLevelString.insert(logLevelString.end(), std::make_pair(ERROR, "ERROR"));
 
 	/**
-	 * Open log file stream, if the file already exists then rename
-	 * it appending the date and create a new one
+	 * Open log file stream
 	 */
-	if (logOutputChannel == Logger::FILE || logOutputChannel == Logger::BOTH) {
-		logFilePath = boost::filesystem::path(logFileName);
-
-		if (boost::filesystem::exists(logFilePath)) {
-			/**
-			 * Get the current date/time as string and prepend log file name with it
-			 */
-			newLogFilePath = logFilePath.string() + Util::getDateAndTime(false);
-			boost::filesystem::rename(logFilePath, newLogFilePath);
-			renamed = true;
-		}
-
-		/**
-		 * Open log file stream
-		 */
-		logFileStream.open(logFileName.c_str(), ios_base::out);
-		if (!logFileStream.is_open()){
-			cerr << "Cannot open log file!" << endl;
-		}
-
-		if (renamed)
-			this->info("A log file with the same name exists, created one with name '" + newLogFilePath + "'");
+	logFileStream.open(logFileName.c_str(), ios_base::out);
+	if (!logFileStream.is_open()){
+		cerr << "Cannot open log file!" << endl;
 	}
+
+	if (renamed)
+		this->info("A log file with the same name exists, created one with name '" + newLogFilePath + "'");
 }
 
 Logger::~Logger() {
@@ -122,38 +120,24 @@ void Logger::error(const string& message, bool logFormatting) {
 
 void Logger::log(const string& message, LOG_LEVEL level, bool logFormatting) {
 	/**
-	 * Return immediately if we are asked not to log at all
+	 * Write to log file first
 	 */
-	if (logOutputChannel == Logger::NONE)
-		return;
-
-	/**
-	 * Write to log file first if we are asked to do
-	 */
-	if (logOutputChannel == Logger::FILE || logOutputChannel == Logger::BOTH) {
-		if (logFormatting)
-			logFileStream << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": ";
-		logFileStream << message;
-		if (logFormatting)
-			logFileStream << endl;
-	}
+	if (logFormatting)
+		logFileStream << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": ";
+	logFileStream << message;
+	if (logFormatting)
+		logFileStream << endl;
 
 	/**
 	 * And then to standard output
 	 */
-	if (logOutputChannel == Logger::STDOUT || logOutputChannel == Logger::BOTH) {
-		if (logFormatting)
-			cout << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": ";
-		cout << message;
-		if (logFormatting)
-			cout << endl;
-	}
+	if (logFormatting)
+		cout << setw(15) << Util::getDateAndTime(true) << setw(7) << logLevelString[level] << ": ";
+	cout << message;
+	if (logFormatting)
+		cout << endl;
 }
 
 void Logger::setLogLevel(Logger::LOG_LEVEL logLevel) {
 	this->logLevel = logLevel;
-}
-
-void Logger::setLogOutputChannel(Logger::LOG_OUTPUT_CHANNEL logOutputChannel) {
-	this->logOutputChannel = logOutputChannel;
 }

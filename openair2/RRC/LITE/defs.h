@@ -55,8 +55,7 @@ ________________________________________________________________*/
 typedef enum  {
   RRC_IDLE=0,
   RRC_SI_RECEIVED,
-  RRC_CONNECTED,
-  RRC_RECONFIGURED
+  RRC_CONNECTED
 } UE_STATE_t;
 
 
@@ -380,7 +379,7 @@ int decode_SIB1(u8 Mod_id,u8 CH_index);
 
 int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
-int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index);
+int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
 
 #endif
 

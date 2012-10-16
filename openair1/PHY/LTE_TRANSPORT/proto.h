@@ -679,13 +679,15 @@ void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
     @param dlsch Pointer to DLSCH descriptor
     @param subframe Subframe number
     @param num_pdcch_symbols Number of PDCCH symbols
+    @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
     @returns 0 on success, 1 on unsuccessful decoding
 */
 u32 dlsch_decoding(s16 *dlsch_llr,
 		   LTE_DL_FRAME_PARMS *lte_frame_parms,
 		   LTE_UE_DLSCH_t *dlsch,
 		   u8 subframe,
-		   u8 num_pdcch_symbols);
+		   u8 num_pdcch_symbols,
+		   u8 is_crnti);
 
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
@@ -1095,7 +1097,7 @@ N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSC
 parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
 */
-int initial_sync(PHY_VARS_UE *phy_vars_ue);
+int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      u32 subframe,
@@ -1346,13 +1348,17 @@ u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type);
 u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 
 /*!
-  \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB.
-  @param prach_config_common Pointer to prachConfigCommon structure
-  @param Xu DFT output 
+  \brief Compute DFT of PRACH ZC sequence.  Used for generation of prach in UE and reception of PRACH in eNB.
+  @param u Target root sequence index of prach
+  @param N_ZC Prime number (839,139)
+  @param Xu DFT output
 */
-void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
-		       lte_frame_type_t frame_type,
-		       u32 X_u[64][839]);
+void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
+
+/*!
+  \brief Initialize multiplicative inverse tables for PRACH as well as roots-of-unity vectors.
+*/
+void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
 
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);

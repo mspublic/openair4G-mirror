@@ -81,18 +81,13 @@ class ManagementClient {
 		 */
 		enum ManagementClientType {
 			/**
-			 * Initial value, this is the value set when a client object
-			 * is created but the type has not yet determined
-			 */
-			UNKNOWN = 0,
-			/**
 			 * GeoNetworking client
 			 */
-			GN = 1,
+			GN = 0,
 			/**
 			 * Facilities client
 			 */
-			FAC = 2
+			FAC = 1
 		};
 
 	public:

@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -170,12 +170,6 @@ bool ItsKeyManager::setKeyValue(ItsKeyID id, ItsKeyValue value) {
 }
 
 u_int16_t ItsKeyManager::getNumberOfKeys(ItsKeyType type) const {
-	/**
-	 * If we're asked for all, return the size of the ITS key map
-	 */
-	if (type == ITS_KEY_TYPE_ALL)
-		return itsKeyMap.size();
-
 	map<ItsKeyID, ItsKey>::const_iterator iterator = itsKeyMap.begin();
 	u_int16_t numberOfKeys = 0;
 

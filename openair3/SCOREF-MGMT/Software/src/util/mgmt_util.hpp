@@ -108,7 +108,6 @@ class Util {
 		static string stringify(T numerical);
 		/**
 		 * Sets Nth bit of given octet
-		 * `index' takes value from 0 to 7
 		 *
 		 * @param octet Pointer to the octet
 		 * @param index Index that'll be set
@@ -116,8 +115,7 @@ class Util {
 		 */
 		static bool setBit(u_int8_t& octet, u_int8_t index);
 		/**
-		 * Unsets `index'th bit of given octet
-		 * `index' takes value from 0 to 7
+		 * Unsets Nth bit of given octet
 		 *
 		 * @param octet Pointer to the octet
 		 * @param index Index that'll be unset
@@ -125,8 +123,7 @@ class Util {
 		 */
 		static bool unsetBit(u_int8_t& octet, u_int8_t index);
 		/**
-		 * Checks if `index'th bit of given octet is set
-		 * `index' takes value from 0 to 7
+		 * Checks if Nth bit of given octet is set
 		 *
 		 * @param octet Octet
 		 * @param index Index that'll be checked
@@ -233,20 +230,6 @@ class Util {
 		 * @return String representation of current date and time information
 		 */
 		static string getDateAndTime(bool withDelimiters);
-		/**
-		 * Returns the list of files in given directory
-		 *
-		 * @param directory Directory that'll be traversed
-		 * @return Vector of std::string carrying directory content
-		 */
-		static vector<string> getListOfFiles(const string& directory);
-		/**
-		 * Returns the file extension of given file name
-		 *
-		 * @param fileName File name of type std::string
-		 * @return File extension of type std::string
-		 */
-		static string getFileExtension(const string& fileName);
 };
 
 #endif /* MGMT_UTIL_HPP_ */

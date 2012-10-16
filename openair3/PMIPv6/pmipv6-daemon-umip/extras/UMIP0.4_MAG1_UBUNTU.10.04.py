@@ -63,7 +63,7 @@ for line in lines:
     elif 'RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks' in line:
         print line
         g_RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks = element
-    elif 'LmaPmipNetworkAddress' in line:
+    elif 'LmaAddress' in line:
         print line
         g_LmaAddress = IPAddress(element)
     elif 'MagAddressIngress' in line:

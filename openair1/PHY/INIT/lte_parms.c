@@ -123,5 +123,7 @@ void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
   msg("frame_parms->first_carrier_offset=%d\n",frame_parms->first_carrier_offset);
   msg("frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
   msg("frame_parms->symbols_per_tti=%d\n",frame_parms->symbols_per_tti);
+  msg("frame_parms->txgain=%d %d %d %d\n",frame_parms->txgain[0],frame_parms->txgain[1],frame_parms->txgain[2],frame_parms->txgain[3]);
+  msg("frame_parms->rxgain=%d %d %d %d\n",frame_parms->rxgain[0],frame_parms->rxgain[1],frame_parms->rxgain[2],frame_parms->rxgain[3]);
  
 }

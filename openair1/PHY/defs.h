@@ -173,7 +173,7 @@ typedef struct
   /// mbsfn reference symbols
   unsigned int lte_gold_mbsfn_table[10][3][42];
   
-  u32 X_u[64][839];
+  s16 X_u[64][2*839];
 
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
@@ -282,6 +282,7 @@ typedef struct
   unsigned int rx_gain_med[4];
   unsigned int rx_gain_byp[4];
   s8 tx_power_dBm;
+  s8 tx_power_max_dBm;
   u32 frame;
   u8 n_connected_eNB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
@@ -290,8 +291,8 @@ typedef struct
 
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -315,7 +316,7 @@ typedef struct
 /// mbsfn reference symbols
   unsigned int lte_gold_mbsfn_table[10][3][42];
   
-  u32 X_u[64][839];
+  s16 X_u[64][2*839];
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 

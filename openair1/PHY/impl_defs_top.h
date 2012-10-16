@@ -239,7 +239,7 @@
 #define AMP 1024 //4096
 #endif
 
-#define MAX_TX_POWER (-20) //dBm
+#define MAX_TX_POWER (-7) //UE2:3 //dBm
 
 #ifndef OPENAIR_LTE
 ///

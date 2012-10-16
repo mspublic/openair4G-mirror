@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -74,21 +74,19 @@ bool GeonetSetConfigurationEventPacket::serialize(vector<unsigned char>& buffer)
 	// Following pointers are used to clarify the code
 	unsigned char* packetBody = buffer.data() + sizeof(MessageHeader);
 	unsigned char* packetPayload = packetBody + sizeof(u_int32_t); // `reserved' and `key count' fields are 4-byte in size
+	unsigned int configurationItemIndex = 0;
+	/*
+	 * We may be asked all the configuration items but just those for
+	 * FAC or NET layers
+	 */
+	u_int16_t configurationItemCount = 0;
 
 	// Encode header first...
 	GeonetPacket::serialize(buffer);
 
 	// ...and then the packet-specific fields
 	if (isBulk) {
-		unsigned int configurationItemIndex = 0;
-		/*
-		 * We may be asked all the configuration items but just those for
-		 * FAC or NET layers
-		 */
-		u_int16_t configurationItemCount = 0;
-		/**
-		 * Fetch relevant ITS key subset...
-		 */
+		// Fetch relevant (sub)set..
 		map<ItsKeyID, ItsKeyValue> keyset = mib.getItsKeyManager().getSubset(requestedItsKeyType);
 		map<ItsKeyID, ItsKeyValue>::const_iterator iterator = keyset.begin();
 

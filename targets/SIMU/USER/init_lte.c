@@ -59,7 +59,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-    PHY_vars_eNB->transmission_mode[i] = (transmission_mode==1?1:2);
+    PHY_vars_eNB->transmission_mode[i] = transmission_mode;
     
   }
   
@@ -141,7 +141,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
   mac_xface = malloc(sizeof(MAC_xface));
 
-  LOG_I(PHY,"init lte parms: Nid_cell %d, Frame type %d, N_RB_DL %d\n",Nid_cell,frame_type,N_RB_DL);
+  LOG_I(PHY,"init lte parms: Nid_cell %d\n",Nid_cell);
 
   *frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   (*frame_parms)->frame_type         = frame_type;
