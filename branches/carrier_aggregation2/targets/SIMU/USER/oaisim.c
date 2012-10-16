@@ -1394,6 +1394,8 @@ init_bypass ();
 
     }				//end of slot
 
+//for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+{
     if ((frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -1402,7 +1404,7 @@ init_bypass ();
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     } 
-  
+  }
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       do_forms2(form_dl[UE_id],
