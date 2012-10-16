@@ -32,10 +32,10 @@
 * \brief rrc procedures for eNB
 * \author Raymond Knopp and Navid Nikaein
 * \date 2011
-* \version 1.0 
+* \version 1.0
 * \company Eurecom
 * \email: raymond.knopp@eurecom.fr and navid.nikaein@eurecom.fr
-*/ 
+*/
 
 
 #include "defs.h"
@@ -47,7 +47,7 @@
 #include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "UL-CCCH-Message.h"
-#include "DL-CCCH-Message.h" 
+#include "DL-CCCH-Message.h"
 #include "UL-DCCH-Message.h"
 #include "DL-DCCH-Message.h"
 #include "TDD-Config.h"
@@ -84,7 +84,7 @@ void init_SI(u8 Mod_id) {
 
   /*
   printf ("before SIB1 init : Nid_cell %d\n", mac_xface->lte_frame_parms->Nid_cell);
-  printf ("before SIB1 init : frame_type %d,tdd_config %d\n", 
+  printf ("before SIB1 init : frame_type %d,tdd_config %d\n",
 	  mac_xface->lte_frame_parms->frame_type,
 	  mac_xface->lte_frame_parms->tdd_config);
   */
@@ -100,7 +100,7 @@ void init_SI(u8 Mod_id) {
   }
   /*
   printf ("after SIB1 init : Nid_cell %d\n", mac_xface->lte_frame_parms->Nid_cell);
-  printf ("after SIB1 init : frame_type %d,tdd_config %d\n", 
+  printf ("after SIB1 init : frame_type %d,tdd_config %d\n",
 	  mac_xface->lte_frame_parms->frame_type,
 	  mac_xface->lte_frame_parms->tdd_config);
   */
@@ -109,14 +109,14 @@ void init_SI(u8 Mod_id) {
 
   eNB_rrc_inst[Mod_id].SIB23 = (u8 *)malloc16(64);
   if (eNB_rrc_inst[Mod_id].SIB23) {
-    
+
     eNB_rrc_inst[Mod_id].sizeof_SIB23 = do_SIB23(Mod_id,
 						 mac_xface->lte_frame_parms,
 						 eNB_rrc_inst[Mod_id].SIB23,
 						 &eNB_rrc_inst[Mod_id].systemInformation,
 						 &eNB_rrc_inst[Mod_id].sib2,
 						 &eNB_rrc_inst[Mod_id].sib3
-#ifdef Rel10 
+#ifdef Rel10
 						 ,
 						 &eNB_rrc_inst[Mod_id].sib13,
 						 eNB_rrc_inst[Mod_id].MBMS_flag
@@ -285,7 +285,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
                                      frame, Mod_id, DCCH, sdu_size, Mod_id);
       if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.present == RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
         rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
-	eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED; 
+	eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
 	LOG_D(RRC,"[eNB %d] UE %d State = RRC_RECONFIGURED \n",Mod_id,UE_index);
       }
       break;
@@ -497,7 +497,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
   struct SRB_ToAddMod **SRB2_config                         = &rrc_inst->SRB2_config[UE_index];
   struct DRB_ToAddMod **DRB_config                          = &rrc_inst->DRB_config[UE_index][0];
-  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index]; 
+  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
 
 
   struct SRB_ToAddMod *SRB2_config2;
@@ -535,7 +535,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
 
 
-  // 
+  //
   // Configure SRB2
 
   SRB_list = CALLOC(1,sizeof(*SRB_list));
@@ -618,7 +618,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index] = mac_MainConfig;
 
   mac_MainConfig->ul_SCH_Config = CALLOC(1,sizeof(*mac_MainConfig->ul_SCH_Config));
-  
+
   maxHARQ_Tx = CALLOC(1,sizeof(long));
   *maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
   mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
@@ -634,7 +634,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
   mac_MainConfig->drx_Config = NULL;
 
   mac_MainConfig->phr_Config = CALLOC(1,sizeof(*mac_MainConfig->phr_Config));
-  
+
   mac_MainConfig->phr_Config->present = MAC_MainConfig__phr_Config_PR_setup;
   mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer= MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
 
@@ -644,7 +644,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
 #ifdef Rel10
   sr_ProhibitTimer_r9 = CALLOC(1,sizeof(long));
-  *sr_ProhibitTimer_r9=0; // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR 
+  *sr_ProhibitTimer_r9=0; // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
   mac_MainConfig->sr_ProhibitTimer_r9=sr_ProhibitTimer_r9;
   sps_RA_ConfigList_rlola = NULL;
 #endif
@@ -690,17 +690,17 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
   MeasId5->reportConfigId = 6;
   ASN_SEQUENCE_ADD(&MeasId_list->list,MeasId5);
 
-  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;  
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
 
   // Add one EUTRA Measurement Object
   MeasObj_list      = CALLOC(1,sizeof(*MeasObj_list));
   memset((void *)MeasObj_list,0,sizeof(*MeasObj_list));
 
   // Configure MeasObject
-  
+
   MeasObj           = CALLOC(1,sizeof(*MeasObj));
   memset((void *)MeasObj,0,sizeof(*MeasObj));
-  
+
   MeasObj->measObjectId           = 1;
   MeasObj->measObject.present                = MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
   MeasObj->measObject.choice.measObjectEUTRA.carrierFreq                 = 36090;
@@ -715,7 +715,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
   MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList = (CellsToAddModList_t *)CALLOC(1,sizeof(*CellsToAddModList));
 
   CellsToAddModList  = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
-  
+
   // Add adjacent cell lists (6 per eNB)
   for (i=0;i<6;i++) {
     CellToAdd                       = (CellsToAddMod_t *)CALLOC(1,sizeof(*CellToAdd));
@@ -724,10 +724,10 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
     CellToAdd->cellIndividualOffset = Q_OffsetRange_dB0;
 
     ASN_SEQUENCE_ADD(&CellsToAddModList->list,CellToAdd);
-  } 
-  
+  }
+
   ASN_SEQUENCE_ADD(&MeasObj_list->list,MeasObj);
-  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;  
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
 
   // Report Configurations for periodical, A1-A5 events
   ReportConfig_list = CALLOC(1,sizeof(*ReportConfig_list));
@@ -839,12 +839,12 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount                          = ReportConfigEUTRA__reportAmount_infinity;
 
   ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_A5);
-  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;  
- 
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+
   /*
   rsrp=CALLOC(1,sizeof(RSRP_Range_t));
   *rsrp=20;
-  
+
 
   Sparams = CALLOC(1,sizeof(*Sparams));
   Sparams->present=MeasConfig__speedStatePars_PR_setup;
@@ -854,10 +854,10 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
   Sparams->choice.setup.mobilityStateParameters.n_CellChangeMedium=5;
   Sparams->choice.setup.mobilityStateParameters.t_Evaluation=MobilityStateParameters__t_Evaluation_s60;
   Sparams->choice.setup.mobilityStateParameters.t_HystNormal=MobilityStateParameters__t_HystNormal_s120;
-  
+
   speedStatePars=Sparams;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure=rsrp;
-  
+
   */
 
 
@@ -881,11 +881,11 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 	Mod_id,frame, size, UE_index);
 
 
-  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
 	frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
   //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
   pdcp_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer,1);
-  
+
 
 }
 
@@ -900,25 +900,25 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 #ifdef Rel10
   LOG_I(RRC,"RSRP of Source %d\n",measResults2->measResultPCell.rsrpResult);
   LOG_I(RRC,"RSRQ of Source %d\n",measResults2->measResultPCell.rsrqResult);
-#else  
+#else
   LOG_I(RRC,"RSRP of Source %d\n",measResults2->measResultServCell.rsrpResult);
   LOG_I(RRC,"RSRQ of Source %d\n",measResults2->measResultServCell.rsrqResult);
-#endif   
-  
+#endif
+
   //Look for IP address of the target eNB
   //Send Handover Request -> target eNB
   //Wait for Handover Acknowledgement <- target eNB
   //Send Handover Command
-  
+
   //x2delay();
   //	handover_request_x2(UE_index,Mod_id,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId);
-  
+
   //	u8 buffer[100];
   //    int size=rrc_eNB_generate_Handover_Command_TeNB(0,0,buffer);
 //
 //	  send_check_message((char*)buffer,size);
   //send_handover_command();
-  
+
 }
 
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete){
@@ -933,30 +933,32 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	  (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity,
 	  (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->logicalChannelIdentity);
       if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
-	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,  
+	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,
 			     (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
 	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,
 			   (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
 			   RADIO_ACCESS_BEARER,Rlc_info_um);
 	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
-	
-	LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n", 
+
+	LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
 	      Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity);
 #ifdef NAS_NETLINK
+// can mean also IPV6 since ether -> ipv6 autoconf
+#    ifndef NAS_DRIVER_TYPE_ETHERNET
 	LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, Mod_id,
 	      Mod_id+1,Mod_id+1);
 	oip_ifup = nas_config(Mod_id,// interface index
-		   Mod_id+1, // thrid octet
+		   Mod_id+1, // third octet
 		   Mod_id+1);// fourth octet
 
 	 if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
-#ifdef OAI_EMU
+#        ifdef OAI_EMU
 	  oai_emulation.info.oai_ifup[Mod_id]=1;
 	  dest_ip_offset=NB_eNB_INST;
-#else
+#        else
 	  dest_ip_offset=8;
-#endif
-	  LOG_I(OIP,"[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",  
+#        endif
+	  LOG_I(OIP,"[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
 		Mod_id,
 		Mod_id,
 		(UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
@@ -967,9 +969,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 		       0,//dscp
 		       ipv4_address(Mod_id+1,Mod_id+1),//saddr
 		       ipv4_address(Mod_id+1,dest_ip_offset+UE_index+1));//daddr
-	  
+
 	   LOG_D(RRC,"[eNB %d] State = Attached (UE %d)\n",Mod_id,UE_index);
 	 }
+#    else
+#        ifdef OAI_EMU
+      oai_emulation.info.oai_ifup[Mod_id]=1;
+#        endif
+#    endif
 #endif
 	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
 	      frame, Mod_id, UE_index, Mod_id);
@@ -990,7 +997,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 
 	if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] ==1) {
 	  // DRB has just been removed so remove RLC + PDCP for DRB
-	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,  
+	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,
 			       (UE_index * MAX_NUM_RB) + DRB2LCHAN[i]);
 	  rrc_rlc_config_req(Mod_id,frame,1,ACTION_REMOVE,
 			     (UE_index * MAX_NUM_RB) + DRB2LCHAN[i],
@@ -1030,7 +1037,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 			  &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
 
     // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
- 
+
   if (eNB_rrc_inst[Mod_id].SRB1_config[UE_index]->logicalChannelConfig) {
     if (eNB_rrc_inst[Mod_id].SRB1_config[UE_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
       SRB1_logicalChannelConfig = &eNB_rrc_inst[Mod_id].SRB1_config[UE_index]->logicalChannelConfig->choice.explicitValue;
@@ -1073,14 +1080,14 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 
   LOG_I(RRC,"[eNB %d][RAPROC] Frame %d : Logical Channel DL-CCCH, Generating RRCConnectionSetup (bytes %d, UE %d)\n",
 	Mod_id,frame,eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size, UE_index);
-  
+
 }
 
 /*
 void ue_rrc_process_rrcConnectionReconfiguration(u8 Mod_id,u32 frame,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 CH_index) {
-  
+
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1)
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
