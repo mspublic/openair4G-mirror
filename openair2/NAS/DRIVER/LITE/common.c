@@ -77,285 +77,298 @@ void nas_COMMON_receive(u16 dlen,
                         nasRadioBearerId_t rb_id) {
 
   //---------------------------------------------------------------------------
-  struct sk_buff      *skb;
-  struct ipversion    *ipv;
-  struct nas_priv     *gpriv=netdev_priv(nasdev[inst]);
-  unsigned int         hard_header_len;
-  //u32 odaddr,osaddr;
-  #ifdef NAS_DEBUG_RECEIVE
-  int i;
-  unsigned char *addr,*daddr,*saddr,*ifaddr,sn;
-  #endif
-  unsigned char        protocol;
-  //struct udphdr *uh;
-  //struct tcphdr *th;
-  //u16 *cksum,check;
-  struct iphdr        *network_header;
+    struct sk_buff      *skb;
+    struct ipversion    *ipv;
+    struct nas_priv     *gpriv=netdev_priv(nasdev[inst]);
+    unsigned int         hard_header_len;
+    u16                 *p_ether_type;
+    u16                  ether_type;
+    //u32 odaddr,osaddr;
+    #ifdef NAS_DEBUG_RECEIVE
+    int i;
+    unsigned char *addr,*daddr,*saddr,*ifaddr,sn;
+    #endif
+    unsigned char        protocol;
+    //struct udphdr *uh;
+    //struct tcphdr *th;
+    //u16 *cksum,check;
+    struct iphdr        *network_header;
 
-  #ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_COMMON_RECEIVE: begin RB %d Inst %d Length %d bytes\n",rb_id,inst,dlen);
-#endif
-  if (rclass == NULL) {
-      printk("NAS_COMMON_RECEIVE: rclass Not found Drop RX packet\n");
-      ++gpriv->stats.rx_dropped;
-      return;
-  }
-  skb = dev_alloc_skb( dlen + 2 );
+    #ifdef NAS_DEBUG_RECEIVE
+    printk("NAS_COMMON_RECEIVE: begin RB %d Inst %d Length %d bytes\n",rb_id,inst,dlen);
+    #endif
+    if (rclass == NULL) {
+        printk("NAS_COMMON_RECEIVE: rclass Not found Drop RX packet\n");
+        ++gpriv->stats.rx_dropped;
+        return;
+    }
+    skb = dev_alloc_skb( dlen + 2 );
 
-  if(!skb) {
-      printk("NAS_COMMON_RECEIVE: low on memory\n");
-      ++gpriv->stats.rx_dropped;
-      return;
-  }
-  skb_reserve(skb,2);
-  memcpy(skb_put(skb, dlen), pdcp_sdu,dlen);
+    if(!skb) {
+        printk("NAS_COMMON_RECEIVE: low on memory\n");
+        ++gpriv->stats.rx_dropped;
+        return;
+    }
+    skb_reserve(skb,2);
+    memcpy(skb_put(skb, dlen), pdcp_sdu,dlen);
 
-  skb->dev = nasdev[inst];
-  hard_header_len = nasdev[inst]->hard_header_len;
+    skb->dev = nasdev[inst];
+    hard_header_len = nasdev[inst]->hard_header_len;
 
-  #ifdef KERNEL_VERSION_GREATER_THAN_2622
-  skb->mac_header = skb->data;
-  #else
-  skb->mac.raw = skb->data;
-  #endif
-  //printk("[NAC_COMMIN_RECEIVE]: Packet Type %d (%d,%d)",skb->pkt_type,PACKET_HOST,PACKET_BROADCAST);
-  skb->pkt_type = PACKET_HOST;
-
-
-#ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_RECEIVE: Receiving packet of size %d from PDCP \n",skb->len);
-
- for (i=0;i<skb->len;i++)
-    printk("%2x ",((unsigned char *)(skb->data))[i]);
-  printk("\n");
-#endif
+    #ifdef KERNEL_VERSION_GREATER_THAN_2622
+    skb->mac_header = skb->data;
+    #else
+    skb->mac.raw = skb->data;
+    #endif
+    //printk("[NAC_COMMIN_RECEIVE]: Packet Type %d (%d,%d)",skb->pkt_type,PACKET_HOST,PACKET_BROADCAST);
+    skb->pkt_type = PACKET_HOST;
 
 
-  if (rclass->ip_version != NAS_MPLS_VERSION_CODE) {  // This is an IP packet
+    #ifdef NAS_DEBUG_RECEIVE
+    printk("NAS_RECEIVE: Receiving packet of size %d from PDCP \n",skb->len);
 
-      // LG TEST skb->ip_summed = CHECKSUM_NONE;
-      skb->ip_summed = CHECKSUM_UNNECESSARY;
-      ipv = (struct ipversion *)&(skb->data[hard_header_len]);
-      switch (ipv->version) {
+    for (i=0;i<skb->len;i++)
+        printk("%2x ",((unsigned char *)(skb->data))[i]);
+    printk("\n");
+    #endif
 
-          case 6:
-              #ifdef NAS_DEBUG_RECEIVE
-              printk("NAS_COMMON_RECEIVE: receive IPv6 message\n");
-              #endif
-              #ifdef KERNEL_VERSION_GREATER_THAN_2622
-              skb->network_header = &skb->data[hard_header_len];
-              #else
-              skb->nh.ipv6h = (struct ipv6hdr *)&skb->data[hard_header_len];
-              #endif
-              if (hard_header_len == 0) {
-                  skb->protocol = htons(ETH_P_IPV6);
-              } else {
-                  #ifdef NAS_DRIVER_TYPE_ETHERNET
-                  skb->protocol = eth_type_trans(skb, nasdev[inst]);
-                  #else
-                  #endif
-              }
-              //printk("Writing packet with protocol %x\n",ntohs(skb->protocol));
-              break;
 
-         case 4:
-             #ifdef NAS_ADDRESS_FIX
-             // Make the third byte of both the source and destination equal to the fourth of the destination
-             daddr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->daddr;
-             odaddr = ((struct iphdr *)skb->data)->daddr;
-             //sn = addr[3];
-             saddr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->saddr;
-             osaddr = ((struct iphdr *)&skb->data[hard_header_len])->saddr;
+    if (rclass->ip_version != NAS_MPLS_VERSION_CODE) {  // This is an IP packet
 
-             if (daddr[0] == saddr[0]) {// same network
-                 daddr[2] = daddr[3]; // set third byte of destination to that of local machine so that local IP stack accepts the packet
-                 saddr[2] = daddr[3]; // set third byte of source to that of local machine so that local IP stack accepts the packet
-             }  else { // get the 3rd byte from device address in net_device structure
-                 ifaddr = (unsigned char *)(&(((struct in_device *)((nasdev[inst])->ip_ptr))->ifa_list->ifa_local));
-                 if (saddr[0] == ifaddr[0]) { // source is in same network as local machine
-                     daddr[0] += saddr[3];        // fix address of remote destination to undo change at source
-                     saddr[2] =  ifaddr[2];       // set third byte to that of local machine so that local IP stack accepts the packet
-                 } else {                         // source is remote machine from outside network
-                     saddr[0] -= daddr[3];        // fix address of remote source to be understood by destination
-                     daddr[2] =  daddr[3];        // fix 3rd byte of local address to be understood by IP stack of
-                     // destination
-                 }
-            }
-            #endif //NAS_ADDRESS_FIX
-            #ifdef NAS_DEBUG_RECEIVE
-            //printk("NAS_TOOL_RECEIVE: receive IPv4 message\n");
-            addr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->saddr;
-            if (addr) {
-              //addr[2]^=0x01;
-              printk("[NAS][COMMON][RECEIVE] Source %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
-            }
-            addr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->daddr;
-            if (addr){
-              //addr[2]^=0x01;
-              printk("[NAS][COMMON][RECEIVE] Dest %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
-            }
-            printk("[NAS][COMMON][RECEIVE] protocol  %d\n",((struct iphdr *)&skb->data[hard_header_len])->protocol);
-            #endif
+        // LG TEST skb->ip_summed = CHECKSUM_NONE;
+        skb->ip_summed = CHECKSUM_UNNECESSARY;
 
-            #ifdef KERNEL_VERSION_GREATER_THAN_2622
-            skb->network_header = &skb->data[hard_header_len];
-            network_header = (struct iphdr *)skb_network_header(skb);
-            protocol = network_header->protocol;
 
-            #else
-            skb->nh.iph = (struct iphdr *)&skb->data[hard_header_len];
-            protocol=skb->nh.iph->protocol;
-            #endif
+        ipv = (struct ipversion *)&(skb->data[hard_header_len]);
+        switch (ipv->version) {
 
-            #ifdef NAS_DEBUG_RECEIVE
-            switch (protocol) {
-                case IPPROTO_IP:
-                    printk("[NAS][COMMON][RECEIVE] Received Raw IPv4 packet\n");
-                    break;
-                case IPPROTO_IPV6:
-                    printk("[NAS][COMMON][RECEIVE] Received Raw IPv6 packet\n");
-                    break;
-                case IPPROTO_ICMP:
-                    printk("[NAS][COMMON][RECEIVE] Received Raw ICMP packet\n");
-                    break;
-                case IPPROTO_TCP:
-                    printk("[NAS][COMMON][RECEIVE] Received TCP packet\n");
-                    break;
-                case IPPROTO_UDP:
-                    printk("[NAS][COMMON][RECEIVE] Received UDP packet\n");
-                    break;
-                default:
-                    break;
-            }
-            #endif
-
-            #ifdef NAS_ADDRESS_FIX
-
-            #ifdef KERNEL_VERSION_GREATER_THAN_2622
-            network_header->check = 0;
-            network_header->check = ip_fast_csum((unsigned char *) network_header, network_header->ihl);
-            //printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
-            #else
-            skb->nh.iph->check = 0;
-            skb->nh.iph->check = ip_fast_csum((unsigned char *)&skb->data[hard_header_len], skb->nh.iph->ihl);
-            //    if (!(skb->nh.iph->frag_off & htons(IP_OFFSET))) {
-            #endif
-            switch(protocol) {
-
-                case IPPROTO_TCP:
-
-#ifdef KERNEL_VERSION_GREATER_THAN_2622
-            cksum  = (u16*)&(((struct tcphdr*)((network_header + (network_header->ihl<<2))))->check);
-            check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));
-            //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
-            //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_TCP, ~(*cksum));
-#else
-            cksum  = (u16*)&(((struct tcphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
-            check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,0,0, ~(*cksum));
-            //check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
-            // check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, dlen, IPPROTO_TCP, ~(*cksum));
-#endif
-
-            *cksum = csum_tcpudp_magic(~osaddr, ~odaddr, 0, 0, ~check);
-            //*cksum = csum_tcpudp_magic(~osaddr, ~odaddr, dlen, IPPROTO_TCP, ~check);
-#ifdef NAS_DEBUG_RECEIVE
-
-            printk("[NAS][COMMON] Inst %d TCP packet calculated CS %x, CS = %x (before), SA (%x)%x, DA (%x)%x\n",
-                    inst,
-                    network_header->check,
-                    *cksum,
-                    osaddr,
-                    ((struct iphdr *)skb->data)->saddr,
-                    odaddr,
-                    ((struct iphdr *)skb->data)->daddr);
-
-            printk("[NAS][COMMON] Inst %d TCP packet NEW CS %x\n",
-                    inst,
-                    *cksum);
-#endif
-                    break;
-                case IPPROTO_UDP:
-
-#ifdef KERNEL_VERSION_GREATER_THAN_2622
-                    cksum  = (u16*)&(((struct udphdr*)((network_header + (network_header->ihl<<2))))->check);
-                    check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));
-                    // check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
-                    //check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_UDP, ~(*cksum));
-#else
-                    cksum  = (u16*)&(((struct udphdr*)((&skb->data[hard_header_len] + (skb->nh.iph->ihl<<2))))->check);
-                    check = csum_tcpudp_magic(((struct iphdr *)&skb->data[hard_header_len])->saddr, ((struct iphdr *)&skb->data[hard_header_len])->daddr, 0,0, ~(*cksum));
-                    //check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
-                    //check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, dlen, IPPROTO_UDP, ~(*cksum));
-#endif
-                    *cksum= csum_tcpudp_magic(~osaddr, ~odaddr,0,0, ~check);
-                    //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,udp_hdr(skb)->len, IPPROTO_UDP, ~check);
-                    //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,dlen, IPPROTO_UDP, ~check);
-
-#ifdef NAS_DEBUG_RECEIVE
-            printk("[NAS][COMMON] Inst %d UDP packet CS = %x (before), SA (%x)%x, DA (%x)%x\n",
-                   inst,
-                   *cksum,
-                   osaddr,
-                   ((struct iphdr *)&skb->data[hard_header_len])->saddr,
-                   odaddr,
-                   ((struct iphdr *)&skb->data[hard_header_len])->daddr);
-
-            printk("[NAS][COMMON] Inst %d UDP packet NEW CS %x\n",
-                   inst,
-                   *cksum);
-#endif
-            //          if ((check = *cksum) != 0) {
-            // src, dst, len, proto, sum
-            //          }
-            break;
-
-          default:
-            break;
-          }
-        //        }
-
-        //#endif  // KERNEL VERSION > 22
-#endif //NAS_ADDRESS_FIX
-
-            if (hard_header_len == 0) {
-                skb->protocol = htons(ETH_P_IP);
-            } else {
-                #ifdef NAS_DRIVER_TYPE_ETHERNET
-                skb->protocol = eth_type_trans(skb, nasdev[inst]);
-                #else
+            case 6:
+                #ifdef NAS_DEBUG_RECEIVE
+                printk("NAS_COMMON_RECEIVE: receive IPv6 message\n");
                 #endif
-            }
-            //printk("[NAS][COMMON] Writing packet with protocol %x\n",ntohs(skb->protocol));
-            break;
+                #ifdef KERNEL_VERSION_GREATER_THAN_2622
+                skb->network_header = &skb->data[hard_header_len];
+                #else
+                skb->nh.ipv6h = (struct ipv6hdr *)&skb->data[hard_header_len];
+                #endif
+                if (hard_header_len == 0) {
+                    skb->protocol = htons(ETH_P_IPV6);
+                } else {
+                    #ifdef NAS_DRIVER_TYPE_ETHERNET
+                    skb->protocol = eth_type_trans(skb, nasdev[inst]);
+                    #else
+                    #endif
+                }
+                //printk("Writing packet with protocol %x\n",ntohs(skb->protocol));
+                break;
 
-        default:
-            printk("NAS_COMMON_RECEIVE: begin RB %d Inst %d Length %d bytes\n",rb_id,inst,dlen);
-            printk("[NAS][COMMON] Inst %d: receive unknown message (version=%d)\n",inst,ipv->version);
-      }
-  } else {  // This is an MPLS packet
-      #ifdef NAS_DEBUG_RECEIVE
-      printk("NAS_COMMON_RECEIVE: Received an MPLS packet on RB %d\n",rb_id);
-      #endif
-      if (hard_header_len == 0) {
-          skb->protocol = htons(ETH_P_MPLS_UC);
-      } else {
-          #ifdef NAS_DRIVER_TYPE_ETHERNET
-          skb->protocol = eth_type_trans(skb, nasdev[inst]);
-          #endif
-      }
-  }
-  ++gpriv->stats.rx_packets;
-  gpriv->stats.rx_bytes += dlen;
-  #ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_COMMON_RECEIVE: sending packet of size %d to kernel\n",skb->len);
-  for (i=0;i<skb->len;i++)
-      printk("%2x ",((unsigned char *)(skb->data))[i]);
-  printk("\n");
-  #endif //NAS_DEBUG_RECEIVE
-  netif_rx(skb);
-  #ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_COMMON_RECEIVE: end\n");
-  #endif
+            case 4:
+                #ifdef NAS_ADDRESS_FIX
+                // Make the third byte of both the source and destination equal to the fourth of the destination
+                daddr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->daddr;
+                odaddr = ((struct iphdr *)skb->data)->daddr;
+                //sn = addr[3];
+                saddr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->saddr;
+                osaddr = ((struct iphdr *)&skb->data[hard_header_len])->saddr;
+
+                if (daddr[0] == saddr[0]) {// same network
+                    daddr[2] = daddr[3]; // set third byte of destination to that of local machine so that local IP stack accepts the packet
+                    saddr[2] = daddr[3]; // set third byte of source to that of local machine so that local IP stack accepts the packet
+                }  else { // get the 3rd byte from device address in net_device structure
+                    ifaddr = (unsigned char *)(&(((struct in_device *)((nasdev[inst])->ip_ptr))->ifa_list->ifa_local));
+                    if (saddr[0] == ifaddr[0]) { // source is in same network as local machine
+                        daddr[0] += saddr[3];        // fix address of remote destination to undo change at source
+                        saddr[2] =  ifaddr[2];       // set third byte to that of local machine so that local IP stack accepts the packet
+                    } else {                         // source is remote machine from outside network
+                        saddr[0] -= daddr[3];        // fix address of remote source to be understood by destination
+                        daddr[2] =  daddr[3];        // fix 3rd byte of local address to be understood by IP stack of
+                        // destination
+                    }
+                }
+                #endif //NAS_ADDRESS_FIX
+                #ifdef NAS_DEBUG_RECEIVE
+                //printk("NAS_TOOL_RECEIVE: receive IPv4 message\n");
+                addr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->saddr;
+                if (addr) {
+                //addr[2]^=0x01;
+                printk("[NAS][COMMON][RECEIVE] Source %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
+                }
+                addr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->daddr;
+                if (addr){
+                //addr[2]^=0x01;
+                printk("[NAS][COMMON][RECEIVE] Dest %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
+                }
+                printk("[NAS][COMMON][RECEIVE] protocol  %d\n",((struct iphdr *)&skb->data[hard_header_len])->protocol);
+                #endif
+
+                #ifdef KERNEL_VERSION_GREATER_THAN_2622
+                skb->network_header = &skb->data[hard_header_len];
+                network_header = (struct iphdr *)skb_network_header(skb);
+                protocol = network_header->protocol;
+
+                #else
+                skb->nh.iph = (struct iphdr *)&skb->data[hard_header_len];
+                protocol=skb->nh.iph->protocol;
+                #endif
+
+                #ifdef NAS_DEBUG_RECEIVE
+                switch (protocol) {
+                    case IPPROTO_IP:
+                        printk("[NAS][COMMON][RECEIVE] Received Raw IPv4 packet\n");
+                        break;
+                    case IPPROTO_IPV6:
+                        printk("[NAS][COMMON][RECEIVE] Received Raw IPv6 packet\n");
+                        break;
+                    case IPPROTO_ICMP:
+                        printk("[NAS][COMMON][RECEIVE] Received Raw ICMP packet\n");
+                        break;
+                    case IPPROTO_TCP:
+                        printk("[NAS][COMMON][RECEIVE] Received TCP packet\n");
+                        break;
+                    case IPPROTO_UDP:
+                        printk("[NAS][COMMON][RECEIVE] Received UDP packet\n");
+                        break;
+                    default:
+                        break;
+                }
+                #endif
+
+                #ifdef NAS_ADDRESS_FIX
+                    #ifdef KERNEL_VERSION_GREATER_THAN_2622
+                    network_header->check = 0;
+                    network_header->check = ip_fast_csum((unsigned char *) network_header, network_header->ihl);
+                    //printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
+                    #else
+                    skb->nh.iph->check = 0;
+                    skb->nh.iph->check = ip_fast_csum((unsigned char *)&skb->data[hard_header_len], skb->nh.iph->ihl);
+                    //    if (!(skb->nh.iph->frag_off & htons(IP_OFFSET))) {
+                    #endif
+
+                switch(protocol) {
+                    case IPPROTO_TCP:
+
+                        #ifdef KERNEL_VERSION_GREATER_THAN_2622
+                        cksum  = (u16*)&(((struct tcphdr*)((network_header + (network_header->ihl<<2))))->check);
+                        check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));
+                        //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
+                        //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_TCP, ~(*cksum));
+                        #else
+                        cksum  = (u16*)&(((struct tcphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
+                        check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,0,0, ~(*cksum));
+                        //check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
+                        // check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, dlen, IPPROTO_TCP, ~(*cksum));
+                        #endif
+
+                        *cksum = csum_tcpudp_magic(~osaddr, ~odaddr, 0, 0, ~check);
+                        //*cksum = csum_tcpudp_magic(~osaddr, ~odaddr, dlen, IPPROTO_TCP, ~check);
+                        #ifdef NAS_DEBUG_RECEIVE
+                        printk("[NAS][COMMON] Inst %d TCP packet calculated CS %x, CS = %x (before), SA (%x)%x, DA (%x)%x\n",
+                                inst,
+                                network_header->check,
+                                *cksum,
+                                osaddr,
+                                ((struct iphdr *)skb->data)->saddr,
+                                odaddr,
+                                ((struct iphdr *)skb->data)->daddr);
+
+                        printk("[NAS][COMMON] Inst %d TCP packet NEW CS %x\n",
+                                inst,
+                                *cksum);
+                        #endif
+                        break;
+
+                    case IPPROTO_UDP:
+                        #ifdef KERNEL_VERSION_GREATER_THAN_2622
+                        cksum  = (u16*)&(((struct udphdr*)((network_header + (network_header->ihl<<2))))->check);
+                        check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));
+                        // check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
+                        //check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_UDP, ~(*cksum));
+                        #else
+                        cksum  = (u16*)&(((struct udphdr*)((&skb->data[hard_header_len] + (skb->nh.iph->ihl<<2))))->check);
+                        check = csum_tcpudp_magic(((struct iphdr *)&skb->data[hard_header_len])->saddr, ((struct iphdr *)&skb->data[hard_header_len])->daddr, 0,0, ~(*cksum));
+                        //check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
+                        //check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, dlen, IPPROTO_UDP, ~(*cksum));
+                        #endif
+                        *cksum= csum_tcpudp_magic(~osaddr, ~odaddr,0,0, ~check);
+                        //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,udp_hdr(skb)->len, IPPROTO_UDP, ~check);
+                        //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,dlen, IPPROTO_UDP, ~check);
+
+                        #ifdef NAS_DEBUG_RECEIVE
+                        printk("[NAS][COMMON] Inst %d UDP packet CS = %x (before), SA (%x)%x, DA (%x)%x\n",
+                           inst,*cksum,osaddr,((struct iphdr *)&skb->data[hard_header_len])->saddr,odaddr,((struct iphdr *)&skb->data[hard_header_len])->daddr);
+
+                        printk("[NAS][COMMON] Inst %d UDP packet NEW CS %x\n",inst,*cksum);
+                        #endif
+                        //if ((check = *cksum) != 0) {
+                        // src, dst, len, proto, sum
+                        //          }
+                        break;
+
+                    default:
+                       break;
+                }
+                //#endif  // KERNEL VERSION > 22
+                #endif //NAS_ADDRESS_FIX
+                if (hard_header_len == 0) {
+                    skb->protocol = htons(ETH_P_IP);
+                } else {
+                    #ifdef NAS_DRIVER_TYPE_ETHERNET
+                    skb->protocol = eth_type_trans(skb, nasdev[inst]);
+                    #else
+                    #endif
+                }
+                //printk("[NAS][COMMON] Writing packet with protocol %x\n",ntohs(skb->protocol));
+                break;
+
+            default:
+                #ifdef NAS_DRIVER_TYPE_ETHERNET
+                // fill skb->pkt_type, skb->dev
+                skb->protocol = eth_type_trans(skb, nasdev[inst]);
+                p_ether_type = (u16 *)&(skb->data[hard_header_len-2]);
+                ether_type = ntohs(*p_ether_type);
+                switch (ether_type) {
+                    case ETH_P_ARP:
+                        printk("[NAS][COMMON] ether_type = ETH_P_ARP\n");
+                        //skb->pkt_type = PACKET_HOST;
+                        skb->protocol = htons(ETH_P_ARP);
+                        #ifdef KERNEL_VERSION_GREATER_THAN_2622
+                        skb->network_header = &skb->data[hard_header_len];
+                        #else
+                        skb->nh.iph = (struct iphdr *)&skb->data[hard_header_len];
+                        #endif
+                        break;
+                    default:
+                        ;
+                }
+                #else
+                printk("NAS_COMMON_RECEIVE: begin RB %d Inst %d Length %d bytes\n",rb_id,inst,dlen);
+                printk("[NAS][COMMON] Inst %d: receive unknown message (version=%d)\n",inst,ipv->version);
+                #endif
+        }
+    } else {  // This is an MPLS packet
+        #ifdef NAS_DEBUG_RECEIVE
+        printk("NAS_COMMON_RECEIVE: Received an MPLS packet on RB %d\n",rb_id);
+        #endif
+        if (hard_header_len == 0) {
+            skb->protocol = htons(ETH_P_MPLS_UC);
+        } else {
+            #ifdef NAS_DRIVER_TYPE_ETHERNET
+            skb->protocol = eth_type_trans(skb, nasdev[inst]);
+            #endif
+        }
+    }
+    ++gpriv->stats.rx_packets;
+    gpriv->stats.rx_bytes += dlen;
+    #ifdef NAS_DEBUG_RECEIVE
+    printk("NAS_COMMON_RECEIVE: sending packet of size %d to kernel\n",skb->len);
+    for (i=0;i<skb->len;i++)
+        printk("%2x ",((unsigned char *)(skb->data))[i]);
+    printk("\n");
+    #endif //NAS_DEBUG_RECEIVE
+    netif_rx(skb);
+    #ifdef NAS_DEBUG_RECEIVE
+    printk("NAS_COMMON_RECEIVE: end\n");
+    #endif
 }
 
 //---------------------------------------------------------------------------

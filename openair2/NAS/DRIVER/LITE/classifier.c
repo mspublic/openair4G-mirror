@@ -732,6 +732,7 @@ void nas_CLASS_send(struct sk_buff *skb,int inst){
     unsigned char             *rarp_ptr;
     __be32                     sip, tip;
     unsigned char              *sha, *tha;         /* s for "source", t for "target" */
+    unsigned char              haddr[16]; // dev->addr_len should be ETH_ALEN
 
     #ifdef NAS_DEBUG_CLASS
     printk("[NAS][%s] begin - inst %d\n",__FUNCTION__, inst);
@@ -754,7 +755,17 @@ void nas_CLASS_send(struct sk_buff *skb,int inst){
     cx_searcher   = 0;
     no_connection = 1;
 
-    //while (cx_searcher<NAS_CX_MAX) {
+    // IN case of virtualization put packet in an other device queue
+    const struct ethhdr *eth = eth_hdr(skb);
+    memcpy(haddr, eth->h_source, dev->addr_len); // dev->addr_len should be equal among all virtualized instances
+    if (memcmp(haddr, dev->addr, dev->addr_len) != 0 ) {
+        printk("[NAS][%s] skbuff not for this instance %d - reroute to correct instance\n",__FUNCTION__, inst);
+
+
+        return;
+    }
+
+
 
     cx = NULL;
 
@@ -882,36 +893,34 @@ void nas_CLASS_send(struct sk_buff *skb,int inst){
             // find in default DSCP a valid classification
             if (cx == NULL) {
                 switch (addr_type) {
-                        break;
                     case NAS_IPV4_ADDR_TYPE_MC_SIGNALLING:
                     case NAS_IPV4_ADDR_TYPE_UNICAST:
                     case NAS_IPV4_ADDR_TYPE_BROADCAST:
 
                         for (i=0; i<NAS_CX_MAX; i++){
-                                cx = &gpriv->cx[i];
-                                //if ((pclassifier=cx->sclassifier[NAS_DSCP_DEFAULT])!=NULL) {
-                                pclassifier=cx->sclassifier[NAS_DSCP_DEFAULT];
-                                while (pclassifier != NULL) {
-                                    if ((pclassifier->ip_version == NAS_IP_VERSION_4) || (pclassifier->ip_version == NAS_IP_VERSION_ALL)) {
-                                        // ok found default classifier for this packet
-                                        nas_create_mask_ipv4_addr(&masked_addr, pclassifier->dplen);
-                                        printk("[NAS][%s] MASK = %d.%d.%d.%d\n",__FUNCTION__, NIPADDR(masked_addr.s_addr));
+                            //if ((pclassifier=cx->sclassifier[NAS_DSCP_DEFAULT])!=NULL) {
+                            pclassifier=(&gpriv->cx[i])->sclassifier[NAS_DSCP_DEFAULT];
+                            while (pclassifier != NULL) {
+                                if ((pclassifier->ip_version == NAS_IP_VERSION_4) || (pclassifier->ip_version == NAS_IP_VERSION_ALL)) {
+                                    // ok found default classifier for this packet
+                                    nas_create_mask_ipv4_addr(&masked_addr, pclassifier->dplen);
+                                    printk("[NAS][%s] MASK = %d.%d.%d.%d\n",__FUNCTION__, NIPADDR(masked_addr.s_addr));
 
-                                        if (IN_ARE_ADDR_MASKED_EQUAL(&pclassifier->daddr.ipv4, &ip_hdr(skb)->daddr, &masked_addr.s_addr)) {
-                                            // then force dscp
-                                            printk("[NAS][%s] ETH_P_IP FOUND NAS_DSCP_DEFAULT with IN_ARE_ADDR_MASKED_EQUAL(%d bits)\n",__FUNCTION__, pclassifier->dplen);
-                                            dscp = NAS_DSCP_DEFAULT;
-                                            break;
-                                        } else if(INADDR_ANY == pclassifier->daddr.ipv4) {
-                                            printk("[NAS][%s] ETH_P_IP FOUND NAS_DSCP_DEFAULT with INADDR_ANY\n",__FUNCTION__);
-                                            dscp = NAS_DSCP_DEFAULT;
-                                            break;
-                                        }
+                                    if (IN_ARE_ADDR_MASKED_EQUAL(&pclassifier->daddr.ipv4, &ip_hdr(skb)->daddr, &masked_addr.s_addr)) {
+                                        // then force dscp
+                                        cx = &gpriv->cx[i];
+                                        printk("[NAS][%s] ETH_P_IP FOUND NAS_DSCP_DEFAULT with IN_ARE_ADDR_MASKED_EQUAL(%d bits)\n",__FUNCTION__, pclassifier->dplen);
+                                        dscp = NAS_DSCP_DEFAULT;
+                                        break;
+                                    } else if(INADDR_ANY == pclassifier->daddr.ipv4) {
+                                        cx = &gpriv->cx[i];
+                                        printk("[NAS][%s] ETH_P_IP FOUND NAS_DSCP_DEFAULT with INADDR_ANY\n",__FUNCTION__);
+                                        dscp = NAS_DSCP_DEFAULT;
+                                        break;
                                     }
-                                    pclassifier = pclassifier->next;
-                                } //else {
-                                    cx = NULL;
-                                //}
+                                }
+                                pclassifier = pclassifier->next;
+                            }
                         }
                         break;
 
