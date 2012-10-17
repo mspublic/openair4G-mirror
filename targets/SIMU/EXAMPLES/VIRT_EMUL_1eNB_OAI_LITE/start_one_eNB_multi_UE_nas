@@ -1,0 +1,79 @@
+#!/bin/bash
+echo "Bash version ${BASH_VERSION}..."
+
+declare -i NUM_MOBILES
+declare -i INSTANCE
+declare -i IP_SOURCE
+declare -i IP_DEST
+declare -i IP
+declare -i RB_ID
+declare -i CLASSIFIER_ID
+
+NUM_MOBILES=$1
+
+for ((i=0 ; i <= $NUM_MOBILES ; i++ ))
+do
+    echo "ip link set oai$i down"
+done
+
+echo "Bringup eNB interface"
+
+
+rmmod nasmesh
+make  naslite_netlink_ether oaisim
+insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
+
+ip addr add dev eth2 192.168.14.145/24 broadcast 192.168.14.255
+ip route add 192.168.14.0/24 dev eth2
+ip route add 224.0.0.160/28 dev eth2
+
+
+#ip route add 224.0.0.160/28 dev eth2
+
+NUM_MOBILES=$1
+IP=1
+
+for ((i=0 ; i <= $NUM_MOBILES ; i++ ))
+do
+    ip link set oai$i up
+    sleep 1
+    ifconfig oai$INSTANCE 10.0.$IP.$IP netmask 255.255.255.0 broadcast 10.0.$IP.255
+    sleep 1
+    ip addr add dev oai$i 2001:$IP::$IP/64
+    let IP=IP+1
+done
+
+
+
+# Loop Cx 0 -> NUM_MOBILES - 1 for configuring default RABS on eNB
+CLASSIFIER_ID=0
+for ((cx=0 ; cx <= `expr $NUM_MOBILES - 1` ; cx++ ))
+do
+    let IP_DEST=cx+2
+    let RB_ID=(cx*8)+3
+    $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z0 -s 10.0.1.1/32   -t 10.0.$IP_DEST.$IP_DEST/32   -r $RB_ID
+    let CLASSIFIER_ID=CLASSIFIER_ID+2
+    $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z0 -x 2001:1::1/128 -y 2001:$IP_DEST::$IP_DEST/128 -r $RB_ID
+    let CLASSIFIER_ID=CLASSIFIER_ID+2
+
+    # configuring default RABS on mobiles
+    for ((instance=1 ; instance <= $NUM_MOBILES ; instance++ ))
+    do
+        if [[ $instance -ne $cx ]]
+        then
+            let IP_SOURCE=instance+1
+            RB_ID=3
+            $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z0 -s 10.0.$IP_SOURCE.$IP_SOURCE/32   -t 10.0.1.1/32      -r $RB_ID
+            $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z0 -x 2001:$IP_SOURCE::$IP_SOURCE/128 -y 2001:1::1/128 -r $RB_ID
+            let CLASSIFIER_ID=CLASSIFIER_ID+2
+        fi
+    done
+done
+
+# echo "start the emulation with 1eNB and" $1 "UE"
+echo "$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u" $1 ">/dev/null"
+# rm -f oai.log
+$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /dev/null
+
+
+echo "End"
