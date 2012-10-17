@@ -76,13 +76,14 @@ uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index) {
   return(two_tier_hexagonal_adjacent_cellIds[Mod_id][index]);
 }
 
-uint16_t get_adjacent_cell_mod_id(uint16_t phyCellId) {
+u8 get_adjacent_cell_mod_id(uint16_t phyCellId) {
 	u8 i;
 	for(i=0;i<7;i++) {
 		if(two_tier_hexagonal_cellIds[i] == phyCellId)
 			return i;
 	}
-	return 0xFFFF; //error!
+	LOG_E(RRC,"\nCannot get adjacent cell mod id! Fatal error!\n");
+	return 0xFF; //error!
 }
 /*
 uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,

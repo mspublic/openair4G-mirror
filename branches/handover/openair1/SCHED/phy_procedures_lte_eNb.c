@@ -56,6 +56,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #include "UTIL/LOG/log.h"
+#include "RRC/LITE/defs.h"
 //#endif
 
 //#define DIAG_PHY
@@ -68,6 +69,8 @@
 
 extern inline unsigned int taus(void);
 extern int exit_openair;
+extern eNB_RRC_INST *eNB_rrc_inst;
+extern mui_t rrc_eNB_mui;
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 int eNB_sync_buffer0[640*6] __attribute__ ((aligned(16)));
@@ -1819,6 +1822,26 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
   pusch_active = 0;
   for (i=0;i<NUMBER_OF_UE_MAX;i++) { 
+
+	  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i] != NULL) {
+
+
+		  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_prepare == 0xFF) {
+			  LOG_D(RRC,"\n Incoming HO detected for new UE_idx %d eNB_ModId %d \n",i,phy_vars_eNB->Mod_id);
+			  rrc_eNB_process_handoverPreparationInformation(phy_vars_eNB->Mod_id,phy_vars_eNB->frame,i);
+		  }
+
+
+		  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_complete == 0xFF) {
+			  LOG_D(RRC,"\n HO Command received for new UE_idx %d eNB %d \n",i,phy_vars_eNB->Mod_id);
+			  //rrc_eNB_process_handoverPreparationInformation(Mod_id,frame,i);
+
+			  rrc_rlc_data_req(phy_vars_eNB->Mod_id,phy_vars_eNB->frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->buf);
+
+			  pdcp_data_req(phy_vars_eNB->Mod_id,phy_vars_eNB->frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->buf,1);
+		  }
+
+	  }
 
     /*
     if ((i == 1) && (phy_vars_eNB->cooperation_flag > 0) && (two_ues_connected == 1))

@@ -18,6 +18,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       LogicalChannelConfig_t *logicalChannelConfig,
 		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
+		       MobilityControlInfo_t *mobilityControlInfo,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod) {
 
@@ -162,6 +163,47 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	}
 	mac_xface->phy_config_meas_ue(Mod_id,eNB_index,UE_mac_inst[Mod_id].n_adj_cells,UE_mac_inst[Mod_id].adj_cell_id);
       }
+
+    if(mobilityControlInfo != NULL) {
+    	if(mobilityControlInfo->radioResourceConfigCommon.rach_ConfigCommon) {
+    		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon, (void *)mobilityControlInfo->radioResourceConfigCommon.rach_ConfigCommon,sizeof(RACH_ConfigCommon_t));
+    	}
+
+        memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->prach_Config.prach_ConfigInfo, (void *)mobilityControlInfo->radioResourceConfigCommon.prach_Config.prach_ConfigInfo,sizeof(PRACH_ConfigInfo_t));
+        UE_mac_inst[Mod_id].radioResourceConfigCommon->prach_Config.rootSequenceIndex = mobilityControlInfo->radioResourceConfigCommon.prach_Config.rootSequenceIndex;
+
+    	if(mobilityControlInfo->radioResourceConfigCommon.pdsch_ConfigCommon) {
+    		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pdsch_ConfigCommon, (void *)mobilityControlInfo->radioResourceConfigCommon.pdsch_ConfigCommon,sizeof(PDSCH_ConfigCommon_t));
+    	}
+
+    	memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pusch_ConfigCommon, (void *)&mobilityControlInfo->radioResourceConfigCommon.pusch_ConfigCommon,sizeof(PUSCH_ConfigCommon_t));
+
+    	if(mobilityControlInfo->radioResourceConfigCommon.phich_Config) {
+    		//fill this when HICH is implemented
+    	}
+    	if(mobilityControlInfo->radioResourceConfigCommon.pucch_ConfigCommon) {
+    		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pucch_ConfigCommon, (void *)mobilityControlInfo->radioResourceConfigCommon.pucch_ConfigCommon,sizeof(PUCCH_ConfigCommon_t));
+    	}
+    	if(mobilityControlInfo->radioResourceConfigCommon.soundingRS_UL_ConfigCommon) {
+    		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->soundingRS_UL_ConfigCommon, (void *)mobilityControlInfo->radioResourceConfigCommon.soundingRS_UL_ConfigCommon,sizeof(SoundingRS_UL_ConfigCommon_t));
+    	}
+    	if(mobilityControlInfo->radioResourceConfigCommon.uplinkPowerControlCommon) {
+    		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->uplinkPowerControlCommon, (void *)mobilityControlInfo->radioResourceConfigCommon.uplinkPowerControlCommon,sizeof(UplinkPowerControlCommon_t));
+    	}
+    	//configure antennaInfoCommon somewhere here..
+    	if(mobilityControlInfo->radioResourceConfigCommon.p_Max) {
+    		//to be configured
+    	}
+    	if(mobilityControlInfo->radioResourceConfigCommon.tdd_Config) {
+    		//to be configured
+    	}
+    	if(mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength) {
+    		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->ul_CyclicPrefixLength, (void *)mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength,sizeof(UL_CyclicPrefixLength_t));
+    	}
+
+    	mac_xface->phy_config_radioResourceCommon_ue(Mod_id,eNB_index,&mobilityControlInfo->radioResourceConfigCommon);
+    }
+
 
     /*
     if (quantityConfig != NULL) {

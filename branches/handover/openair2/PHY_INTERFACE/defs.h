@@ -119,9 +119,14 @@ typedef struct
 			       u8 SIwindowsize,
 			       u16 SIperiod);
     
+
+    /// Configure Common PHY parameters from mobilityControlInfo
+    void (*phy_config_radioResourceCommon_ue)(u8 Mod_id,u8 CH_index,
+    			RadioResourceConfigCommon_t *radioResourceConfigCommon);
+
     /// Configure Common PHY parameters from SIB2
     void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
-			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
+			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
 
     /// Function to indicate failure of contention resolution or RA procedure

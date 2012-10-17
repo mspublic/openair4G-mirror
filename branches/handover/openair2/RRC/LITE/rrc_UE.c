@@ -254,13 +254,17 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
 
   size = do_RRCConnectionReconfigurationComplete(buffer);
   
-  LOG_I(RRC,"[UE %d] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionReconfigurationComplete (bytes %d, eNB_index %d)\n",
+  LOG_I(RRC,"HO [UE %d] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionReconfigurationComplete (bytes %d, eNB_index %d)\n",
 	Mod_id,frame, size, eNB_index);
-  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionReconfigurationComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
+  LOG_D(RLC, "HO [MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionReconfigurationComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
 	frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
   
   //rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
-  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+  if(UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE && UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId != 0xFF) {
+	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+  }
+  else
+	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer,1);
 }
 
 
@@ -558,6 +562,7 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 		       (struct LogicalChannelConfig *)NULL,
 		       (MeasGapConfig_t *)NULL,
 		       (TDD_Config_t *)NULL,
+		       (MobilityControlInfo_t *)NULL,
 		       NULL,
 		       NULL);
   }
@@ -735,6 +740,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			     SRB1_logicalChannelConfig,
 			     (MeasGapConfig_t *)NULL,
 			     NULL,
+			     (MobilityControlInfo_t *)NULL,
 			     NULL,
 			     NULL);
 	}
@@ -774,6 +780,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			 SRB2_logicalChannelConfig,
 			 UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 			 (TDD_Config_t *)NULL,
+			 (MobilityControlInfo_t *)NULL,
 			 (u8 *)NULL,
 			 (u16 *)NULL);
 	}
@@ -806,6 +813,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			   UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
 			   UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 			   (TDD_Config_t*)NULL,
+			   (MobilityControlInfo_t *)NULL,
 			   (u8 *)NULL,
 			   (u16 *)NULL);
 	
@@ -830,35 +838,61 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo) {
-	LOG_I(RRC,"Mobility Control Information is present\n");
-	rrc_ue_process_mobilityControlInfo(Mod_id,eNB_index,
+    	  LOG_I(RRC,"Mobility Control Information is present\n");
+    	  rrc_ue_process_mobilityControlInfo(Mod_id,frame,eNB_index,
 					   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo);
-	
       }
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
-	LOG_I(RRC,"Measurement Configuration is present\n");
-	rrc_ue_process_measConfig(Mod_id,eNB_index,
+    	  LOG_I(RRC,"Measurement Configuration is present\n");
+    	  rrc_ue_process_measConfig(Mod_id,eNB_index,
 				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
       }
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-	LOG_I(RRC,"Radio Resource Configuration is present\n");
-	rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
+    	  LOG_I(RRC,"Radio Resource Configuration is present\n");
+    	  rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
 						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
-
       }
     } // c1 present
   } // critical extensions present
 }
 
-void	rrc_ue_process_mobilityControlInfo(u8 Mod_id,u8 eNB_index,struct MobilityControlInfo *mobilityControlInfo) {
+/* 36.331, 5.3.5.4	Reception of an RRCConnectionReconfiguration including the mobilityControlInfo by the UE (handover) */
+void	rrc_ue_process_mobilityControlInfo(u8 Mod_id, u32 frame, u8 eNB_index, struct MobilityControlInfo *mobilityControlInfo) {
+
+	if(UE_rrc_inst[Mod_id].Info[eNB_index].T310_active == 1)
+		UE_rrc_inst[Mod_id].Info[eNB_index].T310_active = 0;
+	UE_rrc_inst[Mod_id].Info[eNB_index].T304_active = 1;
+
+	UE_rrc_inst[Mod_id].Info[eNB_index].T304_cnt = mobilityControlInfo->t304;
 
 
+	//Synchronisation to DL of target cell
+    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
+          frame, Mod_id, eNB_index, Mod_id);
+
+    rrc_mac_config_req(Mod_id,0,0,eNB_index,
+			 (RadioResourceConfigCommonSIB_t *)NULL,
+			 (struct PhysicalConfigDedicated *)NULL,
+			 (MeasObjectToAddMod_t **)NULL,
+			 (MAC_MainConfig_t *)NULL,
+			 0,
+			 (struct LogicalChannelConfig *)NULL,
+			 (MeasGapConfig_t *)NULL,
+			 (TDD_Config_t *)NULL,
+			 mobilityControlInfo,
+			 (u8 *)NULL,
+			 (u16 *)NULL);
+}
+
+void rrc_detach_from_eNB(u8 Mod_id,u8 eNB_index) {
+	//UE_rrc_inst[Mod_id].DRB_config[eNB_index]
 }
 
 /*------------------------------------------------------------------------------------------*/
 void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/
 
+  u8 Mod_id_t; //handover
   DL_DCCH_Message_t dldcchmsg;
   DL_DCCH_Message_t *dl_dcch_msg=&dldcchmsg;
   //  asn_dec_rval_t dec_rval;
@@ -882,7 +916,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	      &asn_DEF_DL_DCCH_Message,
 	      (void**)&dl_dcch_msg,
 	      (uint8_t*)Buffer,
-	      100,0,0);
+	      120,0,0);
 
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
@@ -904,8 +938,28 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
-	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
-	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
+    	  if(dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo != NULL) {
+    		  /*
+    		   * 36.331, 5.3.5.4 Reception of an RRCConnectionReconfiguration including the mobilityControlInfo by the UE (handover)
+    		   */
+    		  if(UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId != dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo->targetPhysCellId) {
+    			  LOG_W(RRC,"\nHandover target (%d) is different from RSRP measured target (%d)..\n",
+    					  dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo->targetPhysCellId,
+    					  UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId);
+    		  }
+    		  else {
+    			  Mod_id_t = get_adjacent_cell_mod_id(UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId);
+    			  if(Mod_id_t != 0xFF) {
+    				  LOG_D(RRC,"\nReceived RRCReconf for HO \n");
+    				  rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+    				  rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id_t,frame,Mod_id_t);
+    			  }
+    		  }
+    	  }
+    	  else {
+    		  rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+    		  rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
+    	  }
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;
@@ -1047,6 +1101,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 		     (struct LogicalChannelConfig *)NULL,
 		     (MeasGapConfig_t *)NULL,
 		     UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
+		     (MobilityControlInfo_t *)NULL,
 		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
 		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod);
   
@@ -1198,6 +1253,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 			 (struct LogicalChannelConfig *)NULL,
 			 (MeasGapConfig_t *)NULL,
 			 (TDD_Config_t *)NULL,
+			 (MobilityControlInfo_t *)NULL,
 			 NULL,
 			 NULL);
       UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
@@ -1338,7 +1394,7 @@ void ue_meas_filtering(s32 UE_id, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_var
 }
 
 
-u8 check_trigger_meas_event(u8 i, u8 j, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_vars_ue, Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys, Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt) {
+u8 check_trigger_meas_event(u8 i /* Mod_id of serving cell */, u8 j /* Meas Index */, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *phy_vars_ue, Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys, Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt) {
 	u8 eNB_offset;
 	PHY_MEASUREMENTS *phy_meas = &phy_vars_ue->PHY_measurements;
 	u8 currentCellIndex = phy_vars_ue->lte_frame_parms.Nid_cell;
@@ -1359,12 +1415,15 @@ u8 check_trigger_meas_event(u8 i, u8 j, UE_RRC_INST *UE_rrc_inst, PHY_VARS_UE *p
 					i,j,UE_rrc_inst->measTimer[i][j],currentCellIndex,eNB_offset);
 		}
 		if (UE_rrc_inst->measTimer[i][j] >= ttt) {
-			UE_rrc_inst->Info[0].handoverTarget = eNB_offset;
+			UE_rrc_inst->HandoverInfoUe.targetCellId = get_adjacent_cell_id(i,eNB_offset-1); //check this!
+			LOG_D(RRC,"\nHandoverInfoUe.targetCellId: %d \n",UE_rrc_inst->HandoverInfoUe.targetCellId);
 			return 1;
 		}
  	}
 	return 0;
 }
+
+
 // Measurement report triggering, described in 36.331 Section 5.5.4.1
 void ue_measurement_report_triggering(u8 Mod_id, u32 frame, UE_RRC_INST *UE_rrc_inst) {
 	u8 i,j;

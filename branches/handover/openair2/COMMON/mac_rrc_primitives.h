@@ -18,8 +18,10 @@ ________________________________________________________________*/
 #include "COMMON/platform_constants.h"
 
 #include "RadioResourceConfigCommonSIB.h"
+#include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
+#include "MobilityControlInfo.h"
 //#include "rrm_config_structs.h"
 //#include "platform_types.h"
 /** @defgroup _mac_rrc_primitives_ MAC Layer Primitives for Communications with RRC 
@@ -363,6 +365,7 @@ typedef struct{
 			    LogicalChannelConfig_t *logicalChannelConfig,
 			    MeasGapConfig_t *measGapConfig, 
 			    TDD_Config_t *tdd_Config,
+			    MobilityControlInfo_t *mobilityControlInfo,
 			    u8 *SIwindowsize,
 			    u16 *SIperiod);
   unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, char*);

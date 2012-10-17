@@ -72,6 +72,7 @@ extern UE_MAC_INST *UE_mac_inst;
 #ifdef BIGPHYSAREA
 extern void *bigphys_malloc(int);
 #endif
+extern uint16_t two_tier_hexagonal_cellIds[7];
 
 extern inline unsigned int taus(void);
 
@@ -156,6 +157,7 @@ void init_SI(u8 Mod_id) {
 		       (struct LogicalChannelConfig *)NULL,
 		       (MeasGapConfig_t *)NULL,
 		       eNB_rrc_inst[Mod_id].sib1->tdd_Config,
+		       (MobilityControlInfo_t *)NULL,
 		       &SIwindowsize,
 		       &SIperiod);
   }
@@ -248,7 +250,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
   asn_dec_rval_t dec_rval;
   UL_DCCH_Message_t uldcchmsg;
   UL_DCCH_Message_t *ul_dcch_msg=&uldcchmsg;
-  u8 buffer[100];
+  u8 buffer[120];
   int i;
 
   if (Srb_id != 1) {
@@ -263,7 +265,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 			 &asn_DEF_UL_DCCH_Message,
 			 (void**)&ul_dcch_msg,
 			 Rx_sdu,
-			 100,0,0);
+			 120,0,0);
   for (i=0;i<sdu_size;i++)
     msg("%x.",Rx_sdu[i]);
   msg("\n");
@@ -274,13 +276,16 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
   }
 
 //#ifdef X2_SIM
-  for (i=0;i<NUMBER_OF_UE_MAX && eNB_rrc_inst[Mod_id].handover_info[i] != NULL;i++) {
+//  for (i=0;i<NUMBER_OF_UE_MAX && eNB_rrc_inst[Mod_id].handover_info[i] != NULL;i++) {
 
+  	  /*
 	  if(eNB_rrc_inst[Mod_id].handover_info[i]->ho_prepare == 0xFF) {
-		  LOG_D(RRC,"\n Incoming HO detected for new UE_idx %d \n");
+		  LOG_D(RRC,"\n Incoming HO detected for new UE_idx %d eNB_mod_id: %d \n",i,Mod_id);
 		  rrc_eNB_process_handoverPreparationInformation(Mod_id,frame,i);
 	  }
+	  */
 
+	  /*
 	  if(eNB_rrc_inst[Mod_id].handover_info[i]->ho_complete == 0xFF) {
 		  LOG_D(RRC,"\n HO Command received for new UE_idx %d \n");
 		  //rrc_eNB_process_handoverPreparationInformation(Mod_id,frame,i);
@@ -289,7 +294,8 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 
 		  pdcp_data_req(Mod_id,frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[Mod_id].handover_info[i]->buf,1);
 	  }
-  }
+	  */
+//  }
 //#endif
 
   if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_c1) {
@@ -954,6 +960,10 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 #endif   
   
   //void fill_handover_info(u8 Mod_id, u8 UE_index, PhysCellId_t targetPhyId, eNB_RRC_INST *rrc_inst, HANDOVER_INFO *handover_info)
+ //tart
+  // if(eNB_rrc_inst[Mod_id]->handover_info[UE_index]) {
+//
+ // }
   rrc_eNB_generate_HandoverPreparationInformation(Mod_id,UE_index,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId,&eNB_rrc_inst[Mod_id],&eNB_rrc_inst[Mod_id].handover_info[Mod_id]);
 
   //Look for IP address of the target eNB
@@ -977,7 +987,7 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 void rrc_eNB_generate_HandoverPreparationInformation (u8 Mod_id, u8 UE_index, PhysCellId_t targetPhyId, eNB_RRC_INST *rrc_inst, HANDOVER_INFO *handover_info) {
 	u8 buffer[100];
 	u8 size,UE_idx;
-	uint16_t modid_target = get_adjacent_cell_mod_id(targetPhyId);
+	u8 modid_target = get_adjacent_cell_mod_id(targetPhyId);
 
 	HANDOVER_INFO *handoverInfo = CALLOC(1,sizeof(*handoverInfo));
 	struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
@@ -1000,13 +1010,13 @@ void rrc_eNB_generate_HandoverPreparationInformation (u8 Mod_id, u8 UE_index, Ph
     rrc_inst->handover_info[UE_index]->as_context.reestablishmentInfo->targetCellShortMAC_I.bits_unused = 0;
     rrc_inst->handover_info[UE_index]->as_context.reestablishmentInfo->additionalReestabInfoList = NULL;
 
-    rrc_inst->handover_info[UE_index]->ho_prepare = 0xFF;
+    rrc_inst->handover_info[UE_index]->ho_prepare = 0xF0;
     rrc_inst->handover_info[UE_index]->ho_complete = 0;
 
-    if (modid_target != 0xFFFF) {
+    if (modid_target != 0xFF) {
         UE_idx = rrc_find_free_ue_index(modid_target);
         if (UE_idx!=0xFF) {
-        	LOG_D(RRC,"\n Sending HandoverPreparationInformation msg from eNB %d to eNB %d source UE_idx %d target UE_idx %d\n", rrc_inst->physCellId,targetPhyId,UE_index,UE_idx);
+        	LOG_D(RRC,"\n Sending HandoverPreparationInformation msg from eNB %d to eNB %d source UE_idx %d target UE_idx %d source_modId: %d target_modId: %d\n", rrc_inst->physCellId,targetPhyId,UE_index,UE_idx,Mod_id,modid_target);
         	eNB_rrc_inst[modid_target].handover_info[UE_idx] = CALLOC(1,sizeof(*(eNB_rrc_inst[modid_target].handover_info[UE_idx])));
         	memcpy((void *)&eNB_rrc_inst[modid_target].handover_info[UE_idx]->as_context, (void *)&rrc_inst->handover_info[UE_index]->as_context, sizeof(AS_Context_t));
         	memcpy((void *)&eNB_rrc_inst[modid_target].handover_info[UE_idx]->as_config, (void *)&rrc_inst->handover_info[UE_index]->as_config, sizeof(AS_Config_t));
@@ -1082,6 +1092,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelConfig,
 			   eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 			   (TDD_Config_t *)NULL,
+			   (MobilityControlInfo_t *)NULL,
 			   (u8 *)NULL,
 			   (u16 *)NULL);
       }
@@ -1108,6 +1119,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   (LogicalChannelConfig_t *)NULL,
 			   (MeasGapConfig_t *)NULL,
 			   (TDD_Config_t *)NULL,
+			   (MobilityControlInfo_t *)NULL,
 			   (u8 *)NULL,
 			   (u16 *)NULL);
       }
@@ -1167,6 +1179,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 		     SRB1_logicalChannelConfig,
 		     eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 		     (TDD_Config_t *)NULL,
+		     (MobilityControlInfo_t *)NULL,
 		     (u8 *)NULL,
 		     (u16 *)NULL);
 
@@ -1219,7 +1232,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   MobilityControlInfo_t *mobilityInfo;
 
   HandoverCommand_t handoverCommand;
-  uint16_t sourceModId = get_adjacent_cell_mod_id(rrc_inst->handover_info[UE_index]->as_context.reestablishmentInfo->sourcePhysCellId);
+  u8 sourceModId = get_adjacent_cell_mod_id(rrc_inst->handover_info[UE_index]->as_context.reestablishmentInfo->sourcePhysCellId);
 
 #if Rel10
   long * sr_ProhibitTimer_r9;
@@ -1575,7 +1588,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
 
   mobilityInfo = CALLOC(1,sizeof(*mobilityInfo));
   memset((void *)mobilityInfo,0,sizeof(*mobilityInfo));
-  mobilityInfo->targetPhysCellId = (PhysCellId_t) rrc_inst->physCellId;
+  mobilityInfo->targetPhysCellId = (PhysCellId_t) two_tier_hexagonal_cellIds[Mod_id, rrc_inst->handover_info[UE_index]->modid_t];
+  LOG_D(RRC,"\nHO: Process_handover_preparation_info: targetPhysCellId: %d mod_id: %d UE_index: %d \n",mobilityInfo->targetPhysCellId,Mod_id,UE_index);
 
   mobilityInfo->additionalSpectrumEmission = CALLOC(1,sizeof(*mobilityInfo->additionalSpectrumEmission));
   *mobilityInfo->additionalSpectrumEmission = 1; //Check this value!
@@ -1685,10 +1699,14 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   // uint8_t *buf;	/* Buffer with consecutive OCTET_STRING bits */
 //#ifdef X2_SIM
 
-  memcpy(eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->buf,(void *)buffer,size);
-  eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->size = size;
-  eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->ho_complete = 0xFF;
-  eNB_rrc_inst[Mod_id].handover_info[UE_index]->ho_complete = 0xFF;
+  if (sourceModId != 0xFF) {
+	  memcpy(eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->buf,(void *)buffer,size);
+	  eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->size = size;
+	  eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->ho_complete = 0xFF;
+	  eNB_rrc_inst[Mod_id].handover_info[UE_index]->ho_complete = 0xFF;
+  }
+  else
+	  LOG_D(RRC,"\nError! rrc_eNB_generate_RRCConnectionReconfiguration_handover: Could not find source eNB mod_id. ");
 
 
 //#endif

@@ -117,8 +117,8 @@ typedef struct{
 	u8 ho_complete;
 	u8 modid_s; //Mod_id of serving cell
 	u8 modid_t; //Mod_id of target cell
-	u8 ueid_s; //UE_id of serving cell
-	u8 ueid_t; //UE_id of target cell
+	u8 ueid_s; //UE index in serving cell
+	u8 ueid_t; //UE index in target cell
 	AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
 	AS_Context_t as_context; /* They are mandatory for HO */
 	uint8_t buf[100];	/* ASN.1 encoded handoverCommandMessage */
@@ -169,7 +169,9 @@ typedef struct {
 	u32			 numberOfReportsSent;
 } MEAS_REPORT_LIST;
 
-
+typedef struct {
+	PhysCellId_t targetCellId;
+}HANDOVER_INFO_UE;
 
 typedef struct{
   uint8_t                           *SIB1;
@@ -216,6 +218,7 @@ typedef struct{
   SRB_INFO Srb0[NB_SIG_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_UE];
+  HANDOVER_INFO_UE HandoverInfoUe;
   u8 *SIB1[NB_CNX_UE];
   u8 sizeof_SIB1[NB_CNX_UE];
   u8 *SI[NB_CNX_UE];
