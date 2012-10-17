@@ -549,6 +549,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       LogicalChannelConfig_t *logicalChannelConfig,
 		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
+		       MobilityControlInfo_t *mobilityControlInfo,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);
 

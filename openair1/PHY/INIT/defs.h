@@ -3,6 +3,7 @@
 
 #include "PHY/defs.h"
 #include "RadioResourceConfigCommonSIB.h"
+#include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 
@@ -113,6 +114,10 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 void phy_config_sib2_eNB(u8 Mod_id,
 			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
+
+/// Configure Common PHY parameters from mobilityControlInfo
+void phy_config_radioResourceCommon_ue(u8 Mod_id,u8 CH_index,
+			RadioResourceConfigCommon_t *radioResourceConfigCommon);
 
 /*!
 \fn void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
