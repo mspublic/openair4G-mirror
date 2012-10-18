@@ -59,7 +59,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-    PHY_vars_eNB->transmission_mode[i] = (transmission_mode==1?1:2);
+    PHY_vars_eNB->transmission_mode[i] = transmission_mode;
     
   }
   
@@ -158,9 +158,14 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_rx     = 1;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
-  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
   init_frame_parms(*frame_parms,1);
+
+  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
+  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+  init_ul_hopping(*frame_parms);
 
   phy_init_top(*frame_parms);
 
