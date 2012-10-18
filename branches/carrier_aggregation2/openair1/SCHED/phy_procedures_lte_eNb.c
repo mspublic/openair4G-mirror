@@ -1670,7 +1670,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max];
       //phy_vars_eNb->eNB_UE_stats[(u32)UE_id].mode = PRACH;
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].sector = 0;
-      LOG_I(PHY,"[eNB %d][RAPROC] Initiating RA procedure with preamble %d, energy %d, delay %d\n",
+      LOG_D(PHY,"[eNB %d][RAPROC] Initiating RA procedure with preamble %d, energy %d, delay %d\n",
 	  phy_vars_eNB->Mod_id,
 	  preamble_max,
 	  preamble_energy_max,
@@ -1683,7 +1683,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
 				  0,subframe,0);
     }
     else {
-      LOG_I(PHY,"[eNB %d] frame %d, subframe %d: Unable to add user, max user count reached\n", phy_vars_eNB->Mod_id,
+      LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Unable to add user, max user count reached\n", phy_vars_eNB->Mod_id,
 	  phy_vars_eNB->frame, subframe);
     }
   }
@@ -2439,9 +2439,9 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
   if (((phy_vars_eNB[0]->lte_frame_parms.frame_type == 1 )&&(subframe_select(&phy_vars_eNB[0]->lte_frame_parms,last_slot>>1)==SF_UL))||
       (phy_vars_eNB[0]->lte_frame_parms.frame_type == 0)){
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_RX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot);
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      phy_procedures_eNB_RX(last_slot,phy_vars_eNB[CC_id],abstraction_flag);
-    }
+    //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      phy_procedures_eNB_RX(last_slot,phy_vars_eNB[0],abstraction_flag);
+    //}
   }
   if ((subframe_select(&phy_vars_eNB[0]->lte_frame_parms,next_slot>>1)==SF_S) &&
       ((next_slot&1)==0)) {
