@@ -144,7 +144,7 @@ void multipath_channel(channel_desc_t *desc,
 
   double path_loss = pow(10,desc->path_loss_dB/20);
   int dd;
-  dd = -desc->channel_offset;
+  dd = abs(desc->channel_offset);
 
 #ifdef DEBUG_CH
   printf("[CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d \n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length);
@@ -163,7 +163,7 @@ void multipath_channel(channel_desc_t *desc,
   printf("\n");
 #endif
 
-  for (i=dd;i<((int)length+dd);i++) {
+  for (i=0;i<((int)length-dd);i++) {
     for (ii=0;ii<desc->nb_rx;ii++) {
       rx_tmp.x = 0;
       rx_tmp.y = 0;
@@ -181,8 +181,8 @@ void multipath_channel(channel_desc_t *desc,
 	  rx_tmp.y += (tx.y * desc->ch[ii+(j*desc->nb_rx)][l].x) + (tx.x * desc->ch[ii+(j*desc->nb_rx)][l].y);
 	} //l
       }  // j
-      rx_sig_re[ii][i-dd] = rx_tmp.x*path_loss;
-      rx_sig_im[ii][i-dd] = rx_tmp.y*path_loss;
+      rx_sig_re[ii][i+dd] = rx_tmp.x*path_loss;
+      rx_sig_im[ii][i+dd] = rx_tmp.y*path_loss;
       /*
       if ((ii==0)&&((i%32)==0)) {
 	printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],rx_tmp.x,rx_tmp.y,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
