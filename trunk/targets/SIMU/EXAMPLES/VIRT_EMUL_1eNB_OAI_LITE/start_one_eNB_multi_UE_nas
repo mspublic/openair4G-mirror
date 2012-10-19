@@ -4,52 +4,170 @@ echo "Bash version ${BASH_VERSION}..."
 declare -a NAS_IMEI=( 3 9 1 8 3 6 6 2 0 0 0 0 0 0 )
 # first value is for ENB, then UE0, UE1, etc.
 declare -a MARKING=( 1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 )
-declare -a PORT_RANGE=( 0:0 40000:40999 41000:41999 42000:42999 43000:43999 )
+#declare -a PORT_RANGE=( 0:0 40000:40999 41000:41999 42000:42999 43000:43999 )
+
+# BE CAREFULL MAY NOT WORK WITH OTHER VALUES (TO DO)
 declare -i NUM_ENB=1
 
+# Notes:
+# We would like to remove the ipv4 addresses swap in the IP driver code for oai virtualized.
+# Let's say oai0 has ipv4 @ 10.0.1.1, oai1 has ipv4 @ 10.0.2.2 etc.
+# In the past when we generated some local traffic on the computer and wanted to make it go
+# through for example oai1 to oai0, the ipv4 destination address was 10.0.2.1
+#     meaning 10.0.2.2 wants to send a paquet to 10.0.1.1,
+#     so ip_destination[2] has the digit corresponding to the source
+#     so ip_destination[3] has the digit corresponding to the destination
+# then in the driver we modified at the receiving side (oai0 here) the ip source and destination
+# addresses in this way:
+# Originating packet:                               SRC 10.0.X.X -> 10.0.2.1
+# Resulting modified packet at the receiving side:  SRC 10.0.1.2 -> 10.0.1.1
+# So the packet could be accepted by the device (same dest @) and the fake source was was recorded (1.2).
+# So the response to this packet could return to the interface by where the request was pulled.
+# But this solution lead to recompute checksums of packets in the driver.
+#
+# So here we describe a solution where packets are not modified by the IP driver but by the kernel:
+#
+#        +---------------+         +---------------+         +---------------+
+#        |APP "VIRTUALLY"|         |APP "VIRTUALLY"|         |APP "VIRTUALLY"|   etc
+#        |running on eNB |         |running on UE0 |         |running on UE1 |
+#        |sending traffic|         |               |         |               |
+#        | to UE 2       |         |               |         |               |
+#        +---------------+         +---------------+         +---------------+
+#           |        ^                |        ^                |        ^
+#           |        |                |        |                |        |
+#    Tx packet (n1)  |                |        |        Tx packet (n2)   |
+#    XXXX->10.0.1.3  |                |        |         XXXX->10.0.1.3  |
+#           |        |                |        |                |        |
+#           | Rx packet (n2)          |        |                | Rx packet (n1)
+#           | 10.0.1.3->10.0.1.1      |        |                | 10.0.3.1->10.0.3.3
+#           V        |                V        |                V        |
+#        +-----------------------------------------------------------------------------+
+#        |  IPTABLES Table mangle chain OUTPUT TARGET MARK OPERATION setmark           |
+#        |  On packets coming from applications                                        |
+#        |-----------------------------------------------------------------------------|
+#        |  Example for packet n1:                                                     |
+#        |  iptables -t mangle -A OUTPUT --dst 10.0.1.3 -j MARK --set-mark 0x0103      |
+#        +-----------------------------------------------------------------------------+
+#           |        |                |        |                |        |
+#    Tx packet (n1)  |                |        |                |        |
+#    XXXX->10.0.1.3  |                |        |                |        |
+#    mark 0x0103     |                |        |                |        |
+#           |        |                |        |                |        |
+#           V        |                V        |                V        |
+#        +-----------------------------------------------------------------------------+
+#        |  IPTABLES Table nat chain POSTROUTING TARGET SNAT OPERATION --to Fake IP SRC|
+#        |  On packets coming from applications                                        |
+#        |-----------------------------------------------------------------------------|
+#        |  Example for packet n1:                                                     |
+#        |  iptables -t nat -A POSTROUTING -m mark --mark 0x0103 -j SNAT --to 10.0.3.1 |
+#        +-----------------------------------------------------------------------------+
+#           |        |                |        |                |        |
+#           |        |                |        |                | Rx packet (n1)
+#           |        |                |        |                | 10.0.3.1->10.0.3.3
+#           |        |                |        |                | mark 0x0103
+#           |        |                |        |                |        |
+#        +-----------------------------------------------------------------------------+
+#        |  IPTABLES Table mangle chain PREROUTING TARGET MARK OPERATION setmark       |
+#        |  On packets coming from applications                                        |
+#        |-----------------------------------------------------------------------------|
+#        |  Example for packet n1:                                                     |
+#        |  iptables -t nat -A PREROUTING -m mark --mark 0x0103 -j DNAT --to 10.0.3.3  |
+#        +-----------------------------------------------------------------------------+
+#           |        ^                |        ^                |        ^
+#           |        |                |        |                |        |
+#    Tx packet (n1)  |                |        |                | Rx packet (n1)
+#    10.0.3.1->10.0.1.3               |        |                | 10.0.3.1->10.0.1.3
+#    mark 0x0103     |                |        |                | mark 0x0103
+#           |        |                |        |                |        |
+#        +-----------------------------------------------------------------------------+
+#        |  IPTABLES Table mangle chain PREROUTING TARGET MARK OPERATION setmark       |
+#        |  On packets coming from applications                                        |
+#        |-----------------------------------------------------------------------------|
+#        |  Example for packet n1:                                                     |
+#        |  iptables -t mangle -A PREROUTING --dst 10.0.1.3 -j MARK --set-mark 0x0103  |
+#        +-----------------------------------------------------------------------------+
+#           |        ^                |        ^                |        ^
+#           |        |                |        |                |   Rx packet (n1)
+#           |        |                |        |                |   10.0.3.1->10.0.1.3
+#           |        |                |        |                |        |
+#           |10.0.1.1|                |10.0.2.2|                |10.0.3.3|
+#           V        |                V        |                V        |
+#          +----------+              +----------+              +----------+
+#          |  oai0    |              | oai1     |              | oai2     |
+#          |  (eNB)   |              | (UE0)    |              | (UE1)    |
+#          +----------+              +----------+              +----------+
 
-# NOTE ABOUT CLASSIFICATION WITH IPTABLES:
-# OUR NEED IS TO DO SOURCE NAT SINCE WE SUPPOSE THAT APPLICATIONS CANNOT BIND THEIR SOCKET
-# TO A DEDICATED IP ADDRESS OF A OAI INTERFACE.
-# THE IDEA IN THIS SCRIPT IS TO IDENTIFY A TRAFFIC COMMING FROM AN APPLICATION
-# DEDICATED TO A MOBILE NODE OR THE ENB, BY MARKING PACKETS, THEN TO USE THIS MARKING
-# TO ROUTE PACKETS TO THE RIGHT INTERFACE.
+####################################################################################
+#  HERE IS A DISPLAY OF THE CONTENT OF THE NAT TABLE FOR THE DESCRIBED SETTING
+####################################################################################
+# Chain PREROUTING (policy ACCEPT 1108 packets, 242K bytes)
+#  pkts bytes target     prot opt in     out     source               destination
+#     0     0 DNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x102 to:10.0.2.2
+#     0     0 DNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x103 to:10.0.3.3
+#     0     0 DNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x201 to:10.0.1.1
+#     0     0 DNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x203 to:10.0.3.3
+#     0     0 DNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x301 to:10.0.1.1
+#     0     0 DNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x302 to:10.0.2.2
 #
-#        +---------------+   +---------------+   +---------------+
-#        |APP "VIRTUALLY"|   |APP "VIRTUALLY"|   |APP "VIRTUALLY"|   etc
-#        |running on eNB |   |running on UE0 |   |running on UE1 |
-#        +---------------+   +---------------+   +---------------+
-#           |        ^          |        ^          |        ^
-#     mark1 |        |    mark2 |        |    mark3 |        |
-#           |        |          |        |          |        |
-#           |        |          |        |          |        |
-#           |        |          |        |          |        |
-#           V        |          V        |          V        |
-#        +-------------------------------------------------------+
-#        |  IPTABLES SOURCE NAT for packets                      |
-#        |  coming from applications                             |
-#        |                                                       |
-#        |  Packets rerouting for packets                        |
-#        |  coming from applications                             |
-#        |                                                       |
-#        |                                                       |
-#        |                                                       |
-#        +-------------------------------------------------------+
-#            |    ^                |    ^                |    ^
-#            |    |                |    |                |    |
-#            V    |                V    |                V    |
-#          +--------+            +--------+            +--------+
-#          |  oai0  |            | oai1   |            | oai2   |
-#          |  (eNB) |            | (UE0)  |            | (UE1)  |
-#          +--------+            +--------+            +--------+
+# Chain POSTROUTING (policy ACCEPT 2118 packets, 175K bytes)
+#  pkts bytes target     prot opt in     out     source               destination
+#     0     0 SNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x102 to:10.0.2.1
+#     0     0 SNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x103 to:10.0.3.1
+#     0     0 SNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x201 to:10.0.1.2
+#     0     0 SNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x203 to:10.0.3.2
+#     0     0 SNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x301 to:10.0.1.3
+#     0     0 SNAT       all  --  *      *       0.0.0.0/0            0.0.0.0/0           mark match 0x302 to:10.0.2.3
 #
-# 2 options identified:
+# Chain OUTPUT (policy ACCEPT 2133 packets, 186K bytes)
+#  pkts bytes target     prot opt in     out     source               destination
+####################################################################################
+#  HERE IS A DISPLAY OF THE CONTENT OF THE MANGLE TABLE FOR THE DESCRIBED SETTING
+####################################################################################
+#root@hades:~# iptables -t mangle -nvL
+# Chain PREROUTING (policy ACCEPT 2008K packets, 316M bytes)
+#  pkts bytes target     prot opt in     out     source               destination
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.1.2            MARK xset 0x102/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.1.3            MARK xset 0x103/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.2.1            MARK xset 0x201/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.2.3            MARK xset 0x203/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.3.1            MARK xset 0x301/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.3.2            MARK xset 0x302/0xffffffff
 #
-# 1) The traffic is already marked by applications: It is the selected option in this script
+# Chain INPUT (policy ACCEPT 2008K packets, 316M bytes)
+#  pkts bytes target     prot opt in     out     source               destination
 #
-# 2) The traffic is not marked by applications
-#    We have to mark packets ourselves (TO DO) based on ports, contracks or WHATEVER (to determine)
-#    (for example iptables -t mangle -A OUTPUT --(matching options) -j MARK --set-mark 2 )
+# Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+#  pkts bytes target     prot opt in     out     source               destination
+#
+# Chain OUTPUT (policy ACCEPT 1989K packets, 331M bytes)
+#  pkts bytes target     prot opt in     out     source               destination
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.1.2            MARK xset 0x102/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.1.3            MARK xset 0x103/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.2.1            MARK xset 0x201/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.2.3            MARK xset 0x203/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.3.1            MARK xset 0x301/0xffffffff
+#     0     0 MARK       all  --  *      *       0.0.0.0/0            10.0.3.2            MARK xset 0x302/0xffffffff
+#
+# Chain POSTROUTING (policy ACCEPT 1990K packets, 331M bytes)
+#  pkts bytes target     prot opt in     out     source               destination
+#
+####################################################################################
+# We also avoid the manipulation of ipv4 aRP packets by setting ourselves the neighbour cache:
+####################################################################################
+#root@hades:~# ip neigh show
+#...
+#10.0.3.1 dev oai1 lladdr 00:39:18:36:62:00 PERMANENT
+#10.0.2.1 dev oai1 lladdr 00:39:18:36:62:00 PERMANENT
+#10.0.1.1 dev oai1 lladdr 00:39:18:36:62:00 PERMANENT
+#...
+#10.0.1.2 dev oai0 lladdr 00:39:18:36:62:01 PERMANENT
+#10.0.2.2 dev oai0 lladdr 00:39:18:36:62:01 PERMANENT
+#10.0.3.2 dev oai0 lladdr 00:39:18:36:62:01 PERMANENT
+#...
+#10.0.1.3 dev oai0 lladdr 00:39:18:36:62:02 PERMANENT
+#10.0.2.3 dev oai0 lladdr 00:39:18:36:62:02 PERMANENT
+#10.0.3.3 dev oai0 lladdr 00:39:18:36:62:02 PERMANENT
+
 #
 
 declare -i NUM_MOBILES
