@@ -477,13 +477,13 @@ int main(int argc, char **argv) {
 	delay_avg += (double)preamble_delay_list[preamble_max];
       }
       if (n_frames==1) {
-	for (i=0;i<63;i++)
+	for (i=0;i<64;i++)
 	  if (i==preamble_tx)
 	    printf("****** preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
 	  else
 	    printf("preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
 	write_output("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-	write_output("prachF0.m","prachF0", &PHY_vars_UE->lte_ue_prach_vars[0]->prachF[0],6144,1,1);
+	write_output("prachF0.m","prachF0", &PHY_vars_eNB->lte_eNB_prach_vars.prachF[0],6144,1,1);
 	write_output("rxsig0.m","rxs0", 
 		     &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
 		     frame_parms->samples_per_tti,1,1);
