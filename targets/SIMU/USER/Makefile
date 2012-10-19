@@ -106,9 +106,11 @@ ifeq ($(IS_REL8), 0)
 endif
 endif
 
-
+ifdef netlink
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
+endif
+
 ifdef TEST_OMG
 CFLAGS += -DTEST_OMG
 #CFLAGS += -DDEBUG_OMG
