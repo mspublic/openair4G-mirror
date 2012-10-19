@@ -31,7 +31,7 @@ declare -i NUM_ENB=1
 #        |APP "VIRTUALLY"|         |APP "VIRTUALLY"|         |APP "VIRTUALLY"|   etc
 #        |running on eNB |         |running on UE0 |         |running on UE1 |
 #        |sending traffic|         |               |         |               |
-#        | to UE 2       |         |               |         |               |
+#        | to UE 1       |         |               |         |               |
 #        +---------------+         +---------------+         +---------------+
 #           |        ^                |        ^                |        ^
 #           |        |                |        |                |        |
