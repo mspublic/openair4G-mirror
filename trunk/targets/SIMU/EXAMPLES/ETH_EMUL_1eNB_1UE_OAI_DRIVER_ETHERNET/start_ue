@@ -26,7 +26,7 @@ ip addr add dev oai0 2001:1::2/64
 # -y    -> destination ipv6 address
 # -r    -> radio bearer id
 $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f0 -i0 -z0  -x 2001:1::2 -y 2001:1::1 -r 3
-$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z64 -s 10.0.1.2  -t 10.0.1.1  -r 3
+$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z64 -s 10.0.1.2/32  -t 10.0.1.1/32  -r 3
 sleep 1
 echo "to see UE stats, pleasae run : watch_ue script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2  > /dev/null"
