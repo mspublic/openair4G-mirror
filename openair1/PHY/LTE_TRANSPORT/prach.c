@@ -1038,6 +1038,7 @@ void init_prach_tables(int N_ZC) {
 
   int i,m;
 
+  // Compute the modular multiplicative inverse 'iu' of u s.t. iu*u = 1 mod N_ZC
   ZC_inv[0] = 0;
   ZC_inv[1] = 1;
   for (i=2;i<N_ZC;i++) {
@@ -1052,6 +1053,7 @@ void init_prach_tables(int N_ZC) {
 #endif
   }
 
+  // Compute quantized roots of unity
   for (i=0;i<N_ZC;i++) {
     ru[i<<1]     = (s16)(floor(32767.0*cos(2*M_PI*(double)i/N_ZC))); 
     ru[1+(i<<1)] = (s16)(floor(32767.0*sin(2*M_PI*(double)i/N_ZC))); 
@@ -1104,7 +1106,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
       NCS = NCS_restricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
     }
   }
-  num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);\
+  num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
   num_preambles++;
 #ifdef PRACH_DEBUG
   LOG_I(PHY,"Initializing %d preambles for PRACH (NCS_config %d, NCS %d, N_ZC/NCS %d)\n",num_preambles,prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig,NCS,N_ZC/NCS);
@@ -1124,7 +1126,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
       
       
       
-      X_u[i][k] = ((u32*)ru)[(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC];
+        X_u[i][k] = ((u32*)ru)[(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC];
       //    printf("X_u[%d] (%d) : %d,%d\n",k,(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[k])[0],((s16*)&X_u[k])[1]);
     }
   }
