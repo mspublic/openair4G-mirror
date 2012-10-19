@@ -131,6 +131,10 @@ void nas_COMMON_receive(u16 dlen,
         printk("%2x ",((unsigned char *)(skb->data))[i]);
     printk("\n");
     #endif
+    #ifdef NAS_DEBUG_RECEIVE
+    printk("[NAS][COMMON] skb->data           @ %08X\n", skb->data);
+    printk("[NAS][COMMON] skb->mac_header     @ %08X\n", skb->mac_header);
+    #endif
 
 
     if (rclass->ip_version != NAS_MPLS_VERSION_CODE) {  // This is an IP packet
@@ -323,16 +327,29 @@ void nas_COMMON_receive(u16 dlen,
             default:
                 #ifdef NAS_DRIVER_TYPE_ETHERNET
                 // fill skb->pkt_type, skb->dev
+                #ifdef NAS_DEBUG_RECEIVE
+                printk("[NAS][COMMON] Packet is not IPv4 or IPv6 ether_type=%04X\n", ether_type);
+                printk("[NAS][COMMON] skb->data           @ %08X\n", skb->data);
+                printk("[NAS][COMMON] skb->network_header @ %08X\n", skb->network_header);
+                printk("[NAS][COMMON] skb->mac_header     @ %08X\n", skb->mac_header);
+                #endif
                 skb->protocol = eth_type_trans(skb, nasdev[inst]);
-                p_ether_type = (u16 *)&(skb->data[hard_header_len-2]);
+                // minus 1(short) instead of 2(bytes) because u16*
+                p_ether_type = (u16 *)&(skb->mac_header[hard_header_len-2]);
                 ether_type = ntohs(*p_ether_type);
+                #ifdef NAS_DEBUG_RECEIVE
+                printk("[NAS][COMMON] Packet is not IPv4 or IPv6 ether_type=%04X\n", ether_type);
+                printk("[NAS][COMMON] skb->data           @ %08X\n", skb->data);
+                printk("[NAS][COMMON] skb->network_header @ %08X\n", skb->network_header);
+                printk("[NAS][COMMON] skb->mac_header     @ %08X\n", skb->mac_header);
+                #endif
                 switch (ether_type) {
                     case ETH_P_ARP:
                         printk("[NAS][COMMON] ether_type = ETH_P_ARP\n");
                         //skb->pkt_type = PACKET_HOST;
                         skb->protocol = htons(ETH_P_ARP);
                         #ifdef KERNEL_VERSION_GREATER_THAN_2622
-                        skb->network_header = &skb->data[hard_header_len];
+                        skb->network_header = &skb->mac_header[hard_header_len];
                         #else
                         skb->nh.iph = (struct iphdr *)&skb->data[hard_header_len];
                         #endif
