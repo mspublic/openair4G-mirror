@@ -106,7 +106,7 @@ ifeq ($(IS_REL8), 0)
 endif
 endif
 
-ifdef netlink
+ifndef nonetlink
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
 endif
