@@ -870,7 +870,7 @@ main (int argc, char **argv)
       oai_emulation.info.omv_enabled = 1;
       break;
     case 'H': 
-			nb_connected_eNB = atoi(optarg);
+      nb_connected_eNB = atoi(optarg);
       break;
     default:
       help ();
@@ -902,7 +902,15 @@ main (int argc, char **argv)
     LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
     exit (-1);
   }
-      
+  if (nb_connected_eNB > NUMBER_OF_CONNECTED_eNB_MAX){ // navid
+    nb_connected_eNB = NUMBER_OF_CONNECTED_eNB_MAX;
+    LOG_E(EMU,"Adjust the number of connected eNB to the max (%d)\n", NUMBER_OF_CONNECTED_eNB_MAX);
+  }
+  if (nb_connected_eNB > oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote){ // navid 
+    nb_connected_eNB = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
+    LOG_E(EMU,"Adjust the number of connected eNB to the total number of eNBs (%d)\n", oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote);
+  }
+    
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
   abstraction_flag = 1;
@@ -1322,17 +1330,14 @@ main (int argc, char **argv)
 
 	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, frame, slot, next_slot >> 1);
-	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)
-		{ // apaposto
-	    if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] != NOT_SYNCHED) 
-			{
-	      if (frame>0) 
-				{
-								PHY_vars_UE_g[UE_id]->frame = frame;
-								phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
-			 	}
-		 	}
-	  else 
+	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)	{ // apaposto
+	    if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] != NOT_SYNCHED){
+	      if (frame>0) {
+		  PHY_vars_UE_g[UE_id]->frame = frame;
+		  phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
+		}
+	    }
+	    else 
 		{
 	    if ((PHY_vars_UE_g[UE_id]->UE_mode[eNB_id-1] == PUSCH) && (eNB_id < nb_connected_eNB)) 
 	      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id]=PRACH;

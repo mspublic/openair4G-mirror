@@ -197,13 +197,14 @@ void do_DL_sig(double **r_re0,double **r_im0,
     
       // calculate the SNR for the attached eNB
       init_snr(eNB2UE[att_eNB_id][UE_id],  enb_data[att_eNB_id], ue_data[UE_id],PHY_vars_UE_g[UE_id]->sinr_dB,&PHY_vars_UE_g[UE_id]->N0);
-
+#ifdef LOLAMESH
       // calculate sinr here
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	if (att_eNB_id != eNB_id) {
 	  calculate_sinr(eNB2UE[eNB_id][UE_id], enb_data[eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id]->sinr_dB);
 	}
       }
+#endif
       //dlsch_abstraction(PHY_vars_UE_g[UE_id]->sinr_dB, rb_alloc, 8);
 
       // fill in perfect channel estimates

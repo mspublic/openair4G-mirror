@@ -1022,13 +1022,13 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   msg("[PHY] EMUL RRC eNB %d ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",phy_vars_eNB->Mod_id,subframe,UE_index,harq_pid,rnti);
 #endif
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[phy_vars_eNB->Mod_id]->crnti)
       break;
 
     msg("[PHY] EMUL eNB %d ulsch_decoding_emul : subframe ue id %d crnti %x nb ue %d\n",
 	phy_vars_eNB->Mod_id,
 	UE_id,
-	PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti,
+	PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[phy_vars_eNB->Mod_id]->crnti,
 	NB_UE_INST); 
   }
 
