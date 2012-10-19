@@ -1618,8 +1618,8 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   u16 preamble_energy_list[64],preamble_delay_list[64];
   u16 preamble_max,preamble_energy_max;
   u16 i;
-  u8 UE_id;
-
+  u8 UE_id, process_prach=0;
+  
   if (abstraction_flag == 0) {
     LOG_I(PHY,"[eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
 	  phy_vars_eNB->frame,subframe,
@@ -1645,9 +1645,10 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       
       if ((PHY_vars_UE_g[UE_id]->generate_prach==1) &&
 	  (PHY_vars_UE_g[UE_id]->lte_frame_parms.prach_config_common.rootSequenceIndex ==
-	   phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex) ) {
+	   phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex) ){
 	preamble_energy_list[PHY_vars_UE_g[UE_id]->prach_PreambleIndex] = 80;
 	preamble_delay_list[PHY_vars_UE_g[UE_id]->prach_PreambleIndex] = 5;
+	process_prach=1;
       }
     }
   }
@@ -1673,12 +1674,13 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max];
       //phy_vars_eNb->eNB_UE_stats[(u32)UE_id].mode = PRACH;
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].sector = 0;
-      LOG_D(PHY,"[eNB %d][RAPROC] Initiating RA procedure with preamble %d, energy %d, delay %d\n",
-	  phy_vars_eNB->Mod_id,
-	  preamble_max,
-	  preamble_energy_max,
-	  preamble_delay_list[preamble_max]);
-	  
+      LOG_D(PHY,"[eNB %d][RAPROC] Initiating RA procedure for UE %d with preamble %d, energy %d, delay %d\n",
+	    phy_vars_eNB->Mod_id,
+	    UE_id ,
+	    preamble_max,
+	    preamble_energy_max,
+	    preamble_delay_list[preamble_max]);
+      
       mac_xface->initiate_ra_proc(phy_vars_eNB->Mod_id,
 				  phy_vars_eNB->frame,
 				  preamble_max,
@@ -1814,7 +1816,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
     two_ues_connected = 1;
 #else
-    two_ues_connected = 1;
+  two_ues_connected = 1; // should be zero ???
 #endif
 
   pusch_active = 0;

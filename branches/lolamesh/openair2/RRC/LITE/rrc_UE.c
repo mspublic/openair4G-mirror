@@ -783,6 +783,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
 	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
 	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
+	UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_RECONFIGURED;
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;
@@ -824,7 +825,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
   BCCH_DL_SCH_Message_t bcch_message;
   BCCH_DL_SCH_Message_t *bcch_message_ptr=&bcch_message;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
-  SystemInformation_t **si=UE_rrc_inst[Mod_id].si[eNB_index];
+  SystemInformation_t **si= UE_rrc_inst[Mod_id].si[eNB_index];
   asn_dec_rval_t dec_rval;
   u32 si_window;
 
@@ -850,19 +851,19 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	  memcpy((void*)*sib1,
 		 (void*)&bcch_message.message.choice.c1.choice.systemInformationBlockType1,
 		 sizeof(SystemInformationBlockType1_t));
-	  LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
+	  LOG_D(RRC,"[UE %d] Decoding First SIB1 from eNB %d\n",Mod_id,eNB_index);
 	  decode_SIB1(Mod_id,eNB_index);
 	}
+      }
 	break;
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
-
 	si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
 	memcpy((void*)si[si_window],
 	       (void*)&bcch_message.message.choice.c1.choice.systemInformation,
 	       sizeof(SystemInformation_t));
-	LOG_D(RRC,"[UE %d] Decoding SI for frame %d, si_window %d\n",Mod_id,frame,si_window);
+	LOG_D(RRC,"[UE %d] Decoding SI from eNB %d for frame %d, si_window %d\n",Mod_id,eNB_index, frame,si_window);
 	decode_SI(Mod_id,frame,eNB_index,si_window);
       }
       break;
@@ -870,7 +871,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	break;
       }
     }
-  }
+  
 }	    
 	    
 
@@ -1082,7 +1083,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
       rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
 
       if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE) {
-	LOG_I(RRC,"[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
+	LOG_I(RRC,"[UE %d] Received SIB1/SIB2/SIB3 from eNB %d Switching to RRC_SI_RECEIVED\n",Mod_id, eNB_index);
 	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_SI_RECEIVED;
       }
       break;
