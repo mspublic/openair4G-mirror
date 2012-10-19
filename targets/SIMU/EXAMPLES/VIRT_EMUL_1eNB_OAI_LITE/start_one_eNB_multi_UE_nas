@@ -1,6 +1,57 @@
 #!/bin/bash
 echo "Bash version ${BASH_VERSION}..."
 
+declare -a NAS_IMEI=( 3 9 1 8 3 6 6 2 0 0 0 0 0 0 )
+# first value is for ENB, then UE0, UE1, etc.
+declare -a MARKING=( 1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 )
+declare -a PORT_RANGE=( 0:0 40000:40999 41000:41999 42000:42999 43000:43999 )
+declare -i NUM_ENB=1
+
+
+# NOTE ABOUT CLASSIFICATION WITH IPTABLES:
+# OUR NEED IS TO DO SOURCE NAT SINCE WE SUPPOSE THAT APPLICATIONS CANNOT BIND THEIR SOCKET
+# TO A DEDICATED IP ADDRESS OF A OAI INTERFACE.
+# THE IDEA IN THIS SCRIPT IS TO IDENTIFY A TRAFFIC COMMING FROM AN APPLICATION
+# DEDICATED TO A MOBILE NODE OR THE ENB, BY MARKING PACKETS, THEN TO USE THIS MARKING
+# TO ROUTE PACKETS TO THE RIGHT INTERFACE.
+#
+#        +---------------+   +---------------+   +---------------+
+#        |APP "VIRTUALLY"|   |APP "VIRTUALLY"|   |APP "VIRTUALLY"|   etc
+#        |running on eNB |   |running on UE0 |   |running on UE1 |
+#        +---------------+   +---------------+   +---------------+
+#           |        ^          |        ^          |        ^
+#     mark1 |        |    mark2 |        |    mark3 |        |
+#           |        |          |        |          |        |
+#           |        |          |        |          |        |
+#           |        |          |        |          |        |
+#           V        |          V        |          V        |
+#        +-------------------------------------------------------+
+#        |  IPTABLES SOURCE NAT for packets                      |
+#        |  coming from applications                             |
+#        |                                                       |
+#        |  Packets rerouting for packets                        |
+#        |  coming from applications                             |
+#        |                                                       |
+#        |                                                       |
+#        |                                                       |
+#        +-------------------------------------------------------+
+#            |    ^                |    ^                |    ^
+#            |    |                |    |                |    |
+#            V    |                V    |                V    |
+#          +--------+            +--------+            +--------+
+#          |  oai0  |            | oai1   |            | oai2   |
+#          |  (eNB) |            | (UE0)  |            | (UE1)  |
+#          +--------+            +--------+            +--------+
+#
+# 2 options identified:
+#
+# 1) The traffic is already marked by applications: It is the selected option in this script
+#
+# 2) The traffic is not marked by applications
+#    We have to mark packets ourselves (TO DO) based on ports, contracks or WHATEVER (to determine)
+#    (for example iptables -t mangle -A OUTPUT --(matching options) -j MARK --set-mark 2 )
+#
+
 declare -i NUM_MOBILES
 declare -i INSTANCE
 declare -i IP_SOURCE
@@ -9,19 +60,43 @@ declare -i IP
 declare -i RB_ID
 declare -i CLASSIFIER_ID
 
+
+iptables -t mangle --flush
+iptables -t nat    --flush
+iptables -t filter --flush
+
+
 NUM_MOBILES=$1
 
-for ((i=0 ; i <= $NUM_MOBILES ; i++ ))
+for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
 do
+#     let i_p1=i+1
+#
+#     echo "ip rule del fwmark ${MARKING[$i]} table $i_p1"
+#     ip rule del fwmark ${MARKING[$i]} table $i_p1
+#     while [ "$?" -eq "0" ]
+#     do
+#         echo "ip rule del fwmark ${MARKING[$i]} table $i_p1"
+#         ip rule del fwmark ${MARKING[$i]} table $i_p1
+#     done
+#
+#     echo "ip route del table $i_p1"
+#     ip route del table $i_p1
+
     echo "ip link set oai$i down"
+    ip link set oai$i down
 done
+
+
 
 echo "Bringup eNB interface"
 
 
 rmmod nasmesh
 make  naslite_netlink_ether oaisim
-insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
+#insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
+#insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=${NAS_IMEI[0]},${NAS_IMEI[1]},${NAS_IMEI[2]},${NAS_IMEI[3]},${NAS_IMEI[4]},${NAS_IMEI[5]},${NAS_IMEI[6]},${NAS_IMEI[7]},${NAS_IMEI[8]},${NAS_IMEI[9]},${NAS_IMEI[10]},${NAS_IMEI[11]},${NAS_IMEI[12]}, ${NAS_IMEI[13]}
+insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=${NAS_IMEI[0]},${NAS_IMEI[1]},${NAS_IMEI[2]},${NAS_IMEI[3]},${NAS_IMEI[4]},${NAS_IMEI[5]},${NAS_IMEI[6]},${NAS_IMEI[7]},${NAS_IMEI[8]},${NAS_IMEI[9]},${NAS_IMEI[10]},${NAS_IMEI[11]},${NAS_IMEI[12]},${NAS_IMEI[13]}
 
 ip addr add dev eth2 192.168.14.145/24 broadcast 192.168.14.255
 ip route add 192.168.14.0/24 dev eth2
@@ -33,46 +108,235 @@ ip route add 224.0.0.160/28 dev eth2
 NUM_MOBILES=$1
 IP=1
 
-for ((i=0 ; i <= $NUM_MOBILES ; i++ ))
+########################
+#                      #
+#  CONFIGURE OAI IF    #
+#                      #
+########################
+for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
 do
     echo "ip link set oai$i broadcast ff:ff:ff:ff:ff:ff"
     ip link set oai$i broadcast ff:ff:ff:ff:ff:ff
+
     echo "ip link set oai$i up"
     ip link set oai$i up
     sleep 1
+
     echo "ifconfig oai$i 10.0.$IP.$IP netmask 255.255.255.0 broadcast 10.0.$IP.255"
     ifconfig oai$i 10.0.$IP.$IP netmask 255.255.255.0 broadcast 10.0.$IP.255
+
     sleep 1
-     echo "ip addr add dev oai$i 2001:$IP::$IP/64 echo "
+    echo "ip addr add dev oai$i 2001:$IP::$IP/64"
     ip addr add dev oai$i 2001:$IP::$IP/64
+
+    # avoid arp in virtualization
+    for ((j=0 ; j <= $NUM_MOBILES ; j++ ))
+    do
+        if [[ $i -ne $j ]]
+        then
+            echo "ip neigh add to 10.0.$IP.$IP lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$i nud permanent dev oai$j"
+            ip neighbour add to 10.0.$IP.$IP lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$i nud permanent dev oai$j
+        fi
+    done
     let IP=IP+1
 done
 
+########################
+#                      #
+#  MANGLE PACKETS      #
+#                      #
+########################
+# for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
+# do
+#     let i_p1=i+1
+#     echo "ip rule add fwmark ${MARKING[$i]} table $i_p1"
+#     ip rule add fwmark ${MARKING[$i]} table $i_p1
+#
+#     #echo "ip route add table $i_p1 dev oai$i"
+#     #ip route add table $i_p1 to 10.0. dev oai$i proto static
+#     #echo "ip route add table $i_p1 dev oai$i"
+#     #ip route add table $i_p1 dev oai$i
+#     echo "ip route add table $i_p1 from 0.0.0.0/32 dev oai$i proto static"
+#     ip route add table $i_p1 from 0.0.0.0/32 dev oai$i proto static
+# done
 
 
-# Loop Cx 0 -> NUM_MOBILES - 1 for configuring default RABS on eNB
-CLASSIFIER_ID=0
-for ((cx=0 ; cx <= `expr $NUM_MOBILES - 1` ; cx++ ))
+# for ((i=0 ; i < $NUM_ENB; i++ ))
+# do
+#     let i_p1=i+1
+#
+#     echo "ip route add table $i_p1 dev oai$i"
+#     ip route add table $i_p1 to 10.0. dev oai$i proto static
+#     #echo "ip route add table $i_p1 dev oai$i"
+#     #ip route add table $i_p1 dev oai$i
+# done
+#
+# for ((ue=$NUM_ENB ; ue < `expr $NUM_ENB + $NUM_MOBILES` ; ue++))
+# do
+#     let IP_UE=$ue+1
+#     echo "ip route add table 1 to 10.0.$IP_UE.$IP_UE dev oai0 proto static"
+#     ip route add table 1 to 10.0.$IP_UE.$IP_UE dev oai0 proto static
+#     echo "ip route add table 1 from 0.0.0.0/32 dev oai0 proto static"
+#     ip route add table 1 from 0.0.0.0/32 dev oai0 proto static
+# done
+for ((src=0 ; src < `expr $NUM_ENB + $NUM_MOBILES` ; src++))
 do
-    let IP_DEST=cx+2
-    let RB_ID=(cx*8)+3
-    $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z64 -s 10.0.1.1/32   -t 10.0.$IP_DEST.$IP_DEST/32   -r $RB_ID
-    let CLASSIFIER_ID=CLASSIFIER_ID+2
-    $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z0 -x 2001:1::1/128 -y 2001:$IP_DEST::$IP_DEST/128 -r $RB_ID
-    let CLASSIFIER_ID=CLASSIFIER_ID+2
-
-    # configuring default RABS on mobiles
-    for ((instance=1 ; instance <= $NUM_MOBILES ; instance++ ))
+    let IP_SRC=$src+1
+    for ((dst=0 ; dst < `expr $NUM_ENB + $NUM_MOBILES` ; dst++))
     do
-        if [[ $instance -ne $cx ]]
+        if [[ $src -ne $dst ]]
         then
-            let IP_SOURCE=instance+1
-            RB_ID=3
-            $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z64 -s 10.0.$IP_SOURCE.$IP_SOURCE/32   -t 10.0.1.1/32      -r $RB_ID
-            $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z0 -x 2001:$IP_SOURCE::$IP_SOURCE/128 -y 2001:1::1/128 -r $RB_ID
-            let CLASSIFIER_ID=CLASSIFIER_ID+2
+            let IP_DST=$dst+1
+            let marksrc=${MARKING[$src]}
+            marksrc16=`printf '%02x' $marksrc`
+            let markdst=${MARKING[$dst]}
+            markdst16=`printf '%02x' $markdst`
+            echo "iptables -t mangle -A OUTPUT --dst 10.0.$IP_SRC.$IP_DST -j MARK --set-mark 0x$marksrc16$markdst16"
+            iptables -t mangle -A OUTPUT --dst 10.0.$IP_SRC.$IP_DST -j MARK --set-mark 0x$marksrc16$markdst16
+            echo "iptables -t nat -A POSTROUTING -m mark --mark 0x$marksrc16$markdst16 -j SNAT --to 10.0.$IP_DST.$IP_SRC"
+            iptables -t nat -A POSTROUTING -m mark --mark 0x$marksrc16$markdst16 -j SNAT --to 10.0.$IP_DST.$IP_SRC
+
+            # we can use same mark since not same path (PREROUTING)
+            echo "iptables -t mangle -A PREROUTING --dst 10.0.$IP_SRC.$IP_DST -j MARK --set-mark 0x$marksrc16$markdst16"
+            iptables -t mangle -A PREROUTING --dst 10.0.$IP_SRC.$IP_DST -j MARK --set-mark 0x$marksrc16$markdst16
+            echo "iptables -t nat -A PREROUTING    -m mark --mark 0x$marksrc16$markdst16 -j DNAT --to 10.0.$IP_DST.$IP_DST"
+            iptables -t nat -A PREROUTING      -m mark --mark 0x$marksrc16$markdst16 -j DNAT --to 10.0.$IP_DST.$IP_DST
         fi
     done
+done
+
+# for ((ue=$NUM_ENB ; ue < `expr $NUM_ENB + $NUM_MOBILES` ; ue++))
+# do
+#     let IP_UE=$ue+1
+#     # YEs actually this works (${MARKING[0]}) because we include only one eNB
+#     echo "iptables -t mangle -A OUTPUT --dst 10.0.$IP_UE.$IP_UE -j MARK --set-mark ${MARKING[0]}"
+#     iptables -t mangle -A OUTPUT --dst 10.0.$IP_UE.$IP_UE -j MARK --set-mark ${MARKING[0]}
+#
+#     echo "iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[0]} -j SNAT --to 10.0.$IP_UE.$IP_UE"
+#     iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[0]} -j SNAT --to 10.0.$IP_UE.$IP_UE
+#
+#     for ((enb=0 ; enb < $NUM_ENB; enb++ ))
+#     do
+#         ## MANGLE PACKETS
+#         ## RESULTS VISIBLE WITH " iptables -t mangle -nvL "
+#         let IP_ENB=$enb+1
+#
+#         ## MARKING FOR ENBs
+#         ## DST IP ADDR IS ENB ADDRESSES
+#         echo "iptables -t mangle -A OUTPUT -p udp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}"
+#         iptables -t mangle -A OUTPUT -p udp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}
+#
+#         echo "iptables -t mangle -A OUTPUT -p tcp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}"
+#         iptables -t mangle -A OUTPUT -p tcp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}
+#
+#         let tos=16+$ue
+#         tos16=`printf '%x' $tos`
+#         echo "iptables -t mangle -A OUTPUT -p icmp  --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}"
+#         iptables -t mangle -A OUTPUT -p icmp  --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}
+#
+# #         echo "iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[$ue]} -j SNAT --to 10.0.$IP_ENB.$IP_ENB"
+# #         iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[$ue]} -j SNAT --to 10.0.$IP_ENB.$IP_ENB
+#     done
+# done
+echo "########################################################################################"
+echo "#          IPTABLES MANGLE                                                             #"
+echo "########################################################################################"
+iptables -t mangle -nvL
+echo "########################################################################################"
+echo "#          IPTABLES NAT                                                             #"
+echo "########################################################################################"
+iptables -t nat -nvL
+echo "########################################################################################"
+echo "#          RULES                                                                       #"
+echo "########################################################################################"
+ip rule show
+# echo "########################################################################################"
+# echo "#          ROUTES                                                                      #"
+# echo "########################################################################################"
+# for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
+# do
+#     let i_p1=i+1
+#     echo -n " Table "$i_p1" : "; ip route show table $i_p1
+# done
+# echo "########################################################################################"
+
+########################
+#                      #
+#  CONFIGURE RABS      #
+#                      #
+########################
+# Loop Cx 0 -> NUM_MOBILES - 1 for configuring default RABS on eNB
+CLASSIFIER_ID=0
+for ((instance=0 ; instance < $NUM_ENB ; instance++ ))
+do
+    let IP_SRC=instance+1
+    for ((cx=0 ; cx < $NUM_MOBILES ; cx++ ))
+    do
+        let IP_DEST=cx+2
+        if [[ $IP_SRC -ne $IP_DEST ]]
+        then
+            # ON eNB
+            let RB_ID=(cx*8)+3
+            $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z64 -s 10.0.$IP_DEST.$IP_SRC/32   -t 10.0.$IP_SRC.$IP_DEST/32   -r $RB_ID
+            let CLASSIFIER_ID=CLASSIFIER_ID+2
+
+            # ON UE
+            let IP_SOURCE=instance+1
+            let instance_ue=cx+$NUM_ENB
+            RB_ID=3
+            $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$instance -i$instance_ue -f$CLASSIFIER_ID -z64 -s 10.0.$IP_SRC.$IP_DEST/32 -t 10.0.$IP_DEST.$IP_SRC/32      -r $RB_ID
+            let CLASSIFIER_ID=CLASSIFIER_ID+2
+
+            # ON eNB
+            echo "ip neigh add to 10.0.$IP_SRC.$IP_DEST lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$instance_ue nud permanent dev oai$instance"
+            ip neighbour add to 10.0.$IP_SRC.$IP_DEST lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$instance_ue nud permanent dev oai$instance
+
+            # ON UE
+            echo "ip neigh add to 10.0.$IP_DEST.$IP_SRC lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$instance nud permanent dev oai$instance_ue"
+            ip neighbour add to 10.0.$IP_DEST.$IP_SRC lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$instance nud permanent dev oai$instance_ue
+        fi
+    done
+done
+
+# for ((cx=0 ; cx <= `expr $NUM_MOBILES - 1` ; cx++ ))
+# do
+#     let IP_DEST=cx+2
+#     let RB_ID=(cx*8)+3
+#     $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z64 -s 10.0.1.1/32   -t 10.0.$IP_DEST.$IP_DEST/32   -r $RB_ID
+#     let CLASSIFIER_ID=CLASSIFIER_ID+2
+#     $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z64 -x 2001:1::1/128 -y 2001:$IP_DEST::$IP_DEST/128 -r $RB_ID
+#     let CLASSIFIER_ID=CLASSIFIER_ID+2
+#
+#     # configuring default RABS on mobiles
+#     for ((instance=1 ; instance <= $NUM_MOBILES ; instance++ ))
+#     do
+#         if [[ $instance -ne $cx ]]
+#         then
+#             let IP_SOURCE=instance+1
+#             RB_ID=3
+#             $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z64 -s 10.0.$IP_SOURCE.$IP_SOURCE/32   -t 10.0.1.1/32      -r $RB_ID
+#             let CLASSIFIER_ID=CLASSIFIER_ID+2
+#             $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z64 -x 2001:$IP_SOURCE::$IP_SOURCE/128 -y 2001:1::1/128 -r $RB_ID
+#             let CLASSIFIER_ID=CLASSIFIER_ID+2
+#         fi
+#     done
+# done
+
+
+
+IP=1
+for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
+do
+    # avoid arp in virtualization
+    for ((j=0 ; j <= $NUM_MOBILES ; j++ ))
+    do
+        if [[ $i -ne $j ]]
+        then
+            echo "ip neigh add to 10.0.$IP.$IP lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$i nud permanent dev oai$j"
+            ip neighbour add to 10.0.$IP.$IP lladdr 00:${NAS_IMEI[0]}${NAS_IMEI[1]}:${NAS_IMEI[2]}${NAS_IMEI[3]}:${NAS_IMEI[4]}${NAS_IMEI[5]}:${NAS_IMEI[6]}${NAS_IMEI[7]}:${NAS_IMEI[8]}$i nud permanent dev oai$j
+        fi
+    done
+    let IP=IP+1
 done
 
 # echo "start the emulation with 1eNB and" $1 "UE"
