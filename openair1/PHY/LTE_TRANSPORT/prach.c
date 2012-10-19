@@ -727,7 +727,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   u8 n_ra_prb;
   u8 preamble_index;
   u16 NCS,NCS2;
-  u16 preamble_offset,preamble_offset_old,preamble_shift=0;
+  u16 preamble_offset,preamble_offset_old;
+  s16 preamble_shift=0;
   u32 preamble_shift2;
   u16 preamble_index0,n_shift_ra,n_shift_ra_bar;
   u16 d_start,n_group_ra,numshift;
@@ -838,7 +839,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	preamble_shift  = 0;
       }
       else {
-	preamble_shift  += NCS;
+	preamble_shift  -= NCS;
+	if (preamble_shift < 0)
+	  preamble_shift+=N_ZC;
 
       }
       // This is the offset in the root sequence table (5.7.2-4 from 36.211)
@@ -978,7 +981,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	// Do componentwise product with Xu
 	for (offset=0;offset<(N_ZC<<1);offset+=2) {
 	  prachF[offset]   = (s16)(((s32)Xu[offset]*rxsigF[aa][k]   + (s32)Xu[offset+1]*rxsigF[aa][k+1])>>15);
-	  prachF[offset+1] = (s16)((-(s32)Xu[offset]*rxsigF[aa][k+1] + (s32)Xu[offset+1]*rxsigF[aa][k])>>15);
+	  prachF[offset+1] = (s16)(((s32)Xu[offset]*rxsigF[aa][k+1] - (s32)Xu[offset+1]*rxsigF[aa][k])>>15);
 	  /*	  	  if (offset<16)
 	  	    printf("Xu[%d] %d %d, rxsigF[%d][%d] %d %d\n",offset,Xu[offset],Xu[offset+1],aa,k,rxsigF[aa][k],rxsigF[aa][k+1]);
 	  
@@ -1023,7 +1026,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
       if (lev>preamble_energy_list[preamble_index] ) {
 	preamble_energy_list[preamble_index]  = lev;
 	preamble_delay_list[preamble_index]   = (i*fft_size)>>log2_ifft_size;
-      }
+
+      } 
     }
     //    printf("[RAPROC] Preamble %d => %d dB, %d (shift %d (%d), NCS2 %d(%d), Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_delay_list[preamble_index],preamble_shift2,preamble_shift, NCS2,NCS,Ncp);
     //    exit(-1);
