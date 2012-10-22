@@ -179,7 +179,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     	memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pusch_ConfigCommon, (void *)&mobilityControlInfo->radioResourceConfigCommon.pusch_ConfigCommon,sizeof(PUSCH_ConfigCommon_t));
 
     	if(mobilityControlInfo->radioResourceConfigCommon.phich_Config) {
-    		//fill this when HICH is implemented
+    		//fill this when HICH is implemented..comes from the MIB
     	}
     	if(mobilityControlInfo->radioResourceConfigCommon.pucch_ConfigCommon) {
     		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pucch_ConfigCommon, (void *)mobilityControlInfo->radioResourceConfigCommon.pucch_ConfigCommon,sizeof(PUCCH_ConfigCommon_t));
@@ -200,8 +200,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     	if(mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength) {
     		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->ul_CyclicPrefixLength, (void *)mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength,sizeof(UL_CyclicPrefixLength_t));
     	}
-
-    	mac_xface->phy_config_radioResourceCommon_ue(Mod_id,eNB_index,&mobilityControlInfo->radioResourceConfigCommon);
+    	//send entier mobControlInfo
+    	mac_xface->phy_config_radioResourceCommon_ue(Mod_id,eNB_index,&mobilityControlInfo->radioResourceConfigCommon /* add cell id, phich config, nb of RBs */);
     }
 
 
