@@ -159,7 +159,7 @@ void get_prach_resources(u8 Mod_id,
       if (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig)
 	UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex  = (taus())%rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA;
       else
-	UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex  = (taus())&0x3f;
+	UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex  = (taus())&0x3f;//mask with 2f for ex
       UE_mac_inst[Mod_id].RA_prach_resources.ra_RACH_MaskIndex = 0;
     }
     else {
@@ -236,6 +236,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 
       if (UE_mac_inst[Mod_id].RA_active == 0) {
 	// check if RRC is ready to initiate the RA procedure
+    	  //check for HO
 	Size = mac_rrc_data_req(Mod_id,
 				frame,
 				CCCH,1,

@@ -1231,6 +1231,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   QuantityConfig_t *quantityConfig;
   MobilityControlInfo_t *mobilityInfo;
 
+  //config rach preamble
+
   HandoverCommand_t handoverCommand;
   u8 sourceModId = get_adjacent_cell_mod_id(rrc_inst->handover_info[UE_index]->as_context.reestablishmentInfo->sourcePhysCellId);
 

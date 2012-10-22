@@ -262,6 +262,7 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
   //rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
   if(UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE && UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId != 0xFF) {
 	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+	  LOG_D(RRC,"\nWatch this!\n");
   }
   else
 	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer,1);
@@ -865,9 +866,18 @@ void	rrc_ue_process_mobilityControlInfo(u8 Mod_id, u32 frame, u8 eNB_index, stru
 
 	UE_rrc_inst[Mod_id].Info[eNB_index].T304_cnt = mobilityControlInfo->t304;
 
+	//Removing SRB1 and SRB2 and DRB0
+	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_REMOVE, Mod_id+DCCH);
+	rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,Mod_id+DCCH,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+
+	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_REMOVE, Mod_id+DCCH1);
+	rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,Mod_id+DCCH1,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+
+	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_REMOVE, Mod_id+DTCH);
+	rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,Mod_id+DTCH,RADIO_ACCESS_BEARER,Rlc_info_um);
 
 	//Synchronisation to DL of target cell
-    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
+    LOG_D(RRC, "HO: Reset PDCP and RLC for configured RBs.. \n[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
           frame, Mod_id, eNB_index, Mod_id);
 
     rrc_mac_config_req(Mod_id,0,0,eNB_index,
@@ -952,7 +962,9 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
     			  if(Mod_id_t != 0xFF) {
     				  LOG_D(RRC,"\nReceived RRCReconf for HO \n");
     				  rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
-    				  rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id_t,frame,Mod_id_t);
+    				  //Initiate RA procedure
+    				  //PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH
+    				  rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,Mod_id_t);
     			  }
     		  }
     	  }

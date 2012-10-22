@@ -239,6 +239,10 @@ void phy_config_radioResourceCommon_ue(u8 Mod_id,u8 CH_index,
 
 	// Now configure some of the Physical Channels
 
+	//PHICH
+
+	//Target CellId
+
 	// PUCCH
 	init_ncs_cell(lte_frame_parms,PHY_vars_UE_g[Mod_id]->ncs_cell);
 
