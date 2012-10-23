@@ -81,7 +81,7 @@ u32 check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,u32 kprime,u8 lprime,u8 mi) 
 
   // compute REG based on symbol
   if ((lprime == 0)||
-      ((lprime==1)&&(frame_parms->nb_antennas_tx == 4)))
+      ((lprime==1)&&(frame_parms->nb_antennas_tx_eNB == 4)))
     mprime = kprime/6;
   else
     mprime = kprime>>2;
@@ -293,7 +293,7 @@ void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t
     for (row=0;row<RCC;row++) {
       //msg("col %d, index %d, row %d\n",col,index,row);
       if (index>=ND) {
-	for (a=0;a<frame_parms->nb_antennas_tx;a++){
+	for (a=0;a<frame_parms->nb_antennas_tx_eNB;a++){
 	  //msg("a %d k %d\n",a,k);
 
 	  wptr = &wtemp[a][k<<2];
@@ -315,7 +315,7 @@ void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t
   // permutation
   for (i=0;i<Mquad;i++) {
 
-    for (a=0;a<frame_parms->nb_antennas_tx;a++) {
+    for (a=0;a<frame_parms->nb_antennas_tx_eNB;a++) {
       
       wptr  = &wtemp[a][i<<2];
       wptr2 = &wbar[a][((i+frame_parms->Nid_cell)%Mquad)<<2];
@@ -373,7 +373,7 @@ void pdcch_demapping(u16 *llr,u16 *wbar,LTE_DL_FRAME_PARMS *frame_parms,u8 num_p
 	    }
 	  }
 	}
-	else if ((lprime==1)&&(frame_parms->nb_antennas_tx == 4)) {  
+	else if ((lprime==1)&&(frame_parms->nb_antennas_tx_eNB == 4)) {  
 	  // LATER!!!!
 	}
 	else { // no pilots in this symbol
@@ -597,7 +597,7 @@ void pdcch_channel_level(s32 **dl_ch_estimates_ext,
   __m128i *dl_ch128;
   
 
-  for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+  for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       //clear average level
       avg128P = _mm_xor_si128(avg128P,avg128P);
@@ -744,7 +744,7 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
   s32 i;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
+    for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++) {
       //if (frame_parms->mode1_flag && (aatx>0)) break;
 
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
@@ -1227,8 +1227,8 @@ void pdcch_channel_compensation(s32 **rxdataF_ext,
   if (symbol==0)
     pilots=1;
 
-  for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
-    //if (frame_parms->mode1_flag && aatx>0) break; //if mode1_flag is set then there is only one stream to extract, independent of nb_antennas_tx
+  for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++) {
+    //if (frame_parms->mode1_flag && aatx>0) break; //if mode1_flag is set then there is only one stream to extract, independent of nb_antennas_tx_eNB
 
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
@@ -1408,7 +1408,7 @@ void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   s32 i;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
+    for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++) {
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
       rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
       // MRC on each re of rb
@@ -1512,7 +1512,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 				 s,
 				 frame_parms);
 #endif //MU_RECEIVER
-      } else if (frame_parms->nb_antennas_tx>1) {
+      } else if (frame_parms->nb_antennas_tx_eNB>1) {
 	pdcch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 			       lte_ue_common_vars->dl_ch_estimates[eNB_id],
 			       lte_ue_pdcch_vars[eNB_id]->rxdataF_ext,
@@ -1534,7 +1534,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 		      frame_parms->N_RB_DL);
 
   avgs = 0;
-  for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+  for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
   
@@ -1753,17 +1753,17 @@ u8 get_num_pdcch_symbols(u8 num_dci,
 
   if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
     return(cmax(1,nCCEmin));
-  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 4 : 5)))
+  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 4 : 5)))
     return(cmax(2,nCCEmin));
-  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 7 : 8)))
+  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 7 : 8)))
     return(cmax(3,nCCEmin));
   else if (frame_parms->N_RB_DL<=10) { 
     if (frame_parms->Ncp == 0) { // normal CP
-      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 10 : 11)))
+      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 10 : 11)))
 	return(4);
     }
     else { // extended CP
-      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 9 : 10)))
+      if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 9 : 10)))
 	return(4);
     }
   }
@@ -2019,7 +2019,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	// Copy REG to TX buffer      
 	
 	if ((lprime == 0)||
-	    ((lprime==1)&&(frame_parms->nb_antennas_tx == 4))) {  
+	    ((lprime==1)&&(frame_parms->nb_antennas_tx_eNB == 4))) {  
 	  // first symbol, or second symbol+4 TX antennas skip pilots
 
 	  kprime_mod12 = kprime%12;
@@ -2029,7 +2029,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	    for (i=0;i<6;i++) {
 	      if ((i!=(nushiftmod3))&&(i!=(nushiftmod3+3))) {
 		txdataF[0][tti_offset+i] = wbar[0][mprime];
-		if (frame_parms->nb_antennas_tx > 1)
+		if (frame_parms->nb_antennas_tx_eNB > 1)
 		  txdataF[1][tti_offset+i] = wbar[1][mprime];
 #ifdef DEBUG_DCI_ENCODING
 		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
@@ -2045,7 +2045,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	    // kprime represents REG	    
 	    for (i=0;i<4;i++) {
 	      txdataF[0][tti_offset+i] = wbar[0][mprime];
-	      if (frame_parms->nb_antennas_tx > 1)
+	      if (frame_parms->nb_antennas_tx_eNB > 1)
 		txdataF[1][tti_offset+i] = wbar[1][mprime];
 #ifdef DEBUG_DCI_ENCODING
 	      msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
