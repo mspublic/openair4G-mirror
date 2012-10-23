@@ -149,7 +149,7 @@ void pmip_timer_bce_expired_handler(struct tq_elem *tqe)
                 return;
             }
             //Delete existing route for the deleted MN
-            if (is_lma()) {
+            if (is_ha()) {
                 lma_dereg(e, 0, 0);
                 pmipcache_release_entry(e);
                 pmip_bce_delete(e);
@@ -181,7 +181,7 @@ void pmip_timer_bce_expired_handler(struct tq_elem *tqe)
                 dbg("pthread_rwlock_unlock(&e->lock) %s\n", strerror(mutex_return_code));
             }
         }
-        if (is_lma()) {
+        if (is_ha()) {
             lma_dereg(e, 0, 0);
             pmipcache_release_entry(e);
             pmip_bce_delete(e);
@@ -298,7 +298,7 @@ static void pmip_mag_recv_pba(const struct ip6_mh *mh, ssize_t len, const struct
 /*!
  * handler called when receiving a proxy binding update
  */
-static void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
+void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
 {
     printf("=====================================\n");
     dbg("Proxy Binding Update (PBU) Received\n");
