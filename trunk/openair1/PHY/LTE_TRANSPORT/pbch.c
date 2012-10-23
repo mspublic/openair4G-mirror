@@ -103,7 +103,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
     
     /*
     // scramble crc with PBCH CRC mask (Table 5.3.1.1-1 of 3GPP 36.212-860)
-    switch (frame_parms->nb_antennas_tx) {
+    switch (frame_parms->nb_antennas_tx_eNB) {
     case 1:
     crc = crc ^ (u16) 0;
     break;
@@ -131,7 +131,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
     if (frame_parms->mode1_flag == 1)
       amask = 0x0000;
     else {
-      switch (frame_parms->nb_antennas_tx) {
+      switch (frame_parms->nb_antennas_tx_eNB) {
       case 1:
 	amask = 0x0000;
 	break;
@@ -365,7 +365,7 @@ u16 pbch_extract(int **rxdataF,
       }
     }
 
-    for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx;aatx++) {
+    for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx_eNB;aatx++) {
       dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size))];
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*(6*12)];
 
@@ -414,7 +414,7 @@ int pbch_channel_level(int **dl_ch_estimates_ext,
   u32 nsymb = (frame_parms->Ncp==0) ? 7:6;
   u32 symbol_mod = symbol % nsymb;
 
-  for (aatx=0;aatx<4;aatx++) //frame_parms->nb_antennas_tx;aatx++)
+  for (aatx=0;aatx<4;aatx++) //frame_parms->nb_antennas_tx_eNB;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       //clear average level
       avg128 = _mm_xor_si128(avg128,avg128);
@@ -469,7 +469,7 @@ void pbch_channel_compensation(int **rxdataF_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   
-  for (aatx=0;aatx<4;aatx++) //frame_parms->nb_antennas_tx;aatx++)
+  for (aatx=0;aatx<4;aatx++) //frame_parms->nb_antennas_tx_eNB;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
       dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*6*12];
@@ -564,7 +564,7 @@ void pbch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx;aatx++) {
+    for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx_eNB;aatx++) {
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol_mod*6*12];  
       rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol_mod*6*12];  
       // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
@@ -877,7 +877,7 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
 
     if (pbch_error == 0) {
       memcpy(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output,PHY_vars_eNB_g[eNB_id]->pbch_pdu,PBCH_PDU_SIZE);    
-      return(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx);
+      return(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx_eNB);
     }
     else
       return(-1);
