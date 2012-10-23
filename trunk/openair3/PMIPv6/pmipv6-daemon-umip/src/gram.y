@@ -225,7 +225,7 @@ static void uerror(const char *fmt, ...) {
 %token		PROXYMIPLMA
 %token		PROXYMIPMAG
 %token		ALLLMAMULTICASTADDRESS
-%token		LMAADDRESS
+%token		LMAPMIPNETWORKADDRESS
 %token		LMAPMIPNETWORKDEVICE
 %token		LMACORENETWORKADDRESS
 %token		LMACORENETWORKDEVICE
@@ -413,7 +413,6 @@ topdef		: MIP6ENTITY mip6entity ';'
 mip6entity	: MIP6CN { $$ = MIP6_ENTITY_CN;	}
 		| MIP6MN { $$ = MIP6_ENTITY_MN; }
 		| MIP6HA { $$ = MIP6_ENTITY_HA; }
-		| MIP6LMA { $$ = MIP6_ENTITY_LMA; }
 		| MIP6MAG { $$ = MIP6_ENTITY_MAG; }
 		;
 
@@ -854,7 +853,7 @@ proxymiplmaopts	: proxymiplmaopt
 		| proxymiplmaopts proxymiplmaopt
 		;
 
-proxymiplmaopt	: LMAADDRESS ADDR ';'
+proxymiplmaopt	: LMAPMIPNETWORKADDRESS ADDR ';'
 		{
 			memcpy(&conf.LmaAddress, &$2, sizeof(struct in6_addr));
 		}
@@ -981,7 +980,7 @@ proxymipmagopts	: proxymipmagopt
 		| proxymipmagopts proxymipmagopt
 		;
 
-proxymipmagopt	: LMAADDRESS ADDR ';'
+proxymipmagopt	: LMAPMIPNETWORKADDRESS ADDR ';'
 		{
 			memcpy(&conf.LmaAddress, &$2, sizeof(struct in6_addr));
 		}

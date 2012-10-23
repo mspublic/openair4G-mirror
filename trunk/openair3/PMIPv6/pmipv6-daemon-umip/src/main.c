@@ -2,7 +2,7 @@
  * $Id: main.c 1.67 06/05/05 19:40:57+03:00 anttit@tcs.hut.fi $
  *
  * This file is part of the MIPL Mobile IPv6 for Linux.
- * 
+ *
  * Authors: Antti Tuominen <anttit@tcs.hut.fi>
  *          Ville Nuorvala <vnuorval@tcs.hut.fi>
  *
@@ -30,17 +30,17 @@
  * Authors: OPENAIR3 <openair_tech@eurecom.fr>
  *
  * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ *
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility
+ * management protocol standardized by IETF. It is a protocol for building
+ * a common and access technology independent of mobile core networks,
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only
  * network-based mobility management protocol standardized by IETF.
- * 
+ *
  * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
  * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
+ * License version 2. See MIPL terms condition if you need more details.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -267,14 +267,13 @@ int main(int argc, char **argv)
 	if (xfrm_init() < 0)
 		goto xfrm_failed;
 	cn_init();
-	if ((is_ha() || is_mn() || is_lma() || is_mag()) && tunnelctl_init() < 0)
+	if ((is_ha() || is_mn() ||  is_mag()) && tunnelctl_init() < 0)
 		goto tunnelctl_failed;
-	if (is_ha() && ha_init() < 0) 
-		goto ha_failed;
+	if (is_ha() && ha_init() < 0)
+		goto pmip_failed;
+		//goto ha_failed;
 	if (is_mn() && mn_init() < 0)
 		goto mn_failed;
-	if (is_lma() && pmip_lma_init() < 0)
-		goto pmip_failed;
 	if (is_mag() && pmip_mag_init() < 0)
 		goto pmip_failed;
 
