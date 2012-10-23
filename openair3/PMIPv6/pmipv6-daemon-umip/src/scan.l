@@ -320,7 +320,7 @@ RFC5213MinDelayBeforeBCEDelete			{ return RFC5213MINDELAYBEFOREBCEDELETE; }
 RFC5213MaxDelayBeforeNewBCEAssign		{ return RFC5213MAXDELAYBEFORENEWBCEASSIGN; }
 RFC5213TimestampValidityWindow			{ return RFC5213TIMESTAMPVALIDITYWINDOW; }
 RFC5213EnableMAGLocalRouting			{ return RFC5213ENABLEMAGLOCALROUTING; }
-LmaAddress					{ return LMAADDRESS; }
+LmaPmipNetworkAddress					{ return LMAPMIPNETWORKADDRESS; }
 LmaPmipNetworkDevice                            { return LMAPMIPNETWORKDEVICE; }
 LmaCoreNetworkAddress                           { return LMACORENETWORKADDRESS; }
 LmaCoreNetworkDevice                            { return LMACORENETWORKDEVICE; }

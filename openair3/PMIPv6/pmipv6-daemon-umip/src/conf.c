@@ -403,7 +403,7 @@ void conf_show(struct mip6_config *c)
     dbg("AllLmaMulticastAddress            = %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&c->AllLmaMulticastAddress));
     dbg("LmaAddress                        = %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&c->LmaAddress));
 
-    if (is_lma()) {
+    if (is_ha()) {
         for (i = 0; i < c->NumMags; i++) {
             dbg("MAG %d: \n", i);
             dbg("    MagAddressIngress                             = %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&c->MagAddressIngress[i]));

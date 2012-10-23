@@ -61,6 +61,9 @@
 #include "prefix.h"
 #include "statistics.h"
 
+#include "pmip_init.h"
+#include "pmip_handler.h"
+
 static pthread_mutex_t bu_worker_mutex;
 static volatile unsigned long bu_worker_count = 0;
 static pthread_cond_t cond;
@@ -1232,7 +1235,9 @@ static void ha_recv_bu(const struct ip6_mh *mh, ssize_t len,
 {
 	struct ip6_mh_binding_update *bu = (struct ip6_mh_binding_update *)mh;
 
-	if (bu->ip6mhbu_flags & IP6_MH_BU_HOME)
+	if (bu->ip6mhbu_flags & IP6_MH_BU_PR)
+		pmip_lma_recv_pbu(mh, len, in, iif);
+	else if (bu->ip6mhbu_flags & IP6_MH_BU_HOME)
 		(void)ha_recv_home_bu(mh, len, in, iif, 0);
 	else
 		(void)cn_recv_bu(mh, len, in, iif);
@@ -1270,11 +1275,13 @@ int ha_init(void)
 	ha_discover_routers(); /* Let's gather RA */
 	ha_proxy_nd_init();
 	mh_handler_reg(IP6_MH_TYPE_BU, &ha_bu_handler);
+	pmip_lma_init();
 	return 0;
 }
 
 void ha_cleanup(void)
 {
+	pmip_cleanup();
 	mh_handler_dereg(IP6_MH_TYPE_BU, &ha_bu_handler);
 	ha_proxy_nd_cleanup();
 	icmp6_handler_dereg(ND_ROUTER_ADVERT, &ha_ra_handler);

@@ -114,7 +114,6 @@ extern struct mip6_config conf;
 #define MIP6_ENTITY_MN 1
 #define MIP6_ENTITY_HA 2
 #define MIP6_ENTITY_MAG 3
-#define MIP6_ENTITY_LMA 4
 
 static inline int is_cn(void)
 {
@@ -136,10 +135,6 @@ static inline int is_mag(void)
     return conf.mip6_entity == MIP6_ENTITY_MAG;
 }
 
-static inline int is_lma(void)
-{
-    return conf.mip6_entity == MIP6_ENTITY_LMA;
-}
 
 static inline int is_if_entity_set(struct net_iface *i)
 {
@@ -166,11 +161,6 @@ static inline int is_if_ha(struct net_iface *i)
 		(!is_if_entity_set(i) || i->mip6_if_entity == MIP6_ENTITY_HA));
 }
 
-static inline int is_if_lma(struct net_iface *i)
-{
-    return (is_lma() &&
-            (!is_if_entity_set(i) || i->mip6_if_entity == MIP6_ENTITY_LMA));
-}
 
 static inline int is_if_mag(struct net_iface *i)
 {
