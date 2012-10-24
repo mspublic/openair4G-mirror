@@ -88,7 +88,6 @@ fifo_dump_emos_eNB emos_dump_eNB;
 #ifdef DIAG_PHY
 extern int rx_sig_fifo;
 #endif
-
 static unsigned char I0_clear = 1;
 
 u8 is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,u8 UE_id,u8 subframe) {
@@ -1685,7 +1684,13 @@ void process_HARQ_feedback(u8 UE_id,
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
 	    ue_stats->total_transmitted_bits = ue_stats->total_transmitted_bits +
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
+	  
 	  }
+	  
+	  phy_vars_eNB->eNB_UE_stats[(u8)UE_id].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS - 
+						       phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS_last)*10;
+	
+	  phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS_last = phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS;
 	  
 	  // Do fine-grain rate-adaptation for DLSCH 
 	  if (ue_stats->dlsch_NAK[0] > dlsch->error_threshold) {
@@ -2431,6 +2436,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[harq_pid][round];
       }
 
+      /*      if(phy_vars_eNB->frame % 10 == 0) {
+	phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
+						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*10;
+	
+	phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
+     } */ 
     }
   
 

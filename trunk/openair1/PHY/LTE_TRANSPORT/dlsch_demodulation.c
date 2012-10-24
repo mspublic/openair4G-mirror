@@ -68,7 +68,7 @@ __m128i zero;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over
 //#define DEBUG_PHY 1
 __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b,avg128D;
 int avg[4];
-
+int offset_mumimo_llr_drange[29]={8,7,7,7,6,6,6,5,4,3,6,5,5,3,2,2,2,3,3,3,3,2,2,0,0,0,0,0,0};
 int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
              PDSCH_t type,
              unsigned char eNB_id,
@@ -361,8 +361,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       if (first_symbol_flag==1) {
 	// effective channel of desired user is always stronger than interfering eff. channel
 	dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol_mod, nb_rb);
+	
 
-	avg[0] = log2_approx(avg[0])-13;
+	  avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
+	
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
 	//printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }      

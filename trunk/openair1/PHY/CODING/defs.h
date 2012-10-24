@@ -159,7 +159,9 @@ u32 lte_rate_matching_turbo(u32 RTC,
 			    u8 rvidx,
 			    u8 Qm, 
 			    u8 Nl, 
-			    u8 r);
+			    u8 r,
+			    u8 nb_rb,
+			    u8 m);
 
 /** 
 \brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )

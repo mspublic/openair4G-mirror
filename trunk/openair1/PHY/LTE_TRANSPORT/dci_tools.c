@@ -1653,7 +1653,7 @@ u8 sinr2cqi(int sinr) {
 // -4   => 1   => 0
 // -4.5 => 0   => 0
  
-u8 sinr2cqi(int sinr) {
+u8 sinr2cqi(int sinr,u8 trans_mode) {
 
   if (sinr<=-8)
     return(0);
@@ -1713,7 +1713,7 @@ u8 sinr2cqi(int sinr) {
 //}
 
 
-u32 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
+u32 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 trans_mode) {
 
   u8 i;
 
@@ -1724,7 +1724,7 @@ u32 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
 
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
-    diff_cqi = -sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]) + sinr2cqi(meas->subband_cqi_dB[eNB_id][0][i]);
+    diff_cqi = -sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode) + sinr2cqi(meas->subband_cqi_dB[eNB_id][0][i],trans_mode);
 
     // Note, this is Table 7.2.1-2 from 36.213
     if (diff_cqi<=-1)
@@ -1742,7 +1742,7 @@ u32 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
   return(cqivect);
 }
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id) {
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id,u8 trans_mode) {
   
   //  msg("[PHY][UE] Filling CQI for eNB %d, meas->wideband_cqi_tot[%d] %d\n",
   //      eNB_id,eNB_id,meas->wideband_cqi_tot[eNB_id]);
@@ -1750,29 +1750,29 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id) 
 
   switch (uci_format) {
   case wideband_cqi_rank1_2A:
-    ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_tot[eNB_id]);
+    ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_tot[eNB_id],trans_mode);
     ((wideband_cqi_rank1_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNB_id);
     break;
   case wideband_cqi_rank2_2A:
-    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]);
-    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = sinr2cqi(meas->wideband_cqi_dB[eNB_id][1]);
+    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode);
+    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = sinr2cqi(meas->wideband_cqi_dB[eNB_id][1],trans_mode);
     ((wideband_cqi_rank2_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNB_id);
     break;
   case HLC_subband_cqi_nopmi:
-    ((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id]);
-    ((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
+    ((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id],trans_mode);
+    ((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
     break;
   case HLC_subband_cqi_rank1_2A:
-    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id]);
-    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
+    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id],trans_mode);
+    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
     ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi      = quantize_wideband_pmi(meas,eNB_id);
     break;
   case HLC_subband_cqi_rank2_2A:
     // This has to be improved!!!
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]);
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]);
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNB_id);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNB_id,trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi      = quantize_subband_pmi(meas,eNB_id);
     break;
   case ue_selected:
@@ -2026,7 +2026,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
 
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
     //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
     // save PUSCH pmi for later (transmission modes 4,5,6)
 
