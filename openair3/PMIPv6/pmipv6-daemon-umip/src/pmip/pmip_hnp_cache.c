@@ -18,7 +18,9 @@
 #include "pmip_consts.h"
 //---------------------------------------------------------------------------------------------------------------------
 #ifdef USE_RADIUS
-#	include "freeradius-client.h"
+#   include "freeradius-client.h"
+#else
+#   include <ctype.h>
 #endif
 #include "util.h"
 #ifdef ENABLE_VT
@@ -178,10 +180,21 @@ int pmip_mn_to_hnp_cache_init(void)
     return 0;
 }
 #else
+static void trim(char * s) {
+    char * p = s;
+    int l = strlen(p);
+
+    while(isspace(p[l - 1])) p[--l] = 0;
+    while(* p && isspace(* p)) ++p, --l;
+
+    memmove(s, p, l + 1);
+}
+
 int pmip_mn_to_hnp_cache_init (void)
 {
     FILE               *fp;
 
+    char                line [256];
     char                str_addr[40], str_addr_iid[40];
 
     struct in6_addr     addr, addr1;
@@ -196,22 +209,29 @@ int pmip_mn_to_hnp_cache_init (void)
         printf ("can't open %s:", "/etc/pmip/mac-mapping.auth");
         exit (0);
     }
-    while ((fscanf (fp, "%32s %16s\n", str_addr, str_addr_iid) != EOF) && (j < MAX_MOBILES)) {
-        for (i = 0; i < 16; i++) {
-            sscanf (str_addr + i * 2, "%02x", &ap);
-            addr.s6_addr[i] = (unsigned char) ap;
-            g_mn_hn_map[j].mn_prefix = addr;
+    while ( fgets ( line, sizeof line, fp ) != NULL ) {
+        trim(line);
+        // if line is not a comment
+        if (strncmp("#", line, 1) != 0) {
+            //while ((fscanf (fp, "%32s %16s\n", str_addr, str_addr_iid) != EOF) && (j < MAX_MOBILES)) {
+            if ((sscanf (line, "%32s %16s\n", str_addr, str_addr_iid) != EOF) && (j < MAX_MOBILES)) {
+                for (i = 0; i < 16; i++) {
+                    sscanf (str_addr + i * 2, "%02x", &ap);
+                    addr.s6_addr[i] = (unsigned char) ap;
+                    g_mn_hn_map[j].mn_prefix = addr;
 
-            addr1.s6_addr[i] = 0;
+                    addr1.s6_addr[i] = 0;
+                }
+                for (i = 0; i < 8; i++) {
+                    sscanf (str_addr_iid + i * 2, "%02x", &ap1);
+                    addr1.s6_addr[i+8] = (unsigned char) ap1;
+                    g_mn_hn_map[j].mn_iid = addr1;
+                }
+                dbg ("%x:%x:%x:%x:%x:%x:%x:%x\t<->\t%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR (&g_mn_hn_map[j].mn_prefix), NIP6ADDR (&g_mn_hn_map[j].mn_iid));
+                j++;
+                g_mn_count = g_mn_count + 1;
+            }
         }
-        for (i = 0; i < 8; i++) {
-            sscanf (str_addr_iid + i * 2, "%02x", &ap1);
-            addr1.s6_addr[i+8] = (unsigned char) ap1;
-            g_mn_hn_map[j].mn_iid = addr1;
-        }
-        dbg ("%x:%x:%x:%x:%x:%x:%x:%x\t<->\t%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR (&g_mn_hn_map[j].mn_prefix), NIP6ADDR (&g_mn_hn_map[j].mn_iid));
-        j++;
-        g_mn_count = g_mn_count + 1;
     }
     fclose (fp);
     if (j >= MAX_MOBILES) {
