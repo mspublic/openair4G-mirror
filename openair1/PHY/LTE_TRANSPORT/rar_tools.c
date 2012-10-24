@@ -137,9 +137,9 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 
     
    
-  //#ifdef DEBUG_RAR
+#ifdef DEBUG_RAR
   LOG_I(PHY,"rar_tools.c: Filling ue ulsch params -> ulsch %p : subframe %d\n",ulsch,subframe);
-  //#endif
+#endif
 
 
 

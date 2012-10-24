@@ -110,10 +110,11 @@ LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag) {
 }
 
 u32  dlsch_decoding(short *dlsch_llr,
-			     LTE_DL_FRAME_PARMS *frame_parms,
-			     LTE_UE_DLSCH_t *dlsch,
-			     u8 subframe,
-			     u8 num_pdcch_symbols){
+		    LTE_DL_FRAME_PARMS *frame_parms,
+		    LTE_UE_DLSCH_t *dlsch,
+		    u8 subframe,
+		    u8 num_pdcch_symbols,
+		    u8 is_crnti){
   
   
 
@@ -323,7 +324,7 @@ u32  dlsch_decoding(short *dlsch_llr,
 					  MAX_TURBO_ITERATIONS,
 					  crc_type,
 					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-					  harq_pid+1);
+					  (is_crnti==0)?harq_pid:harq_pid+1);
 
 
       

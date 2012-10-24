@@ -185,13 +185,23 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
 
   }
   else {
-    len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\nRSSI %3.2f dB Gain %3.2f \nN0 %d dBm (%d dB, %d dB)\n",
+    len += sprintf(&buffer[len], "[UE PROC] Frame count: %d, RSSI %3.2f dB (%d dB, %d dB), N0 %3.2f dB (%d dB, %d dB)\n",
 		   phy_vars_ue->frame,
 		   10*log10(phy_vars_ue->PHY_measurements.rssi),
-		   10*log10(phy_vars_ue->PHY_measurements.rssi)-input_level_dBm,
-		   phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
+		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot),
 		   phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		   phy_vars_ue->PHY_measurements.n0_power_dB[1]);
+#ifdef EXMIMO
+    phy_vars_ue->rx_total_gain_dB = ((int)(10*log10(phy_vars_ue->PHY_measurements.rssi)))-input_level_dBm;
+    len += sprintf(&buffer[len], "[UE PROC] rf_mode %d, input level (set by user) %d dBm, VGA gain %d dB ==> total gain %3.2f dB, noise figure %3.2f dB\n",
+		   phy_vars_ue->rx_gain_mode[0],
+		   input_level_dBm, 
+		   exmimo_pci_interface->rf.rx_gain00,
+		   10*log10(phy_vars_ue->PHY_measurements.rssi)-input_level_dBm,
+		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot)-phy_vars_ue->rx_total_gain_dB+105);
+#endif
   }
 
   len += sprintf(&buffer[len],"EOF\n");

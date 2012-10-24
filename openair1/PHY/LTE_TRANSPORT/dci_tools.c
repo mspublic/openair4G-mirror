@@ -240,7 +240,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       DCI_format_t dci_format,
 				       LTE_eNB_DLSCH_t **dlsch,
 				       LTE_DL_FRAME_PARMS *frame_parms,
-                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+				       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -589,11 +589,10 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch0->harq_processes[harq_pid]->rvidx     = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rv;
     //dlsch1->harq_processes[harq_pid]->rvidx     = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rv2;
 
-    // check if either TB is disabled (see 36-213 V8.6 p. 26)
+    // check if either TB is disabled (see 36-213 V8.6 p. 26) --> only for format 2 and 2A
 
-
-    if ((dlsch0->harq_processes[harq_pid]->rvidx == 1) && (dlsch0->harq_processes[harq_pid]->mcs == 0))
-      dlsch0->harq_processes[harq_pid]->status = DISABLED;
+    //if ((dlsch0->harq_processes[harq_pid]->rvidx == 1) && (dlsch0->harq_processes[harq_pid]->mcs == 0))
+    //  dlsch0->harq_processes[harq_pid]->status = DISABLED;
 
     //if ((dlsch1->harq_processes[harq_pid]->rvidx == 1) && (dlsch1->harq_processes[harq_pid]->mcs == 0))
     // dlsch1->harq_processes[harq_pid]->status = DISABLED;
