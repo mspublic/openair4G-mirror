@@ -46,6 +46,7 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "UTIL/LOG/log.h"
 #define DEBUG_RRC 1
+#define MAX_U32 0xFFFFFFFF
 
 extern PHY_VARS_UE **PHY_vars_UE_g;
 
@@ -250,6 +251,7 @@ u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
 u16 T310[8] = {0,50,100,200,500,1000,2000};
 u16 N310[8] = {1,2,3,4,6,8,10,20};
 u16 N311[8] = {1,2,3,4,6,8,10,20};
+u32 T304[8] = {50,100,150,200,500,1000,2000,MAX_U32};
 
 rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
 
@@ -324,6 +326,20 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       }
       UE_rrc_inst[Mod_id].Info[index].T310_cnt++;
     }
+
+    if (UE_rrc_inst[Mod_id].Info[index].T304_active==1) {
+      if ((UE_rrc_inst[Mod_id].Info[index].T304_cnt % 10) == 0)
+    	  LOG_D(RRC,"[UE %d][RAPROC] Frame %d T304 Count %d ms\n",Mod_id,frame,
+	      UE_rrc_inst[Mod_id].Info[index].T304_cnt);
+      if (UE_rrc_inst[Mod_id].Info[index].T304_cnt == 0) {
+		UE_rrc_inst[Mod_id].Info[index].T304_active = 0;
+		LOG_D(RRC,"[UE %d] Handover failure..initiating connection re-establishment procedure... \n");
+		//Implement 36.331, section 5.3.5.6 here
+		return(RRC_Handover_failed);
+      }
+      UE_rrc_inst[Mod_id].Info[index].T304_cnt--;
+    }
+
     // Layer 3 filtering of RRC measurements
     if (UE_rrc_inst[Mod_id].QuantityConfig[0] != NULL) {
   	  ue_meas_filtering(Mod_id,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id], 0 /* abstraction_flag */);
