@@ -14,7 +14,7 @@ g_path = os.path.dirname(sys.argv[0]) + "/.."
 g_path = os.path.abspath(g_path)
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "prd", ["pcap=", "runversion=", "pmipdir="])
+    opts, args = getopt.getopt(sys.argv[1:], "prd", ["pcap=", "runversion=", "pmipdir=", "cfile="])
 except getopt.GetoptError, err:
     # print help information and exit:
     print str(err) # will print something like "option -a not recognized"
@@ -22,6 +22,7 @@ except getopt.GetoptError, err:
 
 g_pcap = "no"
 g_run_version = "1"
+g_config_file = "example-ha-lma.conf"
 
 for o,p in opts:
   if o in ('-p','--pcap'):
@@ -30,11 +31,14 @@ for o,p in opts:
      g_run_version = str(p)
   elif o in ['-d','--pmipdir']:
      g_path = p
+  elif o in ['-c','--cfile']:
+     g_config_file = p
 
 ############################################################################################
-g_file_config=g_path+"/extras/example-ha-lma.conf"
+g_file_config=g_path+"/extras/"+g_config_file
 ############################################################################################
 
+print "Config file is : " + g_file_config
 
 g_RFC5213FixedMAGLinkLocalAddressOnAllAccessLinks = IPAddress('0::0')
 g_RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks = " "
@@ -42,12 +46,15 @@ g_LmaAddress                                      = IPAddress('0::0')
 g_LmaPmipNetworkDevice                            = ""
 g_LmaCoreNetworkAddress                           = IPAddress('0::0')
 g_LmaCoreNetworkDevice                            = ""
-g_Mag1AddressIngress                              = IPAddress('0::0')
-g_Mag1AddressEgress                               = IPAddress('0::0')
-g_Mag2AddressIngress                              = IPAddress('0::0')
-g_Mag2AddressEgress                               = IPAddress('0::0')
-g_Mag3AddressIngress                              = IPAddress('0::0')
-g_Mag3AddressEgress                               = IPAddress('0::0')
+g_MagAddressIngress                               = []
+g_MagAddressEgress                                = []
+g_num_mags                                        = 0
+#g_Mag1AddressIngress                              = IPAddress('0::0')
+#g_Mag1AddressEgress                               = IPAddress('0::0')
+#g_Mag2AddressIngress                              = IPAddress('0::0')
+#g_Mag2AddressEgress                               = IPAddress('0::0')
+#g_Mag3AddressIngress                              = IPAddress('0::0')
+#g_Mag3AddressEgress                               = IPAddress('0::0')
 
 
 
@@ -62,6 +69,8 @@ for line in lines:
     split = line.split(' ')
     element = split[-1]
     element = element.strip('"')
+    if line.startswith("#"):
+        continue
     if 'RFC5213FixedMAGLinkLocalAddressOnAllAccessLinks' in line:
         print line
         g_RFC5213FixedMAGLinkLocalAddressOnAllAccessLinks = IPAddress(element)
@@ -81,37 +90,20 @@ for line in lines:
     elif 'LmaCoreNetworkDevice' in line:
         print line
         g_LmaCoreNetworkDevice = element
-    elif 'Mag1AddressIngress' in line:
+    elif 'MagAddressIngress' in line:
         print line
-        g_Mag1AddressEgress = IPAddress(element)
-    elif 'Mag1AddressEgress' in line:
+        g_MagAddressIngress.append(IPAddress(element))
+    elif 'MagAddressEgress' in line:
         print line
-        g_Mag1AddressEgress = IPAddress(element)
-    elif 'Mag2AddressIngress' in line:
-        print line
-        g_Mag2AddressEgress = IPAddress(element)
-    elif 'Mag2AddressEgress' in line:
-        print line
-        g_Mag2AddressEgress = IPAddress(element)
-    elif 'Mag3AddressIngress' in line:
-        print line
-        g_Mag3AddressEgress = IPAddress(element)
-    elif 'Mag3AddressEgress' in line:
-        print line
-        g_Mag3AddressEgress = IPAddress(element)
+        g_MagAddressEgress.append(IPAddress(element))
 
-if g_Mag1AddressIngress.format() != IPAddress('::').format():
-    command = "ip -6 route del " + g_Mag1AddressIngress.format() + "/64"
-    print command
-    os.system(command)
-if g_Mag2AddressIngress.format() != IPAddress('::').format():
-    command = "ip -6 route del " + g_Mag2AddressIngress.format() + "/64"
-    print command
-    os.system(command)
-if g_Mag3AddressIngress.format() != IPAddress('::').format():
-    command = "ip -6 route del " + g_Mag3AddressIngress.format() + "/64"
-    print command
-    os.system(command)
+for ip in g_MagAddressIngress:
+    if ip.format() != IPAddress('::').format():
+        command = "ip -6 route del " + ip.format() + "/64"
+        print command
+        os.system(command)
+        g_num_mags = g_num_mags + 1
+
 
 for i in range (1 , 255):
     command = "ip -6 tunnel del ip6tnl" + str(i) + " >/dev/null 2>&1"
@@ -152,33 +144,15 @@ command = "ip -6 addr add " + g_LmaCoreNetworkAddress.format()+"/64 dev "+ g_Lma
 print command
 os.system(command)
 
-if g_Mag1AddressIngress != IPAddress('::'):
-    command = "ip -6 route add " + Mag1AddressIngress.format() + "/64 via " + Mag1AddressEgress.format() + " dev " + g_LmaPmipNetworkDevice
-    print command
-    os.system(command)
-    # just to resolve, avoid ping6 since it is used for sync
-    command = "ssh -6 root@[" + Mag1AddressIngress.format() + "] \"ls /root\""
-    print command
-    os.system(command)
+index = 0
+for ip_ingress in g_MagAddressIngress:
+    ip_egress = g_MagAddressEgress[index]
+    if ip_ingress.format() != IPAddress('::').format() and ip_egress.format() != IPAddress('::').format():
+        command = "ip -6 route add " + ip_ingress.format() + "/64 via " + ip_egress.format() + " dev " + g_LmaPmipNetworkDevice
+        print command
+        os.system(command)
+    index += 1
 
-
-if g_Mag2AddressIngress != IPAddress('::'):
-    command = "ip -6 route add " + Mag2AddressIngress.format() + "/64 via " + Mag2AddressEgress.format() + " dev " + g_LmaPmipNetworkDevice
-    print command
-    os.system(command)
-    # just to resolve, avoid ping6 since it is used for sync
-    command = "ssh -6 root@[" + Mag2AddressIngress.format() + "] \"ls /root\""
-    print command
-    os.system(command)
-
-if g_Mag3AddressIngress != IPAddress('::'):
-    command = "ip -6 route add " + Mag3AddressIngress.format() + "/64 via " + Mag3AddressEgress.format() + " dev " + g_LmaPmipNetworkDevice
-    print command
-    os.system(command)
-    # just to resolve, avoid ping6 since it is used for sync
-    command = "ssh -6 root@[" + Mag3AddressIngress.format() + "] \"ls /root\""
-    print command
-    os.system(command)
 
 command = "modprobe ip6_tunnel"
 print command
@@ -192,11 +166,11 @@ print command
 os.system(command)
 
 if g_pcap == "yes":
-	command = "xhost + ; export DISPLAY=:0.0 ; sync; wireshark -i eth0 -k -n -w  "+ g_path + "/logs/lma2mags."+g_run_version+".pcap &"
+	command = "xhost + ; export DISPLAY=:0.0 ; sync; wireshark -i "+g_LmaPmipNetworkDevice+" -k -n -w  "+ g_path + "/logs/lma2mags."+g_run_version+".pcap &"
 	value = os.system(command)
 	print value
 
-	command = "xhost + ; export DISPLAY=:0.0 ; sync; wireshark -i eth1 -k -n -w  "+ g_path + "/logs/lma2cn."+g_run_version+".pcap  &"
+	command = "xhost + ; export DISPLAY=:0.0 ; sync; wireshark -i "+g_LmaCoreNetworkDevice+" -k -n -w  "+ g_path + "/logs/lma2cn."+g_run_version+".pcap  &"
 	value = os.system(command)
 	print value
 
