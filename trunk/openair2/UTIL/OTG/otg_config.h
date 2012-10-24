@@ -47,7 +47,7 @@
 #define STRING_STATIC 1
 
 /*!\brief Define the number of states*/
-#define MAX_NUM_TRAFFIC_STATE 2 //  we have two states: STATE 0 and STATE 1
+#define MAX_NUM_TRAFFIC_STATE 4 //  we have 4 state: OFF, PU, ED, PE
 
 
 #define OTG_FLAG_SIZE 3

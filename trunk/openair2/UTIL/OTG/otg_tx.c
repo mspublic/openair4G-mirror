@@ -60,7 +60,6 @@ int type_header=0;
 int time_dist(int src, int dst, int state) {
 
 int idt=0;
-
  switch (g_otg->idt_dist[src][dst][state]) {
  case  UNIFORM:
    idt =  ceil((uniform_dist(g_otg->idt_min[src][dst][state], g_otg->idt_max[src][dst][state])));
@@ -108,41 +107,48 @@ int idt=0;
 int size_dist(int src, int dst, int state) {
 
   int size_data=0;
-  LOG_D(OTG,"Size Distribution idx= %d \n", g_otg->size_dist[src][dst][state]);
-  switch  (g_otg->size_dist[src][dst][state]) {
-  case UNIFORM : 
-    size_data = ceil(uniform_dist(g_otg->size_min[src][dst][state], g_otg->size_max[src][dst][state]));
-    break;
-  case GAUSSIAN :
-    size_data = ceil(gaussian_dist((g_otg->size_max[src][dst][state] + g_otg->size_min[src][dst][state])/2 , g_otg->size_std_dev[src][dst][state]));
-    break;
-  case EXPONENTIAL : 
-    size_data= ceil(exponential_dist(g_otg->size_lambda[src][dst][state])); //SIZE_COEF * 
-    break;
-  case POISSON :
-    size_data =ceil(poisson_dist(g_otg->size_lambda[src][dst][state]));
-    break;
-  case FIXED :
-    size_data=ceil(g_otg->size_min[src][dst][state]);
-    break;
-  case WEIBULL :
-    size_data =ceil(weibull_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
-    break;
-  case PARETO :
-    size_data =ceil(pareto_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
-    break;
-  case GAMMA :
-    size_data =ceil(gamma_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
-    break;
-  case CAUCHY :
-    size_data =ceil(cauchy_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
-    break;
- case LOG_NORMAL :
-   size_data =ceil((lognormal_dist((g_otg->size_max[src][dst][state] + g_otg->size_min[src][dst][state])/2 , g_otg->size_std_dev[src][dst][state])));
-   break;
-  default:
-    LOG_E(OTG, "PKT Size Distribution unknown \n");
+
+	if (state==PU_STATE)
+		size_data=g_otg->pu_size_pkts[src][dst];
+	else if (state==ED_STATE)
+		size_data=g_otg->ed_size_pkts[src][dst];
+else{
+  		LOG_D(OTG,"Size Distribution idx= %d \n", g_otg->size_dist[src][dst][state]);
+  		switch  (g_otg->size_dist[src][dst][state]) {
+  			case UNIFORM : 
+    			size_data = ceil(uniform_dist(g_otg->size_min[src][dst][state], g_otg->size_max[src][dst][state]));
+    			break;
+  			case GAUSSIAN :
+    			size_data = ceil(gaussian_dist((g_otg->size_max[src][dst][state] + g_otg->size_min[src][dst][state])/2 , g_otg->size_std_dev[src][dst][state]));
+    			break;
+  			case EXPONENTIAL : 
+    			size_data= ceil(exponential_dist(g_otg->size_lambda[src][dst][state])); //SIZE_COEF * 
+    			break;
+  			case POISSON :
+    			size_data =ceil(poisson_dist(g_otg->size_lambda[src][dst][state]));
+    			break;
+  			case FIXED :
+    			size_data=ceil(g_otg->size_min[src][dst][state]);
+    			break;
+  			case WEIBULL :
+    			size_data =ceil(weibull_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+    			break;
+  			case PARETO :
+    			size_data =ceil(pareto_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+    			break;
+  			case GAMMA :
+    			size_data =ceil(gamma_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+    			break;
+  			case CAUCHY :
+    			size_data =ceil(cauchy_dist(g_otg->size_scale[src][dst][state],g_otg->size_shape[src][dst][state] ));
+    			break;
+ 				case LOG_NORMAL :
+   				size_data =ceil((lognormal_dist((g_otg->size_max[src][dst][state] + g_otg->size_min[src][dst][state])/2 , g_otg->size_std_dev[src][dst][state])));
+   				break;
+  			default:
+    			LOG_E(OTG, "PKT Size Distribution unknown \n");
   }
+}
   //Case when size overfill min and max values	
   size_data=adjust_size(size_data);
   LOG_D(OTG,"Packet :: Size=%d  Distribution= %d \n", size_data, g_otg->size_dist[src][dst][state]);
@@ -172,7 +178,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
 
   int size=0;
   unsigned int flow_id=1;
-  unsigned char state=ON_STATE; // default traffic state 
+  unsigned char state=OFF_STATE; // default traffic state 
   int state_transition_prob=0;
   int hdr_size;
   unsigned int buffer_size = 0;
@@ -189,95 +195,60 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   char *header=NULL;
 	unsigned int i;
 
-
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
-  if ((g_otg->application_type[src][dst]==0) && (g_otg->idt_dist[src][dst][state]==0) && (g_otg->background[src][dst]==0)){ //???? to fix 
-    //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d: no app type and/or idt are defined\n", src, dst); 
+  if ((g_otg->application_type[src][dst]==0)&&(g_otg->idt_dist[src][dst][PE_STATE]==0)){  
+    //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
     return NULL;	 
   }
 
-else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][state] > 0)) {
+	else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][PE_STATE] > 0)) {
+  	state_management(src,dst,ctime);
+    state=otg_info->state[src][dst];
+		#ifdef STANDALONE
+  	//pre-config for the standalone
+  	if (ctime<otg_info->ptime[src][dst]) //it happends when the emulation was finished
+    	otg_info->ptime[src][dst]=ctime;
+  	if (ctime==0)
+    	otg_info->idt[src][dst]=0; //for the standalone mode: the emulation is run several times, we need to initialise the idt to 0 when ctime=0
+  	//end pre-config
+		#endif 
+		//LOG_D(OTG,"MY_STATE %d \n", state);
+ 
+		if (state==OFF_STATE)
+			return NULL;
+		else{
 
-#ifdef STANDALONE
-  //pre-config for the standalone
-  if (ctime<otg_info->ptime[src][dst]) //it happends when the emulation was finished
-    otg_info->ptime[src][dst]=ctime;
-  if (ctime==0)
-    otg_info->idt[src][dst]=0; //for the standalone mode: the emulation is run several times, we need to initialise the idt to 0 when ctime=0
-  //end pre-config
-#endif 
-  
-/*
-  if (g_otg->num_state[src] > ON_STATE ){  // statefull traffic case, determine if we should do a state transition   
-    switch (otg_info->state[src]) {
-      state_transition_prob = uniform_dist(0,1);
-    case ON_STATE:
-      if ( state_transition_prob < g_otg->state_prob[src][ON_STATE] )
-	otg_info->state[src]= ON_STATE;
-      else //if (state_transition_prob < g_otg->state_prob[src][ON_STATE]  + g_otg->state_prob[src][OFF_STATE] )
-	otg_info->state[src]= OFF_STATE; 
-      // else
-      //   otg_info->state[src]= ACTIVE_STATE; 
-      break;
-    case OFF_STATE:
-      if ( state_transition_prob < g_otg->state_prob[src][ON_STATE] )
-	otg_info->state[src]= ON_STATE;
-      else //if (state_transition_prob < g_otg->state_prob[src][ON_STATE]  + g_otg->state_prob[src][OFF_STATE] )
-	otg_info->state[src]= OFF_STATE; 
-      // else
-      //   otg_info->state[src]= ACTIVE_STATE; 
-      break;
-    case ACTIVE_STATE:
-    default:
-      otg_info->state[src]= ON_STATE; // switch to default state
-      LOG_W(OTG,"Unknown state\n");
-      break;
-    }
-  }
-    state =  otg_info->state[src];*/
+  		if (((state==PU_STATE)||(state==ED_STATE)) || (otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) >= otg_info->idt[src][dst] ) )) {
+  			LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", 
+				src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
+    		otg_info->ptime[src][dst]=ctime;	
+				if (state==PE_STATE) /* compute the IDT only for PE STATE*/
+    			otg_info->idt[src][dst]=time_dist(src, dst, PE_STATE); // update the idt for the next otg_tx
+    		gen_pkts=1;
+  		}  //check if there is background traffic to generate
+  		else if ((gen_pkts==0) && (g_otg->background[src][dst]==1)&&(background_gen(src, dst, ctime)!=0)){ // the gen_pkts condition could be relaxed here
+    		background_ok=1;
+    		LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d] \n", background_ok, src, dst);
+  		}
+  		else{  
+   			return NULL; // do not generate the packet, and keep the idt
+  		}
+		}	
 
-  
-  if ((otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) >= otg_info->idt[src][dst] ) )) {
-  LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
-    otg_info->ptime[src][dst]=ctime;	
-    otg_info->idt[src][dst]=time_dist(src, dst, state); // update the idt for the next otg_tx
-    gen_pkts=1;
-  }  //check if there is background traffic to generate
-  else if ((gen_pkts==0) && (g_otg->background[src][dst]==1)){ // the gen_pkts condition could be relaxed here
-    background_ok= background_gen(src, dst, ctime);
-  }
-  else{  
-    // LOG_D(OTG,"Time To Transmit::NO (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]);
-   return NULL; // do not generate the packet, and keep the idt
-  }
-
- // 	size+=size_dist(src, dst, state);
-
-}
-
-else if (((g_otg->application_type[src][dst]==0)||(g_otg->idt_dist[src][dst][state]==0))&&(g_otg->background[src][dst]==1)){ //The case when we configure only background between src and dst, without data traffic
-	if (background_gen(src, dst, ctime)!=0){
-	    background_ok=1;
-	    LOG_D(OTG,"(only) BACKGROUND :: Time To Transmit [SRC %d][DST %d] \n", src, dst);
 	}
-	else 
-	return NULL;
-}
-
+	else
+	 return NULL;
   hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
-
-int tmp=0;
 
 if (background_ok==0){
 	for(i=1;i<=g_otg->aggregation_level[src][dst];i++)
   	size+=size_dist(src, dst, state);
-
 /* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
 	if (size>PAYLOAD_MAX){
 		size=PAYLOAD_MAX;
     LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
 	}
-  header =random_string(header_size_gen(src), g_otg->packet_gen_type, HEADER_ALPHABET);
+  header =random_string(header_size_gen(src,dst), g_otg->packet_gen_type, HEADER_ALPHABET);
   payload = random_string(size, g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xffff;
   flow=flow_id;
@@ -287,9 +258,9 @@ if (background_ok==0){
   otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
   otg_info->tx_num_pkt[src][dst]+=1;
   if (size!=strlen(payload))
-    LOG_E(OTG,"The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", size, strlen(payload), seq_num, header, payload);
+    LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", flag, size, strlen(payload), seq_num, header, payload);
   else 
-    LOG_T(OTG,"The packet size is %d with seq num %d : |%s|%s| \n", size, seq_num, header, payload);
+    LOG_T(OTG,"[0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", flag, size, seq_num,state, header, payload);
   
  } else {
 
@@ -299,9 +270,7 @@ if (background_ok==0){
 		otg_info->size_background[src][dst]=PAYLOAD_MAX;
     LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
 	}
-
-
-  header =random_string(header_size_gen_background(src),  g_otg->packet_gen_type, HEADER_ALPHABET);
+  header =random_string(header_size_gen_background(src,dst),  g_otg->packet_gen_type, HEADER_ALPHABET);
   payload = random_string(otg_info->size_background[src][dst],  g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xbbbb;
   flow=flow_id_background;
@@ -309,11 +278,10 @@ if (background_ok==0){
   otg_info->tx_num_bytes_background[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
   otg_info->tx_num_pkt_background[src][dst]+=1;
   otg_info->seq_num_background[src][dst]+=1;
-  
   if (otg_info->size_background[src][dst]!=strlen(payload))
-    LOG_E(OTG,"The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
+    LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", flag, otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
   else
-    LOG_T(OTG,"The packet size is %d with seq num %d : |%s|%s| \n", otg_info->size_background[src][dst], seq_num, header, payload);
+    LOG_T(OTG,"[0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", flag, otg_info->size_background[src][dst], seq_num, state, header, payload);
 }
  
  buffer_size = hdr_size + strlen(header) + strlen(payload);
@@ -326,30 +294,30 @@ if (background_ok==0){
 
 
 
-int header_size_gen(int src){
+int header_size_gen(int src, int dst){
 
 int size_header=0;
 type_header=0;
 
-	if (g_otg->ip_v[src]==1) { 
+	if (g_otg->ip_v[src][dst]==1) { 
 		size_header+=HDR_IP_v4_MIN;
 		type_header+=0;
 	}
-	else if  (g_otg->ip_v[src]==2){	
+	else if  (g_otg->ip_v[src][dst]==2){	
 		size_header+=HDR_IP_v6;
 		type_header+=2;
 		
 	}
 	
-	if (g_otg->trans_proto[src]==1){	
+	if (g_otg->trans_proto[src][dst]==1){	
  		size_header+= HDR_UDP ;
 		type_header+=1;
 	}	
-	else if (g_otg->trans_proto[src]==2){
+	else if (g_otg->trans_proto[src][dst]==2){
 		size_header+= HDR_TCP;
 		type_header+=2;
 	}
-LOG_D(OTG,"Header size is %d \n",  size_header);
+LOG_D(OTG,"Header size is %d [IP V=%d][PROTO=%d]\n",  size_header, g_otg->ip_v[src][dst],g_otg->trans_proto[src][dst]);
 
 return size_header;
 
@@ -482,203 +450,196 @@ int j;
      
      switch  (g_otg->application_type[i][j]) {
      case  SCBR : 
-       g_otg->trans_proto[i] = 1;
-       g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = FIXED;
-       g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  100; 
-       g_otg->idt_min[i][j][1] =  10;
-       g_otg->idt_max[i][j][0] =  10;
-       g_otg->idt_max[i][j][1] =  10;
-       g_otg->size_dist[i][j][0] = FIXED;
-       g_otg->size_dist[i][j][1] = FIXED;
-       g_otg->size_min[i][j][0] =  50;
-       g_otg->size_min[i][j][1] =  50;
-       g_otg->size_max[i][j][0] =  50;
-       g_otg->size_max[i][j][1] =  50;
-       LOG_I(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
+       g_otg->trans_proto[i][j] = 1;
+       g_otg->ip_v[i][j] = 1;
+       g_otg->idt_dist[i][j][PE_STATE] = FIXED;
+       g_otg->idt_min[i][j][PE_STATE] =  100; 
+       g_otg->idt_max[i][j][PE_STATE] =  10;
+       g_otg->size_dist[i][j][PE_STATE] = FIXED;
+       g_otg->size_min[i][j][PE_STATE] =  50;
+       g_otg->size_max[i][j][PE_STATE] =  50;
+			 g_otg->prob_off_pe[i][j]=0.5;
+       g_otg->holding_time_off_pe[i][j]=100; 
+       g_otg->holding_time_pe_off[i][j]=300;
+       LOG_I(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
+				
 #ifdef STANDALONE
-       g_otg->dst_port[i] = 0;
-       g_otg->duration[i] = 1000;
+       g_otg->dst_port[i][j] = 0;
+       g_otg->duration[i][j] = 1000;
 #endif 
        break;
      case MCBR :
-       g_otg->trans_proto[i] = 1;
-       g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = FIXED;
-       g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  100;
-       g_otg->idt_min[i][j][1] =  10;
-       g_otg->idt_max[i][j][0] =  10;
-       g_otg->idt_max[i][j][1] =  10;
-       g_otg->size_dist[i][j][0] = FIXED;
-       g_otg->size_dist[i][j][1] = FIXED;
-       g_otg->size_min[i][j][0] =  512;
-       g_otg->size_min[i][j][1] =  512;
-       g_otg->size_max[i][j][0] =  512;
-       g_otg->size_max[i][j][1] =  512;
-       LOG_I(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
+       g_otg->trans_proto[i][j] = 1;
+       g_otg->ip_v[i][j] = 1;
+       g_otg->idt_dist[i][j][PE_STATE] = FIXED;
+       g_otg->idt_min[i][j][PE_STATE] =  100;
+       g_otg->idt_max[i][j][PE_STATE] =  10;
+       g_otg->size_dist[i][j][PE_STATE] = FIXED;
+       g_otg->size_min[i][j][PE_STATE] =  512;
+       g_otg->size_max[i][j][PE_STATE] =  512;
+			 g_otg->prob_off_pe[i][j]=0.5;
+       g_otg->holding_time_off_pe[i][j]=100; 
+       g_otg->holding_time_pe_off[i][j]=300;
+       LOG_I(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 #ifdef STANDALONE
-       g_otg->dst_port[i] = 0;
-       g_otg->duration[i] = 1000;
+       g_otg->dst_port[i][j] = 0;
+       g_otg->duration[i][j] = 1000;
 #endif 
        break;
      case BCBR :
-       g_otg->trans_proto[i] = 1;
-       g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = FIXED;// main param in this mode
-       g_otg->idt_dist[i][j][1] = FIXED;
-       g_otg->idt_min[i][j][0] =  100; // main param in this mode
-       g_otg->idt_min[i][j][1] =  10;
-       g_otg->idt_max[i][j][0] =  10;
-       g_otg->idt_max[i][j][1] =  10;
-       g_otg->size_dist[i][j][0] = FIXED; // main param in this mode
-       g_otg->size_dist[i][j][1] = FIXED;
-       g_otg->size_min[i][j][0] =  1024;// main param in this mode
-       g_otg->size_min[i][j][1] =  1024;
-       g_otg->size_max[i][j][0] =  1024;
-       g_otg->size_max[i][j][1] =  1024;
-       LOG_I(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][0]);
+       g_otg->trans_proto[i][j] = 1;
+       g_otg->ip_v[i][j] = 1;
+       g_otg->idt_dist[i][j][PE_STATE] = FIXED;// main param in this mode
+       g_otg->idt_min[i][j][PE_STATE] =  100; // main param in this mode
+       g_otg->idt_max[i][j][PE_STATE] =  10;
+       g_otg->size_dist[i][j][PE_STATE] = FIXED; // main param in this mode
+       g_otg->size_min[i][j][PE_STATE] =  1024;// main param in this mode
+       g_otg->size_max[i][j][PE_STATE] =  1024;
+			 g_otg->prob_off_pe[i][j]=0.5;
+       g_otg->holding_time_off_pe[i][j]=100; 
+       g_otg->holding_time_pe_off[i][j]=300;
+       LOG_I(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 #ifdef STANDALONE
-       g_otg->dst_port[i] = 0;
-       g_otg->duration[i] = 1000;
+       g_otg->dst_port[i][j] = 0;
+       g_otg->duration[i][j] = 1000;
 #endif  
        break;
      case AUTO_PILOT : 
-       g_otg->trans_proto[i] = 2;
-       g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = UNIFORM;
-       g_otg->idt_dist[i][j][1] = EXPONENTIAL;
-       LOG_I(OTG,"OTG_CONFIG M2M_AP, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
-       g_otg->idt_min[i][j][0] =  100;
-       g_otg->idt_min[i][j][1] =  0;
-       g_otg->idt_max[i][j][0] =  500;
-       g_otg->idt_max[i][j][1] =  0;
-       g_otg->idt_std_dev[i][j][0] = 0;
-       g_otg->idt_std_dev[i][j][1] = 0;
-       g_otg->idt_lambda[i][j][0] = 0;
-       g_otg->idt_lambda[i][j][1] = 5; //pkt/s
-       g_otg->size_dist[i][j][0] = FIXED;
-       g_otg->size_dist[i][j][1] = EXPONENTIAL;
-       g_otg->size_min[i][j][0] =  800;
-       g_otg->size_min[i][j][1] =  0;
-       g_otg->size_max[i][j][0] =  800; 
-       g_otg->size_max[i][j][1] =  0;
-       g_otg->size_std_dev[i][j][0] = 0;
-       g_otg->size_std_dev[i][j][1] = 0;
-       g_otg->size_lambda[i][j][0] = 0;
-       g_otg->size_lambda[i][j][1] = 1/800;
+       g_otg->trans_proto[i][j] = 2;
+       g_otg->ip_v[i][j] = 1;
+       g_otg->idt_dist[i][j][PE_STATE] = UNIFORM;
+       LOG_I(OTG,"OTG_CONFIG M2M_AP, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][PE_STATE]);
+       g_otg->idt_min[i][j][PE_STATE] =  100;
+       g_otg->idt_max[i][j][PE_STATE] =  500;
+       g_otg->idt_std_dev[i][j][PE_STATE] = 0;
+       g_otg->idt_lambda[i][j][PE_STATE] = 0;
+       g_otg->size_dist[i][j][PE_STATE] = FIXED;
+       g_otg->size_min[i][j][PE_STATE] =  800;
+       g_otg->size_max[i][j][PE_STATE] =  800; 
+       g_otg->size_std_dev[i][j][PE_STATE] = 0;
+       g_otg->size_lambda[i][j][PE_STATE] = 0;
+			 g_otg->prob_off_pe[i][j]=0.5;
+       g_otg->holding_time_off_pe[i][j]=100; 
+       g_otg->holding_time_pe_off[i][j]=300;
 #ifdef STANDALONE
-       g_otg->dst_port[i] = 0;
-       g_otg->duration[i] = 1000;
+       g_otg->dst_port[i][j] = 0;
+       g_otg->duration[i][j] = 1000;
 #endif 
        break;
      case BICYCLE_RACE :  
-       g_otg->trans_proto[i] = 2;
-       g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = UNIFORM;
-       g_otg->idt_dist[i][j][1] = EXPONENTIAL;
-       LOG_I(OTG,"OTG_CONFIG M2M_BR, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
-       g_otg->idt_min[i][j][0] =  100;
-       g_otg->idt_min[i][j][1] =  0;
-       g_otg->idt_max[i][j][0] =  500;
-       g_otg->idt_max[i][j][1] =  0;
-       g_otg->idt_std_dev[i][j][0] = 0;
-       g_otg->idt_std_dev[i][j][1] = 0;
-       g_otg->idt_lambda[i][j][0] = 0;
-       g_otg->idt_lambda[i][j][1] = 10; //pkt/s
-       g_otg->size_dist[i][j][0] = FIXED;
-       g_otg->size_dist[i][j][1] = EXPONENTIAL;
-       g_otg->size_min[i][j][0] =  800;
-       g_otg->size_min[i][j][1] =  0;
-       g_otg->size_max[i][j][0] =  800;
-       g_otg->size_max[i][j][1] =  0;
-       g_otg->size_std_dev[i][j][0] = 0;
-       g_otg->size_std_dev[i][j][1] = 0;
-       g_otg->size_lambda[i][j][0] = 0;
-       g_otg->size_lambda[i][j][1] = 1/800;
+       g_otg->trans_proto[i][j] = 2;
+       g_otg->ip_v[i][j] = 1;
+       g_otg->idt_dist[i][j][PE_STATE] = UNIFORM;
+       LOG_I(OTG,"OTG_CONFIG M2M_BR, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][PE_STATE]);
+       g_otg->idt_min[i][j][PE_STATE] =  100;
+       g_otg->idt_max[i][j][PE_STATE] =  500;
+       g_otg->idt_std_dev[i][j][PE_STATE] = 0;
+       g_otg->idt_lambda[i][j][PE_STATE] = 0;
+       g_otg->size_dist[i][j][PE_STATE] = FIXED;
+       g_otg->size_min[i][j][PE_STATE] =  800;
+       g_otg->size_max[i][j][PE_STATE] =  800;
+       g_otg->size_std_dev[i][j][PE_STATE] = 0;
+       g_otg->size_lambda[i][j][PE_STATE] = 0;
+			 g_otg->prob_off_pe[i][j]=0.5;
+       g_otg->holding_time_off_pe[i][j]=100; 
+       g_otg->holding_time_pe_off[i][j]=300;
 #ifdef STANDALONE
        g_otg->dst_port[i] = 0;
        g_otg->duration[i] = 1000;
 #endif 
        break;
      case OPENARENA : 
-       g_otg->trans_proto[i] = 2;
-       g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = UNIFORM;
-       g_otg->idt_dist[i][j][1] = UNIFORM;
-       LOG_I(OTG,"OTG_CONFIG GAMING_OA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
-       g_otg->idt_min[i][j][0] =  69;
-       g_otg->idt_min[i][j][1] =  69;
-       g_otg->idt_max[i][j][0] =  103;
-       g_otg->idt_max[i][j][1] =  103;
-       g_otg->idt_std_dev[i][j][0] = 0;
-       g_otg->idt_std_dev[i][j][1] = 0;
-       g_otg->idt_lambda[i][j][0] = 0;
-       g_otg->idt_lambda[i][j][1] = 0; //pkt/s
-       g_otg->size_dist[i][j][0] = GAUSSIAN;
-       g_otg->size_dist[i][j][1] = GAUSSIAN;
-       g_otg->size_min[i][j][0] =  5;
-       g_otg->size_min[i][j][1] =  5;
-       g_otg->size_max[i][j][0] =  43;
-       g_otg->size_max[i][j][1] =  43;
-       g_otg->size_std_dev[i][j][0] = 5;
-       g_otg->size_std_dev[i][j][1] = 5;
-       g_otg->size_lambda[i][j][0] = 0;
-       g_otg->size_lambda[i][j][1] = 0;
+       g_otg->trans_proto[i][j] = 2;
+       g_otg->ip_v[i][j] = 1;
+       g_otg->idt_dist[i][j][PE_STATE] = UNIFORM;
+       LOG_I(OTG,"OTG_CONFIG GAMING_OA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][PE_STATE]);
+       g_otg->idt_min[i][j][PE_STATE] =  69;
+       g_otg->idt_max[i][j][PE_STATE] =  103;
+       g_otg->idt_std_dev[i][j][PE_STATE] = 0;
+       g_otg->idt_lambda[i][j][PE_STATE] = 0;
+       g_otg->size_dist[i][j][PE_STATE] = GAUSSIAN;
+       g_otg->size_min[i][j][PE_STATE] =  5;
+       g_otg->size_max[i][j][PE_STATE] =  43;
+       g_otg->size_std_dev[i][j][PE_STATE] = 5;
+       g_otg->size_lambda[i][j][PE_STATE] = 0;
+			 g_otg->prob_off_pe[i][j]=0.5;
+       g_otg->holding_time_off_pe[i][j]=100; 
+       g_otg->holding_time_pe_off[i][j]=300;
 #ifdef STANDALONE
        g_otg->dst_port[i] = 0;
        g_otg->duration[i] = 1000;
 #endif 
        break;  
      case TEAM_FORTRESS : 
-       g_otg->trans_proto[i] = 2;
-       g_otg->ip_v[i] = 1;
-       g_otg->idt_dist[i][j][0] = UNIFORM;
-       g_otg->idt_dist[i][j][1] = UNIFORM;
-       LOG_I(OTG,"OTG_CONFIG GAMING_TF, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][0]);
-       g_otg->idt_min[i][j][0] =  31;
-       g_otg->idt_min[i][j][1] =  31;
-       g_otg->idt_max[i][j][0] =  42;
-       g_otg->idt_max[i][j][1] =  42;
-       g_otg->idt_std_dev[i][j][0] = 0;
-       g_otg->idt_std_dev[i][j][1] = 0;
-       g_otg->idt_lambda[i][j][0] = 0;
-       g_otg->idt_lambda[i][j][1] = 0;
-       g_otg->size_dist[i][j][0] = GAUSSIAN;
-       g_otg->size_dist[i][j][1] = GAUSSIAN;
-       g_otg->size_min[i][j][0] =  5;
-       g_otg->size_min[i][j][1] =  5;
-       g_otg->size_max[i][j][0] =  43;
-       g_otg->size_max[i][j][1] =  43;
-       g_otg->size_std_dev[i][j][0] = 5;
-       g_otg->size_std_dev[i][j][1] = 5;
-       g_otg->size_lambda[i][j][0] = 0;
-       g_otg->size_lambda[i][j][1] = 0;
+       g_otg->trans_proto[i][j] = 2;
+       g_otg->ip_v[i][j] = 1;
+       g_otg->idt_dist[i][j][PE_STATE] = UNIFORM;
+       LOG_I(OTG,"OTG_CONFIG GAMING_TF, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][PE_STATE]);
+       g_otg->idt_min[i][j][PE_STATE] =  31;
+       g_otg->idt_max[i][j][PE_STATE] =  42;
+       g_otg->idt_std_dev[i][j][PE_STATE] = 0;
+       g_otg->idt_lambda[i][j][PE_STATE] = 0;
+       g_otg->size_dist[i][j][PE_STATE] = GAUSSIAN;
+       g_otg->size_min[i][j][PE_STATE] =  5;
+       g_otg->size_max[i][j][PE_STATE] =  43;
+       g_otg->size_std_dev[i][j][PE_STATE] = 5;
+       g_otg->size_lambda[i][j][PE_STATE] = 0;
+			 g_otg->prob_off_pe[i][j]=0.5;
+       g_otg->holding_time_off_pe[i][j]=100; 
+       g_otg->holding_time_pe_off[i][j]=300;
+#ifdef STANDALONE
+       g_otg->dst_port[i][j] = 0;
+       g_otg->duration[i][j] = 1000;
+#endif 
+       break;
+     case NO_PREDEFINED_TRAFFIC : 
+       LOG_I(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
+       g_otg->trans_proto[i][j] = 0;
+       g_otg->ip_v[i][j] = 0;
+       g_otg->idt_dist[i][j][PE_STATE] = 0;
+       g_otg->idt_min[i][j][PE_STATE] =  0; 
+       g_otg->idt_max[i][j][PE_STATE] =  0;
+       g_otg->size_dist[i][j][PE_STATE] = FIXED;
+       g_otg->size_min[i][j][PE_STATE] =  0;
+       g_otg->size_max[i][j][PE_STATE] = 0;
 #ifdef STANDALONE
        g_otg->dst_port[i] = 0;
        g_otg->duration[i] = 1000;
 #endif 
        break;
-     case NO_PREDEFINED_TRAFFIC : 
-       LOG_I(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
-       g_otg->trans_proto[i] = 0;
-       g_otg->ip_v[i] = 0;
-       g_otg->idt_dist[i][j][0] = 0;
-       g_otg->idt_dist[i][j][1] = 0;
-       g_otg->idt_min[i][j][0] =  0; 
-       g_otg->idt_min[i][j][1] =  0;
-       g_otg->idt_max[i][j][0] =  0;
-       g_otg->idt_max[i][j][1] =  0;
-       g_otg->size_dist[i][j][0] = FIXED;
-       g_otg->size_dist[i][j][1] = FIXED;
-       g_otg->size_min[i][j][0] =  0;
-       g_otg->size_min[i][j][1] =  0;
-       g_otg->size_max[i][j][0] = 0;
-       g_otg->size_max[i][j][1] =  0;
-       break;
+   case M2M_TRAFFIC : 
+       LOG_I(OTG," M2M_TRAFFIC, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j]);
+       g_otg->trans_proto[i][j] = 2;
+       g_otg->ip_v[i][j] = 1;
+	 		 g_otg->pu_size_pkts[i][j]=50;
+	 		 g_otg->ed_size_pkts[i][j]=60;
+
+       g_otg->idt_dist[i][j][PE_STATE] = UNIFORM;
+       g_otg->idt_min[i][j][PE_STATE] =  1000;
+       g_otg->idt_max[i][j][PE_STATE] =  15;
+       g_otg->size_dist[i][j][PE_STATE] = UNIFORM;
+       g_otg->size_min[i][j][PE_STATE] =  200;
+       g_otg->size_max[i][j][PE_STATE] =  800;
+
+       g_otg->prob_off_pu[i][j]=0.2;
+       g_otg->prob_off_ed[i][j]=0.3;
+       g_otg->prob_off_pe[i][j]=0.4;
+       g_otg->prob_pu_ed[i][j]=0.1;
+       g_otg->prob_pu_pe[i][j]=0.6;
+       g_otg->prob_ed_pu[i][j]=0.3;
+       g_otg->prob_ed_pe[i][j]=0.5;
+       
+       g_otg->holding_time_off_pu[i][j]=10;
+       g_otg->holding_time_off_ed[i][j]=12; 
+       g_otg->holding_time_off_pe[i][j]=13; 
+       g_otg->holding_time_pe_off[i][j]=30;
+#ifdef STANDALONE
+       g_otg->dst_port[i][j] = 0;
+       g_otg->duration[i][j] = 1000;
+#endif 
+ 			break; 
      default:
-       LOG_E(OTG, "[SRC %d][DST %d] Unknown traffic type\n", i, j);
+       LOG_D(OTG, "[SRC %d][DST %d] Unknown traffic type\n", i, j);
      }
    }
  }
@@ -689,7 +650,6 @@ int background_gen(int src, int dst, int ctime){
 
 /*check if it is time to transmit the background traffic
 - we have different distributions for packet size and idt for the UL and DL */
-
 	if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) 
 	||  (otg_info->idt_background[src][dst]==0)){
 		LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
@@ -721,12 +681,12 @@ int background_gen(int src, int dst, int ctime){
 
 
 
-int header_size_gen_background(src){
+int header_size_gen_background(src, dst){
  int size_header=0;
-  if(g_otg->trans_proto_background[src]==0)
-  g_otg->trans_proto_background[src]= rand() % (TCP_IPV6 - UDP_IPV4 + 1) + UDP_IPV4;
+  if(g_otg->trans_proto_background[src][dst]==0)
+  g_otg->trans_proto_background[src][dst]= rand() % (TCP_IPV6 - UDP_IPV4 + 1) + UDP_IPV4;
 
- switch (g_otg->trans_proto_background[src]) {
+ switch (g_otg->trans_proto_background[src][dst]) {
  case  UDP_IPV4:
    size_header=HDR_IP_v4_MIN + HDR_UDP;
  break;
@@ -747,6 +707,121 @@ int header_size_gen_background(src){
 
 return size_header;
 }
+
+
+
+void state_management(src, dst,ctime) {
+
+  if (otg_info->state_transition_prob[src][dst]==0){
+    otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+    otg_info->state[src][dst]=OFF_STATE;
+    LOG_I(OTG,"[%d][[%d] STATE:: OFF INIT (prob %f) \n", src, dst, otg_info->state_transition_prob[src][dst]);
+    otg_info->start_holding_time_off[src][dst]=ctime;
+  }
+LOG_I(OTG,"[%d][[%d] HOLDING_TIMES OFF_PE: %d, OFF_PU: %d, OFF_ED %d, PE_OFF: %d \n", src, dst, g_otg->holding_time_off_pe[src][dst], g_otg->holding_time_off_pu[src][dst],g_otg->holding_time_off_ed[src][dst], g_otg->holding_time_pe_off[src][dst] );  
+
+ switch (otg_info->state[src][dst]){
+
+ case OFF_STATE:
+	
+if (ctime>otg_info->start_holding_time_off[src][dst]){
+ otg_info->c_holding_time_off[src][dst]= ctime - otg_info->start_holding_time_off[src][dst];
+    LOG_I(OTG,"[%d][[%d] STATE:: OFF Holding Time %d (%d, %d)\n", src, dst, otg_info->c_holding_time_off[src][dst], ctime, otg_info->start_holding_time_off[src][dst]);
+    }
+
+  if ( ((otg_info->state_transition_prob[src][dst]>= 1-(g_otg->prob_off_pu[src][dst]+g_otg->prob_off_ed[src][dst]+g_otg->prob_off_pe[src][dst])) && (otg_info->state_transition_prob[src][dst]<1-(g_otg->prob_off_ed[src][dst]+g_otg->prob_off_pe[src][dst])))  && (otg_info->c_holding_time_off[src][dst]>=g_otg->holding_time_off_pu[src][dst])){  
+		 otg_info->state[src][dst]=PU_STATE;
+     otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+     LOG_I(OTG,"[%d][[%d] NEW STATE:: OFF-->PU\n", src, dst);
+  }
+  else if ( ((otg_info->state_transition_prob[src][dst]>= 1-(g_otg->prob_off_ed[src][dst]+g_otg->prob_off_pe[src][dst])) && (otg_info->state_transition_prob[src][dst]< 1-g_otg->prob_off_pe[src][dst])) && (otg_info->c_holding_time_off[src][dst]>=g_otg->holding_time_off_ed[src][dst])){
+     otg_info->state[src][dst]=ED_STATE;
+     otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+     LOG_I(OTG,"[%d][[%d] NEW STATE:: OFF-->ED\n", src, dst);
+  }
+
+  else if (((otg_info->state_transition_prob[src][dst]>=1-g_otg->prob_off_pe[src][dst]) && (otg_info->state_transition_prob[src][dst]<=1)) && (otg_info->c_holding_time_off[src][dst]>=g_otg->holding_time_off_pe[src][dst])){
+     otg_info->state[src][dst]=PE_STATE;
+     otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+     LOG_I(OTG,"[%d][[%d] NEW STATE:: OFF-->PE\n", src, dst);
+
+}
+  else{
+     otg_info->c_holding_time_off[src][dst]= ctime - otg_info->start_holding_time_off[src][dst];
+     otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+     LOG_I(OTG,"[%d][[%d] STATE:: OFF\n", src, dst);
+  }
+  break;
+
+ case PU_STATE:
+     if  (otg_info->state_transition_prob[src][dst]<=1-(g_otg->prob_pu_ed[src][dst]+g_otg->prob_pu_pe[src][dst])){
+       //otg_info->state[src][dst]=OFF_STATE;
+       otg_info->state[src][dst]=OFF_STATE;
+       otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+       otg_info->start_holding_time_off[src][dst]=ctime; 
+     LOG_I(OTG,"[%d][[%d] NEW STATE:: PU-->OFF\n", src, dst);
+     }
+     else if  ((otg_info->state_transition_prob[src][dst]<=1-g_otg->prob_pu_pe[src][dst]) && (otg_info->state_transition_prob[src][dst]>1-(g_otg->prob_pu_ed[src][dst]+g_otg->prob_pu_pe[src][dst]))){
+       //otg_info->state[src][dst]=ON_STATE;
+       otg_info->state[src][dst]=ED_STATE;
+       otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+     LOG_I(OTG,"[%d][[%d] NEW STATE:: PU-->ED\n", src, dst);
+     }
+    else /*if (otg_info->state_transition_prob[src][dst]>=g_otg->prob_pu_ed)*/{
+       //otg_info->state[src][dst]=ON_STATE;
+       otg_info->state[src][dst]=PE_STATE;
+       otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+       otg_info->start_holding_time_pe_off[src][dst]=ctime;
+       LOG_I(OTG,"[%d][[%d] NEW STATE:: PU-->PE\n", src, dst);
+     }
+  break;
+ case ED_STATE:
+     if  (otg_info->state_transition_prob[src][dst]<1-(g_otg->prob_ed_pu[src][dst] + g_otg->prob_ed_pe[src][dst])){
+       //otg_info->state[src][dst]=OFF_STATE;
+       otg_info->state[src][dst]=OFF_STATE;
+       otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+       otg_info->start_holding_time_off[src][dst]=ctime; 
+       LOG_I(OTG,"[%d][[%d] NEW STATE:: ED-->OFF\n", src, dst);
+     }
+     else if  ((otg_info->state_transition_prob[src][dst]>=1-(g_otg->prob_ed_pu[src][dst] + g_otg->prob_ed_pe[src][dst] )) && (otg_info->state_transition_prob[src][dst]<1-g_otg->prob_ed_pe[src][dst]))  {
+       //otg_info->state[src][dst]=ON_STATE;
+       otg_info->state[src][dst]=PE_STATE;
+       otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+       LOG_I(OTG,"[%d][[%d] NEW STATE:: ED-->PU\n", src, dst);
+     }
+     else /*if ((otg_info->state_transition_prob[src][dst]>=1-g_otg->prob_ed_pe)&&(otg_info->state_transition_prob[src][dst]<=1)) */{
+       //otg_info->state[src][dst]=ON_STATE;
+       otg_info->state[src][dst]=PE_STATE;
+       otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+       otg_info->start_holding_time_pe_off[src][dst]=ctime;
+       LOG_I(OTG,"[%d][[%d] NEW STATE:: ED-->PE\n", src, dst);
+     }
+  break;
+
+ case PE_STATE:
+     if (g_otg->holding_time_pe_off[src][dst]<=otg_info->c_holding_time_pe_off[src][dst]){
+       //otg_info->state[src][dst]=OFF_STATE;
+       otg_info->state[src][dst]=OFF_STATE;
+       LOG_I(OTG,"[%d][[%d] NEW STATE:: PE->OFF\n", src, dst);  
+       otg_info->c_holding_time_pe_off[src][dst]=0;
+       otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
+       otg_info->start_holding_time_off[src][dst]=ctime; 
+     }
+     else /* if (g_otg->holding_time_pe_off>otg_info->c_holding_time_pe_off[src][dst])*/{
+		 	if (ctime>otg_info->start_holding_time_pe_off[src][dst])
+          otg_info->c_holding_time_pe_off[src][dst]=ctime-otg_info->start_holding_time_pe_off[src][dst];
+      		LOG_I(OTG,"[%d][[%d] STATE:: PE \n", src, dst);
+     	}
+  break;
+  default:
+      LOG_W(OTG,"Unknown state(%d) \n", otg_info->state[src][dst]);
+      otg_info->state[src][dst]= OFF_STATE; // switch to default state
+      
+      break;
+}
+}
+
+
 
 
 

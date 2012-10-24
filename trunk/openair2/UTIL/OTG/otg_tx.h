@@ -153,7 +153,7 @@ int adjust_size(int size);
 * \note 
 * @ingroup  _otg
 */
-int header_size_gen(int src);
+int header_size_gen(int src, int dst);
 
 
 /*! \fn void init_predef_traffic();
@@ -180,9 +180,9 @@ int background_gen(int src, int dst, int ctime);
 
 
 
-int header_size_gen_background(int src);
+int header_size_gen_background(int src, int dst);
 
-
+void state_management(int src, int dst,int ctime);
 
 
 #endif
