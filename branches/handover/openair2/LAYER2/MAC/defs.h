@@ -97,7 +97,7 @@
 typedef enum {
   CONNECTION_OK=0,
   CONNECTION_LOST,
-  PHY_RESYNCH
+  PHY_RESYNCH,
 } UE_L2_STATE_t;
 
 typedef struct {

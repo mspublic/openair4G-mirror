@@ -217,7 +217,6 @@ void Msg3_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
 
 PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 
-
   u8 Size=0;
   UE_MODE_t UE_mode = mac_xface->get_ue_mode(Mod_id,eNB_index);
   u8 lcid = CCCH;

@@ -884,6 +884,11 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   case RRC_PHY_RESYNCH:
     LOG_D(MAC,"RRC Loss of synch, returning PHY_RESYNCH\n");
     return(PHY_RESYNCH);
+  case RRC_Handover_failed:
+	  LOG_D(MAC,"Handover failure, re-connecting to serving cell\n");
+	  //Invalid...need to add another MAC UE state for re-connection procedure
+	  //return(3);
+	  break;
   default:
     break;
   }

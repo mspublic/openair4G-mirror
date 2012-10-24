@@ -79,6 +79,7 @@ extern void *bigphys_malloc(int);
 extern inline unsigned int taus(void);
 
 extern timeToTrigger_ms[16];
+extern u32 T304[8];
 extern **PHY_vars_UE_g;
 
 extern u8 measFlag;
@@ -863,8 +864,7 @@ void	rrc_ue_process_mobilityControlInfo(u8 Mod_id, u32 frame, u8 eNB_index, stru
 	if(UE_rrc_inst[Mod_id].Info[eNB_index].T310_active == 1)
 		UE_rrc_inst[Mod_id].Info[eNB_index].T310_active = 0;
 	UE_rrc_inst[Mod_id].Info[eNB_index].T304_active = 1;
-
-	UE_rrc_inst[Mod_id].Info[eNB_index].T304_cnt = mobilityControlInfo->t304;
+	UE_rrc_inst[Mod_id].Info[eNB_index].T304_cnt = T304[mobilityControlInfo->t304];
 
 	//Removing SRB1 and SRB2 and DRB0
 	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_REMOVE, Mod_id+DCCH);
@@ -1489,17 +1489,23 @@ void ue_measurement_report_triggering(u8 Mod_id, u32 frame, UE_RRC_INST *UE_rrc_
 									break;
 								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3:
 									if (check_trigger_meas_event(i,j,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id],ofn,ocn,hys,ofs,ocs,a3_offset,ttt_ms) && \
-											UE_rrc_inst[Mod_id].Info[0].State == RRC_CONNECTED) {
+											UE_rrc_inst[Mod_id].Info[0].State == RRC_CONNECTED && \
+											UE_rrc_inst[Mod_id].Info[0].T304_active == 0) {
 										//trigger measurement reporting procedure (36.331, section 5.5.5)
-										UE_rrc_inst[Mod_id].measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
+										if (UE_rrc_inst[Mod_id].measReportList[i][j] == NULL) {
+											UE_rrc_inst[Mod_id].measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
+										}
 										UE_rrc_inst[Mod_id].measReportList[i][j]->measId = UE_rrc_inst[Mod_id].MeasId[i][j]->measId;
 										UE_rrc_inst[Mod_id].measReportList[i][j]->numberOfReportsSent = 0;
 										rrc_ue_generate_MeasurementReport(Mod_id,0,frame,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id]);
+
 									}
 									else {
 										if(UE_rrc_inst[Mod_id].measReportList[i][j] != NULL)
 											free(UE_rrc_inst[Mod_id].measReportList[i][j]);
+											UE_rrc_inst[Mod_id].measReportList[i][j] = NULL;
 									}
+
 									LOG_I(RRC,"\n A3 event detected for UE %d in state: %d \n", (int)Mod_id, UE_rrc_inst[Mod_id].Info[0].State);
 									break;
 								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4:
