@@ -167,7 +167,7 @@ if g_pcap == "yes":
 	value = os.system(command)
 	print value
 
-
+# LD_LIBRARY_PATH for freeradius libs
 command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/pmip6d -c ' + g_file_config
 subprocess.call(command, shell=True)
 
