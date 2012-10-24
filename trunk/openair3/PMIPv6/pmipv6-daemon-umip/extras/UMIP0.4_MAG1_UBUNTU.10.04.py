@@ -163,6 +163,6 @@ if g_pcap == "yes":
 	print value
 
 
-command = '/usr/local/sbin/pmip6d -c ' + g_file_config
+command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/pmip6d -c ' + g_file_config
 subprocess.call(command, shell=True)
 
