@@ -1285,7 +1285,7 @@ main (int argc, char **argv)
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
 	  //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+	  LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
 		eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
 	}
@@ -1344,19 +1344,18 @@ main (int argc, char **argv)
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	
 #ifdef PRINT_STATS
-	//if ((frame % 10) == 0) {
+	if (eNB_stats) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
 	  fflush(eNB_stats);
-
+	}
                     /*
 	  printf("[eNBPRINT] Average System Throughput %dKbps\n",(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
 	  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) 
 	    printf("[eNBPRINT] Transmission Mode on DL for UE %d: %d\n", UE_id, PHY_vars_eNB_g[eNB_id]->transmission_mode[UE_id]);
 	  fprintf(eNB_avg_thr,"%d %d\n",PHY_vars_eNB_g[eNB_id]->frame,(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
                     */
-	  //}
 #endif
       }
       // Call ETHERNET emulation here
@@ -1385,7 +1384,7 @@ main (int argc, char **argv)
 	      exit(-1);
 	    }
 	    if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
-	      initial_sync(PHY_vars_UE_g[UE_id]);
+	      initial_sync(PHY_vars_UE_g[UE_id],normal_txrx);
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
@@ -1402,10 +1401,12 @@ main (int argc, char **argv)
 	    }
  	  }
 #ifdef PRINT_STATS
-                        len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
-	  rewind (UE_stats[UE_id]);
-	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-	  fflush(UE_stats[UE_id]);
+	  if (UE_stats[UE_id]) {
+	    len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
+	    rewind (UE_stats[UE_id]);
+	    fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
+	    fflush(UE_stats[UE_id]);
+	  }
 #endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
@@ -1592,10 +1593,13 @@ main (int argc, char **argv)
 #endif 
   
 #ifdef PRINT_STATS
-  for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
-    fclose (UE_stats[UE_id]);
-  fclose (eNB_stats);
-  fclose (eNB_avg_thr);
+  for(UE_id=0;UE_id<NB_UE_INST;UE_id++) 
+    if (UE_stats[UE_id]) 
+      fclose (UE_stats[UE_id]);
+  if (eNB_stats)
+    fclose (eNB_stats);
+  if (eNB_avg_thr)
+    fclose (eNB_avg_thr);
 #endif
 
   // stop OMG
