@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -45,7 +45,7 @@
 
 ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
 	: mib(mib), logger(logger) {
-	this->client = clientConnection.getClient();
+	this->client = client;
 
 	/**
 	 * Initialise state strings map
@@ -59,10 +59,9 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& cl
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::GN, "GeoNetworking"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::FAC, "Facilities"));
 	/**
-	 * Initialise this client's state and type
+	 * Initialise this client's state
 	 */
 	state = ManagementClient::OFFLINE;
-	type = ManagementClient::UNKNOWN;
 	/**
 	 * Update location table
 	 */
@@ -78,10 +77,6 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& cl
 }
 
 ManagementClient::~ManagementClient() {
-	clientTypeStringMap.clear();
-
-	delete inquiryThreadObject;
-	delete inquiryThread;
 }
 
 boost::asio::ip::address ManagementClient::getAddress() const {
@@ -97,10 +92,7 @@ ManagementClient::ManagementClientState ManagementClient::getState() const {
 }
 
 bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
-	if (this->state == state) {
-		logger.info("State change is not necessary, client is already " + clientStateStringMap[state]);
-		return true;
-	}
+	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
 
 	/**
 	 * Verify state change
@@ -110,14 +102,10 @@ bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
 			|| (this->state == ONLINE && state == CONNECTED)) {
 		logger.debug("State change is valid");
 	} else {
-		logger.error("Requested state change from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state] + " is invalid!");
-		logger.info("Ignoring state change request...");
-		return false;
+		logger.error("State change is invalid!");
 	}
 
 	this->state = state;
-	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
-
 	return true;
 }
 
@@ -140,7 +128,7 @@ string ManagementClient::toString() {
 
 	ss << "ManagementClient[ip:" << client.address().to_string()
 		<< ", port:" << boost::lexical_cast<string>(client.port())
-		<< ", state:" << clientStateStringMap[state] << "]";
+		<< ", state:" << clientStateStringMap[state] << "]" << endl;
 
 	return ss.str();
 }

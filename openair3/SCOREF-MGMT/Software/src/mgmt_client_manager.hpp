@@ -80,13 +80,6 @@ class ManagementClientManager {
 		 * @return true if success, false otherwise
 		 */
 		bool updateManagementClientState(UdpServer& clientConnection, EventType eventType);
-		/**
-		 * Returns the string representation of Client Manager and the clients it manages
-		 *
-		 * @param none
-		 * @return std::string representation of this class
-		 */
-		string toString();
 
 	private:
 		/**

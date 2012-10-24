@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -50,15 +50,15 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "util/mgmt_udp_server.hpp"
 #include "mgmt_packet_handler.hpp"
+#include "util/mgmt_udp_server.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 
-void printHelp(const string& binaryName) {
+void printHelp(string binaryName) {
 	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
 }
 
@@ -66,18 +66,15 @@ const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
 
 int main(int argc, char** argv) {
-	string logFileName, configurationFileName;
-
+	cout << "Size: " << sizeof(ConfigurationNotification) << endl;
 	/**
-	 * Check command-line parameters. Configuration file name is
-	 * necessary yet log file name is optional
+	 * Log file name parameter is optional
 	 */
-	if (argc == 2) {
+	string logFileName = "";
+	if (argc == 1) {
 		logFileName = "SCOREF-MGMT.log";
-		configurationFileName = argv[1];
-	} else if (argc == 3) {
-		configurationFileName = argv[1];
-		logFileName = argv[2];
+	} else if (argc == 2) {
+		logFileName = string(argv[1]);
 	} else {
 		printHelp(argv[0]);
 		exit(1);
@@ -115,17 +112,12 @@ int main(int argc, char** argv) {
 	PacketHandler* packetHandler = NULL;
 
 	/**
-	 * Prepare the list of FACilities configuration files by traversing
-	 * the configration/ directory's content
+	 * Prepare the list of configuration files that are going to be parsed
 	 */
-	string facilitiesConfigurationFileDirectory = "configuration/";
-	vector<string> configurationFileVector = Util::getListOfFiles(facilitiesConfigurationFileDirectory);
-	/**
-	 * Add MGMT module's configuration file to the list
-	 */
-	configurationFileVector.push_back(configurationFileName);
+	vector<string> configurationFileVector;
+	configurationFileVector.push_back("IF.MGMT.conf");
+	configurationFileVector.push_back("IF.IHM.conf");
 	Configuration configuration(configurationFileVector, logger);
-	configuration.setFacilitiesConfigurationDirectory(facilitiesConfigurationFileDirectory);
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
@@ -148,7 +140,7 @@ int main(int argc, char** argv) {
 			mib.initialise();
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot initialise ManagementInformationBase!");
-			throw;
+			throw e;
 		}
 
 		/**
@@ -160,7 +152,7 @@ int main(int argc, char** argv) {
 			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot initialise Geonet Message Handler!");
-			throw;
+			throw e;
 		}
 
 		logger.info("Starting Management & GeoNetworking Interface...");

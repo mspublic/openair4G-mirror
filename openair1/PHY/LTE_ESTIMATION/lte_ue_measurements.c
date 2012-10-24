@@ -165,9 +165,9 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
     }
     if (((phy_vars_ue->frame %100) == 0) && (slot == 1)) {
       if (eNB_offset == 0)
-	LOG_I(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rssi %3.1f dBm\n",phy_vars_ue->Mod_id,
+	LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rssi %3.1f dBm\n",phy_vars_ue->Mod_id,
 	      phy_vars_ue->frame,slot,10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB);
-      LOG_I(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rsrp/rsrq[%d][%d] %3.1f (%3.1f) dBm %3.1f dB\n",
+      LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rsrp/rsrq[%d][%d] %3.1f (%3.1f) dBm %3.1f dB\n",
 	    phy_vars_ue->Mod_id,
 	    phy_vars_ue->frame,slot,eNB_offset,
 	    (eNB_offset>0) ? phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1] : phy_vars_ue->lte_frame_parms.Nid_cell,
@@ -251,7 +251,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     else if (N0_symbol != 0) {
       phy_vars_ue->PHY_measurements.n0_power_tot = 0;
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-#ifdef HW_PREFIX_REMOVAL
+#ifndef HW_PREFIX_REMOVAL
 	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
 	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size);

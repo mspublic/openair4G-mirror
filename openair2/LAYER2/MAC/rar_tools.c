@@ -102,7 +102,7 @@ u16 ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 preamb
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   
-  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : process RAR : preamble_index %d, received %d\n",Mod_id,frame,preamble_index,rarh->RAPID);
+  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : process RAR : preamble_index %d, received %d\n",Mod_id,frame,preamble_index,rarh->RAPID);
   
 #ifdef DEBUG_RAR
   LOG_D(MAC,"[UE %d][RAPROC] rarh->E %d\n",Mod_id,rarh->E);

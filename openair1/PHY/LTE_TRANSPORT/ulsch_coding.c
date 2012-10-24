@@ -449,9 +449,7 @@ u32 ulsch_encoding(u8 *a,
 					  ulsch->harq_processes[harq_pid]->rvidx,
 					  get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs),
 					  1,
-					  r,
-					  ulsch->harq_processes[harq_pid]->nb_rb,
-					  ulsch->harq_processes[harq_pid]->mcs);                       // r
+					  r);                       // r
 #ifdef DEBUG_ULSCH_CODING
       if (r==ulsch->harq_processes[harq_pid]->C-1)
 	write_output("enc_output.m","enc",ulsch->e,r_offset,1,4);

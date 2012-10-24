@@ -5,7 +5,7 @@
  *      Author: demiray
  */
 
-#include "../../src/util/mgmt_util.hpp"
+#include "../src/util/mgmt_util.hpp"
 #include <gtest/gtest.h>
 #include <iostream>
 using namespace std;
@@ -189,8 +189,12 @@ void testUtilEncodeBits(Logger& logger) {
 	u_int8_t octetDestination = 0xCC;
 	u_int8_t octetExpected = 0xF0;
 
-	EXPECT_TRUE(Util::encodeBits(octetDestination, 2, octetSource, 4));
-	EXPECT_EQ(octetExpected, octetDestination);
+	logger.debug("Source: " + Util::getBinaryRepresentation(octetSource));
+	logger.debug("Destination: " + Util::getBinaryRepresentation(octetDestination));
+	logger.debug("Expected: " + Util::getBinaryRepresentation(octetExpected));
+
+	EXPECT_TRUE(Util::encodeBits(octetDestination, 3, octetSource, 4));
+	EXPECT_EQ(octetExpected, octetDestination) << "Unexpected value: " << Util::getBinaryRepresentation(octetDestination);
 }
 
 void testUtilSplit(Logger& logger) {
@@ -219,10 +223,7 @@ void testUtilTrim(Logger& logger) {
 	 */
 	string testInput = "|test|";
 	string testOutput = Util::trim(testInput, '|');
-	EXPECT_STREQ("test", testOutput.c_str());
 
-	testInput = "     test  ";
-	testOutput = Util::trim(testInput, ' ');
 	EXPECT_STREQ("test", testOutput.c_str());
 }
 
@@ -234,40 +235,4 @@ void testUtilIsNumeric(Logger& logger) {
 
 	EXPECT_TRUE(Util::isNumeric(numerical));
 	EXPECT_FALSE(Util::isNumeric(notNumerical));
-}
-
-void testGetListOfFiles(Logger& logger) {
-	logger.info("Testing Util::getListOfFiles() method");
-
-	vector<string> listOfFiles = Util::getListOfFiles("../data/confFiles/");
-
-	/**
-	 * There are currently two configuration files in that directory
-	 * and .svn file, this may change and updates will be necessary then,
-	 * though
-	 *
-	 * We need to sort the vector first in order to ensure that the order
-	 * of our check is correct
-	 */
-	std::sort(listOfFiles.begin(), listOfFiles.end());
-
-	EXPECT_EQ(3, listOfFiles.size());
-	EXPECT_STREQ(".svn", listOfFiles[0].c_str());
-	EXPECT_STREQ("testConfFile1.conf", listOfFiles[1].c_str());
-	EXPECT_STREQ("testConfFile2.conf", listOfFiles[2].c_str());
-}
-
-void testGetFileExtension(Logger& logger) {
-	logger.info("Testing Util::getFileExtension() method");
-
-	vector<string> fileNames;
-	fileNames.push_back(".svn");
-	fileNames.push_back("testFile.conf");
-	fileNames.push_back("testFile.xml.txt");
-	fileNames.push_back("testFile");
-
-	EXPECT_STREQ(".svn", Util::getFileExtension(fileNames[0]).c_str());
-	EXPECT_STREQ(".conf", Util::getFileExtension(fileNames[1]).c_str());
-	EXPECT_STREQ(".txt", Util::getFileExtension(fileNames[2]).c_str());
-	EXPECT_STREQ("", Util::getFileExtension(fileNames[3]).c_str());
 }

@@ -283,14 +283,20 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 
   UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt++;
 
+
+  
+
 }
 
-int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
+
+u8 get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index){
   if(eNB_flag == 1)
-    return(eNB_rrc_inst[Mod_id].Info.Status[index]);
+    return(eNB_rrc_inst[Mod_id].Info.Status);
   else
-    return(UE_rrc_inst[Mod_id].Info[index].State);
+    return(UE_rrc_inst[Mod_id].Info[eNB_index].State);
 }
+
+
 
 
 

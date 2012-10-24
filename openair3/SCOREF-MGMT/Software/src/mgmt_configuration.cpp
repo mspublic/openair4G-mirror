@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -48,9 +48,7 @@
 using namespace boost;
 using namespace std;
 
-/**
- * Initialise configuration parameter name strings
- */
+// Initialise configuration parameter strings
 const string Configuration::CONF_SERVER_PORT_PARAMETER("CONF_SERVER_PORT");
 const string Configuration::CONF_WIRELESS_STATE_UPDATE_INTERVAL("CONF_WIRELESS_STATE_UPDATE_INTERVAL");
 const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_INTERVAL");
@@ -58,20 +56,7 @@ const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_
 Configuration::Configuration(const vector<string>& configurationFileNameVector, Logger& logger)
 	: logger(logger) {
 	this->configurationFileNameVector = configurationFileNameVector;
-
-	/**
-	 * Write given configuration files' names
-	 */
-	stringstream ss;
-	vector<string>::const_iterator it = configurationFileNameVector.begin();
-	while (it != configurationFileNameVector.end())
-		/**
-		 * Following is a nasty-looking one-liner not to put a comma at the end
-		 */
-		ss << *it++ << ((it+1 == configurationFileNameVector.end()) ? "" : ", ");
-
-	logger.info("Following " + boost::lexical_cast<string>(configurationFileNameVector.size()) + \
-			" file(s) have been found (only those with .conf extension will be parsed): " + ss.str());
+	logger.info("There are " + boost::lexical_cast<string>(configurationFileNameVector.size()) + " configuration file(s) to parse");
 
 	/**
 	 * Set default values
@@ -82,16 +67,9 @@ Configuration::Configuration(const vector<string>& configurationFileNameVector, 
 }
 
 Configuration::~Configuration() {
-	configurationFileNameVector.clear();
 }
 
 bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
-	/**
-	 * Verify there is at least one configuration file given to be parsed
-	 */
-	if (configurationFileNameVector.empty())
-		throw Exception("No configuration file name is given to be parsed", logger);
-
 	ifstream configurationFileStream;
 	string parameter, value;
 	string line;
@@ -107,22 +85,7 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 	 * every single parameter/[parameterID/]value pair we find
 	 */
 	for (vector<string>::const_iterator it = configurationFileNameVector.begin(); it != configurationFileNameVector.end(); ++it) {
-		/**
-		 * Check file name extension and do not parse if it's not '.conf'
-		 */
-		string fileExtension = Util::getFileExtension(*it);
-		if (fileExtension.compare(".conf") != 0) {
-			logger.warning("There is a file named '" + *it + "' without .conf extension in given list");
-			continue;
-		}
-
 		string configurationFile = *it;
-		/**
-		 * Add directory name if a FACilities configuration file is being parsed
-		 */
-		if (configurationFile.compare("MGMT.conf") != 0)
-			configurationFile = facilitiesConfigurationDirectory + configurationFile;
-
 		logger.info("Parsing configuration file '" + configurationFile + "'");
 		configurationFileStream.open(configurationFile.c_str());
 
@@ -152,7 +115,7 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 							mib.setValue(parameter, valueContainer);
 						} catch (Exception& e) {
 							e.updateStackTrace("Cannot set MIB ITS key using value given in the configuration file");
-							throw;
+							throw e;
 						}
 					/*
 					 * General configuration parameters are handled locally in this class
@@ -167,7 +130,7 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 							mib.getCommunicationProfileManager().insert(parameter, value);
 						} catch (Exception& e) {
 							e.updateStackTrace("Cannot process communication profile string");
-							throw;
+							throw e;
 						}
 					/**
 					 * Point de Charge Vehicule Electrique (PCVE) IHM Parameters
@@ -220,25 +183,14 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 }
 
 bool Configuration::parseLine(const string& line, string& parameter, string& value) {
-	/**
-	 * Get the substring till '#' character if there's one
-	 */
-	string configurationLine = line;
-	if (line.find('#') != string::npos) {
-		configurationLine.erase(0, configurationLine.length() - configurationLine.find('#'));
-	}
-
-	/**
-	 * Ignore this line if it's empty or there's no equal sign in it
-	 */
-	if (configurationLine.empty() || configurationLine.find('=') == string::npos)
+	if (line.find('=') == string::npos)
 		return false;
 
 	/**
 	 * Parse the line according to the place of equal sign
 	 */
-	parameter = configurationLine.substr(0, configurationLine.find("="));
-	value = configurationLine.substr(configurationLine.find("=") + 1, configurationLine.length());
+	parameter = line.substr(0, line.find("="));
+	value = line.substr(line.find("=") + 1, line.length());
 
 	/**
 	 * Trim value string if there's no '"' character
@@ -289,16 +241,12 @@ void Configuration::addConfigurationFile(const string& configurationFileName) {
 	this->configurationFileNameVector.push_back(configurationFileName);
 }
 
-void Configuration::setFacilitiesConfigurationDirectory(const string& directory) {
-	facilitiesConfigurationDirectory = directory;
-}
-
 int Configuration::getServerPort() const {
 	return serverPort;
 }
 
 void Configuration::setServerPort(int serverPort) {
-	if (serverPort > 0 && serverPort < 65535)
+	if (serverPort > 0 && serverPort < 9000)
 		this->serverPort = serverPort;
 	/**
 	 * Keep default value otherwise

@@ -51,7 +51,7 @@ int pmip_tunnels_init(void)
     if (conf.TunnelingEnabled) {
         if (conf.DynamicTunnelingEnabled == 0) {
             dbg("DynamicTunnelingEnabled is False\n");
-            if (is_ha()) {
+            if (is_lma()) {
                 for (mag = 0 ; mag < conf.NumMags; mag++) {
                     link = if_nametoindex(conf.LmaPmipNetworkDevice);
                     pmip_tunnel_add(&conf.LmaAddress, &conf.MagAddressEgress[mag], link);

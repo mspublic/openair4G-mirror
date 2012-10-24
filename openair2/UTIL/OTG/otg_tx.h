@@ -133,7 +133,7 @@ flow id, simulation time, , sequence number, header type (to know the transport/
 * @ingroup  _otg
 */
 
-char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level);
+char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state);
 
 
 /*! \fn int adjust_size(int size);
@@ -181,8 +181,5 @@ int background_gen(int src, int dst, int ctime);
 
 
 int header_size_gen_background(int src);
-
-
-
 
 #endif

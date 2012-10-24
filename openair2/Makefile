@@ -11,7 +11,6 @@
 #export LM_LICENSE_FILE
 
 KERNEL_NAME=$(shell uname -r)
-NUM_CORES=$(shell cat /proc/cpuinfo | grep processor | wc -l)
 
 export IS_KERNEL_OPENAIRINTERFACE=$(shell if [ `uname -r | cut -d. -f5` = "openairinterface" ] ; then echo "1" ; else echo "0" ; fi)
 
@@ -24,10 +23,8 @@ ifeq ($(IS_KERNEL_OPENAIRINTERFACE), 1)
 export LINUX_KERNEL = linux-`uname -r`
 else
 export LINUX_KERNEL = linux-headers-`uname -r`
+endif 
 endif
-endif
-
-export SET_UM=$(shell if grep --silent User\ Mode\ Linux /proc/cpuinfo ; then echo "ARCH=um" ; else echo ""; fi)
 
 
 #SUBDIRS_openair_USERRF  =   $(MAIN_RT_DIR) $(CONFIG_DIR)
@@ -118,27 +115,25 @@ remove_emul:
 	rmmod  openair_emul
 
 
-
+clean_nasmesh:
+	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd` clean)	
 
 nasmesh_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)
+	(cd NAS/DRIVER/MESH && $(MAKE) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)	
 
 nasmesh.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 -C /usr/src/linux M=`pwd`)
+	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd`)
 
 # automatically detect the linux header files for driver compilation
 nasmesh_netlink.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
-
-naslite_netlink_ether.ko:
-	(cd NAS/DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 nasmesh_netlink_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 
 nasmesh_netlink_loopback.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 rt_emul:
 	(cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER && $(MAKE))
@@ -167,7 +162,7 @@ devs:
 	then \
 	mknod /dev/openair0 c 127 0;\
 	chmod a+rw /dev/openair0;\
-	fi;
+	fi;	
 
 load_sounder_ue: install_cbmimo1_ublaze
 	insmod mac/chansounder/openair_chansounder_ue.ko
@@ -176,7 +171,7 @@ load_sounder_nodeb: install_platon
 	(cd openair_rf && ./openair_rf_platon 1917600 0 ../arch/platon/rbt_files/DAQ_B.rbt 30p 15p 10p 25p && ./openair_rf_platon 1917600 0 ../arch/platon/rbt_files/daq_platon_11_2005.rbt 30p 15p 10p 25p)
 
 
-stop_sounder:
+stop_sounder: 
 	rmmod openair_chansounder
 	rmmod openair_rf
 
@@ -188,11 +183,11 @@ stop_sounder_nodeb:
 
 emul_rt:
 	(cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER && $(MAKE))
-clean:
-	find -name *.o -delete -print
-#find -name *~ -delete -print
 
-cleanall:
+clean: 
+	(cd NAS/DRIVER/MESH && $(MAKE) clean)
+
+cleanall: 
 	find -name *.o -delete -print
 	find -name *.ko -delete -print
 	find -name *~ -delete -print
