@@ -59,7 +59,7 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
       node_data[i]->y = input_node_list->node->Y_pos;
       if (node_data[i]->y <0.0)
         node_data[i]->y = 0.0;
-      LOG_I(OCM, "extract_position: added node_data %d with position X: %f and Y: %f \n", i,input_node_list->node->X_pos, input_node_list->node->Y_pos );
+      LOG_D(OCM, "extract_position: added node_data %d with position X: %f and Y: %f \n", i,input_node_list->node->X_pos, input_node_list->node->Y_pos );
       input_node_list = input_node_list->next;
     }
     else {
