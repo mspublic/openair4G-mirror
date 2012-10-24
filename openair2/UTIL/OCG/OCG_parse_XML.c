@@ -142,16 +142,6 @@ static int application_config_;		/*!< \brief indicating that the parsing positio
 static int predefined_traffic_;
 static int background_traffic_;
 static int customized_traffic_;
-static int pu_;
-static int pe_;
-static int ed_;
-static int prob_off_pu_;
-static int prob_off_ed_;
-static int prob_pu_ed_;
-static int prob_ed_pe_;
-static int holding_time_off_pu_;
-static int holding_time_off_ed_;
-static int holding_time_off_pe_;
 static int application_type_;			/*!< \brief indicating that the parsing position is now within App_Type_*/
 static int source_id_;
 static int destination_id_;
@@ -207,6 +197,20 @@ static int cli_enabled_;
 static int cli_start_enb_;
 static int cli_start_ue_;
 
+//static unsigned int m2m_traffic_;
+static double prob_off_pu_;
+double prob_off_ed_;
+static double prob_off_pe_;
+static double prob_pu_ed_;
+static double prob_pu_pe_;
+static double prob_ed_pe_;
+static double prob_ed_pu_;
+static unsigned int holding_time_off_ed_;
+static unsigned int holding_time_off_pu_;
+static unsigned int holding_time_off_pe_;	
+static unsigned int holding_time_pe_off_;
+static unsigned int pu_size_pkts_;
+static unsigned int ed_size_pkts_;
 
 static int profile_;
 
@@ -400,26 +404,36 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		customized_traffic_ = 1;
 		oai_emulation.info.otg_enabled =1;
 		oai_emulation.info.max_customized_traffic_config_index ++;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PU")) {
-		pu_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PE")) {
-		pe_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "ED")) {
-		ed_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "CUSTOMIZED_TRAFFIC")) {
+		customized_traffic_ = 1;
+	/*} else if (!xmlStrcmp(name, (unsigned char*) "M2M_TRAFFIC")) {
+		m2m_traffic_ = 1;*/
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PU")) {
 		prob_off_pu_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_ED")) {
 		prob_off_ed_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PE")) {
+		prob_off_pe_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_ED")) {
 		prob_pu_ed_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_PE")) {
+		prob_pu_pe_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PE")) {
 		prob_ed_pe_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PU")) {
-		holding_time_off_pu_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PU")) {
+		prob_ed_pu_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_ED")) {
 		holding_time_off_ed_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PU")) {
+		holding_time_off_pu_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PE")) {
 		holding_time_off_pe_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_PE_OFF")) {
+		holding_time_pe_off_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PU_SIZE_PKTS")) {
+		pu_size_pkts_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "ED_SIZE_PKTS")) {
+		ed_size_pkts_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "SOURCE_ID")) {
 		source_id_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "DESTINATION_ID")) {
@@ -707,26 +721,34 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		predefined_traffic_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "CUSTOMIZED_TRAFFIC")) {
 		customized_traffic_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PU")) {
-		pu_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PE")) {
-		pe_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "ED")) {
-		ed_ = 0;
+	/*} else if (!xmlStrcmp(name, (unsigned char*) "M2M_TRAFFIC")) {
+		m2m_traffic_ = 0;*/
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PU")) {
 		prob_off_pu_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_ED")) {
 		prob_off_ed_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PE")) {
+		prob_off_pe_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_ED")) {
 		prob_pu_ed_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_PE")) {
+		prob_pu_pe_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PE")) {
 		prob_ed_pe_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PU")) {
-		holding_time_off_pu_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PU")) {
+		prob_ed_pu_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_ED")) {
 		holding_time_off_ed_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PU")) {
+		holding_time_off_pu_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PE")) {
 		holding_time_off_pe_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_PE_OFF")) {
+		holding_time_pe_off_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PU_SIZE_PKTS")) {
+		pu_size_pkts_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "ED_SIZE_PKTS")) {
+		ed_size_pkts_	= 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "SOURCE_ID")) {
 		source_id_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "DESTINATION_ID")) {
@@ -1025,7 +1047,7 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					} else if (trace_mobility_file_) {
 					    oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file=strndup(ch,len);
 					  }
-				} 
+				} 	
 			}else if (omv_) {
 			  oai_emulation.topology_config.omv=atoi(ch);
 			}
@@ -1042,31 +1064,38 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					oai_emulation.application_config.predefined_traffic.application_type[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
 				} else if (background_traffic_) {
 					oai_emulation.application_config.predefined_traffic.background[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
-				}
+				} else if (aggregation_level_) {
+					oai_emulation.application_config.predefined_traffic.aggregation_level[oai_emulation.info.max_predefined_traffic_config_index] = atoi(ch);}
 			} else if (customized_traffic_) {
-				if (pu_) {
-					oai_emulation.application_config.customized_traffic.pu = 1;
+				/*if (m2m_traffic_) {
+					oai_emulation.application_config.customized_traffic.m2m[oai_emulation.info.max_customized_traffic_config_index] = 1;*/
 					if (prob_off_pu_) {
-						oai_emulation.application_config.customized_traffic.prob_off_pu = atof(ch);
+						oai_emulation.application_config.customized_traffic.prob_off_pu[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+					} else if (prob_off_ed_) {
+						oai_emulation.application_config.customized_traffic.prob_off_ed[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+					} else if (prob_off_pe_) {
+						oai_emulation.application_config.customized_traffic.prob_off_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);				
 					} else if (prob_pu_ed_) {
-						oai_emulation.application_config.customized_traffic.prob_pu_ed = atof(ch);
-					} else if (holding_time_off_pu_) {
-						oai_emulation.application_config.customized_traffic.holding_time_off_pu = atof(ch);
-					}				
-				} else if (ed_) {
-					oai_emulation.application_config.customized_traffic.ed = 1;
-					if (prob_off_ed_) {
-						oai_emulation.application_config.customized_traffic.prob_off_ed = atof(ch);
+						oai_emulation.application_config.customized_traffic.prob_pu_ed[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
+					} else if (prob_pu_pe_) {
+						oai_emulation.application_config.customized_traffic.prob_pu_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
 					} else if (prob_ed_pe_) {
-						oai_emulation.application_config.customized_traffic.prob_ed_pe = atof(ch);
+						oai_emulation.application_config.customized_traffic.prob_ed_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
+					} else if (prob_ed_pu_) {
+						oai_emulation.application_config.customized_traffic.prob_ed_pu[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
 					} else if (holding_time_off_ed_) {
-						oai_emulation.application_config.customized_traffic.holding_time_off_ed = atof(ch);
-					}
-				} else if (pe_) {
-					oai_emulation.application_config.customized_traffic.pe = 1;
-					if (holding_time_off_pe_) {
-						oai_emulation.application_config.customized_traffic.holding_time_off_pe = atof(ch);
-					}
+						oai_emulation.application_config.customized_traffic.holding_time_off_ed[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
+					} else if (holding_time_off_pu_) {
+						oai_emulation.application_config.customized_traffic.holding_time_off_pu[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+					} else if (holding_time_off_pe_) {
+						oai_emulation.application_config.customized_traffic.holding_time_off_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+					} else if (holding_time_pe_off_) {
+						oai_emulation.application_config.customized_traffic.holding_time_pe_off[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+					} else if (pu_size_pkts_) {
+						oai_emulation.application_config.customized_traffic.pu_size_pkts[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+					} else if (ed_size_pkts_) {
+						oai_emulation.application_config.customized_traffic.ed_size_pkts[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
+					/*}*/
 				} else if (background_traffic_) {
 					oai_emulation.application_config.customized_traffic.background[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				}else if (source_id_) {
