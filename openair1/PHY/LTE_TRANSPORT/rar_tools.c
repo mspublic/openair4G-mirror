@@ -123,6 +123,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 				      unsigned char eNB_id ){
   
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
+  u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   u32 frame              = phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id];
   unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
   unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
@@ -178,7 +179,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     }
 
     ulsch->uci_format = HLC_subband_cqi_nopmi;
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
     if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 

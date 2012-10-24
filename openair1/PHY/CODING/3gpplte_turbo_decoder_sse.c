@@ -22,7 +22,7 @@
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(*(__m128i *)&zero[0],(xmmy)))
 #endif
 
-static short zero[8]  __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0} ;
+static short zero[8]  __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
 
 #ifdef __SSE4_1__
 #include "smmintrin.h"
