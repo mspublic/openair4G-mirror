@@ -48,6 +48,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 //#include "prach.h"
+#include "SCHED/defs.h"
+#include "SCHED/extern.h"
 
 //#define PRACH_DEBUG 1
 
@@ -394,7 +396,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   prach_start = (subframe*phy_vars_ue->lte_frame_parms.samples_per_tti)<<1;
 #else
 #ifdef EXMIMO
-  prach_start =  (phy_vars_ue->rx_offset+subframe*phy_vars_ue->lte_frame_parms.samples_per_tti-TIMING_ADVANCE_HW);
+  prach_start =  (phy_vars_ue->rx_offset+subframe*phy_vars_ue->lte_frame_parms.samples_per_tti-openair_daq_vars.timing_advance);
   if (prach_start<0)
     prach_start+=(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   if (prach_start>=(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
@@ -607,8 +609,8 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     }
     else {
       ifft6144(prachF,prach2);
-      for (i=0;i<6144*2;i++)
-	prach2[i]<<=1;
+      /*for (i=0;i<6144*2;i++)
+	prach2[i]<<=1;*/
       memcpy((void*)prach,(void*)(prach+12288),Ncp<<2);
       prach_len = 6144+Ncp;
       if (prach_fmt>1){

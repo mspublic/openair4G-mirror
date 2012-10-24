@@ -239,8 +239,6 @@
 #define AMP 1024 //4096
 #endif
 
-#define MAX_TX_POWER (-20) //dBm
-
 #ifndef OPENAIR_LTE
 ///
 /// PHY-MAC Interface Defs 

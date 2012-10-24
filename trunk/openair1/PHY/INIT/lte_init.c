@@ -36,7 +36,7 @@ void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
   lte_frame_parms->nushift                            = Nid_cell%6;
   lte_frame_parms->Ncp                                = Ncp;
   lte_frame_parms->frame_type                         = frame_type;
-  lte_frame_parms->nb_antennas_tx                     = p_eNB;
+  lte_frame_parms->nb_antennas_tx_eNB                 = p_eNB;
   lte_frame_parms->phich_config_common.phich_resource = phich_config->phich_resource;
   lte_frame_parms->phich_config_common.phich_duration = phich_config->phich_duration;
 }
@@ -244,7 +244,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
     physicalConfigDedicated = phy_vars_eNB->physicalConfigDedicated[UE_id];
     if (physicalConfigDedicated != NULL) {
-      msg("[PHY][eNB %d] Frame %d: Sent physicalConfigDedicated for UE %d\n",phy_vars_eNB->Mod_id, phy_vars_eNB->frame,UE_id);
+      LOG_I(PHY,"[eNB %d] Frame %d: Sent physicalConfigDedicated=%p for UE %d\n",phy_vars_eNB->Mod_id, phy_vars_eNB->frame,physicalConfigDedicated,UE_id);
       msg("------------------------------------------------------------------------\n");
       
       if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -350,6 +350,7 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
   
   if (physicalConfigDedicated) {
     phy_vars_eNB->physicalConfigDedicated[UE_id] = physicalConfigDedicated;
+    LOG_I(PHY,"phy_config_dedicated_eNB: physicalConfigDedicated=%p\n",physicalConfigDedicated);
   }  
   else {
     msg("[PHY][eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, phy_vars_eNB->frame,UE_id);
@@ -997,6 +998,8 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   }
   //initialization for the last instance of ue_pdsch_vars (used for MU-MIMO)
   ue_pdsch_vars[eNB_id]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
+  ue_pdsch_vars_SI[eNB_id]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
+  ue_pdsch_vars_ra[eNB_id]     = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
   ue_pdsch_vars_flp[eNB_id] = (LTE_UE_PDSCH_FLP *)malloc16(sizeof(LTE_UE_PDSCH_FLP));
 #ifdef DEBUG_PHY
   msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars[%d] = %p\n",    eNB_id,ue_pdsch_vars[eNB_id]);

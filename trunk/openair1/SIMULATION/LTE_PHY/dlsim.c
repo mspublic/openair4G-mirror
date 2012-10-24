@@ -1898,7 +1898,8 @@ int main(int argc, char **argv) {
 			       &PHY_vars_UE->lte_frame_parms,
 			       PHY_vars_UE->dlsch_ue[0][0],
 			       subframe,
-			       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols);
+			       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
+			       1);
  
 #ifdef XFORMS
 	  do_forms(form,

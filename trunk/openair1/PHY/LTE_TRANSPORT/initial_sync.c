@@ -47,7 +47,7 @@
 
 #define DEBUG_INIT_SYNCH
 
-int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
+int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 
   u8 l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
@@ -77,7 +77,8 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 		      0,
 		      0);
 
-  if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
+  if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
+      (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
     phy_adjust_gain(phy_vars_ue,0);
 
   LOG_I(PHY,"[UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
@@ -213,7 +214,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   
 }
 
-int initial_sync(PHY_VARS_UE *phy_vars_ue) {
+int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
  
   u32 sync_pos,sync_pos2,sync_pos_slot;
   s32 metric_fdd_ncp=0,metric_fdd_ecp=0,metric_tdd_ncp=0,metric_tdd_ecp=0;
@@ -259,7 +260,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
       phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
     init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
     lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-    ret = pbch_detection(phy_vars_ue);
+    ret = pbch_detection(phy_vars_ue,mode);
 #ifdef DEBUG_INIT_SYNCH
     LOG_I(PHY,"FDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
@@ -298,7 +299,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
       init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-      ret = pbch_detection(phy_vars_ue);
+      ret = pbch_detection(phy_vars_ue,mode);
       
 #ifdef DEBUG_INIT_SYNCH
       LOG_I(PHY,"FDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -327,10 +328,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
       if (sync_pos2 >= sync_pos_slot)
 	phy_vars_ue->rx_offset = sync_pos2 - sync_pos_slot;  
       else
-	phy_vars_ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
+	phy_vars_ue->rx_offset = (FRAME_LENGTH_COMPLEX_SAMPLES>>1) + sync_pos2 - sync_pos_slot;
       
-      if (((sync_pos2 - sync_pos_slot) >=0 ) && 
-	  ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
+      /*if (((sync_pos2 - sync_pos_slot) >=0 ) && 
+	((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {*/
 	
 	
 	rx_sss(phy_vars_ue,&metric_tdd_ncp,&flip_tdd_ncp,&phase_tdd_ncp);
@@ -340,19 +341,19 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
 
 	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-	ret = pbch_detection(phy_vars_ue);
+	ret = pbch_detection(phy_vars_ue,mode);
 	
 
 #ifdef DEBUG_INIT_SYNCH
 	LOG_I(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	    frame_parms->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp,ret);
 #endif
-      }
+	/*}
       else {
 #ifdef DEBUG_INIT_SYNCH
           LOG_I(PHY,"TDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
-      }
+}*/
    
 
       if (ret==-1) {
@@ -368,10 +369,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	if (sync_pos2 >= sync_pos_slot)
 	  phy_vars_ue->rx_offset = sync_pos2 - sync_pos_slot;  
 	else
-	  phy_vars_ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
+	  phy_vars_ue->rx_offset = (FRAME_LENGTH_COMPLEX_SAMPLES>>1) + sync_pos2 - sync_pos_slot;
 	
-	if (((sync_pos2 - sync_pos_slot) >=0 ) && 
-	    ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
+	/*if (((sync_pos2 - sync_pos_slot) >=0 ) && 
+	  ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {*/
 	  
 	  rx_sss(phy_vars_ue,&metric_tdd_ecp,&flip_tdd_ecp,&phase_tdd_ecp);
 	  frame_parms->nushift  = frame_parms->Nid_cell%6;
@@ -379,18 +380,18 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	    phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
 	  init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
 	  lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-	  ret = pbch_detection(phy_vars_ue);
+	  ret = pbch_detection(phy_vars_ue,mode);
 	  
 #ifdef DEBUG_INIT_SYNCH
       LOG_I(PHY,"TDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp,ret);
 #endif
-	}
+      /*}
 	else {
 #ifdef DEBUG_INIT_SYNCH
         LOG_I(PHY,"TDD Extended prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
-	}
+}*/
     
       }
     }

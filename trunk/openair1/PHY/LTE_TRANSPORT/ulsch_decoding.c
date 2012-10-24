@@ -128,7 +128,7 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
   unsigned char Mdlharq;
   unsigned char i;
 
-  ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
+  //ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     Mdlharq = ulsch->Mdlharq;
     ulsch->rnti = 0;
@@ -137,7 +137,7 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
 	  ulsch->harq_processes[i]->Ndi = 0;
 	  ulsch->harq_processes[i]->status = 0;
 	  ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
-	  ulsch->harq_processes[i]->phich_active = 0;
+	  //ulsch->harq_processes[i]->phich_active = 0; //this will be done later after transmission of PHICH
 	  ulsch->harq_processes[i]->phich_ACK = 0;
 	  ulsch->harq_processes[i]->round = 0;
       }

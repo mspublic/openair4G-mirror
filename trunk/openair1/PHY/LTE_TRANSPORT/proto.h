@@ -679,13 +679,15 @@ void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
     @param dlsch Pointer to DLSCH descriptor
     @param subframe Subframe number
     @param num_pdcch_symbols Number of PDCCH symbols
+    @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
     @returns 0 on success, 1 on unsuccessful decoding
 */
 u32 dlsch_decoding(s16 *dlsch_llr,
 		   LTE_DL_FRAME_PARMS *lte_frame_parms,
 		   LTE_UE_DLSCH_t *dlsch,
 		   u8 subframe,
-		   u8 num_pdcch_symbols);
+		   u8 num_pdcch_symbols,
+		   u8 is_crnti);
 
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
@@ -1095,7 +1097,7 @@ N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSC
 parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
 */
-int initial_sync(PHY_VARS_UE *phy_vars_ue);
+int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      u32 subframe,
