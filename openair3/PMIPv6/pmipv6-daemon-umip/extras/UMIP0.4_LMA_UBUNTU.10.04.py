@@ -98,7 +98,7 @@ for line in lines:
         g_MagAddressEgress.append(IPAddress(element))
 
 for ip in g_MagAddressIngress:
-    if ip.format() != IPAddress('::').format():
+    if ip.format() != IPAddress('0::0').format():
         command = "ip -6 route del " + ip.format() + "/64"
         print command
         os.system(command)
@@ -147,7 +147,7 @@ os.system(command)
 index = 0
 for ip_ingress in g_MagAddressIngress:
     ip_egress = g_MagAddressEgress[index]
-    if ip_ingress.format() != IPAddress('::').format() and ip_egress.format() != IPAddress('::').format():
+    if ip_ingress.format() != IPAddress('0::0').format() and ip_egress.format() != IPAddress('0::0').format():
         command = "ip -6 route add " + ip_ingress.format() + "/64 via " + ip_egress.format() + " dev " + g_LmaPmipNetworkDevice
         print command
         os.system(command)
@@ -175,7 +175,8 @@ if g_pcap == "yes":
 	print value
 
 
-command = '/usr/local/sbin/pmip6d -c ' + g_file_config
+# LD_LIBRARY_PATH for freeradius libs
+command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/pmip6d -c ' + g_file_config
 print command
 subprocess.call(command, shell=True)
 
