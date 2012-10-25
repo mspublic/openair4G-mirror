@@ -138,7 +138,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 		for (i=0;i<6;i++,off2+=4)
 		  phy_vars_ue->PHY_measurements.rssi += ((rxF[off2]*rxF[off2])+(rxF[off2+1]*rxF[off2+1]));
 	      }
-	      //	  printf("slot %d, rb %d => rsrp %d, rssi %d\n",slot,rb,phy_vars_ue->PHY_measurements.rsrp[eNB_offset],phy_vars_ue->PHY_measurements.rssi);
+	      //printf("slot %d, rb %d => rsrp %d, rssi %d\n",slot,rb,phy_vars_ue->PHY_measurements.rsrp[eNB_offset],phy_vars_ue->PHY_measurements.rssi);
 	    }
 	}
       }

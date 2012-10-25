@@ -6,6 +6,7 @@
 #include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#include "MobilityControlInfo.h"
 
 #ifndef OPENAIR_LTE
 /**
@@ -116,8 +117,8 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
 
 /// Configure Common PHY parameters from mobilityControlInfo
-void phy_config_radioResourceCommon_ue(u8 Mod_id,u8 CH_index,
-			RadioResourceConfigCommon_t *radioResourceConfigCommon);
+void phy_config_afterHO_ue(u8 Mod_id,u8 CH_index,
+			   MobilityControlInfo_t *mobilityControlInfo);
 
 /*!
 \fn void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
