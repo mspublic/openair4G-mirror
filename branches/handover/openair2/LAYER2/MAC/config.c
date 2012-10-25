@@ -198,10 +198,20 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     		//to be configured
     	}
     	if(mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength) {
-    		memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->ul_CyclicPrefixLength, (void *)mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength,sizeof(UL_CyclicPrefixLength_t));
+	  memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->ul_CyclicPrefixLength, (void *)mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength,sizeof(UL_CyclicPrefixLength_t));
     	}
-    	//send entier mobControlInfo
-    	mac_xface->phy_config_radioResourceCommon_ue(Mod_id,eNB_index,&mobilityControlInfo->radioResourceConfigCommon /* add cell id, phich config, nb of RBs */);
+	
+	UE_mac_inst[Mod_id].crnti = 0;
+	for (i=0;i<15;i++) {
+	  UE_mac_inst[Mod_id].crnti |= (mobilityControlInfo->newUE_Identity.buf[i]<<i);
+	}
+	UE_mac_inst[Mod_id].rach_ConfigDedicated = malloc(sizeof(*mobilityControlInfo->rach_ConfigDedicated));
+	if (mobilityControlInfo->rach_ConfigDedicated)
+	  memcpy((void*)UE_mac_inst[Mod_id].rach_ConfigDedicated,
+		 (void*)mobilityControlInfo->rach_ConfigDedicated,
+		 sizeof(*mobilityControlInfo->rach_ConfigDedicated));
+	
+    	mac_xface->phy_config_afterHO_ue(Mod_id,eNB_index,mobilityControlInfo);
     }
 
 
@@ -214,6 +224,16 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     	}
     }
     */
+  }
+  else {  // This is to configure eNB PHY and MAC for new UE
+
+    // configure PHY as above (without the cell specific stuff)
+    // configure MAC as above
+
+    // save the rnti etc.
+
+
+
   }
   return(0);
 }

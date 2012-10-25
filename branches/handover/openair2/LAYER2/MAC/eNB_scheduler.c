@@ -267,6 +267,16 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *l3msg, u16 l3
 
       }
       else if (num_ce >0) {  // handle l3msg which is not RRCConnectionRequest
+	// Detect the RRCConnectionReconfigurationComplete based on CRNTI-element, being the same as the one in HO-preparation command
+	/*
+	  // get UE_id based on CRNTI and pass DCCH to RLC
+	mac_rlc_data_ind(Mod_id,frame,1,
+			 rx_lcids[0]+(UE_id)*MAX_NUM_RB,
+			 (char *)payload_ptr,
+			 rx_lengths[i],
+			 1,
+			 NULL);//(unsigned int*)crc_status);*/
+
 	//	process_ra_message(l3msg,num_ce,rx_lcids,rx_ces);
       }
 

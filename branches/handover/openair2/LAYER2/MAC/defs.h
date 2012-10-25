@@ -431,6 +431,8 @@ typedef struct{
   u16 crnti;
   /// pointer to RRC PHY configuration 
   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+  /// pointer to RACH_ConfigDedicated (NULL when not active, i.e. upon HO completion or T304 expiry)
+  struct RACH_ConfigDedicated	*rach_ConfigDedicated;
   /// pointer to RRC PHY configuration 
   struct PhysicalConfigDedicated *physicalConfigDedicated;
   /// pointer to TDD Configuration (NULL for FDD)
