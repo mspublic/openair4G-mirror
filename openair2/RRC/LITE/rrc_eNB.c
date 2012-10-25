@@ -230,11 +230,21 @@ u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 
   }
 
-  if (reg==0)
+  if (reg==0) {
+    LOG_I(RRC,"Adding UE %d\n",first_index);
     return(first_index);
+  }
   else
     return(255);
 }
+
+void rrc_remove_UE(u8 Mod_id,u8 UE_id) {
+
+  int i;
+  LOG_I(RRC,"Removing UE %d\n",UE_id);
+  *(unsigned int*)eNB_rrc_inst[Mod_id].Info.UE_list[UE_id] = 0x00000000;
+}
+
 
 /*------------------------------------------------------------------------------*/
 int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
