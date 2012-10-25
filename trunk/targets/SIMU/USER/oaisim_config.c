@@ -211,15 +211,15 @@ void init_oai_emulation() {
 		oai_emulation.application_config.customized_traffic.destination_port[i] = 8080;
 		oai_emulation.application_config.customized_traffic.prob_off_pu[i]= 0;
 		oai_emulation.application_config.customized_traffic.prob_off_ed[i]= 0;
-		oai_emulation.application_config.customized_traffic.prob_off_pe[i]= 0.5;
+		oai_emulation.application_config.customized_traffic.prob_off_pe[i]= 0;
 		oai_emulation.application_config.customized_traffic.prob_pu_ed[i]= 0;
 		oai_emulation.application_config.customized_traffic.prob_pu_pe[i]= 0;
 		oai_emulation.application_config.customized_traffic.prob_ed_pe[i]= 0;
 		oai_emulation.application_config.customized_traffic.prob_ed_pu[i]= 0;
 		oai_emulation.application_config.customized_traffic.holding_time_off_ed[i]= 0;
 		oai_emulation.application_config.customized_traffic.holding_time_off_pu[i]= 0;
-		oai_emulation.application_config.customized_traffic.holding_time_off_pe[i]= 40;
-		oai_emulation.application_config.customized_traffic.holding_time_pe_off[i]= 400;
+		oai_emulation.application_config.customized_traffic.holding_time_off_pe[i]= 0;
+		oai_emulation.application_config.customized_traffic.holding_time_pe_off[i]= 0;
 		oai_emulation.application_config.customized_traffic.pu_size_pkts[i]= 0;
 		oai_emulation.application_config.customized_traffic.ed_size_pkts[i]= 0;
 	}
