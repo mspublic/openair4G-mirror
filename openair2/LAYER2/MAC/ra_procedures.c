@@ -96,14 +96,14 @@ s8 get_DELTA_PREAMBLE(u8 Mod_id) {
 void get_prach_resources(u8 Mod_id,
 			 u8 eNB_index,
 			 u8 t_id,
-			 u8 first_Msg3,
-			 RACH_ConfigDedicated_t *rach_ConfigDedicated) {
+			 u8 first_Msg3) {
 
   u8 Msg3_size = UE_mac_inst[Mod_id].RA_Msg3_size;
   PRACH_RESOURCES_t *prach_resources = &UE_mac_inst[Mod_id].RA_prach_resources;
   RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
   u8 noGroupB = 0;
   u8 f_id = 0,num_prach=0;
+  RACH_ConfigDedicated_t *rach_ConfigDedicated = UE_mac_inst[Mod_id].rach_ConfigDedicated;
 
   if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
     rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
@@ -112,7 +112,7 @@ void get_prach_resources(u8 Mod_id,
     mac_xface->macphy_exit("");
   }
 
-  if (rach_ConfigDedicated) {   // This is for network controlled Mobility, later
+  if (rach_ConfigDedicated) {   // This is for network controlled Mobility
     if (rach_ConfigDedicated->ra_PRACH_MaskIndex != 0) {
       prach_resources->ra_PreambleIndex = rach_ConfigDedicated->ra_PreambleIndex;
       prach_resources->ra_RACH_MaskIndex = rach_ConfigDedicated->ra_PRACH_MaskIndex;
@@ -224,6 +224,15 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
   struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
   s32 frame_diff=0;
 
+  mac_rlc_status_resp_t rlc_status;
+  u8 dcch_header_len=0;
+  u8 dcch_header_len_tmp=0;
+  //  u8 bsr_header_len=0, bsr_ce_len=0, bsr_len=0; 
+  //  u8 phr_header_len=0, phr_ce_len=0,phr_len=0;
+  u16 sdu_lengths[8];
+  u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
+  u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
+  u16 sdu_length_total=0;
 
   if (UE_mode == PRACH) {
     if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
@@ -236,22 +245,19 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
       if (UE_mac_inst[Mod_id].RA_active == 0) {
 	// check if RRC is ready to initiate the RA procedure
     	  //check for HO
-	Size = mac_rrc_data_req(Mod_id,
-				frame,
-				CCCH,1,
-				(char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_FIXED)],0,
-				eNB_index);
-	Size16 = (u16)Size;
+	if ((Size = mac_rrc_data_req(Mod_id,
+				     frame,
+				     CCCH,1,
+				     (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_FIXED)],0,
+				     eNB_index) > 0)) {
+
+	  Size16 = (u16)Size;
 	
-	//	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
-    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
-             frame, Mod_id, eNB_index, Mod_id);
-	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
-
-	if (Size>0) {
-
-
-
+	  //	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
+	  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
+		frame, Mod_id, eNB_index, Mod_id);
+	  LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
+	  
 	  UE_mac_inst[Mod_id].RA_active                        = 1;
 	  UE_mac_inst[Mod_id].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
 	  UE_mac_inst[Mod_id].RA_Msg3_size                     = Size+sizeof(SCH_SUBHEADER_FIXED);
@@ -272,7 +278,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 	  UE_mac_inst[Mod_id].RA_backoff_frame    = frame;
 	  UE_mac_inst[Mod_id].RA_backoff_subframe = subframe;
 	  // Fill in preamble and PRACH resource
-	  get_prach_resources(Mod_id,eNB_index,subframe,1,NULL);
+	  get_prach_resources(Mod_id,eNB_index,subframe,1);
 
 	  generate_ulsch_header((u8*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],  // mac header
 				1,      // num sdus
@@ -281,6 +287,61 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 				&lcid,    // sdu lcid
 				NULL,  // power headroom
 				NULL,  // crnti
+				NULL,  // truncated bsr
+				NULL, // short bsr
+				NULL, // long_bsr
+				0); //post_padding
+
+	  return(&UE_mac_inst[Mod_id].RA_prach_resources);
+	}
+	else if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DCCH] > 0) {  
+	  // This is for triggering a transmission on DCCH using PRACH
+	  dcch_header_len = 2 + 2;  /// SHORT Subheader + C-RNTI control element
+	  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
+					  DCCH,
+					  6);
+	  LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH -> ULSCH (HO RRCConnectionReconfigurationComplete, RRC message has %d bytes to send (mac header len %d)\n",
+		Mod_id,frame, rlc_status.bytes_in_buffer,dcch_header_len);
+	  
+	  sdu_lengths[0] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
+					    DCCH,
+					    (char *)&ulsch_buff[0]);
+	  
+	  sdu_length_total = sdu_lengths[0];
+	  sdu_lcids[0] = DCCH;
+
+	  LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
+	  num_sdus = 1;
+	  update_bsr(Mod_id, frame, DCCH);
+	  //header_len +=2;
+	  UE_mac_inst[Mod_id].RA_active                        = 1;
+	  UE_mac_inst[Mod_id].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
+	  UE_mac_inst[Mod_id].RA_Msg3_size                     = Size+dcch_header_len;
+	  UE_mac_inst[Mod_id].RA_prachMaskIndex                = 0;
+	  UE_mac_inst[Mod_id].RA_prach_resources.Msg3          = ulsch_buff;
+	  UE_mac_inst[Mod_id].RA_backoff_cnt                   = 0;  // add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
+	  if (rach_ConfigCommon) {
+	    UE_mac_inst[Mod_id].RA_window_cnt                    = 2+ rach_ConfigCommon->ra_SupervisionInfo.ra_ResponseWindowSize;
+	    if (UE_mac_inst[Mod_id].RA_window_cnt == 9)
+	      UE_mac_inst[Mod_id].RA_window_cnt = 10;  // Note: 9 subframe window doesn't exist, after 8 is 10!
+	  }
+	  else {
+	    LOG_D(MAC,"[UE %d] FATAL Frame %d: rach_ConfigCommon is NULL !!!\n",Mod_id,frame);
+	    mac_xface->macphy_exit("");
+	  }
+	  UE_mac_inst[Mod_id].RA_tx_frame    = frame;
+	  UE_mac_inst[Mod_id].RA_tx_subframe = subframe;
+	  UE_mac_inst[Mod_id].RA_backoff_frame    = frame;
+	  UE_mac_inst[Mod_id].RA_backoff_subframe = subframe;
+	  // Fill in preamble and PRACH resource
+	  get_prach_resources(Mod_id,eNB_index,subframe,1);
+	  generate_ulsch_header((u8*)ulsch_buff,  // mac header
+				1,      // num sdus
+				0,            // short pading
+				&Size16,  // sdu length
+				&lcid,    // sdu lcid
+				NULL,  // power headroom
+				UE_mac_inst[Mod_id].crnti,  // crnti
 				NULL,  // truncated bsr
 				NULL, // short bsr
 				NULL, // long_bsr
@@ -328,7 +389,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 	  UE_mac_inst[Mod_id].RA_backoff_cnt                   = 0;
 
 	// Fill in preamble and PRACH resource
-	  get_prach_resources(Mod_id,eNB_index,subframe,0,NULL);
+	  get_prach_resources(Mod_id,eNB_index,subframe,0);
 	  return(&UE_mac_inst[Mod_id].RA_prach_resources);
 	}
       }

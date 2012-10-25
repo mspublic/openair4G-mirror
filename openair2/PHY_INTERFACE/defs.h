@@ -121,8 +121,8 @@ typedef struct
     
 
     /// Configure Common PHY parameters from mobilityControlInfo
-    void (*phy_config_radioResourceCommon_ue)(u8 Mod_id,u8 CH_index,
-    			RadioResourceConfigCommon_t *radioResourceConfigCommon);
+    void (*phy_config_afterHO_ue)(u8 Mod_id,u8 CH_index,
+				  MobilityControlInfo_t *mobilityControlInfo);
 
     /// Configure Common PHY parameters from SIB2
     void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
