@@ -328,8 +328,8 @@ int main(int argc, char **argv) {
 
   
   msg("[SIM] Using SCM/101\n");
-  UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
-				PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+  UE2eNB = new_channel_desc_scm(PHY_vars_UE->lte_frame_parms.nb_antennas_tx,
+				PHY_vars_eNB->lte_frame_parms.nb_antennas_rx,
 				channel_model,
 				BW,
 				0.0,
