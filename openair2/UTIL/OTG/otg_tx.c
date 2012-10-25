@@ -195,6 +195,8 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   char *header=NULL;
 	unsigned int i;
 
+
+
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
   if ((g_otg->application_type[src][dst]==0)&&(g_otg->idt_dist[src][dst][PE_STATE]==0)){  
     //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
@@ -202,8 +204,9 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   }
 
 	else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][PE_STATE] > 0)) {
+LOG_I(OTG,"[SRC %d][DST %d] AVAILABLE_NODES \n", src, dst);
   	state_management(src,dst,ctime);
-    state=otg_info->state[src][dst];
+    	state=otg_info->state[src][dst];
 		#ifdef STANDALONE
   	//pre-config for the standalone
   	if (ctime<otg_info->ptime[src][dst]) //it happends when the emulation was finished
@@ -258,9 +261,9 @@ if (background_ok==0){
   otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
   otg_info->tx_num_pkt[src][dst]+=1;
   if (size!=strlen(payload))
-    LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", flag, size, strlen(payload), seq_num, header, payload);
+    LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, size, strlen(payload), seq_num, header, payload);
   else 
-    LOG_T(OTG,"[0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", flag, size, seq_num,state, header, payload);
+    LOG_T(OTG,"[%d][%d] [0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, size, seq_num,state, header, payload);
   
  } else {
 
@@ -279,9 +282,9 @@ if (background_ok==0){
   otg_info->tx_num_pkt_background[src][dst]+=1;
   otg_info->seq_num_background[src][dst]+=1;
   if (otg_info->size_background[src][dst]!=strlen(payload))
-    LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", flag, otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
+    LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", src, dst, flag, otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
   else
-    LOG_T(OTG,"[0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", flag, otg_info->size_background[src][dst], seq_num, state, header, payload);
+    LOG_T(OTG,"[%d][%d][0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, otg_info->size_background[src][dst], seq_num, state, header, payload);
 }
  
  buffer_size = hdr_size + strlen(header) + strlen(payload);
@@ -458,9 +461,7 @@ int j;
        g_otg->size_dist[i][j][PE_STATE] = FIXED;
        g_otg->size_min[i][j][PE_STATE] =  50;
        g_otg->size_max[i][j][PE_STATE] =  50;
-			 g_otg->prob_off_pe[i][j]=0.5;
-       g_otg->holding_time_off_pe[i][j]=100; 
-       g_otg->holding_time_pe_off[i][j]=300;
+
        LOG_I(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 				
 #ifdef STANDALONE
@@ -477,9 +478,7 @@ int j;
        g_otg->size_dist[i][j][PE_STATE] = FIXED;
        g_otg->size_min[i][j][PE_STATE] =  512;
        g_otg->size_max[i][j][PE_STATE] =  512;
-			 g_otg->prob_off_pe[i][j]=0.5;
-       g_otg->holding_time_off_pe[i][j]=100; 
-       g_otg->holding_time_pe_off[i][j]=300;
+
        LOG_I(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 0;
@@ -495,9 +494,7 @@ int j;
        g_otg->size_dist[i][j][PE_STATE] = FIXED; // main param in this mode
        g_otg->size_min[i][j][PE_STATE] =  1024;// main param in this mode
        g_otg->size_max[i][j][PE_STATE] =  1024;
-			 g_otg->prob_off_pe[i][j]=0.5;
-       g_otg->holding_time_off_pe[i][j]=100; 
-       g_otg->holding_time_pe_off[i][j]=300;
+
        LOG_I(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 0;
@@ -518,9 +515,7 @@ int j;
        g_otg->size_max[i][j][PE_STATE] =  800; 
        g_otg->size_std_dev[i][j][PE_STATE] = 0;
        g_otg->size_lambda[i][j][PE_STATE] = 0;
-			 g_otg->prob_off_pe[i][j]=0.5;
-       g_otg->holding_time_off_pe[i][j]=100; 
-       g_otg->holding_time_pe_off[i][j]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 0;
        g_otg->duration[i][j] = 1000;
@@ -540,9 +535,7 @@ int j;
        g_otg->size_max[i][j][PE_STATE] =  800;
        g_otg->size_std_dev[i][j][PE_STATE] = 0;
        g_otg->size_lambda[i][j][PE_STATE] = 0;
-			 g_otg->prob_off_pe[i][j]=0.5;
-       g_otg->holding_time_off_pe[i][j]=100; 
-       g_otg->holding_time_pe_off[i][j]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i] = 0;
        g_otg->duration[i] = 1000;
@@ -562,9 +555,7 @@ int j;
        g_otg->size_max[i][j][PE_STATE] =  43;
        g_otg->size_std_dev[i][j][PE_STATE] = 5;
        g_otg->size_lambda[i][j][PE_STATE] = 0;
-			 g_otg->prob_off_pe[i][j]=0.5;
-       g_otg->holding_time_off_pe[i][j]=100; 
-       g_otg->holding_time_pe_off[i][j]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i] = 0;
        g_otg->duration[i] = 1000;
@@ -584,9 +575,7 @@ int j;
        g_otg->size_max[i][j][PE_STATE] =  43;
        g_otg->size_std_dev[i][j][PE_STATE] = 5;
        g_otg->size_lambda[i][j][PE_STATE] = 0;
-			 g_otg->prob_off_pe[i][j]=0.5;
-       g_otg->holding_time_off_pe[i][j]=100; 
-       g_otg->holding_time_pe_off[i][j]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 0;
        g_otg->duration[i][j] = 1000;
@@ -611,8 +600,8 @@ int j;
        LOG_I(OTG," M2M_TRAFFIC, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j]);
        g_otg->trans_proto[i][j] = 2;
        g_otg->ip_v[i][j] = 1;
-	 		 g_otg->pu_size_pkts[i][j]=50;
-	 		 g_otg->ed_size_pkts[i][j]=60;
+	g_otg->pu_size_pkts[i][j]=50;
+	g_otg->ed_size_pkts[i][j]=60;
 
        g_otg->idt_dist[i][j][PE_STATE] = UNIFORM;
        g_otg->idt_min[i][j][PE_STATE] =  1000;
@@ -712,6 +701,11 @@ return size_header;
 
 void state_management(src, dst,ctime) {
 
+
+if ((g_otg->holding_time_off_pu[src][dst]==0) && (g_otg->holding_time_off_ed[src][dst]==0) && (g_otg->holding_time_off_pe[src][dst]==0))  
+	otg_info->state[src][dst]=PE_STATE;
+else{
+ LOG_I(OTG,"[%d][[%d] STATE_TEST %d, %d, %d \n", src, dst, g_otg->holding_time_off_pu[src][dst], g_otg->holding_time_off_ed[src][dst], g_otg->holding_time_off_pe[src][dst]);
   if (otg_info->state_transition_prob[src][dst]==0){
     otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
     otg_info->state[src][dst]=OFF_STATE;
@@ -818,6 +812,7 @@ if (ctime>otg_info->start_holding_time_off[src][dst]){
       otg_info->state[src][dst]= OFF_STATE; // switch to default state
       
       break;
+}
 }
 }
 
