@@ -60,8 +60,8 @@
     <CURVE>enable</CURVE> <!-- option: enabled, disabled. If CURVE is enabled, graphes are ploted in real time (UL and DL) of WOD and throughput measurement for each packet -->
    <BACKGROUND_STATS>enable</BACKGROUND_STATS>
     <PERFORMANCE_METRICS>
-      	<THROUGHPUT>disable</THROUGHPUT>
-      	<LATENCY>disable</LATENCY>
+      	<THROUGHPUT>enable</THROUGHPUT>
+      	<LATENCY>enable</LATENCY>
       	<OWD_RADIO_ACESS>enable</OWD_RADIO_ACESS>  <!-- option: 0, 1. If 1 owd curve shows the one way radio access delay,else shows end to end owd -->
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
