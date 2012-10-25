@@ -26,7 +26,7 @@ FD_otg *create_form_otg(void)
    obj = fl_add_button(FL_NORMAL_BUTTON,250,510,50,30,"Exit");
    fl_set_object_callback(obj, exit_cb, 0);
 
-   obj_ctime = fl_add_text(FL_NORMAL_TEXT, 150,510,50,30, "EURECOM");
+   //obj_ctime = fl_add_text(FL_NORMAL_TEXT, 150,510,50,30, "EURECOM");
 
   fl_end_form();
   fdui->otg->fdui = fdui;
@@ -49,7 +49,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
       fl_show_form (form_dl->otg, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       fl_set_form_position(form_dl->otg, 200, 200);
         if (g_otg->owd_radio_access==1)
-          fl_set_xyplot_ybounds(form_dl->owd,0,50);
+          fl_set_xyplot_ybounds(form_dl->owd,0,30);
         else
           fl_set_xyplot_ybounds(form_dl->owd,0,200);
  
@@ -59,7 +59,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
       fl_show_form (form_ul->otg, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       fl_set_form_position(form_ul->otg, 850, 200);
       if (g_otg->owd_radio_access==1)
-          fl_set_xyplot_ybounds(form_ul->owd,0,50);
+          fl_set_xyplot_ybounds(form_ul->owd,0,70);
         else
           fl_set_xyplot_ybounds(form_ul->owd,0,200);
       fl_set_xyplot_ybounds(form_ul->throughput,0,50); 

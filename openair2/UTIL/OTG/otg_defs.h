@@ -384,7 +384,7 @@ typedef struct{
 
 
 
-#define MAX_SAMPLES 100
+#define MAX_SAMPLES 30
 
 typedef struct{
 	int init_forms;
