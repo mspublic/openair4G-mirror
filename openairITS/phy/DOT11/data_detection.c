@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
+#define TWO_OVER_SQRT_10 20724
+#define FOUR_OVER_SQRT_42 20225
+#define TWO_OVER_SQRT_42 10112
 
 extern int16_t twiddle_fft64[63*4*2];
 extern int16_t twiddle_ifft64[63*4*2];
@@ -15,7 +19,7 @@ extern int Ncbps[8];
 
 //#define DEBUG_DATA 1
 
-extern uint16_t chest[128] __attribute__((aligned(16)));
+extern int16_t chest[128] __attribute__((aligned(16)));
 extern int interleaver_bpsk[48];
 extern int interleaver_qpsk[48];
 extern int interleaver_16qam[48];
@@ -23,13 +27,33 @@ extern int interleaver_64qam[48];
 
 extern uint8_t scrambler[127*8];
 
+#ifdef EXECTIME
+long dd_t1=0,dd_t2=0,dd_t3=0,dd_t4=0;
+int dd_trials=0;
+
+void print_dd_stats() {
+
+  if (dd_trials>0)
+    printf("Data detection                   : Trials %d, dd_t1 (64pt FFT) %d ns, dd_t2 %d ns (Ch Comp.), dd_t3 %d ns (Deinter), dd_t4 %d ns (Viterbi)\n",dd_trials,
+	   dd_t1/dd_trials,dd_t2/dd_trials,dd_t3/dd_trials,dd_t4/dd_trials);
+  dd_trials=0;
+  dd_t1=0;
+  dd_t2=0;
+  dd_t3=0;
+  dd_t4=0;
+}
+#endif
+
 int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int frame_length,int rx_offset,int (*wait(int,int))) {
 
   int16_t rxDATA_F[128*2] __attribute__((aligned(16)));
   uint32_t rxDATA_F_comp[64*2] __attribute__((aligned(16)));
   uint32_t rxDATA_F_comp2[48] __attribute__((aligned(16)));
+
   int8_t rxDATA_llr[384] __attribute__((aligned(16)));
   int8_t rxDATA_llr2[432] __attribute__((aligned(16)));
+  int16_t rxDATA_F_mag[48];
+  int16_t rxDATA_F_mag2[48];
   int8_t *llr_ptr;
   uint32_t pilot1,pilot2,pilot3,pilot4;
   int i,j,k,k2,tmp,pos;
@@ -38,6 +62,13 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   int s,sprime;
   uint32_t crc_rx;
   char fname[20],vname[20];
+  int log2_maxh;
+  int32_t scale;
+  int ret;
+#ifdef EXECTIME
+  struct timespec tin,tout;
+#endif
+
   // loop over all symbols
   dlen      = 32+16+6+(rxv->sdu_length<<3); // data length is 32-bits CRC + sdu + 16 service + 6 tail
   dlen_symb = dlen/Ndbps[rxv->rate];
@@ -50,6 +81,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     // synchronize to HW if needed
     if (wait)
       *wait(rx_offset,s);
+    dd_trials++;
 
     if (rx_offset>frame_length)
       rx_offset -= frame_length;
@@ -62,7 +94,10 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	     (void *)rx_data,
 	     2*sizeof(int16_t)*(rx_offset+80-frame_length));
     
-    
+
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
     fft((int16_t *)(rx_data+rx_offset+16),         /// complex input
 	rxDATA_F,           /// complex output
 	&twiddle_fft64[0],  /// complex twiddle factors
@@ -70,9 +105,53 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	6,               /// log2(FFT_SIZE)
 	3,               /// scale (energy normalized for 64-point)
 	0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    dd_t1 += (tout.tv_nsec-tin.tv_nsec);
     
-    mult_cpx_vector_norep_unprepared_conjx2(rxDATA_F,(int16_t*)chest,(int16_t*)rxDATA_F_comp,64,10);
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
+    log2_maxh=10;
+    mult_cpx_vector_norep_unprepared_conjx2(rxDATA_F,(int16_t*)chest,(int16_t*)rxDATA_F_comp,64,log2_maxh);
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    dd_t2 += (tout.tv_nsec-tin.tv_nsec);
     
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif   
+ 
+    if ((s==0)&&((rxv->rate>>1)>1)) {  // Compute channel magnitude for first symbol when 16QAM or 64QAM
+      for (i=0;i<5;i++)
+	rxDATA_F_mag[i] = (int16_t)((((int32_t)chest[(38+i)<<2]*(int32_t)chest[(38+i)<<2]) + ((int32_t)chest[1+((38+i)<<2)]*(int32_t)chest[1+((38+i)<<2)]))>>log2_maxh);
+      for (;i<18;i++)
+	rxDATA_F_mag[i] = (int16_t)((((int32_t)chest[(38+1+i)<<2]*(int32_t)chest[(38+1+i)<<2] + (int32_t)chest[1+((38+1+i)<<2)]*(int32_t)chest[1+((38+1+i)<<2)]))>>log2_maxh);
+      
+      for (;i<24;i++)
+      	rxDATA_F_mag[i] = (int16_t)((((int32_t)chest[(38+2+i)<<2]*(int32_t)chest[(38+2+i)<<2] + (int32_t)chest[1+((38+2+i)<<2)]*(int32_t)chest[1+((38+2+i)<<2)]))>>log2_maxh);
+      // +ve portion
+      for (;i<30;i++)
+      	rxDATA_F_mag[i] = (int16_t)((((int32_t)chest[(-24+1+i)<<2]*(int32_t)chest[(-24+1+i)<<2] + (int32_t)chest[1+((-24+1+i)<<2)]*(int32_t)chest[1+((-24+1+i)<<2)]))>>log2_maxh);
+
+      for (;i<43;i++)
+      	rxDATA_F_mag[i] = (int16_t)((((int32_t)chest[(-24+2+i)<<2]*(int32_t)chest[(-24+2+i)<<2] + (int32_t)chest[1+((-24+2+i)<<2)]*(int32_t)chest[1+((-24+2+i)<<2)]))>>log2_maxh);
+
+      for (;i<48;i++)
+      	rxDATA_F_mag[i] = (int16_t)((((int32_t)chest[(-24+3+i)<<2]*(int32_t)chest[(-24+3+i)<<2] + (int32_t)chest[1+((-24+3+i)<<2)]*(int32_t)chest[1+((-24+3+i)<<2)]))>>log2_maxh);
+
+      if ((rxv->rate>>1) == 2)
+	scale = TWO_OVER_SQRT_10;
+      else
+	scale = FOUR_OVER_SQRT_42;
+
+      for (i=0;i<48;i++) {
+	//	printf("mag[%d] = %d\n",i,rxDATA_F_mag[i]);
+	rxDATA_F_mag[i] = (int16_t)((rxDATA_F_mag[i]*scale)>>15);
+      }
+      if ((rxv->rate>>1) == 3)
+	for (i=0;i<48;i++)
+	  rxDATA_F_mag2[i] = (int16_t)((rxDATA_F_mag[i]*TWO_OVER_SQRT_42)>>15);
+    }
+
     // extract 48 statistics and 4 pilot symbols 
     // -ve portion
     for (i=0;i<5;i++)
@@ -160,7 +239,51 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
       }
       break;
     case 2:  // 16QAM
-      return(0==1);
+      llr_ptr = rxDATA_llr;
+      memset(rxDATA_llr,0,192);
+      for (k=0;k<192;k++) {
+	pos = interleaver_16qam[k];
+	//	printf("k %d, pos %d\n",k,pos);
+	if ((pos&1)==1) {
+	  tmp = ((int16_t*)rxDATA_F_comp2)[pos>>1]>>4;
+	  //printf("pos (msb) %d : %d\n",pos>>1,tmp);
+	}
+	else {
+	  tmp = ((int16_t*)rxDATA_F_comp2)[pos>>1];
+	  tmp = (tmp<0)? tmp : -tmp;
+	  tmp = (tmp + rxDATA_F_mag[pos>>2])>>4;
+	  //printf("pos (lsb) %d : rxDATA_F_mag[%d] %d : %d (%d)\n",pos>>1,pos>>2,rxDATA_F_mag[pos>>2],tmp,((int16_t*)rxDATA_F_comp2)[pos>>1]);
+	}
+	
+	if (tmp<-8)
+	  rxDATA_llr[k] = -8;
+	else if (tmp>7)
+	  rxDATA_llr[k] = 7;
+	else
+	  rxDATA_llr[k] = (int8_t)tmp;
+	/*
+	if (tmp<-128)
+	  rxDATA_llr[k] = -128;
+	else if (tmp>127)
+	  rxDATA_llr[k] = 127;
+	else
+	  rxDATA_llr[k] = (int8_t)tmp;
+	*/
+      }
+      if (rxv->rate==3) { // rate 3/4, so add zeros for punctured bits
+	llr_ptr = rxDATA_llr2;
+	memset(rxDATA_llr2,0,144);
+	for (k=0,k2=0;k<96;k++,k2++) {
+	  rxDATA_llr2[k2] = rxDATA_llr[k];
+	  if ((k&3) == 2)
+	    k2+=2;
+	}
+      }   
+#ifdef DEBUG_DATA  
+      sprintf(fname,"rxDATA_llr_%d.m",s);
+      sprintf(vname,"rxDAT_llr_%d",s);
+      write_output(fname,vname, rxDATA_llr,192,1,4);
+#endif
       break;
     case 3:  // 64QAM
       return(0==1);
@@ -173,6 +296,12 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 
       printf("viterbi s %d/%d\n",s,dlen_symb-1);
     */
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    dd_t3 += (tout.tv_nsec-tin.tv_nsec);
+    
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
     if (s < (dlen_symb-1))
       phy_viterbi_dot11_sse2(llr_ptr,data_ind,Ndbps[rxv->rate],s*Ndbps[rxv->rate],0);
     else {
@@ -214,6 +343,10 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
       printf("\n");
 #endif
     }
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    dd_t4 += (tout.tv_nsec-tin.tv_nsec);
+#endif
   }
 
   return(*(uint32_t*)&data_ind[2+rxv->sdu_length] == crc_rx);
