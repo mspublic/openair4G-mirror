@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   TX_VECTOR_t tx_vector;
   int errors=0,misdetected_errors=0,signal_errors=0;
   int symbols=0;
-  int tx_offset = 199,rx_offset;
+  int tx_offset = 0,rx_offset;
   RX_VECTOR_t *rxv;
   uint8_t *data_ind,*data_ind_rx;
   int no_detection=1;
@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
   data_ind[0] = 0;
   data_ind[1] = 0;
 
+  tx_offset = taus()%(FRAME_LENGTH_SAMPLES_MAX/2);
 
   while ((c = getopt (argc, argv, "hag:n:s:S:z:r:p:")) != -1) {
     switch (c) {
@@ -287,53 +288,48 @@ int main(int argc, char **argv) {
 	write_output("rxsig0.m","rxs", &rxdata[0][0],tx_offset+sdu_length_samples,1,1);
       }
       no_detection=1;
-      for (i=0;i<FRAME_LENGTH_SAMPLES_MAX;i+=640) {
-	//printf("Calling initial sync: i %d,rxdata %p\n",i,&rxv,rxdata);
-	if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,i) == BUSY)) {
-	  //printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
-	  no_detection=0;
-	  if (rxv) {
-	    //	    printf("Rate %d, SDU_LENGTH %d\n",rxv->rate,rxv->sdu_length);
-	    if ( (rxv->rate != tx_vector.rate)||(rxv->sdu_length != tx_vector.sdu_length)) {
-	      signal_errors++;
-	      printf("SIGNAL error: rx_offset %d\n",rx_offset);
-	    }
-	    else {
-	      memset(data_ind_rx,0,rxv->sdu_length+4+2+1);
-	      if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,NULL)) {
-		for (i=0;i<rxv->sdu_length+6;i++) {
-		  if (data_ind[i]!=data_ind_rx[i]) {
-		    //		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
-		    misdetected_errors++;
-		    errors++;
-		    break;
-		  }
+
+      //printf("Calling initial sync: i %d,rxdata %p\n",i,&rxv,rxdata);
+      if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,1) == BUSY)) {
+	//printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
+	no_detection=0;
+	if (rxv) {
+	  //	    printf("Rate %d, SDU_LENGTH %d\n",rxv->rate,rxv->sdu_length);
+	  if ( (rxv->rate != tx_vector.rate)||(rxv->sdu_length != tx_vector.sdu_length)) {
+	    signal_errors++;
+	    printf("SIGNAL error: rx_offset %d, tx_offset %d\n",rx_offset,tx_offset);
+	  }
+	  else {
+	    memset(data_ind_rx,0,rxv->sdu_length+4+2+1);
+	    if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,NULL)) {
+	      for (i=0;i<rxv->sdu_length+6;i++) {
+		if (data_ind[i]!=data_ind_rx[i]) {
+		  //		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
+		  misdetected_errors++;
+		  errors++;
 		}
 	      }
-	      else {
-		//	      printf("Bad CRC\n");
-		errors++;
-	      }
+	    } // initial_synch returns IDLE
+	    else {
 	    }
 	  }
-	  break;
 	}
-	//	if (ret == BUSY)
       }
-      if (no_detection==1)
-	missed_packets++;
     }
+    if (no_detection==1)
+      missed_packets++;
+    
     printf("\nSNR %f dB: errors %d/%d, misdetected errors %d/%d,signal_errors %d/%d, missed_packets %d/%d\n",SNR,errors,n_frames-signal_errors,misdetected_errors,n_frames-signal_errors,signal_errors,n_frames,missed_packets,n_frames);
 #ifdef EXECTIME
     print_is_stats();
     print_dd_stats();
 #endif
   }
-
+  
   free(data_ind);
   free(data_ind_rx);
   //  free_channel_desc_scm(ch);
-
+  
   free(txdata);
   for (i=0;i<n_rx;i++) {
     free(rxdata[i]);
