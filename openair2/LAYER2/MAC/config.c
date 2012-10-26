@@ -201,10 +201,9 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	  memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->ul_CyclicPrefixLength, (void *)mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength,sizeof(UL_CyclicPrefixLength_t));
     	}
 	
-	UE_mac_inst[Mod_id].crnti = 0;
-	for (i=0;i<15;i++) {
-	  UE_mac_inst[Mod_id].crnti |= (mobilityControlInfo->newUE_Identity.buf[i]<<i);
-	}
+	UE_mac_inst[Mod_id].crnti = mobilityControlInfo->newUE_Identity.buf[0]|
+	  (mobilityControlInfo->newUE_Identity.buf[1]<<8);
+    
 	UE_mac_inst[Mod_id].rach_ConfigDedicated = malloc(sizeof(*mobilityControlInfo->rach_ConfigDedicated));
 	if (mobilityControlInfo->rach_ConfigDedicated)
 	  memcpy((void*)UE_mac_inst[Mod_id].rach_ConfigDedicated,
