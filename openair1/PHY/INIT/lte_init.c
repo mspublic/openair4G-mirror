@@ -261,10 +261,9 @@ void phy_config_afterHO_ue(u8 Mod_id,u8 eNB_id,
 
   // RNTI
 
-  PHY_vars_UE_g[Mod_id]->lte_ue_pdcch_vars[eNB_id]->crnti = 0;
-  for (i=0;i<15;i++) {
-    PHY_vars_UE_g[Mod_id]->lte_ue_pdcch_vars[eNB_id]->crnti |= (mobilityControlInfo->newUE_Identity.buf[i]<<i);
-  }
+  PHY_vars_UE_g[Mod_id]->lte_ue_pdcch_vars[eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|
+                                                            (mobilityControlInfo->newUE_Identity.buf[1]<<8);
+  
 }
 
 void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
