@@ -50,10 +50,6 @@ Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel, Logger::LO
 	this->logLevel = logLevel;
 	this->logOutputChannel = logOutputChannel;
 	/**
-	 * If we have renamed log file because it exists
-	 */
-	bool renamed = false;
-	/**
 	 * New name for the log file
 	 */
 	string newLogFilePath = "";
@@ -71,6 +67,11 @@ Logger::Logger(const string& logFileName, Logger::LOG_LEVEL logLevel, Logger::LO
 	 * it appending the date and create a new one
 	 */
 	if (logOutputChannel == Logger::FILE || logOutputChannel == Logger::BOTH) {
+		/**
+		 * If we have renamed log file because it exists
+		 */
+		bool renamed = false;
+
 		logFilePath = boost::filesystem::path(logFileName);
 
 		if (boost::filesystem::exists(logFilePath)) {

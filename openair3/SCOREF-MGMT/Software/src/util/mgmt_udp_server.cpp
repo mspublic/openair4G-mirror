@@ -41,6 +41,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include "mgmt_udp_server.hpp"
+#include "mgmt_exception.hpp"
 #include "mgmt_util.hpp"
 
 #include <iostream>
@@ -50,6 +51,11 @@ UdpServer::UdpServer(u_int16_t portNumber, Logger& logger)
 	: logger(logger) {
 	socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
 	logger.info("A UDP server socket created for port " + boost::lexical_cast<string>(portNumber));
+}
+
+UdpServer::UdpServer(const UdpServer& udpServer)
+	: logger(udpServer.logger) {
+	throw Exception("Copy constructor is called for an UdpServer object!", logger);
 }
 
 UdpServer::~UdpServer() {

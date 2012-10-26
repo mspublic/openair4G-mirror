@@ -1,4 +1,7 @@
 
+v1.1.11
+* Cppcheck corrections made
+
 v1.1.10
 * Bugfix for sample configuration lines given inside comments in a .conf file
 * Bugfix Simulator now binds on a port to keep source port constant

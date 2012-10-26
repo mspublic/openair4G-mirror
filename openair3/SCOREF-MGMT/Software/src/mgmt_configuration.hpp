@@ -162,7 +162,7 @@ class Configuration {
 		 * @param value Parameter's value
 		 * @return true on success, false otherwise
 		 */
-		bool parseLine(const string& line, string& parameter, string& value);
+		static bool parseLine(const string& line, string& parameter, string& value);
 		/**
 		 * Parses IHM configuration IDs of type <configurationItemName|configurationItemID>
 		 *
@@ -171,7 +171,7 @@ class Configuration {
 		 * @param parameterID "configurationItemID" part of the parameter string (output)
 		 * @return bool true on success, false otherwise
 		 */
-		bool parseParameterId(const string& param, string& parameterString, u_int16_t& parameterId);
+		static bool parseParameterId(const string& param, string& parameterString, u_int16_t& parameterId);
 		/**
 		 * Sets configuration parameter's value with given value
 		 *

@@ -80,6 +80,12 @@ class UdpServer {
 		 */
 		~UdpServer();
 
+	private:
+		/**
+		 * Copy constructor to prevent the usage of default copy constructor
+		 */
+		UdpServer(const UdpServer& udpServer);
+
 	public:
 		/**
 		 * Reads available data from socket into given buffer

@@ -56,6 +56,7 @@ u_int32_t GeonetCommunicationProfileRequestPacket::getCommunicationProfileReques
 	return communicationProfileRequestSet;
 }
 
+#ifdef UNUSED
 bool GeonetCommunicationProfileRequestPacket::getTransportBtpA() const {
 	return transportBtpA;
 }
@@ -139,6 +140,7 @@ bool GeonetCommunicationProfileRequestPacket::getChannelSch3() const {
 bool GeonetCommunicationProfileRequestPacket::getChannelSch4() const {
 	return channelSch4;
 }
+#endif
 
 bool GeonetCommunicationProfileRequestPacket::parse(const vector<unsigned char>& packetBuffer) {
 	if (packetBuffer.size() < sizeof(MessageHeader))

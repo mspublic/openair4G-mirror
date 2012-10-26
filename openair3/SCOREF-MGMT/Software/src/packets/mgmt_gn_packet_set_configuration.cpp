@@ -132,7 +132,7 @@ bool GeonetSetConfigurationEventPacket::serialize(vector<unsigned char>& buffer)
 }
 
 bool GeonetSetConfigurationEventPacket::encodeConfigurationItem(unsigned char* buffer,
-    const ConfigurationItem* configurationItem) const {
+    const ConfigurationItem* configurationItem) {
 	if (!buffer)
 		return false;
 

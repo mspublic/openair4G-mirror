@@ -161,6 +161,7 @@ ItsKeyValue ManagementInformationBase::getItsKeyValue(ItsKeyID id) {
 
 u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {
 	// This is the DWORD-length so it's 1
+	// TODO Not everything is DWORD!
 	return 1;
 }
 

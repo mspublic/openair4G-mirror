@@ -49,7 +49,7 @@ ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {
 }
 
 ItsKeyManager::~ItsKeyManager() {
-	itsKeyMap.empty();
+	itsKeyMap.clear();
 }
 
 ItsKeyID ItsKeyManager::findKeyId(const string& keyName) const {

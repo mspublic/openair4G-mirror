@@ -59,7 +59,7 @@ string GeonetNetworkStateEventPacket::toString() const {
 	return ss.str();
 }
 
-bool GeonetNetworkStateEventPacket::parse(const vector<unsigned char> packetBuffer) {
+bool GeonetNetworkStateEventPacket::parse(const vector<unsigned char>& packetBuffer) {
 	if (packetBuffer.size() < sizeof(NetworkStateMessage))
 		return false;
 

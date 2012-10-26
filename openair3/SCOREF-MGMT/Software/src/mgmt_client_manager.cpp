@@ -40,6 +40,7 @@
  */
 
 #include "mgmt_client_manager.hpp"
+#include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 
 ManagementClientManager::ManagementClientManager(ManagementInformationBase& mib, Configuration& configuration, Logger& logger)
@@ -72,7 +73,15 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 	 * Create a new client object if we couldn't find one
 	 */
 	if (!clientExists) {
-		ManagementClient* newClient = new ManagementClient(mib, clientConnection, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
+		ManagementClient* newClient = NULL;
+
+		try {
+			newClient = new ManagementClient(mib, clientConnection, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
+		} catch (Exception& e) {
+			e.updateStackTrace("Cannot create a ManagementClient object!");
+			throw;
+		}
+
 		clientVector.push_back(newClient);
 		logger.info("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is created");
 
