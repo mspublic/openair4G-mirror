@@ -111,6 +111,12 @@ class ManagementClient {
 		 */
 		~ManagementClient();
 
+	private:
+		/**
+		 * Copy constructor to prevent the usage of default copy constructor
+		 */
+		ManagementClient(const ManagementClient& managementClient);
+
 	public:
 		/**
 		 * Getter for IP address of this client

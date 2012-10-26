@@ -87,13 +87,15 @@ string CommunicationProfileManager::toString() const {
 
 	ss << "Communication profile count: " << communicationProfileMap.size() << endl;
 
-	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
-	while (iterator != communicationProfileMap.end()) {
-		ss << "Communication Profile [ID:" << iterator->second.id
-			<< ", transport:" << iterator->second.transport
-			<< ", network:" << iterator->second.network
-			<< ", access: " << iterator->second.access
-			<< ", channel: " << iterator->second.channel << "]" << endl;
+	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it;
+	while (it != communicationProfileMap.end()) {
+		ss << "Communication Profile [ID:" << it->second.id
+			<< ", transport:" << it->second.transport
+			<< ", network:" << it->second.network
+			<< ", access: " << it->second.access
+			<< ", channel: " << it->second.channel << "]" << endl;
+
+		++it;
 	}
 
 	return ss.str();
@@ -176,8 +178,6 @@ CommunicationProfileItem CommunicationProfileManager::parse(const string& profil
 	 * Parse communication profile string and get tokens for each layer
 	 */
 	vector<string> profileItemVector = Util::split(profileDefinitionString, ',');
-	const string transport = profileItemVector[0];
-	const string network = profileItemVector[1];
 	const string access = profileItemVector[2];
 	string channel;
 	/*

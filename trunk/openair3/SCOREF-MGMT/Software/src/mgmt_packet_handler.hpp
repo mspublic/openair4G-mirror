@@ -75,6 +75,12 @@ class PacketHandler {
 		 */
 		~PacketHandler();
 
+	private:
+		/**
+		 * Copy constructor to prevent the usage of default one
+		 */
+		PacketHandler(const PacketHandler& packetHandler);
+
 	public:
 		/**
 		 * Takes buffer of a packet and processes accordingly
@@ -101,28 +107,28 @@ class PacketHandler {
 		 * @param packet Pointer to Network State packet
 		 * @return true on success, false otherwise
 		 */
-		bool handleNetworkStateEvent(GeonetNetworkStateEventPacket* packet);
+		static bool handleNetworkStateEvent(GeonetNetworkStateEventPacket* packet);
 		/**
 		 * Handles a Wireless State Response message and triggers an update at MIB
 		 *
 		 * @param packet Pointer to incoming Wireless State Response packet
 		 * @return true on success, false otherwise
 		 */
-		bool handleWirelessStateResponseEvent(GeonetWirelessStateResponseEventPacket* packet);
+		static bool handleWirelessStateResponseEvent(GeonetWirelessStateResponseEventPacket* packet);
 		/**
 		 * Handles a Location Table Response packet
 		 *
 		 * @param Pointer to a Location Table Response packet
 		 * @return true on success, false otherwise
 		 */
-		bool handleLocationTableResponse(GeonetLocationTableResponseEventPacket* packet);
+		static bool handleLocationTableResponse(GeonetLocationTableResponseEventPacket* packet);
 		/**
 		 * Handles a Configuration Notification packet
 		 *
 		 * @param Pointer to a Configuration Notification packet
 		 * @return true on success, false otherwise
 		 */
-		bool handleConfigurationNotification(FacConfigurationNotificationPacket* packet);
+		static bool handleConfigurationNotification(FacConfigurationNotificationPacket* packet);
 		/**
 		 * Handles a Communication Profile Request event message and creates a
 		 * Communication Profile Response packet

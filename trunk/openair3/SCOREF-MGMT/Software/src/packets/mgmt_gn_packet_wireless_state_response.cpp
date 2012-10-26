@@ -60,7 +60,7 @@ string GeonetWirelessStateResponseEventPacket::toString() const {
 	return ss.str();
 }
 
-bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char> packetBuffer) {
+bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char>& packetBuffer) {
 	if (packetBuffer.size() < sizeof(WirelessStateResponseMessage))
 		return false;
 

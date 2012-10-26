@@ -40,12 +40,23 @@
  */
 
 #include "packets/mgmt_gn_packet_location_table_request.hpp"
+#include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 #include "mgmt_client.hpp"
 
 ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
 	: mib(mib), logger(logger) {
+	/**
+	 * Check that source port is not an ephemeral port which would
+	 * change every time a client sendto()s to MGMT
+	 */
 	this->client = clientConnection.getClient();
+	/**
+	 * TODO Ephemeral port range could be read from /proc/sys/net/ipv4/ip_local_port_range
+	 */
+	if (client.port() >= 32768 && client.port() <= 61000) {
+		throw Exception("Client has an ephemeral port number that will change every time it sends data and this will screw ManagementClientManager's state", logger);
+	}
 
 	/**
 	 * Initialise state strings map
@@ -75,6 +86,11 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& cl
 	// todo who is going to join() this thread?
 	inquiryThreadObject = new InquiryThread(mib, clientConnection, wirelessStateUpdateInterval, locationUpdateInterval, logger);
 	inquiryThread = new boost::thread(*inquiryThreadObject);
+}
+
+ManagementClient::ManagementClient(const ManagementClient& managementClient)
+	: mib(managementClient.mib), logger(managementClient.logger) {
+	throw Exception("Copy constructor is called for a ManagementClient object!", logger);
 }
 
 ManagementClient::~ManagementClient() {

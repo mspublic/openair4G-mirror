@@ -58,6 +58,11 @@ PacketHandler::PacketHandler(ManagementInformationBase& mib, Logger& logger) :
 	}
 }
 
+PacketHandler::PacketHandler(const PacketHandler& packetHandler) :
+	mib(packetHandler.mib), logger(packetHandler.logger) {
+	throw Exception("Copy constructor for a PacketHandler object is called!", logger);
+}
+
 PacketHandler::~PacketHandler() {
 	delete packetFactory;
 }
@@ -143,12 +148,10 @@ bool PacketHandler::handleGetConfigurationEvent(UdpServer& client, GeonetGetConf
 	if (!request)
 		return false;
 
-	GeonetPacket* reply = NULL;
-
 	/**
 	 * Create a response according to the request and send to the client right away
 	 */
-	reply = this->packetFactory->createSetConfigurationEventPacket(static_cast<ItsKeyID> (request->getConfID()));
+	GeonetPacket* reply = this->packetFactory->createSetConfigurationEventPacket(static_cast<ItsKeyID> (request->getConfID()));
 
 	if (client.send(*reply))
 		logger.info("A reply for a Get Configuration packet has been sent");
@@ -188,12 +191,10 @@ bool PacketHandler::handleCommunicationProfileRequestEvent(UdpServer& client, Ge
 	if (!request)
 		return false;
 
-	GeonetPacket* reply = NULL;
-
 	/**
 	 * Create a response according to the request and send to the client right away
 	 */
-	reply = this->packetFactory->createCommunicationProfileResponse(request);
+	GeonetPacket* reply = this->packetFactory->createCommunicationProfileResponse(request);
 
 	if (client.send(*reply))
 		logger.info("A reply for a Communication Profile Request has been sent");

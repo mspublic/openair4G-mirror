@@ -183,7 +183,12 @@ int main(int argc, char** argv) {
 						/**
 						 * Inform Client Manager of this sender
 						 */
-						clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
+						try {
+							clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
+						} catch (Exception& e) {
+							e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
+							throw;
+						}
 				}
 
 				// Revert buffer size to initial

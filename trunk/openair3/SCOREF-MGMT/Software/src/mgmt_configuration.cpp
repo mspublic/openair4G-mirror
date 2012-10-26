@@ -56,8 +56,7 @@ const string Configuration::CONF_WIRELESS_STATE_UPDATE_INTERVAL("CONF_WIRELESS_S
 const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_INTERVAL");
 
 Configuration::Configuration(const vector<string>& configurationFileNameVector, Logger& logger)
-	: logger(logger) {
-	this->configurationFileNameVector = configurationFileNameVector;
+	: configurationFileNameVector(configurationFileNameVector), logger(logger) {
 
 	/**
 	 * Write given configuration files' names

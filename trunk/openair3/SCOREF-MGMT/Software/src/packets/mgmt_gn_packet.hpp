@@ -107,7 +107,7 @@ class GeonetPacket {
 		 * @return Event type
 		 */
 		static u_int16_t parseEventTypeOfPacketBuffer(const vector<unsigned char>& buffer) {
-			MessageHeader* header = (MessageHeader*) buffer.data();
+			const MessageHeader* header = reinterpret_cast<const MessageHeader*>(buffer.data());
 
 			u_int16_t eventType = header->eventType;
 			eventType <<= 8;

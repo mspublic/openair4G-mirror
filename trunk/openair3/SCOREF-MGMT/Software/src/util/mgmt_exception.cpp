@@ -48,7 +48,7 @@ Exception::Exception(const string& message, Logger& logger)
 }
 
 Exception::~Exception() throw() {
-	stackTrace.empty();
+	stackTrace.clear();
 }
 
 void Exception::printStackTrace() {
