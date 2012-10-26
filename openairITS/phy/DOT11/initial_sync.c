@@ -63,10 +63,10 @@ void print_is_stats() {
 }
 #endif
 
-CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *rx_frame,int rx_frame_length,int rx_frame_pos) {
+CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *rx_frame,int rx_frame_length,int one_shot) {
 
   int32_t energy,peak_energy,mean_energy;
-  int n,i,i2,j,j2,k,peak_pos,found_sync=0,LTS2_pos,SIGNAL_pos;
+  int n,i,i2,j,j2,k,peak_pos,found_sync=0,LTS2_pos,SIGNAL_pos,offset;
   uint32_t pilot1,pilot2,pilot3,pilot4;
   int16_t tmp;
   int pos;
@@ -77,112 +77,106 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
   struct timespec tin,tout;
 #endif
   int ret;
-  int32_t m[640];
-  int16_t re,im;
+  //  int32_t m[640];
+  //  int16_t re,im;
 
   if (init_rev == 0)
     init_fft(512,9,rev512);
-
-  // handle wrap-around by copying some signal to end of buffer
-  if ((rx_frame_pos+640) > rx_frame_length) {
-    memcpy((void *)(rx_frame+rx_frame_length),
-	   (void *)rx_frame,
-	   2*sizeof(int16_t)*(rx_frame_pos+640-rx_frame_length));
-  }
-
 
   // Check for start of PLCP in buffer (scan over 640 sample span)
 
   peak_energy = 0;
   peak_pos = 0;
-  m[0] = 0;
-  for (n=0;n<640;n+=160) {
-    for (j=n;j<n+160;j++) {
-      re = ((int16_t *)(rx_frame+rx_frame_pos+j))[0];
-      im = ((int16_t *)(rx_frame+rx_frame_pos+j))[1];
-      m[j+1] = (m[j]>>1) + (((int32_t)re*re + (int32_t)im*im)>>1);
-#ifdef DEBUG_SYNCH
-      printf("j %d (%d) : m[j] %d,m[j-10] %d, re %d, im %d, abs %d\n",j,rx_frame_pos,m[j],m[j-10],re,im,(int32_t)re*re + (int32_t)im*im);
-#endif
-      if ((j>20) && (m[j] > (m[j-10]<<2))) {
-#ifdef EXECTIME
-	ret=clock_gettime(CLOCK_REALTIME,&tin);
-#endif
-	fft((int16_t *)(rx_frame+rx_frame_pos+j-5),         /// complex input
-	    signalF,           /// complex output
-	    &twiddle_fft512[0],  /// complex twiddle factors
-	    rev512,           /// bit reversed permutation vector
-	    9,               /// log2(FFT_SIZE)
-	    4,               /// scale (energy normalized for 64-point)
-	    0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
-#ifdef EXECTIME
-	ret=clock_gettime(CLOCK_REALTIME,&tout);
-	is_t1 += (tout.tv_nsec-tin.tv_nsec);
-	
-	ret=clock_gettime(CLOCK_REALTIME,&tin);
-#endif
-	mult_cpx_vector(signalF,STS_LTS_F,corrF,512,15);
-	
-#ifdef EXECTIME
-	ret=clock_gettime(CLOCK_REALTIME,&tout);
-	is_t2 += (tout.tv_nsec-tin.tv_nsec);
-	
-	
-	ret=clock_gettime(CLOCK_REALTIME,&tin);
-#endif
-	fft(corrF,        /// complex input
-	    corrT,          /// complex output
-	    &twiddle_ifft512[0],  /// complex twiddle factors
-	    rev512,         /// bit reversed permutation vector
-	    9,              /// log2(FFT_SIZE)
-	    5,               /// scale (energy normalized for 64-point)
-	    1);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
-	
-#ifdef EXECTIME
-	ret=clock_gettime(CLOCK_REALTIME,&tout);
-	is_t3 += (tout.tv_nsec-tin.tv_nsec);
-	
-	
-	ret=clock_gettime(CLOCK_REALTIME,&tin);
-#endif
-	
-	// look for peak and compare to average output
-	for (i2=0,j2=0;i2<512;i2++,j2+=4) {
-	  energy = corrT[j2]*corrT[j2] + corrT[j2+1]*corrT[j2+1];
-	  if (energy > peak_energy) {
-	    peak_energy = energy;
-	    peak_pos = j-5+i2;
-	  }
-	  mean_energy += energy;
-	}
-	
-	mean_energy -= peak_energy;
-	mean_energy>>=9;
-#ifdef DEBUG_SYNC
-	printf("i %d,j-5 %d: mean energy %d, peak_energy %d, pos %d\n",i,j-5,dB_fixed(mean_energy),dB_fixed(peak_energy),peak_pos);
-	for (j2=n;j2<=j;j2++)
-	  printf("m[%d] %d\n",j2,m[j2]);
-#endif
-	
-#ifdef DEBUG_SYNC
-	if (i==0) {
-	  write_output("STSLTScorr.m","STSLTScorrT", corrT,1024,2,1);
-	}
-#endif
-	
-#ifdef EXECTIME
-	ret=clock_gettime(CLOCK_REALTIME,&tout);
-	is_t4+=(tout.tv_nsec-tin.tv_nsec);
-	init_synch_trials++;
-#endif
-	if (peak_energy>(10*mean_energy)) {
-	  found_sync = 1; 
-	  break;
-	}
-      }
-    }
+  //  m[0] = 0;
 
-    if (found_sync == 1) {
+  //  for (n=0;n<640;n+=160) {
+  //    for (j=n;j<n+160;j++) {
+  //      re = ((int16_t *)(rx_frame+rx_frame_pos+j))[0];
+  //      im = ((int16_t *)(rx_frame+rx_frame_pos+j))[1];
+  //      m[j+1] = ((3*m[j])>>2) + (((int32_t)re*re + (int32_t)im*im)>>2);
+#ifdef DEBUG_SYNC
+  //      printf("j %d (%d) : m[j] %d,m[j-10] %d, re %d, im %d, abs %d\n",j,rx_frame_pos,m[j],m[j-10],re,im,(int32_t)re*re + (int32_t)im*im);
+#endif
+  //      if ((j>20) && (m[j] > (m[j-10]<<3))) {
+  n = 0;
+  while (1) {
+    //    is_wait(n);
+
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
+	// ensure 64-bit alignment on FFT input
+    //    if ((j&1) == 0)
+    //      offset=6;
+    //	else
+    //	  offset=5;
+
+    fft((int16_t *)(rx_frame+n),         /// complex input
+	signalF,           /// complex output
+	&twiddle_fft512[0],  /// complex twiddle factors
+	rev512,           /// bit reversed permutation vector
+	9,               /// log2(FFT_SIZE)
+	4,               /// scale (energy normalized for 64-point)
+	0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    is_t1 += (tout.tv_nsec-tin.tv_nsec);
+    
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
+    mult_cpx_vector(signalF,STS_LTS_F,corrF,512,15);
+    
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    is_t2 += (tout.tv_nsec-tin.tv_nsec);
+    
+    
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
+    fft(corrF,        /// complex input
+	corrT,          /// complex output
+	&twiddle_ifft512[0],  /// complex twiddle factors
+	rev512,         /// bit reversed permutation vector
+	9,              /// log2(FFT_SIZE)
+	5,               /// scale (energy normalized for 64-point)
+	1);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
+    
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    is_t3 += (tout.tv_nsec-tin.tv_nsec);
+    
+    
+    ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
+    
+    // look for peak and compare to average output
+    mean_energy = 0;
+    peak_energy = 0;
+    for (i2=0,j2=0;i2<512;i2++,j2+=4) {
+      energy = corrT[j2]*corrT[j2] + corrT[j2+1]*corrT[j2+1];
+      if (energy > peak_energy) {
+	peak_energy = energy;
+	peak_pos = n+i2;
+	if ((peak_pos&1)==1)
+	  peak_pos--; // ensure peak_pos is 64-bit aligned
+      }
+      mean_energy += energy;
+    }
+    
+    mean_energy -= peak_energy;
+    mean_energy>>=9;
+#ifdef DEBUG_SYNC
+    printf("n %d: mean energy %d/%d dB, peak_energy %d/%d dB, pos %d\n",n,mean_energy,dB_fixed(mean_energy),peak_energy,dB_fixed(peak_energy),peak_pos);
+    //    for (j2=n;j2<=j;j2++)
+    //      printf("m[%d] %d\n",j2,m[j2]);
+#endif
+    
+#ifdef EXECTIME
+    ret=clock_gettime(CLOCK_REALTIME,&tout);
+    is_t4+=(tout.tv_nsec-tin.tv_nsec);
+    init_synch_trials++;
+#endif
+    if (peak_energy>(80*mean_energy)) {
 #ifdef DEBUG_SYNC
       write_output("STSLTScorr.m","STSLTScorrT", corrT,512,2,1);
 #endif
@@ -192,7 +186,7 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
       // now try to estimate channel and decode SIGNAL field
       LTS2_pos = peak_pos + 240;
 #ifdef EXECTIME
-	ret=clock_gettime(CLOCK_REALTIME,&tin);
+      ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif
       fft((int16_t *)(rx_frame+16+LTS2_pos),         /// complex input
 	  rxLTS_F,           /// complex output
@@ -207,7 +201,7 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
       ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif    
       mult_cpx_vector(rxLTS_F,LTS_F,(int16_t*)chest,64,0);
-
+      
 #ifdef EXECTIME
       ret=clock_gettime(CLOCK_REALTIME,&tout);
       is_t6+=(tout.tv_nsec-tin.tv_nsec);
@@ -218,7 +212,7 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
       write_output("rxLTS_F.m","rLTS_F", rxLTS_F,256,1,1);
       write_output("chest.m","ch", chest,128,1,1);
 #endif
-
+      
 #ifdef EXECTIME
       ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif      
@@ -324,12 +318,15 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
       
       return(BUSY);
     }
-    else {
-      *rx_vector = NULL;
-      if (dB_fixed(energy) > CA_THRESHOLD)
-	return(BUSY);
+    n+=160;
+    if (n>=rx_frame_length) {
+      n=0;
+      if (one_shot == 1)
+	return(IDLE);
     }
-  
+
   }
+  // shouldn' get here
+  assert("Exited while(1)\n");
   return(IDLE);
 }
