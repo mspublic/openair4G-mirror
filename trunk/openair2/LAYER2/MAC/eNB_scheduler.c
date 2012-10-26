@@ -3595,7 +3595,7 @@ void update_ul_dci(u8 Mod_id,u16 rnti,u8 dai) {
 
 void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16 nb_rb_used0,unsigned int *nCCE_used) {
 
-  unsigned char UE_id;
+  unsigned char UE_id, UE_id2;
   unsigned char next_ue;
   unsigned char granted_UEs;
   u16 nCCE;
@@ -3643,6 +3643,21 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 
+    if (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED) {
+      dl_pow_off[UE_id]=1;
+      pre_nb_available_rbs[UE_id]=nb_available_rb;
+      for (ii=0;ii<7;ii++)
+	rballoc_sub[UE_id][ii] = 1;
+
+      for (UE_id2=0;UE_id2<granted_UEs;UE_id2++) {
+	if(UE_id!=UE_id2){
+	  dl_pow_off[UE_id2] = 2;
+	  pre_nb_available_rbs[UE_id2] = 0;
+	  for(ii=0;ii<7;ii++)
+	    rballoc_sub[UE_id2][ii]=0;
+	}
+      }
+    }
 
     rnti = find_UE_RNTI(Mod_id,UE_id);
 
@@ -4038,11 +4053,11 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	//eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
 
 #if defined(USER_MODE) && defined(OAI_EMU)
-  if (oai_emulation.info.opt_enabled)
-    trace_pdu(1,  (char*)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0], TBS, Mod_id, 3, 
-	      find_UE_RNTI(Mod_id,next_ue),frame,0,0);
-  LOG_D(OPT,"[eNB %d][DLSCH] Frame %d  rnti %x  with size %d\n", 
-	Mod_id, frame, find_UE_RNTI(Mod_id,next_ue), TBS);
+	if (oai_emulation.info.opt_enabled)
+	  trace_pdu(1,  (char*)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0], TBS, Mod_id, 3, 
+		    find_UE_RNTI(Mod_id,next_ue),frame,0,0);
+	LOG_D(OPT,"[eNB %d][DLSCH] Frame %d  rnti %x  with size %d\n", 
+	      Mod_id, frame, find_UE_RNTI(Mod_id,next_ue), TBS);
 #endif
 
 	aggregation = process_ue_cqi(Mod_id,next_ue);
