@@ -37,7 +37,6 @@
  * \email: raymond.knopp@eurecom.fr and navid.nikaein@eurecom.fr
  */ 
 
-
 #include "defs.h"
 #include "extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -1720,6 +1719,26 @@ void rrc_eNB_process_handoverPreparationInformation(u8 Mod_id,u32 frame, u16 UE_
 
   rrc_eNB_generate_RRCConnectionReconfiguration_handover(Mod_id,frame,UE_index);
 
+}
+
+void check_handovers(u8 Mod_id,PHY_VARS_eNB *phy_vars_eNB) {
+	u8 i;
+	for (i=0;i<NUMBER_OF_UE_MAX;i++) {
+	  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i] != NULL) {
+
+		  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_prepare == 0xFF) {
+			  LOG_D(RRC,"\n Incoming HO detected for new UE_idx %d eNB_ModId %d \n",i,phy_vars_eNB->Mod_id);
+			  rrc_eNB_process_handoverPreparationInformation(phy_vars_eNB->Mod_id,phy_vars_eNB->frame,i);
+		  }
+
+		  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_complete == 0xFF) {
+			  LOG_D(RRC,"\n HO Command received for new UE_idx %d eNB %d \n",i,phy_vars_eNB->Mod_id);
+			  //rrc_eNB_process_handoverPreparationInformation(Mod_id,frame,i);
+			  //rrc_rlc_data_req(phy_vars_eNB->Mod_id,phy_vars_eNB->frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->buf);
+			  pdcp_data_req(phy_vars_eNB->Mod_id,phy_vars_eNB->frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->buf,1);
+		  }
+	  }
+	}
 }
 
 /*

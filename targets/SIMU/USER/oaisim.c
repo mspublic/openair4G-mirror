@@ -1303,7 +1303,8 @@ main (int argc, char **argv)
 	
 	PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
-	
+	check_handovers(eNB_id,PHY_vars_eNB_g[eNB_id]);
+
 #ifdef PRINT_STATS
 	//if ((frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
