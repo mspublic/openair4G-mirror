@@ -963,8 +963,10 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
   // if(eNB_rrc_inst[Mod_id]->handover_info[UE_index]) {
   //
   // }
-  rrc_eNB_generate_HandoverPreparationInformation(Mod_id,UE_index,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId,&eNB_rrc_inst[Mod_id],&eNB_rrc_inst[Mod_id].handover_info[Mod_id]);
-
+  if(eNB_rrc_inst[Mod_id].handover_info[Mod_id]->ho_prepare != 0xF0)
+	  rrc_eNB_generate_HandoverPreparationInformation(Mod_id,UE_index,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId,&eNB_rrc_inst[Mod_id],&eNB_rrc_inst[Mod_id].handover_info[Mod_id]);
+  else
+	  LOG_D(RRC,"\neNB %d: Ignoring MeasReport from UE %d as Handover is in progress... \n",Mod_id,UE_index);
   //Look for IP address of the target eNB
   //Send Handover Request -> target eNB
   //Wait for Handover Acknowledgement <- target eNB
@@ -1703,7 +1705,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   if (sourceModId != 0xFF) {
     memcpy(eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->buf,(void *)buffer,size);
     eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->size = size;
-    eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->ho_complete = 0xFF;
+    eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->ho_complete = 0xF1;
     eNB_rrc_inst[Mod_id].handover_info[UE_index]->ho_complete = 0xFF;
   }
   else
@@ -1727,15 +1729,17 @@ void check_handovers(u8 Mod_id,PHY_VARS_eNB *phy_vars_eNB) {
 	  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i] != NULL) {
 
 		  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_prepare == 0xFF) {
-			  LOG_D(RRC,"\n Incoming HO detected for new UE_idx %d eNB_ModId %d \n",i,phy_vars_eNB->Mod_id);
+			  LOG_D(RRC,"\n Incoming HO detected for new UE_idx %d current eNB %d target eNB: %d \n",i,phy_vars_eNB->Mod_id, eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->modid_t);
 			  rrc_eNB_process_handoverPreparationInformation(phy_vars_eNB->Mod_id,phy_vars_eNB->frame,i);
+			  eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_prepare = 0xF1;
 		  }
 
-		  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_complete == 0xFF) {
-			  LOG_D(RRC,"\n HO Command received for new UE_idx %d eNB %d \n",i,phy_vars_eNB->Mod_id);
+		  if(eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_complete == 0xF1) {
+			  LOG_D(RRC,"\n HO Command received for new UE_idx %d current eNB %d target eNB: %d \n",i,phy_vars_eNB->Mod_id,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->modid_t);
 			  //rrc_eNB_process_handoverPreparationInformation(Mod_id,frame,i);
 			  //rrc_rlc_data_req(phy_vars_eNB->Mod_id,phy_vars_eNB->frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->buf);
-			  pdcp_data_req(phy_vars_eNB->Mod_id,phy_vars_eNB->frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->buf,1);
+			  pdcp_data_req(Mod_id,phy_vars_eNB->frame, 1,(i*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->size,(char*)eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->buf,1);
+			  eNB_rrc_inst[phy_vars_eNB->Mod_id].handover_info[i]->ho_complete = 0xF2;
 		  }
 	  }
 	}
