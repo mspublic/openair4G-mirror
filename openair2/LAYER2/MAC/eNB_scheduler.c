@@ -3636,19 +3636,17 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
   nCCE = mac_xface->get_nCCE_max(Mod_id) - *nCCE_used;
 
-
   /// CALLING Pre_Processor for tm5
-
   tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
-
+    
+  /// If there is more that one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.  
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-
     if (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED) {
       dl_pow_off[UE_id]=1;
       pre_nb_available_rbs[UE_id]=nb_available_rb;
       for (ii=0;ii<7;ii++)
 	rballoc_sub[UE_id][ii] = 1;
-
+      
       for (UE_id2=0;UE_id2<granted_UEs;UE_id2++) {
 	if(UE_id!=UE_id2){
 	  dl_pow_off[UE_id2] = 2;
@@ -3657,7 +3655,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	    rballoc_sub[UE_id2][ii]=0;
 	}
       }
+      break; //the for loop
     }
+  }
+
+
+  for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 
     rnti = find_UE_RNTI(Mod_id,UE_id);
 
@@ -3673,8 +3676,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
       nb_available_rb = pre_nb_available_rbs[UE_id];
 
-    if ((nb_available_rb == 0) || (nCCE < (1<<aggregation)))
-      break;
+    if ((nb_available_rb == 0) || (nCCE < (1<<aggregation))) {
+      LOG_D(MAC,"nb_availiable_rb exhausted\n");
+      continue; //to next user (there might be rbs availiable for other UEs in TM5
+    }
     sdu_length_total=0;
     num_sdus=0;
 
