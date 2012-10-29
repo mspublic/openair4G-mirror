@@ -1198,6 +1198,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   int size;
   int i;
   uint8_t rv[2];
+  u16 Idx;
+  LogicalChannelConfig_t *SRB1_logicalChannelConfig;//,*SRB2_logicalChannelConfig;
 
   LOG_D(RRC,"\n HO newSourceUEIdentity (C-RNTI): ");
   for (i=0;i<2;i++) {
@@ -1655,6 +1657,32 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
     memcpy((void *)rrc_inst->handover_info[UE_index]->as_config.sourceRadioResourceConfig.sps_Config,(void *)rrc_inst->sps_Config[UE_index],sizeof(SPS_Config_t));
   */
 
+	/************************************* Adding new UE procedure begins ********************************************/
+	Idx = (UE_index * MAX_NUM_RB) + DCCH;
+	// SRB1
+	eNB_rrc_inst[Mod_id].Srb1[UE_index].Active = 1;
+	eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Srb_id = Idx;
+	memcpy(&eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+	memcpy(&eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+
+	// SRB2
+	eNB_rrc_inst[Mod_id].Srb2[UE_index].Active = 1;
+	eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Srb_id = Idx;
+	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+
+	rrc_eNB_generate_RRCConnectionSetup(Mod_id,frame,UE_index);
+	//LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Tx RRCConnectionSetup][RRC_eNB][MOD %02d][]\n",
+	//      frame, Mod_id, Mod_id);
+
+	//LOG_D(RRC,"[eNB %d] RLC AM allocation index@0 is %d\n",Mod_id,rlc[Mod_id].m_rlc_am_array[0].allocation);
+	//LOG_D(RRC,"[eNB %d] RLC AM allocation index@1 is %d\n",Mod_id,rlc[Mod_id].m_rlc_am_array[1].allocation);
+	LOG_I(RRC,"[eNB %d] CALLING RLC CONFIG SRB1 (rbid %d) for UE %d\n",
+	      Mod_id,Idx,UE_index);
+	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD, Idx);
+	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+
+	/************************************* Adding new UE procedure ends ********************************************/
 
   size = do_RRCConnectionReconfiguration(Mod_id,
 					 buffer,
@@ -1676,16 +1704,22 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration HO (bytes %d, UE id %d)\n",
 	Mod_id,frame, size, UE_index);
 
-  handoverCommand.criticalExtensions.present = HandoverCommand__criticalExtensions_PR_c1;
-  handoverCommand.criticalExtensions.choice.c1.present = HandoverCommand__criticalExtensions__c1_PR_handoverCommand_r8;
-  handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.buf = buffer;
-  handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.size = size;
+  if (eNB_rrc_inst[Mod_id].SRB1_config[UE_index]->logicalChannelConfig) {
+    if (eNB_rrc_inst[Mod_id].SRB1_config[UE_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+      SRB1_logicalChannelConfig = &eNB_rrc_inst[Mod_id].SRB1_config[UE_index]->logicalChannelConfig->choice.explicitValue;
+    }
+    else {
+      SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+    }
+  }
+  else {
+    SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+  }
 
   LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (HO UE %d) --->][MAC_eNB][MOD %02d][]\n",
 	frame, Mod_id, UE_index, Mod_id);
 
-  /*
-  rrc_mac_config_req(Mod_id,1,UE_index,0,
+  rrc_mac_config_req(Mod_id,1,UE_index,1,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 		     (MeasObjectToAddMod_t **)NULL,
@@ -1694,10 +1728,15 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
 		     SRB1_logicalChannelConfig,
 		     eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 		     (TDD_Config_t *)NULL,
-		     (MobilityControlInfo_t *)NULL,
+		     (MobilityControlInfo_t *)mobilityInfo,
 		     (u8 *)NULL,
 		     (u16 *)NULL);
-*/
+
+  handoverCommand.criticalExtensions.present = HandoverCommand__criticalExtensions_PR_c1;
+  handoverCommand.criticalExtensions.choice.c1.present = HandoverCommand__criticalExtensions__c1_PR_handoverCommand_r8;
+  handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.buf = buffer;
+  handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.size = size;
+
   if (sourceModId != 0xFF) {
     memcpy(eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->buf,(void *)buffer,size);
     eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->size = size;
