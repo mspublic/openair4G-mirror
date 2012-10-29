@@ -1015,7 +1015,9 @@ void rrc_eNB_generate_HandoverPreparationInformation (u8 Mod_id, u8 UE_index, Ph
   rrc_inst->handover_info[UE_index]->ho_complete = 0;
 
   if (modid_target != 0xFF) {
-    UE_idx = rrc_find_free_ue_index(modid_target);
+    //UE_idx = rrc_find_free_ue_index(modid_target);
+	UE_idx = get_next_UE_index(modid_target,(u8 *)eNB_rrc_inst[Mod_id].Info.UE_list[UE_index]); //this should return a new index
+
     if (UE_idx!=0xFF) {
       LOG_D(RRC,"\n Sending HandoverPreparationInformation msg from eNB %d to eNB %d source UE_idx %d target UE_idx %d source_modId: %d target_modId: %d\n", rrc_inst->physCellId,targetPhyId,UE_index,UE_idx,Mod_id,modid_target);
       eNB_rrc_inst[modid_target].handover_info[UE_idx] = CALLOC(1,sizeof(*(eNB_rrc_inst[modid_target].handover_info[UE_idx])));
@@ -1671,26 +1673,6 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
 					 NULL,
 					 mobilityInfo); //*measGapConfig
 
-  /*
-    size = do_RRCConnectionReconfiguration(Mod_id,
-    buffer,
-    UE_index,
-    0,//Transaction_id,
-    SRB_list,
-    DRB_list,
-    NULL, // DRB2_list,
-    NULL, //*sps_Config,
-    physicalConfigDedicated,
-    MeasObj_list,
-    ReportConfig_list,
-    quantityConfig, //*QuantityConfig,
-    MeasId_list,
-    mac_MainConfig,
-    NULL,
-    NULL); //*measGapConfig
-
-  */
-
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration HO (bytes %d, UE id %d)\n",
 	Mod_id,frame, size, UE_index);
 
@@ -1699,9 +1681,23 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
   handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.buf = buffer;
   handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.size = size;
 
-  // uint8_t *buf;	/* Buffer with consecutive OCTET_STRING bits */
-  //#ifdef X2_SIM
+  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (HO UE %d) --->][MAC_eNB][MOD %02d][]\n",
+	frame, Mod_id, UE_index, Mod_id);
 
+  /*
+  rrc_mac_config_req(Mod_id,1,UE_index,0,
+		     (RadioResourceConfigCommonSIB_t *)NULL,
+		     eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+		     (MeasObjectToAddMod_t **)NULL,
+		     eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
+		     1,
+		     SRB1_logicalChannelConfig,
+		     eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
+		     (TDD_Config_t *)NULL,
+		     (MobilityControlInfo_t *)NULL,
+		     (u8 *)NULL,
+		     (u16 *)NULL);
+*/
   if (sourceModId != 0xFF) {
     memcpy(eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->buf,(void *)buffer,size);
     eNB_rrc_inst[sourceModId].handover_info[eNB_rrc_inst[Mod_id].handover_info[UE_index]->ueid_s]->size = size;
@@ -1719,6 +1715,8 @@ void rrc_eNB_process_handoverPreparationInformation(u8 Mod_id,u32 frame, u16 UE_
 
   LOG_I(RRC,"[eNB %d][RAPROC] Frame %d : Logical Channel UL-DCCH, processing RRCHandoverPreparationInformation from source eNB, sending RRCReconf to source eNB for user %d \n",Mod_id,frame,UE_index);
 
+
+  //eNB_rrc_inst[Mod_id].Info.UE_list[UE_index]
   rrc_eNB_generate_RRCConnectionReconfiguration_handover(Mod_id,frame,UE_index);
 
 }
