@@ -153,7 +153,7 @@ static void * dlsch_thread(void *param) {
 
     if (oai_exit) break;
 
-    LOG_I(PHY,"[SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d\n",phy_vars_ue->frame,dlsch_thread_index);
+    LOG_D(PHY,"[SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d\n",phy_vars_ue->frame,dlsch_thread_index);
 
     time_in = rt_get_time();
 
@@ -177,19 +177,21 @@ static void * dlsch_thread(void *param) {
 			 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			 0,
 			 dlsch_subframe[dlsch_thread_index]<<1);
-      LOG_I(PHY,"[UE %d] Calling dlsch_decoding for subframe %d\n",phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index]);
+      LOG_D(PHY,"[UE %d] Calling dlsch_decoding for subframe %d, harq_pid %d\n",
+	    phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index], harq_pid);
       ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			   &phy_vars_ue->lte_frame_parms,
-				 phy_vars_ue->dlsch_ue[eNB_id][0],
+			   phy_vars_ue->dlsch_ue[eNB_id][0],
 			   dlsch_subframe[dlsch_thread_index],
-			   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
+			   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			   1);
       
 
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	phy_vars_ue->dlsch_errors[eNB_id]++;
 	
 #ifdef DEBUG_PHY
-	LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d)\n",
+	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d)\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 	      harq_pid,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
@@ -197,7 +199,7 @@ static void * dlsch_thread(void *param) {
 #endif
       }
       else {
-	LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d)\n",
+	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d)\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 	      harq_pid,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,

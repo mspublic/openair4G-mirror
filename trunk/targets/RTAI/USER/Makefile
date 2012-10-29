@@ -33,9 +33,9 @@ OBJ += $(LOG_OBJS)
 
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
-OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) #$(OTG_OBJS) $(MATH_OBJS) 
+OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS) 
 OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
-CFLAGS += -DOPENAIR2 -DNO_RRM -DMAC_CONTEXT=1
+CFLAGS += -DOPENAIR2 -DNO_RRM -DPUCCH -DMAC_CONTEXT=1
 endif
 
 CFLAGS += $(L2_incl) $(UTIL_incl)
@@ -52,14 +52,14 @@ endif
 CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
 CFLAGS += -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
-CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DPUCCH #-DDLSCH_THREAD #-DULSCH_THREAD
+CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
 
 #only for CBMIMO1
 ifdef CBMIMO1
 CFLAGS += -DFW2011 -DBIT8_TX -DCBMIMO1
 else
 #only for EXPRESS MIMO
-CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=320 #560 with PXB
+CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #162 #560 with PXB
 endif
 
 ifeq ($(HARD_RT),1)
@@ -115,11 +115,20 @@ run_UE: synctest
 run_UE0: synctest
 	rtai-load UE0 --verbose
 
-run_UE0prach: synctest
-	rtai-load UE0prach --verbose
+run_UE1prach: synctest
+	rtai-load UE1prach --verbose
+
+run_UE2prach: synctest
+	rtai-load UE2prach --verbose
 
 run_UE0noL2: synctest
 	rtai-load UE0noL2 -- verbose
+
+run_UE1noL2: 
+	rtai-load UE1noL2 --verbose
+
+run_UE2noL2: 
+	rtai-load UE2noL2 --verbose
 
 run_UE0calib: synctest
 	rtai-load UE0calib --verbose
@@ -139,11 +148,18 @@ run_UE2:
 run_eNB0:
 	rtai-load eNB0 --verbose
 
+run_eNB1:
+	rtai-load eNB1 --verbose
+
+run_eNB2:
+	rtai-load eNB2 --verbose
+
 clean:
 	rm -rf condtest synctest
 	rm -rf $(OBJ) $(RTAI_OBJ)
 
 cleanall: clean
+	rm -rf synctest_eNB synctest_UE
 	rm -rf $(ASN1_MSG_OBJS1)
 
 show:

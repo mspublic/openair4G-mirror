@@ -120,7 +120,9 @@ int oai_exit = 0;
 
 unsigned int *DAQ_MBOX;
 
-unsigned int time_offset[4] = {0,0,0,0};
+//int time_offset[4] = {-118,-118,-118,-118};
+int time_offset[4] = {-138,-138,-138,-138};
+//int time_offset[4] = {0,0,0,0};
 
 int fs4_test=0;
 char UE_flag=0;
@@ -139,7 +141,7 @@ runmode_t mode;
 int rx_input_level_dBm;
 
 
-int otg_enabled = 0;
+int otg_enabled = 1;
 
 //*******************************
 // Calibration parameters from oaisimCROWN
@@ -245,7 +247,7 @@ void do_forms2(FD_lte_scope *form,
   *llr,*llr_time;
   int ind;
   float avg, cum_avg;
-  int nb_tx_ant = (UE_flag==1 ? 2 : 1);
+  int nb_tx_ant = (UE_flag==1 ? frame_parms->nb_antennas_tx_eNB : 1);
   int nb_ce_symb = (UE_flag==1 ? 1 : frame_parms->symbols_per_tti); 
 		 
 
@@ -358,11 +360,10 @@ void do_forms2(FD_lte_scope *form,
 	    //sig2[i] = (float) ((rx_sig[0][2*i]));
 	    time2[i] = (float) i;
 	  }
-	fl_set_xyplot_ybounds(form->channel_t_re,40,70);
+	fl_set_xyplot_ybounds(form->channel_t_re,30,70);
 	//fl_set_xyplot_data(form->channel_t_re,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
 	fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
       }
-
     /*
     // rx sig 1
     if (rx_sig[1] !=NULL) {
@@ -373,7 +374,7 @@ void do_forms2(FD_lte_scope *form,
 	    //sig2[i] = (float) ((rx_sig[1][2*i]));
 	    time2[i] = (float) i;
 	  }
-	//fl_set_xyplot_ybounds(form->channel_t_im,30,60);
+	fl_set_xyplot_ybounds(form->channel_t_im,30,70);
 	//fl_set_xyplot_data(form->channel_t_im,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
 	fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
     }
@@ -608,6 +609,7 @@ static void *eNB_thread(void *arg)
   RTIME time_in;
   int mbox_target=0,mbox_current=0;
   int i;
+  int tx_offset;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -743,27 +745,18 @@ static void *eNB_thread(void *arg)
                                             &(PHY_vars_eNB_g[0]->lte_frame_parms));
                         }
 #ifdef EXMIMO
-                      if (next_slot<19)
-                        {
-                          for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti; i++)
-                            {
-                              ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
-                                ((short*)dummy_tx_buffer)[i]<<4;
-                            }
-                        }
-                      else
-                        {
-                          for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1); i++)
-                            {
-                              ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset+time_offset[aa]])[i]=
-                                ((short*)dummy_tx_buffer)[i]<<4;
-
-                            }  // handle wrap-around
-                          for (i=0; i<time_offset[aa]; i++)
-                            {
-                              ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][0])[i] = ((short*)dummy_tx_buffer)[PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti-(time_offset[aa]<<1)+i]<<4;
-                            }
-                        }
+		      for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti/2; i++) 
+			{
+			  tx_offset = (int)slot_offset+time_offset[aa]+i;
+			  if (tx_offset<0)
+			    tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
+			  if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti))
+			    tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
+			  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
+			    ((short*)dummy_tx_buffer)[2*i]<<4;
+			  ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
+			    ((short*)dummy_tx_buffer)[2*i+1]<<4;
+			}
 #endif //EXMIMO
                     }
                 }
@@ -960,7 +953,7 @@ static void *UE_thread(void *arg)
             {
               rt_printk("fun0: slot %d: doing sync\n",slot);
               received_slots = -1; // will be increased below
-              if (initial_sync(PHY_vars_UE_g[0])==0)
+              if (initial_sync(PHY_vars_UE_g[0],mode)==0)
                 {
                   lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
                                    PHY_vars_UE_g[0],
@@ -988,7 +981,7 @@ static void *UE_thread(void *arg)
           rt_sleep(nano2count(FRAME_PERIOD));
           //	  rt_printk("fun0: slot %d: doing sync\n",slot);
 
-          if (initial_sync(PHY_vars_UE_g[0])==0)
+          if (initial_sync(PHY_vars_UE_g[0],mode)==0)
             {
               /*
               lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
@@ -1071,7 +1064,7 @@ int main(int argc, char **argv) {
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
@@ -1080,12 +1073,20 @@ int main(int argc, char **argv) {
   unsigned int tcxo = 114;
 
   int amp;
+  u8 prach_fmt;
+  int N_ZC;
 
   char rxg_fname[100];
+  char txg_fname[100];
   char rflo_fname[100];
   FILE *rxg_fd=NULL;
+  FILE *txg_fd=NULL;
   FILE *rflo_fd=NULL;
   unsigned int rxg_max[4]={133,133,133,133}, rxg_med[4]={127,127,127,127}, rxg_byp[4]={120,120,120,120};
+  int tx_max_power;
+
+  char line[1000];
+  int l;
 
 #ifdef EMOS
   int error_code;
@@ -1133,9 +1134,35 @@ int main(int argc, char **argv) {
 	  rxg_fd = fopen(rxg_fname,"r");
 	  if (rxg_fd) {
 	    printf("Loading RX Gain parameters from %s\n",rxg_fname);
-	    fscanf(rxg_fd,"%d %d %d %d",&rxg_max[0],&rxg_max[1],&rxg_max[2],&rxg_max[3]);
-	    fscanf(rxg_fd,"%d %d %d %d",&rxg_med[0],&rxg_med[1],&rxg_med[2],&rxg_med[3]);
-	    fscanf(rxg_fd,"%d %d %d %d",&rxg_byp[0],&rxg_byp[1],&rxg_byp[2],&rxg_byp[3]);
+	    l=0;
+	    while (fgets(line, sizeof(line), rxg_fd)) {
+	      if ((strlen(line)==0) || (*line == '#')) continue; //ignore empty or comment lines
+	      else {
+		if (l==0) sscanf(line,"%d %d %d %d",&rxg_max[0],&rxg_max[1],&rxg_max[2],&rxg_max[3]);
+		if (l==1) sscanf(line,"%d %d %d %d",&rxg_med[0],&rxg_med[1],&rxg_med[2],&rxg_med[3]);
+		if (l==2) sscanf(line,"%d %d %d %d",&rxg_byp[0],&rxg_byp[1],&rxg_byp[2],&rxg_byp[3]);
+		l++;
+	      }
+	    }
+	  }
+	  else 
+	    printf("%s not found, running with defaults\n",rxg_fname);
+
+	  sprintf(txg_fname,"%stxg.lime",optarg);
+	  txg_fd = fopen(txg_fname,"r");
+	  if (txg_fd) {
+	    printf("Loading TX Gain parameters from %s\n",txg_fname);
+	    l=0;
+	    while (fgets(line, sizeof(line), txg_fd)) {
+	      if ((strlen(line)==0) || (*line == '#')) {
+		continue; //ignore empty or comment lines
+	      }
+	      else {
+		if (l==0) sscanf(line,"%d %d %d %d",&txgain[0],&txgain[1],&txgain[2],&txgain[3]);
+		if (l==1) sscanf(line,"%d",&tx_max_power);
+		l++;
+	      }
+	    }
 	  }
 	  else 
 	    printf("%s not found, running with defaults\n",rxg_fname);
@@ -1143,11 +1170,12 @@ int main(int argc, char **argv) {
 	  sprintf(rflo_fname,"%srflo.lime",optarg);
 	  rflo_fd = fopen(rflo_fname,"r");
 	  if (rflo_fd) {
-	    printf("Loading RF LO parameters from %s\n",rxg_fname);
+	    printf("Loading RF LO parameters from %s\n",rflo_fname);
 	    fscanf(rflo_fd,"%d %d %d %d",&rf_local[0],&rf_local[1],&rf_local[2],&rf_local[3]);
 	  }
 	  else 
 	    printf("%s not found, running with defaults\n",rflo_fname);
+
 
 	  break;
 	case 256:
@@ -1202,8 +1230,9 @@ int main(int argc, char **argv) {
   frame_parms->Ncp_UL             = 0;
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx     = 2;
-  frame_parms->nb_antennas_rx     = ((UE_flag == 0) && (calibration_flag==1)) ? 2 : 1;
+  frame_parms->nb_antennas_tx_eNB = 2; //initial value overwritten by initial sync later
+  frame_parms->nb_antennas_tx     = (UE_flag==0) ? 2 : 1;
+  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 2 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
 #ifdef CBMIMO1
@@ -1222,16 +1251,27 @@ int main(int argc, char **argv) {
   frame_parms->dual_tx            = 0;
   frame_parms->freq_idx           = 1;
 
-
   init_frame_parms(frame_parms,1);
-  dump_frame_parms(frame_parms);
 
   phy_init_top(frame_parms);
   phy_init_lte_top(frame_parms);
 
+  //init prach for openair1 test
+  frame_parms->prach_config_common.rootSequenceIndex=1; 
+  frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
+  frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+  frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
+  frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+  prach_fmt = get_prach_fmt(frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+			    frame_parms->frame_type);
+  N_ZC = (prach_fmt <4)?839:139;
 
   if (UE_flag==1) {
-    g_log->log_component[PHY].level = LOG_WARNING;
+#ifdef OPENAIR2
+    g_log->log_component[PHY].level = LOG_INFO;
+#else
+    g_log->log_component[PHY].level = LOG_INFO;
+#endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
     g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag  = LOG_HIGH;
@@ -1239,6 +1279,8 @@ int main(int argc, char **argv) {
     g_log->log_component[RLC].flag  = LOG_HIGH;
     g_log->log_component[PDCP].level = LOG_INFO;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
+    g_log->log_component[OTG].level = LOG_INFO;
+    g_log->log_component[OTG].flag  = LOG_HIGH;
 
     frame_parms->node_id = NODE;
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
@@ -1250,6 +1292,10 @@ int main(int argc, char **argv) {
       PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
     }
     
+    compute_prach_seq(&PHY_vars_UE_g[0]->lte_frame_parms.prach_config_common,
+		      PHY_vars_UE_g[0]->lte_frame_parms.frame_type,
+		      PHY_vars_UE_g[0]->X_u);
+
     PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
 #ifndef OPENAIR2
     PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
@@ -1259,11 +1305,12 @@ int main(int argc, char **argv) {
     NB_INST=1;
     
     openair_daq_vars.manual_timing_advance = 0;
-    openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+    openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+
     // if AGC is off, the following values will be used
     for (i=0;i<4;i++) 
-      rxgain[i]=50;
+      rxgain[i]=30;
 
     for (i=0;i<4;i++) {
       PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
@@ -1292,16 +1339,25 @@ int main(int argc, char **argv) {
       }
       PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0];
     }
+
+    PHY_vars_UE_g[0]->tx_power_max_dBm = tx_max_power;
+
   }
   else {
-    g_log->log_component[PHY].level = LOG_WARNING;
+#ifdef OPENAIR2
+    g_log->log_component[PHY].level = LOG_INFO;
+#else
+    g_log->log_component[PHY].level = LOG_INFO;
+#endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
     g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag  = LOG_HIGH;
-    g_log->log_component[RLC].level = LOG_DEBUG;
+    g_log->log_component[RLC].level = LOG_INFO;
     g_log->log_component[RLC].flag  = LOG_HIGH;
     g_log->log_component[PDCP].level = LOG_INFO;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
+    g_log->log_component[OTG].level = LOG_INFO;
+    g_log->log_component[OTG].flag  = LOG_HIGH;
 
 
     frame_parms->node_id = PRIMARY_CH;
@@ -1313,21 +1369,25 @@ int main(int argc, char **argv) {
       PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
       PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
     }
+
+    compute_prach_seq(&PHY_vars_eNB_g[0]->lte_frame_parms.prach_config_common,
+		      PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
+		      PHY_vars_eNB_g[0]->X_u);
     
     NB_eNB_INST=1;
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=9;
-    openair_daq_vars.ue_ul_nb_rb=12;
-    openair_daq_vars.target_ue_ul_mcs=10;
+    openair_daq_vars.target_ue_dl_mcs=5;
+    openair_daq_vars.ue_ul_nb_rb=10;
+    openair_daq_vars.target_ue_ul_mcs=5;
 
     // if AGC is off, the following values will be used
     for (i=0;i<4;i++) 
-      rxgain[i]=40;
+      rxgain[i]=30;
 
     // set eNB to max gain
-    PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB =  rxg_max[0]-10;
+    PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB =  rxg_max[0]; //was measured at rxgain=30;
     for (i=0; i<4; i++) {
       frame_parms->rfmode[i] = rf_mode_max[i];
     }
@@ -1341,11 +1401,13 @@ int main(int argc, char **argv) {
     frame_parms->carrier_freqtx[i] = carrier_freq[i];
     frame_parms->rxgain[i]       = rxgain[i];
     frame_parms->txgain[i]       = txgain[i];
-   //frame_parms->rf_mode is set above (individually for UE and eNB)
+    //frame_parms->rf_mode is set above (individually for UE and eNB)
     frame_parms->rflocal[i]      = rf_local[i];
     frame_parms->rfvcolocal[i]   = rf_vcocal[i];
     frame_parms->rxdc[i]         = rf_rxdc[i];
   }
+
+  dump_frame_parms(frame_parms);
   
   mac_xface = malloc(sizeof(MAC_xface));
   
@@ -1362,20 +1424,20 @@ int main(int argc, char **argv) {
 
   mac_xface->macphy_exit = &exit_fun;
 
-  /*
   if (otg_enabled) {
     init_all_otg();
     g_otg->seed = 0;
     init_seeds(g_otg->seed);
-    g_otg->num_nodes = 1;
+    g_otg->num_nodes = 2;
     for (i=0; i<g_otg->num_nodes; i++){
       for (j=0; j<g_otg->num_nodes; j++){ 
+	//g_otg->packet_gen_type=SUBSTRACT_STRING;
+	g_otg->aggregation_level[i][j]=1;
 	g_otg->application_type[i][j] = SCBR;
-	init_predef_traffic();
       }
     }
+    init_predef_traffic();
   }
-  */
 
   // start up the hardware
   openair_fd=setup_oai_hw(frame_parms);
