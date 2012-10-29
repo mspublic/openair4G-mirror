@@ -132,7 +132,7 @@ int mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index) {
 #ifdef CELLULAR
   return (rrc_L2_get_rrc_status(Mod_id,eNB_flag,index));
 #else 
-  mac_get_rrc_lite_status(Mod_id, eNB_flag, index);
+  return mac_get_rrc_lite_status(Mod_id, eNB_flag, index);
 #endif //CELLULAR
 }
 
