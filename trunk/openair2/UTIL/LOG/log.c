@@ -479,6 +479,9 @@ void set_glog_filelog(int enable) {
   g_log->filelog = enable;
 }
 
+void set_component_filelog(int component){
+  g_log->log_component[component].filelog =  1;
+}
 
 /*
  * for the two functions below, the passed array must have a final entry

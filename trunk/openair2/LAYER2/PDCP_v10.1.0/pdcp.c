@@ -447,7 +447,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	    LOG_I(OTG,"[eNB %d] send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
 	    free(otg_pkt);
 	  }
-	} //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established  \n", frame, eNB_index,dst_id - NB_eNB_INST);
+	} //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
       }
     }else {
       src_id = module_id+NB_eNB_INST;
@@ -460,7 +460,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	  LOG_I(OTG,"[UE %d] send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", UE_index, src_id, rab_id, src_id, dst_id, pkt_size);
 	  free(otg_pkt);
 	}
-      } //else LOG_D(OTG,"frame %d ue %d-> enb %d link not yet established \n", frame, UE_index, eNB_index);
+      } //else LOG_D(OTG,"frame %d ue %d-> enb %d link not yet established state %d  \n", frame, UE_index, eNB_index, mac_get_rrc_status(module_id, eNB_flag, eNB_index ));
     }
   }
 #endif
