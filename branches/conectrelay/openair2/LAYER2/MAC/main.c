@@ -138,6 +138,17 @@ int mac_top_init(){
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
 
+
+  LOG_I(MAC,"[MAIN] Init function start:Nb_RN_INST=%d\n",NB_RN_INST);
+  if (NB_RN_INST>0) {
+    rn_mac_inst = (RN_MAC_INST*)malloc16(NB_RN_INST*sizeof(RN_MAC_INST));
+    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d RN_MAC_INST @ %p\n",NB_RN_INST*sizeof(RN_MAC_INST),NB_RN_INST,rn_mac_inst);
+    bzero(rn_mac_inst,NB_RN_INST*sizeof(RN_MAC_INST));
+  }
+  else{
+    rn_mac_inst = NULL;
+  }
+
   LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
@@ -159,15 +170,6 @@ int mac_top_init(){
     eNB_mac_inst = NULL;
   }
 
-  LOG_I(MAC,"[MAIN] Init function start:Nb_RN_INST=%d\n",NB_RN_INST);
-  if (NB_RN_INST>0) {
-    rn_mac_inst = (RN_MAC_INST*)malloc16(NB_RN_INST*sizeof(RN_MAC_INST));
-    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d RN_MAC_INST @ %p\n",NB_RN_INST*sizeof(RN_MAC_INST),NB_RN_INST,rn_mac_inst);
-    bzero(rn_mac_inst,NB_RN_INST*sizeof(RN_MAC_INST));
-  }
-  else{
-    rn_mac_inst = NULL;
-  }
 
   for(Mod_id=0;Mod_id<NB_eNB_INST;Mod_id++){
 
@@ -198,6 +200,8 @@ int mac_top_init(){
 
   init_transport_channels(2);
 
+
+  // eNB
   // Set up DCIs for TDD 5MHz Config 1..6
   for (i=0;i<NB_eNB_INST;i++) {
     LOG_D(MAC,"[MAIN][eNB %d] initializing RA_template\n",i);
@@ -231,6 +235,43 @@ int mac_top_init(){
       UE_template[j].rnti=0;
     }
   }
+
+
+  // RELAY/eNBs --
+  // Set up DCIs for TDD 5MHz Config 1..6
+  for (i=0;i<NB_RN_INST;i++) {
+    LOG_D(MAC,"[MAIN][RN/eNB %d] initializing RA_template\n",i);
+    LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_eNB/RN][MOD %02d][]\n", i);
+
+    RA_template = (RA_TEMPLATE *)&rn_mac_inst[i].enb.RA_template[0];
+    for (j=0;j<NB_RA_PROC_MAX;j++) {
+      if (mac_xface->lte_frame_parms->frame_type == TDD) {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      }
+      else {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_FDD_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_FDD_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_FDD_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_FDD_t;
+      }
+      RA_template[j].RA_dci_fmt1        = format1A;
+      RA_template[j].RA_dci_fmt2        = format1A;
+    }
+
+
+    UE_template = (UE_TEMPLATE *)&rn_mac_inst[i].enb.UE_template[0];
+    for (j=0;j<NUMBER_OF_UE_MAX;j++) {
+      UE_template[j].rnti=0;
+    }
+  }
+
 
 
  //ICIC init param
@@ -333,6 +374,8 @@ void mac_top_cleanup(void){
     free (UE_mac_inst);
   if (NB_eNB_INST>0)
     free(eNB_mac_inst);
+  if (NB_RN_INST>0)
+      free(rn_mac_inst);
   free( Mac_rlc_xface);
 }
 

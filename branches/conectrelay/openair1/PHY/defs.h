@@ -151,6 +151,7 @@ typedef struct
   /// Module ID indicator for this instance
   u8 Mod_id;
   u8 local_flag;
+  u8 relay_flag;
   unsigned int rx_total_gain_eNB_dB;
   u32 frame;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
@@ -275,6 +276,7 @@ typedef struct
   /// Module ID indicator for this instance
   u8 Mod_id;
   u8 local_flag;
+  u8 relay_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
   rx_gain_t rx_gain_mode[4];

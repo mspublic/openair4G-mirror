@@ -246,7 +246,6 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 	  PHY_vars_RN_g = malloc(NB_RN_INST*sizeof(PHY_VARS_RN*));
 	    for (RN_id=max(NB_eNB_INST,NB_UE_INST); RN_id < max(NB_eNB_INST,NB_UE_INST)+NB_RN_INST;RN_id++){
 	      PHY_vars_RN_g[RN_id-max(NB_eNB_INST,NB_UE_INST)] = init_lte_RN(*frame_parms, RN_id,Nid_cell,cooperation_flag,abstraction_flag,transmission_mode);
-			printf("TEST RELAY INITIALIZATION...\n");
 
 	    }
   }

@@ -107,6 +107,44 @@ void ue_init_mac(){
       UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
     }
   }
+
+  //RELAY/UE NODE MAC INIT
+  if(NB_RN_INST > 0) {
+
+
+	  for (i=0 ; i < NB_RN_INST; i++){
+		  // default values as deined in 36.331 sec 9.2.2
+		  LOG_I(MAC,"[RN%d] Applying default macMainConfig\n",i);
+		  LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_UE][MOD %02d][]\n", i+NB_eNB_INST);
+
+		  //UE_mac_inst[Mod_id].scheduling_info.macConfig=NULL;
+		  rn_mac_inst[i].ue.scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+		  rn_mac_inst[i].ue.scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+		  rn_mac_inst[i].ue.scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
+		  rn_mac_inst[i].ue.scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
+		  rn_mac_inst[i].ue.scheduling_info.PathlossChange_db = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
+		  rn_mac_inst[i].ue.PHR_state = MAC_MainConfig__phr_Config_PR_setup;
+		  rn_mac_inst[i].ue.scheduling_info.SR_COUNTER=0;
+		  rn_mac_inst[i].ue.scheduling_info.sr_ProhibitTimer=0;
+		  rn_mac_inst[i].ue.scheduling_info.sr_ProhibitTimer_Running=0;
+		  rn_mac_inst[i].ue.scheduling_info.maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+		  rn_mac_inst[i].ue.scheduling_info.ttiBundling=0;
+		  rn_mac_inst[i].ue.scheduling_info.drx_config=NULL;
+		  rn_mac_inst[i].ue.scheduling_info.phr_config=NULL;
+		  rn_mac_inst[i].ue.scheduling_info.periodicBSR_SF  =  get_sf_periodicBSRTimer(UE_mac_inst[i].scheduling_info.periodicBSR_Timer);
+		  rn_mac_inst[i].ue.scheduling_info.retxBSR_SF     =  get_sf_retxBSRTimer(UE_mac_inst[i].scheduling_info.retxBSR_Timer);
+		  rn_mac_inst[i].ue.scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[i].scheduling_info.periodicPHR_Timer);
+		  rn_mac_inst[i].ue.scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[i].scheduling_info.prohibitPHR_Timer);
+		  rn_mac_inst[i].ue.scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[i].scheduling_info.PathlossChange);
+
+		  for (j=0; j < MAX_NUM_LCID; j++){
+			  LOG_D(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
+			  rn_mac_inst[i].ue.scheduling_info.Bj[j]=-1;
+			  rn_mac_inst[i].ue.scheduling_info.bucket_size[j]=-1;
+		  }
+	  }
+  }
+
 }
 
 unsigned char *parse_header(unsigned char *mac_header,

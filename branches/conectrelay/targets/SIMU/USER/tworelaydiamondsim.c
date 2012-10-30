@@ -584,7 +584,7 @@ int main (int argc, char **argv)
        l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
 
 
-
+       //FIXME
        //TODO: Where is this function mrbch_phy_sync_failure() function defined? What it is used for?
        for (i = 0; i < NB_eNB_INST; i++)
     	   mac_xface->mrbch_phy_sync_failure (i, 0, i);
@@ -593,8 +593,6 @@ int main (int argc, char **argv)
        //for (RN_id=max(NB_eNB_INST,NB_UE_INST); RN_id < max(NB_eNB_INST,NB_UE_INST)+NB_RN_INST;RN_id++)
        //    	   mac_xface->mrbch_phy_sync_failure (RN_id, 0, RN_id);
 
-
-       //TODO: What is this function? Why do we need this??
        mac_xface->macphy_exit = exit_fun;
 #endif
 
@@ -680,8 +678,9 @@ int main (int argc, char **argv)
     		   oai_emulation.info.time_ms = frame * 10 + (next_slot>>1) ;
 
     		   //CHOOSE UPLINK / DOWNLINK DECISION BASED ON the subframe.
+    		   //TODO: What is this next_slot>>1 thing? It does not give the current subframe...
     		   direction = subframe_select_HDrelay(frame_parms,next_slot>>1);
-    		   printf("SUBFRAME SELECTION FOR SLOT %d DONE. \n", slot);
+    		   printf("(Subframe %d) Direction: %d \n",next_slot>>1, direction);
 
 
     		   //TODO: What does it mean to have Channel_Flag=1. What is -X option in args is used for?? What does Channel_Func() function is used for?
@@ -713,11 +712,16 @@ int main (int argc, char **argv)
     						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
     						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 
-    				   //PHY_vars_eNB_g[eNB_id]->frame = frame;
-    				   phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], argvars.abstraction_flag,argvars.relay_flag);
+    				   PHY_vars_eNB_g[eNB_id]->frame = frame;
 
+    				   //relay_flag=0 sets this eNB as a standard eNB.
+    				   PHY_vars_eNB_g[eNB_id]->relay_flag = 0 ;
+    				   phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], argvars.abstraction_flag,argvars.relay_flag);
+    				   	  //TODO: What are we going to do with the special subframes? Who is transmitting/receiving during these subframes??
 
     			   }
+
+
 
      			   /*******************************************
         			    *
@@ -725,7 +729,7 @@ int main (int argc, char **argv)
         			    *
         			    *
         			    *********************************************/
-    			   /*
+
     			   if ((next_slot % 2) == 0)
     				   clear_UE_transport_info (oai_emulation.info.nb_ue_local);
 
@@ -736,6 +740,9 @@ int main (int argc, char **argv)
 
     					   LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
     							   UE_id, frame, slot, next_slot >> 1);
+
+    					   //This sets the relay flag = 0, (which means this UE is an ordinary UE).
+    					   PHY_vars_UE_g[UE_id]->relay_flag = 0;
 
     					   if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
     						   if (frame>0) {
@@ -758,10 +765,6 @@ int main (int argc, char **argv)
 
 
 
-					 */
-
-
-
      			   /*******************************************
         			    *
         			    *  Relay Node (RN) procedures and preparation for new subframe
@@ -770,6 +773,52 @@ int main (int argc, char **argv)
         			    *********************************************/
 
     			   //TODO: To be implemented...
+
+    			   //FIXME: What is this transport_info clearing? When does these structures created and filled?
+    			   if((next_slot %2) ==0){
+    				  // clear_RN_transport_info(oai_emulation.info.nb_rn_local);
+    			   }
+
+    			   for (RN_id=oai_emulation.info.first_rn_local;
+    					   (RN_id<(oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local)) && (oai_emulation.info.cli_start_rn[RN_id]==1);
+    					   RN_id++) {
+    				   //printf ("debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+    				   //printf ("debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
+    				   LOG_D(EMU,"PHY procedures RN/eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
+    						   RN_id, frame, slot, next_slot >> 1,
+    						   PHY_vars_RN_g[RN_id]->eNB->lte_frame_parms.frame_type,
+    						   PHY_vars_RN_g[RN_id]->eNB->lte_frame_parms.tdd_config,PHY_vars_RN_g[RN_id]->eNB->lte_frame_parms.Nid_cell);
+
+    				   PHY_vars_RN_g[RN_id]->eNB->frame = frame;
+
+    				   //relay_flag=0 sets this eNB as a standard eNB.
+    				   PHY_vars_RN_g[RN_id]->eNB->relay_flag = 1+ (RN_id %2);
+    				   PHY_vars_RN_g[RN_id]->ue->relay_flag = 1+ (RN_id %2);
+
+    				   //Procedures for eNB side of RN node
+    				   phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_RN_g[RN_id]->eNB, argvars.abstraction_flag,argvars.relay_flag);
+
+    				   //Procedures for UE side of RN node
+					   if (PHY_vars_RN_g[RN_id]->ue->UE_mode[0] != NOT_SYNCHED) {
+						   if (frame>0) {
+							   PHY_vars_RN_g[RN_id]->ue->frame = frame;
+							   phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_RN_g[RN_id]->ue, 0, argvars.abstraction_flag,normal_txrx, argvars.relay_flag);
+						   }
+					   }
+					   else {
+						   if (argvars.abstraction_flag==1){
+							   LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", RN_id, PHY_vars_RN_g[RN_id]->ue->UE_mode[0]);
+							   exit(-1);
+						   }
+						   if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
+							   initial_sync(PHY_vars_RN_g[RN_id]->ue);
+
+						   }
+					   }
+
+
+
+    			   }
 
     			   //TODO: Stuff for ethernet emulation. Remove it safely??
     			   //emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);

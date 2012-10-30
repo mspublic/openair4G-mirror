@@ -493,7 +493,7 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     return(-1);
 
   if(relay_flag > 0){
-	  LOG_D(PHY,"Subframe Select: [RELAY] Relay_flag %d for (subframe %d) TDD %d/%d Nid_cell %d\n", relay_flag, subframe, frame_parms->tdd_config,frame_parms->Nid_cell);
+	  //LOG_D(PHY,"Subframe Select: [RELAY] Relay_flag %d for (subframe %d) TDD %d/%d Nid_cell %d\n", relay_flag, subframe, frame_parms->tdd_config,frame_parms->Nid_cell);
 	  return (subframe_select_HDrelay(frame_parms, subframe));
   }
 
