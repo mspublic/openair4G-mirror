@@ -253,6 +253,7 @@ void init_oai_emulation() {
   oai_emulation.info.nb_enb_remote=0;
   oai_emulation.info.first_ue_local=0;
   oai_emulation.info.first_enb_local=0;
+  oai_emulation.info.first_rn_local=0;
   oai_emulation.info.master_id=0;
   oai_emulation.info.nb_ue_local= 1;//default 1 UE 
   oai_emulation.info.nb_enb_local= 1;//default 1 eNB
@@ -290,6 +291,10 @@ void init_oai_emulation() {
   for (i=0; i < NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX; i++)
     oai_emulation.info.oai_ifup[i]=0;
   
+  for (i=0; i < NUMBER_OF_eNB_MAX; i++)
+    oai_emulation.info.cli_start_rn[i]=1;
+
+
    oai_emulation.info.nb_master =0;
    oai_emulation.info.ethernet_id=0;
    oai_emulation.info.multicast_group=0;

@@ -1636,7 +1636,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       LOG_E(PHY,"[UE  %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms.Nid_cell);
       mac_xface->macphy_exit("");
       vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
-      return;
+      return 0;
     }
     LOG_D(PHY,"Calling dci_decoding_proc_emul ...\n");
     dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
@@ -2385,7 +2385,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  LOG_E(PHY,"[UE %d] Frame %d, subframe %d: FATAL, prach_resources is NULL\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
 	  mac_xface->macphy_exit("");
           vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	  return;
+	  return 0;
 	}
 	/*
 #ifdef DEBUG_PHY_PROC
@@ -2656,23 +2656,87 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
 
-  if ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_UL)||
-      (phy_vars_ue->lte_frame_parms.frame_type == 0)){
-    phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
-  }
-  if ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1, relay_flag)==SF_DL) ||
-      (phy_vars_ue->lte_frame_parms.frame_type == 0)){
-    phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
-#ifdef EMOS
-    phy_procedures_emos_UE_RX(phy_vars_ue,last_slot,eNB_id);
-#endif
-  }
-  if (subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1, relay_flag)==SF_S) {
-     phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag, relay_flag);
-  }
-  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1, relay_flag)==SF_S) {
-    phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
-  }
+
+
+  if(phy_vars_ue->relay_flag == 0){
+
+ 	  if (((phy_vars_ue->lte_frame_parms.frame_type == 1)&& ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1,relay_flag)==SF_DL) || (subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_DL2)))||
+ 			  (phy_vars_ue->lte_frame_parms.frame_type == 0)){
+ 		  LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_RX(%d)\n", phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+ 		  //phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+
+ 	  }
+ 	  if (((phy_vars_ue->lte_frame_parms.frame_type == 1)&& ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_UL) || (subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_UL2)))||
+ 			  (phy_vars_ue->lte_frame_parms.frame_type == 0)){
+ 		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_TX(%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, next_slot);
+ 		  //phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+ 	  }
+ 	  if ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_S) &&
+ 			  ((next_slot&1)==0)) {
+ 		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_S_TX(%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, next_slot);
+ 		  //     phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag, relay_flag);
+
+ 	  }
+ 	  if ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1,relay_flag)==SF_S) &&
+ 			  ((last_slot&1)==0)){
+ 		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n", phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+ 		  //phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+ 	  }
+   }
+
+  if(phy_vars_ue->relay_flag == 1){
+
+ 	  if (((phy_vars_ue->lte_frame_parms.frame_type == 1)&& ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1,relay_flag)==SF_DL)))||
+ 			  (phy_vars_ue->lte_frame_parms.frame_type == 0)){
+ 		  LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_RX(%d)\n", phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+ 		  //phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+
+ 	  }
+ 	  if (((phy_vars_ue->lte_frame_parms.frame_type == 1)&& ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_UL)))||
+ 			  (phy_vars_ue->lte_frame_parms.frame_type == 0)){
+ 		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_TX(%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, next_slot);
+ 		  //phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+ 	  }
+ 	  if ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_S) &&
+ 			  ((next_slot&1)==0)) {
+ 		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_S_TX(%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, next_slot);
+ 		  //     phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag, relay_flag);
+
+ 	  }
+ 	  if ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1,relay_flag)==SF_S) &&
+ 			  ((last_slot&1)==0)){
+ 		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n", phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+ 		  //phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+ 	  }
+   }
+
+  if(phy_vars_ue->relay_flag == 2){
+
+  	  if (((phy_vars_ue->lte_frame_parms.frame_type == 1)&& ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1,relay_flag)==SF_DL2)))||
+  			  (phy_vars_ue->lte_frame_parms.frame_type == 0)){
+  		  LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_RX(%d)\n", phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+  		  //phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+
+  	  }
+  	  if (((phy_vars_ue->lte_frame_parms.frame_type == 1)&& ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_UL2)))||
+  			  (phy_vars_ue->lte_frame_parms.frame_type == 0)){
+  		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_TX(%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, next_slot);
+  		  //phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+  	  }
+  	  if ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_S) &&
+  			  ((next_slot&1)==0)) {
+  		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_UE_S_TX(%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, next_slot);
+  		  //     phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag, relay_flag);
+
+  	  }
+  	  if ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1,relay_flag)==SF_S) &&
+  			  ((last_slot&1)==0)){
+  		      LOG_D(PHY,"[UE %d] Frame %d: Calling phy_procedures_eNB_S_RX(%d)\n", phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
+  		  //phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
+  	  }
+    }
+
+
 
 #ifdef OPENAIR2
   if (last_slot%2==0) {

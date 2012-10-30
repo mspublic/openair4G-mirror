@@ -229,6 +229,12 @@ typedef struct{
   MeasGapConfig_t                 *measGapConfig[NB_CNX_UE];
 }UE_RRC_INST;
 
+typedef struct{
+	UE_RRC_INST ue;
+	eNB_RRC_INST eNB;
+} RN_RRC_INST;
+
+
 //main.c
 int rrc_init_global_param(void);
 int L3_xface_init(void);

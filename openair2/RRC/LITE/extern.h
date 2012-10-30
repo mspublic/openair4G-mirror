@@ -15,6 +15,8 @@ ________________________________________________________________*/
 
 extern UE_RRC_INST *UE_rrc_inst;
 extern eNB_RRC_INST *eNB_rrc_inst;
+extern RN_RRC_INST *rn_rrc_inst;
+
 //extern RRC_XFACE *Rrc_xface;
 #ifndef USER_MODE
 //extern MAC_RLC_XFACE *Mac_rlc_xface;

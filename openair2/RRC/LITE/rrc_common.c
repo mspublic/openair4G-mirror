@@ -208,9 +208,18 @@ void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
 
-  LOG_D(RRC,"[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n",
-	NB_UE_INST,NB_eNB_INST);
+  LOG_D(RRC,"[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n, NB_RN_INST=%d\n",
+	NB_UE_INST,NB_eNB_INST,NB_RN_INST);
   
+  if (NB_RN_INST>0){
+      rn_rrc_inst = (RN_RRC_INST*)malloc16(NB_RN_INST*sizeof(RN_RRC_INST));
+      memset(rn_rrc_inst,0,NB_RN_INST*sizeof(RN_RRC_INST));
+      LOG_D(RRC,"ALLOCATE %d Bytes for RN_RRC_INST @ %p\n",(unsigned int)(NB_RN_INST*sizeof(RN_RRC_INST)),rn_rrc_inst);
+    } else{
+      rn_rrc_inst=NULL;
+    }
+
+
   if (NB_UE_INST>0){
     UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
     memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
@@ -245,6 +254,8 @@ void rrc_top_cleanup(void){
    free(UE_rrc_inst);
  if (NB_eNB_INST>0)
    free(eNB_rrc_inst);
+ if (NB_RN_INST>0)
+   free(rn_rrc_inst);
 
 }
 
