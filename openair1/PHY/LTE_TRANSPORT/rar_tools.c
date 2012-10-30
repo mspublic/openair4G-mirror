@@ -128,7 +128,8 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
   LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
-  LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
+  //  LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms =  phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
   //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
 
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);

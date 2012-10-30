@@ -205,11 +205,13 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	}
       }
 #endif
+
       //dlsch_abstraction(PHY_vars_UE_g[UE_id]->sinr_dB, rb_alloc, 8);
+//#endif 
 
       // fill in perfect channel estimates
       channel_desc_t *desc1;
-      s32 **dl_channel_est = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0];
+      s32 **dl_channel_est = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[att_eNB_id]->dl_ch_estimates[0]; // apaposto tommorow
       s16 nb_samples=301;
       //      double scale = pow(10.0,(enb_data[att_eNB_id]->tx_power_dBm + eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
       double scale = pow(10.0,(PHY_vars_eNB_g[att_eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower+eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
@@ -370,7 +372,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
       printf("[SIM][DL] UE %d : ADC in %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif    
 
-      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata;
+      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[att_eNB_id]->rxdata; // apaposto
       slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
       
       adc(r_re,
@@ -435,10 +437,11 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	}
       }
       
+      for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) { // apaposto
       // Compute RX signal for eNB = eNB_id
       for (UE_id=0;UE_id<NB_UE_INST;UE_id++){
-
-	txdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdata;
+ 
+	txdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[eNB_id]->txdata; // apaposto
 	frame_parms = &PHY_vars_UE_g[UE_id]->lte_frame_parms;
 	slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 	slot_offset_meas = ((next_slot&1)==0) ? slot_offset : (slot_offset-(frame_parms->samples_per_tti>>1));
@@ -500,7 +503,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	  }
 	}
       } //UE_id
-      
+    }// apaposto
 	// RF model
 	/*
 	  rf_rx(r_re0,

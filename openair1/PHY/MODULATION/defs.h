@@ -44,7 +44,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	     unsigned char l,
 	     unsigned char Ns,
 	     int sample_offset,
-	     int no_prefix);
+	     int no_prefix); 
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,
@@ -57,13 +57,13 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 
 void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 subframe);
 
-void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 subframe);
+void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 subframe, u8 eNB_index); // apaposto 
 
 void init_prach625(LTE_DL_FRAME_PARMS *frame_parms);
 
 void remove_625_Hz(PHY_VARS_eNB *phy_vars_eNB,s16 *prach);
 
-void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,s16 *prach);
+void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,s16 *prach, u8 eNB_index); // apaposto
 
 #endif
 /** @}*/

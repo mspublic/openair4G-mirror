@@ -464,15 +464,16 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_DLSCH_t *dlsch_ue;
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
-  u32 eNB_id2;
+  u8 eNB_id2;
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
 #endif
   
   for (eNB_id2=0;eNB_id2<NB_eNB_INST;eNB_id2++) {
-    if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
+    if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell	== phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell) // apaposto
       break;
-  }
+     }
+   
   if (eNB_id2==NB_eNB_INST) {
     LOG_E(PHY,"FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
     mac_xface->macphy_exit("");

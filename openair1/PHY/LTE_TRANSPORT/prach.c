@@ -352,23 +352,24 @@ static short prach_tmp[45600*2] __attribute__((aligned(16)));
 
 s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
-  u8 frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
-  u8 tdd_config         = phy_vars_ue->lte_frame_parms.tdd_config;
-  u16 rootSequenceIndex = phy_vars_ue->lte_frame_parms.prach_config_common.rootSequenceIndex; 
-  u8 prach_ConfigIndex  = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex; 
-  u8 Ncs_config         = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  u8 restricted_set     = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag;
-  u8 n_ra_prboffset     = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
+  u8 frame_type         = phy_vars_ue->lte_frame_parms[eNB_id]->frame_type; // apaposto [eNB_id]-> insteadof .
+  u8 tdd_config         = phy_vars_ue->lte_frame_parms[eNB_id]->tdd_config; // apaposto [eNB_id]-> insteadof .
+  u16 rootSequenceIndex = phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.rootSequenceIndex; // apaposto [eNB_id]-> insteadof .
+  u8 prach_ConfigIndex  = phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex; // apaposto [eNB_id]-> insteadof .
+  u8 Ncs_config         = phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;// apaposto [eNB_id]-> insteadof .
+  u8 restricted_set     = phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag; // apaposto [eNB_id]-> insteadof .
+  u8 n_ra_prboffset     = phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset; // apaposto [eNB_id]-> insteadof .
   u8 preamble_index     = phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
   u8 tdd_mapindex       = phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index;
   s16 *prachF           = phy_vars_ue->lte_ue_prach_vars[eNB_id]->prachF;
   s16 *prach            = (s16*)prach_tmp;
   s16 *prach2;
-  s16 subframe_offset   = subframe*phy_vars_ue->lte_frame_parms.samples_per_tti;
+  s16 subframe_offset   = subframe*phy_vars_ue->lte_frame_parms[eNB_id]->samples_per_tti; // apaposto [eNB_id]-> insteadof .
 #ifdef BIT8_TX
   s8 *prach_out         = (s8*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe_offset>>1];
 #else
-  s16 *prach_out        = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe_offset];
+  //s16 *prach_out        = (s16*)&phy_vars_ue->lte_ue_common_vars.txdata[0][subframe_offset];
+  s16 *prach_out        = (s16*)&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[0][subframe_offset]; // apaposto
 #endif
   s16 amp               = phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp;
   s16 Ncp;
@@ -424,7 +425,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
 	n_ra_prb = n_ra_prboffset + 6*(f_ra>>1);
       }    
       else {
-	n_ra_prb = phy_vars_ue->lte_frame_parms.N_RB_UL - 6 - n_ra_prboffset + 6*(f_ra>>1);
+	n_ra_prb = phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_UL - 6 - n_ra_prboffset + 6*(f_ra>>1); // apaposto [eNB_id]-> insteadof .
       }
     }
     else {
@@ -436,7 +437,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
 	n_ra_prb = 6*f_ra;
       }
       else {
-	n_ra_prb = phy_vars_ue->lte_frame_parms.N_RB_UL - 6*(f_ra+1);
+	n_ra_prb = phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_UL - 6*(f_ra+1); // apaposto [eNB_id]-> insteadof .
       }
     }
   }
@@ -504,9 +505,9 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
   //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
   
-  k = (12*n_ra_prb) - 6*phy_vars_ue->lte_frame_parms.N_RB_UL;
+  k = (12*n_ra_prb) - 6*phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_UL; // apaposto [eNB_id]-> insteadof .
   if (k<0)
-    k+=phy_vars_ue->lte_frame_parms.ofdm_symbol_size;
+    k+=phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size; // apaposto [eNB_id]-> insteadof .
   k*=12;
   k+=13;
 
@@ -528,7 +529,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     prachF[k++]= ((Xu_re*ru[offset2<<1]) - (Xu_im*ru[1+(offset2<<1)]))>>15;
     prachF[k++]= ((Xu_im*ru[offset2<<1]) + (Xu_re*ru[1+(offset2<<1)]))>>15;
 
-    if (k==(12*2*phy_vars_ue->lte_frame_parms.ofdm_symbol_size))
+    if (k==(12*2*phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size))  // apaposto [eNB_id]-> insteadof .
       k=0;
   }
 
@@ -551,10 +552,10 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     break;
   }
 
-  Ncp = (Ncp*phy_vars_ue->lte_frame_parms.N_RB_UL/100); 
+  Ncp = (Ncp*phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_UL/100);  // apaposto [eNB_id]-> insteadof .
   prach2 = prach+(Ncp<<1);
   // do IDFT
-  switch (phy_vars_ue->lte_frame_parms.N_RB_UL) {
+  switch (phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_UL) {  // apaposto [eNB_id]-> insteadof .
   case 6:
     if (prach_fmt == 4) {
       fft(prachF,prach2,twiddle_ifft256,rev256,8,4,0);

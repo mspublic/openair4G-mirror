@@ -94,14 +94,16 @@ int generate_sss(mod_sym_t **txdataF,
 
 int pss_ch_est(PHY_VARS_UE *phy_vars_ue,
 	       s32 pss_ext[4][72],
-	       s32 sss_ext[4][72])  {
+	       s32 sss_ext[4][72],
+	       u8  eNB_id)  {//apaposto
 
   short *pss;
   short *pss_ext2,*sss_ext2,*sss_ext3,tmp_re,tmp_im,tmp_re2,tmp_im2;
   u8 aarx,i;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  // LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
 
-  switch (phy_vars_ue->lte_ue_common_vars.eNb_id) {
+  switch (phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id) { //apaposto
     
   case 0:
     pss = &primary_synch0[10];
@@ -151,7 +153,8 @@ int pss_ch_est(PHY_VARS_UE *phy_vars_ue,
 
 int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
 		    s32 pss_ext[4][72],
-		    s32 sss_ext[4][72]) {
+		    s32 sss_ext[4][72],
+		    u8 eNB_id) { //apaposto
 
     
   
@@ -159,12 +162,13 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
   u8 i,aarx;
   s32 *pss_rxF,*pss_rxF_ext;
   s32 *sss_rxF,*sss_rxF_ext;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms; apaposto
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_id];  // apaposto
 
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   u8 pss_symb,sss_symb;
 
-  s32 **rxdataF =  phy_vars_ue->lte_ue_common_vars.rxdataF;
+  s32 **rxdataF =  phy_vars_ue->lte_ue_common_vars[eNB_id]->rxdataF;
 
   if (frame_parms->frame_type == 0) {
     pss_symb = 6-frame_parms->Ncp;
@@ -212,20 +216,22 @@ short phase_re[7] = {16383, 25101, 30791, 32767, 30791, 25101, 16383};
 short phase_im[7] = {-28378, -21063, -11208, 0, 11207, 21062, 28377};
 
 
-int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) {
+int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max, u8 eNB_id) { // apaposto
   
   u8 i;
   s32 pss_ext[4][72];
   s32 sss0_ext[4][72],sss5_ext[4][72];
-  u8 Nid2 = phy_vars_ue->lte_ue_common_vars.eNb_id;
+  u8 Nid2 = phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id; // apaposto
   u8 flip,phase;
   u16 Nid1;
   s16 *sss0,*sss5;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  //  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
   s32 metric;
   s16 *d0,*d5;
 
-  if (phy_vars_ue->lte_frame_parms.frame_type == 0) { // FDD 
+  // if (phy_vars_ue->lte_frame_parms.frame_type == 0) { // FDD  // apaposto
+  if (phy_vars_ue->lte_frame_parms[eNB_id]->frame_type == 0) { // FDD  // apaposto
 #ifdef DEBUG_SSS
     if (phy_vars_ue->lte_frame_parms.Ncp == 0)
       msg("[PHY][UE%d] Doing SSS for FDD Normal Prefix\n",phy_vars_ue->Mod_id);
@@ -269,7 +275,7 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
 
   pss_sss_extract(phy_vars_ue,
 		  pss_ext,
-		  sss0_ext);
+		  sss0_ext, eNB_id); // apaposto
   /*  
   write_output("rxsig0.m","rxs0",&phy_vars_ue->lte_ue_common_vars.rxdata[0][0],phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
   write_output("rxdataF0.m","rxF0",&phy_vars_ue->lte_ue_common_vars.rxdataF[0][0],2*14*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,2,1);
@@ -282,11 +288,12 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
 
   pss_ch_est(phy_vars_ue,
 	     pss_ext,
-	     sss0_ext);
+	     sss0_ext, eNB_id);// apaposto
   
   //  write_output("sss0_comp0.m","sss0comp0",sss0_ext,72,1,1);
 
-  if (phy_vars_ue->lte_frame_parms.frame_type == 0) { // FDD 
+  // if (phy_vars_ue->lte_frame_parms.frame_type == 0) { // FDD // apaposto 
+  if (phy_vars_ue->lte_frame_parms[eNB_id]->frame_type == 0) { // FDD // apaposto
 
     // SSS
     slot_fep(phy_vars_ue,
@@ -318,7 +325,7 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
   
   pss_sss_extract(phy_vars_ue,
 		  pss_ext,
-		  sss5_ext);
+		  sss5_ext, eNB_id); //apaposto
 
   //  write_output("sss5_ext0.m","sss5ext0",sss5_ext,72,1,1);
   // get conjugated channel estimate from PSS (symbol 6), H* = R* \cdot PSS
@@ -326,7 +333,7 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
   
   pss_ch_est(phy_vars_ue,
 	     pss_ext,
-	     sss5_ext);
+	     sss5_ext, eNB_id); // apaposto
   
   
   
@@ -357,7 +364,9 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
 	// if the current metric is better than the last save it
 	if (metric > *tot_metric) {
 	  *tot_metric = metric;
-	  phy_vars_ue->lte_frame_parms.Nid_cell = Nid2+(3*Nid1);
+	  //  phy_vars_ue->lte_frame_parms.Nid_cell = Nid2+(3*Nid1); apaposto
+	  phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell = Nid2+(3*Nid1); // apaposto
+	 
 	  *phase_max = phase;
 	  *flip_max=flip;
 #ifdef DEBUG_SSS

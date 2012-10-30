@@ -613,7 +613,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 frequency adjustment. 0 means -pi/3, 6 means pi/3.
 @returns 0 on success
 */
-int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max);
+int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max, u8  eNB_index); //apaposto
 
 /*! \brief receiver for the PBCH
 \returns number of tx antennas or -1 if error
@@ -928,7 +928,9 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len);
+
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len); 
+
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb, char* buffer, int len);
 
 
@@ -969,7 +971,7 @@ N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSC
 parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
 */
-int initial_sync(PHY_VARS_UE *phy_vars_ue);
+int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_index); // apaposto
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      u32 subframe,
@@ -1074,6 +1076,8 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id);
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id);
 u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id);
+
+
 
 u32 pmi2hex_2Ar1(u16 pmi);
 

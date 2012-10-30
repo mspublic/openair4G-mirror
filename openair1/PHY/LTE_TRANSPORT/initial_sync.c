@@ -47,10 +47,11 @@
 
 #define DEBUG_INIT_SYNCH
 
-int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
+int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id) {
 
   u8 l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  //   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
 
 #ifdef DEBUG_INIT_SYNCH
   msg("[PHY][UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
@@ -75,7 +76,8 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   lte_ue_measurements(phy_vars_ue,
 		      phy_vars_ue->rx_offset,
 		      0,
-		      0);
+		      0,
+		      eNB_id); // apaposto
 
   if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
     phy_adjust_gain(phy_vars_ue,0);
@@ -104,8 +106,9 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   */
   pbch_decoded = 0;
   for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
-    pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
-			  phy_vars_ue->lte_ue_pbch_vars[0],
+    // pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars[eNB_id], // apaposto
+    pbch_tx_ant = rx_pbch(phy_vars_ue->lte_ue_common_vars[eNB_id], // apaposto
+			  phy_vars_ue->lte_ue_pbch_vars[eNB_id],
 			  frame_parms,
 			  0,
 			  SISO,
@@ -115,8 +118,9 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
       break;
     }
     
-    pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
-			  phy_vars_ue->lte_ue_pbch_vars[0],
+    // pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars[eNB_id], // apaposto
+    pbch_tx_ant = rx_pbch(phy_vars_ue->lte_ue_common_vars[eNB_id], // apaposto
+			  phy_vars_ue->lte_ue_pbch_vars[eNB_id],
 			  frame_parms,
 			  0,
 			  ALAMOUTI,
@@ -214,14 +218,15 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   
 }
 
-int initial_sync(PHY_VARS_UE *phy_vars_ue) {
+int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id ) {
  
   u32 sync_pos,sync_pos2,sync_pos_slot;
   s32 metric_fdd_ncp=0,metric_fdd_ecp=0,metric_tdd_ncp=0,metric_tdd_ecp=0;
   u8 phase_fdd_ncp,phase_fdd_ecp,phase_tdd_ncp,phase_tdd_ecp;
   u8 flip_fdd_ncp,flip_fdd_ecp,flip_tdd_ncp,flip_tdd_ecp;
   u16 Nid_cell_fdd_ncp=0,Nid_cell_fdd_ecp=0,Nid_cell_tdd_ncp=0,Nid_cell_tdd_ecp=0;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
   u8 i;
   int ret=-1;
 
@@ -231,13 +236,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   frame_parms->frame_type=0;
   init_frame_parms(frame_parms,1);
 
-  sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars.rxdata, 
+  sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars[eNB_id]->rxdata, 
 			   frame_parms,
-			   (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
+			   (int *)phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id); // apaposto this func assigns the value of the eNb_id  
 
   sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
 #ifdef DEBUG_INIT_SYNCH
-  msg("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
+  msg("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id);
 #endif
 
   // SSS detection
@@ -254,13 +259,14 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
       ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
     
     msg("Calling sss detection (FDD normal CP)\n");
-    rx_sss(phy_vars_ue,&metric_fdd_ncp,&flip_fdd_ncp,&phase_fdd_ncp);
+    rx_sss(phy_vars_ue,&metric_fdd_ncp,&flip_fdd_ncp,&phase_fdd_ncp, eNB_id); // apaposto
     frame_parms->nushift  = frame_parms->Nid_cell%6;
     if (flip_fdd_ncp==1)
       phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
-    init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
+    // init_frame_parms(&phy_vars_ue->lte_frame_parms,1); // apaposto
+    init_frame_parms(&phy_vars_ue->lte_frame_parms,1); // apaposto
     lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-    ret = pbch_detection(phy_vars_ue);
+    ret = pbch_detection(phy_vars_ue, eNB_id); // apaposto
 #ifdef DEBUG_INIT_SYNCH
       msg("FDD Normal prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
@@ -287,13 +293,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     if (((sync_pos2 - sync_pos_slot) >=0 ) && 
       ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
       
-      rx_sss(phy_vars_ue,&metric_fdd_ecp,&flip_fdd_ecp,&phase_fdd_ecp);
+      rx_sss(phy_vars_ue,&metric_fdd_ecp,&flip_fdd_ecp,&phase_fdd_ecp, eNB_id); // apaposto
       frame_parms->nushift  = frame_parms->Nid_cell%6;
       if (flip_fdd_ecp==1)
 	phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
       init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-      ret = pbch_detection(phy_vars_ue);
+      ret = pbch_detection(phy_vars_ue, eNB_id); // apaposto
       
 #ifdef DEBUG_INIT_SYNCH
       msg("FDD Extended prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -323,14 +329,14 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	  ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
 	
 	
-	rx_sss(phy_vars_ue,&metric_tdd_ncp,&flip_tdd_ncp,&phase_tdd_ncp);
+	rx_sss(phy_vars_ue,&metric_tdd_ncp,&flip_tdd_ncp,&phase_tdd_ncp,eNB_id); // apaposto
 	if (flip_tdd_ncp==1)
 	  phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
 	frame_parms->nushift  = frame_parms->Nid_cell%6;
 	init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
 
 	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-	ret = pbch_detection(phy_vars_ue);
+	ret = pbch_detection(phy_vars_ue, eNB_id); // apaposto
 	
 
 #ifdef DEBUG_INIT_SYNCH
@@ -358,13 +364,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
 	if (((sync_pos2 - sync_pos_slot) >=0 ) && 
 	    ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
 	  
-	  rx_sss(phy_vars_ue,&metric_tdd_ecp,&flip_tdd_ecp,&phase_tdd_ecp);
+	  rx_sss(phy_vars_ue,&metric_tdd_ecp,&flip_tdd_ecp,&phase_tdd_ecp, eNB_id); // apaposto
 	  frame_parms->nushift  = frame_parms->Nid_cell%6;
 	  if (flip_tdd_ecp==1)
 	    phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
 	  init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
 	  lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
-	  ret = pbch_detection(phy_vars_ue);
+	  ret = pbch_detection(phy_vars_ue, eNB_id); // apaposto
 	  
 #ifdef DEBUG_INIT_SYNCH
       msg("TDD Extended prefix CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -405,7 +411,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
   else {
     //#ifdef DEBUG_INIT_SYNC
     msg("[PHY][UE%d] Initial sync : PBCH not ok\n",phy_vars_ue->Mod_id);
-    msg("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
+    msg("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id); // apaposto
     msg("[PHY][UE%d] Initial sync: (metric fdd_ncp %d (%d), metric fdd_ecp %d (%d), metric_tdd_ncp %d (%d), metric_tdd_ecp %d (%d))\n", 
 	phy_vars_ue->Mod_id, 
 	metric_fdd_ncp,Nid_cell_fdd_ncp, 

@@ -153,6 +153,7 @@ help (void) {
   printf ("-E Random number generator seed\n"); 
   printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
+  printf ("-H Set the number of connected eNBs \n ");
 }
 
 #ifdef XFORMS
@@ -634,7 +635,7 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
-  u8 nb_connected_eNB=0; // apaposto
+  u8 nb_connected_eNB=0; // apaposto  number of connected eNBs that a UE will be attached
   // omv related info
   //pid_t omv_pid;
   char full_name[200];
@@ -1048,7 +1049,7 @@ main (int argc, char **argv)
 	    map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option), eNB_id, UE_id);
       if (oai_emulation.info.transmission_mode == 5) 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
-						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id]->nb_antennas_rx, // apaposto
 						     (UE_id == 0)? Rayleigh1_corr : Rayleigh1_anticorr,
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
@@ -1057,7 +1058,7 @@ main (int argc, char **argv)
       
       else 
 	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
-						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id]->nb_antennas_rx, // apaposto
 						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
@@ -1066,7 +1067,7 @@ main (int argc, char **argv)
       random_channel(eNB2UE[eNB_id][UE_id]);      
       LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
 	    map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
-      UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
+      UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id]->nb_antennas_tx, // apaposto
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
 						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						   oai_emulation.environment_system_config.system_bandwidth_MB,
@@ -1094,11 +1095,11 @@ main (int argc, char **argv)
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
     // update UE_mode for each eNB_id not just 0
-    for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ // apaposto
+    for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ // apaposto for each eNB that ue will be connected do the following checks
     if (abstraction_flag == 0)
-      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = NOT_SYNCHED;
+      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = NOT_SYNCHED; // this means that is not_Synched
     else // later if phy supports simultanious RA, then this could be set to PRACH
-      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = (eNB_id == 0) ? PRACH : NOT_SYNCHED ;
+      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = (eNB_id == 0) ? PRACH : NOT_SYNCHED ; //  we examine the first eNB and set it on PRACH and the second not synched
     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1235 + UE_id;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[eNB_id] = 10;
     
@@ -1139,7 +1140,7 @@ main (int argc, char **argv)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      for (eNB_id =0 ; eNB_id < nb_connected_eNB; eNB_id++)//apostolos 
+      for (eNB_id =0 ; eNB_id < nb_connected_eNB; eNB_id++)//apostolos apaposto  call phy_sync_success among the UE and all potential connected eNBs
 	mac_xface->dl_phy_sync_success (UE_id, 0, eNB_id,1);	//UE_id%NB_eNB_INST);
       }
 #endif
@@ -1330,21 +1331,21 @@ main (int argc, char **argv)
 
 	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, frame, slot, next_slot >> 1);
-	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)	{ // apaposto
-	    if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] != NOT_SYNCHED){
+	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)	{ // apaposto  run phy_procedures_UE_lte among the UE and all potential connected eNBs
+	    if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] != NOT_SYNCHED){ 
 	      if (frame>0) {
 		  PHY_vars_UE_g[UE_id]->frame = frame;
 		  phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
 		}
 	    }
-	    else 
-		{
-	    if ((PHY_vars_UE_g[UE_id]->UE_mode[eNB_id-1] == PUSCH) && (eNB_id < nb_connected_eNB)) 
-	      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id]=PRACH;
-	    
-	    if ((abstraction_flag ==0)&&(frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) 
-			{
-	      initial_sync(PHY_vars_UE_g[UE_id]);
+	    else {
+	      if ((PHY_vars_UE_g[UE_id]->UE_mode[eNB_id-1] == PUSCH) && (eNB_id < nb_connected_eNB)) 
+		PHY_vars_UE_g[UE_id]->UE_mode[eNB_id]=PRACH;
+	      
+	    if ((abstraction_flag ==0)&&(frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
+	      for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ // apaposto  
+		initial_sync(PHY_vars_UE_g[UE_id], eNB_id);
+	      }
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
@@ -1395,18 +1396,18 @@ main (int argc, char **argv)
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
 	write_output ("dlchan0.m", "dlch0",
-		      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
-		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+		      &(PHY_vars_UE_g[0]->lte_ue_common_vars[eNB_id]->dl_ch_estimates[0][0][0]), // apaposto  // do I a need a for all eNB_ids ??? ask Nvid
+		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms[eNB_id]->ofdm_symbol_size)), 1, 1); // apaposto
 	write_output ("dlchan1.m", "dlch1",
-		      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),
-		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+		      &(PHY_vars_UE_g[0]->lte_ue_common_vars[eNB_id]->dl_ch_estimates[1][0][0]), // apaposto
+		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms[eNB_id]->ofdm_symbol_size)), 1, 1); // apaposto
 	write_output ("dlchan2.m", "dlch2",
-		      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),
-		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+		      &(PHY_vars_UE_g[0]->lte_ue_common_vars[eNB_id]->dl_ch_estimates[2][0][0]), // apaposto
+		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms[eNB_id]->ofdm_symbol_size)), 1, 1); // apaposto
 	write_output ("pbch_rxF_comp0.m", "pbch_comp0",
-		      PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0], 6 * 12 * 4, 1, 1);
+		      PHY_vars_UE_g[0]->lte_ue_pbch_vars[eNB_id]->rxdataF_comp[0], 6 * 12 * 4, 1, 1); // apaposto 0 --> eNB_id
 	write_output ("pbch_rxF_llr.m", "pbch_llr",
-		      PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
+		      PHY_vars_UE_g[0]->lte_ue_pbch_vars[eNB_id]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4); // apaposto 0 ---> eNB_id
       }
       /*
          if ((last_slot==1) && (frame==1)) {
@@ -1437,13 +1438,13 @@ main (int argc, char **argv)
     }				//end of slot
 
     if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
-      write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars[eNB_id]->txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1); // apaposto
       sprintf(fname,"eNBtxsig%d.m",frame);
       sprintf(vname,"txs%d",frame);
       write_output(fname,vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
 
-      write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars[eNB_id]->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1); // apaaposto
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     } 
   

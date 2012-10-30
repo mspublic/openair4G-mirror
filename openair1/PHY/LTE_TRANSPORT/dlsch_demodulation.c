@@ -10096,9 +10096,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	     unsigned char dual_stream_flag,
 	     unsigned char i_mod) {
   
-  LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars;
+  // LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars; // apaposto
+  LTE_UE_COMMON *lte_ue_common_vars  = phy_vars_ue->lte_ue_common_vars[eNB_id]; // apaposto
   LTE_UE_PDSCH **lte_ue_pdsch_vars;
-  LTE_DL_FRAME_PARMS *frame_parms    = &phy_vars_ue->lte_frame_parms;
+  //  LTE_DL_FRAME_PARMS *frame_parms    = &phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms    = phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
   PHY_MEASUREMENTS *phy_measurements = &phy_vars_ue->PHY_measurements;
   LTE_UE_DLSCH_t   **dlsch_ue;
 
@@ -10807,9 +10809,11 @@ int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
 		      unsigned char dual_stream_flag,
 		      unsigned char i_mod)
 {  
-  LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars;
+  //  LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars; // apaposto
+  LTE_UE_COMMON *lte_ue_common_vars  = phy_vars_ue->lte_ue_common_vars[eNB_id]; // apaposto
   LTE_UE_PDSCH_FLP **lte_ue_pdsch_vars_flp;
-  LTE_DL_FRAME_PARMS *frame_parms    = &phy_vars_ue->lte_frame_parms;
+  //  LTE_DL_FRAME_PARMS *frame_parms    = &phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms    = phy_vars_ue->lte_frame_parms[eNB_id];
   PHY_MEASUREMENTS *phy_measurements = &phy_vars_ue->PHY_measurements;
   LTE_UE_DLSCH_t   **dlsch_ue;
 
@@ -11280,7 +11284,8 @@ int rx_pdsch_full_flp(PHY_VARS_UE *phy_vars_ue,
 
 void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword) {
 
-  unsigned int nsymb = (phy_vars_ue->lte_frame_parms.Ncp == 0) ? 14 : 12;
+  //  unsigned int nsymb = (phy_vars_ue->lte_frame_parms.Ncp == 0) ? 14 : 12; // apaposto
+  unsigned int nsymb = (phy_vars_ue->lte_frame_parms[eNB_id]->Ncp == 0) ? 14 : 12; // apaposto
   char fname[32],vname[32];
 
   sprintf(fname,"dlsch%d_rxF_ext0.m",eNB_id);

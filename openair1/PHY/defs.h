@@ -267,9 +267,11 @@ typedef struct
   s8 tx_power_dBm;
   u32 frame;//[NUMBER_OF_CONNECTED_eNB_MAX+1]
   u8 n_connected_eNB;
-  PHY_MEASUREMENTS PHY_measurements;//[NUMBER_OF_CONNECTED_eNB_MAX+1]; /// Measurement variables 
-  LTE_DL_FRAME_PARMS  lte_frame_parms;//[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  LTE_UE_COMMON    lte_ue_common_vars;//[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  PHY_MEASUREMENTS  PHY_measurements; /// Measurement variables //apaposto 
+  
+  LTE_DL_FRAME_PARMS  *lte_frame_parms[NUMBER_OF_CONNECTED_eNB_MAX]; //apaposto
+ 
+  LTE_UE_COMMON    *lte_ue_common_vars[NUMBER_OF_CONNECTED_eNB_MAX]; // apaposto
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX];

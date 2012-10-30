@@ -115,7 +115,8 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
 			int *output,
 			unsigned char Ns,
 			unsigned char l,
-			unsigned char p) {
+			unsigned char p,
+			u8 eNB_id) { // apaposto
   
 
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
@@ -133,9 +134,9 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
   ((short *)&qpsk[3])[0] = -ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[3])[1] = ONE_OVER_SQRT2_Q15;
 
-  mprime = 110 - phy_vars_ue->lte_frame_parms.N_RB_DL;
+  mprime = 110 - phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL; // apaposto
   
-  for (m=0;m<phy_vars_ue->lte_frame_parms.N_RB_DL<<1;m++) {
+  for (m=0;m<phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL<<1;m++) { // apaposto
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;

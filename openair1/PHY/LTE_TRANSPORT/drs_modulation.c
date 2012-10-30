@@ -61,8 +61,10 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
   s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
   u8 cyclic_shift,cyclic_shift0,cyclic_shift1; 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0];
+  //   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
+  //  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0];
+  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[0];  // apaposto
   u32 u,v,alpha_ind;
   u32 u0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
   u32 u1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
@@ -72,12 +74,12 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 
   cyclic_shift0 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 		   phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2 +
-		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]+
+		   phy_vars_ue->lte_frame_parms[eNB_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]+ // apaposto
 		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
 
   cyclic_shift1 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 		   phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2 +
-		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
+		   phy_vars_ue->lte_frame_parms[eNB_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+ // apaposto
 		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
 
   //       cyclic_shift0 = 0;
