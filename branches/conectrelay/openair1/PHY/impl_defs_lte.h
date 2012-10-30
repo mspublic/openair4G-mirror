@@ -773,7 +773,7 @@ typedef enum {
 
 
 
-typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
+typedef enum {SF_DL,SF_DL2, SF_UL, SF_UL2, SF_S} lte_subframe_t;
 
 #endif
 

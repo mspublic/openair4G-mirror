@@ -124,7 +124,7 @@ endif
 
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
-CFLAGS += -DENABLE_FXP -DOAI_EMU
+CFLAGS += -DENABLE_FXP -DOAI_EMU  
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
@@ -191,8 +191,13 @@ $(OBJ) $(ASN1_MSG_OBJS1) : %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c  
-	echo "Compiling oaisim.c ..."
-	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	@echo "Compiling oaisim.c ..."
+	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+
+tworelaydiamondsim : $(OBJ) $(ASN1_MSG_OBJS1) tworelaydiamondsim.c  
+	@echo "Compiling tworelaydiamondsim.c ..."
+	@$(CC)  tworelaydiamondsim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o tworelaydiamondsim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+
 
 oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c  
 	@echo "Compiling oaisimCROWN.c ..."

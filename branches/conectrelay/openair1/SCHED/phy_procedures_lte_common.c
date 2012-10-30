@@ -446,11 +446,56 @@ u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1) {
     return(Np[0+plus1]);
 }
 
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
+lte_subframe_t subframe_select_HDrelay(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
 
   // if FDD return dummy value
   if (frame_parms->frame_type == 0)
-    return(SF_DL);
+    return(-1);
+
+  switch (frame_parms->tdd_config) {
+
+  case 1:
+    switch (subframe) {
+    case 0:
+    case 9:
+    	return(SF_DL);
+    	break;
+    case 2:
+    case 3:
+    	return(SF_UL);
+    	break;
+    case 4:
+    case 5:
+    	return(SF_DL2);
+    	break;
+    case 7:
+    case 8:
+    	return(SF_UL2);
+    	break;
+    default:
+      return(SF_S);
+      break;
+    }
+    break;
+  default:
+    msg("[PHY] phy_procedures_lte_common.c subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
+    mac_xface->macphy_exit("");
+    return(255);
+
+  }
+}
+
+
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe, u8 relay_flag) {
+
+  // if FDD return dummy value
+  if (frame_parms->frame_type == 0)
+    return(-1);
+
+  if(relay_flag > 0){
+	  LOG_D(PHY,"Subframe Select: [RELAY] Relay_flag %d for (subframe %d) TDD %d/%d Nid_cell %d\n", relay_flag, subframe, frame_parms->tdd_config,frame_parms->Nid_cell);
+	  return (subframe_select_HDrelay(frame_parms, subframe));
+  }
 
   switch (frame_parms->tdd_config) {
 
@@ -492,9 +537,9 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
   }
 }
 
-lte_subframe_t get_subframe_direction(u8 Mod_id,u8 subframe) {
+lte_subframe_t get_subframe_direction(u8 Mod_id,u8 subframe, u8 relay_flag) {
 
-  return(subframe_select(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,subframe));
+  return(subframe_select(&PHY_vars_eNB_g[Mod_id]->lte_frame_parms,subframe,relay_flag));
 
 }
 

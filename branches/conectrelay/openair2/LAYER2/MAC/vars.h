@@ -27,6 +27,7 @@ u32 RRC_CONNECTION_FLAG;
 
 UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX]; 
 eNB_MAC_INST *eNB_mac_inst; //[NB_MODULE_MAX]; 
+RN_MAC_INST *rn_mac_inst; //[NB_MODULE_MAX];
 MAC_RLC_XFACE *Mac_rlc_xface;
 
 eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
@@ -47,6 +48,7 @@ u8 Is_rrc_registered;
 #ifdef OPENAIR2
 unsigned char NB_eNB_INST=0;
 unsigned char NB_UE_INST=0;
+unsigned char NB_RN_INST=0;
 unsigned char NB_INST=0;
 #endif
 

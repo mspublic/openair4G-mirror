@@ -128,6 +128,26 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   return (PHY_vars_UE);
 }
 
+
+//TODO: CREATE init_lte_RN
+
+PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
+			 u8 RN_id,
+			 u8 Nid_cell,
+		     u8 cooperation_flag,
+			 u8 abstraction_flag,
+			 u8 transmission_mode)
+{
+
+	PHY_VARS_RN* PHY_vars_RN = malloc(sizeof(PHY_VARS_RN)) ;
+
+	// Every Relay node consist of a eNB and UE parts. Initialize them as they are normal UEs and eNBs.
+	PHY_vars_RN->eNB = init_lte_eNB(frame_parms,RN_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
+	PHY_vars_RN->ue  = init_lte_UE(frame_parms, RN_id,abstraction_flag,transmission_mode);
+
+	return (PHY_vars_RN);
+}
+
 void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u8 frame_type,
 		   u8 tdd_config,
@@ -135,9 +155,10 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u8 extended_prefix_flag, 
 		   u8 N_RB_DL,
 		   u16 Nid_cell,
-		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
+		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag, u8 relay_flag) {
 
-  u8 eNB_id,UE_id;
+  u8 eNB_id,UE_id, RN_id;
+
 
   mac_xface = malloc(sizeof(MAC_xface));
 
@@ -216,6 +237,18 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id] = init_lte_UE(*frame_parms, UE_id,abstraction_flag,transmission_mode);
 
+  }
+
+
+  //ADDED A RELAY NODE (RN) INIT_LTE_RN() function for relay scenarios.
+
+  if(relay_flag){
+	  PHY_vars_RN_g = malloc(NB_RN_INST*sizeof(PHY_VARS_RN*));
+	    for (RN_id=max(NB_eNB_INST,NB_UE_INST); RN_id < max(NB_eNB_INST,NB_UE_INST)+NB_RN_INST;RN_id++){
+	      PHY_vars_RN_g[RN_id-max(NB_eNB_INST,NB_UE_INST)] = init_lte_RN(*frame_parms, RN_id,Nid_cell,cooperation_flag,abstraction_flag,transmission_mode);
+			printf("TEST RELAY INITIALIZATION...\n");
+
+	    }
   }
 
 }

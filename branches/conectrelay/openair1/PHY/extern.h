@@ -23,6 +23,8 @@ extern unsigned int DAQ_MBOX;
 
 extern PHY_VARS_UE **PHY_vars_UE_g;
 extern PHY_VARS_eNB **PHY_vars_eNB_g;
+extern PHY_VARS_RN **PHY_vars_RN_g;
+
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 
 
@@ -52,6 +54,8 @@ extern char mode_string[4][20];
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
+extern unsigned char NB_RN_INST;
+
 #endif
 
 extern double sinr_bler_map[MCS_COUNT][2][16];
