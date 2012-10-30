@@ -242,13 +242,13 @@ int logInit (void) {
     g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
     g_log->level2string[LOG_FILE]          = "F"; // file
     g_log->level2string[LOG_TRACE]         = "T"; // TRACE
-
+    
     g_log->onlinelog = 1; //online log file
     g_log->syslog = 0; 
     g_log->filelog   = 0;
     g_log->level  = LOG_TRACE;
     g_log->flag   = LOG_LOW;
- 
+    
 #ifdef USER_MODE  
   g_log->config.remote_ip      = 0;
   g_log->config.remote_level   = LOG_EMERG;
@@ -479,8 +479,13 @@ void set_glog_filelog(int enable) {
   g_log->filelog = enable;
 }
 
-void set_component_filelog(int component){
-  g_log->log_component[component].filelog =  1;
+void set_component_filelog(int comp){
+  
+  if (g_log->log_component[comp].filelog ==  0){
+    g_log->log_component[comp].filelog =  1;
+    if (g_log->log_component[comp].fd == 0)
+      g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+  }
 }
 
 /*
