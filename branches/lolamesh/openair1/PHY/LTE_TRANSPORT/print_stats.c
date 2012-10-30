@@ -44,7 +44,7 @@
 
 extern u8 number_of_cards;
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len ) { 
 
   u8 eNB=0;
 
@@ -67,7 +67,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 		 phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		 phy_vars_ue->PHY_measurements.n0_power_dB[1]);
   len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
-  len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
+  len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars[eNB]->freq_offset,openair_daq_vars.freq_offset); // apaposto
   len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
   len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",openair_daq_vars.timing_advance);
   len += sprintf(&buffer[len], "[UE PROC] UE tx power = %d\n", PHY_vars_UE_g[0]->tx_power_dBm);  
@@ -153,7 +153,8 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,1)));
     
     
-    len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag);
+    // apaposto len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag); // apaposto
+    len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms[eNB]->mode1_flag); // apaposto
     if (phy_vars_ue->transmission_mode[eNB] == 6)
       len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
     if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) 

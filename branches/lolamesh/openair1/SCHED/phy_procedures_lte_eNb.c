@@ -1619,6 +1619,8 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   u16 preamble_max,preamble_energy_max;
   u16 i;
   u8 UE_id, process_prach=0;
+  u8 eNB_id = phy_vars_eNB->Mod_id; // ask Navid about this 
+
   
   if (abstraction_flag == 0) {
     LOG_I(PHY,"[eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
@@ -1640,11 +1642,11 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       
       LOG_D(PHY,"[RAPROC] UE_id %d, generate_prach %d, UE RSI %d, eNB RSI %d\n",
 	     UE_id,PHY_vars_UE_g[UE_id]->generate_prach,
-	     PHY_vars_UE_g[UE_id]->lte_frame_parms.prach_config_common.rootSequenceIndex,
+	     PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id]->prach_config_common.rootSequenceIndex,
 	     phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex);
       
       if ((PHY_vars_UE_g[UE_id]->generate_prach==1) &&
-	  (PHY_vars_UE_g[UE_id]->lte_frame_parms.prach_config_common.rootSequenceIndex ==
+	  (PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id]->prach_config_common.rootSequenceIndex == // apaposto
 	   phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex) ){
 	preamble_energy_list[PHY_vars_UE_g[UE_id]->prach_PreambleIndex] = 80;
 	preamble_delay_list[PHY_vars_UE_g[UE_id]->prach_PreambleIndex] = 5;

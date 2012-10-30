@@ -2401,8 +2401,10 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   u8  dci_cnt=0,old_dci_cnt=0;
   u32 CCEmap0=0,CCEmap1=0,CCEmap2=0;
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
-  LTE_DL_FRAME_PARMS *frame_parms  = &phy_vars_ue->lte_frame_parms;
-  u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,0);
+  //  LTE_DL_FRAME_PARMS *frame_parms  = &phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms  = phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
+  //  u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,0); // apaposto
+  u8 mi = get_mi(phy_vars_ue->lte_frame_parms[eNB_id],0); // apaposto
   u16 ra_rnti=99;
   u8 format0_found=0,format_c_found=0;
   u8 tmode = phy_vars_ue->transmission_mode[eNB_id];

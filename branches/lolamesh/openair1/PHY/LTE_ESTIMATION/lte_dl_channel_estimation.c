@@ -23,11 +23,11 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   int ch_offset,symbol_offset;
   //  unsigned int n;
   //  int i;
-  u16 Nid_cell = (eNB_offset == 0) ? phy_vars_ue->lte_frame_parms.Nid_cell : phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1];
-
+  //  u16 Nid_cell = (eNB_offset == 0) ? phy_vars_ue->lte_frame_parms.Nid_cell : phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1];  // apaposto
+  u16 Nid_cell = (eNB_offset == 0) ? phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell : phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1];  // apaposto
   u8 nushift;
-  int **dl_ch_estimates=phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset];
-  int **rxdataF=phy_vars_ue->lte_ue_common_vars.rxdataF;
+  int **dl_ch_estimates=phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates[eNB_offset]; // apaposto
+  int **rxdataF=phy_vars_ue->lte_ue_common_vars[eNB_id]->rxdataF; // apaposto
 
   // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
   nushift =  Nid_cell%6;
@@ -46,8 +46,11 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   }
 
 
-  ch_offset     = (l*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
-  symbol_offset = phy_vars_ue->lte_frame_parms.ofdm_symbol_size*symbol;
+  //  ch_offset     = (l*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)); // apaposto
+  //  symbol_offset = phy_vars_ue->lte_frame_parms.ofdm_symbol_size*symbol; // apaposto
+  ch_offset     = (l*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)); // apaposto
+  symbol_offset = phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size*symbol; // apaposto
+
 
   k = (nu + nushift)%6;
   
@@ -134,21 +137,27 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 		      &pilot[p][0],
 		      Ns,
 		      (l==0)?0:1,
-		      p);
+		      p,
+		      eNB_id); // apaposto
   
 
-  for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
+  // for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) { // apaposto
+   for (aarx=0;aarx<phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_rx;aarx++) { // apaposto
     
     pil   = (short *)&pilot[p][0];
-    rxF   = (short *)&rxdataF[aarx][((symbol_offset+k+phy_vars_ue->lte_frame_parms.first_carrier_offset)<<1)]; 
+    //  rxF   = (short *)&rxdataF[aarx][((symbol_offset+k+phy_vars_ue->lte_frame_parms.first_carrier_offset)<<1)]; // apaposto
+    rxF   = (short *)&rxdataF[aarx][((symbol_offset+k+phy_vars_ue->lte_frame_parms[eNB_id]->first_carrier_offset)<<1)]; // apaposto
     dl_ch = (short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
 
-    //    if (eNb_id==0)
-      memset(dl_ch,0,4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
-    
-      if ((phy_vars_ue->lte_frame_parms.N_RB_DL==6)  || 
-	  (phy_vars_ue->lte_frame_parms.N_RB_DL==50) || 
-	  (phy_vars_ue->lte_frame_parms.N_RB_DL==100)) {
+    //    if (eNb_id==0) // not apaposto's this!!
+    /*memset(dl_ch,0,4*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)); // apaposto
+    if ((phy_vars_ue->lte_frame_parms.N_RB_DL==6)  ||  // apaposto
+	(phy_vars_ue->lte_frame_parms.N_RB_DL==50) ||  // apaposto
+	(phy_vars_ue->lte_frame_parms.N_RB_DL==100)) { // apaposto */
+      memset(dl_ch,0,4*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)); // apaposto
+      if ((phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL==6)  || // apaposto
+	  (phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL==50) ||  // apaposto
+	  (phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL==100)) { // apaposto
       
       //First half of pilots
       // Treat first 2 pilots specially (left edge)
@@ -174,7 +183,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       rxF+=24;
       dl_ch+=16;
 
-      for (pilot_cnt=2;pilot_cnt<((phy_vars_ue->lte_frame_parms.N_RB_DL)-1);pilot_cnt+=2) {
+      // for (pilot_cnt=2;pilot_cnt<((phy_vars_ue->lte_frame_parms.N_RB_DL)-1);pilot_cnt+=2) { // apaposto
+      for (pilot_cnt=2;pilot_cnt<((phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL)-1);pilot_cnt+=2) { // apaposto
 	
 	// printf("%d\n",dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);	
 		
@@ -220,7 +230,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       
       rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)]; 
       
-      for (pilot_cnt=0;pilot_cnt<((phy_vars_ue->lte_frame_parms.N_RB_DL)-1);pilot_cnt+=2) {
+      // for (pilot_cnt=0;pilot_cnt<((phy_vars_ue->lte_frame_parms.N_RB_DL)-1);pilot_cnt+=2) {  // apaposto
+	for (pilot_cnt=0;pilot_cnt<((phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL)-1);pilot_cnt+=2) { // apaposto
 	//printf("pilot[%d][%d] (%d,%d)\n",p,pilot_cnt,pil[0],pil[1]);
 	// printf("rx[%d][%d] -> (%d,%d)\n",p,first_carrier_offset + nushift + 6*rb+(3*p),rxF[0],rxF[1]);
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
@@ -271,7 +282,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
     }
     
-    else if (phy_vars_ue->lte_frame_parms.N_RB_DL==25) {
+      // else if (phy_vars_ue->lte_frame_parms.N_RB_DL==25) { // apaposto
+      else if (phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL==25) { // apaposto
       //printf("Channel estimation\n");
 
       // Treat first 2 pilots specially (left edge)
@@ -466,11 +478,11 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       multadd_real_vector_complex_scalar(f2r2,
 					 ch,
 					 dl_ch,
-					 24);
+					 24); 
 
     }
-    else if (phy_vars_ue->lte_frame_parms.N_RB_DL==15) {
-      
+      // else if (phy_vars_ue->lte_frame_parms.N_RB_DL==15) { // apaposto
+      else if (phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL==15) { // apaposto 
       //printf("First Half\n");
       for (rb=0;rb<28;rb+=4) {
 	
@@ -560,7 +572,8 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 	
       }
     } else {
-      msg("channel estimation not implemented for phy_vars_ue->lte_frame_parms.N_RB_DL = %d\n",phy_vars_ue->lte_frame_parms.N_RB_DL);
+	//msg("channel estimation not implemented for phy_vars_ue->lte_frame_parms.N_RB_DL = %d\n",phy_vars_ue->lte_frame_parms.N_RB_DL); // apaposto
+	msg("channel estimation not implemented for phy_vars_ue->lte_frame_parms[eNB_id==%d]->N_RB_DL = %d\n",eNB_id,phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL); // apaposto
     }
     
     
@@ -571,20 +584,30 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     dl_ch = (short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
     if (ch_offset == 0) {
       //      printf("Interpolating %d->0\n",4-phy_vars_ue->lte_frame_parms.Ncp);
-      dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][(4-phy_vars_ue->lte_frame_parms.Ncp)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
+      /* apaposto     dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][(4-phy_vars_ue->lte_frame_parms.Ncp)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
       
       multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
       multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
       
       multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
       multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-    } // this is 1/3,2/3 combination for pilots spaced by 3 symbols
+   apaposto   */ 
+
+   dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][(4-phy_vars_ue->lte_frame_parms[eNB_id]->Ncp)*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)];
+      
+      multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+      
+      multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+      multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+   
+  } // this is 1/3,2/3 combination for pilots spaced by 3 symbols
     
     else {
       //      printf("Interpolating 0->%d\n",4-phy_vars_ue->lte_frame_parms.Ncp);
       
       dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][0];
-      if (phy_vars_ue->lte_frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
+      /* apaposto      if (phy_vars_ue->lte_frame_parms.Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
 	multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	
@@ -601,6 +624,28 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 	multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1),1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
 	multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
       } // pilot spacing 3 symbols (1/3,2/3 combination)
+
+      apaposto */ 
+
+      /* apaposto */
+        if (phy_vars_ue->lte_frame_parms[eNB_id]->Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)
+	multadd_complex_vector_real_scalar(dl_ch_prev,24576,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	multadd_complex_vector_real_scalar(dl_ch,8192,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	
+	multadd_complex_vector_real_scalar(dl_ch_prev,16384,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)<<1)),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	multadd_complex_vector_real_scalar(dl_ch,16384,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	
+	multadd_complex_vector_real_scalar(dl_ch_prev,8192,dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	multadd_complex_vector_real_scalar(dl_ch,24576,dl_ch_prev+(3*2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+      }
+      else {
+	multadd_complex_vector_real_scalar(dl_ch_prev,10923,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	multadd_complex_vector_real_scalar(dl_ch,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	
+	multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)<<1),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+	multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
+      } // pilot spacing 3 symbols (1/3,2/3 combination)
+      /* apaposto */
     }
 #endif
 
@@ -609,14 +654,14 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   }
 
   // do ifft of channel estimate
-  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx*phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
-    if (phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa])
-      fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_offset][aa][LTE_CE_OFFSET],
-	  (short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_offset][aa],
-	  phy_vars_ue->lte_frame_parms.twiddle_ifft,
-	  phy_vars_ue->lte_frame_parms.rev,
-	  phy_vars_ue->lte_frame_parms.log2_symbol_size,
-	  phy_vars_ue->lte_frame_parms.log2_symbol_size/2,
+   for (aa=0;aa<phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_rx*phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_tx;aa++) { // apaposto
+    if (phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates[eNB_offset][aa]) // apaposto
+      fft((short*) phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates[eNB_offset][aa][LTE_CE_OFFSET], // apaposto
+	  (short*) phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates_time[eNB_offset][aa],  // apaposto
+	  phy_vars_ue->lte_frame_parms[eNB_id]->twiddle_ifft,
+	  phy_vars_ue->lte_frame_parms[eNB_id]->rev,
+	  phy_vars_ue->lte_frame_parms[eNB_id]->log2_symbol_size,
+	  phy_vars_ue->lte_frame_parms[eNB_id]->log2_symbol_size/2,
 	  0);
   }
   return(0); 

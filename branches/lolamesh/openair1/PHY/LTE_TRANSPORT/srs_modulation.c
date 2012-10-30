@@ -126,9 +126,11 @@ s32 generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 		    s16 amp,
 		    u32 subframe) {
 
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  // LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms; apaposto
+  LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
   SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated=&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id];
-  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0];
+  //  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0]; 
+  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[0]; // apaposto
   u16 msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
   u16 *Msc_idx_ptr;
   u32 k0,T_SFC;

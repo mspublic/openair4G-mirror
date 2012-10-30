@@ -52,7 +52,8 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
 			int *output,
 			unsigned char Ns,
 			unsigned char l,
-			unsigned char p);
+			unsigned char p,
+			u8 eNB_id); // apaposto
 
 void generate_ul_ref_sigs(void);
 void generate_ul_ref_sigs_rx(void);

@@ -41,8 +41,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   for (i = 0; i < frame_parms->nb_prefix_samples; i++) {
     temp = 0;
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      Re = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
-      Im = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
+      Re = ((s16*)phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates_time[eNB_id][aa])[(i<<2)]; // apaposto
+      Im = ((s16*)phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)]; // apaposto
       temp += (Re*Re/2) + (Im*Im/2);
     }
     if (temp > max_val) {

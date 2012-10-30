@@ -37,7 +37,10 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 @returns 0 on success
 */
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
-		    u8 abstraction_flag, u8 nb_connected_eNB);
+		    u8 abstraction_flag, u8 nb_connected_eNB); // apaposto
+
+int phy_init_lte_ue_common(PHY_VARS_UE *phy_vars_ue,
+		    u8 abstraction_flag, u8 eNB_index); // apaposto
 
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation (eNB)

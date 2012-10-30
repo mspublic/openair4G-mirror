@@ -26,17 +26,18 @@ short conjugate75[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 short conjugate75_2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 short negate[8]__attribute__((aligned(16))) = {-1,-1,-1,-1,-1,-1,-1,-1};
 
-void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
+void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot, u8 eNB_id) { // apaposto
 
 
-  s32 **txdata=phy_vars_ue->lte_ue_common_vars.txdata;
+  s32 **txdata=phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata; // apaposto
   u16 len;
   u32 *kHz7_5ptr;
   __m128i *txptr128,*kHz7_5ptr128,mmtmp_re,mmtmp_im,mmtmp_re2,mmtmp_im2;
   u32 slot_offset;
   u8 aa;
   u32 i;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  // LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
 
   switch (frame_parms->N_RB_UL) {
     
@@ -63,12 +64,15 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
     break;
   }
 
-  slot_offset = (u32)slot * phy_vars_ue->lte_frame_parms.samples_per_tti/2;
+  // slot_offset = (u32)slot * phy_vars_ue->lte_frame_parms.samples_per_tti/2; // apaposto
+  slot_offset = (u32)slot * phy_vars_ue->lte_frame_parms[eNB_id]->samples_per_tti/2; // apaposto
   //  if ((slot&1)==1)
   //    slot_offset += (len/4);
-  len = phy_vars_ue->lte_frame_parms.samples_per_tti/2;
+  // len = phy_vars_ue->lte_frame_parms.samples_per_tti/2; // apaposto
+  len = phy_vars_ue->lte_frame_parms[eNB_id]->samples_per_tti/2; // apaposto
 
-  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
+  //  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) { // apaposto
+ for (aa=0;aa<phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_tx;aa++) {
     txptr128 = (__m128i *)&txdata[aa][slot_offset];
     kHz7_5ptr128 = (__m128i *)kHz7_5ptr;
       // apply 7.5 kHz
@@ -199,16 +203,19 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
 
 
 
-void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,s16 *prach) {
+void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,s16 *prach, u8 eNB_id) { // apaposto
 
   u32 *Hz625ptr;
   __m128i *txptr128,*Hz625ptr128,mmtmp_re,mmtmp_im,mmtmp_re2,mmtmp_im2;
   u8 aa;
   u32 Ncp,len;
   u32 i;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
-  u8 frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
-  u8 prach_ConfigIndex  = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex; 
+  // LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms; // apaposto
+  // u8 frame_type         = phy_vars_ue->lte_frame_parms.frame_type;  // apaposto
+  // u8 prach_ConfigIndex  = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
+  u8 frame_type         = phy_vars_ue->lte_frame_parms[eNB_id]->frame_type; // apaposto
+  u8 prach_ConfigIndex  = phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex; // apaposto
   u8 prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
 
   switch (prach_fmt) {
@@ -262,7 +269,8 @@ void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,s16 *prach) {
     break;
   }
 
-  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
+  // for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) { // apaposto
+  for (aa=0;aa<phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_tx;aa++) { // apaposto
     txptr128 = (__m128i *)prach;
     Hz625ptr128 = (__m128i *)Hz625ptr;
       // apply 7.5 kHz
