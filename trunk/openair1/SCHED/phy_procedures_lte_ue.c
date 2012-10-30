@@ -1278,9 +1278,9 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 
       lte_ue_measurements(phy_vars_ue,
 #ifdef HW_PREFIX_REMOVAL 
-			(last_slot>>1)*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size,
+			  ((last_slot>>1)*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME),
 #else
-			  (last_slot>>1)*frame_parms->samples_per_tti+phy_vars_ue->rx_offset,
+			  ((last_slot>>1)*frame_parms->samples_per_tti+phy_vars_ue->rx_offset)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME),
 #endif
 			  (last_slot == 2) ? 1 : 0,
 			  0);
