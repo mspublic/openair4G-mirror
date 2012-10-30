@@ -101,8 +101,8 @@ void kpi_gen() {
   int tx_total_pkts_dl=0;
   int rx_total_bytes_dl=0;
   int rx_total_pkts_dl=0;
-  int min_owd_dl=0;
-  int max_owd_dl=0;
+  float min_owd_dl=0;
+  float max_owd_dl=0;
   int tx_total_bytes_ul=0;
   int tx_total_pkts_ul=0;
   int rx_total_bytes_ul=0;
@@ -115,8 +115,8 @@ void kpi_gen() {
   int tx_total_pkts_ul_background=0;
   int rx_total_bytes_ul_background=0;
   int rx_total_pkts_ul_background=0;
-  int min_owd_ul=0;
-  int max_owd_ul=0;  
+  float min_owd_ul=0;
+  float max_owd_ul=0;  
 
 char traffic_type[12];
 
@@ -202,12 +202,12 @@ fc=fopen("/tmp/otg.log","w");;
 		fprintf(file,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
 		fprintf(file,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j]);
 		fprintf(file,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j]);
-		fprintf(file,"[%s] RTT MIN (one way)ms= %d \n",traffic_type, otg_info->rx_owd_min[i][j]);
-		fprintf(file,"[%s] RTT MAX (one way)ms= %d \n",traffic_type, otg_info->rx_owd_max[i][j]);
-		fprintf(file,"[%s] TX throughput = %lf(Kbytes/sec) \n",traffic_type, otg_info->tx_throughput[i][j]);
-		fprintf(file,"[%s] RX goodput= %lf (Kbytes/sec) \n",traffic_type, otg_info->rx_goodput[i][j]);
+		fprintf(file,"[%s] RTT MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
+		fprintf(file,"[%s] RTT MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
+		fprintf(file,"[%s] TX throughput = %.2f(Kbytes/sec) \n",traffic_type, otg_info->tx_throughput[i][j]);
+		fprintf(file,"[%s] RX goodput= %.2f (Kbytes/sec) \n",traffic_type, otg_info->rx_goodput[i][j]);
 		if (otg_info->rx_loss_rate[i][j]>0){
-	  	fprintf(file,"[%s] Loss rate(percentage)= %lf \n",traffic_type, (otg_info->rx_loss_rate[i][j]*100));
+	  	fprintf(file,"[%s] Loss rate(percentage)= %.2f \n",traffic_type, (otg_info->rx_loss_rate[i][j]*100));
 	  	fprintf(file,"[%s] NB Lost  packets=%d \n",traffic_type, (otg_info->tx_num_pkt[i][j]-otg_info->rx_num_pkt[i][j]));
 	  	//fprintf(file,"[%s] NB Lost [OTG] packets=%d \n",traffic_type, otg_info->nb_loss_pkts_otg[i][j]);
 		}
@@ -215,7 +215,7 @@ fc=fopen("/tmp/otg.log","w");;
     fprintf(file,"[BACKGROUND] Total packets(TX)= %d \n", otg_info->tx_num_pkt_background[i][j]);
 	  fprintf(file,"[BACKGROUND] Total bytes(TX)= %d \n", otg_info->tx_num_bytes_background[i][j]);
 	  fprintf(file,"[BACKGROUND] TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput_background[i][j]);
-	  fprintf(file,"[BACKGROUND] RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput_background[i][j]);
+	  fprintf(file,"[BACKGROUND] RX goodput= %.2f (Kbytes/sec) \n", otg_info->rx_goodput_background[i][j]);
 	  if (otg_info->rx_loss_rate_background[i][j]>0){
 	    fprintf(file,"[BACKGROUND] Loss rate(percentage)= %lf \n", (otg_info->rx_loss_rate_background[i][j]*100));
 	    fprintf(file,"[BACKGROUND] NB Lost  packets=%d \n", (otg_info->tx_num_pkt_background[i][j]-otg_info->rx_num_pkt_background[i][j]));
@@ -232,22 +232,22 @@ fc=fopen("/tmp/otg.log","w");;
 	  LOG_I(OTG,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
 		LOG_I(OTG,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j]);
 		LOG_I(OTG,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j]);
-		LOG_I(OTG,"[%s] RTT MIN (one way)ms= %d \n",traffic_type, otg_info->rx_owd_min[i][j]);
-		LOG_I(OTG,"[%s] RTT MAX (one way)ms= %d \n",traffic_type, otg_info->rx_owd_max[i][j]);
-		LOG_I(OTG,"[%s] TX throughput = %lf(Kbytes/sec) \n",traffic_type, otg_info->tx_throughput[i][j]);
-		LOG_I(OTG,"[%s] RX goodput= %lf (Kbytes/sec) \n",traffic_type, otg_info->rx_goodput[i][j]);
+		LOG_I(OTG,"[%s] RTT MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
+		LOG_I(OTG,"[%s] RTT MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
+		LOG_I(OTG,"[%s] TX throughput = %.2f(Kbytes/sec) \n",traffic_type, otg_info->tx_throughput[i][j]);
+		LOG_I(OTG,"[%s] RX goodput= %.2f (Kbytes/sec) \n",traffic_type, otg_info->rx_goodput[i][j]);
 	if (otg_info->rx_loss_rate[i][j]>0){
-	  LOG_I(OTG,"[%s] Loss rate(percentage)= %lf \n",traffic_type, (otg_info->rx_loss_rate[i][j]*100));
+	  LOG_I(OTG,"[%s] Loss rate(percentage)= %.2f \n",traffic_type, (otg_info->rx_loss_rate[i][j]*100));
 	  LOG_I(OTG,"[%s] NB Lost  packets= %d \n",traffic_type, (otg_info->tx_num_pkt[i][j]-otg_info->rx_num_pkt[i][j]));
 	  LOG_D(OTG,"[%s] NB Lost [OTG] packets=%d \n",traffic_type, otg_info->nb_loss_pkts_otg[i][j]);
 	}
   if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
     LOG_I(OTG,"[BACKGROUND] Total packets(TX)= %d \n", otg_info->tx_num_pkt_background[i][j]);
 	  LOG_I(OTG,"[BACKGROUND] Total bytes(TX)= %d \n", otg_info->tx_num_bytes_background[i][j]);
-	  LOG_I(OTG,"[BACKGROUND] TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput_background[i][j]);
-	  LOG_I(OTG,"[BACKGROUND] RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput_background[i][j]);
+	  LOG_I(OTG,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", otg_info->tx_throughput_background[i][j]);
+	  LOG_I(OTG,"[BACKGROUND] RX goodput= %.2f (Kbytes/sec) \n", otg_info->rx_goodput_background[i][j]);
 	  if (otg_info->rx_loss_rate_background[i][j]>0){
-	    LOG_I(OTG,"[BACKGROUND] Loss rate(percentage)= %lf \n", (otg_info->rx_loss_rate_background[i][j]*100));
+	    LOG_I(OTG,"[BACKGROUND] Loss rate(percentage)= %.2f \n", (otg_info->rx_loss_rate_background[i][j]*100));
 	    LOG_I(OTG,"[BACKGROUND] NB Lost  packets=%d \n", (otg_info->tx_num_pkt_background[i][j]-otg_info->rx_num_pkt_background[i][j]));
 	  }
 	}
@@ -259,22 +259,22 @@ fc=fopen("/tmp/otg.log","w");;
 		LOG_F(OTG,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
 		LOG_F(OTG,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j]);
 		LOG_F(OTG,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j]);
-		LOG_F(OTG,"[%s] RTT MIN (one way)ms= %d \n",traffic_type, otg_info->rx_owd_min[i][j]);
-		LOG_F(OTG,"[%s] RTT MAX (one way)ms= %d \n",traffic_type, otg_info->rx_owd_max[i][j]);
-		LOG_F(OTG,"[%s] TX throughput = %lf(Kbytes/sec) \n",traffic_type, otg_info->tx_throughput[i][j]);
-		LOG_F(OTG,"[%s] RX goodput= %lf (Kbytes/sec) \n",traffic_type, otg_info->rx_goodput[i][j]);
+		LOG_F(OTG,"[%s] RTT MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
+		LOG_F(OTG,"[%s] RTT MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
+		LOG_F(OTG,"[%s] TX throughput = %.2f(Kbytes/sec) \n",traffic_type, otg_info->tx_throughput[i][j]);
+		LOG_F(OTG,"[%s] RX goodput= %.2f (Kbytes/sec) \n",traffic_type, otg_info->rx_goodput[i][j]);
 	if (otg_info->rx_loss_rate[i][j]>0){
-	  LOG_F(OTG,"[%s] Loss rate(percentage)= %lf \n",traffic_type, (otg_info->rx_loss_rate[i][j]*100));
+	  LOG_F(OTG,"[%s] Loss rate(percentage)= %.2f \n",traffic_type, (otg_info->rx_loss_rate[i][j]*100));
 	  LOG_F(OTG,"[%s] NB Lost  packets= %d \n",traffic_type,(otg_info->tx_num_pkt[i][j]-otg_info->rx_num_pkt[i][j]));
     LOG_D(OTG,"[%s] NB Lost [OTG] packets=%d \n",traffic_type, otg_info->nb_loss_pkts_otg[i][j]);
 	}
   if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
   	LOG_F(OTG,"[BACKGROUND] Total packets(TX)= %d \n", otg_info->tx_num_pkt_background[i][j]);
 	  LOG_F(OTG,"[BACKGROUND] Total bytes(TX)= %d \n", otg_info->tx_num_bytes_background[i][j]);
-	  LOG_F(OTG,"[BACKGROUND] TX throughput = %lf(Kbytes/sec) \n", otg_info->tx_throughput_background[i][j]);
-	  LOG_F(OTG,"[BACKGROUND] RX goodput= %lf (Kbytes/sec) \n", otg_info->rx_goodput_background[i][j]);
+	  LOG_F(OTG,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", otg_info->tx_throughput_background[i][j]);
+	  LOG_F(OTG,"[BACKGROUND] RX goodput= %.2f (Kbytes/sec) \n", otg_info->rx_goodput_background[i][j]);
 	  if (otg_info->rx_loss_rate_background[i][j]>0){
-	    LOG_F(OTG,"[BACKGROUND] Loss rate(percentage)= %lf \n", (otg_info->rx_loss_rate_background[i][j]*100));
+	    LOG_F(OTG,"[BACKGROUND] Loss rate(percentage)= %.2f \n", (otg_info->rx_loss_rate_background[i][j]*100));
 	    LOG_F(OTG,"[BACKGROUND] NB Lost  packets=%d \n", (otg_info->tx_num_pkt_background[i][j]-otg_info->rx_num_pkt_background[i][j]));
 	  }
 	}
@@ -293,17 +293,17 @@ fc=fopen("/tmp/otg.log","w");;
   fprintf(file,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_dl);
   fprintf(file,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_dl);
   fprintf(file,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
-  fprintf(file,"[DATA] RTT MIN (one way)ms= %d \n", min_owd_dl);
-  fprintf(file,"[DATA] RTT MAX (one way)ms= %d \n", max_owd_dl);
-  fprintf(file,"[DATA] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_dl/otg_info->ctime);
-  fprintf(file,"[DATA] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_dl/otg_info->ctime);
+  fprintf(file,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_dl);
+  fprintf(file,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_dl);
+  fprintf(file,"[DATA] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_dl/otg_info->ctime);
+  fprintf(file,"[DATA] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_dl/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_dl_background>0)){
     fprintf(file,"[BACKGROUND] Total packets(TX)= %d \n", tx_total_pkts_dl_background);
     fprintf(file,"[BACKGROUND] Total bytes(TX)= %d \n", tx_total_bytes_dl_background);
     fprintf(file,"[BACKGROUND] Total packets(RX)= %d \n", rx_total_pkts_dl_background);
     fprintf(file,"[BACKGROUND] Total bytes(RX)= %d \n", rx_total_bytes_dl_background);
-    fprintf(file,"[BACKGROUND] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_dl_background/otg_info->ctime);
-    fprintf(file,"[BACKGROUND] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_dl_background/otg_info->ctime);
+    fprintf(file,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_dl_background/otg_info->ctime);
+    fprintf(file,"[BACKGROUND] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_dl_background/otg_info->ctime);
   }
   fprintf (file,"**************** TOTAL UL RESULTS ******************\n");
   fprintf(file,"Total Time= %d \n", otg_info->ctime);
@@ -311,17 +311,17 @@ fc=fopen("/tmp/otg.log","w");;
   fprintf(file,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_ul);
   fprintf(file,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_ul);
   fprintf(file,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
-  fprintf(file,"[DATA] RTT MIN (one way)ms= %d \n", min_owd_ul);
-  fprintf(file,"[DATA] RTT MAX (one way)ms= %d \n", max_owd_ul);
-  fprintf(file,"[DATA] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_ul/otg_info->ctime);
-  fprintf(file,"[DATA] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_ul/otg_info->ctime);
+  fprintf(file,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_ul);
+  fprintf(file,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_ul);
+  fprintf(file,"[DATA] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_ul/otg_info->ctime);
+  fprintf(file,"[DATA] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_ul/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){
     fprintf(file,"[BACKGROUND] Total packets(TX)= %d \n", tx_total_pkts_ul_background);
     fprintf(file,"[BACKGROUND] Total bytes(TX)= %d \n", tx_total_bytes_ul_background);
     fprintf(file,"[BACKGROUND] Total packets(RX)= %d \n", rx_total_pkts_ul_background);
     fprintf(file,"[BACKGROUND] Total bytes(RX)= %d \n", rx_total_bytes_ul_background);
-    fprintf(file,"[BACKGROUND] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_ul_background/otg_info->ctime);
-    fprintf(file,"[BACKGROUND] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_ul_background/otg_info->ctime);
+    fprintf(file,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_ul_background/otg_info->ctime);
+    fprintf(file,"[BACKGROUND] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_ul_background/otg_info->ctime);
   }
   fclose(file);
 #else
@@ -331,18 +331,38 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_I(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_dl);
   LOG_I(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_dl);
   LOG_I(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
-  LOG_I(OTG,"[DATA] RTT MIN (one way)ms= %d \n", min_owd_dl);
-  LOG_I(OTG,"[DATA] RTT MAX (one way)ms= %d \n", max_owd_dl);
-  LOG_I(OTG,"[DATA] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_dl/otg_info->ctime);
-  LOG_I(OTG,"[DATA] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_dl/otg_info->ctime);
+  LOG_I(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_dl);
+  LOG_I(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_dl);
+  LOG_I(OTG,"[DATA] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_dl/otg_info->ctime);
+  LOG_I(OTG,"[DATA] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_dl/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_dl_background>0)){
     LOG_I(OTG,"[BACKGROUND] Total packets(TX)= %d \n", tx_total_pkts_dl_background);
     LOG_I(OTG,"[BACKGROUND] Total bytes(TX)= %d \n", tx_total_bytes_dl_background);
     LOG_I(OTG,"[BACKGROUND] Total packets(RX)= %d \n", rx_total_pkts_dl_background);
     LOG_I(OTG,"[BACKGROUND] Total bytes(RX)= %d \n", rx_total_bytes_dl_background);
-    LOG_I(OTG,"[BACKGROUND] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_dl_background/otg_info->ctime);
-    LOG_I(OTG,"[BACKGROUND] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_dl_background/otg_info->ctime);
-}
+    LOG_I(OTG,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_dl_background/otg_info->ctime);
+    LOG_I(OTG,"[BACKGROUND] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_dl_background/otg_info->ctime);
+	}
+
+  LOG_F(OTG,"**************** TOTAL DL RESULTS ******************\n");
+  LOG_F(OTG,"Total Time= %d \n", otg_info->ctime);
+  LOG_F(OTG,"[DATA] Total packets(TX)= %d \n", tx_total_pkts_dl);
+  LOG_F(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_dl);
+  LOG_F(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_dl);
+  LOG_F(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
+  LOG_F(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_dl);
+  LOG_F(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_dl);
+  LOG_F(OTG,"[DATA] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_dl/otg_info->ctime);
+  LOG_F(OTG,"[DATA] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_dl/otg_info->ctime);
+  if ((g_otg->background_stats==1)&&(tx_total_pkts_dl_background>0)){
+    LOG_F(OTG,"[BACKGROUND] Total packets(TX)= %d \n", tx_total_pkts_dl_background);
+    LOG_F(OTG,"[BACKGROUND] Total bytes(TX)= %d \n", tx_total_bytes_dl_background);
+    LOG_F(OTG,"[BACKGROUND] Total packets(RX)= %d \n", rx_total_pkts_dl_background);
+    LOG_F(OTG,"[BACKGROUND] Total bytes(RX)= %d \n", rx_total_bytes_dl_background);
+    LOG_F(OTG,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_dl_background/otg_info->ctime);
+    LOG_F(OTG,"[BACKGROUND] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_dl_background/otg_info->ctime);
+	}
+
   
 	LOG_I(OTG,"**************** TOTAL UL RESULTS ******************\n");
   LOG_I(OTG,"Total Time= %d \n", otg_info->ctime);
@@ -350,17 +370,36 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_I(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_ul);
   LOG_I(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_ul);
   LOG_I(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
-  LOG_I(OTG,"[DATA] RTT MIN (one way)ms= %d \n", min_owd_ul);
-  LOG_I(OTG,"[DATA] RTT MAX (one way)ms= %d \n", max_owd_ul);
-  LOG_I(OTG,"[DATA] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_ul/otg_info->ctime);
-  LOG_I(OTG,"[DATA] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_ul/otg_info->ctime);
+  LOG_I(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_ul);
+  LOG_I(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_ul);
+  LOG_I(OTG,"[DATA] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_ul/otg_info->ctime);
+  LOG_I(OTG,"[DATA] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_ul/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){
     LOG_I(OTG,"[BACKGROUND] Total packets(TX)= %d \n", tx_total_pkts_ul_background);
     LOG_I(OTG,"[BACKGROUND] Total bytes(TX)= %d \n", tx_total_bytes_ul_background);
     LOG_I(OTG,"[BACKGROUND] Total packets(RX)= %d \n", rx_total_pkts_ul_background);
     LOG_I(OTG,"[BACKGROUND] Total bytes(RX)= %d \n", rx_total_bytes_ul_background);
-    LOG_I(OTG,"[BACKGROUND] TX throughput = %lf(Kbytes/sec) \n", (double)tx_total_bytes_ul_background/otg_info->ctime);
-    LOG_I(OTG,"[BACKGROUND] RX throughput = %lf(Kbytes/sec) \n", (double)rx_total_bytes_ul_background/otg_info->ctime);
+    LOG_I(OTG,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_ul_background/otg_info->ctime);
+    LOG_I(OTG,"[BACKGROUND] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_ul_background/otg_info->ctime);
+
+  }
+	LOG_F(OTG,"**************** TOTAL UL RESULTS ******************\n");
+  LOG_F(OTG,"Total Time= %d \n", otg_info->ctime);
+  LOG_F(OTG,"[DATA] Total packets(TX)= %d \n", tx_total_pkts_ul);
+  LOG_F(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_ul);
+  LOG_F(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_ul);
+  LOG_F(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
+  LOG_F(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_ul);
+  LOG_F(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_ul);
+  LOG_F(OTG,"[DATA] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_ul/otg_info->ctime);
+  LOG_F(OTG,"[DATA] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_ul/otg_info->ctime);
+  if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){
+    LOG_F(OTG,"[BACKGROUND] Total packets(TX)= %d \n", tx_total_pkts_ul_background);
+    LOG_F(OTG,"[BACKGROUND] Total bytes(TX)= %d \n", tx_total_bytes_ul_background);
+    LOG_F(OTG,"[BACKGROUND] Total packets(RX)= %d \n", rx_total_pkts_ul_background);
+    LOG_F(OTG,"[BACKGROUND] Total bytes(RX)= %d \n", rx_total_bytes_ul_background);
+    LOG_F(OTG,"[BACKGROUND] TX throughput = %.2f(Kbytes/sec) \n", (double)tx_total_bytes_ul_background/otg_info->ctime);
+    LOG_F(OTG,"[BACKGROUND] RX throughput = %.2f(Kbytes/sec) \n", (double)rx_total_bytes_ul_background/otg_info->ctime);
 
   }
 
@@ -368,11 +407,16 @@ fc=fopen("/tmp/otg.log","w");;
 }
 
 
-void add_log_metric(int src, int dst, int ctime, float metric, unsigned int label){
+void add_log_metric(int src, int dst, int ctime, double metric, unsigned int label){
  unsigned int i;
  unsigned int j;
  unsigned int k;
  unsigned int node_actif=0;
+
+ //LOG_I(OTG,"[%d][%d] LOGG_ADDED ctime=%d, metric=%.2f  \n", src, dst, ctime, metric);
+
+
+
 
  switch (label) {
  case OTG_LATENCY:
@@ -390,12 +434,12 @@ void add_log_metric(int src, int dst, int ctime, float metric, unsigned int labe
       }
 
       if ((node_actif>0) && ((i==src) && (j==dst)))
-          LOG_F(label,"%d ", metric);
+          LOG_F(label,"%.2f ", metric);
       if  ((node_actif>0) && ((i!=src) || (j!=dst)))
-          LOG_F(label,"%d ", 0);
+          LOG_F(label,"%.2f ", 0);
   }
  }
- LOG_F(label,"%f\n", metric);
+ LOG_F(label,"%.2f\n", metric);
 }
 
 
@@ -405,7 +449,6 @@ void  add_log_label(unsigned int label, unsigned int * start_log_metric){
  unsigned int j;
  unsigned int k;
  unsigned int node_actif=0;
-
 
  if (*start_log_metric==0){
  *start_log_metric=1;
