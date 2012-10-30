@@ -34,7 +34,6 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
   else if (rx_power_fil_dB > TARGET_RX_POWER + 5) //&& (phy_vars_ue->rx_total_gain_dB > MIN_RF_GAIN) )
     phy_vars_ue->rx_total_gain_dB-=5;
 
-#ifdef CBMIMO1
   if (phy_vars_ue->rx_total_gain_dB>MAX_RF_GAIN) {
     /*
     if ((openair_daq_vars.rx_rf_mode==0) && (openair_daq_vars.mode == openair_NOT_SYNCHED)) {
@@ -57,6 +56,7 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
   }
 
 
+#ifdef CBMIMO1
   for (i=0;i<number_of_cards;i++) {
     //openair_set_rx_rf_mode(i,openair_daq_vars.rx_rf_mode);
     openair_set_rx_gain_cal_openair(i,phy_vars_ue->rx_total_gain_dB);
