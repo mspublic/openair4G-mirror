@@ -334,15 +334,19 @@ void oaisim_config() {
      }
    } 
     // init other comps
+  
   olg_config();
   ocg_config_emu(); 
   ocg_config_env();// mobility gen
   ocg_config_topo(); // packet tracer using wireshark
  	// if T is set or ocg enabled 
   if (oai_emulation.info.otg_enabled ) {
-    g_log->log_component[OTG].filelog=1;
+    set_component_filelog(OTG);
+    set_component_filelog(OTG_LATENCY);
+    set_component_filelog(OTG_OWD);
+    /* g_log->log_component[OTG].filelog=1;
     g_log->log_component[OTG_LATENCY].filelog=1;
-    g_log->log_component[OTG_OWD].filelog = 1;
+    g_log->log_component[OTG_OWD].filelog = 1;*/
     ocg_config_app(); // packet generator 
     //    oai_emulation.info.frame_type=1;
   }
