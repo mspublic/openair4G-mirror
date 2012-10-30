@@ -13,6 +13,12 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
 			 u8 abstraction_flag,
 			 u8 transmission_mode);
 
+PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
+			 u8 RN_id,
+			 u8 Nid_cell,
+		     u8 cooperation_flag,
+			 u8 abstraction_flag,
+			 u8 transmission_mode);
 
 void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
  		   u8 frame_type,
@@ -23,4 +29,5 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u16 Nid_cell,
 		   u8 cooperation_flag,
 		   u8 transmission_mode,
-		   u8 abstraction_flag);
+		   u8 abstraction_flag,
+		   u8 relay_flag);

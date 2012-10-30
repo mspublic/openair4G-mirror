@@ -26,6 +26,7 @@ extern const u32 BSR_TABLE[BSR_TABLE_SIZE];
 
 extern UE_MAC_INST *UE_mac_inst;
 extern eNB_MAC_INST *eNB_mac_inst;
+extern RN_MAC_INST *rn_mac_inst;
 extern MAC_RLC_XFACE *Mac_rlc_xface;
 extern u8 Is_rrc_registered;
 
@@ -48,6 +49,7 @@ extern unsigned char NB_INST;
 #endif
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
+extern unsigned char NB_RN_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int); 
 #else

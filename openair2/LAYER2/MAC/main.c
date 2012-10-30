@@ -145,16 +145,29 @@ int mac_top_init(){
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
     ue_init_mac();
   }
-  else
+  else{
     UE_mac_inst = NULL;
+  }
+
   LOG_I(MAC,"[MAIN] Init function start:Nb_eNB_INST=%d\n",NB_eNB_INST);
   if (NB_eNB_INST>0) {
     eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
     bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
   }
-  else
+  else{
     eNB_mac_inst = NULL;
+  }
+
+  LOG_I(MAC,"[MAIN] Init function start:Nb_RN_INST=%d\n",NB_RN_INST);
+  if (NB_RN_INST>0) {
+    rn_mac_inst = (RN_MAC_INST*)malloc16(NB_RN_INST*sizeof(RN_MAC_INST));
+    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d RN_MAC_INST @ %p\n",NB_RN_INST*sizeof(RN_MAC_INST),NB_RN_INST,rn_mac_inst);
+    bzero(rn_mac_inst,NB_RN_INST*sizeof(RN_MAC_INST));
+  }
+  else{
+    rn_mac_inst = NULL;
+  }
 
   for(Mod_id=0;Mod_id<NB_eNB_INST;Mod_id++){
 

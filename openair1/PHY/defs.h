@@ -402,7 +402,11 @@ typedef struct
 
 } PHY_VARS_UE;
 
-
+// TOP LEVEL PHY DATA STRUCTURES FOR A RELAY NODE (RN)
+typedef struct {
+	PHY_VARS_eNB* eNB;
+	PHY_VARS_UE* ue;
+}PHY_VARS_RN;
 
 #include "PHY/INIT/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"

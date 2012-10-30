@@ -517,7 +517,7 @@ int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
   PRACH_RESOURCES_t prach_resources_local;
 #endif
 
-void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
+void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode, u8 relay_flag) {
   
   int i_d;
   u16 first_rb, nb_rb;
@@ -1181,7 +1181,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 }
 
-void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
+void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag, u8 relay_flag) {
 
 }
   
@@ -1937,7 +1937,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 }
 
  
-int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
+int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode, u8 relay_flag) {
 
   u16 l,m,n_symb;
   //  int eNB_id = 0, 
@@ -1968,7 +1968,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   }
 
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_S) {
+  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1,relay_flag) == SF_S) {
     if ((last_slot%2)==0)
       n_symb = 5;//3;
     else
@@ -2638,7 +2638,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   return (0);
 }
   
-void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode, u8 relay_flag) {
 
 #undef DEBUG_PHY_PROC
 
@@ -2656,22 +2656,22 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
 
-  if ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1)==SF_UL)||
+  if ((subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1,relay_flag)==SF_UL)||
       (phy_vars_ue->lte_frame_parms.frame_type == 0)){
-    phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
+    phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
   }
-  if ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1)==SF_DL) ||
+  if ((subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1, relay_flag)==SF_DL) ||
       (phy_vars_ue->lte_frame_parms.frame_type == 0)){
-    phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
+    phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
 #ifdef EMOS
     phy_procedures_emos_UE_RX(phy_vars_ue,last_slot,eNB_id);
 #endif
   }
-  if (subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1)==SF_S) {
-     phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag);
+  if (subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1, relay_flag)==SF_S) {
+     phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag, relay_flag);
   }
-  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1)==SF_S) {
-    phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
+  if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1, relay_flag)==SF_S) {
+    phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode, relay_flag);
   }
 
 #ifdef OPENAIR2
@@ -2680,7 +2680,7 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
     ret = mac_xface->ue_scheduler(phy_vars_ue->Mod_id, 
 				  phy_vars_ue->frame,
 				  last_slot>>1, 
-				  subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1),
+				  subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1, relay_flag),
 				  eNB_id);
     if (ret == CONNECTION_LOST) {
       LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",phy_vars_ue->Mod_id,

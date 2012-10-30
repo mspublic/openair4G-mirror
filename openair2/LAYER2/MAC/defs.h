@@ -356,6 +356,8 @@ typedef struct{
 
 //end ALU's algo
 
+
+
 typedef struct{
   /// 
   u16 Node_id;
@@ -502,6 +504,14 @@ typedef struct{
  /// power backoff due to power management (as allowed by P-MPRc) for this cell
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
 }UE_MAC_INST;
+
+
+
+typedef struct {
+	eNB_MAC_INST enb;
+	UE_MAC_INST ue;
+	u8 relay_mode;
+}RN_MAC_INST;
 
 typedef struct {
   u16 cell_ids[6];

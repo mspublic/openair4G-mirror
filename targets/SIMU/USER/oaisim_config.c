@@ -256,6 +256,7 @@ void init_oai_emulation() {
   oai_emulation.info.master_id=0;
   oai_emulation.info.nb_ue_local= 1;//default 1 UE 
   oai_emulation.info.nb_enb_local= 1;//default 1 eNB
+  oai_emulation.info.nb_rn_local= 1;//default 1 RN -- ADDED FOR RELAYs
   oai_emulation.info.ethernet_flag=0;
   oai_emulation.info.ocm_enabled=1;// flag ?
   oai_emulation.info.ocg_enabled=0;// flag c

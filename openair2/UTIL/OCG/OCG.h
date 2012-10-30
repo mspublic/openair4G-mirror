@@ -592,6 +592,8 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char nb_ue_remote;
     unsigned char nb_enb_local;
     unsigned char nb_enb_remote;
+    unsigned char nb_rn_local;
+    unsigned char nb_rn_remote;
     unsigned char first_enb_local;
     unsigned char first_ue_local;
     unsigned short master_id;

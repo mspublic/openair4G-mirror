@@ -127,8 +127,9 @@ void cleanup_dlsch_threads(void);
   @param next_slot Index of next_slot (0-19)
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
+  @param relay_flag Indicator of Relay Node existence.
 */
-void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
+void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag,u8 relay_flag);
 /*!
   \brief Top-level entry routine for UE procedures.  Called every slot by process scheduler. In even slots, it performs RX functions from previous subframe (if required).  On odd slots, it generate TX waveform for the following subframe.
   @param last_slot Index of last slot (0-19)
@@ -138,7 +139,7 @@ void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eN
   @param abstraction_flag Indicator of PHY abstraction
   @param mode calibration/debug mode
 */
-void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode, u8 relay_flag);
 
 /*!
   \brief Scheduling for UE TX procedures in normal subframes.  
@@ -148,7 +149,7 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u
   @param abstraction_flag Indicator of PHY abstraction
   @param mode calib/normal mode
 */
-void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
+void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode, u8 relay_flag);
 /*!
   \brief Scheduling for UE RX procedures in normal subframes.  
   @param last_slot Index of last slot (0-19)
@@ -157,7 +158,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   @param abstraction_flag Indicator of PHY abstraction
   @param mode calibration/debug mode
 */
-int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
+int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode, u8 relay_flag);
 
 /*!
   \brief Scheduling for UE TX procedures in TDD S-subframes.  
@@ -166,7 +167,7 @@ int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abst
   @param eNB_id Local id of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag, u8 relay_flag);
 
 /*!
   \brief Scheduling for UE RX procedures in TDD S-subframes.  
@@ -183,7 +184,7 @@ void phy_procedures_UE_S_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNB_TX(u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
+void phy_procedures_eNB_TX(u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag, u8 relay_flag);
 
 /*!
   \brief Scheduling for eNB RX procedures in normal subframes.  
@@ -210,20 +211,31 @@ void phy_procedures_eNB_S_TX(u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstract
 void phy_procedures_eNB_S_RX(u8 last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 
 /*!
-  \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
+  \brief Extending the subframe_select() function for Half-Dupley 2-Relay scenario proposed in CONECT project.
   @param frame_parms Pointer to DL frame parameter descriptor
   @param subframe Subframe index
   @returns Subframe type (DL,UL,S) 
 */
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
+lte_subframe_t subframe_select_HDrelay(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
+
+
+/*!
+  \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @param subframe Subframe index
+  @param relay_flag Relay indicator
+  @returns Subframe type (DL,UL,S)
+*/
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe, u8 relay_flag);
 
 /*!
   \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
   @param Mod_id Index of eNB
   @param subframe Subframe index
+  @param relay_flag Relay indicator
   @returns Subframe type (DL,UL,S) 
 */
-lte_subframe_t get_subframe_direction(u8 Mod_id, u8 subframe);
+lte_subframe_t get_subframe_direction(u8 Mod_id, u8 subframe, u8 relay_flag);
 
 /*!
   \brief Function to indicate PHICH transmission subframes.  Implements Table 9.1.2-1 for TDD.
