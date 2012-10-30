@@ -80,7 +80,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
   
   if (logicalChannelConfig!= NULL) {
     if (eNB_flag==0){
-      LOG_I(MAC,"[CONFIG][UE %d] Applying RRC logicalChannelConfig from eNB%d\n",Mod_id,eNB_index);
+      LOG_I(MAC,"[CONFIG][UE %d] Applying RRC logicalChannelConfig from eNB: %d lChanId: %d\n",Mod_id,eNB_index,logicalChannelIdentity);
       UE_mac_inst[Mod_id].logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
       UE_mac_inst[Mod_id].scheduling_info.Bj[logicalChannelIdentity]=0; // initilize the bucket for this lcid
       if (logicalChannelConfig->ul_SpecificParameters)
@@ -165,7 +165,6 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       }
 
     if(mobilityControlInfo != NULL) {
-    	if (eNB_flag == 0) {
 			if(mobilityControlInfo->radioResourceConfigCommon.rach_ConfigCommon) {
 				memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon, (void *)mobilityControlInfo->radioResourceConfigCommon.rach_ConfigCommon,sizeof(RACH_ConfigCommon_t));
 			}
@@ -213,31 +212,23 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 
 			mac_xface->phy_config_afterHO_ue(Mod_id,eNB_index,mobilityControlInfo);
     	}
-    	else { //handle mobilityControlInfo config for eNB
-    		LOG_D(MAC,"\nConfig Handover at MAC... \n");
-    	}
+
+		/*
+		if (quantityConfig != NULL) {
+			if (quantityConfig[0] != NULL) {
+				UE_mac_inst[Mod_id].quantityConfig = quantityConfig[0];
+				LOG_I(MAC,"UE %d configured filterCoeff.",UE_mac_inst[Mod_id].crnti);
+				mac_xface->phy_config_meas_ue
+			}
+		}
+		*/
     }
-
-
-
-    /*
-    if (quantityConfig != NULL) {
-    	if (quantityConfig[0] != NULL) {
-    		UE_mac_inst[Mod_id].quantityConfig = quantityConfig[0];
-    		LOG_I(MAC,"UE %d configured filterCoeff.",UE_mac_inst[Mod_id].crnti);
-    		mac_xface->phy_config_meas_ue
-    	}
-    }
-    */
-  }
-  else {  // This is to configure eNB PHY and MAC for new UE
+  	else {  // This is to configure eNB PHY and MAC for new UE
 
     // configure PHY as above (without the cell specific stuff)
     // configure MAC as above
 
     // save the rnti etc.
-
-
 
   }
   return(0);
