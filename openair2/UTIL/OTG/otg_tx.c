@@ -196,7 +196,6 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
 	unsigned int i;
 
 
-
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
   if ((g_otg->application_type[src][dst]==0)&&(g_otg->idt_dist[src][dst][PE_STATE]==0)){  
     //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
@@ -204,7 +203,6 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   }
 
 	else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][PE_STATE] > 0)) {
-LOG_I(OTG,"[SRC %d][DST %d] AVAILABLE_NODES \n", src, dst);
   	state_management(src,dst,ctime);
     	state=otg_info->state[src][dst];
 		#ifdef STANDALONE
@@ -705,8 +703,7 @@ void state_management(src, dst,ctime) {
 if ((g_otg->holding_time_off_pu[src][dst]==0) && (g_otg->holding_time_off_ed[src][dst]==0) && (g_otg->holding_time_off_pe[src][dst]==0))  
 	otg_info->state[src][dst]=PE_STATE;
 else{
- LOG_I(OTG,"[%d][[%d] STATE_TEST %d, %d, %d \n", src, dst, g_otg->holding_time_off_pu[src][dst], g_otg->holding_time_off_ed[src][dst], g_otg->holding_time_off_pe[src][dst]);
-  if (otg_info->state_transition_prob[src][dst]==0){
+   if (otg_info->state_transition_prob[src][dst]==0){
     otg_info->state_transition_prob[src][dst]=uniform_dist(0,1);
     otg_info->state[src][dst]=OFF_STATE;
     LOG_I(OTG,"[%d][[%d] STATE:: OFF INIT (prob %f) \n", src, dst, otg_info->state_transition_prob[src][dst]);

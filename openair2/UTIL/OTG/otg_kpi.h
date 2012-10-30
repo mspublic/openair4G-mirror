@@ -98,7 +98,7 @@ void rx_loss_rate_bytes(int src, int dst);
 */
 void kpi_gen(void);
 
-void add_log_metric(int src, int dst, int ctime, float metric, unsigned int labelc);
+void add_log_metric(int src, int dst, int ctime, double metric, unsigned int labelc);
 
 void  add_log_label(unsigned int label, unsigned int * start_log_metric);
 

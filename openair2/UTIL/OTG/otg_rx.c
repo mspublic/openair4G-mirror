@@ -65,7 +65,7 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
   //float owd_IP_backbone=0;
   //float owd_application=0;
 char * hdr_payload=NULL;
-int header_size;
+//int header_size;
 
   if (buffer_tx!=NULL) { 
     otg_hdr_info_rx = (otg_hdr_info_t *) (&buffer_tx[bytes_read]);
@@ -129,18 +129,19 @@ int header_size;
 
 
 	if (otg_hdr_rx->time<=ctime){
-	  otg_info->radio_access_delay[src][dst]=(float)(ctime- otg_hdr_rx->time);
+	  otg_info->radio_access_delay[src][dst]=ctime- otg_hdr_rx->time;
          }
 
 	
  	otg_info->rx_pkt_owd[src][dst]=otg_info->owd_const[src][dst]+ otg_info->radio_access_delay[src][dst];
 	
 
-	LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %f (tx time %d, ctime %d), OWD:%f (ms):\n", src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_rx->time, ctime , otg_info->rx_pkt_owd[src][dst]);
+	LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %.2f (tx time %d, ctime %d), OWD:%.2f (ms):\n", src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_rx->time, ctime , otg_info->rx_pkt_owd[src][dst]);
 
-        /*if (g_otg->latency_metric==1)
+
+      /* if (g_otg->latency_metric)
           add_log_metric(src, dst, ctime, otg_info->radio_access_delay[src][dst], OTG_LATENCY); // TO FIX !!!! segmentation fault */
-	
+				
 
 	if (otg_info->rx_owd_max[src][dst]==0){
 	  otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
@@ -150,7 +151,7 @@ int header_size;
 	  otg_info->rx_owd_max[src][dst]=MAX(otg_info->rx_owd_max[src][dst],otg_info->rx_pkt_owd[src][dst] );
 	  otg_info->rx_owd_min[src][dst]=MIN(otg_info->rx_owd_min[src][dst],otg_info->rx_pkt_owd[src][dst] );
 	}
-	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %d, RTT MAX(one way) ms: %d \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
+	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %.2f, RTT MAX(one way) ms: %.2f \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
 	
 	/* xforms part: add metrics  */	
 	if (g_otg->curve==1){ 
