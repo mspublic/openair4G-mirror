@@ -219,6 +219,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
   u32 ulsch_errors=0;
   u32 ulsch_round_attempts[4]={0,0,0,0},ulsch_round_errors[4]={0,0,0,0};
   u32 harq_pid_ul, harq_pid_dl;
+  u32 UE_id_mac, RRC_status;
 
   if (phy_vars_eNB==NULL)
     return 0;
@@ -319,6 +320,12 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
       len += sprintf(&buffer[len],"[eNB PROC] Mode = %s(%d)\n",
 		     mode_string[phy_vars_eNB->eNB_UE_stats[UE_id].mode],
 		     phy_vars_eNB->eNB_UE_stats[UE_id].mode);
+#ifdef OPENAIR2
+      UE_id_mac = find_UE_id(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti);
+      RRC_status = mac_get_rrc_status(phy_vars_eNB->Mod_id,1,UE_id_mac);
+	
+      len += sprintf(&buffer[len],"[eNB PROC] UE_id_mac = %d, RRC status = %d\n",UE_id_mac,RRC_status);
+#endif
       
 #ifdef OPENAIR2
       if (phy_vars_eNB->eNB_UE_stats[UE_id].mode == PUSCH) {
