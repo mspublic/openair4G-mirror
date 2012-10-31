@@ -65,7 +65,7 @@ typedef struct mobility_struct {
 	double azimuth; /*!< The direction in which the node moves (Used with RWALK model) */
 	double journey_time; /*!< The duration of the node trip */
 	double start_journey; /*!< The instant on which the node trip starts*/
-        double target_time;/*!<The time instant before the node should complete>*/
+  double target_time;/*!<The time instant before the node should complete>*/  double target_speed;/*!<The time instant before the node should complete>*/
 }mobility_struct;
 
 typedef struct mobility_struct *MobilityPtr; /*!< The typedef that reflects a #mobility_struct*/

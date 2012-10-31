@@ -3620,7 +3620,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u16 nCCE;
   unsigned char aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0;
+  unsigned char header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0, ta_len=0;
   unsigned char sdu_lcids[11],offset,num_sdus=0;
   u16 nb_rb,nb_available_rb,TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
@@ -3903,12 +3903,15 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       //TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
       TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
       // check first for RLC data on DCCH
-      header_len_dcch = 2+((eNB_UE_stats->UE_timing_offset>0)?2:0); // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
+      // add the length for  all the control elements (timing adv, drx, etc) : header + payload  
+      ta_len = (eNB_UE_stats->UE_timing_offset>0) ? 2 : 0;
+      
+      header_len_dcch = 2; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
 
 
     
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+(MAX_NUM_RB*next_ue),
-				      (TBS-header_len_dcch)); // transport block set size
+				      (TBS-ta_len-header_len_dcch)); // transport block set size
 
       sdu_lengths[0]=0;
       if (rlc_status.bytes_in_buffer > 0) {  // There is DCCH to transmit
@@ -3936,9 +3939,8 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
       // check for DCCH1 and update header information (assume 2 byte sub-header)
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+1+(MAX_NUM_RB*next_ue),
-				      (TBS-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
+				      (TBS-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
                                                                                  // DCCH SDU
-
 
       if (rlc_status.bytes_in_buffer > 0) {
 	LOG_D(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, Requesting %d bytes from RLC (RRC message)\n",
@@ -3958,7 +3960,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       header_len_dtch = 3; // 3 bytes DTCH SDU subheader
 
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),
-				      TBS-header_len_dcch-sdu_length_total-header_len_dtch);
+				      TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
       if (rlc_status.bytes_in_buffer > 0) {
 	
@@ -3979,7 +3981,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	header_len_dtch = 0;
       }
 
-
+      // there is a payload
       if (((sdu_length_total + header_len_dcch + header_len_dtch )> 0)) {
 
 	// Now compute number of required RBs for total sdu length
@@ -3990,7 +3992,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	if (header_len_dtch==0)
 	  header_len_dcch = (header_len_dcch >0) ? 1 : header_len_dcch;  // remove length field
 	else 
-	header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
+	  header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
 	
 
 	nb_rb = 2;
@@ -3998,7 +4000,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	mcs = eNB_UE_stats->dlsch_mcs1;
 	TBS = mac_xface->get_TBS(mcs,nb_rb); 
 	
-	while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch ))  {
+	while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len))  {
 	  nb_rb += 2;  // 
 	  if (nb_rb>nb_available_rb) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
@@ -4010,13 +4012,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	}
 
 	// decrease mcs until TBS falls below required length
-	while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch)) && (mcs>0)) {
+	while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (mcs>0)) {
 	  mcs--;
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
 
 	// if we have decreased too much or we don't have enough RBs, increase MCS
-	while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch)) && (mcs<28)) {
+	while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (mcs<28)) {
 	  mcs++;
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
@@ -4030,8 +4032,8 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	//	TBS, sdu_length_total, offset, TBS-sdu_length_total-offset);
 #endif
 
-	if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total) <= 2) {
-	  padding = (TBS - header_len_dcch - header_len_dtch - sdu_length_total);
+	if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) <= 2) {
+	  padding = (TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len);
 	  post_padding = 0;
 	}
 	else {
@@ -4042,7 +4044,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  else //if (( header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
 	    header_len_dtch = header_len_dtch_tmp; 
 	  
-	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - 1; 
+	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len - 1; // 1 is for the postpadding header 
 	}
 
 
@@ -4052,15 +4054,14 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 				       sdu_lengths,  //
 				       sdu_lcids,
 				       255,                                   // no drx
-				       (header_len_dcch>0)?(eNB_UE_stats->UE_timing_offset/4):0,      // timing advance
+				       ta_len,      // timing advance
 				       NULL,                                  // contention res id
 				       padding,                        
 				       post_padding);
 #ifdef DEBUG_eNB_SCHEDULER
 	LOG_D(MAC,"[eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
 	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
-	    eNB_UE_stats->UE_timing_offset/4,
-	    next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
+	    ta_len,next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
 #endif
 	/*	      
 	msg("[MAC][eNB %d] First 16 bytes of DLSCH : \n");
