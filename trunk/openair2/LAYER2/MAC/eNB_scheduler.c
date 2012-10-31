@@ -4000,23 +4000,23 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	
 	while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch ))  {
 	  nb_rb += 2;  // 
-	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs
+	  if (nb_rb>nb_available_rb) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
-	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
-	    nb_rb = mac_xface->lte_frame_parms->N_RB_DL;
+	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+	    nb_rb = nb_available_rb;
 	    break;
 	  }
 	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
 	}
 
 	// decrease mcs until TBS falls below required length
-	
 	while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch)) && (mcs>0)) {
 	  mcs--;
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
 
-	if (TBS < (sdu_length_total + header_len_dcch + header_len_dtch)) {
+	// if we have decreased too much or we don't have enough RBs, increase MCS
+	while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch)) && (mcs<28)) {
 	  mcs++;
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
