@@ -117,7 +117,7 @@ unsigned char *parse_header(unsigned char *mac_header,
 			    unsigned short *rx_lengths,
 			    unsigned short tb_length) {
 
-  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid;
+  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid, num_sdu_cnt;
   unsigned char *mac_header_ptr = mac_header;
   unsigned short length,ce_len=0;
 
@@ -133,6 +133,8 @@ unsigned char *parse_header(unsigned char *mac_header,
       if (not_done==0) {// last MAC SDU, length is implicit
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
+	for (num_sdu_cnt=0; num_sdu_cnt < num_sdus ; num_sdu_cnt++)
+	  length -= rx_lengths[num_sdu_cnt];  
       }
       else {
 	if (((SCH_SUBHEADER_LONG *)mac_header_ptr)->F == 1) {
@@ -144,7 +146,8 @@ unsigned char *parse_header(unsigned char *mac_header,
 	}
       }
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",num_sdus,lcid,length,mac_header_ptr-mac_header);
+      LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",
+	    num_sdus,lcid,length,mac_header_ptr-mac_header);
 #endif
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -245,7 +248,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
-  LOG_I(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
+  LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
 #ifdef DEBUG_HEADER_PARSING
@@ -302,11 +305,12 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
     if (rx_lcids[i] == CCCH) {
 
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-CCCH, RRC message (eNB %d, %d bytes)\n",Mod_id,frame, eNB_index, rx_lengths[i]);
+      /*
       int j;
       for (j=0;j<rx_lengths[i];j++)
 	msg("%x.",(unsigned char)payload_ptr[j]);
       msg("\n");
-
+      */
       mac_rrc_data_ind(Mod_id,
 		       frame,
 		       CCCH,
@@ -346,7 +350,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 		       1,
 		       NULL);
     }
-
+    payload_ptr+= rx_lengths[i];
   }
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 }
@@ -809,7 +813,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					   bsr_s, // short bsr
 					   bsr_l,
 					   post_padding); // long_bsr
-    LOG_I(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,  dcch_header_len %d, dtch_header_len %d, padding %d,post_padding %d, bsr len %d, phr len %d, reminder %d \n",
+    LOG_D(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,  dcch_header_len %d, dtch_header_len %d, padding %d,post_padding %d, bsr len %d, phr len %d, reminder %d \n",
 	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset, dcch_header_len,  dtch_header_len,
 	  short_padding,post_padding, bsr_len, phr_len,buflen-sdu_length_total-payload_offset);
     // cycle through SDUs and place in ulsch_buffer

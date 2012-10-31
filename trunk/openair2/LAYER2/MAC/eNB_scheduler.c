@@ -491,7 +491,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
   int ii;
   for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
-  LOG_I(MAC,"[eNB %d] Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,rnti,UE_id);
+  LOG_D(MAC,"[eNB %d] Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,rnti,UE_id);
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
   // control element
@@ -500,7 +500,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
     switch (rx_ces[i]) { // implement and process BSR + CRNTI +
     case POWER_HEADROOM:
       eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info =  (payload_ptr[0]&0x3f);// - PHR_MAPPING_OFFSET; 
-      LOG_I(MAC,"[eNB] MAC CE_LCID %d : Received PHR PH = %d (db)\n", rx_ces[i], eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info);
+      LOG_D(MAC,"[eNB] MAC CE_LCID %d : Received PHR PH = %d (db)\n", rx_ces[i], eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info);
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
     case CRNTI:
@@ -1132,7 +1132,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
       //    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
       rnti = find_UE_RNTI(Mod_id,next_ue); // radio network temp id is obtained
 
-      LOG_I(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE %d (SR %d)\n",Mod_id,rnti,frame,subframe,UE_id,
+      LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE %d (SR %d)\n",Mod_id,rnti,frame,subframe,UE_id,
 	    eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
 
       eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0; //// why =0 ???
@@ -1201,7 +1201,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]]+
 	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]];  // This is when remaining data in UE buffers (even if SR is triggered)
 
-	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (DCCH bsr %d, DCCH1 bsr %d, DTCH bsr %d), BO %d\n",
+	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (DCCH bsr %d, DCCH1 bsr %d, DTCH bsr %d), BO %d\n",
 		Mod_id,UE_id,rnti,frame,subframe,
 		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] ,
 		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1],
@@ -1784,8 +1784,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
     // This is an allocated UE_id
     rnti = find_UE_RNTI(Mod_id,next_ue);
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    if (rnti==0)
+      continue;
 
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -1809,11 +1811,12 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	// This is an allocated UE_id
 	rnti_temp = find_UE_RNTI(Mod_id,next_ue_temp);
-	eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+	if (rnti==0)
+	  continue;
 
+	eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
 	if (eNB_UE_stats_temp==NULL)
 	  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-
 
 	// Get candidate harq_pid from PHY
 	mac_xface->get_ue_active_harq_pid(Mod_id,rnti_temp,subframe,&harq_pid_k,&round_k,0);
@@ -2754,8 +2757,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  if (rnti==0)
+	    continue;
 
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -2818,8 +2823,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  if (rnti==0)
+	    continue;
 
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -2884,8 +2891,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  if (rnti==0)
+	    continue;
 
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -2950,8 +2959,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  if (rnti==0)
+	    continue;
 
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -3031,8 +3042,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  if (rnti==0)
+	    continue;
 
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -3130,8 +3143,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  if (rnti==0)
+	    continue;
 
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -3261,8 +3276,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 
 	  // This is an allocated UE_id
 	  rnti = find_UE_RNTI(Mod_id,next_ue);
-	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  if (rnti==0)
+	    continue;
 
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	  if (eNB_UE_stats==NULL)
 	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -3488,8 +3505,10 @@ void tm5_pre_processor (unsigned char Mod_id,
 	
 	// This is an allocated UE_id
 	rnti = find_UE_RNTI(Mod_id,next_ue);
-	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	if (rnti==0)
+	  continue;
 
+	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 	if (eNB_UE_stats==NULL)
 	  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 	
@@ -3663,9 +3682,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 
     rnti = find_UE_RNTI(Mod_id,UE_id);
+    if (rnti==0)
+      continue;
 
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
