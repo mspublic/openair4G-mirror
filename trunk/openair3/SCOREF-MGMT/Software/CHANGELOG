@@ -1,4 +1,10 @@
 
+v1.1.12
+* Bugfix Invalid iterator in Communication Profile Response code
+* PacketHandler now returns relevant task
+* Bugfix Erase-remove idiom fixed in Configuration code
+* Initial code for CONFIGURATION UPDATE AVAILABLE sending
+
 v1.1.11
 * Cppcheck corrections made
 

@@ -64,6 +64,26 @@ using namespace boost;
 class PacketHandler {
 	public:
 		/**
+		 * Result of packet processing to be returned to relevant unit calling handle()
+		 */
+		enum Result {
+			/**
+			 * Packet is processed and no further action is necessary
+			 */
+			DISCARD_PACKET = 0,
+			/**
+			 * Invalid packet
+			 */
+			INVALID_PACKET = 1,
+			/**
+			 * All the clients with relevant configuration requirements
+			 * (meaning NET or FAC parameters) should be informed of new configuration
+			 */
+			SEND_CONFIGURATION_UPDATE_AVAILABLE = 2
+		};
+
+	public:
+		/**
 		 * Constructor for PacketHandler class
 		 *
 		 * @param mib ManagementInformationBase reference
@@ -87,9 +107,9 @@ class PacketHandler {
 		 *
 		 * @param client Sender client
 		 * @param packetBuffer Packet buffer
-		 * @return true on success, false otherwise
+		 * @return relevant PacketHandler::Result enumeration according to the result
 		 */
-		bool handle(UdpServer& client, const vector<unsigned char>& packetBuffer);
+		PacketHandler::Result handle(UdpServer& client, const vector<unsigned char>& packetBuffer);
 
 	private:
 		/**

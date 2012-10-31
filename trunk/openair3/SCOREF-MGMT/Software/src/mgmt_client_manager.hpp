@@ -81,6 +81,12 @@ class ManagementClientManager {
 		 */
 		bool updateManagementClientState(UdpServer& clientConnection, EventType eventType);
 		/**
+		 * Sends CONFIGURATION UPDATE AVAILABLE to all those clients connected
+		 *
+		 * @return true on success, false otherwise
+		 */
+		bool sendConfigurationUpdateAvailable();
+		/**
 		 * Returns the string representation of Client Manager and the clients it manages
 		 *
 		 * @param none

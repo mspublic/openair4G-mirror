@@ -66,7 +66,7 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	payloadIndex += 2;
 
 	// ...and communication profile item(s)
-	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
+	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator = mib.getCommunicationProfileManager().getProfileMap().begin();
 	while (iterator != mib.getCommunicationProfileManager().getProfileMap().end()) {
 		Util::encode4byteInteger(buffer, payloadIndex, iterator->second.id);
 		payloadIndex += 4;

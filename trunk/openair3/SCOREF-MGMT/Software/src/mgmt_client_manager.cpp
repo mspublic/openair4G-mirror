@@ -39,6 +39,7 @@
  * \warning none
  */
 
+#include "packets/mgmt_gn_packet_configuration_available.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
@@ -113,6 +114,44 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 
 	logger.info(toString());
 
+	return true;
+}
+
+bool ManagementClientManager::sendConfigurationUpdateAvailable() {
+	if (clientVector.empty())
+		return false;
+
+	/**
+	 * Create a CONFIGURATION_UPDATE_AVAILABLE packet
+	 */
+	GeonetConfigurationAvailableEventPacket* packet;
+	vector<unsigned char> packetBuffer;
+
+	try {
+		packet = new GeonetConfigurationAvailableEventPacket(mib, logger);
+	} catch (...) {
+		throw Exception("Cannot create a CONFIGURATION_UPDATE_AVAILABLE packet!", logger);
+	}
+
+	/**
+	 * Serialize...
+	 */
+	if (!packet->serialize(packetBuffer)) {
+		logger.error("Cannot serialize CONFIGURATION_UPDATE_AVAILABLE packet!");
+		return false;
+	}
+
+	/**
+	 * ...and send
+	 */
+	boost::asio::io_service ioService;
+	udp::socket* clientSocket = NULL;
+	boost::system::error_code error;
+	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
+		clientSocket = new udp::socket(ioService, udp::endpoint(udp::v4(), (*it)->getPort()));
+//LEFT_HERE		clientSocket->send_to(boost::asio::buffer(packetBuffer), (*it)->get, 0, error);
+		delete clientSocket;
+	}
 	return true;
 }
 
