@@ -67,11 +67,11 @@ PacketHandler::~PacketHandler() {
 	delete packetFactory;
 }
 
-bool PacketHandler::handle(UdpServer& client, const vector<unsigned char>& packetBuffer) {
+PacketHandler::Result PacketHandler::handle(UdpServer& client, const vector<unsigned char>& packetBuffer) {
 	if (packetBuffer.size() < sizeof(MessageHeader)) {
 		logger.error("Buffer size (" + boost::lexical_cast<string>(packetBuffer.size()) + " byte(s)) is not enough to carry a message!");
 		logger.warning("Discarding packet...");
-		return false;
+		return PacketHandler::INVALID_PACKET;
 	}
 
 	logger.info("Incoming packet size is " + boost::lexical_cast<string>(packetBuffer.size()) + " byte(s)");
@@ -81,43 +81,51 @@ bool PacketHandler::handle(UdpServer& client, const vector<unsigned char>& packe
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
 		case MGMT_FAC_EVENT_CONF_REQUEST:
-			return handleGetConfigurationEvent(client, new GeonetGetConfigurationEventPacket(packetBuffer, logger));
+			if (handleGetConfigurationEvent(client, new GeonetGetConfigurationEventPacket(packetBuffer, logger)))
+				return PacketHandler::DISCARD_PACKET;
+			return PacketHandler::INVALID_PACKET;
 
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
 			if (handleWirelessStateResponseEvent(new GeonetWirelessStateResponseEventPacket(mib, packetBuffer, logger))) {
 				logger.info("Wireless state event message processed");
-				return NULL;
-			}
-			break;
+				return PacketHandler::DISCARD_PACKET;
+			} else
+				return PacketHandler::INVALID_PACKET;
 
 		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
 			if (handleNetworkStateEvent(new GeonetNetworkStateEventPacket(mib, packetBuffer, logger))) {
 				logger.info("Network state event message processed");
 				/**
 				 * todo this comment is no more functional, fix this!
+				 *
 				 * If the first message we have received from the client is a
 				 * periodic network state then there was a configuration request
 				 * that has been lost (cause the client was started before the
 				 * server), so here we need to send them all
 				 */
+				return PacketHandler::DISCARD_PACKET;
 			}
-			break;
+			return PacketHandler::INVALID_PACKET;
 
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
 		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
-			return handleCommunicationProfileRequestEvent(client, new GeonetCommunicationProfileRequestPacket(packetBuffer, logger));
+			if (handleCommunicationProfileRequestEvent(client, new GeonetCommunicationProfileRequestPacket(packetBuffer, logger)))
+				return PacketHandler::DISCARD_PACKET;
+			return PacketHandler::INVALID_PACKET;
 
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
 			if (handleLocationTableResponse(new GeonetLocationTableResponseEventPacket(mib, packetBuffer, logger))) {
 				logger.info("Location table response packet processed");
+				return PacketHandler::DISCARD_PACKET;
 			}
-			break;
+			return PacketHandler::INVALID_PACKET;
 
 		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
 			if (handleConfigurationNotification(new FacConfigurationNotificationPacket(mib, packetBuffer, logger))) {
 				logger.info("An incoming Configuration Notification packet has been processed");
+				return PacketHandler::DISCARD_PACKET;
 			}
-			break;
+			return PacketHandler::INVALID_PACKET;
 
 		/**
 		 * Handle unexpected packets as well
@@ -133,15 +141,15 @@ bool PacketHandler::handle(UdpServer& client, const vector<unsigned char>& packe
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST:
 			logger.error("Unexpected packet (event: " + boost::lexical_cast<string>(eventType) + ") received, connected client is buggy");
 			logger.error("Ignoring...");
-			break;
+			return PacketHandler::INVALID_PACKET;
 
 		case MGMT_EVENT_ANY:
 		default:
 			logger.error("Unknown message received, ignoring...");
-			break;
+			return PacketHandler::INVALID_PACKET;
 	}
 
-	return NULL;
+	return PacketHandler::DISCARD_PACKET;
 }
 
 bool PacketHandler::handleGetConfigurationEvent(UdpServer& client, GeonetGetConfigurationEventPacket* request) {
@@ -183,7 +191,7 @@ bool PacketHandler::handleLocationTableResponse(GeonetLocationTableResponseEvent
 }
 
 bool PacketHandler::handleConfigurationNotification(FacConfigurationNotificationPacket* packet) {
-	// Creation of a FacConfigurationNotificationPacket is enough to handle it
+	// TODO Update MIB with incoming ITS key configuration update
 	return true;
 }
 

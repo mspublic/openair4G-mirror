@@ -171,24 +171,43 @@ int main(int argc, char** argv) {
 		try {
 			for (;;) {
 				if (server.receive(rxBuffer)) {
-					bool packetHandled = false;
+					PacketHandler::Result result;
 
 					try {
-						packetHandled = packetHandler->handle(server, rxBuffer);
+						result = packetHandler->handle(server, rxBuffer);
 					} catch (std::exception& e) {
 						cerr << e.what() << endl;
 					}
 
-					if (packetHandled)
-						/**
-						 * Inform Client Manager of this sender
-						 */
-						try {
-							clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
-						} catch (Exception& e) {
-							e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
-							throw;
-						}
+					switch (result) {
+						case PacketHandler::DISCARD_PACKET:
+							/**
+							 * Inform Client Manager of this sender
+							 */
+							try {
+								clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
+							} catch (Exception& e) {
+								e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
+								throw;
+							}
+							break;
+
+						case PacketHandler::INVALID_PACKET:
+							logger.error("Incoming packet is not valid, discarding..");
+							break;
+
+						case PacketHandler::SEND_CONFIGURATION_UPDATE_AVAILABLE:
+							/**
+							 * Update clients with new configuration information
+							 */
+							try {
+								clientManager.sendConfigurationUpdateAvailable();
+							} catch (Exception& e) {
+								e.updateStackTrace("Cannot send a CONFIGURATION UPDATE AVAILABLE packet!");
+								throw;
+							}
+							break;
+					}
 				}
 
 				// Revert buffer size to initial

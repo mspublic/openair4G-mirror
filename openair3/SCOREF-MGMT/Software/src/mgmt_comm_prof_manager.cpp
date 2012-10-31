@@ -87,7 +87,7 @@ string CommunicationProfileManager::toString() const {
 
 	ss << "Communication profile count: " << communicationProfileMap.size() << endl;
 
-	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it;
+	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
 	while (it != communicationProfileMap.end()) {
 		ss << "Communication Profile [ID:" << it->second.id
 			<< ", transport:" << it->second.transport
