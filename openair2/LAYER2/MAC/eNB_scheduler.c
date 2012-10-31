@@ -480,7 +480,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
   int ii;
   for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
-  LOG_D(MAC,"[eNB %d] Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,rnti,UE_id);
+  LOG_D(MAC,"[eNB %d] Received ULSCH sdu with len %d from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,sdu_len, rnti,UE_id);
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
   // control element
@@ -3783,7 +3783,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	header_len_dcch = 0;
 	sdu_length_total = 0;
       }
-
+      
       // check for DCCH1 and update header information (assume 2 byte sub-header)
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+1+(MAX_NUM_RB*next_ue),
 				      (TBS-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
@@ -3837,11 +3837,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	// adjust  header lengths
 	header_len_dcch_tmp = header_len_dcch;
 	header_len_dtch_tmp = header_len_dtch;
-	if (header_len_dtch==0)
+	if (header_len_dtch==0) 
 	  header_len_dcch = (header_len_dcch >0) ? 1 : header_len_dcch;  // remove length field
 	else 
-	header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
-	
+	  header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
+	 
+	header_len_dcch += (eNB_UE_stats->UE_timing_offset>0)?2:0;
 
 	nb_rb = 2;
 
@@ -3879,8 +3880,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	//	TBS, sdu_length_total, offset, TBS-sdu_length_total-offset);
 #endif
 
+
+
 	if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total) <= 2) {
-	  padding = (TBS - header_len_dcch - header_len_dtch - sdu_length_total);
+	  padding = TBS - header_len_dcch - header_len_dtch - sdu_length_total;
 	  post_padding = 0;
 	}
 	else {
@@ -3891,7 +3894,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  else //if (( header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
 	    header_len_dtch = header_len_dtch_tmp; 
 	  
-	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - 1; 
+	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - 1;  
 	}
 
 

@@ -723,7 +723,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
 
-  LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
+  LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
 
 
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
@@ -738,7 +738,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   //UE_transport_info_TB_index[phy_vars_ue->Mod_id]+=phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;
   // navid: currently more than one is not supported in the code 
   UE_transport_info[phy_vars_ue->Mod_id].num_eNB = 1; 
-  UE_transport_info[phy_vars_ue->Mod_id].rnti[0] = phy_vars_ue->lte_ue_pdcch_vars[0]->crnti; 
+  UE_transport_info[phy_vars_ue->Mod_id].rnti[0] = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti; 
   UE_transport_info[phy_vars_ue->Mod_id].eNB_id[0]  = eNB_id;
   UE_transport_info[phy_vars_ue->Mod_id].harq_pid[0] = harq_pid;
   UE_transport_info[phy_vars_ue->Mod_id].tbs[0]     = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3 ;

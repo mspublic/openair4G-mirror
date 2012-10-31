@@ -17,7 +17,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 
-//#define DEBUG_PHY
+#define DEBUG_PHY
 
 extern u16 prach_root_sequence_map0_3[838];
 extern u16 prach_root_sequence_map4[138];
@@ -514,10 +514,8 @@ int phy_init_lte_ue_common(PHY_VARS_UE *phy_vars_ue,
 		    u8 abstraction_flag, 
 		    u8 eNB_index){ // apaposto
 
-  LTE_DL_FRAME_PARMS *frame_parms; // apaposto
-  frame_parms = phy_vars_ue->lte_frame_parms[eNB_index]; // apaposto
-   LTE_UE_COMMON *ue_common_vars;       // apaposto
-  ue_common_vars = phy_vars_ue->lte_ue_common_vars[eNB_index]; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_index];
+   LTE_UE_COMMON *ue_common_vars = phy_vars_ue->lte_ue_common_vars[eNB_index]; 
 
   int i,j;
   unsigned char eNB_id;
@@ -709,9 +707,7 @@ int phy_init_lte_ue_common(PHY_VARS_UE *phy_vars_ue,
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 		    u8 abstraction_flag, u8 nb_connected_eNB){ // apaposto
 
-  LTE_DL_FRAME_PARMS *frame_parms; // apaposto
-  frame_parms = phy_vars_ue->lte_frame_parms[0]; // apaposto only use the frame_parms[0] as template for all the instances
-
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[0]; // only use the frame_parms[0] as template for all the instances
 
   LTE_UE_PDSCH **ue_pdsch_vars        = phy_vars_ue->lte_ue_pdsch_vars;
   LTE_UE_PDSCH_FLP **ue_pdsch_vars_flp= phy_vars_ue->lte_ue_pdsch_vars_flp;
@@ -1364,7 +1360,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars_ra[%d] = %p\n",eNB_id,ue_pdsch_vars_ra[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_pdcch_vars[%d] = %p\n",eNB_id,ue_pdcch_vars[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_prach_vars[%d] = %p\n",eNB_id,ue_prach_vars[eNB_id]);
-    //msg("[OPENAIR][LTE PHY][INIT] prach_resources[%d] = %p\n",eNB_id,prach_resources[eNB_id]);
+    //  msg("[OPENAIR][LTE PHY][INIT] prach_resources[%d] = %p\n",eNB_id,prach_resources[eNB_id]);
 #endif
 
     if (abstraction_flag == 0) {

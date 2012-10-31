@@ -927,10 +927,11 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 subframe) {
   u8 UE_id;
   u16 rnti;
-
+  u8 eNB_id = phy_vars_eNB->Mod_id;
+  
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti)
       break;
   }
   if (UE_id==NB_UE_INST) {

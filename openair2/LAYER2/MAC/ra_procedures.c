@@ -53,12 +53,12 @@
 
 extern inline unsigned int taus(void);
 
-s8 get_DELTA_PREAMBLE(u8 Mod_id) {
+s8 get_DELTA_PREAMBLE(u8 Mod_id, u8 eNB_id) {
 
-  u8 prachConfigIndex = UE_mac_inst[Mod_id].radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+  u8 prachConfigIndex = UE_mac_inst[Mod_id].scheduling_info[eNB_id].radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
   u8 preambleformat;
 
-  if (UE_mac_inst[Mod_id].tdd_Config) { // TDD
+  if (UE_mac_inst[Mod_id].scheduling_info[eNB_id].tdd_Config) { // TDD
     if (prachConfigIndex < 20)
       preambleformat = 0;
     else if (prachConfigIndex < 30)
@@ -105,8 +105,8 @@ void get_prach_resources(u8 Mod_id,
   u8 noGroupB = 0;
   u8 f_id = 0,num_prach=0;
 
-  if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
-    rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
+  if (UE_mac_inst[Mod_id].scheduling_info[eNB_index].radioResourceConfigCommon)
+    rach_ConfigCommon = &UE_mac_inst[Mod_id].scheduling_info[eNB_index].radioResourceConfigCommon->rach_ConfigCommon;
   else {
     LOG_E(MAC,"[UE %d] FATAL  radioResourceConfigCommon is NULL !!!\n",Mod_id);
     mac_xface->macphy_exit("");
@@ -152,7 +152,7 @@ void get_prach_resources(u8 Mod_id,
       UE_mac_inst[Mod_id].RA_prach_resources.ra_RACH_MaskIndex = 0;
       UE_mac_inst[Mod_id].RA_usedGroupA = 0;
     }
-    UE_mac_inst[Mod_id].RA_prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER = get_Po_NOMINAL_PUSCH(Mod_id);
+    UE_mac_inst[Mod_id].RA_prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER = get_Po_NOMINAL_PUSCH(Mod_id,eNB_index);
   }
   else {  // Msg3 is being retransmitted
     if (UE_mac_inst[Mod_id].RA_usedGroupA == 1) {
@@ -171,7 +171,7 @@ void get_prach_resources(u8 Mod_id,
     }
   }
   // choose random PRACH resource in TDD
-  if (UE_mac_inst[Mod_id].tdd_Config) {
+  if (UE_mac_inst[Mod_id].scheduling_info[eNB_index].tdd_Config) {
     num_prach = mac_xface->get_num_prach_tdd(mac_xface->lte_frame_parms);
     if ((num_prach>0) && (num_prach<6))
       UE_mac_inst[Mod_id].RA_prach_resources.ra_TDD_map_index = (taus()%num_prach);
@@ -207,9 +207,9 @@ void Msg3_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled) { // msg3
     trace_pdu(0, &UE_mac_inst[Mod_id].CCCH_pdu.payload, UE_mac_inst[Mod_id].RA_Msg3_size, Mod_id, 3, 
-	      UE_mac_inst[Mod_id].crnti /*UE_mac_inst[Mod_id].RA_prach_resources.ra_RNTI*/,frame,0,0);
+	      UE_mac_inst[Mod_id].crnti[eNB_id] /*UE_mac_inst[Mod_id].RA_prach_resources.ra_RNTI*/,frame,0,0);
     LOG_D(OPT,"[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n", 
-	  Mod_id, frame, UE_mac_inst[Mod_id].crnti /*UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[Mod_id].RA_Msg3_size);
+	  Mod_id, frame, UE_mac_inst[Mod_id].crnti[eNB_id] /*UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[Mod_id].RA_Msg3_size);
     }
 #endif	  
 }
@@ -227,8 +227,8 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 
 
   if (UE_mode == PRACH) {
-    if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
-      rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
+    if (UE_mac_inst[Mod_id].scheduling_info[eNB_index].radioResourceConfigCommon)
+      rach_ConfigCommon = &UE_mac_inst[Mod_id].scheduling_info[eNB_index].radioResourceConfigCommon->rach_ConfigCommon;
     else {
       return(NULL);
     }
