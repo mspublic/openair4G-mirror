@@ -51,6 +51,10 @@
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
 
+#ifndef OAI_EMU
+extern int otg_enabled;
+#endif
+
 extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 extern void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 extern u8 mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index);
@@ -338,6 +342,12 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
      return TRUE;
   }
   }
+#else
+  if (otg_enabled==1) {
+    LOG_I(OTG,"Discarding received packed\n");
+    free_mem_block(sdu_buffer);
+    return TRUE;
+  }
 #endif
   new_sdu = get_free_mem_block(sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof (pdcp_data_ind_header_t));
 
@@ -463,7 +473,32 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
       } //else LOG_D(OTG,"frame %d ue %d-> enb %d link not yet established state %d  \n", frame, UE_index, eNB_index, mac_get_rrc_status(module_id, eNB_flag, eNB_index ));
     }
   }
-#endif
+#else
+  if ((otg_enabled==1) && (eNB_flag == 1)) { // generate DL traffic 
+      src_id = eNB_index;
+      ctime = frame * 100; 
+
+      /*if  ((mac_get_rrc_status(eNB_index, eNB_flag, 0 ) > 2) &&
+	(mac_get_rrc_status(eNB_index, eNB_flag, 1 ) > 2)) { */
+      for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
+	if (mac_get_rrc_status(eNB_index, eNB_flag, dst_id ) > 2) {
+	  otg_pkt=packet_gen(src_id, dst_id, ctime, &pkt_size);
+	  if (otg_pkt != NULL){
+	    rab_id = dst_id * MAX_NUM_RB + DTCH;
+	    pdcp_data_req(src_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO,pkt_size, otg_pkt, PDCP_DATA_PDU);
+	    LOG_I(OTG,"send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, rab_id, src_id, dst_id, pkt_size);
+	    free(otg_pkt);
+	  }
+	  /*else {
+	    LOG_I(OTG,"nothing generated (src %d, dst %d)\n",src_id, dst_id);
+	    }*/	
+	}
+	/*else {
+	  LOG_I(OTG,"rrc_status (src %d, dst %d) = %d\n",src_id, dst_id, mac_get_rrc_status(src_id, eNB_flag, dst_id ));
+	  }*/
+      }
+    }
+#endif  
   // NAS -> PDCP traffic
   pdcp_fifo_read_input_sdus(frame,eNB_flag);
 
