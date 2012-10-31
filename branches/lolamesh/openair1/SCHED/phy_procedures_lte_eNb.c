@@ -45,7 +45,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-//#define DEBUG_PHY_PROC
+#define DEBUG_PHY_PROC
 //#define DEBUG_DLSCH
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
@@ -960,8 +960,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef DEBUG_PHY_PROC
 	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d Setting subframe_scheduling_flag for (ul subframe %d)\n",
 	    phy_vars_eNB->Mod_id,harq_pid,
-	    ((next_slot>>1)==0 ? 1 : 0) +phy_vars_eNB->frame,next_slot>>1,
-	    pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1));
+	      ((next_slot>>1)==0 ? 1 : 0) +phy_vars_eNB->frame,next_slot>>1,// out of sync frame counter? 
+	      pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1));
 #endif
 	phy_vars_eNB->ulsch_eNB[(u32)UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 	
@@ -2242,8 +2242,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				    pucch_format1,
 				    &SR_payload,
 				    last_slot>>1);
-	    LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR (UE SR %d)\n",phy_vars_eNB->Mod_id,
-		  phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1,SR_payload);
+	    LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR format %d (UE SR %d)\n",phy_vars_eNB->Mod_id,
+		  phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1,pucch_format1, SR_payload);
 
 #endif
 	  }
@@ -2295,7 +2295,44 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  // fix later for 2 TB case and format1b
 	  if (bundling_flag==bundling) {
 	    format = pucch_format1a;
-	    //	  msg("PUCCH 1a\n");
+	    msg("PUCCH 1a format \n"); // navid 
+	    if (abstraction_flag == 0)
+	      metric0 = rx_pucch(phy_vars_eNB,
+				 pucch_format1a,
+				 i,
+				 phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,
+				 0, // n2_pucch
+				 1, // shortened format
+				 &SR_payload,
+				 last_slot>>1,
+				 PUCCH1_THRES);
+	    else {
+#ifdef PHY_ABSTRACTION
+	      metric0 = rx_pucch_emul(phy_vars_eNB,
+				      i,
+				      pucch_format1a,
+				      &SR_payload,
+				      last_slot>>1);
+	      LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR format1a (UE SR %d)\n",phy_vars_eNB->Mod_id,
+		    phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1, SR_payload);
+#endif
+	    }
+	    if (SR_payload == 1) {
+	      LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n",phy_vars_eNB->Mod_id,
+		    phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1);
+	      if (phy_vars_eNB->first_sr[i] == 1) { // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
+		phy_vars_eNB->dlsch_eNB[i][0]->harq_processes[0]->round=0;
+		phy_vars_eNB->dlsch_eNB[i][0]->harq_processes[0]->status=SCH_IDLE;
+		LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d First SR\n",
+		      phy_vars_eNB->Mod_id,
+		      phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1);
+	      }
+	      mac_xface->SR_indication(phy_vars_eNB->Mod_id,
+				       phy_vars_eNB->frame,
+				       phy_vars_eNB->dlsch_eNB[i][0]->rnti,last_slot>>1);
+	      
+	    }//end navid 
+	    
 	  }
 	  else {
 	    format = pucch_format1b;

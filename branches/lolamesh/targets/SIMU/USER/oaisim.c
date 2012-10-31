@@ -635,7 +635,7 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
-  u8 nb_connected_eNB=0; // apaposto  number of connected eNBs that a UE will be attached
+  u8 nb_connected_eNB=1; // apaposto
   // omv related info
   //pid_t omv_pid;
   char full_name[200];
@@ -910,7 +910,7 @@ main (int argc, char **argv)
   if (nb_connected_eNB > oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote){ // navid 
     nb_connected_eNB = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
     LOG_E(EMU,"Adjust the number of connected eNB to the total number of eNBs (%d)\n", oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote);
-  }
+    }
     
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
@@ -1339,14 +1339,15 @@ main (int argc, char **argv)
 		}
 	    }
 	    else {
-	      if ((PHY_vars_UE_g[UE_id]->UE_mode[eNB_id-1] == PUSCH) && (eNB_id < nb_connected_eNB)) 
+	      if ((PHY_vars_UE_g[UE_id]->UE_mode[eNB_id-1] == PUSCH) && (eNB_id < nb_connected_eNB)) {
+		LOG_D(EMU,"Change the UE %d mode to PRACH for eNB %d \n",UE_id,eNB_id);
 		PHY_vars_UE_g[UE_id]->UE_mode[eNB_id]=PRACH;
-	      
-	    if ((abstraction_flag ==0)&&(frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
-	      for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ // apaposto  
-		initial_sync(PHY_vars_UE_g[UE_id], eNB_id);
 	      }
-	      /*
+	      if ((abstraction_flag ==0)&&(frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
+		for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ 
+		  initial_sync(PHY_vars_UE_g[UE_id], eNB_id);
+		}
+		/*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
 		write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);

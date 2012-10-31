@@ -59,7 +59,7 @@
 #include "UTIL/OCG/OCG_extern.h"
 #endif
 
-//#define DEBUG_ULSCH_DECODING
+#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
 
@@ -1013,11 +1013,21 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
 			u8 UE_index) {
 
-  u8 UE_id;
+  u8 UE_id, eNB_id;
   u16 rnti;
   u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
-  
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
+  /* navid 
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+    if (PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
+      break;
+  }
+  if (eNB_id==NB_eNB_INST) {
+    LOG_E(PHY,"FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
+    mac_xface->macphy_exit("");
+  }
+  */  // navid 
+  eNB_id= phy_vars_eNB->Mod_id;
 #ifdef DEBUG_PHY
   msg("[PHY] EMUL RRC eNB %d ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",phy_vars_eNB->Mod_id,subframe,UE_index,harq_pid,rnti);
 #endif
@@ -1025,7 +1035,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[phy_vars_eNB->Mod_id]->crnti)
       break;
 
-    msg("[PHY] EMUL eNB %d ulsch_decoding_emul : subframe ue id %d crnti %x nb ue %d\n",
+    LOG_I(PHY,"[PHY] EMUL eNB %d ulsch_decoding_emul : subframe ue id %d crnti %x nb ue %d\n",
 	phy_vars_eNB->Mod_id,
 	UE_id,
 	PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[phy_vars_eNB->Mod_id]->crnti,
@@ -1037,30 +1047,30 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     return(1+MAX_TURBO_ITERATIONS);
   }
   else {
-    msg("found UE with rnti %x => UE_id %d\n",rnti,UE_id);
+    LOG_I(PHY,"found UE with rnti %x => UE_id %d\n",rnti,UE_id);
   }
   // Do abstraction here to determine if packet it in error
 
   memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->b,
-	 PHY_vars_UE_g[UE_id]->ulsch_ue[0]->harq_processes[harq_pid]->b,
+	 PHY_vars_UE_g[UE_id]->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->TBS>>3);
   // get local ue's ack 	 
   if ((UE_index >= oai_emulation.info.first_ue_local) ||(UE_index <(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local))){
     get_ack(&phy_vars_eNB->lte_frame_parms,
-	    PHY_vars_UE_g[UE_id]->dlsch_ue[0][0]->harq_ack,
+	    PHY_vars_UE_g[UE_id]->dlsch_ue[eNB_id][0]->harq_ack,
 	    subframe,
 	    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK);
   }else { // get remote UEs' ack 
-    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0] = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_ACK[0];
-    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1] = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_ACK[1];
+    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0] = PHY_vars_UE_g[UE_id]->ulsch_ue[eNB_id]->o_ACK[0];
+    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1] = PHY_vars_UE_g[UE_id]->ulsch_ue[eNB_id]->o_ACK[1];
   }
   // Do abstraction of PUSCH feedback
   msg("[PHY] EMUL eNB %d : subframe %d : o_ACK %d %d\n",phy_vars_eNB->Mod_id,subframe,phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0],phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1]); 
 
-  phy_vars_eNB->ulsch_eNB[UE_index]->Or1 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
-  phy_vars_eNB->ulsch_eNB[UE_index]->Or2 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
-  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o,MAX_CQI_BYTES); 
-  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o_RI,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_RI,2); 
+  phy_vars_eNB->ulsch_eNB[UE_index]->Or1 = PHY_vars_UE_g[UE_id]->ulsch_ue[eNB_id]->O;
+  phy_vars_eNB->ulsch_eNB[UE_index]->Or2 = PHY_vars_UE_g[UE_id]->ulsch_ue[eNB_id]->O;
+  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o,PHY_vars_UE_g[UE_id]->ulsch_ue[eNB_id]->o,MAX_CQI_BYTES); 
+  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o_RI,PHY_vars_UE_g[UE_id]->ulsch_ue[eNB_id]->o_RI,2); 
 
   phy_vars_eNB->ulsch_eNB[UE_index]->cqi_crc_status = 1;
   return(1);

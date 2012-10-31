@@ -470,7 +470,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 #endif
   
   for (eNB_id2=0;eNB_id2<NB_eNB_INST;eNB_id2++) {
-    if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell	== phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell) // apaposto
+    if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell) // apaposto
       break;
      }
    
@@ -478,7 +478,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     LOG_E(PHY,"FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
     mac_xface->macphy_exit("");
   }
-  //eNB_id2= eNB_id; // testing code: navid 
+  eNB_id2= eNB_id; // testing code: navid 
   LOG_D(PHY,"[UE] dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
 
   //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);

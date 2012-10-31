@@ -88,12 +88,12 @@ unsigned short fill_rar(u8 Mod_id,
   return(rar->t_crnti);
 }
 
-u16 ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index) {
+u16 ue_process_rar(u8 Mod_id, u32 frame, u8 eNB_id, u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   
-  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : process RAR : preamble_index %d, received %d\n",Mod_id,frame,preamble_index,rarh->RAPID);
+  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : process RAR from eNB %d : preamble_index %d, received %d\n",Mod_id,frame,eNB_id, preamble_index,rarh->RAPID);
   
 #ifdef DEBUG_RAR
   LOG_D(MAC,"[UE %d][RAPROC] rarh->E %d\n",Mod_id,rarh->E);
@@ -112,11 +112,11 @@ u16 ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 preamb
 #endif
   if (preamble_index == rarh->RAPID) {
     *t_crnti = rar->t_crnti;
-     UE_mac_inst[Mod_id].crnti = rar->t_crnti;
+     UE_mac_inst[Mod_id].crnti[eNB_id] = rar->t_crnti;
     return(rar->Timing_Advance_Command);
   }
   else {
-    UE_mac_inst[Mod_id].crnti=0;
+    UE_mac_inst[Mod_id].crnti[eNB_id]=0;
     return(0xffff);
   }
 }

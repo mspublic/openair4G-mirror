@@ -402,8 +402,6 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 #ifndef NO_RRM
 	send_msg(&S_rrc,msg_rrc_MR_attach_ind(Mod_id,Mac_id));
 #else
-
-
 	Idx = (UE_index * MAX_NUM_RB) + DCCH;
 	// SRB1
 	eNB_rrc_inst[Mod_id].Srb1[UE_index].Active = 1;

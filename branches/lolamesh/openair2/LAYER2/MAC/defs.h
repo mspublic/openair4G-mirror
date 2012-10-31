@@ -97,6 +97,7 @@
 typedef enum {
   CONNECTION_OK=0,
   CONNECTION_LOST,
+  CONNECTION_PROC,
   PHY_RESYNCH
 } UE_L2_STATE_t;
 
@@ -403,6 +404,18 @@ typedef struct {
   u16 maxHARQ_Tx; 
   /// default value is false
   u16 ttiBundling;
+  /// pointer to RRC PHY configuration 
+  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+  /// pointer to RRC PHY configuration 
+  struct PhysicalConfigDedicated *physicalConfigDedicated;
+  /// pointer to TDD Configuration (NULL for FDD)
+  TDD_Config_t *tdd_Config;
+  /// Pointer to RRC MAC configuration
+  MAC_MainConfig_t *macConfig;
+  /// Pointer to RRC Measurement gap configuration
+  MeasGapConfig_t  *measGapConfig;
+  /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
+  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
   /// default value is release 
   struct DRX_Config *drx_config;
   /// default value is release
@@ -426,27 +439,15 @@ typedef struct {
 } UE_SCHEDULING_INFO;
 
 typedef struct{
-  u16 Node_id;
+  u16 Node_id[NUMBER_OF_CONNECTED_eNB_MAX];
   /// C-RNTI of UE
-  u16 crnti;
-  /// pointer to RRC PHY configuration 
-  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
-  /// pointer to RRC PHY configuration 
-  struct PhysicalConfigDedicated *physicalConfigDedicated;
-  /// pointer to TDD Configuration (NULL for FDD)
-  TDD_Config_t *tdd_Config;
+  u16 crnti[NUMBER_OF_CONNECTED_eNB_MAX];
   /// Number of adjacent cells to measure
   u8  n_adj_cells;
   /// Array of adjacent physical cell ids
   u16 adj_cell_id[6];
-  /// Pointer to RRC MAC configuration
-  MAC_MainConfig_t *macConfig;
-  /// Pointer to RRC Measurement gap configuration
-  MeasGapConfig_t  *measGapConfig;
-  /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
-  /// Scheduling Information 
-  UE_SCHEDULING_INFO scheduling_info;
+    /// Scheduling Information 
+  UE_SCHEDULING_INFO scheduling_info[NUMBER_OF_CONNECTED_eNB_MAX];
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
   /// Incoming DLSCH pdu for PHY
@@ -485,11 +486,11 @@ typedef struct{
   /// Random-access Contention Resolution Timer count value
   u8 RA_contention_resolution_cnt;
   /// power headroom reporitng reconfigured 
-  u8 PHR_reconfigured; 
+  u8 PHR_reconfigured[NUMBER_OF_CONNECTED_eNB_MAX]; 
   /// power headroom state as configured by the higher layers
-  u8 PHR_state; 
+  u8 PHR_state[NUMBER_OF_CONNECTED_eNB_MAX]; 
   /// power backoff due to power management (as allowed by P-MPRc) for this cell
-  u8 PHR_reporting_active; 
+  u8 PHR_reporting_active[NUMBER_OF_CONNECTED_eNB_MAX]; 
  /// power backoff due to power management (as allowed by P-MPRc) for this cell
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
 }UE_MAC_INST;
@@ -602,15 +603,17 @@ void schedule_ue_spec(u8 Mod_id,u32 frame,u8 subframe,u16 nb_rb_used0,u8 nCCE_us
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE
+    @param eNB_index index of eNB
     @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
 */
-s8 get_Po_NOMINAL_PUSCH(u8 Mod_id);
+s8 get_Po_NOMINAL_PUSCH(u8 Mod_id, u8 eNB_index);
 
 /** \brief Function to compute DELTA_PREAMBLE from 36.321 (for RA power ramping procedure and Msg3 PUSCH power control policy) 
     @param Mod_id Module id of UE
+    @param eNB_index index of eNB
     @returns DELTA_PREAMBLE
 */
-s8 get_DELTA_PREAMBLE(u8 Mod_id);
+s8 get_DELTA_PREAMBLE(u8 Mod_id,u8 eNB_index);
 
 /** \brief Function for compute deltaP_rampup from 36.321 (for RA power ramping procedure and Msg3 PUSCH power control policy) 
     @param Mod_id Module id of UE
@@ -796,7 +799,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame,u8 new_Msg3,u8 subframe);
 random-access procedure
 @returns timing advance or 0xffff if preamble doesn't match
 */
-u16 ue_process_rar(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
+u16 ue_process_rar(u8 Mod_id,u32 frame,u8 eNB_id, u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
 
 
 /* \brief Generate header for UL-SCH.  This function parses the desired control elements and sdus and generates the header as described
@@ -864,13 +867,14 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 
 
-/*! \fn  u8 get_bsr_len (u8 Mod_id, u16 bufflen);
+/*! \fn  u8 get_bsr_len (u8 Mod_id, u16 bufflen, u8 eNB_index);
 \brief determine whether the bsr is short or long assuming that the MAC pdu is built 
 \param[in] Mod_id instance of the UE
 \param[in] bufflen size of phy transport block
+\param[in] eNB_index index of target enb
 \param[out] bsr_len size of bsr control element 
 */
-u8 get_bsr_len (u8 Mod_id, u16 buflen);
+u8 get_bsr_len (u8 Mod_id, u16 buflen, u8 eNB_index);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(u8 Mod_id, u8 bsr_len)
 \brief get short bsr level
@@ -893,8 +897,9 @@ BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
 \param[in] Mod_id instance of the UE
 \param[in] frame Frame index
 \param[in] lcid logical channel identifier
+\param[in] eNB_index index of the target eNB
 */
-void update_bsr(u8 Mod_id, u32 frame, u8 lcid);
+void update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 eNB_index);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
@@ -955,12 +960,13 @@ int get_db_dl_PathlossChange(u8 dl_PathlossChange);
 */
 u8 get_phr_mapping (u8 Mod_id, u8 eNB_index);
 
-/*! \fn  void update_phr (u8 Mod_id)
+/*! \fn  void update_phr (u8 Mod_id,u8 eNB_index)
    \brief update/reset the phr timers
-\param[in]  Mod_id index of eNB
+\param[in]  Mod_id index of UE
+\param[in]  eNB_index index of eNB
 \return void
 */
-void update_phr (u8 Mod_id);
+void update_phr (u8 Mod_id, u8 eNB_index);
 
 /*! \brief Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
 \param[in] Mod_id Instance index of UE

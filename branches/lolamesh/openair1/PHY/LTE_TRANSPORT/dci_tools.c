@@ -1354,6 +1354,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   }
 #endif
   dlsch[0]->active=1;
+
   return(0);
 }
 
@@ -1797,10 +1798,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   u8 harq_pid;
   u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   ANFBmode_t AckNackFBMode = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
-  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[0];
-  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
+  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
+  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[eNB_id];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_id];
   //  u32 current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];
 
 #ifdef DEBUG_DCI

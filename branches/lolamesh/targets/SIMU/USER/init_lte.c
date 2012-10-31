@@ -98,19 +98,19 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   int eNB_id =0;
   PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
   PHY_vars_UE->Mod_id=UE_id; 
-  PHY_vars_UE->n_connected_eNB = nb_connected_eNB;    //apaposto
+  PHY_vars_UE->n_connected_eNB = nb_connected_eNB;    
 
-   for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ // apaposto
+  for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ 
     PHY_vars_UE->lte_frame_parms[eNB_id] = (LTE_DL_FRAME_PARMS*)malloc16(sizeof(LTE_DL_FRAME_PARMS));
     memcpy(&PHY_vars_UE->lte_frame_parms[eNB_id],&frame_parms,sizeof(LTE_DL_FRAME_PARMS));
   }
-
-  for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ // apaposto
-   PHY_vars_UE->lte_ue_common_vars[eNB_id] =(LTE_UE_COMMON*)malloc16(sizeof(LTE_UE_COMMON)); // apaposto
-   phy_init_lte_ue_common(PHY_vars_UE,abstraction_flag, eNB_id); // apaposto insert eNB_id
+  
+  for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ 
+    PHY_vars_UE->lte_ue_common_vars[eNB_id] =(LTE_UE_COMMON*)malloc16(sizeof(LTE_UE_COMMON));
+    phy_init_lte_ue_common(PHY_vars_UE,abstraction_flag, eNB_id); 
   }
 
-  phy_init_lte_ue(PHY_vars_UE,abstraction_flag, nb_connected_eNB); // apaposto insert eNB_id=0 since frame_parms passed althogh vectorized are the same
+  phy_init_lte_ue(PHY_vars_UE,abstraction_flag, nb_connected_eNB); 
   
   //for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) { // NUMBER_OF_CONNECTED_eNB_MAX is a definition
   //for (i=0;i<nb_connected_eNB;i++) { // apaposto 

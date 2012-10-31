@@ -340,7 +340,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     memcpy(dlsch->harq_processes[harq_pid]->b,
 	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d\n", 
+    LOG_D(PHY,"eNB %d dlsch_encoding_emul, tbs is %d\n", 
 	phy_vars_eNB->Mod_id,
 	dlsch->harq_processes[harq_pid]->TBS>>3);
 
@@ -352,7 +352,11 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	   //memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
     	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-  }  
+  } else {
+    LOG_D(PHY,"eNB %d dlsch_encoding_emul, NDI = %d for  harq %d tbs is %d\n",
+	  phy_vars_eNB->Mod_id,dlsch->harq_processes[harq_pid]->Ndi,harq_pid, 
+	  dlsch->harq_processes[harq_pid]->TBS>>3);
+  }
   eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]+=dlsch->harq_processes[harq_pid]->TBS>>3;
   //payload_offset +=dlsch->harq_processes[harq_pid]->TBS>>3;
   

@@ -177,10 +177,10 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 eNB_ind
 	Mod_id,frame, size, eNB_index);
 
    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
-                                     frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
+                                     frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, (eNB_index * MAX_NUM_RB) + DCCH);
 
    //  rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
-   pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+   pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,(eNB_index * MAX_NUM_RB) + DCCH,rrc_mui++,0,size,(char*)buffer,1);
 
 }
 
@@ -195,10 +195,10 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, 
   LOG_I(RRC,"[UE %d] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionReconfigurationComplete (bytes %d, eNB_index %d)\n",
 	Mod_id,frame, size, eNB_index);
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (RRCConnectionReconfigurationComplete to eNB %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
-	frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, DCCH);
+	frame, Mod_id+NB_eNB_INST, size, eNB_index, rrc_mui, Mod_id+NB_eNB_INST, (eNB_index * MAX_NUM_RB) + DCCH);
   
   //rrc_rlc_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer);
-  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,(eNB_index * MAX_NUM_RB) + DCCH,rrc_mui++,0,size,(char*)buffer,1);
 }
 
 
@@ -211,7 +211,7 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index) {
   size = do_MeasurementReport(buffer,1,0,3,4,5,6);
 
   //rrc_rlc_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer);
-  pdcp_data_req(Mod_id+NB_eNB_INST,DCCH,rrc_mui++,0,size,(char*)buffer,1);
+  pdcp_data_req(Mod_id+NB_eNB_INST,(eNB_index * MAX_NUM_RB) + DCCH,rrc_mui++,0,size,(char*)buffer,1);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -302,7 +302,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct SRB_ToAddMod *SRB_config) { // add descriptor from RRC PDU
 
-  u8 lchan_id = DCCH;
+  u8 lchan_id = (eNB_index * MAX_NUM_RB) + DCCH;
 
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Active = 1;
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
@@ -326,7 +326,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
 s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct SRB_ToAddMod *SRB_config) { // add descriptor from RRC PDU
 
-  u8 lchan_id = DCCH1;
+  u8 lchan_id = (eNB_index * MAX_NUM_RB) + DCCH1;
 
   UE_rrc_inst[Mod_id].Srb2[eNB_index].Active = 1;
   UE_rrc_inst[Mod_id].Srb2[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG

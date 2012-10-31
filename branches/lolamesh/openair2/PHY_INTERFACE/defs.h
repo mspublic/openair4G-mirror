@@ -98,7 +98,7 @@ typedef struct
     PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);
 
     /// Process Random-Access Response
-    u16 (*ue_process_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
+    u16 (*ue_process_rar)(u8 Mod_id,u32 frame,u8 eNB_id, u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
 
     /// Get SR payload (0,1) from UE MAC
     u32 (*ue_get_SR)(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti,u8 subframe);
@@ -182,7 +182,7 @@ typedef struct
 
     // MAC Helper functions
     /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (Po_NOMINAL_PUSCH parameter)
-    s8 (*get_Po_NOMINAL_PUSCH)(u8 Mod_id);
+    s8 (*get_Po_NOMINAL_PUSCH)(u8 Mod_id, u8 eNB_id);
 
     /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (deltaP_rampup parameter)
     s8 (*get_deltaP_rampup)(u8 Mod_id);
