@@ -17,7 +17,7 @@
 
 #include "UTIL/LOG/log.h"
 
-#define FRAME_LENGTH_SAMPLES_MAX 100000
+#define FRAME_LENGTH_SAMPLES_MAX 76800
 
 uint16_t rev64[64];
 
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   int no_detection=1;
   int missed_packets=0;
   uint8_t rxp;
-  int off;
+  int off,off2;
 
   data_ind    = (uint8_t*)malloc(4095+2+1);
   data_ind_rx = (uint8_t*)malloc(4095+2+1);
@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
 
   write_output("txsig0.m","txs", txdata,sdu_length_samples,1,1);
 
-    // multipath channel
+  // multipath channel
 
   for (i=0;i<sdu_length_samples;i++) {
     s_re[0][i] = (double)(((short *)txdata)[(i<<1)]);
@@ -288,49 +288,55 @@ int main(int argc, char **argv) {
 	
       }
       if (n_frames==1) {
-	write_output("rxsig0.m","rxs", &rxdata[0][0],tx_offset+sdu_length_samples,1,1);
+	write_output("rxsig0.m","rxs", &rxdata[0][0],FRAME_LENGTH_SAMPLES_MAX,1,1);
       }
       no_detection=1;
       off = 0;
       while(off<FRAME_LENGTH_SAMPLES_MAX) {
      
-      rxp = dB_fixed(signal_energy(rxdata[0]+off,104));
-      if (n_frames==1)
-	printf("off %d: rxp %d (%d)\n",off,rxp,signal_energy(rxdata[0]+off,104));
+	rxp = dB_fixed(signal_energy(rxdata[0]+off,104));
+	if (n_frames==1)
+	  printf("off %d: rxp %d (%d)\n",off,rxp,signal_energy(rxdata[0]+off,104));
 
-      if (rxp>RX_THRES_dB) { 
-      //printf("Calling initial sync: i %d,rxdata %p\n",i,&rxv,rxdata);
-      if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],off,FRAME_LENGTH_SAMPLES_MAX,1) == BUSY)) {
-	//printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
-	no_detection=0;
-	if (rxv) {
-	  //	    printf("Rate %d, SDU_LENGTH %d\n",rxv->rate,rxv->sdu_length);
-	  if ( (rxv->rate != tx_vector.rate)||(rxv->sdu_length != tx_vector.sdu_length)) {
-	    signal_errors++;
-	    printf("SIGNAL error: rx_offset %d, tx_offset %d\n",rx_offset,tx_offset);
-	  }
-	  else {
-	    memset(data_ind_rx,0,rxv->sdu_length+4+2+1);
-	    if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,NULL)) {
-	      for (i=0;i<rxv->sdu_length+6;i++) {
-		if (data_ind[i]!=data_ind_rx[i]) {
-		  //		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
-		  misdetected_errors++;
-		  errors++;
+	if (rxp>RX_THRES_dB) { 
+	  if (off<105) 
+	    off2 = FRAME_LENGTH_SAMPLES_MAX-105;
+	  else
+	    off2=off;
+	  if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,off2,1) == BUSY)) {
+	    //printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
+	    no_detection=0;
+	    if (rxv) {
+	      //	    printf("Rate %d, SDU_LENGTH %d\n",rxv->rate,rxv->sdu_length);
+	      if ( (rxv->rate != tx_vector.rate)||(rxv->sdu_length != tx_vector.sdu_length)) {
+		signal_errors++;
+		printf("SIGNAL error: rx_offset %d, tx_offset %d\n",rx_offset,tx_offset);
+		break;
+	      }
+	      else {
+		memset(data_ind_rx,0,rxv->sdu_length+4+2+1);
+		if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,NULL)) {
+		  for (i=0;i<rxv->sdu_length+6;i++) {
+		    if (data_ind[i]!=data_ind_rx[i]) {
+		      //		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
+		      misdetected_errors++;
+		      errors++;
+		    }
+		  }
+		  break;
+		} // initial_synch returns IDLE
+		else {
+		  
 		}
 	      }
-	    } // initial_synch returns IDLE
-	    else {
 	    }
 	  }
 	}
-      }
-     }
     
-      off+=105;
-    }
-    if (no_detection==1)
-      missed_packets++;
+	off+=105;
+      }
+      if (no_detection==1)
+	missed_packets++;
     }
     
     printf("\nSNR %f dB: errors %d/%d, misdetected errors %d/%d,signal_errors %d/%d, missed_packets %d/%d\n",SNR,errors,n_frames-signal_errors,misdetected_errors,n_frames-signal_errors,signal_errors,n_frames,missed_packets,n_frames);
