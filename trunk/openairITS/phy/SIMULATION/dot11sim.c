@@ -13,7 +13,7 @@
 
 #define BW 5.0
 
-#include "PHY/TOOLS/twiddle64.h"
+//#include "PHY/TOOLS/twiddle64.h"
 
 #include "UTIL/LOG/log.h"
 
@@ -21,6 +21,7 @@
 
 uint16_t rev64[64];
 
+#define RX_THRES_dB 50
 
 int main(int argc, char **argv) {
 
@@ -50,6 +51,8 @@ int main(int argc, char **argv) {
   uint8_t *data_ind,*data_ind_rx;
   int no_detection=1;
   int missed_packets=0;
+  uint8_t rxp;
+  int off;
 
   data_ind    = (uint8_t*)malloc(4095+2+1);
   data_ind_rx = (uint8_t*)malloc(4095+2+1);
@@ -227,7 +230,7 @@ int main(int argc, char **argv) {
   tx_lev = signal_energy((int32_t*)txdata,320);
   tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-  //  write_output("txsig0.m","txs", txdata,sdu_length_samples,1,1);
+  write_output("txsig0.m","txs", txdata,sdu_length_samples,1,1);
 
     // multipath channel
 
@@ -288,9 +291,16 @@ int main(int argc, char **argv) {
 	write_output("rxsig0.m","rxs", &rxdata[0][0],tx_offset+sdu_length_samples,1,1);
       }
       no_detection=1;
+      off = 0;
+      while(off<FRAME_LENGTH_SAMPLES_MAX) {
+     
+      rxp = dB_fixed(signal_energy(rxdata[0]+off,104));
+      if (n_frames==1)
+	printf("off %d: rxp %d (%d)\n",off,rxp,signal_energy(rxdata[0]+off,104));
 
+      if (rxp>RX_THRES_dB) { 
       //printf("Calling initial sync: i %d,rxdata %p\n",i,&rxv,rxdata);
-      if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,1) == BUSY)) {
+      if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],off,FRAME_LENGTH_SAMPLES_MAX,1) == BUSY)) {
 	//printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
 	no_detection=0;
 	if (rxv) {
@@ -315,9 +325,13 @@ int main(int argc, char **argv) {
 	  }
 	}
       }
+     }
+    
+      off+=105;
     }
     if (no_detection==1)
       missed_packets++;
+    }
     
     printf("\nSNR %f dB: errors %d/%d, misdetected errors %d/%d,signal_errors %d/%d, missed_packets %d/%d\n",SNR,errors,n_frames-signal_errors,misdetected_errors,n_frames-signal_errors,signal_errors,n_frames,missed_packets,n_frames);
 #ifdef EXECTIME
