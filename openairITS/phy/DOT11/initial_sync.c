@@ -1,4 +1,13 @@
+#ifdef EXECTIME
+#ifdef RTAI
+#include <rtai_lxrt.h>
+#include <rtai_sem.h>
+#include <rtai_msg.h>
+#else
 #include <time.h>
+#endif
+#endif
+
 #include "defs.h"
 #include <stdint.h>
 #include "STS_LTS_F.h"
@@ -7,11 +16,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "PHY/TOOLS/twiddle512.h"
+#include "PHY/TOOLS/twiddle64.h"
 
 #define CA_THRESHOLD 40
 
-extern int16_t twiddle_fft64[63*4*2];
-extern int16_t twiddle_ifft64[63*4*2];
+//extern int16_t twiddle_fft64[63*4*2];
+//extern int16_t twiddle_ifft64[63*4*2];
 
 uint16_t rev512[512];
 extern uint16_t rev64[64];
@@ -24,7 +34,7 @@ int rate2ind[16] = {0,0,0,0,0,0,0,0,6,4,2,0,7,5,3,1};
 //#define EXECTIME 1
 
 RX_VECTOR_t rxv;
-uint16_t chest[128] __attribute__((aligned(16)));
+int16_t chest[256] __attribute__((aligned(16)));
 extern int interleaver_bpsk[48];
 int16_t signalF[512*2*2];
 int16_t corrT[1024*2] __attribute__((aligned(16)));
@@ -34,21 +44,40 @@ int16_t rxSIGNAL_F[128*2] __attribute__((aligned(16)));
 uint32_t rxSIGNAL_F_comp[64*2] __attribute__((aligned(16)));
 uint32_t rxSIGNAL_F_comp2[48] __attribute__((aligned(16)));
 int8_t rxSIGNAL_llr[48] __attribute__((aligned(16)));
-
+int mag,max_mag,shift;
 
 #ifdef EXECTIME
+#ifdef RTAI
+RTIME is_t1=0,is_t2=0,is_t3=0,is_t4=0,is_t5,is_t6,is_t7,is_t8,is_t9;
+extern unsigned int *DAQ_MBOX;
+unsigned int is_mbox1,is_mbox2;
+#else
 long is_t1=0,is_t2=0,is_t3=0,is_t4=0,is_t5,is_t6,is_t7,is_t8,is_t9;
+#endif
 int init_synch_trials=0;
 int signal_trials=0;
 
 void print_is_stats() {
 
-  if (init_synch_trials>0)
+  if (init_synch_trials>0) {
     printf("Initial sync stats (STSLTS Corr) : Trials %d, is_t1 (512pt FFT) %d ns, is_t2 %d ns (STSLTS Corr), is_t3 %d ns (512pt IFFT), is_t4 %d ns (Peak Search/Detection)\n",init_synch_trials,
-	   is_t1/init_synch_trials,is_t2/init_synch_trials,is_t3/init_synch_trials,is_t4/init_synch_trials);
-  if (signal_trials>0)
+	   (int)is_t1/init_synch_trials,(int)is_t2/init_synch_trials,(int)is_t3/init_synch_trials,(int)is_t4/init_synch_trials);
+#ifdef RTAI
+  printf("is_mbox1 (STS) %f (%f us)\n",
+	 (10.0*is_mbox1/init_synch_trials)/10.0,
+	 (666*is_mbox1/init_synch_trials)/10.0);
+#endif
+  }
+
+  if (signal_trials>0) {
     printf("Initial sync stats (SIGNAL)      : Trials %d, is_t5 (LTS FFT) %d ns, is_t6 (LTS Est.) %d ns, is_t7 (SIGNAL FFT) %d ns, is_t8 (SIGNAL Comp. + Deinter) %d ns, is_t9 (SIGNAL Viterbi) %d ns\n",signal_trials,
-	   is_t5/signal_trials,is_t6/signal_trials,is_t7/signal_trials,is_t8/signal_trials,is_t9/signal_trials);
+	   (int)is_t5/signal_trials,(int)is_t6/signal_trials,(int)is_t7/signal_trials,(int)is_t8/signal_trials,(int)is_t9/signal_trials);
+#ifdef RTAI
+    printf("is_mbox2 (STS+SIGNAL) %f (%f us)\n",
+	   (10.0*is_mbox2/signal_trials)/10.0,
+	   (666*is_mbox2/signal_trials)/10.0);
+#endif
+  }
   init_synch_trials=0;
   signal_trials=0;
   is_t1=0;
@@ -60,10 +89,20 @@ void print_is_stats() {
   is_t7=0;
   is_t8=0;
   is_t9=0;
-}
+#ifdef RTAI
+  is_mbox1=0;
+  is_mbox2=0;
+#endif
+} 
 #endif
 
-CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *rx_frame,int rx_frame_length,int one_shot) {
+int is_sleeping_cnt=0;
+CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
+	                      int *rx_offset,
+                              uint32_t *rx_frame,
+                              int rx_frame_length,
+                              int initial_sample_offset,
+                              int one_shot) {
 
   int32_t energy,peak_energy,mean_energy;
   int n,i,i2,j,j2,k,peak_pos,found_sync=0,LTS2_pos,SIGNAL_pos,offset;
@@ -74,7 +113,12 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 
   int signal_parity;
 #ifdef EXECTIME
+#ifdef RTAI
+  RTIME tin,tout;
+  unsigned int mboxin,mboxout;
+#else
   struct timespec tin,tout;
+#endif
 #endif
   int ret;
   //  int32_t m[640];
@@ -98,13 +142,18 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
   //      printf("j %d (%d) : m[j] %d,m[j-10] %d, re %d, im %d, abs %d\n",j,rx_frame_pos,m[j],m[j-10],re,im,(int32_t)re*re + (int32_t)im*im);
 #endif
   //      if ((j>20) && (m[j] > (m[j-10]<<3))) {
-  n = 0;
-  while (1) {
-    //    is_wait(n);
-
+  n = initial_sample_offset - (initial_sample_offset&1); 
+  if ((n+640)>rx_frame_length)
+    memcpy((void*)rx_frame+rx_frame_length,(void*)rx_frame,(n+640-rx_frame_length)<<2);
 #ifdef EXECTIME
+#ifdef RTAI
+    tin=rt_get_time_ns();
+    mboxin = ((unsigned int *)DAQ_MBOX)[0]; 
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif
+#endif
+
 	// ensure 64-bit alignment on FFT input
     //    if ((j&1) == 0)
     //      offset=6;
@@ -119,20 +168,33 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 	4,               /// scale (energy normalized for 64-point)
 	0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    is_t1 += (tout-tin);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     is_t1 += (tout.tv_nsec-tin.tv_nsec);
     
     ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif
+#endif
     mult_cpx_vector(signalF,STS_LTS_F,corrF,512,15);
     
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    is_t2 += (tout-tin);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     is_t2 += (tout.tv_nsec-tin.tv_nsec);
     
     
     ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif
+#endif
+
     fft(corrF,        /// complex input
 	corrT,          /// complex output
 	&twiddle_ifft512[0],  /// complex twiddle factors
@@ -142,13 +204,19 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 	1);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
     
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    is_t3 += (tout-tin);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     is_t3 += (tout.tv_nsec-tin.tv_nsec);
     
     
     ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif
-    
+#endif    
+
     // look for peak and compare to average output
     mean_energy = 0;
     peak_energy = 0;
@@ -166,17 +234,33 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
     mean_energy -= peak_energy;
     mean_energy>>=9;
 #ifdef DEBUG_SYNC
-    printf("n %d: mean energy %d/%d dB, peak_energy %d/%d dB, pos %d\n",n,mean_energy,dB_fixed(mean_energy),peak_energy,dB_fixed(peak_energy),peak_pos);
+    printf("n %d: mean energy %d/%d dB, peak_energy %d/%d dB, ratio %d, pos %d\n",n,mean_energy,dB_fixed(mean_energy),peak_energy,dB_fixed(peak_energy),peak_energy/mean_energy,peak_pos);
     //    for (j2=n;j2<=j;j2++)
     //      printf("m[%d] %d\n",j2,m[j2]);
 #endif
     
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    is_t4 += (tout-tin);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     is_t4+=(tout.tv_nsec-tin.tv_nsec);
+#endif
     init_synch_trials++;
 #endif
-    if (peak_energy>(80*mean_energy)) {
+#ifdef EXECTIME
+#ifdef RTAI
+    mboxout = ((unsigned int *)DAQ_MBOX)[0]; 
+    if (mboxout < mboxin)
+      is_mbox1 += ((150+mboxout)-mboxin);
+    else
+      is_mbox1 += (mboxout-mboxin);
+#endif
+#endif
+
+    if ((dB_fixed(mean_energy) > 20) && (peak_energy>(60*mean_energy))) {
 #ifdef DEBUG_SYNC
       write_output("STSLTScorr.m","STSLTScorrT", corrT,512,2,1);
 #endif
@@ -186,7 +270,11 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
       // now try to estimate channel and decode SIGNAL field
       LTS2_pos = peak_pos + 240;
 #ifdef EXECTIME
+#ifdef RTAI
+      tin=rt_get_time_ns();
+#else
       ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
 #endif
       fft((int16_t *)(rx_frame+16+LTS2_pos),         /// complex input
 	  rxLTS_F,           /// complex output
@@ -196,16 +284,27 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 	  3,               /// scale (energy normalized for 64-point)
 	  0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
 #ifdef EXECTIME
+#ifdef RTAI
+      tout=rt_get_time_ns();
+      is_t5 += (tout-tin);
+      tin = rt_get_time_ns();
+#else
       ret=clock_gettime(CLOCK_REALTIME,&tout);
       is_t5+=(tout.tv_nsec-tin.tv_nsec);
       ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif    
-      mult_cpx_vector(rxLTS_F,LTS_F,(int16_t*)chest,64,0);
+#endif
+      mult_cpx_vector(rxLTS_F,LTS_F,chest,64,0);
       
 #ifdef EXECTIME
+#ifdef RTAI
+      tout=rt_get_time_ns();
+      is_t6 += (tout-tin);
+#else
       ret=clock_gettime(CLOCK_REALTIME,&tout);
       is_t6+=(tout.tv_nsec-tin.tv_nsec);
 #endif    
+#endif
       
 #ifdef DEBUG_SYNC
       write_output("rxLTS.m","rLTS", rx_frame+16+LTS2_pos,64,1,1);
@@ -214,8 +313,13 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 #endif
       
 #ifdef EXECTIME
+#ifdef RTAI
+      tin = rt_get_time_ns();
+#else
       ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
 #endif      
+
       SIGNAL_pos = LTS2_pos + 80;
       fft((int16_t *)(rx_frame+16+SIGNAL_pos),         /// complex input
 	  rxSIGNAL_F,           /// complex output
@@ -224,13 +328,28 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 	  6,               /// log2(FFT_SIZE)
 	  3,               /// scale (energy normalized for 64-point)
 	  0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
-      
-      mult_cpx_vector_norep_unprepared_conjx2(rxSIGNAL_F,(int16_t*)chest,(int16_t*)rxSIGNAL_F_comp,64,10);
+      /*      max_mag=0;
+      for (i=0;i<256;i+=4) {
+	mag = (int32_t)chest[i]*chest[i] + (int32_t)chest[i+1]*chest[i+1];
+	if (mag > max_mag)
+	  max_mag = mag;
+      }
+      shift = log2_approx(max_mag)/2;
+      */
+      shift = 10;
+
+      mult_cpx_vector_norep_unprepared_conjx2(rxSIGNAL_F,chest,(int16_t*)rxSIGNAL_F_comp,64,shift);
 #ifdef EXECTIME
+#ifdef RTAI
+      tout=rt_get_time_ns();
+      is_t7 += (tout-tin);
+      tin = rt_get_time_ns();
+#else
       ret=clock_gettime(CLOCK_REALTIME,&tout);
       is_t7+=(tout.tv_nsec-tin.tv_nsec);
       ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif         
+#endif
       // extract 48 statistics and 4 pilot symbols 
       // -ve portion
       for (i=0;i<5;i++)
@@ -276,10 +395,16 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 	//      rxSIGNAL_llr[k] = (tmp > 7) ? 7 : ((tmp < -8) ? -8 : (int8_t)tmp);
       }
 #ifdef EXECTIME
+#ifdef RTAI
+      tout=rt_get_time_ns();
+      is_t8 += (tout-tin);
+      tin = rt_get_time_ns();
+#else
       ret=clock_gettime(CLOCK_REALTIME,&tout);
       is_t8+=(tout.tv_nsec-tin.tv_nsec);
       ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif         
+#endif
       // Viterbi decoding
       signal_sdu[0]=0;
       signal_sdu[1]=0;
@@ -304,8 +429,20 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
 	*rx_offset = peak_pos+400;
       }
 #ifdef EXECTIME
+#ifdef RTAI
+      tout=rt_get_time_ns();
+      is_t9 += (tout-tin);
+
+    mboxout = ((unsigned int *)DAQ_MBOX)[0]; 
+    if (mboxout < mboxin)
+      is_mbox2 += ((150+mboxout)-mboxin);
+    else
+      is_mbox2 += (mboxout-mboxin);
+
+#else
       ret=clock_gettime(CLOCK_REALTIME,&tout);
       is_t9+=(tout.tv_nsec-tin.tv_nsec);
+#endif
       signal_trials++;
 #endif   
 #ifdef DEBUG_SYNC
@@ -318,15 +455,5 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,uint32_t *r
       
       return(BUSY);
     }
-    n+=160;
-    if (n>=rx_frame_length) {
-      n=0;
-      if (one_shot == 1)
-	return(IDLE);
-    }
-
-  }
-  // shouldn' get here
-  assert("Exited while(1)\n");
   return(IDLE);
 }

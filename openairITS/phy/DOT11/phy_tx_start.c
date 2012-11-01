@@ -8,7 +8,7 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 
-//#define DEBUG_TX
+#define DEBUG_TX
 
 int ratemap[8]    = {11,15,10,14,9,13,8,12};
 int rateparity[8] = {1,0,0,1,0,1,1,0};
@@ -153,12 +153,24 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
     if (j==64)
       j=0;
     //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
+#ifdef EXMIMO
+    output_ptr[640+(i<<1)]     = tmp_t[j<<2]<<4;     // RE component
+    output_ptr[640+1+(i<<1)]   = tmp_t[1+(j<<2)]<<4; // IM component
+#else
     output_ptr[640+(i<<1)]     = tmp_t[j<<2];     // RE component
     output_ptr[640+1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
+#endif
   }
   // copy STS_LTS to start of packet
+#ifdef EXMIMO
+  for (i=0;i<320;i++) {
+    output_ptr[(i<<1)]   = ((int16_t *)STS_LTS_t)[i<<1]<<4;
+    output_ptr[1+(i<<1)] = ((int16_t *)STS_LTS_t)[1+(i<<1)]<<4;
+  }
+#else
   memcpy(output_ptr,STS_LTS_t,640*sizeof(int16_t));
 
+#endif
   
   // now do data portion
   crc = (uint32_t*)&data_ind[tx_vector->sdu_length+2];
@@ -170,9 +182,9 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
   if ((dlen%Ndbps[tx_vector->rate])>0)
     dlen_symb++;
 
-  //#ifdef DEBUG_TX
+#ifdef DEBUG_TX
   printf("Number of symbols in data portion : %d for %d  bytes, CRC %x\n",dlen_symb,tx_vector->sdu_length,*crc);
-  //#endif
+#endif
   // scramble data
 
   data_ind2[0] = scrambler[0]; // service byte 0
@@ -382,8 +394,13 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
       if (j==64)
 	j=0;
       //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
+#ifdef EXMIMO
+      output_ptr2[(i<<1)]     = tmp_t[j<<2]<<4;     // RE component
+      output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<4; // IM component
+#else
       output_ptr2[(i<<1)]     = tmp_t[j<<2];     // RE component
       output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
+#endif
     }    
 
   }
@@ -395,7 +412,9 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
 int init_tx=0;
 
 int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,uint8_t *data_ind) {
+#ifdef DEBUG_TX
   printf("tx_frame %p\n",tx_frame);
+#endif
   return(phy_tx_start_bot(tx_vector,(int16_t *)(tx_frame+next_TXop_offset),data_ind));
 
 }

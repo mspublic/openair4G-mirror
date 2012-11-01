@@ -8,6 +8,7 @@ TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/cmult_vv.o
 TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/cadd_vv.o
 TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/dB_routines.o
+TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/file_output.o
 PHY_OBJS += $(OPENAIRITS_DIR)/phy/DOT11/phy_tx_start.o
 PHY_OBJS += $(OPENAIRITS_DIR)/phy/DOT11/scrambler.o
 PHY_OBJS += $(OPENAIRITS_DIR)/phy/DOT11/interleaver.o
