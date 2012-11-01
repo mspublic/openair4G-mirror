@@ -4,7 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef EXECTIME
+#ifdef RTAI
+#include <rtai_lxrt.h>
+#include <rtai_sem.h>
+#include <rtai_msg.h>
+#else
 #include <time.h>
+#endif
+#endif
 
 #define TWO_OVER_SQRT_10 20724
 #define FOUR_OVER_SQRT_42 20225
@@ -28,14 +36,18 @@ extern int interleaver_64qam[48];
 extern uint8_t scrambler[127*8];
 
 #ifdef EXECTIME
+#ifdef RTAI
+RTIME dd_t1=0,dd_t2=0,dd_t3=0,dd_t4=0;
+#else
 long dd_t1=0,dd_t2=0,dd_t3=0,dd_t4=0;
+#endif
 int dd_trials=0;
 
 void print_dd_stats() {
 
   if (dd_trials>0)
     printf("Data detection                   : Trials %d, dd_t1 (64pt FFT) %d ns, dd_t2 %d ns (Ch Comp.), dd_t3 %d ns (Deinter), dd_t4 %d ns (Viterbi)\n",dd_trials,
-	   dd_t1/dd_trials,dd_t2/dd_trials,dd_t3/dd_trials,dd_t4/dd_trials);
+	   (int)dd_t1/dd_trials,(int)dd_t2/dd_trials,(int)dd_t3/dd_trials,(int)dd_t4/dd_trials);
   dd_trials=0;
   dd_t1=0;
   dd_t2=0;
@@ -66,7 +78,11 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   int32_t scale;
   int ret;
 #ifdef EXECTIME
+#ifdef RTAI
+  RTIME tin,tout;
+#else
   struct timespec tin,tout;
+#endif
 #endif
 
   // loop over all symbols
@@ -81,7 +97,10 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     // synchronize to HW if needed
     if (wait)
       *wait(rx_offset,s);
+
+#ifdef EXECTIME
     dd_trials++;
+#endif
 
     if (rx_offset>frame_length)
       rx_offset -= frame_length;
@@ -96,7 +115,11 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     
 
 #ifdef EXECTIME
+#ifdef RTAI
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tin);
+#endif
 #endif
     fft((int16_t *)(rx_data+rx_offset+16),         /// complex input
 	rxDATA_F,           /// complex output
@@ -106,19 +129,32 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	3,               /// scale (energy normalized for 64-point)
 	0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    dd_t1 += (tin-tout);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     dd_t1 += (tout.tv_nsec-tin.tv_nsec);
     
     ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif
+#endif
+
     log2_maxh=10;
     mult_cpx_vector_norep_unprepared_conjx2(rxDATA_F,(int16_t*)chest,(int16_t*)rxDATA_F_comp,64,log2_maxh);
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    dd_t2 += (tin-tout);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     dd_t2 += (tout.tv_nsec-tin.tv_nsec);
     
     ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif   
+#endif
  
     if ((s==0)&&((rxv->rate>>1)>1)) {  // Compute channel magnitude for first symbol when 16QAM or 64QAM
       for (i=0;i<5;i++)
@@ -297,11 +333,18 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
       printf("viterbi s %d/%d\n",s,dlen_symb-1);
     */
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    dd_t3 += (tin-tout);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     dd_t3 += (tout.tv_nsec-tin.tv_nsec);
     
     ret=clock_gettime(CLOCK_REALTIME,&tin);
 #endif
+#endif
+
     if (s < (dlen_symb-1))
       phy_viterbi_dot11_sse2(llr_ptr,data_ind,Ndbps[rxv->rate],s*Ndbps[rxv->rate],0);
     else {
@@ -344,8 +387,14 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 #endif
     }
 #ifdef EXECTIME
+#ifdef RTAI
+    tout=rt_get_time_ns();
+    dd_t4 += (tin-tout);
+    tin=rt_get_time_ns();
+#else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
     dd_t4 += (tout.tv_nsec-tin.tv_nsec);
+#endif
 #endif
   }
 
