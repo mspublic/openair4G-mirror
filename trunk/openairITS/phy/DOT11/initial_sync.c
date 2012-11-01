@@ -142,7 +142,7 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
   //      printf("j %d (%d) : m[j] %d,m[j-10] %d, re %d, im %d, abs %d\n",j,rx_frame_pos,m[j],m[j-10],re,im,(int32_t)re*re + (int32_t)im*im);
 #endif
   //      if ((j>20) && (m[j] > (m[j-10]<<3))) {
-  n = initial_sample_offset - (initial_sample_offset&1); 
+  n = initial_sample_offset - (initial_sample_offset&3); 
   if ((n+640)>rx_frame_length)
     memcpy((void*)rx_frame+rx_frame_length,(void*)rx_frame,(n+640-rx_frame_length)<<2);
 #ifdef EXECTIME
@@ -234,7 +234,10 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
     mean_energy -= peak_energy;
     mean_energy>>=9;
 #ifdef DEBUG_SYNC
-    printf("n %d: mean energy %d/%d dB, peak_energy %d/%d dB, ratio %d, pos %d\n",n,mean_energy,dB_fixed(mean_energy),peak_energy,dB_fixed(peak_energy),peak_energy/mean_energy,peak_pos);
+    if (mean_energy>0)
+      printf("n %d: mean energy %d/%d dB, peak_energy %d/%d dB, ratio %d, pos %d\n",n,mean_energy,dB_fixed(mean_energy),peak_energy,dB_fixed(peak_energy),peak_energy/mean_energy,peak_pos);
+    else
+      printf("n %d: mean energy %d\n",n,mean_energy);
     //    for (j2=n;j2<=j;j2++)
     //      printf("m[%d] %d\n",j2,m[j2]);
 #endif
