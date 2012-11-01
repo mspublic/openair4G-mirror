@@ -37,13 +37,15 @@ TOP_DIR=$(OPENAIR1_DIR)
 LOG_DIR=$(OPENAIR2_DIR)/UTIL/LOG
 
 export TOP_DIR
-
+export OPENAIR1_DIR
+export OPENAIR2_TOP = $(OPENAIR2_DIR)
+export OPENAIRITS_DIR
 
 include $(OPENAIR1_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIRITS_DIR)/phy/DOT11/Makefile.inc
+include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 
-LOG_OBJS = $(LOG_DIR)/log.o $(LOG_DIR)/vcd_signal_dumper.o
-TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/file_output.o
+#TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/file_output.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(LOG_OBJS)
 
@@ -79,3 +81,4 @@ cleanall : clean
 showflags :
 	@echo $(CFLAGS)
 	@echo $(LFLAGS)
+	@echo $(OBJ)
