@@ -26,10 +26,10 @@
 
 <!--  High complexity configuration of a customized traffic with 3 states: OFF, ED, PU and PE-->
 <CUSTOMIZED_TRAFFIC>	 
-      <SOURCE_ID>1:2</SOURCE_ID> 		
+      <SOURCE_ID>0</SOURCE_ID> 		
       <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> 
       <IP_VERSION>ipv4</IP_VERSION> 
-      <DESTINATION_ID>0</DESTINATION_ID>
+      <DESTINATION_ID>1:3</DESTINATION_ID>
  			<BACKGROUND_TRAFFIC>enable</BACKGROUND_TRAFFIC>  <!-- options: enable, disable. If enable, it generates a background traffic corresponding to the traffic direction-->
       <AGGREGATION_LEVEL>1</AGGREGATION_LEVEL>    <!-- options: default=1, the number of traffic to aggregate-->
       <IDT_DIST>uniform</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
@@ -56,7 +56,7 @@
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>4000</EMULATION_TIME_ms> <!--if0 set to infinity--> 
+    <EMULATION_TIME_ms>0</EMULATION_TIME_ms> <!--if0 set to infinity--> 
     <CURVE>enable</CURVE> <!-- option: enabled, disabled. If CURVE is enabled, graphes are ploted in real time (UL and DL) of WOD and throughput measurement for each packet -->
    <BACKGROUND_STATS>enable</BACKGROUND_STATS>
     <PERFORMANCE_METRICS>
