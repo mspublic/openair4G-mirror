@@ -242,9 +242,9 @@ bool Configuration::parseLine(const string& line, string& parameter, string& val
 	/**
 	 * Trim value string if there's no '"' character
 	 */
-	parameter.erase(remove(parameter.begin(), parameter.end() + 1, ' '));
+	remove(parameter.begin(), parameter.end() + 1, ' ');
 	if (value.find('"') == string::npos)
-		value.erase(remove(value.begin(), value.end() + 1, ' '));
+		remove(value.begin(), value.end() + 1, ' ');
 
 	return true;
 }

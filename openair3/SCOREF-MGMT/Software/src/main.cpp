@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
 		}
 
 		/**
-		 * Allocate aGeonet packet handler
+		 * Allocate a Geonet packet handler
 		 */
 		try {
 			packetHandler = new PacketHandler(mib, logger);
@@ -171,32 +171,53 @@ int main(int argc, char** argv) {
 		try {
 			for (;;) {
 				if (server.receive(rxBuffer)) {
-					PacketHandler::Result result;
+					PacketHandlerResult* result;
 
 					try {
-						result = packetHandler->handle(server, rxBuffer);
+						result = packetHandler->handle(rxBuffer);
 					} catch (std::exception& e) {
 						cerr << e.what() << endl;
 					}
 
-					switch (result) {
-						case PacketHandler::DISCARD_PACKET:
-							/**
-							 * Inform Client Manager of this sender
-							 */
-							try {
-								clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
-							} catch (Exception& e) {
-								e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
-								throw;
-							}
+					/**
+					 * First inform Management Client Manager about this incoming packet (if it's valid)
+					 */
+					if (!result)
+						continue;
+					else if (result->getResult() == PacketHandlerResult::DISCARD_PACKET
+							|| result->getResult() == PacketHandlerResult::DELIVER_PACKET
+							|| result->getResult() == PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE) {
+						/**
+						 * Inform Client Manager of this sender
+						 */
+						try {
+							clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
+						} catch (Exception& e) {
+							e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
+							throw;
+						}
+					}
+
+					switch (result->getResult()) {
+						case PacketHandlerResult::DISCARD_PACKET:
+							delete result;
 							break;
 
-						case PacketHandler::INVALID_PACKET:
+						case PacketHandlerResult::INVALID_PACKET:
 							logger.error("Incoming packet is not valid, discarding..");
+							delete result;
 							break;
 
-						case PacketHandler::SEND_CONFIGURATION_UPDATE_AVAILABLE:
+						case PacketHandlerResult::DELIVER_PACKET:
+							if (server.send(*result->getPacket()))
+								logger.info("Reply successfully delivered to the client at " + server.toString());
+							else
+								logger.warning("Delivery of the reply packet to the client at " + server.toString() + " has failed!");
+
+							delete result;
+							break;
+
+						case PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE:
 							/**
 							 * Update clients with new configuration information
 							 */
@@ -206,6 +227,7 @@ int main(int argc, char** argv) {
 								e.updateStackTrace("Cannot send a CONFIGURATION UPDATE AVAILABLE packet!");
 								throw;
 							}
+							delete result;
 							break;
 					}
 				}

@@ -127,3 +127,11 @@ bool UdpServer::send(const GeonetPacket& packet) {
 const udp::endpoint& UdpServer::getClient() const {
 	return this->client;
 }
+
+string UdpServer::toString() const {
+	stringstream ss;
+
+	ss << "[address: " << client.address() << ", port:" << client.port() << "]";
+
+	return ss.str();
+}
