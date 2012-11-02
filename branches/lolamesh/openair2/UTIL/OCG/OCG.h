@@ -633,6 +633,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char tdd_config_S;
     unsigned char extended_prefix_flag;
     unsigned char N_RB_DL;
+    unsigned short Nid_cell;
     unsigned char transmission_mode;
 
     int max_predefined_traffic_config_index;

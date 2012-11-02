@@ -187,7 +187,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			   unsigned int subframe_offset,
 			   unsigned char N0_symbol,
 			 unsigned char abstraction_flag, 
-			 u8 apaposto_eNB_id){ // apaposto
+			 u8 eNB_index){ // apaposto
 
 
     int aarx,aatx,eNB_id=0,rx_power_correction,gain_offset;
@@ -197,7 +197,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     __m128i *dl_ch0_128,*dl_ch1_128;
     int *dl_ch0,*dl_ch1;
     //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms; // apaposto
-      LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[apaposto_eNB_id]; // apaposto
+      LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_index]; // apaposto
 
   phy_vars_ue->PHY_measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
 
@@ -256,9 +256,9 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       phy_vars_ue->PHY_measurements.n0_power_tot = 0;
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 #ifdef USER_MODE
-	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples); // apaposto
+	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars[eNB_index]->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples); // apaposto
 #else
-	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size); // apaposto
+	phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars[eNB_index]->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size); // apaposto
 #endif
 	phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power[aarx]);
 	phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];
@@ -277,9 +277,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
 	for (eNB_id=0;eNB_id<phy_vars_ue->n_connected_eNB;eNB_id++) {
 	  phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
-	    (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0], // apaposto
-				(frame_parms->nb_prefix_samples))*rx_power_correction) - 
-	    phy_vars_ue->PHY_measurements.n0_power[aarx];
+	    (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars[eNB_index]->dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0], // apaposto
+				(frame_parms->nb_prefix_samples))*rx_power_correction) - phy_vars_ue->PHY_measurements.n0_power[aarx];
 	
 	  if (phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx]<0)
 	    phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = phy_vars_ue->PHY_measurements.n0_power[aarx];
@@ -332,8 +331,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	// cqi/pmi information
       
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-	  dl_ch0    = &phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->dl_ch_estimates[eNB_id][aarx][4]; // apaposto
-	  dl_ch1    = &phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->dl_ch_estimates[eNB_id][2+aarx][4]; // apaposto
+	  dl_ch0    = &phy_vars_ue->lte_ue_common_vars[eNB_index]->dl_ch_estimates[eNB_id][aarx][4]; // apaposto
+	  dl_ch1    = &phy_vars_ue->lte_ue_common_vars[eNB_index]->dl_ch_estimates[eNB_id][2+aarx][4]; // apaposto
 	
 	  for (subband=0;subband<7;subband++) {
 	  
@@ -377,8 +376,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	}	
       
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-	  dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->dl_ch_estimates[eNB_id][aarx][8];  // apaposto
-	  dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->dl_ch_estimates[eNB_id][2+aarx][8]; // apaposto
+	  dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars[eNB_index]->dl_ch_estimates[eNB_id][aarx][8];  // apaposto
+	  dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars[eNB_index]->dl_ch_estimates[eNB_id][2+aarx][8]; // apaposto
 	  /*
 	    #ifdef DEBUG_PHY	
 	    if(eNB_id==0){
@@ -452,7 +451,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       else {
 	// cqi information only for mode 1
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-	  dl_ch0    = &phy_vars_ue->lte_ue_common_vars[apaposto_eNB_id]->dl_ch_estimates[eNB_id][aarx][4]; // apaposto
+	  dl_ch0    = &phy_vars_ue->lte_ue_common_vars[eNB_index]->dl_ch_estimates[eNB_id][aarx][4]; // apaposto
 	
 	  for (subband=0;subband<7;subband++) {
 	  

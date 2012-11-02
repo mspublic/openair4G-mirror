@@ -339,7 +339,7 @@ typedef struct
   int init_averaging; 
 
   /// sinr for all subcarriers of the current link (used only for abstraction)
-  double *sinr_dB;
+  double *sinr_dB[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// N0 (used for abstraction)
   double N0;

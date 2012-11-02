@@ -1114,7 +1114,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 			(last_slot>>1)*frame_parms->samples_per_tti,
 #endif
 			(last_slot == 2) ? 1 : 0,
-			abstraction_flag, eNB_id); // apaposto check this tommorow
+			abstraction_flag, eNB_id); 
 
 #ifdef DEBUG_PHY_PROC    
     if (last_slot == 0) {
@@ -1492,7 +1492,6 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       mac_xface->macphy_exit("");
       return;
     }
-    i =eNB_id; // fixme: need to adjust the cell id
     dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
 					  PHY_vars_eNB_g[i]->num_ue_spec_dci[(last_slot>>1)&1],
 					  PHY_vars_eNB_g[i]->num_common_dci[(last_slot>>1)&1],

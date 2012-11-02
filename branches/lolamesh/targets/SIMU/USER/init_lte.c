@@ -97,16 +97,38 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   int i,j;
   int eNB_id =0;
   PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
+  memset(PHY_vars_UE,0,sizeof(PHY_VARS_UE));
+  LTE_DL_FRAME_PARMS **lte_frame_parms = PHY_vars_UE->lte_frame_parms;
+  // LTE_UE_COMMON **lte_ue_common_vars = PHY_vars_UE->lte_ue_common_vars; 
   PHY_vars_UE->Mod_id=UE_id; 
   PHY_vars_UE->n_connected_eNB = nb_connected_eNB;    
 
+  
+
   for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ 
-    PHY_vars_UE->lte_frame_parms[eNB_id] = (LTE_DL_FRAME_PARMS*)malloc16(sizeof(LTE_DL_FRAME_PARMS));
-    memcpy(&PHY_vars_UE->lte_frame_parms[eNB_id],&frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+    lte_frame_parms[eNB_id] = (LTE_DL_FRAME_PARMS*)malloc16(sizeof(LTE_DL_FRAME_PARMS));
+    //memcpy(&lte_frame_parms[eNB_id],&frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+     lte_frame_parms[eNB_id]->frame_type        = frame_parms->frame_type;
+    lte_frame_parms[eNB_id]->tdd_config         = frame_parms->tdd_config;
+    lte_frame_parms[eNB_id]->tdd_config_S       = frame_parms->tdd_config_S;
+    lte_frame_parms[eNB_id]->N_RB_DL            = frame_parms->N_RB_DL;
+    lte_frame_parms[eNB_id]->N_RB_UL            = lte_frame_parms[eNB_id]->N_RB_DL;
+    lte_frame_parms[eNB_id]->phich_config_common.phich_resource = oneSixth;
+    lte_frame_parms[eNB_id]->phich_config_common.phich_duration = normal;
+    lte_frame_parms[eNB_id]->Ncp                = frame_parms->Ncp;
+    lte_frame_parms[eNB_id]->Nid_cell           = 0;
+    lte_frame_parms[eNB_id]->nushift            = 0;
+    lte_frame_parms[eNB_id]->nb_antennas_tx     = frame_parms->nb_antennas_tx;
+    lte_frame_parms[eNB_id]->nb_antennas_rx     = 1;
+    lte_frame_parms[eNB_id]->mode1_flag         = frame_parms->mode1_flag;
+    lte_frame_parms[eNB_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
+    LOG_D(PHY,"initial_sync enb %d lte_frame_parms %p %d %d %d \n",
+	  eNB_id, lte_frame_parms[eNB_id], lte_frame_parms[eNB_id]->N_RB_DL ,lte_frame_parms[eNB_id]->tdd_config, frame_parms->nb_antennas_tx);
   }
   
   for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ 
     PHY_vars_UE->lte_ue_common_vars[eNB_id] =(LTE_UE_COMMON*)malloc16(sizeof(LTE_UE_COMMON));
+    LOG_D(PHY,"initial_sync enb %d ue common vars %p\n",eNB_id, PHY_vars_UE->lte_ue_common_vars[eNB_id]);
     phy_init_lte_ue_common(PHY_vars_UE,abstraction_flag, eNB_id); 
   }
 
@@ -231,8 +253,9 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
-    PHY_vars_UE_g[UE_id] = init_lte_UE(*frame_parms, UE_id, nb_connected_eNB, abstraction_flag,transmission_mode);//apaposto
-
+    PHY_vars_UE_g[UE_id] = init_lte_UE(*frame_parms, UE_id, nb_connected_eNB, abstraction_flag,transmission_mode);
+    LOG_D(PHY,"initial_sync PHY_vars_UE_g %p for UE id %d  \n",  PHY_vars_UE_g[UE_id] , UE_id);
+    
   }
 
 }

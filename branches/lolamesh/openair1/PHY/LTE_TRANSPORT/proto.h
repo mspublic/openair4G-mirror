@@ -970,8 +970,11 @@ end, the basic frame parameters are known (Frame configuration - TDD/FDD and cyc
 N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
 parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
+  @param eNB_index
+  @param abstraction_flag
+  
 */
-int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_index); // apaposto
+int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_index, u8 abstraction_flag); 
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      u32 subframe,

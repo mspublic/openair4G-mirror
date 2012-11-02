@@ -287,6 +287,7 @@ void init_oai_emulation() {
     oai_emulation.info.tdd_config_S=0;
     oai_emulation.info.extended_prefix_flag=0;
     oai_emulation.info.N_RB_DL=25;
+    oai_emulation.info.Nid_cell=0;
     oai_emulation.info.transmission_mode=2;
 
     oai_emulation.profile = "EURECOM";
