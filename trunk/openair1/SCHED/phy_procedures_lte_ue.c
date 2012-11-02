@@ -800,10 +800,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    */
 	  }
 #ifdef DEBUG_PHY_PROC
-	  LOG_T(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+	  LOG_D(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
-	    LOG_T(PHY,"%x.",ulsch_input_buffer[i]);
-	  LOG_T(PHY,"\n");
+	    LOG_D(PHY,"%x.",ulsch_input_buffer[i]);
+	  LOG_D(PHY,"\n");
 #endif
 #else //OPENAIR2
       // the following lines were necessary for the calibration in CROWN
@@ -1150,6 +1150,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       // check if we have PRACH opportunity
 
       if (is_prach_subframe(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,next_slot>>1)) {
+	printf("UE %d: Frame %d, SF %d Clearing generate_prach\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
 	phy_vars_ue->generate_prach=0;
 #ifdef OPENAIR2
 	// ask L2 for RACH transport
@@ -1198,17 +1199,18 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 					 phy_vars_ue->frame,
 					 eNB_id);
 	  }
-	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) for UL, TX power %d dBm (PL %d dB), l3msg \n",
+	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
+		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
 		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
 		get_PL(phy_vars_ue->Mod_id,eNB_id));
 
 	}
       }
-      //      printf("[PHY][UE] frame %d subframe %d : generate_prach %d, prach_cnt %d\n",phy_vars_ue->frame,next_slot>>1,phy_vars_ue->generate_prach,phy_vars_ue->prach_cnt);
+      printf("[PHY][UE %p] frame %d subframe %d : generate_prach %d, prach_cnt %d\n",phy_vars_ue,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->generate_prach,phy_vars_ue->prach_cnt);
 
       phy_vars_ue->prach_cnt++;
-      if (phy_vars_ue->prach_cnt==2)
+      if (phy_vars_ue->prach_cnt==3)
 	phy_vars_ue->generate_prach=0;
     } // mode is PRACH
     else {
@@ -1838,6 +1840,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    0,
 					    P_RNTI)==0) {
 
+	dump_dci(&phy_vars_ue->lte_frame_parms,(void *)&dci_alloc_rx[i]);
 
 	phy_vars_ue->dlsch_received[eNB_id]++;
 	
