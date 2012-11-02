@@ -410,36 +410,35 @@ fc=fopen("/tmp/otg.log","w");;
 void add_log_metric(int src, int dst, int ctime, double metric, unsigned int label){
  unsigned int i;
  unsigned int j;
- unsigned int k;
  unsigned int node_actif=0;
 
  //LOG_I(OTG,"[%d][%d] LOGG_ADDED ctime=%d, metric=%.2f  \n", src, dst, ctime, metric);
-
-
-
 
  switch (label) {
  case OTG_LATENCY:
    add_log_label(label, &start_log_latency);
    break;
+ case OTG_GP:
+	 add_log_label(label, &start_log_GP);
+	 break;
+ default:
+   LOG_E(OTG, "File label unknown \n");
  }
 
- LOG_F(label,"%d", ctime);
-  for (i=0; i<=(g_otg->num_nodes); i++){
-    for (j=0; j<=(g_otg->num_nodes); j++){
+ LOG_F(label,"%d  ", ctime);
+  for (i=0; i<=(NB_eNB_INST + NB_UE_INST); i++){
+    for (j=0; j<=(NB_eNB_INST + NB_UE_INST); j++){
     node_actif=0;
-      for (k=0; k<=(MAX_NUM_TRAFFIC_STATE); k++){
-        if (g_otg->idt_dist[i][j][k]>0 )
-	node_actif++; 
-      }
+        if ((g_otg->idt_dist[i][j][PE_STATE]>0) || (g_otg->application_type[src][dst] >0))
+					node_actif=1;
 
       if ((node_actif>0) && ((i==src) && (j==dst)))
-          LOG_F(label,"%.2f ", metric);
+          LOG_F(label,"  %f  ", metric);
       if  ((node_actif>0) && ((i!=src) || (j!=dst)))
-          LOG_F(label,"%.2f ", 0);
+          LOG_F(label,"  %d  ", 0);
   }
  }
- LOG_F(label,"%.2f\n", metric);
+ LOG_F(label,"%f\n", metric);
 }
 
 
@@ -447,24 +446,21 @@ void add_log_metric(int src, int dst, int ctime, double metric, unsigned int lab
 void  add_log_label(unsigned int label, unsigned int * start_log_metric){
  unsigned int i;
  unsigned int j;
- unsigned int k;
  unsigned int node_actif=0;
 
  if (*start_log_metric==0){
  *start_log_metric=1;
-   LOG_F(label,"Time ");
-   for (i=0; i<=(g_otg->num_nodes); i++){
-     for (j=0; j<=(g_otg->num_nodes); j++){
+   LOG_F(label,"Time   ");
+   for (i=0; i<=(NB_eNB_INST + NB_UE_INST); i++){
+     for (j=0; j<=(NB_eNB_INST + NB_UE_INST); j++){
        node_actif=0;
-        for (k=0; k<=(MAX_NUM_TRAFFIC_STATE); k++){
-          if (g_otg->idt_dist[i][j][k]>0 )
+          if (g_otg->idt_dist[i][j][PE_STATE]>0 )
 	    node_actif++; 
-      }
       if (node_actif>0)
-        LOG_F(label,"%d-%d ", i, j);  
+        LOG_F(label,"%d->%d    ", i, j);  
     }
    }
-   LOG_F(label,"Aggregate-Flow\n");
+   LOG_F(label,"Aggregated\n");
  }
 }
 

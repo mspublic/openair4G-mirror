@@ -122,7 +122,7 @@ char * hdr_payload=NULL;
 	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
 	}
         /* End Loss and out of sequence data management */
-
+ 
 	if (otg_info->owd_const[src][dst]==0)
 	  owd_const_gen(src,dst,1);
 
@@ -139,10 +139,6 @@ char * hdr_payload=NULL;
 	LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %.2f (tx time %d, ctime %d), OWD:%.2f (ms):\n", src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_rx->time, ctime , otg_info->rx_pkt_owd[src][dst]);
 
 
-      /* if (g_otg->latency_metric)
-          add_log_metric(src, dst, ctime, otg_info->radio_access_delay[src][dst], OTG_LATENCY); // TO FIX !!!! segmentation fault */
-				
-
 	if (otg_info->rx_owd_max[src][dst]==0){
 	  otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
 	  otg_info->rx_owd_min[src][dst]=otg_info->rx_pkt_owd[src][dst];
@@ -152,14 +148,19 @@ char * hdr_payload=NULL;
 	  otg_info->rx_owd_min[src][dst]=MIN(otg_info->rx_owd_min[src][dst],otg_info->rx_pkt_owd[src][dst] );
 	}
 	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %.2f, RTT MAX(one way) ms: %.2f \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
-	
+
 	/* xforms part: add metrics  */	
 	if (g_otg->curve==1){ 
-          if (g_otg->owd_radio_access==0)
-            add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  ctime);
-          else
-            add_tab_metric(src, dst,  otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  ctime);    
-        }
+  	if (g_otg->owd_radio_access==0)
+    	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
+    else
+    	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
+  }
+
+
+  
+
+
 
 //printf("payload_size %d, header_size %d \n", otg_hdr_rx->pkts_size, otg_hdr_rx->hdr_type);
   LOG_I(OTG,"PACKET SIZE RX [SRC %d][DST %d]: Flag (0x%x), time(%d), Seq num (%d), Total size (%d)\n", src, dst, otg_hdr_info_rx->flag, ctime, otg_hdr_rx->seq_num, size);
@@ -169,8 +170,18 @@ char * hdr_payload=NULL;
  	if (otg_hdr_info_rx->flag == 0xffff){
  	  otg_info->rx_num_pkt[src][dst]+=1;
 	  otg_info->rx_num_bytes[src][dst]+=otg_hdr_info_rx->size;
-          otg_info->seq_num_rx[src][dst]=seq_num_rx;
-          otg_info->nb_loss_pkts[src][dst]=nb_loss_pkts;		
+    otg_info->seq_num_rx[src][dst]=seq_num_rx;
+   	otg_info->nb_loss_pkts[src][dst]=nb_loss_pkts;		
+
+/*Plots of latency and goodput are only plotted for the data traffic */
+		if (g_otg->latency_metric) 
+			if (g_otg->owd_radio_access==0)
+  			add_log_metric(src, dst, otg_hdr_rx->time, otg_info->rx_pkt_owd[src][dst], OTG_LATENCY); 
+			else
+				add_log_metric(src, dst, otg_hdr_rx->time, otg_info->radio_access_delay[src][dst], OTG_LATENCY); 
+
+  		if (g_otg->throughput_metric)
+  			add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst], OTG_GP);
         }
 	else{
 	  otg_info->rx_num_pkt_background[src][dst]+=1;

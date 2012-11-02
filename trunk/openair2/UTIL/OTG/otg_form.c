@@ -101,8 +101,6 @@ if (dst<NB_eNB_INST){
   }
   //LOG_D(OTG,"OTG_forms[src %d, dst %d] owd %f TH %f \n", src, dst,  owd, throughput);	
   //LOG_D(OTG,"MAX_UE_eNB %d, %d \n:",  NB_UE_INST,  NB_eNB_INST);   
-
-//printf("otg_counter: UL %d , DL %d \n", clear_cmpt_ul, clear_cmpt_dl);
 }
 
 
@@ -182,7 +180,6 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
 
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][dst],
     otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "Kbit/s");  
-//printf("DL_owd (1)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info->data_owd_dl[src][dst][10], otg_forms_info->idx_dl[src][dst] );
   } 
   else {
     fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
