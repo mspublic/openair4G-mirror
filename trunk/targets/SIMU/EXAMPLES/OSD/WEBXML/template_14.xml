@@ -24,24 +24,7 @@
 
 
 
-<!-- Basic configuration of a customized traffic with 2 states: OFF and ON (PE)-->
-<!-- We ommit to configure ON probability and ON and OFF holding time. They will be preconfigured automatically -->
-<CUSTOMIZED_TRAFFIC>	 
-      <SOURCE_ID>1:2</SOURCE_ID> 		
-      <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> <!-- OPTIONS: tcp (default), udp -->
-      <IP_VERSION>ipv4</IP_VERSION> <!-- OPTIONS: ipv4 (default), ipv6 -->
-      <DESTINATION_ID>0</DESTINATION_ID> 
-       <BACKGROUND_TRAFFIC>enable</BACKGROUND_TRAFFIC> <!-- options: enable, disable. If enable, it generates a background traffic corresponding to the traffic direction-->
-      <AGGREGATION_LEVEL>1</AGGREGATION_LEVEL>     <!-- options: default=1, the number of traffic to aggregate-->
-      <IDT_DIST>uniform</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
-      <IDT_MIN_ms>80</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
-      <IDT_MAX_ms>100</IDT_MAX_ms>  <!--MAximum IDT values in milliseconds-->
-      <SIZE_DIST>uniform</SIZE_DIST>   <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
-      <SIZE_MIN_byte>100</SIZE_MIN_byte>  <!--Minimum PAYLOAD size values in bytes-->
-      <SIZE_MAX_byte>200</SIZE_MAX_byte>  <!--MAximum PAYLOAD size values in bytes-->
-</CUSTOMIZED_TRAFFIC>
-
-
+<!-- Basic configuration of a customized traffic : one state-->
 <CUSTOMIZED_TRAFFIC>	 
       <SOURCE_ID>0</SOURCE_ID> 		
       <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> <!-- OPTIONS: tcp (default), udp -->
@@ -50,12 +33,15 @@
        <BACKGROUND_TRAFFIC>enable</BACKGROUND_TRAFFIC> <!-- options: enable, disable. If enable, it generates a background traffic corresponding to the traffic direction-->
       <AGGREGATION_LEVEL>1</AGGREGATION_LEVEL>     <!-- options: default=1, the number of traffic to aggregate-->
       <IDT_DIST>uniform</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
-      <IDT_MIN_ms>50</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
-      <IDT_MAX_ms>70</IDT_MAX_ms>  <!--MAximum IDT values in milliseconds-->
+      <IDT_MIN_ms>300</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
+      <IDT_MAX_ms>500</IDT_MAX_ms>  <!--MAximum IDT values in milliseconds-->
       <SIZE_DIST>uniform</SIZE_DIST>   <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
       <SIZE_MIN_byte>100</SIZE_MIN_byte>  <!--Minimum PAYLOAD size values in bytes-->
       <SIZE_MAX_byte>200</SIZE_MAX_byte>  <!--MAximum PAYLOAD size values in bytes-->
 </CUSTOMIZED_TRAFFIC>
+
+
+
 
   </APPLICATION_CONFIG>
   
