@@ -625,7 +625,7 @@ main (int argc, char **argv)
 
   u8 abstraction_flag = 0, ethernet_flag = 0;
 
-  u16 Nid_cell = 0;
+  //u16 Nid_cell = 0;
   s32 UE_id, eNB_id, ret;
 
   // time calibration for soft realtime mode  
@@ -714,9 +714,10 @@ main (int argc, char **argv)
 	exit (-1);
       }
     case 'N':
-      Nid_cell = atoi (optarg);
-      if (Nid_cell > 503) {
-	LOG_E(EMU,"Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
+      oai_emulation.info.Nid_cell =  atoi (optarg);
+      // Nid_cell = atoi (optarg);
+      if (oai_emulation.info.Nid_cell > 503) {
+	LOG_E(EMU,"Illegal Nid_cell %d (should be 0 ... 503)\n", oai_emulation.info.Nid_cell);
 	exit(-1);
       }
       break;
@@ -737,7 +738,7 @@ main (int argc, char **argv)
       rate_adaptation_flag = 1;
       break;
     case 'n':
-		 	oai_emulation.info.n_frames = atoi (optarg);
+      oai_emulation.info.n_frames = atoi (optarg);
       //n_frames = (n_frames >1024) ? 1024: n_frames; // adjust the n_frames if higher that 1024
       oai_emulation.info.n_frames_flag = 1;
       break;
@@ -998,7 +999,7 @@ main (int argc, char **argv)
   LOG_I(EMU,"total number of UE %d (local %d, remote %d) mobility %s \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
   LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) mobility %s \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote, oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option);
   LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
-  	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
+  	 oai_emulation.info.frame_type, oai_emulation.info.Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
   
   if(set_seed){
     randominit (oai_emulation.info.seed);
@@ -1007,7 +1008,7 @@ main (int argc, char **argv)
     randominit (0);
     set_taus_seed (0);
   }
-  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, nb_connected_eNB, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
+  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, oai_emulation.info.Nid_cell, nb_connected_eNB, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   //printf ("Nid_cell %d\n", frame_parms->Nid_cell);
 
@@ -1095,18 +1096,14 @@ main (int argc, char **argv)
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
     // update UE_mode for each eNB_id not just 0
-    for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ // apaposto for each eNB that ue will be connected do the following checks
-    if (abstraction_flag == 0)
-      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = NOT_SYNCHED; // this means that is not_Synched
-    else // later if phy supports simultanious RA, then this could be set to PRACH
-      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = (eNB_id == 0) ? PRACH : NOT_SYNCHED ; //  we examine the first eNB and set it on PRACH and the second not synched
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1235 + UE_id;
-    PHY_vars_UE_g[UE_id]->current_dlsch_cqi[eNB_id] = 10;
-    
-    LOG_I(EMU, "UE %d mode to eNB %d, is initialized to %d\n", UE_id, eNB_id, PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] );
+    for (eNB_id=0; eNB_id < NB_eNB_INST ; eNB_id ++){ 
+      PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = NOT_SYNCHED; 
+      PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1235 + UE_id;
+      PHY_vars_UE_g[UE_id]->current_dlsch_cqi[eNB_id] = 10;
+      LOG_I(EMU, "UE %d mode to eNB %d, is initialized to %d\n", UE_id, eNB_id, PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] );
     }
   }
-
+  
   
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
@@ -1331,21 +1328,17 @@ main (int argc, char **argv)
 
 	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, frame, slot, next_slot >> 1);
-	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)	{ // apaposto  run phy_procedures_UE_lte among the UE and all potential connected eNBs
+	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)	{ 
 	    if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] != NOT_SYNCHED){ 
-	      if (frame>0) {
-		  PHY_vars_UE_g[UE_id]->frame = frame;
-		  phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
-		}
+	      if (frame>= (eNB_id+UE_id) * 20 ) { // activate UE proc for multiple eNB only after 20*eNB_id frames so that different UEs start the proc separately
+		PHY_vars_UE_g[UE_id]->frame = frame;
+		phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
+	      }
 	    }
 	    else {
-	      if ((PHY_vars_UE_g[UE_id]->UE_mode[eNB_id-1] == PUSCH) && (eNB_id < nb_connected_eNB)) {
-		LOG_D(EMU,"Change the UE %d mode to PRACH for eNB %d \n",UE_id,eNB_id);
-		PHY_vars_UE_g[UE_id]->UE_mode[eNB_id]=PRACH;
-	      }
-	      if ((abstraction_flag ==0)&&(frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
+	      if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
 		for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ 
-		  initial_sync(PHY_vars_UE_g[UE_id], eNB_id);
+		  initial_sync(PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
 		}
 		/*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
