@@ -343,7 +343,7 @@ void oaisim_config() {
   if (oai_emulation.info.otg_enabled ) {
     set_component_filelog(OTG);
     set_component_filelog(OTG_LATENCY);
-    set_component_filelog(OTG_OWD);
+    set_component_filelog(OTG_GP);
     /* g_log->log_component[OTG].filelog=1;
     g_log->log_component[OTG_LATENCY].filelog=1;
     g_log->log_component[OTG_OWD].filelog = 1;*/
