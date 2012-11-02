@@ -115,6 +115,12 @@ class UdpServer {
 		 * @return The reference of udp::endpoint
 		 */
 		const udp::endpoint& getClient() const;
+		/**
+		 * Returns string representation of this connection
+		 *
+		 * @return String representation of this class of type std::string
+		 */
+		string toString() const;
 
 	private:
 		/**

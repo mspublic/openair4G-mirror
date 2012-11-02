@@ -1,4 +1,9 @@
 
+v1.1.13
+* Bugfix erase/remove idiom error is fixed in mgmt_configuration.cpp
+* PacketHandlerResult class is created to carry the result and the response packet if there's one
+* PacketHandler does not have access to the socket anymore
+
 v1.1.12
 * Bugfix Invalid iterator in Communication Profile Response code
 * PacketHandler now returns relevant task

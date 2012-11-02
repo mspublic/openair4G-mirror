@@ -126,7 +126,7 @@ bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
 			|| (this->state == ONLINE && state == CONNECTED)) {
 		logger.debug("State change is valid");
 	} else {
-		logger.error("Requested state change from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state] + " is invalid!");
+		logger.warning("Requested state change from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state] + " is either invalid or unnecessary");
 		logger.info("Ignoring state change request...");
 		return false;
 	}
