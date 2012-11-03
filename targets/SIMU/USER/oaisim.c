@@ -1132,9 +1132,11 @@ main (int argc, char **argv)
 
 
 #ifdef OPENAIR2
-  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
   for (i = 0; i < NB_eNB_INST; i++)
-    mac_xface->mrbch_phy_sync_failure (i, 0, i);
+    l2_init (i, &PHY_vars_eNB_g[i]->lte_frame_parms);
+  mac_xface->macphy_init();
+  for (i = 0; i < NB_eNB_INST; i++)
+    mac_xface->mrbch_phy_sync_failure (i, 0, i); // init rrc_enb 
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
       for (eNB_id =0 ; eNB_id < nb_connected_eNB; eNB_id++)//apostolos apaposto  call phy_sync_success among the UE and all potential connected eNBs

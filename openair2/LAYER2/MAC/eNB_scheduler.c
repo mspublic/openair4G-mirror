@@ -1117,7 +1117,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	// schedule 4 RBs for UL
 	if((cooperation_flag > 0) && (next_ue == 1))// Allocation on same set of RBs
 	  {
-	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c
+	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c
 						       ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
 						       4);//openair_daq_vars.ue_ul_nb_rb);
 	  }
@@ -1139,7 +1139,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] ,buffer_occupancy);
 
 	  while ((TBS < buffer_occupancy) &&
-		 rb_table[rb_table_index]<(mac_xface->lte_frame_parms->N_RB_UL-1-first_rb)){
+		 rb_table[rb_table_index]<(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL-1-first_rb)){
 	    // continue until we've exhauster the UEs request or the total number of available PRBs
 	    LOG_I(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduled UE (rb_table_index %d => TBS %d)\n",
 		  Mod_id,rnti,frame,subframe,
@@ -1154,7 +1154,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 		first_rb,rb_table[rb_table_index],
 		rb_table_index,mac_xface->get_TBS(ULSCH_dci->mcs,rb_table[rb_table_index]));
 
-	  ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+	  ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,
 						     first_rb,
 						     rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
 
@@ -1209,7 +1209,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 			format0,
 			0);
 	//#ifdef DEBUG_eNB_SCHEDULER
-	//      dump_dci(mac_xface->lte_frame_parms,
+	//      dump_dci(mac_xface->lte_frame_parms[Mod_id],
 	//	       &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
 	//#endif
 	add_ue_ulsch_info(Mod_id,
@@ -1287,7 +1287,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    LOG_D(MAC,"[eNB %d][PUSCH %x][Auto-Calibration] Frame %d subframe %d Scheduled UE PUSCH\n",
 		  Mod_id,rnti,frame,subframe);
 	    
-	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+	    ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,
 						       0,
 						       25);//25);//openair_daq_vars.ue_ul_nb_rb);
 	    
@@ -1324,13 +1324,13 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 
 
-u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
+u32 allocate_prbs(u8 Mod_id, u8 UE_id,u8 nb_rb, u32 *rballoc) {
 
   int i;
   u32 rballoc_dci=0;
   unsigned char nb_rb_alloc=0;
 
-  for (i=0;i<(mac_xface->lte_frame_parms->N_RB_DL-2);i+=2) {
+  for (i=0;i<(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-2);i+=2) {
     if (((*rballoc>>i)&3)==0) {
       *rballoc |= (3<<i);
       rballoc_dci |= (1<<(i>>1));
@@ -1340,10 +1340,10 @@ u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
       return(rballoc_dci);
   }
 
-  if ((mac_xface->lte_frame_parms->N_RB_DL&1)==1) {
-    if ((*rballoc>>(mac_xface->lte_frame_parms->N_RB_DL-1)&1)==0) {
-      *rballoc |= (1<<(mac_xface->lte_frame_parms->N_RB_DL-1));
-      rballoc_dci |= (1<<(mac_xface->lte_frame_parms->N_RB_DL>>1));
+  if ((mac_xface->lte_frame_parms[Mod_id]->N_RB_DL&1)==1) {
+    if ((*rballoc>>(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1)&1)==0) {
+      *rballoc |= (1<<(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1));
+      rballoc_dci |= (1<<(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL>>1));
     }
   }
   return(rballoc_dci);
@@ -1412,8 +1412,8 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
     eNB_mac_inst[Mod_id].bcch_active = 0;
 
     // randomize frequency allocation for SI
-    first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms->N_RB_DL-4));
-    BCCH_alloc_pdu.rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,first_rb,3);
+    first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4));
+    BCCH_alloc_pdu.rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,first_rb,3);
     rballoc |= mac_xface->get_rballoc(BCCH_alloc_pdu.vrb_type,BCCH_alloc_pdu.rballoc);
 
 
@@ -1444,7 +1444,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	      eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bits1);
 	// randomize frequency allocation for RA
 	while (1) {
-	  first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms->N_RB_DL-4));
+	  first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4));
 	  if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+2] != 1))
 	    break;
 	}
@@ -1452,7 +1452,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	vrb_map[first_rb+1] = 1;
 	vrb_map[first_rb+2] = 1;
 
-	((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,first_rb,3);
+	((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,first_rb,3);
 	rballoc |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu1[0])->vrb_type,
 					  ((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu1[0])->rballoc);
 
@@ -1472,14 +1472,14 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
 	// randomize frequency allocation for RA
 	while (1) {
-	  first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms->N_RB_DL-4));
+	  first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4));
 	  if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+2] != 1))
 	    break;
 	}
 	vrb_map[first_rb] = 1;
 	vrb_map[first_rb+1] = 1;
 	vrb_map[first_rb+2] = 1;
-	((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,first_rb,3);
+	((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,first_rb,3);
 	rballoc |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->vrb_type,
 					  ((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->rballoc);
 
@@ -1508,14 +1508,14 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	  ((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->ndi=0;
 	  // randomize frequency allocation for RA
 	  while (1) {
-	    first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms->N_RB_DL-4));
+	    first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4));
 	    if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+2] != 1))
 	      break;
 	  }
 	  vrb_map[first_rb] = 1;
 	  vrb_map[first_rb+1] = 1;
 	  vrb_map[first_rb+2] = 1;
-	  ((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,first_rb,3);
+	  ((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,first_rb,3);
 	  rballoc |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->vrb_type,
 					    ((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->rballoc);
 
@@ -1574,7 +1574,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
       case 2:
 	//	printf("Adding UE spec DCI for %d PRBS (%x) => ",nb_rb,rballoc);
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
+	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(Mod_id,UE_id,nb_rb,&rballoc);
 	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
 	//	printf("%x\n",((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
 	add_ue_spec_dci(DCI_pdu,
@@ -1605,7 +1605,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
 	//if (nb_rb>10) {
 	// DCI format 2_2A_M10PRB can also be used for less than 10 PRB (it refers to the system bandwidth)
-	((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
+	((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(Mod_id,UE_id,nb_rb,&rballoc);
 	((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
 	add_ue_spec_dci(DCI_pdu,
 			DLSCH_dci,
@@ -1617,7 +1617,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			0);
 	/*}
 	  else {
-	  ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
+	  ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(Mod_id,UE_id,nb_rb,&rballoc);
 	  add_ue_spec_dci(DCI_pdu,
 	  DLSCH_dci,
 	  rnti,
@@ -1727,7 +1727,7 @@ void tm5_pre_processor (unsigned char Mod_id,
   aggregation = 2; // set to the maximum aggregation level
 
   // set current available nb_rb and nCCE to maximum
-  nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
+  nb_available_rb = mac_xface->lte_frame_parms[Mod_id]->N_RB_DL - nb_rb_used0;
   nCCE = mac_xface->get_nCCE_max(Mod_id) - nCCE_used;
 
   //********************* Pre-processing for Scheduling UEs**************************///////
@@ -3579,7 +3579,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   //  for (UE_id=0;(UE_id<granted_UEs) && (nCCE > aggregation);UE_id++) {
 
   // set current available nb_rb and nCCE to maximum
-  nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
+  nb_available_rb = mac_xface->lte_frame_parms[Mod_id]->N_RB_DL - nb_rb_used0;
   nCCE = mac_xface->get_nCCE_max(Mod_id) - nCCE_used;
 
 
@@ -3615,7 +3615,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     if (next_ue == 255)
       break;
 
-    switch (mac_xface->lte_frame_parms->tdd_config) {
+    switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
     case 0:
       if ((subframe==0)||(subframe==1)||(subframe==3)||(subframe==5)||(subframe==6)||(subframe==8))
 	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI = 0;
@@ -3851,10 +3851,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	
 	while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch ))  {
 	  nb_rb += 2;  // 
-	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs
+	  if (nb_rb>mac_xface->lte_frame_parms[Mod_id]->N_RB_DL) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
-	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
-	    nb_rb = mac_xface->lte_frame_parms->N_RB_DL;
+	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms[Mod_id]->N_RB_DL);
+	    nb_rb = mac_xface->lte_frame_parms[Mod_id]->N_RB_DL;
 	    break;
 	  }
 	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
@@ -4005,7 +4005,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     DAI = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
     LOG_T(MAC,"[eNB %d] Frame %d: DAI %d for UE %d\n",Mod_id,frame,DAI,next_ue);
     // Save DAI for Format 0 DCI
-    switch (mac_xface->lte_frame_parms->tdd_config) {
+    switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
     case 0:
       if ((subframe==0)||(subframe==1)||(subframe==5)||(subframe==6))
 	break;
@@ -4246,10 +4246,10 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
     //    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
 
-    if ((mac_xface->lte_frame_parms->frame_type == 0) ||  //FDD
-	(mac_xface->lte_frame_parms->tdd_config == 0) ||
-	(mac_xface->lte_frame_parms->tdd_config == 3) ||
-	(mac_xface->lte_frame_parms->tdd_config == 6))
+    if ((mac_xface->lte_frame_parms[Mod_id]->frame_type == 0) ||  //FDD
+	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 0) ||
+	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 3) ||
+	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 6))
       schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,&nCCE);//,calibration_flag);
     
     // schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
@@ -4260,8 +4260,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   case 1:
     // TDD, schedule UL for subframe 7 (TDD config 0,1) / subframe 8 (TDD Config 6)
     // FDD, schedule normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 1) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) { // TDD
+      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
       case 0:
       case 1:
       case 6:
@@ -4281,7 +4281,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   case 2:
     // TDD, nothing 
     // FDD, normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 0) {  //FDD
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 0) {  //FDD
       // schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
       // schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
       // fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
@@ -4291,8 +4291,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // TDD Config 2, ULSCH for subframe 7
     // TDD Config 2/5 normal DLSCH
     // FDD, normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 1) {
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) {
+      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
       case 2: 
       	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,&nCCE);
       case 5: 
@@ -4314,8 +4314,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // TDD Config 1, ULSCH for subframe 8
     // TDD Config 1/2/4/5 DLSCH
     // FDD UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 1) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) { // TDD
+      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
       case 1:
         schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
         schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,&nCCE);
@@ -4330,7 +4330,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       }
     }
     else {
-      if (mac_xface->lte_frame_parms->frame_type == 0) {  //FDD
+      if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 0) {  //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
 	// schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
 	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
@@ -4344,9 +4344,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // FDD normal UL/DLSCH
     schedule_SI(Mod_id,frame,&nprb,&nCCE);
     schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-    if ((mac_xface->lte_frame_parms->frame_type == 0) || //FDD
-	(mac_xface->lte_frame_parms->tdd_config == 0) || // TDD Config 0
-	(mac_xface->lte_frame_parms->tdd_config == 6)) { // TDD Config 6
+    if ((mac_xface->lte_frame_parms[Mod_id]->frame_type == 0) || //FDD
+	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 0) || // TDD Config 0
+	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 6)) { // TDD Config 6
 
       //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
 
@@ -4360,8 +4360,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // TDD Config 0,1,6 ULSCH for subframes 2,3
     // TDD Config 3,4,5 Normal DLSCH
     // FDD normal ULSCH/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 1) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) { // TDD
+      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
       case 0:
       case 1:
       case 6:
@@ -4390,8 +4390,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   case 7:
     // TDD Config 3,4,5 Normal DLSCH
     // FDD Normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 1) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) { // TDD
+      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
       case 3:
       case 4:
       case 5:
@@ -4418,8 +4418,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // TDD Config 2,3,4,5 ULSCH for subframe 2
     //
     // FDD Normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == 1) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) { // TDD
+      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
       case 2:
       case 3:
       case 4:
@@ -4443,8 +4443,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   case 9:
     // TDD Config 1,3,4,6 ULSCH for subframes 3,3,3,4
-    if (mac_xface->lte_frame_parms->frame_type == 1) {
-      switch (mac_xface->lte_frame_parms->tdd_config) {
+    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) {
+      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
       case 1:
       case 3:
       case 4:

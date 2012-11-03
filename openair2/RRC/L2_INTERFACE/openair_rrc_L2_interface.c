@@ -152,6 +152,6 @@ char openair_rrc_eNB_init(u8 Mod_id){
 #ifdef CELLULAR
  return( rrc_L2_eNB_init(Mod_id));
 #else 
-  openair_rrc_lite_eNB_init(Mod_id);
+  return openair_rrc_lite_eNB_init(Mod_id);
 #endif //CELLULAR
 }
