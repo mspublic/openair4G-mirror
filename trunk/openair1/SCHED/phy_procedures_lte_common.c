@@ -323,10 +323,16 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 
   //printf("get_ack: SF %d\n",subframe);
   u8 status=0;
-  
+  u8 subframe_dl;
+
   if (frame_parms->frame_type == FDD) {
-    o_ACK[0] = harq_ack[(subframe-4)%10].ack;
-    status = harq_ack[(subframe-4)%10].send_harq_status;
+    if (subframe < 4)
+      subframe_dl = subframe + 6;
+    else
+      subframe_dl = subframe - 4;
+    o_ACK[0] = harq_ack[subframe_dl].ack;
+    status = harq_ack[subframe_dl].send_harq_status;
+    printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
   }
   else {
     switch (frame_parms->tdd_config) {

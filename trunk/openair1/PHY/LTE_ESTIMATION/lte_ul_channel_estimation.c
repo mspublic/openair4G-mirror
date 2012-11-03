@@ -68,7 +68,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   Msc_RS = N_rb_alloc*12;
 
   cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-		  phy_vars_eNB->ulsch_eNB[UE_id]->n_DMRS2 +
+		  phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
 		  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
 
   //  cyclic_shift = 0;
@@ -87,7 +87,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
       Msc_RS_idx = b;
 #endif
 
-#ifdef DEBUG_CH
+ #ifdef DEBUG_CH
   msg("lte_ul_channel_estimation: subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
 #ifdef USER_MODE
   if (Ns==0)

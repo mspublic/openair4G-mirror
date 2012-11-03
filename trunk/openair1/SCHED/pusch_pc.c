@@ -68,7 +68,9 @@ u8 alpha_lut[8] = {0,40,50,60,70,80,90,100};
 
 void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j, u8 abstraction_flag) {
 
-  u8 harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,subframe);    
+  u8 harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,
+				  ((subframe==0)?1:0) + phy_vars_ue->frame,
+				  subframe);
   
   u8 nb_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb;
   s8 PL;
