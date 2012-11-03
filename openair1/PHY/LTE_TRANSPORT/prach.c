@@ -255,7 +255,7 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 subframe) {
   u8 t1_ra;
   u8 t2_ra;
 
-  printf("In is_prach_subframe ..., prach_ConfigIndex %d\n",prach_ConfigIndex);
+  //  printf("In is_prach_subframe ..., prach_ConfigIndex %d\n",prach_ConfigIndex);
   if (frame_parms->frame_type == FDD) { //FDD
     //implement Table 5.7.1-2 from 36.211 (Rel-10, p.41)
     if ((((frame&1) == 1) && (subframe < 9)) ||

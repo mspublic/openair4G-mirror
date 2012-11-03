@@ -1024,6 +1024,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	if (UE_id>=0) {
 	  //	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+
 	  generate_eNB_dlsch_params_from_dci(next_slot>>1,
 					     &DCI_pdu->dci_alloc[i].dci_pdu[0],
 					     DCI_pdu->dci_alloc[i].rnti,
@@ -1035,7 +1037,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					     0,
 					     P_RNTI,
 					     phy_vars_eNB->eNB_UE_stats[(u8)UE_id].DL_pmi_single);
-
+	  LOG_D(PHY,"[eNB %d][PDSCH %x/%d] Frame %d subframe %d: Generated dlsch params\n",
+		phy_vars_eNB->Mod_id,DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->current_harq_pid,phy_vars_eNB->frame,next_slot>>1);
 	  if ((phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1] = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
 											   DCI_pdu->nCCE,
 											   0,
@@ -1056,7 +1059,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	      phy_vars_eNB->frame, next_slot>>1,UE_id,
 	      DCI_pdu->dci_alloc[i].format,
 	      1<<DCI_pdu->dci_alloc[i].L);
-	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 #endif
 	}
 	else {
@@ -1101,8 +1103,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		*(unsigned int *)&DCI_pdu->dci_alloc[i].dci_pdu[0],
 		i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci,
 		1<<DCI_pdu->dci_alloc[i].L);
-	//dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 #endif
+
+	dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 	
 	generate_eNB_ulsch_params_from_dci(&DCI_pdu->dci_alloc[i].dci_pdu[0],
 					   DCI_pdu->dci_alloc[i].rnti,
@@ -1666,9 +1669,12 @@ void process_HARQ_feedback(u8 UE_id,
       if (dl_harq_pid[m]<dlsch->Mdlharq) {
 	dlsch_harq_proc = dlsch->harq_processes[dl_harq_pid[m]];
 #ifdef DEBUG_PHY_PROC	
-	LOG_I(PHY,"[eNB %d][PDSCH %x/%d] subframe %d, status %d, round %d\n",phy_vars_eNB->Mod_id,
+	LOG_I(PHY,"[eNB %d][PDSCH %x/%d] subframe %d, status %d, round %d (mcs %d, rv %d, TBS %d)\n",phy_vars_eNB->Mod_id,
 	      dlsch->rnti,dl_harq_pid[m],dl_subframe,
-	      dlsch_harq_proc->status,dlsch_harq_proc->round);
+	      dlsch_harq_proc->status,dlsch_harq_proc->round,
+	      dlsch->harq_processes[dl_harq_pid[m]]->mcs,
+	      dlsch->harq_processes[dl_harq_pid[m]]->rvidx,
+	      dlsch->harq_processes[dl_harq_pid[m]]->TBS);
 	if (dlsch_harq_proc->status==DISABLED)
 	  LOG_E(PHY,"why?\n");
 #endif
@@ -2083,7 +2089,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,
 			       ((last_slot>>1)==9 ? -1 : 0 )+ phy_vars_eNB->frame,last_slot>>1);
-  printf("[eNB][PUSCH] subframe %d => harq_pid %d\n",last_slot>>1,harq_pid);
+  //  printf("[eNB][PUSCH] subframe %d => harq_pid %d\n",last_slot>>1,harq_pid);
 
 #ifdef OPENAIR2
   if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && 
@@ -2148,12 +2154,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
 #endif
 
-      nPRS = 0;
+      nPRS = phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[last_slot-1];
 
-      phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
+      phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
 
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, Ndi %d, first_rb %d, nb_rb %d, mcs %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift %d, nprs %d), O_ACK %d \n",
+      LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, Ndi %d, first_rb %d, nb_rb %d, mcs %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
 	    phy_vars_eNB->Mod_id,harq_pid,(((last_slot>>1)==9)?-1:0)+phy_vars_eNB->frame,last_slot>>1,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc,
@@ -2164,7 +2170,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->mcs,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rvidx,
 	    phy_vars_eNB->ulsch_eNB[i]->cyclicShift,
-	    phy_vars_eNB->ulsch_eNB[i]->n_DMRS2,
+	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->n_DMRS2,
 	    phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
 	    nPRS,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->O_ACK);

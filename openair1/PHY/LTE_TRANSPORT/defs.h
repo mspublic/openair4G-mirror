@@ -181,8 +181,10 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
-  /// DRMS field for this ULSCH
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   u8 n_DMRS;
+  /// n_DMRS2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  u8 n_DMRS2;
   /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
   u8 control_only;
   /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
@@ -296,8 +298,6 @@ typedef struct {
   u16 beta_offset_harqack_times8;
   /// power_offset
   u8 power_offset;
-  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
-  u8 n_DMRS2;
   // for cooperative communication
   u8 cooperation_flag;
   /// RNTI attributed to this ULSCH
@@ -371,8 +371,10 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
-  /// DRMS field for this ULSCH
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   u8 n_DMRS;
+  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  u8 n_DMRS2;
   /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)
   //  int calibration_flag;
 } LTE_UL_eNB_HARQ_t;
@@ -436,8 +438,6 @@ typedef struct {
   u32 Msg3_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-  /// n_DMRS2 for cyclic shift of DM RS ( 3GPP 36.211 Table 5.5.2.1.1-1)
-  u8 n_DMRS2;
   /// cyclic shift for DM RS
   u8 cyclicShift;
   /// cooperation flag

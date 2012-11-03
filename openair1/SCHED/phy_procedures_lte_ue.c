@@ -690,15 +690,18 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	
 	//#ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, n_DMRS1 %d,n_DMRS2 %d,n_PRS %d, ACK (%d,%d), O_ACK %d\n",
+	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,
 	      first_rb,nb_rb,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->round,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->mcs,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rvidx,
+	      (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift+
+	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2+
+	      frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[next_slot])%12,
 	      frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
-	      phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2,
+	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2,
 	      frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[next_slot],
 	      phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
@@ -1947,6 +1950,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	       (dci_alloc_rx[i].format == format0)) {
 #ifdef DEBUG_PHY_PROC
 	LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found rnti %x, format 0, dci_cnt %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,dci_alloc_rx[i].rnti,i);
+	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 	/*
 	  if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
 	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -1963,8 +1967,9 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
 	
 	phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
-	
-	if (generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+	dump_dci(&phy_vars_ue->lte_frame_parms,&dci_alloc_rx[i]);
+
+	if (generate_ue_ulsch_params_from_dci((void *)&dci_alloc_rx[i].dci_pdu,
 					      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					      last_slot>>1,
 					      format0,
@@ -2101,7 +2106,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     if (((last_slot%2)==0) && (l==0)) {
       // Regular PDSCH
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
+
 	harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
+	//	printf("PDSCH active in subframe %d, harq_pid %d\n",(last_slot>>1)-1,harq_pid); 
 	if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
 	    (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
 	  dual_stream_UE = 1;
@@ -2251,7 +2258,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 	}
       
-		if (phy_vars_ue->frame % 100 == 0) {
+	if (phy_vars_ue->frame % 100 == 0) {
 	  if ((phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]) != 0) 
 	    phy_vars_ue->dlsch_fer[eNB_id] = (100*(phy_vars_ue->dlsch_errors[eNB_id] - phy_vars_ue->dlsch_errors_last[eNB_id]))/(phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]);
 	
@@ -2290,6 +2297,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif //DLSCH_THREAD
       }
       else {
+	//	printf("PDSCH inactive in subframe %d\n",(last_slot>>1)-1); 
 	phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))].send_harq_status = 0;
       }
 
