@@ -201,8 +201,8 @@ int mac_top_init(){
 	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
       }
       else {
-	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_FDD_t));
-	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_FDD_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu_fdd,sizeof(DCI1A_5MHz_FDD_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A_fdd,sizeof(DCI1A_5MHz_FDD_t));
 	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_FDD_t);
 	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_FDD_t);
 	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_FDD_t;
