@@ -1335,8 +1335,8 @@ main (int argc, char **argv)
 	   eNB_id++) {
                     //printf ("debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
                     //printf ("debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
-	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
-	      eNB_id, frame, slot, next_slot >> 1,
+	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
+	      eNB_id, frame, slot, next_slot >> 1,last_slot>>1,
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	
@@ -1369,8 +1369,8 @@ main (int argc, char **argv)
 	   UE_id++) 
 	if (frame >= (UE_id * 20)) {	// activate UE only after 20*UE_id frames so that different UEs turn on separately
 
-	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
-	     UE_id, frame, slot, next_slot >> 1);
+	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
+		UE_id, frame, slot, next_slot >> 1,last_slot>>1);
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    if (frame>0) {
