@@ -209,7 +209,7 @@ int mac_top_init(){
 
  //ICIC init param
 #ifdef ICIC
-  SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
+  SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms[eNB_id]->N_RB_DL);
 
   srand (time(NULL));
 
@@ -306,17 +306,23 @@ void mac_top_cleanup(void){
 
 }
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
+int l2_init(u8 Mod_id, LTE_DL_FRAME_PARMS *frame_parms) {
 
+  if (Mod_id == 0){ 
+    LOG_I(MAC,"[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
+    mac_init_global_param();
+    init_mac_xface();
+  }
+  LOG_I(MAC,"[MAIN][eNB %d] PHY Frame configuration \n",Mod_id);
+  mac_xface->lte_frame_parms[Mod_id] = frame_parms;
 
+  //Mac_rlc_xface->Is_cluster_head[0] = 1;
+  //Mac_rlc_xface->Is_cluster_head[1] = 0;
 
-  LOG_I(MAC,"[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
-  //    NB_NODE=2;
-  //    NB_INST=2;
+  return(1);
+}
 
-
-  mac_init_global_param();
-
+void init_mac_xface(void){
 
   mac_xface->macphy_init=(void (*)(void))mac_top_init;
 #ifndef USER_MODE
@@ -324,7 +330,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
 #else
   mac_xface->macphy_exit=(void (*)(const char*)) exit;
 #endif
-  LOG_I(MAC,"[MAIN] init eNB MAC functions  \n");
+  LOG_I(MAC,"MAC/PHY xface init eNB MAC functions  \n");
   mac_xface->eNB_dlsch_ulsch_scheduler = (void *)eNB_dlsch_ulsch_scheduler;
   mac_xface->get_dci_sdu               = (DCI_PDU* (*)(u8,u8))get_dci_sdu;
   mac_xface->fill_rar                  = fill_rar;
@@ -344,7 +350,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->Msg1_transmitted          = Msg1_tx;
   mac_xface->ra_failed                 = ra_failed;
 
-  LOG_I(MAC,"[MAIN] init UE MAC functions \n");
+  LOG_I(MAC,"MAX/PHY xface init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
   mac_xface->ue_get_SR                 = ue_get_SR;
@@ -352,10 +358,6 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->ue_get_rach               = ue_get_rach;
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;
-
-
-  LOG_I(MAC,"[MAIN] PHY Frame configuration \n");
-  mac_xface->lte_frame_parms = frame_parms;
 
   mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
   mac_xface->get_PL                 = get_PL;
@@ -379,13 +381,6 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 
   mac_xface->get_PHR = get_PHR;
-  LOG_D(MAC,"[MAIN] ALL INIT OK\n");
+  LOG_D(MAC," MAC/PHY xface init done\n");
 
-  mac_xface->macphy_init();
-
-  //Mac_rlc_xface->Is_cluster_head[0] = 1;
-  //Mac_rlc_xface->Is_cluster_head[1] = 0;
-
-  return(1);
 }
-

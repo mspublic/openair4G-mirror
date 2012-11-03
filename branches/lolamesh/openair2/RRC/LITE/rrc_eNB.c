@@ -83,7 +83,7 @@ void init_SI(u8 Mod_id) {
   eNB_rrc_inst[Mod_id].SIB1 = (u8 *)malloc16(32);
 
   if (eNB_rrc_inst[Mod_id].SIB1)
-    eNB_rrc_inst[Mod_id].sizeof_SIB1 = do_SIB1(mac_xface->lte_frame_parms,
+    eNB_rrc_inst[Mod_id].sizeof_SIB1 = do_SIB1(mac_xface->lte_frame_parms[Mod_id],
 					       (uint8_t *)eNB_rrc_inst[Mod_id].SIB1,
 					       &eNB_rrc_inst[Mod_id].siblock1,
 					       &eNB_rrc_inst[Mod_id].sib1);
@@ -623,7 +623,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
     do_RRCConnectionSetup((u8 *)eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.Payload,
 			  mac_xface->get_transmission_mode(Mod_id,find_UE_RNTI(Mod_id,UE_index)),
 			  UE_index,0,
-			  mac_xface->lte_frame_parms,
+			  mac_xface->lte_frame_parms[Mod_id],
 			  &eNB_rrc_inst[Mod_id].SRB1_config[UE_index],
 			  &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
 			  &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);

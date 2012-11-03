@@ -517,9 +517,7 @@ int phy_init_lte_ue_common(PHY_VARS_UE *phy_vars_ue,
   LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_index];
   LTE_UE_COMMON *ue_common_vars  = phy_vars_ue->lte_ue_common_vars[eNB_index];
   
-  init_frame_parms(frame_parms,1);
-
-    int i,j;
+  int i,j;
   unsigned char eNB_id;
   //  msg("Initializing UE vars (abstraction %d) for eNB TXant %d, UE RXant %d\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
 

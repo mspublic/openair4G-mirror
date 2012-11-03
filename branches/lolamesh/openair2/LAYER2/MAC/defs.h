@@ -748,7 +748,7 @@ u8 schedule_next_dlue(u8 Mod_id, u8 subframe);
 @param rballoc Pointer to bit-map of current PRB allocation given to previous users/control channels.  This is updated for subsequent calls to the routine.
 @returns an rballoc bitmap for resource type 0 allocation (DCI).
 */
-u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
+u32 allocate_prbs(u8 Mod_id,u8 UE_id,u8 nb_rb, u32 *rballoc);
 
 /* \fn u32 req_new_ulsch(u8 Mod_id)
 \brief check for a new transmission in any drb 
@@ -849,8 +849,8 @@ u8 *parse_ulsch_header(u8 *mac_header,
 		       u16 *rx_lengths,
 		       u16 tx_lenght);
 
-
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms);
+void init_mac_xface(void);
+int l2_init(u8 Mod_id, LTE_DL_FRAME_PARMS *frame_parms);
 int mac_init(void);
 void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
