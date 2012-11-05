@@ -376,11 +376,11 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
       for (;i<48;i++)
 	rxSIGNAL_F_comp2[i] = rxSIGNAL_F_comp[(-24+3+i)];
       
-#ifdef DEBUG_SYNC
+      //#ifdef DEBUG_SYNC
       write_output("rxSIGNAL_F.m","rxSIG_F", rxSIGNAL_F,128,2,1);
       write_output("rxSIGNAL_F_comp.m","rxSIG_F_comp", rxSIGNAL_F_comp,64,1,1);
       write_output("rxSIGNAL_F_comp2.m","rxSIG_F_comp2", rxSIGNAL_F_comp2,48,1,1);
-#endif
+      //#endif
       
       // CFO compensation
       

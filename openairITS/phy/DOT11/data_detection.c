@@ -25,7 +25,7 @@ extern uint16_t rev64[64];
 extern int Ndbps[8];
 extern int Ncbps[8];
 
-//#define DEBUG_DATA 1
+#define DEBUG_DATA 1
 
 extern int16_t chest[128] __attribute__((aligned(16)));
 extern int interleaver_bpsk[48];
@@ -42,6 +42,10 @@ RTIME dd_t1=0,dd_t2=0,dd_t3=0,dd_t4=0;
 long dd_t1=0,dd_t2=0,dd_t3=0,dd_t4=0;
 #endif
 int dd_trials=0;
+
+#ifdef RTAI
+extern unsigned int *DAQ_MBOX;
+#endif
 
 void print_dd_stats() {
 
@@ -77,6 +81,9 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   int log2_maxh;
   int32_t scale;
   int ret;
+#ifdef RTAI
+  int mbox_off = 0,old_mbox;
+#endif
 #ifdef EXECTIME
 #ifdef RTAI
   RTIME tin,tout;
@@ -90,20 +97,34 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   dlen_symb = dlen/Ndbps[rxv->rate];
   if ((dlen%Ndbps[rxv->rate])>0)
     dlen_symb++;
-
+#ifdef RTAI
+  old_mbox = ((unsigned int *)DAQ_MBOX)[0];
+#endif
   for (s=0,sprime=1;s<dlen_symb;s++,sprime++,rx_offset+=80) {
 
-    //    printf("DATA symbol %d, rx_offset %d\n",s,rx_offset);
+    printf("DATA symbol %d, rx_offset %d\n",s,rx_offset);
     // synchronize to HW if needed
-    if (wait)
-      *wait(rx_offset,s);
+#ifdef RTAI
+    if (old_mbox > ((unsigned int *)DAQ_MBOX)[0])
+      mbox_off = 150;
+    printf("dd: s %d (%d), old_mbox %d, new_mbox %d\n",
+	   s,rx_offset,old_mbox,((unsigned int *)DAQ_MBOX)[0]);
+    old_mbox = ((unsigned int *)DAQ_MBOX)[0];
+
+    while (((unsigned int *)DAQ_MBOX)[0]+mbox_off < (rx_offset>>9) ) {
+      printf("sleeping\n");
+      rt_sleep(nano2count(66666));
+    }
+#endif
 
 #ifdef EXECTIME
     dd_trials++;
 #endif
 
-    if (rx_offset>frame_length)
+    if (rx_offset>frame_length) {
       rx_offset -= frame_length;
+      mbox_off = 0;
+    }
     // index for pilot symbol lookup
     if (sprime==127)
       sprime=0;
