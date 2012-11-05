@@ -27,7 +27,7 @@ extern int Ncbps[8];
 
 //#define DEBUG_DATA 1
 
-extern int16_t chest[128] __attribute__((aligned(16)));
+extern int16_t chest[256] __attribute__((aligned(16)));
 extern int interleaver_bpsk[48];
 extern int interleaver_qpsk[48];
 extern int interleaver_16qam[48];
@@ -229,11 +229,11 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     // -ve portion
     for (i=0;i<5;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(38+i)];
-    pilot1 = rxDATA_F_comp[(38+5)];
+    pilot1 = ((uint32_t*)&rxDATA_F)[(38+5)<<1];
     
     for (;i<18;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(38+1+i)];
-    pilot2 = rxDATA_F_comp[(38+19)];
+    pilot2 = ((uint32_t*)&rxDATA_F)[(38+19)<<1];
     
     for (;i<24;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(38+2+i)];
@@ -241,10 +241,10 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     // +ve portion
     for (;i<30;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+1+i)];
-    pilot3 = rxDATA_F_comp[(6+1)];
+    pilot3 = ((uint32_t*)&rxDATA_F)[(6+1)<<1];
     for (;i<43;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+2+i)];
-    pilot4 = rxDATA_F_comp[(19+2)];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=-((int16_t *)&pilot4)[1];
+    pilot4 = ((uint32_t*)&rxDATA_F)[(19+2)<<1];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=-((int16_t *)&pilot4)[1];
     for (;i<48;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+3+i)];
     
@@ -274,7 +274,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 
     ((int16_t*)&cfo_Q15)[0] = (int16_t)(cfo_re32>>(2+log2_maxh))*Pseq_rx[sprime];
     ((int16_t*)&cfo_Q15)[1] = (int16_t)(cfo_im32>>(2+log2_maxh))*Pseq_rx[sprime];
-    //#ifdef DEBUG_DATA  
+#ifdef DEBUG_DATA  
     printf("dd: s %d, pilots(%d,%d : %d,%d : %d,%d : %d,%d) * chest (%d,%d : %d,%d : %d,%d : %d,%d) => cfo_Q15 (%d,%d)\n",s,
 	   ((int16_t *)&pilot1)[0]*Pseq_rx[sprime],((int16_t *)&pilot1)[1]*Pseq_rx[sprime],
 	   ((int16_t *)&pilot2)[0]*Pseq_rx[sprime],((int16_t *)&pilot2)[1]*Pseq_rx[sprime],
@@ -285,11 +285,11 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	   chest[(6+1)<<2],chest[1+((6+1)<<2)],
 	   chest[(19+2)<<2],chest[1+((19+2)<<2)],
 	   ((int16_t*)&cfo_Q15)[0],((int16_t*)&cfo_Q15)[1]);
-    //#endif
+#endif
 
     rotate_cpx_vector_norep(rxDATA_F_comp2,&cfo_Q15,rxDATA_F_comp3,48,log2_maxh);
 
-    //#ifdef DEBUG_DATA
+#ifdef DEBUG_DATA
     sprintf(fname,"rxDATA_F%d.m",s);
     sprintf(vname,"rxDAT_F_%d",s);
     write_output(fname,vname, rxDATA_F,128,2,1);
@@ -300,7 +300,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     sprintf(fname,"rxDATA_F_comp3_%d.m",s);
     sprintf(vname,"rxDAT_F_comp3_%d",s);
     write_output(fname,vname, rxDATA_F_comp3,48,1,1);
-    //#endif
+#endif
     // LLR Computation
 
     switch (rxv->rate>>1) {
@@ -446,7 +446,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 
       crc_rx = 0xffffffff;
       crc32(data_ind,&crc_rx,2+rxv->sdu_length);
-      //#ifdef DEBUG_DATA
+#ifdef DEBUG_DATA
       printf("Received CRC %x.%x.%x.%x (%x), computed %x\n",
 	     data_ind[2+rxv->sdu_length],
 	     data_ind[2+rxv->sdu_length+1],
@@ -463,7 +463,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	  printf(".%02x",data_ind[2+i]);
       }
       printf("\n");
-      //#endif
+#endif
     }
 #ifdef EXECTIME
 #ifdef RTAI
