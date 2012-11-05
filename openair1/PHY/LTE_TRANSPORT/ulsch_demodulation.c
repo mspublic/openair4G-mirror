@@ -1403,11 +1403,11 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
 }
 
 #ifdef USER_MODE
-void dump_ulsch(PHY_VARS_eNB *PHY_vars_eNB,u8 subframe) {
+void dump_ulsch(PHY_VARS_eNB *PHY_vars_eNB,u8 subframe, u8 UE_id) {
 
   u32 nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
   u8 harq_pid = subframe2harq_pid(&PHY_vars_eNB->lte_frame_parms,0,subframe);
-  printf("Dumping ULSCH with harq_pid %d, for NB_rb %d, mcs %d, Qm %d, N_symb %d\n", harq_pid,PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->nb_rb,PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->mcs,get_Qm_ul(PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->mcs),PHY_vars_eNB->ulsch_eNB[0]->Nsymb_pusch);
+  printf("Dumping ULSCH with harq_pid %d, for NB_rb %d, mcs %d, Qm %d, N_symb %d\n", harq_pid,PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb,PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,get_Qm_ul(PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs),PHY_vars_eNB->ulsch_eNB[UE_id]->Nsymb_pusch);
 
   write_output("rxsig0.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][0],PHY_vars_eNB->lte_frame_parms.samples_per_tti*10,1,1);
   if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
@@ -1415,18 +1415,18 @@ void dump_ulsch(PHY_VARS_eNB *PHY_vars_eNB,u8 subframe) {
   write_output("rxsigF0.m","rxsF0", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
   if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
     write_output("rxsigF1.m","rxsF1", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][1][0],512*nsymb*2,2,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_ext[0][0][0],300*nsymb*2,2,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->rxdataF_ext[0][0][0],300*nsymb*2,2,1);
   if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("rxsigF1_ext.m","rxsF1_ext", &PHY_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_ext[1][0][0],300*nsymb*2,2,1);
-  write_output("srs_est0.m","srsest0",PHY_vars_eNB->lte_eNB_srs_vars[0].srs_ch_estimates[0][0],512,1,1);
+    write_output("rxsigF1_ext.m","rxsF1_ext", &PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->rxdataF_ext[1][0][0],300*nsymb*2,2,1);
+  write_output("srs_est0.m","srsest0",PHY_vars_eNB->lte_eNB_srs_vars[UE_id].srs_ch_estimates[0][0],512,1,1);
   if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("srs_est1.m","srsest1",PHY_vars_eNB->lte_eNB_srs_vars[0].srs_ch_estimates[0][1],512,1,1);
-  write_output("drs_est0.m","drsest0",PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0],300*nsymb,1,1);
+    write_output("srs_est1.m","srsest1",PHY_vars_eNB->lte_eNB_srs_vars[UE_id].srs_ch_estimates[0][1],512,1,1);
+  write_output("drs_est0.m","drsest0",PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->drs_ch_estimates[0][0],300*nsymb,1,1);
   if (PHY_vars_eNB->lte_frame_parms.nb_antennas_rx>1)
-    write_output("drs_est1.m","drsest1",PHY_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][1],300*nsymb,1,1);
-  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&PHY_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0][0],300*nsymb,1,1);
-  write_output("ulsch_rxF_llr.m","ulsch_llr",PHY_vars_eNB->lte_eNB_pusch_vars[0]->llr,PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->nb_rb*12*get_Qm_ul(PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->mcs)*PHY_vars_eNB->ulsch_eNB[0]->Nsymb_pusch,1,0);	
-  write_output("ulsch_ch_mag.m","ulsch_ch_mag",&PHY_vars_eNB->lte_eNB_pusch_vars[0]->ul_ch_mag[0][0][0],300*nsymb,1,1);	  
+    write_output("drs_est1.m","drsest1",PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->drs_ch_estimates[0][1],300*nsymb,1,1);
+  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->rxdataF_comp[0][0][0],300*nsymb,1,1);
+  write_output("ulsch_rxF_llr.m","ulsch_llr",PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->llr,PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb*12*get_Qm_ul(PHY_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs)*PHY_vars_eNB->ulsch_eNB[UE_id]->Nsymb_pusch,1,0);	
+  write_output("ulsch_ch_mag.m","ulsch_ch_mag",&PHY_vars_eNB->lte_eNB_pusch_vars[UE_id]->ul_ch_mag[0][0][0],300*nsymb,1,1);	  
 	  
 }
 #endif

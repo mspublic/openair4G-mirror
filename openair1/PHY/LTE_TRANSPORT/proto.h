@@ -1045,7 +1045,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u8 use_srs);
 
 #ifdef USER_MODE
-void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb,u8 subframe);
+void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb,u8 subframe, u8 UE_id);
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
