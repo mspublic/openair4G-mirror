@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
 	  else
 	    off2=off;
 	  if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,off2,1) == BUSY)) {
-	    //printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
+	    //	    printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
 	    no_detection=0;
 	    if (rxv) {
 	      //	    printf("Rate %d, SDU_LENGTH %d\n",rxv->rate,rxv->sdu_length);
@@ -323,11 +323,12 @@ int main(int argc, char **argv) {
 		      errors++;
 		    }
 		  }
-		  break;
 		} // initial_synch returns IDLE
 		else {
+		  printf("Running data_detection fails\n");
 		  
 		}
+		break;
 	      }
 	    }
 	  }
