@@ -12,7 +12,10 @@ versions will write to the log file only.
 
 [demiray@leynes test]$  ./SCOREF-MGMT MGMT.conf [LogFileName]
 
-After SCOREF-MGMT is started it'll read the configuration file,
+After SCOREF-MGMT is started it'll read given configuration file
+along with those it finds under configuration/ directory (see 
+Section 2. Configuration File for FACilities in Software/SoftwareComponents/ \
+MGMT/CORE/Documentation/SCOREF-MGMT_Configuration.pdf) and
 update local configuration (such as UDP server port) and MIB
 (Management Information Base) parameters, then it'll start
 listening for incoming connections on UDP port defined by 

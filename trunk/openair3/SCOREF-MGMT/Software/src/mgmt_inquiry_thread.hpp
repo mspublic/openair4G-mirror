@@ -42,7 +42,7 @@
 #ifndef MGMT_INQUIRY_THREAD_HPP_
 #define MGMT_INQUIRY_THREAD_HPP_
 
-#include "util/mgmt_udp_server.hpp"
+#include "util/mgmt_udp_socket.hpp"
 #include "util/mgmt_log.hpp"
 
 class InquiryThread {
@@ -56,7 +56,7 @@ class InquiryThread {
 		 * @param locationUpdateInterval Location Update interval in seconds
 		 * @param logger Logger object reference
 		 */
-		InquiryThread(ManagementInformationBase& mib, UdpServer& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		InquiryThread(ManagementInformationBase& mib, UdpSocket& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for InquiryThread class
 		 */
@@ -86,7 +86,7 @@ class InquiryThread {
 		/**
 		 * UdpServer object reference to communicate with client
 		 */
-		UdpServer& connection;
+		UdpSocket& connection;
 		/**
 		 * Wireless State Update interval in seconds
 		 */
