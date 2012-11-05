@@ -25,7 +25,7 @@ extern uint16_t rev64[64];
 extern int Ndbps[8];
 extern int Ncbps[8];
 
-#define DEBUG_DATA 1
+//#define DEBUG_DATA 1
 
 extern int16_t chest[128] __attribute__((aligned(16)));
 extern int interleaver_bpsk[48];
@@ -47,6 +47,15 @@ int dd_trials=0;
 extern unsigned int *DAQ_MBOX;
 #endif
 
+int16_t Pseq_rx[127]     = { 1, 1, 1, 1,-1,-1,-1, 1,-1,-1,-1,-1, 1, 1,-1, 1,
+			     -1,-1, 1, 1,-1, 1, 1,-1, 1, 1, 1, 1, 1, 1,-1, 1, 
+			     1, 1,-1, 1, 1,-1,-1, 1, 1, 1,-1, 1,-1,-1,-1, 1,
+			     -1, 1,-1,-1, 1,-1,-1, 1, 1, 1, 1, 1,-1,-1, 1, 1,
+			     -1,-1, 1,-1, 1,-1, 1, 1,-1,-1,-1, 1, 1,-1,-1,-1,
+			     -1, 1,-1,-1, 1,-1, 1, 1, 1, 1,-1, 1,-1, 1,-1, 1,
+			     -1,-1,-1,-1,-1, 1,-1, 1, 1,-1, 1,-1, 1, 1, 1,-1,
+			     -1, 1,-1,-1,-1, 1, 1, 1,-1,-1,-1,-1,-1,-1,-1};
+
 void print_dd_stats() {
 
   if (dd_trials>0)
@@ -65,6 +74,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   int16_t rxDATA_F[128*2] __attribute__((aligned(16)));
   uint32_t rxDATA_F_comp[64*2] __attribute__((aligned(16)));
   uint32_t rxDATA_F_comp2[48] __attribute__((aligned(16)));
+  uint32_t rxDATA_F_comp3[48] __attribute__((aligned(16)));
 
   int8_t rxDATA_llr[384] __attribute__((aligned(16)));
   int8_t rxDATA_llr2[432] __attribute__((aligned(16)));
@@ -77,10 +87,13 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   int dlen,dlen_symb;
   int s,sprime;
   uint32_t crc_rx;
-  char fname[20],vname[20];
+  char fname[30],vname[30];
   int log2_maxh;
   int32_t scale;
   int ret;
+  int32_t cfo_re32,cfo_im32;
+  int32_t cfo_Q15;
+
 #ifdef RTAI
   int mbox_off = 0,old_mbox;
 #endif
@@ -101,8 +114,9 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   old_mbox = ((unsigned int *)DAQ_MBOX)[0];
 #endif
   for (s=0,sprime=1;s<dlen_symb;s++,sprime++,rx_offset+=80) {
-
+#ifdef DEBUG_DATA
     printf("DATA symbol %d, rx_offset %d\n",s,rx_offset);
+#endif
     // synchronize to HW if needed
 #ifdef RTAI
     if (old_mbox > ((unsigned int *)DAQ_MBOX)[0])
@@ -123,7 +137,9 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 
     if (rx_offset>frame_length) {
       rx_offset -= frame_length;
+#ifdef RTAI
       mbox_off = 0;
+#endif
     }
     // index for pilot symbol lookup
     if (sprime==127)
@@ -228,21 +244,61 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     pilot3 = rxDATA_F_comp[(6+1)];
     for (;i<43;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+2+i)];
-    pilot4 = rxDATA_F_comp[(19+2)];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=((int16_t *)&pilot4)[1];
+    pilot4 = rxDATA_F_comp[(19+2)];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=-((int16_t *)&pilot4)[1];
     for (;i<48;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+3+i)];
     
+
+
+
+    // CFO compensation
+    cfo_re32 = ((((int16_t *)&pilot1)[0]*(int32_t)chest[(38+5)<<2]) + 
+		(((int16_t *)&pilot1)[1]*(int32_t)chest[1+((38+5)<<2)]));
+    cfo_im32 = -((((int16_t *)&pilot1)[1]*(int32_t)chest[(38+5)<<2]) + 
+	       (((int16_t *)&pilot1)[0]*(int32_t)chest[1+((38+5)<<2)]));
+
+    cfo_re32 += (((((int16_t *)&pilot2)[0]*(int32_t)chest[(38+19)<<2]) + 
+		  (((int16_t *)&pilot2)[1]*(int32_t)chest[1+((38+19)<<2)])));
+    cfo_im32 += (-((((int16_t *)&pilot2)[1]*(int32_t)chest[(38+19)<<2]) + 
+		   (((int16_t *)&pilot2)[0]*(int32_t)chest[1+((38+19)<<2)])));
+
+    cfo_re32 += (((((int16_t *)&pilot3)[0]*(int32_t)chest[(6+1)<<2]) + 
+		  (((int16_t *)&pilot3)[1]*(int32_t)chest[1+((6+1)<<2)])));
+    cfo_im32 += (-((((int16_t *)&pilot3)[1]*(int32_t)chest[(6+1)<<2]) + 
+		   (((int16_t *)&pilot3)[0]*(int32_t)chest[1+((6+1)<<2)])));
+
+    cfo_re32 += (((((int16_t *)&pilot4)[0]*(int32_t)chest[(19+2)<<2]) + 
+		  (((int16_t *)&pilot4)[1]*(int32_t)chest[1+((19+2)<<2)])));
+    cfo_im32 += (-((((int16_t *)&pilot4)[1]*(int32_t)chest[(19+2)<<2]) + 
+		   (((int16_t *)&pilot4)[0]*(int32_t)chest[1+((19+2)<<2)])));
+
+    ((int16_t*)&cfo_Q15)[0] = (int16_t)(cfo_re32>>(2+log2_maxh))*Pseq_rx[sprime];
+    ((int16_t*)&cfo_Q15)[1] = (int16_t)(cfo_im32>>(2+log2_maxh))*Pseq_rx[sprime];
+#ifdef DEBUG_DATA  
+    printf("dd: s %d, pilots(%d,%d : %d,%d : %d,%d : %d,%d) * chest (%d,%d : %d,%d : %d,%d : %d,%d) => cfo_Q15 (%d,%d)\n",s,
+	   ((int16_t *)&pilot1)[0],((int16_t *)&pilot1)[1],
+	   ((int16_t *)&pilot2)[0],((int16_t *)&pilot2)[1],
+	   ((int16_t *)&pilot3)[0],((int16_t *)&pilot3)[1],
+	   ((int16_t *)&pilot4)[0],((int16_t *)&pilot4)[1],
+	   chest[(38+5)<<2],chest[1+((38+5)<<2)],
+	   chest[(38+19)<<2],chest[1+((38+19)<<2)],
+	   chest[(6+1)<<2],chest[1+((6+1)<<2)],
+	   chest[(19+2)<<2],chest[1+((19+2)<<2)],
+	   ((int16_t*)&cfo_Q15)[0],((int16_t*)&cfo_Q15)[1]);
+#endif
+
+    rotate_cpx_vector_norep(rxDATA_F_comp2,&cfo_Q15,rxDATA_F_comp3,48,log2_maxh);
+
 #ifdef DEBUG_DATA
     write_output("rxDATA_F.m","rxDAT_F", rxDATA_F,128,2,1);
     write_output("rxDATA_F_comp.m","rxDAT_F_comp", rxDATA_F_comp,64,1,1);
     sprintf(fname,"rxDATA_F_comp2_%d.m",s);
     sprintf(vname,"rxDAT_F_comp2_%d",s);
     write_output(fname,vname, rxDATA_F_comp2,48,1,1);
+    sprintf(fname,"rxDATA_F_comp3_%d.m",s);
+    sprintf(vname,"rxDAT_F_comp3_%d",s);
+    write_output(fname,vname, rxDATA_F_comp3,48,1,1);
 #endif
-
-
-    // CFO compensation
-
     // LLR Computation
 
     switch (rxv->rate>>1) {
@@ -251,7 +307,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
       memset(rxDATA_llr,0,48);
       for (k=0;k<48;k++) {
 	pos = interleaver_bpsk[k];
-	tmp = ((int16_t*)rxDATA_F_comp2)[pos<<1]>>4;
+	tmp = ((int16_t*)rxDATA_F_comp3)[pos<<1]>>4;
 	if (tmp<-8)
 	  rxDATA_llr[k] = -8;
 	else if (tmp>7)
@@ -276,7 +332,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
       memset(rxDATA_llr,0,96);
       for (k=0;k<96;k++) {
 	pos = interleaver_qpsk[k];
-	tmp = ((int16_t*)rxDATA_F_comp2)[pos]>>4;
+	tmp = ((int16_t*)rxDATA_F_comp3)[pos]>>4;
 
 	if (tmp<-8)
 	  rxDATA_llr[k] = -8;
@@ -302,11 +358,11 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	pos = interleaver_16qam[k];
 	//	printf("k %d, pos %d\n",k,pos);
 	if ((pos&1)==1) {
-	  tmp = ((int16_t*)rxDATA_F_comp2)[pos>>1]>>4;
+	  tmp = ((int16_t*)rxDATA_F_comp3)[pos>>1]>>4;
 	  //printf("pos (msb) %d : %d\n",pos>>1,tmp);
 	}
 	else {
-	  tmp = ((int16_t*)rxDATA_F_comp2)[pos>>1];
+	  tmp = ((int16_t*)rxDATA_F_comp3)[pos>>1];
 	  tmp = (tmp<0)? tmp : -tmp;
 	  tmp = (tmp + rxDATA_F_mag[pos>>2])>>4;
 	  //printf("pos (lsb) %d : rxDATA_F_mag[%d] %d : %d (%d)\n",pos>>1,pos>>2,rxDATA_F_mag[pos>>2],tmp,((int16_t*)rxDATA_F_comp2)[pos>>1]);
