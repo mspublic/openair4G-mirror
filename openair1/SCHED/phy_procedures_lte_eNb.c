@@ -1727,11 +1727,6 @@ void process_HARQ_feedback(u8 UE_id,
 	  
 	  }
 	  
-	  phy_vars_eNB->eNB_UE_stats[(u8)UE_id].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS - 
-						       phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS_last)*10;
-	
-	  phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS_last = phy_vars_eNB->eNB_UE_stats[(u8)UE_id].total_TBS;
-	  
 	  // Do fine-grain rate-adaptation for DLSCH 
 	  if (ue_stats->dlsch_NAK[0] > dlsch->error_threshold) {
 	    if (ue_stats->dlsch_mcs_offset == 1)
