@@ -287,7 +287,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	   ((int16_t*)&cfo_Q15)[0],((int16_t*)&cfo_Q15)[1]);
 #endif
 
-    rotate_cpx_vector_norep(rxDATA_F_comp2,&cfo_Q15,rxDATA_F_comp3,48,log2_maxh);
+    rotate_cpx_vector_norep(rxDATA_F_comp2,&cfo_Q15,rxDATA_F_comp3,48,log2_maxh>>1);
 
 #ifdef DEBUG_DATA
     sprintf(fname,"rxDATA_F%d.m",s);

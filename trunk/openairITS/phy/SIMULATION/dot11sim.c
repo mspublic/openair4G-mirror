@@ -21,7 +21,7 @@
 
 uint16_t rev64[64];
 
-#define RX_THRES_dB 50
+#define RX_THRES_dB 40
 
 int main(int argc, char **argv) {
 
@@ -318,15 +318,20 @@ int main(int argc, char **argv) {
 		if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,NULL)) {
 		  for (i=0;i<rxv->sdu_length+6;i++) {
 		    if (data_ind[i]!=data_ind_rx[i]) {
-		      //		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
+		      		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
 		      misdetected_errors++;
 		      errors++;
 		    }
 		  }
 		} // initial_synch returns IDLE
 		else {
-		  printf("Running data_detection fails\n");
-		  
+		  /*		  printf("Running data_detection fails\n");
+		  for (i=0;i<rxv->sdu_length+6;i++) {
+		    if (data_ind[i]!=data_ind_rx[i]) {
+		      printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
+		    }
+		  }
+		  */
 		}
 		break;
 	      }
