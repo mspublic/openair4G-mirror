@@ -265,6 +265,7 @@ typedef struct
 {
   /// Module ID indicator for this instance
   u8 Mod_id;
+  u8 CC_id;
   u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
