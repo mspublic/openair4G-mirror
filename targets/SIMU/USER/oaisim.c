@@ -998,7 +998,7 @@ init_bypass ();
       LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
       if (oai_emulation.info.transmission_mode == 5) {
 	eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
 						     (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
 						     //(awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
@@ -1009,7 +1009,7 @@ init_bypass ();
 	}
       else {
 	eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
 						     (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
@@ -1018,7 +1018,7 @@ init_bypass ();
 	}
       random_channel(eNB2UE[eNB_id][UE_id][CC_id]);      
       LOG_D(OCM,"[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
-      UE2eNB[UE_id][eNB_id][CC_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
+      UE2eNB[UE_id][eNB_id][CC_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_rx,
 						   (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						   //Rayleigh1,
@@ -1401,11 +1401,11 @@ init_bypass ();
 //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 {
     if ((frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
-      write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0][0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0][0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size,1,1);
 
-      write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0][0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     } 
   }
