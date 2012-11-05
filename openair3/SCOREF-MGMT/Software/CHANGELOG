@@ -1,4 +1,10 @@
 
+v1.2.0 (released on 5 Nov 2012)
+* Release version
+* UdpServer class renamed as UdpSocket
+* ManagementClient class has its own socket now (currently not in use, though)
+* README.RUNNING updated with FACilities configuration files directory
+
 v1.1.13
 * Bugfix erase/remove idiom error is fixed in mgmt_configuration.cpp
 * PacketHandlerResult class is created to carry the result and the response packet if there's one

@@ -50,7 +50,7 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "util/mgmt_udp_server.hpp"
+#include "util/mgmt_udp_socket.hpp"
 #include "mgmt_packet_handler.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 	}
 
 	ManagementClientManager clientManager(mib, configuration, logger);
-	UdpServer server(configuration.getServerPort(), logger);
+	UdpSocket server(configuration.getServerPort(), logger);
 
 	try {
 		/**
@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
 		logger.info("Starting Management & GeoNetworking Interface...");
 		logger.info("Reading configuration file...");
 
-		vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
+		vector<unsigned char> rxBuffer(UdpSocket::RX_BUFFER_SIZE);
 
 		try {
 			for (;;) {
@@ -233,10 +233,11 @@ int main(int argc, char** argv) {
 				}
 
 				// Revert buffer size to initial
-				rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
+				rxBuffer.reserve(UdpSocket::RX_BUFFER_SIZE);
 			}
-		} catch (std::exception& e) {
-			logger.error(e.what());
+		} catch (Exception& e) {
+			e.updateStackTrace("Something went terribly wrong, exiting...");
+			e.printStackTrace();
 		}
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot initialise SCOREF-MGMT module, exiting...");

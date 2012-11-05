@@ -52,7 +52,7 @@ ManagementClientManager::~ManagementClientManager() {
 	clientVector.clear();
 }
 
-bool ManagementClientManager::updateManagementClientState(UdpServer& clientConnection, EventType eventType) {
+bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConnection, EventType eventType) {
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
@@ -60,11 +60,11 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 	 * Traverse client list and check if we already have this client
 	 */
 	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getClient().address().to_string());
-		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getClient().port()));
+		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getRecipient().address().to_string());
+		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getRecipient().port()));
 
-		if ((*it)->getAddress() == clientConnection.getClient().address() && (*it)->getPort() == clientConnection.getClient().port()) {
-			logger.trace("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is found");
+		if ((*it)->getAddress() == clientConnection.getRecipient().address() && (*it)->getPort() == clientConnection.getRecipient().port()) {
+			logger.trace("A client object for " + clientConnection.getRecipient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getRecipient().port()) + " is found");
 			client = *it;
 			clientExists = true;
 		}
@@ -84,7 +84,7 @@ bool ManagementClientManager::updateManagementClientState(UdpServer& clientConne
 		}
 
 		clientVector.push_back(newClient);
-		logger.info("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is created");
+		logger.info("A client object for " + clientConnection.getRecipient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getRecipient().port()) + " is created");
 
 		client = newClient;
 	}

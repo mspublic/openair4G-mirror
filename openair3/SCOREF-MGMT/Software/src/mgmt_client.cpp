@@ -44,19 +44,28 @@
 #include <boost/lexical_cast.hpp>
 #include "mgmt_client.hpp"
 
-ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpSocket& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
 	: mib(mib), logger(logger) {
 	/**
 	 * Check that source port is not an ephemeral port which would
 	 * change every time a client sendto()s to MGMT
-	 */
-	this->client = clientConnection.getClient();
-	/**
 	 * TODO Ephemeral port range could be read from /proc/sys/net/ipv4/ip_local_port_range
 	 */
-	if (client.port() >= 32768 && client.port() <= 61000) {
+	if (clientConnection.getRecipient().port() >= 32768 && clientConnection.getRecipient().port() <= 61000) {
 		throw Exception("Client has an ephemeral port number that will change every time it sends data and this will screw ManagementClientManager's state", logger);
 	}
+
+	/**
+	 * Create a UDP socket for this client
+	 */
+	clientSocket = &clientConnection;
+#if 0
+	try {
+		clientSocket = new UdpSocket(clientConnection.getRecipient().address().to_string(), clientConnection.getRecipient().port(), logger);
+	} catch (...) {
+		throw Exception("Cannot create a UDP socket for the client!", logger);
+	}
+#endif
 
 	/**
 	 * Initialise state strings map
@@ -83,8 +92,8 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& cl
 	/**
 	 * Initialise InquiryThread object for Wireless State updates
 	 */
-	// todo who is going to join() this thread?
-	inquiryThreadObject = new InquiryThread(mib, clientConnection, wirelessStateUpdateInterval, locationUpdateInterval, logger);
+	// TODO who is going to join() this thread?
+	inquiryThreadObject = new InquiryThread(mib, *this->clientSocket, wirelessStateUpdateInterval, locationUpdateInterval, logger);
 	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
 
@@ -98,14 +107,15 @@ ManagementClient::~ManagementClient() {
 
 	delete inquiryThreadObject;
 	delete inquiryThread;
+	delete clientSocket;
 }
 
 boost::asio::ip::address ManagementClient::getAddress() const {
-	return client.address();
+	return clientSocket->getRecipient().address();
 }
 
 unsigned short int ManagementClient::getPort() const {
-	return client.port();
+	return clientSocket->getRecipient().port();
 }
 
 ManagementClient::ManagementClientState ManagementClient::getState() const {
@@ -138,14 +148,14 @@ bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
 }
 
 bool ManagementClient::operator==(const ManagementClient& client) const {
-	if (this->client.address() == client.getAddress())
+	if (this->clientSocket->getRecipient().address() == client.getAddress())
 		return true;
 
 	return false;
 }
 
 bool ManagementClient::operator<(const ManagementClient& client) const {
-	if (this->client.address() < client.getAddress())
+	if (this->clientSocket->getRecipient().address() < client.getAddress())
 		return true;
 
 	return false;
@@ -154,8 +164,8 @@ bool ManagementClient::operator<(const ManagementClient& client) const {
 string ManagementClient::toString() {
 	stringstream ss;
 
-	ss << "ManagementClient[ip:" << client.address().to_string()
-		<< ", port:" << boost::lexical_cast<string>(client.port())
+	ss << "ManagementClient[ip:" << clientSocket->getRecipient().address().to_string()
+		<< ", port:" << boost::lexical_cast<string>(clientSocket->getRecipient().port())
 		<< ", state:" << clientStateStringMap[state] << "]";
 
 	return ss.str();

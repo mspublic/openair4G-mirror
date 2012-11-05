@@ -105,7 +105,7 @@ class ManagementClient {
 		 * @param locationUpdateInterval Determines how frequent the location update will be performed
 		 * @logger Logger object reference
 		 */
-		ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		ManagementClient(ManagementInformationBase& mib, UdpSocket& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
@@ -171,9 +171,9 @@ class ManagementClient {
 		 */
 		ManagementInformationBase& mib;
 		/**
-		 * Client's UDP socket information
+		 * Client's UDP socket
 		 */
-		udp::endpoint client;
+		UdpSocket* clientSocket;
 		/**
 		 * Client's connection state with Management module
 		 */
