@@ -1091,7 +1091,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   u8 status=0;//,status0 = 0,status1 = 0;
   //  u8 k=0;
   u8 rb_table_index;
-  u16 TBS,first_rb=0,i;
+  u16 TBS,first_rb=1,i;
   u32 buffer_occupancy;
   u32 tmp_bsr;
   u32 cqi_req,cshift,ndi,mcs,rballoc;

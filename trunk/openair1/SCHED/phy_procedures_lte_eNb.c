@@ -2283,7 +2283,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	//	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1] = 0;
 
 
-
+#ifdef OAI_EMU
+	    if (abstraction_flag == 0)
+	      dump_ulsch(phy_vars_eNB, last_slot>>1, i);
+#endif
 
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 	  LOG_I(PHY,"[eNB %d][RAPROC] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
@@ -2306,13 +2309,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->ulsch_eNB[(u32)i]->Msg3_active = 0;
 	    //phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 0;
 
-	    /*
-#ifdef USER_MODE
-	    if (abstraction_flag == 0)
-	      dump_ulsch(phy_vars_eNB);
-	    exit(-1);
-#endif
-	    */
 	  }
 	  else {
 	    // activate retransmission for Msg3 (signalled to UE PHY by PHICH (not MAC/DCI)
