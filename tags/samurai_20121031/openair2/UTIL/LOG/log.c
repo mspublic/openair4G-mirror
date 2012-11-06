@@ -1,0 +1,621 @@
+/*******************************************************************************
+
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2010 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+/*! \file log.c
+* \brief log implementaion
+* \author Navid Nikaein
+* \date 2011
+* \version 0.5
+* @ingroup util
+
+*/
+
+//#define LOG_TEST 1
+
+#define COMPONENT_LOG
+#define COMPONENT_LOG_IF
+
+
+
+//static unsigned char       fifo_print_buffer[FIFO_PRINTF_MAX_STRING_SIZE];
+
+#include "log.h"
+#include "log_vars.h"
+#include "vcd_signal_dumper.h"
+
+#ifdef USER_MODE
+//#include "UTIL/OCG/OCG.h"
+//#include "UTIL/OCG/OCG_extern.h"
+#include <string.h>
+#include <time.h>
+#else
+#    define FIFO_PRINTF_MAX_STRING_SIZE   1000
+#    define FIFO_PRINTF_NO              62
+#    define FIFO_PRINTF_SIZE            65536
+
+#endif
+
+// made static and not local to logRecord() for performance reasons
+static char g_buff_tmp  [MAX_LOG_ITEM];
+static char g_buff_info [MAX_LOG_INFO];
+static char g_buff_total[MAX_LOG_TOTAL];
+
+
+static int gfd;
+
+static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN};	/*!< \brief Optional start-format strings for highlighting */
+
+static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
+
+static int bypass_log_hdr;
+
+//extern MAC_xface *mac_xface;
+
+int logInit (void) {
+  
+#ifdef USER_MODE
+  int i;
+  g_log = calloc(1, sizeof(log_t));
+  memset(g_log, 0, sizeof(log_t));
+#else
+  g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
+#endif
+  if (g_log == NULL) {
+#ifdef USER_MODE
+    perror ("cannot allocated memory for log generation modeul \n");
+    exit(-1);
+#else
+    printk("cannot allocated memory for log generation modeul \n");
+    return(-1);
+#endif
+  }
+  
+  g_log->log_component[PHY].name = "PHY";
+    g_log->log_component[PHY].level = LOG_INFO;
+    g_log->log_component[PHY].flag =  LOG_MED;
+    g_log->log_component[PHY].interval =  1;
+    g_log->log_component[PHY].fd = 0;
+    g_log->log_component[PHY].filelog = 0;
+    g_log->log_component[PHY].filelog_name = "/tmp/phy.log";
+    
+    g_log->log_component[MAC].name = "MAC";
+    g_log->log_component[MAC].level = LOG_DEBUG;
+    g_log->log_component[MAC].flag =  LOG_MED;
+    g_log->log_component[MAC].interval =  1;
+    g_log->log_component[MAC].fd = 0;
+    g_log->log_component[MAC].filelog = 0;
+    g_log->log_component[MAC].filelog_name = "/tmp/mac.log";
+    
+    g_log->log_component[OPT].name = "OPT";
+    g_log->log_component[OPT].level = LOG_INFO;
+    g_log->log_component[OPT].flag = LOG_MED;
+    g_log->log_component[OPT].interval =  1;
+    g_log->log_component[OPT].fd = 0;
+    g_log->log_component[OPT].filelog = 0;
+    g_log->log_component[OPT].filelog_name = "";
+
+    g_log->log_component[RLC].name = "RLC";
+    g_log->log_component[RLC].level = LOG_INFO;
+    g_log->log_component[RLC].flag = LOG_MED;
+    g_log->log_component[RLC].interval =  1;
+    g_log->log_component[RLC].fd = 0;
+    g_log->log_component[RLC].filelog = 0;
+    g_log->log_component[RLC].filelog_name = "/tmp/rlc.log";
+    
+    g_log->log_component[PDCP].name = "PDCP";
+    g_log->log_component[PDCP].level = LOG_INFO;
+    g_log->log_component[PDCP].flag = LOG_MED;
+    g_log->log_component[PDCP].interval =  1;
+    g_log->log_component[PDCP].fd = 0;
+    g_log->log_component[PDCP].filelog = 0;
+    g_log->log_component[PDCP].filelog_name = "/tmp/pdcp.log";
+    
+    g_log->log_component[RRC].name = "RRC";
+    g_log->log_component[RRC].level = LOG_TRACE;
+    g_log->log_component[RRC].flag = LOG_MED;
+    g_log->log_component[RRC].interval =  1;
+    g_log->log_component[RRC].fd = 0;
+    g_log->log_component[RRC].filelog = 0;
+    g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
+    
+    g_log->log_component[EMU].name = "EMU";
+    g_log->log_component[EMU].level = LOG_INFO;
+    g_log->log_component[EMU].flag =  LOG_MED; 
+    g_log->log_component[EMU].interval =  1;
+    g_log->log_component[EMU].fd = 0;
+    g_log->log_component[EMU].filelog = 0;
+    g_log->log_component[EMU].filelog_name = "";
+    
+    g_log->log_component[OMG].name = "OMG";
+    g_log->log_component[OMG].level = LOG_INFO;
+    g_log->log_component[OMG].flag =  LOG_MED;
+    g_log->log_component[OMG].interval =  1;
+    g_log->log_component[OMG].fd = 0;
+    g_log->log_component[OMG].filelog = 0;
+    g_log->log_component[OMG].filelog_name = "";
+    
+    g_log->log_component[OTG].name = "OTG";
+    g_log->log_component[OTG].level = LOG_FILE;
+    g_log->log_component[OTG].flag =  LOG_MED;
+    g_log->log_component[OTG].interval =  1;
+    g_log->log_component[OTG].fd = 0;
+    g_log->log_component[OTG].filelog = 0;
+    g_log->log_component[OTG].filelog_name = "/tmp/otg.log";
+
+    g_log->log_component[OTG_LATENCY].name = "OTG_LATENCY";
+    g_log->log_component[OTG_LATENCY].level = LOG_FILE;
+    g_log->log_component[OTG_LATENCY].flag =  LOG_MED;
+    g_log->log_component[OTG_LATENCY].interval =  1;
+    g_log->log_component[OTG_LATENCY].fd = 0;
+    g_log->log_component[OTG_LATENCY].filelog = 0;
+    g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
+
+
+    g_log->log_component[OTG_OWD].name = "OTG_OWD";
+    g_log->log_component[OTG_OWD].level = LOG_FILE;
+    g_log->log_component[OTG_OWD].flag =  LOG_MED;
+    g_log->log_component[OTG_OWD].interval =  1;
+    g_log->log_component[OTG_OWD].fd = 0;
+    g_log->log_component[OTG_OWD].filelog = 0;
+    g_log->log_component[OTG_OWD].filelog_name = "/tmp/otg_owd.log";
+
+    g_log->log_component[OCG].name = "OCG";
+    g_log->log_component[OCG].level = LOG_INFO;
+    g_log->log_component[OCG].flag =  LOG_MED;
+    g_log->log_component[OCG].interval =  1;
+    g_log->log_component[OCG].fd = 0;
+    g_log->log_component[OCG].filelog = 0;
+    g_log->log_component[OCG].filelog_name = "";
+    
+    g_log->log_component[PERF].name = "PERF";
+    g_log->log_component[PERF].level = LOG_INFO;
+    g_log->log_component[PERF].flag =  LOG_MED;
+    g_log->log_component[PERF].interval =  1;
+    g_log->log_component[PERF].fd = 0;
+    g_log->log_component[PERF].filelog = 0;
+    g_log->log_component[PERF].filelog_name = "";
+    
+    g_log->log_component[OIP].name = "OIP";
+    g_log->log_component[OIP].level = LOG_INFO;
+    g_log->log_component[OIP].flag =  LOG_MED;
+    g_log->log_component[OIP].interval =  1;
+    g_log->log_component[OIP].fd = 0;
+    g_log->log_component[OIP].filelog = 0;
+    g_log->log_component[OIP].filelog_name = "";
+    
+    g_log->log_component[CLI].name = "CLI";
+    g_log->log_component[CLI].level = LOG_INFO;
+    g_log->log_component[CLI].flag =  LOG_MED;
+    g_log->log_component[CLI].interval =  1;
+    g_log->log_component[CLI].fd = 0;
+    g_log->log_component[CLI].filelog =  0;
+    g_log->log_component[CLI].filelog_name = "";
+     
+    g_log->log_component[MSC].name = "MSC";
+    g_log->log_component[MSC].level = LOG_TRACE;
+    g_log->log_component[MSC].flag =  LOG_MED;
+    g_log->log_component[MSC].interval =  1;
+    g_log->log_component[MSC].fd = 0;
+    g_log->log_component[MSC].filelog =  0;
+    g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
+ 
+    g_log->log_component[OCM].name = "OCM";
+    g_log->log_component[OCM].level = LOG_TRACE;
+    g_log->log_component[OCM].flag =  LOG_MED;
+    g_log->log_component[OCM].interval =  1;
+    g_log->log_component[OCM].fd = 0;
+    g_log->log_component[OCM].filelog =  0;
+    g_log->log_component[OCM].filelog_name = "/tmp/ocm.log";
+       
+    g_log->level2string[LOG_EMERG]         = "G"; //EMERG
+    g_log->level2string[LOG_ALERT]         = "A"; // ALERT
+    g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
+    g_log->level2string[LOG_ERR]           = "E"; // ERROR
+    g_log->level2string[LOG_WARNING]       = "W"; // WARNING
+    g_log->level2string[LOG_NOTICE]        = "N"; // NOTICE
+    g_log->level2string[LOG_INFO]          = "I"; //INFO
+    g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
+    g_log->level2string[LOG_FILE]          = "F"; // file
+    g_log->level2string[LOG_TRACE]         = "T"; // TRACE
+
+    g_log->onlinelog = 1; //online log file
+    g_log->syslog = 0; 
+    g_log->filelog   = 0;
+    g_log->level  = LOG_TRACE;
+    g_log->flag   = LOG_LOW;
+ 
+#ifdef USER_MODE  
+  g_log->config.remote_ip      = 0;
+  g_log->config.remote_level   = LOG_EMERG;
+  g_log->config.facility       = LOG_LOCAL7;
+  g_log->config.audit_ip       = 0;
+  g_log->config.audit_facility = LOG_LOCAL6;
+  g_log->config.format         = 0x00; // online debug inactive
+  
+  g_log->filelog_name = "/tmp/openair.log";
+ 
+  if (g_log->syslog) {
+    openlog(g_log->log_component[EMU].name, LOG_PID, g_log->config.facility);
+  } 
+  if (g_log->filelog) {
+    gfd = open(g_log->filelog_name, O_WRONLY | O_CREAT, 0666);
+  }
+  // could put a loop here to check for all comps
+  for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
+    if (g_log->log_component[i].filelog == 1 ) 
+      g_log->log_component[i].fd = open(g_log->log_component[i].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+  }
+#else
+  g_log->syslog = 0; 
+  g_log->filelog   = 0;
+  printk ("[OPENAIR2] LOG INIT\n");
+  rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
+#endif
+
+#ifdef USER_MODE  
+  printf("log init done\n");
+#else
+  printk("log init done\n");
+#endif
+
+}
+
+//inline 
+void logRecord( const char *file, const char *func,
+		int line,  int comp, int level, 
+		char *format, ...) {
+   
+ vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
+
+ int len, i;
+  va_list args;
+  log_component_t *c;
+#ifdef USER_MODE
+  struct timespec time_spec;
+  unsigned int time_now_ns;
+  unsigned int time_now_s;
+//  clock_gettime (CLOCK_REALTIME, &time_spec);
+  time_now_ns = (unsigned int) time_spec.tv_nsec;
+  //time_now_s = (unsigned int) time_spec.tv_sec;
+   //clock_t time_now = clock() / (CLOCKS_PER_SEC / 1000);// time in ms
+#endif
+
+  g_buff_total[0] = '\0';
+  c = &g_log->log_component[comp];
+  
+  // do not apply filtering for LOG_F
+  // only log messages which are enabled and are below the global log level and component's level threshold
+  if ( (level != LOG_FILE) && ( (c->level > g_log->level) || (level > c->level) || (level > g_log->level)) ){
+    //  || ((mac_xface->frame % c->interval) != 0)) { 
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
+    return;
+   }
+   // adjust syslog level for TRACE messages
+   if (g_log->syslog) {
+     if (g_log->level > LOG_DEBUG) { 
+       g_log->level = LOG_DEBUG;
+     }
+   }
+
+  va_start(args, format);
+  len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
+  va_end(args);
+
+  //printf (g_buff_info);
+  //return; 
+ // make sure that for log trace the extra info is only printed once, reset when the level changes
+  if ((level == LOG_FILE) ||  (c->flag == LOG_NONE) ){
+    bypass_log_hdr = 1;
+  }
+  else if (((level < LOG_TRACE) && (level >= LOG_EMERG)) ) {
+    bypass_log_hdr = 0;
+  }
+   
+  if (bypass_log_hdr == 0){ 
+
+#ifdef USER_MODE
+    if ( (g_log->flag & FLAG_TIME) || (c->flag & FLAG_TIME)  )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%u]",
+		     time_now_ns);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+#endif    
+    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
+		    log_level_highlight_start[g_log->level]);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+    
+    if ( (g_log->flag & FLAG_COMP) || (c->flag & FLAG_COMP) ){
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+		    g_log->log_component[comp].name);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+  
+    if ( (g_log->flag & FLAG_LEVEL) || (c->flag & FLAG_LEVEL) ){
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+		    g_log->level2string[level]);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+    
+    if (  (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s] ",
+		    func);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+    
+    if (  (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s:%d]",
+		    file,line);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+    
+    if (  (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s", 
+		    log_level_highlight_end[g_log->level]);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+  }
+  // log trace and not reach a new line with 3 bytes
+  if ((level == LOG_TRACE) && (is_newline(g_buff_info,3) == 0 )){
+      bypass_log_hdr = 1;
+  }
+  else
+    bypass_log_hdr = 0;
+  
+  
+
+  strncat(g_buff_total, g_buff_info, MAX_LOG_TOTAL-1);
+  //  strncat(g_buff_total, "\n", MAX_LOG_TOTAL);
+
+#ifdef USER_MODE
+  // OAI printf compatibility 
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE)) 
+    printf("%s",g_buff_total);
+
+  if (g_log->syslog) {
+    syslog(g_log->level, g_buff_total);
+  } 
+  if (g_log->filelog) {
+    write(gfd, g_buff_total, strlen(g_buff_total));
+  } 
+  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
+      write(g_log->log_component[comp].fd, g_buff_total, strlen(g_buff_total));
+  }
+#else
+  if (len > MAX_LOG_TOTAL) {
+    rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
+  }
+  if (len > 0) {
+   rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
+  }
+#endif
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
+
+}
+int  set_log(int component, int level, int interval) {
+  
+  if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
+    if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
+      g_log->log_component[component].level = level;
+      switch (level) {
+      case LOG_TRACE: 
+	g_log->log_component[component].flag = LOG_MED ;
+	break;
+      case LOG_DEBUG:
+	g_log->log_component[component].flag = LOG_MED ;
+	break;
+      case LOG_INFO:
+	g_log->log_component[component].flag = LOG_LOW ;
+	break;
+      default:
+	g_log->log_component[component].flag = LOG_NONE ;
+	break;
+      }
+    }
+    if ((interval > 0) && (interval <= 0xFF)){
+      g_log->log_component[component].interval = interval;
+    }
+    return 0;
+  }
+  else
+    return -1;
+}
+
+int  set_comp_log(int component, int level, int verbosity, int interval) {
+  
+  if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
+    if ((verbosity == LOG_NONE) || (verbosity == LOG_LOW) || (verbosity == LOG_MED) || (verbosity == LOG_FULL) || (verbosity == LOG_HIGH) ) {
+      g_log->log_component[component].flag = verbosity; 
+    }
+    if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
+	 g_log->log_component[component].level = level;
+    }
+    if ((interval > 0) && (interval <= 0xFF)){
+      g_log->log_component[component].interval = interval;
+    }
+    return 0;
+  }
+  else
+    return -1;
+}
+
+void set_glog(int level, int verbosity) {
+  g_log->level = level;
+  g_log->flag = verbosity;
+}
+void set_glog_syslog(int enable) {
+  g_log->syslog = enable;
+}
+void set_glog_onlinelog(int enable) {
+  g_log->onlinelog = enable;
+}
+void set_glog_filelog(int enable) {
+  g_log->filelog = enable;
+}
+
+
+/*
+ * for the two functions below, the passed array must have a final entry
+ * with string value NULL
+ */
+/* map a string to an int. Takes a mapping array and a string as arg */
+int map_str_to_int(mapping *map, const char *str){
+    while (1) {
+        if (map->name == NULL) {
+            return(-1);
+        }
+        if (!strcmp(map->name, str)) {
+            return(map->value);
+        }
+        map++;
+    }
+}
+
+/* map an int to a string. Takes a mapping array and a value */
+char *map_int_to_str(mapping *map, int val) {
+    while (1) {
+        if (map->name == NULL) {
+            return NULL;
+        }
+        if (map->value == val) {
+            return map->name;
+        }
+        map++;
+    }
+}
+int is_newline( char *str, int size){
+    int i;
+    for (  i = 0; i < size; i++ ) {
+      if ( str[i] == '\n' )
+	return 1;
+    }
+    /* if we get all the way to here, there must not have been a newline! */
+    return 0;
+}
+void logClean (void) {
+  int i;
+#ifndef USER_MODE
+  rtf_destroy (FIFO_PRINTF_NO);
+#else
+  if (g_log->syslog) {
+    closelog();
+  } 
+  if (g_log->filelog) {
+    close(gfd);
+  }
+  for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
+    if (g_log->log_component[i].filelog) 
+      close(g_log->log_component[i].fd);
+  }
+#endif
+
+}
+
+
+#ifdef LOG_TEST
+
+int
+main(int argc, char *argv[]) {
+
+  logInit();
+
+  //set_log_syslog(1);
+  test_log();
+  
+  return 1;
+}
+
+int test_log(){
+
+  LOG_ENTER(MAC); // because the default level is DEBUG
+  LOG_I(EMU, "1 Starting OAI logs version %s Build date: %s on %s\n", 
+	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
+  LOG_D(MAC, "1 debug  MAC \n");
+  LOG_N(MAC, "1 notice MAC \n");
+  LOG_W(MAC, "1 warning MAC \n");
+ 
+  set_comp_log(EMU, LOG_INFO, FLAG_ONLINE);
+  set_comp_log(MAC, LOG_WARNING, 0);
+  
+  LOG_I(EMU, "2 Starting OAI logs version %s Build date: %s on %s\n", 
+	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
+  LOG_E(MAC, "2 emerge MAC\n");
+  LOG_D(MAC, "2 debug  MAC \n");
+  LOG_N(MAC, "2 notice MAC \n");
+  LOG_W(MAC, "2 warning MAC \n");
+  LOG_I(MAC, "2 info MAC \n");
+  
+  
+  set_comp_log(MAC, LOG_NOTICE, 1);
+  
+  LOG_ENTER(MAC);
+  LOG_I(EMU, "3 Starting OAI logs version %s Build date: %s on %s\n", 
+	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
+  LOG_D(MAC, "3 debug  MAC \n");
+  LOG_N(MAC, "3 notice MAC \n");
+  LOG_W(MAC, "3 warning MAC \n");
+  LOG_I(MAC, "3 info MAC \n");
+  
+  set_comp_log(MAC, LOG_DEBUG,1);
+  set_comp_log(EMU, LOG_DEBUG,1);
+ 
+  LOG_ENTER(MAC);
+  LOG_I(EMU, "4 Starting OAI logs version %s Build date: %s on %s\n", 
+	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
+  LOG_D(MAC, "4 debug  MAC \n");
+  LOG_N(MAC, "4 notice MAC \n");
+  LOG_W(MAC, "4 warning MAC \n");
+  LOG_I(MAC, "4 info MAC \n");
+
+ 
+  set_comp_log(MAC, LOG_DEBUG,0);
+  set_comp_log(EMU, LOG_DEBUG,0);
+ 
+  LOG_I(LOG, "5 Starting OAI logs version %s Build date: %s on %s\n", 
+	       BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
+  LOG_D(MAC, "5 debug  MAC \n");
+  LOG_N(MAC, "5 notice MAC \n");
+  LOG_W(MAC, "5 warning MAC \n");
+  LOG_I(MAC, "5 info MAC \n");
+  
+ 
+  set_comp_log(MAC, LOG_TRACE,0X07F);
+  set_comp_log(EMU, LOG_TRACE,0X07F);
+  
+  LOG_ENTER(MAC);
+  LOG_I(LOG, "6 Starting OAI logs version %s Build date: %s on %s\n", 
+	BUILD_VERSION, BUILD_DATE, BUILD_HOST);  
+  LOG_D(MAC, "6 debug  MAC \n");
+  LOG_N(MAC, "6 notice MAC \n");
+  LOG_W(MAC, "6 warning MAC \n");
+  LOG_I(MAC, "6 info MAC \n");
+  LOG_EXIT(MAC);
+
+}
+#endif
