@@ -1229,3 +1229,9 @@ int get_db_dl_PathlossChange(u8 dl_PathlossChange){
     break;
   }
 }
+
+/* sec 5.9, 36.321: MAC Reset Procedure */
+int rrc_mac_reset(u8 Mod_id,u8 UE_id) {
+
+	return(1);
+}
