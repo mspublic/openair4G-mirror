@@ -81,18 +81,13 @@ class ManagementClient {
 		 */
 		enum ManagementClientType {
 			/**
-			 * Initial value, this is the value set when a client object
-			 * is created but the type has not yet determined
-			 */
-			UNKNOWN = 0,
-			/**
 			 * GeoNetworking client
 			 */
-			GN = 1,
+			GN = 0,
 			/**
 			 * Facilities client
 			 */
-			FAC = 2
+			FAC = 1
 		};
 
 	public:
@@ -105,17 +100,11 @@ class ManagementClient {
 		 * @param locationUpdateInterval Determines how frequent the location update will be performed
 		 * @logger Logger object reference
 		 */
-		ManagementClient(ManagementInformationBase& mib, UdpSocket& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
 		~ManagementClient();
-
-	private:
-		/**
-		 * Copy constructor to prevent the usage of default copy constructor
-		 */
-		ManagementClient(const ManagementClient& managementClient);
 
 	public:
 		/**
@@ -171,9 +160,9 @@ class ManagementClient {
 		 */
 		ManagementInformationBase& mib;
 		/**
-		 * Client's UDP socket
+		 * Client's UDP socket information
 		 */
-		UdpSocket* clientSocket;
+		udp::endpoint client;
 		/**
 		 * Client's connection state with Management module
 		 */

@@ -28,7 +28,7 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_udp_socket.hpp
+ * \file mgmt_udp_server.hpp
  * \brief A wrapper container to maintain UDP socket connection
  * \company EURECOM
  * \date 2012
@@ -39,8 +39,8 @@
  * \warning none
 */
 
-#ifndef MGMT_UDP_SOCKET_H_
-#define MGMT_UDP_SOCKET_H_
+#ifndef MGMT_UDP_SERVER_H_
+#define MGMT_UDP_SERVER_H_
 
 #include <vector>
 using namespace std;
@@ -56,15 +56,8 @@ using boost::asio::ip::udp;
 /**
  * A wrapper container to maintain UDP socket connection
  */
-class UdpSocket {
+class UdpServer {
 	public:
-		/**
-		 * Socket type enumeration
-		 */
-		enum SOCKET_TYPE {
-			CLIENT_SOCKET = 0,
-			SERVER_SOCKET = 1
-		};
 		/**
 		 * Receive buffer size in bytes
 		 */
@@ -76,30 +69,16 @@ class UdpSocket {
 
 	public:
 		/**
-		 * Constructor for UdpSocket class used as a server socket
+		 * Constructor for UdpServer class
 		 *
-		 * @param portNumber UDP port number that will be listened/connected to
+		 * @param portNumber UDP port number that will be listened for client connections
 		 * @param logger Logger object reference for logging purposes
 		 */
-		UdpSocket(u_int16_t portNumber, Logger& logger);
+		UdpServer(u_int16_t portNumber, Logger& logger);
 		/**
-		 * Constructor for UdpSocket class used as a client socket
-		 *
-		 * @param address IP address
-		 * @param portNumber UDP port number that will be listened/connected to
-		 * @param logger Logger object reference for logging purposes
+		 * Destructor for UdpServer class
 		 */
-		UdpSocket(const string& address, u_int16_t portNumber, Logger& logger);
-		/**
-		 * Destructor for UdpSocket class
-		 */
-		~UdpSocket();
-
-	private:
-		/**
-		 * Copy constructor to prevent the usage of default copy constructor
-		 */
-		UdpSocket(const UdpSocket& udpSocket);
+		~UdpServer();
 
 	public:
 		/**
@@ -129,19 +108,9 @@ class UdpSocket {
 		 *
 		 * @return The reference of udp::endpoint
 		 */
-		const udp::endpoint& getRecipient() const;
-		/**
-		 * Returns string representation of this connection
-		 *
-		 * @return String representation of this class of type std::string
-		 */
-		string toString() const;
+		const udp::endpoint& getClient() const;
 
 	private:
-		/**
-		 * Socket type, client or server
-		 */
-		UdpSocket::SOCKET_TYPE socketType;
 		/**
 		 * The io_service object that the datagram socket will use to dispatch
 		 * handlers for any asynchronous operations performed on the socket
@@ -157,13 +126,13 @@ class UdpSocket {
 		 */
 		udp::socket* socket;
 		/**
-		 * UDP recipient
+		 * UDP client
 		 */
-		boost::asio::ip::udp::endpoint recipient;
+		udp::endpoint client;
 		/**
 		 * Logger object reference for logging purposes
 		 */
 		Logger& logger;
 };
 
-#endif /* MGMT_UDP_SOCKET_H_ */
+#endif /* MGMT_UDP_SERVER_H_ */

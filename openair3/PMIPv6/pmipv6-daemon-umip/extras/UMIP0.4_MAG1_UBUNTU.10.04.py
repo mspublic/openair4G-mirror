@@ -63,7 +63,7 @@ for line in lines:
     elif 'RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks' in line:
         print line
         g_RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks = element
-    elif 'LmaPmipNetworkAddress' in line:
+    elif 'LmaAddress' in line:
         print line
         g_LmaAddress = IPAddress(element)
     elif 'MagAddressIngress' in line:
@@ -163,6 +163,6 @@ if g_pcap == "yes":
 	print value
 
 
-command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/pmip6d -c ' + g_file_config
+command = '/usr/local/sbin/pmip6d -c ' + g_file_config
 subprocess.call(command, shell=True)
 

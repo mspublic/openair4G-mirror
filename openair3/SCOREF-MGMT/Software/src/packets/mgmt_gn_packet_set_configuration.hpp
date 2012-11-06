@@ -87,7 +87,7 @@ class GeonetSetConfigurationEventPacket: public GeonetPacket {
 		 * @param configurationItem Configuration item that'll be serialised into given buffer
 		 * @return true on success, false otherwise
 		 */
-		static bool encodeConfigurationItem(unsigned char* buffer, const ConfigurationItem* configurationItem);
+		bool encodeConfigurationItem(unsigned char* buffer, const ConfigurationItem* configurationItem) const;
 		/**
 		 * Creates a ConfigurationItem by fetching necessary information from
 		 * Management Information Base

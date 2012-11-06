@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -40,58 +40,34 @@
 */
 
 #include <boost/lexical_cast.hpp>
-#include "mgmt_udp_socket.hpp"
-#include "mgmt_exception.hpp"
+#include "mgmt_udp_server.hpp"
 #include "mgmt_util.hpp"
 
 #include <iostream>
 using namespace std;
 
-UdpSocket::UdpSocket(u_int16_t portNumber, Logger& logger)
-	: socketType(UdpSocket::SERVER_SOCKET), logger(logger) {
+UdpServer::UdpServer(u_int16_t portNumber, Logger& logger)
+	: logger(logger) {
 	socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
-	socket->set_option(boost::asio::socket_base::reuse_address(true));
-
-	logger.info("A UDP socket created for port " + boost::lexical_cast<string>(portNumber));
+	logger.info("A UDP server socket created for port " + boost::lexical_cast<string>(portNumber));
 }
 
-UdpSocket::UdpSocket(const string& address, u_int16_t portNumber, Logger& logger)
-	: socketType(UdpSocket::CLIENT_SOCKET), logger(logger) {
-	/**
-	 * Convert incoming string address
-	 */
-	boost::asio::ip::address_v4 recipientAddress;
-	recipientAddress.from_string(address);
-	recipient.address(recipientAddress);
-	recipient.port(portNumber);
-	/**
-	 * Create a socket
-	 */
-	socket = new udp::socket(ioService, recipient);
-	socket->set_option(boost::asio::socket_base::reuse_address(true));
-}
-
-UdpSocket::UdpSocket(const UdpSocket& UdpSocket)
-	: logger(UdpSocket.logger) {
-	throw Exception("Copy constructor is called for an UdpSocket object!", logger);
-}
-
-UdpSocket::~UdpSocket() {
+UdpServer::~UdpServer() {
 	delete socket;
 }
 
-unsigned UdpSocket::receive(vector<unsigned char>& rxBuffer) {
+unsigned UdpServer::receive(vector<unsigned char>& rxBuffer) {
 	boost::system::error_code error;
 	unsigned bytesRead = 0;
 
 	/**
-	 * Ensure there's only one I/O method of UdpSocket running at any given moment
+	 * Ensure there's only one I/O method of UdpServer running at any given moment
 	 */
 	boost::lock_guard<boost::mutex> lock(readMutex);
 
 	try {
 		logger.info("Reading from socket...");
-		bytesRead = socket->receive_from(boost::asio::buffer(rxBuffer), recipient, 0, error);
+		bytesRead = socket->receive_from(boost::asio::buffer(rxBuffer), client, 0, error);
 	} catch (std::exception& e) {
 		logger.error(e.what());
 		return 0;
@@ -102,23 +78,23 @@ unsigned UdpSocket::receive(vector<unsigned char>& rxBuffer) {
 
 	rxBuffer.resize(bytesRead);
 
-	logger.info(boost::lexical_cast<string>(bytesRead) + " byte(s) received from " + recipient.address().to_string() + ":" + boost::lexical_cast<string>(recipient.port()));
+	logger.info(boost::lexical_cast<string>(bytesRead) + " byte(s) received from " + client.address().to_string() + ":" + boost::lexical_cast<string>(client.port()));
 	Util::printHexRepresentation(rxBuffer.data(), rxBuffer.size(), logger);
 
 	return bytesRead;
 }
 
-bool UdpSocket::send(vector<unsigned char>& txBuffer) {
+bool UdpServer::send(vector<unsigned char>& txBuffer) {
 	boost::system::error_code error;
 
 	/**
-	 * Ensure there's only one I/O method of UdpSocket running at any given moment
+	 * Ensure there's only one I/O method of UdpServer running at any given moment
 	 */
 	boost::lock_guard<boost::mutex> lock(writeMutex);
 
 	try {
 		logger.info("Writing...");
-		socket->send_to(boost::asio::buffer(txBuffer), recipient, 0, error);
+		socket->send_to(boost::asio::buffer(txBuffer), client, 0, error);
 		logger.info(boost::lexical_cast<string>(txBuffer.size()) + " byte(s) sent");
 		Util::printHexRepresentation(txBuffer.data(), txBuffer.size(), logger);
 	} catch (std::exception& e) {
@@ -129,7 +105,7 @@ bool UdpSocket::send(vector<unsigned char>& txBuffer) {
 	return true;
 }
 
-bool UdpSocket::send(const GeonetPacket& packet) {
+bool UdpServer::send(const GeonetPacket& packet) {
 	vector<unsigned char> txBuffer(TX_BUFFER_SIZE);
 
 	/**
@@ -142,14 +118,6 @@ bool UdpSocket::send(const GeonetPacket& packet) {
 	return false;
 }
 
-const udp::endpoint& UdpSocket::getRecipient() const {
-	return this->recipient;
-}
-
-string UdpSocket::toString() const {
-	stringstream ss;
-
-	ss << "[address: " << recipient.address() << ", port:" << recipient.port() << "]";
-
-	return ss.str();
+const udp::endpoint& UdpServer::getClient() const {
+	return this->client;
 }

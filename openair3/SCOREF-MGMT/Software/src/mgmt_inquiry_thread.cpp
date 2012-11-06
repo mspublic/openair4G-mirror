@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -49,7 +49,7 @@
 #include <iostream>
 using namespace std;
 
-InquiryThread::InquiryThread(ManagementInformationBase& mib, UdpSocket& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+InquiryThread::InquiryThread(ManagementInformationBase& mib, UdpServer& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
 	: connection(connection), mib(mib), logger(logger) {
 	this->wirelessStateUpdateInterval = wirelessStateUpdateInterval;
 	this->locationUpdateInterval = locationUpdateInterval;

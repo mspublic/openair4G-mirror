@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -66,7 +66,7 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	payloadIndex += 2;
 
 	// ...and communication profile item(s)
-	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator = mib.getCommunicationProfileManager().getProfileMap().begin();
+	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
 	while (iterator != mib.getCommunicationProfileManager().getProfileMap().end()) {
 		Util::encode4byteInteger(buffer, payloadIndex, iterator->second.id);
 		payloadIndex += 4;

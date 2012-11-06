@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -49,8 +49,8 @@ CommunicationProfileManager::CommunicationProfileManager(Logger& logger)
 }
 
 CommunicationProfileManager::~CommunicationProfileManager() {
-	communicationProfileMap.clear();
-	communicationProfileStringMap.clear();
+	communicationProfileMap.empty();
+	communicationProfileStringMap.empty();
 }
 
 bool CommunicationProfileManager::insert(const string& profileIdString, const string& profileDefinitionString) {
@@ -72,7 +72,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 		communicationProfileItem = parse(profileIdString, trimmedProfileDefinitionString);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot parse Communication Profile definitions");
-		throw;
+		throw e;
 	}
 
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(communicationProfileItem.id, communicationProfileItem));
@@ -87,15 +87,13 @@ string CommunicationProfileManager::toString() const {
 
 	ss << "Communication profile count: " << communicationProfileMap.size() << endl;
 
-	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
-	while (it != communicationProfileMap.end()) {
-		ss << "Communication Profile [ID:" << it->second.id
-			<< ", transport:" << it->second.transport
-			<< ", network:" << it->second.network
-			<< ", access: " << it->second.access
-			<< ", channel: " << it->second.channel << "]" << endl;
-
-		++it;
+	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
+	while (iterator != communicationProfileMap.end()) {
+		ss << "Communication Profile [ID:" << iterator->second.id
+			<< ", transport:" << iterator->second.transport
+			<< ", network:" << iterator->second.network
+			<< ", access: " << iterator->second.access
+			<< ", channel: " << iterator->second.channel << "]" << endl;
 	}
 
 	return ss.str();
@@ -178,6 +176,8 @@ CommunicationProfileItem CommunicationProfileManager::parse(const string& profil
 	 * Parse communication profile string and get tokens for each layer
 	 */
 	vector<string> profileItemVector = Util::split(profileDefinitionString, ',');
+	const string transport = profileItemVector[0];
+	const string network = profileItemVector[1];
 	const string access = profileItemVector[2];
 	string channel;
 	/*

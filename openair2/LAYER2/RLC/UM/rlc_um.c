@@ -147,7 +147,7 @@ rlc_um_rx (void *argP, struct mac_data_ind data_indP)
         // Upon reception of a CRLC-CONFIG-Req from upper layer indicating establishment, the RLC entity:
         // -      is created; and
         // -      enters the DATA_TRANSFER_READY state.
-        msg ("[RLC_UM_RX %p] ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", argP);
+        LOG_D(RLC,"[RLC_UM_RX %p] ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", argP);
         free_up (&data_indP.data);
         break;
 
@@ -179,11 +179,11 @@ rlc_um_rx (void *argP, struct mac_data_ind data_indP)
         // Upon reception of a CRLC-CONFIG-Req from upper layer indicating modification, the RLC entity:
         // -      stays in the LOCAL_SUSPEND state;
         // -      modifies only the protocol parameters and timers as indicated by upper layers.
-        msg ("[RLC_UM_RX %p] RLC_LOCAL_SUSPEND_STATE\n", argP);
+        LOG_D(RLC,"[RLC_UM_RX %p] RLC_LOCAL_SUSPEND_STATE\n", argP);
         break;
 
       default:
-        msg ("[RLC_UM_RX][RB %d] TX UNKNOWN PROTOCOL STATE %02X hex\n", rlc->rb_id, rlc->protocol_state);
+        LOG_D(RLC,"[RLC_UM_RX][RB %d] TX UNKNOWN PROTOCOL STATE %02X hex\n", rlc->rb_id, rlc->protocol_state);
   }
 }
 
