@@ -73,7 +73,7 @@ typedef enum  {
 #define MAX_MEAS_ID 6
 
 #define PAYLOAD_SIZE_MAX 1024
-
+#define RRC_BUF_SIZE 140
 
 
 
@@ -121,7 +121,7 @@ typedef struct{
 	u8 ueid_t; //UE index in target cell
 	AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
 	AS_Context_t as_context; /* They are mandatory for HO */
-	uint8_t buf[100];	/* ASN.1 encoded handoverCommandMessage */
+	uint8_t buf[RRC_BUF_SIZE];	/* ASN.1 encoded handoverCommandMessage */
 	int size;		/* size of above message in bytes(I think..) */
 }HANDOVER_INFO;
 

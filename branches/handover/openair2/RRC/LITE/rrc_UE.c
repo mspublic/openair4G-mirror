@@ -926,7 +926,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	      &asn_DEF_DL_DCCH_Message,
 	      (void**)&dl_dcch_msg,
 	      (uint8_t*)Buffer,
-	      120,0,0);
+	      RRC_BUF_SIZE,0,0);
 
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {

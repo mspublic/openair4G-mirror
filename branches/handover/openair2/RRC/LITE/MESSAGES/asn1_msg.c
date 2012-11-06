@@ -1699,9 +1699,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
 				   (void*)&dl_dcch_msg,
 				   buffer,
-				   120);
+				   RRC_BUF_SIZE);
   
-
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
   //#ifdef USER_MODE
   LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
