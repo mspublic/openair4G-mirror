@@ -1195,7 +1195,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 
 void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,u16 UE_index, LTE_DL_FRAME_PARMS *lte_frame_parms) {
 
-  u8 buffer[120];
+  u8 buffer[RRC_BUF_SIZE];
   int size;
   int i;
   uint8_t rv[2];
@@ -1928,7 +1928,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(u8 Mod_id,u32 frame,
 
 	// SRB2
 	eNB_rrc_inst[Mod_id].Srb2[UE_index].Active = 1;
-	eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Srb_id = Idx;
+	eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Srb_id = Idx+1; //Check this!
 	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
