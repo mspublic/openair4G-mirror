@@ -71,6 +71,7 @@ typedef enum {
 	TEAM_FORTRESS,
 	FULL_BUFFER,
   M2M_TRAFFIC,
+	AUTO_PILOT_L,
 }Application;
 
 
