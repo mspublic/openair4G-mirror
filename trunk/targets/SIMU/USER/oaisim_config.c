@@ -59,6 +59,7 @@ mapping otg_app_type_names[] =
     {"gaming_TF", 7},
     {"full_buffer", 8},   
     {"m2m_traffic", 9},
+    {"auto_pilot_l", 9},
     {NULL, -1}
 };
 
