@@ -60,6 +60,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->path_loss_dB   = path_loss_dB;
   chan_desc->first_run      = 1;
   chan_desc->ip             = 0.0;
+  chan_desc->max_Doppler    = max_Doppler;
   chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
   chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
   chan_desc->a              = (struct complex**) malloc(nb_taps*sizeof(struct complex*));
@@ -102,6 +103,8 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   LOG_D(OCM,"[CHANNEL] RF %f\n",chan_desc->ricean_factor);
   for (i=0;i<chan_desc->nb_taps;i++)
     LOG_D(OCM,"[CHANNEL] tap %d: amp %f, delay %f\n",i,chan_desc->amps[i],chan_desc->delays[i]);
+
+  chan_desc->nb_paths=10;
 
   return(chan_desc);
 }
@@ -439,6 +442,32 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   0);
       break;
 
+  case Rayleigh1_800:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 800;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      break;
+
   case Rayleigh1_corr:
       nb_taps = 1;
       Td = 0;
@@ -639,6 +668,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   LOG_D(OCM,"[CHANNEL] RF %f\n",chan_desc->ricean_factor);
   for (i=0;i<chan_desc->nb_taps;i++)
     LOG_D(OCM,"[CHANNEL] tap %d: amp %f, delay %f\n",i,chan_desc->amps[i],chan_desc->delays[i]);
+
+  chan_desc->nb_paths = 10;
 
   return(chan_desc);
 }
