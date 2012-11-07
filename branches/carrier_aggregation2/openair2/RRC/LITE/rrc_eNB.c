@@ -219,7 +219,7 @@ u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 }
 
 /*------------------------------------------------------------------------------*/
-int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
+int rrc_eNB_decode_dcch(u8 Mod_id, u8 CC_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
   /*------------------------------------------------------------------------------*/
 
   asn_dec_rval_t dec_rval;
@@ -323,7 +323,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 
 
 /*------------------------------------------------------------------------------*/
-int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
+int rrc_eNB_decode_ccch(u8 Mod_id, u8 CC_id,u32 frame, SRB_INFO *Srb_info){
   /*------------------------------------------------------------------------------*/
 
   u16 Idx,UE_index;

@@ -160,6 +160,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 
   SRB_INFO *Srb_info;
   int si_window;
+  u8 CC_id;
 
 #ifdef DEBUG_RRC
   if (Srb_id == BCCH)
@@ -234,7 +235,8 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
     Srb_info = &eNB_rrc_inst[Mod_id].Srb0;
     //    msg("\n***********************************INST %d Srb_info %p, Srb_id=%d**********************************\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
     memcpy(Srb_info->Rx_buffer.Payload,Sdu,6);
-    rrc_eNB_decode_ccch(Mod_id,frame,Srb_info);
+    for (CC_id=0;CC_id<MAX_NUM_CC;CC_id++){
+    rrc_eNB_decode_ccch(Mod_id, CC_id ,frame,Srb_info);}
  }
 
   return(0);
@@ -247,7 +249,7 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 }
 
 //------------------------------------------------------------------------------------------------------------------//
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
+void rlcrrc_lite_data_ind( u8 Mod_id, u8 CC_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
@@ -256,7 +258,7 @@ void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu
   LOG_D(RRC,"RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
       DCCH_index,UE_index,sdu_size);
   if (eNB_flag ==1)
-    rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
+    rrc_eNB_decode_dcch(Mod_id, CC_id, frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
     rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,frame,DCCH_index,Buffer,UE_index);
 

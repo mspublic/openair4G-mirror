@@ -798,6 +798,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef OPENAIR2
     // Parse DCI received from MAC
     DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
+				     phy_vars_eNB->CC_id,
 				     phy_vars_eNB->frame,
 				     next_slot>>1);
 #else
@@ -1041,6 +1042,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  
 #ifdef OPENAIR2
 	  DLSCH_pdu = mac_xface->get_dlsch_sdu(phy_vars_eNB->Mod_id,
+					       phy_vars_eNB->CC_id,
 					       phy_vars_eNB->frame,
 					       phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti,
 					       0);
@@ -1134,6 +1136,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 #ifdef OPENAIR2
       DLSCH_pdu = mac_xface->get_dlsch_sdu(phy_vars_eNB->Mod_id,
+					   phy_vars_eNB->CC_id,
 					   phy_vars_eNB->frame,
 					   SI_RNTI,
 					   0);
@@ -1205,6 +1208,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 #ifdef OPENAIR2
       crnti = mac_xface->fill_rar(phy_vars_eNB->Mod_id,
+				  phy_vars_eNB->CC_id,
 				  phy_vars_eNB->frame,
 				  dlsch_input_buffer,
 				  phy_vars_eNB->lte_frame_parms.N_RB_UL);
@@ -1677,6 +1681,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
 	  preamble_delay_list[preamble_max]);
 	  
       mac_xface->initiate_ra_proc(phy_vars_eNB->Mod_id,
+				  phy_vars_eNB->CC_id,
 				  phy_vars_eNB->frame,
 				  preamble_max,
 				  preamble_delay_list[preamble_max],
@@ -1710,6 +1715,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   }
   // check if we have to detect PRACH first
   if ((last_slot&1)==1){
+    	  LOG_I(PHY,"Calling generate_sss : %d\n",last_slot);
+
     //    printf("Checking PRACH for eNB %d, subframe %d\n",phy_vars_eNB->Mod_id,last_slot>>1);
     if (is_prach_subframe(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,last_slot>>1)>0) {
       //      printf("Running prach procedures\n");
@@ -2016,6 +2023,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
 #ifdef OPENAIR2
 	    mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
+				      phy_vars_eNB->CC_id,
 				      phy_vars_eNB->frame,
 				      0);
 #endif
@@ -2068,6 +2076,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
 #ifdef OPENAIR2
 	  mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
+				    phy_vars_eNB->CC_id,
 				    phy_vars_eNB->frame,
 				    0);
 #endif
@@ -2091,6 +2100,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		phy_vars_eNB->frame,harq_pid,i);
 #endif
 	  mac_xface->terminate_ra_proc(phy_vars_eNB->Mod_id,
+				       phy_vars_eNB->CC_id,
 				       phy_vars_eNB->frame,
 				       phy_vars_eNB->ulsch_eNB[i]->rnti,
 				       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b);
@@ -2120,6 +2130,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 #ifdef OPENAIR2
 	  mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
+			    phy_vars_eNB->CC_id,
 			    phy_vars_eNB->frame,
 			    phy_vars_eNB->ulsch_eNB[i]->rnti,
 			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b);
@@ -2243,6 +2254,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		    phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1);
 	    }
 	    mac_xface->SR_indication(phy_vars_eNB->Mod_id,
+				     phy_vars_eNB->CC_id,
 				     phy_vars_eNB->frame,
 				     phy_vars_eNB->dlsch_eNB[i][0]->rnti,last_slot>>1);
 	    
