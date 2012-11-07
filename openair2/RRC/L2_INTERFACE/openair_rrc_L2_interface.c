@@ -78,10 +78,12 @@ s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, s8 *Sdu,u16 Sdu_len,u8 eNB
 /********************************************************************************************************************/
 void rlcrrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer){
 /********************************************************************************************************************/
+u8 CC_id;
 #ifdef CELLULAR
   rrc_L2_rlc_data_ind_rx();
 #else 
-  rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+    for (CC_id=0;CC_id<MAX_NUM_CC;CC_id++){
+  rlcrrc_lite_data_ind(Mod_id,CC_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);}
 #endif //CELLULAR
 }
 
