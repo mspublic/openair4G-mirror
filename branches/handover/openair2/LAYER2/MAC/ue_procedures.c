@@ -1233,5 +1233,13 @@ int get_db_dl_PathlossChange(u8 dl_PathlossChange){
 /* sec 5.9, 36.321: MAC Reset Procedure */
 int rrc_mac_reset(u8 Mod_id,u8 UE_id) {
 
+	//Resetting Bj
+	UE_mac_inst[Mod_id].scheduling_info.Bj[0] = 0;
+	UE_mac_inst[Mod_id].scheduling_info.Bj[1] = 0;
+	UE_mac_inst[Mod_id].scheduling_info.Bj[2] = 0;
+	//Stopping all timers
+	//UE_mac_inst[Mod_id].
+	//timeAlignmentTimer expires
+
 	return(1);
 }
