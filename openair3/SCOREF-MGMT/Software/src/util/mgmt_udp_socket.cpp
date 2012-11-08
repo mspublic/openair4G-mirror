@@ -89,6 +89,12 @@ unsigned UdpSocket::receive(vector<unsigned char>& rxBuffer) {
 	 */
 	boost::lock_guard<boost::mutex> lock(readMutex);
 
+	/**
+	 * Always reset receive buffer size since it's resized after every read
+	 * according to the packet size (and it becomes packet buffer)
+	 */
+	rxBuffer.resize(UdpSocket::RX_BUFFER_SIZE);
+
 	try {
 		logger.info("Reading from socket...");
 		bytesRead = socket->receive_from(boost::asio::buffer(rxBuffer), recipient, 0, error);

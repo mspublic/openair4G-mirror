@@ -56,13 +56,13 @@ bool GeonetLocationTableRequestEventPacket::serialize(vector<unsigned char>& buf
 
 	// Encode header first
 	if (!GeonetPacket::serialize(buffer)) {
-		cerr << "Cannot serialise header into given buffer!" << endl;
+		logger.error("Cannot serialise header into given buffer!");
 		return false;
 	}
 
 	// Then the GN address follows
 	if (!Util::encode8byteInteger(buffer, sizeof(MessageHeader), this->gnAddress)) {
-		cerr << "Cannot serialise GN address into given buffer!" << endl;
+		logger.error("Cannot serialise GN address into given buffer!");
 		return false;
 	}
 

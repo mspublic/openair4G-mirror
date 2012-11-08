@@ -81,23 +81,33 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
 		case MGMT_FAC_EVENT_CONF_REQUEST:
+			logger.info("GET_CONFIGURATION packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleGetConfigurationEvent(new GeonetGetConfigurationEventPacket(packetBuffer, logger));
 
 		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
+			logger.info("NETWORK_STATE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleNetworkStateEvent(new GeonetNetworkStateEventPacket(mib, packetBuffer, logger));
 
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
+			logger.info("WIRELESS_STATE_RESPONSE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleWirelessStateResponseEvent(new GeonetWirelessStateResponseEventPacket(mib, packetBuffer, logger));
 
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
 		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
+			logger.info("COMMUNICATION_PROFILE_REQUEST packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleCommunicationProfileRequestEvent(new GeonetCommunicationProfileRequestPacket(packetBuffer, logger));
 
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
+			logger.info("LOCATION_TABLE_RESPONSE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleLocationTableResponse(new GeonetLocationTableResponseEventPacket(mib, packetBuffer, logger));
 
 		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
+			logger.info("CONFIGURATION_NOTIFICATION packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleConfigurationNotification(new FacConfigurationNotificationPacket(mib, packetBuffer, logger));
+
+		case MGMT_FAC_EVENT_LOCATION_UPDATE:
+			logger.info("LOCATION_UPDATE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + "has been received");
+			return handleLocationUpdate(new GeonetLocationUpdateEventPacket(mib, packetBuffer, logger));
 
 		/**
 		 * Handle unexpected packets as well
@@ -185,4 +195,12 @@ PacketHandlerResult* PacketHandler::handleCommunicationProfileRequestEvent(Geone
 	delete request;
 
 	return new PacketHandlerResult(PacketHandlerResult::DELIVER_PACKET, reply);
+}
+
+PacketHandlerResult* PacketHandler::handleLocationUpdate(GeonetLocationUpdateEventPacket* packet) {
+	delete packet;
+	/*
+	 * Creation of a GeonetWirelessStateEventPacket is enough for processing...
+	 */
+	return new PacketHandlerResult(PacketHandlerResult::DISCARD_PACKET, NULL);
 }

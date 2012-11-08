@@ -50,6 +50,7 @@ using namespace boost;
 #include "packets/mgmt_gn_packet_wireless_state_response.hpp"
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet_get_configuration.hpp"
+#include "packets/mgmt_gn_packet_location_update.hpp"
 #include "packets/mgmt_gn_packet_network_state.hpp"
 #include "mgmt_information_base.hpp"
 #include "mgmt_packet_factory.hpp"
@@ -205,6 +206,14 @@ class PacketHandler {
 		 * @return Pointer to a PacketHandlerResult object
 		 */
 		PacketHandlerResult* handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* packet);
+		/**
+		 * Handles an incoming Location Update message and updates MIB with
+		 * this incoming information
+		 *
+		 * @param Pointer to a Location Update packet
+		 * @return Pointer to a PacketHandlerResult object
+		 */
+		PacketHandlerResult* handleLocationUpdate(GeonetLocationUpdateEventPacket* packet);
 
 	private:
 		/**

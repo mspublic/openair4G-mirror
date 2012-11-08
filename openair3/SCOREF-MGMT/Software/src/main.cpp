@@ -58,12 +58,19 @@ using boost::asio::ip::udp;
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 
+#define VERSION "1.2.1"
+
+void printVersion() {
+	cerr << "SCORE@F MANAGEMENT Module version " << VERSION << endl;
+}
 void printHelp(const string& binaryName) {
 	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
 }
 
+#ifdef BOOST_VERSION_1_50
 const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
+#endif
 
 int main(int argc, char** argv) {
 	string logFileName, configurationFileName;
@@ -72,7 +79,10 @@ int main(int argc, char** argv) {
 	 * Check command-line parameters. Configuration file name is
 	 * necessary yet log file name is optional
 	 */
-	if (argc == 2) {
+	if (argc > 1 && (!string(argv[1]).compare("-v") || !string(argv[1]).compare("--version"))) {
+		printVersion();
+		exit(0);
+	} else if (argc == 2) {
 		logFileName = "SCOREF-MGMT.log";
 		configurationFileName = argv[1];
 	} else if (argc == 3) {

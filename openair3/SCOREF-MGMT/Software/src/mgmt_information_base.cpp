@@ -187,13 +187,13 @@ CommunicationProfileManager& ManagementInformationBase::getCommunicationProfileM
 	return communicationProfileManager;
 }
 
-bool ManagementInformationBase::updateLocationTable(LocationTableItem& locationTableItem) {
-	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem>(locationTableItem.gnAddress, locationTableItem));
+bool ManagementInformationBase::updateLocationTable(LocationTableItem* locationTableItem) {
+	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem*>(locationTableItem->gnAddress, locationTableItem));
 
 	return true;
 }
 
-LocationInformation ManagementInformationBase::getLocation() {
+const LocationInformation& ManagementInformationBase::getLocationInformation() {
 	/**
 	 * todo this is temporary, location information will be received somewhere else later on
 	 */
@@ -203,8 +203,17 @@ LocationInformation ManagementInformationBase::getLocation() {
 	location.speed = rand() % 20;
 	location.heading = 0;
 	location.altitude = rand() % 1000 + 10;
+	/**
+	 * Update time-stamp
+	 */
+	location.timestamp = time(NULL);
 
 	return location;
+}
+
+bool ManagementInformationBase::setLocationInformation(const LocationInformation& locationUpdate) {
+	location = locationUpdate;
+	return true;
 }
 
 bool ManagementInformationBase::setNetworkFlags(const u_int8_t& networkFlags) {

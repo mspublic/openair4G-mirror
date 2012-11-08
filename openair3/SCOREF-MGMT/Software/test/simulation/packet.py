@@ -31,6 +31,30 @@ class Packet:
 		return True
 
 	@staticmethod
+	def sendCommunicationProfileRequest(serverAddress, serverPort, clientPort):
+		# Build the packet
+		communicationProfileRequestPacket = array.array('B')
+		communicationProfileRequestPacket.append(0x40) # Validity=1, version=0
+		communicationProfileRequestPacket.append(0x00) # Priority=0
+		communicationProfileRequestPacket.append(0x03) # EventType=3
+		communicationProfileRequestPacket.append(0x04) # EventSubtype=4
+		communicationProfileRequestPacket.append(0x20) # Transport
+		communicationProfileRequestPacket.append(0x40) # Network
+		communicationProfileRequestPacket.append(0x80) # Access
+		communicationProfileRequestPacket.append(0xFF) # Channel
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(communicationProfileRequestPacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		receivedBytes, sourceAddress = managementSocket.recvfrom(1024)
+		print receivedBytes.encode('hex'), "bytes received from", sourceAddress
+
+		return True
+
+	@staticmethod
 	def sendNetworkState(serverAddress, serverPort, clientPort):
 		# Build the packet
 		networkStatePacket = array.array('B')

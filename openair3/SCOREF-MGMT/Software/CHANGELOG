@@ -1,6 +1,17 @@
 
+v1.2.1
+* Simulator can now send COMMUNICATION_PROFILE_REQUEST
+* A new scenerio file named 02.sce added for Communication Profile tests
+* Bugfix Rx buffer resize error, now it's set to RX_BUFFER_SIZE correctly
+* `extended', `valid', `version', and `priority' fields of packet header are now parsed
+* Bugfix Local variable reference error mgmt_comm_prof_manager.cpp
+* Bugfix Communication profile pass-by-value in mgmt_comm_prof_manager.cpp
+* Bugfix Location table response is now parsed correctly
+* Incoming Location Update is now parsed and MIB is updated
+* Incoming filter sent thru COMM_PROF_REQ is now used to filter Communication Profiles
+* -v and --version parameters are now recognized
+
 v1.2.0 (released on 5 Nov 2012)
-* Release version
 * UdpServer class renamed as UdpSocket
 * ManagementClient class has its own socket now (currently not in use, though)
 * README.RUNNING updated with FACilities configuration files directory

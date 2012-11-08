@@ -72,10 +72,10 @@ struct CommunicationProfileItem {
 		channel = 0;
 	}
 
-	string toString() {
+	string toString() const {
 		stringstream ss;
 
-		ss << "[id:" << id
+		ss << "[id:" << setfill('0') << setw(2) << id
 			<< " transport:" << Util::getBinaryRepresentation(transport)
 			<< " network:" << Util::getBinaryRepresentation(network)
 			<< " access:" << Util::getBinaryRepresentation(access)
@@ -111,12 +111,6 @@ class CommunicationProfileManager {
 		 */
 		bool insert(const string& profileIdString, const string& profileDefinitionString);
 		/**
-		 * Returns string representation of Communication Profile Table
-		 *
-		 * return std::string representation of table
-		 */
-		string toString() const;
-		/**
 		 * Returns the number of profiles present
 		 *
 		 * @return Number of communication profiles, ie. table size
@@ -127,14 +121,20 @@ class CommunicationProfileManager {
 		 *
 		 * @return std::map of Communication Profile Table
 		 */
-		map<CommunicationProfileID, CommunicationProfileItem> getProfileMap() const;
+		map<CommunicationProfileID, CommunicationProfileItem>& getProfileMap();
 		/**
 		 * Returns communication profile map subset filtered by incoming request map
 		 *
 		 * @param filter 32-bit filter part of a Communication Profile Request packet
 		 * @return Filtered subset of communication profile
 		 */
-		map<CommunicationProfileID, CommunicationProfileItem> getProfileMapSubset(u_int32_t filter) const;
+		map<CommunicationProfileID, CommunicationProfileItem> getProfileMapSubset(u_int32_t filter);
+		/**
+		 * Returns string representation of Communication Profile Table
+		 *
+		 * return std::string representation of table
+		 */
+		string toString() const;
 
 	private:
 		/**
