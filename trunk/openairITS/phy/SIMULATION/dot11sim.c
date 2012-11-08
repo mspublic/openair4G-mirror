@@ -21,7 +21,7 @@
 
 uint16_t rev64[64];
 
-#define RX_THRES_dB 40
+#define RX_THRES_dB 26
 
 int main(int argc, char **argv) {
 
@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
   int missed_packets=0;
   uint8_t rxp;
   int off,off2;
+  double txg,txg_dB;
 
   data_ind    = (uint8_t*)malloc(4095+2+1);
   data_ind_rx = (uint8_t*)malloc(4095+2+1);
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
 
   tx_offset = taus()%(FRAME_LENGTH_SAMPLES_MAX/2);
 
-  while ((c = getopt (argc, argv, "hag:n:s:S:z:r:p:")) != -1) {
+  while ((c = getopt (argc, argv, "hag:n:s:S:z:r:p:d:")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -127,6 +128,9 @@ int main(int argc, char **argv) {
 	printf("Unsupported channel model!\n");
 	exit(-1);
       }
+      break;
+    case 'd':
+      tx_offset = atoi(optarg);
       break;
     case 'p':
       tx_vector.sdu_length = atoi(optarg);
@@ -248,9 +252,11 @@ int main(int argc, char **argv) {
     missed_packets=0;
     for (trial=0; trial<n_frames; trial++) {
       //      printf("Trial %d (errors %d), sdu_length_samples %d\n",trial,errors,sdu_length_samples);
-      sigma2_dB = 10*log10((double)tx_lev) - SNR;
+      sigma2_dB = 25; //10*log10((double)tx_lev) - SNR;
+      txg_dB = 10*log10((double)tx_lev) - (SNR + sigma2_dB);
+      txg = pow(10.0,-.05*txg_dB);
       if (n_frames==1)
-	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
+	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f, txg %f\n",sigma2_dB,SNR,10*log10((double)tx_lev)-txg_dB,txg_dB);
       //AWGN
       sigma2 = pow(10,sigma2_dB/10);
       //      printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
@@ -270,8 +276,8 @@ int main(int argc, char **argv) {
 	for (i=0; i<(sdu_length_samples+100); i++) {
 
 	  
-	  ((short*)&rxdata[aa][tx_offset])[(i<<1)]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  ((short*)&rxdata[aa][tx_offset])[1+(i<<1)] = (short) ((r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*)&rxdata[aa][tx_offset])[(i<<1)]   = (short) (((txg*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*)&rxdata[aa][tx_offset])[1+(i<<1)] = (short) (((txg*r_im[aa][i]) + (iqim*r_re[aa][i]*txg) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 
 	  //	  if (i<128)
 	  //	    printf("i%d : rxdata %d, txdata %d\n",i,((short *)rxdata[aa])[rx_offset+(i<<1)],((short *)txdata)[i<<1]);
@@ -294,7 +300,7 @@ int main(int argc, char **argv) {
       off = 0;
       while(off<FRAME_LENGTH_SAMPLES_MAX) {
      
-	rxp = dB_fixed(signal_energy(rxdata[0]+off,104));
+	rxp = dB_fixed(signal_energy(rxdata[0]+off,512));
 	if (n_frames==1)
 	  printf("off %d: rxp %d (%d)\n",off,rxp,signal_energy(rxdata[0]+off,104));
 
@@ -310,7 +316,7 @@ int main(int argc, char **argv) {
 	      //	    printf("Rate %d, SDU_LENGTH %d\n",rxv->rate,rxv->sdu_length);
 	      if ( (rxv->rate != tx_vector.rate)||(rxv->sdu_length != tx_vector.sdu_length)) {
 		signal_errors++;
-		printf("SIGNAL error: rx_offset %d, tx_offset %d\n",rx_offset,tx_offset);
+		printf("SIGNAL error: rx_offset %d, tx_offset %d (off2 %d)\n",rx_offset,tx_offset,off2);
 		break;
 	      }
 	      else {
