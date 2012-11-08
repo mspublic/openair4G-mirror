@@ -29,7 +29,7 @@ int init_rev=0;
 
 int rate2ind[16] = {0,0,0,0,0,0,0,0,6,4,2,0,7,5,3,1};
 
-//#define DEBUG_SYNC 1
+#define DEBUG_SYNC 1
 
 //#define EXECTIME 1
 
@@ -263,7 +263,7 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
 #endif
 #endif
 
-    if ((dB_fixed(mean_energy) > 20) && (peak_energy>(60*mean_energy))) {
+    if ((dB_fixed(mean_energy) > 15) && (peak_energy>(60*mean_energy))) {
 #ifdef DEBUG_SYNC
       write_output("STSLTScorr.m","STSLTScorrT", corrT,512,2,1);
 #endif
