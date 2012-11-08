@@ -95,11 +95,19 @@ bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
 	return true;
 }
 
+bool GeonetPacket::isExtended() const {
+	return header.isExtended();
+}
+
+bool GeonetPacket::isValid() const {
+	return header.isExtended();
+}
+
 string GeonetPacket::toString() const {
 	stringstream ss;
 
-	// todo write extended message and validity fields here as well
-	ss << "GeonetHeader[version:" << (int) header.version << ", priority:" << (int) header.priority
+	ss << "GeonetHeader[extended:" << isExtended() << ", valid:" << isValid()
+	   << ", version:" << (int) header.getVersion() << ", priority:" << (int) header.getPriority()
 		<< ", event:" << (int) (header.eventType * 100 + header.eventSubtype) << "]";
 
 	return ss.str();

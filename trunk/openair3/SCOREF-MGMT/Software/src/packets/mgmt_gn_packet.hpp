@@ -95,11 +95,19 @@ class GeonetPacket {
 		 */
 		virtual bool serialize(vector<unsigned char>& buffer) const;
 		/**
-		 * Returns string representation of relevant GeonetPacket object
+		 * Returns if this packet contains extended/vendor specific data
+		 * Those who override this method will be excommunicated, fair warning
 		 *
-		 * @return std::string representation
+		 * @return boolean
 		 */
-		virtual string toString() const;
+		bool isExtended() const;
+		/**
+		 * Returns if this packet contains valid data
+		 * Those who override this method will be excommunicated, fair warning
+		 *
+		 * @return boolean
+		 */
+		bool isValid() const;
 		/**
 		 * Utility method to get event type of a packet buffer
 		 *
@@ -115,6 +123,12 @@ class GeonetPacket {
 
 			return eventType;
 		}
+		/**
+		 * Returns string representation of relevant GeonetPacket object
+		 *
+		 * @return std::string representation
+		 */
+		virtual string toString() const;
 
 	protected:
 		/**

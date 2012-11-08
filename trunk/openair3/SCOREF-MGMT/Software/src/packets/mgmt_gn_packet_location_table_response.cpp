@@ -69,27 +69,34 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 	// ...and Network Flags
 	mib.setNetworkFlags(packetBuffer[2]);
 
-	u_int16_t itemIndex = packetBufferIndex;
-	for (; lpvCount != 0; lpvCount--) {
-		LocationTableItem item;
+	/**
+	 * Skip 4-byte part (LPV Count, Network Flags, and Reserved flags) coming immediately after the header
+	 */
+	u_int16_t itemIndex = packetBufferIndex + sizeof(u_int32_t);
 
-		Util::parse8byteInteger(packetBuffer.data() + itemIndex, &item.gnAddress); itemIndex += sizeof(GnAddress);
-		Util::parse4byteInteger(packetBuffer.data() + itemIndex, &item.timestamp); itemIndex += sizeof(u_int32_t);
-		Util::parse4byteInteger(packetBuffer.data() + itemIndex, &item.latitude); itemIndex += sizeof(u_int32_t);
-		Util::parse4byteInteger(packetBuffer.data() + itemIndex, &item.longitude); itemIndex += sizeof(u_int32_t);
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.speed); itemIndex += sizeof(u_int16_t);
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.heading); itemIndex += sizeof(u_int16_t);
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.altitude); itemIndex += sizeof(u_int16_t);
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.acceleration); itemIndex += sizeof(u_int16_t);
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.sequenceNumber); itemIndex += sizeof(u_int16_t);
-		item.lpvFlags = packetBuffer.data()[itemIndex++];
-		item.reserved = packetBuffer.data()[itemIndex++];
+	/**
+	 * Traverse location table items...
+	 */
+	for (; lpvCount != 0; lpvCount--) {
+		LocationTableItem* item = new LocationTableItem();
+
+		Util::parse8byteInteger(packetBuffer.data() + itemIndex, &item->gnAddress); itemIndex += sizeof(GnAddress);
+		Util::parse4byteInteger(packetBuffer.data() + itemIndex, &item->timestamp); itemIndex += sizeof(u_int32_t);
+		Util::parse4byteInteger(packetBuffer.data() + itemIndex, &item->latitude); itemIndex += sizeof(u_int32_t);
+		Util::parse4byteInteger(packetBuffer.data() + itemIndex, &item->longitude); itemIndex += sizeof(u_int32_t);
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->speed); itemIndex += sizeof(u_int16_t);
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->heading); itemIndex += sizeof(u_int16_t);
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->altitude); itemIndex += sizeof(u_int16_t);
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->acceleration); itemIndex += sizeof(u_int16_t);
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->sequenceNumber); itemIndex += sizeof(u_int16_t);
+		item->lpvFlags = packetBuffer.data()[itemIndex++];
+		item->reserved = packetBuffer.data()[itemIndex++];
 
 		// Update MIB with this record
 		mib.updateLocationTable(item);
 
 		logger.info("Management Information Base has been updated with following location table entry: ");
-		logger.info(item.toString());
+		logger.info(item->toString());
 
 		// itemIndex shows the next record now, if there's any
 	}

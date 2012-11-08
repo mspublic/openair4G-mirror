@@ -55,6 +55,12 @@ while line:
 				print "CONFIGURATION_REQUEST packet sent successfully"
 			else:
 				print "ERROR: Cannot send CONFIGURATION_REQUEST"
+		# Communication Profile Request Packet
+		if clientPacketType == "COMMUNICATION_PROFILE_REQUEST":
+			if Packet.sendCommunicationProfileRequest(serverAddress, serverPort, clientPort):
+				print "COMMUNICATION_PROFILE_REQUEST packet sent successfully"
+			else:
+				print "ERROR: Cannot send COMMUNICATION_PROFILE_REQUEST"
 		# Network State Packet
 		elif clientPacketType == "NETWORK_STATE":
 			if Packet.sendNetworkState(serverAddress, serverPort, clientPort):

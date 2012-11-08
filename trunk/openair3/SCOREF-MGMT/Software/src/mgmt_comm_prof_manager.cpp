@@ -82,6 +82,68 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 	return true;
 }
 
+u_int8_t CommunicationProfileManager::getProfileCount() const {
+	return communicationProfileMap.size();
+}
+
+map<CommunicationProfileID, CommunicationProfileItem>& CommunicationProfileManager::getProfileMap() {
+	return communicationProfileMap;
+}
+
+map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMapSubset(u_int32_t filter) {
+	/**
+	 * If we're asked everything, return everything
+	 */
+	if (filter == 0xFFFFFFFF)
+		return getProfileMap();
+
+	map<CommunicationProfileID, CommunicationProfileItem> filteredProfileMap;
+	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
+
+	/**
+	 * If `filter' is zero then return an empty map
+	 */
+	if (!filter)
+		return filteredProfileMap;
+
+	u_int8_t transportMask = ((filter & 0xFF000000) >> 24);
+	u_int8_t networkMask = ((filter & 0xFF0000) >> 16);
+	u_int8_t accessMask = ((filter & 0xFF00) >> 8);
+	u_int8_t channelMask = (filter & 0xFF);
+
+	logger.info("Preparing a communication profile subset with following filter...");
+	logger.info("Comm. Profile Filter [transport:" + Util::getBinaryRepresentation(transportMask) + " network:" + Util::getBinaryRepresentation(networkMask) + " access:" + Util::getBinaryRepresentation(accessMask) + " channel:" + Util::getBinaryRepresentation(channelMask) + "]");
+
+	/**
+	 * Travers all the communication profiles and find those match with the filter...
+	 */
+	while (it != communicationProfileMap.end()) {
+		/**
+		 * We should take the subset of communication profile table having those profiles
+		 * that provide all the protocols requested in the filter
+		 */
+		logger.info("Checking with: " + it->second.toString());
+		/**
+		 * If the mask is 0xFF then client wants everything, don't check further
+		 */
+		if ((transportMask == 0xFF || (it->second.transport & transportMask) == transportMask) &&
+			(networkMask == 0xFF || (it->second.network & networkMask) == networkMask) &&
+			(accessMask == 0xFF || (it->second.access & accessMask) == accessMask)) {
+			/**
+			 * Channel information is present only if Access technology is ITSG5 so
+			 * we check if `access' field's first bit is set or not
+			 */
+			if (channelMask == 0xFF || (Util::isBitSet(it->second.access, 0) && (it->second.channel & channelMask) == channelMask)) {
+				filteredProfileMap.insert(filteredProfileMap.end(), std::make_pair(it->first, it->second));
+			}
+		}
+
+		++it;
+	}
+
+	return filteredProfileMap;
+}
+
 string CommunicationProfileManager::toString() const {
 	stringstream ss;
 
@@ -99,32 +161,6 @@ string CommunicationProfileManager::toString() const {
 	}
 
 	return ss.str();
-}
-
-u_int8_t CommunicationProfileManager::getProfileCount() const {
-	return communicationProfileMap.size();
-}
-
-map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMap() const {
-	return communicationProfileMap;
-}
-
-map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMapSubset(u_int32_t filter) const {
-	/**
-	 * If we're asked everything, return everything
-	 */
-	if (filter == 0xFFFFFFFF)
-		return getProfileMap();
-
-	map<CommunicationProfileID, CommunicationProfileItem> filteredProfileMap;
-	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
-
-	while (it != communicationProfileMap.end()) {
-		// todo Intelligent code goes here
-		++it;
-	}
-
-	return filteredProfileMap;
 }
 
 void CommunicationProfileManager::initialise() {
@@ -184,7 +220,7 @@ CommunicationProfileItem CommunicationProfileManager::parse(const string& profil
 	 * For access methods `3G' and `Ethernet' this information is not relevant; for `11n'
 	 * the choice is made by the Access Point, here parse accordingly
 	 */
-	if (!access.compare(0, 2, "3G") || !access.compare(0, 8, "Ethernet") || !access.compare(0, 3, "11n")) {
+	if (!access.compare(0, 2, "3G") || !access.compare(0, 3, "11n") || !access.compare(0, 8, "Ethernet")) {
 		channel = "";
 	} else {
 		channel = profileItemVector[3];
