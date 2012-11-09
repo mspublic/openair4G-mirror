@@ -10,7 +10,7 @@
     </FADING>
     <SYSTEM_BANDWIDTH_MB>7.68</SYSTEM_BANDWIDTH_MB>
     <SYSTEM_FREQUENCY_GHz>1.9</SYSTEM_FREQUENCY_GHz>
-    <TRANSMISSION_MODE>5</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
+    <TRANSMISSION_MODE>1</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
     <ANTENNA>
       <eNB_ANTENNA>
 	<RX_NOISE_LEVEL_dB>0</RX_NOISE_LEVEL_dB>
@@ -71,7 +71,7 @@
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
-      <LEVEL>info</LEVEL>
+      <LEVEL>debug</LEVEL>
       <VERBOSITY>high</VERBOSITY> <!-- low, medium, high, full -->
       <INTERVAL>1</INTERVAL>
     </LOG>		

@@ -417,7 +417,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 
 	  len += sprintf(&buffer[len],"[eNB PROC] RB Allocation from Subband 1 to 7: ");
 	    
-	  for (i=0;i<7;i++)
+	  for (i=0;i<13;i++)
 	    len += sprintf(&buffer[len],"%d ",
 			   phy_vars_eNB->mu_mimo_mode[UE_id].rballoc_sub[i]);
 	  len += sprintf(&buffer[len],"\n");
