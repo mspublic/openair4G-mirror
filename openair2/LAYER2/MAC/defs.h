@@ -413,57 +413,57 @@ typedef struct {
 typedef struct{
   u16 Node_id;
   /// pointer to RRC PHY configuration 
-  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon[MAX_NUM_CCs];
   /// pointer to RRC PHY configuration 
   struct PhysicalConfigDedicated *physicalConfigDedicated;
   /// pointer to RRC PHY configuration SCEll
   struct PhysicalConfigDedicatedSCell_r10	*physicalConfigDedicatedSCell_r10[MAX_NUM_CCs];
   /// pointer to TDD Configuration (NULL for FDD)
-  TDD_Config_t *tdd_Config;
+  TDD_Config_t *tdd_Config[MAX_NUM_CCs];
   /// Pointer to RRC MAC configuration
-  MAC_MainConfig_t *macConfig;
+  MAC_MainConfig_t *macConfig[MAX_NUM_CCs];
   /// Pointer to RRC Measurement gap configuration
-  MeasGapConfig_t  *measGapConfig;
+  MeasGapConfig_t  *measGapConfig[MAX_NUM_CCs];
   /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
+  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID][MAX_NUM_CCs];
   /// Scheduling Information 
-  UE_SCHEDULING_INFO scheduling_info;
+  UE_SCHEDULING_INFO scheduling_info[MAX_NUM_CCs];
   /// Outgoing CCCH pdu for PHY
-  CCCH_PDU CCCH_pdu;
+  CCCH_PDU CCCH_pdu[MAX_NUM_CCs];
   /// Incoming DLSCH pdu for PHY
-  DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
+  DLSCH_PDU DLSCH_pdu[MAX_NUM_CCs][NB_CNX_UE][2];
   //ULSCH_PDU ULSCH_pdu[NB_CNX_UE][2];
   /// Random-access procedure flag
-  u8 RA_active;
+  u8 RA_active[MAX_NUM_CCs];
   /// Random-access window counter
-  s8 RA_window_cnt;
+  s8 RA_window_cnt[MAX_NUM_CCs];
   /// Random-access Msg3 size in bytes
-  u8 RA_Msg3_size;
+  u8 RA_Msg3_size[MAX_NUM_CCs];
   /// Random-access prachMaskIndex
-  u8 RA_prachMaskIndex;
+  u8 RA_prachMaskIndex[MAX_NUM_CCs];
   /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
-  u8 RA_usedGroupA;
+  u8 RA_usedGroupA[MAX_NUM_CCs];
   /// Random-access Resources
-  PRACH_RESOURCES_t RA_prach_resources;
+  PRACH_RESOURCES_t RA_prach_resources[MAX_NUM_CCs];
   /// Random-access PREAMBLE_TRANSMISSION_COUNTER
-  u8 RA_PREAMBLE_TRANSMISSION_COUNTER;
+  u8 RA_PREAMBLE_TRANSMISSION_COUNTER[MAX_NUM_CCs];
   /// Random-access backoff counter
-  s16 RA_backoff_cnt;
+  s16 RA_backoff_cnt[MAX_NUM_CCs];
   /// Random-access variable for window calculation (frame of last change in window counter)
-  u32 RA_tx_frame;
+  u32 RA_tx_frame[MAX_NUM_CCs];
   /// Random-access variable for window calculation (subframe of last change in window counter)
-  u8 RA_tx_subframe;
+  u8 RA_tx_subframe[MAX_NUM_CCs];
   /// Random-access Group B maximum path-loss
   /// Random-access variable for backoff (frame of last change in backoff counter)
-  u32 RA_backoff_frame;
+  u32 RA_backoff_frame[MAX_NUM_CCs];
   /// Random-access variable for backoff (subframe of last change in backoff counter)
-  u8 RA_backoff_subframe;
+  u8 RA_backoff_subframe[MAX_NUM_CCs];
   /// Random-access Group B maximum path-loss
-  u16 RA_maxPL;
+  u16 RA_maxPL[MAX_NUM_CCs];
   /// Random-access Contention Resolution Timer active flag
-  u8 RA_contention_resolution_timer_active;
+  u8 RA_contention_resolution_timer_active[MAX_NUM_CCs];
   /// Random-access Contention Resolution Timer count value
-  u8 RA_contention_resolution_cnt;
+  u8 RA_contention_resolution_cnt[MAX_NUM_CCs];
 }UE_MAC_INST;
 
 

@@ -89,28 +89,28 @@ typedef struct
     // UE functions
 
     /// Indicate loss of synchronization of PBCH
-    void (*out_of_sync_ind)(u8 Mod_id,u32 frame,u16);
+    void (*out_of_sync_ind)(u8 Mod_id,u8 CC_id,u32 frame,u16);
 
     ///  Send a received SI sdu
-    void (*ue_decode_si)(u8 Mod_id,u32 frame, u8 CH_index, void *pdu, u16 len);
+    void (*ue_decode_si)(u8 Mod_id,u8 CC_id,u32 frame, u8 CH_index, void *pdu, u16 len);
 
     /// Send a received DLSCH sdu to MAC
-    void (*ue_send_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
+    void (*ue_send_sdu)(u8 Mod_id,u8 CC_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
     /// Retrieve ULSCH sdu from MAC
-    void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+    void (*ue_get_sdu)(u8 Mod_id,u8 CC_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
     /// Retrieve RRCConnectionReq from MAC
-    PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);
+    PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u8 CC_id,u32 frame,u8 Msg3_flag,u8 subframe);
 
     /// Process Random-Access Response
-    u16 (*ue_process_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
+    u16 (*ue_process_rar)(u8 Mod_id,u8 CC_id,u32 frame,u8 *dlsch_buffer,u16 *t_crnti,u8 preamble_index);
 
     /// Get SR payload (0,1) from UE MAC
-    u32 (*ue_get_SR)(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti,u8 subframe);
+    u32 (*ue_get_SR)(u8 Mod_id,u8 CC_id,u32 frame,u8 eNB_id,u16 rnti,u8 subframe);
 
     /// Indicate synchronization with valid PBCH
-    void (*dl_phy_sync_success) (u8 Mod_id,u32 frame, u8 CH_index,u8 first_sync);
+    void (*dl_phy_sync_success) (u8 Mod_id,u8 CC_id,u32 frame, u8 CH_index,u8 first_sync);
 
     /// Only calls the PDCP for now
     UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u32 frame,u8 subframe, lte_subframe_t direction,u8 eNB_id);
