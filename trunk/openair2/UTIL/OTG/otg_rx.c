@@ -44,6 +44,9 @@
 #include <math.h>
 #include "otg_form.h"
 
+extern unsigned char NB_eNB_INST;
+extern unsigned char NB_UE_INST;
+
 //#include "LAYER2/MAC/extern.h"
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -152,14 +155,17 @@ char * hdr_payload=NULL;
 	/* xforms part: add metrics  */	
 	if (g_otg->curve==1){ 
   	if (g_otg->owd_radio_access==0)
-    	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
+    	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
     else
-    	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
+    	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
   }
 
 
   
-
+	if (src<NB_eNB_INST)
+		otg_info->rx_total_bytes_dl+=size;
+	else
+		otg_info->rx_total_bytes_ul+=size;
 
 
 //printf("payload_size %d, header_size %d \n", otg_hdr_rx->pkts_size, otg_hdr_rx->hdr_type);

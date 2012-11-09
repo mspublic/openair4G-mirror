@@ -71,7 +71,17 @@ typedef enum {
 	TEAM_FORTRESS,
 	FULL_BUFFER,
   M2M_TRAFFIC,
-	AUTO_PILOT_L,
+	AUTO_PILOT_L,			/*AUTO PILOT LOW SPEEDS*/
+	AUTO_PILOT_M,			/*AUTO PILOT MEDIEUM SPEEDS*/
+	AUTO_PILOT_H,			/*AUTO PILOT HIGH SPEEDS*/
+	AUTO_PILOT_E,			/*AUTO PILOT EMERGENCY*/
+	VIRTUAL_GAME_L,		/*VIRTUAL GAME LOW SPEEDS*/
+	VIRTUAL_GAME_M,		/*VIRTUAL GAME MEDIEUM SPEEDS*/
+	VIRTUAL_GAME_H,		/*VIRTUAL GAME HIGH SPEEDS*/
+	VIRTUAL_GAME_F,		/*VIRTUAL GAME FINISH*/
+	ALARM_HUMIDITY,  	/* SENSOR BASED ALARM : HUMIDITY */
+	ALARM_SMOKE,			/* SENSOR BASED ALARM : SMOKE */
+	ALARM_TEMPERATURE,/* SENSOR BASED ALARM : TEMPERATURE */
 }Application;
 
 
@@ -357,7 +367,10 @@ typedef struct{
 	unsigned int c_holding_time_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
 	unsigned int c_holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
  	unsigned int start_holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
-
+  unsigned int tx_total_bytes_dl;
+  unsigned int tx_total_bytes_ul;
+  unsigned int rx_total_bytes_dl;
+  unsigned int rx_total_bytes_ul;
 
 }otg_info_t;
 
