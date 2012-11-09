@@ -488,6 +488,10 @@ typedef struct {
   u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
 } LTE_DL_FRAME_PARMS;
 
+typedef struct {
+	LTE_DL_FRAME_PARMS lte_frame_parms;
+} LTE_HANDOVER_PARAMS;
+
 typedef enum {
   SISO=0,
   ALAMOUTI=1,

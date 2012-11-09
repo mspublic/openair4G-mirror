@@ -892,6 +892,8 @@ void	rrc_ue_process_mobilityControlInfo(u8 Mod_id, u32 frame, u8 eNB_index, stru
 			 mobilityControlInfo,
 			 (u8 *)NULL,
 			 (u16 *)NULL);
+
+    UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_SI_RECEIVED;
 }
 
 void rrc_detach_from_eNB(u8 Mod_id,u8 eNB_index) {

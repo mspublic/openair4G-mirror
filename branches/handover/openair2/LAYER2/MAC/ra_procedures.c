@@ -295,7 +295,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 	  return(&UE_mac_inst[Mod_id].RA_prach_resources);
 	}
 	else if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DCCH] > 0) {  
-	  // This is for triggering a transmission on DCCH using PRACH
+	  // This is for triggering a transmission on DCCH using PRACH (during handover, for example)
 	  dcch_header_len = 2 + 2;  /// SHORT Subheader + C-RNTI control element
 	  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
 					  DCCH,

@@ -71,6 +71,8 @@
 
 #define NS_PER_SLOT 500000
 
+#define MAX_HARQ_PROCESSES 8
+
 extern inline unsigned int taus(void);
 extern int exit_openair;
 
@@ -282,6 +284,39 @@ u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
   }
 
   return(0);
+}
+
+void ue_mac_reset(u8 Mod_id,u8 eNB_index) {
+
+	// This flushes ALL DLSCH and ULSCH harq buffers of ALL connected eNBs...add the eNB_index later
+	// for more flexibility
+
+	u8 i,j,k;
+	PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
+	//[NUMBER_OF_CONNECTED_eNB_MAX][2];
+	for(i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
+		for(j=0;j<2;j++) {
+			//DL HARQ
+			if(phy_vars_ue->dlsch_ue[i][j]) {
+				for(k=0;k<MAX_HARQ_PROCESSES && phy_vars_ue->dlsch_ue[i][j]->harq_processes[k];k++) {
+					phy_vars_ue->dlsch_ue[i][j]->harq_processes[k]->status = SCH_IDLE;
+				}
+			}
+		}
+		//UL HARQ
+		if(phy_vars_ue->ulsch_ue[i]) {
+			for(k=0;k<MAX_HARQ_PROCESSES && phy_vars_ue->ulsch_ue[i]->harq_processes[k];k++) {
+				phy_vars_ue->ulsch_ue[i]->harq_processes[k]->status = SCH_IDLE;
+				//Set NDIs for all UL HARQs to 0
+				phy_vars_ue->ulsch_ue[i]->harq_processes[k]->Ndi = 0;
+
+			}
+		}
+
+		// flush Msg3 buffer
+		phy_vars_ue->ulsch_ue_Msg3_active[i] = 0;
+
+	}
 }
 
 u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,

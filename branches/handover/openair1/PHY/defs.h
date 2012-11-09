@@ -272,6 +272,7 @@ typedef struct
   s8 tx_power_dBm;
   u32 frame;
   u8 n_connected_eNB;
+  LTE_HANDOVER_PARAMS lte_handover_params;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;

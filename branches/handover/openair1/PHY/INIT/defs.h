@@ -118,7 +118,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
 /// Configure Common PHY parameters from mobilityControlInfo
 void phy_config_afterHO_ue(u8 Mod_id,u8 CH_index,
-			   MobilityControlInfo_t *mobilityControlInfo);
+			   MobilityControlInfo_t *mobilityControlInfo,u8 ho_failed);
 
 /*!
 \fn void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
@@ -142,6 +142,13 @@ void phy_config_meas_ue(u8 Mod_id,
 			u8 eNB_index,
 			u8 n_adj_cells,
 			u16 *adj_cell_id);
+
+
+/** \brief PHY Changes for UE MAC reset procedure (Section 5.9, 36.321-8c0)
+@param Mod_id Index of UE
+@param eNB_index Index of corresponding eNB
+*/
+void ue_mac_reset(u8 Mod_id,u8 eNB_index);
 
 /*!
 \fn void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
