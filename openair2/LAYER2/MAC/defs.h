@@ -845,7 +845,7 @@ u8 *parse_ulsch_header(u8 *mac_header,
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms);
 int mac_init(void);
-void ue_init_mac(void);
+void ue_init_mac(u8 Mod_id);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
@@ -976,6 +976,12 @@ void dl_phy_sync_success(unsigned char Mod_id,
 			 u32 frame,
 			 unsigned char eNB_index,
 			 u8 first_sync);
+
+/*! \brief Function to flush all HARQ buffers at the UE
+\param[in] Mod_id Instance index of UE
+\param[in] eNB_id Index of eNB
+*/
+void ue_flush_harq_buffers(u8 Mod_id,u8 eNB_index);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

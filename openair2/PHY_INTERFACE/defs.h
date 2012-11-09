@@ -122,7 +122,7 @@ typedef struct
 
     /// Configure Common PHY parameters from mobilityControlInfo
     void (*phy_config_afterHO_ue)(u8 Mod_id,u8 CH_index,
-				  MobilityControlInfo_t *mobilityControlInfo);
+				  MobilityControlInfo_t *mobilityControlInfo, u8 ho_failed);
 
     /// Configure Common PHY parameters from SIB2
     void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
@@ -140,6 +140,9 @@ typedef struct
 
     /// Function to pass inter-cell measurement parameters to PHY (cell Ids)
     void (*phy_config_meas_ue)(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u16 *adj_cell_id);
+
+    /// Function to flush all harq buffers for chosen UE
+    void (*ue_mac_reset)(u8 Mod_id,u8 eNB_index);
 
     // PHY Helper Functions
 

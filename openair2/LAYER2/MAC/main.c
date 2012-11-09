@@ -139,8 +139,11 @@ int mac_top_init(){
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-    ue_init_mac();
+    for(i=0;i<NB_UE_INST;i++) {
+    	ue_init_mac(i); //pass Mod_id
+    }
   }
   else
     UE_mac_inst = NULL;
@@ -374,6 +377,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
   mac_xface->phy_config_afterHO_ue      = phy_config_afterHO_ue;
   mac_xface->phy_config_meas_ue         = phy_config_meas_ue;
+  mac_xface->ue_mac_reset				= ue_mac_reset;
 
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
