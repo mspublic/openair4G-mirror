@@ -484,7 +484,7 @@ void set_component_filelog(int comp){
   if (g_log->log_component[comp].filelog ==  0){
     g_log->log_component[comp].filelog =  1;
     if (g_log->log_component[comp].fd == 0)
-      g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+      g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
   }
 }
 
