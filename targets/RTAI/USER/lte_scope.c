@@ -16,54 +16,54 @@ create_form_lte_scope( void )
     fdui->vdata = fdui->cdata = NULL;
     fdui->ldata = 0;
 
-    fdui->lte_scope = fl_bgn_form( FL_NO_BOX, 780, 687 );
+    fdui->lte_scope = fl_bgn_form( FL_NO_BOX, 780, 639 );
 
-    obj = fl_add_box( FL_ROUNDED_BOX, 0, 0, 780, 687, "" );
+    obj = fl_add_box( FL_ROUNDED_BOX, 0, 0, 780, 639, "" );
     fl_set_object_color( obj, FL_BLACK, FL_BLUE );
 
-    fdui->channel_t_re = obj = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 20, 280, 100, "Time-Domain Channel (Real Component)" );
+    fdui->channel_t_re = obj = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 20, 280, 100, "Received Signal (Time-Domain, dB)" );
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
     fl_set_object_color( obj, FL_BLACK, FL_BLUE );
+    fl_set_object_lcolor( obj, FL_WHITE );
 
-    fdui->scatter_plot = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 600, 20, 160, 190, "Scatter Plot" );
+    fdui->scatter_plot = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 600, 20, 160, 190, "PBCH Scatter Plot" );
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
     fl_set_object_color( obj, FL_BLACK, FL_GREEN );
+    fl_set_object_lcolor( obj, FL_WHITE );
 
-    fdui->demod_out = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 20, 380, 570, 140, "Demodulator Output" );
+    fdui->demod_out = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 20, 400, 570, 140, "PDSCH/PUSCH Decoder Input" );
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
     fl_set_object_color( obj, FL_BLACK, FL_YELLOW );
+    fl_set_object_lcolor( obj, FL_WHITE );
 
-    fdui->channel_f = obj = fl_add_xyplot( FL_IMPULSE_XYPLOT, 20, 140, 570, 90, "Frequency Bin Response" );
+    fdui->channel_f = obj = fl_add_xyplot( FL_IMPULSE_XYPLOT, 20, 140, 570, 90, "Frequency Domain Channel Estimate" );
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
     fl_set_object_color( obj, FL_BLACK, FL_RED );
+    fl_set_object_lcolor( obj, FL_WHITE );
 
-    fdui->channel_t_im = obj = fl_add_xyplot( FL_NORMAL_XYPLOT, 310, 20, 280, 100, "Time-Domain Channel (Imaginaryl Component)" );
+    fdui->channel_t_im = obj = fl_add_xyplot( FL_NORMAL_XYPLOT, 310, 20, 280, 100, "Time-Domain Channel Estimate" );
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
     fl_set_object_color( obj, FL_BLACK, FL_BLUE );
+    fl_set_object_lcolor( obj, FL_WHITE );
 
-    fdui->decoder_input = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 20, 240, 570, 130, "Decoder Input" );
+    fdui->decoder_input = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 20, 250, 570, 130, "PBCH Decoder Input" );
+    fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
+    fl_set_object_color( obj, FL_BLACK, FL_GREEN );
+    fl_set_object_lcolor( obj, FL_WHITE );
+
+    fdui->scatter_plot2 = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 600, 430, 160, 190, "PDSCH/PUSCH Scatter Plot" );
+    fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
+    fl_set_object_color( obj, FL_BLACK, FL_YELLOW );
+    fl_set_object_lcolor( obj, FL_WHITE );
+
+    fdui->scatter_plot1 = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 600, 225, 160, 190, "PDCCH Scatter Plot" );
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
     fl_set_object_color( obj, FL_BLACK, FL_CYAN );
+    fl_set_object_lcolor( obj, FL_WHITE );
 
-    fdui->scatter_plot2 = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 600, 410, 160, 190, "Scatter Plot" );
-    fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
-    fl_set_object_color( obj, FL_BLACK, FL_GREEN );
-
-    fdui->scatter_plot1 = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 600, 215, 160, 190, "Scatter Plot" );
-    fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
-    fl_set_object_color( obj, FL_BLACK, FL_GREEN );
-
-    fdui->fig11 = obj = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 540, 280, 140, "Time-Domain Channel (Real Component)" );
-    fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
-    fl_set_object_color( obj, FL_BLACK, FL_RED );
-
-    fdui->fig12 = obj = fl_add_xyplot( FL_NORMAL_XYPLOT, 310, 540, 280, 140, "Time-Domain Channel (Real Component)" );
-    fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
-    fl_set_object_color( obj, FL_BLACK, FL_RED );
-
-    fdui->recal = obj = fl_add_button( FL_NORMAL_BUTTON, 650, 630, 70, 40, "Recall" );
+    fdui->ia_receiver_button = obj = fl_add_button( FL_PUSH_BUTTON, 250, 570, 130, 40, "IA receiver OFF" );
     fl_set_object_lalign( obj, FL_ALIGN_CENTER );
-    fl_set_object_callback( obj, RECAL_callback, 0 );
+    fl_set_object_callback( obj, ia_receiver_on_off, 0 );
 
     fl_end_form( );
 
