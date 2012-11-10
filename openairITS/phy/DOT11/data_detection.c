@@ -56,6 +56,9 @@ int16_t Pseq_rx[127]     = { 1, 1, 1, 1,-1,-1,-1, 1,-1,-1,-1,-1, 1, 1,-1, 1,
 			     -1,-1,-1,-1,-1, 1,-1, 1, 1,-1, 1,-1, 1, 1, 1,-1,
 			     -1, 1,-1,-1,-1, 1, 1, 1,-1,-1,-1,-1,-1,-1,-1};
 
+int32_t rxDATA_F_comp_aggreg2[48*1024];
+int32_t rxDATA_F_comp_aggreg3[48*1024];
+
 void print_dd_stats() {
 
   if (dd_trials>0)
@@ -69,7 +72,9 @@ void print_dd_stats() {
 }
 #endif
 
-int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int frame_length,int rx_offset,int (*wait(int,int))) {
+int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int frame_length,int rx_offset,int log2_maxh,int (*wait(int,int))) {
+
+  uint32_t pilot1,pilot2,pilot3,pilot4;
 
   int16_t rxDATA_F[128*2] __attribute__((aligned(16)));
   uint32_t rxDATA_F_comp[64*2] __attribute__((aligned(16)));
@@ -81,18 +86,17 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   int16_t rxDATA_F_mag[48];
   int16_t rxDATA_F_mag2[48];
   int8_t *llr_ptr;
-  uint32_t pilot1,pilot2,pilot3,pilot4;
   int i,j,k,k2,tmp,pos;
   int *interleaver;
   int dlen,dlen_symb;
   int s,sprime;
   uint32_t crc_rx;
   char fname[30],vname[30];
-  int log2_maxh;
   int32_t scale;
   int ret;
   int32_t cfo_re32,cfo_im32;
   int32_t cfo_Q15;
+  int rx_offset2;
 
 #ifdef RTAI
   int mbox_off = 0,old_mbox;
@@ -119,14 +123,18 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 #endif
     // synchronize to HW if needed
 #ifdef RTAI
+    rx_offset2=rx_offset+1024;
+    if (rx_offset2 > frame_length)
+      rx_offset2 -= frame_length;
+
     if (old_mbox > ((unsigned int *)DAQ_MBOX)[0])
       mbox_off = 150;
-    printf("dd: s %d (%d), old_mbox %d, new_mbox %d\n",
-	   s,rx_offset,old_mbox,((unsigned int *)DAQ_MBOX)[0]);
+    //    printf("dd: s %d (%d), old_mbox %d, new_mbox %d\n",
+    //	       s,rx_offset,old_mbox,((unsigned int *)DAQ_MBOX)[0]);
     old_mbox = ((unsigned int *)DAQ_MBOX)[0];
 
-    while (((unsigned int *)DAQ_MBOX)[0]+mbox_off < (rx_offset>>9) ) {
-      printf("sleeping\n");
+    while (((unsigned int *)DAQ_MBOX)[0]+mbox_off < (rx_offset2>>9) ) {
+      //      printf("sleeping\n");
       rt_sleep(nano2count(66666));
     }
 #endif
@@ -168,7 +176,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 #ifdef EXECTIME
 #ifdef RTAI
     tout=rt_get_time_ns();
-    dd_t1 += (tin-tout);
+    dd_t1 += (tout-tin);
     tin=rt_get_time_ns();
 #else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
@@ -178,12 +186,12 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 #endif
 #endif
 
-    log2_maxh=10;
+    //    log2_maxh=10;
     mult_cpx_vector_norep_unprepared_conjx2(rxDATA_F,(int16_t*)chest,(int16_t*)rxDATA_F_comp,64,log2_maxh);
 #ifdef EXECTIME
 #ifdef RTAI
     tout=rt_get_time_ns();
-    dd_t2 += (tin-tout);
+    dd_t2 += (tout-tin);
     tin=rt_get_time_ns();
 #else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
@@ -252,30 +260,32 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 
 
     // CFO compensation
+    
     cfo_re32 = ((((int16_t *)&pilot1)[0]*(int32_t)chest[(38+5)<<2]) + 
-		(((int16_t *)&pilot1)[1]*(int32_t)chest[1+((38+5)<<2)]));
-    cfo_im32 = -((((int16_t *)&pilot1)[1]*(int32_t)chest[(38+5)<<2]) + 
-	       (((int16_t *)&pilot1)[0]*(int32_t)chest[1+((38+5)<<2)]));
-
+		(((int16_t *)&pilot1)[1]*(int32_t)chest[1+((38+5)<<2)]))>>2;
+    cfo_im32 = (((((int16_t *)&pilot1)[1]*(int32_t)chest[(38+5)<<2]) - 
+		 (((int16_t *)&pilot1)[0]*(int32_t)chest[1+((38+5)<<2)])))>>2;
+    
+    
     cfo_re32 += (((((int16_t *)&pilot2)[0]*(int32_t)chest[(38+19)<<2]) + 
-		  (((int16_t *)&pilot2)[1]*(int32_t)chest[1+((38+19)<<2)])));
-    cfo_im32 += (-((((int16_t *)&pilot2)[1]*(int32_t)chest[(38+19)<<2]) + 
-		   (((int16_t *)&pilot2)[0]*(int32_t)chest[1+((38+19)<<2)])));
+		 (((int16_t *)&pilot2)[1]*(int32_t)chest[1+((38+19)<<2)])))>>2;
+    cfo_im32 += (((((int16_t *)&pilot2)[1]*(int32_t)chest[(38+19)<<2]) - 
+		   (((int16_t *)&pilot2)[0]*(int32_t)chest[1+((38+19)<<2)])))>>2;
 
     cfo_re32 += (((((int16_t *)&pilot3)[0]*(int32_t)chest[(6+1)<<2]) + 
-		  (((int16_t *)&pilot3)[1]*(int32_t)chest[1+((6+1)<<2)])));
-    cfo_im32 += (-((((int16_t *)&pilot3)[1]*(int32_t)chest[(6+1)<<2]) + 
-		   (((int16_t *)&pilot3)[0]*(int32_t)chest[1+((6+1)<<2)])));
+		  (((int16_t *)&pilot3)[1]*(int32_t)chest[1+((6+1)<<2)])))>>2;
+    cfo_im32 += (((((int16_t *)&pilot3)[1]*(int32_t)chest[(6+1)<<2]) - 
+		   (((int16_t *)&pilot3)[0]*(int32_t)chest[1+((6+1)<<2)])))>>2;
 
     cfo_re32 += (((((int16_t *)&pilot4)[0]*(int32_t)chest[(19+2)<<2]) + 
-		  (((int16_t *)&pilot4)[1]*(int32_t)chest[1+((19+2)<<2)])));
-    cfo_im32 += (-((((int16_t *)&pilot4)[1]*(int32_t)chest[(19+2)<<2]) + 
-		   (((int16_t *)&pilot4)[0]*(int32_t)chest[1+((19+2)<<2)])));
-
-    ((int16_t*)&cfo_Q15)[0] = (int16_t)(cfo_re32>>(2+log2_maxh))*Pseq_rx[sprime];
-    ((int16_t*)&cfo_Q15)[1] = (int16_t)(cfo_im32>>(2+log2_maxh))*Pseq_rx[sprime];
+		  (((int16_t *)&pilot4)[1]*(int32_t)chest[1+((19+2)<<2)])))>>2;
+    cfo_im32 += (((((int16_t *)&pilot4)[1]*(int32_t)chest[(19+2)<<2]) - 
+		   (((int16_t *)&pilot4)[0]*(int32_t)chest[1+((19+2)<<2)])))>>2;
+    
+    ((int16_t*)&cfo_Q15)[0] = (int16_t)(cfo_re32>>((log2_maxh)))*Pseq_rx[sprime];
+    ((int16_t*)&cfo_Q15)[1] = -(int16_t)(cfo_im32>>((log2_maxh)))*Pseq_rx[sprime];
 #ifdef DEBUG_DATA  
-    printf("dd: s %d, pilots(%d,%d : %d,%d : %d,%d : %d,%d) * chest (%d,%d : %d,%d : %d,%d : %d,%d) => cfo_Q15 (%d,%d)\n",s,
+    printf("dd: s %d, p=[%d+(%d)*j , %d+(%d)*j , %d+(%d)*j , %d+(%d)*j] * ch =[%d+(%d)*j , %d+(%d)*j , %d+(%d)*j , %d+(%d)*j] => cfo_Q15 (%d,%d), CFO32 (%d,%d)\n",s,
 	   ((int16_t *)&pilot1)[0]*Pseq_rx[sprime],((int16_t *)&pilot1)[1]*Pseq_rx[sprime],
 	   ((int16_t *)&pilot2)[0]*Pseq_rx[sprime],((int16_t *)&pilot2)[1]*Pseq_rx[sprime],
 	   ((int16_t *)&pilot3)[0]*Pseq_rx[sprime],((int16_t *)&pilot3)[1]*Pseq_rx[sprime],
@@ -284,7 +294,8 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 	   chest[(38+19)<<2],chest[1+((38+19)<<2)],
 	   chest[(6+1)<<2],chest[1+((6+1)<<2)],
 	   chest[(19+2)<<2],chest[1+((19+2)<<2)],
-	   ((int16_t*)&cfo_Q15)[0],((int16_t*)&cfo_Q15)[1]);
+	   ((int16_t*)&cfo_Q15)[0],((int16_t*)&cfo_Q15)[1],
+	   cfo_re32,cfo_im32);
 #endif
 
     rotate_cpx_vector_norep(rxDATA_F_comp2,&cfo_Q15,rxDATA_F_comp3,48,log2_maxh>>1);
@@ -302,6 +313,11 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     write_output(fname,vname, rxDATA_F_comp3,48,1,1);
 #endif
     // LLR Computation
+
+    for (i=0;i<48;i++) {
+      rxDATA_F_comp_aggreg3[(48*s) + i] = rxDATA_F_comp3[i];
+      rxDATA_F_comp_aggreg2[(48*s) + i] = rxDATA_F_comp2[i];
+    }
 
     switch (rxv->rate>>1) {
     case 0: // BPSK
@@ -414,7 +430,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 #ifdef EXECTIME
 #ifdef RTAI
     tout=rt_get_time_ns();
-    dd_t3 += (tin-tout);
+    dd_t3 += (tout-tin);
     tin=rt_get_time_ns();
 #else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
@@ -468,7 +484,7 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 #ifdef EXECTIME
 #ifdef RTAI
     tout=rt_get_time_ns();
-    dd_t4 += (tin-tout);
+    dd_t4 += (tout-tin);
     tin=rt_get_time_ns();
 #else
     ret=clock_gettime(CLOCK_REALTIME,&tout);
@@ -476,6 +492,9 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
 #endif
 #endif
   }
+
+
+
 
   return(*(uint32_t*)&data_ind[2+rxv->sdu_length] == crc_rx);
 

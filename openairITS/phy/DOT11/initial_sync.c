@@ -29,7 +29,7 @@ int init_rev=0;
 
 int rate2ind[16] = {0,0,0,0,0,0,0,0,6,4,2,0,7,5,3,1};
 
-#define DEBUG_SYNC 1
+//#define DEBUG_SYNC 1
 
 //#define EXECTIME 1
 
@@ -99,6 +99,7 @@ void print_is_stats() {
 int is_sleeping_cnt=0;
 CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
 	                      int *rx_offset,
+			      int *log2_maxh,
                               uint32_t *rx_frame,
                               int rx_frame_length,
                               int initial_sample_offset,
@@ -331,15 +332,15 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
 	  6,               /// log2(FFT_SIZE)
 	  3,               /// scale (energy normalized for 64-point)
 	  0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
-      /*      max_mag=0;
+      max_mag=0;
       for (i=0;i<256;i+=4) {
 	mag = (int32_t)chest[i]*chest[i] + (int32_t)chest[i+1]*chest[i+1];
 	if (mag > max_mag)
 	  max_mag = mag;
       }
-      shift = log2_approx(max_mag)/2;
-      */
-      shift = 10;
+      *log2_maxh = log2_approx(max_mag)/2;
+      
+      shift = log2_maxh+2;
 
       mult_cpx_vector_norep_unprepared_conjx2(rxSIGNAL_F,chest,(int16_t*)rxSIGNAL_F_comp,64,shift);
 #ifdef EXECTIME
