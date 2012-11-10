@@ -43,8 +43,9 @@ int16_t rxLTS_F[128*2] __attribute__((aligned(16)));
 int16_t rxSIGNAL_F[128*2] __attribute__((aligned(16)));
 uint32_t rxSIGNAL_F_comp[64*2] __attribute__((aligned(16)));
 uint32_t rxSIGNAL_F_comp2[48] __attribute__((aligned(16)));
+uint32_t rxSIGNAL_F_comp3[48] __attribute__((aligned(16)));
 int8_t rxSIGNAL_llr[48] __attribute__((aligned(16)));
-int mag,max_mag,shift;
+int mag,max_mag;
 
 #ifdef EXECTIME
 #ifdef RTAI
@@ -110,6 +111,9 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
   uint32_t pilot1,pilot2,pilot3,pilot4;
   int16_t tmp;
   int pos;
+  int32_t cfo_re32,cfo_im32;
+  int32_t cfo_Q15;
+
   uint8_t signal_sdu[3] __attribute__((aligned(16)));
 
   int signal_parity;
@@ -340,9 +344,8 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
       }
       *log2_maxh = log2_approx(max_mag)/2;
       
-      shift = log2_maxh+2;
 
-      mult_cpx_vector_norep_unprepared_conjx2(rxSIGNAL_F,chest,(int16_t*)rxSIGNAL_F_comp,64,shift);
+      mult_cpx_vector_norep_unprepared_conjx2(rxSIGNAL_F,chest,(int16_t*)rxSIGNAL_F_comp,64,*log2_maxh);
 #ifdef EXECTIME
 #ifdef RTAI
       tout=rt_get_time_ns();
@@ -358,11 +361,11 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
       // -ve portion
       for (i=0;i<5;i++)
 	rxSIGNAL_F_comp2[i] = rxSIGNAL_F_comp[(38+i)];
-      pilot1 = rxSIGNAL_F_comp[(38+5)];
+      pilot1 = ((uint32_t*)rxSIGNAL_F)[(38+5)<<1];
       
       for (;i<18;i++)
 	rxSIGNAL_F_comp2[i] = rxSIGNAL_F_comp[(38+1+i)];
-      pilot2 = rxSIGNAL_F_comp[(38+19)];
+      pilot2 = ((uint32_t*)rxSIGNAL_F)[(38+19)<<1];
       
       for (;i<24;i++)
 	rxSIGNAL_F_comp2[i] = rxSIGNAL_F_comp[(38+2+i)];
@@ -370,13 +373,52 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
       // +ve portion
       for (;i<30;i++)
 	rxSIGNAL_F_comp2[i] = rxSIGNAL_F_comp[(-24+1+i)];
-      pilot3 = rxSIGNAL_F_comp[(6+1)];
+      pilot3 = ((uint32_t*)rxSIGNAL_F)[(6+1)<<1];
       for (;i<43;i++)
 	rxSIGNAL_F_comp2[i] = rxSIGNAL_F_comp[(-24+2+i)];
-      pilot4 = rxSIGNAL_F_comp[(19+2)];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=((int16_t *)&pilot4)[1];
+      pilot4 = ((uint32_t*)rxSIGNAL_F)[(19+2)<<1];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=-((int16_t *)&pilot4)[1];
       for (;i<48;i++)
 	rxSIGNAL_F_comp2[i] = rxSIGNAL_F_comp[(-24+3+i)];
-      
+
+    // CFO compensation
+    cfo_re32 = ((((int16_t *)&pilot1)[0]*(int32_t)chest[(38+5)<<2]) + 
+		(((int16_t *)&pilot1)[1]*(int32_t)chest[1+((38+5)<<2)]));
+    cfo_im32 = -((((int16_t *)&pilot1)[1]*(int32_t)chest[(38+5)<<2]) + 
+	       (((int16_t *)&pilot1)[0]*(int32_t)chest[1+((38+5)<<2)]));
+
+    cfo_re32 += (((((int16_t *)&pilot2)[0]*(int32_t)chest[(38+19)<<2]) + 
+		  (((int16_t *)&pilot2)[1]*(int32_t)chest[1+((38+19)<<2)])));
+    cfo_im32 += (-((((int16_t *)&pilot2)[1]*(int32_t)chest[(38+19)<<2]) + 
+		   (((int16_t *)&pilot2)[0]*(int32_t)chest[1+((38+19)<<2)])));
+
+    cfo_re32 += (((((int16_t *)&pilot3)[0]*(int32_t)chest[(6+1)<<2]) + 
+		  (((int16_t *)&pilot3)[1]*(int32_t)chest[1+((6+1)<<2)])));
+    cfo_im32 += (-((((int16_t *)&pilot3)[1]*(int32_t)chest[(6+1)<<2]) + 
+		   (((int16_t *)&pilot3)[0]*(int32_t)chest[1+((6+1)<<2)])));
+
+    cfo_re32 += (((((int16_t *)&pilot4)[0]*(int32_t)chest[(19+2)<<2]) + 
+		  (((int16_t *)&pilot4)[1]*(int32_t)chest[1+((19+2)<<2)])));
+    cfo_im32 += (-((((int16_t *)&pilot4)[1]*(int32_t)chest[(19+2)<<2]) + 
+		   (((int16_t *)&pilot4)[0]*(int32_t)chest[1+((19+2)<<2)])));
+
+    ((int16_t*)&cfo_Q15)[0] = (int16_t)(cfo_re32>>(2+*log2_maxh));
+    ((int16_t*)&cfo_Q15)[1] = (int16_t)(cfo_im32>>(2+*log2_maxh));
+#ifdef DEBUG_SYNC
+    printf("is:  p=[%d+(%d)*j , %d+(%d)*j , %d+(%d)*j , %d+(%d)*j] * ch =[%d+(%d)*j , %d+(%d)*j , %d+(%d)*j , %d+(%d)*j] => cfo_Q15 (%d,%d), CFO32 (%d,%d)\n",
+	   ((int16_t *)&pilot1)[0],((int16_t *)&pilot1)[1],
+	   ((int16_t *)&pilot2)[0],((int16_t *)&pilot2)[1],
+	   ((int16_t *)&pilot3)[0],((int16_t *)&pilot3)[1],
+	   ((int16_t *)&pilot4)[0],((int16_t *)&pilot4)[1],
+	   chest[(38+5)<<2],chest[1+((38+5)<<2)],
+	   chest[(38+19)<<2],chest[1+((38+19)<<2)],
+	   chest[(6+1)<<2],chest[1+((6+1)<<2)],
+	   chest[(19+2)<<2],chest[1+((19+2)<<2)],
+	   ((int16_t*)&cfo_Q15)[0],((int16_t*)&cfo_Q15)[1],
+	   cfo_re32,cfo_im32);
+#endif
+
+    rotate_cpx_vector_norep(rxSIGNAL_F_comp2,&cfo_Q15,rxSIGNAL_F_comp3,48,*log2_maxh>>1);
+  
 #ifdef DEBUG_SYNC
       write_output("rxSIGNAL_F.m","rxSIG_F", rxSIGNAL_F,128,2,1);
       write_output("rxSIGNAL_F_comp.m","rxSIG_F_comp", rxSIGNAL_F_comp,64,1,1);
@@ -388,7 +430,7 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
       // now deinterleave SIGNAL
       for (k=0;k<48;k++) {
 	//      printf("interleaver_bpsk[%d] = %d\n",k,interleaver_bpsk[k]);
-	tmp = ((int16_t*)rxSIGNAL_F_comp2)[k<<1]>>4;
+	tmp = ((int16_t*)rxSIGNAL_F_comp3)[k<<1]>>4;
 	pos = interleaver_bpsk[k];
 	if (tmp<-8)
 	  rxSIGNAL_llr[pos] = -8;
