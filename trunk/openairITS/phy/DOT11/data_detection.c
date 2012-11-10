@@ -237,11 +237,11 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     // -ve portion
     for (i=0;i<5;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(38+i)];
-    pilot1 = ((uint32_t*)&rxDATA_F)[(38+5)<<1];
+    pilot1 = ((uint32_t*)rxDATA_F)[(38+5)<<1];
     
     for (;i<18;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(38+1+i)];
-    pilot2 = ((uint32_t*)&rxDATA_F)[(38+19)<<1];
+    pilot2 = ((uint32_t*)rxDATA_F)[(38+19)<<1];
     
     for (;i<24;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(38+2+i)];
@@ -249,10 +249,10 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
     // +ve portion
     for (;i<30;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+1+i)];
-    pilot3 = ((uint32_t*)&rxDATA_F)[(6+1)<<1];
+    pilot3 = ((uint32_t*)rxDATA_F)[(6+1)<<1];
     for (;i<43;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+2+i)];
-    pilot4 = ((uint32_t*)&rxDATA_F)[(19+2)<<1];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=-((int16_t *)&pilot4)[1];
+    pilot4 = ((uint32_t*)rxDATA_F)[(19+2)<<1];((int16_t *)&pilot4)[0]=-((int16_t *)&pilot4)[0];((int16_t *)&pilot4)[1]=-((int16_t *)&pilot4)[1];
     for (;i<48;i++)
       rxDATA_F_comp2[i] = rxDATA_F_comp[(-24+3+i)];
     

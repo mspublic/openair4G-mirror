@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
   uint8_t rxp;
   int off,off2;
   double txg,txg_dB;
+  int log2_maxh;
 
   data_ind    = (uint8_t*)malloc(4095+2+1);
   data_ind_rx = (uint8_t*)malloc(4095+2+1);
@@ -309,7 +310,7 @@ int main(int argc, char **argv) {
 	    off2 = FRAME_LENGTH_SAMPLES_MAX-105;
 	  else
 	    off2=off;
-	  if ((initial_sync(&rxv,&rx_offset,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,off2,1) == BUSY)) {
+	  if ((initial_sync(&rxv,&rx_offset,&log2_maxh,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,off2,1) == BUSY)) {
 	    //	    printf("Channel is busy, rxv %p, offset %d\n",(void*)rxv,rx_offset);
 	    no_detection=0;
 	    if (rxv) {
@@ -321,7 +322,7 @@ int main(int argc, char **argv) {
 	      }
 	      else {
 		memset(data_ind_rx,0,rxv->sdu_length+4+2+1);
-		if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,NULL)) {
+		if (data_detection(rxv,data_ind_rx,(uint32_t*)rxdata[0],FRAME_LENGTH_SAMPLES_MAX,rx_offset,log2_maxh,NULL)) {
 		  for (i=0;i<rxv->sdu_length+6;i++) {
 		    if (data_ind[i]!=data_ind_rx[i]) {
 		      		  printf("error position %d : %x,%x\n",i,data_ind[i],data_ind_rx[i]);
