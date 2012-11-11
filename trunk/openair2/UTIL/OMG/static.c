@@ -55,11 +55,11 @@ void start_static_generator(omg_global_param omg_param_list) {
   
   if (omg_param_list.nodes <= 0){
     LOG_W(OMG, "Number of static nodes has not been set\n");
-    return(-1);
+    return;
   }
   
   srand(omg_param_list.seed + STATIC); 
-  // for (n_id = omg_param_list.first_ix; n_id< omg_param_list.first_ix + omg_param_list.nodes; n_id++) {
+  // for (n_id = omg_param_list.first_ix; n_id< omg_param_list.first_ix + omg_param_list.nodes; n_id++){
 
   if (omg_param_list.nodes_type == eNB) {
     LOG_I(OMG, "Static mobility model for %d eNBs \n", omg_param_list.nodes);
@@ -80,26 +80,25 @@ void start_static_generator(omg_global_param omg_param_list) {
 
     place_static_node(node);	//initial positions
   }
-  
 }
-  
+
+
 void place_static_node(NodePtr node) {
  	
-	node->X_pos = (double) ((int) (randomGen(omg_param_list.min_X, omg_param_list.max_X)*100))/ 100;
-	node->mob->X_from = node->X_pos;
-	node->mob->X_to = node->X_pos;
-	node->Y_pos = (double) ((int) (randomGen(omg_param_list.min_Y,omg_param_list.max_Y)*100))/ 100;
-	node->mob->Y_from = node->Y_pos;
-	node->mob->Y_to = node->Y_pos;
-
-	node->mob->speed = 0.0;
-	node->mob->journey_time = 0.0;
-
-	LOG_I(OMG, "[STATIC] Initial position of node ID: %d type(UE, eNB): %d (X = %.2f, Y = %.2f) speed = 0.0\n", 
-	      node->ID, node->type, node->X_pos, node->Y_pos);  
-	Node_Vector[STATIC] = (Node_list) add_entry(node, Node_Vector[STATIC]);
-	Node_Vector_len[STATIC]++;
-	//Initial_Node_Vector_len[STATIC]++;
- 
+  node->X_pos = (double) ((int) (randomGen(omg_param_list.min_X, omg_param_list.max_X)*100))/ 100;
+  node->mob->X_from = node->X_pos;
+  node->mob->X_to = node->X_pos;
+  node->Y_pos = (double) ((int) (randomGen(omg_param_list.min_Y,omg_param_list.max_Y)*100))/ 100;
+  node->mob->Y_from = node->Y_pos;
+  node->mob->Y_to = node->Y_pos;
+  
+  node->mob->speed = 0.0;
+  node->mob->journey_time = 0.0;
+  
+  LOG_I(OMG, "[STATIC] Initial position of node ID: %d type(UE, eNB): %d (X = %.2f, Y = %.2f) speed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);  
+  Node_Vector[STATIC] = (Node_list) add_entry(node, Node_Vector[STATIC]);
+  Node_Vector_len[STATIC]++;
+  //Initial_Node_Vector_len[STATIC]++;
+  
 }
 

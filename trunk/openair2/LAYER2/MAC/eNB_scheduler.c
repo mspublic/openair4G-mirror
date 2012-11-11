@@ -1123,6 +1123,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   //  printf("In schedule_ulsch ...\n");
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > (1<<aggregation));UE_id++) {
     //    printf("Checking UE_id %d/%d\n",UE_id,granted_UEs);
+    //LOG_D(OTG,"%d %d \n", UE_id%2, sched_subframe%2);
     if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0) || (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
     { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
 
@@ -1177,7 +1178,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 	// choose this later based on Power Headroom
 	if (ndi == 1) {// set mcs for first round
-	    mcs     = openair_daq_vars.target_ue_ul_mcs;
+	  mcs     = openair_daq_vars.target_ue_ul_mcs;
 	}
 	else  // increment RV
 	  mcs = round + 28; // why 28 ???
@@ -3690,7 +3691,8 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   nCCE = mac_xface->get_nCCE_max(Mod_id) - *nCCE_used;
 
   /// CALLING Pre_Processor for tm5
-  tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
+  if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
+    tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
     
   /// If there is more that one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.  
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
@@ -3953,7 +3955,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       // add the length for  all the control elements (timing adv, drx, etc) : header + payload  
       ta_len = (eNB_UE_stats->UE_timing_offset>0) ? 2 : 0;
       
-      header_len_dcch = 2; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
+      header_len_dcch = 2; // 2 bytes DCCH SDU subheader 
 
 
     

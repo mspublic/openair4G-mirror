@@ -173,7 +173,7 @@ int adjust_size(int size){
 
 
 
-char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, ctime = frame cnt
+unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, ctime = frame cnt
 
 
   int size=0;
@@ -193,7 +193,7 @@ char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, cti
   unsigned int hdr_type =1;//fixme 
   char *payload=NULL;
   char *header=NULL;
-	unsigned int i;
+  unsigned int i;
 
 
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
@@ -249,7 +249,7 @@ if (background_ok==0){
 		size=PAYLOAD_MAX;
     LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
 	}
-  header =random_string(header_size_gen(src,dst), g_otg->packet_gen_type, HEADER_ALPHABET);
+  header = random_string(header_size_gen(src,dst), g_otg->packet_gen_type, HEADER_ALPHABET);
   payload = random_string(size, g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xffff;
   flow=flow_id;
@@ -401,9 +401,9 @@ return(size);
 }
 
 
-char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level){
+unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level){
  
-  char *tx_buffer=NULL;
+  unsigned char *tx_buffer=NULL;
   otg_hdr_info_t *otg_hdr_info_p=NULL;
   otg_hdr_t *otg_hdr_p=NULL;
   unsigned int  byte_tx_count=0; 

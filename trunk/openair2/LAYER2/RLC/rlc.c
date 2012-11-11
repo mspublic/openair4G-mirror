@@ -358,7 +358,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
 //-----------------------------------------------------------------------------
     LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_ind:\n", frame, module_idP, rb_idP);
     rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
-    check_mem_area();
+    //check_mem_area();
     // now demux is done at PDCP 
     //  if ((is_data_planeP)) { 
 #ifdef DEBUG_RLC_PDCP_INTERFACE
