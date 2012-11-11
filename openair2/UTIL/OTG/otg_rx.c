@@ -221,30 +221,24 @@ void owd_const_gen(int src, int dst, unsigned int flag){
 
 
 float owd_const_capillary(){
-  float capillary_domain_latency=0;
-  capillary_domain_latency=uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + TERMINAL_ACCESS_DELAY;
-  return capillary_domain_latency;
+  return ( uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + 
+	   uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + 
+	   uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + 
+	   TERMINAL_ACCESS_DELAY);
 }
 
 
 float owd_const_mobile_core(){
-  float mobile_core_domain_latency=0;
-  mobile_core_domain_latency= uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) +  uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY);
-return mobile_core_domain_latency;
-
+  return ( uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) +  
+	   uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY));
 }
 
 float owd_const_IP_backbone(){
-  float IP_backbone_domain_latency=0;
-  IP_backbone_domain_latency= uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY);;
-  return IP_backbone_domain_latency;
+  return uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY);
 }
 
-
 float owd_const_application(){
-  float application_latency=0;
-  application_latency= uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
-  return application_latency;
+  return uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
 }
 
 

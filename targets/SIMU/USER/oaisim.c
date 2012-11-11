@@ -1275,10 +1275,10 @@ main (int argc, char **argv)
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
       //LOG_D(OMG," extracting position of eNb...\n");
-       extract_position(enb_node_list, enb_data, NB_eNB_INST);
-       //LOG_D(OMG," extracting position of UE...\n");
-       if (oai_emulation.info.omg_model_ue == TRACE)
-	 extract_position(ue_node_list, ue_data, NB_UE_INST); 
+      extract_position(enb_node_list, enb_data, NB_eNB_INST);
+      //LOG_D(OMG," extracting position of UE...\n");
+      //      if (oai_emulation.info.omg_model_ue == TRACE)
+      extract_position(ue_node_list, ue_data, NB_UE_INST); 
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
@@ -1410,7 +1410,6 @@ main (int argc, char **argv)
 #endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
-      
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
@@ -1431,7 +1430,6 @@ main (int argc, char **argv)
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
 	}
       }
-      
       if ((last_slot == 1) && (frame == 0)
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
