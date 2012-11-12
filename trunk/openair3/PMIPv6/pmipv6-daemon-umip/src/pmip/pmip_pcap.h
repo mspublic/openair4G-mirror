@@ -1,3 +1,21 @@
+/*
+ * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
+ *
+ * Authors: OPENAIR3 <openair_tech@eurecom.fr>
+ *
+ * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
+ * 
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
+ * management protocol standardized by IETF. It is a protocol for building 
+ * a common and access technology independent of mobile core networks, 
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ * network-based mobility management protocol standardized by IETF.
+ * 
+ * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
+ * which it involves that it is under the same terms of GNU General Public
+ * License version 2. See MIPL terms condition if you need more details. 
+ */
 /*! \file pmip_pcap.h
 * \brief
 * \author OpenAir3 Group
@@ -5,7 +23,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair3@eurecom.fr
+* \email: openair_tech@eurecom.fr
 */
 
 /** \defgroup PACKET_CAPTURE PACKET CAPTURE
@@ -39,7 +57,7 @@
 #    define PCAPMAXBYTES2CAPTURE 65535
 #    define PCAPTIMEDELAYKERNEL2USERSPACE 1000
 #    define PCAP_CAPTURE_SYSLOG_MESSAGE_FRAME_OFFSET   42
-//-PROTOTYPES----------------------------------------------------------------------------
+//-VARS----------------------------------------------------------------------------
 /*! \var pcap_t * pcap_descr
 \brief PCAP descriptor for capturing packets on MAG ingress interface.
 */
@@ -52,6 +70,7 @@ public_pmip_pcap(char g_pcap_devname[32]);
 \brief PCAP device interface index on which the capture of packets is done.
 */
 public_pmip_pcap(int   g_pcap_iif);
+//-PROTOTYPES----------------------------------------------------------------------------
 /*! \fn int pmip_pcap_loop_start(void)
 * \brief Start the PCAP listener thread.
 * \return 0 on success.
