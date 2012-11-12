@@ -876,10 +876,27 @@ void	rrc_ue_process_mobilityControlInfo(u8 Mod_id, u32 frame, u8 eNB_index, stru
 	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_REMOVE, Mod_id+DTCH);
 	rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,Mod_id+DTCH,RADIO_ACCESS_BEARER,Rlc_info_um);
 
+	//A little cleanup at RRC...
+	//Copying current queue config to free RRC index
+	/*
+	memcpy((void *)UE_rrc_inst[Mod_id].SRB1_config[~(7<<eNB_index)],(void *)UE_rrc_inst[Mod_id].SRB1_config[7<<eNB_index],sizeof(SRB_ToAddMod_t));
+	memcpy((void *)UE_rrc_inst[Mod_id].SRB2_config[~(7<<eNB_index)],(void *)UE_rrc_inst[Mod_id].SRB2_config[7<<eNB_index],sizeof(SRB_ToAddMod_t));
+	memcpy((void *)UE_rrc_inst[Mod_id].DRB_config[~(7<<eNB_index)][0],(void *)UE_rrc_inst[Mod_id].DRB_config[7<<eNB_index][0],sizeof(DRB_ToAddMod_t));
+	 */
+	//Freeing current queue config..
+	free((void *)UE_rrc_inst[Mod_id].SRB1_config[eNB_index]);
+	free((void *)UE_rrc_inst[Mod_id].SRB2_config[eNB_index]);
+	free((void *)UE_rrc_inst[Mod_id].DRB_config[eNB_index][0]);
+
+	UE_rrc_inst[Mod_id].SRB1_config[eNB_index] = NULL;
+	UE_rrc_inst[Mod_id].SRB2_config[eNB_index] = NULL;
+	UE_rrc_inst[Mod_id].DRB_config[eNB_index][0] = NULL;
+
 	//Synchronisation to DL of target cell
     LOG_D(RRC, "HO: Reset PDCP and RLC for configured RBs.. \n[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 eNB %d) --->][MAC_UE][MOD %02d][]\n",
           frame, Mod_id, eNB_index, Mod_id);
 
+    // Reset MAC and configure PHY
     rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			 (RadioResourceConfigCommonSIB_t *)NULL,
 			 (struct PhysicalConfigDedicated *)NULL,
@@ -892,6 +909,18 @@ void	rrc_ue_process_mobilityControlInfo(u8 Mod_id, u32 frame, u8 eNB_index, stru
 			 mobilityControlInfo,
 			 (u8 *)NULL,
 			 (u16 *)NULL);
+
+    // Re-establish PDCP for all RBs that are established
+//	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, Mod_id+DCCH);
+//	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, Mod_id+DCCH1);
+//	rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, Mod_id+DTCH);
+
+
+    // Re-establish RLC for all RBs that are established
+//	rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,Mod_id+DCCH,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+//	rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,Mod_id+DCCH1,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+//	rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,Mod_id+DTCH,RADIO_ACCESS_BEARER,Rlc_info_um);
+
 
     UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_SI_RECEIVED;
 }
@@ -962,7 +991,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
     		  else {
     			  Mod_id_t = get_adjacent_cell_mod_id(UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId);
     			  if(Mod_id_t != 0xFF) {
-    				  LOG_D(RRC,"\nReceived RRCReconf for HO \n");
+    				  LOG_D(RRC,"Received RRCReconfig with mobilityControlInfo \n");
     				  rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
     				  //Initiate RA procedure
     				  //PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH

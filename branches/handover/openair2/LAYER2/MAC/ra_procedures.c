@@ -341,7 +341,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 				&Size16,  // sdu length
 				&lcid,    // sdu lcid
 				NULL,  // power headroom
-				UE_mac_inst[Mod_id].crnti,  // crnti
+				&UE_mac_inst[Mod_id].crnti,  // crnti
 				NULL,  // truncated bsr
 				NULL, // short bsr
 				NULL, // long_bsr
