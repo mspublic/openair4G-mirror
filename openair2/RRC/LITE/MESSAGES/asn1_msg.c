@@ -185,7 +185,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   PLMN_IdentityInfo_t PLMN_identity_info;
   MCC_MNC_Digit_t dummy_mcc[3],dummy_mnc[2];
   asn_enc_rval_t enc_rval;
-  SchedulingInfo_t schedulingInfo2,schedulingInfo3;
+  SchedulingInfo_t schedulingInfo;
   SIB_Type_t sib_type;
 
   memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
@@ -196,8 +196,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   *sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
 
   memset(&PLMN_identity_info,0,sizeof(PLMN_IdentityInfo_t));
-  memset(&schedulingInfo2,0,sizeof(SchedulingInfo_t));
-  memset(&schedulingInfo3,0,sizeof(SchedulingInfo_t));
+  memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
   memset(&sib_type,0,sizeof(SIB_Type_t));
 
 
@@ -249,22 +248,21 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 
   (*sib1)->freqBandIndicator = 38;
 
-  //  assign_enum(&schedulingInfo.si_Periodicity,SchedulingInfo__si_Periodicity_rf8);
-  schedulingInfo2.si_Periodicity=SchedulingInfo__si_Periodicity_rf16;
-  schedulingInfo3.si_Periodicity=SchedulingInfo__si_Periodicity_rf32;
+  schedulingInfo.si_Periodicity=SchedulingInfo__si_Periodicity_rf8;
 
-  //  assign_enum(&sib_type,SIB_Type_sibType3);
-
-  // This is for SIB2
-  ASN_SEQUENCE_ADD(&schedulingInfo2.sib_MappingInfo.list,NULL);
-
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo2);
-
+  // This is for SIB2/3
   sib_type=SIB_Type_sibType3;
+  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
+  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
 
-  ASN_SEQUENCE_ADD(&schedulingInfo3.sib_MappingInfo.list,&sib_type);
+  //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo3);
+
+
+
+
+
+
 
   (*sib1)->tdd_Config = CALLOC(1,sizeof(struct TDD_Config));
 

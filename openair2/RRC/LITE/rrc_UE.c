@@ -888,14 +888,15 @@ if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
       if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
 	if ((frame %8) == 1) {
-	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
+	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/(frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize);
 	  memcpy((void*)si[si_window],
 		 (void*)&bcch_message->message.choice.c1.choice.systemInformation,
 		 sizeof(SystemInformation_t));
+	  LOG_D(RRC,"[UE %d] Decoding SI for frame %d, si_window %d\n",Mod_id,frame,si_window);
+	  decode_SI(Mod_id,frame,eNB_index,si_window);
+ 
 	}
-	LOG_D(RRC,"[UE %d] Decoding SI for frame %d, si_window %d\n",Mod_id,frame,si_window);
-	decode_SI(Mod_id,frame,eNB_index,si_window);
-      }
+     }
       break;
       case BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
 	break;
