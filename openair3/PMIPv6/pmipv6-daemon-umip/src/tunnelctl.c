@@ -2,7 +2,7 @@
  * $Id: tunnelctl.c 1.44 06/04/25 13:24:14+03:00 anttit@tcs.hut.fi $
  *
  * This file is part of the MIPL Mobile IPv6 for Linux.
- *
+ * 
  * Author: Ville Nuorvala <vnuorval@tcs.hut.fi>
  *
  * Copyright 2003-2005 Go-Core Project
@@ -22,24 +22,6 @@
  * along with MIPL Mobile IPv6 for Linux; if not, write to the Free
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA.
- */
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- *
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility
- * management protocol standardized by IETF. It is a protocol for building
- * a common and access technology independent of mobile core networks,
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only
- * network-based mobility management protocol standardized by IETF.
- *
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -168,7 +150,7 @@ static int __tunnel_del(struct mip6_tnl *tnl)
 
 	TDBG("tunnel %s (%d) from %x:%x:%x:%x:%x:%x:%x:%x "
 	     "to %x:%x:%x:%x:%x:%x:%x:%x user count decreased to %d\n",
-	     tnl->parm.name, tnl->ifindex,
+	     tnl->parm.name, tnl->ifindex, 
 	     NIP6ADDR(&tnl->parm.laddr), NIP6ADDR(&tnl->parm.raddr),
 	     tnl->users);
 
@@ -178,7 +160,7 @@ static int __tunnel_del(struct mip6_tnl *tnl)
 		hash_delete(&tnl_hash, &tnl->parm.laddr, &tnl->parm.raddr);
 		strcpy(ifr.ifr_name, tnl->parm.name);
 		if ((res = ioctl(tnl_fd, SIOCDELTUNNEL, &ifr)) < 0) {
-			TDBG("SIOCDELTUNNEL failed status %d %s\n",
+			TDBG("SIOCDELTUNNEL failed status %d %s\n", 
 			     errno, strerror(errno));
 			res = -1;
 		} else
@@ -196,8 +178,8 @@ static int __tunnel_del(struct mip6_tnl *tnl)
  * tunnel does not exist, otherwise zero.
  **/
 int tunnel_del(int ifindex,
-	       int (*ext_tunnel_ops)(int request,
-				     int old_if,
+	       int (*ext_tunnel_ops)(int request, 
+				     int old_if, 
 				     int new_if,
 				     void *data),
 	       void *data)
@@ -243,7 +225,7 @@ static struct mip6_tnl *__tunnel_add(struct in6_addr *local,
 	strcpy(ifr.ifr_name, basedev);
 	ifr.ifr_ifru.ifru_data = (void *)&tnl->parm;
 	if (ioctl(tnl_fd, SIOCADDTUNNEL, &ifr) < 0) {
-	    TDBG("SIOCADDTUNNEL failed status %d %s\n",
+	    TDBG("SIOCADDTUNNEL failed status %d %s\n", 
 		 errno, strerror(errno));
 	    goto err;
 	}
@@ -251,10 +233,9 @@ static struct mip6_tnl *__tunnel_add(struct in6_addr *local,
 		TDBG("tunnel exists,but isn't used for MIPv6\n");
 		goto err;
 	}
-	TDBG("tnl->parm.name = %s\n",tnl->parm.name);
 	strcpy(ifr.ifr_name, tnl->parm.name);
 	if (ioctl(tnl_fd, SIOCGIFFLAGS, &ifr) < 0) {
-		TDBG("SIOCGIFFLAGS failed status %d %s\n",
+		TDBG("SIOCGIFFLAGS failed status %d %s\n", 
 		     errno, strerror(errno));
 		goto err;
 	}
@@ -270,12 +251,12 @@ static struct mip6_tnl *__tunnel_add(struct in6_addr *local,
 	}
 	if (hash_add(&tnl_hash, tnl, &tnl->parm.laddr, &tnl->parm.raddr) < 0)
 		goto err;
-
+	
 	list_add_tail(&tnl->list, &tnl_list);
 
 	TDBG("created tunnel %s (%d) from %x:%x:%x:%x:%x:%x:%x:%x "
 	     "to %x:%x:%x:%x:%x:%x:%x:%x user count %d\n",
-	     tnl->parm.name, tnl->ifindex,
+	     tnl->parm.name, tnl->ifindex, 
 	     NIP6ADDR(&tnl->parm.laddr), NIP6ADDR(&tnl->parm.raddr),
 	     tnl->users);
 
@@ -296,8 +277,8 @@ err:
 int tunnel_add(struct in6_addr *local,
 	       struct in6_addr *remote,
 	       int link,
-	       int (*ext_tunnel_ops)(int request,
-				     int old_if,
+	       int (*ext_tunnel_ops)(int request, 
+				     int old_if, 
 				     int new_if,
 				     void *data),
 	       void *data)
@@ -306,11 +287,11 @@ int tunnel_add(struct in6_addr *local,
 	int res;
 
 	pthread_mutex_lock(&tnl_lock);
-	if ((tnl = hash_get(&tnl_hash, local, remote)) != NULL) {
+	if ((tnl = hash_get(&tnl_hash, local, remote)) != NULL) { 
 		tnl->users++;
 		TDBG("tunnel %s (%d) from %x:%x:%x:%x:%x:%x:%x:%x "
 		     "to %x:%x:%x:%x:%x:%x:%x:%x user count increased to %d\n",
-		     tnl->parm.name, tnl->ifindex,
+		     tnl->parm.name, tnl->ifindex, 
 		     NIP6ADDR(local), NIP6ADDR(remote), tnl->users);
 	} else {
 		if ((tnl = __tunnel_add(local, remote, link)) == NULL) {
@@ -354,7 +335,7 @@ static int __tunnel_mod(struct mip6_tnl *tnl,
 	ifr.ifr_ifru.ifru_data = (void *)&parm;
 
 	if(ioctl(tnl_fd, SIOCCHGTUNNEL, &ifr) < 0) {
-		TDBG("SIOCCHGTUNNEL failed status %d %s\n",
+		TDBG("SIOCCHGTUNNEL failed status %d %s\n", 
 		     errno, strerror(errno));
 		return -1;
 	}
@@ -370,7 +351,7 @@ static int __tunnel_mod(struct mip6_tnl *tnl,
 	     tnl->parm.name, tnl->ifindex, NIP6ADDR(&tnl->parm.laddr),
 	     NIP6ADDR(&tnl->parm.raddr));
 	return tnl->ifindex;
-
+	
 }
 
 
@@ -387,8 +368,8 @@ int tunnel_mod(int ifindex,
 	       struct in6_addr *local,
 	       struct in6_addr *remote,
 	       int link,
-	       int (*ext_tunnel_ops)(int request,
-				     int old_if,
+	       int (*ext_tunnel_ops)(int request, 
+				     int old_if, 
 				     int new_if,
 				     void *data),
 	       void *data)
@@ -412,7 +393,7 @@ int tunnel_mod(int ifindex,
 			TDBG("tunnel %s (%d) from %x:%x:%x:%x:%x:%x:%x:%x "
 			     "to %x:%x:%x:%x:%x:%x:%x:%x user count "
 			     "increased to %d\n",
-			     new->parm.name, new->ifindex,
+			     new->parm.name, new->ifindex, 
 			     NIP6ADDR(local), NIP6ADDR(remote), new->users);
 		}
 	} else {
@@ -426,7 +407,7 @@ int tunnel_mod(int ifindex,
 		}
 	}
 	if (ext_tunnel_ops &&
-	    ext_tunnel_ops(SIOCCHGTUNNEL,
+	    ext_tunnel_ops(SIOCCHGTUNNEL, 
 			   old->ifindex, new->ifindex, data) < 0) {
 		TDBG("ext_tunnel_ops failed\n");
 		if (old != new)
@@ -475,7 +456,7 @@ static int tnl_cleanup(void *data, __attribute__ ((unused)) void *arg)
 void tunnelctl_cleanup(void)
 {
 	pthread_mutex_lock(&tnl_lock);
-	hash_iterate(&tnl_hash, tnl_cleanup, NULL);
+	hash_iterate(&tnl_hash, tnl_cleanup, NULL);	
 	hash_cleanup(&tnl_hash);
 	pthread_mutex_unlock(&tnl_lock);
 	close(tnl_fd);
