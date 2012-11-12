@@ -295,7 +295,6 @@ void init_oai_emulation() {
 
 
 void oaisim_config() {
-
   // init log gen first
  //initialize the log generator 
   logInit();

@@ -489,6 +489,7 @@ typedef struct {
 } LTE_DL_FRAME_PARMS;
 
 typedef struct {
+	u8 ho_triggered;
 	LTE_DL_FRAME_PARMS lte_frame_parms;
 } LTE_HANDOVER_PARAMS;
 

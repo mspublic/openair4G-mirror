@@ -176,6 +176,7 @@ void phy_config_afterHO_ue(u8 Mod_id,u8 eNB_id,
 	  RadioResourceConfigCommon_t *radioResourceConfigCommon = &mobilityControlInfo->radioResourceConfigCommon;
 
 	  memcpy((void *)&PHY_vars_UE_g[Mod_id]->lte_handover_params.lte_frame_parms, (void *)&PHY_vars_UE_g[Mod_id]->lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+	  PHY_vars_UE_g[Mod_id]->lte_handover_params.ho_triggered = 1;
 
 	  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
 	  int N_ZC;
@@ -265,13 +266,12 @@ void phy_config_afterHO_ue(u8 Mod_id,u8 eNB_id,
 
 	  PHY_vars_UE_g[Mod_id]->lte_ue_pdcch_vars[eNB_id]->crnti = mobilityControlInfo->newUE_Identity.buf[0]|
 																(mobilityControlInfo->newUE_Identity.buf[1]<<8);
+
   }
-  else { // Handover failure
-	  if(ho_failed) {
-		  LOG_D(PHY,"\nHandover failed..triggering RACH procedure..")
-		  memcpy((void *)&PHY_vars_UE_g[Mod_id]->lte_frame_parms,(void *)&PHY_vars_UE_g[Mod_id]->lte_handover_params.lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-		  PHY_vars_UE_g[Mod_id]->UE_mode[eNB_id] = PRACH;
-	  }
+  if(ho_failed) {
+	  LOG_D(PHY,"\nHandover failed..triggering RACH procedure..");
+	  memcpy((void *)&PHY_vars_UE_g[Mod_id]->lte_frame_parms,(void *)&PHY_vars_UE_g[Mod_id]->lte_handover_params.lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+	  PHY_vars_UE_g[Mod_id]->UE_mode[eNB_id] = PRACH;
   }
 }
 

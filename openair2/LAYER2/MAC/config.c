@@ -110,7 +110,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_id,eNB_index);
     if (tdd_Config != NULL)
       UE_mac_inst[Mod_id].tdd_Config = tdd_Config;
-  }else {
+  }
+  else {
     if (physicalConfigDedicated == NULL){
       LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY\n",Mod_id);
     } else{
