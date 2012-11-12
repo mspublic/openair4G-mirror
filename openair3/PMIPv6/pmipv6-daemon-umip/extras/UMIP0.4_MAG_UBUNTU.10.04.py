@@ -35,7 +35,7 @@ for o,p in opts:
      g_config_file = str(p)
 
 ############################################################################################
-g_file_config=g_path+"/"+g_config_file
+g_file_config=g_path+"/extras/"+g_config_file
 ############################################################################################
 
 print "Config file is : " + g_file_config
@@ -154,7 +154,7 @@ command = "modprobe tunnel6"
 print command
 os.system(command)
 
-command = "pkill -9 pmip6d > /dev/null 2>&1"
+command = "pkill -9 mip6d > /dev/null 2>&1"
 print command
 os.system(command)
 
@@ -168,6 +168,6 @@ if g_pcap == "yes":
 	print value
 
 # LD_LIBRARY_PATH for freeradius libs
-command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/pmip6d -c ' + g_file_config
+command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/mip6d -c ' + g_file_config
 subprocess.call(command, shell=True)
 
