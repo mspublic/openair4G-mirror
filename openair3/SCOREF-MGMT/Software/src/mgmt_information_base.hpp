@@ -48,6 +48,7 @@
 #include <sys/types.h>
 #include <string>
 #include <map>
+using namespace std;
 
 /**
  * A container to hold configuration parameters of Management entity
@@ -146,23 +147,16 @@ class ManagementInformationBase {
 		/**
 		 * Updates Location Table with given information
 		 *
-		 * @param locationTableItem A pointer to a location Table Item
+		 * @param locationTableItem Location Table Item
 		 * @return true on success, false otherwise
 		 */
-		bool updateLocationTable(LocationTableItem* locationTableItem);
+		bool updateLocationTable(LocationTableItem& locationTableItem);
 		/**
 		 * Returns location information
 		 *
 		 * @return LocationInformation structure
 		 */
-		const LocationInformation& getLocationInformation();
-		/**
-		 * Updates location information with given data
-		 *
-		 * @param locationUpdate A copy of a LocationInformation structure
-		 * @return true on success, false otherwise
-		 */
-		bool setLocationInformation(const LocationInformation& locationUpdate);
+		LocationInformation getLocation();
 		/**
 		 * Sets network flags
 		 *
@@ -191,7 +185,7 @@ class ManagementInformationBase {
 		/**
 		 * Location table that consists of a map of LocationTableItem objects
 		 */
-		map<GnAddress, LocationTableItem*> locationTable;
+		map<GnAddress, LocationTableItem> locationTable;
 		/**
 		 * Communication profile manager
 		 */

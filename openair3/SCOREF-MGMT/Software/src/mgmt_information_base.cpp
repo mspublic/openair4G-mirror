@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -88,7 +88,7 @@ bool ManagementInformationBase::initialise() {
 		itsKeyManager.addKey(MGMT_GN_FAC_ITSKEY_ID_LDM_GARBAGE_COLLECTION_INTERVAL, "MIB_GN_FAC_LDM_GARBAGE_COLLECTION_INTERVAL", ITS_KEY_TYPE_FAC, 1000);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot define ITS key");
-		throw;
+		throw e;
 	}
 
 	logger.info("Management Information Base has been initialised");
@@ -102,7 +102,7 @@ bool ManagementInformationBase::setValue(ItsKeyID id, ItsKeyValue value) {
 		itsKeyManager.setKeyValue(id, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its ID");
-		throw;
+		throw e;
 	}
 
 	return true;
@@ -149,7 +149,7 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 		itsKeyManager.setKeyValue(name, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its name");
-		throw;
+		throw e;
 	}
 
 	return true;
@@ -161,7 +161,6 @@ ItsKeyValue ManagementInformationBase::getItsKeyValue(ItsKeyID id) {
 
 u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {
 	// This is the DWORD-length so it's 1
-	// TODO Not everything is DWORD!
 	return 1;
 }
 
@@ -187,13 +186,13 @@ CommunicationProfileManager& ManagementInformationBase::getCommunicationProfileM
 	return communicationProfileManager;
 }
 
-bool ManagementInformationBase::updateLocationTable(LocationTableItem* locationTableItem) {
-	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem*>(locationTableItem->gnAddress, locationTableItem));
+bool ManagementInformationBase::updateLocationTable(LocationTableItem& locationTableItem) {
+	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem>(locationTableItem.gnAddress, locationTableItem));
 
 	return true;
 }
 
-const LocationInformation& ManagementInformationBase::getLocationInformation() {
+LocationInformation ManagementInformationBase::getLocation() {
 	/**
 	 * todo this is temporary, location information will be received somewhere else later on
 	 */
@@ -203,17 +202,8 @@ const LocationInformation& ManagementInformationBase::getLocationInformation() {
 	location.speed = rand() % 20;
 	location.heading = 0;
 	location.altitude = rand() % 1000 + 10;
-	/**
-	 * Update time-stamp
-	 */
-	location.timestamp = time(NULL);
 
 	return location;
-}
-
-bool ManagementInformationBase::setLocationInformation(const LocationInformation& locationUpdate) {
-	location = locationUpdate;
-	return true;
 }
 
 bool ManagementInformationBase::setNetworkFlags(const u_int8_t& networkFlags) {

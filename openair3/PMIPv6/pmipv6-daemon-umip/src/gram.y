@@ -24,6 +24,24 @@
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  */
+/*
+ * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
+ *
+ * Authors: OPENAIR3 <openair_tech@eurecom.fr>
+ *
+ * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
+ * 
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
+ * management protocol standardized by IETF. It is a protocol for building 
+ * a common and access technology independent of mobile core networks, 
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ * network-based mobility management protocol standardized by IETF.
+ * 
+ * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
+ * which it involves that it is under the same terms of GNU General Public
+ * License version 2. See MIPL terms condition if you need more details. 
+ */
 
 %{
 
@@ -207,7 +225,7 @@ static void uerror(const char *fmt, ...) {
 %token		PROXYMIPLMA
 %token		PROXYMIPMAG
 %token		ALLLMAMULTICASTADDRESS
-%token		LMAPMIPNETWORKADDRESS
+%token		LMAADDRESS
 %token		LMAPMIPNETWORKDEVICE
 %token		LMACORENETWORKADDRESS
 %token		LMACORENETWORKDEVICE
@@ -395,6 +413,7 @@ topdef		: MIP6ENTITY mip6entity ';'
 mip6entity	: MIP6CN { $$ = MIP6_ENTITY_CN;	}
 		| MIP6MN { $$ = MIP6_ENTITY_MN; }
 		| MIP6HA { $$ = MIP6_ENTITY_HA; }
+		| MIP6LMA { $$ = MIP6_ENTITY_LMA; }
 		| MIP6MAG { $$ = MIP6_ENTITY_MAG; }
 		;
 
@@ -835,7 +854,7 @@ proxymiplmaopts	: proxymiplmaopt
 		| proxymiplmaopts proxymiplmaopt
 		;
 
-proxymiplmaopt	: LMAPMIPNETWORKADDRESS ADDR ';'
+proxymiplmaopt	: LMAADDRESS ADDR ';'
 		{
 			memcpy(&conf.LmaAddress, &$2, sizeof(struct in6_addr));
 		}
@@ -943,9 +962,7 @@ proxymiplmaopt	: LMAPMIPNETWORKADDRESS ADDR ';'
 		| MAGADDRESSEGRESS ADDR ';'
 		{
 			memcpy(&conf.MagAddressEgress[conf.NumMags], &$2, sizeof(struct in6_addr));
-			if (! IN6_IS_ADDR_UNSPECIFIED(&conf.MagAddressEgress[conf.NumMags])) {
-				conf.NumMags = conf.NumMags + 1;
-			}
+			conf.NumMags = conf.NumMags + 1;
 		}
 		;
 
@@ -964,7 +981,7 @@ proxymipmagopts	: proxymipmagopt
 		| proxymipmagopts proxymipmagopt
 		;
 
-proxymipmagopt	: LMAPMIPNETWORKADDRESS ADDR ';'
+proxymipmagopt	: LMAADDRESS ADDR ';'
 		{
 			memcpy(&conf.LmaAddress, &$2, sizeof(struct in6_addr));
 		}

@@ -44,9 +44,6 @@
 #include <math.h>
 #include "otg_form.h"
 
-extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
-
 //#include "LAYER2/MAC/extern.h"
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -155,17 +152,14 @@ char * hdr_payload=NULL;
 	/* xforms part: add metrics  */	
 	if (g_otg->curve==1){ 
   	if (g_otg->owd_radio_access==0)
-    	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
+    	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
     else
-    	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
+    	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
   }
 
 
   
-	if (src<NB_eNB_INST)
-		otg_info->rx_total_bytes_dl+=size;
-	else
-		otg_info->rx_total_bytes_ul+=size;
+
 
 
 //printf("payload_size %d, header_size %d \n", otg_hdr_rx->pkts_size, otg_hdr_rx->hdr_type);
@@ -221,24 +215,30 @@ void owd_const_gen(int src, int dst, unsigned int flag){
 
 
 float owd_const_capillary(){
-  return ( uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + 
-	   uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + 
-	   uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + 
-	   TERMINAL_ACCESS_DELAY);
+  float capillary_domain_latency=0;
+  capillary_domain_latency=uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + TERMINAL_ACCESS_DELAY;
+  return capillary_domain_latency;
 }
 
 
 float owd_const_mobile_core(){
-  return ( uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) +  
-	   uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY));
+  float mobile_core_domain_latency=0;
+  mobile_core_domain_latency= uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) +  uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY);
+return mobile_core_domain_latency;
+
 }
 
 float owd_const_IP_backbone(){
-  return uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY);
+  float IP_backbone_domain_latency=0;
+  IP_backbone_domain_latency= uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY);;
+  return IP_backbone_domain_latency;
 }
 
+
 float owd_const_application(){
-  return uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
+  float application_latency=0;
+  application_latency= uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
+  return application_latency;
 }
 
 

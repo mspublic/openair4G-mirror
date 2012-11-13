@@ -1024,7 +1024,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	if (UE_id>=0) {
 	  //	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
-	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 
 	  generate_eNB_dlsch_params_from_dci(next_slot>>1,
 					     &DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1105,7 +1104,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		1<<DCI_pdu->dci_alloc[i].L);
 #endif
 
-	dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+	//dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 	
 	generate_eNB_ulsch_params_from_dci(&DCI_pdu->dci_alloc[i].dci_pdu[0],
 					   DCI_pdu->dci_alloc[i].rnti,
@@ -1940,7 +1939,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   if (preamble_energy_list[preamble_max] > 60) {
     UE_id = find_next_ue_index(phy_vars_eNB);
     if (UE_id>=0) {
-      phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max];
+      phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max];//cmax(0, (int) preamble_delay_list[preamble_max] - 10);
       //phy_vars_eNb->eNB_UE_stats[(u32)UE_id].mode = PRACH;
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].sector = 0;
       LOG_I(PHY,"[eNB %d][RAPROC] Initiating RA procedure with preamble %d, energy %d, delay %d\n",
@@ -1952,6 +1951,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       mac_xface->initiate_ra_proc(phy_vars_eNB->Mod_id,
 				  phy_vars_eNB->frame,
 				  preamble_max,
+				  //				  cmax(0, (int) preamble_delay_list[preamble_max] - 10),
 				  preamble_delay_list[preamble_max],
 				  0,subframe,0);
 #endif
@@ -2397,8 +2397,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  LOG_D(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",phy_vars_eNB->frame,last_slot>>1,
 		harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
-	    msg("%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b[j]);
-	  msg("\n");
+	    LOG_D(PHY,"%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b[j]);
+	  LOG_D(PHY,"\n");
 #endif
 	  
 
@@ -2460,21 +2460,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    (phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][round] - 
 	     phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[harq_pid][round]);
 
-	//phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[i].total_TBS - phy_vars_eNB->eNB_UE_stats[i].total_TBS_last;
-
-	//phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
 	phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[harq_pid][round] = 
 	  phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][round];
 	phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors_last[harq_pid][round] = 
 	  phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[harq_pid][round];
       }
 
-      /*      if(phy_vars_eNB->frame % 10 == 0) {
-	phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*10;
-	
-	phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
-     } */ 
     }
   
 
@@ -2705,10 +2696,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     } // PUCCH processing
     
 #endif //PUCCH
-
-    if (last_slot==0) {
+  
+    if ((phy_vars_eNB->frame % 100 == 0) && (last_slot==9)) {
       phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						     phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*100;
+						     phy_vars_eNB->eNB_UE_stats[i].total_TBS_last);
       
       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
     }

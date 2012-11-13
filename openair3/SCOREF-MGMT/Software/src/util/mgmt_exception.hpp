@@ -51,7 +51,7 @@ using namespace std;
 /**
  * A basic exception class for error handling
  */
-class Exception : public std::exception {
+class Exception {
 	public:
 		/**
 		 * Constructor for Exception class
@@ -63,7 +63,7 @@ class Exception : public std::exception {
 		/**
 		 * Destructor for Exception class
 		 */
-		~Exception() throw();
+		~Exception();
 
 	public:
 		/**

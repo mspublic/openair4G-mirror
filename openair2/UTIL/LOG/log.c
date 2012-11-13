@@ -142,7 +142,7 @@ int logInit (void) {
     g_log->log_component[RRC].fd = 0;
     g_log->log_component[RRC].filelog = 0;
     g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
-
+    
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
     g_log->log_component[EMU].flag =  LOG_MED; 
@@ -231,23 +231,7 @@ int logInit (void) {
     g_log->log_component[OCM].fd = 0;
     g_log->log_component[OCM].filelog =  0;
     g_log->log_component[OCM].filelog_name = "/tmp/ocm.log";
-
-    g_log->log_component[S1AP].name = "S1AP";
-    g_log->log_component[S1AP].level = LOG_TRACE;
-    g_log->log_component[S1AP].flag = LOG_MED;
-    g_log->log_component[S1AP].interval = 1;
-    g_log->log_component[S1AP].fd = 0;
-    g_log->log_component[S1AP].filelog = 0;
-    g_log->log_component[S1AP].filelog_name = "/tmp/s1ap.log";
-
-    g_log->log_component[SCTP].name = "SCTP";
-    g_log->log_component[SCTP].level = LOG_TRACE;
-    g_log->log_component[SCTP].flag = LOG_MED;
-    g_log->log_component[SCTP].interval = 1;
-    g_log->log_component[SCTP].fd = 0;
-    g_log->log_component[SCTP].filelog = 0;
-    g_log->log_component[SCTP].filelog_name = "";
-
+       
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
@@ -500,7 +484,7 @@ void set_component_filelog(int comp){
   if (g_log->log_component[comp].filelog ==  0){
     g_log->log_component[comp].filelog =  1;
     if (g_log->log_component[comp].fd == 0)
-      g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+      g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   }
 }
 

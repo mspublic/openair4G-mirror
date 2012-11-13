@@ -51,8 +51,8 @@
 #endif
 
 
-//#define NAS_DEBUG_CLASS 1
-//#define NAS_DEBUG_SEND 1
+#define NAS_DEBUG_CLASS 1
+#define NAS_DEBUG_SEND 1
 
 //---------------------------------------------------------------------------
 // Add a new classifier rule (send direction)

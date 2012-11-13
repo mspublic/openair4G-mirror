@@ -104,6 +104,7 @@ typedef struct {
   u32  rx_total_gain_dB;
   u32  hw_frame;
   u32  get_frame_done;
+  u32  use_ia_receiver;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE

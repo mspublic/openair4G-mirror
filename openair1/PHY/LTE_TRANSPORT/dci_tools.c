@@ -868,9 +868,9 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   u8 NPRB=0,tbswap=0,tpmi=0;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
 
-  //#ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
   msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
-  //#endif
+#endif
 
   switch (dci_format) {
 
@@ -889,7 +889,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       ndi      = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
       TPC      = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC; 
       harq_pid = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
-      printf("TDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
+      //printf("TDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
     }
     else {
       vrb_type = ((DCI1A_5MHz_FDD_t *)dci_pdu)->vrb_type;
@@ -899,7 +899,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       ndi      = ((DCI1A_5MHz_FDD_t *)dci_pdu)->ndi;
       TPC      = ((DCI1A_5MHz_FDD_t *)dci_pdu)->TPC; 
       harq_pid  = ((DCI1A_5MHz_FDD_t *)dci_pdu)->harq_pid;
-      printf("FDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
+      //printf("FDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
     }
     if (rballoc>RIV_max) {
       msg("dci_tools.c: ERROR: Format 1A: rb_alloc > RIV_max\n");

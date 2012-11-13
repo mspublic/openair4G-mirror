@@ -80,9 +80,11 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 		   phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
 		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
 		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
+  
+  cyclic_shift0 = 0;
+  cyclic_shift1 = 0;
+  //LOG_I(PHY,"lte_ul_channel_estimation: cyclic_shift0 %d, cyclic_shift1  %d\n",cyclic_shift0,cyclic_shift1);
 
-  //       cyclic_shift0 = 0;
-  //        cyclic_shift1 = 0;
   Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE

@@ -1,21 +1,3 @@
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
- * network-based mobility management protocol standardized by IETF.
- * 
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
- */
 /*! \file pmip_tunnel.c
 * \brief
 * \author OpenAir3 Group
@@ -23,7 +5,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair_tech@eurecom.fr
+* \email: openair3@eurecom.fr
 */
 #define PMIP
 #define PMIP_TUNNEL_C
@@ -69,7 +51,7 @@ int pmip_tunnels_init(void)
     if (conf.TunnelingEnabled) {
         if (conf.DynamicTunnelingEnabled == 0) {
             dbg("DynamicTunnelingEnabled is False\n");
-            if (is_ha()) {
+            if (is_lma()) {
                 for (mag = 0 ; mag < conf.NumMags; mag++) {
                     link = if_nametoindex(conf.LmaPmipNetworkDevice);
                     pmip_tunnel_add(&conf.LmaAddress, &conf.MagAddressEgress[mag], link);
