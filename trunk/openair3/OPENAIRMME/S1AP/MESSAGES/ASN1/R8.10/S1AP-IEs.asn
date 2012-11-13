@@ -363,11 +363,6 @@ Direct-Forwarding-Path-Availability ::= ENUMERATED {
 
 E-RABToBeModifiedListBearerModReq ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
-E-RABToBeModifiedItemBearerModReqIEs ::= SET {
-    e-RABToBeModifiedListBearerModReq-ies E-RABToBeModifiedItemBearerModReq,
-    ...
-}
-
 E-RABToBeModifiedItemBearerModReq ::= SEQUENCE {
 	e-RAB-ID						E-RAB-ID,
 	e-RABLevelQoSParameters			E-RABLevelQoSParameters,
@@ -379,11 +374,6 @@ E-RABToBeModifiedItemBearerModReq ::= SEQUENCE {
 
 E-RABReleaseListBearerRelComp ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
-E-RABReleaseItemBearerRelCompIEs ::= SET {
-    e-RABReleaseListBearerRelComp-ies E-RABReleaseItemBearerRelComp,
-    ...
-}
-
 E-RABReleaseItemBearerRelComp ::= SEQUENCE {
 	e-RAB-ID					E-RAB-ID,
 --	iE-Extensions					ProtocolExtensionContainer { {E-RABReleaseItemBearerRelCompExtIEs} } OPTIONAL,
@@ -392,11 +382,6 @@ E-RABReleaseItemBearerRelComp ::= SEQUENCE {
 }
 
 E-RABDataForwardingList ::= SEQUENCE (SIZE (0..maxNrOfE-RABs)) OF IE
-
-E-RABDataForwardingItemIEs ::= SET {
-    e-RABDataForwardingList-ies E-RABDataForwardingItem,
-    ...
-}
 
 E-RABDataForwardingItem ::= SEQUENCE {
 	e-RAB-ID							E-RAB-ID,
@@ -411,11 +396,6 @@ E-RABDataForwardingItem ::= SEQUENCE {
 
 E-RABToBeSetupListCtxtSUReq ::= SEQUENCE (SIZE(1..maxNrOfE-RABs)) OF IE
 
-E-RABToBeSetupItemCtxtSUReqIEs ::= SET {
-    e-RABToBeSetupItemCtxtSUReq-ies E-RABToBeSetupItemCtxtSUReq,
-    ...
-}
-
 E-RABToBeSetupItemCtxtSUReq ::= SEQUENCE {
 	e-RAB-ID					E-RAB-ID,
 	e-RABlevelQoSParameters					E-RABLevelQoSParameters,		
@@ -429,11 +409,6 @@ E-RABToBeSetupItemCtxtSUReq ::= SEQUENCE {
 
 E-RABSetupListBearerSURes ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
-E-RABSetupItemBearerSUResIEs ::= SET {
-    e-RABSetupListBearerSURes-ies E-RABSetupItemBearerSURes,
-    ...
-}
-
 E-RABSetupItemBearerSURes ::= SEQUENCE {
 	e-RAB-ID					E-RAB-ID,
 	transportLayerAddress		TransportLayerAddress,
@@ -445,11 +420,6 @@ E-RABSetupItemBearerSURes ::= SEQUENCE {
 
 E-RABFailedtoSetupListHOReqAck ::= SEQUENCE (SIZE (0..maxNrOfE-RABs)) OF IE
 
-E-RABFailedtoSetupItemHOReqAckIEs ::= SET {
-    e-RABFailedtoSetupListHOReqAck-ies E-RABFailedToSetupItemHOReqAck,
-    ...
-}
-
 E-RABFailedToSetupItemHOReqAck ::= SEQUENCE {
 	e-RAB-ID						E-RAB-ID,
 	cause				Cause,
@@ -459,11 +429,6 @@ E-RABFailedToSetupItemHOReqAck ::= SEQUENCE {
 }
 
 E-RABToBeSetupListBearerSUReq ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
-
-E-RABToBeSetupItemBearerSUReqIEs ::= SET {
-    e-RABToBeSetupListBearerSUReq-ies E-RABToBeSetupItemBearerSUReq,
-    ...
-}
 
 E-RABToBeSetupItemBearerSUReq ::= SEQUENCE {
 	e-RAB-ID						E-RAB-ID,
@@ -477,11 +442,6 @@ E-RABToBeSetupItemBearerSUReq ::= SEQUENCE {
 }
 
 E-RABAdmittedList ::= SEQUENCE (SIZE (0..maxNrOfE-RABs)) OF IE
-
-E-RABAdmittedItemIEs ::= SET {
-    e-RABAdmittedList-ies E-RABAdmittedItem,
-    ...
-}
 
 E-RABAdmittedItem ::= SEQUENCE {
 	e-RAB-ID						E-RAB-ID,
@@ -498,11 +458,6 @@ E-RABAdmittedItem ::= SEQUENCE {
 
 E-RABToBeSwitchedDLList ::= SEQUENCE (SIZE (0..maxNrOfE-RABs)) OF IE
 
-E-RABToBeSwitchedDLListIEs ::= SET {
-    e-RABToBeSwitchedDLList-ies E-RABToBeSwitchedDLItem,
-    ...
-}
-
 E-RABToBeSwitchedDLItem ::= SEQUENCE {
 	e-RAB-ID						E-RAB-ID,
 	transportLayerAddress				TransportLayerAddress,
@@ -513,11 +468,6 @@ E-RABToBeSwitchedDLItem ::= SEQUENCE {
 }
 
 E-RABToBeSwitchedULList ::= SEQUENCE (SIZE (0..maxNrOfE-RABs)) OF IE
-
-E-RABToBeSwitchedULItemIEs ::= SET {
-    e-RABToBeSwitchedULList-ies E-RABToBeSwitchedULItem,
-    ...
-}
 
 E-RABToBeSwitchedULItem ::= SEQUENCE {
 	e-RAB-ID							E-RAB-ID,
@@ -530,11 +480,6 @@ E-RABToBeSwitchedULItem ::= SEQUENCE {
 
 E-RABModifyListBearerModRes ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
-E-RABModifyItemBearerModResIEs ::= SET {
-    e-RABModifyListBearerModRes-ies E-RABModifyItemBearerModRes,
-    ...
-}
-
 E-RABModifyItemBearerModRes ::= SEQUENCE {
 	e-RAB-ID					E-RAB-ID,
     iE-Extensions           IE-Extensions OPTIONAL,
@@ -542,11 +487,6 @@ E-RABModifyItemBearerModRes ::= SEQUENCE {
 }
 
 E-RABSetupListCtxtSURes ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
-
-E-RABSetupListCtxtSUResIEs ::= SET {
-    e-RABSetupListCtxtSURes-ies E-RABSetupItemCtxtSURes,
-    ...
-}
 
 E-RABSetupItemCtxtSURes ::= SEQUENCE {
 	e-RAB-ID					E-RAB-ID,
@@ -558,11 +498,6 @@ E-RABSetupItemCtxtSURes ::= SEQUENCE {
 }
 
 E-RABToBeSetupListHOReq ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
-
-E-RABToBeSetupListHOReqIEs ::= SET {
-    e-RABToBeSetupListHOReq-ies E-RABToBeSetupItemHOReq,
-    ...
-}
 
 E-RABToBeSetupItemHOReq ::= SEQUENCE {
 	e-RAB-ID							E-RAB-ID,

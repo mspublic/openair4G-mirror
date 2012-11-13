@@ -21,5 +21,11 @@ libs1ap_la_SOURCES = \
 	s1ap_mme_decoder.h s1ap_mme_decoder.c	\
 	s1ap_mme_handlers.h s1ap_mme_handlers.c	\
 	s1ap_mme.h s1ap_mme.c			\
-	s1ap_decoder.c	s1ap_encoder.c		\
-	s1ap_ies_defs.h
+	${top_builddir}/S1AP/s1ap_decoder.c	\
+	${top_builddir}/S1AP/s1ap_encoder.c	\
+	${top_builddir}/S1AP/s1ap_ies_defs.h
+
+clean-local:
+	rm -f ${top_builddir}/S1AP/s1ap_ies_defs.h
+	rm -f ${top_builddir}/S1AP/s1ap_decoder.c
+	rm -f ${top_builddir}/S1AP/s1ap_encoder.c
