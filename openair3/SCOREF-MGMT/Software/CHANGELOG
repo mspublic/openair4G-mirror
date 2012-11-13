@@ -1,4 +1,9 @@
 
+v1.2.2
+* test/simulation/README updated
+* test/simulation/packet.py's communication profile request code updated with Andrea's sample
+* Bugfix Communication Profile filtering is now handled correctly
+
 v1.2.1
 * Simulator can now send COMMUNICATION_PROFILE_REQUEST
 * A new scenerio file named 02.sce added for Communication Profile tests

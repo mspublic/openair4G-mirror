@@ -49,14 +49,21 @@ using namespace std;
 
 UdpSocket::UdpSocket(u_int16_t portNumber, Logger& logger)
 	: socketType(UdpSocket::SERVER_SOCKET), logger(logger) {
-	socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
-	socket->set_option(boost::asio::socket_base::reuse_address(true));
+	logger.debug("Server socket is being created at port " + boost::lexical_cast<string>(portNumber));
+
+	try {
+		socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
+		socket->set_option(boost::asio::socket_base::reuse_address(true));
+	} catch (std::exception& e) {
+		throw Exception(e.what(), logger);
+	}
 
 	logger.info("A UDP socket created for port " + boost::lexical_cast<string>(portNumber));
 }
 
 UdpSocket::UdpSocket(const string& address, u_int16_t portNumber, Logger& logger)
 	: socketType(UdpSocket::CLIENT_SOCKET), logger(logger) {
+	logger.debug("Client socket is being created to " + address + ":" + boost::lexical_cast<string>(portNumber));
 	/**
 	 * Convert incoming string address
 	 */
@@ -67,8 +74,12 @@ UdpSocket::UdpSocket(const string& address, u_int16_t portNumber, Logger& logger
 	/**
 	 * Create a socket
 	 */
-	socket = new udp::socket(ioService, recipient);
-	socket->set_option(boost::asio::socket_base::reuse_address(true));
+	try {
+		socket = new udp::socket(ioService, recipient);
+		socket->set_option(boost::asio::socket_base::reuse_address(true));
+	} catch (std::exception& e) {
+		throw Exception(e.what(), logger);
+	}
 }
 
 UdpSocket::UdpSocket(const UdpSocket& UdpSocket)
