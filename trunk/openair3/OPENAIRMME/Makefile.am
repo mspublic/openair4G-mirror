@@ -1,0 +1,8 @@
+SUBDIRS = 			\
+	INTERTASK_INTERFACE 	\
+	SCTP			\
+	S1AP			\
+	UTILS			\
+	TEST			\
+	OAISIM_MME		\
+	DOCS

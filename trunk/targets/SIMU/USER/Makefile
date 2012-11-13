@@ -135,6 +135,10 @@ CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
 CFLAGS += -DENABLE_FXP -DOAI_EMU -DENABLE_USE_CPU_EXECUTION_TIME
 
+ifneq ($(USE_MME), R8)
+UPDATE_RELEASE_9=1
+endif
+
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
@@ -142,6 +146,17 @@ include $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
+include $(OPENAIR2_DIR)/S1AP/Makefile.inc
+include $(OPENAIR2_DIR)/S1AP/MESSAGES/Makefile.inc
+
+CFLAGS += -DENB_MODE
+S1AP_BUILT_OBJS=
+
+ifdef USE_MME
+CFLAGS += -DENABLE_USE_MME
+CFLAGS_S1AP += -DENB_MODE -DENABLE_USE_MME -DEMIT_ASN_DEBUG=1 -DUSER_MODE
+S1AP_BUILT_OBJS += $(S1AP_OBJS) $(addprefix $(OPENAIR2_DIR)/S1AP/MESSAGES/, $(S1AP_ASN_MODULE_SOURCES))
+endif
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o
@@ -194,19 +209,50 @@ printvars:
 	@echo L2 objs are $(L2_OBJS)
 	@echo eNB_flag is $(eNB_flag)
 	@echo UE_flag is $(UE_flag)
+	@echo $(S1AP_BUILT_OBJS)
+
+ASN1RELDIR=R9.8
+ifeq ($(USE_MME), R8)
+	ASN1RELDIR=R8.10
+else
+	CFLAGS_S1AP += -DUPDATE_RELEASE_9
+endif
+S1AP_DIR=$(OPENAIR2_DIR)/S1AP
+ASN1MESSAGESDIR=$(S1AP_DIR)/MESSAGES
+ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
 
 $(OBJ) $(ASN1_MSG_OBJS1) : %.o : %.c
 	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
+$(S1AP_BUILT_OBJS): %.o : %.c
+	@echo Compiling $<
+	@$(CC) -Wall -c $(CFLAGS_S1AP) $(S1AP_Incl) $(UTIL_incl) -o $@ $<
+
+$(ASN1MESSAGESDIR)/s1ap_ieregen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU-Contents.asn $(ASN1DIR)/asn1tostruct.py
+	echo Timestamp > $@
+	(cd $(ASN1DIR) && python $(ASN1DIR)/asn1tostruct.py -f$<)
+
+$(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-CommonDataTypes.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-Constants.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-IEs.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU.asn
+	echo Timestamp > $@
+	(cd $(ASN1MESSAGESDIR) && asn1c -gen-PER -fnative-types -fskeletons-copy $^)
+
+$(S1AP_DIR)/libs1ap.a: $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp $(S1AP_BUILT_OBJS)
+	@echo Creating $@
+	$(AR) rcs $@ $^
+
+ifdef USE_MME
+oaisim : $(OBJ) $(ASN1_MSG_OBJS1) $(S1AP_DIR)/libs1ap.a oaisim.c
+else
 oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c
+endif
 	@echo "Compiling oaisim.c ..."
-	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
+	$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
+	-lsctp -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
 	@echo "Compiling oaisimCROWN.c ..."
-	@$(CC)  oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
-
+	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -236,14 +282,17 @@ nas_sim_mt_cellular:
 nas_sim_rg_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make nasrg_sim MASTER=1 CELLULAR=1 NO_RRM=1)
 
-cleanall: clean cleanasn1
+cleanall: clean cleanasn1 cleanmmeasn1
 
 clean:
 	rm -f oaisim
 	rm -f $(OBJ)
+	rm -f $(S1AP_BUILT_OBJS)
+	rm -f $(ASN1MESSAGESDIR)/libs1ap.a
 	rm -f *.o
 	rm -f *.exe*
 	rm -f $(ASN1_MSG_INC)/asn1_msg.o
+
 cleanl1:
 	rm -f oaisim
 	rm -f $(PHY_OBJS) $(SCHED_OBJS)
@@ -256,6 +305,13 @@ cleanl2:
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
+
+cleanmmeasn1:
+	rm -f $(S1AP_BUILT_OBJS)
+	rm -f $(S1AP_BUILT_OBJS:.o:.c)
+	rm -f $(ASN1MESSAGESDIR)/libs1ap.a
+	rm -f $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp
+	rm -f $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp
 
 cleancell:
 	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
