@@ -36,7 +36,7 @@
 
 #include <stdint.h>
 
-#include "gtpu_messages_def.h"
+// #include "gtpu_messages_def.h"
 #include "sctp_messages_def.h"
 #include "s1ap_messages_def.h"
 
@@ -48,7 +48,7 @@
 
 /* This enum defines messages ids. Each one is unique. */
 typedef enum {
-    #include "gtpu_messages_id.h"
+//     #include "gtpu_messages_id.h"
     #include "sctp_messages_id.h"
     #include "s1ap_messages_id.h"
     MESSAGES_ID_MAX,
@@ -82,7 +82,7 @@ typedef struct MessageDef_s {
 
     union msg {
         #define MESSAGE_DEFINITION
-        #include "gtpu_messages_def.h"
+//         #include "gtpu_messages_def.h"
         #include "sctp_messages_def.h"
         #include "s1ap_messages_def.h"
         #undef MESSAGE_DEFINITION

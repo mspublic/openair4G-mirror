@@ -31,8 +31,8 @@
 /*******************************************************************************
  * This file had been created by asn1tostruct.py script v0.3
  * Please do not modify it directly.
- * Created on: 2012-11-12 16:10:59.280860
- * from /homes/roux/openair4G/openair2/S1AP/MESSAGES/ASN1/R9.8/S1AP-PDU-Contents.asn
+ * Created on: 2012-11-13 11:44:11.921370
+ * from /homes/roux/trunk-clean/openair2/S1AP/MESSAGES/ASN1/R9.8/S1AP-PDU-Contents.asn
  ******************************************************************************/
 #include "s1ap_common.h"
 

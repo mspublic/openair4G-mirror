@@ -49,44 +49,30 @@ S1AP_ASN_MODULE_SOURCES= \
     DL-Forwarding.o \
     Direct-Forwarding-Path-Availability.o   \
     E-RABToBeModifiedListBearerModReq.o \
-    E-RABToBeModifiedItemBearerModReqIEs.o  \
     E-RABToBeModifiedItemBearerModReq.o \
     E-RABReleaseListBearerRelComp.o \
-    E-RABReleaseItemBearerRelCompIEs.o  \
     E-RABReleaseItemBearerRelComp.o \
-    E-RABSubjecttoDataForwardingList.o  \
     E-RABDataForwardingList.o   \
-    E-RABDataForwardingItemIEs.o    \
     E-RABDataForwardingItem.o   \
     E-RABToBeSetupListCtxtSUReq.o   \
-    E-RABToBeSetupItemCtxtSUReqIEs.o    \
     E-RABToBeSetupItemCtxtSUReq.o   \
     E-RABSetupListBearerSURes.o \
-    E-RABSetupItemBearerSUResIEs.o  \
     E-RABSetupItemBearerSURes.o \
     E-RABFailedtoSetupListHOReqAck.o    \
-    E-RABFailedtoSetupItemHOReqAckIEs.o \
     E-RABFailedToSetupItemHOReqAck.o    \
     E-RABToBeSetupListBearerSUReq.o \
-    E-RABToBeSetupItemBearerSUReqIEs.o  \
     E-RABToBeSetupItemBearerSUReq.o \
     E-RABAdmittedList.o \
-    E-RABAdmittedItemIEs.o  \
     E-RABAdmittedItem.o \
     E-RABToBeSwitchedDLList.o   \
-    E-RABToBeSwitchedDLListIEs.o    \
     E-RABToBeSwitchedDLItem.o   \
     E-RABToBeSwitchedULList.o   \
-    E-RABToBeSwitchedULItemIEs.o    \
     E-RABToBeSwitchedULItem.o   \
     E-RABModifyListBearerModRes.o   \
-    E-RABModifyItemBearerModResIEs.o    \
     E-RABModifyItemBearerModRes.o   \
     E-RABSetupListCtxtSURes.o   \
-    E-RABSetupListCtxtSUResIEs.o    \
     E-RABSetupItemCtxtSURes.o   \
     E-RABToBeSetupListHOReq.o   \
-    E-RABToBeSetupListHOReqIEs.o    \
     E-RABToBeSetupItemHOReq.o   \
     ECGIList.o  \
     EmergencyAreaIDList.o   \
@@ -126,7 +112,6 @@ S1AP_ASN_MODULE_SOURCES= \
     HandoverRestrictionList.o   \
     HandoverType.o  \
     HFN.o   \
-    HandoverNotify.o    \
     Inter-SystemInformationTransferType.o   \
     IMSI.o  \
     IntegrityProtectionAlgorithms.o \
@@ -227,7 +212,6 @@ S1AP_ASN_MODULE_SOURCES= \
     UE-S1AP-ID-pair.o   \
     UE-associatedLogicalS1-ConnectionListRes.o  \
     UE-associatedLogicalS1-ConnectionListResAck.o   \
-    UE-associatedLogicalS1-ConnectionItemRes.o  \
     UE-associatedLogicalS1-ConnectionItem.o \
     UEIdentityIndexValue.o  \
     UE-HistoryInformation.o \
@@ -249,7 +233,7 @@ S1AP_ASN_MODULE_SOURCES= \
     HandoverRequest.o   \
     HandoverRequestAcknowledge.o    \
     HandoverFailure.o   \
-    Handover2.o \
+    HandoverNotify.o \
     PathSwitchRequest.o \
     PathSwitchRequestAcknowledge.o  \
     PathSwitchRequestFailure.o  \
@@ -540,7 +524,6 @@ S1AP_ASN_MODULE_HEADERS= \
     UE-S1AP-ID-pair.h   \
     UE-associatedLogicalS1-ConnectionListRes.h  \
     UE-associatedLogicalS1-ConnectionListResAck.h   \
-    UE-associatedLogicalS1-ConnectionItemRes.h  \
     UE-associatedLogicalS1-ConnectionItem.h \
     UEIdentityIndexValue.h  \
     UE-HistoryInformation.h \
@@ -562,7 +545,7 @@ S1AP_ASN_MODULE_HEADERS= \
     HandoverRequest.h   \
     HandoverRequestAcknowledge.h    \
     HandoverFailure.h   \
-    Handover2.h \
+    HandoverNotify.h \
     PathSwitchRequest.h \
     PathSwitchRequestAcknowledge.h  \
     PathSwitchRequestFailure.h  \
@@ -716,8 +699,6 @@ S1AP_ASN_MODULE_SOURCES+=constr_SEQUENCE.o
 S1AP_ASN_MODULE_HEADERS+=constr_SEQUENCE_OF.h
 S1AP_ASN_MODULE_SOURCES+=constr_SEQUENCE_OF.o
 S1AP_ASN_MODULE_HEADERS+=constr_SET_OF.h
-S1AP_ASN_MODULE_HEADERS+=constr_SET.h
-S1AP_ASN_MODULE_SOURCES+=constr_SET.o
 S1AP_ASN_MODULE_SOURCES+=constr_SET_OF.o
 S1AP_ASN_MODULE_HEADERS+=asn_application.h
 S1AP_ASN_MODULE_HEADERS+=asn_system.h
