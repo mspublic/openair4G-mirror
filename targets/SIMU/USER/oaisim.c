@@ -156,6 +156,8 @@ help (void) {
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
   printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
   printf ("-G Enable background traffic \n");
+  printf ("-O [mme ipv4 address] Enable MME mode\n");
+  printf ("-Z Reserved\n");
 }
 
 #ifdef XFORMS
@@ -694,7 +696,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haeoFvVIGt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:")) != -1) {
 
     switch (c) {
 
@@ -879,6 +881,23 @@ main (int argc, char **argv)
       break;
     case 'G' :
       oai_emulation.info.otg_bg_traffic_enabled = 1;
+      break;
+    case 'Z':
+      /* Sebastien ROUX: Reserved for future use (currently used in ltenow branch) */
+      break;
+    case 'O':
+#if defined(ENABLE_USE_MME)
+      oai_emulation.info.mme_enabled = 1;
+      if (optarg == NULL) /* No IP address provided: use localhost */
+      {
+        memcpy(&oai_emulation.info.mme_ip_address[0], "127.0.0.1", 10);
+      } else {
+        u8 ip_length = strlen(optarg) + 1;
+        memcpy(&oai_emulation.info.mme_ip_address[0], optarg, ip_length > 16 ? 16 : ip_length);
+      }
+#else
+      LOG_E(EMU, "You enabled MME mode without MME support...\n");
+#endif
       break;
     default:
       help ();

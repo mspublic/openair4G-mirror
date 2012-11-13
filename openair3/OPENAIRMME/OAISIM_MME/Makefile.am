@@ -1,0 +1,14 @@
+AM_CFLAGS = @ADD_CFLAGS@ \
+	-I$(top_srcdir)/SCTP			\
+	-I$(top_srcdir)/INTERTASK_INTERFACE	\
+	-I$(top_builddir)/S1AP/MESSAGES		\
+	-I$(top_srcdir)/S1AP			\
+	-I$(top_srcdir)/UTILS
+
+oaisim_mme_LDADD = \
+	$(top_builddir)/INTERTASK_INTERFACE/libitti.la	\
+	$(top_builddir)/S1AP/libs1ap.la	\
+	$(top_builddir)/SCTP/libsctpserver.la	\
+	$(top_builddir)/UTILS/libutils.la
+
+bin_PROGRAMS = oaisim_mme

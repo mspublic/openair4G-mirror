@@ -366,7 +366,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
    \param Mod_id Instance ID for eNB/CH
    \param frame Frame index
    \param UE_index Index of UE transmitting the messages*/
-void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_index);
+void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length);
 
 
 //L2_interface.c
