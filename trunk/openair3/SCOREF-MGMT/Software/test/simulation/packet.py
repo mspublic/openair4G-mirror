@@ -38,10 +38,10 @@ class Packet:
 		communicationProfileRequestPacket.append(0x00) # Priority=0
 		communicationProfileRequestPacket.append(0x03) # EventType=3
 		communicationProfileRequestPacket.append(0x04) # EventSubtype=4
-		communicationProfileRequestPacket.append(0x20) # Transport
-		communicationProfileRequestPacket.append(0x40) # Network
+		communicationProfileRequestPacket.append(0xc0) # Transport
+		communicationProfileRequestPacket.append(0xc0) # Network
 		communicationProfileRequestPacket.append(0x80) # Access
-		communicationProfileRequestPacket.append(0xFF) # Channel
+		communicationProfileRequestPacket.append(0xF8) # Channel
 
 		# Create the socket to send to MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

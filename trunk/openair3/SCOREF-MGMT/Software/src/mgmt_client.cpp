@@ -62,8 +62,9 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpSocket& cl
 #if 0
 	try {
 		clientSocket = new UdpSocket(clientConnection.getRecipient().address().to_string(), clientConnection.getRecipient().port(), logger);
-	} catch (...) {
-		throw Exception("Cannot create a UDP socket for the client!", logger);
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot create a UDP client socket!");
+		throw;
 	}
 #endif
 

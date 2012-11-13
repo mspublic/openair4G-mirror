@@ -126,14 +126,15 @@ map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManage
 		/**
 		 * If the mask is 0xFF then client wants everything, don't check further
 		 */
-		if ((transportMask == 0xFF || (it->second.transport & transportMask) == transportMask) &&
-			(networkMask == 0xFF || (it->second.network & networkMask) == networkMask) &&
-			(accessMask == 0xFF || (it->second.access & accessMask) == accessMask)) {
+		if ((transportMask == 0xFF || (it->second.transport & transportMask) == it->second.transport) &&
+			(networkMask == 0xFF || (it->second.network & networkMask) == it->second.network) &&
+			(accessMask == 0xFF || (it->second.access & accessMask) == it->second.access)) {
 			/**
 			 * Channel information is present only if Access technology is ITSG5 so
 			 * we check if `access' field's first bit is set or not
 			 */
-			if (channelMask == 0xFF || (Util::isBitSet(it->second.access, 0) && (it->second.channel & channelMask) == channelMask)) {
+			if (channelMask == 0xFF || (Util::isBitSet(it->second.access, 0) && (it->second.channel & channelMask) == it->second.channel)) {
+				logger.info("Communication profile match, adding this into the COMM_PROFILE_RESPONSE packet...");
 				filteredProfileMap.insert(filteredProfileMap.end(), std::make_pair(it->first, it->second));
 			}
 		}

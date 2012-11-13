@@ -1,14 +1,20 @@
 
 0. Introduction
-   This directory involves the simulation of GN and FAC 
-   to test their interfaces with MGMT.
+   This directory involves the simulation of GN and FAC to test these interfaces.
 
 1. Dependencies
+   Python packages should be installed.
 
 2. Building
+   There is no build for this tool, it's plain Python which is interpreted rather 
+   than to be built, see section 3. Running.
 
 3. Running
-
+   Since this simulator has been written in Python one needs the Python interpreter.
+   In order to run first scenario file, for example,
+   
+   $ python main.py scenarios/01.sce
+   
 4. References
 
 - Baris Demiray <baris.demiray@eurecom.fr>

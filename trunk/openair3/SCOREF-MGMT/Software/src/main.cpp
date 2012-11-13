@@ -147,10 +147,10 @@ int main(int argc, char** argv) {
 		exit(-1);
 	}
 
-	ManagementClientManager clientManager(mib, configuration, logger);
-	UdpSocket server(configuration.getServerPort(), logger);
-
 	try {
+		ManagementClientManager clientManager(mib, configuration, logger);
+		UdpSocket server(configuration.getServerPort(), logger);
+
 		/**
 		 * Initialise MIB
 		 */
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
 		try {
 			for (;;) {
 				if (server.receive(rxBuffer)) {
-					PacketHandlerResult* result;
+					PacketHandlerResult* result = NULL;
 
 					try {
 						result = packetHandler->handle(rxBuffer);
@@ -242,7 +242,9 @@ int main(int argc, char** argv) {
 					}
 				}
 
-				// Revert buffer size to initial
+				/**
+				 * Revert buffer size to initial
+				 */
 				rxBuffer.reserve(UdpSocket::RX_BUFFER_SIZE);
 			}
 		} catch (Exception& e) {
