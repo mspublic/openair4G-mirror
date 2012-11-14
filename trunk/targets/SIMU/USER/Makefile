@@ -247,7 +247,7 @@ else
 oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c
 endif
 	@echo "Compiling oaisim.c ..."
-	$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
+	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
 	-lsctp -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
