@@ -964,7 +964,7 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
   // if(eNB_rrc_inst[Mod_id]->handover_info[UE_index]) {
   //
   // }
-  if(eNB_rrc_inst[Mod_id].handover_info[Mod_id]->ho_prepare != 0xF0)
+  if(eNB_rrc_inst[Mod_id].handover_info[UE_index]->ho_prepare != 0xF0)
 	  rrc_eNB_generate_HandoverPreparationInformation(Mod_id,UE_index,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId,&eNB_rrc_inst[Mod_id],&eNB_rrc_inst[Mod_id].handover_info[Mod_id]);
   else
 	  LOG_D(RRC,"\neNB %d: Ignoring MeasReport from UE %d as Handover is in progress... \n",Mod_id,UE_index);
