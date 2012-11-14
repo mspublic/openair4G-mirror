@@ -57,9 +57,11 @@ MATH_OBJS  =  $(MATH_DIR)/oml.o
 CLI_OBJ  =  $(CLI_DIR)/cli_server.o
 CLI_OBJ  +=  $(CLI_DIR)/cli.o
 CLI_OBJ  +=  $(CLI_DIR)/cli_cmd.o
-
+ifdef $(USE_MME)
 SCTP_OBJS = $(SCTP_DIR)/sctp_primitives_client.o
-
+else
+SCTP_OBJS = 
+endif
 UTIL_OBJ = $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(LOG_OBJS) $(OCG_OBJS) $(MATH_OBJS) $(OTG_OBJS) $(CLI_OBJ) $(OMG_OBJS) $(OPT_OBJS) $(SCTP_OBJS)
 
 UTIL_incl = -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OMG_DIR) -I$(OTG_DIR) -I$(CLI_DIR) -I$(OPT_DIR) -I$(OMV_DIR) -I$(SCTP_DIR)
