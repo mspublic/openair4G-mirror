@@ -181,7 +181,7 @@ struct ieee80211p_priv {
 
 	/* Netlink socket used for softmodem <-> ieee80211p communications */
 	struct sock *nl_sock;
-	int pid_softmodem;
+	unsigned int pid_softmodem;
 	struct sk_buff *rx_skb;
 
 };/* ieee80211p_device_priv */

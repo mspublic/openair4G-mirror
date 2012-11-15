@@ -116,9 +116,11 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 	/* lock */	
 	spin_lock(&priv->rxq_lock);
 
-    /************************
+    	/************************
 	 * Netlink skb handling *
 	 ************************/
+
+	printk(KERN_ERR "ieee80211p_tasklet_rx: receiving data from PHY\n");
 
 	if (skb == NULL) {
         printk(KERN_ERR "ieee80211_tasklet_rx: received skb == NULL\n");
@@ -127,14 +129,14 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 
 	/* Get the netlink message header */
 	nlh = (struct nlmsghdr *)skb->data;
-
-	/* Keep track of the softmodem pid */
-	priv->pid_softmodem = (int)nlh->nlmsg_pid;
  
 	/* Check the command of the received msg */
 	nlcmd = (char *)NLMSG_DATA(nlh);	
 	if (*nlcmd == NLCMD_INIT) {
-		//printk(KERN_ERR "ieee80211_tasklet_rx: NLCMD_INIT received / softmodem pid = %d\n",priv->pid_softmodem);
+		/* Keep track of the softmodem pid */
+		//priv->pid_softmodem = (int)nlh->nlmsg_pid;
+		priv->pid_softmodem = nlh->nlmsg_pid;
+		printk(KERN_ERR "ieee80211_tasklet_rx: NLCMD_INIT received / softmodem pid = %u\n",priv->pid_softmodem);
 		dev_kfree_skb_any(skb);	
 		goto error;
 	}
@@ -395,6 +397,8 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 
 	/* Return value */
 	int ret = 0;
+
+	printk(KERN_ERR "ieee80211p_tasklet_tx: sending data to PHY\n");
 	
 	if (qnum >= IEEE80211P_NUM_TXQ) {
 		printk(KERN_ERR "ieee80211p_tx: wrong queue number\n");
@@ -444,11 +448,13 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 	/* Free the old skb */
 	dev_kfree_skb_any(skb);
 
+	printk(KERN_ERR "ieee80211p_tasklet_tx: sending data to PHY using pid = %d\n",priv->pid_softmodem);
+
     ret = netlink_unicast(priv->nl_sock,nlskb,priv->pid_softmodem,NETLINK_80211P_GROUP);
 
     if (ret <= 0) {
-    	printk(KERN_ERR "ieee80211p_tx: netlink mesg not sent\n");
-		return;
+    	printk(KERN_ERR "ieee80211p_tx: netlink mesg not sent ret = %d\n",ret);
+	return;
     }
 
 } /* ieee80211p_tx */

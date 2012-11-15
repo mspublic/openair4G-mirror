@@ -64,7 +64,9 @@ int netlink_init() {
 	memset(&s_nladdr, 0 ,sizeof(s_nladdr));	
 	s_nladdr.nl_family= AF_NETLINK ;
    	s_nladdr.nl_pad=0;
-   	s_nladdr.nl_pid = pthread_self() << 16 | getpid();
+   	//s_nladdr.nl_pid = pthread_self() << 16 | getpid();
+	s_nladdr.nl_pid = getpid();
+	printf("ieee80211 netlink_init(): init pid = %u\n",s_nladdr.nl_pid);
    	s_nladdr.nl_groups = NETLINK_80211P_GROUP;
 
    	ret = bind(fd, (struct sockaddr*)&s_nladdr, sizeof(s_nladdr));
@@ -103,7 +105,9 @@ int netlink_send(int fd, int cmd,int payloadlen, char *payload) {
 	
 	/* Header */
 	nlh->nlmsg_len = NLMSG_SPACE(payloadlen+NLCMD_SIZE);
-	nlh->nlmsg_pid = pthread_self() << 16 | getpid();
+	//nlh->nlmsg_pid = pthread_self() << 16 | getpid();
+	nlh->nlmsg_pid = getpid();
+	printf("ieee80211 netlink_send(): pid = %u\n",nlh->nlmsg_pid);
 	nlh->nlmsg_flags = NLM_F_REQUEST;
 	nlh->nlmsg_type = 21;
 	
