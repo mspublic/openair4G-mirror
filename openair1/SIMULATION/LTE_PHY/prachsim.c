@@ -95,8 +95,9 @@ int main(int argc, char **argv) {
   char c;
 
   int i,aa,aarx;
-  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
+  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0,ue_speed0=0.0,ue_speed1=0.0;
   u8 snr1set=0;
+  u8 ue_speed1set=0;
   //mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
   int **txdataF2;
@@ -136,6 +137,7 @@ int main(int argc, char **argv) {
   int N_ZC;
   int delay = 0;
   double delay_avg=0;
+  double ue_speed = 0;
   int NCS_config = 1,rootSequenceIndex=0;
   logInit();
 
@@ -153,7 +155,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:z:N:F:d:Z:L:")) != -1)
+  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:")) != -1)
     {
       switch (c)
 	{
@@ -226,6 +228,13 @@ int main(int argc, char **argv) {
 	case 'p':
 	  preamble_tx=atoi(optarg);
 	  break;
+	case 'v':
+	  ue_speed0 = atoi(optarg);
+	  break;
+	case 'V':
+	  ue_speed1 = atoi(optarg);
+      ue_speed1set = 1;
+	  break;
 	case 'Z':
 	  NCS_config = atoi(optarg);
 	  if ((NCS_config > 15) || (NCS_config < 0))
@@ -295,6 +304,8 @@ int main(int argc, char **argv) {
 	  printf("-O oversampling factor (1,2,4,8,16)\n");
       //	  printf("-f PRACH format (0=1,1=2,2=3,3=4)\n");
 	  printf("-d Channel delay \n");
+	  printf("-v Starting UE velocity in km/h, runs from 'v' to 'v+50km/h'. If n_frames is 1 just 'v' is simulated \n");
+	  printf("-V Ending UE velocity in km/h, runs from 'v' to 'V'");
 	  printf("-L rootSequenceIndex (0-837)\n");
 	  printf("-Z NCS_config (ZeroCorrelationZone) (0-15)\n");
 	  printf("-H Run with High-Speed Flag enabled \n");
@@ -315,6 +326,13 @@ int main(int argc, char **argv) {
       snr1 = snr0+.1;
     else
       snr1 = snr0+5.0;
+  }
+
+  if (ue_speed1set==0) {
+    if (n_frames==1)
+      ue_speed1 = ue_speed0+10;
+    else
+      ue_speed1 = ue_speed0+50;
   }
 
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
@@ -344,7 +362,6 @@ int main(int argc, char **argv) {
 				0.0,
 				delay,
 				0);
-  
 
   if (UE2eNB==NULL) {
     msg("Problem generating channel model. Exiting.\n");
@@ -433,7 +450,10 @@ int main(int argc, char **argv) {
 
 
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
+      for (ue_speed=ue_speed0;ue_speed<ue_speed1;ue_speed+=10) {
     delay_avg = 0.0;
+    // max Doppler shift
+    UE2eNB->max_Doppler = 1.9076e9*(ue_speed/3.6)/3e8;
     printf("n_frames %d SNR %f\n",n_frames,SNR);
     prach_errors=0;
     for (trial=0; trial<n_frames; trial++) {
@@ -500,9 +520,12 @@ int main(int argc, char **argv) {
 	write_output("prach_preamble.m","prachp",&PHY_vars_eNB->X_u[0],839,1,1);
       }
     }
-    printf("SNR %f dB: errors %d/%d (delay %f)\n",SNR,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
-    //printf("(%f,%f)\n",SNR,(double)prach_errors/(double)n_frames);
-  }
+    printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
+    //printf("(%f,%f)\n",ue_speed,(double)prach_errors/(double)n_frames);
+  } // UE Speed loop
+      //printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
+      //  printf("(%f,%f)\n",SNR,(double)prach_errors/(double)n_frames);
+} //SNR loop
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
   free(txdataF2[1]);
