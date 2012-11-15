@@ -98,7 +98,7 @@ char rxsdu[2000];
 
 void *tx_thread(void *arg) {
 
-  int fd=((int*)arg);
+  int fd=*((int*)arg);
   RT_TASK *task;
   int ret;
   int i;
