@@ -218,7 +218,7 @@ static void *rx_thread(void *arg) {
 
   
   if (fd>0) {
-    printf("tx_thread starting, fd %d\n",fd);
+    printf("rx_thread starting, fd %d\n",fd);
     
     data_ind_rx = (uint8_t*)malloc(4095+2+1+12);
     
