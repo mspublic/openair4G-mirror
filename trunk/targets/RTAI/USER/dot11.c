@@ -287,12 +287,13 @@ static void *rx_thread(void *arg) {
 	  	   frame,rxv->rate,rxv->sdu_length,rx_offset,log2_maxh,(rx_energy/10.0)-rxg_max[0]+30-rxgain[0],
 	  	   rx_energy/10.0,rxg_max[0]-30+rxgain[0]);
 	    
-	    memset((void*)&data_ind_rx[10],0,rxv->sdu_length+4+2+1);
-	    if ((rxv->sdu_length > 1024) || (rxv->rate > 3) )
+	    if ((rxv->sdu_length > 1500) || (rxv->rate > 3) )
 	      printf("ERROR: Frame %d: Rate %d, SDU_LENGTH %d,rx_offset %d,log2_maxh %d, rxp %f dBm (dig %f,rxgain %d)\n",
 		     frame,rxv->rate,rxv->sdu_length,rx_offset,log2_maxh,(rx_energy/10.0)-rxg_max[0]+30-rxgain[0],
 		     rx_energy/10.0,rxg_max[0]-30+rxgain[0]);
 	    else {
+	      memset((void*)&data_ind_rx[10],0,rxv->sdu_length+4+2+1);
+
 	      if (data_detection(rxv,&data_ind_rx[10],
 				 (uint32_t*)rxdata[0],
 				 76800,rx_offset,log2_maxh,NULL)) {
@@ -312,10 +313,10 @@ static void *rx_thread(void *arg) {
 	      }
 	      else {
 		neg_crc++;
-		//	    printf("Received SDU with negative CRC\n");
-		//	    oai_exit=1;
-		//write_output("rxDATA_F_comp_aggreg3.m","rxDAT_F_comp_aggreg3", rxDATA_F_comp_aggreg3,48*200,1,1);
-		//write_output("rxDATA_F_comp_aggreg2.m","rxDAT_F_comp_aggreg2", rxDATA_F_comp_aggreg2,48*200,1,1);
+		printf("Received SDU with negative CRC\n");
+		oai_exit=1;
+		write_output("rxDATA_F_comp_aggreg3.m","rxDAT_F_comp_aggreg3", rxDATA_F_comp_aggreg3,48*200,1,1);
+		//		write_output("rxDATA_F_comp_aggreg2.m","rxDAT_F_comp_aggreg2", rxDATA_F_comp_aggreg2,48*200,1,1);
 	      }
 	      sdu_received = 1;
 	
@@ -361,7 +362,7 @@ static void *rx_thread(void *arg) {
 																					  printf("%2hhx.",rxsdu[n]);
 																					  printf("\n");
 																					*/	
-	  initial_sample_offset += (6*512);
+	  initial_sample_offset += (8*512);
 	  if (initial_sample_offset > FRAME_LENGTH_SAMPLES)
 	    initial_sample_offset -= FRAME_LENGTH_SAMPLES;
 	
@@ -409,7 +410,7 @@ static void *rx_thread(void *arg) {
 	//  if ((frame%100) == 0)
 	//printf("**** New frame %d\n",frame);
 
-	if (frame == 10000)
+	if (frame == 100000)
 	  oai_exit = 1;
       }    
       // sleep until HW has filled enough samples
