@@ -35,8 +35,8 @@ typedef enum {
 
 typedef TX_VECTOR_t RX_VECTOR_t;
 
-int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,uint8_t *data_ind);
-int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_ind);
+int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,int frame_length,uint8_t *data_ind);
+int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t next_TXop_offset,int frame_length,uint8_t *data_ind);
 
 CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,int *rx_offset,int *log2_maxh,uint32_t *rx_frame,int rx_frame_length,int initial_sample_offset,int one_shot);
 int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int frame_length,int rx_offset,int log2_maxh,int (*wait(int,int)));

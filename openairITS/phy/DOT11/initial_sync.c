@@ -268,7 +268,7 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
 #endif
 #endif
 
-    if ((dB_fixed(mean_energy) > 15) && (peak_energy>(60*mean_energy))) {
+    if ((dB_fixed(mean_energy) > 15) && (peak_energy>(50*mean_energy))) {
 #ifdef DEBUG_SYNC
       write_output("STSLTScorr.m","STSLTScorrT", corrT,512,2,1);
 #endif
@@ -501,5 +501,6 @@ CHANNEL_STATUS_t initial_sync(RX_VECTOR_t **rx_vector,
       
       return(BUSY);
     }
+
   return(IDLE);
 }
