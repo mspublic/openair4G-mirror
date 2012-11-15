@@ -189,7 +189,7 @@ int n;
  
 static void *rx_thread(void *arg) {
 
-  int fd;// = *((int*)arg);
+  int fd = *((int*)arg);
   int rx_offset;
   RX_VECTOR_t *rxv;
   uint8_t *data_ind_rx;
@@ -216,7 +216,6 @@ static void *rx_thread(void *arg) {
   */
   char dummy_data[16];
 
-  fd = netlink_init();
   
   if (fd>0) {
     printf("tx_thread starting, fd %d\n",fd);
@@ -733,7 +732,7 @@ int main(int argc, char **argv) {
 
   int c;
   char do_forms=0;
-  unsigned int fd;//,dot11_netlink_fd;
+  unsigned int fd,dot11_netlink_fd;
   unsigned int tcxo = 114;
 
   int amp;
@@ -908,9 +907,9 @@ int main(int argc, char **argv) {
 
   printf("Initializing dot11 DSP functions\n");
   dot11_init();
-  //  dot11_netlink_fd = dot11_netlink_init();
+  dot11_netlink_fd = netlink_init();
 
-  //  printf("dot11_netlink_fd %d\n",dot11_netlink_fd);
+  printf("dot11_netlink_fd %d\n",dot11_netlink_fd);
 
 
 
@@ -937,9 +936,9 @@ int main(int argc, char **argv) {
   //thread1 = rt_thread_create(dot11_thread, NULL, 100000000);
 
 
-  thread1 = rt_thread_create(rx_thread, NULL, 100000000);
+  thread1 = rt_thread_create(rx_thread, &dot11_netlink_fd, 100000000);
 
-  thread2 = rt_thread_create(tx_thread, NULL, 100000000);
+  thread2 = rt_thread_create(tx_thread, &dot11_netlink_fd, 100000000);
 
   // wait for end of program
   printf("TYPE <ENTER> TO TERMINATE main thread\n");
