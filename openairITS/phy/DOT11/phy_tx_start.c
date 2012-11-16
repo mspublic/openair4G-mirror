@@ -284,23 +284,23 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
     case 0: // BPSK
       // -ve portion
       for (i=0;i<5;i++)
-	dataF[(38+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(38+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(38+5)<<1]=Pseq[sprime]; // Pilot 1
       for (;i<18;i++)
-	dataF[(38+1+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(38+1+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(38+19)<<1]=Pseq[sprime]; // Pilot 2
       for (;i<24;i++)
-	dataF[(38+2+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(38+2+i)<<1]=BPSK[data_interleaved[i]&1];
       
       // +ve portion
       for (;i<30;i++)
-	dataF[(-24+1+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(-24+1+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(6+1)<<1]=Pseq[sprime];  // Pilot 3
       for (;i<43;i++)
-	dataF[(-24+2+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(-24+2+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(19+2)<<1]=-Pseq[sprime]; // Pilot 4
       for (;i<48;i++)
-	dataF[(-24+3+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(-24+3+i)<<1]=BPSK[data_interleaved[i]&1];
       
     break;
 
@@ -405,12 +405,12 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
     break;
 
     }
-#ifdef DEBUG_TX
-    if (s==0) {
+    //#ifdef DEBUG_TX
+    if (s<12) {
       for (i=0;i<64;i++)
 	printf("k %d: (%d,%d)\n",i,dataF[i<<1],dataF[1+(i<<1)]);
     }
-#endif
+    //#endif
     
     fft(dataF,         /// complex input
 	tmp_t,           /// complex output
