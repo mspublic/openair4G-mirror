@@ -416,7 +416,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 				  unsigned short *rx_lengths,
 				  unsigned short tb_length) {
 
-  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid;
+  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid,num_sdu_cnt;
   unsigned char *mac_header_ptr = mac_header;
   unsigned short length, ce_len=0;
 
@@ -430,6 +430,8 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
       if (not_done==0) { // last MAC SDU, length is implicit
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
+	for (num_sdu_cnt=0; num_sdu_cnt < num_sdus ; num_sdu_cnt++)
+	  length -= rx_lengths[num_sdu_cnt]; 
       }
       else {
 	if (lcid == CCCH ){
@@ -4093,7 +4095,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  else //if (( header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
 	    header_len_dtch = header_len_dtch_tmp; 
 	  
-	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len - 1; // 1 is for the postpadding header 
+	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len ; // 1 is for the postpadding header 
 	}
 
 
