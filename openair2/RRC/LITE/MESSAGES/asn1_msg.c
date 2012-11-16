@@ -483,7 +483,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   //  SystemInformationBlockType13_r9_t *sib13;
 
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
-#ifdef REL10
+#ifdef Rel10
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
 #endif
   asn_enc_rval_t enc_rval;
