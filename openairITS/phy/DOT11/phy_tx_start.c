@@ -160,8 +160,8 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
 
 #ifdef EXMIMO
   for (i=0;i<320;i++) {
-    output_ptr2[(i<<1)]   = ((int16_t *)STS_LTS_t)[i<<1]<<4;
-    output_ptr2[1+(i<<1)] = ((int16_t *)STS_LTS_t)[1+(i<<1)]<<4;
+    output_ptr2[(i<<1)]   = ((int16_t *)STS_LTS_t)[i<<1]<<2;
+    output_ptr2[1+(i<<1)] = ((int16_t *)STS_LTS_t)[1+(i<<1)]<<2;
   }
 #else
   memcpy(output_ptr2,STS_LTS_t,640*sizeof(int16_t));
@@ -190,8 +190,8 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
       j=0;
     //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
 #ifdef EXMIMO
-    output_ptr2[(i<<1)]     = tmp_t[j<<2]<<4;     // RE component
-    output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<4; // IM component
+    output_ptr2[(i<<1)]     = tmp_t[j<<2]<<2;     // RE component
+    output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<2; // IM component
 #else
     output_ptr2[(i<<1)]     = tmp_t[j<<2];     // RE component
     output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
@@ -405,12 +405,12 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
     break;
 
     }
-    //#ifdef DEBUG_TX
+#ifdef DEBUG_TX
     if (s<12) {
       for (i=0;i<64;i++)
-	printf("k %d: (%d,%d)\n",i,dataF[i<<1],dataF[1+(i<<1)]);
+	printf("s %d, k %d: (%d,%d)\n",s,i,dataF[i<<1],dataF[1+(i<<1)]);
     }
-    //#endif
+#endif
     
     fft(dataF,         /// complex input
 	tmp_t,           /// complex output
@@ -435,8 +435,8 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
 	j=0;
       //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
 #ifdef EXMIMO
-      output_ptr2[(i<<1)]     = tmp_t[j<<2]<<4;     // RE component
-      output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<4; // IM component
+      output_ptr2[(i<<1)]     = tmp_t[j<<2]<<2;     // RE component
+      output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<2; // IM component
 #else
       output_ptr2[(i<<1)]     = tmp_t[j<<2];     // RE component
       output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
