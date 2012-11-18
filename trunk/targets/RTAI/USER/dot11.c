@@ -314,9 +314,9 @@ static void *rx_thread(void *arg) {
 	      else {
 		neg_crc++;
 		printf("Received SDU with negative CRC\n");
-		oai_exit=1;
-		write_output("rxDATA_F_comp_aggreg3.m","rxDAT_F_comp_aggreg3", rxDATA_F_comp_aggreg3,48*200,1,1);
-		write_output("rxsig_sdu.m","rxsig_sdu",&rxdata[0][rx_offset],80*40,1,1);
+		//oai_exit=1;
+		//write_output("rxDATA_F_comp_aggreg3.m","rxDAT_F_comp_aggreg3", rxDATA_F_comp_aggreg3,48*200,1,1);
+		//write_output("rxsig_sdu.m","rxsig_sdu",&rxdata[0][rx_offset],80*40,1,1);
 
 		//		write_output("rxDATA_F_comp_aggreg2.m","rxDAT_F_comp_aggreg2", rxDATA_F_comp_aggreg2,48*200,1,1);
 	      }
@@ -942,9 +942,9 @@ int main(int argc, char **argv) {
   //thread1 = rt_thread_create(dot11_thread, NULL, 100000000);
 
 
-  thread1 = rt_thread_create(rx_thread, &dot11_netlink_fd, 100000000);
+  thread1 = rt_thread_create(rx_thread, &dot11_netlink_fd, 1000000);
 
-  thread2 = rt_thread_create(tx_thread, &dot11_netlink_fd, 100000000);
+  thread2 = rt_thread_create(tx_thread, &dot11_netlink_fd, 1000000);
 
   // wait for end of program
   printf("TYPE <ENTER> TO TERMINATE main thread\n");
