@@ -365,7 +365,7 @@ static void *rx_thread(void *arg) {
 																					  printf("%2hhx.",rxsdu[n]);
 																					  printf("\n");
 																					*/	
-	  initial_sample_offset += (8*512);
+	  initial_sample_offset += (10*512);
 	  if (initial_sample_offset > FRAME_LENGTH_SAMPLES)
 	    initial_sample_offset -= FRAME_LENGTH_SAMPLES;
 	
