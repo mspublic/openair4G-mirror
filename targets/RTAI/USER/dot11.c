@@ -374,7 +374,7 @@ static void *rx_thread(void *arg) {
 	  // wait until TX is finished
 	
 	  printf("TX: txlen %d, initial_sample_offset %d\n",txlen,initial_sample_offset);
-	  oai_exit=1;
+	  //oai_exit=1;
 
 	  rt_sleep(nano2count((txlen*66666)>>9));
 	  skip = initial_sample_offset+txlen-FRAME_LENGTH_SAMPLES;
