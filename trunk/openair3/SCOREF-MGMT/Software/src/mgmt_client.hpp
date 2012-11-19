@@ -100,12 +100,12 @@ class ManagementClient {
 		 * Constructor for ManagementClient class
 		 *
 		 * @param mib Management Information Base reference
-		 * @param clientConnection Connected socket for client connection
+		 * @param clientEndpoint Client's connection information
 		 * @param wirelessStateUpdateInterval Determines how frequent the wireless state update will be performed
 		 * @param locationUpdateInterval Determines how frequent the location update will be performed
 		 * @logger Logger object reference
 		 */
-		ManagementClient(ManagementInformationBase& mib, UdpSocket& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		ManagementClient(ManagementInformationBase& mib, udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
@@ -136,7 +136,6 @@ class ManagementClient {
 		 * @return ManagementClientState value for this client
 		 */
 		ManagementClientState getState() const;
-		// XXX setType() and getType()
 		/**
 		 * Sets the state of this client with given state
 		 *
@@ -144,6 +143,19 @@ class ManagementClient {
 		 * @return true on success, false otherwise
 		 */
 		bool setState(ManagementClientState state);
+		/**
+		 * Returns the type of this client
+		 *
+		 * @return ManagementClientType value for this client
+		 */
+		ManagementClientType getType() const;
+		/**
+		 * Sets the type of this client with given state
+		 *
+		 * @param state New ManagementClientType for this client
+		 * @return true on success, false otherwise
+		 */
+		bool setType(ManagementClientType type);
 		/**
 		 * Overloaded == operator to use ManagementClient type as a std::map key
 		 *
@@ -174,6 +186,10 @@ class ManagementClient {
 		 * Client's UDP socket
 		 */
 		UdpSocket* clientSocket;
+		/**
+		 * Client's udp::endpoint information
+		 */
+		udp::endpoint& clientEndpoint;
 		/**
 		 * Client's connection state with Management module
 		 */

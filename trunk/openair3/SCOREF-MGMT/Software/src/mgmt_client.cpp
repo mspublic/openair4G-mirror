@@ -44,29 +44,26 @@
 #include <boost/lexical_cast.hpp>
 #include "mgmt_client.hpp"
 
-ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpSocket& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
-	: mib(mib), logger(logger) {
+ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+	: mib(mib), clientEndpoint(clientEndpoint), logger(logger) {
 	/**
 	 * Check that source port is not an ephemeral port which would
 	 * change every time a client sendto()s to MGMT
 	 * TODO Ephemeral port range could be read from /proc/sys/net/ipv4/ip_local_port_range
 	 */
-	if (clientConnection.getRecipient().port() >= 32768 && clientConnection.getRecipient().port() <= 61000) {
+	if (clientEndpoint.port() >= 32768 && clientEndpoint.port() <= 61000) {
 		throw Exception("Client has an ephemeral port number that will change every time it sends data and this will screw ManagementClientManager's state", logger);
 	}
 
 	/**
 	 * Create a UDP socket for this client
 	 */
-	clientSocket = &clientConnection;
-#if 0
 	try {
-		clientSocket = new UdpSocket(clientConnection.getRecipient().address().to_string(), clientConnection.getRecipient().port(), logger);
+		clientSocket = new UdpSocket(clientEndpoint.address().to_string(), clientEndpoint.port(), logger);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot create a UDP client socket!");
 		throw;
 	}
-#endif
 
 	/**
 	 * Initialise state strings map
@@ -77,6 +74,7 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpSocket& cl
 	/**
 	 * Initialise type strings map
 	 */
+	clientTypeStringMap.insert(std::make_pair(ManagementClient::UNKNOWN, "Unknown"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::GN, "GeoNetworking"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::FAC, "Facilities"));
 	/**
@@ -87,19 +85,20 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpSocket& cl
 	/**
 	 * Update location table
 	 */
-	GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
-	clientConnection.send(locationTableRequest);
-
-	/**
-	 * Initialise InquiryThread object for Wireless State updates
-	 */
-	// TODO who is going to join() this thread?
-	inquiryThreadObject = new InquiryThread(mib, *this->clientSocket, wirelessStateUpdateInterval, locationUpdateInterval, logger);
-	inquiryThread = new boost::thread(*inquiryThreadObject);
+//	GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
+//	if (clientSocket->send(locationTableRequest) == false)
+//		logger.error("Cannot send a LOCATION_TABLE_REQUEST to the client at " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()));
+//
+//	/**
+//	 * Initialise InquiryThread object for Wireless State updates
+//	 */
+//	// TODO who is going to join() this thread?
+//	inquiryThreadObject = new InquiryThread(mib, *this->clientSocket, wirelessStateUpdateInterval, locationUpdateInterval, logger);
+//	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
 
 ManagementClient::ManagementClient(const ManagementClient& managementClient)
-	: mib(managementClient.mib), logger(managementClient.logger) {
+	: mib(managementClient.mib), clientEndpoint(managementClient.clientEndpoint), logger(managementClient.logger) {
 	throw Exception("Copy constructor is called for a ManagementClient object!", logger);
 }
 
@@ -148,6 +147,16 @@ bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
 	return true;
 }
 
+ManagementClient::ManagementClientType ManagementClient::getType() const {
+	return this->type;
+}
+
+bool ManagementClient::setType(ManagementClient::ManagementClientType type) {
+	this->type = type;
+
+	return true;
+}
+
 bool ManagementClient::operator==(const ManagementClient& client) const {
 	if (this->clientSocket->getRecipient().address() == client.getAddress())
 		return true;
@@ -167,7 +176,7 @@ string ManagementClient::toString() {
 
 	ss << "ManagementClient[ip:" << clientSocket->getRecipient().address().to_string()
 		<< ", port:" << boost::lexical_cast<string>(clientSocket->getRecipient().port())
-		<< ", state:" << clientStateStringMap[state] << "]";
+		<< ", type:" << clientTypeStringMap[type] << ", state:" << clientStateStringMap[state] << "]";
 
 	return ss.str();
 }

@@ -50,15 +50,15 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "util/mgmt_udp_socket.hpp"
 #include "mgmt_packet_handler.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
+#include "mgmt_server.hpp"
 
-#define VERSION "1.2.1"
+#define VERSION "1.2.3 dev"
 
 void printVersion() {
 	cerr << "SCORE@F MANAGEMENT Module version " << VERSION << endl;
@@ -76,8 +76,8 @@ int main(int argc, char** argv) {
 	string logFileName, configurationFileName;
 
 	/**
-	 * Check command-line parameters. Configuration file name is
-	 * necessary yet log file name is optional
+	 * Process command-line parameters
+	 * Configuration file name is necessary yet log file name is optional here
 	 */
 	if (argc > 1 && (!string(argv[1]).compare("-v") || !string(argv[1]).compare("--version"))) {
 		printVersion();
@@ -92,8 +92,6 @@ int main(int argc, char** argv) {
 		printHelp(argv[0]);
 		exit(1);
 	}
-
-	Logger logger(logFileName, Logger::TRACE);
 
 #ifdef BOOST_VERSION_1_50
 	/**
@@ -121,8 +119,14 @@ int main(int argc, char** argv) {
 	}
 #endif
 
+	/**
+	 * Create a Logger object
+	 */
+	Logger logger(logFileName, Logger::TRACE);
+	/**
+	 * Create the father
+	 */
 	ManagementInformationBase mib(logger);
-	PacketHandler* packetHandler = NULL;
 
 	/**
 	 * Prepare the list of FACilities configuration files by traversing
@@ -142,119 +146,35 @@ int main(int argc, char** argv) {
 	try {
 		configuration.parseConfigurationFiles(mib);
 	} catch (Exception& e) {
-		e.updateStackTrace("Cannot parse a configuration file");
+		e.updateStackTrace("Cannot parse the configuration file");
 		e.printStackTrace();
 		exit(-1);
 	}
 
+	/**
+	 * Initialise MIB
+	 */
 	try {
-		ManagementClientManager clientManager(mib, configuration, logger);
-		UdpSocket server(configuration.getServerPort(), logger);
-
-		/**
-		 * Initialise MIB
-		 */
-		try {
-			mib.initialise();
-		} catch (Exception& e) {
-			e.updateStackTrace("Cannot initialise ManagementInformationBase!");
-			throw;
-		}
-
-		/**
-		 * Allocate a Geonet packet handler
-		 */
-		try {
-			packetHandler = new PacketHandler(mib, logger);
-		} catch (std::bad_alloc& exception) {
-			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
-		} catch (Exception& e) {
-			e.updateStackTrace("Cannot initialise Geonet Message Handler!");
-			throw;
-		}
-
-		logger.info("Starting Management & GeoNetworking Interface...");
-		logger.info("Reading configuration file...");
-
-		vector<unsigned char> rxBuffer(UdpSocket::RX_BUFFER_SIZE);
-
-		try {
-			for (;;) {
-				if (server.receive(rxBuffer)) {
-					PacketHandlerResult* result = NULL;
-
-					try {
-						result = packetHandler->handle(rxBuffer);
-					} catch (std::exception& e) {
-						cerr << e.what() << endl;
-					}
-
-					/**
-					 * First inform Management Client Manager about this incoming packet (if it's valid)
-					 */
-					if (!result)
-						continue;
-					else if (result->getResult() == PacketHandlerResult::DISCARD_PACKET
-							|| result->getResult() == PacketHandlerResult::DELIVER_PACKET
-							|| result->getResult() == PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE) {
-						/**
-						 * Inform Client Manager of this sender
-						 */
-						try {
-							clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
-						} catch (Exception& e) {
-							e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
-							throw;
-						}
-					}
-
-					switch (result->getResult()) {
-						case PacketHandlerResult::DISCARD_PACKET:
-							delete result;
-							break;
-
-						case PacketHandlerResult::INVALID_PACKET:
-							logger.error("Incoming packet is not valid, discarding..");
-							delete result;
-							break;
-
-						case PacketHandlerResult::DELIVER_PACKET:
-							if (server.send(*result->getPacket()))
-								logger.info("Reply successfully delivered to the client at " + server.toString());
-							else
-								logger.warning("Delivery of the reply packet to the client at " + server.toString() + " has failed!");
-
-							delete result;
-							break;
-
-						case PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE:
-							/**
-							 * Update clients with new configuration information
-							 */
-							try {
-								clientManager.sendConfigurationUpdateAvailable();
-							} catch (Exception& e) {
-								e.updateStackTrace("Cannot send a CONFIGURATION UPDATE AVAILABLE packet!");
-								throw;
-							}
-							delete result;
-							break;
-					}
-				}
-
-				/**
-				 * Revert buffer size to initial
-				 */
-				rxBuffer.reserve(UdpSocket::RX_BUFFER_SIZE);
-			}
-		} catch (Exception& e) {
-			e.updateStackTrace("Something went terribly wrong, exiting...");
-			e.printStackTrace();
-		}
+		mib.initialise();
 	} catch (Exception& e) {
-		e.updateStackTrace("Cannot initialise SCOREF-MGMT module, exiting...");
-		e.printStackTrace();
+		e.updateStackTrace("Cannot initialise ManagementInformationBase!");
+		throw;
 	}
+
+	/**
+	 * Instantiate a Client Manager and pass it to Management Server
+	 */
+	boost::asio::io_service ioService;
+	ManagementClientManager clientManager(mib, configuration, logger);
+	ManagementServer server(ioService, configuration.getServerPort(), mib, clientManager, logger);
+
+	try {
+		ioService.run();
+	} catch (std::exception& e) {
+		logger.error(e.what());
+	}
+
+	logger.info("Exiting...");
 
 	return 0;
 }

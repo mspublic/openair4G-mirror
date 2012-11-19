@@ -67,6 +67,12 @@ while line:
 				print "NETWORK_STATE packet sent successfully"
 			else:
 				print "ERROR: Cannot send NETWORK_STATE"
+		# Location Update
+		elif clientPacketType == "LOCATION_UPDATE":
+			if Packet.sendLocationUpdate(serverAddress, serverPort, clientPort):
+				print "LOCATION_UPDATE packet sent successfully"
+			else:
+				print "ERROR: Cannot send LOCATION_UPDATE"
 
 	# Wait command
 	elif commands[0] == "WAIT":

@@ -67,17 +67,19 @@ UdpSocket::UdpSocket(const string& address, u_int16_t portNumber, Logger& logger
 	/**
 	 * Convert incoming string address
 	 */
-	boost::asio::ip::address_v4 recipientAddress;
-	recipientAddress.from_string(address);
+	boost::asio::ip::address_v4 recipientAddress = boost::asio::ip::address_v4::from_string(address);
 	recipient.address(recipientAddress);
 	recipient.port(portNumber);
 	/**
 	 * Create a socket
 	 */
+	logger.debug("Creating a socket to " + recipient.address().to_string() + ":" + boost::lexical_cast<string>(recipient.port()));
 	try {
-		socket = new udp::socket(ioService, recipient);
-		socket->set_option(boost::asio::socket_base::reuse_address(true));
+		// TODO bind: address already in use
+//		socket = new udp::socket(ioService, recipient);
+//		socket->set_option(boost::asio::socket_base::reuse_address(true));
 	} catch (std::exception& e) {
+		logger.error(e.what());
 		throw Exception(e.what(), logger);
 	}
 }
