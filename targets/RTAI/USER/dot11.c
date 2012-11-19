@@ -172,6 +172,7 @@ CHANNEL_STATUS_t dot11_state = IDLE;
 extern int Ndbps[8];
 
 extern int32_t rxDATA_F_comp_aggreg3[48*1024];
+extern int32_t rxDATA_F_comp_aggreg2[48*1024];
 
 #define FRAME_LENGTH_SAMPLES 76800
 #define RX_THRES 60
@@ -476,7 +477,7 @@ static void *rx_thread(void *arg) {
     write_output("rxsig0.m","rxs", rxdata[0],76800,1,1);
     write_output("txsig0.m","txs", txdata[0],76800,1,1);
     write_output("rxDATA_F_comp_aggreg3.m","rxDAT_F_comp_aggreg3", rxDATA_F_comp_aggreg3,48*200,1,1);
-    //write_output("rxDATA_F_comp_aggreg2.m","rxDAT_F_comp_aggreg2", rxDATA_F_comp_aggreg2,48*200,1,1);
+    write_output("rxDATA_F_comp_aggreg2.m","rxDAT_F_comp_aggreg2", rxDATA_F_comp_aggreg2,48*200,1,1);
 
     printf("[DOT11][PHY] Leaving rx_thread\n");
     free(data_ind_rx);
