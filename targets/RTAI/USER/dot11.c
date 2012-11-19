@@ -942,9 +942,9 @@ int main(int argc, char **argv) {
   //thread1 = rt_thread_create(dot11_thread, NULL, 100000000);
 
 
-  thread1 = rt_thread_create(rx_thread, &dot11_netlink_fd, 1000000);
+  thread1 = rt_thread_create(rx_thread, &dot11_netlink_fd, 10000000);
 
-  thread2 = rt_thread_create(tx_thread, &dot11_netlink_fd, 1000000);
+  thread2 = rt_thread_create(tx_thread, &dot11_netlink_fd, 10000000);
 
   // wait for end of program
   printf("TYPE <ENTER> TO TERMINATE main thread\n");
