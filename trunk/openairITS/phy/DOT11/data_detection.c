@@ -118,9 +118,9 @@ int data_detection(RX_VECTOR_t *rxv,uint8_t *data_ind,uint32_t* rx_data,int fram
   old_mbox = ((unsigned int *)DAQ_MBOX)[0];
 #endif
   for (s=0,sprime=1;s<dlen_symb;s++,sprime++,rx_offset+=80) {
-    //#ifdef DEBUG_DATA
+#ifdef DEBUG_DATA
     printf("DATA symbol %d, rx_offset %d\n",s,rx_offset);
-    //#endif
+#endif
     // synchronize to HW if needed
 #ifdef RTAI
     rx_offset2=rx_offset+1024;
