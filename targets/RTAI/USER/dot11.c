@@ -380,13 +380,13 @@ static void *rx_thread(void *arg) {
 	  skip = initial_sample_offset+txlen-FRAME_LENGTH_SAMPLES;
 	  if (skip < 0)
 	    skip = 0;
-	  /*
+	  
 	  // erase TX signal
 	  for (i=0;i<(txlen-skip);i++)
 	    txdata[0][initial_sample_offset+i] = 0x00010001;
 	  for (i=0;i<skip;i++)
 	    txdata[0][i] = 0x00010001;
-	  */
+	  
 
 	  initial_sample_offset += txlen;  
 	  if (initial_sample_offset > FRAME_LENGTH_SAMPLES) {
