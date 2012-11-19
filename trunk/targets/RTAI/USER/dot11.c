@@ -292,7 +292,7 @@ static void *rx_thread(void *arg) {
 		     frame,rxv->rate,rxv->sdu_length,rx_offset,log2_maxh,(rx_energy/10.0)-rxg_max[0]+30-rxgain[0],
 		     rx_energy/10.0,rxg_max[0]-30+rxgain[0]);
 	    else {
-	      memset((void*)&data_ind_rx[10],0,rxv->sdu_length+4+2+1);
+	      memset((void*)&data_ind_rx[10],0,rxv->sdu_length+4+2+1+16);
 
 	      if (data_detection(rxv,&data_ind_rx[10],
 				 (uint32_t*)rxdata[0],
