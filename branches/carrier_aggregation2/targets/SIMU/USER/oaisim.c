@@ -1093,7 +1093,7 @@ init_bypass ();
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);	//UE_id%NB_eNB_INST);
+      mac_xface->dl_phy_sync_success (UE_id, CC_id, 0, 0,1);	//UE_id%NB_eNB_INST);
       }
 }//CC_id loop 
 }//enb_id
