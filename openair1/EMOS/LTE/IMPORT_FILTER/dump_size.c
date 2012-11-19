@@ -5,7 +5,7 @@
 #define OPENAIR_LTE
 
 //#include <gps.h>
-#include "PHY/defs.h"
+#include "SCHED/phy_procedures_emos.h"
 
 int main(void)
 {

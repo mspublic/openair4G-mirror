@@ -1,21 +1,3 @@
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
- * network-based mobility management protocol standardized by IETF.
- * 
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
- */
 /*! \file pmip_handler.h
 * \brief
 * \author OpenAir3 Group
@@ -23,7 +5,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair_tech@eurecom.fr
+* \email: openair3@eurecom.fr
 */
 
 /** \defgroup HANDLER MESSAGE HANDLER
@@ -102,15 +84,5 @@ protected_pmip_handler(void             pmip_timer_bce_expired_handler(struct tq
 * \param[in]  tqe A task queue element
 */
 protected_pmip_handler(void             pmip_timer_tunnel_expired_handler(struct tq_elem *tqe);)
-
-/*! \fn void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
- * \brief  Handler triggered by the reception of a PBU with P flag set
- * \param[in]  mh       Mobility header
- * \param[in]  len      size of message
- * \param[in]  in_addrs Bundle of address (src and dst)
- * \param[in]  iif      Interface id
- */
-public_pmip_handler(void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif);)
-
 #endif
 /** @}*/

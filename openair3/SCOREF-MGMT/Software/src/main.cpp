@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -50,44 +50,31 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "util/mgmt_udp_socket.hpp"
 #include "mgmt_packet_handler.hpp"
+#include "util/mgmt_udp_server.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 
-#define VERSION "1.2.1"
-
-void printVersion() {
-	cerr << "SCORE@F MANAGEMENT Module version " << VERSION << endl;
-}
-void printHelp(const string& binaryName) {
+void printHelp(string binaryName) {
 	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
 }
 
-#ifdef BOOST_VERSION_1_50
 const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
-#endif
 
 int main(int argc, char** argv) {
-	string logFileName, configurationFileName;
-
+	cout << "Size: " << sizeof(ConfigurationNotification) << endl;
 	/**
-	 * Check command-line parameters. Configuration file name is
-	 * necessary yet log file name is optional
+	 * Log file name parameter is optional
 	 */
-	if (argc > 1 && (!string(argv[1]).compare("-v") || !string(argv[1]).compare("--version"))) {
-		printVersion();
-		exit(0);
-	} else if (argc == 2) {
+	string logFileName = "";
+	if (argc == 1) {
 		logFileName = "SCOREF-MGMT.log";
-		configurationFileName = argv[1];
-	} else if (argc == 3) {
-		configurationFileName = argv[1];
-		logFileName = argv[2];
+	} else if (argc == 2) {
+		logFileName = string(argv[1]);
 	} else {
 		printHelp(argv[0]);
 		exit(1);
@@ -125,17 +112,12 @@ int main(int argc, char** argv) {
 	PacketHandler* packetHandler = NULL;
 
 	/**
-	 * Prepare the list of FACilities configuration files by traversing
-	 * the configration/ directory's content
+	 * Prepare the list of configuration files that are going to be parsed
 	 */
-	string facilitiesConfigurationFileDirectory = "configuration/";
-	vector<string> configurationFileVector = Util::getListOfFiles(facilitiesConfigurationFileDirectory);
-	/**
-	 * Add MGMT module's configuration file to the list
-	 */
-	configurationFileVector.push_back(configurationFileName);
+	vector<string> configurationFileVector;
+	configurationFileVector.push_back("IF.MGMT.conf");
+	configurationFileVector.push_back("IF.IHM.conf");
 	Configuration configuration(configurationFileVector, logger);
-	configuration.setFacilitiesConfigurationDirectory(facilitiesConfigurationFileDirectory);
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
@@ -147,10 +129,10 @@ int main(int argc, char** argv) {
 		exit(-1);
 	}
 
-	try {
-		ManagementClientManager clientManager(mib, configuration, logger);
-		UdpSocket server(configuration.getServerPort(), logger);
+	ManagementClientManager clientManager(mib, configuration, logger);
+	UdpServer server(configuration.getServerPort(), logger);
 
+	try {
 		/**
 		 * Initialise MIB
 		 */
@@ -158,11 +140,11 @@ int main(int argc, char** argv) {
 			mib.initialise();
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot initialise ManagementInformationBase!");
-			throw;
+			throw e;
 		}
 
 		/**
-		 * Allocate a Geonet packet handler
+		 * Allocate aGeonet packet handler
 		 */
 		try {
 			packetHandler = new PacketHandler(mib, logger);
@@ -170,86 +152,37 @@ int main(int argc, char** argv) {
 			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot initialise Geonet Message Handler!");
-			throw;
+			throw e;
 		}
 
 		logger.info("Starting Management & GeoNetworking Interface...");
 		logger.info("Reading configuration file...");
 
-		vector<unsigned char> rxBuffer(UdpSocket::RX_BUFFER_SIZE);
+		vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
 
 		try {
 			for (;;) {
 				if (server.receive(rxBuffer)) {
-					PacketHandlerResult* result = NULL;
+					bool packetHandled = false;
 
 					try {
-						result = packetHandler->handle(rxBuffer);
+						packetHandled = packetHandler->handle(server, rxBuffer);
 					} catch (std::exception& e) {
 						cerr << e.what() << endl;
 					}
 
-					/**
-					 * First inform Management Client Manager about this incoming packet (if it's valid)
-					 */
-					if (!result)
-						continue;
-					else if (result->getResult() == PacketHandlerResult::DISCARD_PACKET
-							|| result->getResult() == PacketHandlerResult::DELIVER_PACKET
-							|| result->getResult() == PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE) {
+					if (packetHandled)
 						/**
 						 * Inform Client Manager of this sender
 						 */
-						try {
-							clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
-						} catch (Exception& e) {
-							e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
-							throw;
-						}
-					}
-
-					switch (result->getResult()) {
-						case PacketHandlerResult::DISCARD_PACKET:
-							delete result;
-							break;
-
-						case PacketHandlerResult::INVALID_PACKET:
-							logger.error("Incoming packet is not valid, discarding..");
-							delete result;
-							break;
-
-						case PacketHandlerResult::DELIVER_PACKET:
-							if (server.send(*result->getPacket()))
-								logger.info("Reply successfully delivered to the client at " + server.toString());
-							else
-								logger.warning("Delivery of the reply packet to the client at " + server.toString() + " has failed!");
-
-							delete result;
-							break;
-
-						case PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE:
-							/**
-							 * Update clients with new configuration information
-							 */
-							try {
-								clientManager.sendConfigurationUpdateAvailable();
-							} catch (Exception& e) {
-								e.updateStackTrace("Cannot send a CONFIGURATION UPDATE AVAILABLE packet!");
-								throw;
-							}
-							delete result;
-							break;
-					}
+						clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
 				}
 
-				/**
-				 * Revert buffer size to initial
-				 */
-				rxBuffer.reserve(UdpSocket::RX_BUFFER_SIZE);
+				// Revert buffer size to initial
+				rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
 			}
-		} catch (Exception& e) {
-			e.updateStackTrace("Something went terribly wrong, exiting...");
-			e.printStackTrace();
+		} catch (std::exception& e) {
+			logger.error(e.what());
 		}
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot initialise SCOREF-MGMT module, exiting...");

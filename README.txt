@@ -13,5 +13,3 @@ targets: scripts to compile and lauch different system targets (simulation, emul
 see README files in these subdirectories for more information
 
 see also https://twiki.eurecom.fr/twiki/bin/view/OpenAirInterface/WebHome
-
-.

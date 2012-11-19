@@ -138,7 +138,7 @@ static void * dlsch_thread(void *param) {
     msg("[openair][SCHED][DLSCH] Illegal dlsch_thread_index %d!!!!\n",dlsch_thread_index);
     return;
   }
-
+  
   dlsch_cpuid[dlsch_thread_index] = cpuid;
 
   while (exit_openair == 0){

@@ -366,7 +366,7 @@ u16 pbch_extract(int **rxdataF,
     }
 
     for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx_eNB;aatx++) {
-      dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size))];
+      dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol*(frame_parms->ofdm_symbol_size))];
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*(6*12)];
 
       for (rb=0; rb<nb_rb; rb++) {

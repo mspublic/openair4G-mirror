@@ -71,7 +71,7 @@
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
-      <LEVEL>info</LEVEL>
+      <LEVEL>debug</LEVEL>
       <VERBOSITY>high</VERBOSITY> <!-- low, medium, high, full -->
       <INTERVAL>1</INTERVAL>
     </LOG>		

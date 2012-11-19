@@ -429,9 +429,9 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
     if (lcid < EXTENDED_POWER_HEADROOM) { 
       if (not_done==0) { // last MAC SDU, length is implicit
 	mac_header_ptr++;
-	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
+	length = tb_length-(mac_header_ptr-mac_header)-ce_len;	
 	for (num_sdu_cnt=0; num_sdu_cnt < num_sdus ; num_sdu_cnt++)
-	  length -= rx_lengths[num_sdu_cnt]; 
+	  length -= rx_lengths[num_sdu_cnt];  
       }
       else {
 	if (lcid == CCCH ){
@@ -995,7 +995,7 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 	  }
 	  else {
 	    msg4_padding = 0;
-	    msg4_post_padding = TBsize - rrc_sdu_length - msg4_header-1;
+	    msg4_post_padding = TBsize - rrc_sdu_length - msg4_header -1;
 	  }
 	  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d subframe %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
 		Mod_id,frame,subframe,TBsize,rrc_sdu_length,msg4_header,msg4_padding,msg4_post_padding); 
@@ -1125,7 +1125,6 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   //  printf("In schedule_ulsch ...\n");
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > (1<<aggregation));UE_id++) {
     //    printf("Checking UE_id %d/%d\n",UE_id,granted_UEs);
-    //LOG_D(OTG,"%d %d \n", UE_id%2, sched_subframe%2);
     if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0) || (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
     { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
 
@@ -1180,7 +1179,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 	// choose this later based on Power Headroom
 	if (ndi == 1) {// set mcs for first round
-	  mcs     = openair_daq_vars.target_ue_ul_mcs;
+	    mcs     = openair_daq_vars.target_ue_ul_mcs;
 	}
 	else  // increment RV
 	  mcs = round + 28; // why 28 ???
@@ -1221,7 +1220,9 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 	  }
 
-	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+	  //rb_table_index = 8;
+
+	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
 		first_rb,rb_table[rb_table_index],
 		rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
@@ -3668,12 +3669,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u16 sdu_length_total=0;
   //  unsigned char loop_count;
   unsigned char DAI;
-  u16 i=0,ii=0;
+  u16 i=0,ii=0,tpmi0=1;
   u8 dl_pow_off[256];
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
   //int **rballoc_sub = (int **)malloc(1792*sizeof(int *));
-  granted_UEs = find_dlgranted_UEs(Mod_id);
+  granted_UEs = 2; //find_dlgranted_UEs(Mod_id);
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 2; // set to the maximum aggregation level
   int mcs;
@@ -3691,14 +3692,16 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   // set current available nb_rb and nCCE to maximum
   nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
   nCCE = mac_xface->get_nCCE_max(Mod_id) - *nCCE_used;
-
+  
   /// CALLING Pre_Processor for tm5
-  if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-    tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
+  tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
+
+ 
+  //
     
   /// If there is more that one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.  
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-    if (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED) {
+    if ((find_UE_RNTI(Mod_id,UE_id)!=0) && (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED)) {
       dl_pow_off[UE_id]=1;
       pre_nb_available_rbs[UE_id]=nb_available_rb;
       for (ii=0;ii<7;ii++)
@@ -3714,28 +3717,42 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
       break; //the for loop
     }
+    /*    else {
+      dl_pow_off[UE_id]=0;
+      pre_nb_available_rbs[UE_id]=nb_available_rb;
+      for (ii=0;ii<7;ii++)
+	rballoc_sub[UE_id][ii] = 1;
+	}*/
   }
 
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 
     rnti = find_UE_RNTI(Mod_id,UE_id);
-    if (rnti==0)
+    if (rnti==0) {
+      //LOG_E(MAC,"Cannot find rnti for UE_id %d (granted UEs %d)\n",UE_id,granted_UEs);
       continue;
+    }
 
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
+    //set wideband pmi of first user (assumed first subband pmi)
+    /*    if (UE_id == 0) {
+      tpmi0 = eNB_UE_stats->DL_pmi_single&3;
+      }*/
+
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
-    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
+    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) 
       nb_available_rb = pre_nb_available_rbs[UE_id];
 
     if ((nb_available_rb == 0) || (nCCE < (1<<aggregation))) {
-      LOG_D(MAC,"nb_availiable_rb exhausted\n");
+      LOG_W(MAC,"UE %d: nb_availiable_rb exhausted (nb_rb_used %d, nb_available_rb %d, nCCE %d, aggregation %d)\n",
+	    UE_id, nb_rb_used0, nb_available_rb, nCCE, aggregation);
       continue; //to next user (there might be rbs availiable for other UEs in TM5
     }
     sdu_length_total=0;
@@ -3957,7 +3974,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       // add the length for  all the control elements (timing adv, drx, etc) : header + payload  
       ta_len = (eNB_UE_stats->UE_timing_offset>0) ? 2 : 0;
       
-      header_len_dcch = 2; // 2 bytes DCCH SDU subheader 
+      header_len_dcch = 2; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
 
 
     
@@ -4009,6 +4026,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       // here we should loop over all possible DTCH
 
       header_len_dtch = 3; // 3 bytes DTCH SDU subheader
+
+      LOG_D(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, Checking RLC status (rab %d, tbs %d, len %d)\n",
+	    Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),TBS,
+	    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),
 				      TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
@@ -4095,7 +4116,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  else //if (( header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
 	    header_len_dtch = header_len_dtch_tmp; 
 	  
-	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len ; // 1 is for the postpadding header 
+	  post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len;// - 1; // 1 is for the postpadding header 
 	}
 
 
@@ -4204,6 +4225,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	    dl_pow_off[next_ue] = 1;
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = dl_pow_off[next_ue];
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
+	  //	  (next_ue==0) ? (((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->tpmi = tpmi0+1) : (((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->tpmi = (tpmi0^1)+1);
 	  break;
 	case 6:
 	  break;
@@ -4212,7 +4234,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
 
       }
-
+    
       else {  // There is no data from RLC or MAC header, so don't schedule
 
       }

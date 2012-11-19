@@ -13,7 +13,6 @@ typedef struct {
 	FL_FORM *otg;
 	FL_OBJECT *owd;
 	FL_OBJECT *throughput;
-	FL_OBJECT *loss_ratio;
 } FD_otg;
 
 extern FD_otg * create_form_otg(void);

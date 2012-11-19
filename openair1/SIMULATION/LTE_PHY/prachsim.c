@@ -95,9 +95,8 @@ int main(int argc, char **argv) {
   char c;
 
   int i,aa,aarx;
-  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0,ue_speed0=0.0,ue_speed1=0.0;
+  double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   u8 snr1set=0;
-  u8 ue_speed1set=0;
   //mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
   int **txdataF2;
@@ -111,7 +110,6 @@ int main(int argc, char **argv) {
   u16 Nid_cell=0;
 
   u8 awgn_flag=0;
-  u8 hs_flag=0;
   int n_frames=1;
   channel_desc_t *UE2eNB;
   u32 nsymb,tx_lev,tx_lev_dB;
@@ -123,7 +121,7 @@ int main(int argc, char **argv) {
 #endif
 
 
-  SCM_t channel_model=Rayleigh1;
+  SCM_t channel_model=Rayleigh1_corr;
 
   //  u8 abstraction_flag=0,calibration_flag=0;
   //  double prach_sinr;
@@ -137,7 +135,6 @@ int main(int argc, char **argv) {
   int N_ZC;
   int delay = 0;
   double delay_avg=0;
-  double ue_speed = 0;
   int NCS_config = 1,rootSequenceIndex=0;
   logInit();
 
@@ -155,7 +152,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:")) != -1)
+  while ((c = getopt (argc, argv, "haA:Cr:p:g:n:s:S:t:x:y:z:N:F:d:Z:L:")) != -1)
     {
       switch (c)
 	{
@@ -202,8 +199,6 @@ int main(int argc, char **argv) {
 	    channel_model=Rice8;
 	  case 'M':
 	    channel_model=Rice1;
-	  case 'N':
-	    channel_model=Rayleigh1_800;
 	  break;
 	  default:
 	    msg("Unsupported channel model!\n");
@@ -228,21 +223,10 @@ int main(int argc, char **argv) {
 	case 'p':
 	  preamble_tx=atoi(optarg);
 	  break;
-	case 'v':
-	  ue_speed0 = atoi(optarg);
-	  break;
-	case 'V':
-	  ue_speed1 = atoi(optarg);
-      ue_speed1set = 1;
-	  break;
 	case 'Z':
 	  NCS_config = atoi(optarg);
 	  if ((NCS_config > 15) || (NCS_config < 0))
 	    printf("Illegal NCS_config %d, (should be 0-15)\n",NCS_config);
-	  break;
-	case 'H':
-	  printf("High-Speed Flag enabled\n");
-	  hs_flag = 1;
 	  break;
 	case 'L':
 	  rootSequenceIndex = atoi(optarg);
@@ -298,17 +282,13 @@ int main(int argc, char **argv) {
 	  printf("-n Number of frames to simulate\n");
 	  printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
 	  printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-	  printf("-g [A,B,C,D,E,F,G,I,N] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) or Rayleigh1 (I) or Rayleigh1_800 (N) models (ignores delay spread and Ricean factor)\n");
+	  printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
 	  printf("-z Number of RX antennas used in eNB\n");
 	  printf("-N Nid_cell\n");
 	  printf("-O oversampling factor (1,2,4,8,16)\n");
-      //	  printf("-f PRACH format (0=1,1=2,2=3,3=4)\n");
-	  printf("-d Channel delay \n");
-	  printf("-v Starting UE velocity in km/h, runs from 'v' to 'v+50km/h'. If n_frames is 1 just 'v' is simulated \n");
-	  printf("-V Ending UE velocity in km/h, runs from 'v' to 'V'");
+	  printf("-f PRACH format (0=1,1=2,2=3,3=4)\n");
 	  printf("-L rootSequenceIndex (0-837)\n");
 	  printf("-Z NCS_config (ZeroCorrelationZone) (0-15)\n");
-	  printf("-H Run with High-Speed Flag enabled \n");
 	  printf("-F Input filename (.txt format) for RX conformance testing\n");
 	  exit (-1);
 	  break;
@@ -326,13 +306,6 @@ int main(int argc, char **argv) {
       snr1 = snr0+.1;
     else
       snr1 = snr0+5.0;
-  }
-
-  if (ue_speed1set==0) {
-    if (n_frames==1)
-      ue_speed1 = ue_speed0+10;
-    else
-      ue_speed1 = ue_speed0+50;
   }
 
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
@@ -362,6 +335,7 @@ int main(int argc, char **argv) {
 				0.0,
 				delay,
 				0);
+  
 
   if (UE2eNB==NULL) {
     msg("Problem generating channel model. Exiting.\n");
@@ -384,14 +358,14 @@ int main(int argc, char **argv) {
   PHY_vars_UE->lte_frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex; 
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
-  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
+  PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   PHY_vars_UE->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex=rootSequenceIndex; 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=NCS_config;
-  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
+  PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
   prach_fmt = get_prach_fmt(PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
@@ -450,10 +424,7 @@ int main(int argc, char **argv) {
 
 
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
-      for (ue_speed=ue_speed0;ue_speed<ue_speed1;ue_speed+=10) {
     delay_avg = 0.0;
-    // max Doppler shift
-    UE2eNB->max_Doppler = 1.9076e9*(ue_speed/3.6)/3e8;
     printf("n_frames %d SNR %f\n",n_frames,SNR);
     prach_errors=0;
     for (trial=0; trial<n_frames; trial++) {
@@ -467,7 +438,7 @@ int main(int argc, char **argv) {
             
 
       if (awgn_flag == 0) {
-	multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
+	multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
 			  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
       }
       if (n_frames==1) {
@@ -520,12 +491,8 @@ int main(int argc, char **argv) {
 	write_output("prach_preamble.m","prachp",&PHY_vars_eNB->X_u[0],839,1,1);
       }
     }
-    printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
-    //printf("(%f,%f)\n",ue_speed,(double)prach_errors/(double)n_frames);
-  } // UE Speed loop
-      //printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
-      //  printf("(%f,%f)\n",SNR,(double)prach_errors/(double)n_frames);
-} //SNR loop
+    printf("SNR %f dB: errors %d/%d (delay %f)\n",SNR,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
+  }
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
   free(txdataF2[1]);

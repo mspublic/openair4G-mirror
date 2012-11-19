@@ -47,7 +47,7 @@ extern int interleaver_64qam[288];
 uint8_t data_coded[65632]; //65632 = (4095 byte SDU + 4 byte CRC + 2 byte service + 1 byte tail)*8 bits/byte * 2 coded bits per bit
 uint8_t data_ind2[4095];
 
-int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offset,int frame_length,uint8_t *data_ind) {
+int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_ind) {
 
   uint8_t signal[3];
   int rate_bits;
@@ -67,8 +67,6 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
   int *interleaver;
   int s,sprime;
   int16_t *output_ptr2;
-  int tx_offset2;
-  int overlap=0;
 
   memset(signal_bits,0,24*sizeof(int));
   memset(signalF,0,64*2*sizeof(int16_t));
@@ -150,58 +148,16 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
       3,               /// scale (energy normalized for 64-point)
       0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
 
-  // copy STS_LTS to start of packet
-
-  tx_offset2 = (tx_offset<<1);
-  overlap=0;
-  if ((tx_offset2 + 640) > (frame_length<<1))
-    overlap = 1;
-  output_ptr2 = &output_ptr[tx_offset2];
-
-#ifdef EXMIMO
-  for (i=0;i<320;i++) {
-    output_ptr2[(i<<1)]   = ((int16_t *)STS_LTS_t)[i<<1]<<2;
-    output_ptr2[1+(i<<1)] = ((int16_t *)STS_LTS_t)[1+(i<<1)]<<2;
-  }
-#else
-  memcpy(output_ptr2,STS_LTS_t,640*sizeof(int16_t));
-
-#endif
-
-  if (overlap == 1)
-    memcpy((void*)output_ptr,
-	   (void*)&output_ptr[frame_length<<1],
-	   (tx_offset2 + 640 - (frame_length<<1))<<1);
-    
-  // position of SIGNAL
-  tx_offset2 = (tx_offset<<1) + 640;
-  
-  overlap=0;
-  if (tx_offset2 > (frame_length<<1))
-    tx_offset2-=frame_length;
-  else if ((tx_offset2 + 160) > (frame_length<<1))
-    overlap = 1;
-  
-  output_ptr2 = &output_ptr[tx_offset2];
- 
   // cyclic extension and output scaling 
   for (i=0,j=48;i<80;i++,j++) {
     if (j==64)
       j=0;
     //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
-#ifdef EXMIMO
-    output_ptr2[(i<<1)]     = tmp_t[j<<2]<<2;     // RE component
-    output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<2; // IM component
-#else
-    output_ptr2[(i<<1)]     = tmp_t[j<<2];     // RE component
-    output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
-#endif
+    output_ptr[640+(i<<1)]     = tmp_t[j<<2];     // RE component
+    output_ptr[640+1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
   }
-  if (overlap == 1) {
-    memcpy((void*)output_ptr,
-	   (void*)&output_ptr[frame_length<<1],
-	   (tx_offset2 + 160 - (frame_length<<1))<<1);
-  }
+  // copy STS_LTS to start of packet
+  memcpy(output_ptr,STS_LTS_t,640*sizeof(int16_t));
 
   
   // now do data portion
@@ -214,9 +170,9 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
   if ((dlen%Ndbps[tx_vector->rate])>0)
     dlen_symb++;
 
-#ifdef DEBUG_TX
+  //#ifdef DEBUG_TX
   printf("Number of symbols in data portion : %d for %d  bytes, CRC %x\n",dlen_symb,tx_vector->sdu_length,*crc);
-#endif
+  //#endif
   // scramble data
 
   data_ind2[0] = scrambler[0]; // service byte 0
@@ -284,23 +240,23 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
     case 0: // BPSK
       // -ve portion
       for (i=0;i<5;i++)
-	dataF[(38+i)<<1]=BPSK[data_interleaved[i]&1];
+	dataF[(38+i)<<1]=BPSK[data_interleaved[i]];
       dataF[(38+5)<<1]=Pseq[sprime]; // Pilot 1
       for (;i<18;i++)
-	dataF[(38+1+i)<<1]=BPSK[data_interleaved[i]&1];
+	dataF[(38+1+i)<<1]=BPSK[data_interleaved[i]];
       dataF[(38+19)<<1]=Pseq[sprime]; // Pilot 2
       for (;i<24;i++)
-	dataF[(38+2+i)<<1]=BPSK[data_interleaved[i]&1];
+	dataF[(38+2+i)<<1]=BPSK[data_interleaved[i]];
       
       // +ve portion
       for (;i<30;i++)
-	dataF[(-24+1+i)<<1]=BPSK[data_interleaved[i]&1];
+	dataF[(-24+1+i)<<1]=BPSK[data_interleaved[i]];
       dataF[(6+1)<<1]=Pseq[sprime];  // Pilot 3
       for (;i<43;i++)
-	dataF[(-24+2+i)<<1]=BPSK[data_interleaved[i]&1];
+	dataF[(-24+2+i)<<1]=BPSK[data_interleaved[i]];
       dataF[(19+2)<<1]=-Pseq[sprime]; // Pilot 4
       for (;i<48;i++)
-	dataF[(-24+3+i)<<1]=BPSK[data_interleaved[i]&1];
+	dataF[(-24+3+i)<<1]=BPSK[data_interleaved[i]];
       
     break;
 
@@ -406,9 +362,9 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
 
     }
 #ifdef DEBUG_TX
-    if (s<12) {
+    if (s==0) {
       for (i=0;i<64;i++)
-	printf("s %d, k %d: (%d,%d)\n",s,i,dataF[i<<1],dataF[1+(i<<1)]);
+	printf("k %d: (%d,%d)\n",i,dataF[i<<1],dataF[1+(i<<1)]);
     }
 #endif
     
@@ -420,45 +376,26 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offs
 	3,               /// scale (energy normalized for 64-point)
 	0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
 
-    // cyclic extension and output scaling
-    tx_offset2 += 160;
-
-    overlap=0;
-    if (tx_offset2 >= (frame_length<<1))
-      tx_offset2 -= (frame_length<<1);
-    else if ((tx_offset2 + 160) > (frame_length<<1))
-      overlap = 1;
-
-    output_ptr2 = &output_ptr[tx_offset2];
+    // cyclic extension and output scaling 
+    output_ptr2 = &output_ptr[640+160*(1+s)];
     for (i=0,j=48;i<80;i++,j++) {
       if (j==64)
 	j=0;
       //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
-#ifdef EXMIMO
-      output_ptr2[(i<<1)]     = tmp_t[j<<2]<<2;     // RE component
-      output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<2; // IM component
-#else
       output_ptr2[(i<<1)]     = tmp_t[j<<2];     // RE component
       output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
-#endif
     }    
-    if (overlap == 1) {
-      memcpy((void*)output_ptr,
-	     (void*)&output_ptr[frame_length<<1],
-	     (tx_offset2 + 160 - (frame_length<<1))<<1);
-    }
+
   }
   
   
-  return(400+(80*dlen_symb));
+  return(0);
 }
 
 int init_tx=0;
 
-int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,int frame_length,uint8_t *data_ind) {
-#ifdef DEBUG_TX
+int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,uint8_t *data_ind) {
   printf("tx_frame %p\n",tx_frame);
-#endif
-  return(phy_tx_start_bot(tx_vector,(int16_t *)tx_frame,next_TXop_offset,frame_length,data_ind));
+  return(phy_tx_start_bot(tx_vector,(int16_t *)(tx_frame+next_TXop_offset),data_ind));
 
 }

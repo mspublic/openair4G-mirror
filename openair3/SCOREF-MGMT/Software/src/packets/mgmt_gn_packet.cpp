@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -95,19 +95,11 @@ bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
 	return true;
 }
 
-bool GeonetPacket::isExtended() const {
-	return header.isExtended();
-}
-
-bool GeonetPacket::isValid() const {
-	return header.isExtended();
-}
-
 string GeonetPacket::toString() const {
 	stringstream ss;
 
-	ss << "GeonetHeader[extended:" << isExtended() << ", valid:" << isValid()
-	   << ", version:" << (int) header.getVersion() << ", priority:" << (int) header.getPriority()
+	// todo write extended message and validity fields here as well
+	ss << "GeonetHeader[version:" << (int) header.version << ", priority:" << (int) header.priority
 		<< ", event:" << (int) (header.eventType * 100 + header.eventSubtype) << "]";
 
 	return ss.str();

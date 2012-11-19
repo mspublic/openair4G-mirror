@@ -75,7 +75,7 @@ class Configuration {
 		 * @param configurationFileNameList Configuration files that shall be parsed
 		 * @param logger Logger object reference
 		 */
-		Configuration(const vector<string>& configurationFileNameVector, Logger& logger);
+		Configuration(const vector<string>& confgurationFileNameVector, Logger& logger);
 		/**
 		 * Destructor for Configuration class
 		 */
@@ -103,14 +103,6 @@ class Configuration {
 		 * @return none
 		 */
 		void addConfigurationFile(const string& configurationFileName);
-		/**
-		 * Sets the directory name where Configuration class is going to
-		 * look for FACilities configuration files
-		 *
-		 * @param directory Directory name (relative to ./)
-		 * @return none
-		 */
-		void setFacilitiesConfigurationDirectory(const string& directory);
 		/**
 		 * Returns UDP server port number
 		 *
@@ -162,7 +154,7 @@ class Configuration {
 		 * @param value Parameter's value
 		 * @return true on success, false otherwise
 		 */
-		static bool parseLine(const string& line, string& parameter, string& value);
+		bool parseLine(const string& line, string& parameter, string& value);
 		/**
 		 * Parses IHM configuration IDs of type <configurationItemName|configurationItemID>
 		 *
@@ -171,7 +163,7 @@ class Configuration {
 		 * @param parameterID "configurationItemID" part of the parameter string (output)
 		 * @return bool true on success, false otherwise
 		 */
-		static bool parseParameterId(const string& param, string& parameterString, u_int16_t& parameterId);
+		bool parseParameterId(const string& param, string& parameterString, u_int16_t& parameterId);
 		/**
 		 * Sets configuration parameter's value with given value
 		 *
@@ -182,10 +174,6 @@ class Configuration {
 		bool setValue(const string& parameter, const string& value);
 
 	private:
-		/**
-		 * Directory where FACilities configuration files reside
-		 */
-		string facilitiesConfigurationDirectory;
 		/**
 		 * Configuration files name vector
 		 */
