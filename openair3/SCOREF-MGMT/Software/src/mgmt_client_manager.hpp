@@ -75,11 +75,11 @@ class ManagementClientManager {
 		 * a new client object if necessary or updating its state if there's one
 		 * defined for sender source address
 		 *
-		 * @param clientConnection Sender of relevant packet
+		 * @param clientEndpoint A udp::endpoint reference
 		 * @param eventType Type/subtype of event the packet was sent for
 		 * @return true if success, false otherwise
 		 */
-		bool updateManagementClientState(UdpSocket& clientConnection, EventType eventType);
+		bool updateManagementClientState(udp::endpoint& clientEndpoint, EventType eventType);
 		/**
 		 * Sends CONFIGURATION UPDATE AVAILABLE to all those clients connected
 		 *

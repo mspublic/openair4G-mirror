@@ -104,6 +104,43 @@ class Packet:
 		return True
 
 	@staticmethod
+	def sendLocationUpdate(serverAddress, serverPort, clientPort):
+		# Build the packet
+		locationUpdatePacket = array.array('B')
+		locationUpdatePacket.append(0x40) # Validity=1, version=0
+		locationUpdatePacket.append(0x00) # Priority=0
+		locationUpdatePacket.append(0x01) # EventType=1
+		locationUpdatePacket.append(0x10) # EventSubtype=10
+		locationUpdatePacket.append(0x01) # Timestamp (4-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x03)
+		locationUpdatePacket.append(0x04)
+		locationUpdatePacket.append(0x01) # Latitude (4-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x03)
+		locationUpdatePacket.append(0x04)
+		locationUpdatePacket.append(0x01) # Longitude (4-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x03)
+		locationUpdatePacket.append(0x04)
+		locationUpdatePacket.append(0x01) # Speed (2-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x01) # Heading (2-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x01) # Altitude (2-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x01) # TAcc, and PodAcc (1-byte)
+		locationUpdatePacket.append(0x01) # SAcc, Hacc, and AltAcc (1-byte) 
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(locationUpdatePacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		return True
+
+	@staticmethod
 	def testConfigurationResponse(address):
 		# Create the socket to receive from MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

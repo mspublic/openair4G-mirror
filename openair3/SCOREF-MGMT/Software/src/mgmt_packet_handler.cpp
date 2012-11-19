@@ -106,7 +106,7 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 			return handleConfigurationNotification(new FacConfigurationNotificationPacket(mib, packetBuffer, logger));
 
 		case MGMT_FAC_EVENT_LOCATION_UPDATE:
-			logger.info("LOCATION_UPDATE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + "has been received");
+			logger.info("LOCATION_UPDATE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleLocationUpdate(new GeonetLocationUpdateEventPacket(mib, packetBuffer, logger));
 
 		/**

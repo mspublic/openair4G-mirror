@@ -1,4 +1,10 @@
 
+v1.3.0 (released on 19 Nov 2012)
+* Now simulator can send LOCATION_UPDATE
+* Bugfix GeonetPacket::serialise() now validates incoming buffer size
+* ManagementServer class introduced and caused intensive changes in main.cpp
+* Client type is now recognized better according to the event type/subtypes
+
 v1.2.2
 * test/simulation/README updated
 * test/simulation/packet.py's communication profile request code updated with Andrea's sample

@@ -83,6 +83,14 @@ bool GeonetPacket::parseHeaderBuffer(const vector<unsigned char>& headerBuffer, 
 }
 
 bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
+	/**
+	 * Validate incoming buffer's size
+	 */
+	if (buffer.size() < sizeof(MessageHeader)) {
+		logger.error("Incoming buffer is not sufficient to encode a message header into!");
+		return false;
+	}
+
 	logger.debug("Serialising header...");
 
 	buffer[0] = header.version;
