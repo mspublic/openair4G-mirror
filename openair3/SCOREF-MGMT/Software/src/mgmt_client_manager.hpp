@@ -42,7 +42,7 @@
 #ifndef MGMT_CLIENT_MANAGER_HPP_
 #define MGMT_CLIENT_MANAGER_HPP_
 
-#include "util/mgmt_udp_socket.hpp"
+#include "util/mgmt_udp_server.hpp"
 #include "mgmt_configuration.hpp"
 #include "mgmt_types.hpp"
 #include "util/mgmt_log.hpp"
@@ -79,20 +79,7 @@ class ManagementClientManager {
 		 * @param eventType Type/subtype of event the packet was sent for
 		 * @return true if success, false otherwise
 		 */
-		bool updateManagementClientState(UdpSocket& clientConnection, EventType eventType);
-		/**
-		 * Sends CONFIGURATION UPDATE AVAILABLE to all those clients connected
-		 *
-		 * @return true on success, false otherwise
-		 */
-		bool sendConfigurationUpdateAvailable();
-		/**
-		 * Returns the string representation of Client Manager and the clients it manages
-		 *
-		 * @param none
-		 * @return std::string representation of this class
-		 */
-		string toString();
+		bool updateManagementClientState(UdpServer& clientConnection, EventType eventType);
 
 	private:
 		/**

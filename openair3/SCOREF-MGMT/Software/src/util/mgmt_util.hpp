@@ -63,7 +63,7 @@ class Util {
 		 * @param bufferSize Size of the buffer
 		 * @return none
 		 */
-		static void resetBuffer(unsigned char * buffer, const size_t bufferSize);
+		static void resetBuffer(void* buffer, size_t bufferSize);
 		/**
 		 * Copies data between given two buffers
 		 *
@@ -72,7 +72,7 @@ class Util {
 		 * @param copySize Amount of data to be copied
 		 * @return true on success, false otherwise
 		 */
-		static bool copyBuffer(unsigned char* destinationBuffer, const unsigned char* sourceBuffer, size_t copySize);
+		static bool copyBuffer(void* destinationBuffer, const void* sourceBuffer, size_t copySize);
 		/**
 		 * Prints hexadecimal representation of given buffer
 		 *
@@ -108,7 +108,6 @@ class Util {
 		static string stringify(T numerical);
 		/**
 		 * Sets Nth bit of given octet
-		 * `index' takes value from 0 to 7
 		 *
 		 * @param octet Pointer to the octet
 		 * @param index Index that'll be set
@@ -116,8 +115,7 @@ class Util {
 		 */
 		static bool setBit(u_int8_t& octet, u_int8_t index);
 		/**
-		 * Unsets `index'th bit of given octet
-		 * `index' takes value from 0 to 7
+		 * Unsets Nth bit of given octet
 		 *
 		 * @param octet Pointer to the octet
 		 * @param index Index that'll be unset
@@ -125,8 +123,7 @@ class Util {
 		 */
 		static bool unsetBit(u_int8_t& octet, u_int8_t index);
 		/**
-		 * Checks if `index'th bit of given octet is set
-		 * `index' takes value from 0 to 7
+		 * Checks if Nth bit of given octet is set
 		 *
 		 * @param octet Octet
 		 * @param index Index that'll be checked
@@ -192,6 +189,13 @@ class Util {
 		 */
 		static bool encode2byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int16_t data);
 		/**
+		 * Splits given string with given delimiter
+		 *
+		 * @param input Input string that is going to be split
+		 * @param delimiter Delimiter character
+		 * @return std::vector containing split parts
+		 */
+		/**
 		 * Encodes given bits starting from given index into given octet
 		 *
 		 * @param octet Octet that given bits will be encoded into
@@ -202,7 +206,7 @@ class Util {
 		 */
 		static bool encodeBits(u_int8_t& octet, u_int8_t index, u_int8_t data, u_int8_t dataSize);
 		/**
-		 * Splits given string according to given delimiter and returns the
+		 * Splits given string according to given delimiter and return the
 		 * string list as a vector
 		 *
 		 * @param input Input string that'll be delimited
@@ -233,20 +237,6 @@ class Util {
 		 * @return String representation of current date and time information
 		 */
 		static string getDateAndTime(bool withDelimiters);
-		/**
-		 * Returns the list of files in given directory
-		 *
-		 * @param directory Directory that'll be traversed
-		 * @return Vector of std::string carrying directory content
-		 */
-		static vector<string> getListOfFiles(const string& directory);
-		/**
-		 * Returns the file extension of given file name
-		 *
-		 * @param fileName File name of type std::string
-		 * @return File extension of type std::string
-		 */
-		static string getFileExtension(const string& fileName);
 };
 
 #endif /* MGMT_UTIL_HPP_ */

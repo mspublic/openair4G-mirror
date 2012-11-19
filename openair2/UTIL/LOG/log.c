@@ -76,7 +76,7 @@ static int bypass_log_hdr;
 
 //extern MAC_xface *mac_xface;
 
-int logInit (void) {
+void logInit (void) {
   
 #ifdef USER_MODE
   int i;
@@ -86,13 +86,8 @@ int logInit (void) {
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
   if (g_log == NULL) {
-#ifdef USER_MODE
     perror ("cannot allocated memory for log generation modeul \n");
     exit(-1);
-#else
-    printk("cannot allocated memory for log generation modeul \n");
-    return(-1);
-#endif
   }
   
   g_log->log_component[PHY].name = "PHY";
@@ -142,7 +137,7 @@ int logInit (void) {
     g_log->log_component[RRC].fd = 0;
     g_log->log_component[RRC].filelog = 0;
     g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
-
+    
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
     g_log->log_component[EMU].flag =  LOG_MED; 
@@ -176,13 +171,13 @@ int logInit (void) {
     g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
 
 
-    g_log->log_component[OTG_GP].name = "OTG_GP";
-    g_log->log_component[OTG_GP].level = LOG_FILE;
-    g_log->log_component[OTG_GP].flag =  LOG_MED;
-    g_log->log_component[OTG_GP].interval =  1;
-    g_log->log_component[OTG_GP].fd = 0;
-    g_log->log_component[OTG_GP].filelog = 0;
-    g_log->log_component[OTG_GP].filelog_name = "/tmp/otg_GP.dat";
+    g_log->log_component[OTG_OWD].name = "OTG_OWD";
+    g_log->log_component[OTG_OWD].level = LOG_FILE;
+    g_log->log_component[OTG_OWD].flag =  LOG_MED;
+    g_log->log_component[OTG_OWD].interval =  1;
+    g_log->log_component[OTG_OWD].fd = 0;
+    g_log->log_component[OTG_OWD].filelog = 0;
+    g_log->log_component[OTG_OWD].filelog_name = "/tmp/otg_owd.log";
 
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
@@ -231,23 +226,7 @@ int logInit (void) {
     g_log->log_component[OCM].fd = 0;
     g_log->log_component[OCM].filelog =  0;
     g_log->log_component[OCM].filelog_name = "/tmp/ocm.log";
-
-    g_log->log_component[S1AP].name = "S1AP";
-    g_log->log_component[S1AP].level = LOG_TRACE;
-    g_log->log_component[S1AP].flag = LOG_MED;
-    g_log->log_component[S1AP].interval = 1;
-    g_log->log_component[S1AP].fd = 0;
-    g_log->log_component[S1AP].filelog = 0;
-    g_log->log_component[S1AP].filelog_name = "/tmp/s1ap.log";
-
-    g_log->log_component[SCTP].name = "SCTP";
-    g_log->log_component[SCTP].level = LOG_TRACE;
-    g_log->log_component[SCTP].flag = LOG_MED;
-    g_log->log_component[SCTP].interval = 1;
-    g_log->log_component[SCTP].fd = 0;
-    g_log->log_component[SCTP].filelog = 0;
-    g_log->log_component[SCTP].filelog_name = "";
-
+       
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
@@ -258,13 +237,13 @@ int logInit (void) {
     g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
     g_log->level2string[LOG_FILE]          = "F"; // file
     g_log->level2string[LOG_TRACE]         = "T"; // TRACE
-    
+
     g_log->onlinelog = 1; //online log file
     g_log->syslog = 0; 
     g_log->filelog   = 0;
     g_log->level  = LOG_TRACE;
     g_log->flag   = LOG_LOW;
-    
+ 
 #ifdef USER_MODE  
   g_log->config.remote_ip      = 0;
   g_log->config.remote_level   = LOG_EMERG;
@@ -292,12 +271,8 @@ int logInit (void) {
   printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
-
-#ifdef USER_MODE  
+  
   printf("log init done\n");
-#else
-  printk("log init done\n");
-#endif
 
 }
 
@@ -495,14 +470,6 @@ void set_glog_filelog(int enable) {
   g_log->filelog = enable;
 }
 
-void set_component_filelog(int comp){
-  
-  if (g_log->log_component[comp].filelog ==  0){
-    g_log->log_component[comp].filelog =  1;
-    if (g_log->log_component[comp].fd == 0)
-      g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  }
-}
 
 /*
  * for the two functions below, the passed array must have a final entry

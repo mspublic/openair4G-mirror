@@ -28,7 +28,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   int i,j;
   PHY_VARS_eNB* PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  memset(PHY_vars_eNB,0,sizeof(PHY_VARS_eNB));
+
   PHY_vars_eNB->Mod_id=eNB_id;
   PHY_vars_eNB->cooperation_flag=cooperation_flag;
   memcpy(&(PHY_vars_eNB->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
@@ -59,7 +59,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-    PHY_vars_eNB->transmission_mode[i] = transmission_mode;
+    PHY_vars_eNB->transmission_mode[i] = (transmission_mode==1?1:2);
     
   }
   
@@ -98,7 +98,6 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
 
   int i,j;
   PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  memset(PHY_vars_UE,0,sizeof(PHY_VARS_UE));
   PHY_vars_UE->Mod_id=UE_id; 
   memcpy(&(PHY_vars_UE->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
@@ -142,7 +141,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
   mac_xface = malloc(sizeof(MAC_xface));
 
-  LOG_I(PHY,"init lte parms: Nid_cell %d, Frame type %d, N_RB_DL %d\n",Nid_cell,frame_type,N_RB_DL);
+  LOG_I(PHY,"init lte parms: Nid_cell %d\n",Nid_cell);
 
   *frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   (*frame_parms)->frame_type         = frame_type;
@@ -159,14 +158,9 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_rx     = 1;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
+  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
   init_frame_parms(*frame_parms,1);
-
-  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
-  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
-  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-  (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
-  init_ul_hopping(*frame_parms);
 
   phy_init_top(*frame_parms);
 

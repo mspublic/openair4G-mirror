@@ -1,0 +1,511 @@
+FreeRADIUS Version 2.1.10, for host i686-pc-linux-gnu, built on Jun  6 2011 at 15:09:40
+Copyright (C) 1999-2009 The FreeRADIUS server project and contributors. 
+There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A 
+PARTICULAR PURPOSE. 
+You may redistribute copies of FreeRADIUS under the terms of the 
+GNU General Public License v2. 
+Starting - reading configuration files ...
+including configuration file /usr/local/etc/raddb/radiusd.conf
+including configuration file /usr/local/etc/raddb/proxy.conf
+including configuration file /usr/local/etc/raddb/clients.conf
+including files in directory /usr/local/etc/raddb/modules/
+including configuration file /usr/local/etc/raddb/modules/radutmp
+including configuration file /usr/local/etc/raddb/modules/dynamic_clients
+including configuration file /usr/local/etc/raddb/modules/perl
+including configuration file /usr/local/etc/raddb/modules/linelog
+including configuration file /usr/local/etc/raddb/modules/echo
+including configuration file /usr/local/etc/raddb/modules/etc_group
+including configuration file /usr/local/etc/raddb/modules/smsotp
+including configuration file /usr/local/etc/raddb/modules/mac2vlan
+including configuration file /usr/local/etc/raddb/modules/smbpasswd
+including configuration file /usr/local/etc/raddb/modules/policy
+including configuration file /usr/local/etc/raddb/modules/krb5
+including configuration file /usr/local/etc/raddb/modules/cui
+including configuration file /usr/local/etc/raddb/modules/logintime
+including configuration file /usr/local/etc/raddb/modules/detail.log
+including configuration file /usr/local/etc/raddb/modules/inner-eap
+including configuration file /usr/local/etc/raddb/modules/ldap
+including configuration file /usr/local/etc/raddb/modules/opendirectory
+including configuration file /usr/local/etc/raddb/modules/preprocess
+including configuration file /usr/local/etc/raddb/modules/checkval
+including configuration file /usr/local/etc/raddb/modules/otp
+including configuration file /usr/local/etc/raddb/modules/detail.example.com
+including configuration file /usr/local/etc/raddb/modules/mschap
+including configuration file /usr/local/etc/raddb/modules/sradutmp
+including configuration file /usr/local/etc/raddb/modules/attr_filter
+including configuration file /usr/local/etc/raddb/modules/wimax
+including configuration file /usr/local/etc/raddb/modules/mac2ip
+including configuration file /usr/local/etc/raddb/modules/ippool
+including configuration file /usr/local/etc/raddb/modules/sqlcounter_expire_on_login
+including configuration file /usr/local/etc/raddb/modules/expiration
+including configuration file /usr/local/etc/raddb/modules/exec
+including configuration file /usr/local/etc/raddb/modules/unix
+including configuration file /usr/local/etc/raddb/modules/detail
+including configuration file /usr/local/etc/raddb/modules/files
+including configuration file /usr/local/etc/raddb/modules/counter
+including configuration file /usr/local/etc/raddb/modules/ntlm_auth
+including configuration file /usr/local/etc/raddb/modules/sql_log
+including configuration file /usr/local/etc/raddb/modules/pap
+including configuration file /usr/local/etc/raddb/modules/pam
+including configuration file /usr/local/etc/raddb/modules/realm
+including configuration file /usr/local/etc/raddb/modules/passwd
+including configuration file /usr/local/etc/raddb/modules/acct_unique
+including configuration file /usr/local/etc/raddb/modules/expr
+including configuration file /usr/local/etc/raddb/modules/digest
+including configuration file /usr/local/etc/raddb/modules/chap
+including configuration file /usr/local/etc/raddb/modules/attr_rewrite
+including configuration file /usr/local/etc/raddb/modules/always
+including configuration file /usr/local/etc/raddb/eap.conf
+including configuration file /usr/local/etc/raddb/policy.conf
+including files in directory /usr/local/etc/raddb/sites-enabled/
+including configuration file /usr/local/etc/raddb/sites-enabled/default
+including configuration file /usr/local/etc/raddb/sites-enabled/inner-tunnel
+including configuration file /usr/local/etc/raddb/sites-enabled/control-socket
+main {
+	allow_core_dumps = no
+}
+including dictionary file /usr/local/etc/raddb/dictionary
+main {
+	prefix = "/usr/local"
+	localstatedir = "/usr/local/var"
+	logdir = "/usr/local/var/log/radius"
+	libdir = "/usr/local/lib"
+	radacctdir = "/usr/local/var/log/radius/radacct"
+	hostname_lookups = no
+	max_request_time = 30
+	cleanup_delay = 5
+	max_requests = 1024
+	pidfile = "/usr/local/var/run/radiusd/radiusd.pid"
+	checkrad = "/usr/local/sbin/checkrad"
+	debug_level = 0
+	proxy_requests = no
+ log {
+	stripped_names = yes
+	auth = yes
+	auth_badpass = yes
+	auth_goodpass = yes
+ }
+ security {
+	max_attributes = 200
+	reject_delay = 1
+	status_server = yes
+ }
+}
+radiusd: #### Loading Realms and Home Servers ####
+ proxy server {
+	retry_delay = 5
+	retry_count = 3
+	default_fallback = no
+	dead_time = 120
+	wake_all_if_all_dead = no
+ }
+ home_server localhost {
+	ipaddr = 127.0.0.1
+	port = 1812
+	type = "auth"
+	secret = "testing123"
+	response_window = 20
+	max_outstanding = 65536
+	require_message_authenticator = yes
+	zombie_period = 40
+	status_check = "status-server"
+	ping_interval = 30
+	check_interval = 30
+	num_answers_to_alive = 3
+	num_pings_to_alive = 3
+	revive_interval = 120
+	status_check_timeout = 4
+	irt = 2
+	mrt = 16
+	mrc = 5
+	mrd = 30
+ }
+ home_server_pool my_auth_failover {
+	type = fail-over
+	home_server = localhost
+ }
+ realm example.com {
+	auth_pool = my_auth_failover
+ }
+ realm LOCAL {
+ }
+radiusd: #### Loading Clients ####
+ client localhost {
+	ipv6addr = :: IPv6 address [::]
+	require_message_authenticator = no
+	secret = "testing123"
+	nastype = "other"
+	password = "linux"
+ }
+ client 2001:100::3 {
+	require_message_authenticator = no
+	secret = "testing123"
+	shortname = "mag2"
+	nastype = "other"
+	password = "linux"
+ }
+ client 2001:100::2 {
+	require_message_authenticator = no
+	secret = "testing123"
+	shortname = "mag1"
+	nastype = "other"
+	password = "linux"
+ }
+radiusd: #### Instantiating modules ####
+ instantiate {
+ Module: Linked to module rlm_exec
+ Module: Instantiating module "exec" from file /usr/local/etc/raddb/modules/exec
+  exec {
+	wait = no
+	input_pairs = "request"
+	shell_escape = yes
+  }
+ Module: Linked to module rlm_expr
+ Module: Instantiating module "expr" from file /usr/local/etc/raddb/modules/expr
+ Module: Linked to module rlm_expiration
+ Module: Instantiating module "expiration" from file /usr/local/etc/raddb/modules/expiration
+  expiration {
+	reply-message = "Password Has Expired  "
+  }
+ Module: Linked to module rlm_logintime
+ Module: Instantiating module "logintime" from file /usr/local/etc/raddb/modules/logintime
+  logintime {
+	reply-message = "You are calling outside your allowed timespan  "
+	minimum-timeout = 60
+  }
+ }
+radiusd: #### Loading Virtual Servers ####
+server inner-tunnel { # from file /usr/local/etc/raddb/sites-enabled/inner-tunnel
+ modules {
+ Module: Checking authenticate {...} for more modules to load
+ Module: Linked to module rlm_pap
+ Module: Instantiating module "pap" from file /usr/local/etc/raddb/modules/pap
+  pap {
+	encryption_scheme = "auto"
+	auto_header = yes
+  }
+ Module: Linked to module rlm_chap
+ Module: Instantiating module "chap" from file /usr/local/etc/raddb/modules/chap
+ Module: Linked to module rlm_mschap
+ Module: Instantiating module "mschap" from file /usr/local/etc/raddb/modules/mschap
+  mschap {
+	use_mppe = yes
+	require_encryption = no
+	require_strong = no
+	with_ntdomain_hack = no
+  }
+ Module: Linked to module rlm_unix
+ Module: Instantiating module "unix" from file /usr/local/etc/raddb/modules/unix
+  unix {
+	radwtmp = "/usr/local/var/log/radius/radwtmp"
+  }
+ Module: Linked to module rlm_eap
+ Module: Instantiating module "eap" from file /usr/local/etc/raddb/eap.conf
+  eap {
+	default_eap_type = "md5"
+	timer_expire = 60
+	ignore_unknown_eap_types = no
+	cisco_accounting_username_bug = no
+	max_sessions = 4096
+  }
+ Module: Linked to sub-module rlm_eap_md5
+ Module: Instantiating eap-md5
+ Module: Linked to sub-module rlm_eap_leap
+ Module: Instantiating eap-leap
+ Module: Linked to sub-module rlm_eap_gtc
+ Module: Instantiating eap-gtc
+   gtc {
+	challenge = "Password: "
+	auth_type = "PAP"
+   }
+ Module: Linked to sub-module rlm_eap_tls
+ Module: Instantiating eap-tls
+   tls {
+	rsa_key_exchange = no
+	dh_key_exchange = yes
+	rsa_key_length = 512
+	dh_key_length = 512
+	verify_depth = 0
+	CA_path = "/usr/local/etc/raddb/certs"
+	pem_file_type = yes
+	private_key_file = "/usr/local/etc/raddb/certs/server.pem"
+	certificate_file = "/usr/local/etc/raddb/certs/server.pem"
+	CA_file = "/usr/local/etc/raddb/certs/ca.pem"
+	private_key_password = "whatever"
+	dh_file = "/usr/local/etc/raddb/certs/dh"
+	random_file = "/usr/local/etc/raddb/certs/random"
+	fragment_size = 1024
+	include_length = yes
+	check_crl = no
+	cipher_list = "DEFAULT"
+	make_cert_command = "/usr/local/etc/raddb/certs/bootstrap"
+    cache {
+	enable = no
+	lifetime = 24
+	max_entries = 255
+    }
+    verify {
+    }
+   }
+ Module: Linked to sub-module rlm_eap_ttls
+ Module: Instantiating eap-ttls
+   ttls {
+	default_eap_type = "md5"
+	copy_request_to_tunnel = no
+	use_tunneled_reply = no
+	virtual_server = "inner-tunnel"
+	include_length = yes
+   }
+ Module: Linked to sub-module rlm_eap_peap
+ Module: Instantiating eap-peap
+   peap {
+	default_eap_type = "mschapv2"
+	copy_request_to_tunnel = no
+	use_tunneled_reply = no
+	proxy_tunneled_request_as_eap = yes
+	virtual_server = "inner-tunnel"
+   }
+ Module: Linked to sub-module rlm_eap_mschapv2
+ Module: Instantiating eap-mschapv2
+   mschapv2 {
+	with_ntdomain_hack = no
+   }
+ Module: Checking authorize {...} for more modules to load
+ Module: Linked to module rlm_realm
+ Module: Instantiating module "suffix" from file /usr/local/etc/raddb/modules/realm
+  realm suffix {
+	format = "suffix"
+	delimiter = "@"
+	ignore_default = no
+	ignore_null = no
+  }
+ Module: Linked to module rlm_files
+ Module: Instantiating module "files" from file /usr/local/etc/raddb/modules/files
+  files {
+	usersfile = "/usr/local/etc/raddb/users"
+	acctusersfile = "/usr/local/etc/raddb/acct_users"
+	preproxy_usersfile = "/usr/local/etc/raddb/preproxy_users"
+	compat = "no"
+  }
+ Module: Checking session {...} for more modules to load
+ Module: Linked to module rlm_radutmp
+ Module: Instantiating module "radutmp" from file /usr/local/etc/raddb/modules/radutmp
+  radutmp {
+	filename = "/usr/local/var/log/radius/radutmp"
+	username = "%{User-Name}"
+	case_sensitive = yes
+	check_with_nas = yes
+	perm = 384
+	callerid = yes
+  }
+ Module: Checking post-proxy {...} for more modules to load
+ Module: Checking post-auth {...} for more modules to load
+ Module: Linked to module rlm_attr_filter
+ Module: Instantiating module "attr_filter.access_reject" from file /usr/local/etc/raddb/modules/attr_filter
+  attr_filter attr_filter.access_reject {
+	attrsfile = "/usr/local/etc/raddb/attrs.access_reject"
+	key = "%{User-Name}"
+  }
+ } # modules
+} # server
+server { # from file /usr/local/etc/raddb/radiusd.conf
+ modules {
+ Module: Checking authenticate {...} for more modules to load
+ Module: Linked to module rlm_digest
+ Module: Instantiating module "digest" from file /usr/local/etc/raddb/modules/digest
+ Module: Checking authorize {...} for more modules to load
+ Module: Linked to module rlm_preprocess
+ Module: Instantiating module "preprocess" from file /usr/local/etc/raddb/modules/preprocess
+  preprocess {
+	huntgroups = "/usr/local/etc/raddb/huntgroups"
+	hints = "/usr/local/etc/raddb/hints"
+	with_ascend_hack = no
+	ascend_channels_per_line = 23
+	with_ntdomain_hack = no
+	with_specialix_jetstream_hack = no
+	with_cisco_vsa_hack = no
+	with_alvarion_vsa_hack = no
+  }
+ Module: Linked to module rlm_detail
+ Module: Instantiating module "auth_log" from file /usr/local/etc/raddb/modules/detail.log
+  detail auth_log {
+	detailfile = "/usr/local/var/log/radius/radacct/%{Client-IP-Address}/auth-detail-%Y%m%d"
+	header = "%t"
+	detailperm = 384
+	dirperm = 493
+	locking = no
+	log_packet_header = no
+  }
+ Module: Instantiating module "IPASS" from file /usr/local/etc/raddb/modules/realm
+  realm IPASS {
+	format = "prefix"
+	delimiter = "/"
+	ignore_default = no
+	ignore_null = no
+  }
+ Module: Linked to module rlm_checkval
+ Module: Instantiating module "checkval" from file /usr/local/etc/raddb/modules/checkval
+  checkval {
+	item-name = "Calling-Station-Id"
+	check-name = "Calling-Station-Id"
+	data-type = "string"
+	notfound-reject = no
+  }
+rlm_checkval: Registered name Calling-Station-Id for attribute 31
+ Module: Checking preacct {...} for more modules to load
+ Module: Linked to module rlm_acct_unique
+ Module: Instantiating module "acct_unique" from file /usr/local/etc/raddb/modules/acct_unique
+  acct_unique {
+	key = "User-Name, Acct-Session-Id, NAS-IP-Address, Client-IP-Address, NAS-Port"
+  }
+ Module: Checking accounting {...} for more modules to load
+ Module: Instantiating module "detail" from file /usr/local/etc/raddb/modules/detail
+  detail {
+	detailfile = "/usr/local/var/log/radius/radacct/%{Client-IP-Address}/detail-%Y%m%d"
+	header = "%t"
+	detailperm = 384
+	dirperm = 493
+	locking = no
+	log_packet_header = no
+  }
+ Module: Instantiating module "attr_filter.accounting_response" from file /usr/local/etc/raddb/modules/attr_filter
+  attr_filter attr_filter.accounting_response {
+	attrsfile = "/usr/local/etc/raddb/attrs.accounting_response"
+	key = "%{User-Name}"
+  }
+ Module: Checking session {...} for more modules to load
+ Module: Checking post-proxy {...} for more modules to load
+ Module: Checking post-auth {...} for more modules to load
+ } # modules
+} # server
+radiusd: #### Opening IP addresses and Ports ####
+listen {
+	type = "auth"
+	ipv6addr = :: IPv6 address [::]
+	port = 0
+}
+listen {
+	type = "acct"
+	ipv6addr = :: IPv6 address [::]
+	port = 0
+}
+listen {
+	type = "control"
+ listen {
+	socket = "/usr/local/var/run/radiusd/radiusd.sock"
+ }
+}
+listen {
+	type = "auth"
+	ipaddr = 127.0.0.1
+	port = 18120
+}
+Listening on authentication address :: port 1812
+Listening on accounting address :: port 1813
+Listening on command file /usr/local/var/run/radiusd/radiusd.sock
+Listening on authentication address 127.0.0.1 port 18120 as server inner-tunnel
+Ready to process requests.
+rad_recv: Access-Request packet from host 2001:100::2 port 49061, id=60, length=70
+	User-Name = "000000146c53180a"
+	User-Password = "linux"
+	Service-Type = Authenticate-Only
+	NAS-Port = 0
+# Executing section authorize from file /usr/local/etc/raddb/sites-enabled/default
++- entering group authorize {...}
+++[preprocess] returns ok
+[auth_log] 	expand: /usr/local/var/log/radius/radacct/%{Client-IP-Address}/auth-detail-%Y%m%d -> /usr/local/var/log/radius/radacct//auth-detail-20110630
+[auth_log] /usr/local/var/log/radius/radacct/%{Client-IP-Address}/auth-detail-%Y%m%d expands to /usr/local/var/log/radius/radacct//auth-detail-20110630
+[auth_log] 	expand: %t -> Thu Jun 30 10:24:49 2011
+++[auth_log] returns ok
+++[chap] returns noop
+++[mschap] returns noop
+++[digest] returns noop
+[IPASS] No '/' in User-Name = "000000146c53180a", looking up realm NULL
+[IPASS] No such realm "NULL"
+++[IPASS] returns noop
+[suffix] No '@' in User-Name = "000000146c53180a", looking up realm NULL
+[suffix] No such realm "NULL"
+++[suffix] returns noop
+[eap] No EAP-Message, not doing EAP
+++[eap] returns noop
+++[unix] returns notfound
+WARNING: Found User-Password == "...".
+WARNING: Are you sure you don't mean Cleartext-Password?
+WARNING: See "man rlm_pap" for more information.
+[files] users: Matched entry 000000146c53180a at line 91
+++[files] returns ok
+rlm_checkval: Could not find item named Calling-Station-Id in request
+rlm_checkval: Could not find attribute named Calling-Station-Id in check pairs
+++[checkval] returns notfound
+++[expiration] returns noop
+++[logintime] returns noop
+[pap] WARNING: Auth-Type already set.  Not setting to PAP
+++[pap] returns noop
+Found Auth-Type = Accept
+Auth-Type = Accept, accepting the user
+Login OK: [000000146c53180a/linux] (from client mag1 port 0)
+# Executing section post-auth from file /usr/local/etc/raddb/sites-enabled/default
++- entering group post-auth {...}
+++[exec] returns noop
+Sending Access-Accept of id 60 to 2001:100::2 port 49061
+	Service-Type = Authenticate-Only
+	Framed-Interface-Id = 0:0:0:0
+	Framed-IPv6-Prefix = 2001:100:6:5000::/64
+Finished request 0.
+Going to the next request
+Waking up in 4.9 seconds.
+Cleaning up request 0 ID 60 with timestamp +24
+Ready to process requests.
+rad_recv: Access-Request packet from host 2001:100::3 port 51724, id=15, length=70
+	User-Name = "000000146c53180a"
+	User-Password = "linux"
+	Service-Type = Authenticate-Only
+	NAS-Port = 0
+# Executing section authorize from file /usr/local/etc/raddb/sites-enabled/default
++- entering group authorize {...}
+++[preprocess] returns ok
+[auth_log] 	expand: /usr/local/var/log/radius/radacct/%{Client-IP-Address}/auth-detail-%Y%m%d -> /usr/local/var/log/radius/radacct//auth-detail-20110630
+[auth_log] /usr/local/var/log/radius/radacct/%{Client-IP-Address}/auth-detail-%Y%m%d expands to /usr/local/var/log/radius/radacct//auth-detail-20110630
+[auth_log] 	expand: %t -> Thu Jun 30 10:25:12 2011
+++[auth_log] returns ok
+++[chap] returns noop
+++[mschap] returns noop
+++[digest] returns noop
+[IPASS] No '/' in User-Name = "000000146c53180a", looking up realm NULL
+[IPASS] No such realm "NULL"
+++[IPASS] returns noop
+[suffix] No '@' in User-Name = "000000146c53180a", looking up realm NULL
+[suffix] No such realm "NULL"
+++[suffix] returns noop
+[eap] No EAP-Message, not doing EAP
+++[eap] returns noop
+++[unix] returns notfound
+WARNING: Found User-Password == "...".
+WARNING: Are you sure you don't mean Cleartext-Password?
+WARNING: See "man rlm_pap" for more information.
+[files] users: Matched entry 000000146c53180a at line 91
+++[files] returns ok
+rlm_checkval: Could not find item named Calling-Station-Id in request
+rlm_checkval: Could not find attribute named Calling-Station-Id in check pairs
+++[checkval] returns notfound
+++[expiration] returns noop
+++[logintime] returns noop
+[pap] WARNING: Auth-Type already set.  Not setting to PAP
+++[pap] returns noop
+Found Auth-Type = Accept
+Auth-Type = Accept, accepting the user
+Login OK: [000000146c53180a/linux] (from client mag2 port 0)
+# Executing section post-auth from file /usr/local/etc/raddb/sites-enabled/default
++- entering group post-auth {...}
+++[exec] returns noop
+Sending Access-Accept of id 15 to 2001:100::3 port 51724
+	Service-Type = Authenticate-Only
+	Framed-Interface-Id = 0:0:0:0
+	Framed-IPv6-Prefix = 2001:100:6:5000::/64
+Finished request 1.
+Going to the next request
+Waking up in 4.9 seconds.
+Cleaning up request 1 ID 15 with timestamp +47
+Ready to process requests.
+Ready to process requests.
+Exiting normally.

@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
   int i,j,aa,b,u,Msc_RS_idx;
 
  
-  double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate;
+  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,SNRmeas,rate;
   //int **txdataF, **txdata;
   int **txdata;
 #ifdef IFFT_FPGA
@@ -408,7 +408,7 @@ int main(int argc, char **argv) {
   int UE_id = 0;
   unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
   unsigned char l;
-  SCM_t channel_model=Rice1;
+  SCM_t channel_model=Rayleigh1_corr;
 
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
@@ -442,7 +442,7 @@ int main(int argc, char **argv) {
   u8 cyclic_shift = 0;
   u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
-  u8 tdd_config=3,frame_type=TDD;
+  u8 tdd_config=3,frame_type=0;
 
   u8 N0=30;
   double tx_gain=1.0;
@@ -824,7 +824,7 @@ int main(int argc, char **argv) {
     cqi_crc_falsenegatives=0;
     round=0;
 
-    //randominit(0);
+    randominit(0);
       
     PHY_vars_UE->frame=1;
     PHY_vars_eNB->frame=1;
@@ -999,12 +999,12 @@ int main(int argc, char **argv) {
 				frame_parms);
 	    
 #ifndef OFDMA_ULSCH
-	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],subframe<<1);
-	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],1+(subframe<<1));
+	    apply_7_5_kHz(PHY_vars_UE,subframe<<1);
+	    apply_7_5_kHz(PHY_vars_UE,1+(subframe<<1));
 #endif
 	    
 	    tx_lev += signal_energy(&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
-				    PHY_vars_eNB->lte_frame_parms.samples_per_tti);
+				  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	
 	  }
 #endif
@@ -1012,12 +1012,8 @@ int main(int argc, char **argv) {
 
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
-	//Set target wideband RX noise level to N0
 	sigma2_dB = N0;//10*log10((double)tx_lev)  +10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(PHY_vars_UE->lte_frame_parms.N_RB_DL*12)) - SNR;
-	// Adjust SNR to account for difference in TX bandwidth and sampling rate (512/300 for 5MHz) 
-	SNR2 = SNR + 10*log10(((double)PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/N_RB_DL/12));
-	// compute tx_gain to achieve target SNR (per resource element!)
-	tx_gain = sqrt(pow(10.0,.1*(N0+SNR2))*nb_rb/(N_RB_DL*(double)tx_lev));
+	tx_gain = sqrt(pow(10.0,.1*(N0+SNR))*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*(double)tx_lev*nb_rb));
   
 	//AWGN
 
@@ -1137,9 +1133,7 @@ int main(int argc, char **argv) {
 	
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
-	    printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
-	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
-	      print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
+	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
 	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }
@@ -1179,8 +1173,8 @@ int main(int argc, char **argv) {
 		1024);
 #endif       
     }   //trials
-    printf("\n**********************SNR = %f dB (%f) : TX %d dB (gain %f dB), N0W %f dB, I0 %d dB [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
-	   SNR,SNR2,
+    printf("\n**********************SNR = %f dB : TX %d dB (gain %f dB), N0W %f dB, I0 %d dB [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
+	   SNR,
 	   tx_lev_dB,
 	   20*log10(tx_gain),
 	   (double)N0,

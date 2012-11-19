@@ -310,15 +310,15 @@ u32 ulsch_encoding(u8 *a,
 	
 	
 #ifdef DEBUG_ULSCH_CODING    
-    msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
+    msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
 #endif
 	
 	threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
 				  Kr>>3, 
 				  &ulsch->harq_processes[harq_pid]->d[r][96],
 				  (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-				  f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-				  f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+				  f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
+				  f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
 				  );
 #ifdef DEBUG_ULSCH_CODING
 	if (r==0)
@@ -449,9 +449,7 @@ u32 ulsch_encoding(u8 *a,
 					  ulsch->harq_processes[harq_pid]->rvidx,
 					  get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs),
 					  1,
-					  r,
-					  ulsch->harq_processes[harq_pid]->nb_rb,
-					  ulsch->harq_processes[harq_pid]->mcs);                       // r
+					  r);                       // r
 #ifdef DEBUG_ULSCH_CODING
       if (r==ulsch->harq_processes[harq_pid]->C-1)
 	write_output("enc_output.m","enc",ulsch->e,r_offset,1,4);
@@ -463,7 +461,7 @@ u32 ulsch_encoding(u8 *a,
     H = Q_CQI;
     Hprime = H/Q_m;
   }
-
+  
 
   //  Do CQI coding
   if ((ulsch->O>1) && (ulsch->O < 12)) {
@@ -471,6 +469,7 @@ u32 ulsch_encoding(u8 *a,
     return(-1);
   }
   else {
+
     // add 8-bit CRC
     crc = crc8(o_flip,
 	       ulsch->O)>>24;

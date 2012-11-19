@@ -370,7 +370,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 #else
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = module_id;
 #endif
-
+    
     // XXX Decompression would be done at this point
 
     /*

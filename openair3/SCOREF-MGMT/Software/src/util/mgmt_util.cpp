@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -40,20 +40,17 @@
 */
 
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/date_time.hpp>
-using namespace boost::filesystem;
-
 #include "mgmt_util.hpp"
 #include <iostream>
 #include <sstream>
 using namespace std;
 
-void Util::resetBuffer(unsigned char* buffer, const size_t bufferSize) {
+void Util::resetBuffer(void* buffer, size_t bufferSize) {
 	memset(buffer, 0x00, bufferSize);
 }
 
-bool Util::copyBuffer(unsigned char* destinationBuffer, const unsigned char* sourceBuffer, size_t copySize) {
+bool Util::copyBuffer(void* destinationBuffer, const void* sourceBuffer, size_t copySize) {
 	if (!destinationBuffer || !sourceBuffer)
 		return false;
 
@@ -154,12 +151,12 @@ bool Util::setBit(u_int8_t& octet, u_int8_t index) {
 }
 
 bool Util::unsetBit(u_int8_t& octet, u_int8_t index) {
-	u_int8_t mask = 0x80;
+	u_int8_t mask = 0x7f;
 
 	/**
 	 * Unset relevant bit
 	 */
-	octet &= ~(mask >>= index);
+	octet &= (mask >>= index);
 
 	return true;
 }
@@ -217,7 +214,7 @@ float Util::parse4byteFloat(const vector<unsigned char>& floatBuffer) {
 }
 
 bool Util::encode8byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int64_t data) {
-	if (buffer.capacity() < bufferIndex + sizeof(data))
+	if (buffer.size() < (unsigned)(bufferIndex - 1))
 		return false;
 
 	u_int32_t dataHigherPart = ((data >> 32) & 0xffffffff);
@@ -228,7 +225,7 @@ bool Util::encode8byteInteger(vector<unsigned char>& buffer, u_int16_t bufferInd
 }
 
 bool Util::encode4byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int32_t data) {
-	if (buffer.capacity() < bufferIndex + sizeof(data))
+	if (buffer.size() < (unsigned)(bufferIndex - 1))
 		return false;
 
 	buffer[bufferIndex] = ((data >> 24) & 0xff);
@@ -240,7 +237,7 @@ bool Util::encode4byteInteger(vector<unsigned char>& buffer, u_int16_t bufferInd
 }
 
 bool Util::encode2byteInteger(vector<unsigned char>& buffer, u_int16_t bufferIndex, u_int16_t data) {
-	if (buffer.capacity() < bufferIndex + sizeof(data))
+	if (buffer.size() < (unsigned)(bufferIndex - 1))
 		return false;
 
 	buffer[bufferIndex] = ((data >> 8) & 0xff);
@@ -257,17 +254,14 @@ bool Util::encodeBits(u_int8_t& octet, u_int8_t index, u_int8_t data, u_int8_t d
 		return false;
 
 	/**
-	 * Set/unset bits one by one using setBit() and unsetBit()
+	 * Start from the last bit and encode till the first bit
 	 */
-	u_int8_t sourceIndex = 7 - dataSize, destinationIndex = index;
-	while (sourceIndex++ != 8) {
-		if (Util::isBitSet(data, sourceIndex)) {
-			setBit(octet, destinationIndex);
-		} else {
-			unsetBit(octet, destinationIndex);
-		}
-
-		destinationIndex++;
+	u_int8_t bit = index + dataSize - 1;
+	while (dataSize--) {
+		if (isBitSet(data, bit))
+			setBit(octet, bit);
+		else
+			unsetBit(octet, bit);
 	}
 
 	return true;
@@ -285,11 +279,14 @@ vector<string> Util::split(const string& input, char delimiter) {
 }
 
 string Util::trim(const string& str, char character) {
-	string trimmed = str;
+	string trimmedString = str;
+	/**
+	 * todo this is not the `proper' trim() method, should be revised
+	 */
+	if (trimmedString.find_last_of(character) != string::npos)
+		trimmedString.resize(trimmedString.length() - 1);
 
-	trimmed.erase(remove(trimmed.begin(), trimmed.end(), character), trimmed.end());
-
-	return trimmed;
+	return trimmedString;
 }
 
 bool Util::isNumeric(const string& str) {
@@ -335,32 +332,4 @@ string Util::getDateAndTime(bool withDelimiters) {
 	ss << ldt;
 	cout << ss.str() << endl; // "2004-02-29 12:34:56.000789-05:00"
 #endif
-}
-
-vector<string> Util::getListOfFiles(const string& directory) {
-	boost::filesystem::path directoryPath(directory);
-	vector<string> fileList;
-
-	/**
-	 * First check if it exists and then if it really is a directory
-	 */
-	if (!exists(directory) && !is_directory(directoryPath))
-		return fileList;
-
-	directory_iterator endIterator;
-	for (directory_iterator directoryIterator(directoryPath); directoryIterator != endIterator; ++directoryIterator)
-		fileList.push_back(directoryIterator->path().filename().c_str());
-
-	return fileList;
-}
-
-string Util::getFileExtension(const string& fileName) {
-	/**
-	 * If there is no dots then do not let this method to throw an
-	 * exception, just return an empty string
-	 */
-	if (fileName.find('.') == string::npos)
-		return "";
-
-	return fileName.substr(fileName.rfind('.'), fileName.length() - fileName.rfind('.'));
 }

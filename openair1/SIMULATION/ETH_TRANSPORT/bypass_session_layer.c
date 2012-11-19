@@ -52,7 +52,7 @@ void init_bypass (void){
 void bypass_init ( unsigned int (*tx_handlerP) (unsigned char,char*, unsigned int*, unsigned int*),unsigned int (*rx_handlerP) (unsigned char,char*,unsigned int)){
 /***************************************************************************/
 #ifdef USER_MODE
-  multicast_link_start (bypass_rx_handler, oai_emulation.info.multicast_group);
+  multicast_link_start (bypass_rx_handler, oai_emulation.info.multicast_group, oai_emulation.info.multicast_ifname);
 #endif //USER_MODE
   tx_handler = tx_handlerP;
   rx_handler = rx_handlerP;
@@ -398,7 +398,7 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
     LOG_T(EMU,"[TX_DATA] SYNC TRANSPORT\n");
   }
   else if(Type==ENB_TRANSPORT){
-    // LOG_T(EMU,"[TX_DATA] ENB TRANSPORT\n");
+    LOG_D(EMU,"[TX_DATA] ENB TRANSPORT\n");
      messg->Message_type = ENB_TRANSPORT_INFO;
      total_size=0;
      total_tbs=0;
@@ -418,7 +418,7 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
      }
   }
   else if (Type == UE_TRANSPORT){ 
-    //LOG_T(EMU,"[TX_DATA] UE TRANSPORT\n");
+    LOG_D(EMU,"[TX_DATA] UE TRANSPORT\n");
     messg->Message_type = UE_TRANSPORT_INFO;
     total_size=0;
       total_tbs=0; // compute the actual size of transport_blocks

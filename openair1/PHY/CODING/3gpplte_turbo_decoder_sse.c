@@ -22,7 +22,7 @@
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(*(__m128i *)&zero[0],(xmmy)))
 #endif
 
-static short zero[8]  __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
+static short zero[8]  __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0} ;
 
 #ifdef __SSE4_1__
 #include "smmintrin.h"
@@ -1216,8 +1216,6 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   u8 temp;
   llr_t tmp2[n],*t_p,*s_p;;
   int byte_pos[n],bit_pos[n],*byte_pos_p,*bit_pos_p;
-
-
   if (crc_type > 3) {
     msg("Illegal crc length!\n");
     return 255;
@@ -1229,11 +1227,10 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   }
 
   if (decoder_in_use[inst]) {
-    msg("turbo decoder for inst %d already in use\n",inst);
+    msg("turbo decoder already in use\n");
     return 255;
   }
   else {
-    //msg("setting turbo decoder inst %d to 1\n",inst);
     decoder_in_use[inst] = 1;
   }
   
@@ -1586,7 +1583,6 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 
     if ((crc == oldcrc) && (crc!=0)) {
       decoder_in_use[inst] = 0;
-      //msg("setting turbo decoder inst %d to 0\n",inst);
       return(iteration_cnt);
     }
 
@@ -1598,7 +1594,6 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     }
   }
 
-  //msg("setting turbo decoder inst %d to 0\n",inst);
   decoder_in_use[inst] = 0;
 
   return(iteration_cnt);

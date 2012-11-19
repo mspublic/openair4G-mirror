@@ -42,7 +42,6 @@
 #ifndef MGMT_TYPES_HPP_
 #define MGMT_TYPES_HPP_
 
-#include "util/mgmt_util.hpp"
 #include <sys/types.h>
 #include <sstream>
 #include <string>
@@ -53,12 +52,12 @@ using namespace std;
  * Configuration Item IDs
  */
 enum ItsKeyID {
-	/**
+	/*
 	 * Common ITS keys
 	 */
 	MGMT_GN_ALL_ITSKEY_ID_STATION_TYPE 						= 0,
 	MGMT_GN_ALL_ITSKEY_ID_STATION_SUBTYPE					= 1,
-	/**
+	/*
 	 * Network ITS keys
 	 */
 	MGMT_GN_NET_ITSKEY_ID_GN_LOCAL_ADD_CONF_METHOD			= 1000,
@@ -81,7 +80,7 @@ enum ItsKeyID {
 	MGMT_GN_NET_ITSKEY_ID_SEC_ALLOW_UNSECURE				= 2000,
 	MGMT_GN_NET_ITSKEY_ID_SEC_END_2_END						= 2001,
 	MGMT_GN_NET_ITSKEY_ID_SEC_PSEUDONYM						= 2002,
-	/**
+	/*
 	 * FACilities ITS keys
 	 */
 	MGMT_GN_FAC_ITSKEY_ID_VEHICLE_WIDTH						= 2,
@@ -89,7 +88,7 @@ enum ItsKeyID {
 	MGMT_GN_FAC_ITSKEY_ID_CAM_BTP_PORT						= 3010,
 	MGMT_GN_FAC_ITSKEY_ID_DENM_BTP_PORT						= 3011,
 	MGMT_GN_FAC_ITSKEY_ID_LDM_GARBAGE_COLLECTION_INTERVAL	= 3020,
-	/**
+	/*
 	 * Configuration set ITS keys
 	 */
 	MGMT_GN_ITSKEY_SET_NET									= 0xaaaa,
@@ -109,7 +108,6 @@ enum EventType {
 	 * Location
 	 */
 	MGMT_GN_EVENT_LOCATION_UPDATE = 0x100,
-	MGMT_FAC_EVENT_LOCATION_UPDATE = 0x110,
 	MGMT_GN_EVENT_LOCATION_TABLE_REQUEST = 0x101,
 	MGMT_FAC_EVENT_LOCATION_TABLE_REQUEST = 0x103,
 	MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE = 0x102,
@@ -155,31 +153,6 @@ struct MessageHeader {
 	u_int8_t priority;
 	u_int8_t eventType;
 	u_int8_t eventSubtype;
-
-	/**
-	 * Returns if this packet contains extended/ventor specific data
-	 */
-	bool isExtended() const {
-		return Util::isBitSet(version, 0);
-	}
-	/**
-	 * Returns if this packet contains valid data
-	 */
-	bool isValid() const {
-		return Util::isBitSet(version, 1);
-	}
-	/**
-	 * Returns the last 4 bits of version field (which is actual version information)
-	 */
-	u_int8_t getVersion() const {
-		return version & 0x0F;
-	}
-	/**
-	 * Returns the first 3 bits of priority field (which is actual priority information)
-	 */
-	u_int8_t getPriority() const {
-		return priority >> 5;
-	}
 } __attribute__((packed));
 
 /**
@@ -192,24 +165,12 @@ struct LocationInformation {
 	u_int16_t speed;	 /* Speed in signed units of 1 meter */
 	u_int16_t heading;
 	u_int16_t altitude;
-	u_int16_t acceleration; /* TAcc, PodAcc, SAcc, Hacc, AltAcc */
 
-	/**
-	 * Initialize everything to zero
-	 */
-	LocationInformation() {
-		timestamp = latitude = longitude = speed = heading = altitude = acceleration = 0;
-	}
-
-	string toString() {
-		stringstream ss;
-
-		ss << "LocationInformation[timestamp:" << timestamp << ", latitude:" << latitude
-			<< ", longitude:" << longitude << ", speed:" << speed << ", heading:" << heading
-			<< ", altitude:" << altitude << ", acceleration:" << acceleration;
-
-		return ss.str();
-	}
+	unsigned TAcc:4;
+	unsigned PosAcc:4;
+	unsigned SAcc:2;
+	unsigned Hacc:3;
+	unsigned AltAcc:3;
 } __attribute__((packed));
 
 /**

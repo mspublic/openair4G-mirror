@@ -288,6 +288,7 @@ u8 attach_ue0(char *sdu) {
   UE_rrc_inst[0].Info[0].State = RRC_SI_RECEIVED;
   rrc_ue_generate_RRCConnectionRequest(0,131,0);
 
+  //  Size = Rrc_xface->mac_rrc_data_req(0, 
   Size = mac_rrc_data_req(0,
 			  131,
 			  CCCH,1,
@@ -316,6 +317,7 @@ u8 attach_ue1(char *sdu) {
   mac_rrc_lite_data_ind(0,131,0,UE_rrc_inst[0].Srb0[0].Tx_buffer.Payload,
 			UE_rrc_inst[0].Srb0[0].Tx_buffer.payload_size,1,0);
 
+  //  return(Rrc_xface->mac_rrc_data_req(0,
   return(mac_rrc_data_req(0,
 				     132,
 				     0,1,
@@ -441,11 +443,9 @@ int main (int argc, char **argv) {
   u8 payload_offset;
   int i,comp;
 
-  logInit();
-
   NB_UE_INST  = 1;
   NB_eNB_INST = 1;
-  NB_INST=2;
+
 
   // Parse arguments
   if(parse_args(argc, argv, &args) > 0) {

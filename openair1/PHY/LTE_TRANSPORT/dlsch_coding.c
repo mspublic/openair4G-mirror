@@ -199,7 +199,6 @@ int dlsch_encoding(unsigned char *a,
   unsigned int A; 
   unsigned char mod_order;
   unsigned int Kr,Kr_bytes,r,r_offset=0;
-  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
   // printf("Encoder: A: %d\n",A);
@@ -271,15 +270,15 @@ int dlsch_encoding(unsigned char *a,
       
       
 #ifdef DEBUG_DLSCH_CODING    
-      msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
+      msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
 #endif
       
       threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
 				Kr>>3, 
 				&dlsch->harq_processes[harq_pid]->d[r][96],
 				(r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-				f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-				f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+				f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
+				f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
 				);
 #ifdef DEBUG_DLSCH_CODING
       if (r==0)
@@ -319,9 +318,7 @@ int dlsch_encoding(unsigned char *a,
 					dlsch->harq_processes[harq_pid]->rvidx,
 					get_Qm(dlsch->harq_processes[harq_pid]->mcs),
 					dlsch->harq_processes[harq_pid]->Nl,
-					r,
-					nb_rb,
-					m);                       // r
+					r);                       // r
 #ifdef DEBUG_DLSCH_CODING
     if (r==dlsch->harq_processes[harq_pid]->C-1)
       write_output("enc_output.m","enc",dlsch->e,r_offset,1,4);

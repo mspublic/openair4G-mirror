@@ -72,7 +72,7 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
       emu_transport_UL(frame, last_slot , next_slot);
   //DL
   }else {   
-    if (next_slot%2 == 0 )
+     if (next_slot%2 == 0 )
       if ( ((frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
       emu_transport_DL(frame, last_slot,next_slot);
     }
@@ -190,7 +190,7 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
   u8 nb_total_dci;
     
 
-  //LOG_I(EMU," pbch fill phy eNB %d vars for slot %d \n",enb_id, next_slot);
+  LOG_D(EMU," pbch fill phy eNB %d vars for slot %d \n",enb_id, next_slot);
    
   // eNB
   // PBCH : copy payload 
@@ -230,12 +230,12 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
       
       if (eNB_transport_info[enb_id].dci_alloc[n_dci_dl].format > 0){ //exclude ul dci
 	
-	/*	LOG_D(EMU, "dci spec %d common %d tbs is %d payload offset %d\n", 
+	LOG_D(EMU, "dci spec %d common %d tbs is %d payload offset %d\n", 
 	      eNB_transport_info[enb_id].num_ue_spec_dci, 
 	      eNB_transport_info[enb_id].num_common_dci,
 	      eNB_transport_info[enb_id].tbs[n_dci_dl], 
 	      payload_offset);
-	*/
+	
 	switch (eNB_transport_info[enb_id].dlsch_type[n_dci_dl]) {
 	  
 	case 0: //SI:
@@ -243,14 +243,14 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
 	  memcpy(PHY_vars_eNB_g[enb_id]->dlsch_eNB_SI->harq_processes[0]->b,
 		 &eNB_transport_info[enb_id].transport_blocks[payload_offset],
 		 eNB_transport_info[enb_id].tbs[n_dci_dl]);
-	  //LOG_D(EMU, "SI eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
+	  LOG_D(EMU, "SI eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
 	  break;
 	case 1: //RA:
 	  
 	  memcpy(PHY_vars_eNB_g[enb_id]->dlsch_eNB_ra->harq_processes[0]->b,
 		 &eNB_transport_info[enb_id].transport_blocks[payload_offset],
 		 eNB_transport_info[enb_id].tbs[n_dci_dl]);
-	  //LOG_D(EMU, "RA eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
+	  LOG_D(EMU, "RA eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
 	  break;
   
 	case 2://TB0:
@@ -258,14 +258,14 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
 	  ue_id = eNB_transport_info[enb_id].ue_id[n_dci_dl];
 	  PHY_vars_eNB_g[enb_id]->dlsch_eNB[ue_id][0]->rnti= eNB_transport_info[enb_id].dci_alloc[n_dci_dl].rnti; 
 	  dlsch_eNB = PHY_vars_eNB_g[enb_id]->dlsch_eNB[ue_id][0];
-	  /*LOG_D(EMU, " enb_id %d ue id is %d rnti is %x dci index %d, harq_pid %d tbs %d \n", 
+	  LOG_D(EMU, " enb_id %d ue id is %d rnti is %x dci index %d, harq_pid %d tbs %d \n", 
 		enb_id, ue_id, eNB_transport_info[enb_id].dci_alloc[n_dci_dl].rnti,
 		n_dci_dl, harq_pid, eNB_transport_info[enb_id].tbs[n_dci_dl]);
 	   int i;
 	   for (i=0;i<eNB_transport_info[enb_id].tbs[n_dci_dl];i++)
 	    msg("%x.",(unsigned char) eNB_transport_info[enb_id].transport_blocks[payload_offset+i]);
-	    */	  
-	  memcpy(dlsch_eNB->harq_processes[harq_pid]->b,
+	  	  
+	   memcpy(dlsch_eNB->harq_processes[harq_pid]->b,
 		 &eNB_transport_info[enb_id].transport_blocks[payload_offset],
 		 eNB_transport_info[enb_id].tbs[n_dci_dl]);
 	  break;
@@ -286,7 +286,7 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
       }
       n_dci_dl++;
     }
-    LOG_D(EMU, "Fill phy eNB vars done !\n");
+    LOG_D(EMU, "Fill phy eNB vars done next slot %d !\n", next_slot);
   }
 }
 
@@ -338,6 +338,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
      PHY_vars_UE_g[ue_id]->pucch_sel[subframe] = ue_cntl_delay[ue_id][last_slot%2].pucch_sel;
    } 
    
+   LOG_D(EMU,"subframe %d trying to copy the payload from num eNB %d to UE %d \n",subframe, UE_transport_info[ue_id].num_eNB, ue_id);
 
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
      /* 
@@ -362,7 +363,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
 
      *(u32 *)ulsch->o                        = ue_cntl_delay[ue_id][last_slot%2].pusch_uci;
 
-     // LOG_D(EMU,"subframe %d get acks for ue %d: (%d, %d) \n",subframe, ue_id,  ulsch->o_ACK[0],  ulsch->o_ACK[1]   );
+     LOG_D(EMU,"subframe %d copy the payload from eNB %d to UE %d with harq id %d \n",subframe, enb_id, ue_id, harq_pid);
 
      memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b,
 	    UE_transport_info[ue_id].transport_blocks,

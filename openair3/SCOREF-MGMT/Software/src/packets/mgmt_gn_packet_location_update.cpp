@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -47,11 +47,6 @@ GeonetLocationUpdateEventPacket::GeonetLocationUpdateEventPacket(ManagementInfor
 	: GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_LOCATION_UPDATE, logger), mib(mib), logger(logger) {
 }
 
-GeonetLocationUpdateEventPacket::GeonetLocationUpdateEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer, Logger& logger)
-	: GeonetPacket(packetBuffer, logger), mib(mib), logger(logger) {
-	parse(packetBuffer);
-}
-
 GeonetLocationUpdateEventPacket::~GeonetLocationUpdateEventPacket() {
 }
 
@@ -73,7 +68,11 @@ bool GeonetLocationUpdateEventPacket::serialize(vector<unsigned char>& buffer) c
 	 * ..and then the body
 	 */
 	u_int8_t payloadIndex = sizeof(MessageHeader);
-	const LocationInformation& location = mib.getLocationInformation();
+	LocationInformation location = mib.getLocation();
+	/**
+	 * Update time-stamp
+	 */
+	location.timestamp = time(NULL); // todo timestamp's calculation is explained in lot 3 slides
 
 	Util::encode4byteInteger(buffer, payloadIndex, location.timestamp); payloadIndex += 4;
 	Util::encode4byteInteger(buffer, payloadIndex, location.latitude); payloadIndex += 4;
@@ -81,37 +80,18 @@ bool GeonetLocationUpdateEventPacket::serialize(vector<unsigned char>& buffer) c
 	Util::encode2byteInteger(buffer, payloadIndex, location.speed); payloadIndex += 2;
 	Util::encode2byteInteger(buffer, payloadIndex, location.heading); payloadIndex += 2;
 	Util::encode2byteInteger(buffer, payloadIndex, location.altitude); payloadIndex += 2;
-	Util::encode2byteInteger(buffer, payloadIndex, location.acceleration); payloadIndex += 2;
+	/**
+	 * Encode last two octets carrying 5 flags
+	 */
+	u_int8_t octet = 0x00;
+	Util::encodeBits(octet, 0, location.TAcc, 4);
+	Util::encodeBits(octet, 4, location.PosAcc, 4);
+	buffer[payloadIndex++] = octet;
+	Util::encodeBits(octet, 0, location.SAcc, 2);
+	Util::encodeBits(octet, 2, location.Hacc, 3);
+	Util::encodeBits(octet, 5, location.AltAcc, 3);
+	buffer[payloadIndex] = octet;
 
 	buffer.resize(sizeof(LocationUpdateMessage));
 	return true;
-}
-
-bool GeonetLocationUpdateEventPacket::parse(const vector<unsigned char>& packetBuffer) {
-	if (packetBuffer.size() != sizeof(LocationUpdateMessage))
-		return false;
-
-	LocationInformation locationUpdate;
-
-	/**
-	 * Skip header..
-	 */
-	u_int8_t payloadOffset = sizeof(MessageHeader);
-
-	/**
-	 * Parse fields..
-	 */
-	Util::parse4byteInteger(packetBuffer.data() + payloadOffset, &locationUpdate.timestamp); payloadOffset += sizeof(u_int32_t);
-	Util::parse4byteInteger(packetBuffer.data() + payloadOffset, &locationUpdate.latitude); payloadOffset += sizeof(u_int32_t);
-	Util::parse4byteInteger(packetBuffer.data() + payloadOffset, &locationUpdate.longitude); payloadOffset += sizeof(u_int32_t);
-	Util::parse2byteInteger(packetBuffer.data() + payloadOffset, &locationUpdate.speed); payloadOffset += sizeof(u_int16_t);
-	Util::parse2byteInteger(packetBuffer.data() + payloadOffset, &locationUpdate.heading); payloadOffset += sizeof(u_int16_t);
-	Util::parse2byteInteger(packetBuffer.data() + payloadOffset, &locationUpdate.altitude); payloadOffset += sizeof(u_int16_t);
-	Util::parse2byteInteger(packetBuffer.data() + payloadOffset, &locationUpdate.acceleration); payloadOffset += sizeof(u_int16_t);
-
-	logger.info("Following Location Information has been parsed:");
-	logger.info(locationUpdate.toString());
-	logger.info("Notifying MIB for this information...");
-
-	return mib.setLocationInformation(locationUpdate);
 }

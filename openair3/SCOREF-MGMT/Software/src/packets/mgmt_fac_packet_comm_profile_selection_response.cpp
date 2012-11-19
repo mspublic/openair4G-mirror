@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -48,7 +48,6 @@ FacCommunicationProfileSelectionResponsePacket::FacCommunicationProfileSelection
 	packet.latency = latency;
 	packet.relevance = relevance;
 	packet.reliability = reliability;
-	packet.reserved = 0x00;
 }
 
 FacCommunicationProfileSelectionResponsePacket::~FacCommunicationProfileSelectionResponsePacket() {}
@@ -64,12 +63,11 @@ bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned c
 	buffer[payloadIndex++] = packet.latency;
 	buffer[payloadIndex++] = packet.relevance;
 	buffer[payloadIndex++] = packet.reliability;
-	buffer[payloadIndex++] = packet.reserved;
 	/*
 	 * todo here most suitable communication profile will be found
 	 * by an intelligent code that'll be added later on
 	 */
-	Util::encode4byteInteger(buffer, payloadIndex, packet.communicationProfileId);
+	buffer[payloadIndex] = packet.communicationProfileId;
 
 	// Resize incoming buffer
 	buffer.resize(sizeof(CommunicationProfileSelectionResponse));

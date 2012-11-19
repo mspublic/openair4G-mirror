@@ -89,11 +89,12 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
   int             pdcp_nb_sdu_sent = 0;
   u8              cont = 1;
   int ret;
+  int mcs_inst;
 
   while (sdu && cont) {
-
+    mcs_inst = ((pdcp_data_ind_header_t *)(sdu->data))->inst;
 #if defined(OAI_EMU)
-    // asjust the instance id when passing sdu to IP
+    // adjust the instance id when passing sdu to IP
     ((pdcp_data_ind_header_t *)(sdu->data))->inst = (((pdcp_data_ind_header_t *)(sdu->data))->inst >= NB_eNB_INST) ?
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - NB_eNB_INST +oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local :// UE
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - oai_emulation.info.first_ue_local; // ENB
@@ -177,10 +178,10 @@ pdcp_fifo_flush_sdus (u32_t frame,u8 eNB_flag)
               LOG_D(PDCP,
                     "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- PDCP_DATA_IND / %d Bytes --->][IP][MOD %02d][]\n",
                     frame,
-                    ((pdcp_data_ind_header_t *)(sdu->data))->inst,
+		    mcs_inst,//((pdcp_data_ind_header_t *)(sdu->data))->inst,
                     ((pdcp_data_ind_header_t *)(sdu->data))->rb_id,
                     ((pdcp_data_ind_header_t *)(sdu->data))->data_size,
-                    ((pdcp_data_ind_header_t *)(sdu->data))->inst);
+		    mcs_inst);//((pdcp_data_ind_header_t *)(sdu->data))->inst);
 
               list_remove_head (&pdcp_sdu_list);
               free_mem_block (sdu);
@@ -422,8 +423,8 @@ pdcp_fifo_read_input_sdus (u32_t frame, u8_t eNB_flag)
 #ifdef PDCP_DEBUG
       LOG_I(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n", \
                   frame, pdcp_read_header.inst, len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr), pdcp_read_header.rb_id);
-      LOG_D(PDCP, "[MSC_MSG][FRAME %05d][IP][MOD %02d][][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %02d][RB %02d]\n",
-                                 frame, pdcp_read_header.inst,  pdcp_read_header.data_size, pdcp_read_header.inst, pdcp_read_header.rb_id);
+      //  LOG_D(PDCP, "[MSC_MSG][FRAME %05d][IP][MOD %02d][][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %02d][RB %02d]\n",
+      //                          frame, pdcp_read_header.inst,  pdcp_read_header.data_size, pdcp_read_header.inst, pdcp_read_header.rb_id);
 
 #endif
 

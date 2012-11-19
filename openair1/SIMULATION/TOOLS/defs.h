@@ -55,15 +55,13 @@ typedef struct {
   ///path loss including shadow fading in dB 
   double path_loss_dB;
   ///additional delay of channel in samples. 
-  s32 channel_offset; 
+  s8 channel_offset; 
   ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
   double forgetting_factor;
   ///needs to be set to 1 for the first call, 0 otherwise.
   u8 first_run;
   /// initial phase for frequency offset simulation 
   double ip;
-  /// number of paths taken by transmit signal
-  u16 nb_paths;
 } channel_desc_t;
 
 typedef struct {
@@ -133,7 +131,6 @@ typedef enum {
   ETU,
   Rayleigh8,
   Rayleigh1,
-  Rayleigh1_800,
   Rayleigh1_corr,
   Rayleigh1_anticorr,
   Rice8,
@@ -317,13 +314,7 @@ double uniformrandom(void);
 void freq_channel(channel_desc_t *desc,u16 nb_rb, s16 n_samples);
 void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples);
 u8 multipath_channel_nosigconv(channel_desc_t *desc);
-void multipath_tv_channel(channel_desc_t *desc,
-		       double **tx_sig_re, 
-		       double **tx_sig_im, 
-		       double **rx_sig_re,
-		       double **rx_sig_im,
-		       u16 length,
-		       u8 keep_channel);
+
 
 /**@} */
 /**@} */

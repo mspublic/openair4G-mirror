@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -60,7 +60,7 @@ string GeonetWirelessStateResponseEventPacket::toString() const {
 	return ss.str();
 }
 
-bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char>& packetBuffer) {
+bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char> packetBuffer) {
 	if (packetBuffer.size() < sizeof(WirelessStateResponseMessage))
 		return false;
 

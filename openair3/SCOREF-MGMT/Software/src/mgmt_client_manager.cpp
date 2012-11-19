@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -39,9 +39,7 @@
  * \warning none
  */
 
-#include "packets/mgmt_gn_packet_configuration_available.hpp"
 #include "mgmt_client_manager.hpp"
-#include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 
 ManagementClientManager::ManagementClientManager(ManagementInformationBase& mib, Configuration& configuration, Logger& logger)
@@ -49,22 +47,26 @@ ManagementClientManager::ManagementClientManager(ManagementInformationBase& mib,
 }
 
 ManagementClientManager::~ManagementClientManager() {
-	clientVector.clear();
+	while(!clientVector.empty()) {
+		delete clientVector.back();
+		clientVector.pop_back();
+	}
 }
 
-bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConnection, EventType eventType) {
+bool ManagementClientManager::updateManagementClientState(UdpServer& clientConnection, EventType eventType) {
+	vector<ManagementClient*>::iterator it = clientVector.begin();
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
 	/**
 	 * Traverse client list and check if we already have this client
 	 */
-	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getRecipient().address().to_string());
-		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getRecipient().port()));
+	while (it++ != clientVector.end()) {
+		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getClient().address().to_string());
+		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getClient().port()));
 
-		if ((*it)->getAddress() == clientConnection.getRecipient().address() && (*it)->getPort() == clientConnection.getRecipient().port()) {
-			logger.trace("A client object for " + clientConnection.getRecipient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getRecipient().port()) + " is found");
+		if ((*it)->getAddress() == clientConnection.getClient().address() && (*it)->getPort() == clientConnection.getClient().port()) {
+			logger.trace("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is found");
 			client = *it;
 			clientExists = true;
 		}
@@ -74,17 +76,9 @@ bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConne
 	 * Create a new client object if we couldn't find one
 	 */
 	if (!clientExists) {
-		ManagementClient* newClient = NULL;
-
-		try {
-			newClient = new ManagementClient(mib, clientConnection, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
-		} catch (Exception& e) {
-			e.updateStackTrace("Cannot create a ManagementClient object!");
-			throw;
-		}
-
+		ManagementClient* newClient = new ManagementClient(mib, clientConnection, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
 		clientVector.push_back(newClient);
-		logger.info("A client object for " + clientConnection.getRecipient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getRecipient().port()) + " is created");
+		logger.info("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is created");
 
 		client = newClient;
 	}
@@ -112,55 +106,5 @@ bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConne
 			break;
 	}
 
-	logger.info(toString());
-
 	return true;
-}
-
-bool ManagementClientManager::sendConfigurationUpdateAvailable() {
-	if (clientVector.empty())
-		return false;
-
-	/**
-	 * Create a CONFIGURATION_UPDATE_AVAILABLE packet
-	 */
-	GeonetConfigurationAvailableEventPacket* packet;
-	vector<unsigned char> packetBuffer;
-
-	try {
-		packet = new GeonetConfigurationAvailableEventPacket(mib, logger);
-	} catch (...) {
-		throw Exception("Cannot create a CONFIGURATION_UPDATE_AVAILABLE packet!", logger);
-	}
-
-	/**
-	 * Serialize...
-	 */
-	if (!packet->serialize(packetBuffer)) {
-		logger.error("Cannot serialize CONFIGURATION_UPDATE_AVAILABLE packet!");
-		return false;
-	}
-
-	/**
-	 * ...and send
-	 */
-	boost::asio::io_service ioService;
-	udp::socket* clientSocket = NULL;
-	boost::system::error_code error;
-	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		clientSocket = new udp::socket(ioService, udp::endpoint(udp::v4(), (*it)->getPort()));
-//LEFT_HERE		clientSocket->send_to(boost::asio::buffer(packetBuffer), (*it)->get, 0, error);
-		delete clientSocket;
-	}
-	return true;
-}
-
-string ManagementClientManager::toString() {
-	stringstream ss;
-
-	ss << "Client Status[count:" << clientVector.size() << "]" << endl;
-	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it)
-		ss << (*it)->toString();
-
-	return ss.str();
 }

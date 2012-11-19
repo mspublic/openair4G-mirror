@@ -142,13 +142,22 @@ static int application_config_;		/*!< \brief indicating that the parsing positio
 static int predefined_traffic_;
 static int background_traffic_;
 static int customized_traffic_;
+static int pu_;
+static int pe_;
+static int ed_;
+static int prob_off_pu_;
+static int prob_off_ed_;
+static int prob_pu_ed_;
+static int prob_ed_pe_;
+static int holding_time_off_pu_;
+static int holding_time_off_ed_;
+static int holding_time_off_pe_;
 static int application_type_;			/*!< \brief indicating that the parsing position is now within App_Type_*/
 static int source_id_;
 static int destination_id_;
 static int traffic_;		/*!< \brief indicating that the parsing position is now within Traffic_*/
 static int transport_protocol_;	/*!< \brief indicating that the parsing position is now within Transport_Protocol_*/
 static int ip_version_;
-static unsigned int aggregation_level_;
 static int idt_dist_;
 static int idt_min_ms_;
 static int idt_max_ms_;
@@ -165,12 +174,10 @@ static double size_scale_;
 static double size_shape_;
 static int stream_;
 static int destination_port_;
-static int packet_gen_type_;
 
 static int emulation_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
 static int emulation_time_ms_;
 static int curve_;
-static int background_stats_;
 static int performance_metrics_;		/*!< \brief indicating that the parsing position is now within Performance_*/
 static int throughput_;
 static int latency_;
@@ -197,20 +204,6 @@ static int cli_enabled_;
 static int cli_start_enb_;
 static int cli_start_ue_;
 
-//static unsigned int m2m_traffic_;
-static double prob_off_pu_;
-double prob_off_ed_;
-static double prob_off_pe_;
-static double prob_pu_ed_;
-static double prob_pu_pe_;
-static double prob_ed_pe_;
-static double prob_ed_pu_;
-static unsigned int holding_time_off_ed_;
-static unsigned int holding_time_off_pu_;
-static unsigned int holding_time_off_pe_;	
-static unsigned int holding_time_pe_off_;
-static unsigned int pu_size_pkts_;
-static unsigned int ed_size_pkts_;
 
 static int profile_;
 
@@ -404,44 +397,32 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		customized_traffic_ = 1;
 		oai_emulation.info.otg_enabled =1;
 		oai_emulation.info.max_customized_traffic_config_index ++;
-	} else if (!xmlStrcmp(name, (unsigned char*) "CUSTOMIZED_TRAFFIC")) {
-		customized_traffic_ = 1;
-	/*} else if (!xmlStrcmp(name, (unsigned char*) "M2M_TRAFFIC")) {
-		m2m_traffic_ = 1;*/
+	} else if (!xmlStrcmp(name, (unsigned char*) "PU")) {
+		pu_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PE")) {
+		pe_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "ED")) {
+		ed_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PU")) {
 		prob_off_pu_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_ED")) {
 		prob_off_ed_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PE")) {
-		prob_off_pe_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_ED")) {
 		prob_pu_ed_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_PE")) {
-		prob_pu_pe_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PE")) {
 		prob_ed_pe_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PU")) {
-		prob_ed_pu_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_ED")) {
-		holding_time_off_ed_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PU")) {
 		holding_time_off_pu_ = 1;
+	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_ED")) {
+		holding_time_off_ed_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PE")) {
 		holding_time_off_pe_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_PE_OFF")) {
-		holding_time_pe_off_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PU_SIZE_PKTS")) {
-		pu_size_pkts_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "ED_SIZE_PKTS")) {
-		ed_size_pkts_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "SOURCE_ID")) {
 		source_id_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "DESTINATION_ID")) {
 		destination_id_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "APPLICATION_TYPE")) {
 		application_type_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PACKET_GEN_TYPE")) {
-		packet_gen_type_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "BACKGROUND_TRAFFIC")) {
 	        background_traffic_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "TRAFFIC")) {
@@ -450,8 +431,6 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		transport_protocol_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IP_VERSION")) {
 		ip_version_ = 1;
-	} else if (!xmlStrcmp(name, (unsigned char*) "AGGREGATION_LEVEL")) {
-		aggregation_level_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IDT_DIST")) {
 		idt_dist_ = 1;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IDT_MIN_ms")) {
@@ -491,8 +470,6 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		emulation_time_ms_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "CURVE")) {
 		curve_ = 1;
-	} else if (!xmlStrcmp(name,(unsigned char*) "BACKGROUND_STATS")) {
-		background_stats_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 1;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -721,50 +698,38 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		predefined_traffic_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "CUSTOMIZED_TRAFFIC")) {
 		customized_traffic_ = 0;
-	/*} else if (!xmlStrcmp(name, (unsigned char*) "M2M_TRAFFIC")) {
-		m2m_traffic_ = 0;*/
+	} else if (!xmlStrcmp(name, (unsigned char*) "PU")) {
+		pu_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "PE")) {
+		pe_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "ED")) {
+		ed_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PU")) {
 		prob_off_pu_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_ED")) {
 		prob_off_ed_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_OFF_PE")) {
-		prob_off_pe_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_ED")) {
 		prob_pu_ed_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_PU_PE")) {
-		prob_pu_pe_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PE")) {
 		prob_ed_pe_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PROB_ED_PU")) {
-		prob_ed_pu_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_ED")) {
-		holding_time_off_ed_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PU")) {
 		holding_time_off_pu_ = 0;
+	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_ED")) {
+		holding_time_off_ed_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_OFF_PE")) {
 		holding_time_off_pe_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "HOLDING_TIME_PE_OFF")) {
-		holding_time_pe_off_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PU_SIZE_PKTS")) {
-		pu_size_pkts_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "ED_SIZE_PKTS")) {
-		ed_size_pkts_	= 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "SOURCE_ID")) {
 		source_id_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "DESTINATION_ID")) {
 		destination_id_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "APPLICATION_TYPE")) {
 		application_type_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "PACKET_GEN_TYPE")) {
-		packet_gen_type_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "BACKGROUND_TRAFFIC")) {
 	        background_traffic_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "TRAFFIC")) {
 		traffic_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 0;
-	} else if (!xmlStrcmp(name, (unsigned char*) "AGGREGATION_LEVEL")) {
-		aggregation_level_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IP_VERSION")) {
 		ip_version_ = 0;
 	} else if (!xmlStrcmp(name, (unsigned char*) "IDT_DIST")) {
@@ -806,8 +771,6 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		emulation_time_ms_ = 0;
 	}else if (!xmlStrcmp(name,(unsigned char*) "CURVE")) {
 		curve_ = 0;
-	}else if (!xmlStrcmp(name,(unsigned char*) "BACKGROUND_STATS")) {
-		background_stats_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE_METRICS")) {
 		performance_metrics_ = 0;
 	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
@@ -1044,18 +1007,14 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 							oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y = atoi(ch);
 							oai_emulation.info.nb_enb_local = oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x * oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y;
 						}
-					} else if (trace_mobility_file_) {
-					    oai_emulation.topology_config.mobility.eNB_mobility.trace_config.trace_mobility_file=strndup(ch,len);
-					  }
-				} 	
+					}
+				} 
 			}else if (omv_) {
 			  oai_emulation.topology_config.omv=atoi(ch);
 			}
 
 		} else if (application_config_) {
-		           if (packet_gen_type_){
-			     oai_emulation.application_config.packet_gen_type=strndup(ch, len);
-			     } else if (predefined_traffic_) {
+			if (predefined_traffic_) {
 				if (source_id_) {
 					oai_emulation.application_config.predefined_traffic.source_id[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
 				} else if (destination_id_) {
@@ -1064,41 +1023,32 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					oai_emulation.application_config.predefined_traffic.application_type[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
 				} else if (background_traffic_) {
 					oai_emulation.application_config.predefined_traffic.background[oai_emulation.info.max_predefined_traffic_config_index] = strndup(ch, len);
-				} else if (aggregation_level_) {
-					oai_emulation.application_config.predefined_traffic.aggregation_level[oai_emulation.info.max_predefined_traffic_config_index] = atoi(ch);}
+				}
 			} else if (customized_traffic_) {
-				/*if (m2m_traffic_) {
-					oai_emulation.application_config.customized_traffic.m2m[oai_emulation.info.max_customized_traffic_config_index] = 1;*/
+				if (pu_) {
+					oai_emulation.application_config.customized_traffic.pu = 1;
 					if (prob_off_pu_) {
-						oai_emulation.application_config.customized_traffic.prob_off_pu[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
-					} else if (prob_off_ed_) {
-						oai_emulation.application_config.customized_traffic.prob_off_ed[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
-					} else if (prob_off_pe_) {
-						oai_emulation.application_config.customized_traffic.prob_off_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);				
+						oai_emulation.application_config.customized_traffic.prob_off_pu = atof(ch);
 					} else if (prob_pu_ed_) {
-						oai_emulation.application_config.customized_traffic.prob_pu_ed[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
-					} else if (prob_pu_pe_) {
-						oai_emulation.application_config.customized_traffic.prob_pu_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
-					} else if (prob_ed_pe_) {
-						oai_emulation.application_config.customized_traffic.prob_ed_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
-					} else if (prob_ed_pu_) {
-						oai_emulation.application_config.customized_traffic.prob_ed_pu[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
-					} else if (holding_time_off_ed_) {
-						oai_emulation.application_config.customized_traffic.holding_time_off_ed[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);	
+						oai_emulation.application_config.customized_traffic.prob_pu_ed = atof(ch);
 					} else if (holding_time_off_pu_) {
-						oai_emulation.application_config.customized_traffic.holding_time_off_pu[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
-					} else if (holding_time_off_pe_) {
-						oai_emulation.application_config.customized_traffic.holding_time_off_pe[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
-					} else if (holding_time_pe_off_) {
-						oai_emulation.application_config.customized_traffic.holding_time_pe_off[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
-					} else if (pu_size_pkts_) {
-						oai_emulation.application_config.customized_traffic.pu_size_pkts[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
-					} else if (ed_size_pkts_) {
-						oai_emulation.application_config.customized_traffic.ed_size_pkts[oai_emulation.info.max_customized_traffic_config_index] = atof(ch);
-					/*}*/
-				} else if (background_traffic_) {
-					oai_emulation.application_config.customized_traffic.background[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
-				}else if (source_id_) {
+						oai_emulation.application_config.customized_traffic.holding_time_off_pu = atof(ch);
+					}				
+				} else if (ed_) {
+					oai_emulation.application_config.customized_traffic.ed = 1;
+					if (prob_off_ed_) {
+						oai_emulation.application_config.customized_traffic.prob_off_ed = atof(ch);
+					} else if (prob_ed_pe_) {
+						oai_emulation.application_config.customized_traffic.prob_ed_pe = atof(ch);
+					} else if (holding_time_off_ed_) {
+						oai_emulation.application_config.customized_traffic.holding_time_off_ed = atof(ch);
+					}
+				} else if (pe_) {
+					oai_emulation.application_config.customized_traffic.pe = 1;
+					if (holding_time_off_pe_) {
+						oai_emulation.application_config.customized_traffic.holding_time_off_pe = atof(ch);
+					}
+				} else if (source_id_) {
 					oai_emulation.application_config.customized_traffic.source_id[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (destination_id_) {
 					oai_emulation.application_config.customized_traffic.destination_id[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
@@ -1106,8 +1056,6 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 					oai_emulation.application_config.customized_traffic.transport_protocol[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (ip_version_) {
 					oai_emulation.application_config.customized_traffic.ip_version[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
-				} else if (aggregation_level_) {
-					oai_emulation.application_config.customized_traffic.aggregation_level[oai_emulation.info.max_customized_traffic_config_index] = atoi(ch);
 				} else if (idt_dist_) {
 					oai_emulation.application_config.customized_traffic.idt_dist[oai_emulation.info.max_customized_traffic_config_index] = strndup(ch, len);
 				} else if (idt_min_ms_) {
@@ -1148,8 +1096,6 @@ void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called o
 		    oai_emulation.emulation_config.emulation_time_ms = atof(ch);
 		  } else if (curve_) {
 		    oai_emulation.emulation_config.curve = strndup(ch, len);
- 			} else if (background_stats_) {
-		    oai_emulation.emulation_config.background_stats = strndup(ch, len);
 		  }else if (performance_metrics_) {
 		    if (throughput_) {
 		      oai_emulation.emulation_config.performance_metrics.throughput = strndup(ch, len);

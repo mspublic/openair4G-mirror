@@ -209,7 +209,7 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
       ul_subframe =2;
       break;
     default:
-      LOG_E(PHY,"get_Msg3_harq_pid: Unsupported TDD configuration %d\n",frame_parms->tdd_config);
+      msg("get_Msg3_harq_pid: Unsupported TDD configuration %d\n",frame_parms->tdd_config);
       mac_xface->macphy_exit("");
       break;
     }
@@ -239,7 +239,7 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
 	return((9+ACK_index)%10);
       }
       else {
-	LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
 	    subframe,frame_parms->tdd_config);
 	return(0);
       }
@@ -258,7 +258,7 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
 	return(4);  // To be updated
       }
       else {
-	LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
 	    subframe,frame_parms->tdd_config);
 	return(0);
       }
@@ -286,7 +286,7 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
 	return(2);
       }
       else {
-	LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
 	    subframe,frame_parms->tdd_config);
 	return(0);
       }
@@ -305,7 +305,7 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
 	return(1);  // To be updated
       }
       else {
-	LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
 	    subframe,frame_parms->tdd_config);
 	return(0);
       }
@@ -321,18 +321,12 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	   unsigned char subframe,
 	   unsigned char *o_ACK) {
 
-  //printf("get_ack: SF %d\n",subframe);
+    printf("get_ack: SF %d\n",subframe);
   u8 status=0;
-  u8 subframe_dl;
-
+  
   if (frame_parms->frame_type == FDD) {
-    if (subframe < 4)
-      subframe_dl = subframe + 6;
-    else
-      subframe_dl = subframe - 4;
-    o_ACK[0] = harq_ack[subframe_dl].ack;
-    status = harq_ack[subframe_dl].send_harq_status;
-    printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
+    o_ACK[0] = harq_ack[(subframe-4)%10].ack;
+    status = harq_ack[(subframe-4)%10].send_harq_status;
   }
   else {
     switch (frame_parms->tdd_config) {
@@ -357,7 +351,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	status = harq_ack[4].send_harq_status;
       }
       else {
-	LOG_E(PHY,"phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
+	msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
 	    subframe,frame_parms->tdd_config);
 	return(0);
       }
@@ -397,7 +391,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	status = harq_ack[9].send_harq_status + (harq_ack[0].send_harq_status<<1);
       }
       else {
-	LOG_E(PHY,"phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
+	msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
 	    subframe,frame_parms->tdd_config);
 	return(0);
       }
@@ -405,7 +399,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
     
     }
   }
-  //printf("status %d\n",status);
+  printf("status %d\n",status);
 
   return(status);
 }
@@ -439,7 +433,7 @@ u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1) {
       Np=Np100;
       break;
     default:
-      LOG_E(PHY,"get_Np() FATAL: unsupported N_RB_DL %d\n",N_RB_DL);
+      msg("[PHY] get_Np() FATAL: unsupported N_RB_DL %d\n",N_RB_DL);
       return(0);
       break;
     }
@@ -486,12 +480,12 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     else if (subframe==1)
       return (SF_S);
     else  {
-      LOG_E(PHY,"[PHY_PROCEDURES_LTE] Unknown subframe number\n");
+      msg("[PHY_PROCEDURES_LTE] Unknown subframe number\n");
       return(255);
     }
     break;
   default:
-    LOG_E(PHY,"subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
+    msg("[PHY] phy_procedures_lte_common.c subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
     mac_xface->macphy_exit("");
     return(255);
     
@@ -547,12 +541,12 @@ unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
   s8 UE_id;
   if ((PHY_vars_eNB_g == NULL) || (PHY_vars_eNB_g[Mod_id] == NULL)) {
-    LOG_E(PHY,"get_eNB_UE_stats: No phy_vars_eNB found (or not allocated) for Mod_id %d\n",Mod_id);
+    msg("get_eNB_UE_stats: No phy_vars_eNB found (or not allocated) for Mod_id %d\n",Mod_id);
     return NULL;
   }
   UE_id = find_ue(rnti, PHY_vars_eNB_g[Mod_id]);
   if (UE_id == -1) {
-    LOG_E(PHY,"get_eNB_UE_stats: UE with rnti %x not found\n",rnti);
+    msg("get_eNB_UE_stats: UE with rnti %d not found\n",rnti);
     return NULL;
   }
   return(&PHY_vars_eNB_g[Mod_id]->eNB_UE_stats[(u32)UE_id]);

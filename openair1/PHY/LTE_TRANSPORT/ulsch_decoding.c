@@ -128,7 +128,7 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
   unsigned char Mdlharq;
   unsigned char i;
 
-  //ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
+  ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     Mdlharq = ulsch->Mdlharq;
     ulsch->rnti = 0;
@@ -137,7 +137,7 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
 	  ulsch->harq_processes[i]->Ndi = 0;
 	  ulsch->harq_processes[i]->status = 0;
 	  ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
-	  //ulsch->harq_processes[i]->phich_active = 0; //this will be done later after transmission of PHICH
+	  ulsch->harq_processes[i]->phich_active = 0;
 	  ulsch->harq_processes[i]->phich_ACK = 0;
 	  ulsch->harq_processes[i]->round = 0;
       }
@@ -224,7 +224,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
   A = ulsch->harq_processes[harq_pid]->TBS;
 
-  if (A > 3*6144) {
+  if (A > 2*6144) {
     msg("ulsch_decoding.c: FATAL ERROR: illegal TBS %d\n",A);
     return(-1);
   }
@@ -823,8 +823,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     else
       ulsch->cqi_crc_status = 0;
 
-    //printf("crc(cqi) rx: %x\n",(crc8(o_flip,ulsch->Or1)>>24));
-
     if (ulsch->Or1<=32) {
       ulsch->o[3] = o_flip[0] ;
       ulsch->o[2] = o_flip[1] ;
@@ -882,7 +880,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     }
     
 #ifdef DEBUG_ULSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? ulsch->harq_processes[harq_pid]->F : 0);
 #endif
     
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
@@ -957,12 +955,12 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     ret = phy_threegpplte_turbo_decoder(&ulsch->harq_processes[harq_pid]->d[r][96],
 					ulsch->harq_processes[harq_pid]->c[r],
 					Kr,
-					f1f2mat_old[iind*2],   
-					f1f2mat_old[(iind*2)+1], 
+					f1f2mat[iind*2],   
+					f1f2mat[(iind*2)+1], 
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					UE_id&3);
+					harq_pid&3);
     
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    
