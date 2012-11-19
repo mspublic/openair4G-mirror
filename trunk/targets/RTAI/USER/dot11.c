@@ -365,7 +365,7 @@ static void *rx_thread(void *arg) {
 																					  printf("%2hhx.",rxsdu[n]);
 																					  printf("\n");
 																					*/	
-	  initial_sample_offset += (10*512);
+	  initial_sample_offset += (8*512);
 	  if (initial_sample_offset > FRAME_LENGTH_SAMPLES)
 	    initial_sample_offset -= FRAME_LENGTH_SAMPLES;
 	
@@ -377,7 +377,7 @@ static void *rx_thread(void *arg) {
 	  printf("TX: txlen %d, initial_sample_offset %d\n",txlen,initial_sample_offset);
 	  //oai_exit=1;
 
-	  rt_sleep(nano2count(66666+(txlen*66666)>>9));
+	  rt_sleep(nano2count(66666*8+(txlen*66666)>>9));
 	  skip = initial_sample_offset+txlen-FRAME_LENGTH_SAMPLES;
 	  if (skip < 0)
 	    skip = 0;
