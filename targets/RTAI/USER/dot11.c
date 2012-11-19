@@ -315,9 +315,9 @@ static void *rx_thread(void *arg) {
 	      else {
 		neg_crc++;
 		printf("Received SDU with negative CRC\n");
-		//oai_exit=1;
-		//write_output("rxDATA_F_comp_aggreg3.m","rxDAT_F_comp_aggreg3", rxDATA_F_comp_aggreg3,48*200,1,1);
-		//write_output("rxsig_sdu.m","rxsig_sdu",&rxdata[0][rx_offset],80*40,1,1);
+		oai_exit=1;
+		write_output("rxDATA_F_comp_aggreg3.m","rxDAT_F_comp_aggreg3", rxDATA_F_comp_aggreg3,48*200,1,1);
+		write_output("rxsig_sdu.m","rxsig_sdu",&rxdata[0][rx_offset],80*40,1,1);
 
 		//		write_output("rxDATA_F_comp_aggreg2.m","rxDAT_F_comp_aggreg2", rxDATA_F_comp_aggreg2,48*200,1,1);
 	      }
@@ -365,7 +365,7 @@ static void *rx_thread(void *arg) {
 																					  printf("%2hhx.",rxsdu[n]);
 																					  printf("\n");
 																					*/	
-	  initial_sample_offset += (6*512);
+	  initial_sample_offset += (7*512);
 	  if (initial_sample_offset > FRAME_LENGTH_SAMPLES)
 	    initial_sample_offset -= FRAME_LENGTH_SAMPLES;
 	
