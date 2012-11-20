@@ -148,6 +148,8 @@ PacketHandlerResult* PacketHandler::handleGetConfigurationEvent(GeonetGetConfigu
 	 */
 	delete request;
 
+	logger.info("A SET_CONFIGURATION packet is prepared, will be sent soon...");
+
 	return new PacketHandlerResult(PacketHandlerResult::DELIVER_PACKET, reply);
 }
 
@@ -177,7 +179,7 @@ PacketHandlerResult* PacketHandler::handleLocationTableResponse(GeonetLocationTa
 
 PacketHandlerResult* PacketHandler::handleConfigurationNotification(FacConfigurationNotificationPacket* packet) {
 	// TODO Update MIB with incoming ITS key configuration update
-	return new PacketHandlerResult(PacketHandlerResult::DISCARD_PACKET, NULL);
+	return new PacketHandlerResult(PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE, NULL);
 }
 
 PacketHandlerResult* PacketHandler::handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* request) {

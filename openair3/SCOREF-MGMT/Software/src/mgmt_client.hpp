@@ -131,6 +131,12 @@ class ManagementClient {
 		 */
 		unsigned short int getPort() const;
 		/**
+		 * Returns a reference to the udp::endpoint of this client
+		 *
+		 * return A reference to udp::endpoint of this client
+		 */
+		const udp::endpoint& getEndpoint() const;
+		/**
 		 * Returns the state of this client
 		 *
 		 * @return ManagementClientState value for this client
@@ -189,7 +195,7 @@ class ManagementClient {
 		/**
 		 * Client's udp::endpoint information
 		 */
-		udp::endpoint& clientEndpoint;
+		udp::endpoint clientEndpoint;
 		/**
 		 * Client's connection state with Management module
 		 */

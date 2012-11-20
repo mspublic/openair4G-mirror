@@ -52,7 +52,7 @@ ManagementClientManager::~ManagementClientManager() {
 	clientVector.clear();
 }
 
-bool ManagementClientManager::updateManagementClientState(udp::endpoint& clientEndpoint, EventType eventType) {
+ManagementClientManager::Task ManagementClientManager::updateManagementClientState(udp::endpoint& clientEndpoint, EventType eventType) {
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
@@ -157,45 +157,29 @@ bool ManagementClientManager::updateManagementClientState(udp::endpoint& clientE
 
 	logger.info(toString());
 
-	return true;
+	/**
+	 * Return a task according to the client type
+	 */
+	if (client->getType() == ManagementClient::GN && !clientExists) {
+		/**
+		 * This is a new GN client so we should ask for Location Table
+		 */
+		return ManagementClientManager::SEND_LOCATION_TABLE_REQUEST;
+	}
+
+	return ManagementClientManager::NOTHING;
 }
 
-bool ManagementClientManager::sendConfigurationUpdateAvailable() {
-	if (clientVector.empty())
-		return false;
-
+const ManagementClient* ManagementClientManager::getClientByType(ManagementClient::ManagementClientType clientType) {
 	/**
-	 * Create a CONFIGURATION_UPDATE_AVAILABLE packet
+	 * Traverse client vector and find the specific client of given type
 	 */
-	GeonetConfigurationAvailableEventPacket* packet;
-	vector<unsigned char> packetBuffer;
-
-	try {
-		packet = new GeonetConfigurationAvailableEventPacket(mib, logger);
-	} catch (...) {
-		throw Exception("Cannot create a CONFIGURATION_UPDATE_AVAILABLE packet!", logger);
+	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
+		if ((*it)->getType() == clientType)
+			return *it;
 	}
 
-	/**
-	 * Serialize...
-	 */
-	if (!packet->serialize(packetBuffer)) {
-		logger.error("Cannot serialize CONFIGURATION_UPDATE_AVAILABLE packet!");
-		return false;
-	}
-
-	/**
-	 * ...and send
-	 */
-	boost::asio::io_service ioService;
-	udp::socket* clientSocket = NULL;
-	boost::system::error_code error;
-	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		clientSocket = new udp::socket(ioService, udp::endpoint(udp::v4(), (*it)->getPort()));
-		clientSocket->send_to(boost::asio::buffer(packetBuffer), udp::endpoint(udp::v4(), (*it)->getPort()), 0, error);
-		delete clientSocket;
-	}
-	return true;
+	return NULL;
 }
 
 string ManagementClientManager::toString() {

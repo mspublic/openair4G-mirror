@@ -1,4 +1,13 @@
 
+v1.3.1
+* CONFIGURATION_NOTIFICATION packet of FACilities added to simulator
+* A new scenario file 04.sce has been added for CONFIGURATION_NOTIFICATION
+* CONFIGURATION_NOTIFICATION packet is now handled correctly and GN is being notified by a 
+  CONFIGURATION_AVAILABLE packet
+* ManagementClientManager::updateManagementClientState() doesn't handle packets anymore 
+  and LOCATION_TABLE_REQUEST is now sent by ManagementServer upon the connection of a GN client
+* Bugfix ConfigurationAvailable now resizes the serialized buffer correctly
+
 v1.3.0 (released on 19 Nov 2012)
 * Now simulator can send LOCATION_UPDATE
 * Bugfix GeonetPacket::serialise() now validates incoming buffer size

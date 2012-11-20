@@ -82,17 +82,11 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint
 	 */
 	state = ManagementClient::OFFLINE;
 	type = ManagementClient::UNKNOWN;
+
 	/**
-	 * Update location table
+	 * Initialise InquiryThread object for Wireless State updates
 	 */
-//	GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
-//	if (clientSocket->send(locationTableRequest) == false)
-//		logger.error("Cannot send a LOCATION_TABLE_REQUEST to the client at " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()));
-//
-//	/**
-//	 * Initialise InquiryThread object for Wireless State updates
-//	 */
-//	// TODO who is going to join() this thread?
+	// TODO who is going to join() this thread?
 //	inquiryThreadObject = new InquiryThread(mib, *this->clientSocket, wirelessStateUpdateInterval, locationUpdateInterval, logger);
 //	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
@@ -116,6 +110,10 @@ boost::asio::ip::address ManagementClient::getAddress() const {
 
 unsigned short int ManagementClient::getPort() const {
 	return clientSocket->getRecipient().port();
+}
+
+const udp::endpoint& ManagementClient::getEndpoint() const {
+	return this->clientEndpoint;
 }
 
 ManagementClient::ManagementClientState ManagementClient::getState() const {

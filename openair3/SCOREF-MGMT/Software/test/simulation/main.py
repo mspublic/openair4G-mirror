@@ -73,6 +73,12 @@ while line:
 				print "LOCATION_UPDATE packet sent successfully"
 			else:
 				print "ERROR: Cannot send LOCATION_UPDATE"
+		# Configuration Notification
+		elif clientPacketType == "CONFIGURATION_NOTIFICATION":
+			if Packet.sendConfigurationNotification(serverAddress, serverPort, clientPort):
+				print "CONFIGURATION_NOTIFICATION packet sent successfully"
+			else:
+				print "ERROR: Cannot send CONFIGURATION_NOTIFICATION"
 
 	# Wait command
 	elif commands[0] == "WAIT":
