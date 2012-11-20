@@ -39,6 +39,8 @@
  * \warning none
 */
 
+#include "packets/mgmt_gn_packet_configuration_available.hpp"
+#include "packets/mgmt_gn_packet_location_table_request.hpp"
 #include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 #include "mgmt_server.hpp"
@@ -110,6 +112,7 @@ void ManagementServer::handleClientData() {
 	 * PacketHandler class will return a result set
 	 */
 	PacketHandlerResult* result = NULL;
+	ManagementClientManager::Task task;
 
 	try {
 		result = packetHandler.handle(rxData);
@@ -131,12 +134,17 @@ void ManagementServer::handleClientData() {
 		 * Inform Client Manager of this sender
 		 */
 		try {
-			clientManager.updateManagementClientState(recipient, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxData));
+			task = clientManager.updateManagementClientState(recipient, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxData));
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
 			throw;
 		}
 	}
+
+	/**
+	 * Do the necessary told by PacketHandler
+	 */
+	GeonetConfigurationAvailableEventPacket* packet;
 
 	switch (result->getResult()) {
 		case PacketHandlerResult::DISCARD_PACKET:
@@ -173,15 +181,83 @@ void ManagementServer::handleClientData() {
 
 		case PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE:
 			/**
-			 * Update clients with new configuration information
+			 * Update GN client with new configuration information
+			 */
+			const ManagementClient* gnClient = clientManager.getClientByType(ManagementClient::GN);
+
+			if (!gnClient) {
+				logger.info("There is no GN client connected right now, so a CONFIGURATION_AVAILABLE won't be sent");
+				break;
+			}
+
+			/**
+			 * Create a CONFIGURATION_UPDATE_AVAILABLE packet
 			 */
 			try {
-				clientManager.sendConfigurationUpdateAvailable();
-			} catch (Exception& e) {
-				e.updateStackTrace("Cannot send a CONFIGURATION UPDATE AVAILABLE packet!");
-				throw;
+				packet = new GeonetConfigurationAvailableEventPacket(mib, logger);
+				/**
+				 * Serialize...
+				 */
+				txData.resize(TX_BUFFER_SIZE);
+				packet->serialize(txData);
+			} catch (...) {
+				throw Exception("Cannot create a CONFIGURATION_UPDATE_AVAILABLE packet!", logger);
 			}
+
+			logger.info("A CONFIGURATION_UPDATE_AVAILABLE packet is prepared, sending...");
+
+			/**
+			 * Send serialized data thru socket
+			 */
+			socket.async_send_to(ba::buffer(txData), udp::endpoint(udp::v4(), gnClient->getPort()),
+					boost::bind(&ManagementServer::handleSend, this,
+							ba::placeholders::error,
+							ba::placeholders::bytes_transferred));
+
+			/**
+			 * Reset TX buffer
+			 */
+			txData.resize(TX_BUFFER_SIZE);
+
 			delete result;
+			break;
+	}
+
+	/**
+	 * Do the necessary told by ManagementClientHandler
+	 */
+	GeonetLocationTableRequestEventPacket* locationTableRequest = NULL;
+
+	switch (task) {
+		case ManagementClientManager::NOTHING:
+			break;
+
+		case ManagementClientManager::SEND_LOCATION_TABLE_REQUEST:
+			/**
+			 * Here we should send a LOCATION TABLE REQUEST
+			 */
+			try {
+				locationTableRequest = new GeonetLocationTableRequestEventPacket(0xffffffffffffffff, logger);
+				locationTableRequest->serialize(txData);
+				delete locationTableRequest;
+			} catch (...) {
+				throw Exception("Cannot create/serialize a Location Table Request packet!", logger);
+				break;
+			}
+
+			/**
+			 * Send serialized data thru socket
+			 */
+			logger.info("Sending a LOCATION_TABLE_REQUEST packet");
+			socket.async_send_to(ba::buffer(txData), recipient,
+					boost::bind(&ManagementServer::handleSend, this,
+							ba::placeholders::error,
+							ba::placeholders::bytes_transferred));
+
+			break;
+
+		default:
+			logger.warning("Invalid task is returned by ManagementClientManager class!");
 			break;
 	}
 }

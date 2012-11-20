@@ -141,6 +141,31 @@ class Packet:
 		return True
 
 	@staticmethod
+	def sendConfigurationNotification(serverAddress, serverPort, clientPort):
+		# Build the packet
+		configurationNotificationPacket = array.array('B')
+		configurationNotificationPacket.append(0x40) # Validity=1, version=0
+		configurationNotificationPacket.append(0x00) # Priority=0
+		configurationNotificationPacket.append(0x03) # EventType=3
+		configurationNotificationPacket.append(0x14) # EventSubtype=14
+		configurationNotificationPacket.append(0x0B) # Configuration ID (2-byte)
+		configurationNotificationPacket.append(0xCC)   # Configuration ID = LDM Garbage Collection Interval
+		configurationNotificationPacket.append(0x00) # Length (2-byte)
+		configurationNotificationPacket.append(0x04)   # Length = 4-byte
+		configurationNotificationPacket.append(0x00) # Configuration Value (variable-size)
+		configurationNotificationPacket.append(0x00)   # configuration Value = 100 (ms)
+		configurationNotificationPacket.append(0x00)
+		configurationNotificationPacket.append(0x64)
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(configurationNotificationPacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		return True
+
+	@staticmethod
 	def testConfigurationResponse(address):
 		# Create the socket to receive from MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

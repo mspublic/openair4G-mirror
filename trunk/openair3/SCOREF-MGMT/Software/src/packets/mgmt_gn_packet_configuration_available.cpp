@@ -74,6 +74,11 @@ bool GeonetConfigurationAvailableEventPacket::serialize(vector<unsigned char>& b
 	buffer[bodyIndex + 2] = ((keyCount >> 8) & 0xff);
 	buffer[bodyIndex + 3] = (keyCount & 0xff);
 
+	/**
+	 * Resize buffer to the number of bytes we've written into it
+	 */
+	buffer.resize(sizeof(ConfigureAvailableMessage));
+
 	return true;
 }
 

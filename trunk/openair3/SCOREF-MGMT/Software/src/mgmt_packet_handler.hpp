@@ -80,6 +80,7 @@ class PacketHandlerResult {
 			/**
 			 * All the clients with relevant configuration requirements
 			 * (meaning NET or FAC parameters) should be informed of new configuration
+			 * PS: This comment above is valid only for GN right now since it's the only "other" client than FAC
 			 */
 			SEND_CONFIGURATION_UPDATE_AVAILABLE = 3
 		};
