@@ -3,7 +3,7 @@ SRC = emos_dump.c dump_size.c
 OBJ = emos_dump.o dump_size.o
 
 CFLAGS = $(shell rtai-config --lxrt-cflags)
-LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
+LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm -lgps -lforms
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	
 
