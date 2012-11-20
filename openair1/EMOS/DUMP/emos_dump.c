@@ -46,10 +46,13 @@
 #include <errno.h>
 #include <math.h>
 #include <time.h>
-
+#include <gps.h>
+#include <forms.h>
 
 #include "SCHED/phy_procedures_emos.h"
 #include "emos_dump.h"
+struct gps_data_t *gps_data = NULL;
+struct gps_fix_t dummy_gps_data;
 
 int end=0;
 
@@ -80,9 +83,29 @@ int main (int argc, char **argv)
   char  dumpfile_name[1024];
   time_t starttime_tmp;
   struct tm starttime;
-
+  
   int channel_buffer_size;
+  
+  time_t timer;
+  struct tm *now;
+ 
 
+  timer = time(NULL);
+  now = localtime(&timer);
+  
+  gps_data = gps_open("127.0.0.1","2947");
+  if (gps_data == NULL) 
+    {
+      printf("Could not open GPS\n");
+      exit(-1);
+    }
+  else if (gps_stream(gps_data, WATCH_ENABLE,NULL) != 0)
+    {
+      //sprintf(tmptxt,"Error sending command to GPS, gps_data = %x", gps_data);
+      printf("Error sending command to GPS\n");
+      exit(-1);
+    }
+  
   while ((c = getopt (argc, argv, "he")) != -1) {
     switch (c) {
     case 'e':
@@ -160,13 +183,28 @@ int main (int argc, char **argv)
               fprintf(stderr, "Error writing to dumpfile\n");
               exit(EXIT_FAILURE);
             }
+	  if (gps_data)
+	    {
+	      if (fwrite(&(gps_data->fix), sizeof(char), sizeof(struct gps_fix_t), dumpfile_id) != sizeof(struct gps_fix_t))
+		{
+		  printf("Error writing to dumpfile, stopping recording\n");
+		}
+	    }
+	  else
+	    {
+	      printf("WARNING: No GPS data available, storing dummy packet\n");
+	      if (fwrite(&(dummy_gps_data), sizeof(char), sizeof(struct gps_fix_t), dumpfile_id) != sizeof(struct gps_fix_t))
+		{
+		  printf("Error writing to dumpfile, stopping recording\n");
+		}
+	    } 
         }
     }
-
+  
   free(fifo2file_buffer);
   fclose(dumpfile_id);
   close(fifo);
-
+  
   return 0;
 
 }
