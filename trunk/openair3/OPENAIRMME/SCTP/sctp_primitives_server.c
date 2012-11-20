@@ -48,13 +48,28 @@
 #include "intertask_interface.h"
 #include "sctp_primitives_server.h"
 
+#define IPV4_ADDR    "%u.%u.%u.%u"
+#define IPV4_ADDR_FORMAT(aDDRESS)               \
+    (uint8_t)((aDDRESS)  & 0x000000ff),         \
+    (uint8_t)(((aDDRESS) & 0x0000ff00) >> 8 ),  \
+    (uint8_t)(((aDDRESS) & 0x00ff0000) >> 16),  \
+    (uint8_t)(((aDDRESS) & 0xff000000) >> 24)
+
 #ifndef SCTP_DEBUG
 # define SCTP_DEBUG(x, args...) do { fprintf(stdout, "[SCTP][D]"x, ##args); } while(0)
 #endif
+#ifndef SCTP_ERROR
+# define SCTP_ERROR(x, args...) do { fprintf(stdout, "[SCTP][E]"x, ##args); } while(0)
+#endif
 
 #define BUFFER_SIZE (1<<16)
-#define MAX_CONNECTION 10
-#define LOG_OUT stdout
+
+#undef SCTP_DUMP_LIST
+
+struct sctp_arg_s {
+    int      fd;
+    uint32_t ppid;
+};
 
 // Thread used to receive messages from upper layers
 static pthread_t sctpThread;
@@ -138,15 +153,20 @@ static int sctp_remove_assoc_from_list(int32_t assoc_id) {
 }
 
 static void sctp_dump_assoc(sctp_descriptor_t *sctp_desc) {
+#if defined(SCTP_DUMP_LIST)
     if (sctp_desc == NULL) return;
 
     SCTP_DEBUG("fd           : %d\n", sctp_desc->fd);
     SCTP_DEBUG("input streams: %d\n", sctp_desc->instreams);
     SCTP_DEBUG("out streams  : %d\n", sctp_desc->outstreams);
     SCTP_DEBUG("assoc_id     : %d\n", sctp_desc->assoc_id);
+#else
+    sctp_desc = sctp_desc;
+#endif
 }
 
 static void sctp_dump_list(void) {
+#if defined(SCTP_DUMP_LIST)
     sctp_descriptor_t *sctp_desc;
 
     sctp_desc = available_connections_head;
@@ -157,6 +177,9 @@ static void sctp_dump_list(void) {
         sctp_dump_assoc(sctp_desc);
         sctp_desc = sctp_desc->next_assoc;
     }
+#else
+    sctp_dump_assoc(NULL);
+#endif
 }
 
 static int sctp_send_msg(int32_t sctp_assoc_id, uint16_t stream, const uint8_t *buffer, const uint32_t length)
@@ -175,7 +198,7 @@ static int sctp_send_msg(int32_t sctp_assoc_id, uint16_t stream, const uint8_t *
                      (const void *)buffer,
                      length,
                      (struct sockaddr *)&assoc_desc->sin,
-                     sizeof(assoc_desc->sin), 0, 0, stream, 0, 0) < 0)
+                     sizeof(assoc_desc->sin), assoc_desc->ppid, 0, stream, 0, 0) < 0)
     {
         perror("send");
         return -1;
@@ -188,12 +211,15 @@ static int sctp_send_msg(int32_t sctp_assoc_id, uint16_t stream, const uint8_t *
     return 0;
 }
 
-static int sctp_create_new_connection(int port, char *address) {
+static int sctp_create_new_connection(int port, char *address, uint32_t ppid) {
     struct sctp_event_subscribe event;
     struct sockaddr_in addr;
     struct sctp_initmsg init;
 
-    int *fd_p, fd;
+    struct sctp_arg_s *sctp_arg_p;
+
+    int fd;
+
 #if defined(USE_SOCK_STREAM)
     if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) < 0) {
 #else
@@ -202,6 +228,9 @@ static int sctp_create_new_connection(int port, char *address) {
         perror("socket");
         return -1;
     }
+
+    SCTP_DEBUG("Creating new listen socket on address "IPV4_ADDR" and port %u\n",
+               IPV4_ADDR_FORMAT(inet_addr(address)), port);
 
     memset((void *)&event, 1, sizeof(struct sctp_event_subscribe));
     if (setsockopt(fd, IPPROTO_SCTP, SCTP_EVENTS, &event, sizeof(struct sctp_event_subscribe)) < 0)
@@ -238,10 +267,12 @@ static int sctp_create_new_connection(int port, char *address) {
         perror("listen");
         exit(1);
     }
-    fd_p = (int*)malloc(sizeof(int));
-    *fd_p = fd;
 
-    if (pthread_create(&assocThread, NULL, &sctp_receiver_thread, (void*)fd_p) < 0)
+    sctp_arg_p = malloc(sizeof(sctp_arg_p));
+    sctp_arg_p->fd = fd;
+    sctp_arg_p->ppid = ppid;
+
+    if (pthread_create(&assocThread, NULL, &sctp_receiver_thread, (void*)sctp_arg_p) < 0)
     {
         perror("pthread_create");
         return -1;
@@ -252,15 +283,16 @@ static int sctp_create_new_connection(int port, char *address) {
 void *sctp_receiver_thread(void *args)
 {
     int flags, n;
-    int *clientsock_p;
     int clientsock;
     socklen_t from_len;
+
+    struct sctp_arg_s *sctp_arg_p;
     struct sctp_sndrcvinfo sinfo;
     struct sockaddr_in addr;
     uint8_t buffer[BUFFER_SIZE];
 
-    clientsock_p = (int *)args;
-    clientsock = (int)*clientsock_p;
+    sctp_arg_p = (struct sctp_arg_s *)args;
+    clientsock = sctp_arg_p->fd;
 
     while(1)
     {
@@ -318,6 +350,7 @@ void *sctp_receiver_thread(void *args)
                             // TODO: handle this case
                         } else {
                             new_association->fd         = clientsock;
+                            new_association->ppid       = sctp_arg_p->ppid;
                             new_association->instreams  = sctp_assoc_changed->sac_inbound_streams;
                             new_association->outstreams = sctp_assoc_changed->sac_outbound_streams;
                             new_association->assoc_id   = sctp_assoc_changed->sac_assoc_id;
@@ -353,6 +386,14 @@ void *sctp_receiver_thread(void *args)
             }
             association->messages_recv++;
 
+            if (ntohl(sinfo.sinfo_ppid) != association->ppid) {
+                /* Mismatch in Payload Protocol Identifier,
+                 * may be we received unsollicited traffic from stack other than S1AP.
+                 */
+                SCTP_ERROR("Received data from peer with unsollicited PPID %d, expecting %d\n",
+                           ntohl(sinfo.sinfo_ppid), association->ppid);
+            }
+
             message_p->messageId = S1AP_SCTP_NEW_MESSAGE_IND;
             message_p->originTaskId = TASK_SCTP;
             message_p->destinationTaskId = TASK_S1AP;
@@ -382,17 +423,17 @@ static void *sctp_intertask_interface(void *args) {
             {
                 SctpS1APInit *sctpS1APInitMsg;
                 sctpS1APInitMsg = &receivedMessage->msg.sctpS1APInit;
-                sctp_create_new_connection(sctpS1APInitMsg->port, sctpS1APInitMsg->address);
+                sctp_create_new_connection(sctpS1APInitMsg->port, sctpS1APInitMsg->address, sctpS1APInitMsg->ppid);
             } break;
-            case SCTP_CLOSE_S1AP_ASSOCIATION:
+            case SCTP_CLOSE_ASSOCIATION:
             {
                 
             } break;
 
-            case SCTP_NEW_S1AP_DATA_REQ:
+            case SCTP_NEW_DATA_REQ:
             {
-                SctpNewS1APDataReq *sctpNewS1APDataReq;
-                sctpNewS1APDataReq = &receivedMessage->msg.sctpNewS1APDataReq;
+                SctpNewDataReq *sctpNewS1APDataReq;
+                sctpNewS1APDataReq = &receivedMessage->msg.sctpNewDataReq;
 
                 if (sctp_send_msg(sctpNewS1APDataReq->assocId,
                                   sctpNewS1APDataReq->stream,
@@ -412,7 +453,7 @@ static void *sctp_intertask_interface(void *args) {
     return NULL;
 }
 
-int sctp_init(void) {
+int sctp_init(const mme_config_t *mme_config) {
     SCTP_DEBUG("Initializing SCTP task interface\n");
     if (pthread_create(&sctpThread, NULL, &sctp_intertask_interface, NULL) < 0) {
         perror("sctp pthread_create");

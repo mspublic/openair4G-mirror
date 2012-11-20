@@ -34,26 +34,55 @@
  * @{
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 
-// #include "gtpu_messages_def.h"
-#include "sctp_messages_def.h"
-#include "s1ap_messages_def.h"
+#include "mme_config.h"
+
+#include "gtpv1_u_messages_types.h"
+#include "sctp_messages_types.h"
+#include "s1ap_messages_types.h"
+#include "timer_messages_types.h"
+#include "udp_messages_types.h"
 
 #ifndef INTERTASK_INTERFACE_H_
 #define INTERTASK_INTERFACE_H_
 
-#define MESSAGE_ID(x) x,
-#define MESSAGE_DEF(x) x
+enum task_priorities {
+    TASK_PRIORITY_MAX       = 100,
+    TASK_PRIORITY_MAX_LEAST = 85,
+    TASK_PRIORITY_MED_PLUS  = 70,
+    TASK_PRIORITY_MED       = 55,
+    TASK_PRIORITY_MED_LEAST = 40,
+    TASK_PRIORITY_MIN_PLUS  = 25,
+    TASK_PRIORITY_MIN       = 10,
+};
+
+// #define MESSAGE_ID(x) x,
+// #define MESSAGE_DEF(x) x
 
 /* This enum defines messages ids. Each one is unique. */
 typedef enum {
-//     #include "gtpu_messages_id.h"
-    #include "sctp_messages_id.h"
-    #include "s1ap_messages_id.h"
+
+    #define MESSAGE_DEF(iD, pRIO, sTRUCT) iD,
+
+//     #include "gtpv1_u_messages_def.h"
+    #include "sctp_messages_def.h"
+    #include "s1ap_messages_def.h"
+    #include "timer_messages_def.h"
+    #include "udp_messages_def.h"
+
+    #undef MESSAGE_DEF
+
     MESSAGES_ID_MAX,
     MESSAGES_ID_END = MESSAGES_ID_MAX,
 } MessagesIds;
+
+struct message_priority_s {
+    uint32_t id;
+    uint32_t priority;
+};
 
 //! Tasks id of each task
 typedef enum {
@@ -62,9 +91,9 @@ typedef enum {
     /// S1AP message task
     TASK_S1AP,
     /// GTP-U message task
-    TASK_GTPU,
+    TASK_GTPV1_U,
     /// NAS message task
-    TASK_NAS,
+    TASK_UDP,
     /// TIMERS message task
     TASK_TIMER,
     TASK_MAX,
@@ -75,38 +104,42 @@ typedef enum {
  *  @brief Message structure for inter thread communication.
  */
 typedef struct MessageDef_s {
-    uint32_t messageId; /**< Unique message id as referenced in enum MessagesIds */
+    uint32_t messageId;         /**< Unique message id as referenced in enum MessagesIds */
 
-    uint32_t originTaskId; /**< ID of the sender task */
+    uint32_t originTaskId;      /**< ID of the sender task */
     uint32_t destinationTaskId; /**< ID of the destination task */
 
     union msg {
-        #define MESSAGE_DEFINITION
-//         #include "gtpu_messages_def.h"
+        #define MESSAGE_DEF(iD, pRIO, sTRUCT) sTRUCT;
+
+        #include "gtpv1_u_messages_def.h"
         #include "sctp_messages_def.h"
         #include "s1ap_messages_def.h"
-        #undef MESSAGE_DEFINITION
+        #include "timer_messages_def.h"
+        #include "udp_messages_def.h"
+
+        #undef MESSAGE_DEF
     } msg; /**< Union of payloads as defined in x_messages_def.h headers */
 } MessageDef;
 
 /** \brief Send a message to a task (could be itself)
- \param taskId Task ID
+ \param task_id Task ID
  \param message Pointer to the message to send
  @returns -1 on failure, 0 otherwise
  **/
-int send_msg_to_task(TaskId taskId, MessageDef *message);
+int send_msg_to_task(TaskId task_id, MessageDef *message);
 
 /** \brief Retrieves a messsage in queue.
  * If the queue is empty, the thread is blocked till a new message arrives.
- \param taskId Task ID of the receiving task
- \param receivedMsg Pointer to the allocated message
+ \param task_id Task ID of the receiving task
+ \param received_msg Pointer to the allocated message
  **/
-void receive_msg(TaskId taskId, MessageDef **receivedMsg);
+void receive_msg(TaskId task_id, MessageDef **received_msg);
 
 /** \brief Init function for the intertask interface. Init queues, Mutexes and Cond vars.
  * If the queue is empty, the thread is blocked till a new message arrives.
  **/
-void intertask_interface_init(void);
+void intertask_interface_init(const mme_config_t *mme_config);
 
 #endif /* INTERTASK_INTERFACE_H_ */
 /* @} */

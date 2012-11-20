@@ -272,10 +272,12 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = \
+	GTPV1-U			\
 	INTERTASK_INTERFACE 	\
 	SCTP			\
 	S1AP			\
 	UTILS			\
+	UDP			\
 	TEST			\
 	OAISIM_MME		\
 	DOCS

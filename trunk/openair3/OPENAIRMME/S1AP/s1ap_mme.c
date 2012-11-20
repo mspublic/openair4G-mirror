@@ -71,6 +71,7 @@ static int s1ap_send_init_sctp(void) {
     message_p->originTaskId = TASK_S1AP;
     message_p->destinationTaskId = TASK_SCTP;
     message_p->msg.sctpS1APInit.port = S1AP_PORT;
+    message_p->msg.sctpS1APInit.ppid = S1AP_SCTP_PPID;
     message_p->msg.sctpS1APInit.address = "0.0.0.0"; //ANY address
 
     return send_msg_to_task(TASK_SCTP, message_p);
@@ -129,7 +130,7 @@ void* s1ap_mme_thread(void *args) {
     return NULL;
 }
 
-int s1ap_mme_init(void) {
+int s1ap_mme_init(const mme_config_t *mme_config) {
     S1AP_DEBUG("Initializing S1AP interface\n");
 
     if (get_asn1c_environment_version() < 923)

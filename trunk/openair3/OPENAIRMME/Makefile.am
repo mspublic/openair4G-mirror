@@ -1,8 +1,10 @@
 SUBDIRS = 			\
+	GTPV1-U			\
 	INTERTASK_INTERFACE 	\
 	SCTP			\
 	S1AP			\
 	UTILS			\
+	UDP			\
 	TEST			\
 	OAISIM_MME		\
 	DOCS

@@ -32,6 +32,8 @@
 # include "intertask_interface.h"
 #endif
 
+#include "mme_config.h"
+
 #ifndef S1AP_MME_H_
 #define S1AP_MME_H_
 
@@ -115,7 +117,7 @@ extern MessageDef *receivedMessage;
 /** \brief S1AP layer top init
  * @returns -1 in case of failure
  **/
-int s1ap_mme_init(void);
+int s1ap_mme_init(const mme_config_t *mme_config);
 
 /** \brief Look for given eNB id in the list
  * \param eNB_id The unique eNB id to search in list

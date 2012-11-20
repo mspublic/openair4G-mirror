@@ -64,6 +64,7 @@ struct sctp_descriptor_s {
 
     int                fd;                  ///< Socket descriptor
     uint32_t           sctpAssocId;         ///< SCTP asscociation ID
+    uint32_t           ppid;                ///< Payload Protocol Identifier
     pthread_t          recvThread;          ///< Receiver thread
     sctp_recv_callback recv_callback;       ///< Data received callback
 };
@@ -116,8 +117,9 @@ static struct sctp_descriptor_s *sctp_is_assoc_id_in_list(uint32_t assocId) {
  */
 int sctp_connect_to_remote_host(
     const char *ip_addr,
-    int port,
-    void *args,
+    uint16_t    port,
+    uint32_t    ppid,
+    void       *args,
     sctp_connected_callback connected_callback,
     sctp_recv_callback upperlayer_recv) {
 
@@ -197,6 +199,7 @@ int sctp_connect_to_remote_host(
     }
 
     sctp_ref->fd = fd;
+    sctp_ref->ppid = ppid;
     sctp_ref->sctpAssocId = status.sstat_assoc_id;
     sctp_ref->recv_callback = upperlayer_recv;
 
@@ -227,8 +230,6 @@ void sctp_disconnect(uint32_t assocId) {
 int sctp_send_msg(uint32_t sctpAssocId, uint16_t stream, const uint8_t *buffer, const uint32_t length)
 {
     int fd;
-    struct sctp_sndrcvinfo sinfo;
-    struct sockaddr_in addr;
     struct sctp_descriptor_s *sctp_ref;
 
     assert(buffer != NULL);
@@ -240,21 +241,8 @@ int sctp_send_msg(uint32_t sctpAssocId, uint16_t stream, const uint8_t *buffer, 
 
     fd = sctp_ref->fd;
 
-    memset(&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
-    sinfo.sinfo_stream = stream;
-
-#if 0
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(36412);
-    addr.sin_addr.s_addr = inet_addr(ip_addr);
-#endif
-
     /* Send message on specified stream of the fd association */
-#if 0
-    if (sctp_sendmsg(fd, (const void *)buffer, length, (struct sockaddr *)&addr, sizeof(addr), 0, 0, stream, 0, 0) < 0) {
-#else
-    if (sctp_sendmsg(fd, (const void *)buffer, length, NULL, 0, 0, 0, stream, 0, 0) < 0) {
-#endif
+    if (sctp_sendmsg(fd, (const void *)buffer, length, NULL, 0, sctp_ref->ppid, 0, stream, 0, 0) < 0) {
         SCTP_ERROR("Scpt_sendmsg failed: %s\n", strerror(errno));
         return -1;
     }
@@ -313,7 +301,7 @@ void *sctp_recv_msg(void *arg_p)
         {
             SCTP_DEBUG("[FD %d] Msg of length %d received from %s:%u on stream %d, PPID %d, assoc_id %d\n",
                     sctp_ref->sctpAssocId, n, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port),
-                    sinfo.sinfo_stream, ntohl(sinfo.sinfo_ppid), sinfo.sinfo_assoc_id);
+                    sinfo.sinfo_stream, sinfo.sinfo_ppid, sinfo.sinfo_assoc_id);
             //calling given recv callback
             if (sctp_ref->recv_callback != NULL) {
                 uint8_t *buffer2;

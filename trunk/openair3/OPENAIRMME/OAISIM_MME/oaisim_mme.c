@@ -37,11 +37,15 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include "mme_config.h"
+
 #include "intertask_interface.h"
 #include "sctp_primitives_server.h"
+#include "udp_primitives_server.h"
 #include "s1ap_mme.h"
-#include "mme_config.h"
+#include "gtpv1_u.h"
 #include "log.h"
+#include "timer.h"
 
 int main(int argc, char *argv[])
 {
@@ -51,10 +55,13 @@ int main(int argc, char *argv[])
     fprintf(stdout, "Starting %s\n", PACKAGE_STRING);
 
     /* Calling each layer init function */
-    log_init(mme_config);
-    intertask_interface_init();
-    sctp_init();
-    s1ap_mme_init();
+    log_init(&mme_config);
+    intertask_interface_init(&mme_config);
+    sctp_init(&mme_config);
+    udp_init(&mme_config);
+    s1ap_mme_init(&mme_config);
+    gtpv1_u_init(&mme_config);
+    timer_init(&mme_config);
 
     while(1) {
         sleep(1);
