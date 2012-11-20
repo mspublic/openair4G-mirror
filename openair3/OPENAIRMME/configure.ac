@@ -57,24 +57,18 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
+AC_PROG_MKDIR_P
 
 AC_C_INLINE
-AC_CHECK_FUNCS([inet_ntoa])
-AC_CHECK_FUNCS([memchr])
-AC_CHECK_FUNCS([socket])
-AC_CHECK_HEADERS([arpa/inet.h])
-AC_CHECK_HEADERS([float.h])
-AC_CHECK_HEADERS([netinet/in.h])
-AC_CHECK_HEADERS([limits.h])
-AC_CHECK_HEADERS([malloc.h])
-AC_CHECK_HEADERS([stddef.h])
-AC_CHECK_HEADERS([sys/socket.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h inttypes.h limits.h malloc.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/socket.h unistd.h])
 
 # Checks for library functions.
+AC_FUNC_MMAP
 AC_FUNC_MALLOC
 AC_FUNC_ALLOCA
+AC_FUNC_REALLOC
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([inet_ntoa memchr memmove memset socket strerror])
+AC_CHECK_FUNCS([ftruncate inet_ntoa memchr memmove memset munmap socket strchr strerror strspn])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -95,6 +89,8 @@ dnl ***libsctp-dev support***
 AC_CHECK_LIB([sctp], [sctp_sendmsg], [], [AC_MSG_ERROR([libsctp not found, consider installing libsctp-dev package])])
 dnl ***pthread support***
 AC_CHECK_LIB([pthread], [pthread_mutex_init], [], [AC_MSG_ERROR(pthread library needed!)])
+dnl ***real time support***
+AC_CHECK_LIB([rt], [timer_create], [], [AC_MSG_ERROR(rt library needed!)])
 
 AC_SUBST(ADD_CFLAGS)
 
@@ -125,7 +121,9 @@ AM_CONDITIONAL([HAVE_DOXYGEN],
                [test -n "$DOXYGEN"])AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([DOCS/DOXYGEN/Doxyfile])])
 
 AC_OUTPUT(                          \
+    GTPV1-U/Makefile                \
     TEST/Makefile                   \
+    UTILS/TIMER/Makefile            \
     UTILS/Makefile                  \
     S1AP/MESSAGES/ASN1/Makefile     \
     S1AP/MESSAGES/Makefile          \
@@ -133,6 +131,7 @@ AC_OUTPUT(                          \
     INTERTASK_INTERFACE/Makefile    \
     OAISIM_MME/Makefile             \
     SCTP/Makefile                   \
+    UDP/Makefile                    \
     DOCS/DOXYGEN/Makefile           \
     DOCS/Makefile                   \
     Makefile                        \

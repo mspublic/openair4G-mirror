@@ -33,6 +33,6 @@
 #ifndef LOG_H_
 #define LOG_H_
 
-int log_init(mme_config_t mme_config);
+int log_init(const mme_config_t *mme_config);
 
 #endif /* LOG_H_ */

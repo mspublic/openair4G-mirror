@@ -29,12 +29,22 @@
 *******************************************************************************/
 
 #include <stdint.h>
+#include "mme_default_values.h"
 
 #ifndef MME_CONFIG_H_
 #define MME_CONFIG_H_
 
 typedef struct mme_config_s {
     uint8_t verbosity_level;
+    struct {
+        int root_timer_value_ms;
+    } timer_config;
+    struct {
+        uint16_t port_number;
+    } gtpv1_u_config;
+    struct {
+        uint16_t port_number;
+    } s1ap_config;
 } mme_config_t;
 
 int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config);

@@ -75,7 +75,8 @@ typedef int (*sctp_connected_callback)(void     *args,
  */
 int sctp_connect_to_remote_host(
     const char              *ip_addr,
-    int                      port,
+    uint16_t                 port,
+    uint32_t                 ppid,
     void                    *args,
     sctp_connected_callback  connected_callback,
     sctp_recv_callback       recv_callback);

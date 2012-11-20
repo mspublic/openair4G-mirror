@@ -182,7 +182,7 @@ int sctp_connected(void     *args,
 
     fprintf(stdout, "New association %d\n", assocId);
 
-    s1ap_test_generate_s1_setup_request(assocId, &buffer, &len);
+    s1ap_test_generate_s1_setup_request(assocId * nb_eNB, &buffer, &len);
 
     if (sctp_send_msg(assocId, 0, buffer, len) < 0)
     {
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
     }
 
     for (i = 0; i < nb_eNB; i++) {
-        sctp_connect_to_remote_host(ip_addr, 36412, NULL, sctp_connected, recv_callback);
+        sctp_connect_to_remote_host(ip_addr, 36412, 18, NULL, sctp_connected, recv_callback);
     }
     while (1) {
         sleep(1);

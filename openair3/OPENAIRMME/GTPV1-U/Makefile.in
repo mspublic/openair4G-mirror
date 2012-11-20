@@ -15,6 +15,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 am__make_dryrun = \
   { \
@@ -52,8 +53,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = oaisim_mme$(EXEEXT)
-subdir = OAISIM_MME
+bin_PROGRAMS = gtpv1_u_test$(EXEEXT)
+subdir = GTPV1-U
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -64,20 +65,21 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)"
-PROGRAMS = $(bin_PROGRAMS)
-oaisim_mme_SOURCES = oaisim_mme.c
-oaisim_mme_OBJECTS = oaisim_mme.$(OBJEXT)
-oaisim_mme_DEPENDENCIES = $(top_builddir)/GTPV1-U/libgtpv1u.la \
-	$(top_builddir)/INTERTASK_INTERFACE/libitti.la \
-	$(top_builddir)/S1AP/libs1ap.la \
-	$(top_builddir)/SCTP/libsctpserver.la \
-	$(top_builddir)/UTILS/TIMER/libtimer.la \
-	$(top_builddir)/UTILS/libutils.la \
-	$(top_builddir)/UDP/libudpserver.la
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+libgtpv1u_la_LIBADD =
+am_libgtpv1u_la_OBJECTS = gtpv1_u_message_tx.lo gtpv1_u_task.lo
+libgtpv1u_la_OBJECTS = $(am_libgtpv1u_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
+libgtpv1u_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libgtpv1u_la_LDFLAGS) $(LDFLAGS) -o $@
+am__installdirs = "$(DESTDIR)$(bindir)"
+PROGRAMS = $(bin_PROGRAMS)
+gtpv1_u_test_SOURCES = gtpv1_u_test.c
+gtpv1_u_test_OBJECTS = gtpv1_u_test.$(OBJEXT)
+gtpv1_u_test_DEPENDENCIES = libgtpv1u.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -104,8 +106,8 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-SOURCES = oaisim_mme.c
-DIST_SOURCES = oaisim_mme.c
+SOURCES = $(libgtpv1u_la_SOURCES) gtpv1_u_test.c
+DIST_SOURCES = $(libgtpv1u_la_SOURCES) gtpv1_u_test.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -118,15 +120,9 @@ ACLOCAL = @ACLOCAL@
 ADD_CFLAGS = @ADD_CFLAGS@
 ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
-AM_CFLAGS = @ADD_CFLAGS@ \
-	-I$(top_srcdir)/GTPV1-U			\
-	-I$(top_srcdir)/SCTP			\
+AM_CFLAGS = @ADD_CFLAGS@ 	\
 	-I$(top_srcdir)/INTERTASK_INTERFACE	\
-	-I$(top_builddir)/S1AP/MESSAGES		\
-	-I$(top_srcdir)/S1AP			\
-	-I$(top_srcdir)/UDP			\
-	-I$(top_srcdir)/UTILS			\
-	-I$(top_srcdir)/UTILS/TIMER
+	-I$(top_srcdir)/UTILS
 
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
@@ -256,15 +252,15 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-oaisim_mme_LDADD = \
-	$(top_builddir)/GTPV1-U/libgtpv1u.la	\
-	$(top_builddir)/INTERTASK_INTERFACE/libitti.la	\
-	$(top_builddir)/S1AP/libs1ap.la	\
-	$(top_builddir)/SCTP/libsctpserver.la	\
-	$(top_builddir)/UTILS/TIMER/libtimer.la	\
-	$(top_builddir)/UTILS/libutils.la	\
-	$(top_builddir)/UDP/libudpserver.la
+noinst_LTLIBRARIES = libgtpv1u.la
+libgtpv1u_la_LDFLAGS = -all-static
+libgtpv1u_la_SOURCES = \
+	gtpv1_u.h		\
+	gtpv1_u_message.h	\
+	gtpv1_u_message_tx.c	\
+	gtpv1_u_task.c
 
+gtpv1_u_test_LDADD = libgtpv1u.la
 all: all-am
 
 .SUFFIXES:
@@ -278,9 +274,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu OAISIM_MME/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu GTPV1-U/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu OAISIM_MME/Makefile
+	  $(AUTOMAKE) --gnu GTPV1-U/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -299,6 +295,19 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; \
+	locs=`for p in $$list; do echo $$p; done | \
+	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
+	      sort -u`; \
+	test -z "$$locs" || { \
+	  echo rm -f $${locs}; \
+	  rm -f $${locs}; \
+	}
+libgtpv1u.la: $(libgtpv1u_la_OBJECTS) $(libgtpv1u_la_DEPENDENCIES) $(EXTRA_libgtpv1u_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libgtpv1u_la_LINK)  $(libgtpv1u_la_OBJECTS) $(libgtpv1u_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
@@ -345,9 +354,9 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-oaisim_mme$(EXEEXT): $(oaisim_mme_OBJECTS) $(oaisim_mme_DEPENDENCIES) $(EXTRA_oaisim_mme_DEPENDENCIES) 
-	@rm -f oaisim_mme$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(oaisim_mme_OBJECTS) $(oaisim_mme_LDADD) $(LIBS)
+gtpv1_u_test$(EXEEXT): $(gtpv1_u_test_OBJECTS) $(gtpv1_u_test_DEPENDENCIES) $(EXTRA_gtpv1_u_test_DEPENDENCIES) 
+	@rm -f gtpv1_u_test$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(gtpv1_u_test_OBJECTS) $(gtpv1_u_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -355,7 +364,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oaisim_mme.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtpv1_u_message_tx.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtpv1_u_task.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtpv1_u_test.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -482,7 +493,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS)
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -519,7 +530,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool \
+	clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -590,15 +602,15 @@ uninstall-am: uninstall-binPROGRAMS
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-libtool cscopelist ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-binPROGRAMS install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	clean-generic clean-libtool clean-noinstLTLIBRARIES cscopelist \
+	ctags distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-binPROGRAMS \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS

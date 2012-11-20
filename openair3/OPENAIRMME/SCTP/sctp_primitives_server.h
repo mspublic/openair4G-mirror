@@ -36,6 +36,8 @@
 # include "config.h"
 #endif
 
+#include "mme_config.h"
+
 #if !defined(HAVE_LIBSCTP)
 # error "You must install libsctp-dev"
 #endif
@@ -50,6 +52,7 @@ typedef struct sctp_descriptor_s {
     struct sctp_descriptor_s *next_assoc;       ///< Next association in the list
     struct sctp_descriptor_s *previous_assoc;   ///< Previous association in the list
     int      fd;            ///< Socket descriptor
+    uint32_t ppid;          ///< Payload protocol Identifier
     uint16_t instreams;     ///< Number of input streams negociated for this connection
     uint16_t outstreams;    ///< Number of output strams negotiated for this connection
     int32_t  assoc_id;      ///< SCTP association id for the connection
@@ -80,7 +83,7 @@ typedef void (*sctp_recv_callback)(uint8_t *buffer, uint32_t length);
  \param NONE
  @returns -1 on error, 0 otherwise.
  **/
-int sctp_init(void);
+int sctp_init(const mme_config_t *mme_config);
 
 #endif /* SCTP_PRIMITIVES_H_ */
 

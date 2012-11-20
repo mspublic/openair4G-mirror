@@ -36,11 +36,11 @@ struct itti_queue_ref itti_queue = { PTHREAD_MUTEX_INITIALIZER, NULL, NULL, 0 };
 int itti_accept_socket = -1;
 pthread_t itti_thread;
 
-int itti_queue_message(MessageDef *message) {
+int itti_queue_message(MessageDef *message_p) {
     return 0;
 }
 
-void * itti_create_socket(void *arg_p) {
+static void * itti_create_socket(void *arg_p) {
     int itti_conn_socket;
     struct sockaddr_in servaddr; /*  socket address structure  */
 

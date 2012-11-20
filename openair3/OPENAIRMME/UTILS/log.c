@@ -36,12 +36,12 @@ int log_enabled = 0;
 extern int asn_debug;
 extern int asn1_xer_print;
 
-int log_init(mme_config_t mme_config) {
-    if (mme_config.verbosity_level == 1) {
+int log_init(const mme_config_t *mme_config) {
+    if (mme_config->verbosity_level == 1) {
         log_enabled = 1;
         asn_debug = 0;
         asn1_xer_print = 1;
-    } else if (mme_config.verbosity_level == 2) {
+    } else if (mme_config->verbosity_level == 2) {
         log_enabled = 1;
         asn_debug = 1;
         asn1_xer_print = 1;

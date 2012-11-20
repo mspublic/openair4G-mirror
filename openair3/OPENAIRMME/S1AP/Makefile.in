@@ -156,11 +156,11 @@ ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_CFLAGS = \
 	@ADD_CFLAGS@ 			\
-	-I${top_builddir}/S1AP		\
-	-I${top_builddir}/S1AP/MESSAGES	\
-	-I${top_srcdir}/INTERTASK_INTERFACE	\
-	-I${top_srcdir}/SCTP	\
-	-I${top_srcdir}/UTILS
+	-I$(top_builddir)/S1AP		\
+	-I$(top_builddir)/S1AP/MESSAGES	\
+	-I$(top_srcdir)/INTERTASK_INTERFACE	\
+	-I$(top_srcdir)/SCTP	\
+	-I$(top_srcdir)/UTILS
 
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
@@ -303,9 +303,9 @@ libs1ap_la_SOURCES = \
 	s1ap_mme_decoder.h s1ap_mme_decoder.c	\
 	s1ap_mme_handlers.h s1ap_mme_handlers.c	\
 	s1ap_mme.h s1ap_mme.c			\
-	${top_builddir}/S1AP/s1ap_decoder.c	\
-	${top_builddir}/S1AP/s1ap_encoder.c	\
-	${top_builddir}/S1AP/s1ap_ies_defs.h
+	$(top_builddir)/S1AP/s1ap_decoder.c	\
+	$(top_builddir)/S1AP/s1ap_encoder.c	\
+	$(top_builddir)/S1AP/s1ap_ies_defs.h
 
 all: all-recursive
 
@@ -393,19 +393,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-s1ap_decoder.lo: ${top_builddir}/S1AP/s1ap_decoder.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT s1ap_decoder.lo -MD -MP -MF $(DEPDIR)/s1ap_decoder.Tpo -c -o s1ap_decoder.lo `test -f '${top_builddir}/S1AP/s1ap_decoder.c' || echo '$(srcdir)/'`${top_builddir}/S1AP/s1ap_decoder.c
+s1ap_decoder.lo: $(top_builddir)/S1AP/s1ap_decoder.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT s1ap_decoder.lo -MD -MP -MF $(DEPDIR)/s1ap_decoder.Tpo -c -o s1ap_decoder.lo `test -f '$(top_builddir)/S1AP/s1ap_decoder.c' || echo '$(srcdir)/'`$(top_builddir)/S1AP/s1ap_decoder.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/s1ap_decoder.Tpo $(DEPDIR)/s1ap_decoder.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='${top_builddir}/S1AP/s1ap_decoder.c' object='s1ap_decoder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/S1AP/s1ap_decoder.c' object='s1ap_decoder.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o s1ap_decoder.lo `test -f '${top_builddir}/S1AP/s1ap_decoder.c' || echo '$(srcdir)/'`${top_builddir}/S1AP/s1ap_decoder.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o s1ap_decoder.lo `test -f '$(top_builddir)/S1AP/s1ap_decoder.c' || echo '$(srcdir)/'`$(top_builddir)/S1AP/s1ap_decoder.c
 
-s1ap_encoder.lo: ${top_builddir}/S1AP/s1ap_encoder.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT s1ap_encoder.lo -MD -MP -MF $(DEPDIR)/s1ap_encoder.Tpo -c -o s1ap_encoder.lo `test -f '${top_builddir}/S1AP/s1ap_encoder.c' || echo '$(srcdir)/'`${top_builddir}/S1AP/s1ap_encoder.c
+s1ap_encoder.lo: $(top_builddir)/S1AP/s1ap_encoder.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT s1ap_encoder.lo -MD -MP -MF $(DEPDIR)/s1ap_encoder.Tpo -c -o s1ap_encoder.lo `test -f '$(top_builddir)/S1AP/s1ap_encoder.c' || echo '$(srcdir)/'`$(top_builddir)/S1AP/s1ap_encoder.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/s1ap_encoder.Tpo $(DEPDIR)/s1ap_encoder.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='${top_builddir}/S1AP/s1ap_encoder.c' object='s1ap_encoder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/S1AP/s1ap_encoder.c' object='s1ap_encoder.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o s1ap_encoder.lo `test -f '${top_builddir}/S1AP/s1ap_encoder.c' || echo '$(srcdir)/'`${top_builddir}/S1AP/s1ap_encoder.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o s1ap_encoder.lo `test -f '$(top_builddir)/S1AP/s1ap_encoder.c' || echo '$(srcdir)/'`$(top_builddir)/S1AP/s1ap_encoder.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -749,9 +749,9 @@ uninstall-am:
 
 
 clean-local:
-	rm -f ${top_builddir}/S1AP/s1ap_ies_defs.h
-	rm -f ${top_builddir}/S1AP/s1ap_decoder.c
-	rm -f ${top_builddir}/S1AP/s1ap_encoder.c
+	rm -f $(top_builddir)/S1AP/s1ap_ies_defs.h
+	rm -f $(top_builddir)/S1AP/s1ap_decoder.c
+	rm -f $(top_builddir)/S1AP/s1ap_encoder.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

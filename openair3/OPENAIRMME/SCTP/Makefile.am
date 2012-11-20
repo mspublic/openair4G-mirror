@@ -5,7 +5,8 @@ libsctpserver_la_LDFLAGS = -all-static
 AM_CFLAGS = @ADD_CFLAGS@
 
 AM_CPPFLAGS =	\
-	-I${top_srcdir}/INTERTASK_INTERFACE
+	-I$(top_srcdir)/INTERTASK_INTERFACE	\
+	-I$(top_srcdir)/UTILS
 
 libsctpserver_la_SOURCES=	\
 	sctp_primitives_server.h sctp_primitives_server.c
