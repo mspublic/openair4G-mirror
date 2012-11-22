@@ -170,6 +170,13 @@ class ItsKeyManager {
 		 */
 		ItsDataType getDataType(ItsKeyID id);
 		/**
+		 * Returns ITS data type's string name
+		 *
+		 * @param id ITS key ID of the key
+		 * @return std::string name of the data type of the ITS key
+		 */
+		string getDataTypeName(ItsKeyID id);
+		/**
 		 * Sets the value of ITS key given its name
 		 *
 		 * @param name Name of ITS key to be reset
@@ -189,7 +196,7 @@ class ItsKeyManager {
 		 * Returns ITS key ID of ITS key given its name
 		 *
 		 * @param keyName Name of the ITS key being searched
-		 * @return ITS key ID of the ITS key if found, 0xeeee otherwise
+		 * @return ITS key ID of the ITS key if found, 0xDEAD otherwise
 		 */
 		ItsKeyID findKeyId(const string& keyName) const;
 		/**
@@ -217,6 +224,10 @@ class ItsKeyManager {
 		 * List of type std::map for 'ITS key ID to ITS key value' mapping
 		 */
 		map<ItsKeyID, ItsKey> itsKeyMap;
+		/**
+		 * String name map for ITS key data types
+		 */
+		map<ItsDataType, string> itsKeyDataTypeName;
 		/**
 		 * Logger object reference
 		 */

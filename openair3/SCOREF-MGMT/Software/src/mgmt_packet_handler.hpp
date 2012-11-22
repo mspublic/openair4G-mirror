@@ -198,7 +198,7 @@ class PacketHandler {
 		 * @param Pointer to a Configuration Notification packet
 		 * @return Pointer to a PacketHandlerResult object
 		 */
-		static PacketHandlerResult* handleConfigurationNotification(FacConfigurationNotificationPacket* packet);
+		PacketHandlerResult* handleConfigurationNotification(FacConfigurationNotificationPacket* packet);
 		/**
 		 * Handles a Communication Profile Request event message and creates a
 		 * Communication Profile Response packet

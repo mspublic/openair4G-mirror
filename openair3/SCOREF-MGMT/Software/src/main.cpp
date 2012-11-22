@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
 	 */
 	boost::asio::io_service ioService;
 	ManagementClientManager clientManager(mib, configuration, logger);
-	ManagementServer server(ioService, configuration.getServerPort(), mib, clientManager, logger);
+	ManagementServer server(ioService, configuration, mib, clientManager, logger);
 
 	try {
 		ioService.run();

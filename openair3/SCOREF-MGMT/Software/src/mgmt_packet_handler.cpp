@@ -74,9 +74,7 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 		return new PacketHandlerResult(PacketHandlerResult::INVALID_PACKET, NULL);
 	}
 
-	logger.info("Incoming packet size is " + boost::lexical_cast<string>(packetBuffer.size()) + " byte(s)");
 	u_int16_t eventType = GeonetPacket::parseEventTypeOfPacketBuffer(packetBuffer);
-	logger.info("Event field has the value " + boost::lexical_cast<string>(eventType));
 
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
@@ -178,7 +176,19 @@ PacketHandlerResult* PacketHandler::handleLocationTableResponse(GeonetLocationTa
 }
 
 PacketHandlerResult* PacketHandler::handleConfigurationNotification(FacConfigurationNotificationPacket* packet) {
-	// TODO Update MIB with incoming ITS key configuration update
+	if (!packet) {
+		logger.warning("Invalid Configuration Notification packet received!");
+		return NULL;
+	}
+
+	/**
+	 * MIB is already notified about this ITS key value change in the
+	 * constructor of FacConfigurationNotificationPacket class
+	 */
+
+	/**
+	 * Command ManagementServer to notify GN about this update...
+	 */
 	return new PacketHandlerResult(PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE, NULL);
 }
 

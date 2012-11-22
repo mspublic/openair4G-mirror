@@ -116,7 +116,8 @@ string GeonetPacket::toString() const {
 
 	ss << "GeonetHeader[extended:" << isExtended() << ", valid:" << isValid()
 	   << ", version:" << (int) header.getVersion() << ", priority:" << (int) header.getPriority()
-		<< ", event:" << (int) (header.eventType * 100 + header.eventSubtype) << "]";
+		<< ", eventType:" << hex << showbase << (int) header.eventType
+		<< ", eventSubType: " << (int) header.eventSubtype << "]";
 
 	return ss.str();
 }

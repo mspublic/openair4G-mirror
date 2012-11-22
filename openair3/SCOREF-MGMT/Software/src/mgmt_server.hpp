@@ -43,9 +43,12 @@
 #define MGMT_SERVER_H_
 
 #include "mgmt_information_base.hpp"
+#include "mgmt_inquiry_thread.hpp"
 #include "mgmt_packet_handler.hpp"
 #include "mgmt_client_manager.hpp"
+#include "mgmt_configuration.hpp"
 #include "util/mgmt_log.hpp"
+#include <boost/thread.hpp>
 #include <boost/asio.hpp>
 #include <vector>
 using boost::asio::ip::udp;
@@ -62,7 +65,7 @@ class ManagementServer {
 		 */
 		static const u_int16_t RX_BUFFER_SIZE = 1024;
 		/**
-		 * Transmit sbuffer size in bytes
+		 * Transmit buffer size in bytes
 		 */
 		static const u_int16_t TX_BUFFER_SIZE = 1024;
 
@@ -71,11 +74,11 @@ class ManagementServer {
 		 * Constructor for ManagementServer class
 		 *
 		 * @param ioService I/O functionality is passed by the caller
-		 * @param portNumber UDP port number that will be listened/connected to
+		 * @param configuration A reference to the Configuration object of SCOREF-MGMT
 		 * @param mib ManagementInformationBase reference
 		 * @param logger Logger object reference for logging purposes
 		 */
-		ManagementServer(ba::io_service& ioService, u_int16_t portNumber, ManagementInformationBase& mib, ManagementClientManager& clientManager, Logger& logger);
+		ManagementServer(ba::io_service& ioService, const Configuration& configuration, ManagementInformationBase& mib, ManagementClientManager& clientManager, Logger& logger);
 		/**
 		 * Destructor for ManagementServer class
 		 */
@@ -86,7 +89,6 @@ class ManagementServer {
 		 * Receive data
 		 */
 		void readData();
-
 		/**
 		 * Callback for Rx, so called when data is read on the socket
 		 *
@@ -136,9 +138,21 @@ class ManagementServer {
 		 */
 		ManagementInformationBase& mib;
 		/**
+		 * Configuration information
+		 */
+		const Configuration& configuration;
+		/**
 		 * Client manager
 		 */
 		ManagementClientManager& clientManager;
+		/**
+		 * InquiryThread object for Wireless State updates
+		 */
+		InquiryThread* inquiryThreadObject;
+		/**
+		 * InquiryThread runner for Wireless State updates
+		 */
+		boost::thread* inquiryThread;
 		/**
 		 * Logger object reference for logging purposes
 		 */

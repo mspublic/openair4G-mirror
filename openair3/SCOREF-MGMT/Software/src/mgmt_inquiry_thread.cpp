@@ -39,8 +39,6 @@
  * \warning none
 */
 
-#include "packets/mgmt_gn_packet_wireless_state_request.hpp"
-#include "packets/mgmt_gn_packet_location_update.hpp"
 #include "mgmt_inquiry_thread.hpp"
 #include <boost/lexical_cast.hpp>
 #include <boost/date_time.hpp>
@@ -49,8 +47,8 @@
 #include <iostream>
 using namespace std;
 
-InquiryThread::InquiryThread(ManagementInformationBase& mib, UdpSocket& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
-	: connection(connection), mib(mib), logger(logger) {
+InquiryThread::InquiryThread(ManagementInformationBase& mib, void (*callback)(InquiryThread::Task), u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+	: mib(mib), ManagementServerCallback(callback), logger(logger) {
 	this->wirelessStateUpdateInterval = wirelessStateUpdateInterval;
 	this->locationUpdateInterval = locationUpdateInterval;
 }
@@ -103,29 +101,39 @@ void InquiryThread::operator()() {
 }
 
 bool InquiryThread::requestWirelessStateUpdate() {
-	GeonetWirelessStateRequestEventPacket request(logger);
-
-	if (connection.send(request)) {
-		logger.info("Wireless state request message has been sent");
-
-		return true;
-	} else {
-		logger.error("Wireless state request message cannot be sent!");
-
-		return false;
-	}
+	/**
+	 * Notify ManagementServer to ask for updated Wireless State...
+	 */
+	ManagementServerCallback(InquiryThread::SEND_WIRELESS_STATE_UPDATE);
+	return true;
+//	GeonetWirelessStateRequestEventPacket request(logger);
+//
+//	if (connection.send(request)) {
+//		logger.info("Wireless state request message has been sent");
+//
+//		return true;
+//	} else {
+//		logger.error("Wireless state request message cannot be sent!");
+//
+//		return false;
+//	}
 }
 
 bool InquiryThread::requestLocationUpdate() {
-	GeonetLocationUpdateEventPacket request(mib, logger);
-
-	if (connection.send(request)) {
-		logger.info("Location Update message has been sent");
-
-		return true;
-	} else {
-		logger.error("Location Update message cannot be sent!");
-
-		return false;
-	}
+	/**
+	 * Notify ManagementServer for the Location Update...
+	 */
+	ManagementServerCallback(InquiryThread::SEND_LOCATION_UPDATE);
+	return true;
+//	GeonetLocationUpdateEventPacket request(mib, logger);
+//
+//	if (connection.send(request)) {
+//		logger.info("Location Update message has been sent");
+//
+//		return true;
+//	} else {
+//		logger.error("Location Update message cannot be sent!");
+//
+//		return false;
+//	}
 }

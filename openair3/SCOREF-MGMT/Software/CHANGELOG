@@ -1,4 +1,14 @@
 
+v1.3.2
+* ItsKeyManager error code has been changed to 0xDEAD from 0xEEEE
+* GN addresses are now printed the same way HITACHI does
+* ManagementClient does not have anything to do with neither UdpSocket nor 
+  boost::thread anymore, they're handled by ManagementServer now
+* InquiryThread doesn't play with UdpSocket anymore either, it merely notifies
+  ManagementServer to do what is necessary
+* Bugfix Size check in FacConfigurationNotificationPacket::parse() doesn't 
+  discard valid packets anymore
+
 v1.3.1
 * CONFIGURATION_NOTIFICATION packet of FACilities added to simulator
 * A new scenario file 04.sce has been added for CONFIGURATION_NOTIFICATION

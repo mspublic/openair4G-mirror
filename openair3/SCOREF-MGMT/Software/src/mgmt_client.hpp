@@ -42,15 +42,11 @@
 #ifndef MGMT_CLIENT_HPP_
 #define MGMT_CLIENT_HPP_
 
-#include "mgmt_inquiry_thread.hpp"
 #include "util/mgmt_log.hpp"
-
-#include <boost/thread.hpp>
 #include <boost/asio.hpp>
-using boost::asio::ip::udp;
-
 #include <string>
 #include <map>
+using boost::asio::ip::udp;
 
 /**
  * A container to hold information about Management clients, mostly used
@@ -189,10 +185,6 @@ class ManagementClient {
 		 */
 		ManagementInformationBase& mib;
 		/**
-		 * Client's UDP socket
-		 */
-		UdpSocket* clientSocket;
-		/**
 		 * Client's udp::endpoint information
 		 */
 		udp::endpoint clientEndpoint;
@@ -204,14 +196,6 @@ class ManagementClient {
 		 * Client type
 		 */
 		ManagementClient::ManagementClientType type;
-		/**
-		 * InquiryThread object for Wireless State updates
-		 */
-		InquiryThread* inquiryThreadObject;
-		/**
-		 * InquiryThread runner for Wireless State updates
-		 */
-		boost::thread* inquiryThread;
 		/**
 		 * Logger object reference
 		 */
