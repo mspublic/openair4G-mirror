@@ -44,6 +44,7 @@
 
 #include "util/mgmt_util.hpp"
 #include <sys/types.h>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -251,17 +252,21 @@ struct LocationTableItem {
 	string toString() const {
 		stringstream ss;
 
-		ss << "[gnAddr:" << gnAddress << ", "
-			<< "timestamp:" << timestamp << ", "
-			<< "lat.:" << latitude << ", "
-			<< "long.:" << longitude << ", "
-			<< "speed:" << speed << ", "
-			<< "heading:" << heading << ", "
-			<< "alt.:" << altitude << ", "
-			<< "accel.:" << acceleration << ", "
-			<< "seqNum:" << sequenceNumber << ", "
-			<< "lpvFlags:" << (int)lpvFlags << ", "
-			<< "res.:" << (int)reserved << "]";
+		/**
+		 * Print GN address in hex (as Andrea told) and the rest in decimal notation
+		 */
+		ss << "[gnAddr:" << hex << showbase << gnAddress << ", ";
+		ss << resetiosflags(ios_base::hex) << resetiosflags(ios_base::showbase);
+		ss << "ts:" << timestamp
+			<< " lat.:" << latitude
+			<< " long.:" << longitude
+			<< " speed:" << speed
+			<< " heading:" << heading
+			<< " alt.:" << altitude
+			<< " accel.:" << acceleration
+			<< " sn.:" << sequenceNumber
+			<< " lpv:" << (int)lpvFlags
+			<< " res.:" << (int)reserved << "]";
 
 		return ss.str();
 	}
@@ -384,7 +389,7 @@ struct ConfigurationItem {
  */
 struct VariableSizeConfigurationItem {
 	u_int16_t configurationId;
-	u_int16_t length; /* # of DWORDS */
+	u_int16_t length; /* # of bytes */
 	vector<unsigned char> configurationBuffer;
 };
 

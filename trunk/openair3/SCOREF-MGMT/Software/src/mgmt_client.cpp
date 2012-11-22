@@ -56,16 +56,6 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint
 	}
 
 	/**
-	 * Create a UDP socket for this client
-	 */
-	try {
-		clientSocket = new UdpSocket(clientEndpoint.address().to_string(), clientEndpoint.port(), logger);
-	} catch (Exception& e) {
-		e.updateStackTrace("Cannot create a UDP client socket!");
-		throw;
-	}
-
-	/**
 	 * Initialise state strings map
 	 */
 	clientStateStringMap.insert(std::make_pair(ManagementClient::OFFLINE, "OFFLINE"));
@@ -82,13 +72,6 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint
 	 */
 	state = ManagementClient::OFFLINE;
 	type = ManagementClient::UNKNOWN;
-
-	/**
-	 * Initialise InquiryThread object for Wireless State updates
-	 */
-	// TODO who is going to join() this thread?
-//	inquiryThreadObject = new InquiryThread(mib, *this->clientSocket, wirelessStateUpdateInterval, locationUpdateInterval, logger);
-//	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
 
 ManagementClient::ManagementClient(const ManagementClient& managementClient)
@@ -98,18 +81,14 @@ ManagementClient::ManagementClient(const ManagementClient& managementClient)
 
 ManagementClient::~ManagementClient() {
 	clientTypeStringMap.clear();
-
-	delete inquiryThreadObject;
-	delete inquiryThread;
-	delete clientSocket;
 }
 
 boost::asio::ip::address ManagementClient::getAddress() const {
-	return clientSocket->getRecipient().address();
+	return clientEndpoint.address();
 }
 
 unsigned short int ManagementClient::getPort() const {
-	return clientSocket->getRecipient().port();
+	return clientEndpoint.port();
 }
 
 const udp::endpoint& ManagementClient::getEndpoint() const {
@@ -156,14 +135,14 @@ bool ManagementClient::setType(ManagementClient::ManagementClientType type) {
 }
 
 bool ManagementClient::operator==(const ManagementClient& client) const {
-	if (this->clientSocket->getRecipient().address() == client.getAddress())
+	if (this->clientEndpoint.address() == client.getAddress())
 		return true;
 
 	return false;
 }
 
 bool ManagementClient::operator<(const ManagementClient& client) const {
-	if (this->clientSocket->getRecipient().address() < client.getAddress())
+	if (this->clientEndpoint.address() < client.getAddress())
 		return true;
 
 	return false;
@@ -172,8 +151,8 @@ bool ManagementClient::operator<(const ManagementClient& client) const {
 string ManagementClient::toString() {
 	stringstream ss;
 
-	ss << "ManagementClient[ip:" << clientSocket->getRecipient().address().to_string()
-		<< ", port:" << boost::lexical_cast<string>(clientSocket->getRecipient().port())
+	ss << "ManagementClient[ip:" << clientEndpoint.address().to_string()
+		<< ", port:" << boost::lexical_cast<string>(clientEndpoint.port())
 		<< ", type:" << clientTypeStringMap[type] << ", state:" << clientStateStringMap[state] << "]";
 
 	return ss.str();

@@ -40,26 +40,49 @@
 */
 
 #include "packets/mgmt_gn_packet_configuration_available.hpp"
+#include "packets/mgmt_gn_packet_wireless_state_request.hpp"
 #include "packets/mgmt_gn_packet_location_table_request.hpp"
+#include "packets/mgmt_gn_packet_location_update.hpp"
 #include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 #include "mgmt_server.hpp"
 #include <boost/bind.hpp>
 
-ManagementServer::ManagementServer(ba::io_service& ioService, u_int16_t portNumber, ManagementInformationBase& mib, ManagementClientManager& clientManager, Logger& logger)
-	try : ioService(ioService), socket(ioService, ba::ip::udp::endpoint(udp::v4(), portNumber)), mib(mib), clientManager(clientManager),
+/**
+ * Callback for the InquiryThread that it uses when we should request a Location
+ * Update or a Wireless State Update
+ */
+void handleInquiryThreadTasks(InquiryThread::Task task) {
+	cerr << "InquiryThread called me with task " << (int)task << endl;
+}
+
+ManagementServer::ManagementServer(ba::io_service& ioService, const Configuration& configuration, ManagementInformationBase& mib, ManagementClientManager& clientManager, Logger& logger)
+	try : ioService(ioService), socket(ioService, ba::ip::udp::endpoint(udp::v4(), configuration.getServerPort())), mib(mib), configuration(configuration), clientManager(clientManager),
 	  logger(logger), packetHandler(mib, logger) {
 		/**
 		 * Immediately start reading data
 		 */
-		logger.info("Reading data on port " + boost::lexical_cast<string>(portNumber));
+		logger.info("Reading data on port " + boost::lexical_cast<string>(configuration.getServerPort()));
 		readData();
+
+		/**
+		 * Initialise InquiryThread object for Wireless State updates
+		 */
+		try {
+			inquiryThreadObject = new InquiryThread(mib, handleInquiryThreadTasks, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
+			inquiryThread = new boost::thread(*inquiryThreadObject);
+		} catch (std::exception& e) {
+			throw Exception(e.what(), logger);
+		}
 	} catch (Exception& e) {
-		e.updateStackTrace("Cannot initialize ManagementServer members!");
+		e.updateStackTrace("Cannot initialize ManagementServer!");
 		throw;
 	}
 
-ManagementServer::~ManagementServer() {}
+ManagementServer::~ManagementServer() {
+	delete inquiryThreadObject;
+	delete inquiryThread;
+}
 
 void ManagementServer::readData() {
 	/**

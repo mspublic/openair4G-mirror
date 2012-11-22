@@ -112,25 +112,43 @@ bool ManagementInformationBase::setValue(ItsKeyID id, const vector<unsigned char
 	/**
 	 * Set the value according to its data type
 	 */
+	logger.info("ITS key type to be changed is " + itsKeyManager.getDataTypeName(id));
+
 	switch (itsKeyManager.getDataType(id)) {
 		case ITS_DATA_TYPE_FLOAT:
 			if (value.size() != 4) {
 				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has float type but incompatible size");
 				return false;
-			}
+			} else
+				logger.debug("ITS Key size is compatible, updating corresponding key...");
+
+			/**
+			 * And update the value
+			 */
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).floatValue));
 			itsKeyManager.getKeyValue(id).floatValue = Util::parse4byteFloat(value);
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s new value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).floatValue));
 			break;
 
 		case ITS_DATA_TYPE_INTEGER:
 			if (value.size() != 4) {
 				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has integer type but incompatible size");
 				return false;
-			}
+			} else
+				logger.debug("ITS Key size is compatible, updating corresponding key...");
+
+			/**
+			 * And update the value
+			 */
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).intValue));
 			Util::parse4byteInteger(value.data(), &itsKeyManager.getKeyValue(id).intValue);
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s new value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).intValue));
 			break;
 
 		case ITS_DATA_TYPE_STRING:
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + itsKeyManager.getKeyValue(id).stringValue);
 			itsKeyManager.getKeyValue(id).stringValue = string(value.begin(), value.end());
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + itsKeyManager.getKeyValue(id).stringValue);
 			break;
 
 		default:

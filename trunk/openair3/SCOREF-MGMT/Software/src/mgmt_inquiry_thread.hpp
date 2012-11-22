@@ -42,21 +42,37 @@
 #ifndef MGMT_INQUIRY_THREAD_HPP_
 #define MGMT_INQUIRY_THREAD_HPP_
 
-#include "util/mgmt_udp_socket.hpp"
+#include "mgmt_information_base.hpp"
 #include "util/mgmt_log.hpp"
 
 class InquiryThread {
 	public:
 		/**
+		 * Tasks that this class sends back to it's mummy when there's
+		 * something that has to be done such as requesting some updates
+		 * from GN
+		 */
+		enum Task {
+			/**
+			 * Location Update has to be sent
+			 */
+			SEND_LOCATION_UPDATE = 0,
+			/**
+			 * Wireless State has to be updated
+			 */
+			SEND_WIRELESS_STATE_UPDATE = 1
+		};
+
+	public:
+		/**
 		 * Constructor for InquiryThread class
 		 *
 		 * @param mib Management Information Base reference
-		 * @param connection UdpServer object that the questions will be asked through
 		 * @param wirelessStateUpdateInterval Wireless State Update interval in seconds
 		 * @param locationUpdateInterval Location Update interval in seconds
 		 * @param logger Logger object reference
 		 */
-		InquiryThread(ManagementInformationBase& mib, UdpSocket& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		InquiryThread(ManagementInformationBase& mib, void (*ManagementServerCallback)(InquiryThread::Task), u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for InquiryThread class
 		 */
@@ -66,7 +82,7 @@ class InquiryThread {
 		/**
 		 * () operator overload to pass this method to boost::thread
 		 *
-		 * todo this method is too complex and prone to errors, should be revised
+		 * todo this method is too complex and prone to errors, better be refactored
 		 */
 		void operator()();
 		/**
@@ -84,10 +100,6 @@ class InquiryThread {
 
 	private:
 		/**
-		 * UdpServer object reference to communicate with client
-		 */
-		UdpSocket& connection;
-		/**
 		 * Wireless State Update interval in seconds
 		 */
 		u_int8_t wirelessStateUpdateInterval;
@@ -100,10 +112,13 @@ class InquiryThread {
 		 */
 		ManagementInformationBase& mib;
 		/**
+		 * Caller's callback sent to this class to be called by the callee
+		 */
+		void (*ManagementServerCallback)(InquiryThread::Task);
+		/**
 		 * Logger object reference
 		 */
 		Logger& logger;
 };
-
 
 #endif /* MGMT_INQUIRY_THREAD_HPP_ */

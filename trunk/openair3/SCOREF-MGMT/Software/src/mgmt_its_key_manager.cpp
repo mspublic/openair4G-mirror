@@ -46,6 +46,12 @@
 #include <sstream>
 
 ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {
+	/**
+	 * Insert string correspondences for numerical values of ITS key data types
+	 */
+	itsKeyDataTypeName.insert(itsKeyDataTypeName.end(), std::make_pair(ITS_DATA_TYPE_FLOAT, "FLOAT"));
+	itsKeyDataTypeName.insert(itsKeyDataTypeName.end(), std::make_pair(ITS_DATA_TYPE_INTEGER, "INTEGER"));
+	itsKeyDataTypeName.insert(itsKeyDataTypeName.end(), std::make_pair(ITS_DATA_TYPE_STRING, "STRING"));
 }
 
 ItsKeyManager::~ItsKeyManager() {
@@ -62,7 +68,7 @@ ItsKeyID ItsKeyManager::findKeyId(const string& keyName) const {
 		++iterator;
 	}
 
-	return static_cast<ItsKeyID>(0xeeee);
+	return static_cast<ItsKeyID>(0xDEAD);
 }
 
 map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
@@ -146,6 +152,10 @@ ItsKeyType ItsKeyManager::getKeyType(ItsKeyID id) {
 
 ItsDataType ItsKeyManager::getDataType(ItsKeyID id) {
 	return itsKeyMap[id].dataType;
+}
+
+string ItsKeyManager::getDataTypeName(ItsKeyID id) {
+	return itsKeyDataTypeName[itsKeyMap[id].dataType];
 }
 
 bool ItsKeyManager::setKeyValue(const string& name, ItsKeyValue value) {
