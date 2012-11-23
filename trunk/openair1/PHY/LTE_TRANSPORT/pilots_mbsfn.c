@@ -74,7 +74,7 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
 	       &txdataF[0][subframe_offset+(2*samples_per_symbol)],
 	       amp,
 	       subframe,
-	       2,
+	       0,
 	       4);
 
     
@@ -84,7 +84,7 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
 	       &txdataF[0][subframe_offset+(6*samples_per_symbol)],
 	       amp,
 	       subframe,
-	       6,
+	       1,
 	       4);
 		   
     //antenna 4 symbol 4 slot 1
@@ -92,7 +92,7 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
 	       &txdataF[0][subframe_offset+(10*samples_per_symbol)],
 	       amp,
 	       subframe,
-	       10,
+	       2,
 	       4);
      
   return(0);  

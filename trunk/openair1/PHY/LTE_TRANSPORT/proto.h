@@ -216,7 +216,11 @@ s32 generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
 			 s16 amp,
 			 u16 slot);
-
+			 
+s32 generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
+			 mod_sym_t **txdataF,
+			 s16 amp,
+			 u16 subframe);
 
 s32 generate_pss(mod_sym_t **txdataF,
 		 s16 amp,

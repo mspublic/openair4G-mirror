@@ -99,13 +99,13 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
 					0,
 				    subframe,
 				    l);					
-	for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {		
+	 /*   for (i=0;i<phy_vars_ue->PHY_measurements.n_adj_cells;i++) {		
 		lte_dl_mbsfn_channel_estimation(phy_vars_ue,
 				    eNB_id,
 					i+1,
 				    subframe,
 				    l);		
-    /*  lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
+   /* lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
 				Ns,
 				aa,
 				l,
@@ -115,8 +115,8 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
 				  Ns,
 				  aa,
 				  l,
-				  symbol);*/
-      }
+				  symbol); */
+    //  } 
 #endif
 
       // do frequency offset estimation here!
