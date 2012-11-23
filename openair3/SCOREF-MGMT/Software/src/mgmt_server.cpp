@@ -48,14 +48,6 @@
 #include "mgmt_server.hpp"
 #include <boost/bind.hpp>
 
-/**
- * Callback for the InquiryThread that it uses when we should request a Location
- * Update or a Wireless State Update
- */
-void handleInquiryThreadTasks(InquiryThread::Task task) {
-	cerr << "InquiryThread called me with task " << (int)task << endl;
-}
-
 ManagementServer::ManagementServer(ba::io_service& ioService, const Configuration& configuration, ManagementInformationBase& mib, ManagementClientManager& clientManager, Logger& logger)
 	try : ioService(ioService), socket(ioService, ba::ip::udp::endpoint(udp::v4(), configuration.getServerPort())), mib(mib), configuration(configuration), clientManager(clientManager),
 	  logger(logger), packetHandler(mib, logger) {
@@ -69,7 +61,7 @@ ManagementServer::ManagementServer(ba::io_service& ioService, const Configuratio
 		 * Initialise InquiryThread object for Wireless State updates
 		 */
 		try {
-			inquiryThreadObject = new InquiryThread(mib, handleInquiryThreadTasks, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
+			inquiryThreadObject = new InquiryThread(this, configuration.getWirelessStateUpdateInterval(), logger);
 			inquiryThread = new boost::thread(*inquiryThreadObject);
 		} catch (std::exception& e) {
 			throw Exception(e.what(), logger);
@@ -82,6 +74,39 @@ ManagementServer::ManagementServer(ba::io_service& ioService, const Configuratio
 ManagementServer::~ManagementServer() {
 	delete inquiryThreadObject;
 	delete inquiryThread;
+}
+
+bool ManagementServer::sendWirelessStateRequest() {
+	/**
+	 * Check if there's a GN connected
+	 */
+	if (!clientManager.isGnConnected()) {
+		logger.warning("Wanted to send a Wireless Status Request but GN is not connected...");
+		return false;
+	}
+
+	/**
+	 * Create the relevant packet and serialize it
+	 */
+	GeonetWirelessStateRequestEventPacket request(logger);
+
+	txData.resize(TX_BUFFER_SIZE);
+	request.serialize(txData);
+
+	/**
+	 * Send serialized data thru socket
+	 */
+	socket.async_send_to(ba::buffer(txData), recipient,
+			boost::bind(&ManagementServer::handleSend, this,
+					ba::placeholders::error,
+					ba::placeholders::bytes_transferred));
+
+	/**
+	 * Reset TX buffer
+	 */
+	txData.resize(TX_BUFFER_SIZE);
+
+	return true;
 }
 
 void ManagementServer::readData() {

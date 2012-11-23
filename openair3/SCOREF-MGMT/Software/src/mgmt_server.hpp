@@ -42,6 +42,7 @@
 #ifndef MGMT_SERVER_H_
 #define MGMT_SERVER_H_
 
+#include "interface/mgmt_packet_sender.hpp"
 #include "mgmt_information_base.hpp"
 #include "mgmt_inquiry_thread.hpp"
 #include "mgmt_packet_handler.hpp"
@@ -58,7 +59,7 @@ namespace ba = boost::asio;
 /**
  * Management server functionality and a wrapper for boost::asio's asynchronous I/O
  */
-class ManagementServer {
+class ManagementServer : public IManagementPacketSender {
 	public:
 		/**
 		 * Receive buffer size in bytes
@@ -83,6 +84,15 @@ class ManagementServer {
 		 * Destructor for ManagementServer class
 		 */
 		~ManagementServer();
+
+	public:
+		/**
+		 * Implementation of IManagementPacketSender functionality
+		 *
+		 * @param none
+		 * @return true on success, false otherwise
+		 */
+		bool sendWirelessStateRequest();
 
 	public:
 		/**

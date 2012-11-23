@@ -170,7 +170,7 @@ ManagementClientManager::Task ManagementClientManager::updateManagementClientSta
 	return ManagementClientManager::NOTHING;
 }
 
-const ManagementClient* ManagementClientManager::getClientByType(ManagementClient::ManagementClientType clientType) {
+const ManagementClient* ManagementClientManager::getClientByType(ManagementClient::ManagementClientType clientType) const {
 	/**
 	 * Traverse client vector and find the specific client of given type
 	 */
@@ -180,6 +180,14 @@ const ManagementClient* ManagementClientManager::getClientByType(ManagementClien
 	}
 
 	return NULL;
+}
+
+bool ManagementClientManager::isGnConnected() const {
+	return (getClientByType(ManagementClient::GN) == NULL) ? false : true;
+}
+
+bool ManagementClientManager::isFacConnected() const {
+	return (getClientByType(ManagementClient::FAC) == NULL) ? false : true;
 }
 
 string ManagementClientManager::toString() {

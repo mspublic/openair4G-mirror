@@ -28,8 +28,8 @@
 *******************************************************************************/
 
 /*!
- * \file mgmt_inquiry_thread.hpp
- * \brief A thread worker function to ask repetitive questions to relevant modules to update MIB
+ * \file mgmt_packet_sender.hpp
+ * \brief This is an abstract base class implemented by ManagementServer class
  * \company EURECOM
  * \date 2012
  * \author Baris Demiray
@@ -39,54 +39,28 @@
  * \warning none
 */
 
-#ifndef MGMT_INQUIRY_THREAD_HPP_
-#define MGMT_INQUIRY_THREAD_HPP_
+#ifndef MGMT_PACKET_SENDER_H_
+#define MGMT_PACKET_SENDER_H_
 
-#include "interface/mgmt_packet_sender.hpp"
-#include "mgmt_information_base.hpp"
-#include "util/mgmt_log.hpp"
-
-class InquiryThread {
+/**
+ * This is an abstract base class implemented by ManagementServer class
+ * to provide functionality of status query packet sending for InquiryThread
+ */
+class IManagementPacketSender {
 	public:
 		/**
-		 * Constructor for InquiryThread class
-		 *
-		 * @param wirelessStateUpdateInterval Wireless State Update interval in seconds
-		 * @param logger Logger object reference
+		 * Virtual destructor for this abstract base class
 		 */
-		InquiryThread(IManagementPacketSender* packetSender, u_int8_t wirelessStateUpdateInterval, Logger& logger);
-		/**
-		 * Destructor for InquiryThread class
-		 */
-		virtual ~InquiryThread();
+//		virtual ~IManagementPacketSender() = 0;
 
 	public:
 		/**
-		 * () operator overload to pass this method to boost::thread
+		 * Send a Wireless State Request packet to GN client
 		 *
-		 * todo this method is too complex and prone to errors, better be refactored
+		 * @param none
+		 * @return true if success, false otherwise
 		 */
-		void operator()();
-		/**
-		 * Sends request for a Wireless State Response message
-		 * Incoming message will be handled and MIB will be updated
-		 * accordingly by GeonetMessageHandler class
-		 */
-		bool requestWirelessStateUpdate();
-
-	private:
-		/**
-		 * IManagementPacketSender reference to use ManagementServer's functionality
-		 */
-		IManagementPacketSender* packetSender;
-		/**
-		 * Wireless State Update interval in seconds
-		 */
-		u_int8_t wirelessStateUpdateInterval;
-		/**
-		 * Logger object reference
-		 */
-		Logger& logger;
+		virtual bool sendWirelessStateRequest() = 0;
 };
 
-#endif /* MGMT_INQUIRY_THREAD_HPP_ */
+#endif /* MGMT_PACKET_SENDER_H_ */

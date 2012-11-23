@@ -47,10 +47,9 @@
 #include <iostream>
 using namespace std;
 
-InquiryThread::InquiryThread(ManagementInformationBase& mib, void (*callback)(InquiryThread::Task), u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
-	: mib(mib), ManagementServerCallback(callback), logger(logger) {
+InquiryThread::InquiryThread(IManagementPacketSender* packetSender, u_int8_t wirelessStateUpdateInterval, Logger& logger)
+	: packetSender(packetSender), logger(logger) {
 	this->wirelessStateUpdateInterval = wirelessStateUpdateInterval;
-	this->locationUpdateInterval = locationUpdateInterval;
 }
 
 InquiryThread::~InquiryThread() {
@@ -58,82 +57,27 @@ InquiryThread::~InquiryThread() {
 
 void InquiryThread::operator()() {
 	/**
-	 * Find smaller interval and the difference between them
+	 * Send a Wireless State Request every `wirelessStateUpdateInterval' second(s)
 	 */
-	if (wirelessStateUpdateInterval == locationUpdateInterval) {
-		boost::posix_time::seconds wait(wirelessStateUpdateInterval);
+	boost::posix_time::seconds wait(wirelessStateUpdateInterval);
 
-		while (true) {
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Update and a Location Update");
-			boost::this_thread::sleep(wait);
-			if (!requestWirelessStateUpdate() || !requestLocationUpdate())
-				break;
-		}
-
-	} else if (wirelessStateUpdateInterval > locationUpdateInterval) {
-		boost::posix_time::seconds wait(locationUpdateInterval), difference(wirelessStateUpdateInterval - locationUpdateInterval);
-
-		while (true) {
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)locationUpdateInterval) + " second(s) to send a Location Update");
-			boost::this_thread::sleep(wait);
-			if (!requestLocationUpdate())
-				break;
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval - locationUpdateInterval) + " second(s) to send a Wireless Update");
-			boost::this_thread::sleep(difference);
-			if (!requestWirelessStateUpdate())
-				break;
-		}
-	} else {
-		boost::posix_time::seconds wait(wirelessStateUpdateInterval), difference(locationUpdateInterval - wirelessStateUpdateInterval);
-
-		while (true) {
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Update");
-			boost::this_thread::sleep(wait);
-			if (!requestWirelessStateUpdate())
-				break;
-
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)locationUpdateInterval - wirelessStateUpdateInterval) + " second(s) to send a Location Update");
-			boost::this_thread::sleep(difference);
-			if (!requestLocationUpdate())
-				break;
-		}
+	while (true) {
+		logger.info("Will wait for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Update");
+		boost::this_thread::sleep(wait);
+		requestWirelessStateUpdate();
 	}
 }
 
 bool InquiryThread::requestWirelessStateUpdate() {
 	/**
-	 * Notify ManagementServer to ask for updated Wireless State...
+	 * Use ManagementServerFunctionality to send a Wireless State Update to GN
 	 */
-	ManagementServerCallback(InquiryThread::SEND_WIRELESS_STATE_UPDATE);
-	return true;
-//	GeonetWirelessStateRequestEventPacket request(logger);
-//
-//	if (connection.send(request)) {
-//		logger.info("Wireless state request message has been sent");
-//
-//		return true;
-//	} else {
-//		logger.error("Wireless state request message cannot be sent!");
-//
-//		return false;
-//	}
-}
+	if (packetSender->sendWirelessStateRequest() == false) {
+		logger.warning("Cannot send a Wireless State Request packet to GN!");
+		return false;
+	}
 
-bool InquiryThread::requestLocationUpdate() {
-	/**
-	 * Notify ManagementServer for the Location Update...
-	 */
-	ManagementServerCallback(InquiryThread::SEND_LOCATION_UPDATE);
+	logger.info("A Wireless State Request sent to GN");
+
 	return true;
-//	GeonetLocationUpdateEventPacket request(mib, logger);
-//
-//	if (connection.send(request)) {
-//		logger.info("Location Update message has been sent");
-//
-//		return true;
-//	} else {
-//		logger.error("Location Update message cannot be sent!");
-//
-//		return false;
-//	}
 }
