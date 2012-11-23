@@ -1,4 +1,7 @@
 
+v1.3.4
+* These documentation files have been updated: README.RUNNING, README.HEADER_TEMPLATE, README.BUILD, README
+
 v1.3.3
 * CONF_LOCATION_UPDATE_INTERVAL removed from the configuration file, functionality is kept, though
 * Bugfix Incoming buffer size is now validated in GeonetWirelessStateRequestEventPacket::serialize()

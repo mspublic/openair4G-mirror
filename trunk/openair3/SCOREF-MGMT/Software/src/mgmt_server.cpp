@@ -290,7 +290,6 @@ void ManagementServer::handleClientData() {
 				delete locationTableRequest;
 			} catch (...) {
 				throw Exception("Cannot create/serialize a Location Table Request packet!", logger);
-				break;
 			}
 
 			/**
