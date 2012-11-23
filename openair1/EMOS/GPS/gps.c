@@ -87,9 +87,10 @@ int main(int argc, char *argv[]) {
       printf("Could not open GPS\n");
       exit(-1);
     }
-  else if (gps_query(gps_data, "w+x\n") != 0)
-    {
-      //sprintf(tmptxt,"Error sending command to GPS, gps_data = %x", gps_data);
+  //  else if (gps_stream(gps_data, WATCH_ENABLE,NULL) != 0)
+   else if (gps_query(gps_data, "w+x") != 0)
+  {
+    //sprintf(tmptxt,"Error sending command to GPS, gps_data = %x", gps_data);
       printf("Error sending command to GPS\n");
       exit(-1);
     }
