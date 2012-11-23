@@ -72,8 +72,6 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_mbsfn_table[10]
 }
 
 
-
-
 #ifdef LTE_GOLD_MAIN
 main() {
 
