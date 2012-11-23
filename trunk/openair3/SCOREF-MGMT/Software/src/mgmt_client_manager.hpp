@@ -101,7 +101,21 @@ class ManagementClientManager {
 		 *
 		 * @return A const pointer of the ManagementClient object of given type
 		 */
-		const ManagementClient* getClientByType(ManagementClient::ManagementClientType clientType);
+		const ManagementClient* getClientByType(ManagementClient::ManagementClientType clientType) const;
+		/**
+		 * Tells if GN is connected
+		 *
+		 * @param none
+		 * @return true if there's a GN connected, false otherwise
+		 */
+		bool isGnConnected() const;
+		/**
+		 * Tells if FAC is connected
+		 *
+		 * @param none
+		 * @return true if there's a FAC connected, false otherwise
+		 */
+		bool isFacConnected() const;
 		/**
 		 * Returns the string representation of Client Manager and the clients it manages
 		 *

@@ -1,4 +1,10 @@
 
+v1.3.3
+* CONF_LOCATION_UPDATE_INTERVAL removed from the configuration file, functionality is kept, though
+* Bugfix Incoming buffer size is now validated in GeonetWirelessStateRequestEventPacket::serialize()
+* InquiryThread's interface has been changed a little, now it receives ManagementServer functionality 
+  as a IManagementPacketSender interface not to expose everything to the thread
+
 v1.3.2
 * ItsKeyManager error code has been changed to 0xDEAD from 0xEEEE
 * GN addresses are now printed the same way HITACHI does
