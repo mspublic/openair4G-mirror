@@ -46,10 +46,13 @@
 #include <errno.h>
 #include <math.h>
 #include <time.h>
-
+#include <gps.h>
+#include <forms.h>
 
 #include "SCHED/phy_procedures_emos.h"
 #include "emos_dump.h"
+struct gps_data_t *gps_data = NULL;
+struct gps_fix_t dummy_gps_data;
 
 int end=0;
 
@@ -80,9 +83,33 @@ int main (int argc, char **argv)
   char  dumpfile_name[1024];
   time_t starttime_tmp;
   struct tm starttime;
-
+  
   int channel_buffer_size;
+  
+  time_t timer;
+  struct tm *now;
+ 
 
+  timer = time(NULL);
+  now = localtime(&timer);
+  
+  gps_data = gps_open("127.0.0.1","2947");
+  if (gps_data == NULL) 
+    {
+      printf("Could not open GPS\n");
+      exit(-1);
+    }
+#if GPSD_API_MAJOR_VERSION>=4
+  else if (gps_stream(gps_data, WATCH_ENABLE,NULL) != 0)
+#else
+  else if (gps_query(gps_data, "w+x") != 0)
+#endif
+    {
+      //sprintf(tmptxt,"Error sending command to GPS, gps_data = %x", gps_data);
+      printf("Error sending command to GPS\n");
+      exit(-1);
+    }
+  
   while ((c = getopt (argc, argv, "he")) != -1) {
     switch (c) {
     case 'e':
@@ -138,11 +165,12 @@ int main (int argc, char **argv)
   while (!end)
     {
       bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, channel_buffer_size);
+      /*
       if (eNB_flag==1)
 	printf("eNB: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
       else
 	printf("UE: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx,bytes);
-
+      */
       fifo2file_ptr += channel_buffer_size;
       counter ++;
 
@@ -153,20 +181,49 @@ int main (int argc, char **argv)
           counter = 0;
 
           //flush buffer to disk
-          printf("flushing buffer to disk\n");
+	  if (eNB_flag==1)
+	    printf("eNB: count %d, frame %d, flushing buffer to disk\n",
+		   counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx);
+	  else
+	    printf("UE: count %d, frame %d, flushing buffer to disk\n",
+		   counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx);
+
 
           if (fwrite(fifo2file_buffer, sizeof(char), NO_ESTIMATES_DISK*channel_buffer_size, dumpfile_id) != NO_ESTIMATES_DISK*channel_buffer_size)
             {
               fprintf(stderr, "Error writing to dumpfile\n");
               exit(EXIT_FAILURE);
             }
+	  if (gps_data)
+	    {
+	      if (gps_poll(gps_data) != 0) {
+		printf("problem polling data from gps\n");
+	      }
+	      else {
+		printf("lat %g, lon %g\n",gps_data->fix.latitude,gps_data->fix.longitude);
+	      }
+	      if (fwrite(&(gps_data->fix), sizeof(char), sizeof(struct gps_fix_t), dumpfile_id) != sizeof(struct gps_fix_t))
+		{
+		  printf("Error writing to dumpfile, stopping recording\n");
+		  exit(EXIT_FAILURE);
+		}
+	    }
+	  else
+	    {
+	      printf("WARNING: No GPS data available, storing dummy packet\n");
+	      if (fwrite(&(dummy_gps_data), sizeof(char), sizeof(struct gps_fix_t), dumpfile_id) != sizeof(struct gps_fix_t))
+		{
+		  printf("Error writing to dumpfile, stopping recording\n");
+		  exit(EXIT_FAILURE);
+		}
+	    } 
         }
     }
-
+  
   free(fifo2file_buffer);
   fclose(dumpfile_id);
   close(fifo);
-
+  
   return 0;
 
 }
