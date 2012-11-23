@@ -99,7 +99,11 @@ int main (int argc, char **argv)
       printf("Could not open GPS\n");
       exit(-1);
     }
+#if GPSD_API_MAJOR_VERSION>=4
   else if (gps_stream(gps_data, WATCH_ENABLE,NULL) != 0)
+#else
+  else if (gps_query(gps_data, "w+x") != 0)
+#endif
     {
       //sprintf(tmptxt,"Error sending command to GPS, gps_data = %x", gps_data);
       printf("Error sending command to GPS\n");
@@ -161,11 +165,12 @@ int main (int argc, char **argv)
   while (!end)
     {
       bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, channel_buffer_size);
+      /*
       if (eNB_flag==1)
 	printf("eNB: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
       else
 	printf("UE: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx,bytes);
-
+      */
       fifo2file_ptr += channel_buffer_size;
       counter ++;
 
@@ -176,7 +181,13 @@ int main (int argc, char **argv)
           counter = 0;
 
           //flush buffer to disk
-          printf("flushing buffer to disk\n");
+	  if (eNB_flag==1)
+	    printf("eNB: count %d, frame %d, flushing buffer to disk\n",
+		   counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx);
+	  else
+	    printf("UE: count %d, frame %d, flushing buffer to disk\n",
+		   counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx);
+
 
           if (fwrite(fifo2file_buffer, sizeof(char), NO_ESTIMATES_DISK*channel_buffer_size, dumpfile_id) != NO_ESTIMATES_DISK*channel_buffer_size)
             {
@@ -185,9 +196,16 @@ int main (int argc, char **argv)
             }
 	  if (gps_data)
 	    {
+	      if (gps_poll(gps_data) != 0) {
+		printf("problem polling data from gps\n");
+	      }
+	      else {
+		printf("lat %g, lon %g\n",gps_data->fix.latitude,gps_data->fix.longitude);
+	      }
 	      if (fwrite(&(gps_data->fix), sizeof(char), sizeof(struct gps_fix_t), dumpfile_id) != sizeof(struct gps_fix_t))
 		{
 		  printf("Error writing to dumpfile, stopping recording\n");
+		  exit(EXIT_FAILURE);
 		}
 	    }
 	  else
@@ -196,6 +214,7 @@ int main (int argc, char **argv)
 	      if (fwrite(&(dummy_gps_data), sizeof(char), sizeof(struct gps_fix_t), dumpfile_id) != sizeof(struct gps_fix_t))
 		{
 		  printf("Error writing to dumpfile, stopping recording\n");
+		  exit(EXIT_FAILURE);
 		}
 	    } 
         }
