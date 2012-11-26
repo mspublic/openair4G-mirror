@@ -197,6 +197,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if (openair_daq_vars.node_configured > 0) {
 
       if (vid == XILINX_VENDOR) {  // This is ExpressMIMO
+	rt_disable_irq(pdev[0]->irq);
+
 	printk("[openair][IOCTL] ExpressMIMO: Triggering reset of OAI firmware\n",openair_daq_vars.node_configured);
 	//exmimo_firmware_init();
 	//openair_dma(0,EXMIMO_PCIE_INIT);
@@ -887,7 +889,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 	}
 	else {
-	  openair_dma(i,EXMIMO_STOP_TX);
+	  openair_dma(i,EXMIMO_STOP);
 	}
       }
 
@@ -976,6 +978,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     }
     else {
 
+      rt_enable_irq(pdev[0]->irq);
       openair_daq_vars.get_frame_done = 0;
       setup_regs(0,frame_parms);
       get_frame_cnt=0;
@@ -989,6 +992,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       }
       if (get_frame_cnt==30)
 	printk("Get frame error\n");
+      rt_disable_irq(pdev[0]->irq);
 
       pci_dma_sync_single_for_cpu(pdev[0], 
 				  exmimo_pci_interface->rf.adc_head[0],
@@ -1299,7 +1303,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
     }
     else {
-      openair_dma(0,EXMIMO_TX_FRAME);
+      //      openair_dma(0,EXMIMO_CONFIG);
+      //      udelay(1000);
+      openair_dma(0,EXMIMO_START_RT_ACQUISITION);
     }
     break;
 
@@ -1448,11 +1454,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 			     update_firmware_ubuffer, /* from */
 			     update_firmware_length * 4       /* in bytes */
 			     );
-	pci_map_single(pdev[0],(void*)fw_block, update_firmware_length*4,PCI_DMA_BIDIRECTIONAL);
+//	pci_map_single(pdev[0],(void*)fw_block, update_firmware_length*4,PCI_DMA_BIDIRECTIONAL);
 	for (i=0;i<update_firmware_length;i++) {
-	  fw_block[16+i] = ((unsigned int *)update_firmware_kbuffer)[i];
+	  fw_block[32+i] = ((unsigned int *)update_firmware_kbuffer)[i];
 	  // Endian flipping is done in user-space so undo it
-	  invert4(fw_block[16+i]);
+	  invert4(fw_block[32+i]);
 	}
 
 	kfree(update_firmware_kbuffer);
@@ -1702,9 +1708,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     break;
 
   case openair_GET_PCI_INTERFACE:
-    copy_to_user((void *)arg,&pci_interface[0],sizeof(PCI_interface_t*));
-    printk("[IOCTL] copying pci_interface[0]=%p to %p\n", pci_interface[0],arg);
-      
+    if (vid != XILINX_VENDOR) {
+      copy_to_user((void *)arg,&pci_interface[0],sizeof(PCI_interface_t*));
+      printk("[IOCTL] copying pci_interface[0]=%p to %p\n", pci_interface[0],arg);
+    }
+    else {
+      copy_to_user((void *)arg,&exmimo_pci_interface,sizeof(exmimo_pci_interface_t*));
+      printk("[IOCTL] copying exmimo_pci_interface=%p to %p\n", exmimo_pci_interface,arg);
+    }
     break;
     
 

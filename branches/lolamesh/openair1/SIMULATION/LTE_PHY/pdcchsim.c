@@ -84,7 +84,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
 
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   double iqim=0.0;
-  int subframe_offset;
+  //  int subframe_offset;
   u8 subframe=0;
 
   int trial, n_errors_common=0,n_errors_ul=0,n_errors_dl=0,n_errors_cfi=0,n_errors_hi=0;
@@ -147,14 +147,14 @@ int main(int argc, char **argv) {
   u32 nsymb,tx_lev,tx_lev_dB=0,num_pdcch_symbols=3;
   u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
-  s8 interf1=-128,interf2=-128;
+  //  s8 interf1=-128,interf2=-128;
   u8 dci_cnt=0;
   LTE_DL_FRAME_PARMS *frame_parms;
   u8 log2L=2, log2Lcommon=2, format_selector=0;
   u8 dci_length=sizeof_DCI1_5MHz_TDD_t;
   DCI_format_t format=format1;
   u8 dci_length_bytes=sizeof(DCI1_5MHz_TDD_t);
-  u8 numCCE,nCCE_max,common_active=0,ul_active=0,dl_active=0,num_dci,num_common_dci,num_ue_spec_dci,HI;
+  u8 numCCE,nCCE_max,common_active=0,ul_active=0,dl_active=0,num_dci,num_common_dci,num_ue_spec_dci;
   u32 rv;
 
   u32 n_trials_common=0,n_trials_ul=0,n_trials_dl=0,false_detection_cnt=0;
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hapg:d:c:i:j:n:s:x:y:z:L:M:N:I:F:R:S:P:")) != -1) {
+  while ((c = getopt (argc, argv, "hapg:d:c:n:s:x:y:z:L:M:N:I:F:R:S:P:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -234,12 +234,14 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	break;
+	/*
       case 'i':
 	interf1=atoi(optarg);
 	break;
       case 'j':
 	interf2=atoi(optarg);
 	break;
+	*/
       case 'n':
 	n_frames = atoi(optarg);
 	break;
@@ -464,6 +466,7 @@ int main(int argc, char **argv) {
   }
 
 
+  logInit();
 
   if ((transmission_mode>1) && (n_tx==1))
     n_tx=2;
@@ -479,7 +482,7 @@ int main(int argc, char **argv) {
 
   mac_xface->computeRIV = computeRIV;
   mac_xface->lte_frame_parms = &PHY_vars_eNB->lte_frame_parms;
-  init_transport_channels(transmission_mode);
+  //  init_transport_channels(transmission_mode);
 
   if (n_frames==1)
     snr1 = snr0+.1;
@@ -574,7 +577,7 @@ int main(int argc, char **argv) {
 
 
   randominit(0);
-  
+
   
   nCCE_max = get_nCCE(3,&PHY_vars_eNB->lte_frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,0));
   printf("nCCE_max %d\n",nCCE_max);
@@ -627,6 +630,7 @@ int main(int argc, char **argv) {
 	  dci_alloc[0].L          = log2Lcommon;
 	  dci_alloc[0].rnti       = SI_RNTI;
 	  dci_alloc[0].format     = format1A;
+	  dci_alloc[0].nCCE       = 0;
 	  num_dci++;
 	  num_common_dci++;
 	  numCCE += (1<<log2Lcommon);
@@ -643,6 +647,7 @@ int main(int argc, char **argv) {
 	    dci_alloc[num_dci].L          = log2L;
 	    dci_alloc[num_dci].rnti       = n_rnti;
 	    dci_alloc[num_dci].format     = format0;
+	    dci_alloc[num_dci].nCCE       = numCCE;
 	    num_dci++;
 	    num_ue_spec_dci++;
 	    numCCE+=(1<<log2L);
@@ -664,6 +669,7 @@ int main(int argc, char **argv) {
 	    dci_alloc[num_dci].L          = log2L;
 	    dci_alloc[num_dci].rnti       = n_rnti;
 	    dci_alloc[num_dci].format     = format;
+	    dci_alloc[num_dci].nCCE       = numCCE;
 	    num_dci++;
 	    num_ue_spec_dci++;
 	    numCCE+=(1<<log2L);
@@ -852,7 +858,7 @@ int main(int argc, char **argv) {
       // UE receiver	
       for (l=0;l<PHY_vars_eNB->lte_frame_parms.symbols_per_tti;l++) {
 	  
-	subframe_offset = (l/PHY_vars_eNB->lte_frame_parms.symbols_per_tti)*PHY_vars_eNB->lte_frame_parms.samples_per_tti;
+	//	subframe_offset = (l/PHY_vars_eNB->lte_frame_parms.symbols_per_tti)*PHY_vars_eNB->lte_frame_parms.samples_per_tti;
 	//	    printf("subframe_offset = %d\n",subframe_offset);
 	  
 	slot_fep(PHY_vars_UE,

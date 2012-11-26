@@ -47,6 +47,8 @@ otg_t *g_otg; /*!< \brief  global params */
 otg_info_t *otg_info; /*!< \brief  info otg: measurements about the simulation  */
 otg_forms_info_t *otg_forms_info;
 
+
+
 //int ptime; /*!< \brief ptime is uses to compute the local simulation time */
 
 #endif

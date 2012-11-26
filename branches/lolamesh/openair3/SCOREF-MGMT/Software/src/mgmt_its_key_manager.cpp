@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -40,11 +40,16 @@
 */
 
 #include "mgmt_its_key_manager.hpp"
+#include "util/mgmt_exception.hpp"
+#include <boost/lexical_cast.hpp>
+#include "util/mgmt_util.hpp"
+#include <sstream>
 
-ItsKeyManager::ItsKeyManager() {}
+ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {
+}
 
 ItsKeyManager::~ItsKeyManager() {
-	itsKeyMap.empty();
+	itsKeyMap.clear();
 }
 
 ItsKeyID ItsKeyManager::findKeyId(const string& keyName) const {
@@ -66,7 +71,7 @@ map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
 
 	while (iterator != this->itsKeyMap.end()) {
 		// Add every ITS key which is common and is of requested type into the map
-		if (iterator->second.type == keyType || iterator->second.type == ITS_KEY_TYPE_COMMON || keyType == ITS_KEY_TYPE_ALL)
+		if (iterator->second.keyType == keyType || iterator->second.keyType == ITS_KEY_TYPE_COMMON || keyType == ITS_KEY_TYPE_ALL)
 			subset.insert(subset.end(), std::make_pair(iterator->first, iterator->second.value));
 
 		++iterator;
@@ -75,25 +80,79 @@ map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
 	return subset;
 }
 
-bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value) {
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsDataType dataType, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue) {
+	/**
+	 * Validate incoming values
+	 */
 	if (name.empty())
-		return false;
+		throw Exception("ITS key name is empty!", logger);
+	else if (dataType == ITS_DATA_TYPE_INTEGER && (value.intValue < minValue.intValue || value.intValue > maxValue.intValue))
+		throw Exception("ITS key '" + name + "'s value (" + boost::lexical_cast<string>(value.intValue) + ") is out-of-range!", logger);
+	else if (dataType == ITS_DATA_TYPE_FLOAT && (value.floatValue < minValue.floatValue || value.floatValue > maxValue.floatValue))
+		throw Exception("ITS key '" + name + "'s value (" + boost::lexical_cast<string>(value.floatValue) + ") is out-of-range!", logger);
 
-	ItsKey itsKey = {name, type, value};
+	ItsKey itsKey;
+	itsKey.name = name;
+	itsKey.keyType = keyType;
+	itsKey.dataType = dataType;
+	itsKey.value = value;
+	itsKey.minValue = minValue;
+	itsKey.maxValue = maxValue;
 	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
 
 	return true;
 }
 
-ItsKeyValue ItsKeyManager::getKey(ItsKeyID id) {
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, u_int32_t value, u_int32_t minValue, u_int32_t maxValue) {
+	ItsKeyValue valueContainer, minValueContainer, maxValueContainer;
+
+	valueContainer.intValue = value;
+	minValueContainer.intValue = minValue;
+	maxValueContainer.intValue = maxValue;
+
+	ItsKey itsKey;
+	itsKey.name = name;
+	itsKey.keyType = keyType;
+	itsKey.dataType = ITS_DATA_TYPE_INTEGER;
+	itsKey.value = valueContainer;
+	itsKey.minValue = minValueContainer;
+	itsKey.maxValue = maxValueContainer;
+	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
+
+	return true;
+}
+
+bool ItsKeyManager::addKey(ItsKeyID id, const string& name, ItsKeyType keyType, const string& value) {
+	ItsKeyValue valueContainer;
+	valueContainer.stringValue = Util::trim(value, '"');
+
+	ItsKey itsKey;
+	itsKey.name = name;
+	itsKey.keyType = keyType;
+	itsKey.dataType = ITS_DATA_TYPE_STRING;
+	itsKey.value = valueContainer;
+	itsKeyMap.insert(itsKeyMap.end(), std::make_pair(id, itsKey));
+
+	return true;
+}
+
+ItsKeyValue& ItsKeyManager::getKeyValue(ItsKeyID id) {
 	return itsKeyMap[id].value;
 }
 
-bool ItsKeyManager::setKey(const string& name, ItsKeyValue value) {
+ItsKeyType ItsKeyManager::getKeyType(ItsKeyID id) {
+	return itsKeyMap[id].keyType;
+}
+
+ItsDataType ItsKeyManager::getDataType(ItsKeyID id) {
+	return itsKeyMap[id].dataType;
+}
+
+bool ItsKeyManager::setKeyValue(const string& name, ItsKeyValue value) {
 	map<ItsKeyID, ItsKey>::iterator iterator = itsKeyMap.begin();
 
 	while (iterator != this->itsKeyMap.end()) {
-		if (!iterator->second.name.compare(name)) {
+		if (!name.compare(0, iterator->second.name.length(), iterator->second.name)) {
 			iterator->second.value = value;
 			return true;
 		}
@@ -104,18 +163,27 @@ bool ItsKeyManager::setKey(const string& name, ItsKeyValue value) {
 	return false;
 }
 
-bool ItsKeyManager::setKey(ItsKeyID id, ItsKeyValue value) {
+bool ItsKeyManager::setKeyValue(ItsKeyID id, ItsKeyValue value) {
 	itsKeyMap[id].value = value;
 
 	return true;
 }
 
 u_int16_t ItsKeyManager::getNumberOfKeys(ItsKeyType type) const {
+	/**
+	 * If we're asked for all, return the size of the ITS key map
+	 */
+	if (type == ITS_KEY_TYPE_ALL)
+		return itsKeyMap.size();
+
 	map<ItsKeyID, ItsKey>::const_iterator iterator = itsKeyMap.begin();
 	u_int16_t numberOfKeys = 0;
 
 	while (iterator != itsKeyMap.end()) {
-		if (type == ITS_KEY_TYPE_COMMON || iterator->second.type == type)
+		/**
+		 * Count all `common' keys and those of type `type'
+		 */
+		if (type == ITS_KEY_TYPE_COMMON || iterator->second.keyType == type)
 			++numberOfKeys;
 
 		++iterator;

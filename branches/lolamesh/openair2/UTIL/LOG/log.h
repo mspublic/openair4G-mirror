@@ -124,9 +124,10 @@ extern "C" {
  *  @brief Macro used to call tr_log_full_ex with file, function and line information
  * @{*/
 #ifdef USER_MODE
-#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+  //#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+#define logIt(component, level, format, args...) logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
 #else
-#define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+#define logIt(component, level, format, args...) logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args)
 #endif
 /* @}*/
 
@@ -137,7 +138,7 @@ extern "C" {
  * @{*/
 
 // debugging macros
-//#ifdef USER_MODE
+#ifdef USER_MODE
 #define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
 #define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
 #define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
@@ -148,19 +149,17 @@ extern "C" {
 #define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
 #define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
 #define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
-/*
 #else
-#define LOG_G(c, x...) msg(x)
-#define LOG_A(c, x...) msg(x)
-#define LOG_C(c, x...) msg(x)
-#define LOG_E(c, x...) msg(x)
-#define LOG_W(c, x...) msg(x)
-#define LOG_N(c, x...) msg(x)
-#define LOG_I(c, x...) msg(x)
-#define LOG_D(c, x...) msg(x)
-#define LOG_T(c, x...) msg(x)
+#define LOG_G(c, x...) printk(x)
+#define LOG_A(c, x...) printk(x)
+#define LOG_C(c, x...) printk(x)
+#define LOG_E(c, x...) printk(x)
+#define LOG_W(c, x...) printk(x)
+#define LOG_N(c, x...) printk(x)
+#define LOG_I(c, x...) printk(x)
+#define LOG_D(c, x...) printk(x)
+#define LOG_T(c, x...) printk(x)
 #endif
-*/
 /* @}*/
 
 
@@ -223,7 +222,7 @@ extern "C" {
 
 //static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-  typedef enum {MIN_LOG_COMPONENTS=0, PHY, MAC, EMU, OCG, OMG,OPT,OTG,OTG_LATENCY,OTG_OWD,RLC, PDCP, RRC, PERF,OIP, CLI, MSC, OCM, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, PHY, MAC, EMU, OCG, OMG,OPT,OTG,OTG_LATENCY,OTG_GP,RLC, PDCP, RRC, PERF,OIP, CLI, MSC, OCM, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 

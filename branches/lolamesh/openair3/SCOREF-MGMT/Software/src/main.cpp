@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -50,38 +50,40 @@ using namespace std;
 #include <boost/asio.hpp>
 using boost::asio::ip::udp;
 
-#include "packets/mgmt_gn_packet_location_table_request.hpp"
-#include "mgmt_gn_packet_handler.hpp"
-#include "util/mgmt_udp_server.hpp"
-#include "mgmt_inquiry_thread.hpp"
+#include "util/mgmt_udp_socket.hpp"
+#include "mgmt_packet_handler.hpp"
+#include "mgmt_client_manager.hpp"
+#include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 
-void printHelp(string binaryName) {
-	cerr << binaryName << " <configurationFile> <logFileName>" << endl;
-	// todo explain other commandline options here
+void printHelp(const string& binaryName) {
+	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
 }
 
 const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
 
 int main(int argc, char** argv) {
+	string logFileName, configurationFileName;
+
 	/**
-	 * Configuration file name parameter is necessary, log file
-	 * name parameter is optional
+	 * Check command-line parameters. Configuration file name is
+	 * necessary yet log file name is optional
 	 */
-	string logFileName = "";
 	if (argc == 2) {
 		logFileName = "SCOREF-MGMT.log";
+		configurationFileName = argv[1];
 	} else if (argc == 3) {
-		logFileName = string(argv[2]);
+		configurationFileName = argv[1];
+		logFileName = argv[2];
 	} else {
 		printHelp(argv[0]);
 		exit(1);
 	}
 
-	Logger logger(logFileName, Logger::DEBUG);
+	Logger logger(logFileName, Logger::TRACE);
 
 #ifdef BOOST_VERSION_1_50
 	/**
@@ -109,67 +111,138 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-	// Location table update will be done at the beginning for once
-	// todo this should be managed by ManagementClientState
-	bool locationTableUpdated = false;
-
 	ManagementInformationBase mib(logger);
-	GeonetMessageHandler packetHandler(mib, logger);
-
-	logger.info("Starting Management & GeoNetworking Interface...");
-	logger.info("Reading configuration file...");
-
-	Configuration configuration(argv[1], logger);
-	if (!configuration.parseConfigurationFile(mib)) {
-		logger.error("Cannot open/parse configuration file, exiting...");
-		return -1;
-	}
-
-	UdpServer server(configuration.getServerPort(), logger);
+	PacketHandler* packetHandler = NULL;
 
 	/**
-	 * Initialise InquiryThread object for Wireless State updates
+	 * Prepare the list of FACilities configuration files by traversing
+	 * the configration/ directory's content
 	 */
-	InquiryThread inquiryThreadObject(server, configuration.getWirelessStateUpdateInterval(), logger);
-	boost::thread inquiryThread(inquiryThreadObject);
+	string facilitiesConfigurationFileDirectory = "configuration/";
+	vector<string> configurationFileVector = Util::getListOfFiles(facilitiesConfigurationFileDirectory);
+	/**
+	 * Add MGMT module's configuration file to the list
+	 */
+	configurationFileVector.push_back(configurationFileName);
+	Configuration configuration(configurationFileVector, logger);
+	configuration.setFacilitiesConfigurationDirectory(facilitiesConfigurationFileDirectory);
+	/**
+	 * Parse configuration file and create UDP server socket
+	 */
+	try {
+		configuration.parseConfigurationFiles(mib);
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot parse a configuration file");
+		e.printStackTrace();
+		exit(-1);
+	}
 
-	vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
-	vector<unsigned char> txBuffer(UdpServer::TX_BUFFER_SIZE);
+	ManagementClientManager clientManager(mib, configuration, logger);
+	UdpSocket server(configuration.getServerPort(), logger);
 
 	try {
-		for (;;) {
-			if (server.receive(rxBuffer)) {
-				GeonetPacket* reply = NULL;
+		/**
+		 * Initialise MIB
+		 */
+		try {
+			mib.initialise();
+		} catch (Exception& e) {
+			e.updateStackTrace("Cannot initialise ManagementInformationBase!");
+			throw;
+		}
 
-				try {
-					reply = packetHandler.handleGeonetMessage(rxBuffer, server.getClient());
-				} catch (std::exception& e) {
-					cerr << e.what() << endl;
+		/**
+		 * Allocate a Geonet packet handler
+		 */
+		try {
+			packetHandler = new PacketHandler(mib, logger);
+		} catch (std::bad_alloc& exception) {
+			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
+		} catch (Exception& e) {
+			e.updateStackTrace("Cannot initialise Geonet Message Handler!");
+			throw;
+		}
+
+		logger.info("Starting Management & GeoNetworking Interface...");
+		logger.info("Reading configuration file...");
+
+		vector<unsigned char> rxBuffer(UdpSocket::RX_BUFFER_SIZE);
+
+		try {
+			for (;;) {
+				if (server.receive(rxBuffer)) {
+					PacketHandlerResult* result;
+
+					try {
+						result = packetHandler->handle(rxBuffer);
+					} catch (std::exception& e) {
+						cerr << e.what() << endl;
+					}
+
+					/**
+					 * First inform Management Client Manager about this incoming packet (if it's valid)
+					 */
+					if (!result)
+						continue;
+					else if (result->getResult() == PacketHandlerResult::DISCARD_PACKET
+							|| result->getResult() == PacketHandlerResult::DELIVER_PACKET
+							|| result->getResult() == PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE) {
+						/**
+						 * Inform Client Manager of this sender
+						 */
+						try {
+							clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
+						} catch (Exception& e) {
+							e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
+							throw;
+						}
+					}
+
+					switch (result->getResult()) {
+						case PacketHandlerResult::DISCARD_PACKET:
+							delete result;
+							break;
+
+						case PacketHandlerResult::INVALID_PACKET:
+							logger.error("Incoming packet is not valid, discarding..");
+							delete result;
+							break;
+
+						case PacketHandlerResult::DELIVER_PACKET:
+							if (server.send(*result->getPacket()))
+								logger.info("Reply successfully delivered to the client at " + server.toString());
+							else
+								logger.warning("Delivery of the reply packet to the client at " + server.toString() + " has failed!");
+
+							delete result;
+							break;
+
+						case PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE:
+							/**
+							 * Update clients with new configuration information
+							 */
+							try {
+								clientManager.sendConfigurationUpdateAvailable();
+							} catch (Exception& e) {
+								e.updateStackTrace("Cannot send a CONFIGURATION UPDATE AVAILABLE packet!");
+								throw;
+							}
+							delete result;
+							break;
+					}
 				}
 
-				if (reply)
-					server.send(*reply);
+				// Revert buffer size to initial
+				rxBuffer.reserve(UdpSocket::RX_BUFFER_SIZE);
 			}
-
-			if (!locationTableUpdated) {
-				// Initialise location table
-				GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
-				server.send(locationTableRequest);
-				locationTableUpdated = true;
-			}
-
-			// Revert buffer sizes to initials
-			rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
-			txBuffer.reserve(UdpServer::TX_BUFFER_SIZE);
+		} catch (Exception& e) {
+			e.updateStackTrace("Something went terribly wrong, exiting...");
+			e.printStackTrace();
 		}
-	} catch (std::exception& e) {
-		logger.error(e.what());
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot initialise SCOREF-MGMT module, exiting...");
+		e.printStackTrace();
 	}
-
-	/**
-	 * Wait for inquiry thread to finish its job
-	 */
-	inquiryThread.join();
 
 	return 0;
 }

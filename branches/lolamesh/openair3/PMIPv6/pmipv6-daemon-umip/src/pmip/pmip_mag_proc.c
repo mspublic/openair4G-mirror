@@ -32,6 +32,11 @@ void pmip_timer_retrans_pbu_handler(struct tq_elem *tqe);
 int mag_setup_route(struct in6_addr *pmip6_addr, int downlink)
 {
     int res = 0;
+    dbg("Downlink(MAG local traffic also): Add new rule for dest=%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(pmip6_addr));
+    res = rule_add(NULL, RT6_TABLE_MIP6, IP6_RULE_PRIO_PMIP6_FWD-1, RTN_UNICAST, &in6addr_any, 0, pmip6_addr, 128, 0);
+    if (res < 0) {
+        dbg("ERROR Add new rule for downlink, MAG local traffic also");
+    }
     if (conf.TunnelingEnabled) {
         //add a rule for MN for uplink traffic from MN must query the TABLE for PMIP --> tunneled
         dbg("Uplink: Add new rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(pmip6_addr));
@@ -39,14 +44,14 @@ int mag_setup_route(struct in6_addr *pmip6_addr, int downlink)
         if (res < 0) {
             dbg("ERROR Add new rule for tunneling");
         }
-        //add a route for downlink traffic through LMA (any src) ==> MN
-        dbg("Downlink: Add new route for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);
-        res |= route_add(downlink, RT6_TABLE_MIP6, RTPROT_MIP, 0, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, pmip6_addr, 128, NULL);
-        if (res < 0) {
-            dbg("ERROR Add new rule for tunneling");
-        }
     } else {
-        dbg("WARNING CANNOT ADD ROUTING RULES SINCE TUNNELING DISABLED IN CONFIG");
+        dbg("WARNING CANNOT ADD new rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x SINCE TUNNELING DISABLED IN CONFIG\n", NIP6ADDR(pmip6_addr));
+    }
+    //add a route for downlink traffic through LMA (any src) ==> MN
+    dbg("Downlink: Add new route for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);
+    res |= route_add(downlink, RT6_TABLE_MIP6, RTPROT_MIP, 0, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, pmip6_addr, 128, NULL);
+    if (res < 0) {
+        dbg("ERROR Add new rule for tunneling");
     }
     return res;
 }
@@ -54,21 +59,26 @@ int mag_setup_route(struct in6_addr *pmip6_addr, int downlink)
 int mag_remove_route(struct in6_addr *pmip6_addr, int downlink)
 {
     int res = 0;
+    //Delete existing rule for the deleted MN
+    dbg("Downlink(MAG local traffic also): Delete new rule for dest=%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(pmip6_addr));
+    res = rule_del(NULL, RT6_TABLE_MIP6, IP6_RULE_PRIO_PMIP6_FWD-1, RTN_UNICAST, &in6addr_any, 0, pmip6_addr, 128, 0);
+    if (res < 0) {
+        dbg("ERROR Del old rule for downlink, MAG local traffic also");
+    }
     if (conf.TunnelingEnabled) {
-        //Delete existing rule for the deleted MN
         dbg("Uplink: Delete old rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(pmip6_addr));
         res = rule_del(NULL, RT6_TABLE_PMIP, IP6_RULE_PRIO_PMIP6_FWD, RTN_UNICAST, pmip6_addr, 128, &in6addr_any, 0, 0);
         if (res < 0) {
-            dbg("ERROR Del new rule for tunneling ");
-        }
-        //Delete existing route for the deleted MN
-        dbg("Downlink: Delete old routes for: %x:%x:%x:%x:%x:%x:%x:%x from table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);
-        res |= route_del(downlink, RT6_TABLE_MIP6, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, pmip6_addr, 128, NULL);
-        if (res < 0) {
-            dbg("ERROR Del new rule for tunneling ");
+            dbg("ERROR Del old rule for tunneling ");
         }
     } else {
-        dbg("WARNING CANNOT DELETE ROUTING RULES SINCE TUNNELING DISABLED IN CONFIG");
+        dbg("WARNING CANNOT DELETE old rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x SINCE TUNNELING DISABLED IN CONFIG\n", NIP6ADDR(pmip6_addr));
+    }
+    //Delete existing route for the deleted MN
+    dbg("Downlink: Delete old routes for: %x:%x:%x:%x:%x:%x:%x:%x from table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);
+    res |= route_del(downlink, RT6_TABLE_MIP6, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, pmip6_addr, 128, NULL);
+    if (res < 0) {
+        dbg("ERROR Del old rule for tunneling ");
     }
     return res;
 }
@@ -258,7 +268,7 @@ int mag_kickoff_ra(pmip_entry_t * bce)
     if (err < 0) {
         dbg("Error: couldn't send a RA message ...\n");
     } else {
-        dbg("RA LL ADDRESS sent\n");
+        dbg("RA LL ADDRESS sent on bce link %d\n", bce->link);
     }
     return err;
 }
@@ -316,6 +326,7 @@ int mag_get_ingress_info(int *if_index, char *dev_name_mn_link)
             strncpy(dev_name_mn_link, devname, 32);
             *if_index = if_idx;
             dbg("The interface name of the device that is used for communicate with MNs is %s\n", dev_name_mn_link);
+            dbg("The interface index of the device that is used for communicate with MNs is %d\n", *if_index);
             fclose(fp);
             return 1;
         }
@@ -445,7 +456,11 @@ int mag_pmip_md(msg_info_t * info, pmip_entry_t * bce)
         struct in6_addr *link_local = link_local_addr(&bce->mn_suffix);
         bce->mn_link_local_addr = *link_local;  // link local address of MN
         bce->type               = BCE_TEMP;
-        dbg("Making BCE entry in MAG with HN prefix  %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix));
+        dbg("Making BCE entry in MAG with HN prefix        %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix));
+        dbg("                             Suffix           %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_suffix));
+        dbg("                             Link local addr  %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_link_local_addr));
+        dbg("                             Serv mag addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_mag_addr));
+        dbg("                             Serv lma addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_lma_addr));
         dbg("New attachment detected! Start Location Registration procedure...\n");
         mag_start_registration(bce);
     }

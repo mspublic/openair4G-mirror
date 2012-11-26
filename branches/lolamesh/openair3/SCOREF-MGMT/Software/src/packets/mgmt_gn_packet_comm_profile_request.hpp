@@ -80,6 +80,7 @@ class GeonetCommunicationProfileRequestPacket: public GeonetPacket {
 		 * @return 32-bit requested flag set
 		 */
 		u_int32_t getCommunicationProfileRequestSet() const;
+#ifdef UNUSED
 		/**
 		 * Returns Transport::BTPA flag's value
 		 *
@@ -206,6 +207,7 @@ class GeonetCommunicationProfileRequestPacket: public GeonetPacket {
 		 * @return true if set, false otherwise
 		 */
 		bool getChannelSch4() const;
+#endif
 		/**
 		 * Parses the packet buffer and fills configuration flags
 		 *

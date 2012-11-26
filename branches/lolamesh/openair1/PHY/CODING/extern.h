@@ -1,3 +1,4 @@
 
-extern unsigned short f1f2mat[2*188];
+extern unsigned short f1f2mat_old[2*188];
+
 

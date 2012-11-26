@@ -14,6 +14,7 @@
 static u32 bitrev[32] = {0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31};
 static u32 bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
 
+//#define RM_DEBUG_TX 1
 //#define RM_DEBUG 1
 //#define RM_DEBUG2 1
 // #define RM_DEBUG_CC 1
@@ -23,19 +24,19 @@ u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
   u32 RTC = (D>>5), ND, ND3;
   u32 row,col,Kpi,index;
   u32 index3,k;
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   u32 nulled=0;
-#endif
+  #endif
 
   if ((D&0x1f) > 0)
     RTC++;
   Kpi = (RTC<<5);
   //  Kpi3 = Kpi*3;
   ND = Kpi - D;
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
   printf("RTC = %d, Kpi=%d, ND=%d\n",RTC,Kpi,ND);
-#endif
+  #endif
   ND3 = ND*3;
 
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
@@ -68,9 +69,9 @@ u32 sub_block_interleaving_turbo(u32 D, u8 *d,u8 *w) {
       k++;
     }      
   }
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("RM_TX: Nulled %d\n",nulled);
-#endif
+  #endif
   return(RTC);
 }
 
@@ -357,7 +358,7 @@ u32 generate_dummy_w_cc(u32 D, u8 *w){
 
 u32 lte_rate_matching_turbo(u32 RTC,
 				     u32 G, 
-				     u8 *w,
+			             u8 *w,
 				     u8 *e, 
 				     u8 C, 
 				     u32 Nsoft, 
@@ -366,19 +367,46 @@ u32 lte_rate_matching_turbo(u32 RTC,
 				     u8 rvidx,
 				     u8 Qm, 
 				     u8 Nl, 
-				     u8 r) {
+			    u8 r,
+			    u8 nb_rb,
+			    u8 m) {
   
   
   u32 Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
-
+  int cnt=0;
+  int code_block,round;
   u8 *e2;
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG_TX
+  int zeroed=0;
+  int oned=0;
+  int twoed=0;
+  int threed =0;
   u32 nulled=0;
+  static unsigned char *counter_buffer[3][4];
+  FILE *counter_fd;
+  char fname[512];
 #endif
-
+  
   Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
   Ncb = cmin(Nir/C,3*(RTC<<5));
-
+#ifdef RM_DEBUG_TX
+  if (rvidx==0 && r==0){
+    for(round=0;round<4;round++) 
+      for (code_block=0;code_block<3;code_block++){
+	counter_buffer[code_block][round] = (unsigned char *)malloc(Ncb*sizeof(char));
+	memset(counter_buffer[code_block][round],0,Ncb*sizeof(char));
+      }
+  }
+  else
+    if(rvidx==3){
+      sprintf(fname, "mcs%d_rate_matching_RB_%d.txt", m, nb_rb);
+      // sprintf(fname,"mcs0_rate_matching_RB_6.txt");
+      counter_fd = fopen(fname,"w");      
+    }
+#endif
+  // if (rvidx==3)
+  //  for (cnt=0;cnt<Ncb;cnt++)
+  //    counter_buffer[rvidx][cnt]=0;
   if (Ncb<(3*(RTC<<5))) {
     msg("Exiting, RM condition (Nir %d, Nsoft %d, Kw %d\n",Nir,Nsoft,3*(RTC<<5));
     return(0);
@@ -386,9 +414,9 @@ u32 lte_rate_matching_turbo(u32 RTC,
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
 
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG
   printf("lte_rate_matching_turbo: Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",3*(RTC<<5),rvidx, G, Qm,Nl,r);
-#endif
+  #endif
 
   if (r < (C-(GpmodC)))
     E = Nl*Qm * (Gp/C);
@@ -399,9 +427,9 @@ u32 lte_rate_matching_turbo(u32 RTC,
 
   ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
 
-#ifdef RM_DEBUG
+  #ifdef RM_DEBUG_TX
   printf("lte_rate_matching_turbo: E %d, k0 %d, Ncbmod %d, Ncb/(RTC<<3) %d\n",E,ind,Ncbmod,Ncb/(RTC<<3));
-#endif
+  #endif
 
   e2=e+(r*E);
 
@@ -409,28 +437,62 @@ u32 lte_rate_matching_turbo(u32 RTC,
 
 
     while(w[ind] == LTE_NULL) {
-#ifdef RM_DEBUG
+      #ifdef RM_DEBUG_TX
       printf("RM_tx : ind %d, NULL\n",ind);
       nulled++;
-#endif
+      #endif
       ind++;
       if (ind==Ncb)
 	ind=0;
     }
 
     e2[k] = w[ind];
-#ifdef RM_DEBUG
+    cnt = cnt+1;
+    #ifdef RM_DEBUG_TX
+    counter_buffer[r][rvidx][ind]++;
+    // printf("Bit_Counter[%d][%d][%d]=%d\n",r,rvidx,ind,counter_buffer[r][rvidx][ind]);
     //    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
-    printf("RM_TX %d (%d) Ind: %d (%d)\n",k,k+r*E,ind,e2[k]);
-#endif
+    // printf("RM_TX %d (%d) Ind: %d (%d)\n",k,k+r*E,ind,e2[k]);
+    #endif
     ind++;
     if (ind==Ncb)
       ind=0;
   }
+  
+#ifdef RM_DEBUG_TX
+  if (rvidx==3){
+    for(cnt=0;cnt<Ncb;cnt++)
+      {
+	fprintf(counter_fd,"%d %x %x %x %x %x %x %x %x %x %x %x %x\n",cnt,
+		counter_buffer[0][0][cnt],counter_buffer[1][0][cnt],counter_buffer[2][0][cnt],
+		counter_buffer[0][1][cnt],counter_buffer[1][1][cnt],counter_buffer[2][1][cnt],
+		counter_buffer[0][2][cnt],counter_buffer[1][2][cnt],counter_buffer[2][2][cnt],
+		counter_buffer[0][3][cnt],counter_buffer[1][3][cnt],counter_buffer[2][3][cnt]
+		);
+    }
+    fclose(counter_fd);
+    
+  }
+  /*   
+   for(cnt=0;cnt<Ncb;cnt++){
+    printf("Bit_Counter[%d][%d]=%d\n",rvidx,cnt,counter_buffer[r][rvidx][cnt]);
+    if(counter_buffer[r][rvidx][cnt]==0)
+      zeroed++;
+    else if(counter_buffer[r][rvidx][cnt]==1)
+      oned++;
+    else if(counter_buffer[r][rvidx][cnt]==2)
+      twoed++;
+    else if(counter_buffer[r][rvidx][cnt]==3)
+      threed++;
+   }
 
-#ifdef RM_DEBUG
+ printf("zeroed %d\n",zeroed);
+printf("oned %d\n",oned);
+printf("twoed %d\n",twoed);
+printf("threed %d\n",threed);
+*/ 
   printf("nulled %d\n",nulled);
-#endif
+   #endif
   return(E);
 }
 
@@ -551,21 +613,23 @@ int lte_rate_matching_turbo_rx(u32 RTC,
       printf("repetition %d (%d,%d,%d)\n",ind,rvidx,E,Ncb);
     */
     // Maximum-ratio combining of repeated bits and retransmissions
+    /* 
     w_tmp = (int) w[ind] + (int) soft_input2[k];
-    if (w_tmp > 32768) {
-#ifdef DEBUG_RM
+    if (w_tmp > 32767) {
+      //#ifdef DEBUG_RM
       printf("OVERFLOW!!!!!, w_tmp = %d\n",w_tmp);
-#endif
-      w[ind] = 32768;
+      //#endif
+      w[ind] = 32767;
     }
     else if (w_tmp < -32768) {
-#ifdef DEBUG_RM
+      //#ifdef DEBUG_RM
       printf("UNDERFLOW!!!!!, w_tmp = %d\n",w_tmp);
-#endif
+      //#endif
       w[ind] = -32768;
     }
     else
-      w[ind] += soft_input2[k];
+    */
+    w[ind] += soft_input2[k];
 #ifdef RM_DEBUG
       printf("RM_RX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif

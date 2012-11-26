@@ -51,17 +51,15 @@ static int x, y, z;
 
 void init_seeds(int seed){
 	
-	LOG_I(OTG,"seeds:%d\n", seed);	
-	set_taus_seed(seed);
-	LOG_I(OTG,"set taus seed OK !!\n");
+  set_taus_seed(seed);
+  LOG_I(OTG,"set taus seed to %d done \n", seed);
 		
 }
 
 double uniform_rng() {		
   double random;
   random = (double)taus(OTG)/((double)0xffffffff);
-
-  LOG_D(OTG,"Uniform taus random number= %lf\n", random);
+  //LOG_D(OTG,"Uniform taus random number= %lf\n", random);
 return random;
 }
 
@@ -73,10 +71,10 @@ return random;
 // Uniform Distribution using the Uniform_Random_Number_Generator
 
 double uniform_dist(int min, int max) {
-	double uniform_rn;
-        uniform_rn = (max - min) * uniform_rng() + min;
-        LOG_I(OTG,"Uniform Random Nb = %lf, (min %d, max %d)\n", uniform_rn, min, max);	
-	return uniform_rn;
+  double uniform_rn;
+  uniform_rn = (max - min) * uniform_rng() + min;
+  //  LOG_D(OTG,"Uniform Random Nb = %lf, (min %d, max %d)\n", uniform_rn, min, max);	
+  return uniform_rn;
 }
 
 // Gaussian Distribution using Box-Muller Transformation
@@ -177,7 +175,7 @@ shape_int=ceil(shape);
 	}
 	
 	gamma_rn= (-1/scale)*log(mult_var);
-	LOG_I(OTG,"Gamma Random Nb = %lf (scale=%.2f, shape=%.2f)\n", gamma_rn, scale, shape);	
+	LOG_D(OTG,"Gamma Random Nb = %lf (scale=%.2f, shape=%.2f)\n", gamma_rn, scale, shape);	
 	return gamma_rn;
 
 }
@@ -195,10 +193,10 @@ double cauchy_rn;
 	
 	if (cauchy_rn<0){
 	  cauchy_rn=fabs(cauchy_rn);  
-	  LOG_I(OTG,"Cauchy Random Nb = %lf <0 (scale=%.2f, shape=%.2f), we use absolute value\n", cauchy_rn, scale, shape);
+	  LOG_D(OTG,"Cauchy Random Nb = %lf <0 (scale=%.2f, shape=%.2f), we use absolute value\n", cauchy_rn, scale, shape);
 	}
 	else
-	  LOG_I(OTG,"Cauchy Random Nb = %lf (scale=%.2f, shape=%.2f)\n", cauchy_rn, scale, shape);
+	  LOG_D(OTG,"Cauchy Random Nb = %lf (scale=%.2f, shape=%.2f)\n", cauchy_rn, scale, shape);
 	return cauchy_rn;
 
 }

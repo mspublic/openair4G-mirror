@@ -2,17 +2,17 @@
  * Copyright (C)2004,2005 USAGI/WIDE Project
  * Copyright (C)2005 Go-Core Project
  * Copyright (C)2005,2006 Helsinki University of Technology
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -34,17 +34,17 @@
  * Authors: OPENAIR3 <openair_tech@eurecom.fr>
  *
  * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ *
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility
+ * management protocol standardized by IETF. It is a protocol for building
+ * a common and access technology independent of mobile core networks,
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only
  * network-based mobility management protocol standardized by IETF.
- * 
+ *
  * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
  * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
+ * License version 2. See MIPL terms condition if you need more details.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -144,7 +144,7 @@ static int vt_handle_add(struct vt_handle *vh)
 #define VTDECOR_BU_START vh->vh_opt.fancy == VT_BOOL_TRUE ? "\033[1;4m" : ""
 #define VTDECOR_END vh->vh_opt.fancy == VT_BOOL_TRUE ? "\033[0m" : ""
 
-ssize_t fprintf_decor(int decor, const struct vt_handle *vh, 
+ssize_t fprintf_decor(int decor, const struct vt_handle *vh,
 		      const char *fmt, ...)
 {
 	char buf[VT_REPLY_BUFLEN];
@@ -154,8 +154,8 @@ ssize_t fprintf_decor(int decor, const struct vt_handle *vh,
 	vsprintf(buf, fmt, ap);
 	va_end(ap);
 
-	return fprintf(vh->vh_stream, "%s%s%s", 
-		       decor == VTDECOR_B ? VTDECOR_B_START :VTDECOR_BU_START, 
+	return fprintf(vh->vh_stream, "%s%s%s",
+		       decor == VTDECOR_B ? VTDECOR_B_START :VTDECOR_BU_START,
 		       buf, VTDECOR_END);
 }
 
@@ -834,7 +834,7 @@ static int bcache_vt_dump(void *data, void *arg)
 		list_for_each(l, &bce->mob_net_prefixes) {
 			struct prefix_list_entry *p;
 			p = list_entry(l, struct prefix_list_entry, list);
-			fprintf(vh->vh_stream, " MNP: %x:%x:%x:%x:%x:%x:%x:%x/%d\n", 
+			fprintf(vh->vh_stream, " MNP: %x:%x:%x:%x:%x:%x:%x:%x/%d\n",
                     NIP6ADDR(&p->ple_prefix), p->ple_plen);
 		}
 	}
@@ -865,7 +865,7 @@ static int pmip_cache_vt_dump(void *data, void *arg)
     fprintf_b(vh, " status %s",
           (bce->type == BCE_PMIP) ? "PMIP" :
           (bce->type == BCE_TEMP) ? "TEMP" :
-          (bce->type == BCE_CN) ? "CN" :
+          (bce->type == BCE_NO_ENTRY) ? "EMPTY" :
           "(unknown)");
 
     fprintf(vh->vh_stream, "\n");
@@ -1684,7 +1684,7 @@ static void *vt_server_recv(__attribute__ ((unused)) void *arg)
 				sock_max = vt_connect_handle->vh_sock;
 		}
 
-		ret = select(sock_max+1, &fds, NULL, NULL, NULL); 
+		ret = select(sock_max+1, &fds, NULL, NULL, NULL);
 		if (ret < 0) {
 			if (errno == EINTR)
 				continue;

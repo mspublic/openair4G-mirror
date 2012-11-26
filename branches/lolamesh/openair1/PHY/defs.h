@@ -28,14 +28,14 @@
 *******************************************************************************/
 
 /*! \file PHY/defs.h
-* \brief Top-level defines and structure definitions
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
-* \note
-* \warning
+ \brief Top-level defines and structure definitions
+ \author R. Knopp, F. Kaltenberger
+ \date 2011
+ \version 0.1
+ \company Eurecom
+ \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+ \note
+ \warning
 */
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
@@ -47,7 +47,11 @@
 #include <string.h>
 #include <math.h>
 //#include <complex.h>
+#ifdef MEX
+#define msg mexPrintf
+#else
 #define msg printf   
+#endif
 //use msg in the real-time thread context
 #define msg_nrt printf   
 //use msg_nrt in the non real-time context (for initialization, ...)
@@ -129,6 +133,7 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 
+#ifdef OPENAIR_LTE
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
 
@@ -137,6 +142,8 @@
 #define NUM_DCI_MAX 32
 
 #define NUMBER_OF_eNB_SECTORS_MAX 3
+
+typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5} runmode_t;
 
 /// Top-level PHY Data Structure for eNB 
 typedef struct
@@ -162,9 +169,11 @@ typedef struct
 
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
-
   
-  s16 X_u[64][2*839];
+  /// mbsfn reference symbols
+  unsigned int lte_gold_mbsfn_table[10][3][42];
+  
+  u32 X_u[64][839];
 
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
@@ -256,6 +265,10 @@ typedef struct
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 //#define debug_msg msg
 
+typedef enum {
+  max_gain=0,med_gain,byp_gain
+} rx_gain_t;
+
 /// Top-level PHY Data Structure for UE 
 typedef struct
 {
@@ -264,18 +277,23 @@ typedef struct
   u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
+  rx_gain_t rx_gain_mode[4];
+  unsigned int rx_gain_max[4];
+  unsigned int rx_gain_med[4];
+  unsigned int rx_gain_byp[4];
   s8 tx_power_dBm;
+
   u32 frame;//[NUMBER_OF_CONNECTED_eNB_MAX+1]
+  s8 tx_power_max_dBm;
   u8 n_connected_eNB;
-  PHY_MEASUREMENTS  PHY_measurements; /// Measurement variables //apaposto 
-  
-  LTE_DL_FRAME_PARMS  *lte_frame_parms[NUMBER_OF_CONNECTED_eNB_MAX]; //apaposto
- 
-  LTE_UE_COMMON    *lte_ue_common_vars[NUMBER_OF_CONNECTED_eNB_MAX]; // apaposto
+  PHY_MEASUREMENTS  PHY_measurements; 
+  LTE_DL_FRAME_PARMS  *lte_frame_parms[NUMBER_OF_CONNECTED_eNB_MAX]; 
+  LTE_UE_COMMON    *lte_ue_common_vars[NUMBER_OF_CONNECTED_eNB_MAX]; 
+
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -285,7 +303,10 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
   LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  // For abstraction-purposes only
   u8               sr[10];
+  u8               pucch_sel[10];
   u8               pucch_payload[22];
 
   UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -293,8 +314,10 @@ typedef struct
   /// cell-specific reference symbols
   unsigned int lte_gold_table[7][20][2][14];
 
-
-  s16 X_u[64][2*839];
+/// mbsfn reference symbols
+  unsigned int lte_gold_mbsfn_table[10][3][42];
+  
+  u32 X_u[64][839];
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
@@ -324,8 +347,8 @@ typedef struct
   u8               prach_cnt;
   u8               prach_PreambleIndex;
   //  u8               prach_timer;
-  int              rx_offset; // Timing offset
-
+  int              rx_offset; /// Timing offset
+  int              timing_advance; ///timing advance signalled from eNB
   /// Flag to tell if UE is secondary user (cognitive mode)
   unsigned char    is_secondary_ue; 
   /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
@@ -354,8 +377,9 @@ typedef struct
   PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
   /// PUCCH variables
+
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
-  
+
   u8 ncs_cell[20][7];
 
   /// UL-POWER-Control
@@ -380,22 +404,17 @@ typedef struct
 
 } PHY_VARS_UE;
 
+
+
 #include "PHY/INIT/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"
 #include "PHY/MODULATION/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
-
-#ifndef OPENAIR_LTE
-#include "PHY/TRANSPORT/defs.h"
-#include "PHY/ESTIMATION/defs.h"
-#else //OPENAIR_LTE
 #include "PHY/LTE_ESTIMATION/defs.h"
-  //#include "PHY/LTE_REFSIG/defs.h"
-  //#include "PHY/LTE_TRANSPORT/defs.h"
-#endif //OPENAIR_LTE
-//#ifdef USER_MODE
+
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-  //#endif
+#endif //OPENAIR_LTE
+
 #endif //  __PHY_DEFS__H__
 
 

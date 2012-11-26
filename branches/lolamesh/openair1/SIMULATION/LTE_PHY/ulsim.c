@@ -32,14 +32,14 @@ extern short *ul_ref_sigs[30][2][33];
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
 
-#define MCS_COUNT 23//added for PHY abstraction
+#define MCS_COUNT 24//added for PHY abstraction
 
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 //Added for PHY abstraction
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
-double sinr_bler_map[MCS_COUNT][2][9];
+//double sinr_bler_map[MCS_COUNT][2][16];
 
 extern u16 beta_ack[16],beta_ri[16],beta_cqi[16];
 
@@ -360,7 +360,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
 
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
   int i,j,aa,b,u,Msc_RS_idx;
 
  
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,SNRmeas,rate;
+  double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate;
   //int **txdataF, **txdata;
   int **txdata;
 #ifdef IFFT_FPGA
@@ -402,12 +402,13 @@ int main(int argc, char **argv) {
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
   u8 extended_prefix_flag=0;
+  int cqi_flag=0,cqi_error,cqi_errors,cqi_crc_falsepositives,cqi_crc_falsenegatives;
 
   int eNB_id = 0;
   int UE_id = 0;
-  unsigned char nb_rb=2,first_rb=0,mcs=4,round=0,bundling_flag=1;
+  unsigned char nb_rb=25,first_rb=0,mcs=0,round=0,bundling_flag=1;
   unsigned char l;
-  SCM_t channel_model=Rayleigh1_corr;
+  SCM_t channel_model=Rice1;
 
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
@@ -441,14 +442,14 @@ int main(int argc, char **argv) {
   u8 cyclic_shift = 0;
   u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
-  u8 tdd_config=3,frame_type=0;
+  u8 tdd_config=3,frame_type=TDD;
 
-  u8 N0=40;
+  u8 N0=30;
   double tx_gain=1.0;
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:s:c:r:i:f:c:oA:C:R:g:N:S:T:Q")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -568,6 +569,9 @@ int main(int argc, char **argv) {
 	exit(-1);
       }
       break;
+    case 'Q':
+      cqi_flag=1;
+      break;
     case 'h':
     default:
       printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -c cyclic_shift -o (srs on) -g channel_model [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M') \n",argv[0]);
@@ -623,11 +627,11 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
   
-  coded_bits_per_codeword = nb_rb * (12 * get_Qm(mcs)) * nsymb;
+  coded_bits_per_codeword = nb_rb * (12 * get_Qm_ul(mcs)) * nsymb;
 
   rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
 
-  printf("Rate = %f (mod %d)\n",rate,get_Qm(mcs));
+  printf("Rate = %f (mod %d)\n",rate,get_Qm_ul(mcs));
   
 
   sprintf(bler_fname,"bler_%d.m",mcs);
@@ -744,7 +748,7 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.mcs     = mcs;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
-  UL_alloc_pdu.cqi_req = 0;
+  UL_alloc_pdu.cqi_req = cqi_flag&1;
   UL_alloc_pdu.cshift  = 0;
   UL_alloc_pdu.dai     = 1;
 
@@ -815,10 +819,12 @@ int main(int argc, char **argv) {
     round_trials[1] = 0;
     round_trials[2] = 0;
     round_trials[3] = 0;
-
+    cqi_errors=0;
+    cqi_crc_falsepositives=0;
+    cqi_crc_falsenegatives=0;
     round=0;
 
-    randominit(0);
+    //randominit(0);
       
     PHY_vars_UE->frame=1;
     PHY_vars_eNB->frame=1;
@@ -901,7 +907,13 @@ int main(int argc, char **argv) {
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb,
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
 #endif	
-	  
+
+	  if ((cqi_flag == 1) && (n_frames == 1) ) {
+	    printf("CQI information (O %d) %d %d\n",PHY_vars_UE->ulsch_ue[0]->O,
+		   PHY_vars_UE->ulsch_ue[0]->o[0],PHY_vars_UE->ulsch_ue[0]->o[1]);
+	    print_CQI(PHY_vars_UE->ulsch_ue[0]->o,PHY_vars_UE->ulsch_ue[0]->uci_format,0);
+	  }
+
 	  if (ulsch_encoding(input_buffer,
 			     &PHY_vars_UE->lte_frame_parms,
 			     PHY_vars_UE->ulsch_ue[0],
@@ -987,12 +999,12 @@ int main(int argc, char **argv) {
 				frame_parms);
 	    
 #ifndef OFDMA_ULSCH
-	    apply_7_5_kHz(PHY_vars_UE,subframe<<1);
-	    apply_7_5_kHz(PHY_vars_UE,1+(subframe<<1));
+	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],subframe<<1);
+	    apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],1+(subframe<<1));
 #endif
 	    
 	    tx_lev += signal_energy(&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
-				  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+				    PHY_vars_eNB->lte_frame_parms.samples_per_tti);
 	
 	  }
 #endif
@@ -1000,8 +1012,12 @@ int main(int argc, char **argv) {
 
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
+	//Set target wideband RX noise level to N0
 	sigma2_dB = N0;//10*log10((double)tx_lev)  +10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(PHY_vars_UE->lte_frame_parms.N_RB_DL*12)) - SNR;
-	tx_gain = sqrt(pow(10.0,.1*(N0+SNR))*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*(double)tx_lev*nb_rb));
+	// Adjust SNR to account for difference in TX bandwidth and sampling rate (512/300 for 5MHz) 
+	SNR2 = SNR + 10*log10(((double)PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/N_RB_DL/12));
+	// compute tx_gain to achieve target SNR (per resource element!)
+	tx_gain = sqrt(pow(10.0,.1*(N0+SNR2))*nb_rb/(N_RB_DL*(double)tx_lev));
   
 	//AWGN
 
@@ -1093,10 +1109,37 @@ int main(int argc, char **argv) {
 			    control_only_flag,
 			    1  // Nbundled 
 			    );
+
+	if (cqi_flag > 0) {
+	  cqi_error = 0;
+	  if (PHY_vars_eNB->ulsch_eNB[0]->Or1 < 32) {
+	    for (i=2;i<4;i++) {
+	      //	      printf("cqi %d : %d (%d)\n",i,PHY_vars_eNB->ulsch_eNB[0]->o[i],PHY_vars_UE->ulsch_ue[0]->o[i]);
+	      if (PHY_vars_eNB->ulsch_eNB[0]->o[i] != PHY_vars_UE->ulsch_ue[0]->o[i])
+		cqi_error = 1;
+	    }
+	  }
+	  else {
+
+	  }
+	  if (cqi_error == 1) {
+	    cqi_errors++;
+	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 1)
+	      cqi_crc_falsepositives++;
+	  }
+	  else {
+	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 0)
+	      cqi_crc_falsenegatives++;
+	  }
+	}
+    //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
       
+	
 	if (ret <= MAX_TURBO_ITERATIONS) {
 	  if (n_frames==1) {
-	    printf("No ULSCH errors found, o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
+	    printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
+	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
+	      print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
 	    dump_ulsch(PHY_vars_eNB,subframe);
 	    exit(-1);
 	  }
@@ -1136,8 +1179,8 @@ int main(int argc, char **argv) {
 		1024);
 #endif       
     }   //trials
-    printf("\n**********************SNR = %f dB : TX %d dB (gain %f dB), N0W %f dB, I0 %d dB [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
-	   SNR,
+    printf("\n**********************SNR = %f dB (%f) : TX %d dB (gain %f dB), N0W %f dB, I0 %d dB [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
+	   SNR,SNR2,
 	   tx_lev_dB,
 	   20*log10(tx_gain),
 	   (double)N0,
@@ -1165,6 +1208,12 @@ int main(int argc, char **argv) {
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
     
+    if (cqi_flag >0) {
+      printf("CQI errors %d/%d,false positives %d/%d, CQI false negatives %d/%d\n",
+	     cqi_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
+	     cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
+	     cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
+    }
     fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
 	    SNR,
 	    mcs,

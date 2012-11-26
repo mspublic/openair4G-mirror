@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -40,6 +40,7 @@
 */
 
 #include "mgmt_gn_packet_location_table_response.hpp"
+#include <boost/lexical_cast.hpp>
 #include "../util/mgmt_util.hpp"
 #include <sstream>
 
@@ -60,13 +61,13 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 
 	// Parse LPV Count...
 	if (Util::parse2byteInteger(packetBuffer.data() + packetBufferIndex, &lpvCount)) {
-		logger.info("Location table response has following number of entr{y|ies}: " + lpvCount);
+		logger.info("Location table response has following number of entr{y|ies}: " + boost::lexical_cast<string>(lpvCount));
 	} else {
 		logger.error("Cannot parse location table entry count");
 		return false;
 	}
 	// ...and Network Flags
-	mib.networkFlags = packetBuffer[2];
+	mib.setNetworkFlags(packetBuffer[2]);
 
 	u_int16_t itemIndex = packetBufferIndex;
 	for (; lpvCount != 0; lpvCount--) {
@@ -85,7 +86,7 @@ bool GeonetLocationTableResponseEventPacket::parse(const vector<unsigned char>& 
 		item.reserved = packetBuffer.data()[itemIndex++];
 
 		// Update MIB with this record
-		mib.locationTable.insert(mib.locationTable.end(), pair<GnAddress, LocationTableItem>(item.gnAddress, item));
+		mib.updateLocationTable(item);
 
 		logger.info("Management Information Base has been updated with following location table entry: ");
 		logger.info(item.toString());

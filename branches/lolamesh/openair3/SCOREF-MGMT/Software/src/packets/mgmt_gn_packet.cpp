@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -47,7 +47,7 @@ using namespace std;
 
 GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version, u_int8_t priority,
     u_int16_t eventType, Logger& logger) : logger(logger) {
-	Util::resetBuffer(&header, sizeof(MessageHeader));
+	Util::resetBuffer(reinterpret_cast<unsigned char*>(&header), sizeof(MessageHeader));
 
 	if (extendedMessage)
 		this->header.version |= 0x80;
@@ -83,7 +83,7 @@ bool GeonetPacket::parseHeaderBuffer(const vector<unsigned char>& headerBuffer, 
 }
 
 bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
-	logger.debug("Serializing header...");
+	logger.debug("Serialising header...");
 
 	buffer[0] = header.version;
 	buffer[0] |= 0x40; // encode Validity flag as 1
@@ -98,8 +98,9 @@ bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
 string GeonetPacket::toString() const {
 	stringstream ss;
 
-	ss << "Version: " << (int) header.version << endl << "Priority: " << (int) header.priority << endl << "Event Type: "
-	    << (int) (header.eventType * 100 + header.eventSubtype);
+	// todo write extended message and validity fields here as well
+	ss << "GeonetHeader[version:" << (int) header.version << ", priority:" << (int) header.priority
+		<< ", event:" << (int) (header.eventType * 100 + header.eventSubtype) << "]";
 
 	return ss.str();
 }

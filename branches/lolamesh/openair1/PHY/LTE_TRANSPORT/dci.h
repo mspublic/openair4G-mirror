@@ -96,7 +96,7 @@ typedef struct DCI0_5MHz_TDD_1_6 DCI0_5MHz_TDD_1_6_t;
 ///  DCI Format Type 0 (5 MHz,FDD, 25 bits)
 struct DCI0_5MHz_FDD {
   /// Padding
-  u32 padding:2;
+  u32 padding:9;
   /// CQI Request
   u32 cqi_req:1;
   /// DRS Cyclic Shift

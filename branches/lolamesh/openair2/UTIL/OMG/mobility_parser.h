@@ -42,6 +42,7 @@
 #define MOBILITY_PARSER_H_
 
 #include "hashtable.h"
+
 /**
  * @struct Simple struct to hold only few information
  * @brief The entry in each node is a line from the external mobility file
@@ -67,6 +68,7 @@ typedef struct node_info {
 	struct node_info* next;
 	//struct node_info* prev;
 }node_info;
+// head pointer to a linked list containing vid,vid_addr
 
 
 
@@ -93,7 +95,8 @@ void print_list(struct Exnode* head);
  * if so append append is called else a new linked list to the vehicle is created.
  * @param need mobility file to be given
  */
-hash_table_t* read_mobility_file(); // mobility file need to be given here, add in omg_param_list, get it from there
+
+void read_mobility_file(); // mobility file need to be given here, add in omg_param_list, get it from there
 
 /**
  * function builds a linked list which holds vehicle id and its mapping pointer to
@@ -129,5 +132,7 @@ void quicksortlist(Exnode *pLeft, Exnode *pRight);
 Exnode* get_next_position(hash_table_t *table,int node_id);
 
 void reset_visit_status(hash_table_t *table, float time, int node_id);
+
+void clear_llist();
 
 #endif /* MOBILITY_PARSER_H_ */

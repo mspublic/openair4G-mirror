@@ -1,7 +1,7 @@
 ## $Id: Makefile.am 1.55 06/05/07 17:37:11+03:00 anttit@tcs.hut.fi $
 ## Process this file with automake to produce Makefile.in
 
-AM_CFLAGS = -Wall -g -Wextra -Wpointer-arith -Wreturn-type -pedantic -std=gnu99 -DUSE_RADIUS -DCACHE_RADIUS
+AM_CFLAGS = -Wall -g -Wextra -Wpointer-arith -Wreturn-type -pedantic -std=gnu99
 AM_CPPFLAGS = -isystem $(top_srcdir)/include -I../src -I./pmip -I/usr/local/include
 AM_YFLAGS = -d
 
@@ -83,7 +83,11 @@ if BUILTIN_CRYPTO
 pmip6d_SOURCES += crypto.c crypto.h
 endif
 
-pmip6d_LDADD =  -lpcap  -lfreeradius-client
+pmip6d_LDADD =  -lpcap
+if USE_RADIUS
+pmip6d_LDADD += -lfreeradius-client
+AM_CFLAGS    += -DUSE_RADIUS
+endif
 
 if MISSING
 pmip6d_LDADD += -L$(top_builddir)/libmissing -lmissing

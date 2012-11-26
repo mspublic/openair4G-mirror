@@ -51,6 +51,16 @@
 void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned long size);
 
 /*
+ * Flush incoming byte stream in hexadecimal without formating
+ *
+ * @param component Utilised as with macros defined in UTIL/LOG/log.h
+ * @param data unsigned char* pointer for data buffer
+ * @param size Number of octets in data buffer
+ * @return none
+ */
+void util_flush_hex_octets(comp_name_t component, unsigned char* data, unsigned long size);
+
+/*
  * Prints binary representation of given octet prepending 
  * passed log message
  *

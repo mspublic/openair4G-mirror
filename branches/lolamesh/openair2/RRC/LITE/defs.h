@@ -175,6 +175,10 @@ typedef struct{
   uint8_t                           DRB_active[NUMBER_OF_UE_MAX][8];
   struct PhysicalConfigDedicated    *physicalConfigDedicated[NUMBER_OF_UE_MAX];
   struct SPS_Config                 *sps_Config[NUMBER_OF_UE_MAX];
+  MeasObjectToAddMod_t              *MeasObj[NUMBER_OF_UE_MAX][MAX_MEAS_OBJ];
+  struct ReportConfigToAddMod       *ReportConfig[NUMBER_OF_UE_MAX][MAX_MEAS_CONFIG];
+  struct QuantityConfig             *QuantityConfig[NUMBER_OF_UE_MAX];
+  struct MeasIdToAddMod             *MeasId[NUMBER_OF_UE_MAX][MAX_MEAS_ID];
   MAC_MainConfig_t                  *mac_MainConfig[NUMBER_OF_UE_MAX];
   MeasGapConfig_t                   *measGapConfig[NUMBER_OF_UE_MAX];
   eNB_RRC_INFO                      Info;
@@ -234,6 +238,7 @@ char openair_rrc_lite_eNB_init(u8 Mod_id);
 char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id,u8 eNB_flag);
+void rrc_top_cleanup(void);
 
 /** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
 @param Mod_id Instance of UE/eNB
@@ -348,7 +353,8 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index);
    \param frame Frame index
    \param UE_index Index of UE transmitting the message
    \param rrcConnectionSetupComplete Pointer to RRCConnectionSetupComplete message*/
-void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_index, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete);
+void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_index, 
+						RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete);
 
 /**\brief Process the RRCConnectionReconfigurationComplete based on information coming from UE
    \param Mod_id Instance ID for eNB/CH
@@ -370,99 +376,11 @@ void mac_sync_ind( u8 Mod_id, u8 status);
 void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 void rrc_lite_out_of_sync_ind(u8 Mod_id, u32 frame, unsigned short eNB_index);
 
-/* 
-uint8_t do_SIB1(LTE_DL_FRAME_PARMS            *frame_parms, 
-		uint8_t                       *buffer,
-		BCCH_DL_SCH_Message_t         *bcch_message,
-		SystemInformationBlockType1_t **sib1);
-*/
-/** 
-\brief Generate a default configuration for SIB2/SIB3 in one System Information PDU (eNB).
-@param Mod_id Index of eNB (used to derive some parameters)
-@param buffer Pointer to PER-encoded ASN.1 description of SI PDU
-@param systemInformation Pointer to asn1c C representation of SI PDU
-@param sib2 Pointer (returned) to sib2 component withing SI PDU
-@param sib3 Pointer (returned) to sib3 component withing SI PDU
-@return size of encoded bit stream in bytes*/
-/*
-uint8_t do_SIB23(uint8_t Mod_id,
-		 uint8_t *buffer,  
-		 SystemInformation_t *systemInformation,
-		 SystemInformationBlockType2_t **sib2,
-		 SystemInformationBlockType3_t **sib3
-#ifdef Rel10
-		 ,
-                 SystemInformationBlockType13_r9_t **sib13,
-		 uint8_t MBMS_flag
-#endif
-);
-*/
-/** 
-\brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This 
-routine only generates an mo-data establishment cause.
-@param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
-@param rv 5 byte random string or S-TMSI
-@returns Size of encoded bit stream in bytes*/
-//uint8_t do_RRCConnectionRequest(uint8_t *buffer,u8 *rv);
-
-/** \brief Generate an RRCConnectionSetupComplete UL-DCCH-Message (UE)
-@param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
-@returns Size of encoded bit stream in bytes*/
-//uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer);
-
-/** \brief Generate an RRCConnectionReconfigurationComplete UL-DCCH-Message (UE)
-@param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
-@returns Size of encoded bit stream in bytes*/
-//uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer);
-
-/** 
-\brief Generate an RRCConnectionSetup DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and 
-PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
-@param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
-@param transmission_mode Transmission mode for UE (1-9)
-@param UE_id UE index for this message
-@param Transaction_id Transaction_ID for this message
-@param frame_parms Pointer to DL Frame Configuration parameters for physicalConfigDedicated
-@param SRB1_config Pointer (returned) to SRB1_config IE for this UE
-@param physicalConfigDedicated Pointer (returned) to PhysicalConfigDedicated IE for this UE
-@returns Size of encoded bit stream in bytes*/
-/*uint8_t do_RRCConnectionSetup(uint8_t *buffer,
-			      uint8_t transmission_mode,
-			      uint8_t UE_id,
-			      uint8_t Transaction_id,
-			      LTE_DL_FRAME_PARMS *frame_parms,
-			      struct SRB_ToAddMod **SRB1_config,
-			      struct SRB_ToAddMod **SRB2_config,
-			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
-*/
-/** 
-\brief Generate an RRCConnectionReconfiguration DL-DCCH-Message (eNB).  This routine configures SRBToAddMod (SRB2) and one DRBToAddMod 
-(DRB3).  PhysicalConfigDedicated is not updated.
-@param Mod_id Module ID of this eNB Instance
-@param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
-@param UE_id UE index for this message
-@param Transaction_id Transaction_ID for this message
-@param rrc_inst Pointer to eNB RRC top-level structure
-@returns Size of encoded bit stream in bytes*/
-/*
-uint8_t do_RRCConnectionReconfiguration(uint8_t Mod_id,
-					uint8_t *buffer,
-					uint8_t UE_id,
-					uint8_t Transaction_id,
-					eNB_RRC_INST *rrc_inst);
-*/
-/**
-\brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
-@param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
-@returns Size of encoded bit stream in bytes*/
-//uint8_t do_MCCHMessage(uint8_t *buffer);
-
-
 int decode_SIB1(u8 Mod_id,u8 CH_index);
 
 int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
-int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag, u8 index);
+int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index);
 
 #endif
 

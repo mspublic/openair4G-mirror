@@ -2,11 +2,13 @@
 #define __INIT_DEFS__H__
 
 #include "PHY/defs.h"
+
+#ifdef OPENAIR_LTE
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#else
 
-#ifndef OPENAIR_LTE
 /**
 \fn int phy_init(unsigned char nb_antennas_tx)
 \brief Allocate and Initialize the PHY variables after receiving static configuration
@@ -33,14 +35,16 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation
 @param phy_vars_ue Pointer to UE Variables
+@param nb_connected_eNB Number of eNB that UE can process in one PDSCH demodulation subframe
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 */
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
-		    u8 abstraction_flag, u8 nb_connected_eNB); // apaposto
+		    u8 abstraction_flag, u8 nb_connected_eNB); 
+
 
 int phy_init_lte_ue_common(PHY_VARS_UE *phy_vars_ue,
-		    u8 abstraction_flag, u8 eNB_index); // apaposto
+		    u8 abstraction_flag, u8 eNB_index); 
 
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation (eNB)
@@ -138,7 +142,7 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 void phy_config_meas_ue(u8 Mod_id,
 			u8 eNB_index,
 			u8 n_adj_cells,
-			u16 *adj_cell_id);
+			u32 *adj_cell_id);
 
 /*!
 \fn void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
