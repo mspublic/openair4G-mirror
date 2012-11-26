@@ -100,14 +100,15 @@ void init_mobility_generator(omg_global_param omg_param_list) {
     break;
 
   case TRACE:
-      start_trace_generator(omg_param_list);
-      LOG_D(OMG," --------DISPLAY JOB LIST-------- \n");
-      display_job_list(Job_Vector);
-      Job_Vector = quick_sort (Job_Vector);
-      LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n");
-      display_job_list(Job_Vector);
-      LOG_D(OMG," --------OMG will load static mobility traces from user specified file-------- \n");
-      break; 
+    start_trace_generator(omg_param_list);
+    LOG_D(OMG," --------DISPLAY JOB LIST-------- \n");
+    display_job_list(Job_Vector);
+    Job_Vector = quick_sort (Job_Vector);
+    LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n");
+    display_job_list(Job_Vector);
+    LOG_D(OMG," --------OMG will load static mobility traces from user specified file-------- \n");
+    
+    break; 
 
   case SUMO: 
     start_sumo_generator(omg_param_list);
@@ -123,12 +124,14 @@ void stop_mobility_generator(int mobility_type) {
   switch (mobility_type) {
 
   case STATIC: 
+    break;
   case RWP: 
+    break;
   case RWALK: 
+    break;
   case TRACE:
-      //LOG_D(OMG," --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
-    LOG_D(OMG," --------Destructor not implemented for Mobility type %d-------- \n",mobility_type);
-  break; 
+    clear_llist();
+   break; 
 
   case SUMO: 
     stop_sumo_generator();
@@ -182,8 +185,7 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
   if (Node_Vector[mobility_type] != NULL){
     switch (mobility_type) {
    case STATIC:
-      LOG_D(OMG,"get_static_positions\n");
-      Vector = (Node_list)Node_Vector[STATIC];
+     Vector = (Node_list)Node_Vector[STATIC];
       break; 
    case RWP:
       get_rwp_positions_updated(cur_time);

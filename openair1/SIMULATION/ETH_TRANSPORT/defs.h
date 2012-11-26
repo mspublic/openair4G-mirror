@@ -61,6 +61,7 @@ typedef struct  {
   u32 pucch_payload:21;        // ack/nak/cqi information
   u8 sr:1;
   u8 pusch_flag:1;  // 0=none,1=active
+  u8 pucch_sel:1; 
   u32 pusch_uci;     // uci information on pusch
   u8 pusch_ri:2;    // ri information on pusch
   u8 pusch_ack:2;   // ack/nak on pusch

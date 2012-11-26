@@ -48,6 +48,7 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LITE/extern.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 #ifdef PHY_EMUL
@@ -117,7 +118,7 @@ unsigned char *parse_header(unsigned char *mac_header,
 			    unsigned short *rx_lengths,
 			    unsigned short tb_length) {
 
-  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid;
+  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid, num_sdu_cnt;
   unsigned char *mac_header_ptr = mac_header;
   unsigned short length,ce_len=0;
 
@@ -133,6 +134,8 @@ unsigned char *parse_header(unsigned char *mac_header,
       if (not_done==0) {// last MAC SDU, length is implicit
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
+	for (num_sdu_cnt=0; num_sdu_cnt < num_sdus ; num_sdu_cnt++)
+	  length -= rx_lengths[num_sdu_cnt];  
       }
       else {
 	if (((SCH_SUBHEADER_LONG *)mac_header_ptr)->F == 1) {
@@ -144,7 +147,8 @@ unsigned char *parse_header(unsigned char *mac_header,
 	}
       }
 #ifdef DEBUG_HEADER_PARSING
-      LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",num_sdus,lcid,length,mac_header_ptr-mac_header);
+      LOG_D(MAC,"[UE] sdu %d lcid %d length %d (offset now %d)\n",
+	    num_sdus,lcid,length,mac_header_ptr-mac_header);
 #endif
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -243,7 +247,9 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
   unsigned short rx_lengths[MAX_NUM_RB];
   unsigned char *tx_sdu;
 
-  //printf("sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
+
+  LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
 #ifdef DEBUG_HEADER_PARSING
@@ -261,7 +267,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
       switch (rx_ces[i]) {
       case UE_CONT_RES:
 
-	LOG_D(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n",
+	LOG_I(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n",
 	      Mod_id,frame,payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
 	  UE_mac_inst[Mod_id].RA_active=0;
@@ -269,8 +275,9 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[1];//1=sizeof(SCH_SUBHEADER_FIXED);
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
-	      LOG_D(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
+	      LOG_I(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
 	      mac_xface->ra_failed(Mod_id,eNB_index);
+              vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 	      return;
 	    }
 	  UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 0;
@@ -299,11 +306,12 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
     if (rx_lcids[i] == CCCH) {
 
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-CCCH, RRC message (eNB %d, %d bytes)\n",Mod_id,frame, eNB_index, rx_lengths[i]);
+      /*
       int j;
       for (j=0;j<rx_lengths[i];j++)
 	msg("%x.",(unsigned char)payload_ptr[j]);
       msg("\n");
-
+      */
       mac_rrc_data_ind(Mod_id,
 		       frame,
 		       CCCH,
@@ -333,7 +341,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 		       NULL);
     }
     else if (rx_lcids[i] == DTCH) {
-      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
+      LOG_I(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
       mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
 		       0,
@@ -343,15 +351,17 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 		       1,
 		       NULL);
     }
-
+    payload_ptr+= rx_lengths[i];
   }
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 }
 
 void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
   int i;
-  
-  //LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
+
+  //  LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
   mac_rrc_data_ind(Mod_id,
 		   frame,
@@ -360,7 +370,7 @@ void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 		   len,
 		   0,
 		   eNB_index);
-
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
 }
 
 
@@ -628,6 +638,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   int j; // used for padding
   // Compute header length
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
+
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   // hypo length,in case of long header skip the padding byte
@@ -637,7 +649,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   bsr_ce_len = get_bsr_len (Mod_id, buflen, eNB_index);
   if (bsr_ce_len > 0 ){
     bsr_len = bsr_ce_len + bsr_header_len;
-    LOG_D(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (ce%d,hdr%d) buff_len %d\n",Mod_id, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_ce_len, bsr_header_len, buflen);
+    LOG_I(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (ce%d,hdr%d) buff_len %d\n",Mod_id, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_ce_len, bsr_header_len, buflen);
   } else
     bsr_len = 0;
   phr_ce_len = (UE_mac_inst[Mod_id].PHR_reporting_active[eNB_index] == 1) ? 1 /* sizeof(POWER_HEADROOM_CMD)*/: 0;
@@ -719,6 +731,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
      LOG_D(MAC,"[UE %d] Frame %d : UL-DTCH -> ULSCH, %d bytes to send (Transport Block size %d, mac header len %d, BSR byte[DTCH] %d)\n",
 	   Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dtch_header_len,UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR_bytes[DTCH]);
 
+
     sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,
 					     (eNB_index*MAX_NUM_RB) + DTCH,
 					     (char *)&ulsch_buff[sdu_length_total]);
@@ -740,7 +753,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     lcid = UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR_short_lcid;
     bsr_s->LCGID = lcid;
     bsr_s->Buffer_size = UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[lcid];
-    LOG_D(MAC,"[UE %d] Frame %d report SHORT BSR with level %d for LCGID %d\n", 
+    LOG_I(MAC,"[UE %d] Frame %d report SHORT BSR with level %d for LCGID %d\n", 
 	  Mod_id, frame, UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[lcid],lcid);
   } else if (bsr_ce_len == sizeof(BSR_LONG))  {
     bsr_s = NULL;
@@ -748,7 +761,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     bsr_l->Buffer_size1 = UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[DCCH];
     bsr_l->Buffer_size2 = UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[DCCH1];
     bsr_l->Buffer_size3 = UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[DTCH];
-    LOG_D(MAC, "[UE %d] Frame %d report long BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d)\n", Mod_id,frame, 
+    LOG_I(MAC, "[UE %d] Frame %d report long BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d)\n", Mod_id,frame, 
 	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[CCCH],
 	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[DCCH],
 	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR[DCCH1],
@@ -786,7 +799,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     else 
       dtch_header_len= dtch_header_len_tmp;
     
-    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total-1;
+    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
   }
  
   // Generate header
@@ -850,7 +863,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 	  Mod_id,payload_offset, sdu_length_total);
     UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
     UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
-     
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
 }
 
 // called at each subframe
@@ -874,8 +887,10 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   
   //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
-  if (subframe%5 == 0)
-    pdcp_run(frame, 0, Mod_id, eNB_index);  
+  //if (subframe%5 == 0)
+  pdcp_run(frame, 0, Mod_id, eNB_index);  
+  UE_mac_inst[Mod_id].frame = frame;
+  UE_mac_inst[Mod_id].subframe = subframe;
 
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, eNB_index);
@@ -908,12 +923,16 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       return(RRC_OK); 
     }
     UE_mac_inst[Mod_id].RA_contention_resolution_cnt++;
+    /* LOG_D(MAC,"navid [UE %d] Counter resolution timer (%d, %d) for enb %d\n",  
+	  Mod_id, UE_mac_inst[Mod_id].RA_contention_resolution_cnt,
+	  (1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3, eNB_index);
+    */
     if (UE_mac_inst[Mod_id].RA_contention_resolution_cnt ==
 	((1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3)) {
       UE_mac_inst[Mod_id].RA_active = 0;
       // Signal PHY to quit RA procedure
+      LOG_I(MAC,"Counter resolution timer expired, RA failed\n");
       mac_xface->ra_failed(Mod_id,eNB_index);
-      LOG_D(MAC,"Counter resolution timer expired, RA failed\n");
     }
   }
 

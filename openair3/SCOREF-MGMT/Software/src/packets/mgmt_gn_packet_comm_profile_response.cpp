@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -59,15 +59,15 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	GeonetPacket::serialize(buffer);
 	// ...then append communication profile item count
 	u_int8_t payloadIndex = sizeof(MessageHeader);
-	Util::encode2byteInteger(buffer, payloadIndex, mib.communicationProfileManager.getProfileCount());
+	Util::encode2byteInteger(buffer, payloadIndex, mib.getCommunicationProfileManager().getProfileCount());
 	payloadIndex += 2;
 	// ...and `reserved' field
 	Util::encode2byteInteger(buffer, payloadIndex, 0x0000);
 	payloadIndex += 2;
 
 	// ...and communication profile item(s)
-	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
-	while (iterator != mib.communicationProfileManager.getProfileMap().end()) {
+	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator = mib.getCommunicationProfileManager().getProfileMap().begin();
+	while (iterator != mib.getCommunicationProfileManager().getProfileMap().end()) {
 		Util::encode4byteInteger(buffer, payloadIndex, iterator->second.id);
 		payloadIndex += 4;
 
@@ -81,7 +81,7 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	}
 
 	// Resize incoming buffer
-	buffer.resize(sizeof(CommunicationProfileResponse) + mib.communicationProfileManager.getProfileCount()
+	buffer.resize(sizeof(CommunicationProfileResponse) + mib.getCommunicationProfileManager().getProfileCount()
 			* sizeof(CommunicationProfileItem));
 
 	return true;
@@ -91,7 +91,7 @@ string GeonetCommunicationProfileResponsePacket::toString() const {
 	stringstream ss;
 
 	ss << GeonetPacket::toString() << endl;
-	ss << mib.communicationProfileManager.toString() << endl;
+	ss << mib.getCommunicationProfileManager().toString() << endl;
 
 	return ss.str();
 }

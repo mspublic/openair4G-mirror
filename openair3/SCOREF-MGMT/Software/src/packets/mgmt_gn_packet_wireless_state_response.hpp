@@ -80,7 +80,7 @@ class GeonetWirelessStateResponseEventPacket : public GeonetPacket {
 		 * @param packetBuffer std::vector keeping packet data
 		 * @return true on success, false otherwise
 		 */
-		bool parse(const vector<unsigned char> packetBuffer);
+		bool parse(const vector<unsigned char>& packetBuffer);
 
 	private:
 		/**

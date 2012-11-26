@@ -1,4 +1,4 @@
-extern unsigned short threegpplte_interleaver_output;
+extern unsigned int threegpplte_interleaver_output;
 extern unsigned int threegpplte_interleaver_tmp;
 
 extern inline void threegpplte_interleaver_reset(void) {

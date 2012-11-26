@@ -75,7 +75,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
 
 
-  phy_init_lte_ue(PHY_vars_UE,0);
+  phy_init_lte_ue(PHY_vars_UE,1,0);
 
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 
   char c;
 
-  int i,l,aa,aarx;
+  int i,l,aa;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   u8 snr1set=0;
   //mod_sym_t **txdataF;
@@ -102,29 +102,26 @@ int main(int argc, char **argv) {
 #endif
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double ricean_factor=0.0000005,Td=.8,iqim=0.0;
-  u8 channel_length;
-  int trial, n_trials, ntrials=1, n_errors,n_errors2,n_alamouti;
+  double ricean_factor=0.0000005,iqim=0.0;
+
+  int trial, n_trials, ntrials=1, n_errors;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
   unsigned char eNB_id = 0;
   u16 Nid_cell=0;
 
   int n_frames=1;
   channel_desc_t *UE2eNB;
-  u32 nsymb,tx_lev,tx_lev_dB;
+  u32 nsymb,tx_lev;
   u8 extended_prefix_flag=0;
-  s8 interf1=-19,interf2=-19;
+
   LTE_DL_FRAME_PARMS *frame_parms;
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
 
-  u16 NB_RB=1;
-
   SCM_t channel_model=Rayleigh1_corr;
 
-  u8 abstraction_flag=0,calibration_flag=0;
-  double pucch_sinr;
+  //  double pucch_sinr;
   u8 osf=1,N_RB_DL=25;
   u32 pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
   PUCCH_FMT_t pucch_format = pucch_format1;
@@ -137,7 +134,6 @@ int main(int argc, char **argv) {
   u8 N0=40;
   u8 pucch1_thres=13;
 
-  channel_length = (int) 11+2*BW*Td;
 
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
@@ -151,7 +147,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "haA:Cr:pf:g:i:j:n:s:S:t:x:y:z:N:F:T:")) != -1)
+  while ((c = getopt (argc, argv, "har:pf:g:n:s:S:x:y:z:N:F:T:")) != -1)
     {
       switch (c)
 	{
@@ -213,12 +209,6 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	break;
-	case 'i':
-	  interf1=atoi(optarg);
-	  break;
-	case 'j':
-	  interf2=atoi(optarg);
-	  break;
 	case 'n':
 	  n_frames = atoi(optarg);
 	  break;
@@ -230,9 +220,6 @@ int main(int argc, char **argv) {
 	  snr1 = atof(optarg);
 	  snr1set=1;
 	  msg("Setting SNR1 to %f\n",snr1);
-	  break;
-	case 't':
-	  Td= atof(optarg);
 	  break;
 	case 'p':
 	  extended_prefix_flag=1;
@@ -267,15 +254,6 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	  break;
-	case 'A':
-	  abstraction_flag=1;
-	  ntrials=10000;
-	  msg("Running Abstraction test\n");
-	  break;
-	case 'C':
-	  calibration_flag=1;
-	  msg("Running Abstraction calibration for Bias removal\n");
-	  break;
 	case 'N':
 	  N0 = atoi(optarg);
 	  break;
@@ -292,7 +270,7 @@ int main(int argc, char **argv) {
 	  break;
 	default:
 	case 'h':
-	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -r Ricean_FactordB -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",argv[0]);
+	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -r Ricean_FactordB -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -N CellId\n",argv[0]);
 	  printf("-h This message\n");
 	  printf("-a Use AWGN channel and not multipath\n");
 	  printf("-p Use extended prefix mode\n");
@@ -310,14 +288,14 @@ int main(int argc, char **argv) {
 	  printf("-N Noise variance in dB\n");
 	  printf("-R N_RB_DL\n");
 	  printf("-O oversampling factor (1,2,4,8,16)\n");
-	  printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-	  printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
 	  printf("-f PUCCH format (0=1,1=1a,2=1b), formats 2/2a/2b not supported\n");
 	  printf("-F Input filename (.txt format) for RX conformance testing\n");
 	  exit (-1);
 	  break;
 	}
     }
+
+  logInit();
 
   if (transmission_mode==2)
     n_tx=2;
@@ -416,7 +394,7 @@ int main(int argc, char **argv) {
 		 0, //n2_pucch,
 		 0, //shortened_format,
 		 &pucch_payload, 
-		 scfdma_amps[1], //amp,
+		 AMP, //amp,
 		 subframe); //subframe
 #ifdef IFFT_FPGA_UE  
   tx_lev=0;
@@ -461,8 +439,8 @@ int main(int argc, char **argv) {
 			  &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
 			  nsymb,
 			  frame_parms);
-	apply_7_5_kHz(PHY_vars_UE,subframe<<1);
-	apply_7_5_kHz(PHY_vars_UE,1+(subframe<<1));
+	apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],subframe<<1);
+	apply_7_5_kHz(PHY_vars_UE,PHY_vars_UE->lte_ue_common_vars.txdata[aa],1+(subframe<<1));
 
       }
       
@@ -471,8 +449,6 @@ int main(int argc, char **argv) {
     }
 #endif
     
-    
-    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
     
     //  write_output("txsig0.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
     //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -493,8 +469,6 @@ int main(int argc, char **argv) {
     printf("n_frames %d SNR %f\n",n_frames,SNR);
 
     n_errors = 0;
-    n_errors2 = 0;
-    n_alamouti = 0;
     pucch_tx = 0;
     pucch1_missed=0;
     pucch1_false=0;

@@ -5,7 +5,7 @@ OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
-CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
+CFLAGS =  -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat -O2
 
 LFLAGS = -lm -lblas -lxml2 -lrt 
 
@@ -63,9 +63,9 @@ CFLAGS += -DXFORMS
 LFLAGS += -lforms
 endif
 
-#ifdef PERFECT_CE
+ifdef PERFECT_CE
 CFLAGS += -DPERFECT_CE
-#endif
+endif
 
 ifdef BIT8_TX
 CFLAGS += -DBIT8_TX
@@ -130,17 +130,17 @@ all:  femtosim
 #$(OBJ)
 femtosim :   femtoUtils.o femtosim.c	
 	@echo "Compiling femtosim.c"
-	@$(CC) -o femtosim femtosim.c  femtoUtils.o $(CFLAGS) $(OBJ) $(LFLAGS) -DPERFECT_CE #-static -L/usr/lib/libblas #-lm -lblas
-	
-
+	@$(CC) -o femtosim femtosim.c  femtoUtils.o $(CFLAGS) $(OBJ) $(LFLAGS)  #-static -L/usr/lib/libblas #-lm -lblas
 
 femtoUtils.o: $(OBJ)  femtoUtils.h femtoUtils.c
 	@echo "Compiling femtoUtils.c"
 	@$(CC) -c femtoUtils.c $(CFLAGS) $(OBJ) $(LFLAGS)  -L/usr/lib/libblas #-lm -lblas -DPERFECT_CE
 
-Tester: Tester.c
-	@$(CC) Tester.c -o Tester	
+Tester: Tester.c 
+	@$(CC) Tester.c -o Tester	$(CFLAGS)
 
+ComparaFile: ComparaFile.c
+	@$(CC) ComparaFile.c -o ComparaFile
 
 clean :
 	rm -f $(OBJ)

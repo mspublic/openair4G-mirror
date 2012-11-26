@@ -42,29 +42,35 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mobility_parser.h"
-//#include "hashtable.h"
+#include "hashtable.h"
 #include "log.h"
-node_info* head_node_info;// head pointer to a linked list containing vid,vid_addr
-extern hash_table_t* table;
+
+
+node_info* head_node_info =NULL;
+hash_table_t* table=NULL;
+
 //need to be removed , used only once (old code)
 struct Exnode* gen_list(){
 	struct Exnode* head = NULL;
 	return head;
 }
 
+
 //read the mobility file and generates a hashtable of linked list with key pointing to vehicle id
-hash_table_t* read_mobility_file(char* mobility_file[]){
+void read_mobility_file(char* mobility_file[]){
 		FILE *fp;
-	    char str[128];
-	    hash_table_t *table = hash_table_new(MODE_ALLREF);
+	    char str[128],*p;
+            if (table == NULL){
+	        table = hash_table_new(MODE_ALLREF);
+            }
+            
 	    if((fp=fopen(mobility_file, "r"))==NULL) {
-	      printf("Cannot open file %s\n", mobility_file);
+	      LOG_D(OMG,"Cannot open file %s\n", mobility_file);
 	      exit(1);
 	    }
 	    Exnode* headRef;
-	    node_info* Node_info=NULL;
-
-	    head_node_info=Node_info;
+	    static node_info* Node_info=NULL;
+           
 	    int *keyholder[10];
 	    int i=0;
 	    
@@ -72,8 +78,11 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      if(fgets(str, 126, fp)) { // happy go for small mobility file :-)
 	    	  char * pch;
 	      	  int fmt=0;
-
-	      	  pch = strtok (str," "); // the separator between the items in the list is a space
+                  p=str;
+                  while(*p==' ' || *p=='\t') p++; // skip whitespaces
+		  if(*p=='\r') p++;
+		  if (*p!='\n') {
+	      	  pch = strtok (p," "); // the separator between the items in the list is a space
 	      	  Exnode* node = malloc(sizeof(Exnode));
 
 	      	  while (pch != NULL)
@@ -84,6 +93,7 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      							break;
 	      						  case 1:
 	      							node->vid =atoi(pch);
+                                                                
 	      							break;
 	      						  case 2:
 	      							node->x=atof(pch);
@@ -108,16 +118,20 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      	  //check in the hash table if the key exist node->vid if exist ? initialize headRef
 	      	  int *value = NULL;
 	      	  value = (int *)HT_LOOKUP(table, &(node->vid));
+                  
 	      	  if (value==NULL){
 	      		if (Node_info==NULL){
 	      			Node_info=build_node_info(Node_info,node->vid,&(node->vid));
 	      			head_node_info=Node_info;
-				LOG_D(OMG,"TRACE head node info is %p\n",head_node_info);
 			}
 	      		else{
-	      			build_node_info(Node_info,node->vid,&(node->vid));
+			  Node_info=build_node_info(Node_info,node->vid,&(node->vid));
+                          
 			
 	      		}
+			Node_info->next=NULL;
+			//LOG_D(OMG,"[TRACE] build info for node %d %d head %p node %p next %p\n", 
+			//      Node_info->vid, node->vid, head_node_info,  Node_info, Node_info->next);
 	      		keyholder[i]=&node->vid;
                         i++;
 	      		hash_table_add(table, &(node->vid), sizeof(node->vid), node, sizeof(node));
@@ -133,14 +147,15 @@ hash_table_t* read_mobility_file(char* mobility_file[]){
 	      	  }
 	      	  if (headRef!=NULL){
 	      		  	  AppendNode(headRef, node);
+                                  
 	      	  	  	 }
 
-	      }
+	      }}
 	    }
 
 	    fclose(fp);
-
-	    return table;
+            
+	    //return table;
 }
 
 //builds linked list with each node holding vehicle is and linked list pointer on the hastable
@@ -160,8 +175,7 @@ node_info*  build_node_info(node_info* headRef, int vid, int *vid_addr){
 	  headRef->next = newNode;
 	  
 	}
-	LOG_D(OMG,"TRACE node info next is %p\n", headRef->next);
-	return headRef;
+	return headRef->next;
 }
 
 void AppendNode(struct Exnode* headRef, struct Exnode* newNode) {
@@ -364,37 +378,107 @@ void quicksortlist(Exnode *pLeft, Exnode *pRight){
 	quicksortlist(pStart->next,pCurrent);
 
 }
-/*
+
+void clear_llist(){
+
+        node_info* TempNode=NULL;
+        node_info* tmp=NULL;
+	TempNode=head_node_info;
+	
+	while(TempNode->next!=NULL){
+          int *value1 = NULL;
+	  value1 = (int *) HT_LOOKUP(table, TempNode->vid_addr);
+	  Exnode* TempMob = (Exnode *)value1;
+          
+          while (TempMob->next!=NULL){
+                Exnode* tmp=NULL;
+                tmp=TempMob;
+                TempMob=TempMob->next;
+                free(tmp);
+                tmp=NULL;
+          }
+          if (TempMob->next == NULL){
+                free(TempMob);
+                TempMob=NULL;
+                }
+          tmp=TempNode;
+          TempNode=TempNode->next;
+          free(tmp);
+          tmp=NULL;
+	}
+	if (TempNode->next==NULL ){
+	  free(TempNode);
+          TempNode=NULL;
+	  
+	}
+
+        hash_table_delete(table);
+}
+/*     
+
 int main(){
+        //char *mobility_file[50];
 	Exnode* next_loc=NULL;
+        //mobility_file = (char*) malloc(256);
+	//mobility_file=strtok("regular.tr");
 	hash_table_t *table=read_mobility_file();
 	sort_veh_movement(table);
 	printf("Number of nodes --> %d \n",get_num_nodes());
-	next_loc=get_next_position(table,22);
+	next_loc=get_next_position(table,140392);
 	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	//next_loc=NULL;
-	next_loc=get_next_position(table,22);
+	next_loc=get_next_position(table,140392);
 	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	//next_loc=NULL;
-	next_loc=get_next_position(table,22);
+	next_loc=get_next_position(table,140392);
 	if (next_loc!=NULL){
 	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
 	//next_loc=NULL;
-	}next_loc=get_next_position(table,11);
+	}next_loc=get_next_position(table,140392);
 	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
-	next_loc=get_next_position(table,11);
+	next_loc=get_next_position(table,140392);
 	//if (next_loc!=NULL){
 	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
-	next_loc=get_next_position(table,11);
+	next_loc=get_next_position(table,140392);
 	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
-	next_loc=get_next_position(table,11);
+	next_loc=get_next_position(table,140392);
 	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
-	reset_visit_status(table,20.0,11);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140392);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140396);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140396);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140396);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140396);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140396);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+        next_loc=get_next_position(table,140396);
+	printf("node details %d\n %lf %lf %lf %lf %d\n",next_loc->vid,next_loc->time,next_loc->x,next_loc->y,next_loc->speed,next_loc->vid);
+	//reset_visit_status(table,20.0,11);
 	node_info* head_node=head_node_info;
 
 	while(head_node->next!=NULL){
 
-		if(head_node->vid==22){
+		if(head_node->vid==140392){
 			int *value1 = NULL;
 			value1 = (int *) HT_LOOKUP(table, head_node->vid_addr);
 			Exnode *value=(Exnode *)value1;

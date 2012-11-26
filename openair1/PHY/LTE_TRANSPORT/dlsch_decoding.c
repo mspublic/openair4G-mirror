@@ -110,10 +110,11 @@ LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag) {
 }
 
 u32  dlsch_decoding(short *dlsch_llr,
-			     LTE_DL_FRAME_PARMS *frame_parms,
-			     LTE_UE_DLSCH_t *dlsch,
-			     u8 subframe,
-			     u8 num_pdcch_symbols){
+		    LTE_DL_FRAME_PARMS *frame_parms,
+		    LTE_UE_DLSCH_t *dlsch,
+		    u8 subframe,
+		    u8 num_pdcch_symbols,
+		    u8 is_crnti){
   
   
 
@@ -165,8 +166,8 @@ u32  dlsch_decoding(short *dlsch_llr,
     return(MAX_TURBO_ITERATIONS);
   }
 
-  A = dlsch->harq_processes[harq_pid]->TBS;
-
+  A = dlsch->harq_processes[harq_pid]->TBS; //2072 for QPSK 1/3
+  //printf("DEcoder: A: %d\n",A);
 #ifndef USER_MODE
   if (A > 6144) {
     msg("dlsch_decoding.c: Illegal TBS %d\n",A);
@@ -230,7 +231,7 @@ u32  dlsch_decoding(short *dlsch_llr,
     }
   
 #ifdef DEBUG_DLSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
@@ -318,14 +319,15 @@ u32  dlsch_decoding(short *dlsch_llr,
 					  &dlsch->harq_processes[harq_pid]->d[r][96],
 					  dlsch->harq_processes[harq_pid]->c[r],
 					  Kr,
-					  f1f2mat[iind*2],   
-					  f1f2mat[(iind*2)+1], 
+					  f1f2mat_old[iind*2],   
+					  f1f2mat_old[(iind*2)+1], 
 					  MAX_TURBO_ITERATIONS,
 					  crc_type,
 					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-					  harq_pid+1);
+					  (is_crnti==0)?harq_pid:harq_pid+1);
 
 
+      
    }
 
     if (ret>=(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
@@ -400,40 +402,41 @@ u32  dlsch_decoding(short *dlsch_llr,
 #include "LAYER2/MAC/defs.h"
 #endif
 
+ int dlsch_abstraction_EESM(double* sinr_dB, u8 TM, u32 rb_alloc[4], u8 mcs) {
 
-
-
-int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
-
-  int index;
+   int index,ii;
   double sinr_eff = 0;
   int rb_count = 0;
   int offset;
   double bler = 0;
+  TM = TM-1;
   for (offset = 0; offset <= 24; offset++) {
     if (rb_alloc[0] & (1<<offset)) {
       rb_count++;
-      sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[offset*2])))/beta_dlsch[mcs]);
-      //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
-
-      sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta_dlsch[mcs]);
-      //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
+      for(ii=0;ii<12;ii++)
+	{
+	  sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[(offset*12)+ii])))/beta1_dlsch[TM][mcs]);
+	  //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
+	  
+	  //  sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta1_dlsch[TM][mcs]);
+	  //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
+	}
     }
   }       
   //printf("sinr_eff1 = %f\n",sinr_eff);
-  sinr_eff =  - beta_dlsch[mcs] *log((sinr_eff)/(2*rb_count));
+  sinr_eff =  -beta2_dlsch[TM][mcs]*log((sinr_eff)/(12*rb_count));
   sinr_eff = 10 * log10(sinr_eff);
   LOG_I(OCM,"sinr_eff2 = %f\n",sinr_eff);
 
   // table lookup
   sinr_eff *= 10;
   sinr_eff = floor(sinr_eff);
-  if ((int)sinr_eff%2) {
-    sinr_eff += 1;
-  }
+  // if ((int)sinr_eff%2) {
+  //   sinr_eff += 1;
+  // }
   sinr_eff /= 10;
   msg("sinr_eff after rounding = %f\n",sinr_eff);
-  for (index = 0; index < 9; index++) {
+  for (index = 0; index < 16; index++) {
     if(index == 0) {
       if (sinr_eff < sinr_bler_map[mcs][0][index]) {
         bler = 1;
@@ -456,6 +459,322 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
 #endif
 }
 
+ int dlsch_abstraction_MIESM(double* sinr_dB,u8 TM, u32 rb_alloc[4], u8 mcs) {
+
+  int index;
+  double sinr_eff = 0;
+  double sinr_db1 = 0;
+  double sinr_db2 = 0;
+  double SI=0;
+  double RBIR=0;
+  int rb_count = 0;
+  int offset, M=0;
+  double bler = 0;
+  int start,middle,end;
+  TM = TM-1;
+  for (offset = 0; offset <= 24; offset++) {
+    if (rb_alloc[0] & (1<<offset)) {
+      rb_count++;
+     
+      //we need to do the table lookups here for the mutual information corresponding to the certain sinr_dB. 
+      
+      sinr_db1 = sinr_dB[offset*2];
+      sinr_db2 = sinr_dB[offset*2+1];
+
+      msg("sinr_db1=%f\n,sinr_db2=%f\n",sinr_db1,sinr_db2);
+
+      //rounding up for the table lookup
+      sinr_db1 *= 10;
+      sinr_db2 *= 10;
+
+      sinr_db1 = floor(sinr_db1);
+      sinr_db2 = floor(sinr_db2);
+
+      if ((int)sinr_db1%2) {
+	sinr_db1 += 1;
+      }
+      if ((int)sinr_db2%2) {
+	sinr_db2 += 1;
+      }
+
+      sinr_db1 /= 10;
+      sinr_db2 /= 10;
+      
+      if(mcs<10){
+	//for sinr_db1
+	for (index = 0; index < 162; index++) {
+	    if (sinr_db1 < MI_map_4qam[0][0]) {
+	      SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=2;
+	    break;
+	    }
+	     if (sinr_db1 > MI_map_4qam[0][161]) {
+	       SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
+	        M +=2;
+	    break;
+	    }
+	  
+	  if (sinr_db1 == MI_map_4qam[0][index]) {
+	    SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	     M +=2;
+	    break;
+	  }
+	}
+      
+      //for sinr_db2
+	for (index = 0; index < 162; index++) {
+	    if (sinr_db2 < MI_map_4qam[0][0]) {
+	      SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	       M +=2;
+	    break;
+	    }
+	     if (sinr_db2 > MI_map_4qam[0][161]) {
+	       SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
+	        M +=2;
+	    break;
+	    }
+	  
+	  if (sinr_db2 == MI_map_4qam[0][index]) {
+	    SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	     M +=2;
+	    break;
+	  }
+	}
+	
+      }
+      else if(mcs>9 && mcs<17)
+	{
+	  //for sinr_db1
+	  for (index = 0; index < 197; index++) {
+	    if (sinr_db1 < MI_map_16qam[0][0]) {
+	      SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	       M +=4;
+	      break;
+	    }
+	    if (sinr_db1 > MI_map_16qam[0][196]) {
+	      SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    
+	    if (sinr_db1 == MI_map_16qam[0][index]) {
+	      SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	    break;
+	  }
+	  }
+	  
+	  //for sinr_db2
+	  for (index = 0; index < 197; index++) {
+	    if (sinr_db2 < MI_map_16qam[0][0]) {
+	      SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    if (sinr_db2 > MI_map_16qam[0][196]) {
+	      SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    
+	    if (sinr_db2 == MI_map_16qam[0][index]) {
+	      SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	    break;
+	    }
+	  }
+	  
+	}
+      else if(mcs>16 && mcs<22)
+	{
+	  	//for sinr_db1
+	for (index = 0; index < 227; index++) {
+	    if (sinr_db1 < MI_map_64qam[0][0]) {
+	      SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=6;
+	    break;
+	    }
+	     if (sinr_db1 > MI_map_64qam[0][226]) {
+	       SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
+	       M +=6;
+	    break;
+	    }
+	  
+	     if (sinr_db1 == MI_map_64qam[0][index]) {
+	       SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	       M +=6;
+	       break;
+	     }
+	}
+	
+	//for sinr_db2
+	for (index = 0; index < 227; index++) {
+	  if (sinr_db2 < MI_map_64qam[0][0]) {
+	    SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	  if (sinr_db2 > MI_map_64qam[0][226]) {
+	    SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	  
+	  if (sinr_db2 == MI_map_64qam[0][index]) {
+	    SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	}
+	}
+    }
+  }
+
+  RBIR = SI/M;
+  
+  //Now RBIR->SINR_effective Mapping
+  //binary search method is performed here
+  if(mcs<10){
+    start = 0;
+    end = 161;
+    middle = end/2;
+    if (RBIR <= MI_map_4qam[2][start])
+      {
+      sinr_eff =  MI_map_4qam[0][start];
+      }
+    else
+      {
+      if (RBIR >= MI_map_4qam[2][end])
+	sinr_eff =  MI_map_4qam[0][end];
+      else
+	{//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_4qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	    start = middle;
+	  middle = (end-middle)/2;
+	}
+	}
+    for (; end>start; end--){
+      if ((RBIR < MI_map_4qam[2][end]) && (RBIR >  MI_map_4qam[2][end-2])){
+      sinr_eff = MI_map_4qam[0][end-1];
+      break;
+      }
+    }
+      }
+    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs]; 
+  }
+
+
+  
+  else
+    if (mcs>9 && mcs<17)
+      {
+	
+	start = 0;
+	end = 196;
+	middle = end/2;
+	if (RBIR <= MI_map_16qam[2][start])
+	  {
+	  sinr_eff =  MI_map_16qam[0][start];
+	  }
+	else
+	  {
+	  if (RBIR >= MI_map_16qam[2][end])
+	    sinr_eff =  MI_map_16qam[0][end];
+	  else
+	    {
+	//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_16qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	  start = middle;
+	  middle = (end-middle)/2;
+	}
+	    }
+	for (; end>start; end--){
+	  if ((RBIR < MI_map_16qam[2][end]) && (RBIR >  MI_map_16qam[2][end-2])){
+	    sinr_eff = MI_map_16qam[0][end-1];
+	    break;
+	  }
+	}
+      }
+	sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs];
+      } 
+    else
+      if (mcs>16)
+	{
+	  start = 0;
+	  end = 226;
+    middle = end/2;
+    if (RBIR <= MI_map_64qam[2][start])
+      {
+      sinr_eff =  MI_map_64qam[0][start];
+      }
+    else
+      {
+      if (RBIR >= MI_map_64qam[2][end])
+	sinr_eff =  MI_map_64qam[0][end];
+      else
+	{
+	//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_64qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	  start = middle;
+	  middle = (end-middle)/2;
+	}
+	}
+    for (; end>start; end--){
+      if ((RBIR < MI_map_64qam[2][end]) && (RBIR >  MI_map_64qam[2][end-2])){
+	sinr_eff = MI_map_64qam[0][end-1];
+      break;
+      }
+    } 
+      }
+    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs]; 
+	}
+
+  printf("SINR_Eff = %e\n",sinr_eff);
+
+ sinr_eff *= 10;
+  sinr_eff = floor(sinr_eff);
+  // if ((int)sinr_eff%2) {
+  //   sinr_eff += 1;
+  // }
+  sinr_eff /= 10;
+  msg("sinr_eff after rounding = %f\n",sinr_eff);
+
+   for (index = 0; index < 16; index++) {
+    if(index == 0) {
+      if (sinr_eff < sinr_bler_map[mcs][0][index]) {
+        bler = 1;
+        break;
+      }
+    }
+    if (sinr_eff == sinr_bler_map[mcs][0][index]) {
+        bler = sinr_bler_map[mcs][1][index];
+    }
+  }
+#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
+   if (uniformrandom() < bler) {
+    msg("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(0);
+  }
+  else {
+    msg("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(1);
+  }
+#endif
+    
+ }
+
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
 			u8 dlsch_id,
@@ -465,6 +784,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
   u8 eNB_id2;
+  u32 ue_id;
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
 #endif
@@ -515,16 +835,18 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,
-								PHY_vars_eNB_g[eNB_id2])][0];
+    ue_id= (u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0];
 
 #ifdef DEBUG_DLSCH_DECODING
-    for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
-      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
+    for (i=0;i<dlsch_ue->harq_processes[harq_pid]->TBS>>3;i++)
+      msg("%x.",dlsch_eNB->harq_processes[harq_pid]->b[i]);
+    msg("\n current harq pid is %d ue id %d \n", harq_pid, ue_id);
 #endif
 
-    if (dlsch_abstraction(phy_vars_ue->sinr_dB, dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
+    // apaposto //
+						 if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
+   // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
       // reset HARQ 
       dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
       dlsch_ue->harq_processes[harq_pid]->round  = 0;

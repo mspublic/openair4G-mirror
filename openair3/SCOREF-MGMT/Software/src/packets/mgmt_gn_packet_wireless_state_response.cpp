@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -40,6 +40,7 @@
 */
 
 #include "mgmt_gn_packet_wireless_state_response.hpp"
+#include <boost/lexical_cast.hpp>
 #include "../util/mgmt_util.hpp"
 #include <sstream>
 
@@ -59,13 +60,13 @@ string GeonetWirelessStateResponseEventPacket::toString() const {
 	return ss.str();
 }
 
-bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char> packetBuffer) {
+bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char>& packetBuffer) {
 	if (packetBuffer.size() < sizeof(WirelessStateResponseMessage))
 		return false;
 
 	// Parse interface count first
 	u_int8_t interfaceCount = packetBuffer.data()[sizeof(MessageHeader)];
-	logger.info("Number of interfaces is " + interfaceCount);
+	logger.info("Number of interfaces is " + boost::lexical_cast<string>(interfaceCount));
 
 	// Then traverse the buffer to get the state for every interface...
 	u_int16_t itemIndex = sizeof(WirelessStateResponseMessage);
@@ -82,7 +83,7 @@ bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char> p
 		item.reserved = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
 
 		// Update MIB with this record
-		mib.wirelessStateMap.insert(mib.wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(item.interfaceId, item));
+		mib.updateWirelessState(item.interfaceId, item);
 
 		logger.info("Management Information Base has been updated with following wireless state entry: ");
 		logger.info(item.toString());

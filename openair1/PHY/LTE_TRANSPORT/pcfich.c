@@ -275,7 +275,7 @@ void generate_pcfich(u8 num_pdcch_symbols,
 	       txdataF[0][symbol_offset+reg_offset+i]);
 #endif
 	*/
-	if (frame_parms->nb_antennas_tx>1)  
+	if (frame_parms->nb_antennas_tx_eNB>1)  
 	  txdataF[1][symbol_offset+reg_offset+i] = pcfich_d[1][m];
 	m++;
       }

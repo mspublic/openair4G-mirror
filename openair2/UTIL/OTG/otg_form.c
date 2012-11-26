@@ -18,9 +18,9 @@ FD_otg *create_form_otg(void)
   fdui->otg = fl_bgn_form(FL_NO_BOX, 550, 550);
   obj = fl_add_box(FL_UP_BOX,0,0,900,700,"");
   fdui->owd = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,50,30,450,190,"One Way Delay(ms)"); 
-    fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
+  fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
   fdui->throughput = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,50,300,450,190,"Throughput(Kbit/s)");
-    fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
+  fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
    
   
    obj = fl_add_button(FL_NORMAL_BUTTON,250,510,50,30,"Exit");
@@ -49,7 +49,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
       fl_show_form (form_dl->otg, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       fl_set_form_position(form_dl->otg, 200, 200);
         if (g_otg->owd_radio_access==1)
-          fl_set_xyplot_ybounds(form_dl->owd,0,50);
+          fl_set_xyplot_ybounds(form_dl->owd,0,30);
         else
           fl_set_xyplot_ybounds(form_dl->owd,0,200);
  
@@ -59,7 +59,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
       fl_show_form (form_ul->otg, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       fl_set_form_position(form_ul->otg, 850, 200);
       if (g_otg->owd_radio_access==1)
-          fl_set_xyplot_ybounds(form_ul->owd,0,50);
+          fl_set_xyplot_ybounds(form_ul->owd,0,70);
         else
           fl_set_xyplot_ybounds(form_ul->owd,0,200);
       fl_set_xyplot_ybounds(form_ul->throughput,0,50); 
@@ -76,8 +76,6 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
 																																																																																																																																																																																																		
 void add_tab_metric(int src, int dst, float owd, float throughput, int ctime){
 
-
-printf("values_forms src %d, dst %d, owd %f, th %f  \n", src, dst, owd, throughput);
   if (otg_forms_info->init_forms==0){
     show_otg_form();
     otg_forms_info->init_forms=1;
@@ -86,7 +84,7 @@ printf("values_forms src %d, dst %d, owd %f, th %f  \n", src, dst, owd, throughp
   }
 
 if (dst<NB_eNB_INST){ 
-    LOG_D(OTG,"direction: UL [src:%d, dst:%d] \n", src, dst);
+    //LOG_D(OTG,"direction: UL [src:%d, dst:%d] \n", src, dst);
     otg_forms_info->data_owd_ul[src][dst][otg_forms_info->idx_ul[src][dst]]= owd;
     otg_forms_info->data_throughput_ul[src][dst][otg_forms_info->idx_ul[src][dst]]=throughput;
     otg_forms_info->data_ctime_ul[src][dst][otg_forms_info->idx_ul[src][dst]]= otg_forms_info->idx_ul[src][dst]; 
@@ -94,7 +92,7 @@ if (dst<NB_eNB_INST){
     plot_graphes_ul(src, dst);
   }
   else{
-    LOG_D(OTG,"direction: DL [src:%d, dst:%d] \n", src, dst);
+    //LOG_D(OTG,"direction: DL [src:%d, dst:%d] \n", src, dst);
     otg_forms_info->data_owd_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= owd;
     otg_forms_info->data_throughput_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= throughput;
     otg_forms_info->data_ctime_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= otg_forms_info->idx_dl[src][dst]; 
@@ -103,8 +101,6 @@ if (dst<NB_eNB_INST){
   }
   //LOG_D(OTG,"OTG_forms[src %d, dst %d] owd %f TH %f \n", src, dst,  owd, throughput);	
   //LOG_D(OTG,"MAX_UE_eNB %d, %d \n:",  NB_UE_INST,  NB_eNB_INST);   
-
-printf("otg_counter: UL %d , DL %d \n", clear_cmpt_ul, clear_cmpt_dl);
 }
 
 
@@ -184,7 +180,6 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
 
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][dst],
     otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "Kbit/s");  
-//printf("DL_owd (1)[src %d,  dst %d] owd %f, idx %d \n", src, dst, otg_forms_info->data_owd_dl[src][dst][10], otg_forms_info->idx_dl[src][dst] );
   } 
   else {
     fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],

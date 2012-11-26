@@ -52,7 +52,6 @@
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1) 
 #define PBCH_PDU_SIZE 3 //bytes
-#define TIMING_ADVANCE_INIT 0
 
 #define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
 
@@ -62,6 +61,7 @@
 
 #define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
 
+typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {
   normal=0,
@@ -409,15 +409,17 @@ typedef struct {
   /// Number of resource blocks (RB) in UL
   u8 N_RB_UL;
   /// Cell ID                 
-  u8 Nid_cell;               
+  u16 Nid_cell;               
+  /// MBSFN Area ID
+  u16 Nid_cell_mbsfn;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   u8 Ncp;
   /// Cyclic Prefix for UL (0=Normal CP, 1=Extended CP)
   u8 Ncp_UL;                   
   /// shift of pilot position in one RB
   u8 nushift;                
-/// Frame type (0 FDD, 1 TDD)
-  u8 frame_type;
+  /// Frame type (0 FDD, 1 TDD)
+  lte_frame_type_t frame_type;
   /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   u8 tdd_config;
   /// TDD S-subframe configuration (0-9) 
@@ -426,17 +428,29 @@ typedef struct {
   u8 node_id;
   /// Frequency index of CBMIMO1 card
   u8 freq_idx;
-  /// Frequency for ExpressMIMO/LIME
+  /// RX Frequency for ExpressMIMO/LIME
   u32 carrier_freq[4];
+  /// TX Frequency for ExpressMIMO/LIME
+  u32 carrier_freqtx[4];
   /// RX gain for ExpressMIMO/LIME
   u32 rxgain[4];
+  /// TX gain for ExpressMIMO/LIME
+  u32 txgain[4];
+  /// RF mode for ExpressMIMO/LIME
+  u32 rfmode[4];
+  /// RF RX DC Calibration for ExpressMIMO/LIME
+  u32 rxdc[4];
+  /// RF TX DC Calibration for ExpressMIMO/LIME
+  u32 rflocal[4];
+  /// RF VCO calibration for ExpressMIMO/LIME
+  u32 rfvcolocal[4];
   /// Turns on second TX of CBMIMO1 card
   u8 dual_tx;                
-/// flag to indicate SISO transmission
+  /// flag to indicate SISO transmission
   u8 mode1_flag;           
-/// Size of FFT  
+  /// Size of FFT  
   u16 ofdm_symbol_size;
-/// log2(Size of FFT)  
+  /// log2(Size of FFT)  
   u8 log2_symbol_size;
   /// Number of prefix samples in all but first symbol of slot
   u16 nb_prefix_samples;
@@ -452,6 +466,8 @@ typedef struct {
   u8 nb_antennas_tx;
   /// Number of Receive antennas in node
   u8 nb_antennas_rx;
+  /// Number of Transmit antennas in eNodeB
+  u8 nb_antennas_tx_eNB;
   /// Pointer to twiddle factors for FFT
   s16 *twiddle_fft;
   ///pointer to twiddle factors for IFFT
@@ -608,7 +624,11 @@ typedef struct {
   /// Pointers to llr vectors (2 TBs)
   s16 *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
-  u8 log2_maxh;
+  s16 log2_maxh;
+  /// LLR shifts for subband scaling
+  u8 *llr_shifts;
+  /// Pointer to LLR shifts
+  u8 *llr_shifts_p;
   /// Pointers to llr vectors (128-bit alignment)
   s16 **llr128;  
   //u32 *rb_alloc;
@@ -751,6 +771,8 @@ typedef enum {
   PUSCH=3,
   RESYNCH=4
 } UE_MODE_t;
+
+
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 

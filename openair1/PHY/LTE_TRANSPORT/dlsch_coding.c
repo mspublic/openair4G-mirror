@@ -74,11 +74,11 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
 	msg("Freeing dlsch process %d (%p)\n",i,dlsch->harq_processes[i]);
 #endif
 	if (dlsch->harq_processes[i]->b) {
-	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
+        free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
 #ifdef DEBUG_DLSCH_FREE
 	  msg("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
 #endif
-	}
+    }
 	if (dlsch->harq_processes[i]->c) {
 #ifdef DEBUG_DLSCH_FREE
 	  msg("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
@@ -117,12 +117,12 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
       //printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
       if (dlsch->harq_processes[i]) {
-	bzero(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
-	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
-	if (!dlsch->harq_processes[i]->b) {
-	  msg("Can't get b\n");
-	  exit_flag=1;
-	}
+          bzero(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
+          dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
+          if (!dlsch->harq_processes[i]->b) {
+              msg("Can't get b\n");
+              exit_flag=1;
+          }
 	if (abstraction_flag==0) {
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
 	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
@@ -199,9 +199,10 @@ int dlsch_encoding(unsigned char *a,
   unsigned int A; 
   unsigned char mod_order;
   unsigned int Kr,Kr_bytes,r,r_offset=0;
+  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
 
-  A = dlsch->harq_processes[harq_pid]->TBS;
-
+  A = dlsch->harq_processes[harq_pid]->TBS; //6228
+  // printf("Encoder: A: %d\n",A);
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
   G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
@@ -218,13 +219,13 @@ int dlsch_encoding(unsigned char *a,
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
 		 A)>>8;
-    
     a[A>>3] = ((u8*)&crc)[2];
     a[1+(A>>3)] = ((u8*)&crc)[1];
     a[2+(A>>3)] = ((u8*)&crc)[0];
 
     dlsch->harq_processes[harq_pid]->B = A+24;
-    dlsch->harq_processes[harq_pid]->b = a;
+    //    dlsch->harq_processes[harq_pid]->b = a;
+    memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
     if (lte_segmentation(dlsch->harq_processes[harq_pid]->b,
 			 dlsch->harq_processes[harq_pid]->c,
 			 dlsch->harq_processes[harq_pid]->B,
@@ -270,15 +271,15 @@ int dlsch_encoding(unsigned char *a,
       
       
 #ifdef DEBUG_DLSCH_CODING    
-      msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
+      msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
       
       threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
 				Kr>>3, 
 				&dlsch->harq_processes[harq_pid]->d[r][96],
 				(r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-				f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
-				f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
+				f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+				f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
 				);
 #ifdef DEBUG_DLSCH_CODING
       if (r==0)
@@ -318,7 +319,9 @@ int dlsch_encoding(unsigned char *a,
 					dlsch->harq_processes[harq_pid]->rvidx,
 					get_Qm(dlsch->harq_processes[harq_pid]->mcs),
 					dlsch->harq_processes[harq_pid]->Nl,
-					r);                       // r
+					r,
+					nb_rb,
+					m);                       // r
 #ifdef DEBUG_DLSCH_CODING
     if (r==dlsch->harq_processes[harq_pid]->C-1)
       write_output("enc_output.m","enc",dlsch->e,r_offset,1,4);
@@ -332,7 +335,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 *DLSCH_pdu,
 			 LTE_eNB_DLSCH_t *dlsch) {
 
-  // int payload_offset = 0;
+  //int payload_offset = 0;
   unsigned char harq_pid = dlsch->current_harq_pid;
   unsigned short i;
 
@@ -340,16 +343,20 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     memcpy(dlsch->harq_processes[harq_pid]->b,
 	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-    LOG_D(PHY,"eNB %d dlsch_encoding_emul, tbs is %d\n", 
+
+
+
+    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d harq pid %d \n", 
 	phy_vars_eNB->Mod_id,
-	dlsch->harq_processes[harq_pid]->TBS>>3);
+	  dlsch->harq_processes[harq_pid]->TBS>>3,
+	  harq_pid);
 
     for (i=0;i<dlsch->harq_processes[harq_pid]->TBS>>3;i++)
       msg("%x.",DLSCH_pdu[i]);
     msg("\n");
 
     memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]],
-	   //memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
+	   //	    memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
     	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
   } else {

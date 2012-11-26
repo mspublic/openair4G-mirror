@@ -138,6 +138,8 @@ int init_signal_buffers(LTE_DL_FRAME_PARMS *frame_parms) {
     else {
       msg("[PHY][INIT] PCIe interface %d at %p\n",card_id,exmimo_pci_interface);
       //      openair_writel(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface[card_id]));  
+      DAQ_MBOX = (unsigned int)bigmalloc16(16);
+      exmimo_pci_interface->rf.mbox        = (unsigned int)virt_to_phys((volatile void*)DAQ_MBOX);
       
       for (i=0;i<NB_ANTENNAS_RX;i++) {
 	exmimo_pci_interface->rf.adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);

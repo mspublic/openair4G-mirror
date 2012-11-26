@@ -84,5 +84,15 @@ protected_pmip_handler(void             pmip_timer_bce_expired_handler(struct tq
 * \param[in]  tqe A task queue element
 */
 protected_pmip_handler(void             pmip_timer_tunnel_expired_handler(struct tq_elem *tqe);)
+
+/*! \fn void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
+ * \brief  Handler triggered by the reception of a PBU with P flag set
+ * \param[in]  mh       Mobility header
+ * \param[in]  len      size of message
+ * \param[in]  in_addrs Bundle of address (src and dst)
+ * \param[in]  iif      Interface id
+ */
+public_pmip_handler(void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif);)
+
 #endif
 /** @}*/

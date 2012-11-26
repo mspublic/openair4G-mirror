@@ -115,21 +115,28 @@ AC_CHECK_LIB(pcap, pcap_next, [], [
 	AC_MSG_ERROR([PCAP library required but not found.])
 ])
 
-AC_CHECK_LIB(freeradius-client, rc_read_config, [], [
+AC_ARG_WITH(pmip-use-radius,
+			AS_HELP_STRING([--with-pmip-use-radius],[use radius auth]),
+			[ac_cv_pmip_use_radius=$withval], [ac_cv_pmip_use_radius=no])
+if test x$ac_cv_pmip_use_radius = xyes; then
+	AC_CHECK_LIB(freeradius-client, rc_read_config, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_read_dictionary, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_read_dictionary, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_avpair_add, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_avpair_add, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_avpair_get, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_avpair_get, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_avpair_free, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_avpair_free, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
+	])
+fi
+
+
 
 
 AC_CHECK_LIB(netlink, rtnl_talk)
@@ -149,8 +156,15 @@ fi
 
 AC_MSG_NOTICE([*** checking for optional features])
 AC_CACHE_CHECK([whether to use builtin crypto],
-	       [ac_cv_use_builtin_crypto], [ac_cv_use_builtin_crypto=no])
+			   [ac_cv_use_builtin_crypto], [ac_cv_use_builtin_crypto=no])
 AM_CONDITIONAL(BUILTIN_CRYPTO, test x$ac_cv_lib_crypto_HMAC_Init = xno)
+
+if test ac_cv_pmip_use_radius = xyes; then
+        AC_DEFINE([USE_RADIUS], [1], [USE RADIUS AUTH])
+fi
+AC_CACHE_CHECK([whether to use RADIUS client library],
+			   [ac_cv_pmip_use_radius], [ac_cv_pmip_use_radius=no])
+AM_CONDITIONAL(USE_RADIUS, test x$ac_cv_pmip_use_radius = xyes)
 
 dnl Option --disable-debug
 AC_ARG_ENABLE(debug,
@@ -256,6 +270,7 @@ AC_PACKAGE_NAME version AC_PACKAGE_VERSION
 
   Use built-in crypto: ............ $ac_cv_use_builtin_crypto
   Use OpenSSL crypto library: ..... $ac_cv_lib_crypto_HMAC_Init
+  Use RADIUS client library: ...... $ac_cv_pmip_use_radius
   Enable debugging mode: .......... $ac_cv_enable_debug
   Enable virtual debug terminal: .. $ac_cv_enable_vt
 

@@ -27,6 +27,15 @@ void init_transport_channels(unsigned char transmission_mode) {
   BCCH_alloc_pdu.harq_pid = 0;
   BCCH_alloc_pdu.TPC      = 1;      // set to 3 PRB
 
+  BCCH_alloc_pdu_fdd.type               = 1;
+  BCCH_alloc_pdu_fdd.vrb_type           = 0;
+  BCCH_alloc_pdu_fdd.rballoc            = BCCH_RB_ALLOC;
+  BCCH_alloc_pdu_fdd.ndi      = 1;
+  BCCH_alloc_pdu_fdd.rv       = 1;
+  BCCH_alloc_pdu_fdd.mcs      = 1;
+  BCCH_alloc_pdu_fdd.harq_pid = 0;
+  BCCH_alloc_pdu_fdd.TPC      = 1;      // set to 3 PRB
+
   DLSCH_alloc_pdu1A.type               = 1;
   DLSCH_alloc_pdu1A.vrb_type           = 0;
   DLSCH_alloc_pdu1A.rballoc            = BCCH_RB_ALLOC;
@@ -36,6 +45,15 @@ void init_transport_channels(unsigned char transmission_mode) {
   DLSCH_alloc_pdu1A.harq_pid = 0;
   DLSCH_alloc_pdu1A.TPC      = 1;   // set to 3 PRB
 
+  DLSCH_alloc_pdu1A_fdd.type               = 1;
+  DLSCH_alloc_pdu1A_fdd.vrb_type           = 0;
+  DLSCH_alloc_pdu1A_fdd.rballoc            = BCCH_RB_ALLOC;
+  DLSCH_alloc_pdu1A_fdd.ndi      = 1;
+  DLSCH_alloc_pdu1A_fdd.rv       = 1;
+  DLSCH_alloc_pdu1A_fdd.mcs      = 2;
+  DLSCH_alloc_pdu1A_fdd.harq_pid = 0;
+  DLSCH_alloc_pdu1A_fdd.TPC      = 1;   // set to 3 PRB
+
   RA_alloc_pdu.type               = 1;
   RA_alloc_pdu.vrb_type           = 0;
   RA_alloc_pdu.rballoc            = RA_RB_ALLOC;
@@ -44,6 +62,15 @@ void init_transport_channels(unsigned char transmission_mode) {
   RA_alloc_pdu.mcs      = 1;
   RA_alloc_pdu.harq_pid = 0;
   RA_alloc_pdu.TPC      = 1;
+
+  RA_alloc_pdu_fdd.type               = 1;
+  RA_alloc_pdu_fdd.vrb_type           = 0;
+  RA_alloc_pdu_fdd.rballoc            = RA_RB_ALLOC;
+  RA_alloc_pdu_fdd.ndi      = 1;
+  RA_alloc_pdu_fdd.rv       = 1;
+  RA_alloc_pdu_fdd.mcs      = 1;
+  RA_alloc_pdu_fdd.harq_pid = 0;
+  RA_alloc_pdu_fdd.TPC      = 1;
 
   
   DLSCH_alloc_pdu1.rballoc          = 0xf;

@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -52,7 +52,8 @@ GeonetWirelessStateRequestEventPacket::~GeonetWirelessStateRequestEventPacket() 
 bool GeonetWirelessStateRequestEventPacket::serialize(vector<unsigned char>& buffer) const {
 	/* This packet is an only-header packet */
 	if (!GeonetPacket::serialize(buffer)) {
-		cerr << "Cannot serialise packet header!" << endl;
+		logger.error("Cannot serialise packet header!");
+		return false;
 	}
 
 	buffer.resize(sizeof(MessageHeader));

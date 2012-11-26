@@ -119,17 +119,17 @@ int rrc_init_global_param(void){
   DTCH_UL_LCHAN_DESC.Delay_class=1;
 
   Rlc_info_um.rlc_mode=RLC_UM;
-  Rlc_info_um.rlc.rlc_um_info.timer_reordering=0;
+  Rlc_info_um.rlc.rlc_um_info.timer_reordering=25;
   Rlc_info_um.rlc.rlc_um_info.sn_field_length=10;
   Rlc_info_um.rlc.rlc_um_info.is_mXch=0;
   //Rlc_info_um.rlc.rlc_um_info.sdu_discard_mode=16;
 
   Rlc_info_am_config.rlc_mode=RLC_AM;
-  Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 255;
+  Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 50;
   Rlc_info_am_config.rlc.rlc_am_info.poll_pdu           = 8;
   Rlc_info_am_config.rlc.rlc_am_info.poll_byte          = 1000;
   Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit  = 15;
-  Rlc_info_am_config.rlc.rlc_am_info.t_reordering       = 5000;
+  Rlc_info_am_config.rlc.rlc_am_info.t_reordering       = 50;
   Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit  = 10;
 #ifndef NO_RRM
   if(L3_xface_init())
@@ -239,11 +239,13 @@ void openair_rrc_top_init(void){
 
 }
 
-int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
-  if(eNB_flag == 1)
-    return(eNB_rrc_inst[Mod_id].Info.Status[index]);
-  else
-    return(UE_rrc_inst[Mod_id].Info[index].State);
+void rrc_top_cleanup(void){
+
+ if (NB_UE_INST>0)
+   free(UE_rrc_inst);
+ if (NB_eNB_INST>0)
+   free(eNB_rrc_inst);
+
 }
 
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
