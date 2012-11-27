@@ -59,17 +59,13 @@ class ManagementClient {
 		 */
 		enum ManagementClientState {
 			/**
-			 * Client is not connected
+			 * Client is not connected or is unreachable
 			 */
 			OFFLINE = 0,
 			/**
-			 * A client is connected but has not yet received configuration
+			 * A client is connected and alive
 			 */
 			ONLINE = 1,
-			/**
-			 * A client is connected and has received configuration
-			 */
-			CONNECTED = 2
 		};
 
 		/**

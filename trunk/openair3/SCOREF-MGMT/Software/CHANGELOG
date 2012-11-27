@@ -1,4 +1,9 @@
 
+v1.3.5
+* Client state CONNECTED removed, now there are ONLINE and OFFLINE only
+* test/simulation/README update with scenario file information
+* ../Documentation/SCOREF-MGMT Progress.pdf file added
+
 v1.3.4
 * These documentation files have been updated: README.RUNNING, README.HEADER_TEMPLATE, README.BUILD, README
 

@@ -9,12 +9,39 @@
    There is no build for this tool, it's plain Python which is interpreted rather 
    than to be built, see section 3. Running.
 
-3. Running
+3. Commands
+   Following commands are supported.
+
+   DEFINE_SERVER_PORT <port>
+   Defines the destination port (i.e. the MGMT-CORE's port)
+
+   DEFINE_CLIENT_PORT <port>
+   Defines the client's port (i.e. source port that is used to send the packets to MGMT-CORE from)
+
+   DEFINE_TYPE
+   Defines client type, can be 'GN' or 'FAC'
+
+   SEND COMMUNICATION_PROFILE_REQUEST
+   Sends a COMMUNICATION_PROFILE_REQUEST packet to MGMT-CORE's given port
+
+   SEND NETWORK_STATE
+   Sends a NETWORK_STATE packet to MGMT-CORE's given port
+
+   SEND LOCATION_UPDATE
+   Sends a LOCATION_UPDATE to MGMT-CORE's given port
+
+   SEND CONFIGURATION_NOTIFICATION
+   Sends a CONFIGURATION_NOTIFICATION to MGMT-CORE's given port
+
+   SEND GET_CONFIGURATION
+   Sends a GET_CONFIGURATION to MGMT-CORE's given port
+
+4. Running
    Since this simulator has been written in Python one needs the Python interpreter.
    In order to run first scenario file, for example,
    
    $ python main.py scenarios/01.sce
    
-4. References
+5. References
 
 - Baris Demiray <baris.demiray@eurecom.fr>

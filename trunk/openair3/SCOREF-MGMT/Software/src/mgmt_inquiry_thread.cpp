@@ -62,7 +62,7 @@ void InquiryThread::operator()() {
 	boost::posix_time::seconds wait(wirelessStateUpdateInterval);
 
 	while (true) {
-		logger.info("Will wait for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Update");
+		logger.info("Will wait for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Request");
 		boost::this_thread::sleep(wait);
 		requestWirelessStateUpdate();
 	}
