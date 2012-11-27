@@ -1,5 +1,5 @@
 - A document having doxygen-generated class diagrams (and more) will be produced
 - packets/ directory (and may be util/ too) would be a shared object
 - boost::property_tree::ini_parser could be utilised for configuration file parse
-
+ 
 - Baris Demiray <baris.demiray@eurecom.fr>

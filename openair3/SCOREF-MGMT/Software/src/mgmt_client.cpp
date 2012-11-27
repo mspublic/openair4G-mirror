@@ -60,7 +60,6 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint
 	 */
 	clientStateStringMap.insert(std::make_pair(ManagementClient::OFFLINE, "OFFLINE"));
 	clientStateStringMap.insert(std::make_pair(ManagementClient::ONLINE, "ONLINE"));
-	clientStateStringMap.insert(std::make_pair(ManagementClient::CONNECTED, "CONNECTED"));
 	/**
 	 * Initialise type strings map
 	 */
@@ -100,23 +99,8 @@ ManagementClient::ManagementClientState ManagementClient::getState() const {
 }
 
 bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
-	if (this->state == state) {
-		logger.info("State change is not necessary, client is already " + clientStateStringMap[state]);
+	if (this->state == state)
 		return true;
-	}
-
-	/**
-	 * Verify state change
-	 */
-	if ((this->state == OFFLINE && state == ONLINE)
-			|| (this->state == OFFLINE && state == CONNECTED)
-			|| (this->state == ONLINE && state == CONNECTED)) {
-		logger.debug("State change is valid");
-	} else {
-		logger.warning("Requested state change from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state] + " is either invalid or unnecessary");
-		logger.info("Ignoring state change request...");
-		return false;
-	}
 
 	this->state = state;
 	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);

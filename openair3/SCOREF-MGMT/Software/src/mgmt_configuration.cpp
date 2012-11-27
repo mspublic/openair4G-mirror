@@ -148,7 +148,8 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 						try {
 							ItsKeyValue valueContainer;
 							valueContainer.intValue = atoi(value.c_str());
-							mib.setValue(parameter, valueContainer);
+							if (mib.setValue(parameter, valueContainer))
+								logger.info("Parameter '" + parameter + "' has been set to '" + value + "'");
 						} catch (Exception& e) {
 							e.updateStackTrace("Cannot set MIB ITS key using value given in the configuration file");
 							throw;
