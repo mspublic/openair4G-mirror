@@ -9,13 +9,13 @@ Unit of measure: FL_COORD_PIXEL
 =============== FORM ===============
 Name: lte_scope
 Width: 780
-Height: 639
-Number of Objects: 10
+Height: 723
+Number of Objects: 11
 
 --------------------
 class: FL_BOX
 type: ROUNDED_BOX
-box: 0 0 780 639
+box: 0 0 780 723
 boxtype: FL_ROUNDED_BOX
 colors: FL_BLACK FL_BLUE
 alignment: FL_ALIGN_CENTER
@@ -51,7 +51,7 @@ argument:
 --------------------
 class: FL_XYPLOT
 type: POINTS_XYPLOT
-box: 600 20 160 190
+box: 600 230 160 190
 boxtype: FL_EMBOSSED_BOX
 colors: FL_BLACK FL_GREEN
 alignment: FL_ALIGN_BOTTOM
@@ -63,24 +63,6 @@ shortcut:
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: scatter_plot
-callback: 
-argument: 
-
---------------------
-class: FL_XYPLOT
-type: POINTS_XYPLOT
-box: 20 400 570 140
-boxtype: FL_EMBOSSED_BOX
-colors: FL_BLACK FL_YELLOW
-alignment: FL_ALIGN_BOTTOM
-style: FL_NORMAL_STYLE
-size: FL_TINY_SIZE
-lcol: FL_WHITE
-label: PDSCH/PUSCH Decoder Input
-shortcut: 
-resize: FL_RESIZE_ALL
-gravity: FL_NoGravity FL_NoGravity
-name: demod_out
 callback: 
 argument: 
 
@@ -141,7 +123,7 @@ argument:
 --------------------
 class: FL_XYPLOT
 type: POINTS_XYPLOT
-box: 600 430 160 190
+box: 600 440 160 190
 boxtype: FL_EMBOSSED_BOX
 colors: FL_BLACK FL_YELLOW
 alignment: FL_ALIGN_BOTTOM
@@ -159,7 +141,7 @@ argument:
 --------------------
 class: FL_XYPLOT
 type: POINTS_XYPLOT
-box: 600 225 160 190
+box: 600 20 160 190
 boxtype: FL_EMBOSSED_BOX
 colors: FL_BLACK FL_CYAN
 alignment: FL_ALIGN_BOTTOM
@@ -177,7 +159,7 @@ argument:
 --------------------
 class: FL_BUTTON
 type: PUSH_BUTTON
-box: 250 570 130 40
+box: 620 660 130 40
 boxtype: FL_UP_BOX
 colors: FL_COL1 FL_COL1
 alignment: FL_ALIGN_CENTER
@@ -191,6 +173,42 @@ gravity: FL_NoGravity FL_NoGravity
 name: ia_receiver_button
 callback: ia_receiver_on_off
 argument: 0
+
+--------------------
+class: FL_XYPLOT
+type: POINTS_XYPLOT
+box: 20 400 570 140
+boxtype: FL_EMBOSSED_BOX
+colors: FL_BLACK FL_YELLOW
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_WHITE
+label: PDSCH/PUSCH Decoder Input
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: demod_out
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: NORMAL_XYPLOT
+box: 20 560 570 140
+boxtype: FL_EMBOSSED_BOX
+colors: FL_BLACK FL_WHITE
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_WHITE
+label: Throughput [kbits/s]
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: tput
+callback: 
+argument: 
 
 ==============================
 create_the_forms

@@ -352,7 +352,9 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
 
 s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
-  int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
+  int oip_ifup=0; 
+  int oip_id=0;
+  u8 ip_addr[4] = {10,0,0,0};
 
     LOG_D(RRC,"[UE] Frame %d: Configuring DRB %ld/LCID %d\n",
       frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
@@ -372,42 +374,44 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
 		       RADIO_ACCESS_BEARER,Rlc_info_um);
 #ifdef NAS_NETLINK
-#    ifdef OAI_EMU
-    ip_addr_offset3 = oai_emulation.info.nb_enb_local;
-    ip_addr_offset4 = NB_eNB_INST;
-#    else
-    ip_addr_offset3 = 0;
-    ip_addr_offset4 = 8;
-#    endif
-#    ifndef NAS_DRIVER_TYPE_ETHERNET
-    LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, ip_addr_offset3+Mod_id,
-	  ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1);
-    oip_ifup=nas_config(ip_addr_offset3+Mod_id,   // interface_id
-			ip_addr_offset3+Mod_id+1, // third_octet
-			ip_addr_offset4+Mod_id+1); // fourth_octet
+#ifdef OAI_EMU
+    oip_id     = oai_emulation.info.nb_enb_local+Mod_id;
+    ip_addr[2] = (u8) (oai_emulation.info.nb_enb_local+Mod_id+1);
+    ip_addr[3] = (u8) (NB_eNB_INST + DRB_config->drb_Identity);
+    //ip_addr[3] = (u8) (NB_eNB_INST + Mod_id + 1);
+#else
+    oip_id     = Mod_id;
+    ip_addr[2] = (u8) (Mod_id+1);
+    ip_addr[3] = (u8) (NUMBER_OF_eNB_MAX + DRB_config->drb_Identity);
+#endif
+    LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP %d.%d.%d.%d\n", Mod_id, oip_id, ip_addr[0],ip_addr[1],ip_addr[2],ip_addr[3]);
+    oip_ifup=nas_config(oip_id,   // interface_id
+			ip_addr[2], // third_octet
+			ip_addr[3]); // fourth_octet
     if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
-#        ifdef OAI_EMU
+#ifdef OAI_EMU
       oai_emulation.info.oai_ifup[Mod_id]=1;
-#        endif
-      LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
+#endif
+      LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack, src %d.%d.%d.%d, dst %d.%d.%d.%d\n",  
 	    Mod_id,
-	    ip_addr_offset3+Mod_id,
-	    (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
+	    oip_id,
+	    (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
+	    ip_addr[0],ip_addr[1],ip_addr[2],ip_addr[3],
+	    ip_addr[0],ip_addr[1],ip_addr[2],eNB_index+1);
 
 	    rb_conf_ipv4(0,//add
 			 Mod_id,//cx align with the UE index
-			 ip_addr_offset3+Mod_id,//inst num_enb+ue_index
+			 oip_id,//inst num_enb+ue_index
 			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
 			 0,//dscp
-			 ipv4_address(ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1),//saddr
-			 ipv4_address(ip_addr_offset3+Mod_id+1,eNB_index+1));//daddr
+			 ipv4_address(ip_addr[2],ip_addr[3]),//saddr
+			 ipv4_address(ip_addr[2],eNB_index+1));//daddr
 	    LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",Mod_id,eNB_index);
     }
-#    else
-#        ifdef OAI_EMU
-      oai_emulation.info.oai_ifup[Mod_id]=1;
-#        endif
-#    endif
+#else //NAS_NETLINK
+#ifdef OAI_EMU
+    oai_emulation.info.oai_ifup[Mod_id]=1;
+#endif
 #endif
     break;
   case RLC_Config_PR_um_Uni_Directional_UL :

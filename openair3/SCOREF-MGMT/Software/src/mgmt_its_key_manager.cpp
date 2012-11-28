@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -46,16 +46,10 @@
 #include <sstream>
 
 ItsKeyManager::ItsKeyManager(Logger& logger) : logger(logger) {
-	/**
-	 * Insert string correspondences for numerical values of ITS key data types
-	 */
-	itsKeyDataTypeName.insert(itsKeyDataTypeName.end(), std::make_pair(ITS_DATA_TYPE_FLOAT, "FLOAT"));
-	itsKeyDataTypeName.insert(itsKeyDataTypeName.end(), std::make_pair(ITS_DATA_TYPE_INTEGER, "INTEGER"));
-	itsKeyDataTypeName.insert(itsKeyDataTypeName.end(), std::make_pair(ITS_DATA_TYPE_STRING, "STRING"));
 }
 
 ItsKeyManager::~ItsKeyManager() {
-	itsKeyMap.clear();
+	itsKeyMap.empty();
 }
 
 ItsKeyID ItsKeyManager::findKeyId(const string& keyName) const {
@@ -68,7 +62,7 @@ ItsKeyID ItsKeyManager::findKeyId(const string& keyName) const {
 		++iterator;
 	}
 
-	return static_cast<ItsKeyID>(0xDEAD);
+	return static_cast<ItsKeyID>(0xeeee);
 }
 
 map<ItsKeyID, ItsKeyValue> ItsKeyManager::getSubset(ItsKeyType keyType) const {
@@ -154,30 +148,6 @@ ItsDataType ItsKeyManager::getDataType(ItsKeyID id) {
 	return itsKeyMap[id].dataType;
 }
 
-string ItsKeyManager::getDataTypeName(ItsKeyID id) {
-	return itsKeyDataTypeName[itsKeyMap[id].dataType];
-}
-
-std::size_t ItsKeyManager::getDataTypeSize(ItsKeyID id) {
-	switch (itsKeyMap[id].dataType) {
-		case ITS_DATA_TYPE_INTEGER:
-			return sizeof(int);
-
-		case ITS_DATA_TYPE_FLOAT:
-			return sizeof(float);
-
-		case ITS_DATA_TYPE_STRING:
-			return itsKeyMap[id].value.stringValue.length();
-
-		default:
-			logger.warning("ITS key with ID " + boost::lexical_cast<string>((int)id) + " doesn't have a valid data type!");
-			/**
-			 * Most of the ITS keys are of type integer so let's return the size of an integer
-			 */
-			return sizeof(int);
-	}
-}
-
 bool ItsKeyManager::setKeyValue(const string& name, ItsKeyValue value) {
 	map<ItsKeyID, ItsKey>::iterator iterator = itsKeyMap.begin();
 
@@ -200,12 +170,6 @@ bool ItsKeyManager::setKeyValue(ItsKeyID id, ItsKeyValue value) {
 }
 
 u_int16_t ItsKeyManager::getNumberOfKeys(ItsKeyType type) const {
-	/**
-	 * If we're asked for all, return the size of the ITS key map
-	 */
-	if (type == ITS_KEY_TYPE_ALL)
-		return itsKeyMap.size();
-
 	map<ItsKeyID, ItsKey>::const_iterator iterator = itsKeyMap.begin();
 	u_int16_t numberOfKeys = 0;
 

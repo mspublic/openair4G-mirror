@@ -94,7 +94,7 @@ char * random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type);
 * \note 
 * @ingroup  _otg
 */
-unsigned char *packet_gen(int src, int dst, int ctime, int *pkt_size);
+char *packet_gen(int src, int dst, int ctime, int *pkt_size);
 
 
 /*! \fn char *header_gen(int  hdr_size);
@@ -104,7 +104,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int *pkt_size);
 * \note 
 * @ingroup  _otg
 */
-unsigned char *header_gen(int hdr_size);
+char *header_gen(int hdr_size);
 
 /*! \fn char *payload_pkts(int payload_size);
 * \brief generate the payload
@@ -113,7 +113,7 @@ unsigned char *header_gen(int hdr_size);
 * \note 
 * @ingroup  _otg
 */
-unsigned char *payload_pkts(int payload_size);
+char *payload_pkts(int payload_size);
 
 
 /*! \fn 
@@ -133,7 +133,7 @@ flow id, simulation time, , sequence number, header type (to know the transport/
 * @ingroup  _otg
 */
 
-unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level);
+char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level);
 
 
 /*! \fn int adjust_size(int size);

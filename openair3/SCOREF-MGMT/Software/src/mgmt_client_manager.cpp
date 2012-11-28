@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -39,9 +39,7 @@
  * \warning none
  */
 
-#include "packets/mgmt_gn_packet_configuration_available.hpp"
 #include "mgmt_client_manager.hpp"
-#include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 
 ManagementClientManager::ManagementClientManager(ManagementInformationBase& mib, Configuration& configuration, Logger& logger)
@@ -49,22 +47,26 @@ ManagementClientManager::ManagementClientManager(ManagementInformationBase& mib,
 }
 
 ManagementClientManager::~ManagementClientManager() {
-	clientVector.clear();
+	while(!clientVector.empty()) {
+		delete clientVector.back();
+		clientVector.pop_back();
+	}
 }
 
-ManagementClientManager::Task ManagementClientManager::updateManagementClientState(udp::endpoint& clientEndpoint, EventType eventType) {
+bool ManagementClientManager::updateManagementClientState(UdpServer& clientConnection, EventType eventType) {
+	vector<ManagementClient*>::iterator it = clientVector.begin();
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
 	/**
 	 * Traverse client list and check if we already have this client
 	 */
-	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientEndpoint.address().to_string());
-		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientEndpoint.port()));
+	while (it++ != clientVector.end()) {
+		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getClient().address().to_string());
+		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getClient().port()));
 
-		if ((*it)->getAddress() == clientEndpoint.address() && (*it)->getPort() == clientEndpoint.port()) {
-			logger.trace("A client object for " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()) + " is found");
+		if ((*it)->getAddress() == clientConnection.getClient().address() && (*it)->getPort() == clientConnection.getClient().port()) {
+			logger.trace("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is found");
 			client = *it;
 			clientExists = true;
 		}
@@ -74,19 +76,9 @@ ManagementClientManager::Task ManagementClientManager::updateManagementClientSta
 	 * Create a new client object if we couldn't find one
 	 */
 	if (!clientExists) {
-		ManagementClient* newClient = NULL;
-
-		try {
-			newClient = new ManagementClient(mib, clientEndpoint, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
-		} catch (Exception& e) {
-			e.updateStackTrace("Cannot create a ManagementClient object!");
-			throw;
-		} catch (std::exception& e) {
-			throw Exception(e.what(), logger);
-		}
-
+		ManagementClient* newClient = new ManagementClient(mib, clientConnection, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
 		clientVector.push_back(newClient);
-		logger.info("A client object for " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()) + " is created");
+		logger.info("A client object for " + clientConnection.getClient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getClient().port()) + " is created");
 
 		client = newClient;
 	}
@@ -97,15 +89,13 @@ ManagementClientManager::Task ManagementClientManager::updateManagementClientSta
 	 */
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
-		case MGMT_FAC_EVENT_CONF_REQUEST:
-		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
+			client->setState(ManagementClient::CONNECTED);
+			break;
+
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
 		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
-		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
-		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST:
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
-		case MGMT_FAC_EVENT_LOCATION_UPDATE:
 			client->setState(ManagementClient::ONLINE);
 			break;
 
@@ -116,88 +106,5 @@ ManagementClientManager::Task ManagementClientManager::updateManagementClientSta
 			break;
 	}
 
-	/**
-	 * Update client's type according to incoming message
-	 */
-	switch (eventType) {
-
-		case MGMT_GN_EVENT_LOCATION_UPDATE:
-		case MGMT_GN_EVENT_LOCATION_TABLE_REQUEST:
-		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
-		case MGMT_GN_EVENT_CONF_UPDATE_AVAILABLE:
-		case MGMT_GN_EVENT_CONF_REQUEST:
-		case MGMT_GN_EVENT_CONF_CONT_RESPONSE:
-		case MGMT_GN_EVENT_CONF_BULK_RESPONSE:
-		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
-		case MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE:
-		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST:
-		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
-		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
-			client->setType(ManagementClient::GN);
-			break;
-
-		case MGMT_FAC_EVENT_LOCATION_UPDATE:
-		case MGMT_FAC_EVENT_LOCATION_TABLE_REQUEST:
-		case MGMT_FAC_EVENT_LOCATION_TABLE_RESPONSE:
-		case MGMT_FAC_EVENT_CONF_REQUEST:
-		case MGMT_FAC_EVENT_CONF_CONT_RESPONSE:
-		case MGMT_FAC_EVENT_CONF_BULK_RESPONSE:
-		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
-		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
-		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_RESPONSE:
-		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST:
-		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_RESPONSE:
-			client->setType(ManagementClient::FAC);
-			break;
-
-		case MGMT_EVENT_ANY:
-		default:
-			logger.warning("Cannot determine client type by incoming event type/subtype!");
-			client->setType(ManagementClient::UNKNOWN);
-			break;
-	}
-
-	logger.info(toString());
-
-	/**
-	 * Return a task according to the client type
-	 */
-	if (client->getType() == ManagementClient::GN && !clientExists) {
-		/**
-		 * This is a new GN client so we should ask for Location Table
-		 */
-		return ManagementClientManager::SEND_LOCATION_TABLE_REQUEST;
-	}
-
-	return ManagementClientManager::NOTHING;
-}
-
-const ManagementClient* ManagementClientManager::getClientByType(ManagementClient::ManagementClientType clientType) const {
-	/**
-	 * Traverse client vector and find the specific client of given type
-	 */
-	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		if ((*it)->getType() == clientType)
-			return *it;
-	}
-
-	return NULL;
-}
-
-bool ManagementClientManager::isGnConnected() const {
-	return (getClientByType(ManagementClient::GN) == NULL) ? false : true;
-}
-
-bool ManagementClientManager::isFacConnected() const {
-	return (getClientByType(ManagementClient::FAC) == NULL) ? false : true;
-}
-
-string ManagementClientManager::toString() {
-	stringstream ss;
-
-	ss << "Client Status[count:" << clientVector.size() << "]" << endl;
-	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it)
-		ss << (*it)->toString() << endl;
-
-	return ss.str();
+	return true;
 }

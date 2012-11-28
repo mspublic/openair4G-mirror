@@ -354,6 +354,7 @@ struct DCI1B_5MHz_2A_TDD {
   unsigned char tpmi:2;
   /// TMI confirmation for precoding
   unsigned char pmi:1;
+  //u64 rah:1;
 } __attribute__ ((__packed__));
 
 typedef struct DCI1B_5MHz_2A_TDD DCI1B_5MHz_2A_TDD_t;

@@ -1140,7 +1140,7 @@ int main(int argc, char **argv) {
 	    printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
 	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
 	      print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
-	    dump_ulsch(PHY_vars_eNB,subframe);
+	    dump_ulsch(PHY_vars_eNB,subframe,0);
 	    exit(-1);
 	  }
 	  round=5;
@@ -1149,7 +1149,7 @@ int main(int argc, char **argv) {
 	  errs[round]++;
 	  if (n_frames==1) {
 	    printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
-	    dump_ulsch(PHY_vars_eNB,subframe);
+	    dump_ulsch(PHY_vars_eNB,subframe,0);
 	    exit(-1);
 	  }
 	  //	    printf("round %d errors %d/%d\n",round,errs[round],trials);

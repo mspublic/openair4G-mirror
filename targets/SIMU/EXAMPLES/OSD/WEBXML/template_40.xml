@@ -36,7 +36,7 @@
       <UE_MOBILITY>
 	<UE_INITIAL_DISTRIBUTION>random</UE_INITIAL_DISTRIBUTION>
 	<RANDOM_UE_DISTRIBUTION>
-	  <NUMBER_OF_NODES>2</NUMBER_OF_NODES>
+	  <NUMBER_OF_NODES>4</NUMBER_OF_NODES>
 	</RANDOM_UE_DISTRIBUTION>
 	<UE_MOBILITY_TYPE>TRACE</UE_MOBILITY_TYPE> 
 	<TRACE_MOBILITY_FILE>static_2ues.tr</TRACE_MOBILITY_FILE> --> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
@@ -55,7 +55,7 @@
   <APPLICATION_CONFIG>
     <CUSTOMIZED_TRAFFIC>  	
       <SOURCE_ID>0</SOURCE_ID>		
-      <DESTINATION_ID>1:2</DESTINATION_ID>
+      <DESTINATION_ID>1:4</DESTINATION_ID>
       <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <IDT_MIN_ms>10</IDT_MIN_ms>
       <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
@@ -71,7 +71,7 @@
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
-      <LEVEL>info</LEVEL>
+      <LEVEL>debug</LEVEL>
       <VERBOSITY>high</VERBOSITY> <!-- low, medium, high, full -->
       <INTERVAL>1</INTERVAL>
     </LOG>		

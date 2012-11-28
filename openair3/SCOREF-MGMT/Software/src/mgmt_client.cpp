@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -40,57 +40,51 @@
  */
 
 #include "packets/mgmt_gn_packet_location_table_request.hpp"
-#include "util/mgmt_exception.hpp"
 #include <boost/lexical_cast.hpp>
 #include "mgmt_client.hpp"
 
-ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
-	: mib(mib), clientEndpoint(clientEndpoint), logger(logger) {
-	/**
-	 * Check that source port is not an ephemeral port which would
-	 * change every time a client sendto()s to MGMT
-	 */
-	if (clientEndpoint.port() >= 32768 && clientEndpoint.port() <= 61000) {
-		throw Exception("Client has an ephemeral port number that will change every time it sends data and this will screw ManagementClientManager's state management", logger);
-	}
+ManagementClient::ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+	: mib(mib), logger(logger) {
+	this->client = client;
 
 	/**
 	 * Initialise state strings map
 	 */
 	clientStateStringMap.insert(std::make_pair(ManagementClient::OFFLINE, "OFFLINE"));
 	clientStateStringMap.insert(std::make_pair(ManagementClient::ONLINE, "ONLINE"));
+	clientStateStringMap.insert(std::make_pair(ManagementClient::CONNECTED, "CONNECTED"));
 	/**
 	 * Initialise type strings map
 	 */
-	clientTypeStringMap.insert(std::make_pair(ManagementClient::UNKNOWN, "Unknown"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::GN, "GeoNetworking"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::FAC, "Facilities"));
 	/**
-	 * Initialise this client's state and type
+	 * Initialise this client's state
 	 */
 	state = ManagementClient::OFFLINE;
-	type = ManagementClient::UNKNOWN;
-}
+	/**
+	 * Update location table
+	 */
+	GeonetLocationTableRequestEventPacket locationTableRequest(0xffffffffffffffff, logger);
+	clientConnection.send(locationTableRequest);
 
-ManagementClient::ManagementClient(const ManagementClient& managementClient)
-	: mib(managementClient.mib), clientEndpoint(managementClient.clientEndpoint), logger(managementClient.logger) {
-	throw Exception("Copy constructor is called for a ManagementClient object!", logger);
+	/**
+	 * Initialise InquiryThread object for Wireless State updates
+	 */
+	// todo who is going to join() this thread?
+	inquiryThreadObject = new InquiryThread(mib, clientConnection, wirelessStateUpdateInterval, locationUpdateInterval, logger);
+	inquiryThread = new boost::thread(*inquiryThreadObject);
 }
 
 ManagementClient::~ManagementClient() {
-	clientTypeStringMap.clear();
 }
 
 boost::asio::ip::address ManagementClient::getAddress() const {
-	return clientEndpoint.address();
+	return client.address();
 }
 
 unsigned short int ManagementClient::getPort() const {
-	return clientEndpoint.port();
-}
-
-const udp::endpoint& ManagementClient::getEndpoint() const {
-	return this->clientEndpoint;
+	return client.port();
 }
 
 ManagementClient::ManagementClientState ManagementClient::getState() const {
@@ -98,34 +92,32 @@ ManagementClient::ManagementClientState ManagementClient::getState() const {
 }
 
 bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
-	if (this->state == state)
-		return true;
-
-	this->state = state;
 	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
 
-	return true;
-}
+	/**
+	 * Verify state change
+	 */
+	if ((this->state == OFFLINE && state == ONLINE)
+			|| (this->state == OFFLINE && state == CONNECTED)
+			|| (this->state == ONLINE && state == CONNECTED)) {
+		logger.debug("State change is valid");
+	} else {
+		logger.error("State change is invalid!");
+	}
 
-ManagementClient::ManagementClientType ManagementClient::getType() const {
-	return this->type;
-}
-
-bool ManagementClient::setType(ManagementClient::ManagementClientType type) {
-	this->type = type;
-
+	this->state = state;
 	return true;
 }
 
 bool ManagementClient::operator==(const ManagementClient& client) const {
-	if (this->clientEndpoint.address() == client.getAddress())
+	if (this->client.address() == client.getAddress())
 		return true;
 
 	return false;
 }
 
 bool ManagementClient::operator<(const ManagementClient& client) const {
-	if (this->clientEndpoint.address() < client.getAddress())
+	if (this->client.address() < client.getAddress())
 		return true;
 
 	return false;
@@ -134,9 +126,9 @@ bool ManagementClient::operator<(const ManagementClient& client) const {
 string ManagementClient::toString() {
 	stringstream ss;
 
-	ss << "ManagementClient[ip:" << clientEndpoint.address().to_string()
-		<< ", port:" << boost::lexical_cast<string>(clientEndpoint.port())
-		<< ", type:" << clientTypeStringMap[type] << ", state:" << clientStateStringMap[state] << "]";
+	ss << "ManagementClient[ip:" << client.address().to_string()
+		<< ", port:" << boost::lexical_cast<string>(client.port())
+		<< ", state:" << clientStateStringMap[state] << "]" << endl;
 
 	return ss.str();
 }

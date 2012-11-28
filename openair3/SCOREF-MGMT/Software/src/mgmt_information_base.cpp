@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -88,7 +88,7 @@ bool ManagementInformationBase::initialise() {
 		itsKeyManager.addKey(MGMT_GN_FAC_ITSKEY_ID_LDM_GARBAGE_COLLECTION_INTERVAL, "MIB_GN_FAC_LDM_GARBAGE_COLLECTION_INTERVAL", ITS_KEY_TYPE_FAC, 1000);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot define ITS key");
-		throw;
+		throw e;
 	}
 
 	logger.info("Management Information Base has been initialised");
@@ -102,7 +102,7 @@ bool ManagementInformationBase::setValue(ItsKeyID id, ItsKeyValue value) {
 		itsKeyManager.setKeyValue(id, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its ID");
-		throw;
+		throw e;
 	}
 
 	return true;
@@ -112,43 +112,25 @@ bool ManagementInformationBase::setValue(ItsKeyID id, const vector<unsigned char
 	/**
 	 * Set the value according to its data type
 	 */
-	logger.info("ITS key type to be changed is " + itsKeyManager.getDataTypeName(id));
-
 	switch (itsKeyManager.getDataType(id)) {
 		case ITS_DATA_TYPE_FLOAT:
 			if (value.size() != 4) {
 				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has float type but incompatible size");
 				return false;
-			} else
-				logger.debug("ITS Key size is compatible, updating corresponding key...");
-
-			/**
-			 * And update the value
-			 */
-			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).floatValue));
+			}
 			itsKeyManager.getKeyValue(id).floatValue = Util::parse4byteFloat(value);
-			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s new value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).floatValue));
 			break;
 
 		case ITS_DATA_TYPE_INTEGER:
 			if (value.size() != 4) {
 				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has integer type but incompatible size");
 				return false;
-			} else
-				logger.debug("ITS Key size is compatible, updating corresponding key...");
-
-			/**
-			 * And update the value
-			 */
-			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).intValue));
+			}
 			Util::parse4byteInteger(value.data(), &itsKeyManager.getKeyValue(id).intValue);
-			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s new value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).intValue));
 			break;
 
 		case ITS_DATA_TYPE_STRING:
-			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + itsKeyManager.getKeyValue(id).stringValue);
 			itsKeyManager.getKeyValue(id).stringValue = string(value.begin(), value.end());
-			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + itsKeyManager.getKeyValue(id).stringValue);
 			break;
 
 		default:
@@ -167,7 +149,7 @@ bool ManagementInformationBase::setValue(const string& name, ItsKeyValue value) 
 		itsKeyManager.setKeyValue(name, value);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot set ITS key using its name");
-		throw;
+		throw e;
 	}
 
 	return true;
@@ -177,8 +159,9 @@ ItsKeyValue ManagementInformationBase::getItsKeyValue(ItsKeyID id) {
 	return itsKeyManager.getKeyValue(id);
 }
 
-std::size_t ManagementInformationBase::getLength(ItsKeyID itsKey) {
-	return itsKeyManager.getDataTypeSize(itsKey);
+u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {
+	// This is the DWORD-length so it's 1
+	return 1;
 }
 
 ItsKeyManager& ManagementInformationBase::getItsKeyManager() {
@@ -203,16 +186,15 @@ CommunicationProfileManager& ManagementInformationBase::getCommunicationProfileM
 	return communicationProfileManager;
 }
 
-bool ManagementInformationBase::updateLocationTable(LocationTableItem* locationTableItem) {
-	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem*>(locationTableItem->gnAddress, locationTableItem));
+bool ManagementInformationBase::updateLocationTable(LocationTableItem& locationTableItem) {
+	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem>(locationTableItem.gnAddress, locationTableItem));
 
 	return true;
 }
 
-const LocationInformation& ManagementInformationBase::getLocationInformation() {
+LocationInformation ManagementInformationBase::getLocation() {
 	/**
-	 * Location information is no more sent through MGMT-CORE, see SCOREF-MGMT Progress file under
-	 * Documentation/ folder for further details
+	 * todo this is temporary, location information will be received somewhere else later on
 	 */
 	srand(time(NULL));
 	location.latitude = rand() % 20 + 10;
@@ -220,17 +202,8 @@ const LocationInformation& ManagementInformationBase::getLocationInformation() {
 	location.speed = rand() % 20;
 	location.heading = 0;
 	location.altitude = rand() % 1000 + 10;
-	/**
-	 * Update time-stamp
-	 */
-	location.timestamp = time(NULL);
 
 	return location;
-}
-
-bool ManagementInformationBase::setLocationInformation(const LocationInformation& locationUpdate) {
-	location = locationUpdate;
-	return true;
 }
 
 bool ManagementInformationBase::setNetworkFlags(const u_int8_t& networkFlags) {

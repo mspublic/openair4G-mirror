@@ -92,8 +92,6 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][16];
 
-extern void kpi_gen();
-
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = {
     {"custom", 0},
@@ -158,8 +156,6 @@ help (void) {
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
   printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
   printf ("-G Enable background traffic \n");
-  printf ("-O [mme ipv4 address] Enable MME mode\n");
-  printf ("-Z Reserved\n");
 }
 
 #ifdef XFORMS
@@ -698,7 +694,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:")) != -1) {
+  while ((c = getopt (argc, argv, "haeoFvVIGt:C:N:P:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:T:A:J")) != -1) {
 
     switch (c) {
 
@@ -883,23 +879,6 @@ main (int argc, char **argv)
       break;
     case 'G' :
       oai_emulation.info.otg_bg_traffic_enabled = 1;
-      break;
-    case 'Z':
-      /* Sebastien ROUX: Reserved for future use (currently used in ltenow branch) */
-      break;
-    case 'O':
-#if defined(ENABLE_USE_MME)
-      oai_emulation.info.mme_enabled = 1;
-      if (optarg == NULL) /* No IP address provided: use localhost */
-      {
-        memcpy(&oai_emulation.info.mme_ip_address[0], "127.0.0.1", 10);
-      } else {
-        u8 ip_length = strlen(optarg) + 1;
-        memcpy(&oai_emulation.info.mme_ip_address[0], optarg, ip_length > 16 ? 16 : ip_length);
-      }
-#else
-      LOG_E(EMU, "You enabled MME mode without MME support...\n");
-#endif
       break;
     default:
       help ();
@@ -1296,10 +1275,10 @@ main (int argc, char **argv)
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
       //LOG_D(OMG," extracting position of eNb...\n");
-      extract_position(enb_node_list, enb_data, NB_eNB_INST);
-      //LOG_D(OMG," extracting position of UE...\n");
-      //      if (oai_emulation.info.omg_model_ue == TRACE)
-      extract_position(ue_node_list, ue_data, NB_UE_INST); 
+       extract_position(enb_node_list, enb_data, NB_eNB_INST);
+       //LOG_D(OMG," extracting position of UE...\n");
+       if (oai_emulation.info.omg_model_ue == TRACE)
+	 extract_position(ue_node_list, ue_data, NB_UE_INST); 
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
@@ -1431,6 +1410,7 @@ main (int argc, char **argv)
 #endif
 	}
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
+      
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
@@ -1451,6 +1431,7 @@ main (int argc, char **argv)
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
 	}
       }
+      
       if ((last_slot == 1) && (frame == 0)
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 

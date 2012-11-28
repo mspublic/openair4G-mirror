@@ -759,7 +759,7 @@ typedef struct {
   /// Downlink Power offset field
   u8 dl_pow_off;
   ///Subband resource allocation field
-  u8 rballoc_sub[7];
+  u8 rballoc_sub[13];
   ///Total number of PRBs indicator
   u8 pre_nb_available_rbs;
 }MU_MIMO_mode;

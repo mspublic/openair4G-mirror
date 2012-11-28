@@ -54,9 +54,6 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   u32 v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[Ns+(subframe<<1)];
 
 
-  //debug_msg("lte_ul_channel_estimation: cyclic shift %d\n",cyclicShift);
-
-
   s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
   s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
@@ -71,7 +68,10 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 		  phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
 		  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
 
-  //  cyclic_shift = 0;
+  cyclic_shift = 0;
+  //LOG_I(PHY,"Ns=%d, l=%d, lte_ul_channel_estimation: cyclic shift %d\n",Ns,l,cyclic_shift);
+
+
 #ifdef USER_MODE
   Msc_idx_ptr = (u16*) bsearch(&Msc_RS, dftsizes, 33, sizeof(u16), compareints);
   if (Msc_idx_ptr)

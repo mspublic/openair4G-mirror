@@ -95,10 +95,6 @@ class GeonetCommunicationProfileResponsePacket : public GeonetPacket {
 		 */
 		ManagementInformationBase& mib;
 		/**
-		 * Logger reference
-		 */
-		Logger& logger;
-		/**
 		 * Communication Profile Request flag set to determine
 		 * requested options and respond accordingly
 		 */

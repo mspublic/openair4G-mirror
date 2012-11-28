@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -40,30 +40,24 @@
 */
 
 #include "mgmt_fac_packet_configuration_notification.hpp"
-#include <boost/lexical_cast.hpp>
 #include <sstream>
 using namespace std;
 
 FacConfigurationNotificationPacket::FacConfigurationNotificationPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer, Logger& logger) :
 	GeonetPacket(packetBuffer, logger), mib(mib), logger(logger) {
 	/**
-	 * Parse the packet...
+	 * Parse the packet and update MIB with extracted information
 	 */
 	parse(packetBuffer);
-	/**
-	 * ...and update MIB with extracted information
-	 */
-	logger.info("Notifying MIB about this ITS key value change...");
 	mib.setValue(static_cast<ItsKeyID>(packet.configurationItem.configurationId), packet.configurationItem.configurationBuffer);
+	logger.info(toString());
 }
 
 FacConfigurationNotificationPacket::~FacConfigurationNotificationPacket() {}
 
 bool FacConfigurationNotificationPacket::parse(const vector<unsigned char>& packetBuffer) {
-	if (packetBuffer.size() < sizeof(MessageHeader)) {
-		logger.warning("Incoming buffer is short of size (size=" + boost::lexical_cast<string>(packetBuffer.size()) + ") to carry a Configuration Notification packet!");
+	if (packetBuffer.size() < sizeof(ConfigurationNotification))
 		return false;
-	}
 
 	/**
 	 * Parse configuration id and size of configuration item
@@ -81,14 +75,13 @@ bool FacConfigurationNotificationPacket::parse(const vector<unsigned char>& pack
 	 */
 	u_int16_t packetHeaderLength = sizeof(MessageHeader) + sizeof(packet.configurationItem.configurationId) + sizeof(packet.configurationItem.length);
 	if (packetBuffer.size() != packetHeaderLength + packet.configurationItem.length) {
-		logger.info("Incoming Configuration Notification packet is short of size to carry the payload it asserts it carries!");
+		logger.info("Incoming Configuration Notification packet is short of size");
 		return false;
 	}
 
 	/**
-	 * Extract payload...
+	 * Extract payload
 	 */
-	packet.configurationItem.configurationBuffer.resize(packet.configurationItem.length);
 	copy(packetBuffer.begin() + packetHeaderLength, packetBuffer.end(), packet.configurationItem.configurationBuffer.begin());
 
 	return true;
@@ -97,8 +90,7 @@ bool FacConfigurationNotificationPacket::parse(const vector<unsigned char>& pack
 string FacConfigurationNotificationPacket::toString() const {
 	stringstream ss;
 
-	ss << "ConfigurationNotification[ConfID:" << hex << showbase << packet.configurationItem.configurationId
-	   << resetiosflags(ios_base::hex) << ", Length:" << packet.configurationItem.length << "]";
+	ss << "[ConfID:" << packet.configurationItem.configurationId << ", Length:" << packet.configurationItem.length << "]";
 
 	return ss.str();
 }

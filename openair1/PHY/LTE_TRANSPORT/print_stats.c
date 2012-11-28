@@ -84,7 +84,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
 #endif
   len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
   len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
-  len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",openair_daq_vars.timing_advance);
+  len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",phy_vars_ue->timing_advance);
   len += sprintf(&buffer[len], "[UE PROC] UE tx power = %d\n", PHY_vars_UE_g[0]->tx_power_dBm);  
   
   //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
@@ -274,11 +274,11 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
     len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",(phy_vars_eNB->total_transmitted_bits/1000),phy_vars_eNB->frame+1);
     len += sprintf(&buffer[len],"[eNB PROC] Average System Throughput %dKbps\n",(phy_vars_eNB->total_system_throughput)/((phy_vars_eNB->frame+1)*10));
     len += sprintf(&buffer[len],"[eNB PROC] Total Successful DLSCH Transmissions %d in %dframe(s)\n",success,phy_vars_eNB->frame+1);
-    if(phy_vars_eNB->transmission_mode[0] == 5){
-      len += sprintf(&buffer[len],"[eNB PROC] For TM5:FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->FULL_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
-      len += sprintf(&buffer[len],"[eNB PROC] For TM5:MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
-      len += sprintf(&buffer[len],"[eNB PROC] For TM5:SU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_SUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
-    }
+    //if(phy_vars_eNB->transmission_mode[0] == 5){
+      len += sprintf(&buffer[len],"[eNB PROC] FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->FULL_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+      len += sprintf(&buffer[len],"[eNB PROC] MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+      len += sprintf(&buffer[len],"[eNB PROC] SU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_SUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+      //}
   }
   
   len += sprintf(&buffer[len],"\n");
@@ -414,15 +414,15 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 	    len += sprintf(&buffer[len],"[eNB PROC] ****UE %d is in SU-MIMO mode****\n",UE_id);
 	  else
 	    len += sprintf(&buffer[len],"[eNB PROC] ****UE %d is not scheduled****\n",UE_id);
-
-	  len += sprintf(&buffer[len],"[eNB PROC] RB Allocation from Subband 1 to 7: ");
-	    
-	  for (i=0;i<7;i++)
-	    len += sprintf(&buffer[len],"%d ",
-			   phy_vars_eNB->mu_mimo_mode[UE_id].rballoc_sub[i]);
-	  len += sprintf(&buffer[len],"\n");
-	  len += sprintf(&buffer[len],"[eNB PROC] Total Number of Allocated PRBs = %d\n",phy_vars_eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs);
 	}
+	len += sprintf(&buffer[len],"[eNB PROC] RB Allocation from Subband 1 to 13: ");
+	
+	for (i=0;i<13;i++)
+	  len += sprintf(&buffer[len],"%d ",
+			 phy_vars_eNB->mu_mimo_mode[UE_id].rballoc_sub[i]);
+	len += sprintf(&buffer[len],"\n");
+	len += sprintf(&buffer[len],"[eNB PROC] Total Number of Allocated PRBs = %d\n",phy_vars_eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs);
+	
 	
 #ifdef OPENAIR2
       }

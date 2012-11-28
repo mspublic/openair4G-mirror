@@ -298,7 +298,10 @@ typedef struct{
   u8 bsr_info[MAX_NUM_LCID]; 
   
   /// phr information 
-   u8 phr_info; 
+  u8 phr_info; 
+  
+  //dl buffer info
+  u32_t dl_buffer_info[MAX_NUM_LCID];
 } UE_TEMPLATE;
 
 typedef struct {

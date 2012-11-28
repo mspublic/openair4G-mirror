@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -65,14 +65,11 @@ bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned c
 	buffer[payloadIndex++] = packet.relevance;
 	buffer[payloadIndex++] = packet.reliability;
 	buffer[payloadIndex++] = packet.reserved;
-	/**
-	 * Get the most suitable communication profile from CommunicationProfileManager...
+	/*
+	 * todo here most suitable communication profile will be found
+	 * by an intelligent code that'll be added later on
 	 */
-	CommunicationProfileID communicationProfileId = mib.getCommunicationProfileManager().selectProfile(packet.latency, packet.relevance, packet.reliability);
-	/**
-	 * ...and encode it into the response packet
-	 */
-	Util::encode4byteInteger(buffer, payloadIndex, static_cast<int>(communicationProfileId));
+	Util::encode4byteInteger(buffer, payloadIndex, packet.communicationProfileId);
 
 	// Resize incoming buffer
 	buffer.resize(sizeof(CommunicationProfileSelectionResponse));
