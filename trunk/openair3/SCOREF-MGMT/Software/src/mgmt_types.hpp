@@ -202,7 +202,7 @@ struct LocationInformation {
 		timestamp = latitude = longitude = speed = heading = altitude = acceleration = 0;
 	}
 
-	string toString() {
+	string toString() const {
 		stringstream ss;
 
 		ss << "LocationInformation[timestamp:" << timestamp << ", latitude:" << latitude

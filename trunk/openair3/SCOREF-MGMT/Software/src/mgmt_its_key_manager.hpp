@@ -177,6 +177,13 @@ class ItsKeyManager {
 		 */
 		string getDataTypeName(ItsKeyID id);
 		/**
+		 * Returns the size of ITS key
+		 *
+		 * @param id ITS key ID of the key
+		 * @return Size of the ITS key's value in bytes
+		 */
+		std::size_t getDataTypeSize(ItsKeyID id);
+		/**
 		 * Sets the value of ITS key given its name
 		 *
 		 * @param name Name of ITS key to be reset

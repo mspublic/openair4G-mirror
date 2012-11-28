@@ -130,6 +130,17 @@ class CommunicationProfileManager {
 		 */
 		map<CommunicationProfileID, CommunicationProfileItem> getProfileMapSubset(u_int32_t filter);
 		/**
+		 * In this method we have the intelligent code that'll pick a proper communication
+		 * profile according to the parameters (or in other words the requirements) given
+		 * by the client
+		 *
+		 * @param latency Latency requirement
+		 * @param relevance Relevance requirement
+		 * @param reliability Reliability requirement
+		 * @return A communication profile ID of type CommunicationProfileID
+		 */
+		static CommunicationProfileID selectProfile(u_int8_t latency, u_int8_t relevance, u_int8_t reliability);
+		/**
 		 * Returns string representation of Communication Profile Table
 		 *
 		 * return std::string representation of table
@@ -175,7 +186,6 @@ class CommunicationProfileManager {
 		 * Logger object reference
 		 */
 		Logger& logger;
-
 };
 
 #endif /* MGMT_COMM_PROF_MANAGER_HPP_ */

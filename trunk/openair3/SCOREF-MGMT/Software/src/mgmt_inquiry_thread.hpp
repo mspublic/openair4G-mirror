@@ -46,11 +46,15 @@
 #include "mgmt_information_base.hpp"
 #include "util/mgmt_log.hpp"
 
+/**
+ * A thread worker function to ask repetitive questions to relevant modules to update MIB
+ */
 class InquiryThread {
 	public:
 		/**
 		 * Constructor for InquiryThread class
 		 *
+		 * @param packetSender Packet sending functionality of ManagementServer class
 		 * @param wirelessStateUpdateInterval Wireless State Update interval in seconds
 		 * @param logger Logger object reference
 		 */
@@ -64,13 +68,17 @@ class InquiryThread {
 		/**
 		 * () operator overload to pass this method to boost::thread
 		 *
-		 * todo this method is too complex and prone to errors, better be refactored
+		 * @param none
+		 * @return none
 		 */
 		void operator()();
 		/**
 		 * Sends request for a Wireless State Response message
 		 * Incoming message will be handled and MIB will be updated
 		 * accordingly by GeonetMessageHandler class
+		 *
+		 * @param none
+		 * @return true on success, false otherwise
 		 */
 		bool requestWirelessStateUpdate();
 

@@ -64,7 +64,11 @@ void InquiryThread::operator()() {
 	while (true) {
 		logger.info("Will wait for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Request");
 		boost::this_thread::sleep(wait);
-		requestWirelessStateUpdate();
+
+		if (requestWirelessStateUpdate())
+			logger.info("A Wireless State Request packet sent to GN");
+		else
+			logger.warning("Cannot send a Wireless State Request packet to GN!");
 	}
 }
 
@@ -72,12 +76,5 @@ bool InquiryThread::requestWirelessStateUpdate() {
 	/**
 	 * Use ManagementServerFunctionality to send a Wireless State Update to GN
 	 */
-	if (packetSender->sendWirelessStateRequest() == false) {
-		logger.warning("Cannot send a Wireless State Request packet to GN!");
-		return false;
-	}
-
-	logger.info("A Wireless State Request sent to GN");
-
-	return true;
+	return packetSender->sendWirelessStateRequest();
 }

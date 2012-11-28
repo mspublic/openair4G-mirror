@@ -177,10 +177,8 @@ ItsKeyValue ManagementInformationBase::getItsKeyValue(ItsKeyID id) {
 	return itsKeyManager.getKeyValue(id);
 }
 
-u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {
-	// This is the DWORD-length so it's 1
-	// TODO Not everything is DWORD!
-	return 1;
+std::size_t ManagementInformationBase::getLength(ItsKeyID itsKey) {
+	return itsKeyManager.getDataTypeSize(itsKey);
 }
 
 ItsKeyManager& ManagementInformationBase::getItsKeyManager() {
@@ -213,7 +211,8 @@ bool ManagementInformationBase::updateLocationTable(LocationTableItem* locationT
 
 const LocationInformation& ManagementInformationBase::getLocationInformation() {
 	/**
-	 * todo this is temporary, location information will be received somewhere else later on
+	 * Location information is no more sent through MGMT-CORE, see SCOREF-MGMT Progress file under
+	 * Documentation/ folder for further details
 	 */
 	srand(time(NULL));
 	location.latitude = rand() % 20 + 10;

@@ -49,10 +49,9 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint
 	/**
 	 * Check that source port is not an ephemeral port which would
 	 * change every time a client sendto()s to MGMT
-	 * TODO Ephemeral port range could be read from /proc/sys/net/ipv4/ip_local_port_range
 	 */
 	if (clientEndpoint.port() >= 32768 && clientEndpoint.port() <= 61000) {
-		throw Exception("Client has an ephemeral port number that will change every time it sends data and this will screw ManagementClientManager's state", logger);
+		throw Exception("Client has an ephemeral port number that will change every time it sends data and this will screw ManagementClientManager's state management", logger);
 	}
 
 	/**

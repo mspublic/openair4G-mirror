@@ -145,6 +145,13 @@ map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManage
 	return filteredProfileMap;
 }
 
+CommunicationProfileID CommunicationProfileManager::selectProfile(u_int8_t latency, u_int8_t relevance, u_int8_t reliability) {
+	/**
+	 * todo Intelligent code goes here!
+	 */
+	return 0x00;
+}
+
 string CommunicationProfileManager::toString() const {
 	stringstream ss;
 
