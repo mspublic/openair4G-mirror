@@ -194,8 +194,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   char *payload=NULL;
   char *header=NULL;
   unsigned int i;
-
-
+  
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
   if ((g_otg->application_type[src][dst]==0)&&(g_otg->idt_dist[src][dst][PE_STATE]==0)){  
     //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 

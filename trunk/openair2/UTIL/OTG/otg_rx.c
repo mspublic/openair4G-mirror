@@ -99,30 +99,41 @@ char * hdr_payload=NULL;
 
         if (otg_hdr_info_rx->flag == 0xffff){
           seq_num_rx=otg_info->seq_num_rx[src][dst];
-          nb_loss_pkts=otg_info->nb_loss_pkts[src][dst];
+					if (src<NB_eNB_INST)
+          	nb_loss_pkts=otg_info->nb_loss_pkts_dl[src][dst];
+					else
+          	nb_loss_pkts=otg_info->nb_loss_pkts_ul[src][dst];
+
         }
 	else{
           seq_num_rx=otg_info->seq_num_rx_background[src][dst];
-          nb_loss_pkts=otg_info->nb_loss_pkts_background[src][dst];
+					if (src<NB_eNB_INST)
+          	nb_loss_pkts=otg_info->nb_loss_pkts_background_dl[src][dst];
+					else
+          	nb_loss_pkts=otg_info->nb_loss_pkts_background_ul[src][dst];
         }
 
 
 	LOG_D(OTG,"[%d][%d] AGGREGATION LEVEL (RX) %d \n", src, dst, otg_hdr_rx->aggregation_level);
   otg_info->aggregation_level[src][dst]=otg_hdr_rx->aggregation_level;
 
-	/* Loss and out of sequence data management */
-	if ((otg_hdr_rx->seq_num)==seq_num_rx+1) {
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
+	/* Loss and out of sequence data management, we have 3 case : */
+			/* (1) Receieved packet corresponds to the expected one, in terms of the sequence number*/
+
+	if ((otg_hdr_rx->seq_num)==seq_num_rx) {
+	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) packet seq_num TX=%d, seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
 	  seq_num_rx+=1;
 	}
-	else if ((otg_hdr_rx->seq_num)>seq_num_rx+1){ // out of sequence packet:  previous packet lost 
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
-	  nb_loss_pkts+=((otg_hdr_rx->seq_num)-(seq_num_rx+1));
-	  seq_num_rx=otg_hdr_rx->seq_num;
+			/* (2) Receieved packet with a sequence number higher than the expected sequence number (there is a gap): packet loss */
+	else if ((otg_hdr_rx->seq_num)>seq_num_rx){ // out of sequence packet:  previous packet lost 
+	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
+	  nb_loss_pkts+=((otg_hdr_rx->seq_num)-(seq_num_rx));
+	  seq_num_rx=otg_hdr_rx->seq_num+1;
 	} 
-	else if ((otg_hdr_rx->seq_num)< seq_num_rx+1){ //the received packet arrived late 
+			/* (3) Receieved packet with a sequence number less than the expected sequence number: recovery after loss/out of sequence  */
+	else if ((otg_hdr_rx->seq_num)< seq_num_rx){ //the received packet arrived late 
 	  nb_loss_pkts-=1;
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
+	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
 	}
         /* End Loss and out of sequence data management */
  
@@ -163,10 +174,9 @@ char * hdr_payload=NULL;
 
   
 	if (src<NB_eNB_INST)
-		otg_info->rx_total_bytes_dl+=size;
-	else
-		otg_info->rx_total_bytes_ul+=size;
-
+		otg_info->rx_total_bytes_dl+=otg_hdr_info_rx->size;
+else
+		otg_info->rx_total_bytes_ul+=otg_hdr_info_rx->size;
 
 //printf("payload_size %d, header_size %d \n", otg_hdr_rx->pkts_size, otg_hdr_rx->hdr_type);
   LOG_I(OTG,"PACKET SIZE RX [SRC %d][DST %d]: Flag (0x%x), time(%d), Seq num (%d), Total size (%d)\n", src, dst, otg_hdr_info_rx->flag, ctime, otg_hdr_rx->seq_num, size);
@@ -177,7 +187,10 @@ char * hdr_payload=NULL;
  	  otg_info->rx_num_pkt[src][dst]+=1;
 	  otg_info->rx_num_bytes[src][dst]+=otg_hdr_info_rx->size;
     otg_info->seq_num_rx[src][dst]=seq_num_rx;
-   	otg_info->nb_loss_pkts[src][dst]=nb_loss_pkts;		
+		if (src<NB_eNB_INST)
+    	otg_info->nb_loss_pkts_dl[src][dst]=nb_loss_pkts;
+		else
+      otg_info->nb_loss_pkts_ul[src][dst]=nb_loss_pkts;		
 
 /*Plots of latency and goodput are only plotted for the data traffic */
 		if (g_otg->latency_metric) 
@@ -193,7 +206,10 @@ char * hdr_payload=NULL;
 	  otg_info->rx_num_pkt_background[src][dst]+=1;
 	  otg_info->rx_num_bytes_background[src][dst]+=otg_hdr_info_rx->size;
 	  otg_info->seq_num_rx_background[src][dst]=seq_num_rx;
-          otg_info->nb_loss_pkts_background[src][dst]=nb_loss_pkts;
+		if (src<NB_eNB_INST)
+    	otg_info->nb_loss_pkts_background_dl[src][dst]=nb_loss_pkts;
+		else
+      otg_info->nb_loss_pkts_background_ul[src][dst]=nb_loss_pkts;
 	}
 
       if (is_size_ok == 0) {

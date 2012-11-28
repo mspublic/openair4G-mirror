@@ -90,8 +90,22 @@ void rx_loss_rate_bytes(int src, int dst){
 
 }
 
+void nb_loss_pkts(){
+unsigned int i,j;
 
+otg_info->total_loss_dl=0;
+otg_info->total_loss_ul=0;
 
+  for (i=0; i<(NB_eNB_INST + NB_UE_INST); i++){
+    for (j=0; j<(NB_eNB_INST + NB_UE_INST); j++){
+ 	if (i<NB_eNB_INST)
+		otg_info->total_loss_dl+=(otg_info->nb_loss_pkts_dl[i][j] + otg_info->nb_loss_pkts_background_dl[i][j]);
+	else
+		otg_info->total_loss_ul+=(otg_info->nb_loss_pkts_ul[i][j] + otg_info->nb_loss_pkts_background_ul[i][j]);
+
+		}
+	}
+}
 
 
 void kpi_gen() {

@@ -27,7 +27,7 @@ FD_otg *create_form_otg(void)
   
    obj = fl_add_button(FL_NORMAL_BUTTON,250,510,50,30,"Exit");
    fl_set_object_callback(obj, exit_cb, 0);
-	 fdui->loss_ratio=fl_add_text(FL_NORMAL_TEXT,0,510,250,30,"Loss Ratio");
+	 fdui->loss_ratio=fl_add_text(FL_NORMAL_TEXT,0,510,250,30,"NB Loss pkts");
 
   fl_end_form();
   fdui->otg->fdui = fdui;
@@ -129,7 +129,8 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[src][dst],
     otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "kB/s");  
-		sprintf(loss_rate, "%s%.3f","Loss Ration UL((%) of bytes)=", 100*(1-((double)otg_info->rx_total_bytes_ul/otg_info->tx_total_bytes_ul)));
+		nb_loss_pkts();
+		sprintf(loss_rate, "%s%d","NB Loss pkts UL=", otg_info->total_loss_ul);
 		fl_set_object_label(form_ul->loss_ratio, loss_rate);
   } 
   else {
@@ -137,7 +138,8 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
     otg_forms_info->data_owd_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "ms");  
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
     otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "kB/s");  
-		sprintf(loss_rate, "%s%.3f","Loss Ration UL((%) of bytes)=",100*(1-((double)otg_info->rx_total_bytes_ul/otg_info->tx_total_bytes_ul)));
+		nb_loss_pkts();
+		sprintf(loss_rate, "%s%d","NB Loss pkts UL=",otg_info->total_loss_ul);
 		fl_set_object_label(form_ul->loss_ratio, loss_rate);
   }
  
@@ -180,7 +182,7 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
   fl_update_display(1); //the function flushes the X buffer so the drawing requests are on their way to the server
 
 
-
+ 
   if (otg_forms_info->is_data_plot_dl == -1) 
     otg_forms_info->is_data_plot_dl=dst;
 
@@ -189,7 +191,8 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
     otg_forms_info->data_owd_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "ms");   
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][dst],
     otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "kB/s"); 
-		sprintf(loss_rate, "%s%.3f","Loss Ratio DL((%) of bytes)=", 100*(1-((double)otg_info->rx_total_bytes_dl/otg_info->tx_total_bytes_dl)));
+		nb_loss_pkts();
+		sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
 		fl_set_object_label(form_dl->loss_ratio, loss_rate);
   } 
   else {
@@ -197,7 +200,8 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
     otg_forms_info->data_owd_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "ms");  
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
     otg_forms_info->data_throughput_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "kB/s");  
-		sprintf(loss_rate, "%s%.3f","Loss Ratio DL((%) of bytes)=",100*(1-((double)otg_info->rx_total_bytes_dl/otg_info->tx_total_bytes_dl)));
+		nb_loss_pkts();
+		sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
 		fl_set_object_label(form_dl->loss_ratio, loss_rate);
   }
 
