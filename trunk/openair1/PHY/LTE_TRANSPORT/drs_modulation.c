@@ -229,9 +229,9 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 #else
 	if (re_offset >= frame_parms->ofdm_symbol_size) {
 	  if (frame_parms->N_RB_DL&1)  // odd number of RBs 
-	    re_offset=7;
+	    re_offset=6;
 	  else                         // even number of RBs (doesn't straddle DC)
-	    re_offset=1;  
+	    re_offset=0;  
 	}
 #endif
       }
