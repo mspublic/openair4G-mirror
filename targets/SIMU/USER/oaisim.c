@@ -92,6 +92,8 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][16];
 
+extern void kpi_gen();
+
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = {
     {"custom", 0},
