@@ -1153,7 +1153,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       LOG_D(PHY,"[eNB %d][SI] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d, num_pdcch_symbols %d\n",
 	  phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot, input_buffer_length,num_pdcch_symbols);
       for (i=0;i<input_buffer_length;i++)
-	msg("%x.",i,DLSCH_pdu[i]);
+	msg("%x.",DLSCH_pdu[i]);
       msg("\n");
 #endif
 #endif
@@ -1619,6 +1619,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   u16 preamble_max,preamble_energy_max;
   u16 i;
   u8 UE_id;
+  u8 CC_id;
 
   if (abstraction_flag == 0) {
     /*
@@ -1644,11 +1645,11 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
 	     PHY_vars_UE_g[UE_id]->lte_frame_parms.prach_config_common.rootSequenceIndex,
 	     phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex);
       */
-      if ((PHY_vars_UE_g[UE_id]->generate_prach==1) &&
-	  (PHY_vars_UE_g[UE_id]->lte_frame_parms.prach_config_common.rootSequenceIndex ==
+      if ((PHY_vars_UE_g[UE_id][CC_id]->generate_prach==1) &&
+	  (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.prach_config_common.rootSequenceIndex ==
 	   phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex) ) {
-	preamble_energy_list[PHY_vars_UE_g[UE_id]->prach_PreambleIndex] = 80;
-	preamble_delay_list[PHY_vars_UE_g[UE_id]->prach_PreambleIndex] = 5;
+	preamble_energy_list[PHY_vars_UE_g[UE_id][CC_id]->prach_PreambleIndex] = 80;
+	preamble_delay_list[PHY_vars_UE_g[UE_id][CC_id]->prach_PreambleIndex] = 5;
       }
     }
   }
@@ -2432,15 +2433,15 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB **phy_vars_eNB,u8 abstraction_flag) {
 
-  int CC_id;
+  int CC_id=0;
 
   if (((phy_vars_eNB[0]->lte_frame_parms.frame_type == 1)&&(subframe_select(&phy_vars_eNB[0]->lte_frame_parms,next_slot>>1)==SF_DL))||
       (phy_vars_eNB[0]->lte_frame_parms.frame_type == 0)){
 
 #ifdef OPENAIR2
     if ((next_slot % 2)==0) {
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[CC_id]->Mod_id,0,phy_vars_eNB[CC_id]->frame,next_slot>>1);}
+    
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[CC_id]->Mod_id,0,phy_vars_eNB[CC_id]->frame,next_slot>>1);
     }
 #endif
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -2460,8 +2461,8 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     //    LOG_D(PHY,"[eNB %d] Frame %d: Calling phy_procedures_eNB_S_TX(%d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
 #ifdef OPENAIR2
     if ((next_slot % 2)==0) {
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[CC_id]->Mod_id,0,phy_vars_eNB[CC_id]->frame,next_slot>>1);}
+	CC_id=0;
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB[CC_id]->Mod_id,0,phy_vars_eNB[CC_id]->frame,next_slot>>1);
     }
 #endif
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

@@ -41,6 +41,8 @@
 #include "PHY/extern.h"
 #include "LAYER2/MAC/extern.h"
 
+u8 CC_id;
+
 //u8 ncs_cell[20][7];
 //#define DEBUG_PUCCH_TX
 //#define DEBUG_PUCCH_RX
@@ -462,7 +464,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
   u32 u1 = (frame_parms->Nid_cell % 30) + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
   u32 v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
   u32 v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
-
+  
 
   if ((deltaPUCCH_Shift==0) || (deltaPUCCH_Shift>3)) {
     msg("[PHY][eNB] rx_pucch: Illegal deltaPUCCH_shift %d (should be 1,2,3)\n",deltaPUCCH_Shift);
@@ -930,7 +932,7 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->lte_ue_pdcch_vars[0]->crnti)
       break;
   }
   if (UE_id==NB_UE_INST) {
@@ -939,14 +941,14 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
   }
 
   if (fmt == pucch_format1) {
-    payload[0] = PHY_vars_UE_g[UE_id]->sr[subframe];
+    payload[0] = PHY_vars_UE_g[UE_id][CC_id]->sr[subframe];
   }
   else if (fmt == pucch_format1a) {
-    payload[0] = PHY_vars_UE_g[UE_id]->pucch_payload[0];
+    payload[0] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[0];
   }
   else if (fmt == pucch_format1b) {
-    payload[0] = PHY_vars_UE_g[UE_id]->pucch_payload[0];
-    payload[1] = PHY_vars_UE_g[UE_id]->pucch_payload[1];    
+    payload[0] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[0];
+    payload[1] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[1];    
   }
   else 
     LOG_E(PHY,"[eNB] Frame %d: Can't handle formats 2/2a/2b\n",phy_vars_eNB->frame);

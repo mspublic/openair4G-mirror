@@ -136,7 +136,7 @@
 #define NUM_DCI_MAX 32
 
 #ifdef Rel10
-#define MAX_NUM_CCs 2
+#define MAX_NUM_CCs 1
 #endif
 
 /// Top-level PHY Data Structure for eNB 

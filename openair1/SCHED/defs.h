@@ -136,8 +136,8 @@ void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB **phy_vars_e
   @param eNB_id ID of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
 
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE **phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
 /*!
   \brief Scheduling for UE TX procedures in normal subframes.  
   @param next_slot Index of next slot (0-19)

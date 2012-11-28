@@ -30,7 +30,7 @@ s16 *primary_synch2_time;
 #include "PHY/CODING/vars.h"
 
 //PHY_VARS *PHY_vars;
-PHY_VARS_UE **PHY_vars_UE_g;
+PHY_VARS_UE ***PHY_vars_UE_g;
 PHY_VARS_eNB ***PHY_vars_eNB_g;
 LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 

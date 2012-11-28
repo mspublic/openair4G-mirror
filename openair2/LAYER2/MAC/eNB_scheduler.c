@@ -371,7 +371,7 @@ s8 mac_remove_ue(unsigned char Mod_id, unsigned char UE_id) {
   return(1);
 }
 
-unsigned char *get_dlsch_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 TBindex) {
+unsigned char *get_dlsch_sdu(u8 Mod_id,u8 CC_id, u32 frame,u16 rnti,u8 TBindex) {
 
   unsigned char UE_id;
 
