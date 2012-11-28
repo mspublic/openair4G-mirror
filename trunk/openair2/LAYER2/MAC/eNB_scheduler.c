@@ -348,7 +348,7 @@ u16 find_dlgranted_UEs(unsigned char Mod_id){
 // get aggregatiob form phy for a give UE
 unsigned char process_ue_cqi (unsigned char Mod_id, unsigned char UE_id) {
 
-  unsigned char aggregation=2;
+  unsigned char aggregation=1;
   // check the MCS and SNR and set the aggregation accordingly
 
   return aggregation;
@@ -429,7 +429,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
     if (lcid < EXTENDED_POWER_HEADROOM) { 
       if (not_done==0) { // last MAC SDU, length is implicit
 	mac_header_ptr++;
-	length = tb_length-(mac_header_ptr-mac_header)-ce_len;
+	length = tb_length-(mac_header_ptr-mac_header)-ce_len;	
 	for (num_sdu_cnt=0; num_sdu_cnt < num_sdus ; num_sdu_cnt++)
 	  length -= rx_lengths[num_sdu_cnt]; 
       }
@@ -995,7 +995,7 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 	  }
 	  else {
 	    msg4_padding = 0;
-	    msg4_post_padding = TBsize - rrc_sdu_length - msg4_header-1;
+	    msg4_post_padding = TBsize - rrc_sdu_length - msg4_header -1;
 	  }
 	  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d subframe %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
 		Mod_id,frame,subframe,TBsize,rrc_sdu_length,msg4_header,msg4_padding,msg4_post_padding); 
@@ -1101,7 +1101,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
   //weight = get_ue_weight(Mod_id,UE_id);
-  aggregation = 2; // set to maximum aggregation level
+  aggregation = 1; // set to maximum aggregation level
 
 
 // UE data info;
@@ -1221,7 +1221,9 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 	  }
 
-	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+	  //rb_table_index = 8;
+
+	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
 		first_rb,rb_table[rb_table_index],
 		rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
@@ -1258,7 +1260,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = 0;
 	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] = 0;
 	  }
-	}
+
 
 	// Cyclic shift for DM RS
 	if(cooperation_flag == 2) {
@@ -1314,6 +1316,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 			  format0,
 			  0);
 	}
+	
 	//#ifdef DEBUG_eNB_SCHEDULER
 	//      dump_dci(mac_xface->lte_frame_parms,
 	//	       &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
@@ -1328,6 +1331,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	//msg("[MAC][eNB %d][ULSCH Scheduler] Frame %d, subframe %d: Generated ULSCH DCI for next UE_id %d, format 0\n", Mod_id,frame,subframe,next_ue);
 
 	break; // leave loop after first UE is schedule (avoids m
+	} // ndi==1 (else we let the PHY/phich handle it)
       } // UE is in PUSCH
     } // UE_is_to_be_scheduled
   } // loop over UE_id
@@ -1642,7 +1646,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			  DLSCH_dci,
 			  rnti,
 			  sizeof(DCI1_5MHz_TDD_t),
-			  2,//aggregation,
+			  process_ue_cqi (Mod_id,UE_id),//aggregation,
 			  sizeof_DCI1_5MHz_TDD_t,
 			  format1,
 			  0);
@@ -1655,7 +1659,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			  DLSCH_dci,
 			  rnti,
 			  sizeof(DCI1_5MHz_FDD_t),
-			  2,//aggregation,
+			  process_ue_cqi (Mod_id,UE_id),//aggregation,
 			  sizeof_DCI1_5MHz_FDD_t,
 			  format1,
 			  0);
@@ -1687,7 +1691,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			DLSCH_dci,
 			rnti,
 			sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
-			2,//aggregation,
+			process_ue_cqi (Mod_id,UE_id),//aggregation,
 			sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
 			format2_2A_M10PRB,
 			0);
@@ -1719,7 +1723,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			DLSCH_dci,
 			rnti,
 			sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
-			2,//aggregation,
+			process_ue_cqi (Mod_id,UE_id),//aggregation,
 			sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
 			format1E_2A_M10PRB,
 			0);
@@ -3668,14 +3672,14 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u16 sdu_length_total=0;
   //  unsigned char loop_count;
   unsigned char DAI;
-  u16 i=0,ii=0;
+  u16 i=0,ii=0,tpmi0=1;
   u8 dl_pow_off[256];
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
   //int **rballoc_sub = (int **)malloc(1792*sizeof(int *));
-  granted_UEs = find_dlgranted_UEs(Mod_id);
+  granted_UEs = 2; //find_dlgranted_UEs(Mod_id);
   //weight = get_ue_weight(Mod_id,UE_id);
-  aggregation = 2; // set to the maximum aggregation level
+  aggregation = 1; // set to the maximum aggregation level
   int mcs;
 
   for(i=0;i<256;i++)
@@ -3731,11 +3735,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
-    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
+    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) 
       nb_available_rb = pre_nb_available_rbs[UE_id];
 
     if ((nb_available_rb == 0) || (nCCE < (1<<aggregation))) {
-      LOG_D(MAC,"nb_availiable_rb exhausted\n");
+      LOG_W(MAC,"UE %d: nb_availiable_rb exhausted (nb_rb_used %d, nb_available_rb %d, nCCE %d, aggregation %d)\n",
+	    UE_id, nb_rb_used0, nb_available_rb, nCCE, aggregation);
       continue; //to next user (there might be rbs availiable for other UEs in TM5
     }
     sdu_length_total=0;
@@ -4010,6 +4015,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
       header_len_dtch = 3; // 3 bytes DTCH SDU subheader
 
+      LOG_D(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, Checking RLC status (rab %d, tbs %d, len %d)\n",
+	    Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),TBS,
+	    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
+
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),
 				      TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
@@ -4212,7 +4221,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
 
       }
-
+    
       else {  // There is no data from RLC or MAC header, so don't schedule
 
       }
@@ -4729,5 +4738,5 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   }
 
   DCI_pdu->nCCE = nCCE;
-  //  printf("MAC: frame %d, subframe %d nCCE %d\n",frame,subframe,nCCE);
+  LOG_D(MAC,"frame %d, subframe %d nCCE %d\n",frame,subframe,nCCE);
 }
