@@ -998,7 +998,7 @@ init_bypass ();
       LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
       if (oai_emulation.info.transmission_mode == 5) {
 	eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
 						     (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
 						     //(awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
@@ -1009,7 +1009,7 @@ init_bypass ();
 	}
       else {
 	eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
 						     (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						     oai_emulation.environment_system_config.system_bandwidth_MB,
 						     forgetting_factor,
@@ -1018,7 +1018,7 @@ init_bypass ();
 	}
       random_channel(eNB2UE[eNB_id][UE_id][CC_id]);      
       LOG_D(OCM,"[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
-      UE2eNB[UE_id][eNB_id][CC_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
+      UE2eNB[UE_id][eNB_id][CC_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_rx,
 						   (awgn_flag == 1) ? AWGN : map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						   //Rayleigh1,
@@ -1045,18 +1045,20 @@ init_bypass ();
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
   openair_daq_vars.ue_ul_nb_rb = 2;
 
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
+    for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+    PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=120;
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
-      PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
+      PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] = NOT_SYNCHED;
     else
-      PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
-    PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 10;
+      PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] = PRACH;
+    PHY_vars_UE_g[UE_id][CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
+    PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
 
-    LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0] );
-  }
+    LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] );
+     }
+   }
 
   
 #ifdef XFORMS
@@ -1279,6 +1281,8 @@ init_bypass ();
       if ((next_slot % 2) == 0)
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
 #endif
+
+CC_id = 0;
       
       for (UE_id = oai_emulation.info.first_ue_local; 
 	   (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1); 
@@ -1288,19 +1292,20 @@ init_bypass ();
 	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, frame, slot, next_slot >> 1);
 
-	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
+         
+	  if (PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] != NOT_SYNCHED) {
 	    if (frame>0) {
-	      PHY_vars_UE_g[UE_id]->frame = frame;
+	      PHY_vars_UE_g[UE_id][CC_id]->frame = frame;
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 	    }
 	  }
 	  else {
 	    if (abstraction_flag==1){
-	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
+	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0]);
 	      exit(-1);
 	    }
 	    if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
-	      initial_sync(PHY_vars_UE_g[UE_id]);
+	      initial_sync(PHY_vars_UE_g[UE_id][CC_id]);
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
@@ -1317,7 +1322,7 @@ init_bypass ();
 	    }
  	  }
 #ifndef NAS_NETLINK
-	  len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
+	  len = dump_ue_stats (PHY_vars_UE_g[UE_id][CC_id], stats_buffer, 0);
 	  rewind (UE_stats[UE_id]);
 	  fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
 #endif
@@ -1358,18 +1363,18 @@ init_bypass ();
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
 	write_output ("dlchan0.m", "dlch0",
-		      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
-		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+		      &(PHY_vars_UE_g[0][0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
+		      (6 * (PHY_vars_UE_g[0][0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
 	write_output ("dlchan1.m", "dlch1",
-		      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),
-		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+		      &(PHY_vars_UE_g[0][0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),
+		      (6 * (PHY_vars_UE_g[0][0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
 	write_output ("dlchan2.m", "dlch2",
-		      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),
-		      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+		      &(PHY_vars_UE_g[0][0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),
+		      (6 * (PHY_vars_UE_g[0][0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
 	write_output ("pbch_rxF_comp0.m", "pbch_comp0",
-		      PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0], 6 * 12 * 4, 1, 1);
+		      PHY_vars_UE_g[0][0]->lte_ue_pbch_vars[0]->rxdataF_comp[0], 6 * 12 * 4, 1, 1);
 	write_output ("pbch_rxF_llr.m", "pbch_llr",
-		      PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
+		      PHY_vars_UE_g[0][0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
       }
       /*
          if ((last_slot==1) && (frame==1)) {
@@ -1401,11 +1406,11 @@ init_bypass ();
 //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 {
     if ((frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
-      write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0][0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0][0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size,1,1);
 
-      write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0][0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     } 
   }
@@ -1413,17 +1418,17 @@ init_bypass ();
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       do_forms2(form_dl[UE_id],
 		frame_parms,  
-		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
-		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
-		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
-		PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
-		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
-		PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->llr[0],
-		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
-		PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
+		PHY_vars_UE_g[UE_id][0]->lte_ue_common_vars.dl_ch_estimates_time,
+		PHY_vars_UE_g[UE_id][0]->lte_ue_common_vars.dl_ch_estimates[0],
+		PHY_vars_UE_g[UE_id][0]->lte_ue_common_vars.rxdata,
+		PHY_vars_UE_g[UE_id][0]->lte_ue_common_vars.rxdataF,
+		PHY_vars_UE_g[UE_id][0]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id][0]->lte_ue_pdsch_vars[3]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id][0]->lte_ue_pdsch_vars[0]->llr[0],
+		PHY_vars_UE_g[UE_id][0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
+		PHY_vars_UE_g[UE_id][0]->lte_ue_pbch_vars[0]->llr,
 		1920,
-		&PHY_vars_UE_g[UE_id]->PHY_measurements);
+		&PHY_vars_UE_g[UE_id][0]->PHY_measurements);
     }
 
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -1431,11 +1436,11 @@ init_bypass ();
 		frame_parms,  
 		NULL,
 		NULL,
-		PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],
-		PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdataF[0],
-		PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
+		PHY_vars_eNB_g[eNB_id][0]->lte_eNB_common_vars.rxdata[0],
+		PHY_vars_eNB_g[eNB_id][0]->lte_eNB_common_vars.rxdataF[0],
+		PHY_vars_eNB_g[eNB_id][0]->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
 		NULL,
-		PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->llr,
+		PHY_vars_eNB_g[eNB_id][0]->lte_eNB_pusch_vars[0]->llr,
 		NULL,
 		NULL,
 		1024,
@@ -1445,9 +1450,9 @@ init_bypass ();
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	do_forms (form[eNB_id][UE_id],
-		  PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars,
-		  PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars,
-		  eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
+		  PHY_vars_UE_g[UE_id][0]->lte_ue_pdsch_vars,
+		  PHY_vars_eNB_g[eNB_id][0]->lte_eNB_pusch_vars,
+		  eNB2UE[eNB_id][UE_id][0]->ch,eNB2UE[eNB_id][UE_id][0]->channel_length);
       }
     }
 #endif	
