@@ -1,4 +1,14 @@
 
+v1.4.0 (released on 28 Nov 2012)
+* FAC-CM and MGMT-CORE interface documents' older versions have been added
+* GN and MGMT-CORE interface documents' older versions have been added
+* TODO.cppcheck file updated after fixes done to remove warnings
+* Intelligent code's place (for profile selection) clarified
+* ITS key data type handling now handles string and float types correctly
+* Bugfix ManagementServer exceptions are now handled
+* Bugfix FAC messages are now recognized to mark a client as 'ONLINE'
+* Util::getDateAndTime() is now shorter and smarter
+
 v1.3.5
 * Client state CONNECTED removed, now there are ONLINE and OFFLINE only
 * test/simulation/README update with scenario file information

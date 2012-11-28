@@ -97,11 +97,15 @@ ManagementClientManager::Task ManagementClientManager::updateManagementClientSta
 	 */
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
+		case MGMT_FAC_EVENT_CONF_REQUEST:
+		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
 		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST:
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
-		// todo why don't we have any MGMT_FAC_* here?
+		case MGMT_FAC_EVENT_LOCATION_UPDATE:
 			client->setState(ManagementClient::ONLINE);
 			break;
 

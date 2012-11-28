@@ -155,7 +155,10 @@ ConfigurationItem GeonetSetConfigurationEventPacket::buildConfigurationItem(ItsK
 	ConfigurationItem confItem;
 
 	confItem.configurationId = itsKey;
-	confItem.length = mib.getLength(itsKey);
+	/**
+	 * Convert byte length into DWORD length
+	 */
+	confItem.length = mib.getLength(itsKey) / 4;
 	confItem.configurationValue = mib.getItsKeyValue(itsKey).intValue;
 
 	return confItem;
@@ -167,7 +170,7 @@ string GeonetSetConfigurationEventPacket::toString() const {
 	if (isBulk) {
 		ss << "Key count: " << ((isBulk) ? mib.getItsKeyManager().getNumberOfKeys(requestedItsKeyType) : 1) << endl;
 	} else {
-		ss << "Configuration ID: " << requestedItsKey << endl << "Length: " << mib.getLength(requestedItsKey) << endl
+		ss << "Configuration ID: " << requestedItsKey << endl << "Length (in bytes): " << mib.getLength(requestedItsKey) << endl
 		    << "Value: " << mib.getItsKeyValue(requestedItsKey).intValue << endl;
 	}
 

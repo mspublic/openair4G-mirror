@@ -107,9 +107,9 @@ class ManagementInformationBase {
 		 * Returns DWORD length of relevant ITS key
 		 *
 		 * @param itsKeyId ITS key ID
-		 * @return DWORD-length of relevant ITS key
+		 * @return byte length of given key of type std::size_t
 		 */
-		u_int8_t getLength(ItsKeyID itsKeyId) const;
+		std::size_t getLength(ItsKeyID itsKeyId);
 		/**
 		 * Returns ItsKeyManager container's reference
 		 *

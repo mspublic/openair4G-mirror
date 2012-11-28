@@ -74,6 +74,9 @@ ManagementServer::ManagementServer(ba::io_service& ioService, const Configuratio
 ManagementServer::~ManagementServer() {
 	delete inquiryThreadObject;
 	delete inquiryThread;
+
+	rxData.clear();
+	txData.clear();
 }
 
 bool ManagementServer::sendWirelessStateRequest() {
@@ -110,49 +113,57 @@ bool ManagementServer::sendWirelessStateRequest() {
 }
 
 void ManagementServer::readData() {
-	/**
-	 * Reset buffers
-	 */
-	rxData.resize(RX_BUFFER_SIZE);
+	try {
+		/**
+		 * Reset buffers
+		 */
+		rxData.resize(RX_BUFFER_SIZE);
 
-	/**
-	 * Register handleReceive() as the call-back of Rx
-	 */
-	socket.async_receive_from(boost::asio::buffer(rxData, ManagementServer::RX_BUFFER_SIZE), recipient,
-			boost::bind(&ManagementServer::handleReceive, this,
-					ba::placeholders::error,
-					ba::placeholders::bytes_transferred));
+		/**
+		 * Register handleReceive() as the call-back of Rx
+		 */
+		socket.async_receive_from(boost::asio::buffer(rxData, ManagementServer::RX_BUFFER_SIZE), recipient,
+				boost::bind(&ManagementServer::handleReceive, this,
+						ba::placeholders::error,
+						ba::placeholders::bytes_transferred));
+	} catch (...) {
+		throw Exception("Cannot receive data from asynchronous UDP socket!", logger);
+	}
 }
 
 void ManagementServer::handleReceive(const boost::system::error_code& error, size_t size) {
-	/**
-	 * Resize RX buffer according to the amount of data received
-	 */
-	rxData.resize(size);
+	try {
+		/**
+		 * Resize RX buffer according to the amount of data received
+		 */
+		rxData.resize(size);
 
-	if (!error) {
-		logger.info("Following " + boost::lexical_cast<string>(size) + " byte(s) received from " + recipient.address().to_string() + ":" + boost::lexical_cast<string>(recipient.port()));
-		Util::printHexRepresentation(rxData.data(), size, logger);
+		if (!error) {
+			logger.info("Following " + boost::lexical_cast<string>(size) + " byte(s) received from " + recipient.address().to_string() + ":" + boost::lexical_cast<string>(recipient.port()));
+			Util::printHexRepresentation(rxData.data(), size, logger);
+
+			/**
+			 * Utilize PacketHandler class to generate a response, if necessary
+			 */
+			try {
+				handleClientData();
+			} catch (Exception& e) {
+				e.updateStackTrace("Cannot process Rx data!");
+				throw;
+			}
+		} else {
+			logger.warning("Error[code:" + boost::lexical_cast<string>(error.value()) + ", message:" + error.message() + "]");
+			logger.info("Discarding incoming data...");
+		}
 
 		/**
-		 * Utilize PacketHandler class to generate a response, if necessary
+		 * Read data again...
 		 */
-		try {
-			handleClientData();
-		} catch (Exception& e) {
-			e.updateStackTrace("Cannot process Rx data!");
-			// todo where does this exception go?
-			throw;
-		}
-	} else {
-		logger.warning("Error[code:" + boost::lexical_cast<string>(error.value()) + ", message:" + error.message() + "]");
-		logger.info("Discarding incoming data...");
+		readData();
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot handle a receive on asynchronous UDP socket!");
+		throw;
 	}
-
-	/**
-	 * Read data again...
-	 */
-	readData();
 }
 
 void ManagementServer::handleClientData() {

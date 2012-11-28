@@ -158,6 +158,26 @@ string ItsKeyManager::getDataTypeName(ItsKeyID id) {
 	return itsKeyDataTypeName[itsKeyMap[id].dataType];
 }
 
+std::size_t ItsKeyManager::getDataTypeSize(ItsKeyID id) {
+	switch (itsKeyMap[id].dataType) {
+		case ITS_DATA_TYPE_INTEGER:
+			return sizeof(int);
+
+		case ITS_DATA_TYPE_FLOAT:
+			return sizeof(float);
+
+		case ITS_DATA_TYPE_STRING:
+			return itsKeyMap[id].value.stringValue.length();
+
+		default:
+			logger.warning("ITS key with ID " + boost::lexical_cast<string>((int)id) + " doesn't have a valid data type!");
+			/**
+			 * Most of the ITS keys are of type integer so let's return the size of an integer
+			 */
+			return sizeof(int);
+	}
+}
+
 bool ItsKeyManager::setKeyValue(const string& name, ItsKeyValue value) {
 	map<ItsKeyID, ItsKey>::iterator iterator = itsKeyMap.begin();
 
