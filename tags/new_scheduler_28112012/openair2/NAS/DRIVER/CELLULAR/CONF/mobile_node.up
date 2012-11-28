@@ -1,0 +1,8 @@
+sysctl -w net.ipv6.conf.default.dad_transmits=0
+
+#service ypbind stop
+#service netfs stop
+#ifconfig eth0 down
+
+ifconfig graal0 192.168.14.2
+#route add default gw 192.168.14.100
