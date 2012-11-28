@@ -60,12 +60,28 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     }
   }
 
-  //  PHY_VARS_UE *PHY_vars_UE; 
-  PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
-    PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
-    PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
+//*************
+PHY_vars_UE_g = (PHY_VARS_UE***) malloc(NB_UE_INST*sizeof(PHY_VARS_UE**));
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
+    PHY_vars_UE_g[UE_id] = (PHY_VARS_UE**) malloc(MAX_NUM_CCs*sizeof(PHY_VARS_UE*));
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[UE_id][CC_id] =(PHY_VARS_UE*)  malloc(sizeof(PHY_VARS_UE));
+      PHY_vars_UE_g[UE_id][CC_id]->Mod_id=UE_id;
+      PHY_vars_UE_g[UE_id][CC_id]->CC_id=CC_id;
+      //PHY_vars_UE_g[UE_id][CC_id]->cooperation_flag=cooperation_flag;
+    }
   }
+
+//*************
+///////////////
+  //  PHY_VARS_UE *PHY_vars_UE; 
+ // PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
+  //for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+    //PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
+    //PHY_vars_UE_g[UE_id][CC_id]->Mod_id=UE_id; 
+  //}
+
+///////////////
 
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
@@ -162,39 +178,41 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
   // init all UE vars
 
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), *frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    memcpy(&(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms), *frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     // Do this until SSS detection is finished
     if (NB_eNB_INST>0) {
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.Nid_cell;
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.nushift;
+      PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.Nid_cell;
+      PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.nushift;
     }
 
-    phy_init_lte_ue(PHY_vars_UE_g[UE_id],abstraction_flag);
+    phy_init_lte_ue(PHY_vars_UE_g[UE_id][CC_id],abstraction_flag);
 
     for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
       for (j=0;j<2;j++) {
-	PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
-	if (!PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]) {
+	PHY_vars_UE_g[UE_id][CC_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
+	if (!PHY_vars_UE_g[UE_id][CC_id]->dlsch_ue[i][j]) {
 	  LOG_E(PHY,"Can't get ue dlsch structures\n");
 	  exit(-1);
 	}
 	else
-	  LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]);//navid
+	  LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE_g[UE_id][CC_id]->dlsch_ue[i][j]);//navid
       }
       
       
-      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
-      if (!PHY_vars_UE_g[UE_id]->ulsch_ue[i]) {
+      PHY_vars_UE_g[UE_id][CC_id]->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
+      if (!PHY_vars_UE_g[UE_id][CC_id]->ulsch_ue[i]) {
 	LOG_E(PHY,"Can't get ue ulsch structures\n");
 	exit(-1);
       }
       
-      PHY_vars_UE_g[UE_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
-      PHY_vars_UE_g[UE_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
+      PHY_vars_UE_g[UE_id][CC_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
+      PHY_vars_UE_g[UE_id][CC_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
 
-      PHY_vars_UE_g[UE_id]->transmission_mode[i] = transmission_mode;
+      PHY_vars_UE_g[UE_id][CC_id]->transmission_mode[i] = transmission_mode;
     }
-
+    
   }
-}
+}}
+
