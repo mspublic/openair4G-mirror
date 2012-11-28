@@ -143,7 +143,7 @@ u8 CC_id;
 	}
 	else {
 	  mac_xface->phy_config_dedicated_scell_ue(Mod_id,eNB_index,physicalConfigDedicatedSCell_r10,CC_id );
-	  UE_mac_inst[Mod_id].physicalConfigDedicatedSCell_r10[0]=physicalConfigDedicatedSCell_r10; // using SCell index 0
+	  UE_mac_inst[Mod_id].physicalConfigDedicatedSCell_r10=physicalConfigDedicatedSCell_r10; // using SCell index 0
 	}
   }
 #endif

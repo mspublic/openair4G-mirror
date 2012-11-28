@@ -28,7 +28,7 @@ extern unsigned int mchrach_error_cnt[2][8],sach_error_cnt;
 extern CHBCH_RX_t rx_mode;
 #endif //OPENAIR_LTE
 
-extern PHY_VARS_UE **PHY_vars_UE_g;
+extern PHY_VARS_UE ***PHY_vars_UE_g;
 extern PHY_VARS_eNB ***PHY_vars_eNB_g;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 

@@ -412,58 +412,59 @@ typedef struct {
 
 typedef struct{
   u16 Node_id;
+  
   /// pointer to RRC PHY configuration 
-  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon[MAX_NUM_CCs];
+  RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
   /// pointer to RRC PHY configuration 
   struct PhysicalConfigDedicated *physicalConfigDedicated;
   /// pointer to RRC PHY configuration SCEll
-  struct PhysicalConfigDedicatedSCell_r10	*physicalConfigDedicatedSCell_r10[MAX_NUM_CCs];
+  struct PhysicalConfigDedicatedSCell_r10	*physicalConfigDedicatedSCell_r10;
   /// pointer to TDD Configuration (NULL for FDD)
-  TDD_Config_t *tdd_Config[MAX_NUM_CCs];
+  TDD_Config_t *tdd_Config;
   /// Pointer to RRC MAC configuration
-  MAC_MainConfig_t *macConfig[MAX_NUM_CCs];
+  MAC_MainConfig_t *macConfig;
   /// Pointer to RRC Measurement gap configuration
-  MeasGapConfig_t  *measGapConfig[MAX_NUM_CCs];
+  MeasGapConfig_t  *measGapConfig;
   /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID][MAX_NUM_CCs];
+  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
   /// Scheduling Information 
-  UE_SCHEDULING_INFO scheduling_info[MAX_NUM_CCs];
+  UE_SCHEDULING_INFO scheduling_info;
   /// Outgoing CCCH pdu for PHY
-  CCCH_PDU CCCH_pdu[MAX_NUM_CCs];
+  CCCH_PDU CCCH_pdu;
   /// Incoming DLSCH pdu for PHY
   DLSCH_PDU DLSCH_pdu[MAX_NUM_CCs][NB_CNX_UE][2];
   //ULSCH_PDU ULSCH_pdu[NB_CNX_UE][2];
   /// Random-access procedure flag
-  u8 RA_active[MAX_NUM_CCs];
+  u8 RA_active;
   /// Random-access window counter
-  s8 RA_window_cnt[MAX_NUM_CCs];
+  s8 RA_window_cnt;
   /// Random-access Msg3 size in bytes
-  u8 RA_Msg3_size[MAX_NUM_CCs];
+  u8 RA_Msg3_size;
   /// Random-access prachMaskIndex
-  u8 RA_prachMaskIndex[MAX_NUM_CCs];
+  u8 RA_prachMaskIndex;
   /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
-  u8 RA_usedGroupA[MAX_NUM_CCs];
+  u8 RA_usedGroupA;
   /// Random-access Resources
-  PRACH_RESOURCES_t RA_prach_resources[MAX_NUM_CCs];
+  PRACH_RESOURCES_t RA_prach_resources;
   /// Random-access PREAMBLE_TRANSMISSION_COUNTER
-  u8 RA_PREAMBLE_TRANSMISSION_COUNTER[MAX_NUM_CCs];
+  u8 RA_PREAMBLE_TRANSMISSION_COUNTER;
   /// Random-access backoff counter
-  s16 RA_backoff_cnt[MAX_NUM_CCs];
+  s16 RA_backoff_cnt;
   /// Random-access variable for window calculation (frame of last change in window counter)
-  u32 RA_tx_frame[MAX_NUM_CCs];
+  u32 RA_tx_frame;
   /// Random-access variable for window calculation (subframe of last change in window counter)
-  u8 RA_tx_subframe[MAX_NUM_CCs];
+  u8 RA_tx_subframe;
   /// Random-access Group B maximum path-loss
   /// Random-access variable for backoff (frame of last change in backoff counter)
-  u32 RA_backoff_frame[MAX_NUM_CCs];
+  u32 RA_backoff_frame;
   /// Random-access variable for backoff (subframe of last change in backoff counter)
-  u8 RA_backoff_subframe[MAX_NUM_CCs];
+  u8 RA_backoff_subframe;
   /// Random-access Group B maximum path-loss
-  u16 RA_maxPL[MAX_NUM_CCs];
+  u16 RA_maxPL;
   /// Random-access Contention Resolution Timer active flag
-  u8 RA_contention_resolution_timer_active[MAX_NUM_CCs];
+  u8 RA_contention_resolution_timer_active;
   /// Random-access Contention Resolution Timer count value
-  u8 RA_contention_resolution_cnt[MAX_NUM_CCs];
+  u8 RA_contention_resolution_cnt;
 }UE_MAC_INST;
 
 
@@ -645,7 +646,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu);
 */
 void SR_indication(u8 Mod_id,u32 frame,u16 rnti, u8 subframe);
 
-u8 *get_dlsch_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 TBindex);
+u8 *get_dlsch_sdu(u8 Mod_id,u8 CC_id,u32 frame,u16 rnti,u8 TBindex);
 //added for ALU icic purpose
 u32 Get_Cell_SBMap(u8 Mod_id);
 void UpdateSBnumber(unsigned char Mod_id);
@@ -711,7 +712,7 @@ void out_of_sync_ind(u8 Mod_id, u32 frame, u16);
 void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 
-void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
+void ue_send_sdu(u8 Mod_id, u8 CC_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
 
 void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 

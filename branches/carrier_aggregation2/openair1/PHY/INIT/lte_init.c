@@ -57,7 +57,7 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
 			 u8 SIwindowsize,
 			 u16 SIperiod) {
 
-  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id][CC_id]->lte_frame_parms;
   if (tdd_Config) {
     lte_frame_parms->tdd_config    = tdd_Config->subframeAssignment;
     lte_frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns;  
@@ -168,12 +168,12 @@ void phy_config_sib2_eNB(u8 Mod_id,
 void phy_config_sib2_ue(u8 Mod_id, u8 CC_id ,u8 CH_index,
 			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
-  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id][CC_id]->lte_frame_parms;
   int N_ZC;
   u8 prach_fmt;
   int u;
 
-  msg("[PHY][UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame,CH_index);
+  msg("[PHY][UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,PHY_vars_UE_g[Mod_id][CC_id]->frame,CH_index);
 
   lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
 
@@ -188,7 +188,7 @@ void phy_config_sib2_ue(u8 Mod_id, u8 CC_id ,u8 CH_index,
   u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
     prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
   
-  compute_prach_seq(u,N_ZC, PHY_vars_UE_g[Mod_id]->X_u);
+  compute_prach_seq(u,N_ZC, PHY_vars_UE_g[Mod_id][CC_id]->X_u);
 
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
@@ -241,7 +241,7 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
   // Now configure some of the Physical Channels
 
   // PUCCH
-  init_ncs_cell(lte_frame_parms,PHY_vars_UE_g[Mod_id]->ncs_cell);
+  init_ncs_cell(lte_frame_parms,PHY_vars_UE_g[Mod_id][CC_id]->ncs_cell);
 
   init_ul_hopping(lte_frame_parms);
 
