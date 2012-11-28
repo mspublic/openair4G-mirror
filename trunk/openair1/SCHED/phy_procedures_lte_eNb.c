@@ -45,8 +45,12 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
+#ifdef EMOS
+#include "SCHED/phy_procedures_emos.h"
+#endif
+
 #define DEBUG_PHY_PROC
-//#define DEBUG_DLSCH
+//#define DEBUG_ULSCH
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -305,6 +309,7 @@ int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rn
       Yk = (Yk*39827)%65537;
 
     Yk = Yk % (nCCE/L);
+    //LOG_D(PHY,"rnti %x, Yk = %d, nCCE %d\n",rnti,Yk,nCCE);
 
     switch (L) {
     case 1:
@@ -320,42 +325,24 @@ int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rn
     for (m = 0 ; m < nb_candidates ; m++) {
       search_space_free = 1;
       for (l=0;l<L;l++) {
-	if (CCE_table[((Yk+m)*L) + l] == 1) {
+	if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
 	  search_space_free = 0;
 	  break;
 	}
       }
       if (search_space_free == 1) {
 	for (l=0;l<L;l++)
-	  CCE_table[((Yk+m)*L)+l]=1;
-	return((Yk+m)*L);
+	  CCE_table[(((Yk+m)%(nCCE/L))*L)+l]=1;
+	return(((Yk+m)%(nCCE/L))*L);
       }
     }
     return(-1);
   }
 }
+
 #ifdef EMOS
-void phy_procedures_emos_eNB_TX(unsigned char next_slot) {
+void phy_procedures_emos_eNB_TX(unsigned char next_slot, PHY_VARS_eNB *phy_vars_eNB) {
 
-  unsigned char sect_id,i;
-
-  if (next_slot==1) {
-    emos_dump_eNB.timestamp = rt_get_time_ns();
-    emos_dump_eNB.frame_tx = phy_vars_eNB->frame;
-  }
-  if (next_slot%2==0) {
-    for (i=0; i<2; i++) 
-      memcpy(&emos_dump_eNB.DCI_alloc[i][next_slot>>1], &CH_mac_inst[0].DCI_pdu.dci_alloc[i], sizeof(DCI_ALLOC_t));
-  }
-  if (next_slot==19) {
-    LOG_D(PHY,"[eNB %d] Frame %d, slot %d, Writing EMOS data to FIFO\n",
-	      phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-    if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_eNB, sizeof(fifo_dump_emos_eNB))!=sizeof(fifo_dump_emos_eNB)) {
-      LOG_D(PHY,"[eNB %d] Frame %d, slot %d, Problem writing EMOS data to FIFO\n",
-		phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot);
-      return;
-    }
-  }
 }
 #endif
 
@@ -438,37 +425,52 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
 }
 
 #ifdef EMOS
-void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
+void phy_procedures_emos_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB) {
   
-    unsigned char sect_id,i,aa;
+  u8 aa;
+  u16 last_subframe_emos;
+  u16 pilot_pos1 = 3 - phy_vars_eNB->lte_frame_parms.Ncp, pilot_pos2 = 10 - 2*phy_vars_eNB->lte_frame_parms.Ncp;
+  u32 bytes;
 
-  if (last_slot%2==1) {
-    memcpy(&emos_dump_eNB.phy_vars_eNB->eNB_UE_stats[(last_slot>>1)-2],&PHY_vars_eNB_g->eNB_UE_stats,sizeof(PHY_vars_eNB_g->eNB_UE_stats));
+  if (last_slot > 3)
+    last_subframe_emos = (last_slot-4)>>1;
+  else 
+    mac_xface->macphy_exit("should never happen");
+
+  if (last_slot%2==1) 
+    for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
+        memcpy(&emos_dump_eNB.channel[aa][last_subframe_emos*2*phy_vars_eNB->lte_frame_parms.N_RB_UL*12],              
+               &phy_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][aa][phy_vars_eNB->lte_frame_parms.N_RB_UL*12*pilot_pos1],
+               phy_vars_eNB->lte_frame_parms.N_RB_UL*12*sizeof(int));
+        memcpy(&emos_dump_eNB.channel[aa][(last_subframe_emos*2+1)*phy_vars_eNB->lte_frame_parms.N_RB_UL*12],          
+               &phy_vars_eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][aa][phy_vars_eNB->lte_frame_parms.N_RB_UL*12*pilot_pos2],
+               phy_vars_eNB->lte_frame_parms.N_RB_UL*12*sizeof(int));
   }
 
-  if (last_slot==4) {
-    emos_dump_eNB.rx_total_gain_dB = PHY_vars_eNB_g->rx_total_gain_eNB_dB;
-    emos_dump_eNB.mimo_mode = openair_daq_vars.dlsch_transmission_mode;
+  if (last_slot==9) {
+    emos_dump_eNB.timestamp = rt_get_time_ns();
+    emos_dump_eNB.frame_tx = phy_vars_eNB->frame;
+    emos_dump_eNB.rx_total_gain_dB = phy_vars_eNB->rx_total_gain_eNB_dB;
+    emos_dump_eNB.mimo_mode = phy_vars_eNB->transmission_mode[0];
+    memcpy(&emos_dump_eNB.PHY_measurements_eNB,
+           &phy_vars_eNB->PHY_measurements_eNB[0],
+           sizeof(PHY_MEASUREMENTS_eNB));
+    memcpy(&emos_dump_eNB.eNB_UE_stats[0],&phy_vars_eNB->eNB_UE_stats[0],NUMBER_OF_UE_MAX*sizeof(LTE_eNB_UE_stats));
+
+    bytes = rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_eNB, sizeof(fifo_dump_emos_eNB));
+    //bytes = rtf_put(CHANSOUNDER_FIFO_MINOR, "test", sizeof("test"));
+    if (bytes!=sizeof(fifo_dump_emos_eNB)) {
+      LOG_W(PHY,"[eNB %d] Frame %d, slot %d, Problem writing EMOS data to FIFO (bytes=%d, size=%d)\n",
+            phy_vars_eNB->Mod_id,phy_vars_eNB->frame, last_slot,bytes,sizeof(fifo_dump_emos_eNB));
+    }
+    else {
+      if (phy_vars_eNB->frame%100==0) {
+        LOG_I(PHY,"[eNB %d] Frame %d (%d), slot %d, Writing %d bytes EMOS data to FIFO\n",
+              phy_vars_eNB->Mod_id,phy_vars_eNB->frame, ((fifo_dump_emos_eNB*)&emos_dump_eNB)->frame_tx, last_slot, bytes);
+      }
+    }
   }
-
-  if (last_slot==8) {
-    emos_dump_eNB.ulsch_errors = PHY_vars_eNB_g->eNB_UE_stats[1].ulsch_errors;
-    for (sect_id = 0; sect_id<3; sect_id++)  
-      memcpy(&emos_dump_eNB.PHY_measurements_eNB[sect_id],
-	     &PHY_vars_eNB_g->PHY_measurements_eNB[sect_id],
-	     sizeof(PHY_MEASUREMENTS_eNB));
-
-  }
-
-  if (last_slot%2==1) {
-    for (sect_id = 0; sect_id<3; sect_id++)  
-      for (aa=0; aa<PHY_vars_eNB_g->lte_frame_parms.nb_antennas_rx; aa++) 
-	memcpy(&emos_dump_eNB.channel[(last_slot>>1)-2][sect_id][aa][0],	       PHY_vars_eNB_g->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
-	       PHY_vars_eNB_g->lte_frame_parms.ofdm_symbol_size*sizeof(int));
-  }
-
 }
-
 #endif
 
 #ifndef OPENAIR2
@@ -908,7 +910,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     //#endif
 
 #ifdef OPENAIR2
-      // if there are two users and we want to do cooperation
+    // if there are two users and we want to do cooperation
     //    if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
     //      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,phy_vars_eNB->frame,next_slot>>1);//,1);
     //    else
@@ -938,7 +940,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     }
   
 #ifdef EMOS
-    emos_dump_eNB.dci_cnt[next_slot>>1] = DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci; //nb_dci_common+nb_dci_ue_spec;
+    //emos_dump_eNB.dci_cnt[next_slot>>1] = DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci; //nb_dci_common+nb_dci_ue_spec;
 #endif
     // clear previous allocation information for all UEs
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
@@ -946,6 +948,16 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     }
 
     init_nCCE_table();
+    /*
+    num_pdcch_symbols = get_num_pdcch_symbols(DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci,
+					      DCI_pdu->dci_alloc,
+					      &phy_vars_eNB->lte_frame_parms,
+					      next_slot>>1);
+    DCI_pdu->nCCE = get_nCCE(num_pdcch_symbols,
+			     &phy_vars_eNB->lte_frame_parms,
+			     get_mi(&phy_vars_eNB->lte_frame_parms,next_slot>>1));
+    LOG_D(PHY,"num_pdcch_symbols %d, nCCE %d\n",num_pdcch_symbols,nCCE);
+    */
 
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
 #ifdef DEBUG_PHY_PROC
@@ -954,7 +966,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
       if (DCI_pdu->dci_alloc[i].rnti == SI_RNTI) {
-	//	LOG_D(PHY,"[eNB %d] SI generate_eNB_dlsch_params_from_dci\n", phy_vars_eNB->Mod_id);
+#ifdef DEBUG_PHY_PROC
+	LOG_D(PHY,"[eNB %d] SI generate_eNB_dlsch_params_from_dci\n", phy_vars_eNB->Mod_id);
+#endif
 	generate_eNB_dlsch_params_from_dci(next_slot>>1,
 					   &DCI_pdu->dci_alloc[i].dci_pdu[0],
 					   DCI_pdu->dci_alloc[i].rnti,
@@ -968,7 +982,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					   phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
 
 	if ((phy_vars_eNB->dlsch_eNB_SI->nCCE[next_slot>>1] = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
-									      DCI_pdu->dci_alloc[i].nCCE,
+									      DCI_pdu->nCCE,
 									      1,
 									      SI_RNTI,
 									      next_slot>>1)) == -1) {
@@ -1024,7 +1038,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	if (UE_id>=0) {
 	  //	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
-	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 
 	  generate_eNB_dlsch_params_from_dci(next_slot>>1,
 					     &DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1051,8 +1064,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  LOG_D(PHY,"[eNB %d] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %x)  => %d/%d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,
 		DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1],DCI_pdu->nCCE);
 	}
-#ifdef DEBUG_PHY_PROC      
 	DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nCCE[next_slot>>1];
+#ifdef DEBUG_PHY_PROC      
 	//if (phy_vars_eNB->frame%100 == 0)
 	  LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d UE_id %d Generated DCI format %d, aggregation %d\n",
 	      phy_vars_eNB->Mod_id, DCI_pdu->dci_alloc[i].rnti,
@@ -1105,7 +1118,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		1<<DCI_pdu->dci_alloc[i].L);
 #endif
 
-	dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+	//dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 	
 	generate_eNB_ulsch_params_from_dci(&DCI_pdu->dci_alloc[i].dci_pdu[0],
 					   DCI_pdu->dci_alloc[i].rnti,
@@ -1500,7 +1513,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 
 #ifdef EMOS
-  phy_procedures_emos_eNB_TX(next_slot);
+  phy_procedures_emos_eNB_TX(next_slot, phy_vars_eNB);
 #endif
 }
   
@@ -2279,8 +2292,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 
 #ifdef OAI_EMU
-	    if (abstraction_flag == 0)
-	      dump_ulsch(phy_vars_eNB, last_slot>>1, i);
+	if (abstraction_flag == 0)
+	  dump_ulsch(phy_vars_eNB, last_slot>>1, i);
 #endif
 
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
@@ -2394,11 +2407,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	else {
 	  
 #ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_ULSCH
 	  LOG_D(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",phy_vars_eNB->frame,last_slot>>1,
 		harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
 	    msg("%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b[j]);
 	  msg("\n");
+#endif
 #endif
 	  
 
@@ -2436,7 +2451,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			    0);
       
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d] Frame %d subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n", 
+      LOG_I(PHY,"[eNB %d] Frame %d subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n", 
 	    phy_vars_eNB->Mod_id,
 	    phy_vars_eNB->frame, last_slot>>1, 
 	    phy_vars_eNB->eNB_UE_stats[i].sector, 
@@ -2460,21 +2475,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    (phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][round] - 
 	     phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[harq_pid][round]);
 
-	//phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[i].total_TBS - phy_vars_eNB->eNB_UE_stats[i].total_TBS_last;
-
-	//phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
 	phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[harq_pid][round] = 
 	  phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][round];
 	phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors_last[harq_pid][round] = 
 	  phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[harq_pid][round];
       }
 
-      /*      if(phy_vars_eNB->frame % 10 == 0) {
-	phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*10;
-	
-	phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
-     } */ 
     }
   
 
@@ -2705,10 +2711,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     } // PUCCH processing
     
 #endif //PUCCH
-
-    if (last_slot==0) {
+  
+    if ((phy_vars_eNB->frame % 100 == 0) && (last_slot==9)) {
       phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						     phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*100;
+						     phy_vars_eNB->eNB_UE_stats[i].total_TBS_last);
       
       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
     }
@@ -2737,7 +2743,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   }
 
 #ifdef EMOS
-  phy_procedures_emos_eNB_RX(last_slot);
+  phy_procedures_emos_eNB_RX(last_slot,phy_vars_eNB);
 #endif
    
 }
