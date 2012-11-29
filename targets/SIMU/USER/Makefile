@@ -106,10 +106,10 @@ ifeq ($(IS_REL8), 0)
 endif
 endif
 
-#ifndef nonetlink
+ifndef nonetlink
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
-#endif
+endif
 
 ifdef TEST_OMG
 CFLAGS += -DTEST_OMG
