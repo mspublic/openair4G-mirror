@@ -455,7 +455,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	for (UE_id=0;UE_id<NB_UE_INST;UE_id++){
  
 	txdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[eNB_id]->txdata; 
-	frame_parms = &PHY_vars_UE_g[UE_id]->lte_frame_parms;
+	frame_parms = PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id];
 	slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 	slot_offset_meas = ((next_slot&1)==0) ? slot_offset : (slot_offset-(frame_parms->samples_per_tti>>1));
 

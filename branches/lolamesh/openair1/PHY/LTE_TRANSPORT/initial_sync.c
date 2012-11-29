@@ -241,7 +241,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
     
     sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars[eNB_id]->rxdata, 
 			     frame_parms,
-			     (int *)phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id); // this func assigns the value of the eNb_id  
+			     (int *)&phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id); // this func assigns the value of the eNb_id  
 
     sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
 #ifdef DEBUG_INIT_SYNCH
