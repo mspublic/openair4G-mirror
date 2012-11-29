@@ -238,14 +238,14 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                         frame_parms,
                         dlsch_ue,
-                        symbol_mod,
+                        symbol,
                         nb_rb);
     
   if (first_symbol_flag==1) {
     dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			frame_parms,
 			avg,
-			symbol_mod,
+			symbol,
 			nb_rb);
 #ifdef DEBUG_PHY
     msg("[DLSCH] avg[0] %d\n",avg[0]);
@@ -354,16 +354,16 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
                             frame_parms,
                             dlsch_ue,
-                            symbol_mod,
+                            symbol,
                             nb_rb);      
 
       /* compute new log2_maxh for effective channel */
       if (first_symbol_flag==1) {
 	// effective channel of desired user is always stronger than interfering eff. channel
-	dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol_mod, nb_rb);
+	dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol, nb_rb);
 	
 
-	  avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
+	avg[0] = log2_approx(avg[0]) - 13; //offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
 	
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
 	//printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
@@ -609,7 +609,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
       dl_ch_mag128      = (__m128i *)&dl_ch_mag[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
       dl_ch_mag128b     = (__m128i *)&dl_ch_magb[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
       rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
@@ -749,8 +749,8 @@ void dlsch_channel_compensation(int **rxdataF_ext,
       
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       rho128        = (__m128i *)&rho[aarx][symbol*frame_parms->N_RB_DL*12];
-      dl_ch128      = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-      dl_ch128_2    = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+      dl_ch128      = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch128_2    = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
           
       for (rb=0;rb<nb_rb;rb++) {
 	// multiply by conjugated channel
@@ -918,8 +918,8 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
     
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
         
-    dl_ch128_0          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-    dl_ch128_1          = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+    dl_ch128_0          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+    dl_ch128_1          = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
         
         
     dl_ch_mag128      = (__m128i *)&dl_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
@@ -1070,7 +1070,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
         
     Nre = (pilots==0) ? 12 : 8;
         
-    precoded_signal_strength += ((signal_energy_nodc(&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*Nre],
+    precoded_signal_strength += ((signal_energy_nodc(&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*Nre],
 						     (nb_rb*Nre))*rx_power_correction) - (phy_measurements->n0_power[aarx]));
   } // rx_antennas
     
@@ -1105,8 +1105,8 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
     
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
         
-    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-    dl_ch128i         = (__m128i *)&dl_ch_estimates_ext_i[aarx][symbol_mod*frame_parms->N_RB_DL*12];
+    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+    dl_ch128i         = (__m128i *)&dl_ch_estimates_ext_i[aarx][symbol*frame_parms->N_RB_DL*12];
     dl_ch_rho128      = (__m128i *)&dl_ch_rho_ext[aarx][symbol*frame_parms->N_RB_DL*12];
         
         
@@ -1246,13 +1246,15 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 void dlsch_scale_channel(int **dl_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          LTE_UE_DLSCH_t **dlsch_ue,
-                         u8 symbol_mod,
+                         u8 symbol,
                          unsigned short nb_rb){
 
     short rb, ch_amp;
-    unsigned char aatx,aarx,pilots=0;
+    unsigned char aatx,aarx,pilots=0,symbol_mod;
     __m128i *dl_ch128, ch_amp128;    
     
+    symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
     if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
         pilots=1;
     
@@ -1266,7 +1268,7 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
         for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++) {
             for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
-                dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+                dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
                 
                 for (rb=0;rb<nb_rb;rb++) {
                     dl_ch128[0] = _mm_mulhi_epi16(dl_ch128[0],ch_amp128);
@@ -1291,20 +1293,22 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
 void dlsch_channel_level(int **dl_ch_estimates_ext,
 			 LTE_DL_FRAME_PARMS *frame_parms,
 			 int *avg,
-			 u8 symbol_mod,
+			 u8 symbol,
 			 unsigned short nb_rb){
 
   short rb;
-  unsigned char aatx,aarx,nre=12;
+  unsigned char aatx,aarx,nre=12,symbol_mod;
   __m128i *dl_ch128;
   
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
   for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       //clear average level
       avg128D = _mm_xor_si128(avg128D,avg128D);
       // 5 is always a symbol with no pilots for both normal and extended prefix
 
-      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
 
       for (rb=0;rb<nb_rb;rb++) {
 	//	printf("rb %d : ",rb);
@@ -1351,12 +1355,14 @@ void dlsch_channel_level_prec(int **dl_ch_estimates_ext,
                               LTE_DL_FRAME_PARMS *frame_parms,
                               unsigned char *pmi_ext,
                               int *avg,
-                              u8 symbol_mod,
+                              u8 symbol,
                               unsigned short nb_rb){
 
   short rb;
-  unsigned char aarx,nre=12;
+  unsigned char aarx,nre=12,symbol_mod;
   __m128i *dl_ch128_0,*dl_ch128_1, dl_ch128_0_tmp, dl_ch128_1_tmp;
+
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   //clear average level
   avg128D = _mm_xor_si128(avg128D,avg128D);
@@ -1372,8 +1378,8 @@ void dlsch_channel_level_prec(int **dl_ch_estimates_ext,
     nre=12;
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-    dl_ch128_0 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
-    dl_ch128_1 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol_mod*frame_parms->N_RB_DL*12];
+    dl_ch128_0 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+    dl_ch128_1 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
 
     for (rb=0;rb<nb_rb;rb++) {
 
@@ -1554,8 +1560,8 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
+    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
 
     rxF_ext   = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
     
@@ -2011,10 +2017,10 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
-    dl_ch1     = &dl_ch_estimates[2+aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
+    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
+    dl_ch1     = &dl_ch_estimates[2+aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+    dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol*(frame_parms->N_RB_DL*12)];
     pmi_loc = pmi_ext;
 
     rxF_ext   = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];

@@ -42,9 +42,7 @@
 #ifndef MGMT_TYPES_HPP_
 #define MGMT_TYPES_HPP_
 
-#include "util/mgmt_util.hpp"
 #include <sys/types.h>
-#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -110,7 +108,6 @@ enum EventType {
 	 * Location
 	 */
 	MGMT_GN_EVENT_LOCATION_UPDATE = 0x100,
-	MGMT_FAC_EVENT_LOCATION_UPDATE = 0x110,
 	MGMT_GN_EVENT_LOCATION_TABLE_REQUEST = 0x101,
 	MGMT_FAC_EVENT_LOCATION_TABLE_REQUEST = 0x103,
 	MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE = 0x102,
@@ -156,31 +153,6 @@ struct MessageHeader {
 	u_int8_t priority;
 	u_int8_t eventType;
 	u_int8_t eventSubtype;
-
-	/**
-	 * Returns if this packet contains extended/ventor specific data
-	 */
-	bool isExtended() const {
-		return Util::isBitSet(version, 0);
-	}
-	/**
-	 * Returns if this packet contains valid data
-	 */
-	bool isValid() const {
-		return Util::isBitSet(version, 1);
-	}
-	/**
-	 * Returns the last 4 bits of version field (which is actual version information)
-	 */
-	u_int8_t getVersion() const {
-		return version & 0x0F;
-	}
-	/**
-	 * Returns the first 3 bits of priority field (which is actual priority information)
-	 */
-	u_int8_t getPriority() const {
-		return priority >> 5;
-	}
 } __attribute__((packed));
 
 /**
@@ -193,24 +165,12 @@ struct LocationInformation {
 	u_int16_t speed;	 /* Speed in signed units of 1 meter */
 	u_int16_t heading;
 	u_int16_t altitude;
-	u_int16_t acceleration; /* TAcc, PodAcc, SAcc, Hacc, AltAcc */
 
-	/**
-	 * Initialize everything to zero
-	 */
-	LocationInformation() {
-		timestamp = latitude = longitude = speed = heading = altitude = acceleration = 0;
-	}
-
-	string toString() const {
-		stringstream ss;
-
-		ss << "LocationInformation[timestamp:" << timestamp << ", latitude:" << latitude
-			<< ", longitude:" << longitude << ", speed:" << speed << ", heading:" << heading
-			<< ", altitude:" << altitude << ", acceleration:" << acceleration;
-
-		return ss.str();
-	}
+	unsigned TAcc:4;
+	unsigned PosAcc:4;
+	unsigned SAcc:2;
+	unsigned Hacc:3;
+	unsigned AltAcc:3;
 } __attribute__((packed));
 
 /**
@@ -252,21 +212,17 @@ struct LocationTableItem {
 	string toString() const {
 		stringstream ss;
 
-		/**
-		 * Print GN address in hex (as Andrea told) and the rest in decimal notation
-		 */
-		ss << "[gnAddr:" << hex << showbase << gnAddress << ", ";
-		ss << resetiosflags(ios_base::hex) << resetiosflags(ios_base::showbase);
-		ss << "ts:" << timestamp
-			<< " lat.:" << latitude
-			<< " long.:" << longitude
-			<< " speed:" << speed
-			<< " heading:" << heading
-			<< " alt.:" << altitude
-			<< " accel.:" << acceleration
-			<< " sn.:" << sequenceNumber
-			<< " lpv:" << (int)lpvFlags
-			<< " res.:" << (int)reserved << "]";
+		ss << "[gnAddr:" << gnAddress << ", "
+			<< "timestamp:" << timestamp << ", "
+			<< "lat.:" << latitude << ", "
+			<< "long.:" << longitude << ", "
+			<< "speed:" << speed << ", "
+			<< "heading:" << heading << ", "
+			<< "alt.:" << altitude << ", "
+			<< "accel.:" << acceleration << ", "
+			<< "seqNum:" << sequenceNumber << ", "
+			<< "lpvFlags:" << (int)lpvFlags << ", "
+			<< "res.:" << (int)reserved << "]";
 
 		return ss.str();
 	}
@@ -389,7 +345,7 @@ struct ConfigurationItem {
  */
 struct VariableSizeConfigurationItem {
 	u_int16_t configurationId;
-	u_int16_t length; /* # of bytes */
+	u_int16_t length; /* # of DWORDS */
 	vector<unsigned char> configurationBuffer;
 };
 

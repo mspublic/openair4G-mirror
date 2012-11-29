@@ -2,7 +2,6 @@
 #include "otg_form.h"
 #include "otg_vars.h"
 
-
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 
@@ -11,23 +10,23 @@ FL_FORM *fclock;
 unsigned int clear_cmpt_ul=0;
 unsigned int clear_cmpt_dl=0;
 
-
 FD_otg *create_form_otg(void)
 {
-  FL_OBJECT *obj;
+  FL_OBJECT *obj, *obj_ctime;
   FD_otg *fdui = (FD_otg *) fl_calloc(1, sizeof(*fdui));
 
   fdui->otg = fl_bgn_form(FL_NO_BOX, 550, 550);
   obj = fl_add_box(FL_UP_BOX,0,0,900,700,"");
-  fdui->owd = fl_add_xyplot(FL_NORMAL_XYPLOT,50,30,450,190,"Delay(ms)"); 
-  fl_set_object_color(fdui->owd,FL_BLACK,FL_YELLOW);
-  fdui->throughput = fl_add_xyplot(FL_NORMAL_XYPLOT,50,300,450,190,"Throughput(KB/s)");
-  fl_set_object_color(fdui->throughput,FL_BLACK,FL_YELLOW);
+  fdui->owd = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,50,30,450,190,"One Way Delay(ms)"); 
+  fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
+  fdui->throughput = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,50,300,450,190,"Throughput(Kbit/s)");
+  fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
    
   
    obj = fl_add_button(FL_NORMAL_BUTTON,250,510,50,30,"Exit");
    fl_set_object_callback(obj, exit_cb, 0);
-	 fdui->loss_ratio=fl_add_text(FL_NORMAL_TEXT,0,510,250,30,"NB Loss pkts");
+
+   //obj_ctime = fl_add_text(FL_NORMAL_TEXT, 150,510,50,30, "EURECOM");
 
   fl_end_form();
   fdui->otg->fdui = fdui;
@@ -50,22 +49,20 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
       fl_show_form (form_dl->otg, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       fl_set_form_position(form_dl->otg, 200, 200);
         if (g_otg->owd_radio_access==1)
-          fl_set_xyplot_ybounds(form_dl->owd,0,100);
+          fl_set_xyplot_ybounds(form_dl->owd,0,30);
         else
           fl_set_xyplot_ybounds(form_dl->owd,0,200);
  
       fl_set_xyplot_ybounds(form_dl->throughput,0,100); 
-
-
       form_ul= create_form_otg ();
       sprintf (title, "LTE UE->eNB (UL)");
       fl_show_form (form_ul->otg, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       fl_set_form_position(form_ul->otg, 850, 200);
       if (g_otg->owd_radio_access==1)
-          fl_set_xyplot_ybounds(form_ul->owd,0,100);
+          fl_set_xyplot_ybounds(form_ul->owd,0,70);
         else
           fl_set_xyplot_ybounds(form_ul->owd,0,200);
-      fl_set_xyplot_ybounds(form_ul->throughput,0,100); 
+      fl_set_xyplot_ybounds(form_ul->throughput,0,50); 
 
     }
 
@@ -111,13 +108,10 @@ void plot_graphes_ul(int src, int dst) //UE -->eNB
 {
 
 int i, src_idx=1, curve_id=1;
-char loss_rate[100];
 
 if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 
   fl_update_display(1); //the function flushes the X buffer so the drawing requests are on their way to the server
-
- 	
 
 
   if (otg_forms_info->is_data_plot_ul == -1) 
@@ -128,21 +122,16 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
     otg_forms_info->data_owd_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "ms");  
 
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[src][dst],
-    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "kB/s");  
-		nb_loss_pkts();
-		sprintf(loss_rate, "%s%d","NB Loss pkts UL=", otg_info->total_loss_ul);
-		fl_set_object_label(form_ul->loss_ratio, loss_rate);
+    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "Kbit/s");  
   } 
   else {
     fl_set_xyplot_data (form_ul->owd, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
     otg_forms_info->data_owd_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "ms");  
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
-    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "kB/s");  
-		nb_loss_pkts();
-		sprintf(loss_rate, "%s%d","NB Loss pkts UL=",otg_info->total_loss_ul);
-		fl_set_object_label(form_ul->loss_ratio, loss_rate);
+    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "Kbit/s");  
+
   }
- 
+
   for (src_idx=1;src_idx<=NB_UE_INST;src_idx++){
     if (src_idx!=otg_forms_info->is_data_plot_ul){
       fl_add_xyplot_overlay(form_ul->owd,curve_id++,
@@ -176,33 +165,29 @@ void plot_graphes_dl(int src, int dst)  //eNB -->UE
 {
 
 int i, dst_idx=1, curve_id=1;
-char loss_rate[100];
+
 if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
 
   fl_update_display(1); //the function flushes the X buffer so the drawing requests are on their way to the server
 
 
- 
   if (otg_forms_info->is_data_plot_dl == -1) 
     otg_forms_info->is_data_plot_dl=dst;
 
   if (otg_forms_info->is_data_plot_dl == dst) {
     fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime_dl[src][dst],
     otg_forms_info->data_owd_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "ms");   
+
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][dst],
-    otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "kB/s"); 
-		nb_loss_pkts();
-		sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
-		fl_set_object_label(form_dl->loss_ratio, loss_rate);
+    otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "Kbit/s");  
   } 
   else {
     fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
     otg_forms_info->data_owd_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "ms");  
+
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
-    otg_forms_info->data_throughput_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "kB/s");  
-		nb_loss_pkts();
-		sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
-		fl_set_object_label(form_dl->loss_ratio, loss_rate);
+    otg_forms_info->data_throughput_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "Kbit/s");  
+
   }
 
   for (dst_idx=1;dst_idx<=NB_UE_INST;dst_idx++){

@@ -1125,8 +1125,8 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   //  printf("In schedule_ulsch ...\n");
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > (1<<aggregation));UE_id++) {
     //    printf("Checking UE_id %d/%d\n",UE_id,granted_UEs);
-    //LOG_D(OTG,"%d %d \n", UE_id%2, sched_subframe%2);
-    if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0) || (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
+    //if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0) || (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
+    if (((UE_id%2)==(sched_subframe%2)))
     { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
 
       // find next ue to schedule
@@ -3695,14 +3695,17 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   // set current available nb_rb and nCCE to maximum
   nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
   nCCE = mac_xface->get_nCCE_max(Mod_id) - *nCCE_used;
-
+  
   /// CALLING Pre_Processor for tm5
   if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
     tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
+
+ 
+  //
     
   /// If there is more that one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.  
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-    if (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED) {
+    if ((find_UE_RNTI(Mod_id,UE_id)!=0) && (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED)) {
       dl_pow_off[UE_id]=1;
       pre_nb_available_rbs[UE_id]=nb_available_rb;
       for (ii=0;ii<7;ii++)
@@ -3718,14 +3721,37 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
       break; //the for loop
     }
+    else {
+      dl_pow_off[UE_id]=0;
+      pre_nb_available_rbs[UE_id]=nb_available_rb;
+      for (ii=0;ii<7;ii++)
+	rballoc_sub[UE_id][ii] = 1;
+      // a little hack to force the PMIs to be orthogonal
+      if (UE_id==1)
+	PHY_vars_eNB_g[0]->eNB_UE_stats[1].DL_pmi_single = (PHY_vars_eNB_g[0]->eNB_UE_stats[0].DL_pmi_single ^ 0x1555); 
+    }
+
+    // update stats for print
+    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].dl_pow_off = dl_pow_off[UE_id];
+    LOG_D(PHY,"******************Scheduling Information for UE%d ************************\n",UE_id);
+    LOG_D(PHY,"dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
+    LOG_D(PHY,"***********RB Alloc for every subband for UE%d ***********\n",UE_id);
+    for(i=0;i<7;i++){
+      PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub[UE_id][i];
+      LOG_D(PHY,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
+    }
+    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[UE_id];
+    LOG_D(PHY,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
   }
 
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 
     rnti = find_UE_RNTI(Mod_id,UE_id);
-    if (rnti==0)
+    if (rnti==0) {
+      //LOG_E(MAC,"Cannot find rnti for UE_id %d (granted UEs %d)\n",UE_id,granted_UEs);
       continue;
+    }
 
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
     if (eNB_UE_stats==NULL)
@@ -3854,7 +3880,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     
     // for TM5, limit the MCS to 16QAM    
     if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
+      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
 
     // for EXMIMO, limit the MCS to 16QAM as well
 #ifdef EXMIMO

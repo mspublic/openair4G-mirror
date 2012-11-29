@@ -53,6 +53,7 @@ extern u8 number_of_cards;
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
   u8 eNB=0;
+  u32 RRC_status;
 
   if (phy_vars_ue==NULL)
     return 0;
@@ -84,7 +85,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
 #endif
   len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
   len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
-  len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",openair_daq_vars.timing_advance);
+  len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",phy_vars_ue->timing_advance);
   len += sprintf(&buffer[len], "[UE PROC] UE tx power = %d\n", PHY_vars_UE_g[0]->tx_power_dBm);  
   
   //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
@@ -166,7 +167,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (both): %x,%x\n",eNB,
 		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,0)),
 		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,1)));
-    
+
+#ifdef OPENAIR2    
+      RRC_status = mac_get_rrc_status(phy_vars_ue->Mod_id,0,0);
+      len += sprintf(&buffer[len],"[UE PROC] RRC status = %d\n",RRC_status);
+#endif
     
     len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag);
     if (phy_vars_ue->transmission_mode[eNB] == 6)

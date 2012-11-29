@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -51,47 +51,36 @@ using namespace std;
 using boost::asio::ip::udp;
 
 #include "mgmt_packet_handler.hpp"
+#include "util/mgmt_udp_server.hpp"
 #include "mgmt_client_manager.hpp"
 #include "util/mgmt_exception.hpp"
 #include "mgmt_configuration.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
-#include "mgmt_server.hpp"
 
-#define VERSION "1.3.1"
-
-void printVersion() {
-	cerr << "SCORE@F MANAGEMENT Module version " << VERSION << endl;
-}
-void printHelp(const string& binaryName) {
+void printHelp(string binaryName) {
 	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
 }
 
-#ifdef BOOST_VERSION_1_50
 const string CONF_HELP_PARAMETER_STRING = "help";
 const string CONF_LOG_LEVEL_PARAMETER_STRING = "loglevel";
-#endif
 
 int main(int argc, char** argv) {
-	string logFileName, configurationFileName;
-
+	cout << "Size: " << sizeof(ConfigurationNotification) << endl;
 	/**
-	 * Process command-line parameters
-	 * Configuration file name is necessary yet log file name is optional here
+	 * Log file name parameter is optional
 	 */
-	if (argc > 1 && (!string(argv[1]).compare("-v") || !string(argv[1]).compare("--version"))) {
-		printVersion();
-		exit(0);
-	} else if (argc == 2) {
+	string logFileName = "";
+	if (argc == 1) {
 		logFileName = "SCOREF-MGMT.log";
-		configurationFileName = argv[1];
-	} else if (argc == 3) {
-		configurationFileName = argv[1];
-		logFileName = argv[2];
+	} else if (argc == 2) {
+		logFileName = string(argv[1]);
 	} else {
 		printHelp(argv[0]);
 		exit(1);
 	}
+
+	Logger logger(logFileName, Logger::TRACE);
 
 #ifdef BOOST_VERSION_1_50
 	/**
@@ -119,62 +108,86 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-	/**
-	 * Create a Logger object
-	 */
-	Logger logger(logFileName, Logger::TRACE);
-	/**
-	 * Create the father
-	 */
 	ManagementInformationBase mib(logger);
+	PacketHandler* packetHandler = NULL;
 
 	/**
-	 * Prepare the list of FACilities configuration files by traversing
-	 * the configration/ directory's content
+	 * Prepare the list of configuration files that are going to be parsed
 	 */
-	string facilitiesConfigurationFileDirectory = "configuration/";
-	vector<string> configurationFileVector = Util::getListOfFiles(facilitiesConfigurationFileDirectory);
-	/**
-	 * Add MGMT module's configuration file to the list
-	 */
-	configurationFileVector.push_back(configurationFileName);
+	vector<string> configurationFileVector;
+	configurationFileVector.push_back("IF.MGMT.conf");
+	configurationFileVector.push_back("IF.IHM.conf");
 	Configuration configuration(configurationFileVector, logger);
-	configuration.setFacilitiesConfigurationDirectory(facilitiesConfigurationFileDirectory);
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
 	try {
 		configuration.parseConfigurationFiles(mib);
 	} catch (Exception& e) {
-		e.updateStackTrace("Cannot parse the configuration file");
+		e.updateStackTrace("Cannot parse a configuration file");
 		e.printStackTrace();
 		exit(-1);
 	}
 
-	/**
-	 * Initialise MIB
-	 */
-	try {
-		mib.initialise();
-	} catch (Exception& e) {
-		e.updateStackTrace("Cannot initialise ManagementInformationBase!");
-		throw;
-	}
-
-	/**
-	 * Instantiate a Client Manager and pass it to Management Server
-	 */
-	boost::asio::io_service ioService;
 	ManagementClientManager clientManager(mib, configuration, logger);
-	ManagementServer server(ioService, configuration, mib, clientManager, logger);
+	UdpServer server(configuration.getServerPort(), logger);
 
 	try {
-		ioService.run();
-	} catch (std::exception& e) {
-		logger.error(e.what());
-	}
+		/**
+		 * Initialise MIB
+		 */
+		try {
+			mib.initialise();
+		} catch (Exception& e) {
+			e.updateStackTrace("Cannot initialise ManagementInformationBase!");
+			throw e;
+		}
 
-	logger.info("Exiting...");
+		/**
+		 * Allocate aGeonet packet handler
+		 */
+		try {
+			packetHandler = new PacketHandler(mib, logger);
+		} catch (std::bad_alloc& exception) {
+			throw Exception("Cannot allocate a GeonetMessageHandler object!", logger);
+		} catch (Exception& e) {
+			e.updateStackTrace("Cannot initialise Geonet Message Handler!");
+			throw e;
+		}
+
+		logger.info("Starting Management & GeoNetworking Interface...");
+		logger.info("Reading configuration file...");
+
+		vector<unsigned char> rxBuffer(UdpServer::RX_BUFFER_SIZE);
+
+		try {
+			for (;;) {
+				if (server.receive(rxBuffer)) {
+					bool packetHandled = false;
+
+					try {
+						packetHandled = packetHandler->handle(server, rxBuffer);
+					} catch (std::exception& e) {
+						cerr << e.what() << endl;
+					}
+
+					if (packetHandled)
+						/**
+						 * Inform Client Manager of this sender
+						 */
+						clientManager.updateManagementClientState(server, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxBuffer));
+				}
+
+				// Revert buffer size to initial
+				rxBuffer.reserve(UdpServer::RX_BUFFER_SIZE);
+			}
+		} catch (std::exception& e) {
+			logger.error(e.what());
+		}
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot initialise SCOREF-MGMT module, exiting...");
+		e.printStackTrace();
+	}
 
 	return 0;
 }

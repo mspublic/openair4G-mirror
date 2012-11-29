@@ -89,6 +89,19 @@ int main (int argc, char **argv)
   time_t timer;
   struct tm *now;
  
+  while ((c = getopt (argc, argv, "he")) != -1) {
+    switch (c) {
+    case 'e':
+      eNB_flag=1;
+      break;
+    case 'h':
+      printf("EMOS FIFO to file dump.\n");
+      printf("Usage: %s -h(elp) -e(NB) (default=ue)\n",argv[0]);
+      exit(0);
+    default:
+      break;
+    }
+  }
 
   timer = time(NULL);
   now = localtime(&timer);
@@ -110,20 +123,6 @@ int main (int argc, char **argv)
       exit(-1);
     }
   
-  while ((c = getopt (argc, argv, "he")) != -1) {
-    switch (c) {
-    case 'e':
-      eNB_flag=1;
-      break;
-    case 'h':
-      printf("EMOS FIFO to file dump.\n");
-      printf("Usage: %s -h(elp) -e(NB) (default=ue)\n",argv[0]);
-      exit(0);
-    default:
-      break;
-    }
-  }
-
   if (eNB_flag==1)
     channel_buffer_size = sizeof(fifo_dump_emos_eNB);
   else
@@ -161,16 +160,14 @@ int main (int argc, char **argv)
 
   signal(SIGINT, endme);
 
-
+  printf("starting dump, channel_buffer_size=%d ...\n",channel_buffer_size);
   while (!end)
     {
       bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, channel_buffer_size);
-      /*
       if (eNB_flag==1)
 	printf("eNB: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
       else
 	printf("UE: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx,bytes);
-      */
       fifo2file_ptr += channel_buffer_size;
       counter ++;
 

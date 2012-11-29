@@ -1,21 +1,3 @@
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
- * network-based mobility management protocol standardized by IETF.
- * 
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
- */
 /*! \file pmip6d.c
 * \brief The main PMIP6D file
 * \author OpenAir3 Group
@@ -23,7 +5,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair_tech@eurecom.fr
+* \email: openair3@eurecom.fr
 */
 #define PMIP
 #define PMIP_INIT_C
@@ -85,7 +67,7 @@ static int pmip_cache_delete_each(void *data, __attribute__ ((unused)) void *arg
         pmip_tunnel_del(bce->tunnel);
     }
     //Delete existing route for the deleted MN
-    if (is_ha()) {
+    if (is_lma()) {
         lma_remove_route(&bce->mn_addr, bce->tunnel);
         //decrement users of old tunnel.
         pmip_tunnel_del(bce->tunnel);
@@ -154,16 +136,9 @@ int pmip_common_init(void)
     } else {
         dbg("PMIP Binding Cache is initialized!\n");
     }
-    return 0;
-}
-//---------------------------------------------------------------------------------------------------------------------
-int pmip_mag_init(void)
-//---------------------------------------------------------------------------------------------------------------------
-{
-    pmip_common_init();
     /**
-     * Adds a default rule for RT6_TABLE_MIP6.
-     */
+    * Adds a default rule for RT6_TABLE_MIP6.
+    */
     dbg("Add default rule for RT6_TABLE_MIP6\n");
     if (rule_add(NULL, RT6_TABLE_MIP6, IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST, &in6addr_any, 0, &in6addr_any, 0, 0) < 0) {
         dbg("Add default rule for RT6_TABLE_MIP6 failed, insufficient privilege/kernel options missing!\n");
@@ -171,20 +146,21 @@ int pmip_mag_init(void)
     }
 
     /**
-     * Initialize timers of tunnels (tunnels between LMA and MAGs).
-     */
+    * Initialize timers of tunnels (tunnels between LMA and MAGs).
+    */
     if (pmip_tunnels_init() < 0) {
         dbg("PMIP Tunnels initialization failed! \n");
         return -1;
     } else {
         dbg("PMIP Tunnels are initialized!\n");
     }
-
-    /**
-    *  Get iif of MN messages
-    */
-    mag_get_ingress_info(&g_ingress_iif, NULL);
-
+    return 0;
+}
+//---------------------------------------------------------------------------------------------------------------------
+int pmip_mag_init(void)
+//---------------------------------------------------------------------------------------------------------------------
+{
+    pmip_common_init();
     conf.OurAddress = conf.MagAddressEgress[0];
     conf.HomeNetworkPrefix = get_node_prefix(&conf.MagAddressIngress[0]); //copy Home network prefix.
     dbg("Running as MAG entity\n");
@@ -227,23 +203,12 @@ int pmip_mag_init(void)
 int pmip_lma_init(void)
 //---------------------------------------------------------------------------------------------------------------------
 {
-    if (pmip_common_init() < 0) return -1;
-
-    /**
-     * Initialize timers of tunnels (tunnels between LMA and MAGs).
-     */
-    if (pmip_tunnels_init() < 0) {
-        dbg("PMIP Tunnels initialization failed! \n");
-        return -1;
-    } else {
-        dbg("PMIP Tunnels are initialized!\n");
-    }
-
+    pmip_common_init();
     pmip_lma_mn_to_hnp_cache_init();
     conf.OurAddress = conf.LmaAddress;
     dbg("Entity Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.OurAddress));
     dbg("Initializing the PBU handler\n");
     //To capture PBU message.
-    //mh_handler_reg(IP6_MH_TYPE_BU, &pmip_lma_pbu_handler);
+    mh_handler_reg(IP6_MH_TYPE_BU, &pmip_lma_pbu_handler);
     return 0;
 }

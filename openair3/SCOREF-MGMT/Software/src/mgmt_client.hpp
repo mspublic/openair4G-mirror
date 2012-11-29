@@ -42,11 +42,15 @@
 #ifndef MGMT_CLIENT_HPP_
 #define MGMT_CLIENT_HPP_
 
+#include "mgmt_inquiry_thread.hpp"
 #include "util/mgmt_log.hpp"
+
+#include <boost/thread.hpp>
 #include <boost/asio.hpp>
+using boost::asio::ip::udp;
+
 #include <string>
 #include <map>
-using boost::asio::ip::udp;
 
 /**
  * A container to hold information about Management clients, mostly used
@@ -59,13 +63,17 @@ class ManagementClient {
 		 */
 		enum ManagementClientState {
 			/**
-			 * Client is not connected or is unreachable
+			 * Client is not connected
 			 */
 			OFFLINE = 0,
 			/**
-			 * A client is connected and alive
+			 * A client is connected but has not yet received configuration
 			 */
 			ONLINE = 1,
+			/**
+			 * A client is connected and has received configuration
+			 */
+			CONNECTED = 2
 		};
 
 		/**
@@ -73,18 +81,13 @@ class ManagementClient {
 		 */
 		enum ManagementClientType {
 			/**
-			 * Initial value, this is the value set when a client object
-			 * is created but the type has not yet determined
-			 */
-			UNKNOWN = 0,
-			/**
 			 * GeoNetworking client
 			 */
-			GN = 1,
+			GN = 0,
 			/**
 			 * Facilities client
 			 */
-			FAC = 2
+			FAC = 1
 		};
 
 	public:
@@ -92,22 +95,16 @@ class ManagementClient {
 		 * Constructor for ManagementClient class
 		 *
 		 * @param mib Management Information Base reference
-		 * @param clientEndpoint Client's connection information
+		 * @param clientConnection Connected socket for client connection
 		 * @param wirelessStateUpdateInterval Determines how frequent the wireless state update will be performed
 		 * @param locationUpdateInterval Determines how frequent the location update will be performed
 		 * @logger Logger object reference
 		 */
-		ManagementClient(ManagementInformationBase& mib, udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		ManagementClient(ManagementInformationBase& mib, UdpServer& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
 		~ManagementClient();
-
-	private:
-		/**
-		 * Copy constructor to prevent the usage of default copy constructor
-		 */
-		ManagementClient(const ManagementClient& managementClient);
 
 	public:
 		/**
@@ -123,17 +120,12 @@ class ManagementClient {
 		 */
 		unsigned short int getPort() const;
 		/**
-		 * Returns a reference to the udp::endpoint of this client
-		 *
-		 * return A reference to udp::endpoint of this client
-		 */
-		const udp::endpoint& getEndpoint() const;
-		/**
 		 * Returns the state of this client
 		 *
 		 * @return ManagementClientState value for this client
 		 */
 		ManagementClientState getState() const;
+		// XXX setType() and getType()
 		/**
 		 * Sets the state of this client with given state
 		 *
@@ -141,19 +133,6 @@ class ManagementClient {
 		 * @return true on success, false otherwise
 		 */
 		bool setState(ManagementClientState state);
-		/**
-		 * Returns the type of this client
-		 *
-		 * @return ManagementClientType value for this client
-		 */
-		ManagementClientType getType() const;
-		/**
-		 * Sets the type of this client with given state
-		 *
-		 * @param state New ManagementClientType for this client
-		 * @return true on success, false otherwise
-		 */
-		bool setType(ManagementClientType type);
 		/**
 		 * Overloaded == operator to use ManagementClient type as a std::map key
 		 *
@@ -181,9 +160,9 @@ class ManagementClient {
 		 */
 		ManagementInformationBase& mib;
 		/**
-		 * Client's udp::endpoint information
+		 * Client's UDP socket information
 		 */
-		udp::endpoint clientEndpoint;
+		udp::endpoint client;
 		/**
 		 * Client's connection state with Management module
 		 */
@@ -192,6 +171,14 @@ class ManagementClient {
 		 * Client type
 		 */
 		ManagementClient::ManagementClientType type;
+		/**
+		 * InquiryThread object for Wireless State updates
+		 */
+		InquiryThread* inquiryThreadObject;
+		/**
+		 * InquiryThread runner for Wireless State updates
+		 */
+		boost::thread* inquiryThread;
 		/**
 		 * Logger object reference
 		 */

@@ -6,7 +6,7 @@
 	<PATHLOSS_EXPONENT>3.67</PATHLOSS_EXPONENT>
 	<PATHLOSS_0_dB>-128</PATHLOSS_0_dB><!--pathloss at 1km -->
       </FREE_SPACE_MODEL_PARAMETERS>
-      <SMALL_SCALE>AWGN</SMALL_SCALE>
+      <SMALL_SCALE>SCM_C</SMALL_SCALE>
     </FADING>
     <SYSTEM_BANDWIDTH_MB>7.68</SYSTEM_BANDWIDTH_MB>
     <SYSTEM_FREQUENCY_GHz>1.9</SYSTEM_FREQUENCY_GHz>
@@ -17,7 +17,7 @@
 	<NUMBER_OF_SECTORS>1</NUMBER_OF_SECTORS><!--this means we use an omnidirectional antenna and the following parameter is ignored--> 
 	<BEAM_WIDTH_dB>0</BEAM_WIDTH_dB><!--3dB beam width per sector--> 
 	<ANTENNA_GAIN_dBi>0</ANTENNA_GAIN_dBi>
-	<TX_POWER_dBm>43</TX_POWER_dBm>
+	<TX_POWER_dBm>15</TX_POWER_dBm>
       </eNB_ANTENNA>
       <UE_ANTENNA>
 	<RX_NOISE_LEVEL_dB>0</RX_NOISE_LEVEL_dB>
@@ -65,13 +65,13 @@
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> 
+    <EMULATION_TIME_ms>3000</EMULATION_TIME_ms> 
     <CURVE>disable</CURVE>
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
-      <LEVEL>info</LEVEL>
+      <LEVEL>debug</LEVEL>
       <VERBOSITY>high</VERBOSITY> <!-- low, medium, high, full -->
       <INTERVAL>1</INTERVAL>
     </LOG>		

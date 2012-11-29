@@ -798,8 +798,8 @@ void pdcch_extract_rbs_single(s32 **rxdataF,
 #endif
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
+    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
 
     rxF_ext   = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
     
@@ -980,10 +980,10 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
-    dl_ch1     = &dl_ch_estimates[2+aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
+    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
+    dl_ch1     = &dl_ch_estimates[2+aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+    dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol*(frame_parms->N_RB_DL*12)];
 
     //    msg("pdcch extract_rbs: rxF_ext pos %d\n",symbol*(frame_parms->N_RB_DL*12));
     rxF_ext   = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
@@ -2126,8 +2126,8 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 	// check for TB1 later
 	
       }
+      n_dci_dl++;
     }
-    n_dci_dl++;
   }
   memcpy((void *)&eNB_transport_info[phy_vars_eNB->Mod_id].dci_alloc,
 	 (void *)dci_alloc,

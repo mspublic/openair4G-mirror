@@ -3,12 +3,7 @@ M = 512;
 L = 30;
 ant = 2;
 frames = 201:210;
-%frames2 = frames;
 frames2 = 501:510;
-
-%method = 'tlsdeconv';
-method = 'tlsdeconvangles';
-
 
 %%
 %H_UE2 = reshape(permute(H_UE(frames,2049:2560,:),[2 1 3]),512,[],2);
@@ -66,33 +61,21 @@ title('PDP compensated UL channel')
 
 %%
 addpath('E:\Synchro\kaltenbe\My Documents\Matlab\reciprocity')
-clear p
+fprintf('\ntlsdeconvangles\n')
 for j=1:2
-    if strcmp(method,'tlsdeconvangles')
-        fprintf('\ntlsdeconvangles\n')
-        [p(:,j),phi_hat,costnew(j)]=tlsdeconvangles(H_UE_t(:,frames,j),H_eNB_t(:,frames,j),20);
-        phi_hat_last(:,j) = phi_hat(:,end);
-    elseif strcmp(method,'tlsdeconv')
-        fprintf('\ntlsdeconv\n')
-        [p(:,j),costnew(j)]=tlsdeconv(H_UE_t(:,frames,j),H_eNB_t(:,frames,j),20);
-        phi_hat_last(:,j) = zeros(length(frames),1);
-    else
-        error('unknow method %s',method);
-    end
-            
+    [p(:,j),phi_hat,costnew(j)]=tlsdeconvangles(H_UE_t(:,frames,j),H_eNB_t(:,frames,j),20);
+    phi_hat_last(:,j) = phi_hat(:,end);
 end
 
 %%
 colors=['b' 'g' 'r' 'c' 'm' 'y' 'k' 'b' 'g' 'r'];
 
-if strcmp(method,'tlsdeconvangles')
-    figure(5)
-    clf; hold on
-    niter=size(phi_hat,2);
-    for k=2:size(phi_hat,1);
-      polar(phi_hat(k,:),1:niter,colors(k-1));
-      %polar(-reference(k)/180*pi,niter,[colors(k-1) 'o']);
-    end
+figure(5)
+clf; hold on
+niter=size(phi_hat,2);
+for k=2:size(phi_hat,1);
+  polar(phi_hat(k,:),1:niter,colors(k-1));
+  %polar(-reference(k)/180*pi,niter,[colors(k-1) 'o']);
 end
 
 figure(6)
@@ -105,78 +88,58 @@ g = H_eNB_t(:,frames2,:);
 h = H_UE_t(:,frames2,:);
 % reconstruct g from h
 for j=1:2
-    g_hat(:,:,j) = filter(p(:,j),1,h(:,:,j));
-    if all(frames==frames2)
-        for i=1:length(frames)
-            g_hat(:,i,j) = exp(-1j*phi_hat_last(i,j)).*g_hat(:,i,j);
-        end
-    end
+g_hat(:,:,j) = filter(p(:,j),1,h(:,:,j));
+% for i=1:length(frames)
+%     g_hat(:,i,j) = exp(-1j*phi_hat_last(i,j)).*g_hat(:,i,j);
+% end
 end
 G = fft(g,512,1);
 G_hat = fft(g_hat,512,1);
-H = fft(h,512,1);
 
 % normalize G and G_hat
 scale_G = sqrt(mean(mean(mean(abs(G).^2,1),2),3));
 scale_G_hat = sqrt(mean(mean(mean(abs(G_hat).^2,1),2),3));
-scale_H = sqrt(mean(mean(mean(abs(H).^2,1),2),3));
 
 G=G./scale_G;
 G_hat = G_hat./scale_G_hat;
-H=H./scale_H;
 
-%%
 addpath('E:\Synchro\kaltenbe\My Documents\Matlab\reciprocity\ICC paper');
 SNR_vec_dB = -10:10:40;
 SNR_vec = 10.^(SNR_vec_dB./10);
 C_CSIR = zeros(512,length(frames2),length(SNR_vec));
-C_CSIT_perf = zeros(512,length(frames2),length(SNR_vec));
-C_CSIT_calib = zeros(512,length(frames2),length(SNR_vec));
-C_CSIT_nocalib = zeros(512,length(frames2),length(SNR_vec));
+C_CSIT_corr = zeros(512,length(frames2),length(SNR_vec));
+C_CSIT_est = zeros(512,length(frames2),length(SNR_vec));
 for i=1:512
     for j=1:length(frames2)
-        [C_CSIR(i,j,:), C_CSIT_perf(i,j,:), C_CSIT_calib(i,j,:)] = cap_miso(squeeze(G(i,j,:)).', squeeze(G_hat(i,j,:)).', SNR_vec.');
-        [~, ~, C_CSIT_nocalib(i,j,:)] = cap_miso(squeeze(G(i,j,:)).', squeeze(H(i,j,:)).', SNR_vec.');
+        [C_CSIR(i,j,:), C_CSIT_corr(i,j,:), C_CSIT_est(i,j,:)] = cap_miso(squeeze(G(i,j,:)).', squeeze(G_hat(i,j,:)).', SNR_vec.');
     end
 end
 
 scale_C = 1/(1e-3/14) * 1/4.5e6;
 
-%%
 figure(10)
 hold off
-plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIT_perf,1),2)),'ro--');
+plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIR,1),2)));
 hold on
-plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIT_calib,1),2)),'mx:');
-%plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIT_calib_nofreqoff,1),2)),'c+:');
-plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIR,1),2)),'bs--');
-plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIT_nocalib,1),2)),'kd-');
-%legend('CSIR + perfect CSIT', 'CSIR + calibrated CSIT', 'CSIR + calibrated no freq offset', ...
-%    'CSIR only', 'CSIR + uncalibrated CSIT', 'Location', 'Northwest')
-legend('CSIR + perfect CSIT', 'CSIR + calibrated CSIT', ...
-    'CSIR only', 'CSIR + uncalibrated CSIT', 'Location', 'Northwest')
+plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIT_corr,1),2)),'r');
+plot(SNR_vec_dB,scale_C*squeeze(mean(sum(C_CSIT_est,1),2)),'g');
+legend('CSIR only', 'CSIR + estimated CSIT', 'CSIR + perfect CSIT')
 xlabel('SNR [dB]')
 ylabel('Capacity [bit/sec/Hz]')
 
 %%
 figure(7)
-p = squeeze(20*log10(abs(g(:,:,ant)))).';
-waterfall(max(p,zeros(size(p))))
+waterfall(squeeze(20*log10(abs(g(:,:,ant)))).')
 zlim([0 50])
 title('|g|^2 [dB]')
-xlabel('Delay Time [samples]')
-ylabel('Snapshots')
 
 figure(8)
-p = squeeze(20*log10(abs(g_hat(:,:,ant)))).';
-waterfall(max(p,zeros(size(p))))
+waterfall(squeeze(20*log10(abs(g_hat(:,:,ant)))).')
 zlim([0 50])
 title('|\hat{g}|^2 [dB]')
-xlabel('Delay Time [samples]')
-ylabel('Snapshots')
 
 figure(9)
 hold off
-mse = abs(g-g_hat).^2./abs(g).^2;
+mse = abs(g-g_hat).^2;
 surf(squeeze(10*log10(mse(:,:,ant))).')
 title('mse [dB]')

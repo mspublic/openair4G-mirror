@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -56,13 +56,13 @@ bool GeonetLocationTableRequestEventPacket::serialize(vector<unsigned char>& buf
 
 	// Encode header first
 	if (!GeonetPacket::serialize(buffer)) {
-		logger.error("Cannot serialise header into given buffer!");
+		cerr << "Cannot serialise header into given buffer!" << endl;
 		return false;
 	}
 
 	// Then the GN address follows
 	if (!Util::encode8byteInteger(buffer, sizeof(MessageHeader), this->gnAddress)) {
-		logger.error("Cannot serialise GN address into given buffer!");
+		cerr << "Cannot serialise GN address into given buffer!" << endl;
 		return false;
 	}
 

@@ -13,7 +13,7 @@ CFLAGS += -O2
 
 SRC = synctest.c condtest.c
 
-RTAI_OBJ = synctest.o sched_dlsch.o sched_ulsch.o
+RTAI_OBJ = synctest.o sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
 OBJ = $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
 
 TOP_DIR = $(OPENAIR1_DIR)

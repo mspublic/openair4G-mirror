@@ -88,10 +88,11 @@ endif
 ####################################################
 
 #netlink.ko:
-	#make $(x)$(y) NAS_NETLINK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
+#	make NAS_NETLINK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
 
 #nasmesh.ko:
 #	make  V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
+
 print:
 	@echo linux kernel ge 22: $(IS_KERNEL_SUBVERSION_GREATER_THAN_22)
 	@echo kernel name : $(KERNEL_NAME)
@@ -101,5 +102,7 @@ print:
 	@echo flag gt2629: $(GT2629)
 	@echo  linux kernel ge 30: $(IS_KERNEL_SUBVERSION_GREATER_THAN_30)
 	@echo flag KERNEL_MAIN_VERSION $(KERNEL_MAIN_VERSION)
-#clean:
+
+clean:
+	rm -f $(nasmesh-objs) $(obj-m)
 #	make -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules

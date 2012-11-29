@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fr/openairinterface
-  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -73,11 +73,6 @@ bool GeonetConfigurationAvailableEventPacket::serialize(vector<unsigned char>& b
 	// encode `key count' field
 	buffer[bodyIndex + 2] = ((keyCount >> 8) & 0xff);
 	buffer[bodyIndex + 3] = (keyCount & 0xff);
-
-	/**
-	 * Resize buffer to the number of bytes we've written into it
-	 */
-	buffer.resize(sizeof(ConfigureAvailableMessage));
 
 	return true;
 }

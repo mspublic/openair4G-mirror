@@ -46,6 +46,10 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
+#ifdef EMOS
+#include "SCHED/phy_procedures_emos.h"
+#endif
+
 //#ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -91,6 +95,11 @@ extern int dlsch_subframe[8];
 extern pthread_mutex_t dlsch_mutex[8];
 /// Condition variable for dlsch thread
 extern pthread_cond_t dlsch_cond[8];
+extern int rx_pdsch_instance_cnt[8];
+extern int rx_pdsch_slot[8];
+extern pthread_mutex_t rx_pdsch_mutex[8];
+/// Condition variable for rx_pdsch thread
+extern pthread_cond_t rx_pdsch_cond[8];
 #endif
 
 DCI_ALLOC_t dci_alloc_rx[8];
@@ -753,8 +762,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 	  if (abstraction_flag==0) {
 	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,
-			       &phy_vars_ue->lte_frame_parms,
-			       phy_vars_ue->ulsch_ue[eNB_id],
+			       phy_vars_ue,
 			       harq_pid,
 			       phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
@@ -838,8 +846,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      LOG_I(PHY,"Encoding ulsch\n");
 	    }
 	    if (ulsch_encoding(ulsch_input_buffer,
-			       &phy_vars_ue->lte_frame_parms,
-			       phy_vars_ue->ulsch_ue[eNB_id],
+			       phy_vars_ue,
 			       harq_pid,
 			       phy_vars_ue->transmission_mode[eNB_id],0,
 			       0  //  Nbundled, to be updated!!!!
@@ -968,7 +975,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		    Po_PUCCH);
 	    }
 	    else {
-	      LOG_I(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d\n",
+	      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d\n",
 		    phy_vars_ue->Mod_id, 
 		    phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 		    phy_vars_ue->frame, next_slot>>1,
@@ -1153,7 +1160,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       // check if we have PRACH opportunity
 
       if (is_prach_subframe(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,next_slot>>1)) {
-	printf("UE %d: Frame %d, SF %d Clearing generate_prach\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
+	LOG_D(PHY,"UE %d: Frame %d, SF %d Clearing generate_prach\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
 	phy_vars_ue->generate_prach=0;
 #ifdef OPENAIR2
 	// ask L2 for RACH transport
@@ -1170,7 +1177,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  phy_vars_ue->generate_prach=1;
 	  phy_vars_ue->prach_cnt=0;
 	  //phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
-	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
+	  //phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
 	  
 	  if (abstraction_flag == 0) {
 	    LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
@@ -1185,13 +1192,15 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
 
 #ifdef EXMIMO
-	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm)/3;
+	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm);
 #else
 	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = AMP;
 #endif
 	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
-	    LOG_I(PHY,"[UE  %d][RAPROC] PRACH digital power %d dB (amp %d)\n",
+	    LOG_I(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
 		  phy_vars_ue->Mod_id,
+		  get_PL(phy_vars_ue->Mod_id,eNB_id),
+		  phy_vars_ue->tx_power_dBm,
 		  dB_fixed(prach_power),
 		  phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp);
 	  }
@@ -1202,7 +1211,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 					 phy_vars_ue->frame,
 					 eNB_id);
 	  }
-	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
+	  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
 		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
 		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
@@ -1210,7 +1219,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 	}
       }
-      printf("[PHY][UE %p] frame %d subframe %d : generate_prach %d, prach_cnt %d\n",phy_vars_ue,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->generate_prach,phy_vars_ue->prach_cnt);
+      LOG_D(PHY,"[UE %p] frame %d subframe %d : generate_prach %d, prach_cnt %d\n",phy_vars_ue,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->generate_prach,phy_vars_ue->prach_cnt);
 
       phy_vars_ue->prach_cnt++;
       if (phy_vars_ue->prach_cnt==3)
@@ -1507,11 +1516,16 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   u8 pbch_phase;
   u16 frame_tx;
   static u8 first_run = 1;
+  u8 pbch_trials = 0;
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
-    //msg("[PHY][UE  %d] Trying PBCH %d (NidCell %d, eNB_id %d)\n",phy_vars_ue->Mod_id,pbch_phase,phy_vars_ue->lte_frame_parms.Nid_cell,eNB_id);
+  pbch_phase=(phy_vars_ue->frame%4);
+  if (pbch_phase>=4)
+    pbch_phase=0;
+  for (pbch_trials=0;pbch_trials<4;pbch_trials++) {
+  //for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
+    //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,pbch_phase,phy_vars_ue->lte_frame_parms.Nid_cell,eNB_id);
     if (abstraction_flag == 0) {
       pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
 			    phy_vars_ue->lte_ue_pbch_vars[eNB_id],
@@ -1534,7 +1548,9 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
       break;
     }
-   
+    pbch_phase++;
+    if (pbch_phase>=4)
+      pbch_phase=0;
   }
 
 
@@ -1685,7 +1701,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     dci_cnt = dci_decoding_procedure(phy_vars_ue,
 				     dci_alloc_rx,
 				     eNB_id,last_slot>>1);
-    //    LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
+    //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
  
     if (is_phich_subframe(&phy_vars_ue->lte_frame_parms,last_slot>>1)) {
       rx_phich(phy_vars_ue,
@@ -1843,7 +1859,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    0,
 					    P_RNTI)==0) {
 
-	dump_dci(&phy_vars_ue->lte_frame_parms,(void *)&dci_alloc_rx[i]);
+	//dump_dci(&phy_vars_ue->lte_frame_parms,(void *)&dci_alloc_rx[i]);
 
 	phy_vars_ue->dlsch_received[eNB_id]++;
 	
@@ -1856,7 +1872,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #ifdef DEBUG_PHY_PROC
 	  LOG_I(PHY,"[UE  %d] Frame %d, subframe %d: Received DCI with CRNTI %x => Mode PUSCH\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti);
 #endif
-	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
+	  //dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 	  phy_vars_ue->UE_mode[eNB_id] = PUSCH;
 	  //mac_xface->macphy_exit("Connected. Exiting\n");
 	}
@@ -1950,7 +1966,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	       (dci_alloc_rx[i].format == format0)) {
 #ifdef DEBUG_PHY_PROC
 	LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found rnti %x, format 0, dci_cnt %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,dci_alloc_rx[i].rnti,i);
-	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
+	//dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 	/*
 	  if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
 	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -1967,7 +1983,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
 	
 	phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
-	dump_dci(&phy_vars_ue->lte_frame_parms,&dci_alloc_rx[i]);
+	//dump_dci(&phy_vars_ue->lte_frame_parms,&dci_alloc_rx[i]);
 
 	if (generate_ue_ulsch_params_from_dci((void *)&dci_alloc_rx[i].dci_pdu,
 					      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
@@ -1983,7 +1999,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #ifdef DEBUG_PHY_PROC
 	  LOG_D(PHY,"[UE  %d] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",phy_vars_ue->Mod_id,last_slot>>1);
 #endif
-	  
+
 	}
       }
   
@@ -2017,7 +2033,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   int timing_advance;
   u8 pilot1,pilot2,pilot3;
 #ifdef DLSCH_THREAD
-  u8 dlsch_thread_index = 0;
+  u8 rx_pdsch_thread_index = 0;
 #endif
 
   u8 i_mod = 0;
@@ -2101,16 +2117,47 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       }
       */
     }
+
+#ifdef DLSCH_THREAD
+    if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1)  {
+      // activate thread since Chest is now done for slot before last_slot
+      if (l==0) {
+	LOG_D(PHY,"frame %d, last_slot %d: Calling rx_pdsch_thread for harq_pid %d\n",phy_vars_ue->frame,last_slot, phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid);
+	if (pthread_mutex_lock (&rx_pdsch_mutex[rx_pdsch_thread_index]) != 0) {               // Signal MAC_PHY Scheduler
+	  LOG_E(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",phy_vars_ue->Mod_id);     // lock before accessing shared resource
+	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
+	  return(-1);
+	}
+	rx_pdsch_instance_cnt[rx_pdsch_thread_index]++;
+	(last_slot == 0) ? (rx_pdsch_slot[rx_pdsch_thread_index] = 19) : (rx_pdsch_slot[rx_pdsch_thread_index] = (last_slot-1));
+	pthread_mutex_unlock (&rx_pdsch_mutex[rx_pdsch_thread_index]);
+	
+	if (rx_pdsch_instance_cnt[rx_pdsch_thread_index] == 0) {
+	  if (pthread_cond_signal(&rx_pdsch_cond[rx_pdsch_thread_index]) != 0) {
+	    LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for rx_pdsch_cond[%d]\n",phy_vars_ue->Mod_id,rx_pdsch_thread_index);
+	    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
+	    return(-1);
+	  }
+	}
+	else {
+	  LOG_W(PHY,"[UE  %d] RX_PDSCH thread for rx_pdsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,rx_pdsch_thread_index);
+	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
+	  return(-1);
+	}
+      }
+    }
+#endif
   
     // process last DLSCH symbols + invoke decoding
     if (((last_slot%2)==0) && (l==0)) {
       // Regular PDSCH
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
-
+#ifndef DLSCH_THREAD //USER_MODE
 	harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
 	//	printf("PDSCH active in subframe %d, harq_pid %d\n",(last_slot>>1)-1,harq_pid); 
 	if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
-	    (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
+	    (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0) &&
+	    (openair_daq_vars.use_ia_receiver ==1)) {
 	  dual_stream_UE = 1;
 	  eNB_id_i = phy_vars_ue->n_connected_eNB;
 	  i_mod = get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
@@ -2141,42 +2188,15 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	}
 	
 	phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
-	
+
 #ifdef DEBUG_PHY_PROC
 	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d Scheduling DLSCH decoding\n",
 	      phy_vars_ue->Mod_id,
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 	      harq_pid,
 	      phy_vars_ue->frame,last_slot>>1);      
-#endif
-	
-#ifdef DLSCH_THREAD //USER_MODE
-
-	dlsch_thread_index = 0;
-	
-	if (pthread_mutex_lock (&dlsch_mutex[dlsch_thread_index]) != 0) {               // Signal MAC_PHY Scheduler
-	  LOG_E(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",phy_vars_ue->Mod_id);     // lock before accessing shared resource
-          vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	  return(-1);
-	}
-	dlsch_instance_cnt[dlsch_thread_index]++;
-	dlsch_subframe[dlsch_thread_index] = (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1));
-	pthread_mutex_unlock (&dlsch_mutex[dlsch_thread_index]);
-	
-	if (dlsch_instance_cnt[dlsch_thread_index] == 0) {
-	  if (pthread_cond_signal(&dlsch_cond[dlsch_thread_index]) != 0) {
-	    LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for dlsch_cond[%d]\n",phy_vars_ue->Mod_id,dlsch_thread_index);
-            vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	    return(-1);
-	  }
-	}
-	else {
-	  LOG_W(PHY,"[UE  %d] DLSCH thread for dlsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,dlsch_thread_index);
-          vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	  return(-1);
-	}
-	
-#else //DLSCH_THREAD
+#endif	
+       
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
 	  if (abstraction_flag == 0) {
 	    dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
@@ -2190,7 +2210,6 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			       0,
 			       ((((last_slot>>1)==0) ? 9 : ((last_slot>>1))-1))<<1);
-
 	    ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 				 &phy_vars_ue->lte_frame_parms,
 				 phy_vars_ue->dlsch_ue[eNB_id][0],
@@ -2222,9 +2241,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
 		phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
 	    
-	    if (abstraction_flag ==0 )
-	      dump_dlsch(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),harq_pid);
-		       
+	    //	    if (abstraction_flag ==0 )
+	      //	      dump_dlsch(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),harq_pid);
 #endif
 	  }
 	  else {
@@ -2251,6 +2269,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 	    //	    if (phy_vars_ue->current_dlsch_cqi[eNB_id] <28)
 	    //	      phy_vars_ue->current_dlsch_cqi[eNB_id]++;
+	    //LOG_I(PHY,"Current TBS = %d\n",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS);
 	    phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->total_TBS[eNB_id] +
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS;
 	    phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_TBS[eNB_id] +
@@ -2258,7 +2277,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 	}
             
-	if (phy_vars_ue->frame % 100 == 0) {
+	if (phy_vars_ue->frame % 10 == 0) {
 	  if ((phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]) != 0) 
 	    phy_vars_ue->dlsch_fer[eNB_id] = (100*(phy_vars_ue->dlsch_errors[eNB_id] - phy_vars_ue->dlsch_errors_last[eNB_id]))/(phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]);
 	
@@ -2297,9 +2316,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))].send_harq_status = 0;
       }
     
-      if (last_slot==2) {
-	// if(phy_vars_ue->frame % 10 == 0)
-	phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id])*100;
+      if ((phy_vars_ue->frame % 10 == 0) && (last_slot==2)) {
+	LOG_D(PHY,"Calculating bitrate: total_TBS = %d, total_TBS_last = %d\n",phy_vars_ue->total_TBS[eNB_id],phy_vars_ue->total_TBS_last[eNB_id]);
+	phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id]);
 	phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
       }
 
@@ -2310,7 +2329,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	LOG_D(PHY,"SI is active\n");
 #endif
 	
-	// process symbols 10,11,12 and trigger DLSCH decoding
+	// process symbols 10,11,12 (13) of last SF and trigger DLSCH decoding
 	if (abstraction_flag==0) {
 	  for (m=pilot3;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++) {
 #ifdef DEBUG_PHY_PROC
@@ -2603,10 +2622,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	     m<pilot2;
 	     m++) {      
 	  
+#ifndef DLSCH_THREAD
 	  if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1)  {
 	    harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
 	    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
-		(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
+		(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0) &&
+		(openair_daq_vars.use_ia_receiver ==1)) {
 	      dual_stream_UE = 1;
 	      eNB_id_i = phy_vars_ue->n_connected_eNB;
 	      i_mod =  get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
@@ -2628,7 +2649,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		     dual_stream_UE,
 		     i_mod);//phy_vars_ue->is_secondary_ue);
 	  } // CRNTI active
-	  
+#endif	  
+
 	  if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1)  {
 	    // process SI DLSCH in first slot
 	    rx_pdsch(phy_vars_ue,
@@ -2659,10 +2681,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       if (((last_slot%2)==1) && (l==pilot1)) {
 	for (m=pilot2;m<pilot3;m++) {
 	  
+#ifndef DLSCH_THREAD
 	  if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
 	    harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
 	    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
-		(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
+		(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0) &&
+		(openair_daq_vars.use_ia_receiver ==1)) {
 	      dual_stream_UE = 1;
 	      eNB_id_i = phy_vars_ue->n_connected_eNB;
 	      i_mod = get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
@@ -2683,7 +2707,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		     dual_stream_UE,
 		     i_mod);//phy_vars_ue->is_secondary_ue);
 	  } // CRNTI active
-	  
+#endif	  
 	  if(phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
 	    rx_pdsch(phy_vars_ue,
 		     SI_PDSCH,

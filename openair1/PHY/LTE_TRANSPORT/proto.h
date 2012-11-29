@@ -216,11 +216,7 @@ s32 generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
 			 s16 amp,
 			 u16 slot);
-			 
-s32 generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
-			 mod_sym_t **txdataF,
-			 s16 amp,
-			 u16 subframe);
+
 
 s32 generate_pss(mod_sym_t **txdataF,
 		 s16 amp,
@@ -1126,8 +1122,7 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
   @param Nbundled Parameter for ACK/NAK bundling (36.213 Section 7.3)
 */
 u32 ulsch_encoding(u8 *a,
-		   LTE_DL_FRAME_PARMS *frame_parms,
-		   LTE_UE_ULSCH_t *ulsch,
+		   PHY_VARS_UE *phy_vars_ue,
 		   u8 harq_pid,
 		   u8 tmode,
 		   u8 control_only_flag,

@@ -55,6 +55,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
+#include "SCHED/defs.h"
+
 #include "MAC_INTERFACE/extern.h"
 
 #ifdef CBMIMO1
@@ -212,8 +214,8 @@ static void * dlsch_thread(void *param) {
 			       phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS>>3,
 			       eNB_id);
 #endif
-	phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS + phy_vars_ue->total_TBS[eNB_id];
-	phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_received_bits[eNB_id] + phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS;
+	phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS + phy_vars_ue->total_TBS[eNB_id];
+	phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_received_bits[eNB_id] + phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS;
       }
     }
     
@@ -225,11 +227,6 @@ static void * dlsch_thread(void *param) {
       
     }
 
-    if(phy_vars_ue->frame % 10 == 0){
-      phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id])*10;
-      phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
-    }
-    
     time_out = rt_get_time();
 
 #ifdef DEBUG_PHY
@@ -241,7 +238,7 @@ static void * dlsch_thread(void *param) {
 	  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
 	  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
     if (phy_vars_ue->frame%100==0) {
-      LOG_I(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
 	    phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 	    phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	    phy_vars_ue->dlsch_errors[eNB_id],

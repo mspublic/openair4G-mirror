@@ -44,9 +44,6 @@
 #include <math.h>
 #include "otg_form.h"
 
-extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
-
 //#include "LAYER2/MAC/extern.h"
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -99,41 +96,30 @@ char * hdr_payload=NULL;
 
         if (otg_hdr_info_rx->flag == 0xffff){
           seq_num_rx=otg_info->seq_num_rx[src][dst];
-					if (src<NB_eNB_INST)
-          	nb_loss_pkts=otg_info->nb_loss_pkts_dl[src][dst];
-					else
-          	nb_loss_pkts=otg_info->nb_loss_pkts_ul[src][dst];
-
+          nb_loss_pkts=otg_info->nb_loss_pkts[src][dst];
         }
 	else{
           seq_num_rx=otg_info->seq_num_rx_background[src][dst];
-					if (src<NB_eNB_INST)
-          	nb_loss_pkts=otg_info->nb_loss_pkts_background_dl[src][dst];
-					else
-          	nb_loss_pkts=otg_info->nb_loss_pkts_background_ul[src][dst];
+          nb_loss_pkts=otg_info->nb_loss_pkts_background[src][dst];
         }
 
 
 	LOG_D(OTG,"[%d][%d] AGGREGATION LEVEL (RX) %d \n", src, dst, otg_hdr_rx->aggregation_level);
   otg_info->aggregation_level[src][dst]=otg_hdr_rx->aggregation_level;
 
-	/* Loss and out of sequence data management, we have 3 case : */
-			/* (1) Receieved packet corresponds to the expected one, in terms of the sequence number*/
-
-	if ((otg_hdr_rx->seq_num)==seq_num_rx) {
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) packet seq_num TX=%d, seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
+	/* Loss and out of sequence data management */
+	if ((otg_hdr_rx->seq_num)==seq_num_rx+1) {
+	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) packet seq_num TX=%d, seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
 	  seq_num_rx+=1;
 	}
-			/* (2) Receieved packet with a sequence number higher than the expected sequence number (there is a gap): packet loss */
-	else if ((otg_hdr_rx->seq_num)>seq_num_rx){ // out of sequence packet:  previous packet lost 
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
-	  nb_loss_pkts+=((otg_hdr_rx->seq_num)-(seq_num_rx));
-	  seq_num_rx=otg_hdr_rx->seq_num+1;
+	else if ((otg_hdr_rx->seq_num)>seq_num_rx+1){ // out of sequence packet:  previous packet lost 
+	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
+	  nb_loss_pkts+=((otg_hdr_rx->seq_num)-(seq_num_rx+1));
+	  seq_num_rx=otg_hdr_rx->seq_num;
 	} 
-			/* (3) Receieved packet with a sequence number less than the expected sequence number: recovery after loss/out of sequence  */
-	else if ((otg_hdr_rx->seq_num)< seq_num_rx){ //the received packet arrived late 
+	else if ((otg_hdr_rx->seq_num)< seq_num_rx+1){ //the received packet arrived late 
 	  nb_loss_pkts-=1;
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
+	  LOG_D(OTG,"check_packet :: (i=%d,j=%d) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst, otg_hdr_rx->seq_num, seq_num_rx+1);
 	}
         /* End Loss and out of sequence data management */
  
@@ -166,17 +152,15 @@ char * hdr_payload=NULL;
 	/* xforms part: add metrics  */	
 	if (g_otg->curve==1){ 
   	if (g_otg->owd_radio_access==0)
-    	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
+    	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
     else
-    	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
+    	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
   }
 
 
   
-	if (src<NB_eNB_INST)
-		otg_info->rx_total_bytes_dl+=otg_hdr_info_rx->size;
-else
-		otg_info->rx_total_bytes_ul+=otg_hdr_info_rx->size;
+
+
 
 //printf("payload_size %d, header_size %d \n", otg_hdr_rx->pkts_size, otg_hdr_rx->hdr_type);
   LOG_I(OTG,"PACKET SIZE RX [SRC %d][DST %d]: Flag (0x%x), time(%d), Seq num (%d), Total size (%d)\n", src, dst, otg_hdr_info_rx->flag, ctime, otg_hdr_rx->seq_num, size);
@@ -187,10 +171,7 @@ else
  	  otg_info->rx_num_pkt[src][dst]+=1;
 	  otg_info->rx_num_bytes[src][dst]+=otg_hdr_info_rx->size;
     otg_info->seq_num_rx[src][dst]=seq_num_rx;
-		if (src<NB_eNB_INST)
-    	otg_info->nb_loss_pkts_dl[src][dst]=nb_loss_pkts;
-		else
-      otg_info->nb_loss_pkts_ul[src][dst]=nb_loss_pkts;		
+   	otg_info->nb_loss_pkts[src][dst]=nb_loss_pkts;		
 
 /*Plots of latency and goodput are only plotted for the data traffic */
 		if (g_otg->latency_metric) 
@@ -206,10 +187,7 @@ else
 	  otg_info->rx_num_pkt_background[src][dst]+=1;
 	  otg_info->rx_num_bytes_background[src][dst]+=otg_hdr_info_rx->size;
 	  otg_info->seq_num_rx_background[src][dst]=seq_num_rx;
-		if (src<NB_eNB_INST)
-    	otg_info->nb_loss_pkts_background_dl[src][dst]=nb_loss_pkts;
-		else
-      otg_info->nb_loss_pkts_background_ul[src][dst]=nb_loss_pkts;
+          otg_info->nb_loss_pkts_background[src][dst]=nb_loss_pkts;
 	}
 
       if (is_size_ok == 0) {
@@ -237,24 +215,30 @@ void owd_const_gen(int src, int dst, unsigned int flag){
 
 
 float owd_const_capillary(){
-  return ( uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + 
-	   uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + 
-	   uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + 
-	   TERMINAL_ACCESS_DELAY);
+  float capillary_domain_latency=0;
+  capillary_domain_latency=uniform_dist(MIN_APPLICATION_PROCESSING_GATEWAY_DELAY, MAX_APPLICATION_PROCESSING_GATEWAY_DELAY) + uniform_dist(MIN_FORMATING_TRANSFERRING_DELAY, MAX_FORMATING_TRANSFERRING_DELAY) + uniform_dist(MIN_ACCESS_DELAY, MAX_ACCESS_DELAY) + TERMINAL_ACCESS_DELAY;
+  return capillary_domain_latency;
 }
 
 
 float owd_const_mobile_core(){
-  return ( uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) +  
-	   uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY));
+  float mobile_core_domain_latency=0;
+  mobile_core_domain_latency= uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) +  uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY);
+return mobile_core_domain_latency;
+
 }
 
 float owd_const_IP_backbone(){
-  return uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY);
+  float IP_backbone_domain_latency=0;
+  IP_backbone_domain_latency= uniform_dist(MIN_NETWORK_ACCESS_DELAY,MAX_NETWORK_ACCESS_DELAY);;
+  return IP_backbone_domain_latency;
 }
 
+
 float owd_const_application(){
-  return uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
+  float application_latency=0;
+  application_latency= uniform_dist(MIN_APPLICATION_ACESS_DELAY, MAX_APPLICATION_ACESS_DELAY);
+  return application_latency;
 }
 
 

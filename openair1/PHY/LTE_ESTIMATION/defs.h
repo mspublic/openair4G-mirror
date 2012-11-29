@@ -2,9 +2,11 @@
 #define __LTE_ESTIMATION_DEFS__H__
 
 #include "PHY/defs.h"
+/*
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
+*/
 
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
 * @{
@@ -85,8 +87,8 @@ int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 				    unsigned char symbol);
 
 
-#ifdef EMOS
 /*
+#ifdef EMOS
 int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS],
 				   int **rxdataF,
 				   LTE_DL_FRAME_PARMS *frame_parms,
@@ -94,8 +96,8 @@ int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_AN
 				   unsigned char p,
 				   unsigned char l,
 				   unsigned char sector);
-*/
 #endif
+*/
 
 /*!
 \brief Frequency offset estimation for LTE

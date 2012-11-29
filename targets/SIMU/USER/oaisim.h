@@ -38,5 +38,7 @@ void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *
 
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
+#ifdef OPENAIR2
 int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data);
 void omv_end (int pfd, Data_Flow_Unit omv_data);
+#endif
