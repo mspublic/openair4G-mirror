@@ -1019,78 +1019,79 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     
     ue_pdsch_vars[eNB_id]->rxdataF_ext     = (int **)malloc16(8*sizeof(int*));
     ue_pdsch_vars_flp[eNB_id]->rxdataF_ext = (int **)malloc16(8*sizeof(int*));
-    for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+    // use frame parms of eNB0 to init additional data struct used for mu-mimo
+    for (i=0; i<frame_parms[0]->nb_antennas_rx; i++)
       {
 	for (j=0; j<4; j++) //frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[eNB_id]->rxdataF_ext[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*14));
-	    ue_pdsch_vars_flp[eNB_id]->rxdataF_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*14));
+	    ue_pdsch_vars[eNB_id]->rxdataF_ext[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms[0]->N_RB_DL*12*14));
+	    ue_pdsch_vars_flp[eNB_id]->rxdataF_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms[0]->N_RB_DL*12*14));
 	  }
       }
 
     ue_pdsch_vars[eNB_id]->rxdataF_comp     = (int **)malloc16(8*sizeof(int*));
     ue_pdsch_vars_flp[eNB_id]->rxdataF_comp = (double **)malloc16(8*sizeof(int*));
-    for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+    for (i=0; i<frame_parms[0]->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[eNB_id]->rxdataF_comp[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*14));
-	    ue_pdsch_vars_flp[eNB_id]->rxdataF_comp[(j<<1)+i] = (double *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*14));
+	    ue_pdsch_vars[eNB_id]->rxdataF_comp[(j<<1)+i]     = (int *)malloc16(sizeof(int)*(frame_parms[0]->N_RB_DL*12*14));
+	    ue_pdsch_vars_flp[eNB_id]->rxdataF_comp[(j<<1)+i] = (double *)malloc16(sizeof(int)*(frame_parms[0]->N_RB_DL*12*14));
 	  }
       }
     //    printf("rxdataF_comp[0] %p\n",ue_pdsch_vars[eNB_id]->rxdataF_comp[0]);
     
     ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext     = (int **)malloc16(8*sizeof(int*));
     ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext = (int **)malloc16(8*sizeof(int*));
-    for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+    for (i=0; i<frame_parms[0]->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
-	    ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
+	    ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[0]->N_RB_DL*12));
+	    ue_pdsch_vars_flp[eNB_id]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms[0]->N_RB_DL*12));
 	  }
       }
     
     ue_pdsch_vars[eNB_id]->dl_ch_rho_ext     = (int **)malloc16(8*sizeof(short*));
     ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext = (double **)malloc16(8*sizeof(double*));
-    for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+    for (i=0; i<frame_parms[0]->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	  {
-	    ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
-	    ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms[eNB_id]->N_RB_DL*12));
+	    ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[0]->N_RB_DL*12));
+	    ue_pdsch_vars_flp[eNB_id]->dl_ch_rho_ext[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms[0]->N_RB_DL*12));
 	  }
       }
 
-    ue_pdsch_vars[eNB_id]->pmi_ext     = (unsigned char *)malloc16(frame_parms[eNB_id]->N_RB_DL);
-    ue_pdsch_vars_flp[eNB_id]->pmi_ext = (unsigned char *)malloc16(frame_parms[eNB_id]->N_RB_DL);
+    ue_pdsch_vars[eNB_id]->pmi_ext     = (unsigned char *)malloc16(frame_parms[0]->N_RB_DL);
+    ue_pdsch_vars_flp[eNB_id]->pmi_ext = (unsigned char *)malloc16(frame_parms[0]->N_RB_DL);
         
     ue_pdsch_vars[eNB_id]->dl_ch_mag     = (int **)malloc16(8*sizeof(short*));
     ue_pdsch_vars_flp[eNB_id]->dl_ch_mag = (double **)malloc16(8*sizeof(double*));
-    for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+    for (i=0; i<frame_parms[0]->nb_antennas_rx; i++)
       {
 	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++) 
 	  {
-	    ue_pdsch_vars[eNB_id]->dl_ch_mag[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
-	    ue_pdsch_vars_flp[eNB_id]->dl_ch_mag[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms[eNB_id]->N_RB_DL*12));
+	    ue_pdsch_vars[eNB_id]->dl_ch_mag[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[0]->N_RB_DL*12));
+	    ue_pdsch_vars_flp[eNB_id]->dl_ch_mag[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms[0]->N_RB_DL*12));
 	  }
       }
     ue_pdsch_vars[eNB_id]->dl_ch_magb     = (int **)malloc16(8*sizeof(short*));
     ue_pdsch_vars_flp[eNB_id]->dl_ch_magb = (double **)malloc16(8*sizeof(double*));
-    for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+    for (i=0; i<frame_parms[0]->nb_antennas_rx; i++)
       {
       for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
 	{
-	  ue_pdsch_vars[eNB_id]->dl_ch_magb[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
-	  ue_pdsch_vars_flp[eNB_id]->dl_ch_magb[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms[eNB_id]->N_RB_DL*12));
+	  ue_pdsch_vars[eNB_id]->dl_ch_magb[(j<<1)+i]     = (int *)malloc16(7*2*sizeof(int)*(frame_parms[0]->N_RB_DL*12));
+	  ue_pdsch_vars_flp[eNB_id]->dl_ch_magb[(j<<1)+i] = (double *)malloc16(7*2*sizeof(double)*(frame_parms[0]->N_RB_DL*12));
 	}
       }
-    ue_pdsch_vars[eNB_id]->rho     = (int **)malloc16(frame_parms[eNB_id]->nb_antennas_rx*sizeof(int*));
-    ue_pdsch_vars_flp[eNB_id]->rho = (double **)malloc16(frame_parms[eNB_id]->nb_antennas_rx*sizeof(double*));
-    for (i=0;i<frame_parms[eNB_id]->nb_antennas_rx;i++)
+    ue_pdsch_vars[eNB_id]->rho     = (int **)malloc16(frame_parms[0]->nb_antennas_rx*sizeof(int*));
+    ue_pdsch_vars_flp[eNB_id]->rho = (double **)malloc16(frame_parms[0]->nb_antennas_rx*sizeof(double*));
+    for (i=0;i<frame_parms[0]->nb_antennas_rx;i++)
       {
-	ue_pdsch_vars[eNB_id]->rho[i]     = (int *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*7*2));
-	ue_pdsch_vars_flp[eNB_id]->rho[i] = (double *)malloc16(sizeof(double)*(frame_parms[eNB_id]->N_RB_DL*12*7*2));
+	ue_pdsch_vars[eNB_id]->rho[i]     = (int *)malloc16(sizeof(int)*(frame_parms[0]->N_RB_DL*12*7*2));
+	ue_pdsch_vars_flp[eNB_id]->rho[i] = (double *)malloc16(sizeof(double)*(frame_parms[0]->N_RB_DL*12*7*2));
       }
     
     ue_pdsch_vars[eNB_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));

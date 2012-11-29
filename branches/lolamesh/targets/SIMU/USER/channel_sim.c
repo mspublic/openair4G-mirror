@@ -380,8 +380,10 @@ void do_DL_sig(double **r_re0,double **r_im0,
 #ifdef DEBUG_SIM    
       printf("[SIM][DL] UE %d : ADC in %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif    
+      // fixme, this need to be done for num connected enb per ue
+      //      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[eNB_id]->rxdata; 
+      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[0]->rxdata; 
 
-      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[att_eNB_id]->rxdata; 
       slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
       
       adc(r_re,
@@ -389,7 +391,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  0,
 	  slot_offset,
 	  rxdata,
-      nb_antennas_rx,
+	  nb_antennas_rx,
 	  frame_parms->samples_per_tti>>1,
 	  12);
       
@@ -449,7 +451,6 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	}
       }
       
-      for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) { 
       // Compute RX signal for eNB = eNB_id
 	for (UE_id=0;UE_id<NB_UE_INST;UE_id++){
  
@@ -515,7 +516,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	  }
 	}
       } //UE_id
-    }
+    
 	// RF model
 	/*
 	  rf_rx(r_re0,
