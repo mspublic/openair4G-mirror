@@ -50,9 +50,8 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint
 	 * Check that source port is not an ephemeral port which would
 	 * change every time a client sendto()s to MGMT
 	 */
-	if (clientEndpoint.port() >= 32768 && clientEndpoint.port() <= 61000) {
-		throw Exception("Client has an ephemeral port number that will change every time it sends data and this will screw ManagementClientManager's state management", logger);
-	}
+	if (clientEndpoint.port() >= 32768 && clientEndpoint.port() <= 61000)
+		logger.error("Client uses an ephemeral port that will change every time it sends data and this will confuse my state management!");
 
 	/**
 	 * Initialise state strings map

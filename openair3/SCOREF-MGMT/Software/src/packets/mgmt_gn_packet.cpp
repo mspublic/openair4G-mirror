@@ -64,6 +64,9 @@ GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version
 GeonetPacket::GeonetPacket(const vector<unsigned char>& packetBuffer, Logger& logger)
 	: logger(logger) {
 	parseHeaderBuffer(packetBuffer, &this->header);
+	/**
+	 * Print the packet information
+	 */
 	logger.info(toString());
 }
 
@@ -73,6 +76,15 @@ GeonetPacket::~GeonetPacket() {
 bool GeonetPacket::parseHeaderBuffer(const vector<unsigned char>& headerBuffer, MessageHeader* header) {
 	if (headerBuffer.size() < sizeof(MessageHeader) || !header)
 		return false;
+
+	/**
+	 * Parse (E) and (V) fields first
+	 */
+	extended = Util::isBitSet(headerBuffer[0], 0);
+	valid = Util::isBitSet(headerBuffer[0], 1);
+
+	if (!valid)
+		logger.warning("Incoming packet's (V) validity flag is not set! Will parse anyway...");
 
 	header->version = headerBuffer[0] & 0x0f;
 	header->priority = (headerBuffer[1] >> 5);
@@ -104,11 +116,11 @@ bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
 }
 
 bool GeonetPacket::isExtended() const {
-	return header.isExtended();
+	return extended;
 }
 
 bool GeonetPacket::isValid() const {
-	return header.isExtended();
+	return valid;
 }
 
 string GeonetPacket::toString() const {
