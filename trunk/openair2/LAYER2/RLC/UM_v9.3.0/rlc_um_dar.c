@@ -379,7 +379,7 @@ void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_
     signed int in_window;
     u16_t      old_vr_ur;
     if ((rlcP->timer_reordering_running)) {
-        if ((rlcP->timer_reordering  + rlcP->timer_reordering_init)   == frame) {
+        if ((rlcP->timer_reordering  + rlcP->timer_reordering_init)   <= frame) {
             // 5.1.2.2.4   Actions when t-Reordering expires
             //  When t-Reordering expires, the receiving UM RLC entity shall:
             //  -update VR(UR) to the SN of the first UMD PDU with SN >= VR(UX) that has not been received;
