@@ -11,8 +11,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	     int sample_offset,
 	     int no_prefix) {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  LTE_UE_COMMON *ue_common_vars   = &phy_vars_ue->lte_ue_common_vars;
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[0];
+  LTE_UE_COMMON *ue_common_vars   = phy_vars_ue->lte_ue_common_vars[0];
   u8 eNB_id = 0;//ue_common_vars->eNb_id;
   unsigned char aa;
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame

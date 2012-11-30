@@ -24,8 +24,8 @@ s32 signal_energy(s32 *input,u32 length) {
   s16 *printb;
 #endif
 
-  mm0 = _m_pxor(mm0,mm0);
-  mm3 = _m_pxor(mm3,mm3);
+  mm0 = _mm_setzero_si64();
+  mm3 = _mm_setzero_si64();
 
   for (i=0;i<length>>1;i++) {
     
@@ -105,8 +105,8 @@ s32 signal_energy_nodc(s32 *input,u32 length) {
   s16 *printb;
 #endif
 
-  mm0 = _m_pxor(mm0,mm0);
-  mm3 = _m_pxor(mm3,mm3);
+  mm0 = _mm_setzero_si64();
+  mm3 = _mm_setzero_si64();
 
   for (i=0;i<length>>1;i++) {
     

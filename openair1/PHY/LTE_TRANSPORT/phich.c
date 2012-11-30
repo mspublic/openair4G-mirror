@@ -954,7 +954,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
 	      u8 eNB_id) {
 
 
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id];
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
 
   //  u8 HI;
@@ -1228,7 +1228,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
 	  HI16,
 	  nseq_PHICH,
 	  ngroup_PHICH);
-      get_Msg3_alloc_ret(&phy_vars_ue->lte_frame_parms,
+      get_Msg3_alloc_ret(phy_vars_ue->lte_frame_parms[eNB_id],
 			 subframe,
 			 phy_vars_ue->frame,
 			 &phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id],

@@ -518,6 +518,8 @@ s8 dB_fixed(u32 x);
 
 s8 dB_fixed2(u32 x,u32 y);
 
+s16 dB_fixed_times10(u32 x);
+
 s32 phy_phase_compensation_top (u32 pilot_type, u32 initial_pilot,
 				u32 last_pilot, s32 ignore_prefix);
 
