@@ -119,7 +119,7 @@ int rrc_init_global_param(void){
   DTCH_UL_LCHAN_DESC.Delay_class=1;
 
   Rlc_info_um.rlc_mode=RLC_UM;
-  Rlc_info_um.rlc.rlc_um_info.timer_reordering=25;
+  Rlc_info_um.rlc.rlc_um_info.timer_reordering=5;
   Rlc_info_um.rlc.rlc_um_info.sn_field_length=10;
   Rlc_info_um.rlc.rlc_um_info.is_mXch=0;
   //Rlc_info_um.rlc.rlc_um_info.sdu_discard_mode=16;

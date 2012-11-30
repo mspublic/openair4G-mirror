@@ -664,7 +664,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   sdu_lengths[0]=0;
   if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DCCH] > 0) {
     
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 				    DCCH,
 				    (buflen-dcch_header_len-bsr_len-phr_len));
     LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH -> ULSCH, RRC message has %d bytes to send (Transport Block size %d, mac header len %d)\n",
@@ -689,7 +689,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   // DCCH1
   if (UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DCCH1] > 0) {
 
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 				    DCCH1,
 				    (buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-sdu_length_total));
 
@@ -723,7 +723,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     else 
       dtch_header_len = 2;//sizeof(SCH_SUBHEADER_SHORT);
     */
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 				    DTCH,
 				    buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
 
@@ -955,7 +955,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 	  UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration;
       }
       // measure the buffer size
-      rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
+      rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 					    lcid,
 					    0);//tb_size does not reauire when requesting the status
       //      LOG_D(MAC,"[UE %d] frame %d rlc buffer (lcid %d, byte %d)BSR level %d\n",
@@ -1057,7 +1057,7 @@ void update_bsr(u8 Mod_id, u32 frame, u8 lcid){
 
   mac_rlc_status_resp_t rlc_status;
 
-  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,
+  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 				  lcid,
 				  0);//tb_size does not require when requesting the status
   if (rlc_status.bytes_in_buffer > 0 ) {
