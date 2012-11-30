@@ -126,8 +126,9 @@ void ManagementServer::readData() {
 				boost::bind(&ManagementServer::handleReceive, this,
 						ba::placeholders::error,
 						ba::placeholders::bytes_transferred));
-	} catch (...) {
-		throw Exception("Cannot receive data from asynchronous UDP socket!", logger);
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot receive data from asynchronous UDP socket!");
+		throw;
 	}
 }
 

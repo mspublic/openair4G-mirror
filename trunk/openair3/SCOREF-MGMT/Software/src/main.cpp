@@ -58,7 +58,7 @@ using boost::asio::ip::udp;
 #include "util/mgmt_log.hpp"
 #include "mgmt_server.hpp"
 
-#define VERSION "1.3.1"
+#define VERSION "1.5.0"
 
 void printVersion() {
 	cerr << "SCORE@F MANAGEMENT Module version " << VERSION << endl;
@@ -170,6 +170,9 @@ int main(int argc, char** argv) {
 
 	try {
 		ioService.run();
+	} catch (Exception& e) {
+		e.updateStackTrace("Cannot run I/O service!");
+		e.printStackTrace();
 	} catch (std::exception& e) {
 		logger.error(e.what());
 	}

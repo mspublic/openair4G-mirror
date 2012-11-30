@@ -85,7 +85,7 @@ class GeonetPacket {
 		 * @param header Structure to be filled in
 		 * @return true on success, false otherwise
 		 */
-		static bool parseHeaderBuffer(const vector<unsigned char>& headerBuffer, MessageHeader* header);
+		bool parseHeaderBuffer(const vector<unsigned char>& headerBuffer, MessageHeader* header);
 		/**
 		 * Serialises header fields onto given buffer
 		 * This method is called by every subclass::serialize()
@@ -135,6 +135,14 @@ class GeonetPacket {
 		 * Header is kept in superclass for every Geonet* subclass
 		 */
 		MessageHeader header;
+		/**
+		 * (E) Extended bit
+		 */
+		bool extended;
+		/**
+		 * (V) Validity bit
+		 */
+		bool valid;
 		/**
 		 * Logger object reference
 		 */

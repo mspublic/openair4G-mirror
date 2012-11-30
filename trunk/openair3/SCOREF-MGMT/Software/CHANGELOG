@@ -1,4 +1,8 @@
 
+v1.5.0 (released on 30 Nov 2012)
+* Bugfix Error with exception handling of boost ioservice handlers fixed
+* Bugfix Parsing error with Extended and Valid fields of MessageHeader fixed
+
 v1.4.1
 * ../Documentation/SCOREF-MGMT\ Progress.{doc|pdf} file updated to v1.2
 
