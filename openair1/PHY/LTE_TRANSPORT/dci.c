@@ -2126,8 +2126,8 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 	// check for TB1 later
 	
       }
-      n_dci_dl++;
     }
+    n_dci_dl++;
   }
   memcpy((void *)&eNB_transport_info[phy_vars_eNB->Mod_id].dci_alloc,
 	 (void *)dci_alloc,

@@ -199,6 +199,7 @@ void ia_receiver_on_off( FL_OBJECT *button, long arg) {
     }
     else {
       fl_set_object_label(button, "DL traffic ON");
+      fl_set_object_color(button, FL_GREEN, FL_GREEN);
       otg_enabled = 1;
     }
   }
@@ -211,6 +212,7 @@ void ia_receiver_on_off( FL_OBJECT *button, long arg) {
     }
     else {
       fl_set_object_label(button, "DL traffic OFF");
+      fl_set_object_color(button, FL_RED, FL_RED);
       otg_enabled = 0;
     }
   }
@@ -1076,7 +1078,7 @@ int main(int argc, char **argv) {
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
@@ -1282,7 +1284,7 @@ int main(int argc, char **argv) {
 #ifdef OPENAIR2
     g_log->log_component[PHY].level = LOG_INFO;
 #else
-    g_log->log_component[PHY].level = LOG_DEBUG;
+    g_log->log_component[PHY].level = LOG_INFO;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
     g_log->log_component[MAC].level = LOG_INFO;
@@ -1391,7 +1393,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=9;
+    openair_daq_vars.target_ue_dl_mcs=16;
     openair_daq_vars.ue_ul_nb_rb=10;
     openair_daq_vars.target_ue_ul_mcs=4;
 
@@ -1436,7 +1438,7 @@ int main(int argc, char **argv) {
   mac_xface->macphy_exit = &exit_fun;
 
 #ifdef OPENAIR2
-  if (otg_enabled) {
+  //if (otg_enabled) {
     init_all_otg();
     g_otg->seed = 0;
     init_seeds(g_otg->seed);
@@ -1449,7 +1451,7 @@ int main(int argc, char **argv) {
       }
     }
     init_predef_traffic();
-  }
+    //}
 #endif
 
   // start up the hardware

@@ -868,7 +868,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 }
 
 // First stage of Random-Access Scheduling
-void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned char *nprb,unsigned int *nCCE) {
+void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned char Msg3_subframe,unsigned char *nprb,unsigned int *nCCE) {
 
   RA_TEMPLATE *RA_template = (RA_TEMPLATE *)&eNB_mac_inst[Mod_id].RA_template[0];
   unsigned char i;//,harq_pid,round;
@@ -887,6 +887,7 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
       if (RA_template[i].generate_rar == 1) {
 	*nprb= (*nprb) + 3;
 	*nCCE = (*nCCE) + 4;
+	RA_template[i].Msg3_subframe=Msg3_subframe;
       }
       else if (RA_template[i].generate_Msg4 == 1) {
 
@@ -1117,8 +1118,18 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 // output of scheduling, the UE numbers in RBs, where it is in the code???
 
 
+  // check if RA (Msg3) is active in this subframe, if so skip the PRBs used for Msg3
 
+  for (i=0;i<NB_RA_PROC_MAX;i++) {
+    if ((eNB_mac_inst[Mod_id].RA_template[i].RA_active == 1) && 
+	(eNB_mac_inst[Mod_id].RA_template[i].generate_rar == 0) &&
+	(eNB_mac_inst[Mod_id].RA_template[i].Msg3_subframe == sched_subframe)) {  
 
+      first_rb = 1+(i<<2);
+      
+      break;
+    }
+  }
 
   // allocated UE_ids until nCCE
 
@@ -1221,6 +1232,10 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 	  }
 
+	  if (rb_table[rb_table_index]>(mac_xface->lte_frame_parms->N_RB_UL-1-first_rb)) {
+	    rb_table_index--;
+	    TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
+	  }
 	  //rb_table_index = 8;
 
 	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
@@ -3676,11 +3691,14 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u8 dl_pow_off[256];
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
-  //int **rballoc_sub = (int **)malloc(1792*sizeof(int *));
-  granted_UEs = 2; //find_dlgranted_UEs(Mod_id);
+  int mcs;
+
+
+  granted_UEs = find_dlgranted_UEs(Mod_id);
+  granted_UEs = 2;
+
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 1; // set to the maximum aggregation level
-  int mcs;
 
   for(i=0;i<256;i++)
     pre_nb_available_rbs[i] = 0;
@@ -3697,53 +3715,62 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   nCCE = mac_xface->get_nCCE_max(Mod_id) - *nCCE_used;
   
   /// CALLING Pre_Processor for tm5
-  if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-    tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
+  //if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) {
+  //tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
 
- 
-  //
-    
-  /// If there is more that one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.  
-  for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-    if ((find_UE_RNTI(Mod_id,UE_id)!=0) && (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED)) {
-      dl_pow_off[UE_id]=1;
-      pre_nb_available_rbs[UE_id]=nb_available_rb;
-      for (ii=0;ii<7;ii++)
-	rballoc_sub[UE_id][ii] = 1;
-      
-      for (UE_id2=0;UE_id2<granted_UEs;UE_id2++) {
-	if(UE_id!=UE_id2){
-	  dl_pow_off[UE_id2] = 2;
-	  pre_nb_available_rbs[UE_id2] = 0;
-	  for(ii=0;ii<7;ii++)
-	    rballoc_sub[UE_id2][ii]=0;
+    /// If there is more that one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.  
+    for (UE_id=0;UE_id<granted_UEs;UE_id++) {
+      if (find_UE_RNTI(Mod_id,UE_id)!=0) {
+	dl_pow_off[UE_id]=1;
+	pre_nb_available_rbs[UE_id]=nb_available_rb;
+	for (ii=0;ii<7;ii++)
+	  rballoc_sub[UE_id][ii] = 1;
+	
+	if (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED) {
+	  for (UE_id2=0;UE_id2<granted_UEs;UE_id2++) {
+	    if(UE_id!=UE_id2){
+	      dl_pow_off[UE_id2] = 2;
+	      pre_nb_available_rbs[UE_id2] = 0;
+	      for(ii=0;ii<7;ii++)
+		rballoc_sub[UE_id2][ii]=0;
+	    }
+	  }
+	  break; //the for loop
 	}
       }
-      break; //the for loop
     }
-    else {
-      dl_pow_off[UE_id]=0;
-      pre_nb_available_rbs[UE_id]=nb_available_rb;
-      for (ii=0;ii<7;ii++)
-	rballoc_sub[UE_id][ii] = 1;
+  
+    
+    // if both users are connected we want to schedule them in MU-MIMO mode in any case and we set the PMI of the second user orthogonal to the first one
+    if ((find_UE_RNTI(Mod_id,0)!=0) && (mac_get_rrc_status(Mod_id,1,0) == RRC_RECONFIGURED) &&
+	(find_UE_RNTI(Mod_id,1)!=0) && (mac_get_rrc_status(Mod_id,1,1) == RRC_RECONFIGURED)) {
+      dl_pow_off[0]=0;
+      dl_pow_off[1]=0;
+      pre_nb_available_rbs[0]=nb_available_rb;
+      pre_nb_available_rbs[1]=nb_available_rb;
+      for (ii=0;ii<7;ii++) {
+	rballoc_sub[0][ii] = 1;
+	rballoc_sub[1][ii] = 1;
+      }
       // a little hack to force the PMIs to be orthogonal
-      if (UE_id==1)
-	PHY_vars_eNB_g[0]->eNB_UE_stats[1].DL_pmi_single = (PHY_vars_eNB_g[0]->eNB_UE_stats[0].DL_pmi_single ^ 0x1555); 
+      PHY_vars_eNB_g[0]->eNB_UE_stats[1].DL_pmi_single = (PHY_vars_eNB_g[0]->eNB_UE_stats[0].DL_pmi_single ^ 0x1555); 
     }
-
+      
+    
     // update stats for print
-    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].dl_pow_off = dl_pow_off[UE_id];
-    LOG_D(PHY,"******************Scheduling Information for UE%d ************************\n",UE_id);
-    LOG_D(PHY,"dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
-    LOG_D(PHY,"***********RB Alloc for every subband for UE%d ***********\n",UE_id);
-    for(i=0;i<7;i++){
-      PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub[UE_id][i];
-      LOG_D(PHY,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
+    for (UE_id=0;UE_id<granted_UEs;UE_id++) {
+      PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].dl_pow_off = dl_pow_off[UE_id];
+      LOG_D(PHY,"******************Scheduling Information for UE%d ************************\n",UE_id);
+      LOG_D(PHY,"dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
+      LOG_D(PHY,"***********RB Alloc for every subband for UE%d ***********\n",UE_id);
+      for(i=0;i<7;i++){
+	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub[UE_id][i];
+	LOG_D(PHY,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
+      }
+      PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[UE_id];
+      LOG_D(PHY,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
     }
-    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[UE_id];
-    LOG_D(PHY,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
-  }
-
+    //}
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 
@@ -3884,7 +3911,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     // for EXMIMO, limit the MCS to 16QAM as well
 #ifdef EXMIMO
-    eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
+    eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,9);
 #endif    
 
     // Get candidate harq_pid from PHY
@@ -3992,7 +4019,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
 
     
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+(MAX_NUM_RB*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+(MAX_NUM_RB*next_ue),
 				      (TBS-ta_len-header_len_dcch)); // transport block set size
 
       sdu_lengths[0]=0;
@@ -4020,7 +4047,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
 
       // check for DCCH1 and update header information (assume 2 byte sub-header)
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+1+(MAX_NUM_RB*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+1+(MAX_NUM_RB*next_ue),
 				      (TBS-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
                                                                                  // DCCH SDU
 
@@ -4045,7 +4072,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	    Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),TBS,
 	    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DTCH+(MAX_NUM_RB*next_ue),
 				      TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
       if (rlc_status.bytes_in_buffer > 0) {
@@ -4595,7 +4622,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     if (mac_xface->lte_frame_parms->frame_type == 1) { // TDD
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 1:
-        schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
+	//        schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
         schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
       case 2:
       case 4:
@@ -4616,12 +4643,12 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     break;
   case 5:
-    // TDD/FDD Schedule SI and RA
+    // TDD/FDD Schedule SI
     // TDD Config 0,6 ULSCH for subframes 9,3 resp.
     // TDD normal DLSCH
     // FDD normal UL/DLSCH
     schedule_SI(Mod_id,frame,&nprb,&nCCE);
-    schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
+    schedule_RA(Mod_id,frame,subframe,5,&nprb,&nCCE);
     if ((mac_xface->lte_frame_parms->frame_type == FDD) || //FDD
 	(mac_xface->lte_frame_parms->tdd_config == 0) || // TDD Config 0
 	(mac_xface->lte_frame_parms->tdd_config == 6)) { // TDD Config 6
@@ -4652,10 +4679,13 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
 	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
 	break;
+      case 5:
+	schedule_RA(Mod_id,frame,subframe,2,&nprb,&nCCE);
+	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+	break;
       case 3:
       case 4:
-      case 5:
-	//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
 	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
 	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
 	break;
@@ -4679,8 +4709,11 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
       case 4:
+	//schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
+	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	break;
       case 5:
-	//	schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
 	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
 	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
 	break;
@@ -4690,8 +4723,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-	// schedule_ue_spec(Mod_id,subframe,0,0);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
     }
 
 

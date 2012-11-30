@@ -322,6 +322,8 @@ typedef struct {
   u8 RA_dci_fmt2;
   /// Flag to indicate the eNB should generate RAR.  This is triggered by detection of PRACH
   u8 generate_rar;
+  /// Subframe where Msg3 is to be sent
+  u8 Msg3_subframe;
   /// Flag to indicate the eNB should generate Msg4 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
   u8 generate_Msg4;
   /// Flag to indicate the eNB should generate the DCI for Msg4, after getting the SDU from RRC.
@@ -570,12 +572,13 @@ for the message.
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 *nprb,unsigned int *nCCE);
+void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 Msg3_subframe,u8 *nprb,unsigned int *nCCE);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
+@param Msg3_subframe Subframe where Msg3 will be transmitted
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
