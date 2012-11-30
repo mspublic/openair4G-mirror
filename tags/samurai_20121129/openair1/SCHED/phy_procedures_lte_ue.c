@@ -56,7 +56,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 //#endif
 
-#define DEBUG_PHY_PROC 1
+//#define DEBUG_PHY_PROC 1
 #define UE_TX_POWER (-10)
 
 #ifdef OPENAIR2
@@ -1401,7 +1401,7 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
     LOG_E(PHY,"emos rx last_slot_emos %d, last_slot %d\n", last_slot_emos,last_slot);
     mac_xface->macphy_exit("should never happen");
   }
-
+  /*
   for (i=0; i<1; i++)
     for (j=0; j<2; j++) { 
       // first OFDM symbol with pilots
@@ -1413,7 +1413,8 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
 	     &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(j<<1) + i][(phy_vars_ue->lte_frame_parms.Ncp == 0 ? 4 : 3)*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
 	     phy_vars_ue->lte_frame_parms.ofdm_symbol_size*sizeof(int));
     }
-  
+  */
+
   if (last_slot==0) {
     emos_dump_UE.timestamp = rt_get_time_ns();
     emos_dump_UE.frame_rx = phy_vars_ue->frame;
@@ -1601,6 +1602,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	      frame_tx,
 	      phy_vars_ue->frame & 0x03FF,
 	      pbch_phase);
+	/*
 #if defined(CBMIMO) || defined(EXMIMO)
 	for (i=0;i<20;i++){
 	  LOG_D(PHY,"slot %d: frame %d, hw_slot %d, last_slot %d, next_slot %d, time0 %llu, time1 %llu, time2 %llu, mbox0 %d, mbox1 %d, mbox2 %d, mbox_target %d\n",
@@ -1609,6 +1611,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 		timing_info[i].mbox0, timing_info[i].mbox1, timing_info[i].mbox2, timing_info[i].mbox_target);
 	}
 #endif
+	*/
 	phy_vars_ue->frame = (phy_vars_ue->frame & 0xFFFFFC00) | (frame_tx & 0x000003FF);
 	/*
 	LOG_D(PHY,"[UE  %d] frame %d, slot %d: PBCH PDU does not match, ignoring it (PBCH ant_tx=%d, frame_tx=%d).\n",
@@ -2288,7 +2291,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  //phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
 	  
 	  // CQI adaptation when current MCS is odd, even is handled by eNB
-	  }
+	}
 
 
 #ifdef DEBUG_PHY_PROC
@@ -2317,8 +2320,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       }
     
       if ((phy_vars_ue->frame % 10 == 0) && (last_slot==2)) {
-	LOG_D(PHY,"Calculating bitrate: total_TBS = %d, total_TBS_last = %d\n",phy_vars_ue->total_TBS[eNB_id],phy_vars_ue->total_TBS_last[eNB_id]);
-	phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id]);
+	LOG_D(PHY,"[UE %d] Calculating bitrate: total_TBS = %d, total_TBS_last = %d\n",phy_vars_ue->Mod_id,phy_vars_ue->total_TBS[eNB_id],phy_vars_ue->total_TBS_last[eNB_id]);
+	phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id])*10;
 	phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
       }
 

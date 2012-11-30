@@ -48,7 +48,7 @@ struct fifo_dump_emos_struct_UE {
   unsigned int     rx_total_gain_dB;                                     /// Total gain
   unsigned char    eNb_id;                                               /// eNb_id UE is synched to
   unsigned char    mimo_mode;                                            /// Transmission mode
-  int              channel[NB_ANTENNAS_TX_EMOS][NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS];
+  //int              channel[NB_ANTENNAS_TX_EMOS][NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS];
 };
 
 typedef struct  fifo_dump_emos_struct_UE fifo_dump_emos_UE;

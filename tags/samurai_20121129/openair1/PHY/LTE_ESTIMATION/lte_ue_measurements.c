@@ -84,7 +84,9 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
     if (eNB_offset==0)
       phy_vars_ue->PHY_measurements.rssi = 0;
 
+#ifdef DEBUG_MEAS
     LOG_D(PHY,"ue_rrc_measurements: eNB_offset %d => rssi %d\n",eNB_offset,phy_vars_ue->PHY_measurements.rssi);
+#endif
     // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
     //    printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, Nid2 %d, nushift %d, eNB_offset %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,Nid2,nushift,eNB_offset);
     if (eNB_offset > 0)
@@ -104,7 +106,9 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
       for (l=0,nu=0;l<=(4-phy_vars_ue->lte_frame_parms.Ncp);l+=(4-phy_vars_ue->lte_frame_parms.Ncp),nu=3) {
 	k = (nu + nushift)%6;
+#ifdef DEBUG_MEAS
 	LOG_D(PHY,"[UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,nushift,eNB_offset,k);
+#endif
 	for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
 	  rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1];
 	  
@@ -164,6 +168,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
     }
     if (((phy_vars_ue->frame %100) == 0) && (slot == 1)) {
+#ifdef DEBUG_MEAS
       if (eNB_offset == 0)
 	LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rssi %3.1f dBm\n",phy_vars_ue->Mod_id,
 	      phy_vars_ue->frame,slot,10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB);
@@ -174,6 +179,8 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	    (dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12),
 	    (10*log10(phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_offset][0][0])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12)-6.02,
 	    (10*log10(phy_vars_ue->PHY_measurements.rsrq[eNB_offset]))-20);
+#endif
+
     
     }
   }

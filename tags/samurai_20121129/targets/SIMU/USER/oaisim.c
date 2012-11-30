@@ -1481,63 +1481,69 @@ main (int argc, char **argv)
   
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+      /*
         if (PHY_vars_UE_g[UE_id]->frame<TPUT_WINDOW_SIZE) {
-            avg_tput_UE[UE_id][PHY_vars_UE_g[UE_id]->frame] = PHY_vars_UE_g[UE_id]->bitrate[0]/100;
+            avg_tput_UE[UE_id][PHY_vars_UE_g[UE_id]->frame] = PHY_vars_UE_g[UE_id]->bitrate[0]/1000;
             tput_time_UE[UE_id][PHY_vars_UE_g[UE_id]->frame] = PHY_vars_UE_g[UE_id]->frame;
         } 
         else {
-            memcpy((void*)avg_tput_UE[UE_id],(void*)&avg_tput_UE[UE_id][1],(TPUT_WINDOW_SIZE-1)*sizeof(unsigned int));
-            memcpy((void*)tput_time_UE[UE_id],(void*)&tput_time_UE[UE_id][1],(TPUT_WINDOW_SIZE-1)*sizeof(unsigned int));
-            avg_tput_UE[UE_id][TPUT_WINDOW_SIZE-1] = PHY_vars_UE_g[UE_id]->bitrate[0]/100;
-            tput_time_UE[UE_id][TPUT_WINDOW_SIZE-1] = PHY_vars_UE_g[UE_id]->frame;
-        }
-        do_forms2(form_dl[UE_id],
-                  &(PHY_vars_UE_g[UE_id]->lte_frame_parms),
-                  PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-                  1,
-                  (s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
-                  (s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
-                  (s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
-                  (s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
-                  (s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
-                  (s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-                  (s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[PHY_vars_UE_g[UE_id]->n_connected_eNB]->rxdataF_comp[0],
-                  (s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->llr[0],
-                  (s16*)PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
-                  (s8*)PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
-                  avg_tput_UE[UE_id],
-                  tput_time_UE[UE_id],
-                  (PHY_vars_UE_g[UE_id]->frame < TPUT_WINDOW_SIZE) ? (PHY_vars_UE_g[UE_id]->frame+1) : TPUT_WINDOW_SIZE,
-                  1920);
-      }
-
+      */
+      memcpy((void*)avg_tput_UE[UE_id],(void*)&avg_tput_UE[UE_id][1],(TPUT_WINDOW_SIZE-1)*sizeof(unsigned int));
+      memcpy((void*)tput_time_UE[UE_id],(void*)&tput_time_UE[UE_id][1],(TPUT_WINDOW_SIZE-1)*sizeof(unsigned int));
+      avg_tput_UE[UE_id][TPUT_WINDOW_SIZE-1] = PHY_vars_UE_g[UE_id]->bitrate[0]/1000;
+      tput_time_UE[UE_id][TPUT_WINDOW_SIZE-1] = PHY_vars_UE_g[UE_id]->frame;
+      //}
+      do_forms2(form_dl[UE_id],
+		&(PHY_vars_UE_g[UE_id]->lte_frame_parms),
+		PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
+		1,
+		(s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
+		(s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
+		(s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
+		(s16**)PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
+		(s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->rxdataF_comp[0],
+		(s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+		(s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[PHY_vars_UE_g[UE_id]->n_connected_eNB]->rxdataF_comp[0],
+		(s16*)PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->llr[0],
+		(s16*)PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
+		(s8*)PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
+		avg_tput_UE[UE_id],
+		tput_time_UE[UE_id],
+		(PHY_vars_UE_g[UE_id]->frame < TPUT_WINDOW_SIZE) ? (PHY_vars_UE_g[UE_id]->frame+1) : TPUT_WINDOW_SIZE,
+		1920);
+    }
+    
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+      /*
         if (PHY_vars_eNB_g[eNB_id]->frame<TPUT_WINDOW_SIZE) {
-            avg_tput_eNB[eNB_id][PHY_vars_eNB_g[eNB_id]->frame] = (PHY_vars_eNB_g[eNB_id]->eNB_UE_stats[0].total_transmitted_bits)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10);
+            avg_tput_eNB[eNB_id][PHY_vars_eNB_g[eNB_id]->frame] = (PHY_vars_eNB_g[eNB_id]->eNB_UE_stats[0].total_transmitted_bits)/((PHY_vars_eNB_g[eNB_id]->frame+1));
         } 
         else {
-            memcpy((void*)avg_tput_eNB[eNB_id],(void*)&avg_tput_eNB[eNB_id][1],(TPUT_WINDOW_SIZE-1)*sizeof(unsigned int));
-            avg_tput_eNB[eNB_id][TPUT_WINDOW_SIZE-1] = (PHY_vars_eNB_g[eNB_id]->eNB_UE_stats[0].total_transmitted_bits)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10);
-        }
+      */
+      memcpy((void*)avg_tput_eNB[eNB_id],(void*)&avg_tput_eNB[eNB_id][1],(TPUT_WINDOW_SIZE-1)*sizeof(unsigned int));
+      memcpy((void*)tput_time_eNB[eNB_id],(void*)&tput_time_eNB[eNB_id][1],(TPUT_WINDOW_SIZE-1)*sizeof(unsigned int));
+      avg_tput_eNB[eNB_id][TPUT_WINDOW_SIZE-1] = PHY_vars_eNB_g[eNB_id]->total_dlsch_bitrate/1000;
+      tput_time_eNB[eNB_id][TPUT_WINDOW_SIZE-1] = PHY_vars_eNB_g[eNB_id]->frame;
+      //}
         
-        do_forms2(form_ul[eNB_id],
-                  &(PHY_vars_eNB_g[eNB_id]->lte_frame_parms),
-                  0,
-                  0,
-                  (s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->drs_ch_estimates_time[0],
-                  (s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->drs_ch_estimates[0],
-                  (s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],
-                  (s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdataF[0],
-                  NULL,
-                  (s16*)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
-                  NULL,
-                  (s16*)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->llr,
-                  NULL,
-                  NULL,
-                  avg_tput_eNB[eNB_id],
-                  tput_time_eNB[eNB_id],
-                  TPUT_WINDOW_SIZE,
-                  1024);
+      do_forms2(form_ul[eNB_id],
+		&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms),
+		0,
+		0,
+		(s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->drs_ch_estimates_time[0],
+		(s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->drs_ch_estimates[0],
+		(s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],
+		(s16**)PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdataF[0],
+		NULL,
+		(s16*)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
+		NULL,
+		(s16*)PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->llr,
+		NULL,
+		NULL,
+		avg_tput_eNB[eNB_id],
+		tput_time_eNB[eNB_id],
+		TPUT_WINDOW_SIZE,
+		1024);
     }
     
     /*  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
