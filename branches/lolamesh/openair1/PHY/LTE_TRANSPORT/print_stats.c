@@ -50,6 +50,10 @@
 extern u8 number_of_cards;
 #endif
 
+#ifdef OPENAIR2
+#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#endif
+
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
   u8 eNB=0;
@@ -207,7 +211,6 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
   }
 
   len += sprintf(&buffer[len],"EOF\n");
-  len += sprintf(&buffer[len],"\0");
 
   return len;
 } // is_clusterhead
@@ -431,7 +434,6 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
     len += sprintf(&buffer[len],"\n");
   }
   len += sprintf(&buffer[len],"EOF\n");
-  len += sprintf(&buffer[len],"\0");
   
   return len;
 }

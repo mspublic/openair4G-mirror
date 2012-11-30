@@ -283,6 +283,7 @@ int logInit (void) {
   printk("log init done\n");
 #endif
 
+  return 0;
 }
 
 //inline 
