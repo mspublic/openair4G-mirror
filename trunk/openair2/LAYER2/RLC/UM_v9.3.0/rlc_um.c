@@ -316,6 +316,7 @@ rlc_um_mac_status_indication (void *rlcP, u32_t frame, u16_t tbs_sizeP, struct m
   status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
 
   if (rlcP) {
+    rlc_um_check_timer_dar_time_out((rlc_um_entity_t *) rlcP,frame,eNB_flag);
 
 #ifdef RLC_UM_TEST_TRAFFIC
 
