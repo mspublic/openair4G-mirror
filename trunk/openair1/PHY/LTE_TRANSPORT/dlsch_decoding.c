@@ -324,7 +324,7 @@ u32  dlsch_decoding(short *dlsch_llr,
 					  MAX_TURBO_ITERATIONS,
 					  crc_type,
 					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-					  (is_crnti==0)?harq_pid:harq_pid+1);
+					  is_crnti); //(is_crnti==0)?harq_pid:harq_pid+1);
 
 
       
