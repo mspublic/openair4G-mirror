@@ -3692,7 +3692,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
   //int **rballoc_sub = (int **)malloc(1792*sizeof(int *));
-  granted_UEs = 2; //find_dlgranted_UEs(Mod_id);
+  granted_UEs = find_dlgranted_UEs(Mod_id);
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 1; // set to the maximum aggregation level
   int mcs;
