@@ -2097,6 +2097,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->Nsymb_pusch;
       ulsch->harq_processes[harq_pid]->round = 0;
+
+      // a Ndi=1 automatically acknowledges previous PUSCH transmission
+      if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) 
+	phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] = 0;  
     }
     else {
       //      printf("Ndi = 0 : Setting RVidx from mcs %d\n",((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
