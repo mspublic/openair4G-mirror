@@ -458,6 +458,7 @@ int main(int argc, char **argv)
   setup_broadcast_dci(&dci_hop1, context.rnti_hop1, 0, args.mcs_hop1, args.n_prb_hop1);
   generate_eNB_dlsch_params_from_dci(context.subframe_pdsch, dci_hop1.dci_pdu, 
       context.rnti_hop1, format1, context.phy_vars_ch_src->dlsch_eNB[0], context.frame_parms, 
+      &context.phy_vars_ch_src->pdsch_config_dedicated[0],
       SI_RNTI, RA_RNTI, P_RNTI,
       context.phy_vars_ch_src->eNB_UE_stats[0].DL_pmi_single);
   context.tbs_hop1 = context.phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->TBS;
@@ -953,7 +954,7 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
   char varbuf[80];
 
   for(k = 0; k < args->n_relays; k++) {
-    rxdata[k] = context->phy_vars_mr[k]->lte_ue_common_vars.rxdata;
+    rxdata[k] = context->phy_vars_mr[k]->lte_ue_common_vars[0]->rxdata;
     //rxdataF[k] = context->phy_vars_mr[k]->lte_ue_common_vars.rxdataF;
   }
 
@@ -972,7 +973,9 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
 
   // Generate eNB transport channel parameters
   generate_eNB_dlsch_params_from_dci(subframe, dci.dci_pdu, context->rnti_hop1, 
-      format1, dlsch_enb, frame_parms, SI_RNTI, RA_RNTI, P_RNTI,
+      format1, dlsch_enb, frame_parms,
+      &context->phy_vars_ch_src->pdsch_config_dedicated[0],
+      SI_RNTI, RA_RNTI, P_RNTI,
       context->phy_vars_ch_src->eNB_UE_stats[0].DL_pmi_single);
 
   // Create PDCCH
@@ -1042,7 +1045,9 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
     context->phy_vars_mr[k]->lte_ue_pdcch_vars[0]->crnti = context->rnti_hop1;
     context->phy_vars_mr[k]->lte_ue_pdcch_vars[0]->num_pdcch_symbols = n_pdcch_symbols;
     generate_ue_dlsch_params_from_dci(subframe, dci.dci_pdu, context->rnti_hop1, 
-        format1, dlsch_ue, frame_parms, SI_RNTI, RA_RNTI, P_RNTI);
+        format1, dlsch_ue, frame_parms,
+	&context->phy_vars_mr[k]->pdsch_config_dedicated[0],
+	SI_RNTI, RA_RNTI, P_RNTI);
 
     context->hop1_received_pdcch[k] = true;
 
@@ -1091,7 +1096,7 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
 
     // Decode received bits
     n_iter = dlsch_decoding(llr, frame_parms, dlsch_ue[0], subframe, 
-        context->phy_vars_mr[k]->lte_ue_pdcch_vars[0]->num_pdcch_symbols);
+        context->phy_vars_mr[k]->lte_ue_pdcch_vars[0]->num_pdcch_symbols, 0);
 
     if(args->verbose > 2)
       print_dlsch_ue_stats(dlsch_ue[0]);
@@ -1122,11 +1127,11 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
     for(k = 0; k < args->n_relays; k++) {
       snprintf(fnbuf, 80, "hop1_r%d_mr%d_rxdatav.m", context->round_hop1, k);
       snprintf(varbuf, 80, "hop1_r%d_mr%d_rxdata", context->round_hop1, k);
-      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars.rxdata[0], 
+      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars[0]->rxdata[0], 
           10*frame_parms->samples_per_tti, 1, 1);
       snprintf(fnbuf, 80, "hop1_r%d_mr%d_rxdataFv.m", context->round_hop1, k);
       snprintf(varbuf, 80, "hop1_r%d_mr%d_rxdataF", context->round_hop1, k);
-      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars.rxdataF[0],
+      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars[0]->rxdataF[0],
           2*frame_parms->ofdm_symbol_size*2*n_symbols_per_slot, 2, 1);
     }
   }
@@ -1208,8 +1213,8 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
     if(!context->hop2_received_pusch_dci[k])
       continue;
 
-    txdataF = context->phy_vars_mr[k]->lte_ue_common_vars.txdataF;
-    txdata = context->phy_vars_mr[k]->lte_ue_common_vars.txdata;
+    txdataF = context->phy_vars_mr[k]->lte_ue_common_vars[0]->txdataF;
+    txdata = context->phy_vars_mr[k]->lte_ue_common_vars[0]->txdata;
     ulsch_ue = context->phy_vars_mr[k]->ulsch_ue[0];
 
     // Clear txdataF vector
@@ -1325,11 +1330,11 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
     for(k = 0; k < args->n_relays; k++) {
       snprintf(fnbuf, 80, "hop2_r%d_mr%d_txdataFv.m", context->round_hop2, k);
       snprintf(varbuf, 80, "hop2_r%d_mr%d_txdataF", context->round_hop2, k); 
-      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars.txdataF[0],
+      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars[0]->txdataF[0],
           FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX, 1, 1);
       snprintf(fnbuf, 80, "hop2_r%d_mr%d_txdatav.m", context->round_hop2, k);
       snprintf(varbuf, 80, "hop2_r%d_mr%d_txdata", context->round_hop2, k);
-      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars.txdata[0], 
+      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars[0]->txdata[0], 
           10*frame_parms->samples_per_tti, 1, 1);
     }
     snprintf(fnbuf, 80, "hop2_r%d_ch_rxdatav.m", context->round_hop2);
@@ -1829,13 +1834,13 @@ void setup_phy_vars(LTE_DL_FRAME_PARMS* frame_parms, PHY_VARS_eNB* phy_vars_ch_s
   phy_vars_ch_src->frame = 1;
   phy_init_lte_eNB(phy_vars_ch_src, 0, 0, 0);
   for(k = 0; k < n_relays; k++) {
-    phy_vars_mr[k]->lte_frame_parms = *frame_parms;
+    phy_vars_mr[k]->lte_frame_parms[0] = frame_parms;
     phy_vars_mr[k]->frame = 1;
     lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[0], 0);
     lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[1], 1);
     lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[2], 2);
 
-    phy_init_lte_ue(phy_vars_mr[k], 0);
+    phy_init_lte_ue(phy_vars_mr[k], 0, 1);
     phy_vars_mr[k]->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
     phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
     phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
@@ -2101,7 +2106,7 @@ void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* fram
 
 void ofdm_fep(PHY_VARS_UE* phy_vars_mr, u8 subframe)
 {
-  int n_symbols_per_slot = (phy_vars_mr->lte_frame_parms.Ncp == 0 ? 7 : 6);
+  int n_symbols_per_slot = (phy_vars_mr->lte_frame_parms[0]->Ncp == 0 ? 7 : 6);
   int slot;
   int symbol;
 
@@ -2247,8 +2252,8 @@ void print_ulsch_ue_stats(LTE_UE_ULSCH_t* d)
   int k;
   LTE_UL_UE_HARQ_t* h;
   if(d) {
-    printf("UE ulsch: Nsymb_pusch=%d, O=%d, o_ACK=%d %d %d %d, O_ACK=%d, Mdlharq=%d, n_DMRS2=%d, cooperation_flag=%d\n",
-        d->Nsymb_pusch, d->O, d->o_ACK[0], d->o_ACK[1], d->o_ACK[2], d->o_ACK[3], d->O_ACK, d->Mdlharq, d->n_DMRS2, d->cooperation_flag);
+    printf("UE ulsch: Nsymb_pusch=%d, O=%d, o_ACK=%d %d %d %d, Mdlharq=%d, cooperation_flag=%d\n",
+        d->Nsymb_pusch, d->O, d->o_ACK[0], d->o_ACK[1], d->o_ACK[2], d->o_ACK[3], d->Mdlharq, d->cooperation_flag);
     for(k = 0; k < 3; k++) {
       if(d->harq_processes[k]) {
         h = d->harq_processes[k];
@@ -2266,8 +2271,8 @@ void print_ulsch_eNB_stats(LTE_eNB_ULSCH_t* d)
   int k;
   LTE_UL_eNB_HARQ_t* h;
   if(d) {
-    printf("eNB ulsch: Nsymb_pusch=%d, Mdlharq=%d, cqi_crc_status=%d, Or1=%d, Or2=%d, o_RI=%d %d, O_RI=%d, o_ACK=%d %d %d %d, O_ACK=%d, o_RCC=%d, beta_offset_cqi_times8=%d, beta_offset_ri_times8=%d, beta_offset_harqack_times8=%d, rnti=%x, n_DMRS2=%d, cyclicShift=%d, cooperation_flag=%d\n",
-        d->Nsymb_pusch, d->Mdlharq, d->cqi_crc_status, d->Or1, d->Or2, d->o_RI[0], d->o_RI[1], d->O_RI, d->o_ACK[0], d->o_ACK[1], d->o_ACK[2], d->o_ACK[3], d->O_ACK, d->o_RCC, d->beta_offset_cqi_times8, d->beta_offset_ri_times8, d->beta_offset_harqack_times8, d->rnti, d->n_DMRS2, d->cyclicShift, d->cooperation_flag);
+    printf("eNB ulsch: Nsymb_pusch=%d, Mdlharq=%d, cqi_crc_status=%d, Or1=%d, Or2=%d, o_RI=%d %d, O_RI=%d, o_ACK=%d %d %d %d, o_RCC=%d, beta_offset_cqi_times8=%d, beta_offset_ri_times8=%d, beta_offset_harqack_times8=%d, rnti=%x, cyclicShift=%d, cooperation_flag=%d\n",
+        d->Nsymb_pusch, d->Mdlharq, d->cqi_crc_status, d->Or1, d->Or2, d->o_RI[0], d->o_RI[1], d->O_RI, d->o_ACK[0], d->o_ACK[1], d->o_ACK[2], d->o_ACK[3], d->o_RCC, d->beta_offset_cqi_times8, d->beta_offset_ri_times8, d->beta_offset_harqack_times8, d->rnti, d->cyclicShift, d->cooperation_flag);
     for(k = 0; k < 3; k++) {
       if(d->harq_processes[k]) {
         h = d->harq_processes[k];
