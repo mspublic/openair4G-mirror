@@ -117,7 +117,6 @@ void terminate(void);
 void exit_fun(const char* s);
 
 extern int transmission_mode_rrc;//FIXME!!!
-u8 measFlag = 0; //temporary flag to control frequency of MeasReport msgs
 
 void 
 help (void) {
@@ -1273,7 +1272,7 @@ main (int argc, char **argv)
       }
     }
 
-    measFlag = 1; //Setting measFlag to allow 1 MeasReport msg to be sent
+   // measFlag = 1; //Setting measFlag to allow 1 MeasReport msg to be sent
 
     for (slot=0 ; slot<20 ; slot++) {
 
