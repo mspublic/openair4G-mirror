@@ -12,7 +12,7 @@ OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
-CFLAGS =  -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -Wno-packed-bitfield-compat
+CFLAGS =  -Wall -Wno-unused-variable -Wno-unused-but-set-variable -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -Wno-packed-bitfield-compat
 
 LFLAGS = -lm -lblas -lrt
 
@@ -33,32 +33,8 @@ CFLAGS += -DCELLULAR
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-ifdef EMOS
-CFLAGS += -DEMOS
-endif
-
 ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
-endif
-
-ifdef MeNBMUE
-CFLAGS += -DMeNBMUE
-endif
-
-ifdef MU_RECEIVER
-CFLAGS += -DMU_RECEIVER
-endif
-
-ifdef ZBF_ENABLED
-CFLAGS += -DNULL_SHAPE_BF_ENABLED
-endif
-
-ifdef RANDOM_BF
-CFLAGS += -DRANDOM_BF
-endif
-
-ifdef PBS_SIM
-CFLAGS += -DPBS_SIM
 endif
 
 ifdef XFORMS
@@ -70,7 +46,7 @@ ifdef PERFECT_CE
 CFLAGS += -DPERFECT_CE
 endif
 
-CFLAGS += -DNO_RRM -DOPENAIR2 #-DPHY_ABSTRACTION
+CFLAGS += -DNO_RRM #-DOPENAIR2 #-DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
@@ -80,20 +56,27 @@ all: colabsim
 include $(TOP_DIR)/PHY/Makefile.inc
 #SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
 include $(TOP_DIR)/SCHED/Makefile.inc
-include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
+SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/taus.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/abstraction.o
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
+
 CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) ${UTIL_incl}
-#EXTRA_CFLAGS = 
 
-#STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
-
-#LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 LAYER2_OBJ = $(OPENAIR2_DIR)/LAYER2/MAC/lte_transport_init.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) $(LOG_OBJS) #$(ASN1_MSG_OBJS) 
+#OBJ += $(OPENAIR2_DIR)/RRC/L2_INTERFACE/openair_rrc_L2_interface.o
+#OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/eNB_scheduler.o
 
 ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
