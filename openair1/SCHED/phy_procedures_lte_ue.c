@@ -265,7 +265,7 @@ void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
   }
 
 #ifdef DEBUG_PHY_PROC  
-  LOG_D(PHY,"[UE %d] Frame %d, received (rar) timing_advance %d, HW timing advance %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, phy_vars_ue->timing_advance,openair_daq_vars.timing_advance);
+  LOG_I(PHY,"[UE %d] Frame %d, received (rar) timing_advance %d, HW timing advance %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame, phy_vars_ue->timing_advance,openair_daq_vars.timing_advance);
 #endif
 
 }
@@ -1401,19 +1401,20 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
     LOG_E(PHY,"emos rx last_slot_emos %d, last_slot %d\n", last_slot_emos,last_slot);
     mac_xface->macphy_exit("should never happen");
   }
-  /*
+ 
+if ((last_slot==14) || (last_slot==15)) {
   for (i=0; i<1; i++)
     for (j=0; j<2; j++) { 
       // first OFDM symbol with pilots
-      memcpy(&emos_dump_UE.channel[j][last_slot_emos*2*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
+      memcpy(&emos_dump_UE.channel[j][(last_slot%2)*2*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
 	     &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(j<<1) + i][0],
 	     phy_vars_ue->lte_frame_parms.ofdm_symbol_size*sizeof(int));
       // second OFDM symbol with pilots
-      memcpy(&emos_dump_UE.channel[j][(last_slot_emos*2+1)*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
+      memcpy(&emos_dump_UE.channel[j][((last_slot%2)*2+1)*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
 	     &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(j<<1) + i][(phy_vars_ue->lte_frame_parms.Ncp == 0 ? 4 : 3)*phy_vars_ue->lte_frame_parms.ofdm_symbol_size],
 	     phy_vars_ue->lte_frame_parms.ofdm_symbol_size*sizeof(int));
     }
-  */
+  }
 
   if (last_slot==0) {
     emos_dump_UE.timestamp = rt_get_time_ns();
@@ -1440,6 +1441,12 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
     emos_dump_UE.dlsch_fer = phy_vars_ue->dlsch_fer[eNB_id];
     emos_dump_UE.dlsch_cntl_errors = phy_vars_ue->dlsch_SI_errors[eNB_id];
     emos_dump_UE.dlsch_ra_errors = phy_vars_ue->dlsch_ra_errors[eNB_id];
+    emos_dump_UE.total_TBS = phy_vars_ue->total_TBS[eNB_id];
+    emos_dump_UE.total_TBS_last = phy_vars_ue->total_TBS_last[eNB_id];
+    emos_dump_UE.bitrate = phy_vars_ue->bitrate[eNB_id];
+    emos_dump_UE.total_received_bits = phy_vars_ue->total_received_bits[eNB_id];
+    emos_dump_UE.pmi_saved = phy_vars_ue->dlsch_ue[eNB_id][0]->pmi_alloc;
+    emos_dump_UE.use_ia_receiver = openair_daq_vars.use_ia_receiver;
 
     bytes = rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE));
     if (bytes!=sizeof(fifo_dump_emos_UE)) {
@@ -1952,7 +1959,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					      format1A,
 					      &phy_vars_ue->dlsch_ue_ra[eNB_id], 
 					      &phy_vars_ue->lte_frame_parms,
-                          phy_vars_ue->pdsch_config_dedicated,
+					      phy_vars_ue->pdsch_config_dedicated,
 					      SI_RNTI,
 					      phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
 					      P_RNTI)==0) {
@@ -1960,7 +1967,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  phy_vars_ue->dlsch_ra_received[eNB_id]++;
 	  
 #ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[UE  %d] Generate UE DLSCH RA_RNTI format 1A, rb_alloc %x, dlsch_ue_ra[eNB_id] %p\n",
+	  LOG_I(PHY,"[UE  %d] Generate UE DLSCH RA_RNTI format 1A, rb_alloc %x, dlsch_ue_ra[eNB_id] %p\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc[0],phy_vars_ue->dlsch_ue_ra[eNB_id]);
 #endif
 	}
@@ -2536,8 +2543,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d subframe %d Received RAR  mode %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)), phy_vars_ue->UE_mode[eNB_id]);
 #endif	  
 
-	  if ((phy_vars_ue->UE_mode[eNB_id] != PUSCH) && (phy_vars_ue->prach_resources[eNB_id]->Msg3!=NULL)) {
 #ifdef OPENAIR2
+	  if ((phy_vars_ue->UE_mode[eNB_id] != PUSCH) && (phy_vars_ue->prach_resources[eNB_id]->Msg3!=NULL)) {
 	    LOG_I(PHY,"[UE  %d][RAPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);			
@@ -2588,8 +2595,14 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);
 	    }
-#endif
 	  } // mode != PUSCH
+#else //OPENAIR2
+
+
+	  timing_advance = ((RAR_PDU*) (phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b+1))->Timing_Advance_Command;
+	  //timing_advance = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b[0];
+	  process_timing_advance_rar(phy_vars_ue,timing_advance);
+#endif
 	} //ret <= MAX_ITERATIONS
 	/*      
 #ifdef DEBUG_PHY_PROC	
