@@ -3,7 +3,7 @@ import datetime
 import getopt
 import getpass
 
-version = "0.4"
+version = "0.5"
 
 lines = ""
 iesDefs = {}
@@ -224,12 +224,15 @@ f.write("    uint8_t procedureCode;\n")
 f.write("    uint8_t criticality;\n")
 f.write("    uint8_t direction;\n")
 f.write("    union {\n")
-for ie in iesDefs:
-    if ie in ieofielist.values():
+
+messageList = iesDefs.keys()
+messageList.sort()
+for message in messageList:
+    if message in ieofielist.values():
         continue
-    if len(iesDefs[ie]["ies"]) == 0:
+    if len(iesDefs[message]["ies"]) == 0:
         continue
-    f.write("        %s_t %s;\n" % (re.sub('-', '_', ie), lowerFirstCamelWord(re.sub('-', '_', ie))))
+    f.write("        %s_t %s;\n" % (re.sub('-', '_', message), lowerFirstCamelWord(re.sub('-', '_', message))))
 f.write("    } msg;\n")
 f.write("} %s_message;\n\n" % (fileprefix))
 
@@ -350,7 +353,11 @@ for key in iesDefs:
         f.write("                decoded += tempDecoded;\n")
         f.write("                if (asn1_xer_print)\n")
         f.write("                    xer_fprint(stdout, &asn_DEF_%s, %s_p);\n" % (ietypeunderscore, lowerFirstCamelWord(ietypesubst)))
-        f.write("                memcpy(&%s->%s, %s_p, sizeof(%s_t));\n" % (lowerFirstCamelWord(re.sub('-', '_', key)), ienameunderscore, lowerFirstCamelWord(ietypesubst), ietypeunderscore))
+        if ie[2] in ieofielist.keys():
+            f.write("                if (%s_decode_%s(&%s->%s, %s_p) < 0)\n" % (fileprefix, ietypeunderscore.lower(), lowerFirstCamelWord(re.sub('-', '_', key)), ienameunderscore, lowerFirstCamelWord(ietypesubst)))
+            f.write("                    %s_DEBUG(\"Decoding of encapsulated IE %s failed\\n\");\n" % (fileprefix.upper(), lowerFirstCamelWord(ietypesubst)))
+        else:
+            f.write("                memcpy(&%s->%s, %s_p, sizeof(%s_t));\n" % (lowerFirstCamelWord(re.sub('-', '_', key)), ienameunderscore, lowerFirstCamelWord(ietypesubst), ietypeunderscore))
         f.write("            } break;\n")
     f.write("            default:\n")
     f.write("                %s_DEBUG(\"Unknown protocol IE id (%%d) for message %s\", (int)ie_p->id);\n" % (fileprefix.upper(), re.sub('-', '_', structName.lower())))
@@ -406,14 +413,15 @@ outputHeaderToFile(f,filename)
 f.write("#include \"%s_common.h\"\n" % (fileprefix))
 f.write("#include \"%s_ies_defs.h\"\n\n" % (fileprefix))
 for key in iesDefs:
+    if key in ieofielist.values():
+        continue
+
     structName = re.sub('ies', '', key)
     asn1cStruct = re.sub('-', '_', re.sub('IEs', '', key))
     asn1cStruct = re.sub('Item', 'List', asn1cStruct)
     asn1cStructfirstlower = asn1cStruct[:1].lower() + asn1cStruct[1:]
     firstwordlower = re.sub('Item', 'List', re.sub('enb', 'eNB', lowerFirstCamelWord(asn1cStruct)))
 
-    if key in ieofielist.values():
-        continue
     iesaccess = ""
     if key not in ieofielist.values():
         iesaccess = "%s_ies." % (firstwordlower)
