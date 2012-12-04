@@ -52,7 +52,7 @@ ManagementClientManager::~ManagementClientManager() {
 	clientVector.clear();
 }
 
-ManagementClientManager::Task ManagementClientManager::updateManagementClientState(udp::endpoint& clientEndpoint, EventType eventType) {
+ManagementClientManager::Task ManagementClientManager::updateClientState(const udp::endpoint& clientEndpoint, EventType eventType) {
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
@@ -60,11 +60,11 @@ ManagementClientManager::Task ManagementClientManager::updateManagementClientSta
 	 * Traverse client list and check if we already have this client
 	 */
 	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientEndpoint.address().to_string());
-		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientEndpoint.port()));
+		logger.trace("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientEndpoint.address().to_string());
+		logger.trace("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientEndpoint.port()));
 
 		if ((*it)->getAddress() == clientEndpoint.address() && (*it)->getPort() == clientEndpoint.port()) {
-			logger.trace("A client object for " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()) + " is found");
+			logger.debug("A client object for " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()) + " is found");
 			client = *it;
 			clientExists = true;
 		}
@@ -178,6 +178,18 @@ const ManagementClient* ManagementClientManager::getClientByType(ManagementClien
 	 */
 	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
 		if ((*it)->getType() == clientType)
+			return *it;
+	}
+
+	return NULL;
+}
+
+ManagementClient* ManagementClientManager::getClientByEndpoint(const udp::endpoint& endPoint) {
+	/**
+	 * Traverse client vector and find the specific client at given end point
+	 */
+	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
+		if ((*it)->getEndpoint() == endPoint)
 			return *it;
 	}
 

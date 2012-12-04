@@ -83,7 +83,7 @@ class ManagementServer : public IManagementPacketSender {
 		/**
 		 * Destructor for ManagementServer class
 		 */
-		~ManagementServer();
+		virtual ~ManagementServer();
 
 	public:
 		/**

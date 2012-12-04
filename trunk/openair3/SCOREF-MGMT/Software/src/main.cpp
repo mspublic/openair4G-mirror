@@ -57,11 +57,10 @@ using boost::asio::ip::udp;
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 #include "mgmt_server.hpp"
-
-#define VERSION "1.5.0"
+#include "version.hpp"
 
 void printVersion() {
-	cerr << "SCORE@F MANAGEMENT Module version " << VERSION << endl;
+	cerr << "SCORE@F MANAGEMENT Module version " << MGMT_VERSION << endl;
 }
 void printHelp(const string& binaryName) {
 	cerr << binaryName << " <configurationFile> [logFileName]" << endl;
