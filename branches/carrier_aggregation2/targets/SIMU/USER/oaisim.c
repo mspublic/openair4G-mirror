@@ -1331,20 +1331,23 @@ CC_id = 0;
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
 #endif
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	//for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	CC_id = 0;
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-      }
+	  //}
       }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	//for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	CC_id = 0;
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	}
+	  //}
       }
       if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	  //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	  CC_id = 0;
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	}
+	  //}
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1353,9 +1356,10 @@ CC_id = 0;
 	  */
 	}
 	else {// UL part
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	  //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	  CC_id = 0;
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	}
+	  //}
 	}
       }
 

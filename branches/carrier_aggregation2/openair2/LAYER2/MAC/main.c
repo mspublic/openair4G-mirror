@@ -259,7 +259,7 @@ int mac_init_global_param(){
 
   //  mac_xface->macphy_data_ind=macphy_data_ind;
   mac_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
-  mac_xface->dl_phy_sync_success=dl_phy_sync_success;
+  mac_xface->dl_phy_sync_success=dl_phy_sync_success; //CC_id ?
   mac_xface->out_of_sync_ind=mac_out_of_sync_ind;
 
   //  Mac_rlc_xface->macphy_exit=  mac_xface->macphy_exit;
