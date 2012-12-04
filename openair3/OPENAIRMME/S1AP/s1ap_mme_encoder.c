@@ -48,6 +48,11 @@ int s1ap_mme_encode_s1setupresponse(S1SetupResponseIEs_t *s1SetupResponseIEs, ui
     MessageDef *message_p;
 
     memset(s1SetupResponse_p, 0, sizeof(S1SetupResponse_t));
+
+    if (s1ap_encode_s1setupresponseies(s1SetupResponse_p, s1SetupResponseIEs) < 0) {
+        return -1;
+    }
+
     message_p = (MessageDef *)malloc(sizeof(MessageDef));
 
     message_p->messageId = SCTP_NEW_DATA_REQ;
@@ -57,18 +62,15 @@ int s1ap_mme_encode_s1setupresponse(S1SetupResponseIEs_t *s1SetupResponseIEs, ui
     message_p->msg.sctpNewDataReq.stream = 0;
     message_p->msg.sctpNewDataReq.assocId = assocId;
 
-    if (s1ap_encode_s1setupresponseies(s1SetupResponse_p, s1SetupResponseIEs) < 0) {
+    if (s1ap_generate_successfull_outcome(&message_p->msg.sctpNewDataReq.buffer,
+                                          &message_p->msg.sctpNewDataReq.bufLen,
+                                          ProcedureCode_id_S1Setup,
+                                          Criticality_reject,
+                                          &asn_DEF_S1SetupResponse,
+                                          s1SetupResponse_p) < 0) {
         free(message_p);
         return -1;
     }
-
-    if (s1ap_generate_successfull_outcome(&message_p->msg.sctpNewDataReq.buffer,
-        &message_p->msg.sctpNewDataReq.bufLen,
-        ProcedureCode_id_S1Setup,
-        Criticality_reject,
-        &asn_DEF_S1SetupResponse,
-        s1SetupResponse_p) < 0)
-        return -1;
 
     return send_msg_to_task(TASK_SCTP, message_p);
 }
@@ -79,6 +81,11 @@ int s1ap_mme_encode_s1setupfailure(S1SetupFailureIEs_t *s1SetupFailureIEs, uint3
     MessageDef *message_p;
 
     memset(s1SetupFailure_p, 0, sizeof(S1SetupFailure_t));
+
+    if (s1ap_encode_s1setupfailureies(s1SetupFailure_p, s1SetupFailureIEs) < 0) {
+        return -1;
+    }
+
     message_p = (MessageDef *)malloc(sizeof(MessageDef));
 
     message_p->messageId = SCTP_NEW_DATA_REQ;
@@ -88,18 +95,15 @@ int s1ap_mme_encode_s1setupfailure(S1SetupFailureIEs_t *s1SetupFailureIEs, uint3
     message_p->msg.sctpNewDataReq.stream = 0;
     message_p->msg.sctpNewDataReq.assocId = assocId;
 
-    if (s1ap_encode_s1setupfailureies(s1SetupFailure_p, s1SetupFailureIEs) < 0) {
+    if (s1ap_generate_unsuccessfull_outcome(&message_p->msg.sctpNewDataReq.buffer,
+                                            &message_p->msg.sctpNewDataReq.bufLen,
+                                            ProcedureCode_id_S1Setup,
+                                            Criticality_reject,
+                                            &asn_DEF_S1SetupFailure,
+                                            s1SetupFailure_p) < 0) {
         free(message_p);
         return -1;
     }
-
-    if (s1ap_generate_unsuccessfull_outcome(&message_p->msg.sctpNewDataReq.buffer,
-        &message_p->msg.sctpNewDataReq.bufLen,
-        ProcedureCode_id_S1Setup,
-        Criticality_reject,
-        &asn_DEF_S1SetupFailure,
-        s1SetupFailure_p) < 0)
-        return -1;
 
     return send_msg_to_task(TASK_SCTP, message_p);
 }
@@ -111,6 +115,11 @@ int s1ap_mme_encode_initial_context_setup_request(InitialContextSetupRequestIEs_
     MessageDef                   *message_p;
 
     memset(initialContextSetupRequest_p, 0, sizeof(InitialContextSetupRequest_t));
+
+    if (s1ap_encode_initialcontextsetuprequesties(initialContextSetupRequest_p, initialContextSetupRequestIEs) < 0) {
+        return -1;
+    }
+
     message_p = (MessageDef *)malloc(sizeof(MessageDef));
 
     message_p->messageId = SCTP_NEW_DATA_REQ;
@@ -120,18 +129,15 @@ int s1ap_mme_encode_initial_context_setup_request(InitialContextSetupRequestIEs_
     message_p->msg.sctpNewDataReq.stream = ue_ref->sctp_stream_send;
     message_p->msg.sctpNewDataReq.assocId = ue_ref->eNB->sctp_assoc_id;
 
-    if (s1ap_encode_initialcontextsetuprequesties(initialContextSetupRequest_p, initialContextSetupRequestIEs) < 0) {
+    if (s1ap_generate_initiating_message(&message_p->msg.sctpNewDataReq.buffer,
+                                         &message_p->msg.sctpNewDataReq.bufLen,
+                                         ProcedureCode_id_InitialContextSetup,
+                                         Criticality_reject,
+                                         &asn_DEF_InitialContextSetupRequest,
+                                         initialContextSetupRequest_p) < 0) {
         free(message_p);
         return -1;
     }
-
-    if (s1ap_generate_initiating_message(&message_p->msg.sctpNewDataReq.buffer,
-        &message_p->msg.sctpNewDataReq.bufLen,
-        ProcedureCode_id_InitialContextSetup,
-        Criticality_reject,
-        &asn_DEF_InitialContextSetupRequest,
-        initialContextSetupRequest_p) < 0)
-        return -1;
 
     return send_msg_to_task(TASK_SCTP, message_p);
 }
@@ -143,6 +149,12 @@ int s1ap_mme_encode_downlink_nas_transport(DownlinkNASTransportIEs_t *downlinkNa
     MessageDef             *message_p;
 
     memset(downlinkNasTransport_p, 0, sizeof(DownlinkNASTransport_t));
+
+    /* Convert IE structure into asn1 message */
+    if (s1ap_encode_downlinknastransporties(downlinkNasTransport_p, downlinkNasTransportIEs) < 0) {
+        return -1;
+    }
+
     message_p = (MessageDef *)malloc(sizeof(MessageDef));
 
     message_p->messageId = SCTP_NEW_DATA_REQ;
@@ -151,20 +163,16 @@ int s1ap_mme_encode_downlink_nas_transport(DownlinkNASTransportIEs_t *downlinkNa
     message_p->msg.sctpNewDataReq.stream = ue_ref->sctp_stream_send;
     message_p->msg.sctpNewDataReq.assocId = ue_ref->eNB->sctp_assoc_id;
 
-    /* Convert IE structure into asn1 message */
-    if (s1ap_encode_downlinknastransporties(downlinkNasTransport_p, downlinkNasTransportIEs) < 0) {
+    /* Generate Initiating message for the list of IEs */
+    if (s1ap_generate_initiating_message(&message_p->msg.sctpNewDataReq.buffer,
+                                         &message_p->msg.sctpNewDataReq.bufLen,
+                                         ProcedureCode_id_downlinkNASTransport,
+                                         Criticality_reject,
+                                         &asn_DEF_DownlinkNASTransport,
+                                         downlinkNasTransport_p) < 0) {
         free(message_p);
         return -1;
     }
-
-    /* Generate Initiating message for the list of IEs */
-    if (s1ap_generate_initiating_message(&message_p->msg.sctpNewDataReq.buffer,
-        &message_p->msg.sctpNewDataReq.bufLen,
-        ProcedureCode_id_downlinkNASTransport,
-        Criticality_reject,
-        &asn_DEF_DownlinkNASTransport,
-        downlinkNasTransport_p) < 0)
-        return -1;
 
     return send_msg_to_task(TASK_SCTP, message_p);
 }

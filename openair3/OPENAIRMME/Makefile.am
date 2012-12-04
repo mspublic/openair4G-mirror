@@ -3,6 +3,8 @@ SUBDIRS = 			\
 	INTERTASK_INTERFACE 	\
 	SCTP			\
 	S1AP			\
+	S6A			\
+	SGW-LITE		\
 	UTILS			\
 	UDP			\
 	TEST			\

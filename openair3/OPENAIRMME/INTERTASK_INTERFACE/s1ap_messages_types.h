@@ -1,5 +1,6 @@
 #ifndef S1AP_MESSAGES_TYPES_H_
 #define S1AP_MESSAGES_TYPES_H_
+
 typedef struct {
     uint8_t  *buffer;           ///< SCTP buffer
     uint32_t  bufLen;           ///< SCTP buffer length

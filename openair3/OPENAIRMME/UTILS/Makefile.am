@@ -8,5 +8,4 @@ libutils_la_SOURCES = \
 	log.c log.h	\
 	mme_config.c mme_config.h	\
 	mme_default_values.h	\
-	queue.h	\
-	tpl.h	tpl.c
+	queue.h	tree.h

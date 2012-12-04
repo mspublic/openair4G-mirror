@@ -40,8 +40,6 @@
 #include "s1ap_mme_handlers.h"
 #include "s1ap_ies_defs.h"
 
-int indent = 0;
-
 #define S1AP_DEBUG_LIST
 #ifdef S1AP_DEBUG_LIST
 # define eNB_LIST_OUT(x, args...) S1AP_DEBUG("[eNB]%*s"x"\n", 4*indent, "", ##args)
@@ -52,13 +50,14 @@ int indent = 0;
 #endif
 
 #if !defined(MME_CLIENT_TEST)
-static pthread_t s1apThread;
+static pthread_t s1ap_task_thread;
 
 uint8_t nb_eNB_associated;
 eNB_description_t *eNB_list_head;
 eNB_description_t *eNB_list_tail;
 
 MessageDef *receivedMessage;
+static int indent = 0;
 
 void* s1ap_mme_thread(void *args);
 
@@ -119,6 +118,14 @@ void* s1ap_mme_thread(void *args) {
                  */
                 s1ap_generate_downlink_nas_transport(&receivedMessage->msg.s1apNASNewMessageInd);
             } break;
+            case SGW_CREATE_SESSION_RESPONSE:
+            {
+                s1ap_handle_create_session_response(&receivedMessage->msg.sgwCreateSessionResponse);
+            } break;
+            case SGW_MODIFY_BEARER_RESPONSE:
+            {
+                
+            } break;
             default:
             {
                 S1AP_DEBUG("Unkwnon message ID %d\n", receivedMessage->messageId);
@@ -148,7 +155,7 @@ int s1ap_mme_init(const mme_config_t *mme_config) {
     eNB_list_tail = NULL;
     nb_eNB_associated = 0;
 
-    if (pthread_create(&s1apThread, NULL, &s1ap_mme_thread, NULL) < 0) {
+    if (pthread_create(&s1ap_task_thread, NULL, &s1ap_mme_thread, NULL) < 0) {
         perror("s1ap phtread_create");
         return -1;
     }
@@ -260,8 +267,24 @@ ue_description_t* s1ap_is_ue_mme_id_in_list(uint32_t mme_ue_s1ap_id) {
     return NULL;
 }
 
-eNB_description_t* s1ap_new_eNB(void) {
+ue_description_t* s1ap_is_teid_in_list(uint32_t teid) {
+    ue_description_t *ue_ref;
     eNB_description_t *eNB_ref;
+    // No eNB_list_head in list, simply returning NULL
+    if (eNB_list_head == NULL) return NULL;
+    for (eNB_ref = eNB_list_head; eNB_ref; eNB_ref = eNB_ref->next_eNB) {
+        for (ue_ref = eNB_ref->ue_list_head; ue_ref; ue_ref = ue_ref->next_ue) {
+            // We fount a matching reference, return it
+            if (ue_ref->teid == teid)
+                return ue_ref;
+        }
+    }
+    // No matching UE, return NULL
+    return NULL;
+}
+
+eNB_description_t* s1ap_new_eNB(void) {
+    eNB_description_t *eNB_ref = NULL;
 
     eNB_ref = malloc(sizeof(eNB_description_t));
 
@@ -294,8 +317,8 @@ eNB_description_t* s1ap_new_eNB(void) {
 }
 
 ue_description_t* s1ap_new_ue(uint32_t sctp_assoc_id) {
-    eNB_description_t *eNB_ref;
-    ue_description_t  *ue_ref;
+    eNB_description_t *eNB_ref = NULL;
+    ue_description_t  *ue_ref  = NULL;
 
     if ((eNB_ref = s1ap_is_eNB_assoc_id_in_list(sctp_assoc_id)) == NULL) {
         /* No eNB attached to this SCTP assoc ID...

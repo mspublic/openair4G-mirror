@@ -65,7 +65,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libutils_la_LIBADD =
-am_libutils_la_OBJECTS = log.lo mme_config.lo tpl.lo
+am_libutils_la_OBJECTS = log.lo mme_config.lo
 libutils_la_OBJECTS = $(am_libutils_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -287,8 +287,7 @@ libutils_la_SOURCES = \
 	log.c log.h	\
 	mme_config.c mme_config.h	\
 	mme_default_values.h	\
-	queue.h	\
-	tpl.h	tpl.c
+	queue.h	tree.h
 
 all: all-recursive
 
@@ -346,7 +345,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mme_config.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpl.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

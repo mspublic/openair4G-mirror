@@ -16,9 +16,6 @@
 
 #include "queue.h"
 
-#define ITTI_QUEUE_SIZE_MAX (1 * 1024 * 1024) /* 1 MBytes */
-#define ITTI_PORT           (3632)
-
 struct itti_queue_s {
     struct itti_queue_s *next;
     char                *data;

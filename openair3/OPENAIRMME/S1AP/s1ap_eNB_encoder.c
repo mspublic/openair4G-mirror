@@ -113,6 +113,25 @@ int s1ap_eNB_generate_initial_ue_message(struct s1ap_eNB_UE_description_s *ue_re
     return sctp_send_msg(ue_ref->eNB->assocId, ue_ref->stream_send, buffer, len);
 }
 
+int s1ap_eNB_encode_initial_context_setup_response(InitialContextSetupResponseIEs_t  *sptr,
+                                                   uint8_t             **buffer,
+                                                   uint32_t             *length) {
+    InitialContextSetupResponse_t  initial;
+    InitialContextSetupResponse_t *initial_p = &initial;
+
+    memset((void *)initial_p, 0, sizeof(InitialContextSetupResponse_t));
+
+    if (s1ap_encode_initialcontextsetupresponseies(initial_p, sptr) < 0)
+        return -1;
+
+    return s1ap_generate_successfull_outcome(buffer,
+        length,
+        ProcedureCode_id_InitialContextSetup,
+        Criticality_reject,
+        &asn_DEF_InitialContextSetupResponse,
+        initial_p);
+}
+
 int s1ap_eNB_generate_uplink_nas_transport(struct s1ap_eNB_UE_description_s *ue_ref,
                                            uint8_t                          *nas_pdu,
                                            uint32_t                          nas_len) {

@@ -47,6 +47,7 @@
 
 #include "intertask_interface.h"
 #include "sctp_primitives_server.h"
+#include "mme_config.h"
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
 #define IPV4_ADDR_FORMAT(aDDRESS)               \
@@ -61,8 +62,6 @@
 #ifndef SCTP_ERROR
 # define SCTP_ERROR(x, args...) do { fprintf(stdout, "[SCTP][E]"x, ##args); } while(0)
 #endif
-
-#define BUFFER_SIZE (1<<16)
 
 #undef SCTP_DUMP_LIST
 
@@ -82,7 +81,7 @@ static sctp_descriptor_t *available_connections_tail = NULL;
 static uint32_t number_of_connections = 0;
 
 // LOCAL FUNCTIONS prototypes
-void *sctp_receiver_thread(void *args);
+void *sctp_receiver_thread(void *args_p);
 static int sctp_send_msg(int32_t sctp_assoc_id, uint16_t stream, const uint8_t *buffer, const uint32_t length);
 
 // Association list related local functions prototypes
@@ -93,12 +92,12 @@ static sctp_descriptor_t* sctp_add_new_peer(void) {
     sctp_descriptor_t *new_sctp_descriptor;
 
     new_sctp_descriptor = malloc(sizeof(sctp_descriptor_t));
-    new_sctp_descriptor->next_assoc = NULL;
-    new_sctp_descriptor->previous_assoc = NULL;
-
     if (new_sctp_descriptor == NULL) {
         return NULL;
     }
+    new_sctp_descriptor->next_assoc = NULL;
+    new_sctp_descriptor->previous_assoc = NULL;
+
     if (available_connections_tail == NULL) {
         available_connections_head = new_sctp_descriptor;
         available_connections_tail = available_connections_head;
@@ -268,7 +267,9 @@ static int sctp_create_new_connection(int port, char *address, uint32_t ppid) {
         exit(1);
     }
 
-    sctp_arg_p = malloc(sizeof(sctp_arg_p));
+    if ((sctp_arg_p = malloc(sizeof(struct sctp_arg_s))) == NULL) {
+        return -1;
+    }
     sctp_arg_p->fd = fd;
     sctp_arg_p->ppid = ppid;
 
@@ -280,7 +281,7 @@ static int sctp_create_new_connection(int port, char *address, uint32_t ppid) {
     return fd;
 }
 
-void *sctp_receiver_thread(void *args)
+void *sctp_receiver_thread(void *args_p)
 {
     int flags, n;
     int clientsock;
@@ -289,9 +290,9 @@ void *sctp_receiver_thread(void *args)
     struct sctp_arg_s *sctp_arg_p;
     struct sctp_sndrcvinfo sinfo;
     struct sockaddr_in addr;
-    uint8_t buffer[BUFFER_SIZE];
+    uint8_t buffer[SCTP_BUFFER_SIZE];
 
-    sctp_arg_p = (struct sctp_arg_s *)args;
+    sctp_arg_p = (struct sctp_arg_s *)args_p;
     clientsock = sctp_arg_p->fd;
 
     while(1)
@@ -300,7 +301,7 @@ void *sctp_receiver_thread(void *args)
         memset((void *)&addr, 0, sizeof(struct sockaddr_in));
         from_len = (socklen_t)sizeof(struct sockaddr_in);
         memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
-        n = sctp_recvmsg(clientsock, (void*)buffer, BUFFER_SIZE,
+        n = sctp_recvmsg(clientsock, (void*)buffer, SCTP_BUFFER_SIZE,
                         (struct sockaddr *)&addr, &from_len,
                         &sinfo, &flags);
         if (n < 0)
@@ -345,7 +346,7 @@ void *sctp_receiver_thread(void *args)
                     {
                         sctp_descriptor_t *new_association;
 
-                        SCTP_DEBUG("new connection");
+                        SCTP_DEBUG("New connection\n");
                         if ((new_association = sctp_add_new_peer()) == NULL) {
                             // TODO: handle this case
                         } else {
@@ -361,7 +362,7 @@ void *sctp_receiver_thread(void *args)
                     case SCTP_SHUTDOWN_COMP:
                     {
                         if (sctp_remove_assoc_from_list(sctp_assoc_changed->sac_assoc_id) < 0) {
-                            SCTP_DEBUG("Failed to find client in list");
+                            SCTP_DEBUG("Failed to find client in list\n");
                         }
                         sctp_dump_list();
                     } break;
@@ -411,10 +412,11 @@ void *sctp_receiver_thread(void *args)
             send_msg_to_task(TASK_S1AP, message_p);
         }
     }
+    free(args_p);
     return NULL;
 }
 
-static void *sctp_intertask_interface(void *args) {
+static void *sctp_intertask_interface(void *args_p) {
     while(1) {
         MessageDef *receivedMessage;
         receive_msg(TASK_SCTP, &receivedMessage);

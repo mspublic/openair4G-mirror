@@ -73,4 +73,6 @@ int s1ap_generate_downlink_nas_transport(S1apNASNewMessageInd *message);
 
 int s1ap_handle_sctp_deconnection(uint8_t assoc_id);
 
+int s1ap_handle_create_session_response(SgwCreateSessionResponse *session_response_p);
+
 #endif /* S1AP_MME_HANDLERS_H_ */

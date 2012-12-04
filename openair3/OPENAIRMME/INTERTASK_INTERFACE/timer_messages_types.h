@@ -2,9 +2,14 @@
 #define TIMER_MESSAGES_TYPES_H_
 
 typedef struct {
-    uint32_t expiry_ms;
+    uint32_t expiry_sec;
+    uint32_t expiry_usec;
     uint32_t timer_id;
-} TimerNewRequest, TimerHasExpired;
+} TimerNewRequest;
+
+typedef struct {
+    long timer_id;
+}TimerHasExpired;
 
 typedef struct {
     uint32_t timer_id;

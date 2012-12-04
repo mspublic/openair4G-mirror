@@ -41,6 +41,10 @@ int s1ap_eNB_encode_initial_ue_message(InitialUEMessageIEs_t *initialUEmessageIE
                                        uint8_t              **buffer,
                                        uint32_t              *length);
 
+int s1ap_eNB_encode_initial_context_setup_response(InitialContextSetupResponseIEs_t  *sptr,
+                                                   uint8_t             **buffer,
+                                                   uint32_t             *length);
+
 int s1ap_eNB_encode_s1_setup_request(S1SetupRequestIEs_t  *s1SetupRequestIEs,
                                      uint8_t             **buffer,
                                      uint32_t             *length);

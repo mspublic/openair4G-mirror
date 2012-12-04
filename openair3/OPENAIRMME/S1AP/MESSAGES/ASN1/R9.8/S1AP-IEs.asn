@@ -62,7 +62,7 @@ AllocationAndRetentionPriority ::= SEQUENCE {
     priorityLevel               PriorityLevel,
     pre-emptionCapability       Pre-emptionCapability,
     pre-emptionVulnerability    Pre-emptionVulnerability,
-        iE-Extensions               IE-Extensions OPTIONAL,
+    iE-Extensions               IE-Extensions OPTIONAL,
     ...
 }
 
@@ -394,7 +394,7 @@ E-RABList ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
 E-RABToBeSwitchedULList ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
-E-RABToBeSwitchedDLList                     ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
+E-RABToBeSwitchedDLList ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
 E-RABToBeSetupListBearerSUReq ::= SEQUENCE (SIZE(1.. maxNrOfE-RABs)) OF IE
 
@@ -929,7 +929,7 @@ SONConfigurationTransfer ::= SEQUENCE {
     sourceeNB-ID                    SourceeNB-ID,
     sONInformation                  SONInformation,
         iE-Extensions               IE-Extensions OPTIONAL,
-...
+    ...
 }
 
 Source-ToTarget-TransparentContainer ::= OCTET STRING

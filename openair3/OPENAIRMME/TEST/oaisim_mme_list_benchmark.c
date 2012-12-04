@@ -54,6 +54,7 @@
 
 static int connected_eNB = 0;
 static char ip_addr[] = "127.0.0.1";
+uint32_t ipv4_local = 0x7F000001;
 static uint8_t id[] = { 0x03, 0x56, 0xf0, 0xd8 };
 static char identity[] = { 0x02, 0x08, 0x34 };
 static char tac[] = { 0x00, 0x01 };
@@ -133,6 +134,35 @@ int s1ap_test_generate_initial_ue_message(uint32_t eNB_UE_S1AP_ID,
     return s1ap_eNB_encode_initial_ue_message(initialUEmessageIEs_p, buffer, length);
 }
 
+int s1ap_test_generate_initial_setup_resp(uint32_t eNB_UE_S1AP_ID,
+                                          uint32_t mme_UE_S1AP_ID,
+                                          uint8_t  eRAB_id,
+                                          uint32_t teid,
+                                          uint8_t **buffer,
+                                          uint32_t *length) {
+    InitialContextSetupResponseIEs_t  initialResponseIEs;
+    InitialContextSetupResponseIEs_t *initialResponseIEs_p = &initialResponseIEs;
+
+    E_RABSetupItemCtxtSURes_t e_RABSetupItemCtxtSURes;
+
+    memset(initialResponseIEs_p, 0, sizeof(InitialContextSetupResponseIEs_t));
+    memset(&e_RABSetupItemCtxtSURes, 0, sizeof(E_RABSetupItemCtxtSURes_t));
+
+    initialResponseIEs_p->mme_ue_s1ap_id = mme_UE_S1AP_ID;
+    initialResponseIEs_p->eNB_UE_S1AP_ID = eNB_UE_S1AP_ID;
+
+    e_RABSetupItemCtxtSURes.e_RAB_ID = eRAB_id;
+    e_RABSetupItemCtxtSURes.transportLayerAddress.buf = (uint8_t *)&ipv4_local;
+    e_RABSetupItemCtxtSURes.transportLayerAddress.size = 4;
+
+    e_RABSetupItemCtxtSURes.gTP_TEID.buf = (uint8_t *)&teid;
+    e_RABSetupItemCtxtSURes.gTP_TEID.size = 4;
+
+    ASN_SEQUENCE_ADD(&initialResponseIEs_p->e_RABSetupListCtxtSURes.e_RABSetupItemCtxtSURes, &e_RABSetupItemCtxtSURes);
+
+    return s1ap_eNB_encode_initial_context_setup_response(initialResponseIEs_p, buffer, length);
+}
+
 int recv_callback(uint32_t  assocId,
                   uint32_t  stream,
                   uint8_t  *buffer,
@@ -162,6 +192,17 @@ int recv_callback(uint32_t  assocId,
     } else if (message.procedureCode == ProcedureCode_id_InitialContextSetup
                && message.direction == S1AP_PDU_PR_initiatingMessage) {
         fprintf(stdout, "Received InitialContextSetup request\n");
+        s1ap_test_generate_initial_setup_resp(message.msg.initialContextSetupRequestIEs.eNB_UE_S1AP_ID,
+                                          message.msg.initialContextSetupRequestIEs.mme_ue_s1ap_id,
+                                          0x5,
+                                          0x1,
+                                          &buffer2,
+                                          &len);
+        if (sctp_send_msg(assocId, stream, buffer2, len) < 0) {
+            fprintf(stderr, "sctp_send_msg returned status < 0\nSomething bad happened on SCTP layer\n");
+            free(buffer2);
+        }
+        free(buffer2);
     } else {
         fprintf(stderr, "Received unexpected message %d %d\n", message.procedureCode, message.direction);
         free(buffer);

@@ -4,7 +4,7 @@ define([svnversion], esyscmd([sh -c "svnversion ..|tr -d '\n'"]))
 
 AC_DEFINE(SVN_REVISION, "svnversion", [SVN Revision])
 
-AC_INIT([oaisim_mme], [0.2.svnversion], [openair_admin@eurecom.fr])
+AC_INIT([oaisim_mme], [0.3.svnversion], [openair_admin@eurecom.fr])
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
 #AM_INIT_AUTOMAKE(oaisim_mme, 0.1.svnversion)
@@ -59,7 +59,6 @@ AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 AC_PROG_MKDIR_P
 
-AC_C_INLINE
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h inttypes.h limits.h malloc.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/socket.h unistd.h])
 
 # Checks for library functions.
@@ -72,26 +71,60 @@ AC_CHECK_FUNCS([ftruncate inet_ntoa memchr memmove memset munmap socket strchr s
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
+AC_TYPE_INT8_T
 AC_TYPE_INT16_T
 AC_TYPE_INT32_T
-AC_TYPE_INT8_T
+AC_TYPE_INT64_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
+AC_TYPE_UINT8_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
-AC_TYPE_UINT8_T
-AC_TYPE_INT64_T
 AC_TYPE_UINT64_T
 AC_CHECK_TYPES([ptrdiff_t])
 
-dnl ***libsctp-dev support***
+dnl *** libsctp-dev support ***
 AC_CHECK_LIB([sctp], [sctp_sendmsg], [], [AC_MSG_ERROR([libsctp not found, consider installing libsctp-dev package])])
-dnl ***pthread support***
+
+dnl *** pthread support ***
 AC_CHECK_LIB([pthread], [pthread_mutex_init], [], [AC_MSG_ERROR(pthread library needed!)])
-dnl ***real time support***
+
+dnl *** real time support ***
 AC_CHECK_LIB([rt], [timer_create], [], [AC_MSG_ERROR(rt library needed!)])
 
+dnl *** Disable HSS support by default ***
+AC_ARG_ENABLE([hss],
+              AS_HELP_STRING([--enable-hss],
+                             [Enable 3GPP S6A support]),
+              [CFLAGS="$CFLAGS -DENABLE_USE_HSS"],
+              [CFLAGS="$CFLAGS -DDISABLE_USE_HSS"])
+
+dnl *** If user requested support for HSS, add some freediameter dependencies ***
+AS_IF([test "x$enable_hss" == "xyes"], [
+    dnl ***freediameter support***
+    AC_CHECK_LIB([fdcore], [fd_core_initialize], [], [AC_MSG_ERROR(Free diameter lib not installed)])
+    dnl *** Freediameter requirements ***
+    AC_CHECK_HEADERS([signalent.h])
+    AC_CHECK_FUNCS([ntohll strndup])
+    AC_DEFINE([HAVE_AI_ADDRCONFIG], [], [Define to 1 if you have AI_ADDRCONFIG defined in netdb.h])
+    AC_DEFINE([HAVE_CLOCK_GETTIME], [], [Define to 1 if you have clock_gettime in librt])
+    AC_DEFINE([HAVE_PTHREAD_BAR], [], [Define to 1 if you have pthread_barrier_wait in libpthread])
+    AC_DEFINE([SCTP_CONNECTX_4_ARGS], [], [Define to 1 if sctp_connectx function accepts 4 arguments])
+    AC_CHECK_LIB([rt], [clock_gettime], [AC_DEFINE(HAVE_CLOCK_GETTIME, 1)], [])
+    AC_CHECK_LIB([pthread], [pthread_barrier_wait], [AC_DEFINE(HAVE_PTHREAD_BAR, 1)], [])
+    AC_CHECK_DECL([AI_ADDRCONFIG], [AC_DEFINE(HAVE_AI_ADDRCONFIG, 1)], [], [[#include <netdb.h>]])
+    AC_MSG_CHECKING(if sctp_connectx accepts 4 arguments)
+    AC_LINK_IFELSE([
+        AC_LANG_SOURCE(
+            [[int main() { return sctp_connectx(0, NULL, 0, NULL); }]])
+    ], [AC_DEFINE(SCTP_CONNECTX_4_ARGS, 1)])
+    AC_CHECK_LIB([gnutls], [gnutls_hash], [AC_DEFINE(GNUTLS_VERSION_210, 1, [Define to 1 if you have gnutls 2.10 installed])], [])
+    AC_CHECK_LIB([gnutls], [gnutls_x509_trust_list_verify_crt], [AC_DEFINE(GNUTLS_VERSION_300, 1, [Define to 1 if you have gnutls 3.0 installed])], [])
+    AC_CHECK_LIB([gnutls], [gnutls_handshake_set_timeout], [AC_DEFINE(GNUTLS_VERSION_310, 1, [Define to 1 if you have gnutls 3.1 installed])], [])
+])
+
+AM_CONDITIONAL([ENABLE_USE_HSS], [test x$enable_hss == xyes])
 AC_SUBST(ADD_CFLAGS)
 
 dnl *** Enable r9 update by default ***
@@ -122,16 +155,18 @@ AM_CONDITIONAL([HAVE_DOXYGEN],
 
 AC_OUTPUT(                          \
     GTPV1-U/Makefile                \
-    TEST/Makefile                   \
-    UTILS/TIMER/Makefile            \
-    UTILS/Makefile                  \
+    INTERTASK_INTERFACE/Makefile    \
     S1AP/MESSAGES/ASN1/Makefile     \
     S1AP/MESSAGES/Makefile          \
     S1AP/Makefile                   \
-    INTERTASK_INTERFACE/Makefile    \
-    OAISIM_MME/Makefile             \
+    S6A/Makefile                    \
     SCTP/Makefile                   \
+    SGW-LITE/Makefile               \
+    TEST/Makefile                   \
+    UTILS/TIMER/Makefile            \
+    UTILS/Makefile                  \
     UDP/Makefile                    \
+    OAISIM_MME/Makefile             \
     DOCS/DOXYGEN/Makefile           \
     DOCS/Makefile                   \
     Makefile                        \
@@ -142,7 +177,8 @@ echo "
 Prefix.........: $prefix
 C Compiler.....: $CC $CFLAGS
 Linker.........: $LD $LDFLAGS $LIBS
-Doxygen........: ${DOXYGEN:-NONE}"
+Doxygen........: ${DOXYGEN:-no}
+HSS............: ${enable_hss:-no}"
 
 if test x$enable_r9 != xno; then
     echo "Release........: 9.8"
