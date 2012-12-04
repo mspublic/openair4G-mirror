@@ -6,6 +6,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_llr_computation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_llr_computation_128.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/power_control.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_scrambling.o
