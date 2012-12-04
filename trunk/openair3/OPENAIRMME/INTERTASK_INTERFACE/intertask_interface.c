@@ -37,27 +37,30 @@
 
 #include "queue.h"
 
+// Locally define macro to enable task id to string table
+#define INTERTASK_C
+
 #include "intertask_interface.h"
 #include "intertask_interface_dump.h"
 
-#define ITTI_DEBUG(x, args...) do { fprintf(stdout, "[ITTI][D]"x, ##args); } \
+static int itti_debug = 0;
+
+#define ITTI_DEBUG(x, args...) do { if (itti_debug) fprintf(stdout, "[ITTI][D]"x, ##args); } \
+    while(0)
+#define ITTI_ERROR(x, args...) do { fprintf(stdout, "[ITTI][E]"x, ##args); } \
     while(0)
 
 /* This list acts as a FIFO of messages received by tasks (RRC, NAS, ...) */
 struct message_list_s {
     STAILQ_ENTRY(message_list_s) next_element;
-//     struct message_list_s *next_element; ///< Next element in the list
 
-    MessageDef         *msg;          ///< Pointer to the message
+    MessageDef *msg;          ///< Pointer to the message
 
     uint32_t message_number;          ///< Unique message number
     uint32_t message_priority;        ///< Message priority
 };
 
-// /* Reference to the first element of the list */
-// static struct message_list_s *head[TASK_MAX];
-// /* Reference to the last element of the list */
-// static struct message_list_s *tail[TASK_MAX];
+/* Message queues: declare a queue for each task */
 static STAILQ_HEAD(message_queue_head, message_list_s) message_queue[TASK_MAX];
 /* Number of messages in the queue */
 static uint32_t message_in_queue[TASK_MAX];
@@ -66,44 +69,79 @@ static pthread_mutex_t message_queue_mutex[TASK_MAX];
 /* Conditinal Var for message queue and task synchro */
 static pthread_cond_t  mssage_queue_cond_var[TASK_MAX];
 
-/* Current message number. Increment every call to send_msg_to_task */
+/* Current message number. Incremented every call to send_msg_to_task */
 static uint32_t message_number = 0;
 
 /* Map message priority to message id */
 const struct message_priority_s messages_priorities[MESSAGES_ID_MAX] = {
     #define MESSAGE_DEF(iD, pRIO, sTRUCT) { iD, pRIO },
 
-    //     #include "gtpv1_u_messages_def.h"
+    #include "gtpv1_u_messages_def.h"
     #include "sctp_messages_def.h"
     #include "s1ap_messages_def.h"
+    #include "s6a_messages_def.h"
     #include "timer_messages_def.h"
     #include "udp_messages_def.h"
 
     #undef MESSAGE_DEF
 };
 
-static inline uint32_t get_message_priority(TaskId task_id) {
+static inline uint32_t get_message_priority(MessagesIds message_id) {
     uint32_t i;
 
-    for (i = 0; i < TASK_MAX; i++) {
-        if ((messages_priorities[i]).id == task_id)
+    for (i = 0; i < MESSAGES_ID_MAX; i++) {
+        if ((messages_priorities[i]).id == message_id)
             return ((messages_priorities[i]).priority);
     }
     return 0;
 }
 
+int send_broadcast_message(MessageDef *message_p) {
+    uint32_t i;
+    int ret;
+
+    for (i = TASK_FIRST; i < TASK_MAX; i++) {
+        ret = send_msg_to_task(i, message_p);
+        if (ret < 0) {
+            ITTI_ERROR("Failed to send broadcast message to task (%u:%s)\n",
+                       i, tasks_string[i]);
+        }
+    }
+
+    return ret;
+}
+
+inline MessageDef *alloc_new_message(
+    TaskId      origin_task_id,
+    TaskId      destination_task_id,
+    MessagesIds message_id) {
+
+    MessageDef *temp = NULL;
+
+    if ((origin_task_id >= TASK_MAX) || (destination_task_id >= TASK_MAX) ||
+        (message_id >= MESSAGES_ID_MAX))
+        return NULL;
+
+    temp = (MessageDef *)malloc(sizeof(MessageDef));
+    if (temp == NULL)
+        return temp;
+
+    temp->messageId = message_id;
+    temp->originTaskId = origin_task_id;
+    temp->destinationTaskId = destination_task_id;
+
+    return temp;
+}
+
 int send_msg_to_task(TaskId task_id, MessageDef *message)
 {
     struct message_list_s *new;
-    struct message_list_s *temp;
-
     uint32_t priority;
 
     assert(message != NULL);
     assert(task_id < TASK_MAX);
 
-//     priority = messages_priorities[task_id];
-    priority = get_message_priority(task_id);
+    priority = get_message_priority(message->messageId);
 
     // Lock the mutex to get exclusive access to the list
     pthread_mutex_lock(&message_queue_mutex[task_id]);
@@ -114,35 +152,44 @@ int send_msg_to_task(TaskId task_id, MessageDef *message)
     message_number++;
 
     // Fill in members
-    new->msg = message;
-    new->message_number = message_number;
+    new->msg              = message;
+    new->message_number   = message_number;
+    new->message_priority = priority;
 
     if (STAILQ_EMPTY(&message_queue[task_id])) {
         STAILQ_INSERT_HEAD(&message_queue[task_id], new, next_element);
     } else {
+        struct message_list_s *insert_after = NULL;
+        struct message_list_s *temp;
+
         STAILQ_FOREACH(temp, &message_queue[task_id], next_element) {
             struct message_list_s *next;
             next = STAILQ_NEXT(temp, next_element);
-            if (next == NULL) {
-                STAILQ_INSERT_TAIL(&message_queue[task_id], new, next_element);
-                break;
+            /* Increment message priority to create a sort of
+             * priority based scheduler */
+            if (temp->message_priority < TASK_PRIORITY_MAX)
+                temp->message_priority++;
+            if (next && next->message_priority < priority) {
+                insert_after = temp;
             }
-            if (next->message_priority < priority) {
-                STAILQ_INSERT_AFTER(&message_queue[task_id], temp, new, next_element);
-                break;
-            }
+        }
+        if (insert_after == NULL) {
+            STAILQ_INSERT_TAIL(&message_queue[task_id], new, next_element);
+        } else {
+            STAILQ_INSERT_AFTER(&message_queue[task_id], insert_after, new, next_element);
         }
     }
 
     // Update the number of messages in the queue
     message_in_queue[task_id]++;
     if (message_in_queue[task_id] == 1) {
-        // Emit a signal
+        // Emit a signal to wake up target task thread
         pthread_cond_signal(&mssage_queue_cond_var[task_id]);
     }
     // Release the mutex
     pthread_mutex_unlock(&message_queue_mutex[task_id]);
-    ITTI_DEBUG("Message %d succesfully sent to task_id %d\n", message_number, task_id);
+    ITTI_DEBUG("Message %d with priority %d succesfully sent to task_id (%u:%s)\n",
+               message_number, priority, task_id, tasks_string[task_id]);
     return 0;
 }
 
@@ -155,10 +202,12 @@ void receive_msg(TaskId task_id, MessageDef **received_msg)
     pthread_mutex_lock(&message_queue_mutex[task_id]);
 
     if (message_in_queue[task_id] == 0) {
-        ITTI_DEBUG("Message in queue[%u] == 0, waiting\n", task_id);
+        ITTI_DEBUG("Message in queue[(%u:%s)] == 0, waiting\n",
+                   task_id, tasks_string[task_id]);
         // Wait while list == 0
         pthread_cond_wait(&mssage_queue_cond_var[task_id], &message_queue_mutex[task_id]);
-        ITTI_DEBUG("Receiver thread queue[%u] got new message notification\n", task_id);
+        ITTI_DEBUG("Receiver thread queue[(%u:%s)] got new message notification\n",
+                   task_id, tasks_string[task_id]);
     }
 
     if (!STAILQ_EMPTY(&message_queue[task_id])) {
@@ -179,9 +228,8 @@ void receive_msg(TaskId task_id, MessageDef **received_msg)
 void intertask_interface_init(const mme_config_t *mme_config)
 {
     int i;
+    /* Initializing each queue and related stuff */
     for (i = 0; i < TASK_MAX; i++) {
-//         head[i] = NULL;
-//         tail[i] = NULL;
         STAILQ_INIT(&message_queue[i]);
         message_in_queue[i] = 0;
         // Initialize mutexes
@@ -189,5 +237,5 @@ void intertask_interface_init(const mme_config_t *mme_config)
         // Initialize Cond vars
         pthread_cond_init(&mssage_queue_cond_var[i], NULL);
     }
-    itti_init();
+//     itti_init();
 }

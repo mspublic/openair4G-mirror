@@ -44,6 +44,7 @@ static void config_init(mme_config_t *mme_config) {
     mme_config->timer_config.root_timer_value_ms = MME_TIMER_EXPIRY_MS;
     mme_config->gtpv1_u_config.port_number = GTPV1_U_PORT_NUMBER;
     mme_config->s1ap_config.port_number = S1AP_PORT_NUMBER;
+    mme_config->itti_config.sched_policy = ITTI_TASK_SCHED_POLICY;
 }
 
 static void usage(void) {

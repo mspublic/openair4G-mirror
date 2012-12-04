@@ -52,7 +52,7 @@ enum s1_eNB_state_s {
 enum s1_ue_state_s {
     S1AP_UE_WAITING_CSR,    ///< Waiting for Initial Context Setup Response
     S1AP_UE_HANDOVER,       ///< Handover procedure triggered
-    S1AP_UE_CONNECTED,      ///< UE context setup-ed
+    S1AP_UE_CONNECTED,      ///< UE context ready
 };
 
 /** Main structure representing UE association over s1ap
@@ -80,6 +80,8 @@ typedef struct ue_description_s {
     uint8_t                   sctp_stream_send; ///< MME -> eNB stream
     /*@}*/
 
+    uint32_t                  teid; ///< S11 TEID
+
 //     uint8_t                   eRAB_id;
 } ue_description_t;
 
@@ -92,8 +94,12 @@ typedef struct eNB_description_s {
 
     enum s1_eNB_state_s       s1_state;         ///< State of the eNB S1AP association over MME
 
+    /** eNB related parameters **/
+    /*@{*/
     char                      eNB_name[150];    ///< Printable eNB Name
     uint32_t                  eNB_id;           ///< Unique eNB ID
+    uint8_t                   default_paging_drx; ///< Default paging DRX interval for eNB
+    /*@}*/
 
     /** UE list for this eNB **/
     /*@{*/
@@ -142,6 +148,7 @@ ue_description_t* s1ap_is_ue_eNB_id_in_list(eNB_description_t *eNB_ref, uint32_t
  * @returns NULL if no UE matchs the ue_mme_id, or reference to the ue element in list if matches
  **/
 ue_description_t* s1ap_is_ue_mme_id_in_list(uint32_t ue_mme_id);
+ue_description_t* s1ap_is_teid_in_list(uint32_t teid);
 
 /** \brief Allocate and add to the list a new eNB descriptor
  * @returns Reference to the new eNB element in list
@@ -154,10 +161,20 @@ eNB_description_t* s1ap_new_eNB(void);
  **/
 ue_description_t* s1ap_new_ue(uint32_t sctp_assoc_id);
 
+/** \brief Dump the eNB list
+ * Calls dump_eNB for each eNB in list
+ **/
 void s1ap_dump_eNB_list(void);
 
+/** \brief Dump eNB related information.
+ * Calls dump_ue for each UE in list
+ * \param eNB_ref eNB structure reference to dump
+ **/
 void s1ap_dump_eNB(eNB_description_t *eNB_ref);
 
+/** \brief Dump UE related information.
+ * \param ue_ref ue structure reference to dump
+ **/
 void s1ap_dump_ue(ue_description_t *ue_ref);
 
 /** \brief Remove target UE from the list

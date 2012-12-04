@@ -52,6 +52,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@ENABLE_USE_HSS_TRUE@am__append_1 = -I$(top_srcdir)/S6A
+@ENABLE_USE_HSS_TRUE@am__append_2 = $(top_builddir)/S6A/libs6a.la
 bin_PROGRAMS = oaisim_mme$(EXEEXT)
 subdir = OAISIM_MME
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
@@ -71,10 +73,11 @@ oaisim_mme_OBJECTS = oaisim_mme.$(OBJEXT)
 oaisim_mme_DEPENDENCIES = $(top_builddir)/GTPV1-U/libgtpv1u.la \
 	$(top_builddir)/INTERTASK_INTERFACE/libitti.la \
 	$(top_builddir)/S1AP/libs1ap.la \
+	$(top_builddir)/SGW-LITE/libsgw_lite.la \
 	$(top_builddir)/SCTP/libsctpserver.la \
 	$(top_builddir)/UTILS/TIMER/libtimer.la \
 	$(top_builddir)/UTILS/libutils.la \
-	$(top_builddir)/UDP/libudpserver.la
+	$(top_builddir)/UDP/libudpserver.la $(am__append_2)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -118,16 +121,12 @@ ACLOCAL = @ACLOCAL@
 ADD_CFLAGS = @ADD_CFLAGS@
 ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
-AM_CFLAGS = @ADD_CFLAGS@ \
-	-I$(top_srcdir)/GTPV1-U			\
-	-I$(top_srcdir)/SCTP			\
-	-I$(top_srcdir)/INTERTASK_INTERFACE	\
-	-I$(top_builddir)/S1AP/MESSAGES		\
-	-I$(top_srcdir)/S1AP			\
-	-I$(top_srcdir)/UDP			\
-	-I$(top_srcdir)/UTILS			\
-	-I$(top_srcdir)/UTILS/TIMER
-
+AM_CFLAGS = @ADD_CFLAGS@ -I$(top_srcdir)/GTPV1-U -I$(top_srcdir)/SCTP \
+	-I$(top_srcdir)/INTERTASK_INTERFACE \
+	-I$(top_builddir)/S1AP/MESSAGES -I$(top_srcdir)/S1AP \
+	-I$(top_srcdir)/SGW-LITE -I$(top_srcdir)/UDP \
+	-I$(top_srcdir)/UTILS -I$(top_srcdir)/UTILS/TIMER \
+	$(am__append_1)
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 ASN1C_CHECK = @ASN1C_CHECK@
@@ -256,15 +255,14 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-oaisim_mme_LDADD = \
-	$(top_builddir)/GTPV1-U/libgtpv1u.la	\
-	$(top_builddir)/INTERTASK_INTERFACE/libitti.la	\
-	$(top_builddir)/S1AP/libs1ap.la	\
-	$(top_builddir)/SCTP/libsctpserver.la	\
-	$(top_builddir)/UTILS/TIMER/libtimer.la	\
-	$(top_builddir)/UTILS/libutils.la	\
-	$(top_builddir)/UDP/libudpserver.la
-
+oaisim_mme_LDADD = $(top_builddir)/GTPV1-U/libgtpv1u.la \
+	$(top_builddir)/INTERTASK_INTERFACE/libitti.la \
+	$(top_builddir)/S1AP/libs1ap.la \
+	$(top_builddir)/SGW-LITE/libsgw_lite.la \
+	$(top_builddir)/SCTP/libsctpserver.la \
+	$(top_builddir)/UTILS/TIMER/libtimer.la \
+	$(top_builddir)/UTILS/libutils.la \
+	$(top_builddir)/UDP/libudpserver.la $(am__append_2)
 all: all-am
 
 .SUFFIXES:

@@ -242,7 +242,8 @@ int sctp_send_msg(uint32_t sctpAssocId, uint16_t stream, const uint8_t *buffer, 
     fd = sctp_ref->fd;
 
     /* Send message on specified stream of the fd association */
-    if (sctp_sendmsg(fd, (const void *)buffer, length, NULL, 0, sctp_ref->ppid, 0, stream, 0, 0) < 0) {
+    if (sctp_sendmsg(fd, (const void *)buffer, length, NULL, 0,
+        ntohs(sctp_ref->ppid), 0, stream, 0, 0) < 0) {
         SCTP_ERROR("Scpt_sendmsg failed: %s\n", strerror(errno));
         return -1;
     }

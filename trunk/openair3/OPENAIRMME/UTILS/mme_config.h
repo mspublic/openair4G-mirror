@@ -29,6 +29,7 @@
 *******************************************************************************/
 
 #include <stdint.h>
+#include <sched.h>
 #include "mme_default_values.h"
 
 #ifndef MME_CONFIG_H_
@@ -45,6 +46,16 @@ typedef struct mme_config_s {
     struct {
         uint16_t port_number;
     } s1ap_config;
+    struct {
+        /* Defines the scheduling policy for each task thread.
+         * The value should be one of these macros:
+         * - SCHED_NORMAL
+         * - SCHED_FIFO
+         * - SCHED_RR
+         * - SCHED_BATCH
+         */
+        uint8_t sched_policy;
+    } itti_config;
 } mme_config_t;
 
 int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config);

@@ -27,25 +27,32 @@
                  06410 Biot FRANCE
 
 *******************************************************************************/
-
-#if HAVE_CONFIG_H
-# include "config.h"
-#endif
-
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 
+#if HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "mme_config.h"
+#include "gtpv1_u.h"
 
 #include "intertask_interface.h"
 #include "sctp_primitives_server.h"
 #include "udp_primitives_server.h"
 #include "s1ap_mme.h"
-#include "gtpv1_u.h"
 #include "log.h"
 #include "timer.h"
+#include "sgw_lite_defs.h"
+
+#if defined(ENABLE_USE_HSS)
+# include <freeDiameter/freeDiameter-host.h>
+# include <freeDiameter/libfdcore.h>
+# include "s6a_defs.h"
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -62,6 +69,10 @@ int main(int argc, char *argv[])
     s1ap_mme_init(&mme_config);
     gtpv1_u_init(&mme_config);
     timer_init(&mme_config);
+#if defined(ENABLE_USE_HSS)
+     s6a_init(&mme_config);
+#endif
+    sgw_lite_init(&mme_config);
 
     while(1) {
         sleep(1);

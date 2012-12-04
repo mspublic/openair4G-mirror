@@ -1220,7 +1220,7 @@ Index: skeletons/INTEGER.c
  				value, ct->lower_bound);
  			value += ct->lower_bound;
  			if((specs && specs->field_unsigned)
-@@ -659,6 +661,147 @@
+@@ -659,6 +661,149 @@
  	return rval;
  }
  
@@ -1304,10 +1304,10 @@ Index: skeletons/INTEGER.c
 +				if (ct->range_bits < 8) {
 +					value = per_get_few_bits(pd, ct->range_bits);
 +					if(value < 0) _ASN_DECODE_STARVED;
-+				} if (ct->range_bits == 8) {
++				} else if (ct->range_bits == 8) {
 +					if (aper_get_align(pd) < 0)
 +						_ASN_DECODE_FAILED;
-+					value = per_get_few_bits(pd, 8);
++					value = per_get_few_bits(pd, ct->range_bits);
 +					if(value < 0) _ASN_DECODE_STARVED;
 +				} else {
 +					/* Align */
@@ -1325,6 +1325,8 @@ Index: skeletons/INTEGER.c
 +				value += ct->lower_bound;
 +			}
 +			return rval;
++		} else {
++			_ASN_DECODE_FAILED;
 +		}
 +	} else {
 +		ASN_DEBUG("Decoding unconstrained integer %s", td->name);
@@ -1368,7 +1370,7 @@ Index: skeletons/INTEGER.c
  asn_enc_rval_t
  INTEGER_encode_uper(asn_TYPE_descriptor_t *td,
  	asn_per_constraints_t *constraints, void *sptr, asn_per_outp_t *po) {
-@@ -692,7 +835,7 @@
+@@ -692,7 +837,7 @@
  				|| uval > (unsigned long)ct->upper_bound)
  					inext = 1;
  			}
@@ -1377,7 +1379,7 @@ Index: skeletons/INTEGER.c
  				uval, st->buf[0], st->size,
  				ct->lower_bound, ct->upper_bound,
  				inext ? "ext" : "fix");
-@@ -709,7 +852,7 @@
+@@ -709,7 +854,7 @@
  				|| value > ct->upper_bound)
  					inext = 1;
  			}
@@ -1386,7 +1388,7 @@ Index: skeletons/INTEGER.c
  				value, st->buf[0], st->size,
  				ct->lower_bound, ct->upper_bound,
  				inext ? "ext" : "fix");
-@@ -744,7 +887,7 @@
+@@ -744,7 +889,7 @@
  	}
  
  	if(ct && ct->lower_bound) {
@@ -1395,7 +1397,7 @@ Index: skeletons/INTEGER.c
  		/* TODO: adjust lower bound */
  		_ASN_ENCODE_FAILED;
  	}
-@@ -761,6 +904,129 @@
+@@ -761,6 +906,129 @@
  	_ASN_ENCODED_OK(er);
  }
  
@@ -1525,7 +1527,7 @@ Index: skeletons/INTEGER.c
  int
  asn_INTEGER2long(const INTEGER_t *iptr, long *lptr) {
  	uint8_t *b, *end;
-@@ -822,6 +1088,66 @@
+@@ -822,6 +1090,66 @@
  }
  
  int
@@ -1592,7 +1594,7 @@ Index: skeletons/INTEGER.c
  asn_INTEGER2ulong(const INTEGER_t *iptr, unsigned long *lptr) {
  	uint8_t *b, *end;
  	unsigned long l;
-@@ -854,6 +1180,38 @@
+@@ -854,6 +1182,38 @@
  }
  
  int
@@ -1631,7 +1633,7 @@ Index: skeletons/INTEGER.c
  asn_ulong2INTEGER(INTEGER_t *st, unsigned long value) {
  	uint8_t *buf;
  	uint8_t *end;
-@@ -879,6 +1237,31 @@
+@@ -879,6 +1239,31 @@
  }
  
  int
@@ -1663,7 +1665,7 @@ Index: skeletons/INTEGER.c
  asn_long2INTEGER(INTEGER_t *st, long value) {
  	uint8_t *buf, *bp;
  	uint8_t *p;
-@@ -932,3 +1315,58 @@
+@@ -932,3 +1317,58 @@
  
  	return 0;
  }
@@ -2300,7 +2302,6 @@ Index: skeletons/constr_SET_OF.c
 +	rv.consumed = 0;
 +	return rv;
 +}
-\ No newline at end of file
 Index: skeletons/UTCTime.c
 ===================================================================
 --- skeletons/UTCTime.c	(revision 1410)
@@ -2776,7 +2777,7 @@ Index: skeletons/constr_CHOICE.c
  
  	if(constraints) ct = &constraints->value;
  	else if(td->per_constraints) ct = &td->per_constraints->value;
-@@ -984,8 +1065,89 @@
+@@ -984,8 +1065,88 @@
  		_ASN_ENCODED_OK(rval);
  	}
  }
@@ -2850,17 +2851,16 @@ Index: skeletons/constr_CHOICE.c
 +			return elm->type->aper_encoder(elm->type, elm->per_constraints,
 +										   memb_ptr, po);
 +	} else {
-+// 		asn_enc_rval_t rval;
-+// 		if(specs->ext_start == -1)
-+// 			_ASN_ENCODE_FAILED;
-+// 		if(aper_put_nsnnwn(po, present - specs->ext_start))
-+// 			_ASN_ENCODE_FAILED;
-+// 		if(aper_open_type_put(elm->type, elm->per_constraints,
-+// 			memb_ptr, po))
-+// 			_ASN_ENCODE_FAILED;
-+// 		rval.encoded = 0;
-+// 		_ASN_ENCODED_OK(rval);
-+        _ASN_ENCODE_FAILED;
++		asn_enc_rval_t rval;
++		if(specs->ext_start == -1)
++			_ASN_ENCODE_FAILED;
++		if(aper_put_nsnnwn(po, ct->range_bits, present - specs->ext_start))
++			_ASN_ENCODE_FAILED;
++		if(aper_open_type_put(elm->type, elm->per_constraints,
++			memb_ptr, po))
++			_ASN_ENCODE_FAILED;
++		rval.encoded = 0;
++		_ASN_ENCODED_OK(rval);
 +	}
 +}
 +
@@ -3848,7 +3848,7 @@ Index: skeletons/per_support.c
 +aper_put_nsnnwn(asn_per_outp_t *po, int range, int number) {
 +	int bytes;
  
-+	ASN_DEBUG("aper put nsnnwn n range %d, number %d", range, number);
++    ASN_DEBUG("aper put nsnnwn %d with range %d", number, range);
 +	/* 10.5.7.1 X.691 */
 +	if(range < 0) {
 +		int i;

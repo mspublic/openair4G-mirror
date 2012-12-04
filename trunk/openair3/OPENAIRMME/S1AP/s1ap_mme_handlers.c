@@ -159,10 +159,10 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assocId, uint32_t stream, struct s
         return -1;
     }
 
-    S1AP_DEBUG("New s1 setup request incoming from");
+    S1AP_DEBUG("New s1 setup request incoming from\n");
     if ((s1SetupRequest_p->presenceMask & S1SETUPREQUESTIES_ENBNAME_PRESENT) ==
         S1SETUPREQUESTIES_ENBNAME_PRESENT) {
-        S1AP_DEBUG(" %s ", s1SetupRequest_p->eNBname.buf);
+        S1AP_DEBUG("- eNB name: %s\n", s1SetupRequest_p->eNBname.buf);
         eNB_name = (char*)s1SetupRequest_p->eNBname.buf;
     }
     if (s1SetupRequest_p->global_ENB_ID.eNB_ID.present == ENB_ID_PR_homeENB_ID) {
@@ -172,7 +172,7 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assocId, uint32_t stream, struct s
             //TODO: handle case were size != 28 -> notify ? reject ?
         }
         eNB_id = (eNB_id_buf[0] << 20) + (eNB_id_buf[1] << 12) + (eNB_id_buf[2] << 4) + ((eNB_id_buf[3] & 0xf0) >> 4);
-        S1AP_DEBUG(" with home eNB id %u\n", eNB_id);
+        S1AP_DEBUG("- eNB id: %u\n", eNB_id);
     } else {
         // Macro eNB = 20 bits
         uint8_t *eNB_id_buf = s1SetupRequest_p->global_ENB_ID.eNB_ID.choice.macroENB_ID.buf;
@@ -180,7 +180,7 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assocId, uint32_t stream, struct s
             //TODO: handle case were size != 20 -> notify ? reject ?
         }
         eNB_id = (eNB_id_buf[0] << 12) + (eNB_id_buf[1] << 4) + ((eNB_id_buf[2] & 0xf0) >> 4);
-        S1AP_DEBUG(" with macro eNB id %u\n", eNB_id);
+        S1AP_DEBUG("- eNB id: %u\n", eNB_id);
     }
 
     if (nb_eNB_associated == MAX_NUMBER_OF_ENB) {
@@ -190,8 +190,8 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assocId, uint32_t stream, struct s
         /* Send an overload cause... */
         s1SetupFailure.cause.present = Cause_PR_misc;
         s1SetupFailure.cause.choice.misc = CauseMisc_control_processing_overload;
-        S1AP_DEBUG("There is too much eNB connected to MME, rejecting the association\n"
-               "Connected = %d, maximum allowed = %d\n", nb_eNB_associated, MAX_NUMBER_OF_ENB);
+        S1AP_DEBUG("There is too much eNB connected to MME, rejecting the association\n");
+        S1AP_DEBUG("Connected = %d, maximum allowed = %d\n", nb_eNB_associated, MAX_NUMBER_OF_ENB);
         s1ap_mme_encode_s1setupfailure(&s1SetupFailure, receivedMessage->msg.s1apSctpNewMessageInd.assocId);
         return -1;
     }
@@ -208,6 +208,8 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assocId, uint32_t stream, struct s
         }
         eNB_association->s1_state = S1AP_RESETING;
         eNB_association->eNB_id = eNB_id;
+        eNB_association->default_paging_drx = s1SetupRequest_p->defaultPagingDRX;
+
         if (eNB_name != NULL) {
             memcpy(eNB_association->eNB_name, s1SetupRequest_p->eNBname.buf, s1SetupRequest_p->eNBname.size);
         }
@@ -345,51 +347,60 @@ int s1ap_mme_handle_initial_ue_message(uint32_t assocId, uint32_t stream, struct
         }
         s1ap_dump_eNB(ue_ref->eNB);
         {
-            char address[] = { 127, 0, 0, 1 };
-            char supportedAlgorithms[] = { 0x02, 0xa0 };
-            char securityKey[] = { 0xfd, 0x23, 0xad, 0x22, 0xd0, 0x21, 0x02, 0x90, 0x19, 0xed,
-                                   0xcf, 0xc9, 0x78, 0x44, 0xba, 0xbb, 0x34, 0x6e, 0xff, 0x89,
-                                   0x1c, 0x3a, 0x56, 0xf0, 0x81, 0x34, 0xdd, 0xee, 0x19, 0x55,
-                                   0xf2, 0x1f };
-            InitialContextSetupRequestIEs_t initialContextSetupRequest;
-            E_RABToBeSetupItemCtxtSUReq_t   e_RABToBeSetup;
+            MessageDef              *message_p;
+            SgwCreateSessionRequest *session_request_p;
 
-            memset(&initialContextSetupRequest, 0, sizeof(InitialContextSetupRequestIEs_t));
-            memset(&e_RABToBeSetup, 0, sizeof(E_RABToBeSetupItemCtxtSUReq_t));
+            message_p = alloc_new_message(TASK_S1AP, TASK_SGW_LITE, SGW_CREATE_SESSION_REQUEST);
+            if (message_p == NULL) return -1;
 
-            initialContextSetupRequest.mme_ue_s1ap_id = ue_ref->mme_ue_s1ap_id;
-            initialContextSetupRequest.eNB_UE_S1AP_ID = ue_ref->eNB_ue_s1ap_id;
+            /* WARNING:
+             * Some parameters should be provided by NAS Layer:
+             * - ue_time_zone
+             * - pdn type
+             * - imsi
+             * - msisdn
+             * - mei
+             * - uli
+             * - uci
+             * - bearer level qos
+             * Some parameters should be provided bt HSS:
+             * - PGW address for CP
+             * - paa
+             * - ambr
+             * and by MME Application layer:
+             * - selection_mode
+             * Set these parameters with random values for now.
+             */
 
-            /* uEaggregateMaximumBitrateDL and uEaggregateMaximumBitrateUL expressed in term of bits/sec */
-            asn_int642INTEGER(&initialContextSetupRequest.uEaggregateMaximumBitrate.uEaggregateMaximumBitRateDL, 100000000UL);
-            asn_int642INTEGER(&initialContextSetupRequest.uEaggregateMaximumBitrate.uEaggregateMaximumBitRateUL, 50000000UL);
+            session_request_p = &message_p->msg.sgwCreateSessionRequest;
+            memset(session_request_p, 0, sizeof(SgwCreateSessionRequest));
 
-            e_RABToBeSetup.e_RAB_ID = 12; /* ??? */
-            e_RABToBeSetup.e_RABlevelQoSParameters.qCI = 0; // ??
-            e_RABToBeSetup.e_RABlevelQoSParameters.allocationRetentionPriority.priorityLevel = 15; //No priority
-            e_RABToBeSetup.e_RABlevelQoSParameters.allocationRetentionPriority.pre_emptionCapability = Pre_emptionCapability_shall_not_trigger_pre_emption;
-            e_RABToBeSetup.e_RABlevelQoSParameters.allocationRetentionPriority.pre_emptionVulnerability = Pre_emptionVulnerability_not_pre_emptable;
-            e_RABToBeSetup.transportLayerAddress.buf = (uint8_t *)address; //IPv4, address = 32 bits
-            e_RABToBeSetup.transportLayerAddress.size = 4;
-            e_RABToBeSetup.transportLayerAddress.bits_unused = 0;
-            e_RABToBeSetup.gTP_TEID.buf  = (uint8_t*)address;
-            e_RABToBeSetup.gTP_TEID.size = 4;
+            /* Local MME TEID */
+            ue_ref->teid = 1;
 
-            ASN_SEQUENCE_ADD(&initialContextSetupRequest.e_RABToBeSetupListCtxtSUReq, &e_RABToBeSetup);
+            /* As the create session request is the first exchanged message and as
+             * no tunnel had been previously setup, the distant teid is set to 0.
+             * The remote teid will be provided in the response message.
+             */
+            session_request_p->teid = 0;
+            session_request_p->rat_type = RAT_TYPE_EUTRAN;
 
-            initialContextSetupRequest.ueSecurityCapabilities.encryptionAlgorithms.buf = (uint8_t *)supportedAlgorithms;
-            initialContextSetupRequest.ueSecurityCapabilities.encryptionAlgorithms.size = 2;
-            initialContextSetupRequest.ueSecurityCapabilities.encryptionAlgorithms.bits_unused = 0;
+            /* Asking for default bearer in initial UE message */
+            session_request_p->sender_fteid_for_cp.teid = 1;
+            session_request_p->sender_fteid_for_cp.interface_type = S11_MME_GTP_C;
+            session_request_p->bearer_to_create.eps_bearer_id = 5;
+            session_request_p->bearer_to_create.bearer_level_qos.pci = PRE_EMPTION_CAPABILITY_DISABLED;
+            session_request_p->bearer_to_create.bearer_level_qos.mbr_uplink = 50000;
+            session_request_p->bearer_to_create.bearer_level_qos.mbr_uplink = 100000;
 
-            initialContextSetupRequest.ueSecurityCapabilities.integrityProtectionAlgorithms.buf = (uint8_t *)supportedAlgorithms;
-            initialContextSetupRequest.ueSecurityCapabilities.integrityProtectionAlgorithms.size = 2;
-            initialContextSetupRequest.ueSecurityCapabilities.integrityProtectionAlgorithms.bits_unused = 0;
+            /* Set PDN type for pdn_type and PAA even if this IE is redundant */
+            session_request_p->pdn_type = IPv4;
+            session_request_p->paa.pdn_type = IPv4;
+            /* UE DHCPv4 allocated ip address */
+            session_request_p->paa.ipv4_address = 0x00000000;
 
-            initialContextSetupRequest.securityKey.buf = (uint8_t*)securityKey; /* 256 bits length */
-            initialContextSetupRequest.securityKey.size = 32;
-            initialContextSetupRequest.securityKey.bits_unused = 0;
-
-            return s1ap_mme_encode_initial_context_setup_request(&initialContextSetupRequest, ue_ref);
+            session_request_p->selection_mode = MS_O_N_P_APN_S_V;
+            return send_msg_to_task(TASK_SGW_LITE, message_p);
         }
     }
     return 0;
@@ -449,7 +460,10 @@ int s1ap_mme_handle_initial_context_setup_response(
     struct s1ap_message_s *message) {
 
     InitialContextSetupResponseIEs_t *initialContextSetupResponseIEs_p;
-    ue_description_t *ue_ref;
+    ue_description_t                 *ue_ref;
+    SgwModifyBearerRequest           *modify_request_p;
+    MessageDef                       *message_p;
+    E_RABSetupItemCtxtSURes_t        *eRABSetupItemCtxtSURes_p;
 
     initialContextSetupResponseIEs_p = &message->msg.initialContextSetupResponseIEs;
 
@@ -463,9 +477,30 @@ int s1ap_mme_handle_initial_context_setup_response(
                    ue_ref->eNB_ue_s1ap_id, (int)initialContextSetupResponseIEs_p->eNB_UE_S1AP_ID);
         return -1;
     }
+
+    if (initialContextSetupResponseIEs_p->e_RABSetupListCtxtSURes.e_RABSetupItemCtxtSURes.count != 1) {
+        S1AP_DEBUG("E-RAB creation has failed\n");
+        return -1;
+    }
+
     ue_ref->s1_ue_state = S1AP_UE_CONNECTED;
-    //TODO: check E-RAB lists
-    return 0;
+
+    message_p = alloc_new_message(TASK_SGW_LITE, TASK_S1AP, SGW_MODIFY_BEARER_REQUEST);
+
+    if (message_p == NULL) {
+        return -1;
+    }
+
+    eRABSetupItemCtxtSURes_p = (E_RABSetupItemCtxtSURes_t*)initialContextSetupResponseIEs_p->e_RABSetupListCtxtSURes.e_RABSetupItemCtxtSURes.array[0];
+
+    modify_request_p = &message_p->msg.sgwModifyBearerRequest;
+    modify_request_p->teid = ue_ref->teid;
+    modify_request_p->bearer_context_to_modify.eps_bearer_id     = eRABSetupItemCtxtSURes_p->e_RAB_ID;
+    modify_request_p->bearer_context_to_modify.s1_eNB_fteid.teid = *((uint32_t*)eRABSetupItemCtxtSURes_p->gTP_TEID.buf);
+    modify_request_p->bearer_context_to_modify.s1_eNB_fteid.ipv4 = 1;
+    memcpy(&modify_request_p->bearer_context_to_modify.s1_eNB_fteid.ipv4_address, eRABSetupItemCtxtSURes_p->transportLayerAddress.buf, 4);
+
+    return send_msg_to_task(TASK_SGW_LITE, message_p);
 }
 
 int s1ap_mme_handle_ue_context_release_request(uint32_t assocId, uint32_t stream, struct s1ap_message_s *message) {
@@ -618,4 +653,90 @@ int s1ap_handle_sctp_deconnection(uint8_t assoc_id) {
     S1AP_DEBUG("Removed eNB attached to assoc_id: %d\n",
                assoc_id);
     return 0;
+}
+
+int s1ap_handle_create_session_response(SgwCreateSessionResponse *session_response_p) {
+    /* We received create session response from S-GW on S11 interface abstraction.
+     * At least one bearer has been established. We can now send s1ap initial context setup request
+     * message to eNB.
+     */
+    char supportedAlgorithms[] = { 0x02, 0xa0 };
+    char securityKey[] = { 0xfd, 0x23, 0xad, 0x22, 0xd0, 0x21, 0x02, 0x90, 0x19, 0xed,
+                            0xcf, 0xc9, 0x78, 0x44, 0xba, 0xbb, 0x34, 0x6e, 0xff, 0x89,
+                            0x1c, 0x3a, 0x56, 0xf0, 0x81, 0x34, 0xdd, 0xee, 0x19, 0x55,
+                            0xf2, 0x1f };
+
+    ue_description_t *ue_ref = NULL;
+    InitialContextSetupRequestIEs_t initialContextSetupRequest;
+    E_RABToBeSetupItemCtxtSUReq_t   e_RABToBeSetup;
+
+    if ((session_response_p->bearer_context_created.s1u_sgw_fteid.ipv4 == 0) &&
+        (session_response_p->bearer_context_created.s1u_sgw_fteid.ipv6 == 0)) {
+
+        S1AP_ERROR("No IP address provided for transport layer address\n"
+                   "-->Sending Intial context setup failure\n");
+        return -1;
+    }
+
+    if ((ue_ref = s1ap_is_teid_in_list(session_response_p->teid)) == NULL) {
+        S1AP_DEBUG("Teid %d is not attached to any UE context\n", session_response_p->teid);
+        return -1;
+    }
+
+    memset(&initialContextSetupRequest, 0, sizeof(InitialContextSetupRequestIEs_t));
+    memset(&e_RABToBeSetup, 0, sizeof(E_RABToBeSetupItemCtxtSUReq_t));
+
+    initialContextSetupRequest.mme_ue_s1ap_id = ue_ref->mme_ue_s1ap_id;
+    initialContextSetupRequest.eNB_UE_S1AP_ID = ue_ref->eNB_ue_s1ap_id;
+
+    /* uEaggregateMaximumBitrateDL and uEaggregateMaximumBitrateUL expressed in term of bits/sec */
+    asn_int642INTEGER(&initialContextSetupRequest.uEaggregateMaximumBitrate.uEaggregateMaximumBitRateDL, 100000000UL);
+    asn_int642INTEGER(&initialContextSetupRequest.uEaggregateMaximumBitrate.uEaggregateMaximumBitRateUL, 50000000UL);
+
+    e_RABToBeSetup.e_RAB_ID = session_response_p->bearer_context_created.eps_bearer_id; /* ??? */
+    e_RABToBeSetup.e_RABlevelQoSParameters.qCI = 0; // ??
+    e_RABToBeSetup.e_RABlevelQoSParameters.allocationRetentionPriority.priorityLevel = 15; //No priority
+    e_RABToBeSetup.e_RABlevelQoSParameters.allocationRetentionPriority.pre_emptionCapability = Pre_emptionCapability_shall_not_trigger_pre_emption;
+    e_RABToBeSetup.e_RABlevelQoSParameters.allocationRetentionPriority.pre_emptionVulnerability = Pre_emptionVulnerability_not_pre_emptable;
+
+    e_RABToBeSetup.gTP_TEID.buf  = calloc(4, sizeof(uint8_t));
+    memcpy(e_RABToBeSetup.gTP_TEID.buf, &session_response_p->bearer_context_created.s1u_sgw_fteid.teid, 4);
+    e_RABToBeSetup.gTP_TEID.size = 4;
+    if ((session_response_p->bearer_context_created.s1u_sgw_fteid.ipv4 == 1) &&
+        (session_response_p->bearer_context_created.s1u_sgw_fteid.ipv6 == 0)) {
+        /* Only IPv4 supported */
+        e_RABToBeSetup.transportLayerAddress.buf = (uint8_t*)&session_response_p->bearer_context_created.s1u_sgw_fteid.ipv4_address;
+        e_RABToBeSetup.transportLayerAddress.size = 4;
+        e_RABToBeSetup.transportLayerAddress.bits_unused = 0;
+    } else if ((session_response_p->bearer_context_created.s1u_sgw_fteid.ipv4 == 0) &&
+               (session_response_p->bearer_context_created.s1u_sgw_fteid.ipv6 == 1)) {
+        /* Only IPv6 supported */
+        e_RABToBeSetup.transportLayerAddress.buf = (uint8_t*)&session_response_p->bearer_context_created.s1u_sgw_fteid.ipv4_address;
+        e_RABToBeSetup.transportLayerAddress.size = 16;
+        e_RABToBeSetup.transportLayerAddress.bits_unused = 0;
+    } else if ((session_response_p->bearer_context_created.s1u_sgw_fteid.ipv4 == 1) &&
+               (session_response_p->bearer_context_created.s1u_sgw_fteid.ipv6 == 1)) {
+        /* Both IPv4 and IPv6 supported */
+        e_RABToBeSetup.transportLayerAddress.buf = calloc(20, sizeof(uint8_t));
+        e_RABToBeSetup.transportLayerAddress.size = 20;
+        e_RABToBeSetup.transportLayerAddress.bits_unused = 0;
+        memcpy(e_RABToBeSetup.transportLayerAddress.buf, &session_response_p->bearer_context_created.s1u_sgw_fteid.ipv4_address, 4);
+        memcpy(e_RABToBeSetup.transportLayerAddress.buf + 4, session_response_p->bearer_context_created.s1u_sgw_fteid.ipv6_address, 16);
+    }
+
+    ASN_SEQUENCE_ADD(&initialContextSetupRequest.e_RABToBeSetupListCtxtSUReq, &e_RABToBeSetup);
+
+    initialContextSetupRequest.ueSecurityCapabilities.encryptionAlgorithms.buf = (uint8_t *)supportedAlgorithms;
+    initialContextSetupRequest.ueSecurityCapabilities.encryptionAlgorithms.size = 2;
+    initialContextSetupRequest.ueSecurityCapabilities.encryptionAlgorithms.bits_unused = 0;
+
+    initialContextSetupRequest.ueSecurityCapabilities.integrityProtectionAlgorithms.buf = (uint8_t *)supportedAlgorithms;
+    initialContextSetupRequest.ueSecurityCapabilities.integrityProtectionAlgorithms.size = 2;
+    initialContextSetupRequest.ueSecurityCapabilities.integrityProtectionAlgorithms.bits_unused = 0;
+
+    initialContextSetupRequest.securityKey.buf = (uint8_t*)securityKey; /* 256 bits length */
+    initialContextSetupRequest.securityKey.size = 32;
+    initialContextSetupRequest.securityKey.bits_unused = 0;
+
+    return s1ap_mme_encode_initial_context_setup_request(&initialContextSetupRequest, ue_ref);
 }
