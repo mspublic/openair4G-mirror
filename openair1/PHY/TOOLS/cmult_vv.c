@@ -8,6 +8,12 @@
 static  __m128i shift     __attribute__ ((aligned(16)));
 static  __m128i m0,m1,m2,m4     __attribute__ ((aligned(16)));
 
+#ifndef __SSE3__
+__m128i zero;
+#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
+#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
+#endif
+
 //#define DEBUG_CMULT
 
 int mult_cpx_vector(s16 *x1, 
