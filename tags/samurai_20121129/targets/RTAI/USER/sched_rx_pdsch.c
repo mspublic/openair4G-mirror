@@ -214,7 +214,7 @@ static void * rx_pdsch_thread(void *param) {
 
       }
       // trigger DLSCH decoding thread
-      phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
+      //phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
 
       dlsch_thread_index = 0;
 	

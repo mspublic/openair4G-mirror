@@ -3911,7 +3911,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     // for EXMIMO, limit the MCS to 16QAM as well
 #ifdef EXMIMO
-    eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,9);
+    eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
 #endif    
 
     // Get candidate harq_pid from PHY

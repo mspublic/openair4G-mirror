@@ -842,9 +842,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
 #endif //OPENAIR2
 	  if (abstraction_flag==0) {
+	    /*
 	    if (phy_vars_ue->frame%100==0) {
 	      LOG_I(PHY,"Encoding ulsch\n");
 	    }
+	    */
 	    if (ulsch_encoding(ulsch_input_buffer,
 			       phy_vars_ue,
 			       harq_pid,
@@ -1180,7 +1182,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  //phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
 	  
 	  if (abstraction_flag == 0) {
-	    LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+	    LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->frame,
 		  next_slot>>1,
@@ -1197,7 +1199,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = AMP;
 #endif
 	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
-	    LOG_I(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
+	    LOG_D(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
 		  phy_vars_ue->Mod_id,
 		  get_PL(phy_vars_ue->Mod_id,eNB_id),
 		  phy_vars_ue->tx_power_dBm,
@@ -1237,9 +1239,11 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
 
   if (abstraction_flag==0) {
+    /*
     if (phy_vars_ue->frame%100==1) {
       LOG_I(PHY,"frame %d, next_slot %d, setting switch to rx\n",phy_vars_ue->frame, next_slot);
     }
+    */
     
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
 #ifdef CBMIMO1 //this is the CBMIMO1 case
@@ -1402,6 +1406,7 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
     mac_xface->macphy_exit("should never happen");
   }
  
+  /*
 if ((last_slot==14) || (last_slot==15)) {
   for (i=0; i<1; i++)
     for (j=0; j<2; j++) { 
@@ -1415,7 +1420,8 @@ if ((last_slot==14) || (last_slot==15)) {
 	     phy_vars_ue->lte_frame_parms.ofdm_symbol_size*sizeof(int));
     }
   }
-
+  */
+  
   if (last_slot==0) {
     emos_dump_UE.timestamp = rt_get_time_ns();
     emos_dump_UE.frame_rx = phy_vars_ue->frame;
@@ -2136,24 +2142,25 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	if (pthread_mutex_lock (&rx_pdsch_mutex[rx_pdsch_thread_index]) != 0) {               // Signal MAC_PHY Scheduler
 	  LOG_E(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",phy_vars_ue->Mod_id);     // lock before accessing shared resource
 	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	  return(-1);
-	}
-	rx_pdsch_instance_cnt[rx_pdsch_thread_index]++;
-	(last_slot == 0) ? (rx_pdsch_slot[rx_pdsch_thread_index] = 19) : (rx_pdsch_slot[rx_pdsch_thread_index] = (last_slot-1));
-	pthread_mutex_unlock (&rx_pdsch_mutex[rx_pdsch_thread_index]);
-	
-	if (rx_pdsch_instance_cnt[rx_pdsch_thread_index] == 0) {
-	  if (pthread_cond_signal(&rx_pdsch_cond[rx_pdsch_thread_index]) != 0) {
-	    LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for rx_pdsch_cond[%d]\n",phy_vars_ue->Mod_id,rx_pdsch_thread_index);
+	} else {
+	  rx_pdsch_instance_cnt[rx_pdsch_thread_index]++;
+	  (last_slot == 0) ? (rx_pdsch_slot[rx_pdsch_thread_index] = 19) : (rx_pdsch_slot[rx_pdsch_thread_index] = (last_slot-1));
+	  pthread_mutex_unlock (&rx_pdsch_mutex[rx_pdsch_thread_index]);
+	  
+	  if (rx_pdsch_instance_cnt[rx_pdsch_thread_index] == 0) {
+	    if (pthread_cond_signal(&rx_pdsch_cond[rx_pdsch_thread_index]) != 0) {
+	      LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for rx_pdsch_cond[%d]\n",phy_vars_ue->Mod_id,rx_pdsch_thread_index);
+	      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
+	    }
+	  }
+	  else {
+	    LOG_W(PHY,"[UE  %d] Frame=%d, Slot=%d, RX_PDSCH thread for rx_pdsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot,rx_pdsch_thread_index);
 	    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	    return(-1);
 	  }
 	}
-	else {
-	  LOG_W(PHY,"[UE  %d] RX_PDSCH thread for rx_pdsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,rx_pdsch_thread_index);
-	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	  return(-1);
-	}
+	// trigger DLSCH decoding thread
+	if (!(last_slot%2)) // odd slots
+	  phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
       }
     }
 #endif
