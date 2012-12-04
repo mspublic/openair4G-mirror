@@ -496,7 +496,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  return(-1);
 	}
       else if (i_mod == 4)
-	dlsch_16qam_16qam_llr(frame_parms,
+	dlsch_16qam_16qam_llr_128(frame_parms,
 			      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
 			      lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
 			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,

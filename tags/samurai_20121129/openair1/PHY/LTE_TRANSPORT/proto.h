@@ -291,6 +291,14 @@ void qam16_qam16(short *stream0_in,
                  short *rho01,
                  int length);
 
+void qam16_qam16_128(short *stream0_in,
+                 short *stream1_in,
+                 short *ch_mag,
+                 short *ch_mag_i,
+                 short *stream0_out,
+                 short *rho01,
+                 int length);
+
 /** \brief This function perform LLR computation for dual-stream (16QAM/16QAM) transmission.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
@@ -305,6 +313,19 @@ void qam16_qam16(short *stream0_in,
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
 int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
+                          int **rxdataF_comp,
+                          int **rxdataF_comp_i,
+                          int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
+                          int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+                          int **rho_i,
+                          short *dlsch_llr,
+                          unsigned char symbol,
+                          unsigned char first_symbol_flag,
+                          unsigned short nb_rb,
+                          u16 pbch_pss_sss_adjust,
+                          short **llr16p);
+
+int dlsch_16qam_16qam_llr_128(LTE_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
                           int **rxdataF_comp_i,
                           int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
