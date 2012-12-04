@@ -95,13 +95,20 @@ class ManagementClientManager {
 		 * @param eventType Type/subtype of event the packet was sent for
 		 * @return ManagementClientManager::Task for the caller
 		 */
-		ManagementClientManager::Task updateManagementClientState(udp::endpoint& clientEndpoint, EventType eventType);
+		ManagementClientManager::Task updateClientState(const udp::endpoint& clientEndpoint, EventType eventType);
 		/**
 		 * Returns relevant ManagementClient of given type
 		 *
 		 * @return A const pointer of the ManagementClient object of given type
 		 */
 		const ManagementClient* getClientByType(ManagementClient::ManagementClientType clientType) const;
+		/**
+		 * Returns the client at given end
+		 *
+		 * @param endPoint Connection end point information of type udp::endpoint
+		 * @return A pointer of the relevant ManagementClient object
+		 */
+		ManagementClient* getClientByEndpoint(const udp::endpoint& endPoint);
 		/**
 		 * Tells if GN is connected
 		 *

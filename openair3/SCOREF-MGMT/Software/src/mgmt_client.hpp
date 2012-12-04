@@ -97,7 +97,7 @@ class ManagementClient {
 		 * @param locationUpdateInterval Determines how frequent the location update will be performed
 		 * @logger Logger object reference
 		 */
-		ManagementClient(ManagementInformationBase& mib, udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		ManagementClient(ManagementInformationBase& mib, const udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
@@ -169,6 +169,29 @@ class ManagementClient {
 		 */
 		bool operator<(const ManagementClient& client) const;
 		/**
+		 * This is called when we send a packet to this client that
+		 * requires a response
+		 *
+		 * @param none
+		 * @return none
+		 */
+		void waitingForReply();
+		/**
+		 * This is called when we receive a reply corresponding to the
+		 * request packet we sent to this client
+		 *
+		 * @param none
+		 * @return none
+		 */
+		void replyReceived();
+		/**
+		 * Returns if this client has replied to the last packet we sent
+		 *
+		 * @param none
+		 * @return true if this client is alive, false otherwise
+		 */
+		bool isAlive();
+		/**
 		 * Returns string representation of this client
 		 *
 		 * @return std::string representation of this client
@@ -204,6 +227,11 @@ class ManagementClient {
 		 * String representations for Management Client types
 		 */
 		map<ManagementClient::ManagementClientType, string> clientTypeStringMap;
+		/**
+		 * True if this client has replied to the last packet we sent to
+		 * it that requires a response, false otherwise
+		 */
+		bool repliedToTheLastPacket;
 };
 
 #endif /* MGMT_CLIENT_HPP_ */

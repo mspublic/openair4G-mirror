@@ -44,7 +44,7 @@
 #include <boost/lexical_cast.hpp>
 #include "mgmt_client.hpp"
 
-ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
+ManagementClient::ManagementClient(ManagementInformationBase& mib, const udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
 	: mib(mib), clientEndpoint(clientEndpoint), logger(logger) {
 	/**
 	 * Check that source port is not an ephemeral port which would
@@ -69,6 +69,10 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, udp::endpoint
 	 */
 	state = ManagementClient::OFFLINE;
 	type = ManagementClient::UNKNOWN;
+	/**
+	 * We are not waiting a reply from this client now
+	 */
+	repliedToTheLastPacket = true;
 }
 
 ManagementClient::ManagementClient(const ManagementClient& managementClient)
@@ -100,8 +104,8 @@ bool ManagementClient::setState(ManagementClient::ManagementClientState state) {
 	if (this->state == state)
 		return true;
 
-	this->state = state;
 	logger.info("State has changed from " + clientStateStringMap[this->state] + " to " + clientStateStringMap[state]);
+	this->state = state;
 
 	return true;
 }
@@ -128,6 +132,18 @@ bool ManagementClient::operator<(const ManagementClient& client) const {
 		return true;
 
 	return false;
+}
+
+void ManagementClient::waitingForReply() {
+	repliedToTheLastPacket = false;
+}
+
+void ManagementClient::replyReceived() {
+	repliedToTheLastPacket = true;
+}
+
+bool ManagementClient::isAlive() {
+	return state == ManagementClient::ONLINE && repliedToTheLastPacket == true;
 }
 
 string ManagementClient::toString() {

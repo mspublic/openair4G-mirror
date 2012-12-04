@@ -46,6 +46,7 @@
 GeonetNetworkStateEventPacket::GeonetNetworkStateEventPacket(ManagementInformationBase& mib, vector<unsigned char> packetBuffer, Logger& logger)
 	: GeonetPacket(packetBuffer, logger), mib(mib) {
 	if (parse(packetBuffer)) {
+		logger.info(this->toString());
 		logger.info("MIB is updated with incoming network state information");
 	}
 }
@@ -55,6 +56,16 @@ GeonetNetworkStateEventPacket::~GeonetNetworkStateEventPacket() {
 
 string GeonetNetworkStateEventPacket::toString() const {
 	stringstream ss;
+
+	ss << "NetworkState[RxPackets:" << mib.getNetworkState().rxPackets
+		<< " rxBytes:" << mib.getNetworkState().rxBytes
+		<< " txPackets:" << mib.getNetworkState().txPackets
+		<< " txBytes:" << mib.getNetworkState().txBytes
+		<< " toUpperLayer:" << mib.getNetworkState().toUpperLayerPackets
+		<< " discarded:" << mib.getNetworkState().discardedPackets
+		<< " duplicate:" << mib.getNetworkState().duplicatePackets
+		<< " forwarded:" << mib.getNetworkState().forwardedPackets
+		<< "]";
 
 	return ss.str();
 }

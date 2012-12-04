@@ -81,10 +81,28 @@ ManagementServer::~ManagementServer() {
 
 bool ManagementServer::sendWirelessStateRequest() {
 	/**
+	 * Fetch and validate client object
+	 */
+	ManagementClient* geoNetworkingClient = clientManager.getClientByEndpoint(recipient);
+
+	if (!geoNetworkingClient)
+		return false;
+
+	/**
 	 * Check if there's a GN connected
 	 */
 	if (!clientManager.isGnConnected()) {
 		logger.warning("Wanted to send a Wireless Status Request but GN is not connected...");
+		return false;
+	}
+
+	/**
+	 * Check if we have received a reply for the last packet we sent
+	 */
+	if (!geoNetworkingClient->isAlive()) {
+		logger.error("This client did not reply to the last packet we sent, marking it as OFFLINE");
+		geoNetworkingClient->setState(ManagementClient::OFFLINE);
+
 		return false;
 	}
 
@@ -103,6 +121,8 @@ bool ManagementServer::sendWirelessStateRequest() {
 			boost::bind(&ManagementServer::handleSend, this,
 					ba::placeholders::error,
 					ba::placeholders::bytes_transferred));
+
+	geoNetworkingClient->waitingForReply();
 
 	/**
 	 * Reset TX buffer
@@ -194,7 +214,7 @@ void ManagementServer::handleClientData() {
 		 * Inform Client Manager of this sender
 		 */
 		try {
-			task = clientManager.updateManagementClientState(recipient, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxData));
+			task = clientManager.updateClientState(recipient, (EventType)GeonetPacket::parseEventTypeOfPacketBuffer(rxData));
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot update Management Client's state according to incoming data!");
 			throw;
