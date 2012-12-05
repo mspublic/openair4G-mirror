@@ -145,7 +145,7 @@ extern s16 prach_ifft[4][1024*2];
 
 runmode_t mode;
 int rx_input_level_dBm;
-int otg_enabled = 1;
+int otg_enabled = 0;
 
 int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
