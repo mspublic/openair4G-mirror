@@ -1,3 +1,5 @@
+#!bin/sh
+
 ## INSTRUCTIONS
 ## - check the coherence of the OPENAIRITS_DIR and MOD_DIR with YOUR platform
 ## - configure the module dependencies by running the following command:
@@ -9,12 +11,12 @@
 ## run the following shell
 ## voila !!
 
-# Interface configuration (interface type, MAC address, IP address, disable ARP)
-iw phy phy0 interface add wlan0 type ibss 4addr off
-ifconfig wlan0 hw ether 10:11:12:13:14:15
-ifconfig wlan0 192.168.1.1 up -arp
-
-# Static ARP table
-arp -i wlan0 -s 192.168.1.2 10:21:22:23:24:25
-arp -i wlan0 -s 192.168.1.255 FF:FF:FF:FF:FF:FF
+#Environment variables
+export MOD_DIR=/lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates
+export OPENAIR_HOME=/home/thales/openair4G
+export OPENAIR1_DIR=$OPENAIR_HOME/openair1
+export OPENAIR2_DIR=$OPENAIR_HOME/openair2
+export OPENAIR3_DIR=$OPENAIR_HOME/openair3
+export OPENAIR_TARGETS=$OPENAIR_HOME/targets
+export OPENAIRITS_DIR=$OPENAIR_HOME/openairITS
 

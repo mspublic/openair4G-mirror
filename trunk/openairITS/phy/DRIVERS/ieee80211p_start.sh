@@ -12,7 +12,7 @@
 ## voila !!
 
 #Path configuration
-MOD_DIR=/lib/modules/`uname -r`/kernel
+#MOD_DIR=/lib/modules/`uname -r`/kernel
 
 #Modules compilation
 cd ${OPENAIRITS_DIR}/mac/DOT11/
@@ -34,4 +34,8 @@ sudo cp ${OPENAIRITS_DIR}/mac/DOT11/net/mac80211/mac80211_eurecom.ko ${MOD_DIR}/
 cd ${OPENAIRITS_DIR}/phy/DRIVERS/
 make clean
 make
+
+# Module loading
+modprobe mac80211_eurecom
+insmod ${OPENAIRITS_DIR}/phy/DRIVERS/ieee80211p.ko
 
