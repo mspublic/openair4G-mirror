@@ -12,7 +12,6 @@
 ## voila !!
 
 #Environment variables
-
 export OPENAIR_HOME=/home/thales/openair4G
 export OPENAIR1_DIR=$OPENAIR_HOME/openair1
 export OPENAIR2_DIR=$OPENAIR_HOME/openair2
