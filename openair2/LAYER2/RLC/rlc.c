@@ -362,7 +362,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
     // now demux is done at PDCP 
     //  if ((is_data_planeP)) { 
 #ifdef DEBUG_RLC_PDCP_INTERFACE
-      msg("[RLC] TTI %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
+    LOG_D(RLC,"TTI %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
 	  frame, module_idP,
 	  sduP,
 	  sdu_sizeP,
