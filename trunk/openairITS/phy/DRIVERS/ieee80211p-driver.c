@@ -395,7 +395,7 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 	/* Return value */
 	int ret = 0;
 
-	printk(KERN_ERR "ieee80211p_tasklet_tx: receiving data from ieee80211\n");
+	printk(KERN_ERR "ieee80211p_tx: receiving data from ieee80211\n");
 	
 	if (qnum >= IEEE80211P_NUM_TXQ) {
 		printk(KERN_ERR "ieee80211p_tx: wrong queue number\n");
@@ -445,7 +445,7 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 	/* Free the old skb */
 	dev_kfree_skb_any(skb);
 
-	printk(KERN_ERR "ieee80211p_tasklet_tx: sending data to PHY using pid = %d\n",priv->pid_softmodem);
+	printk(KERN_ERR "ieee80211p_tx: sending data to PHY using pid = %d\n",priv->pid_softmodem);
 
     ret = netlink_unicast(priv->nl_sock,nlskb,priv->pid_softmodem,NETLINK_80211P_GROUP);
 
