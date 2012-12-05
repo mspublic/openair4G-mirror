@@ -17,8 +17,8 @@ MOD_DIR=/lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates
 
 #Modules compilation
 cd ${OPENAIRITS_DIR}/mac/DOT11/
-make clean
-make MAC=1
+sudo make clean
+sudo make MAC=1
 
 sudo rm ${MOD_DIR}/compat/compat.ko
 sudo rm ${MOD_DIR}/net/wireless/cfg80211.ko
@@ -33,11 +33,9 @@ sudo cp ${OPENAIRITS_DIR}/mac/DOT11/net/wireless/cfg80211.ko ${MOD_DIR}/net/wire
 sudo cp ${OPENAIRITS_DIR}/mac/DOT11/net/mac80211/mac80211_eurecom.ko ${MOD_DIR}/net/mac80211/mac80211_eurecom.ko
 
 cd ${OPENAIRITS_DIR}/phy/DRIVERS/
-make clean
-make
+sudo make clean
+sudo make
 
-# Module loading
-sudo depmod -a
-sudo modprobe mac80211_eurecom
-sudo insmod ${OPENAIRITS_DIR}/phy/DRIVERS/ieee80211p.ko
+# Go back to the source directory
+cd ${OPENAIRITS_DIR}
 
