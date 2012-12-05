@@ -36,6 +36,6 @@ cd ${OPENAIRITS_DIR}/phy/DRIVERS/
 sudo make clean
 sudo make
 
-# Go back to the source directory
+#Go back to the source directory
 cd ${OPENAIRITS_DIR}
 
