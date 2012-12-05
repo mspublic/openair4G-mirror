@@ -12,7 +12,7 @@
 ## voila !!
 
 #Environment variables
-export MOD_DIR=/lib/modules/2.6.32.11+drm33.2.openairinterface.bigphys.rtai/updates
+
 export OPENAIR_HOME=/home/thales/openair4G
 export OPENAIR1_DIR=$OPENAIR_HOME/openair1
 export OPENAIR2_DIR=$OPENAIR_HOME/openair2
