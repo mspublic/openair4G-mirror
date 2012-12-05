@@ -36,6 +36,7 @@ make clean
 make
 
 # Module loading
-modprobe mac80211_eurecom
-insmod ${OPENAIRITS_DIR}/phy/DRIVERS/ieee80211p.ko
+sudo depmod -a
+sudo modprobe mac80211_eurecom
+sudo insmod ${OPENAIRITS_DIR}/phy/DRIVERS/ieee80211p.ko
 
