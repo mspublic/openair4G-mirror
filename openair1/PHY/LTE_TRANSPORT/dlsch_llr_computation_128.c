@@ -52,7 +52,7 @@
 #include "extern.h"
 
 #ifndef __SSE3__
-__m128i zero;
+__m128i zero = {0};
 //#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
 #define _mm_abs_epi16(xmmx) _mm_add_epi16(_mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx))),_mm_srli_epi16(_mm_cmpgt_epi16(zero,(xmmx)),15))
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
@@ -64,6 +64,7 @@ __m128i zero;
 #define NOCYGWIN_STATIC 
 #endif
 
+NOCYGWIN_STATIC __m128i ONES __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m128i rho_rpi_128i __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m128i rho_rmi_128i __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m128i rho_rpi_1_1_128i __attribute__ ((aligned(16)));
@@ -625,6 +626,9 @@ NOCYGWIN_STATIC __m128i tmp_result_128i2 __attribute__ ((aligned(16)));
 // calculates psi_a = psi_r*a_r + psi_i*a_i 
 #define prodsum_psi_a_epi16(psi_r,a_r,psi_i,a_i,psi_a) tmp_result_128i = _mm_mulhi_epi16(psi_r,a_r); tmp_result_128i = _mm_slli_epi16(tmp_result_128i,1); tmp_result_128i2 = _mm_mulhi_epi16(psi_i,a_i); tmp_result_128i2 = _mm_slli_epi16(tmp_result_128i2,1); psi_a = _mm_adds_epi16(tmp_result_128i,tmp_result_128i2);
 
+// calculate interference magnitude
+#define interference_abs_epi16_tmp(psi,int_ch_mag,int_mag,c1,c2) tmp_result_128i = _mm_cmplt_epi16(psi,int_ch_mag); tmp_result_128i2 = _mm_xor_si128(tmp_result_128i,ONES); tmp_result_128i = _mm_and_si128(tmp_result_128i,c1); tmp_result_128i2 = _mm_and_si128(tmp_result_128i2,c2); int_mag = _mm_or_si128(tmp_result_128i,tmp_result_128i2); 
+
 // calculates a_sq = int_ch_mag*(a_r^2 + a_i^2)*scale_factor 
 #define square_a_epi16(a_r,a_i,int_ch_mag,scale_factor,a_sq) tmp_result_128i = _mm_mulhi_epi16(a_r,a_r); tmp_result_128i = _mm_slli_epi16(tmp_result_128i,1); tmp_result_128i = _mm_mulhi_epi16(tmp_result_128i,scale_factor); tmp_result_128i = _mm_slli_epi16(tmp_result_128i,1); tmp_result_128i = _mm_mulhi_epi16(tmp_result_128i,int_ch_mag); tmp_result_128i = _mm_slli_epi16(tmp_result_128i,1); tmp_result_128i2 = _mm_mulhi_epi16(a_i,a_i); tmp_result_128i2 = _mm_slli_epi16(tmp_result_128i2,1); tmp_result_128i2 = _mm_mulhi_epi16(tmp_result_128i2,scale_factor); tmp_result_128i2 = _mm_slli_epi16(tmp_result_128i2,1); tmp_result_128i2 = _mm_mulhi_epi16(tmp_result_128i2,int_ch_mag); tmp_result_128i2 = _mm_slli_epi16(tmp_result_128i2,1); a_sq = _mm_adds_epi16(tmp_result_128i,tmp_result_128i2);
 
@@ -640,14 +644,26 @@ void interference_abs_epi16(__m128i *psi,
     short *ONE_OVER_SQRT_10_temp = (short *)ONE_OVER_SQRT_10;
     short *THREE_OVER_SQRT_10_temp = (short *)THREE_OVER_SQRT_10;
     int jj;
-    
+    __m128i int_mag_tmp;
+
     for (jj=0;jj<8;jj++) {
         if (psi_temp[jj] < int_ch_mag_temp[jj])
             int_mag_temp[jj] = ONE_OVER_SQRT_10_temp[jj];
         else
             int_mag_temp[jj] = THREE_OVER_SQRT_10_temp[jj];
     }
-    int_mag= (__m128i *) int_mag_temp;
+    //int_mag= (__m128i *) int_mag_temp;
+    
+    /*    __m128i signlt = _mm_cmplt_epi16(*psi,*int_ch_mag);
+    __m128i signgt = _mm_xor_si128(signlt,_mm_set1_epi16(0xffff));
+    tmp_result_128i  = _mm_and_si128(signlt,*ONE_OVER_SQRT_10);
+    tmp_result_128i2 = _mm_and_si128(signgt,*THREE_OVER_SQRT_10);
+    int_mag_tmp = _mm_or_si128(tmp_result_128i,tmp_result_128i2);
+    int_mag= &int_mag_tmp;*/
+    
+
+    //    interference_abs_epi16_tmp(*psi,*int_ch_mag,int_mag_tmp,*ONE_OVER_SQRT_10,*THREE_OVER_SQRT_10);
+    //int_mag= &int_mag_tmp;
 }
 
 //==============================================================================================
@@ -801,6 +817,7 @@ void qam16_qam16_128(short *stream0_in,
     SQRT_10_OVER_FOUR_128i = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
     ONE_OVER_TWO_SQRT_10_128i = _mm_set1_epi16(10362); // round(1/2/sqrt(10)*2^16)
     NINE_OVER_TWO_SQRT_10_128i = _mm_set1_epi16(23315); // round(9/2/sqrt(10)*2^14)
+    ONES = _mm_set1_epi16(0xffff);
 
     for (i=0;i<length>>2;i+=2) {
         // In one iteration, we deal with 8 REs
@@ -954,39 +971,39 @@ void qam16_qam16_128(short *stream0_in,
         y0_m_3_3_128i = _mm_subs_epi16(y0r_three_over_sqrt10_128i,y0i_three_over_sqrt10_128i);
 
         // Compute optimal interfering symbol magnitude
-        interference_abs_epi16(&psi_r_p1_p1_128i ,&ch_mag_int_128i,&a_r_p1_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p1_p1_128i ,&ch_mag_int_128i,&a_i_p1_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_p1_p3_128i ,&ch_mag_int_128i,&a_r_p1_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p1_p3_128i ,&ch_mag_int_128i,&a_i_p1_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_p1_m1_128i ,&ch_mag_int_128i,&a_r_p1_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p1_m1_128i ,&ch_mag_int_128i,&a_i_p1_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_p1_m3_128i ,&ch_mag_int_128i,&a_r_p1_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p1_m3_128i ,&ch_mag_int_128i,&a_i_p1_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_p3_p1_128i ,&ch_mag_int_128i,&a_r_p3_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p3_p1_128i ,&ch_mag_int_128i,&a_i_p3_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_p3_p3_128i ,&ch_mag_int_128i,&a_r_p3_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p3_p3_128i ,&ch_mag_int_128i,&a_i_p3_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_p3_m1_128i ,&ch_mag_int_128i,&a_r_p3_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p3_m1_128i ,&ch_mag_int_128i,&a_i_p3_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_p3_m3_128i ,&ch_mag_int_128i,&a_r_p3_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_p3_m3_128i ,&ch_mag_int_128i,&a_i_p3_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m1_p1_128i ,&ch_mag_int_128i,&a_r_m1_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m1_p1_128i ,&ch_mag_int_128i,&a_i_m1_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m1_p3_128i ,&ch_mag_int_128i,&a_r_m1_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m1_p3_128i ,&ch_mag_int_128i,&a_i_m1_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m1_m1_128i ,&ch_mag_int_128i,&a_r_m1_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m1_m1_128i ,&ch_mag_int_128i,&a_i_m1_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m1_m3_128i ,&ch_mag_int_128i,&a_r_m1_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m1_m3_128i ,&ch_mag_int_128i,&a_i_m1_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m3_p1_128i ,&ch_mag_int_128i,&a_r_m3_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m3_p1_128i ,&ch_mag_int_128i,&a_i_m3_p1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m3_p3_128i ,&ch_mag_int_128i,&a_r_m3_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m3_p3_128i ,&ch_mag_int_128i,&a_i_m3_p3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m3_m1_128i ,&ch_mag_int_128i,&a_r_m3_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m3_m1_128i ,&ch_mag_int_128i,&a_i_m3_m1_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_r_m3_m3_128i ,&ch_mag_int_128i,&a_r_m3_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-        interference_abs_epi16(&psi_i_m3_m3_128i ,&ch_mag_int_128i,&a_i_m3_m3_128i ,&ONE_OVER_SQRT_10_Q15_128i, &THREE_OVER_SQRT_10_128i);
-
+        interference_abs_epi16_tmp(psi_r_p1_p1_128i ,ch_mag_int_128i,a_r_p1_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p1_p1_128i ,ch_mag_int_128i,a_i_p1_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_p1_p3_128i ,ch_mag_int_128i,a_r_p1_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p1_p3_128i ,ch_mag_int_128i,a_i_p1_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_p1_m1_128i ,ch_mag_int_128i,a_r_p1_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p1_m1_128i ,ch_mag_int_128i,a_i_p1_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_p1_m3_128i ,ch_mag_int_128i,a_r_p1_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p1_m3_128i ,ch_mag_int_128i,a_i_p1_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_p3_p1_128i ,ch_mag_int_128i,a_r_p3_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p3_p1_128i ,ch_mag_int_128i,a_i_p3_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_p3_p3_128i ,ch_mag_int_128i,a_r_p3_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p3_p3_128i ,ch_mag_int_128i,a_i_p3_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_p3_m1_128i ,ch_mag_int_128i,a_r_p3_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p3_m1_128i ,ch_mag_int_128i,a_i_p3_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_p3_m3_128i ,ch_mag_int_128i,a_r_p3_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_p3_m3_128i ,ch_mag_int_128i,a_i_p3_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m1_p1_128i ,ch_mag_int_128i,a_r_m1_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m1_p1_128i ,ch_mag_int_128i,a_i_m1_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m1_p3_128i ,ch_mag_int_128i,a_r_m1_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m1_p3_128i ,ch_mag_int_128i,a_i_m1_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m1_m1_128i ,ch_mag_int_128i,a_r_m1_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m1_m1_128i ,ch_mag_int_128i,a_i_m1_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m1_m3_128i ,ch_mag_int_128i,a_r_m1_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m1_m3_128i ,ch_mag_int_128i,a_i_m1_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m3_p1_128i ,ch_mag_int_128i,a_r_m3_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m3_p1_128i ,ch_mag_int_128i,a_i_m3_p1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m3_p3_128i ,ch_mag_int_128i,a_r_m3_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m3_p3_128i ,ch_mag_int_128i,a_i_m3_p3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m3_m1_128i ,ch_mag_int_128i,a_r_m3_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m3_m1_128i ,ch_mag_int_128i,a_i_m3_m1_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_r_m3_m3_128i ,ch_mag_int_128i,a_r_m3_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        interference_abs_epi16_tmp(psi_i_m3_m3_128i ,ch_mag_int_128i,a_i_m3_m3_128i,ONE_OVER_SQRT_10_Q15_128i, THREE_OVER_SQRT_10_128i);
+        
         // Calculation of groups of two terms in the bit metric involving product of psi and interference magnitude
         prodsum_psi_a_epi16(psi_r_p1_p1_128i,a_r_p1_p1_128i,psi_i_p1_p1_128i,a_i_p1_p1_128i,psi_a_p1_p1_128i);
         prodsum_psi_a_epi16(psi_r_p1_p3_128i,a_r_p1_p3_128i,psi_i_p1_p3_128i,a_i_p1_p3_128i,psi_a_p1_p3_128i);
