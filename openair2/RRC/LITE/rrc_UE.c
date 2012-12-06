@@ -375,39 +375,38 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 #    ifdef OAI_EMU
     ip_addr_offset3 = oai_emulation.info.nb_enb_local;
     ip_addr_offset4 = NB_eNB_INST;
-#    else
+#    else  // for testing with HW: fixme
     ip_addr_offset3 = 0;
     ip_addr_offset4 = 8;
 #    endif
 #    ifndef NAS_DRIVER_TYPE_ETHERNET
-    LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, ip_addr_offset3+Mod_id,
-	  ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1);
-    oip_ifup=nas_config(ip_addr_offset3+Mod_id,   // interface_id
-			ip_addr_offset3+Mod_id+1, // third_octet
-			ip_addr_offset4+Mod_id+1); // fourth_octet
-    if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
-#        ifdef OAI_EMU
-      oai_emulation.info.oai_ifup[Mod_id]=1;
-#        endif
+    if (UE_rrc_inst[Mod_id].Info[eNB_index].oai_ifup == 0){
+      LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, ip_addr_offset3+Mod_id,
+	    ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1);
+      oip_ifup=nas_config(ip_addr_offset3+Mod_id,   // interface_id
+			  ip_addr_offset3+Mod_id+1, // third_octet
+			  ip_addr_offset4+Mod_id+1); // fourth_octet
+      UE_rrc_inst[Mod_id].Info[eNB_index].oai_ifup = ( oip_ifup == 0 ) ? 1 : 0;
+    }
+
+    if (UE_rrc_inst[Mod_id].Info[eNB_index].oai_ifup ==1 ){ // interface is up --> send a config the DRB
+      
       LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
 	    Mod_id,
 	    ip_addr_offset3+Mod_id,
 	    (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
 
-	    rb_conf_ipv4(0,//add
-			 Mod_id,//cx align with the UE index
-			 ip_addr_offset3+Mod_id,//inst num_enb+ue_index
-			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
-			 0,//dscp
-			 ipv4_address(ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1),//saddr
-			 ipv4_address(ip_addr_offset3+Mod_id+1,eNB_index+1));//daddr
-	    LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",Mod_id,eNB_index);
+      rb_conf_ipv4(0,//add
+		   Mod_id,//cx align with the UE index
+		   ip_addr_offset3+Mod_id,//inst num_enb+ue_index
+		   (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
+		   0,//dscp
+		   ipv4_address(ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1),//saddr
+		   ipv4_address(ip_addr_offset3+Mod_id+1,eNB_index+1));//daddr
+      LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",Mod_id,eNB_index);
+      UE_rrc_inst[Mod_id].Info[eNB_index].rbconfig[*DRB_config->logicalChannelIdentity]=1; 
     }
-#    else
-#        ifdef OAI_EMU
-      oai_emulation.info.oai_ifup[Mod_id]=1;
-#        endif
-#    endif
+#endif
 #endif
     break;
   case RLC_Config_PR_um_Uni_Directional_UL :

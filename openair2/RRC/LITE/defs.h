@@ -75,10 +75,10 @@ typedef enum  {
 #define PAYLOAD_SIZE_MAX 1024
 
 
-
-
 typedef struct{
   UE_STATE_t State;
+  u8 oai_ifup;
+  u8 rbconfig[MAX_NUM_LCID];
   u8 SIB1Status;
   u8 SIStatus;
   u8 SIwindowsize;
@@ -97,6 +97,8 @@ typedef struct{
 typedef struct{
   u8 Status[NUMBER_OF_UE_MAX];
   u8 Status_co[NUMBER_OF_UE_MAX]; //TCS LOLAmesh
+  u8 oai_ifup;
+  u8 rbconfig[MAX_NUM_LCID];
   u8 Nb_ue;
   //unsigned short UE_index_list[NUMBER_OF_UE_MAX];
   //L2_ID UE_list[NUMBER_OF_UE_MAX];
@@ -192,7 +194,7 @@ typedef struct{
 
 
 typedef struct{
-  UE_RRC_INFO Info[NB_SIG_CNX_UE];
+  UE_RRC_INFO Info[NB_SIG_CNX_UE]; // num max connected eNB/CH
   u8 State_CoLink[MAX_VLINK_PER_MR];
   SRB_INFO Srb0[NB_SIG_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];

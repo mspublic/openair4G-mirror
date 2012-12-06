@@ -953,17 +953,19 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 #ifdef NAS_NETLINK
 // can mean also IPV6 since ether -> ipv6 autoconf
 #    ifndef NAS_DRIVER_TYPE_ETHERNET
-	LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, Mod_id,
-	      Mod_id+1,Mod_id+1);
-	oip_ifup = nas_config(Mod_id,// interface index
-		   Mod_id+1, // third octet
-		   Mod_id+1);// fourth octet
-
-	 if (oip_ifup == 0 ){ // interface is up --> send a config the DRB
+	if (eNB_rrc_inst[Mod_id].Info.oai_ifup == 0 ){
+	  LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, Mod_id,
+		Mod_id+1,Mod_id+1);
+	  oip_ifup = nas_config(Mod_id,// interface index
+				Mod_id+1, // third octet
+				Mod_id+1);// fourth octet
+	  eNB_rrc_inst[Mod_id].Info.oai_ifup = (oip_ifup == 0 ) ? 1 : 0;
+	}
+	if (eNB_rrc_inst[Mod_id].Info.oai_ifup == 1){ // interface is up --> send a config the DRB
 #        ifdef OAI_EMU
 	  oai_emulation.info.oai_ifup[Mod_id]=1;
 	  dest_ip_offset=NB_eNB_INST;
-#        else
+#        else // for testing with HW: fixme
 	  dest_ip_offset=8;
 #        endif
 	  LOG_I(OIP,"[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
@@ -979,12 +981,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 		       ipv4_address(Mod_id+1,dest_ip_offset+UE_index+1));//daddr
 
 	   LOG_D(RRC,"[eNB %d] State = Attached (UE %d)\n",Mod_id,UE_index);
+	   eNB_rrc_inst[Mod_id].Info.rbconfig[ *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity]=1;
 	 }
-#    else
-#        ifdef OAI_EMU
-      oai_emulation.info.oai_ifup[Mod_id]=1;
-#        endif
-#    endif
+#endif
 #endif
 	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
 	      frame, Mod_id, UE_index, Mod_id);
