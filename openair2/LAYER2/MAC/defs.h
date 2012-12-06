@@ -60,6 +60,7 @@
 #include "TDD-Config.h"
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
+#include "LAYER2/MAC/virtual_link.h" //TCS LOLAmesh
 
 //#ifdef PHY_EMUL
 //#include "SIMULATION/PHY_EMULATION/impl_defs.h"
@@ -69,6 +70,9 @@
  * @ingroup _ref_implementation_
  * @{
  */
+
+// Size of the collaborative sequence number Control Element
+#define CO_SEQ_NUM_CE_SIZE 3 //TCS LOLAmesh
 
 #define BCCH_PAYLOAD_SIZE_MAX 128  
 #define CCCH_PAYLOAD_SIZE_MAX 128    
@@ -84,7 +88,8 @@
 #define printk printf
 #endif //USER_MODE
 
-#define MAX_NUM_LCID 11
+/* 1 new LCID defined 11 + 1 = 12 */
+#define MAX_NUM_LCID 12 //TCS LOLAmesh
 #define MAX_NUM_RB 8
 #define MAX_NUM_CE 5
 
@@ -175,6 +180,11 @@ typedef struct {
   u8 R:2;
 } __attribute__((__packed__))POWER_HEADROOM_CMD;
 
+//TCS LOLAmesh
+typedef struct {
+	u16 squence_number;
+	u8 VLID;
+} __attribute__((__packed__))CO_SEQ_NUM;
 
 typedef struct {
   u8 Num_ue_spec_dci ; 
@@ -193,6 +203,8 @@ typedef struct {
 
 // DLSCH LCHAN IDs
 #define CCCH_LCHANID 0
+/* This CE apply for DL-SCH and UL-SCH */
+#define CO_SEQ_NUM 15//TCS LOLAmesh
 #define UE_CONT_RES 28
 #define TIMING_ADV_CMD 29
 #define DRX_CMD 30
@@ -256,9 +268,17 @@ typedef struct {
   UE_DLSCH_STATUS status;
 } eNB_DLSCH_INFO;
 
+struct cornti_array { //TCS LOLAmesh
+	u8 count;
+	u16 array[MAX_VLINK_PER_CH];
+};
+
 typedef struct{
   /// C-RNTI of UE
   u16 rnti;
+
+  /// CO-RNTIs of the virtual links
+  struct cornti_array cornti; //TCS LOLAmesh
 
   // PHY interface info
 
@@ -291,7 +311,6 @@ typedef struct{
 
   //Resource Block indication for each sub-band in MU-MIMO 
   u8 rballoc_sub[8][7];
-
 
   // Logical channel info for link with RLC
   
@@ -443,6 +462,21 @@ typedef struct {
   s16 bucket_size[MAX_NUM_LCID];
 } UE_SCHEDULING_INFO;
 
+/* Forwarding table definition */
+
+#define MAX_FW_ENTRY 10 //TCS LOLAmesh
+
+struct forwardingTableEntry { //TCS LOLAmesh
+	u8 vlid;
+	u16 cornti1;
+	u16 cornti2;
+};
+
+struct forwardingTable { //TCS LOLAmesh
+	u8 count;
+	struct forwardingTableEntry array[MAX_FW_ENTRY];
+};
+
 typedef struct{
   u16 Node_id[NUMBER_OF_CONNECTED_eNB_MAX];
   /// frame counter
@@ -502,6 +536,8 @@ typedef struct{
   u8 PHR_reporting_active[NUMBER_OF_CONNECTED_eNB_MAX]; 
  /// power backoff due to power management (as allowed by P-MPRc) for this cell
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
+	// mac layer forwarding table
+	struct forwardingTable forwardingTable; //TCS LOLAmesh
 }UE_MAC_INST;
 
 typedef struct {
@@ -520,9 +556,10 @@ in the DLSCH buffer.
 @param drx_cmd dicontinous reception command 
 @param timing_advancd_cmd timing advanced command
 @param ue_cont_res_id Pointer to contention resolution identifier (NULL means not present in payload)
-@param CO_seq_number Pointer to collaborative channel sequence number (NULL means not present in payload)
+@param co_seq_num Pointer to collaborative PDU sequence number (NULL means not present in payload)
 @param short_padding Number of bytes for short padding (0,1,2)
 @param post_padding number of bytes for padding at the end of MAC PDU 
+@param
 @returns Number of bytes used for header
 */
 unsigned char generate_dlsch_header(unsigned char *mac_header,
@@ -532,6 +569,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned char drx_cmd,
 				    unsigned char timing_advance_cmd,
 				    unsigned char *ue_cont_res_id,
+				    unsigned short *co_seq_num, //TCS LOLAmesh
 				    unsigned char short_padding,
 				    unsigned short post_padding);
 
@@ -562,6 +600,16 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);
+
+//TCS LOLAmesh
+/** \brief RRC Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on RRCConnectionReconfiguration messages for colaborative data transmission set up.
+ * Only called by UEs
+@param Mod_id Instance ID of eNB
+@param eNB_id Index of eNB if this is a UE configuration
+@param co_RNTI cornti to be added in the forwarding table
+@param virtualLinkID virtual link ID associated with the cornti
+*/
+int rrc_mac_config_co_req(u8 Mod_id,u8 eNB_index,u16 co_RNTI,u8 virtualLinkID);
 
 
 /** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
@@ -1003,6 +1051,29 @@ void dl_phy_sync_success(unsigned char Mod_id,
 			 u32 frame,
 			 unsigned char eNB_index,
 			 u8 first_sync);
+
+//TCS LOLAmesh
+/* Add a new entry or fill a new entry in the forwarding table
+ * @param forwardingTable
+ * @param vlid -> ID of the considered virtual link
+ * @param cornti -> cornti associated to the virtual link
+ * returns 0 = entry added / -2 = entry found but corrupted */
+int mac_forwarding_add_entry(struct forwardingTable *forwardingTable, u8 Mod_id, u8 eNB_index, u8 vlid, u16 cornti);
+
+//TCS LOLAmesh
+/* Remove an entry in the forwarding table
+ * @param vlid -> ID of the considered virtual link
+ * @param cornti -> cornti associated to the virtual link
+ * return 0 = entry removed / -1 = error */
+int mac_forwarding_remove_entry(struct forwardingTable *forwardingTable, u8 vlid);
+
+//TCS LOLAmesh
+/* Get the output CORNTI associated to an input CORNTI
+ * @param forwardingTable
+ * @param vlid -> ID of the considered virtual link
+ * @param cornti -> cornti associated to the virtual link
+ * returns output CORNTI*/
+int mac_forwarding_get_output_CORNTI(struct forwardingTable *forwardingTable, u8 Mod_id, u8 eNB_index, u8 vlid, u16 cornti);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

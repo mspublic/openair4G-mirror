@@ -549,11 +549,15 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 }
 
 
-void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_index,
+int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_index,
 						    RadioResourceConfigDedicated_t *radioResourceConfigDedicated) {
 
   long SRB_id,DRB_id;
   int i,cnt;
+	u8 vlid;
+	u16 cornti;
+	int ret;
+	int collaborative_link = 0;
   LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
 
   // Save physicalConfigDedicated if present
@@ -682,44 +686,68 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
     for (i=0;i<radioResourceConfigDedicated->drb_ToAddModList->list.count;i++) {
       DRB_id   = radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity-1;
       if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) {
-	memcpy(UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id],radioResourceConfigDedicated->drb_ToAddModList->list.array[i],
-	       sizeof(struct DRB_ToAddMod));
+      	memcpy(UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id],radioResourceConfigDedicated->drb_ToAddModList->list.array[i],sizeof(struct DRB_ToAddMod));
       }
       else {
-	UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
+				UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
 
-	rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
-	// MAC/PHY Configuration
-	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
-	      frame, Mod_id, DRB_id, eNB_index, Mod_id);
-	rrc_mac_config_req(Mod_id,0,0,eNB_index,
-			   (RadioResourceConfigCommonSIB_t *)NULL,
-			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
-			   (MeasObjectToAddMod_t **)NULL,
-			   UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
-			   *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
-			   UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
-			   UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
-			   (TDD_Config_t*)NULL,
-			   (u8 *)NULL,
-			   (u16 *)NULL);
+				rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
+				// MAC/PHY Configuration
+				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
+							frame, Mod_id, DRB_id, eNB_index, Mod_id);
+				rrc_mac_config_req(Mod_id,0,0,eNB_index,
+							 (RadioResourceConfigCommonSIB_t *)NULL,
+							 UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+							 (MeasObjectToAddMod_t **)NULL,
+							 UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
+							 *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
+							 UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
+							 UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
+							 (TDD_Config_t*)NULL,
+							 (u8 *)NULL,
+							 (u16 *)NULL);
 
-      }
-    }
+				//TCS LOLAmesh
+				/* Configure the MAC layer forwarding table if this is a collaborative DRB (CORNTI and virtual link ID field is present) */
+				if ((radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI != NULL)&&
+						(radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID != NULL)) {
+					// MAC/PHY Configuration
+					cornti = (u16)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI;
+					vlid = (u8)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID;
+					LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] Configuring DRB %d for collabortaive communications with CORNTI = %u and VLID = %u\n",frame,Mod_id, DRB_id, eNB_index, Mod_id, DRB_id, cornti, vlid);
+					/* Configure the forwarding table with the given vlid and cornti */
+					ret=rrc_mac_config_co_req(Mod_id,eNB_index,cornti,vlid);
+					if (ret < 0) {
+						LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] MAC layer forwarding table configuration failed\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
+					} else {
+						LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] MAC layer forwarding table configuration succeeded\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
+					}
+					UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_CONNECTED;
+					LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_CONNECTED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
+					collaborative_link = 1;
+				}// end if ((radioResourceConfigDedicated->drb_ToAddModList->list.array...
+      }// end if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) / else
+    }//end or (i=0;i<radioResourceConfigDedicated->drb_ToAddModList->list.count;i++)
+  }//end if (radioResourceConfigDedicated->drb_ToAddModList)
+
+  //TCS LOLAmesh
+  if (collaborative_link == 0) {
+  	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_CONNECTED;
+  	LOG_D(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",Mod_id,eNB_index);
   }
 
-  UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_CONNECTED;
-  LOG_D(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",Mod_id,eNB_index);
-
+  return collaborative_link;
 
 }
 
 
-void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
+int rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 eNB_index) {
 
-  LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing RRCConnectionReconfiguration (eNB %d)\n",
+  int ret = 0;
+
+	LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing RRCConnectionReconfiguration (eNB %d)\n",
 	Mod_id,frame,eNB_index);
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
@@ -737,12 +765,14 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
       }
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
 	LOG_I(RRC,"Radio Resource Configuration is present\n");
-	rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
+	ret = rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
 						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
 
       }
     } // c1 present
   } // critical extensions present
+
+  return ret;
 }
 
 void	rrc_ue_process_mobilityControlInfo(u8 Mod_id,u8 eNB_index,struct MobilityControlInfo *mobilityControlInfo) {
@@ -758,6 +788,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
   DL_DCCH_Message_t *dl_dcch_msg=NULL;//&dldcchmsg;
   //  asn_dec_rval_t dec_rval;
   int i;
+  int ret;
 
   if (Srb_id != 1) {
     LOG_D(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB1), should not have ...\n",Mod_id,frame);
@@ -783,7 +814,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
-    if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_CONNECTED) {
+    if ((UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_CONNECTED)||(UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_RECONFIGURED)) {
 
       switch (dl_dcch_msg->message.choice.c1.present) {
 
@@ -800,10 +831,14 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
-	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+	ret = rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
 	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
-	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
-	LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
+	//TCS LOLAmesh
+	// If this is not a cooperative link
+	if (ret == 0) {
+		UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
+		LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
+	}
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;

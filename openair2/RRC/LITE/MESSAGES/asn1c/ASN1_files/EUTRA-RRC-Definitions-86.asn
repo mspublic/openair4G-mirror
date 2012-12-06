@@ -1486,12 +1486,14 @@ SRB-ToAddMod ::=	SEQUENCE {
 DRB-ToAddModList ::=				SEQUENCE (SIZE (1..maxDRB)) OF DRB-ToAddMod
 
 DRB-ToAddMod ::=	SEQUENCE {
-	eps-BearerIdentity					INTEGER (0..15)			OPTIONAL,		-- Cond DRB-Setup
-	drb-Identity						DRB-Identity,
-	pdcp-Config							PDCP-Config				OPTIONAL,		-- Cond PDCP
-	rlc-Config							RLC-Config				OPTIONAL,		-- Cond Setup
-	logicalChannelIdentity				INTEGER (3..10)			OPTIONAL,		-- Cond DRB-Setup
-	logicalChannelConfig				LogicalChannelConfig	OPTIONAL,		-- Cond Setup
+	eps-BearerIdentity						INTEGER (0..15)					OPTIONAL,		-- Cond DRB-Setup
+	drb-Identity									DRB-Identity,
+	pdcp-Config										PDCP-Config							OPTIONAL,		-- Cond PDCP
+	rlc-Config										RLC-Config							OPTIONAL,		-- Cond Setup
+	logicalChannelIdentity				INTEGER (3..10)					OPTIONAL,		-- Cond DRB-Setup
+	logicalChannelConfig					LogicalChannelConfig		OPTIONAL,		-- Cond Setup
+	co-RNTI												INTEGER (0..65535)			OPTIONAL,
+	virtualLinkID									INTEGER (0..255)				OPTIONAL,
 	...
 }
 
