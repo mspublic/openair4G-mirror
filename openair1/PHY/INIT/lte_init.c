@@ -269,9 +269,9 @@ void phy_config_afterHO_ue(u8 Mod_id,u8 eNB_id,
 
   }
   if(ho_failed) {
-	  LOG_D(PHY,"Handover failed..triggering RACH procedure..");
+	  LOG_D(PHY,"\nHandover failed..triggering RACH procedure..");
 	  memcpy((void *)&PHY_vars_UE_g[Mod_id]->lte_frame_parms,(void *)&PHY_vars_UE_g[Mod_id]->lte_handover_params.lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-	  //PHY_vars_UE_g[Mod_id]->UE_mode[eNB_id] = PRACH;
+	  PHY_vars_UE_g[Mod_id]->UE_mode[eNB_id] = PRACH;
   }
 }
 
