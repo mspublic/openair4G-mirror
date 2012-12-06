@@ -333,7 +333,6 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 	      UE_rrc_inst[Mod_id].Info[index].T304_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T304_cnt == 0) {
 		UE_rrc_inst[Mod_id].Info[index].T304_active = 0;
-		UE_rrc_inst[Mod_id].HandoverInfoUe.measFlag = 1;
 		LOG_D(RRC,"[UE %d] Handover failure..initiating connection re-establishment procedure... \n");
 		//Implement 36.331, section 5.3.5.6 here
 		return(RRC_Handover_failed);
@@ -346,7 +345,7 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   	  ue_meas_filtering(Mod_id,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id], 0 /* abstraction_flag */);
     }
 
-    ue_measurement_report_triggering(Mod_id, frame, UE_rrc_inst,PHY_vars_UE_g[Mod_id]);
+    ue_measurement_report_triggering(Mod_id, frame, UE_rrc_inst);
   }
 
   return(RRC_OK);

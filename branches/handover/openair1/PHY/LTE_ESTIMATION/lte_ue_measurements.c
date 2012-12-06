@@ -152,15 +152,12 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	phy_vars_ue->PHY_measurements.rssi/=(24*phy_vars_ue->lte_frame_parms.N_RB_DL);
 	phy_vars_ue->PHY_measurements.rssi*=rx_power_correction;
       }
-      if (phy_vars_ue->PHY_measurements.rssi>0)
-	phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = 100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi;
-      else
-	phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = -12000;
+      phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = 100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi;
       
       //((200*phy_vars_ue->PHY_measurements.rsrq[eNB_offset]) + ((1024-200)*100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi))>>10;
     }
     else {   // Do abstraction of RSRP and RSRQ
-      phy_vars_ue->PHY_measurements.rssi = phy_vars_ue->PHY_measurements.rx_power_avg[0];
+
 
     }
 
