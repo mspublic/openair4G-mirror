@@ -536,8 +536,8 @@ typedef struct{
   u8 PHR_reporting_active[NUMBER_OF_CONNECTED_eNB_MAX]; 
  /// power backoff due to power management (as allowed by P-MPRc) for this cell
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
-	// mac layer forwarding table
-	struct forwardingTable forwardingTable; //TCS LOLAmesh
+  // mac layer forwarding table
+  struct forwardingTable forwardingTable; //TCS LOLAmesh
 }UE_MAC_INST;
 
 typedef struct {

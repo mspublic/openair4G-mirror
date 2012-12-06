@@ -4474,24 +4474,24 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   eNB_RRC_INST *rrc_inst = &eNB_rrc_inst[Mod_id];
 
   //TCS LOLAmesh RRCConnectionReconfiguration parameters
-	// RadioResourceConfigDedicated
-	// RadioResourceConfigDedicated->SRBToAddModList == NULL
-	// RadioResourceConfigDedicated->DRBToAddModList == NULL
-	DRB_ToAddModList_t *DRB_list;
-	struct DRB_ToAddMod **DRB_config = &rrc_inst->DRB_config[UE_index][1]; ///first RB is the Default RB, second RB is the virtual RB
-	struct DRB_ToAddMod *DRB_config2;
-	struct RLC_Config *DRB_rlc_config;
-	struct LogicalChannelConfig *DRB_lchan_config;
-	struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
-	// RadioResourceConfigDedicated->DRBToReleaseList
-	// RadioResourceConfigDedicated->mac-MainConfig
-	MAC_MainConfig_t *mac_MainConfig;
-	long *logicalchannelgroup,*logicalchannelgroup_drb;
-	long *maxHARQ_Tx, *periodicBSR_Timer;
-	long *lcid;
-	// RadioResourceConfigDedicated->sps-Config == NULL
-	// RadioResourceConfigDedicated->physicalConfigDedicated
-	struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
+  // RadioResourceConfigDedicated
+  // RadioResourceConfigDedicated->SRBToAddModList == NULL
+  // RadioResourceConfigDedicated->DRBToAddModList == NULL
+  DRB_ToAddModList_t *DRB_list;
+  struct DRB_ToAddMod **DRB_config = &rrc_inst->DRB_config[UE_index][1]; ///first RB is the Default RB, second RB is the virtual RB
+  struct DRB_ToAddMod *DRB_config2;
+  struct RLC_Config *DRB_rlc_config;
+  struct LogicalChannelConfig *DRB_lchan_config;
+  struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
+  // RadioResourceConfigDedicated->DRBToReleaseList
+  // RadioResourceConfigDedicated->mac-MainConfig
+  MAC_MainConfig_t *mac_MainConfig;
+  long *logicalchannelgroup,*logicalchannelgroup_drb;
+  long *maxHARQ_Tx, *periodicBSR_Timer;
+  long *lcid;
+  // RadioResourceConfigDedicated->sps-Config == NULL
+  // RadioResourceConfigDedicated->physicalConfigDedicated
+  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
 
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
@@ -4568,7 +4568,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 						DRB_config2->drb_Identity = 2; //first RB is the Default RB, second RB is the virtual RB
 						// logical channel ID
 						lcid = CALLOC(1,sizeof(*lcid));
-						*lcid = 3;
+						*lcid = 7;
 						DRB_config2->logicalChannelIdentity = lcid;
 						// rlc config
 						DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
