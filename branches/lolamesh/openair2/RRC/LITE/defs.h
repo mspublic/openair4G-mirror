@@ -20,6 +20,7 @@ ________________________________________________________________*/
 
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/virtual_link.h" //TCS LOLAmesh
 
 //#include "COMMON/openair_defs.h"
 #ifndef USER_MODE
@@ -95,6 +96,7 @@ typedef struct{
 
 typedef struct{
   u8 Status[NUMBER_OF_UE_MAX];
+  u8 Status_co[NUMBER_OF_UE_MAX]; //TCS LOLAmesh
   u8 Nb_ue;
   //unsigned short UE_index_list[NUMBER_OF_UE_MAX];
   //L2_ID UE_list[NUMBER_OF_UE_MAX];
@@ -191,6 +193,7 @@ typedef struct{
 
 typedef struct{
   UE_RRC_INFO Info[NB_SIG_CNX_UE];
+  u8 State_CoLink[MAX_VLINK_PER_MR];
   SRB_INFO Srb0[NB_SIG_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_UE];
@@ -282,7 +285,7 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u32 frame,u8 CH_index)
     \param frame Frame index
     \param *rrcConnectionReconfiguration pointer to the sturcture
     \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,u8 eNB_index);
+int rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,u8 eNB_index);
 
 /** \brief Generates/Encodes RRCConnectionReconfigurationComplete  message at UE 
     \param Mod_id Instance ID of UE
@@ -323,7 +326,7 @@ void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig);
     \param Mod_id Instance of UE on which to act
     \param CH_index Index of corresponding CH/eNB
     \param radioResourceConfigDedicated Pointer to RadioResourceConfigDedicated IE from configuration*/
-void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 CH_index,
+int rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 CH_index,
 						 RadioResourceConfigDedicated_t *radioResourceConfigDedicated);
 
 // eNB/CH RRC Procedures

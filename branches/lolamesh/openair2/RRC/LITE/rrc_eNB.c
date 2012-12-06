@@ -311,7 +311,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 	if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
 	  rrc_eNB_process_RRCConnectionSetupComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
 	  eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_CONNECTED;
-	  LOG_D(RRC,"[eNB %d] UE %d State = RRC_CONNECTED \n",Mod_id,UE_index);
+	  LOG_D(RRC,"[eNB %d] UE %d State = RRC_CONNECTED\n",Mod_id,UE_index);
 	  LOG_D(RRC,"[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\nNow CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
             frame, Mod_id, UE_index, Mod_id);
 	}
