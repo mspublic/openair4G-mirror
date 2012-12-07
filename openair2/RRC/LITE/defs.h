@@ -186,6 +186,7 @@ typedef struct{
   MAC_MainConfig_t                  *mac_MainConfig[NUMBER_OF_UE_MAX];
   MeasGapConfig_t                   *measGapConfig[NUMBER_OF_UE_MAX];
   eNB_RRC_INFO                      Info;
+  u8 State_CoLink[MAX_VLINK_PER_MR]; //LOLAmesh
   SRB_INFO                          SI;
   SRB_INFO                          Srb0;
   SRB_INFO_TABLE_ENTRY              Srb1[NUMBER_OF_UE_MAX+1];
@@ -195,7 +196,7 @@ typedef struct{
 
 typedef struct{
   UE_RRC_INFO Info[NB_SIG_CNX_UE]; // num max connected eNB/CH
-  u8 State_CoLink[MAX_VLINK_PER_MR];
+  u8 State_CoLink[MAX_VLINK_PER_MR];//LOLAmesh
   SRB_INFO Srb0[NB_SIG_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_UE];
@@ -292,8 +293,10 @@ int rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,RRCConnecti
 /** \brief Generates/Encodes RRCConnectionReconfigurationComplete  message at UE 
     \param Mod_id Instance ID of UE
     \param frame Frame index
-    \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, u8 eNB_index);
+    \param CH_index Index of corresponding eNB/CH
+    \param isCODRB indicates if this is a CODRB
+    \param virtualLinkID the VLID associated to the CODRB*/
+void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, u8 eNB_index, u8 isCODRB, u8 virtualLinkID);
 
 /** \brief Establish SRB1 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param Mod_id Instance ID of UE

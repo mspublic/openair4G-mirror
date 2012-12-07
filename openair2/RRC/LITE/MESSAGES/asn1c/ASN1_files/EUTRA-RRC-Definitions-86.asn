@@ -380,6 +380,8 @@ RRCConnectionReconfigurationComplete ::= SEQUENCE {
 }
 
 RRCConnectionReconfigurationComplete-r8-IEs ::= SEQUENCE {
+	isCODRB											INTEGER(0..1)						OPTIONAL,
+	virtualLinkId								INTEGER(0..255)					OPTIONAL,
 	nonCriticalExtension				SEQUENCE {}							OPTIONAL
 }
 

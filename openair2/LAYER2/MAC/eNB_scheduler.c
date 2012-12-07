@@ -4453,6 +4453,121 @@ void UpdateSBnumber(unsigned char Mod_id){
 mui_t rrc_eNB_mui_=0;
 
 //TCS LOLAmesh
+void eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u16 UE_index, u32 frame, u16 cornti, u8 vlid) {
+
+  u8 buffer [100];
+  u8 size;
+  long *coRNTI;
+  long *virtualLinkID;
+
+	//Get the eNB RRC instance
+	eNB_RRC_INST *rrc_inst = &eNB_rrc_inst[Mod_id];
+
+  //TCS LOLAmesh RRCConnectionReconfiguration parameters
+	// RadioResourceConfigDedicated
+	// RadioResourceConfigDedicated->SRBToAddModList == NULL
+	// RadioResourceConfigDedicated->DRBToAddModList == NULL
+	DRB_ToAddModList_t *DRB_list;
+	struct DRB_ToAddMod **DRB_config = &rrc_inst->DRB_config[UE_index][CO_DRB_IDENTITY]; ///first RB is the Default RB, second RB is the virtual RB
+	struct DRB_ToAddMod *DRB_config2;
+	struct RLC_Config *DRB_rlc_config;
+	struct LogicalChannelConfig *DRB_lchan_config;
+	struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
+	// RadioResourceConfigDedicated->DRBToReleaseList
+	// RadioResourceConfigDedicated->mac-MainConfig
+	MAC_MainConfig_t *mac_MainConfig;
+	long *logicalchannelgroup,*logicalchannelgroup_drb;
+	long *maxHARQ_Tx, *periodicBSR_Timer;
+	long *lcid;
+	// RadioResourceConfigDedicated->sps-Config == NULL
+	// RadioResourceConfigDedicated->physicalConfigDedicated
+	struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
+
+	/* We generate the RRCConnectionReconfiguration message */
+
+	// RadioResourceConfigDedicated->DRBToAddModList
+	DRB_list = CALLOC(1,sizeof(*DRB_list));
+	DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
+	*DRB_config = DRB_config2;
+	// RadioResourceConfigDedicated->DRBToAddModList->DRBToAddMod
+	// drb identity
+	DRB_config2->drb_Identity = CO_DRB_IDENTITY; //first RB is the Default RB, second RB is the virtual RB
+	// logical channel ID
+	lcid = CALLOC(1,sizeof(*lcid));
+	*lcid = 7; //7 for collaborative RB
+	DRB_config2->logicalChannelIdentity = lcid;
+	// rlc config
+	DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
+	DRB_config2->rlc_Config   = DRB_rlc_config;
+	DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
+	DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
+	DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
+	DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering=T_Reordering_ms35;
+	// logical channel config
+	DRB_lchan_config = CALLOC(1,sizeof(*DRB_lchan_config));
+	DRB_config2->logicalChannelConfig   = DRB_lchan_config;
+	DRB_ul_SpecificParameters = CALLOC(1,sizeof(*DRB_ul_SpecificParameters));
+	DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
+	DRB_ul_SpecificParameters->priority = 2; // lower priority than srb1, srb2
+	DRB_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+	DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+	logicalchannelgroup_drb = CALLOC(1,sizeof(long));
+	*logicalchannelgroup_drb=0;
+	DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
+	// CO-RNTI
+	coRNTI = CALLOC(1,sizeof(*coRNTI));
+	*coRNTI = cornti;
+	DRB_config2->co_RNTI = (long)coRNTI;
+	// Virtual Link ID
+	virtualLinkID = CALLOC(1,sizeof(*virtualLinkID));
+	*virtualLinkID = vlid;
+	DRB_config2->virtualLinkID = (long)virtualLinkID;
+	ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
+
+	// RadioResourceConfigDedicated->mac-MainConfig
+	mac_MainConfig = CALLOC(1,sizeof(*mac_MainConfig));
+	eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index] = mac_MainConfig;
+	mac_MainConfig->ul_SCH_Config = CALLOC(1,sizeof(*mac_MainConfig->ul_SCH_Config));
+	maxHARQ_Tx = CALLOC(1,sizeof(long));
+	*maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+	mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
+	periodicBSR_Timer = CALLOC(1,sizeof(long));
+	*periodicBSR_Timer = MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64;
+	mac_MainConfig->ul_SCH_Config->periodicBSR_Timer =  periodicBSR_Timer;
+	mac_MainConfig->ul_SCH_Config->retxBSR_Timer =  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320;
+	mac_MainConfig->ul_SCH_Config->ttiBundling=0; // FALSE
+	mac_MainConfig->drx_Config = NULL;
+	mac_MainConfig->phr_Config = CALLOC(1,sizeof(*mac_MainConfig->phr_Config));
+	mac_MainConfig->phr_Config->present = MAC_MainConfig__phr_Config_PR_setup;
+	mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer= MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
+	mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer=MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
+	mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange=MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1; // Value dB1 =1 dB, dB3 = 3 dB
+
+	size = do_RRCConnectionReconfiguration(Mod_id,
+					 buffer,
+					 UE_index,
+					 0,//Transaction_id,
+					 NULL,//SRB_list
+					 DRB_list,//DRB_list (ToAdd)
+					 NULL, //DRB2_list (ToRelease)
+					 NULL, //sps config
+					 physicalConfigDedicated,//physicalConfigDedicated
+					 NULL,//MeasObj_list
+					 NULL,//ReportConfig_list
+					 NULL, //*QuantityConfig
+					 NULL,//measId_list
+					 mac_MainConfig,//mac_macConfig
+					 NULL); //measGapConfig
+
+	LOG_D(RRC,"[eNB %d][TCS DEBUG] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for collaborative RB (bytes %d, UE id %d, cornti %u, vlid %u)\n",Mod_id,frame, size, UE_index, cornti, vlid);
+	LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][TCS DEBUG][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d) --->][RLC][MOD %02d][RB %02d]\n",frame, Mod_id, size, UE_index, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
+
+	/* Send data to lower layer (PDCP) */
+	pdcp_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui_++,0,size,(char*)buffer,1);
+
+}
+
+//TCS LOLAmesh
 void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subframe) {//, int calibration_flag) {
 
   unsigned char nprb=0;
@@ -4462,36 +4577,12 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   //TCS LOLAmesh
   int i;
   int j;
-  u8 buffer [100];
-  u8 size;
   u16 UE_index = 0;
-  u8 status;
   u8 vlink_status = 1;
   u16 cornti;
+  u8 vlid;
   u8 count; // length of the cornti list in a UE_template stucture
-  long *coRNTI;
-  long *virtualLinkID;
-  eNB_RRC_INST *rrc_inst = &eNB_rrc_inst[Mod_id];
-
-  //TCS LOLAmesh RRCConnectionReconfiguration parameters
-  // RadioResourceConfigDedicated
-  // RadioResourceConfigDedicated->SRBToAddModList == NULL
-  // RadioResourceConfigDedicated->DRBToAddModList == NULL
-  DRB_ToAddModList_t *DRB_list;
-  struct DRB_ToAddMod **DRB_config = &rrc_inst->DRB_config[UE_index][1]; ///first RB is the Default RB, second RB is the virtual RB
-  struct DRB_ToAddMod *DRB_config2;
-  struct RLC_Config *DRB_rlc_config;
-  struct LogicalChannelConfig *DRB_lchan_config;
-  struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
-  // RadioResourceConfigDedicated->DRBToReleaseList
-  // RadioResourceConfigDedicated->mac-MainConfig
-  MAC_MainConfig_t *mac_MainConfig;
-  long *logicalchannelgroup,*logicalchannelgroup_drb;
-  long *maxHARQ_Tx, *periodicBSR_Timer;
-  long *lcid;
-  // RadioResourceConfigDedicated->sps-Config == NULL
-  // RadioResourceConfigDedicated->physicalConfigDedicated
-  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
+  u8 status;
 
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
@@ -4506,7 +4597,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   //TCS LOLAmesh
   /* Each 100 frames check if it is possible to setup a collaborative RB */
-  if (frame % 100 == 0) {
+  if ((frame % 100 == 0)&&(subframe == 1)) {
 
   	LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, check for collaborative DRB\n",Mod_id, frame, subframe);
 
@@ -4516,7 +4607,10 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   		/* If the VL has not been established yet, try to establish it */
   		if (virtualLinksTable[Mod_id].array[i].status == VLINK_NOT_CONNECTED) {
 
-  			LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK not connected\n",Mod_id, frame, subframe);
+  			/* Get the virtual link ID */
+  			vlid = virtualLinksTable[Mod_id].array[i].virtualLinkID;
+
+  			LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d not connected\n",Mod_id, frame, subframe, vlid);
 
   			/* We go through all the MRs belonging to a VL */
   			for (j=0;j<virtualLinksTable[Mod_id].array[i].MRarray.count;j++) {
@@ -4528,7 +4622,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   				/* We can't establish a RB */
   				status = mac_get_rrc_status(Mod_id,1,UE_index);
   				if (status != RRC_RECONFIGURED) {
-  					LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, UE %d in RRC_IDLE (%d), can't establish virtual link\n",Mod_id, frame, subframe, UE_index,status);
+  					LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d UE %d in RRC_IDLE (%d), can't establish virtual link\n",Mod_id, frame, subframe, vlid, UE_index,status);
   					vlink_status = 0;
   					break;
   				}
@@ -4538,7 +4632,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   			/* If the VL is ready to be established */
   			if (vlink_status == 1) {
 
-  				LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VL %d ready to be established\n",Mod_id, frame, subframe, i);
+  				LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d ready to be established\n",Mod_id, frame, subframe, vlid);
 
   				/* We chose the cornti randomly */
   				cornti = (u16)taus();
@@ -4554,90 +4648,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   					/* We get the UE_index of the MR */
   					UE_index = virtualLinksTable[Mod_id].array[i].MRarray.array[j];
 
-  					//Get the eNB RRC instance
-						eNB_RRC_INST *rrc_inst = &eNB_rrc_inst[Mod_id];
-
-  					/* We generate the RRCConnectionReconfiguration message */
-
-						// RadioResourceConfigDedicated->DRBToAddModList
-						DRB_list = CALLOC(1,sizeof(*DRB_list));
-						DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
-						*DRB_config = DRB_config2;
-						// RadioResourceConfigDedicated->DRBToAddModList->DRBToAddMod
-						// drb identity
-						DRB_config2->drb_Identity = 2; //first RB is the Default RB, second RB is the virtual RB
-						// logical channel ID
-						lcid = CALLOC(1,sizeof(*lcid));
-						*lcid = 7;
-						DRB_config2->logicalChannelIdentity = lcid;
-						// rlc config
-						DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
-						DRB_config2->rlc_Config   = DRB_rlc_config;
-						DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
-						DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
-						DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
-						DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering=T_Reordering_ms35;
-						// logical channel config
-						DRB_lchan_config = CALLOC(1,sizeof(*DRB_lchan_config));
-						DRB_config2->logicalChannelConfig   = DRB_lchan_config;
-						DRB_ul_SpecificParameters = CALLOC(1,sizeof(*DRB_ul_SpecificParameters));
-						DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
-						DRB_ul_SpecificParameters->priority = 2; // lower priority than srb1, srb2
-						DRB_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-						DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-						logicalchannelgroup_drb = CALLOC(1,sizeof(long));
-						*logicalchannelgroup_drb=0;
-						DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-					  // CO-RNTI
-						coRNTI = CALLOC(1,sizeof(*coRNTI));
-					  *coRNTI = cornti;
-					  DRB_config2->co_RNTI = (long)coRNTI;
-					  // Virtual Link ID
-					  virtualLinkID = CALLOC(1,sizeof(*virtualLinkID));
-					  *virtualLinkID = virtualLinksTable[Mod_id].array[i].virtualLinkID;
-					  DRB_config2->virtualLinkID = (long)virtualLinkID;
-						ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
-
-						// RadioResourceConfigDedicated->mac-MainConfig
-						mac_MainConfig = CALLOC(1,sizeof(*mac_MainConfig));
-						eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index] = mac_MainConfig;
-						mac_MainConfig->ul_SCH_Config = CALLOC(1,sizeof(*mac_MainConfig->ul_SCH_Config));
-						maxHARQ_Tx = CALLOC(1,sizeof(long));
-						*maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
-						mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
-						periodicBSR_Timer = CALLOC(1,sizeof(long));
-						*periodicBSR_Timer = MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64;
-						mac_MainConfig->ul_SCH_Config->periodicBSR_Timer =  periodicBSR_Timer;
-						mac_MainConfig->ul_SCH_Config->retxBSR_Timer =  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320;
-						mac_MainConfig->ul_SCH_Config->ttiBundling=0; // FALSE
-						mac_MainConfig->drx_Config = NULL;
-						mac_MainConfig->phr_Config = CALLOC(1,sizeof(*mac_MainConfig->phr_Config));
-						mac_MainConfig->phr_Config->present = MAC_MainConfig__phr_Config_PR_setup;
-						mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer= MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
-						mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer=MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
-						mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange=MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1; // Value dB1 =1 dB, dB3 = 3 dB
-
-						size = do_RRCConnectionReconfiguration(Mod_id,
-										 buffer,
-										 UE_index,
-										 0,//Transaction_id,
-										 NULL,//SRB_list
-										 DRB_list,//DRB_list (ToAdd)
-										 NULL, //DRB2_list (ToRelease)
-										 NULL, //sps config
-										 physicalConfigDedicated,//physicalConfigDedicated
-										 NULL,//MeasObj_list
-										 NULL,//ReportConfig_list
-										 NULL, //*QuantityConfig
-										 NULL,//measId_list
-										 mac_MainConfig,//mac_macConfig
-										 NULL); //measGapConfig
-
-  				  LOG_D(RRC,"[eNB %d][TCS DEBUG] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for collaborative RB (bytes %d, UE id %d, cornti %u, vlid %u)\n",Mod_id,frame, size, UE_index, cornti, virtualLinksTable[Mod_id].array[i].virtualLinkID);
-  				  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][TCS DEBUG][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d) --->][RLC][MOD %02d][RB %02d]\n",frame, Mod_id, size, UE_index, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
-
-  				  /* Send data to lower layer (PDCP) */
-  				  pdcp_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui_++,0,size,(char*)buffer,1);
+  					// Generate and send RRCConnectionReconfiguration
+  					eNB_generate_RRCConnectionReconfiguration(Mod_id,UE_index,frame,cornti,vlid);
 
   				}// end for (j=0;j<virtualLinksTable[Mod_id].array[i].MRList.count;j++)
 
@@ -4650,7 +4662,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   		/* Else go to the next VL */
   		else {
-  			LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d connected\n",Mod_id, frame, subframe, i);
+  			LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d connected\n",Mod_id, frame, subframe, virtualLinksTable[Mod_id].array[i].virtualLinkID);
 				break;
 			}
 
