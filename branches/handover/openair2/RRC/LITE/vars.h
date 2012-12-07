@@ -176,7 +176,7 @@ float RSRQ_meas_mapping[33] = {
 };
 
 // TimeToTrigger enum mapping table (36.331 TimeToTrigger IE)
-const u32 timeToTrigger_ms[16] = {0,40,64,80,100,128,160,256,320,480,512,640,1024,1280,2560,5120};
+const u32 timeToTrigger_ms[16] = {0,10 /* 40 */,64,80,100,128,160,256,320,480,512,640,1024,1280,2560,5120};
 
 u8 DRB2LCHAN[8];
 

@@ -755,7 +755,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	 
 #ifdef OPENAIR2
 	  //  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
-	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1) { 
+	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1) {
 	    mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
 				  phy_vars_ue->frame,
 				  eNB_id,

@@ -251,7 +251,7 @@ typedef struct{
   struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
   struct MeasIdToAddMod           *MeasId[NB_CNX_UE][MAX_MEAS_ID];
   MEAS_REPORT_LIST				  *measReportList[NB_CNX_UE][MAX_MEAS_ID];
-  u32							  measTimer[NB_CNX_UE][MAX_MEAS_ID];
+  u32							  measTimer[NB_CNX_UE][MAX_MEAS_ID][6]; // 6 neighboring cells
   RSRP_Range_t                    s_measure;
   struct MeasConfig__speedStatePars	  *speedStatePars;
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
