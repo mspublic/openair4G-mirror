@@ -363,7 +363,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol, nb_rb);
 	
 
-	avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
+    avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
 	
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
 	//printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
@@ -475,6 +475,16 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			    symbol,first_symbol_flag,nb_rb,
 			    adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
 			    lte_ue_pdsch_vars[eNB_id]->llr128);
+      else if (i_mod == 4) 
+          dlsch_qpsk_16qam_llr(frame_parms,
+			    lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+			    lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+			    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+			    lte_ue_pdsch_vars[eNB_id]->llr[0],
+			    symbol,first_symbol_flag,nb_rb,
+			    adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
+			    lte_ue_pdsch_vars[eNB_id]->llr128);
       else {
 	msg("rx_dlsch.c : IC receiver only implemented for 4QAM-4QAM\n");
 	return(-1);
@@ -492,11 +502,18 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			lte_ue_pdsch_vars[eNB_id]->llr128);
       else if (i_mod == 2)
 	{
-	  msg("rx_dlsch.c : IC receiver only implemented for 16QAM-16QAM\n");
-	  return(-1);
+        dlsch_16qam_qpsk_llr(frame_parms,
+                             lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                             lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                             lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                             lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                             lte_ue_pdsch_vars[eNB_id]->llr[0],
+                             symbol,first_symbol_flag,nb_rb,
+                             adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
+                             lte_ue_pdsch_vars[eNB_id]->llr128);
 	}
       else if (i_mod == 4)
-	dlsch_16qam_16qam_llr_128(frame_parms,
+	dlsch_16qam_16qam_llr(frame_parms,
 			      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
 			      lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
 			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,

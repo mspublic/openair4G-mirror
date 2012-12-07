@@ -2177,7 +2177,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    (openair_daq_vars.use_ia_receiver ==1)) {
 	  dual_stream_UE = 1;
 	  eNB_id_i = phy_vars_ue->n_connected_eNB;
-	  i_mod = get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+	  if (get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs)==4)
+	    i_mod=2;
+	  else
+	    i_mod=4;
 	  if (phy_vars_ue->frame%100==0) {
 	    LOG_I(PHY,"using IA receiver\n");
 	  }
@@ -2333,9 +2336,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))].send_harq_status = 0;
       }
     
-      if ((phy_vars_ue->frame % 10 == 0) && (last_slot==2)) {
+      if ((phy_vars_ue->frame % 100 == 0) && (last_slot==2)) {
 	LOG_D(PHY,"[UE %d] Calculating bitrate: total_TBS = %d, total_TBS_last = %d\n",phy_vars_ue->Mod_id,phy_vars_ue->total_TBS[eNB_id],phy_vars_ue->total_TBS_last[eNB_id]);
-	phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id])*10;
+	phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id])*1;
 	phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
       }
 
@@ -2653,7 +2656,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		(openair_daq_vars.use_ia_receiver ==1)) {
 	      dual_stream_UE = 1;
 	      eNB_id_i = phy_vars_ue->n_connected_eNB;
-	      i_mod =  get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+	      if (get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs)==4)
+		i_mod=2;
+	      else
+		i_mod=4;
 	    }
 	    else {
 	      dual_stream_UE = 0;
@@ -2712,7 +2718,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		(openair_daq_vars.use_ia_receiver ==1)) {
 	      dual_stream_UE = 1;
 	      eNB_id_i = phy_vars_ue->n_connected_eNB;
-	      i_mod = get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+	      if (get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs)==4)
+		i_mod=2;
+	      else
+		i_mod=4;
 	    }
 	    else {
 	      dual_stream_UE = 0;
