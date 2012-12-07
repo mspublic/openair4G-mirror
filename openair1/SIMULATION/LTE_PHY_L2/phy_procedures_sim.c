@@ -202,7 +202,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
     bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
 #endif
     
-    
+    //TODO: Why NB_CH_INST instead of NB_eNB_INST ??
     for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
       
       frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
@@ -291,6 +291,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	}
       }
       // Compute RX signal for UE = UE_id
+      //TODO: Again, why NB_CH_INST instead of NB_eNB_INST??
       for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
 	frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
 	tx_pwr = dac_fixed_gain(s_re,
