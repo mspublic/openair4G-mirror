@@ -186,11 +186,11 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 eNB_ind
 
 
 
-void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, u8 eNB_index) {
+void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id, u32 frame, u8 eNB_index, u8 isCODRB, u8 virtualLinkID) {
 
   u8 buffer[32], size;
 
-  size = do_RRCConnectionReconfigurationComplete(buffer);
+  size = do_RRCConnectionReconfigurationComplete(buffer,isCODRB,virtualLinkID);
 
   LOG_I(RRC,"[UE %d] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionReconfigurationComplete (bytes %d, eNB_index %d)\n",
 	Mod_id,frame, size, eNB_index);
@@ -721,8 +721,8 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
 					} else {
 						LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] MAC layer forwarding table configuration succeeded\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
 					}
-					UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_CONNECTED;
-					LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_CONNECTED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
+					//UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_RECONFIGURED;
+					//LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
 					collaborative_link = 1;
 				}// end if ((radioResourceConfigDedicated->drb_ToAddModList->list.array...
       }// end if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) / else
@@ -733,9 +733,14 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
   if (collaborative_link == 0) {
   	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_CONNECTED;
   	LOG_D(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",Mod_id,eNB_index);
+  	ret = 0;
+  }
+  //If this is a collaborative link, we return the id of the link
+  else {
+  	ret = vlid;
   }
 
-  return collaborative_link;
+  return ret;
 
 }
 
@@ -831,12 +836,18 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
 	ret = rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
-	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
 	//TCS LOLAmesh
-	// If this is not a cooperative link
+	// If this is not a cooperative link ret == 0
 	if (ret == 0) {
+		rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,0,0);
 		UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
 		LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
+	}
+	// If this is a cooperative link ret == vlid
+	else {
+		rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,1,ret);
+		UE_rrc_inst[Mod_id].State_CoLink[ret] = RRC_RECONFIGURED;
+		LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,ret,eNB_index);
 	}
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:

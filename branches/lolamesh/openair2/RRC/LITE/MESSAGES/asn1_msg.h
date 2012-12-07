@@ -65,8 +65,10 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer);
 
 /** \brief Generate an RRCConnectionReconfigurationComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
+@isCODRB indicates if the RRCConnectionReconfigurationComplete acknowledges a DRB setup a CODRB setup
+@virtualLinkID virtualLink associated to the CODRB
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer);
+uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer, uint8_t isCODRB, uint8_t virtualLinkID);
 
 /** 
 \brief Generate an RRCConnectionSetup DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and 

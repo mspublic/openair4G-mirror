@@ -254,6 +254,9 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
   //UL_DCCH_Message_t uldcchmsg;
   UL_DCCH_Message_t *ul_dcch_msg=NULL;//&uldcchmsg;
   int i;
+  //TCS LOLAmesh
+  u8 vlid;
+  u8 isCodrb;
 
   if (Srb_id != 1) {
     LOG_E(RRC,"[eNB %d] Frame %d: Received message on SRB%d, should not have ...\n",Mod_id,frame,Srb_id);
@@ -294,9 +297,19 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes (RRCConnectionReconfigurationComplete) --->][RRC_eNB][MOD %02d][]\n",
                                      frame, Mod_id, DCCH, sdu_size, Mod_id);
       if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.present == RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
-        rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
-	eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
-	LOG_D(RRC,"[eNB %d] UE %d State = RRC_RECONFIGURED \n",Mod_id,UE_index);
+      	rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
+				//TCS LOLAmesh
+      	isCodrb = (u8)*(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.isCODRB);
+				//This is not a collaborative RB
+				if (isCodrb == 0){
+					eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
+					LOG_D(RRC,"[eNB %d] UE %d State = RRC_RECONFIGURED \n",Mod_id,UE_index);
+				}
+				if (isCodrb == 1){
+					vlid = (u8)*(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.virtualLinkId);
+					eNB_rrc_inst[Mod_id].State_CoLink[vlid] = RRC_RECONFIGURED;
+					LOG_D(RRC,"[TCS DEBUG][eNB %d] UE %d State = RRC_RECONFIGURED on vlid %u\n",Mod_id,UE_index,vlid);
+				}
       }
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
