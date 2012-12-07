@@ -1447,7 +1447,7 @@ int main(int argc, char **argv) {
       for (j=0; j<g_otg->num_nodes; j++){ 
 	//g_otg->packet_gen_type=SUBSTRACT_STRING;
 	g_otg->aggregation_level[i][j]=1;
-	g_otg->application_type[i][j] = MCBR; //MCBR, BCBR
+	g_otg->application_type[i][j] = BCBR; //MCBR, BCBR
       }
     }
     init_predef_traffic();

@@ -1632,19 +1632,6 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
       DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[UE_id].DLSCH_DCI[harq_pid];
 
-      /// Synchronizing rballoc with rballoc_sub
-      for(x=0;x<7;x++){
-	for(y=0;y<2;y++){
-	  z = 2*x + y;
-	    if(z < (2*6 + 1)){
-	      rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
-	    }
-	}
-      }
-      for(i=0;i<13;i++){
-	if(rballoc_sub[i] == 1)
-	  rballoc |= (0x0001<<i);
-      }
 
       switch(mac_xface->get_transmission_mode(Mod_id,rnti)) {
       default:
@@ -1723,14 +1710,19 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	  }*/
 	break;
       case 5:
-	/*	for(x=0;x<7;x++){
+	/// Synchronizing rballoc with rballoc_sub
+	for(x=0;x<7;x++){
 	  for(y=0;y<2;y++){
+	    z = 2*x + y;
 	    if(z < (2*6 + 1)){
-	      z = 2*x + y;
 	      rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
 	    }
 	  }
-	  }*/
+	}
+	for(i=0;i<13;i++){
+	  if(rballoc_sub[i] == 1)
+	    rballoc |= (0x0001<<i);
+	}
 	((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
 	((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
 
@@ -3906,8 +3898,15 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
     
     // for TM5, limit the MCS to 16QAM    
-    if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
+    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) 
+      if (dl_pow_off[next_ue]==0) {
+	if (next_ue==0)
+	  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
+	else
+	  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,9);
+      }
+      else
+	eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
 
     // for EXMIMO, limit the MCS to 16QAM as well
 #ifdef EXMIMO
