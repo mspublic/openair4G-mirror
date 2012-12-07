@@ -545,20 +545,20 @@ int main (int argc, char **argv)
     		   random_channel(UE2RN[UE_id][RN_id]);
 
 
-               RN2UE[RN_id][UE_id] = new_channel_desc_scm(PHY_vars_RN_g[RN_id]->eNB->lte_frame_parms.nb_antennas_tx,
-                    						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-                    						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
-                    						     oai_emulation.environment_system_config.system_bandwidth_MB,
-                    						     forgetting_factor,
-                    						     0,
-                    						     0);
-               random_channel(RN2UE[RN_id][UE_id]);
-
+		   RN2UE[RN_id][UE_id] = new_channel_desc_scm(PHY_vars_RN_g[RN_id]->eNB->lte_frame_parms.nb_antennas_tx,
+							      PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+							      map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+							      oai_emulation.environment_system_config.system_bandwidth_MB,
+							      forgetting_factor,
+							      0,
+							      0);
+		   random_channel(RN2UE[RN_id][UE_id]);
+		   
     		   //Generate the frequency response of the channel
-               freq_channel(UE2RN[UE_id][RN_id],PHY_vars_RN_g[0]->eNB->lte_frame_parms.N_RB_DL,PHY_vars_RN_g[0]->eNB->lte_frame_parms.N_RB_DL*12+1);
-               freq_channel(RN2UE[RN_id][UE_id],PHY_vars_RN_g[0]->ue->lte_frame_parms.N_RB_DL,PHY_vars_RN_g[0]->ue->lte_frame_parms.N_RB_DL*12+1);
-
-
+		   freq_channel(UE2RN[UE_id][RN_id],PHY_vars_RN_g[0]->eNB->lte_frame_parms.N_RB_DL,PHY_vars_RN_g[0]->eNB->lte_frame_parms.N_RB_DL*12+1);
+		   freq_channel(RN2UE[RN_id][UE_id],PHY_vars_RN_g[0]->ue->lte_frame_parms.N_RB_DL,PHY_vars_RN_g[0]->ue->lte_frame_parms.N_RB_DL*12+1);
+		   
+		   
     	   }
        }
 
