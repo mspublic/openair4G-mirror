@@ -19,6 +19,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/virtual_link.h" //LOLAmesh
 //#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -1204,6 +1205,19 @@ main (int argc, char **argv)
     Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
 #endif 
   
+  //TCS LOLAmesh
+  /* Virtual links table initialization */
+  // CH 0 = eNB 0 = Mod_id 0 => virtualLinksTable index
+  // 1 virtual link to be defined with 1 MRs => virtualLinksTable.array index
+  // MR 0 = UE 0 = UE_index 0 => virtualLinksTable.array.MRarray.array index
+  virtualLinksTable[0].count = 1; // Nb of virtual links
+  virtualLinksTable[0].array[0].virtualLinkID = 1; // Virtual link ID
+  virtualLinksTable[0].array[0].PCellIddestCH = 1; // dummy value
+  virtualLinksTable[0].array[0].PCellIdsourceCH = 2; // dummy value
+  virtualLinksTable[0].array[0].status = VLINK_NOT_CONNECTED; // Virtual link state
+  virtualLinksTable[0].array[0].MRarray.count = 1; // Nb of MRs in the virtual link
+  virtualLinksTable[0].array[0].MRarray.array[0] = 0; // UE_index of the MR
+
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
   printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("after init: frame_type %d,tdd_config %d\n", 
