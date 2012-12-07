@@ -76,6 +76,7 @@ uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index) {
   return(two_tier_hexagonal_adjacent_cellIds[Mod_id][index]);
 }
 
+/* This only works for the hexagonal topology...need a more general function for other topologies */
 u8 get_adjacent_cell_mod_id(uint16_t phyCellId) {
 	u8 i;
 	for(i=0;i<7;i++) {
@@ -1888,7 +1889,7 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
 
   struct MeasResultEUTRA *measresulteutra2;
   measresulteutra2 = CALLOC(1,sizeof(*measresulteutra2));
-  measresulteutra2->physCellId=phy_id;//1;
+  measresulteutra2->physCellId=phy_id;
 
   struct MeasResultEUTRA__cgi_Info *measresult_cgi2;
   measresult_cgi2 = CALLOC(1,sizeof(*measresult_cgi2));

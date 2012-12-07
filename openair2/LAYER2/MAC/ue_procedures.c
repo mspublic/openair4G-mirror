@@ -981,7 +981,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
     if (UE_mac_inst[Mod_id].PHR_reconfigured == 1){ // upon (re)configuration of the power headroom reporting functionality by upper layers 
       UE_mac_inst[Mod_id].PHR_reporting_active =1;
       UE_mac_inst[Mod_id].PHR_reconfigured = 0;
-    } else { 
+    } else {
       //LOG_D(MAC,"PHR normal operation %d active %d \n", UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF, UE_mac_inst[Mod_id].PHR_reporting_active);
       if ((UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF <= 0) && 
 	  ((mac_xface->get_PL(Mod_id,eNB_index) <  UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db ) || 
