@@ -89,6 +89,12 @@ typedef struct {
   double speed;
 } node_desc_t;
 
+typedef struct {
+	node_desc_t* ue;
+	node_desc_t* enb;
+} rn_node_desc_t;
+
+
 typedef enum {
   rural=0,
   urban,

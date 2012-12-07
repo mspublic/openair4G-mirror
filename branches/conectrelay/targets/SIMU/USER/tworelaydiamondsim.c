@@ -70,8 +70,10 @@ channel_desc_t *UE2RN[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 channel_desc_t *RN2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 
 //Added for PHY abstraction
+//TODO: What are these data structures. Only for Abstraction? But they are also used for the do_DL_sig and do_UL_sig functions.
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
+rn_node_desc_t *rn_data[NUMBER_OF_eNB_MAX];
 
 //TODO: What is this 2 and 16 refers to??
 double sinr_bler_map[MCS_COUNT][2][16];
@@ -450,6 +452,28 @@ int main (int argc, char **argv)
      init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, argvars.Nid_cell, argvars.cooperation_flag, oai_emulation.info.transmission_mode, argvars.abstraction_flag, argvars.relay_flag);
 
 
+     //INIT eNB, UE and RN data structures...
+     //TODO: enb_data ??
+     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+       enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
+       init_enb(enb_data[eNB_id],oai_emulation.environment_system_config.antenna.eNB_antenna);
+     }
+
+     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+       ue_data[UE_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
+       init_ue(ue_data[UE_id],oai_emulation.environment_system_config.antenna.UE_antenna);
+     }
+
+     //FIXME: This part does not work with the RN nodes.
+
+     for (RN_id = 0; RN_id < NB_RN_INST; RN_id++) {
+       rn_data[RN_id]->ue = (node_desc_t *)malloc(sizeof(node_desc_t));
+       rn_data[RN_id]->enb = (node_desc_t *)malloc(sizeof(node_desc_t));
+       init_ue(rn_data[RN_id]->ue,oai_emulation.environment_system_config.antenna.UE_antenna);
+       init_enb(rn_data[RN_id]->enb,oai_emulation.environment_system_config.antenna.eNB_antenna);
+     }
+
+
      //SOME OCM RELATED ASSIGNMENTS
 
      if ((oai_emulation.info.ocm_enabled == 1)&& (argvars.ethernet_flag == 0 ) &&
@@ -823,22 +847,46 @@ int main (int argc, char **argv)
     			   //TODO: Stuff for ethernet emulation. Remove it safely??
     			   //emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
 
-    			   /*
+    			   //Create somekind of new function like do_DL_sig() that will not only go over phy_vars_eNB[], but also phy_vars_RN[]->eNB and similarly UE structs.
+    			   //  OR add these into the do_DL_sig() function (with a relay flag, otherwise it dlsim etc. will not work).
+
     			   if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
-    				   do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+    				   do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2RN[0][0],enb_data[0],rn_data[0].ue,next_slot,argvars.abstraction_flag,frame_parms);
+    				   do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,RN2UE[1][0],rn_data.enb,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+
     			   }
+       			   if ((direction  == SF_DL2)|| (frame_parms->frame_type==0)){
+       				   do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2RN[0][1],enb_data,rn_data.ue,next_slot,argvars.abstraction_flag,frame_parms);
+       				   do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,RN2UE[0][0],rn_data.enb,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+
+        			   }
     			   if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
     				   do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+    				   do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+
     			   }
+    			   if ((direction  == SF_UL2)|| (frame_parms->frame_type==0)){
+    				   do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+    				   do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+
+    			   }
+
     			   if ((direction == SF_S)) {//it must be a special subframe
     				   if (next_slot%2==0) {//DL part
     					   do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+    					   do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+
     				   }
     				   else {// UL part
     					   do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+    					   do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,argvars.abstraction_flag,frame_parms);
+
     				   }
     			   }
 
+
+
+/*
     			   if ((last_slot == 1) && (frame == 0)
     					   && (argvars.abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
@@ -856,7 +904,7 @@ int main (int argc, char **argv)
     				   write_output ("pbch_rxF_llr.m", "pbch_llr",
     						   PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
     			   }
-
+*/
     			   if (next_slot %2 == 0){
     				   clock_gettime (CLOCK_REALTIME, &time_spec);
     				   time_last = time_now;
@@ -877,7 +925,7 @@ int main (int argc, char **argv)
     				   }
     			   } // end if next_slot%2
 
-    			 */
+
 
     		   }// if Channel_Flag==0
 
@@ -885,6 +933,23 @@ int main (int argc, char **argv)
 
 
        }
+
+
+       // added for PHY abstraction
+       if (oai_emulation.info.ocm_enabled == 1) {
+    	   for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++)
+    		   free(enb_data[eNB_id]);
+
+    	   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++)
+    		   free(ue_data[UE_id]);
+
+    	   for (RN_id = 0; RN_id < NUMBER_OF_eNB_MAX; RN_id++)
+    		   free(rn_data[RN_id]);
+       } //End of PHY abstraction changes
+
+#ifdef OPENAIR2
+       mac_top_cleanup();
+#endif
 
 	  return 0;
 
