@@ -121,6 +121,7 @@ char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
   UE_rrc_inst[Mod_id].Srb0[eNB_index].Active=0;
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Active=0;
   UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
+  UE_rrc_inst[Mod_id].HandoverInfoUe.measFlag=1;
 
   init_SI_UE(Mod_id,eNB_index);
   LOG_D(RRC,"[UE %d] INIT: phy_sync_2_ch_ind\n", Mod_id);
@@ -302,25 +303,23 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
 		  rsrp_t = binary_search_float(RSRP_meas_mapping,nElem,phy_vars_ue->PHY_measurements.rsrp_filtered[target_eNB_offset]); //RSRP of target cell
 		  rsrq_t = binary_search_float(RSRQ_meas_mapping,nElem1,phy_vars_ue->PHY_measurements.rsrq_filtered[target_eNB_offset]); //RSRQ of target cell
 
-		  if (measFlag == 1) {
-			  cellId = get_adjacent_cell_id(Mod_id,0); //PhycellId of serving cell
-			  targetCellId = UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId ;//get_adjacent_cell_id(Mod_id,target_eNB_offset); //PhycellId of target cell
-			  LOG_D(RRC,"Sending MeasReport: servingCell(%d) targetCell(%d) rsrp_s(%d) rsrq_s(%d) rsrp_t(%d) rsrq_t(%d) \n", \
-					  cellId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+		//  if (measFlag == 1) {
+		  cellId = get_adjacent_cell_id(Mod_id,0); //PhycellId of serving cell
+		  targetCellId = UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId ;//get_adjacent_cell_id(Mod_id,target_eNB_offset); //PhycellId of target cell
+		  LOG_D(RRC,"Sending MeasReport: servingCell(%d) targetCell(%d) rsrp_s(%d) rsrq_s(%d) rsrp_t(%d) rsrq_t(%d) \n", \
+				  cellId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
 
-			  size = do_MeasurementReport(buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
-			  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
+		  size = do_MeasurementReport(buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+		  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
 
 		  if (frame != cframe){
 		  pdcp_data_req(Mod_id+NB_eNB_INST,frame,0,DCCH,rrc_mui++,0,size,(char*)buffer,1);
 		  cframe=frame;
 		  LOG_W(PDCP, "[UE %d] Frame %d Sending MeasReport (%d bytes) through DCCH%d to PDCP \n",Mod_id,frame, size, DCCH);
 		  }
-
-		  measFlag = 0; //re-setting measFlag so that no more MeasReports are sent in this frame
-		  }
+	//	  measFlag = 0; //re-setting measFlag so that no more MeasReports are sent in this frame
+	//	  }
   }
-
 }
 }
 
@@ -1522,7 +1521,8 @@ void ue_measurement_report_triggering(u8 Mod_id, u32 frame, UE_RRC_INST *UE_rrc_
 								case ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3:
 									if (check_trigger_meas_event(i,j,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id],ofn,ocn,hys,ofs,ocs,a3_offset,ttt_ms) && \
 											UE_rrc_inst[Mod_id].Info[0].State == RRC_CONNECTED && \
-											UE_rrc_inst[Mod_id].Info[0].T304_active == 0) {
+											UE_rrc_inst[Mod_id].Info[0].T304_active == 0 && \
+											UE_rrc_inst[Mod_id].HandoverInfoUe.measFlag == 1) {
 										//trigger measurement reporting procedure (36.331, section 5.5.5)
 										if (UE_rrc_inst[Mod_id].measReportList[i][j] == NULL) {
 											UE_rrc_inst[Mod_id].measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));

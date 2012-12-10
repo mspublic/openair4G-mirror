@@ -117,7 +117,7 @@ void terminate(void);
 void exit_fun(const char* s);
 
 extern int transmission_mode_rrc;//FIXME!!!
-u8 measFlag = 0; //temporary flag to control frequency of MeasReport msgs
+//u8 measFlag = 0; //temporary flag to control frequency of MeasReport msgs
 
 void 
 help (void) {
@@ -1273,7 +1273,7 @@ main (int argc, char **argv)
       }
     }
 
-    measFlag = 1; //Setting measFlag to allow 1 MeasReport msg to be sent
+  //  measFlag = 1; //Setting measFlag to allow 1 MeasReport msg to be sent
 
     for (slot=0 ; slot<20 ; slot++) {
 
@@ -1343,11 +1343,16 @@ main (int argc, char **argv)
 	      ue_measurement_report_triggering(UE_id, frame, UE_rrc_inst);
 	      */
 
+	      if(UE_rrc_inst->Info[0].handoverTarget) {
+	    	  PHY_vars_UE_g[UE_id]->lte_handover_params.ho_initiated = 1;
+	      }
+
 	      phy_procedures_UE_lte(last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 
 	      if(PHY_vars_UE_g[UE_id]->lte_handover_params.ho_triggered == 1) {
 			  PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH; //Find a way to obtain the correct eNB index
 	      }
+
 
 	    }
 	  }

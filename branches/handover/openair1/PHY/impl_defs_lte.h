@@ -117,6 +117,8 @@ typedef enum {
 typedef struct {
   /// Flag to indicate ACK NAK repetition activation, see 36.213 (10.1)
   u8 ackNackRepetition;
+  /// PUCCH rampup for handover
+  u8 rampUp;
   /// NANRep, see 36.213 (10.1)
   ACKNAKREP_t repetitionFactor;
   /// n1PUCCH-AN-Rep, see 36.213 (10.1)
@@ -489,6 +491,7 @@ typedef struct {
 } LTE_DL_FRAME_PARMS;
 
 typedef struct {
+	u8 ho_initiated;
 	u8 ho_triggered;
 	LTE_DL_FRAME_PARMS lte_frame_parms;
 } LTE_HANDOVER_PARAMS;

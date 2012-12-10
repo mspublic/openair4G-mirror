@@ -171,6 +171,7 @@ typedef struct {
 
 typedef struct {
 	PhysCellId_t targetCellId;
+	u8 measFlag;
 }HANDOVER_INFO_UE;
 
 typedef struct{
