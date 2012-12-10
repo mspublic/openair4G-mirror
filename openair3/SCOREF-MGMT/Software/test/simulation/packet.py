@@ -1,19 +1,23 @@
 
 import socket
 import array
-import pickle
-from bzrlib.merge import ConfigurableFileMerger
-from copy_reg import pickle
 
 class Packet:
 	@staticmethod
-	def sendConfigurationRequest(serverAddress, serverPort, clientPort):
+	def sendConfigurationRequest(serverAddress, serverPort, clientPort, clientType):
 		# Build the packet
 		configurationRequestPacket = array.array('B')
 		configurationRequestPacket.append(0x40) # Validity=1, version=0
 		configurationRequestPacket.append(0x00) # Priority=0
 		configurationRequestPacket.append(0x03) # EventType=3
-		configurationRequestPacket.append(0x01) # EventSubtype=1
+		# Set the event sub-type according to the client type
+		if clientType == "GN":
+			configurationRequestPacket.append(0x01) # EventSubtype=1
+		elif clientType == "FAC":
+			configurationRequestPacket.append(0x11) # EventSubtype=11
+		elif clientType == "LTE":
+			# This value is not defined yet!
+			configurationRequestPacket.append(0x12) # EventSubtype=12
 		configurationRequestPacket.append(0xff) # ConfigurationId=0xFFFF (all)
 		configurationRequestPacket.append(0xff)
 		configurationRequestPacket.append(0x00) # TransmissionMode=0x0001 (bulk)
@@ -31,13 +35,20 @@ class Packet:
 		return True
 
 	@staticmethod
-	def sendCommunicationProfileRequest(serverAddress, serverPort, clientPort):
+	def sendCommunicationProfileRequest(serverAddress, serverPort, clientPort, clientType):
 		# Build the packet
 		communicationProfileRequestPacket = array.array('B')
 		communicationProfileRequestPacket.append(0x40) # Validity=1, version=0
 		communicationProfileRequestPacket.append(0x00) # Priority=0
 		communicationProfileRequestPacket.append(0x03) # EventType=3
-		communicationProfileRequestPacket.append(0x04) # EventSubtype=4
+		# Set the event sub-type according to the client type
+		if clientType == "GN":
+			communicationProfileRequestPacket.append(0x04) # EventSubtype=4
+		elif clientType == "FAC":
+			communicationProfileRequestPacket.append(0x15) # EventSubtype=15
+		elif clientType == "LTE":
+			# This value is not defined yet!
+			communicationProfileRequestPacket.append(0x16) # EventSubtype=16
 		communicationProfileRequestPacket.append(0xc0) # Transport
 		communicationProfileRequestPacket.append(0xc0) # Network
 		communicationProfileRequestPacket.append(0x80) # Access

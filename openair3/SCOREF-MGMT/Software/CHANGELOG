@@ -1,4 +1,10 @@
 
+v1.5.2
+* Simulator updated to make it send custom messages based on the client type
+  (for CONF_REQ and COMM_PROF_REQ packages)
+* START and END commands removed from the command set of the simulator
+* ../Documentation/FAC-CM... file's 5th version added
+
 v1.5.1
 * ../Design/UML/ directory added with sequence diagrams
 * Another state control mechanism added for Wireless State Requests

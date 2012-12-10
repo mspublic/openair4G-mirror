@@ -1,46 +1,57 @@
 
 0. Introduction
-   This directory involves the simulation of GN and FAC to test these interfaces.
+	This directory involves the simulation of GN and FAC to test these interfaces.
 
 1. Dependencies
-   Python packages should be installed.
+	Python packages should be installed.
 
 2. Building
-   There is no build for this tool, it's plain Python which is interpreted rather 
-   than to be built, see section 3. Running.
+	There is no build for this tool, it's plain Python which is interpreted rather 
+	than to be built, see section 3. Running.
 
 3. Commands
-   Following commands are supported.
+	Following commands are supported.
 
-   DEFINE_SERVER_PORT <port>
-   Defines the destination port (i.e. the MGMT-CORE's port)
+	3.1. DEFINE Command Family
+		3.1.1. DEFINE SERVER_ADDRESS <address>
+			Defines the destination address (i.e. the MGMT-CORE's address)
 
-   DEFINE_CLIENT_PORT <port>
-   Defines the client's port (i.e. source port that is used to send the packets to MGMT-CORE from)
+		3.1.2. DEFINE SERVER_PORT <port>
+			Defines the destination port (i.e. the MGMT-CORE's port)
 
-   DEFINE_TYPE
-   Defines client type, can be 'GN' or 'FAC'
+		3.1.3. DEFINE CLIENT_PORT <port>
+			Defines the client's port (i.e. source port that is used to send the packets to MGMT-CORE from)
 
-   SEND COMMUNICATION_PROFILE_REQUEST
-   Sends a COMMUNICATION_PROFILE_REQUEST packet to MGMT-CORE's given port
+		3.1.4. DEFINE CLIENT_TYPE <clientType>
+			Defines client type and can be 'GN', 'FAC', or 'LTE'
 
-   SEND NETWORK_STATE
-   Sends a NETWORK_STATE packet to MGMT-CORE's given port
+	3.2. SEND Command Family
+		3.2.1. SEND COMMUNICATION_PROFILE_REQUEST
+			Sends a COMMUNICATION_PROFILE_REQUEST packet to MGMT-CORE's given port
 
-   SEND LOCATION_UPDATE
-   Sends a LOCATION_UPDATE to MGMT-CORE's given port
+			NOTICE: Client type has to be defined in advance for this command since event sub-type
+			changes from client to client for this packet
 
-   SEND CONFIGURATION_NOTIFICATION
-   Sends a CONFIGURATION_NOTIFICATION to MGMT-CORE's given port
+		3.2.2. SEND NETWORK_STATE
+			Sends a NETWORK_STATE packet to MGMT-CORE's given port
 
-   SEND GET_CONFIGURATION
-   Sends a GET_CONFIGURATION to MGMT-CORE's given port
+		3.2.3. SEND LOCATION_UPDATE
+			Sends a LOCATION_UPDATE to MGMT-CORE's given port
+
+		3.2.4. SEND CONFIGURATION_NOTIFICATION
+			Sends a CONFIGURATION_NOTIFICATION to MGMT-CORE's given port
+
+		3.2.5. SEND GET_CONFIGURATION
+			Sends a GET_CONFIGURATION to MGMT-CORE's given port
+
+			NOTICE: Client type has to be defined in advance for this command since event sub-type
+			changes from client to client for this packet
 
 4. Running
-   Since this simulator has been written in Python one needs the Python interpreter.
-   In order to run first scenario file, for example,
+	Since this simulator has been written in Python you need to have the Python interpreter.
+	In order to run first scenario file, for example, issue the following command,
    
-   $ python main.py scenarios/01.sce
+	$ python main.py scenarios/01.sce
    
 5. References
 
