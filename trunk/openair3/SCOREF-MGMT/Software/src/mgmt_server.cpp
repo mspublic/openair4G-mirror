@@ -81,20 +81,20 @@ ManagementServer::~ManagementServer() {
 
 bool ManagementServer::sendWirelessStateRequest() {
 	/**
-	 * Fetch and validate client object
-	 */
-	ManagementClient* geoNetworkingClient = clientManager.getClientByEndpoint(recipient);
-
-	if (!geoNetworkingClient)
-		return false;
-
-	/**
 	 * Check if there's a GN connected
 	 */
 	if (!clientManager.isGnConnected()) {
 		logger.warning("Wanted to send a Wireless Status Request but GN is not connected...");
 		return false;
 	}
+
+	/**
+	 * Fetch and validate client object
+	 */
+	ManagementClient* geoNetworkingClient = clientManager.getClientByEndpoint(recipient);
+
+	if (!geoNetworkingClient)
+		return false;
 
 	/**
 	 * Check if we have received a reply for the last packet we sent
