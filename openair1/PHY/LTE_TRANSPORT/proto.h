@@ -279,6 +279,80 @@ s32 dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			u16 pbch_pss_sss_adj,
 			s16 **llr128p);
 
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/16QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qpsk_qam16(s16 *stream0_in,
+                s16 *stream1_in,
+                short *ch_mag_i,
+                s16 *stream0_out,
+                s16 *rho01,
+                s32 length);
+
+/** \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
+    @param frame_parms Frame descriptor structure
+    @param rxdataF_comp Compensated channel output
+    @param rxdataF_comp_i Compensated channel output for interference
+    @param rho_i Correlation between channel of signal and inteference
+    @param dlsch_llr llr output
+    @param symbol OFDM symbol index in sub-frame
+    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
+    @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param llr128p pointer to pointer to symbol in dlsch_llr*/
+s32 dlsch_qpsk_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
+			s32 **rxdataF_comp,
+			s32 **rxdataF_comp_i,
+            int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+			s32 **rho_i,
+			s16 *dlsch_llr,
+			u8 symbol,
+			u8 first_symbol_flag,
+			u16 nb_rb,
+			u16 pbch_pss_sss_adj,
+			s16 **llr128p);
+
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 16QAM/QPSK reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam16_qpsk(short *stream0_in,
+                short *stream1_in,
+                short *ch_mag,
+                short *stream0_out,
+                short *rho01,
+                int length); 
+/** \brief This function perform LLR computation for dual-stream (16QAM/QPSK) transmission.
+    @param frame_parms Frame descriptor structure
+    @param rxdataF_comp Compensated channel output
+    @param rxdataF_comp_i Compensated channel output for interference
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param rho_i Correlation between channel of signal and inteference
+    @param dlsch_llr llr output
+    @param symbol OFDM symbol index in sub-frame
+    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
+    @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param llr16p pointer to pointer to symbol in dlsch_llr*/
+int dlsch_16qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+                         int **rxdataF_comp,
+                         int **rxdataF_comp_i,
+                         int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
+                         int **rho_i,
+                         short *dlsch_llr,
+                         unsigned char symbol,
+                         unsigned char first_symbol_flag,
+                         unsigned short nb_rb,
+                         u16 pbch_pss_sss_adjust,
+                         short **llr16p);
+
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 16QAM/16QAM reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
