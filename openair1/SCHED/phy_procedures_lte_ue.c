@@ -916,7 +916,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			   pucch_ack_payload,
 			   AMP,
 			   next_slot>>1);
-	    Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format);
+	    if(phy_vars_ue->lte_handover_params.ho_initiated)
+	    	Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format,1);
+	    else
+	    	Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format,0);
 	    phy_vars_ue->tx_power_dBm = Po_PUCCH;
 	  }
 	  else {
@@ -960,9 +963,13 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				SR_payload,
 				next_slot>>1);
 	  }
-	  Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,pucch_format1);
-	  phy_vars_ue->tx_power_dBm = Po_PUCCH;
-	}
+		 if(phy_vars_ue->lte_handover_params.ho_initiated)
+			 Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format,1);
+		 else
+			 Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format,0);
+
+		  phy_vars_ue->tx_power_dBm = Po_PUCCH;
+		}
       }
 #endif  // PUCCH
 

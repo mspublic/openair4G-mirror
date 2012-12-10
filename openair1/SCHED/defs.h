@@ -432,7 +432,7 @@ UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index);
     @param pucch_fmt Format of PUCCH that is being transmitted
     @returns Transmit power
  */
-s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t pucch_fmt);
+s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t pucch_fmt, u8 ramp_up);
 
 /** \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables
