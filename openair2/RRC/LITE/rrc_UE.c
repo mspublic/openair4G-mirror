@@ -692,8 +692,7 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
 
 				rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
 				// MAC/PHY Configuration
-				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
-							frame, Mod_id, DRB_id, eNB_index, Mod_id);
+				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",frame, Mod_id, DRB_id, eNB_index, Mod_id);
 				rrc_mac_config_req(Mod_id,0,0,eNB_index,
 							 (RadioResourceConfigCommonSIB_t *)NULL,
 							 UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
@@ -757,20 +756,16 @@ int rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo) {
-	LOG_I(RRC,"Mobility Control Information is present\n");
-	rrc_ue_process_mobilityControlInfo(Mod_id,eNB_index,
-					   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo);
-
+      	LOG_I(RRC,"Mobility Control Information is present\n");
+      	rrc_ue_process_mobilityControlInfo(Mod_id,eNB_index,rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo);
       }
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
-	LOG_I(RRC,"Measurement Configuration is present\n");
-	rrc_ue_process_measConfig(Mod_id,eNB_index,
-				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
+      	LOG_I(RRC,"Measurement Configuration is present\n");
+      	rrc_ue_process_measConfig(Mod_id,eNB_index,rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
       }
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-	LOG_I(RRC,"Radio Resource Configuration is present\n");
-	ret = rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
-						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
+      	LOG_I(RRC,"Radio Resource Configuration is present\n");
+      	ret = rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
 
       }
     } // c1 present
@@ -835,20 +830,20 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
-	ret = rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
-	//TCS LOLAmesh
-	// If this is not a cooperative link ret == 0
-	if (ret == 0) {
-		rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,0,0);
-		UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
-		LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
-	}
-	// If this is a cooperative link ret == vlid
-	else {
-		rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,1,ret);
-		UE_rrc_inst[Mod_id].State_CoLink[ret] = RRC_RECONFIGURED;
-		LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,ret,eNB_index);
-	}
+				ret = rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+				//TCS LOLAmesh
+				// If this is not a cooperative link ret == 0
+				if (ret == 0) {
+					rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,0,0);
+					UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
+					LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
+				}
+				// If this is a cooperative link ret == vlid
+				else {
+					rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,1,ret);
+					UE_rrc_inst[Mod_id].State_CoLink[ret] = RRC_RECONFIGURED;
+					LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,ret,eNB_index);
+				}
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;
