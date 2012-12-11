@@ -71,8 +71,6 @@
  * @{
  */
 
-#define CO_DRB_IDENTITY 7 //TCS LOLAmesh
-
 // Size of the collaborative sequence number Control Element
 #define CO_SEQ_NUM_CE_SIZE 3 //TCS LOLAmesh
 
