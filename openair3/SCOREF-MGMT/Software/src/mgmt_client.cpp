@@ -64,6 +64,7 @@ ManagementClient::ManagementClient(ManagementInformationBase& mib, const udp::en
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::UNKNOWN, "Unknown"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::GN, "GeoNetworking"));
 	clientTypeStringMap.insert(std::make_pair(ManagementClient::FAC, "Facilities"));
+	clientTypeStringMap.insert(std::make_pair(ManagementClient::LTE, "Long Term Evolution"));
 	/**
 	 * Initialise this client's state and type
 	 */

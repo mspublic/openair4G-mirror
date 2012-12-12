@@ -24,6 +24,7 @@
 
 		3.1.4. DEFINE CLIENT_TYPE <clientType>
 			Defines client type and can be 'GN', 'FAC', or 'LTE'
+			Packets sent will have relevant event types and sub-types based on this client type
 
 	3.2. SEND Command Family
 		3.2.1. SEND COMMUNICATION_PROFILE_REQUEST
@@ -35,17 +36,27 @@
 		3.2.2. SEND NETWORK_STATE
 			Sends a NETWORK_STATE packet to MGMT-CORE's given port
 
-		3.2.3. SEND LOCATION_UPDATE
+		3.2.3. SEND WIRELESS_STATE
+			Sends a WIRELESS_STATE_RESPONSE packet to MGMT-CORE's given port
+
+			NOTICE: Client type has to be defined in advance for this command since event sub-type
+			changes from client to client for this packet
+
+		3.2.4. SEND LOCATION_UPDATE
 			Sends a LOCATION_UPDATE to MGMT-CORE's given port
 
-		3.2.4. SEND CONFIGURATION_NOTIFICATION
+		3.2.5. SEND CONFIGURATION_NOTIFICATION
 			Sends a CONFIGURATION_NOTIFICATION to MGMT-CORE's given port
 
-		3.2.5. SEND GET_CONFIGURATION
+		3.2.6. SEND GET_CONFIGURATION
 			Sends a GET_CONFIGURATION to MGMT-CORE's given port
 
 			NOTICE: Client type has to be defined in advance for this command since event sub-type
 			changes from client to client for this packet
+
+	3.3. Util Command Family
+		3.2.1. WAIT Command
+			Makes the simulator wait for the specified amount of seconds
 
 4. Running
 	Since this simulator has been written in Python you need to have the Python interpreter.

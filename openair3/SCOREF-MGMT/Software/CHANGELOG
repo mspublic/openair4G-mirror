@@ -1,4 +1,10 @@
 
+v1.5.3
+* LTE client type and event type/subtype for Wireless State Response added
+* Bugfix Wireless interface ID is now displayed correctly
+* Bugfix Update error for already-present interface IDs in MIB::updateWirelessState() is fixed
+* Simulator is now able to send unsolicited WIRELESS_STATE_RESPONSE
+
 v1.5.2
 * Simulator updated to make it send custom messages based on the client type
   (for CONF_REQ and COMM_PROF_REQ packages)

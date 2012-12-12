@@ -87,6 +87,7 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 			return handleNetworkStateEvent(new GeonetNetworkStateEventPacket(mib, packetBuffer, logger));
 
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
+		case MGMT_LTE_EVENT_STATE_WIRELESS_STATE_RESPONSE:
 			logger.info("WIRELESS_STATE_RESPONSE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleWirelessStateResponseEvent(new GeonetWirelessStateResponseEventPacket(mib, packetBuffer, logger));
 

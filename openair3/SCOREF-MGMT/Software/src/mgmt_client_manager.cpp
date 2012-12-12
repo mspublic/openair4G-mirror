@@ -150,6 +150,10 @@ ManagementClientManager::Task ManagementClientManager::updateClientState(const u
 			client->setType(ManagementClient::FAC);
 			break;
 
+		case MGMT_LTE_EVENT_STATE_WIRELESS_STATE_RESPONSE:
+			client->setType(ManagementClient::LTE);
+			break;
+
 		case MGMT_EVENT_ANY:
 		default:
 			logger.warning("Cannot determine client type by incoming event type/subtype!");

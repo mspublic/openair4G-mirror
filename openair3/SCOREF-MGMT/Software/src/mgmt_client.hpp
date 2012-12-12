@@ -84,7 +84,11 @@ class ManagementClient {
 			/**
 			 * Facilities client
 			 */
-			FAC = 2
+			FAC = 2,
+			/**
+			 * LTE client
+			 */
+			LTE = 3
 		};
 
 	public:
