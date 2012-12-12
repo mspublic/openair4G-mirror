@@ -1,10 +1,11 @@
 dnl $Id: configure.ac 1.45 06/05/07 17:37:11+03:00 anttit@tcs.hut.fi $
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.65)
-AC_INIT([MIPL Mobile IPv6 for Linux],[2.0.2-umip-0.4],[URL:http://www.mobile-ipv6.org/bugs/],[mipv6])
+AC_PREREQ(2.57)
+AC_INIT([MIPL Mobile IPv6 for Linux], [2.0.2-umip-0.4],
+	[URL:http://www.mobile-ipv6.org/bugs/], mipv6)
 AC_DEFINE_UNQUOTED([PACKAGE_COPYRIGHT],
-	["Copyright (C) 2003-2006 Helsinki University of Technology, and others"],
+	["Copyright (C) 2003-2006 Helsinki University of Technology, and others"], 
 	[Define to the copyright statement])
 
 AC_CONFIG_SRCDIR([src/main.c])
@@ -13,7 +14,7 @@ AM_CONFIG_HEADER(config.h)
 
 AC_REVISION($Revision: 1.45 $)
 AC_CANONICAL_HOST
-AC_USE_SYSTEM_EXTENSIONS
+AC_GNU_SOURCE
 AC_PROG_CC
 AC_PROG_RANLIB
 AC_PROG_GCC_TRADITIONAL
@@ -43,7 +44,7 @@ fi
 AC_CHECK_PROG([INDENT], [indent], [indent])
 if test -z "$INDENT"; then
 	AC_MSG_WARN([
-*** indent not found in the system.  If you need to generate pmgr.c and
+*** indent not found in the system.  If you need to generate pmgr.c and 
 *** pmgr.h you need to install indent.
 ])
 fi
@@ -66,18 +67,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h sys/ioctl.h sys/param.h time.h syslog.h])
 dnl Checks for library functions.
 AC_FUNC_FORK
 AC_FUNC_SELECT_ARGTYPES
-AC_DIAGNOSE([obsolete],[your code may safely assume C89 semantics that RETSIGTYPE is void.
-Remove this warning and the `AC_CACHE_CHECK' when you adjust the code.])dnl
-AC_CACHE_CHECK([return type of signal handlers],[ac_cv_type_signal],[AC_COMPILE_IFELSE(
-[AC_LANG_PROGRAM([#include <sys/types.h>
-#include <signal.h>
-],
-		 [return *(signal (0, 0)) (0) == 1;])],
-		   [ac_cv_type_signal=int],
-		   [ac_cv_type_signal=void])])
-AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
-		    (`int' or `void').])
-
+AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_FUNC_WAIT3
 AC_CHECK_FUNCS([memset select socket strdup strerror])
@@ -115,28 +105,35 @@ AC_CHECK_LIB(pcap, pcap_next, [], [
 	AC_MSG_ERROR([PCAP library required but not found.])
 ])
 
-AC_CHECK_LIB(freeradius-client, rc_read_config, [], [
+AC_ARG_WITH(pmip-use-radius,
+			AC_HELP_STRING([--with-pmip-use-radius],[use radius auth]),
+			[ac_cv_pmip_use_radius=$withval], [ac_cv_pmip_use_radius=no])
+if test x$ac_cv_pmip_use_radius = xyes; then
+	AC_CHECK_LIB(freeradius-client, rc_read_config, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_read_dictionary, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_read_dictionary, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_avpair_add, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_avpair_add, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_avpair_get, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_avpair_get, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
-AC_CHECK_LIB(freeradius-client, rc_avpair_free, [], [
+	])
+	AC_CHECK_LIB(freeradius-client, rc_avpair_free, [], [
 	AC_MSG_ERROR([freeradius-client library required but not found.])
-])
+	])
+fi
+
+
 
 
 AC_CHECK_LIB(netlink, rtnl_talk)
 AM_CONDITIONAL(LOCAL_NETLINK, test x$ac_cv_lib_netlink_rtnl_talk = xno)
 
 AC_ARG_WITH(builtin-crypto,
-	AS_HELP_STRING([--with-builtin-crypto],[use builtin crypto code]),
+	AC_HELP_STRING([--with-builtin-crypto],[use builtin crypto code]),
 	[ac_cv_use_builtin_crypto=$withval], [ac_cv_use_builtin_crypto=no])
 if test x$ac_cv_use_builtin_crypto = xyes; then
 	ac_cv_lib_crypto_HMAC_Init=no
@@ -152,9 +149,16 @@ AC_CACHE_CHECK([whether to use builtin crypto],
 	       [ac_cv_use_builtin_crypto], [ac_cv_use_builtin_crypto=no])
 AM_CONDITIONAL(BUILTIN_CRYPTO, test x$ac_cv_lib_crypto_HMAC_Init = xno)
 
+if test ac_cv_pmip_use_radius = xyes; then
+        AC_DEFINE([USE_RADIUS], [1], [USE RADIUS AUTH])
+fi
+AC_CACHE_CHECK([whether to use RADIUS client library],
+			   [ac_cv_pmip_use_radius], [ac_cv_pmip_use_radius=no])
+AM_CONDITIONAL(USE_RADIUS, test x$ac_cv_pmip_use_radius = xyes)
+
 dnl Option --disable-debug
 AC_ARG_ENABLE(debug,
-	AS_HELP_STRING([--disable-debug],[disable debug messages and asserts]),
+	AC_HELP_STRING([--disable-debug],[disable debug messages and asserts]),
         [ac_cv_enable_debug=$enableval], [ac_cv_enable_debug=yes])
 if test x$ac_cv_enable_debug = xno; then
         AC_DEFINE([MIP6_NDEBUG], [1], [Disable debugging])
@@ -164,7 +168,7 @@ AC_CACHE_CHECK([whether to enable debug messages],
 
 dnl Option --enable-vt
 AC_ARG_ENABLE(vt,
-	AS_HELP_STRING([--enable-vt],[enable virtual terminal for debugging]),
+	AC_HELP_STRING([--enable-vt],[enable virtual terminal for debugging]),
         [ac_cv_enable_vt=$enableval], [ac_cv_enable_vt=no])
 if test x$ac_cv_enable_vt = xyes; then
         AC_DEFINE([ENABLE_VT], [1], [Enable VT])
@@ -207,7 +211,7 @@ AC_CHECK_DECLS([IFA_F_HOMEADDRESS],,
 	[AC_MSG_ERROR([kernel headers do not support MIPv6.
 
 *** If working Linux kernel headers are not in the default include path,
-*** please use CPPFLAGS variable to specify where they can be found
+*** please use CPPFLAGS variable to specify where they can be found 
 *** (e.g. CPPFLAGS="-isystem /usr/src/linux/include")
 ])], [#include <sys/socket.h>
 #include <linux/if_addr.h>])
@@ -217,7 +221,7 @@ AC_CHECK_HEADERS([netinet/in.h netinet/ip6.h netinet/icmp6.h netinet/ip6mh.h])
 AC_CHECK_MEMBER(struct ip6_ext.ip6e_nxt, AC_DEFINE([HAVE_STRUCT_IP6_EXT],,
 		[Define to 1 if struct ip6_ext is in <netinet/ip6.h>.]),,
 		[#include <netinet/ip6.h>])
-AC_CHECK_MEMBER(struct ip6_opt_home_address.ip6oha_type,
+AC_CHECK_MEMBER(struct ip6_opt_home_address.ip6oha_type, 
 		AC_DEFINE([HAVE_STRUCT_IP6_OPT_HOME_ADDRESS],,
 		[Define to 1 if struct ip6_opt_home_address is in <netinet/ip6.h>.]),,
 		[#include <netinet/ip6.h>])
@@ -256,6 +260,7 @@ AC_PACKAGE_NAME version AC_PACKAGE_VERSION
 
   Use built-in crypto: ............ $ac_cv_use_builtin_crypto
   Use OpenSSL crypto library: ..... $ac_cv_lib_crypto_HMAC_Init
+  Use RADIUS client library: ...... $ac_cv_pmip_use_radius
   Enable debugging mode: .......... $ac_cv_enable_debug
   Enable virtual debug terminal: .. $ac_cv_enable_vt
 

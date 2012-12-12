@@ -1,3 +1,21 @@
+/*
+ * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
+ *
+ * Authors: OPENAIR3 <openair_tech@eurecom.fr>
+ *
+ * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
+ * 
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
+ * management protocol standardized by IETF. It is a protocol for building 
+ * a common and access technology independent of mobile core networks, 
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ * network-based mobility management protocol standardized by IETF.
+ * 
+ * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
+ * which it involves that it is under the same terms of GNU General Public
+ * License version 2. See MIPL terms condition if you need more details. 
+ */
 /*! \file pmip_mag_proc.c
 * \brief
 * \author OpenAir3 Group
@@ -5,7 +23,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair3@eurecom.fr
+* \email: openair_tech@eurecom.fr
 */
 #define PMIP
 #define PMIP_MAG_PROC_C
@@ -268,7 +286,7 @@ int mag_kickoff_ra(pmip_entry_t * bce)
     if (err < 0) {
         dbg("Error: couldn't send a RA message ...\n");
     } else {
-        dbg("RA LL ADDRESS sent\n");
+        dbg("RA LL ADDRESS sent on bce link %d\n", bce->link);
     }
     return err;
 }
@@ -323,9 +341,14 @@ int mag_get_ingress_info(int *if_index, char *dev_name_mn_link)
             addr.s6_addr[i] = (unsigned char) ap;
         }
         if (memcmp(&conf.MagAddressIngress[0], &addr, sizeof(struct in6_addr)) == 0) {
-            strncpy(dev_name_mn_link, devname, 32);
-            *if_index = if_idx;
-            dbg("The interface name of the device that is used for communicate with MNs is %s\n", dev_name_mn_link);
+            if (dev_name_mn_link != NULL) {
+                strncpy(dev_name_mn_link, devname, 32);
+                dbg("The interface name of the device that is used for communicate with MNs is %s\n", dev_name_mn_link);
+            }
+            if ( if_index != NULL) {
+                *if_index = if_idx;
+                dbg("The interface index of the device that is used for communicate with MNs is %d\n", *if_index);
+            }
             fclose(fp);
             return 1;
         }
@@ -356,9 +379,14 @@ int mag_get_egress_info(int *if_index, char *dev_name_mn_link)
             addr.s6_addr[i] = (unsigned char) ap;
         }
         if (memcmp(&conf.MagAddressEgress[0], &addr, sizeof(struct in6_addr)) == 0) {
-            strncpy(dev_name_mn_link, devname, 32);
-            *if_index = if_idx;
-            dbg("The interface name of the device that is used for communicate with LMA is %s\n", dev_name_mn_link);
+            if (dev_name_mn_link != NULL) {
+                strncpy(dev_name_mn_link, devname, 32);
+                dbg("The interface name of the device that is used for communicate with LMA is %s\n", dev_name_mn_link);
+            }
+            if ( if_index != NULL) {
+                *if_index = if_idx;
+                dbg("The interface index of the device that is used for communicate with LMA is %d\n", *if_index);
+            }
             fclose(fp);
             return 1;
         }
@@ -455,7 +483,11 @@ int mag_pmip_md(msg_info_t * info, pmip_entry_t * bce)
         struct in6_addr *link_local = link_local_addr(&bce->mn_suffix);
         bce->mn_link_local_addr = *link_local;  // link local address of MN
         bce->type               = BCE_TEMP;
-        dbg("Making BCE entry in MAG with HN prefix  %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix));
+        dbg("Making BCE entry in MAG with HN prefix        %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix));
+        dbg("                             Suffix           %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_suffix));
+        dbg("                             Link local addr  %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_link_local_addr));
+        dbg("                             Serv mag addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_mag_addr));
+        dbg("                             Serv lma addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_lma_addr));
         dbg("New attachment detected! Start Location Registration procedure...\n");
         mag_start_registration(bce);
     }

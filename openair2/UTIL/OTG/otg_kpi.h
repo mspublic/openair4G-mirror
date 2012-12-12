@@ -50,7 +50,7 @@
 
 
 unsigned int start_log_latency=0;
-unsigned int start_log_throughput=0;
+unsigned int start_log_GP=0;
 
 /*! \fn void tx_throughput( int src, int dst)
 * \brief compute the transmitter throughput in bytes per seconds
@@ -70,7 +70,7 @@ void tx_throughput( int src, int dst);
 */
 void rx_goodput( int src, int dst);
 
-
+ 
 /*void rx_loss_rate_pkts(int src, int dst)
 * \brief compute the loss rate in bytes at the server bytes
 * \param[in] Source, destination
@@ -98,8 +98,10 @@ void rx_loss_rate_bytes(int src, int dst);
 */
 void kpi_gen(void);
 
-void add_log_metric(int src, int dst, int ctime, float metric, unsigned int labelc);
+void add_log_metric(int src, int dst, int ctime, double metric, unsigned int label);
 
 void  add_log_label(unsigned int label, unsigned int * start_log_metric);
+
+void nb_loss_pkts();
 
 #endif

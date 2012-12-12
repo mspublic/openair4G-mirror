@@ -7,7 +7,7 @@ CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 #-msse4
 #CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
 #CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
-CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
+CFLAGS = -O2 -DEXECTIME -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
 
 CFLAGS += -I$(OPENAIR1_DIR) -DNO_OPENAIR1 -DUSER_MODE -I$(OPENAIRITS_DIR) -I$(OPENAIR2_DIR) -DNB_ANTENNAS_TX=1 -DNB_ANTENNAS_RX=2
 
@@ -37,13 +37,15 @@ TOP_DIR=$(OPENAIR1_DIR)
 LOG_DIR=$(OPENAIR2_DIR)/UTIL/LOG
 
 export TOP_DIR
-
+export OPENAIR1_DIR
+export OPENAIR2_TOP = $(OPENAIR2_DIR)
+export OPENAIRITS_DIR
 
 include $(OPENAIR1_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIRITS_DIR)/phy/DOT11/Makefile.inc
+include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 
-LOG_OBJS = $(LOG_DIR)/log.o
-TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/file_output.o
+#TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/file_output.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(LOG_OBJS)
 
@@ -79,3 +81,4 @@ cleanall : clean
 showflags :
 	@echo $(CFLAGS)
 	@echo $(LFLAGS)
+	@echo $(OBJ)

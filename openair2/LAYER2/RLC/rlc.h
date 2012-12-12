@@ -287,7 +287,7 @@ public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, u32_t, u
 * \param[in]  tb_sizeP         Size of a transport block set in bytes.
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
-public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, chan_id_t, tb_size_t );)
+public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, u8_t, chan_id_t, tb_size_t );)
 
 //-----------------------------------------------------------------------------
 //   PUBLIC RLC CONSTANTS

@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -49,8 +49,8 @@ CommunicationProfileManager::CommunicationProfileManager(Logger& logger)
 }
 
 CommunicationProfileManager::~CommunicationProfileManager() {
-	communicationProfileMap.empty();
-	communicationProfileStringMap.empty();
+	communicationProfileMap.clear();
+	communicationProfileStringMap.clear();
 }
 
 bool CommunicationProfileManager::insert(const string& profileIdString, const string& profileDefinitionString) {
@@ -72,7 +72,7 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 		communicationProfileItem = parse(profileIdString, trimmedProfileDefinitionString);
 	} catch (Exception& e) {
 		e.updateStackTrace("Cannot parse Communication Profile definitions");
-		throw e;
+		throw;
 	}
 
 	communicationProfileMap.insert(communicationProfileMap.end(), std::make_pair(communicationProfileItem.id, communicationProfileItem));
@@ -82,32 +82,15 @@ bool CommunicationProfileManager::insert(const string& profileIdString, const st
 	return true;
 }
 
-string CommunicationProfileManager::toString() const {
-	stringstream ss;
-
-	ss << "Communication profile count: " << communicationProfileMap.size() << endl;
-
-	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator;
-	while (iterator != communicationProfileMap.end()) {
-		ss << "Communication Profile [ID:" << iterator->second.id
-			<< ", transport:" << iterator->second.transport
-			<< ", network:" << iterator->second.network
-			<< ", access: " << iterator->second.access
-			<< ", channel: " << iterator->second.channel << "]" << endl;
-	}
-
-	return ss.str();
-}
-
 u_int8_t CommunicationProfileManager::getProfileCount() const {
 	return communicationProfileMap.size();
 }
 
-map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMap() const {
+map<CommunicationProfileID, CommunicationProfileItem>& CommunicationProfileManager::getProfileMap() {
 	return communicationProfileMap;
 }
 
-map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMapSubset(u_int32_t filter) const {
+map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManager::getProfileMapSubset(u_int32_t filter) {
 	/**
 	 * If we're asked everything, return everything
 	 */
@@ -117,12 +100,75 @@ map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManage
 	map<CommunicationProfileID, CommunicationProfileItem> filteredProfileMap;
 	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
 
+	/**
+	 * If `filter' is zero then return an empty map
+	 */
+	if (!filter)
+		return filteredProfileMap;
+
+	u_int8_t transportMask = ((filter & 0xFF000000) >> 24);
+	u_int8_t networkMask = ((filter & 0xFF0000) >> 16);
+	u_int8_t accessMask = ((filter & 0xFF00) >> 8);
+	u_int8_t channelMask = (filter & 0xFF);
+
+	logger.info("Preparing a communication profile subset with following filter...");
+	logger.info("Comm. Profile Filter [transport:" + Util::getBinaryRepresentation(transportMask) + " network:" + Util::getBinaryRepresentation(networkMask) + " access:" + Util::getBinaryRepresentation(accessMask) + " channel:" + Util::getBinaryRepresentation(channelMask) + "]");
+
+	/**
+	 * Travers all the communication profiles and find those match with the filter...
+	 */
 	while (it != communicationProfileMap.end()) {
-		// todo Intelligent code goes here
+		/**
+		 * We should take the subset of communication profile table having those profiles
+		 * that provide all the protocols requested in the filter
+		 */
+		logger.info("Checking with: " + it->second.toString());
+		/**
+		 * If the mask is 0xFF then client wants everything, don't check further
+		 */
+		if ((transportMask == 0xFF || (it->second.transport & transportMask) == it->second.transport) &&
+			(networkMask == 0xFF || (it->second.network & networkMask) == it->second.network) &&
+			(accessMask == 0xFF || (it->second.access & accessMask) == it->second.access)) {
+			/**
+			 * Channel information is present only if Access technology is ITSG5 so
+			 * we check if `access' field's first bit is set or not
+			 */
+			if (channelMask == 0xFF || (Util::isBitSet(it->second.access, 0) && (it->second.channel & channelMask) == it->second.channel)) {
+				logger.info("Communication profile match, adding this into the COMM_PROFILE_RESPONSE packet...");
+				filteredProfileMap.insert(filteredProfileMap.end(), std::make_pair(it->first, it->second));
+			}
+		}
+
 		++it;
 	}
 
 	return filteredProfileMap;
+}
+
+CommunicationProfileID CommunicationProfileManager::selectProfile(u_int8_t latency, u_int8_t relevance, u_int8_t reliability) {
+	/**
+	 * todo Intelligent code goes here!
+	 */
+	return 0x00;
+}
+
+string CommunicationProfileManager::toString() const {
+	stringstream ss;
+
+	ss << "Communication profile count: " << communicationProfileMap.size() << endl;
+
+	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = communicationProfileMap.begin();
+	while (it != communicationProfileMap.end()) {
+		ss << "Communication Profile [ID:" << it->second.id
+			<< ", transport:" << it->second.transport
+			<< ", network:" << it->second.network
+			<< ", access: " << it->second.access
+			<< ", channel: " << it->second.channel << "]" << endl;
+
+		++it;
+	}
+
+	return ss.str();
 }
 
 void CommunicationProfileManager::initialise() {
@@ -176,15 +222,13 @@ CommunicationProfileItem CommunicationProfileManager::parse(const string& profil
 	 * Parse communication profile string and get tokens for each layer
 	 */
 	vector<string> profileItemVector = Util::split(profileDefinitionString, ',');
-	const string transport = profileItemVector[0];
-	const string network = profileItemVector[1];
 	const string access = profileItemVector[2];
 	string channel;
 	/*
 	 * For access methods `3G' and `Ethernet' this information is not relevant; for `11n'
 	 * the choice is made by the Access Point, here parse accordingly
 	 */
-	if (!access.compare(0, 2, "3G") || !access.compare(0, 8, "Ethernet") || !access.compare(0, 3, "11n")) {
+	if (!access.compare(0, 2, "3G") || !access.compare(0, 3, "11n") || !access.compare(0, 8, "Ethernet")) {
 		channel = "";
 	} else {
 		channel = profileItemVector[3];
@@ -215,17 +259,33 @@ bool CommunicationProfileManager::setFlags(const string& configuration, u_int8_t
 
 	while (iterator != profileStrings.end()) {
 		/**
-		 * Verify incoming communication profile definition string item
+		 * Verify incoming communication profile definition string item and handle "BTP" exception
 		 */
-		if (communicationProfileStringMap[*iterator] == 0)
-			logger.warning("Communication profile definition string '" + *iterator + "' is not valid! Check SCOREF-MGMT_Configuration.pdf file.");
+		if (iterator->compare("BTP") == 0) {
+			logger.debug("Communication profile string 'BTP' has found, both BTP_A and BTP_B flags will be set");
 
-		/**
-		 * Bit indexes start from 1 in 'MNGT to CM-GN Interface' paper but it
-		 * corresponds to bit 0 for Util::setBit() so here we subtract 1 to
-		 * find index against 0 as the first
-		 */
-		Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator] - 1));
+			/**
+			 * If communication profile includes BTP then we should set both BTP_A and BTP_B
+			 * bits since they'll both be defined and available
+			 *
+			 * Bit indexes start from 1 in 'MNGT to CM-GN Interface' paper but it
+			 * corresponds to bit 0 for Util::setBit() so here we subtract 1 to
+			 * find index against 0 as the first
+			 */
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap["BTP_A"] - 1));
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap["BTP_B"] - 1));
+		} else if (communicationProfileStringMap[*iterator] != 0) {
+			/*
+			 * If index is valid than set the bit at that index
+			 */
+			Util::setBit(octet, static_cast<u_int8_t>(communicationProfileStringMap[*iterator] - 1));
+		} else if (communicationProfileStringMap[*iterator] == 0) {
+			/*
+			 * Invalid strings are ignored
+			 */
+			logger.warning("Communication profile definition string '" + *iterator + "' is not valid!");
+			logger.info("Check SCOREF-MGMT_Configuration.pdf file for valid configuration settings");
+		}
 
 		++iterator;
 	}

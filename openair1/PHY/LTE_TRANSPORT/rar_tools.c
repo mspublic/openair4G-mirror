@@ -53,7 +53,7 @@ extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
 extern unsigned short RIV_max;
 
-#define DEBUG_RAR
+//#define DEBUG_RAR
 
 #ifdef OPENAIR2
 int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
@@ -83,7 +83,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
   ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
   ulsch->O_RI                                  = 1;
-  ulsch->O_ACK                                 = 2;
+  ulsch->harq_processes[harq_pid]->O_ACK                                 = 2;
   ulsch->beta_offset_cqi_times8                = 18;
   ulsch->beta_offset_ri_times8                 = 10;
   ulsch->beta_offset_harqack_times8            = 16;
@@ -123,6 +123,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 				      unsigned char eNB_id ){
   
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
+  u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   u32 frame              = phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id];
   unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
   unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
@@ -137,7 +138,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     
    
 #ifdef DEBUG_RAR
-  msg("rar_tools.c: Filling ue ulsch params -> ulsch %p : subframe %d\n",ulsch,subframe);
+  LOG_I(PHY,"rar_tools.c: Filling ue ulsch params -> ulsch %p : subframe %d\n",ulsch,subframe);
 #endif
 
 
@@ -178,11 +179,11 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     }
 
     ulsch->uci_format = HLC_subband_cqi_nopmi;
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
     if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
-    ulsch->O_ACK                                  = 2;
+    ulsch->harq_processes[harq_pid]->O_ACK                                  = 2;
 
     ulsch->beta_offset_cqi_times8                  = 18;
     ulsch->beta_offset_ri_times8                   = 10;
@@ -208,7 +209,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     // initialize power control based on PRACH power
 	ulsch->f_pusch = delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC] +
 	mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id);
-	msg("[PHY][UE %d][PUSCH PC] Initializing f_pusch to %d dB, TPC %d (delta_PUSCH_msg2 %d dB), deltaP_rampup %d dB\n",
+	LOG_D(PHY,"[UE %d][PUSCH PC] Initializing f_pusch to %d dB, TPC %d (delta_PUSCH_msg2 %d dB), deltaP_rampup %d dB\n",
 	    phy_vars_ue->Mod_id,ulsch->f_pusch,ulsch->harq_processes[harq_pid]->TPC,delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC],
 	    mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id));
     

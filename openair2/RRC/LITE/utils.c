@@ -45,7 +45,6 @@ u16 find_free_dtch_position(u8 Mod_id, u16 UE_CH_index){
   return 0;
 }
 
-/*
 //-------------------------------------------------------------------------------------------//
 u8 rrc_find_free_ue_index(u8 Mod_id){
 //-------------------------------------------------------------------------------------------//
@@ -59,7 +58,7 @@ u8 rrc_find_free_ue_index(u8 Mod_id){
       return i;
   return 0xff;  
 }
-*/
+
 
 //-------------------------------------------------------------------------------------------//
 unsigned short rrc_find_ue_index(unsigned char Mod_id, L2_ID Mac_id){

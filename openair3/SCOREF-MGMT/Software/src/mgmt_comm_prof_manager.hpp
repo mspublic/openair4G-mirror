@@ -42,7 +42,7 @@
 #ifndef MGMT_COMM_PROF_MANAGER_HPP_
 #define MGMT_COMM_PROF_MANAGER_HPP_
 
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
 #include <string>
@@ -72,10 +72,10 @@ struct CommunicationProfileItem {
 		channel = 0;
 	}
 
-	string toString() {
+	string toString() const {
 		stringstream ss;
 
-		ss << "[id:" << id
+		ss << "[id:" << setfill('0') << setw(2) << id
 			<< " transport:" << Util::getBinaryRepresentation(transport)
 			<< " network:" << Util::getBinaryRepresentation(network)
 			<< " access:" << Util::getBinaryRepresentation(access)
@@ -111,12 +111,6 @@ class CommunicationProfileManager {
 		 */
 		bool insert(const string& profileIdString, const string& profileDefinitionString);
 		/**
-		 * Returns string representation of Communication Profile Table
-		 *
-		 * return std::string representation of table
-		 */
-		string toString() const;
-		/**
 		 * Returns the number of profiles present
 		 *
 		 * @return Number of communication profiles, ie. table size
@@ -127,14 +121,31 @@ class CommunicationProfileManager {
 		 *
 		 * @return std::map of Communication Profile Table
 		 */
-		map<CommunicationProfileID, CommunicationProfileItem> getProfileMap() const;
+		map<CommunicationProfileID, CommunicationProfileItem>& getProfileMap();
 		/**
 		 * Returns communication profile map subset filtered by incoming request map
 		 *
 		 * @param filter 32-bit filter part of a Communication Profile Request packet
 		 * @return Filtered subset of communication profile
 		 */
-		map<CommunicationProfileID, CommunicationProfileItem> getProfileMapSubset(u_int32_t filter) const;
+		map<CommunicationProfileID, CommunicationProfileItem> getProfileMapSubset(u_int32_t filter);
+		/**
+		 * In this method we have the intelligent code that'll pick a proper communication
+		 * profile according to the parameters (or in other words the requirements) given
+		 * by the client
+		 *
+		 * @param latency Latency requirement
+		 * @param relevance Relevance requirement
+		 * @param reliability Reliability requirement
+		 * @return A communication profile ID of type CommunicationProfileID
+		 */
+		static CommunicationProfileID selectProfile(u_int8_t latency, u_int8_t relevance, u_int8_t reliability);
+		/**
+		 * Returns string representation of Communication Profile Table
+		 *
+		 * return std::string representation of table
+		 */
+		string toString() const;
 
 	private:
 		/**
@@ -175,7 +186,6 @@ class CommunicationProfileManager {
 		 * Logger object reference
 		 */
 		Logger& logger;
-
 };
 
 #endif /* MGMT_COMM_PROF_MANAGER_HPP_ */

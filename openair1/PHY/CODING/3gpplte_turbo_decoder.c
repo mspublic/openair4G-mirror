@@ -311,6 +311,8 @@ void compute_alpha_s(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_l
   llr_t new0,new1,new2, new3, new4, new5, new6, new7;
   llr_t m_b0,m_b1,m_b2, m_b3, m_b4, m_b5, m_b6, m_b7;
   // initialize log_alpha[0][m]
+  llr_t alpha_max;
+
   old0 = 0;
   old1 = -MAX/2;
   old2 = -MAX/2; old3 = -MAX/2;
@@ -324,6 +326,7 @@ void compute_alpha_s(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_l
   alpha[0*(frame_length)+5] = old5;
   alpha[0*(frame_length)+6] = old6;
   alpha[0*(frame_length)+7] = old7;
+
   //
   // compute log_alpha[k][m]
   // Steady-state portion
@@ -381,6 +384,39 @@ void compute_alpha_s(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_l
       if (m_b7 > new7) new7=m_b7;
       alpha[k*STATES + 7] = new7;
       old7=new7;
+
+      alpha_max = alpha[(STATES*k) + 0];
+      if(alpha[(STATES*k) + 1]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 1];
+      if(alpha[(STATES*k) + 2]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 2];
+      if(alpha[(STATES*k) + 3]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 3];
+      if(alpha[(STATES*k) + 4]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 4];
+      if(alpha[(STATES*k) + 5]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 5];
+      if(alpha[(STATES*k) + 6]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 6];
+      if(alpha[(STATES*k) + 7]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 7];
+      
+      alpha[(STATES*k)+0]-=alpha_max;
+      alpha[(STATES*k)+1]-=alpha_max;
+      alpha[(STATES*k)+2]-=alpha_max;
+      alpha[(STATES*k)+3]-=alpha_max;
+      alpha[(STATES*k)+4]-=alpha_max;
+      alpha[(STATES*k)+5]-=alpha_max;
+      alpha[(STATES*k)+6]-=alpha_max;
+      alpha[(STATES*k)+7]-=alpha_max;
+      new0=alpha[(STATES*k)+0];
+      new1=alpha[(STATES*k)+1];
+      new2=alpha[(STATES*k)+2];
+      new3=alpha[(STATES*k)+3];
+      new4=alpha[(STATES*k)+4];
+      new5=alpha[(STATES*k)+5];
+      new6=alpha[(STATES*k)+6];      
+      new7=alpha[(STATES*k)+7];
     }
 
   for (k=frame_length+1;k<=frame_length+3;k++)
@@ -413,6 +449,24 @@ void compute_alpha_s(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_l
       if (m_b3 > new3) new3=m_b3;
       alpha[k*STATES + 3] = new3;
       old3=new3;
+
+      alpha_max = alpha[(STATES*k) + 0];
+      if(alpha[(STATES*k) + 1]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 1];
+      if(alpha[(STATES*k) + 2]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 2];
+      if(alpha[(STATES*k) + 3]>alpha_max)
+	alpha_max = alpha[(STATES*k) + 3];
+
+      alpha[(STATES*k)+0]-=alpha_max;
+      alpha[(STATES*k)+1]-=alpha_max;
+      alpha[(STATES*k)+2]-=alpha_max;
+      alpha[(STATES*k)+3]-=alpha_max;
+
+      new0=alpha[(STATES*k)+0];
+      new1=alpha[(STATES*k)+1];
+      new2=alpha[(STATES*k)+2];
+      new3=alpha[(STATES*k)+3];
     }
 }
 
@@ -422,6 +476,7 @@ void compute_beta_s(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned sh
   llr_t new0, new1, new2, new3, new4, new5, new6, new7;
   llr_t m_b0, m_b1, m_b2, m_b3, m_b4,m_b5, m_b6, m_b7;
   llr_t m11,m10; 
+  llr_t beta_max;
 
   //  int m_max;
 
@@ -463,6 +518,7 @@ void compute_beta_s(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned sh
   if (m_max1==7) old7=0; else old7 = -MAX/2;
   */
 
+  /*
   // Initialise zero state because of termination
   beta[(STATES*(frame_length+3)) + 0] = 0;
   beta[(STATES*(frame_length+3)) + 1] = -MAX/2;
@@ -526,6 +582,27 @@ void compute_beta_s(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned sh
       beta[k*STATES + 7] = new7;
       old7=new7;
     }
+  */
+
+
+  beta[(STATES*(frame_length)) + 0] = alpha[(STATES*frame_length) + 0];
+  beta[(STATES*(frame_length)) + 1] = alpha[(STATES*frame_length) + 1];
+  beta[(STATES*(frame_length)) + 2] = alpha[(STATES*frame_length) + 2];
+  beta[(STATES*(frame_length)) + 3] = alpha[(STATES*frame_length) + 3];
+  beta[(STATES*(frame_length)) + 4] = alpha[(STATES*frame_length) + 4];
+  beta[(STATES*(frame_length)) + 5] = alpha[(STATES*frame_length) + 5];
+  beta[(STATES*(frame_length)) + 6] = alpha[(STATES*frame_length) + 6];
+  beta[(STATES*(frame_length)) + 7] = alpha[(STATES*frame_length) + 7];
+
+
+  old0 = beta[(STATES*frame_length)+0];
+  old1 = beta[(STATES*frame_length)+1];
+  old2 = beta[(STATES*frame_length)+2];
+  old3 = beta[(STATES*frame_length)+3];
+  old4 = beta[(STATES*frame_length)+4]; 
+  old5 = beta[(STATES*frame_length)+5];
+  old6 = beta[(STATES*frame_length)+6];
+  old7 = beta[(STATES*frame_length)+7];
 
   for (k=(frame_length-1);k>=0;k--)
     {
@@ -547,6 +624,9 @@ void compute_beta_s(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned sh
       new5 = SAT_ADD(old2,M5T,MAX);
       new6 = SAT_ADD(old3,M6T,MAX);
       new7 = SAT_ADD(old3,M7T,MAX);
+
+
+
       if (m_b0 > new0) new0=m_b0;
       beta[k*STATES + 0] = new0;
       old0=new0;
@@ -571,7 +651,53 @@ void compute_beta_s(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned sh
       if (m_b7 > new7) new7=m_b7;
       beta[k*STATES + 7] = new7;
       old7=new7;
-    };
+
+      beta_max = beta[(STATES*k) + 0];
+      if(beta[(STATES*k) + 1]>beta_max)
+	beta_max = beta[(STATES*k) + 1];
+      if(beta[(STATES*k) + 2]>beta_max)
+	beta_max = beta[(STATES*k) + 2];
+      if(beta[(STATES*k) + 3]>beta_max)
+	beta_max = beta[(STATES*k) + 3];
+      if(beta[(STATES*k) + 4]>beta_max)
+	beta_max = beta[(STATES*k) + 4];
+      if(beta[(STATES*k) + 5]>beta_max)
+	beta_max = beta[(STATES*k) + 5];
+      if(beta[(STATES*k) + 6]>beta_max)
+	beta_max = beta[(STATES*k) + 6];
+      if(beta[(STATES*k) + 7]>beta_max)
+	beta_max = beta[(STATES*k) + 7];
+      beta[(STATES*k)+0]-=beta_max;
+      beta[(STATES*k)+1]-=beta_max;
+      beta[(STATES*k)+2]-=beta_max;
+      beta[(STATES*k)+3]-=beta_max;
+      beta[(STATES*k)+4]-=beta_max;
+      beta[(STATES*k)+5]-=beta_max;
+      beta[(STATES*k)+6]-=beta_max;
+      beta[(STATES*k)+7]-=beta_max;
+
+      new0=beta[(STATES*k)+0];
+      new1=beta[(STATES*k)+1];
+      new2=beta[(STATES*k)+2];
+      new3=beta[(STATES*k)+3];
+      new4=beta[(STATES*k)+4];
+      new5=beta[(STATES*k)+5];
+      new6=beta[(STATES*k)+6];
+      new7=beta[(STATES*k)+7];
+      /*      
+      if (((k%(frame_length>>3))==0)&&(k>0)) {
+
+	alpha[((k)*STATES)+0]=beta[((k)*STATES)+0]
+	alpha[((k)*STATES)+1]=beta[((k)*STATES)+1];
+	alpha[((k)*STATES)+2]=beta[((k)*STATES)+2];
+	alpha[((k)*STATES)+3]=beta[((k)*STATES)+3];
+	alpha[((k)*STATES)+4]=beta[((k)*STATES)+4];
+	alpha[((k)*STATES)+5]=beta[((k)*STATES)+5];
+	alpha[((k)*STATES)+6]=beta[((k)*STATES)+6];
+	alpha[((k)*STATES)+7]=beta[((k)*STATES)+7];
+      }
+      */      
+    }
 }
 void compute_ext_s(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length)
 {

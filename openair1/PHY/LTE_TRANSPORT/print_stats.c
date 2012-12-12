@@ -42,15 +42,22 @@
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
+#ifdef EXMIMO
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+#else
 extern u8 number_of_cards;
+#endif
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
   u8 eNB=0;
 
   if (phy_vars_ue==NULL)
     return 0;
 
+  if ((mode == normal_txrx) || (mode == no_L2_connect)) {
   len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
   len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
 		 phy_vars_ue->frame,
@@ -66,7 +73,15 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 		 phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		 phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		 phy_vars_ue->PHY_measurements.n0_power_dB[1]);
-  len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
+#ifdef CBMIMO1
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
+#else
+#ifdef EXMIMO
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],exmimo_pci_interface->rf.rx_gain00);
+#else
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
+#endif
+#endif
   len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
   len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
   len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",openair_daq_vars.timing_advance);
@@ -169,6 +184,28 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
     len += sprintf(&buffer[len], "[UE PROC] Total Received Bits %dkbits\n",(phy_vars_ue->total_received_bits[0]/1000));
 
   }
+
+  }
+  else {
+    len += sprintf(&buffer[len], "[UE PROC] Frame count: %d, RSSI %3.2f dB (%d dB, %d dB), N0 %3.2f dB (%d dB, %d dB)\n",
+		   phy_vars_ue->frame,
+		   10*log10(phy_vars_ue->PHY_measurements.rssi),
+		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
+		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot),
+		   phy_vars_ue->PHY_measurements.n0_power_dB[0],
+		   phy_vars_ue->PHY_measurements.n0_power_dB[1]);
+#ifdef EXMIMO
+    phy_vars_ue->rx_total_gain_dB = ((int)(10*log10(phy_vars_ue->PHY_measurements.rssi)))-input_level_dBm;
+    len += sprintf(&buffer[len], "[UE PROC] rf_mode %d, input level (set by user) %d dBm, VGA gain %d dB ==> total gain %3.2f dB, noise figure %3.2f dB\n",
+		   phy_vars_ue->rx_gain_mode[0],
+		   input_level_dBm, 
+		   exmimo_pci_interface->rf.rx_gain00,
+		   10*log10(phy_vars_ue->PHY_measurements.rssi)-input_level_dBm,
+		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot)-phy_vars_ue->rx_total_gain_dB+105);
+#endif
+  }
+
   len += sprintf(&buffer[len],"EOF\n");
   len += sprintf(&buffer[len],"\0");
 
@@ -182,6 +219,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
   u32 ulsch_errors=0;
   u32 ulsch_round_attempts[4]={0,0,0,0},ulsch_round_errors[4]={0,0,0,0};
   u32 harq_pid_ul, harq_pid_dl;
+  u32 UE_id_mac, RRC_status;
 
   if (phy_vars_eNB==NULL)
     return 0;
@@ -282,6 +320,12 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
       len += sprintf(&buffer[len],"[eNB PROC] Mode = %s(%d)\n",
 		     mode_string[phy_vars_eNB->eNB_UE_stats[UE_id].mode],
 		     phy_vars_eNB->eNB_UE_stats[UE_id].mode);
+#ifdef OPENAIR2
+      UE_id_mac = find_UE_id(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti);
+      RRC_status = mac_get_rrc_status(phy_vars_eNB->Mod_id,1,UE_id_mac);
+	
+      len += sprintf(&buffer[len],"[eNB PROC] UE_id_mac = %d, RRC status = %d\n",UE_id_mac,RRC_status);
+#endif
       
 #ifdef OPENAIR2
       if (phy_vars_eNB->eNB_UE_stats[UE_id].mode == PUSCH) {
@@ -341,19 +385,26 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[2][2],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_errors[2][3],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[2][3]);
-	len += sprintf(&buffer[len],"[eNB PROC] DLSCH errors %d/%d (%d/%d,%d/%d,%d/%d,%d/%d)\n",
+	len += sprintf(&buffer[len],"[eNB PROC] DLSCH errors %d/%d (%d/%d/%d,%d/%d/%d,%d/%d/%d,%d/%d/%d)\n",
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_l2_errors,
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[0],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[0],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_ACK[0],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[0],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[1],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_ACK[1],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[1],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[2],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_ACK[2],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[2],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[3],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_ACK[3],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[3]);
 
+	len += sprintf(&buffer[len],"[eNB PROC] DLSCH total bits %dkbit\n",(phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits)/1000);
 	len += sprintf(&buffer[len],"[eNB PROC] DLSCH Bitrate %dkbps\n",(phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate/1000));
+	len += sprintf(&buffer[len],"[eNB PROC] DLSCH Average User Throughput %dKbps\n",(phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits)/((phy_vars_eNB->frame+1)*10));
+
 	len += sprintf(&buffer[len],"[eNB PROC] Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
  
 	if(phy_vars_eNB->transmission_mode[UE_id] == 5){

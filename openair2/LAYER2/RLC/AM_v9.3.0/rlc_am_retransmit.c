@@ -35,10 +35,10 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "rlc.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
-#define TRACE_RLC_AM_RESEGMENT
-#define TRACE_RLC_AM_FORCE_TRAFFIC
-#define TRACE_RLC_AM_NACK
-#define TRACE_RLC_AM_ACK
+//#define TRACE_RLC_AM_RESEGMENT
+//#define TRACE_RLC_AM_FORCE_TRAFFIC
+//#define TRACE_RLC_AM_NACK
+//#define TRACE_RLC_AM_ACK
 //-----------------------------------------------------------------------------
 void rlc_am_nack_pdu (rlc_am_entity_t *rlcP, u32_t frame, u16_t snP, u16_t so_startP, u16_t so_endP)
 //-----------------------------------------------------------------------------
@@ -745,7 +745,8 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP,u32_t frame)
 #ifdef TRACE_RLC_AM_FORCE_TRAFFIC
         else {
             LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] ... BUT NOT ENOUGH BYTES ALLOWED BY MAC %0d\n", frame, rlcP->module_id,rlcP->rb_id, rlcP->nb_bytes_requested_by_mac);
+	}
 #endif
-        }
+        
     }
 }

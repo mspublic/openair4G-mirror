@@ -2,13 +2,14 @@
 #define __INIT_DEFS__H__
 
 #include "PHY/defs.h"
+
+#ifdef OPENAIR_LTE
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #include "MobilityControlInfo.h"
-
-#ifndef OPENAIR_LTE
+#else
 /**
 \fn int phy_init(unsigned char nb_antennas_tx)
 \brief Allocate and Initialize the PHY variables after receiving static configuration
@@ -35,10 +36,12 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation
 @param phy_vars_ue Pointer to UE Variables
+@param nb_connected_eNB Number of eNB that UE can process in one PDSCH demodulation subframe
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 */
 int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
+		    int nb_connected_eNB,
 		    u8 abstraction_flag);
 
 /*!
@@ -141,7 +144,7 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 void phy_config_meas_ue(u8 Mod_id,
 			u8 eNB_index,
 			u8 n_adj_cells,
-			u16 *adj_cell_id);
+			u32 *adj_cell_id);
 
 
 /** \brief PHY Changes for UE MAC reset procedure (Section 5.9, 36.321-8c0)

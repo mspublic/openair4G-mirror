@@ -110,10 +110,11 @@ LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag) {
 }
 
 u32  dlsch_decoding(short *dlsch_llr,
-			     LTE_DL_FRAME_PARMS *frame_parms,
-			     LTE_UE_DLSCH_t *dlsch,
-			     u8 subframe,
-			     u8 num_pdcch_symbols){
+		    LTE_DL_FRAME_PARMS *frame_parms,
+		    LTE_UE_DLSCH_t *dlsch,
+		    u8 subframe,
+		    u8 num_pdcch_symbols,
+		    u8 is_crnti){
   
   
 
@@ -230,7 +231,7 @@ u32  dlsch_decoding(short *dlsch_llr,
     }
   
 #ifdef DEBUG_DLSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
@@ -318,14 +319,15 @@ u32  dlsch_decoding(short *dlsch_llr,
 					  &dlsch->harq_processes[harq_pid]->d[r][96],
 					  dlsch->harq_processes[harq_pid]->c[r],
 					  Kr,
-					  f1f2mat[iind*2],   
-					  f1f2mat[(iind*2)+1], 
+					  f1f2mat_old[iind*2],   
+					  f1f2mat_old[(iind*2)+1], 
 					  MAX_TURBO_ITERATIONS,
 					  crc_type,
 					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-					  harq_pid+1);
+					  is_crnti); //(is_crnti==0)?harq_pid:harq_pid+1);
 
 
+      
    }
 
     if (ret>=(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
@@ -399,168 +401,6 @@ u32  dlsch_decoding(short *dlsch_llr,
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #endif
-
-u32  dlsch_decoding_abstraction(double *dlsch_MIPB,
-				LTE_DL_FRAME_PARMS *frame_parms,
-				LTE_UE_DLSCH_t *dlsch,
-				u8 subframe,
-				u8 num_pdcch_symbols){
-  
-  
-  u32 nulled_bits_cir_buf=0;
-  u32 start_ind;
-  u16 nb_rb;
-  u8 harq_pid;
-  u32 A,E;
-  u8 mod_order;
-  u32 G;
-  u32 ret,offset;
-  u16 iind;
-  //  u8 dummy_channel_output[(3*8*block_length)+12];
-  short dummy_w[8][3*(6144+64)];
-  u32 r,r_offset=0,Kr,Kr_bytes,err_flag=0;
-  u8 crc_type;
-#ifdef DEBUG_DLSCH_DECODING
-  u16 i;
-#endif
-  if (!dlsch_MIPB) {
-    msg("dlsch_decoding.c: NULL dlsch_MIPB pointer\n");
-    return(MAX_TURBO_ITERATIONS);
-  }
-
-  if (!dlsch) {
-    msg("dlsch_decoding.c: NULL dlsch pointer\n");
-    return(MAX_TURBO_ITERATIONS);
-  }
-
-  if (!frame_parms) {
-    msg("dlsch_decoding.c: NULL frame_parms pointer\n");
-    return(MAX_TURBO_ITERATIONS);
-  }
-
-  if (subframe>9) {
-    msg("dlsch_decoding.c: Illegal subframe index %d\n",subframe);
-    return(MAX_TURBO_ITERATIONS);
-  }
-
-  nb_rb = dlsch->nb_rb;
-
-
-  if (nb_rb > 25) {
-    msg("dlsch_decoding.c: Illegal nb_rb %d\n",nb_rb);
-    return(MAX_TURBO_ITERATIONS);
-  }
-
-  harq_pid = dlsch->current_harq_pid;
-  if (harq_pid >= 8) {
-    msg("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
-    return(MAX_TURBO_ITERATIONS);
-  }
-
-  A = dlsch->harq_processes[harq_pid]->TBS;
-
-#ifndef USER_MODE
-  if (A > 6144) {
-    msg("dlsch_decoding.c: Illegal TBS %d\n",A);
-    return(MAX_TURBO_ITERATIONS);
-  }
-#endif
-
-  mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
-
-  ret = MAX_TURBO_ITERATIONS;
-
-
-  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
-
-
-
-  //  msg("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,dlsch->harq_processes[harq_pid]->Ndi);
-
-  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {
-    // This is a new packet, so compute quantities regarding segmentation
-    dlsch->harq_processes[harq_pid]->B = A+24;
-    lte_segmentation(NULL,
-		     NULL,
-		     dlsch->harq_processes[harq_pid]->B,
-		     &dlsch->harq_processes[harq_pid]->C,
-		     &dlsch->harq_processes[harq_pid]->Cplus,
-		     &dlsch->harq_processes[harq_pid]->Cminus,
-		     &dlsch->harq_processes[harq_pid]->Kplus,
-		     &dlsch->harq_processes[harq_pid]->Kminus,		     
-		     &dlsch->harq_processes[harq_pid]->F);
-    //  CLEAR LLR's HERE for first packet in process
-  }
-  /*
-  else {
-    msg("dlsch_decoding.c: Ndi>0 not checked yet!!\n");
-    return(MAX_TURBO_ITERATIONS);
-  }
-  */
-  err_flag = 0;
-  r_offset = 0;
-  for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
-
-    // Get Turbo interleaver parameters
-    if (r<dlsch->harq_processes[harq_pid]->Cminus)
-      Kr = dlsch->harq_processes[harq_pid]->Kminus;
-    else
-      Kr = dlsch->harq_processes[harq_pid]->Kplus;
-    Kr_bytes = Kr>>3;
-    
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      msg("dlsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
-  
-#ifdef DEBUG_DLSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
-#endif
-
-    memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
-    dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
-							       (u8*) &dummy_w[r][0],
-							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
-
-    //#ifdef DEBUG_DLSCH_DECODING    
-    msg("HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
-	harq_pid,r, G,
-	   Kr*3,
-	   mod_order,
-	   nb_rb,
-	   dlsch->harq_processes[harq_pid]->Nl);
-    //#endif    
-
-   start_ind = lte_rate_matching_turbo_rx_abs(dlsch->harq_processes[harq_pid]->RTC[r],
-							G,
-							dlsch->harq_processes[harq_pid]->w_abs[r],
-							(u8*)&dummy_w[r][0],
-							dlsch_MIPB,
-							dlsch->harq_processes[harq_pid]->C,
-							NSOFT,
-							dlsch->Mdlharq,
-							dlsch->Kmimo,
-							dlsch->harq_processes[harq_pid]->rvidx,
-							dlsch->harq_processes[harq_pid]->Ndi,
-							get_Qm(dlsch->harq_processes[harq_pid]->mcs),
-							dlsch->harq_processes[harq_pid]->Nl,
-							r,
-							&E); 
-    
-    r_offset += E;
-
-  }
-  
-  return(start_ind);
-}
 
  int dlsch_abstraction_EESM(double* sinr_dB, u8 TM, u32 rb_alloc[4], u8 mcs) {
 
@@ -944,6 +784,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
   u32 eNB_id2;
+  u32 ue_id;
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
 #endif
@@ -991,13 +832,13 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,
-								PHY_vars_eNB_g[eNB_id2])][0];
+    ue_id= (u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0];
 
 #ifdef DEBUG_DLSCH_DECODING
-    for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
-      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
+    for (i=0;i<dlsch_ue->harq_processes[harq_pid]->TBS>>3;i++)
+      msg("%x.",dlsch_eNB->harq_processes[harq_pid]->b[i]);
+    msg("\n current harq pid is %d ue id %d \n", harq_pid, ue_id);
 #endif
 
     if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {

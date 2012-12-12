@@ -1,8 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
 #include <execinfo.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
@@ -10,7 +15,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
 #endif
@@ -83,6 +87,7 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms) {
   
 }
 
+#ifdef OPENAIR_LTE
 void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms, int carrier) {
 
   int i;
@@ -140,3 +145,8 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
   }
 
 }
+#endif
+
+#ifdef OPENAIR_ITS
+
+#endif

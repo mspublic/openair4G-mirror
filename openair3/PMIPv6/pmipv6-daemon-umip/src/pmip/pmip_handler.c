@@ -1,3 +1,21 @@
+/*
+ * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
+ *
+ * Authors: OPENAIR3 <openair_tech@eurecom.fr>
+ *
+ * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
+ * 
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
+ * management protocol standardized by IETF. It is a protocol for building 
+ * a common and access technology independent of mobile core networks, 
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ * network-based mobility management protocol standardized by IETF.
+ * 
+ * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
+ * which it involves that it is under the same terms of GNU General Public
+ * License version 2. See MIPL terms condition if you need more details. 
+ */
 /*! \file pmip_handler.c
  * \brief
  * \author OpenAir3 Group
@@ -5,7 +23,7 @@
  * \version 1.0
  * \company Eurecom
  * \project OpenAirInterface
- * \email: openair3@eurecom.fr
+ * \email: openair_tech@eurecom.fr
  */
 #define PMIP
 #define PMIP_HANDLER_C
@@ -149,7 +167,7 @@ void pmip_timer_bce_expired_handler(struct tq_elem *tqe)
                 return;
             }
             //Delete existing route for the deleted MN
-            if (is_lma()) {
+            if (is_ha()) {
                 lma_dereg(e, 0, 0);
                 pmipcache_release_entry(e);
                 pmip_bce_delete(e);
@@ -181,7 +199,7 @@ void pmip_timer_bce_expired_handler(struct tq_elem *tqe)
                 dbg("pthread_rwlock_unlock(&e->lock) %s\n", strerror(mutex_return_code));
             }
         }
-        if (is_lma()) {
+        if (is_ha()) {
             lma_dereg(e, 0, 0);
             pmipcache_release_entry(e);
             pmip_bce_delete(e);
@@ -298,7 +316,7 @@ static void pmip_mag_recv_pba(const struct ip6_mh *mh, ssize_t len, const struct
 /*!
  * handler called when receiving a proxy binding update
  */
-static void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
+void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
 {
     printf("=====================================\n");
     dbg("Proxy Binding Update (PBU) Received\n");

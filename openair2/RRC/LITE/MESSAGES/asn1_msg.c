@@ -60,8 +60,6 @@ int errno;
 #define msg printf
 #endif
 
-int transmission_mode_rrc;
-
 uint16_t two_tier_hexagonal_cellIds[7] = {0,1,2,4,5,7,8};
 uint16_t two_tier_hexagonal_adjacent_cellIds[7][6] = {{1,2,4,5,7,8},    // CellId 0
 				                      {11,18,2,0,8,15}, // CellId 1
@@ -197,7 +195,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   PLMN_IdentityInfo_t PLMN_identity_info;
   MCC_MNC_Digit_t dummy_mcc[3],dummy_mnc[2];
   asn_enc_rval_t enc_rval;
-  SchedulingInfo_t schedulingInfo2,schedulingInfo3;
+  SchedulingInfo_t schedulingInfo;
   SIB_Type_t sib_type;
 
   memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
@@ -208,8 +206,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   *sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
 
   memset(&PLMN_identity_info,0,sizeof(PLMN_IdentityInfo_t));
-  memset(&schedulingInfo2,0,sizeof(SchedulingInfo_t));
-  memset(&schedulingInfo3,0,sizeof(SchedulingInfo_t));
+  memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
   memset(&sib_type,0,sizeof(SIB_Type_t));
 
 
@@ -261,22 +258,21 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 
   (*sib1)->freqBandIndicator = 38;
 
-  //  assign_enum(&schedulingInfo.si_Periodicity,SchedulingInfo__si_Periodicity_rf8);
-  schedulingInfo2.si_Periodicity=SchedulingInfo__si_Periodicity_rf16;
-  schedulingInfo3.si_Periodicity=SchedulingInfo__si_Periodicity_rf32;
+  schedulingInfo.si_Periodicity=SchedulingInfo__si_Periodicity_rf8;
 
-  //  assign_enum(&sib_type,SIB_Type_sibType3);
-
-  // This is for SIB2
-  ASN_SEQUENCE_ADD(&schedulingInfo2.sib_MappingInfo.list,NULL);
-
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo2);
-
+  // This is for SIB2/3
   sib_type=SIB_Type_sibType3;
+  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
+  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
 
-  ASN_SEQUENCE_ADD(&schedulingInfo3.sib_MappingInfo.list,&sib_type);
+  //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo3);
+
+
+
+
+
+
 
   (*sib1)->tdd_Config = CALLOC(1,sizeof(struct TDD_Config));
 
@@ -479,6 +475,7 @@ uint8_t do_SIB2_AT4(uint8_t Mod_id,
 }
 
 uint8_t do_SIB23(uint8_t Mod_id,
+		 LTE_DL_FRAME_PARMS *frame_parms,
 		 uint8_t *buffer,
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
@@ -496,7 +493,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   //  SystemInformationBlockType13_r9_t *sib13;
 
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
-#ifdef REL10
+#ifdef Rel10
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
 #endif
   asn_enc_rval_t enc_rval;
@@ -542,9 +539,11 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL;
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep=RACH_ConfigCommon__powerRampingParameters__powerRampingStep_dB2;
 
-
+#ifdef EXMIMO
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_100;
+#else
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_108;
-
+#endif
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax=RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
 
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf4;
@@ -572,8 +571,16 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset = 2;
 
   // PDSCH-Config
+#ifdef EXMIMO
+  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=3;
+#else
   (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=15;
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0;
+#endif
+  if (frame_parms->mode1_flag==1)
+    (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0;
+  else
+    (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=1;
+
 
   // PUSCH-Config
   (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB=1;
@@ -598,9 +605,14 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // uplinkPowerControlCommon
 
+#ifdef EXMIMO
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -100;
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -100;
+#else
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -108;
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha=UplinkPowerControlCommon__alpha_al1;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -108;
+#endif
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha=UplinkPowerControlCommon__alpha_al1;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1=DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b=DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
 
@@ -912,8 +924,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   asn_enc_rval_t enc_rval;
   uint8_t ecause=0;
 
-
-
   long *logicalchannelgroup;
 
   struct SRB_ToAddMod *SRB1_config2;//,*SRB2_config2;
@@ -1016,6 +1026,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //	      PDSCH_ConfigDedicated__p_a_dB0);
   physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.choice.release=0;
@@ -1097,11 +1108,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
   //     AntennaInfoDedicated__transmissionMode_tm2);
 
-  // TODO: set transmission mode based on some external config
-  // for the moment use transmission_mode_rrc
-  //physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
-
-  switch (transmission_mode_rrc){
+  switch (transmission_mode){
   case 1:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;
@@ -1161,8 +1168,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
-
-
 #ifdef Rel10
   betaOffset_CA_Index = CALLOC(1,sizeof(long));
   cShift = CALLOC(1,sizeof(long));
@@ -1208,7 +1213,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 					MeasIdToAddModList_t              *MeasId_list,
 					MAC_MainConfig_t                  *mac_MainConfig,
 					MeasGapConfig_t                   *measGapConfig,
-					MobilityControlInfo_t 			  *mobilityInfo) {
+					MobilityControlInfo_t 			  *mobilityInfo,
+					uint8_t                           *nas_pdu,
+                    uint32_t                           nas_length) {
 
 
   asn_enc_rval_t enc_rval;
@@ -1645,8 +1652,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig));
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->present =RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
     memcpy(&rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue,
-	   mac_MainConfig,
-	   sizeof(*mac_MainConfig));
+           mac_MainConfig,
+           sizeof(*mac_MainConfig));
   }
   else {
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig=NULL;
@@ -1691,8 +1698,14 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   }
   else
 	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
+  if ((nas_pdu == NULL) || (nas_length == 0)) {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
+  } else {
+      DedicatedInfoNAS_t *dedicatedInfoNAS;
+      dedicatedInfoNAS = &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList;
+      dedicatedInfoNAS->buf = nas_pdu;
+      dedicatedInfoNAS->size = nas_length;
+  }
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure= rsrp;
@@ -1945,7 +1958,7 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
 
     ASN_SEQUENCE_ADD(&measResultListEUTRA2->list,measresulteutra2);
 
-    measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*measResultListEUTRA2;
+    measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
 
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
@@ -1959,7 +1972,6 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
 
   return((enc_rval.encoded+7)/8);
 }
-
 
 #ifndef USER_MODE
 int init_module(void)

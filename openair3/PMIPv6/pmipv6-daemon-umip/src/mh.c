@@ -24,24 +24,6 @@
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA.
  */
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
- * network-based mobility management protocol standardized by IETF.
- * 
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
- */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -71,11 +53,7 @@
 #include "keygen.h"
 #include "prefix.h"
 #include "statistics.h"
-/////////////////////////////////
-//Added for PMIP
 #include "pmip_types.h"
-//#include "pmip_consts.h" (in mh.h)
-/////////////////////////////////
 
 #define MH_DEBUG_LEVEL 1
 
@@ -239,8 +217,6 @@ static const size_t _mh_len[] = {
 	sizeof(struct ip6_mh_binding_update),
 	sizeof(struct ip6_mh_binding_ack),
 	sizeof(struct ip6_mh_binding_error)
-//LG    sizeof(ip6_mh_proxy_binding_request_t),
-//LG    sizeof(ip6_mh_proxy_binding_response_t)
 };
 
 /**
@@ -796,7 +772,6 @@ int mh_opt_parse(const struct ip6_mh *mh, ssize_t len, ssize_t offset,
 	memset(mh_opts, 0, sizeof(*mh_opts));
 	while (left > 0) {
 		struct ip6_mh_opt *op = (struct ip6_mh_opt *)&opts[i];
-        MDBG("Parsing  op->ip6mhopt_type %d\n", op->ip6mhopt_type);
 		/* make sure the binding authorization data is last */
 		if (bauth)
 			return -EINVAL;
@@ -812,7 +787,6 @@ int mh_opt_parse(const struct ip6_mh *mh, ssize_t len, ssize_t offset,
 			       "Kernel failed to catch malformed Mobility"
 			       "Option type %d. Update kernel!",
 			       op->ip6mhopt_type);
-			MDBG("left %d < sizeof(struct ip6_mh_opt) %d \n", left, sizeof(struct ip6_mh_opt));
 			return -EINVAL;
 		}
 		if (op->ip6mhopt_type == IP6_MHOPT_PADN) {
@@ -828,10 +802,8 @@ int mh_opt_parse(const struct ip6_mh *mh, ssize_t len, ssize_t offset,
 				mh_opts->opts[op->ip6mhopt_type] = i;
 			else if (mh_opts_dup_ok[op->ip6mhopt_type])
 				mh_opts->opts_end[op->ip6mhopt_type] = i;
-			else {
-                MDBG("ERROR op->ip6mhopt_type %d\n", op->ip6mhopt_type);
+			else
 				return -EINVAL;
-			}
 			ret++;
 		}
 		left -= op->ip6mhopt_len + 2;

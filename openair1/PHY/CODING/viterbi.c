@@ -160,16 +160,16 @@ void phy_generate_viterbi_tables(void) {
 #define RESCALE 0x00000040
 
 
-static  __m128i  __attribute__((aligned(16))) TB[4*8192];
+static  __m128i  __attribute__((aligned(16))) TB[4*4095*8];
 
 static  __m128i metrics0_15,metrics16_31,metrics32_47,metrics48_63,even0_30a,even0_30b,even32_62a,even32_62b,odd1_31a,odd1_31b,odd33_63a,odd33_63b,TBeven0_30,TBeven32_62,TBodd1_31,TBodd33_63 __attribute__((aligned(16)));
 
 static  __m128i rescale,min_state,min_state2 __attribute__((aligned(16)));
 
-void phy_viterbi_dot11_sse2(char *y,unsigned char *decoded_bytes,unsigned short n) {
+void phy_viterbi_dot11_sse2(char *y,unsigned char *decoded_bytes,unsigned short n,int offset, int traceback ) {
   
 
-  __m128i *m0_ptr,*m1_ptr,*TB_ptr = &TB[0];
+  __m128i *m0_ptr,*m1_ptr,*TB_ptr = &TB[offset<<2];
 
 
   char *in = y;
@@ -179,13 +179,15 @@ void phy_viterbi_dot11_sse2(char *y,unsigned char *decoded_bytes,unsigned short 
 
   short position;
 
-  // set initial metrics
-
-  metrics0_15 = _mm_cvtsi32_si128(INIT0);
-  metrics16_31 = _mm_xor_si128(metrics16_31,metrics16_31);
-  metrics32_47 = _mm_xor_si128(metrics32_47,metrics32_47);
-  metrics48_63 = _mm_xor_si128(metrics32_47,metrics32_47);
-
+  //  printf("offset %d, TB_ptr %p\n",offset,TB_ptr);
+  if (offset == 0) {
+    // set initial metrics
+    
+    metrics0_15 = _mm_cvtsi32_si128(INIT0);
+    metrics16_31 = _mm_xor_si128(metrics16_31,metrics16_31);
+    metrics32_47 = _mm_xor_si128(metrics32_47,metrics32_47);
+    metrics48_63 = _mm_xor_si128(metrics32_47,metrics32_47);
+  }
   rescale = _mm_cvtsi32_si128(RESCALE);
 
   /*
@@ -196,7 +198,7 @@ void phy_viterbi_dot11_sse2(char *y,unsigned char *decoded_bytes,unsigned short 
   */
 
 
-  for (position=0;position<n;position++) {
+  for (position=offset;position<(offset+n);position++) {
 
 
 	//printf("%d : (%d,%d)\n",position,in[0],in[1]);
@@ -367,23 +369,25 @@ void phy_viterbi_dot11_sse2(char *y,unsigned char *decoded_bytes,unsigned short 
   }
 
   // Traceback
-  prev_state0 = 0;
-  TB_ptr2 = (unsigned char *)&TB[(n-1)*4];
-  for (position = n-1 ; position>-1; position--) {
-
-//    if ((position%8) == 0)
-//	printf("%d: %x\n",1+(position>>3),decoded_bytes[1+(position>>3)]);
-		     	
-    decoded_bytes[(position)>>3] += (prev_state0 & 0x1)<<(position & 0x7);
-    
-  //  printf("pos %d : ps = %d -> %d\n",position,prev_state0,TB_ptr2[prev_state0]);
-    
-    if (TB_ptr2[prev_state0] == 0) 
-      prev_state0 = (prev_state0 >> 1);
-    else
-      prev_state0 = 32 + (prev_state0>>1);
-
-    TB_ptr2-=64;
+  if (traceback == 1) {
+    prev_state0 = 0;
+    TB_ptr2 = (unsigned char *)&TB[(offset+n-1)<<2];
+    for (position = offset+n-1 ; position>-1; position--) {
+      //   printf("pos %d: decoded %x\n",position>>3,decoded_bytes[position>>3]);
+      decoded_bytes[(position)>>3] += (prev_state0 & 0x1)<<(position & 0x7);
+      /*
+      if ((position%8) == 0)
+	printf("%d: %x\n",(position>>3),decoded_bytes[(position>>3)]);
+      
+      printf("pos %d : ps = %d -> %d\n",position,prev_state0,TB_ptr2[prev_state0]);
+      */
+      if (TB_ptr2[prev_state0] == 0) 
+	prev_state0 = (prev_state0 >> 1);
+      else
+	prev_state0 = 32 + (prev_state0>>1);
+      
+      TB_ptr2-=64;
+    }
   }
   _mm_empty();
 

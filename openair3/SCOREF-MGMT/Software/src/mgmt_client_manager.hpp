@@ -42,9 +42,9 @@
 #ifndef MGMT_CLIENT_MANAGER_HPP_
 #define MGMT_CLIENT_MANAGER_HPP_
 
-#include "util/mgmt_udp_server.hpp"
+#include "util/mgmt_udp_socket.hpp"
 #include "mgmt_configuration.hpp"
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include "util/mgmt_log.hpp"
 #include "mgmt_client.hpp"
 
@@ -55,6 +55,22 @@ using namespace std;
  * A container for a manager for Management clients
  */
 class ManagementClientManager {
+	public:
+		/**
+		 * Following enumeration is used to tell caller of updateManagementClientState()
+		 * method what steps are to follow
+		 */
+		enum Task {
+			/**
+			 * Nothing is to be done
+			 */
+			NOTHING = 0,
+			/**
+			 * Send a Location Table Request (only if the client is GN)
+			 */
+			SEND_LOCATION_TABLE_REQUEST = 1
+		};
+
 	public:
 		/**
 		 * Constructor for ManagementClientManager class
@@ -75,11 +91,45 @@ class ManagementClientManager {
 		 * a new client object if necessary or updating its state if there's one
 		 * defined for sender source address
 		 *
-		 * @param clientConnection Sender of relevant packet
+		 * @param clientEndpoint A udp::endpoint reference
 		 * @param eventType Type/subtype of event the packet was sent for
-		 * @return true if success, false otherwise
+		 * @return ManagementClientManager::Task for the caller
 		 */
-		bool updateManagementClientState(UdpServer& clientConnection, EventType eventType);
+		ManagementClientManager::Task updateClientState(const udp::endpoint& clientEndpoint, EventType eventType);
+		/**
+		 * Returns relevant ManagementClient of given type
+		 *
+		 * @return A const pointer of the ManagementClient object of given type
+		 */
+		const ManagementClient* getClientByType(ManagementClient::ManagementClientType clientType) const;
+		/**
+		 * Returns the client at given end
+		 *
+		 * @param endPoint Connection end point information of type udp::endpoint
+		 * @return A pointer of the relevant ManagementClient object
+		 */
+		ManagementClient* getClientByEndpoint(const udp::endpoint& endPoint);
+		/**
+		 * Tells if GN is connected
+		 *
+		 * @param none
+		 * @return true if there's a GN connected, false otherwise
+		 */
+		bool isGnConnected() const;
+		/**
+		 * Tells if FAC is connected
+		 *
+		 * @param none
+		 * @return true if there's a FAC connected, false otherwise
+		 */
+		bool isFacConnected() const;
+		/**
+		 * Returns the string representation of Client Manager and the clients it manages
+		 *
+		 * @param none
+		 * @return std::string representation of this class
+		 */
+		string toString();
 
 	private:
 		/**

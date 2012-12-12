@@ -80,7 +80,7 @@ class GeonetNetworkStateEventPacket: public GeonetPacket {
 		 * @param packetBuffer Buffer containing packet data
 		 * @return true on success, false otherwise
 		 */
-		bool parse(const vector<unsigned char> packetBuffer);
+		bool parse(const vector<unsigned char>& packetBuffer);
 
 	private:
 		/**

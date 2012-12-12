@@ -25,24 +25,6 @@
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA.
  */
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
- * network-based mobility management protocol standardized by IETF.
- * 
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
- */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -60,7 +42,7 @@
 #include "debug.h"
 #include "rtnl.h"
 
-#define RT_DEBUG_LEVEL 1
+#define RT_DEBUG_LEVEL 0
 
 #if RT_DEBUG_LEVEL >= 1
 #define RTDBG dbg
@@ -73,7 +55,7 @@ int rtnl_do(int proto, struct nlmsghdr *sn, struct nlmsghdr *rn)
 	struct rtnl_handle rth;
 	int err;
 	if (rtnl_open_byproto(&rth, 0, proto) < 0) {
-		dbg("ERROR \n");
+		dbg("huh?\n");
 		return -1;
 	}
 	err = rtnl_talk(&rth, sn, 0, 0, rn, NULL, NULL);
