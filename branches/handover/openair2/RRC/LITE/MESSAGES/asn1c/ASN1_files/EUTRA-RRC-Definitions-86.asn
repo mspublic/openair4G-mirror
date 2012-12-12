@@ -2694,7 +2694,6 @@ AdditionalReestabInfo ::=	SEQUENCE{
 	shortMAC-I							ShortMAC-I
 }
 
-
 RRM-Config ::=				SEQUENCE {
 	ue-InactiveTime				ENUMERATED {
 									s1, s2, s3, s5, s7, s10, s15, s20,
@@ -2710,6 +2709,7 @@ RRM-Config ::=				SEQUENCE {
 }
 
 
+Key-eNodeB-Star ::=                                     BIT STRING (SIZE (256))
 maxReestabInfo				INTEGER ::= 32	-- Maximum number of KeNB* and shortMAC-I forwarded
 											-- at handover for re-establishment preparation
 
