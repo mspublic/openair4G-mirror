@@ -66,7 +66,7 @@ bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char>& 
 
 	// Parse interface count first
 	u_int8_t interfaceCount = packetBuffer.data()[sizeof(MessageHeader)];
-	logger.info("Number of interfaces is " + boost::lexical_cast<string>(interfaceCount));
+	logger.info("Number of interfaces is " + boost::lexical_cast<string>((int)interfaceCount));
 
 	// Then traverse the buffer to get the state for every interface...
 	u_int16_t itemIndex = sizeof(WirelessStateResponseMessage);

@@ -1,6 +1,7 @@
 
 import socket
 import array
+import random
 
 class Packet:
 	@staticmethod
@@ -110,6 +111,46 @@ class Packet:
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		managementSocket.bind(('0.0.0.0', clientPort))
 		sentByteCount = managementSocket.sendto(networkStatePacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		return True
+
+	@staticmethod
+	def sendWirelessState(serverAddress, serverPort, clientPort, clientType):
+		random.seed()
+
+		# Build the packet
+		wirelessStatePacket = array.array('B')
+		wirelessStatePacket.append(0x40) # Validity=1, version=0
+		wirelessStatePacket.append(0x00) # Priority=0
+		wirelessStatePacket.append(0x04) # EventType=4
+		# Set the event sub-type according to the client type
+		if clientType == "GN":
+			wirelessStatePacket.append(0x03) # EventSubtype=3
+		elif clientType == "LTE":
+			# This value is not defined yet!
+			wirelessStatePacket.append(0x3) # EventSubtype=3
+		wirelessStatePacket.append(0x01) # IF Count
+		wirelessStatePacket.append(0x00) # Reserved
+		wirelessStatePacket.append(0x00) # Reserved
+		wirelessStatePacket.append(0x00) # Reserved
+		wirelessStatePacket.append(0x00) # Interface ID (2-byte)
+		wirelessStatePacket.append(random.randint(1, 10))
+		wirelessStatePacket.append(0x00) # Access Technology (2-byte)
+		wirelessStatePacket.append(random.randint(1, 255))
+		wirelessStatePacket.append(random.randint(1, 255)) # Channel Frequency (2-byte)
+		wirelessStatePacket.append(random.randint(1, 255))
+		wirelessStatePacket.append(0x00) # Bandwidth (2-byte)
+		wirelessStatePacket.append(random.randint(1, 255))
+		wirelessStatePacket.append(random.randint(1, 100)) # Channel Busy Ratio (1-byte)
+		wirelessStatePacket.append(random.randint(1, 10)) # Status (1-byte)
+		wirelessStatePacket.append(random.randint(1, 100)) # Average TX Power (1-byte)
+		wirelessStatePacket.append(0x00) # Reserved
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(wirelessStatePacket, (serverAddress, serverPort))
 		print sentByteCount, "bytes sent"
 
 		return True

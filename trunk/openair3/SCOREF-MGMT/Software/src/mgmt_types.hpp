@@ -137,6 +137,7 @@ enum EventType {
 	 */
 	MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST = 0x402,
 	MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE = 0x403,
+	MGMT_LTE_EVENT_STATE_WIRELESS_STATE_RESPONSE = 0x423,
 	MGMT_GN_EVENT_STATE_NETWORK_STATE = 0x404
 };
 
@@ -320,14 +321,13 @@ struct WirelessStateResponseItem {
 	string toString() const {
 		stringstream ss;
 
-		ss << "Interface ID: " << interfaceId << endl
-			<< "Access Technology: " << accessTechnology << endl
-			<< "Channel Frequency: " << channelFrequency << endl
-			<< "Bandwidth: " << bandwidth << endl
-			<< "Channel Busy Ratio: " << (int)channelBusyRatio << endl
-			<< "Status: " << (int)status << endl
-			<< "Average TX Power: " << (int)averageTxPower << endl
-			<< "Reserved: " << (int)reserved << endl;
+		ss << "WirelessState[If ID:" << interfaceId
+			<< ", Access Tech:" << accessTechnology
+			<< ", Channel Freq:" << channelFrequency
+			<< ", Bandwidth:" << bandwidth
+			<< ", Busy Ratio:" << (int)channelBusyRatio
+			<< ", Status:" << (int)status
+			<< ", Average TX Power:" << (int)averageTxPower << "]";
 
 		return ss.str();
 	}

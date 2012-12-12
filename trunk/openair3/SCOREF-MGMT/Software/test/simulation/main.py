@@ -43,6 +43,7 @@ while line:
 	if commands[0] == "SEND":
 		clientPacketType = commands[1]
 		print clientPacketType, "packet is going to be sent"
+
 		# Configuration Request Packet
 		if clientPacketType == "GET_CONFIGURATION":
 			# Ignore the command if the client type is not defined
@@ -54,8 +55,9 @@ while line:
 				print "CONFIGURATION_REQUEST packet sent successfully"
 			else:
 				print "ERROR: Cannot send CONFIGURATION_REQUEST"
+
 		# Communication Profile Request Packet
-		if clientPacketType == "COMMUNICATION_PROFILE_REQUEST":
+		elif clientPacketType == "COMMUNICATION_PROFILE_REQUEST":
 			# Ignore the command if the client type is not defined
 			if clientType == "UNDEFINED":
 				print "ERROR: Client type has to be defined in advance to send a CONFIGURATION_REQUEST"
@@ -65,24 +67,38 @@ while line:
 				print "COMMUNICATION_PROFILE_REQUEST packet sent successfully"
 			else:
 				print "ERROR: Cannot send COMMUNICATION_PROFILE_REQUEST"
+
 		# Network State Packet
 		elif clientPacketType == "NETWORK_STATE":
 			if Packet.sendNetworkState(serverAddress, serverPort, clientPort):
 				print "NETWORK_STATE packet sent successfully"
 			else:
 				print "ERROR: Cannot send NETWORK_STATE"
+
+		# Wireless State Packet
+		elif clientPacketType == "WIRELESS_STATE":
+			if Packet.sendWirelessState(serverAddress, serverPort, clientPort, clientType):
+				print "WIRELESS_STATE packet sent successfully"
+			else:
+				print "ERROR: Cannot send WIRELESS_STATE"
+
 		# Location Update
 		elif clientPacketType == "LOCATION_UPDATE":
 			if Packet.sendLocationUpdate(serverAddress, serverPort, clientPort):
 				print "LOCATION_UPDATE packet sent successfully"
 			else:
 				print "ERROR: Cannot send LOCATION_UPDATE"
+
 		# Configuration Notification
 		elif clientPacketType == "CONFIGURATION_NOTIFICATION":
 			if Packet.sendConfigurationNotification(serverAddress, serverPort, clientPort):
 				print "CONFIGURATION_NOTIFICATION packet sent successfully"
 			else:
 				print "ERROR: Cannot send CONFIGURATION_NOTIFICATION"
+
+		# Unknown packet
+		else:
+			print "Sorry dude, I don't know what you mean by", clientPacketType
 
 	# Wait command
 	elif commands[0] == "WAIT":
@@ -91,7 +107,7 @@ while line:
 		time.sleep(howManySeconds)
 
 	# DEFINE command family
-	if commands[0] == "DEFINE":		
+	elif commands[0] == "DEFINE":		
 		# Server address is being defined
 		if commands[1] == "SERVER_ADDRESS":
 			serverAddress = commands[2]
@@ -121,6 +137,14 @@ while line:
 	# TODO			responder.start()
 			else:
 				print "Those incoming messages that require a response will be ignored"
+
+		# Unknown sub-command
+		else:
+			print "Sorry dude, I don't know what you mean by", command[1]
+
+	# Unknown command
+	else:
+		print "Sorry dude, I don't know what you mean by", command[0], "command"
 
 	# Read a new line and remove newline
 	line = scenarioFile.readline()

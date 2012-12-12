@@ -190,7 +190,22 @@ WirelessStateResponseItem& ManagementInformationBase::getWirelessState(Interface
 }
 
 bool ManagementInformationBase::updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem wirelessState) {
-	wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(interfaceId, wirelessState));
+	map<InterfaceID, WirelessStateResponseItem>::iterator itemIndex = wirelessStateMap.find(interfaceId);
+
+	/**
+	 * First check if we already had this Interface ID, if yes, then replace it
+	 */
+	if (itemIndex == wirelessStateMap.end())
+		wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(interfaceId, wirelessState));
+	else
+		itemIndex->second = wirelessState;
+
+	/**
+	 * Print the list of interfaces we had so far
+	 */
+	logger.info("I had the information for following interfaces so far...");
+	for (map<InterfaceID, WirelessStateResponseItem>::const_iterator it = wirelessStateMap.begin(); it != wirelessStateMap.end(); ++it)
+		logger.info(it->second.toString());
 
 	return true;
 }
