@@ -448,7 +448,7 @@ int init_opt(int trace_mode, char *path,char* ip, char* port){
   
   }
   LOG_D(OPT,"mode %s init ip %s port %s path %s\n", 
-	(in_trace ==opt_wireshark)? "wireshark" : "PCAP", in_ip, in_port, in_path )
+	(in_trace ==opt_wireshark)? "wireshark" : "PCAP", in_ip, in_port, in_path );
      
   //  mac_info = (mac_info*)malloc16(sizeof(mac_lte_info));
   // memset(mac_info, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);

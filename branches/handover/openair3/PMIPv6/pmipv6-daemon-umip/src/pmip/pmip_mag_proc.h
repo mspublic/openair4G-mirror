@@ -1,3 +1,21 @@
+/*
+ * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
+ *
+ * Authors: OPENAIR3 <openair_tech@eurecom.fr>
+ *
+ * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
+ * 
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
+ * management protocol standardized by IETF. It is a protocol for building 
+ * a common and access technology independent of mobile core networks, 
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ * network-based mobility management protocol standardized by IETF.
+ * 
+ * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
+ * which it involves that it is under the same terms of GNU General Public
+ * License version 2. See MIPL terms condition if you need more details. 
+ */
 /*! \file pmip_mag_proc.h
 * \brief
 * \author OpenAir3 Group
@@ -5,7 +23,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair3@eurecom.fr
+* \email: openair_tech@eurecom.fr
 */
 
 /** \defgroup MAG_Processing MAG_Processing
@@ -49,6 +67,12 @@
 #	include <netinet/ip6.h>
 #	include "pmip_cache.h"
 #	include "pmip_msgs.h"
+
+//-VARS----------------------------------------------------------------------------
+/*! \var int  g_ingress_iif
+\brief Ingress interface index that is delivered by kernel in /proc/net/if_inet6 .
+*/
+protected_pmip_mag_proc(int   g_ingress_iif;)
 //-PROTOTYPES----------------------------------------------------------------------------
 /*! \fn int mag_setup_route(struct in6_addr *pmip6_addr, int downlink)
 * \brief	Set a route on a MAG for reaching a mobile node.

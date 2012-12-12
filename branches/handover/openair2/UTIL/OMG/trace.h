@@ -65,7 +65,7 @@ int create_trace_node(NodePtr node,node_info *head_node) ;
  * \param node a pointer of type NodePtr that represents the node to which the random position is assigned
  */
 void place_trace_node(NodePtr node) ;
-
+int deploy_nodes();
 /**
  * \fn Pair sleep_rwp_node(NodePtr node, double cur_time)
  * \brief Called by the function start_rwp_generator(omg_global_param omg_param_list) and update_rwp_nodes(double cur_time), it allows the node to sleep for a random duration starting
@@ -75,7 +75,7 @@ void place_trace_node(NodePtr node) ;
  * \return A Pair structure containing the node and the time when it is reaching the destination
  */
 Pair sleep_trace_node(NodePtr node, double cur_time,float sleep_duration) ;
-
+Pair keep_awake_trace_node(NodePtr node, double cur_time,float duration,int jump);
 /**
  * \fn Pair move_rwp_node(NodePtr node, double cur_time)
  * \brief Called by the function update_rwp_nodes(double cur_time), it computes the next destination of a node ((X,Y) coordinates and the arrival

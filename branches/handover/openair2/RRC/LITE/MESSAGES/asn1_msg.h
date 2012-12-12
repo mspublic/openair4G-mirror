@@ -37,6 +37,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB23(uint8_t Mod_id,
+		 LTE_DL_FRAME_PARMS *frame_parms,
 		 uint8_t *buffer,
 		 SystemInformation_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
@@ -122,7 +123,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 					MeasIdToAddModList_t              *MeasId_list,
 					MAC_MainConfig_t                  *mac_MainConfig,
 					MeasGapConfig_t                   *measGapConfig,
-					MobilityControlInfo_t			  *mobilityInfo
+					MobilityControlInfo_t			  *mobilityInfo,
+					uint8_t                           *nas_pdu,
+                    uint32_t                           nas_length
 					/*, struct MeasConfig__speedStatePars	  	  *speedStatePars*/
 					);
 

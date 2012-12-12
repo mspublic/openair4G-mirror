@@ -145,6 +145,8 @@ typedef struct {
   u32 TBS;
   /// The payload + CRC size in bits, "B" from 36-212 
   u16 B;  
+  /// Length of ACK information (bits)
+  u8 O_ACK;
   /// Pointer to the payload
   u8 *b;             
   /// Pointers to transport block segments
@@ -179,8 +181,10 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
-  /// DRMS field for this ULSCH
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   u8 n_DMRS;
+  /// n_DMRS2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  u8 n_DMRS2;
   /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
   u8 control_only;
   /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
@@ -260,8 +264,6 @@ typedef struct {
   u8 O_RI;
   /// Pointer to ACK
   u8 o_ACK[4];
-  /// Length of ACK information (bits)
-  u8 O_ACK;
   /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)
   u8 O_CQI_MIN;
   /// ACK/NAK Bundling flag
@@ -296,8 +298,6 @@ typedef struct {
   u16 beta_offset_harqack_times8;
   /// power_offset
   u8 power_offset;
-  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
-  u8 n_DMRS2;
   // for cooperative communication
   u8 cooperation_flag;
   /// RNTI attributed to this ULSCH
@@ -335,6 +335,8 @@ typedef struct {
   u32 TBS;
   /// The payload + CRC size in bits  
   u16 B; 
+  /// Length of ACK information (bits)
+  u8 O_ACK;
   /// Pointer to the payload
   u8 *b;  
   /// Pointers to transport block segments
@@ -369,8 +371,10 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
-  /// DRMS field for this ULSCH
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   u8 n_DMRS;
+  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  u8 n_DMRS2;
   /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)
   //  int calibration_flag;
 } LTE_UL_eNB_HARQ_t;
@@ -404,8 +408,6 @@ typedef struct {
   u8 O_RI;
   /// Pointer to ACK
   u8 o_ACK[4];
-  /// Length of ACK information (bits)
-  u8 O_ACK;
   /// ACK/NAK Bundling flag
   u8 bundling;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
@@ -436,8 +438,6 @@ typedef struct {
   u32 Msg3_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-  /// n_DMRS2 for cyclic shift of DM RS ( 3GPP 36.211 Table 5.5.2.1.1-1)
-  u8 n_DMRS2;
   /// cyclic shift for DM RS
   u8 cyclicShift;
   /// cooperation flag
@@ -516,31 +516,32 @@ typedef struct {
   /// 
   u32 dlsch_sliding_cnt;
   ///
+  u32 dlsch_ACK[8];
   u32 dlsch_NAK[8];
   ///
   u32 dlsch_l2_errors;
   ///
-  u32 dlsch_trials[4];
+  u32 dlsch_trials[8];
   ///
   u32 ulsch_errors[3];
   ///
   u32 ulsch_consecutive_errors[3];
   ///
-  u32 ulsch_decoding_attempts[3][4];
+  u32 ulsch_decoding_attempts[3][8];
   ///
-  u32 ulsch_round_errors[3][4];
-  u32 ulsch_decoding_attempts_last[3][4];
-  u32 ulsch_round_errors_last[3][4];
-  u32 ulsch_round_fer[3][4];
+  u32 ulsch_round_errors[3][8];
+  u32 ulsch_decoding_attempts_last[3][8];
+  u32 ulsch_round_errors_last[3][8];
+  u32 ulsch_round_fer[3][8];
   s8 dlsch_mcs_offset;
   /// Target mcs1 after rate-adaptation (used by MAC layer scheduler)
   u8 dlsch_mcs1;
   /// Target mcs2 after rate-adaptation (used by MAC layer scheduler)
   u8 dlsch_mcs2;
   //  SRS_param_t SRS_parameters;
-  unsigned int total_TBS;
+  int total_TBS;
   //
-  unsigned int total_TBS_last;
+  int total_TBS_last;
   //
   unsigned int dlsch_bitrate;
   //
@@ -644,6 +645,8 @@ typedef struct {
   u8 dci_length;
   /// Aggregation level 
   u8 L;
+  /// Position of first CCE of the dci
+  unsigned int nCCE;
   /// flag to indicate that this is a RA response
   u8 ra_flag;
   /// rnti

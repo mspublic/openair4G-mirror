@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -40,7 +40,6 @@
 */
 
 #include "mgmt_gn_packet_wireless_state_request.hpp"
-#include <iostream>
 #include <sstream>
 
 GeonetWirelessStateRequestEventPacket::GeonetWirelessStateRequestEventPacket(Logger& logger)
@@ -50,17 +49,31 @@ GeonetWirelessStateRequestEventPacket::GeonetWirelessStateRequestEventPacket(Log
 GeonetWirelessStateRequestEventPacket::~GeonetWirelessStateRequestEventPacket() {}
 
 bool GeonetWirelessStateRequestEventPacket::serialize(vector<unsigned char>& buffer) const {
-	/* This packet is an only-header packet */
-	if (!GeonetPacket::serialize(buffer)) {
-		logger.error("Cannot serialise packet header!");
+	/**
+	 * Validate buffer size
+	 */
+	if (buffer.size() < sizeof(MessageHeader)) {
+		logger.warning("Incoming buffer size is smaller than a mere header size!");
 		return false;
 	}
 
+	/**
+	 * This packet is an only-header packet so serialize only a header
+	 */
+	if (!GeonetPacket::serialize(buffer)) {
+		logger.error("Cannot serialise packet header into a Wireless State Request!");
+		return false;
+	}
+
+	/**
+	 * Shrink the buffer to the size of data we've written into it
+	 */
 	buffer.resize(sizeof(MessageHeader));
+
 	return true;
 }
 
 string GeonetWirelessStateRequestEventPacket::toString() const {
 	/* This packet is an only-header packet */
 	return GeonetPacket::toString();
-};
+}

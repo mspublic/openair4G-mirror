@@ -29,7 +29,7 @@ void extract_position(Node_list input_node_list, node_desc_t**, int nb_nodes);//
 void get_beta_map();//Abstraction changes
 void get_MIESM_param(void);
 
-void init_snr(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*);//Abstraction changes
+void init_snr(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*, u8, u16);//Abstraction changes
 void calculate_sinr(channel_desc_t *,  node_desc_t *, node_desc_t *, double *sinr_dB);//Abstraction changes
 void get_beta_map(void); 
 int dlsch_abstraction_EESM(double* sinr_dB, u32 rb_alloc[4], u8 mcs); //temporary testing for PHY abstraction

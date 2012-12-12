@@ -253,8 +253,8 @@ void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_si
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
   u8 DCCH_index = Srb_id % MAX_NUM_RB;
 
-  LOG_D(RRC,"RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
-      DCCH_index,UE_index,sdu_size);
+  LOG_D(RRC,"[SRB %d]RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
+	Srb_id-1, DCCH_index,UE_index,sdu_size);
   if (eNB_flag ==1)
     rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
@@ -283,20 +283,14 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 
   UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt++;
 
-
-  
-
 }
 
-
-u8 get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index){
+int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
   if(eNB_flag == 1)
-    return(eNB_rrc_inst[Mod_id].Info.Status);
+    return(eNB_rrc_inst[Mod_id].Info.Status[index]);
   else
-    return(UE_rrc_inst[Mod_id].Info[eNB_index].State);
+    return(UE_rrc_inst[Mod_id].Info[index].State);
 }
-
-
 
 
 

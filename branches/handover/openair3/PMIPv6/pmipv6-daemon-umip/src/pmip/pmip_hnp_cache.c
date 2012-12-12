@@ -1,3 +1,21 @@
+/*
+ * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
+ *
+ * Authors: OPENAIR3 <openair_tech@eurecom.fr>
+ *
+ * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
+ * 
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
+ * management protocol standardized by IETF. It is a protocol for building 
+ * a common and access technology independent of mobile core networks, 
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ * network-based mobility management protocol standardized by IETF.
+ * 
+ * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
+ * which it involves that it is under the same terms of GNU General Public
+ * License version 2. See MIPL terms condition if you need more details. 
+ */
 /*! \file pmip_hnp_cache.c
 * \brief PMIP binding cache functions
 * \author OpenAir3 Group
@@ -5,7 +23,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair3@eurecom.fr
+* \email: openair_tech@eurecom.fr
 */
 #define PMIP
 #define PMIP_HNP_CACHE_C
@@ -18,7 +36,9 @@
 #include "pmip_consts.h"
 //---------------------------------------------------------------------------------------------------------------------
 #ifdef USE_RADIUS
-#	include "freeradius-client.h"
+#   include "freeradius-client.h"
+#else
+#   include <ctype.h>
 #endif
 #include "util.h"
 #ifdef ENABLE_VT
@@ -36,6 +56,7 @@ static mnid_hnp_t 			g_mn_hn_map[MAX_MOBILES];
 */
 static int 					g_mn_count = 0;
 #ifdef USE_RADIUS
+#	define CACHE_RADIUS
 #	define RADIUS_MSG_MAX_SIZE      4096
 #	define RADIUS_USERNAME_MAX_SIZE 256
 /*! \var rc_handle*			g_rh
@@ -177,10 +198,21 @@ int pmip_mn_to_hnp_cache_init(void)
     return 0;
 }
 #else
+static void trim(char * s) {
+    char * p = s;
+    int l = strlen(p);
+
+    while(isspace(p[l - 1])) p[--l] = 0;
+    while(* p && isspace(* p)) ++p, --l;
+
+    memmove(s, p, l + 1);
+}
+
 int pmip_mn_to_hnp_cache_init (void)
 {
     FILE               *fp;
 
+    char                line [256];
     char                str_addr[40], str_addr_iid[40];
 
     struct in6_addr     addr, addr1;
@@ -191,23 +223,33 @@ int pmip_mn_to_hnp_cache_init (void)
 
     memset(g_mn_hn_map, 0, sizeof(mnid_hnp_t) * MAX_MOBILES);
     j = 0;
-    if ((fp = fopen ("/etc/match", "r")) == NULL) {
-        printf ("can't open %s:", "/match");
+    if ((fp = fopen ("/etc/pmip/mac-mapping.auth", "r")) == NULL) {
+        printf ("can't open %s:", "/etc/pmip/mac-mapping.auth");
         exit (0);
     }
-    while ((fscanf (fp, "%32s %32s\n", str_addr, str_addr_iid) != EOF) && (j < MAX_MOBILES)) {
-        for (i = 0; i < 16; i++) {
-            sscanf (str_addr + i * 2, "%02x", &ap);
-            addr.s6_addr[i] = (unsigned char) ap;
-            g_mn_hn_map[j].mn_prefix = addr;
-            sscanf (str_addr_iid + i * 2, "%02x", &ap1);
-            addr1.s6_addr[i] = (unsigned char) ap1;
-            g_mn_hn_map[j].mn_iid = addr1;
+    while ( fgets ( line, sizeof line, fp ) != NULL ) {
+        trim(line);
+        // if line is not a comment
+        if (strncmp("#", line, 1) != 0) {
+            //while ((fscanf (fp, "%32s %16s\n", str_addr, str_addr_iid) != EOF) && (j < MAX_MOBILES)) {
+            if ((sscanf (line, "%32s %16s\n", str_addr, str_addr_iid) != EOF) && (j < MAX_MOBILES)) {
+                for (i = 0; i < 16; i++) {
+                    sscanf (str_addr + i * 2, "%02x", &ap);
+                    addr.s6_addr[i] = (unsigned char) ap;
+                    g_mn_hn_map[j].mn_prefix = addr;
+
+                    addr1.s6_addr[i] = 0;
+                }
+                for (i = 0; i < 8; i++) {
+                    sscanf (str_addr_iid + i * 2, "%02x", &ap1);
+                    addr1.s6_addr[i+8] = (unsigned char) ap1;
+                    g_mn_hn_map[j].mn_iid = addr1;
+                }
+                dbg ("%x:%x:%x:%x:%x:%x:%x:%x\t<->\t%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR (&g_mn_hn_map[j].mn_prefix), NIP6ADDR (&g_mn_hn_map[j].mn_iid));
+                j++;
+                g_mn_count = g_mn_count + 1;
+            }
         }
-        dbg ("%x:%x:%x:%x:%x:%x:%x:%x\t", NIP6ADDR (&g_mn_hn_map[j].mn_prefix));
-        dbg ("%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR (&g_mn_hn_map[j].mn_iid));
-        j++;
-        g_mn_count = g_mn_count + 1;
     }
     fclose (fp);
     if (j >= MAX_MOBILES) {

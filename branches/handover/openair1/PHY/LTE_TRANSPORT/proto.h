@@ -216,7 +216,11 @@ s32 generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
 			 s16 amp,
 			 u16 slot);
-
+			 
+s32 generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
+			 mod_sym_t **txdataF,
+			 s16 amp,
+			 u16 subframe);
 
 s32 generate_pss(mod_sym_t **txdataF,
 		 s16 amp,
@@ -251,8 +255,7 @@ void qpsk_qpsk(s16 *stream0_in,
 	       s16 *stream1_in,
 	       s16 *stream0_out,
 	       s16 *rho01,
-	       s32 length
-	       );
+	       s32 length);
 
 /** \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
     @param frame_parms Frame descriptor structure
@@ -275,6 +278,165 @@ s32 dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			u16 nb_rb,
 			u16 pbch_pss_sss_adj,
 			s16 **llr128p);
+
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/16QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qpsk_qam16(s16 *stream0_in,
+                s16 *stream1_in,
+                short *ch_mag_i,
+                s16 *stream0_out,
+                s16 *rho01,
+                s32 length);
+
+/** \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
+    @param frame_parms Frame descriptor structure
+    @param rxdataF_comp Compensated channel output
+    @param rxdataF_comp_i Compensated channel output for interference
+    @param rho_i Correlation between channel of signal and inteference
+    @param dlsch_llr llr output
+    @param symbol OFDM symbol index in sub-frame
+    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
+    @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param llr128p pointer to pointer to symbol in dlsch_llr*/
+s32 dlsch_qpsk_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
+			s32 **rxdataF_comp,
+			s32 **rxdataF_comp_i,
+            int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+			s32 **rho_i,
+			s16 *dlsch_llr,
+			u8 symbol,
+			u8 first_symbol_flag,
+			u16 nb_rb,
+			u16 pbch_pss_sss_adj,
+			s16 **llr128p);
+
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 16QAM/QPSK reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam16_qpsk(short *stream0_in,
+                short *stream1_in,
+                short *ch_mag,
+                short *stream0_out,
+                short *rho01,
+                int length); 
+/** \brief This function perform LLR computation for dual-stream (16QAM/QPSK) transmission.
+    @param frame_parms Frame descriptor structure
+    @param rxdataF_comp Compensated channel output
+    @param rxdataF_comp_i Compensated channel output for interference
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param rho_i Correlation between channel of signal and inteference
+    @param dlsch_llr llr output
+    @param symbol OFDM symbol index in sub-frame
+    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
+    @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param llr16p pointer to pointer to symbol in dlsch_llr*/
+int dlsch_16qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+                         int **rxdataF_comp,
+                         int **rxdataF_comp_i,
+                         int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
+                         int **rho_i,
+                         short *dlsch_llr,
+                         unsigned char symbol,
+                         unsigned char first_symbol_flag,
+                         unsigned short nb_rb,
+                         u16 pbch_pss_sss_adjust,
+                         short **llr16p);
+
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 16QAM/16QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam16_qam16(short *stream0_in,
+                 short *stream1_in,
+                 short *ch_mag,
+                 short *ch_mag_i,
+                 short *stream0_out,
+                 short *rho01,
+                 int length);
+
+/** \brief This function perform LLR computation for dual-stream (16QAM/16QAM) transmission.
+    @param frame_parms Frame descriptor structure
+    @param rxdataF_comp Compensated channel output
+    @param rxdataF_comp_i Compensated channel output for interference
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param rho_i Correlation between channel of signal and inteference
+    @param dlsch_llr llr output
+    @param symbol OFDM symbol index in sub-frame
+    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
+    @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param llr16p pointer to pointer to symbol in dlsch_llr*/
+int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
+                          int **rxdataF_comp,
+                          int **rxdataF_comp_i,
+                          int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
+                          int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+                          int **rho_i,
+                          short *dlsch_llr,
+                          unsigned char symbol,
+                          unsigned char first_symbol_flag,
+                          unsigned short nb_rb,
+                          u16 pbch_pss_sss_adjust,
+                          short **llr16p);
+
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 64QAM/64QAM reception.
+    @param stream0_in Input from channel compensated (MR combined) stream 0
+    @param stream1_in Input from channel compensated (MR combined) stream 1
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param stream0_out Output from LLR unit for stream0
+    @param rho01 Cross-correlation between channels (MR combined)
+    @param length in complex channel outputs*/
+void qam64_qam64(short *stream0_in,
+                 short *stream1_in,
+                 short *ch_mag,
+                 short *ch_mag_i,
+                 short *stream0_out,
+                 short *rho01,
+                 int length);
+
+/** \brief This function perform LLR computation for dual-stream (64QAM/64QAM) transmission.
+    @param frame_parms Frame descriptor structure
+    @param rxdataF_comp Compensated channel output
+    @param rxdataF_comp_i Compensated channel output for interference
+    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param rho_i Correlation between channel of signal and inteference
+    @param dlsch_llr llr output
+    @param symbol OFDM symbol index in sub-frame
+    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
+    @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param llr16p pointer to pointer to symbol in dlsch_llr*/
+int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
+                          int **rxdataF_comp,
+                          int **rxdataF_comp_i,
+                          int **dl_ch_mag,
+                          int **dl_ch_mag_i,
+                          int **rho_i,
+                          short *dlsch_llr,
+                          unsigned char symbol,
+                          unsigned char first_symbol_flag,
+                          unsigned short nb_rb,
+                          u16 pbch_pss_sss_adjust,
+                          short **llr16p);
+
 
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
     @param frame_parms Frame descriptor structure
@@ -577,6 +739,12 @@ void dlsch_channel_level_prec(s32 **dl_ch_estimates_ext,
                               u8 symbol_mod,
                               u16 nb_rb);
 
+void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         LTE_UE_DLSCH_t **dlsch_ue,
+                         u8 symbol_mod,
+                         u16 nb_rb);
+
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
     threads (on multi-core machines) corresponding to different HARQ processes. The routine first 
     computes the segmentation information, followed by rate dematching and sub-block deinterleaving the of the
@@ -589,13 +757,15 @@ void dlsch_channel_level_prec(s32 **dl_ch_estimates_ext,
     @param dlsch Pointer to DLSCH descriptor
     @param subframe Subframe number
     @param num_pdcch_symbols Number of PDCCH symbols
+    @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
     @returns 0 on success, 1 on unsuccessful decoding
 */
 u32 dlsch_decoding(s16 *dlsch_llr,
 		   LTE_DL_FRAME_PARMS *lte_frame_parms,
 		   LTE_UE_DLSCH_t *dlsch,
 		   u8 subframe,
-		   u8 num_pdcch_symbols);
+		   u8 num_pdcch_symbols,
+		   u8 is_crnti);
 
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
@@ -728,11 +898,11 @@ u16 extract_crc(u8 *dci,u8 DCI_LENGTH);
   \param stream0_out pointer to output stream
   \param rho01 pointer to correlation matrix
   \param length*/ 
-void qpsk_qpsk(s16 *stream0_in,
-	       s16 *stream1_in,
-	       s16 *stream0_out,
-	       s16 *rho01,
-	       s32 length
+void qpsk_qpsk_prec(short *stream0_in,
+	       short *stream1_in,
+	       short *stream0_out,
+	       short *rho01,
+	       int length
 	       );
 
 /** \brief Attempt decoding of a particular DCI with given length and format.
@@ -767,15 +937,19 @@ u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				DCI_ALLOC_t *dci_alloc_rx,
 				s16 eNB_id);
 
-/** \brief Compute Q (modulation order) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
+/** \brief Compute Q (modulation order) based on I_MCS PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 u8 get_Qm(u8 I_MCS);
 
-/** \brief Compute I_TBS (transport-block size) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
+/** \brief Compute Q (modulation order) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
+    @param I_MCS */
+u8 get_Qm(u8 I_MCS);
+
+/** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 u8 get_I_TBS(u8 I_MCS);
 
-/** \brief Compute I_TBS (transport-block size) based on I_MCS for UL.  Implements table 8.6.1-1 from 36.213.
+/** \brief Compute I_TBS (transport-block size) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
     @param I_MCS */
 unsigned char get_I_TBS_UL(unsigned char I_MCS);
 
@@ -900,6 +1074,7 @@ s32 generate_ue_dlsch_params_from_dci(u8 subframe,
 				      DCI_format_t dci_format,
 				      LTE_UE_DLSCH_t **dlsch_ue,
 				      LTE_DL_FRAME_PARMS *frame_parms,
+                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti);
@@ -910,6 +1085,7 @@ s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       DCI_format_t dci_format,
 				       LTE_eNB_DLSCH_t **dlsch_eNB,
 				       LTE_DL_FRAME_PARMS *frame_parms,
+                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -947,7 +1123,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u8 use_srs);
 
 #ifdef USER_MODE
-void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb,u8 subframe);
+void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb,u8 subframe, u8 UE_id);
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
@@ -958,7 +1134,7 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len);
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int rx_input_level_dBm);
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb, char* buffer, int len);
 
 
@@ -999,7 +1175,7 @@ N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSC
 parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
 */
-int initial_sync(PHY_VARS_UE *phy_vars_ue);
+int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      u32 subframe,
@@ -1100,7 +1276,7 @@ void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
 void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats);
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id);
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id,u8 trans_mode);
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id);
 u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id);
@@ -1186,10 +1362,11 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	     u8 pucch1_thres);
 
 s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
-		   u8 UE_index,
-		   PUCCH_FMT_t fmt,
-		   u8 *payload,
-		   u8 subframe);
+		  u8 UE_index,
+		  PUCCH_FMT_t fmt,
+		  u8 n1_pucch_sel,
+		  u8 *payload,
+		  u8 subframe);
 
 
 /*!
@@ -1249,17 +1426,13 @@ u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type);
 u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index);
 
 /*!
-  \brief Compute DFT of PRACH ZC sequence.  Used for generation of prach in UE and reception of PRACH in eNB.
-  @param u Target root sequence index of prach
-  @param N_ZC Prime number (839,139)
-  @param Xu DFT output
+  \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB.
+  @param prach_config_common Pointer to prachConfigCommon structure
+  @param Xu DFT output 
 */
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
-
-/*!
-  \brief Initialize multiplicative inverse tables for PRACH as well as roots-of-unity vectors.
-*/
-void compute_prach_seq(u32 u,u32 N_ZC,u32 *Xu);
+void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
+		       lte_frame_type_t frame_type,
+		       u32 X_u[64][839]);
 
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);
@@ -1273,6 +1446,29 @@ u32 dlsch_decoding_abstraction(double *dlsch_MIPB,
 		   u8 subframe,
 		   u8 num_pdcch_symbols);
 
+// DL power control functions
+double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated);
+
+double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,  
+                       LTE_eNB_DLSCH_t *dlsch_eNB );
+
+double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
+                       PDSCH_CONFIG_COMMON *pdsch_config_common,
+                       u8 n_antenna_port,
+                       LTE_eNB_DLSCH_t *dlsch_eNB);
+
+double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,  
+                      LTE_UE_DLSCH_t *dlsch_ue );
+
+double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
+                      PDSCH_CONFIG_COMMON *pdsch_config_common,
+                      u8 n_antenna_port,
+                      LTE_UE_DLSCH_t *dlsch_ue);
+
+void compute_sqrt_RhoAoRhoB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
+                            PDSCH_CONFIG_COMMON *pdsch_config_common,
+                            u8 n_antenna_port,
+                            LTE_UE_DLSCH_t *dlsch_ue);
 
 /**@}*/
 #endif

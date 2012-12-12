@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -46,6 +46,7 @@
 GeonetNetworkStateEventPacket::GeonetNetworkStateEventPacket(ManagementInformationBase& mib, vector<unsigned char> packetBuffer, Logger& logger)
 	: GeonetPacket(packetBuffer, logger), mib(mib) {
 	if (parse(packetBuffer)) {
+		logger.info(this->toString());
 		logger.info("MIB is updated with incoming network state information");
 	}
 }
@@ -56,10 +57,20 @@ GeonetNetworkStateEventPacket::~GeonetNetworkStateEventPacket() {
 string GeonetNetworkStateEventPacket::toString() const {
 	stringstream ss;
 
+	ss << "NetworkState[RxPackets:" << mib.getNetworkState().rxPackets
+		<< " rxBytes:" << mib.getNetworkState().rxBytes
+		<< " txPackets:" << mib.getNetworkState().txPackets
+		<< " txBytes:" << mib.getNetworkState().txBytes
+		<< " toUpperLayer:" << mib.getNetworkState().toUpperLayerPackets
+		<< " discarded:" << mib.getNetworkState().discardedPackets
+		<< " duplicate:" << mib.getNetworkState().duplicatePackets
+		<< " forwarded:" << mib.getNetworkState().forwardedPackets
+		<< "]";
+
 	return ss.str();
 }
 
-bool GeonetNetworkStateEventPacket::parse(const vector<unsigned char> packetBuffer) {
+bool GeonetNetworkStateEventPacket::parse(const vector<unsigned char>& packetBuffer) {
 	if (packetBuffer.size() < sizeof(NetworkStateMessage))
 		return false;
 

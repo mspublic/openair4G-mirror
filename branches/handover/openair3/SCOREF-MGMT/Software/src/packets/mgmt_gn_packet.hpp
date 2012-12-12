@@ -43,7 +43,7 @@
 #define MGMT_GN_PACKET_HPP_
 
 #include "../mgmt_information_base.hpp"
-#include "../mgmt_gn_datatypes.hpp"
+#include "../mgmt_types.hpp"
 #include "../util/mgmt_log.hpp"
 #include <string>
 #include <vector>
@@ -85,7 +85,7 @@ class GeonetPacket {
 		 * @param header Structure to be filled in
 		 * @return true on success, false otherwise
 		 */
-		static bool parseHeaderBuffer(const vector<unsigned char>& headerBuffer, MessageHeader* header);
+		bool parseHeaderBuffer(const vector<unsigned char>& headerBuffer, MessageHeader* header);
 		/**
 		 * Serialises header fields onto given buffer
 		 * This method is called by every subclass::serialize()
@@ -95,11 +95,19 @@ class GeonetPacket {
 		 */
 		virtual bool serialize(vector<unsigned char>& buffer) const;
 		/**
-		 * Returns string representation of relevant GeonetPacket object
+		 * Returns if this packet contains extended/vendor specific data
+		 * Those who override this method will be excommunicated, fair warning
 		 *
-		 * @return std::string representation
+		 * @return boolean
 		 */
-		virtual string toString() const;
+		bool isExtended() const;
+		/**
+		 * Returns if this packet contains valid data
+		 * Those who override this method will be excommunicated, fair warning
+		 *
+		 * @return boolean
+		 */
+		bool isValid() const;
 		/**
 		 * Utility method to get event type of a packet buffer
 		 *
@@ -107,7 +115,7 @@ class GeonetPacket {
 		 * @return Event type
 		 */
 		static u_int16_t parseEventTypeOfPacketBuffer(const vector<unsigned char>& buffer) {
-			MessageHeader* header = (MessageHeader*) buffer.data();
+			const MessageHeader* header = reinterpret_cast<const MessageHeader*>(buffer.data());
 
 			u_int16_t eventType = header->eventType;
 			eventType <<= 8;
@@ -115,12 +123,26 @@ class GeonetPacket {
 
 			return eventType;
 		}
+		/**
+		 * Returns string representation of relevant GeonetPacket object
+		 *
+		 * @return std::string representation
+		 */
+		virtual string toString() const;
 
 	protected:
 		/**
 		 * Header is kept in superclass for every Geonet* subclass
 		 */
 		MessageHeader header;
+		/**
+		 * (E) Extended bit
+		 */
+		bool extended;
+		/**
+		 * (V) Validity bit
+		 */
+		bool valid;
 		/**
 		 * Logger object reference
 		 */

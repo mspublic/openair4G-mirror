@@ -60,6 +60,12 @@ class Logger {
 			WARNING = 3,
 			ERROR = 4
 		};
+		enum LOG_OUTPUT_CHANNEL {
+			FILE = 0,
+			STDOUT = 1,
+			BOTH = 2,
+			NONE = 3
+		};
 
 	public:
 		/**
@@ -68,7 +74,7 @@ class Logger {
 		 * @param logFileName Log file name
 		 * @param logLevel Initial log level (default is INFO)
 		 */
-		Logger(const string& logFileName, Logger::LOG_LEVEL logLevel = Logger::INFO);
+		Logger(const string& logFileName, Logger::LOG_LEVEL logLevel = Logger::INFO, Logger::LOG_OUTPUT_CHANNEL = Logger::BOTH);
 		/**
 		 * Destructor for Logger class
 		 */
@@ -126,6 +132,12 @@ class Logger {
 		 * @param logLevel New log level of type Logger::LOG_LEVEL
 		 */
 		void setLogLevel(Logger::LOG_LEVEL logLevel);
+		/**
+		 * Updates configured log output channel with given value
+		 *
+		 * @param logOutputChannel New log output channel of type Logger::LOG_OUTPUT_CHANNEL
+		 */
+		void setLogOutputChannel(Logger::LOG_OUTPUT_CHANNEL logOutputChannel);
 
 	private:
 		/**
@@ -144,6 +156,10 @@ class Logger {
 		 * Configured log level
 		 */
 		Logger::LOG_LEVEL logLevel;
+		/**
+		 * Configured log output channel
+		 */
+		Logger::LOG_OUTPUT_CHANNEL logOutputChannel;
 		/**
 		 * Log level string map
 		 */

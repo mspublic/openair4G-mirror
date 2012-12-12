@@ -70,6 +70,18 @@ typedef enum {
 	OPENARENA,
 	TEAM_FORTRESS,
 	FULL_BUFFER,
+  M2M_TRAFFIC,
+	AUTO_PILOT_L,			/*AUTO PILOT LOW SPEEDS*/
+	AUTO_PILOT_M,			/*AUTO PILOT MEDIEUM SPEEDS*/
+	AUTO_PILOT_H,			/*AUTO PILOT HIGH SPEEDS*/
+	AUTO_PILOT_E,			/*AUTO PILOT EMERGENCY*/
+	VIRTUAL_GAME_L,		/*VIRTUAL GAME LOW SPEEDS*/
+	VIRTUAL_GAME_M,		/*VIRTUAL GAME MEDIEUM SPEEDS*/
+	VIRTUAL_GAME_H,		/*VIRTUAL GAME HIGH SPEEDS*/
+	VIRTUAL_GAME_F,		/*VIRTUAL GAME FINISH*/
+	ALARM_HUMIDITY,  	/* SENSOR BASED ALARM : HUMIDITY */
+	ALARM_SMOKE,			/* SENSOR BASED ALARM : SMOKE */
+	ALARM_TEMPERATURE,/* SENSOR BASED ALARM : TEMPERATURE */
 }Application;
 
 
@@ -92,7 +104,7 @@ typedef enum {
 	PARETO,
 	GAMMA,
 	CAUCHY,
-        LOG_NORMAL,
+  LOG_NORMAL,
 }dist_type;
 
 
@@ -129,12 +141,20 @@ typedef enum {
 *\brief ip_v presents the used IP version to generate the packet 
 *
 */
+/*
 typedef enum { 	
-  //	MIN_NUM_STATE,
-	ON_STATE=0,
-	OFF_STATE,
+	OFF_STATE=0,
+  ON_STATE,
 	ACTIVE_STATE,
 	MAX_NUM_STATE,
+}TRAFFIC_STATE;
+*/
+
+typedef enum {  
+	OFF_STATE=0,
+	PU_STATE,
+	ED_STATE,
+	PE_STATE,
 }TRAFFIC_STATE;
 
 /**
@@ -144,9 +164,15 @@ typedef enum {
 *
 */
 typedef enum {  
-	STATIC_STRING=0,
-	RANDOM_STRING, 
-}ALPHABET;
+  REPEAT_STRING=0, // repeat the same set of characters 
+  SUBSTRACT_STRING, // substract the string from the know character string 
+  RANDOM_POSITION, // take the char from the known character string randomly
+  RANDOM_STRING, // rake the charcters randomly 
+}ALPHABET_GEN;
+typedef enum {  
+  HEADER_ALPHABET=0,
+  PAYLOAD_ALPHABET, 
+}ALPHABET_TYPE;
 
 
 
@@ -175,12 +201,13 @@ TCP_IPV6,
 typedef struct {
 	int application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  /*!\brief It identify the application of the simulated traffic, could be cbr, m2m, gaming,etc*/ 
  /*!\header info */
-	int trans_proto[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Transport Protocol*/
-	int ip_v[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Ip version */
+	int trans_proto[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Transport Protocol*/
+	int ip_v[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!\brief Ip version */
 	//int header_compression; 				/*!\brief Specify if header compression is used or not */
 	int num_nodes; 						/*!\brief Number of used nodes in the simulation */
-	int background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief enable or disable background traffic  */
-
+  int packet_gen_type;			       /*!\brief define how the payload is generated: fixed, predefined, random position, random see  ALPHABET_GEN */
+  unsigned int background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief enable or disable background traffic  */
+	unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /* define packet aggregation level for the case of gateway*/
 	// src id , dst id, and state  						// think to the case of several streams per node !!!!!
 	int idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE];	/*!\brief Inter Departure Time distribution */	
 	int idt_min[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_TRAFFIC_STATE]; 	/*!\brief Min Inter Departure Time, for uniform distrib  */
@@ -208,36 +235,40 @@ typedef struct {
 	// num stream for each src
 	// int stream [NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; // this requires multi thread for parallel stream for a givcen src	
 	// emu info
-	int duration[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Duration of traffic generation or use the emuulation time instead */
+	int duration[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Duration of traffic generation or use the emuulation time instead */
 	int seed; /*!\brief The seed used to generate the random positions*/
 
 
-	int  dst_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Destination port number, for the socket mode*/
-	char *dst_ip[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Destination IP address, for the socket mode*/
+	int  dst_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Destination port number, for the socket mode*/
+	char *dst_ip[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Destination IP address, for the socket mode*/
 
-	int trans_proto_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief define the transport protocol and IP version for background traffic*/
-
-
-
-// add m2m specific config params by Lusheng below
-// to be improved by Aymen
-
-	double prob_off_pu;
-	double prob_pu_ed;
-	double holding_time_off_pu;
-
-	double prob_off_ed;
-	double prob_ed_pe;
-	double holding_time_off_ed;
-	
-	double holding_time_off_pe;
+	int trans_proto_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief define the transport protocol and IP version for background traffic*/
 
 
-unsigned int throughput_metric;
-unsigned int latency_metric; 
-unsigned int loss_metric;
-unsigned int curve;
-unsigned int owd_radio_access;
+
+	double prob_off_pu[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	double prob_off_ed[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+  double prob_off_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	double prob_pu_ed[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	double prob_pu_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	double prob_ed_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	double prob_ed_pu[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int holding_time_off_ed[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int holding_time_off_pu[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int holding_time_off_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];	
+	unsigned int holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int pu_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int ed_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	//unsigned int m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+
+
+	unsigned int throughput_metric;
+	unsigned int latency_metric; 
+	unsigned int loss_metric;
+	unsigned int curve;
+	unsigned int owd_radio_access;
+	unsigned int background_stats;
+
 }otg_t; 
 
 
@@ -249,6 +280,7 @@ typedef struct{
 	unsigned char state; 	/*!< \brief state of node : on, off, or active */
 	unsigned char hdr_type; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 	unsigned short pkts_size;		/*!< \brief the size of payload + header */
+  unsigned short aggregation_level;		/*!< \brief packet aggregation level */
 	//int payload_size;	/*!< \brief the size of the payload to transmit */
 	//int header_size; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 }__attribute__((__packed__)) otg_hdr_t;
@@ -290,13 +322,12 @@ typedef struct{
 	int seq_num[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief the sequence number of the sender  */
 	int seq_num_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];     /*!< \brief the sequence number for background traffic of the sender  */
 	int seq_num_rx[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief the sequence number of the receiver */
-        int seq_num_rx_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];	/*!< \brief the sequence number for background traffic of the receiver */
+  int seq_num_rx_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];	/*!< \brief the sequence number for background traffic of the receiver */
 
 
 	int idt_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];         /*!< \brief  Inter Departure Time for background traffic in ms*/
 	int size_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];        /*!< \brief  payload size for background traffic*/
 	int idt[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];			/*!< \brief  Inter Departure Time in ms*/
-	int state[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];			                /*!< \brief  current state of src node */
 	int header_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Define the type of header: Transport layer + IP version*/
 			
 /*!< \brief Statics part: vars updated at each iteration of otg_tx */
@@ -305,35 +336,45 @@ typedef struct{
 	// vars updated at each iteration of otg_rx	
 	int rx_num_pkt[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  Number of data packet in the rx */
 	int rx_num_bytes[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  Number of bytes in the rx */
-	int rx_pkt_owd[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
-	int rx_owd_min[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  		/*!< \brief  One way delay min*/
-	int rx_owd_max[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay max*/
-	int nb_loss_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Number of data packets losses*/
-	int owd_const[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  One way delay constant*/
+	float rx_pkt_owd[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
+	float rx_owd_min[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  		/*!< \brief  One way delay min*/
+	float rx_owd_max[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay max*/
+	int nb_loss_pkts_ul[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Number of data packets losses for UL*/
+	int nb_loss_pkts_dl[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Number of data packets losses for DL*/
+	float owd_const[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  One way delay constant*/
 /*!< \brief KPI part: calculate the KPIs, total */ 
 	float tx_throughput[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Tx throughput: (size of transmitted data)/ctime*/ 
 	float rx_goodput[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  Rx goodput: (size of received data)/ctime*/
 	float rx_loss_rate[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Rx Loss Rate: ratio, unit: bytes*/
 	//int rx_latency[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  Rx Latency */
+
 /*!< \brief Background traffic part: SATS + KPIs */
-        int tx_num_pkt_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background data packet in the rx */
+  int tx_num_pkt_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background data packet in the rx */
 	int tx_num_bytes_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background bytes in the rx */
-        int rx_num_pkt_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background data packet in the tx */
+  int rx_num_pkt_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background data packet in the tx */
 	int rx_num_bytes_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Number of background bytes in the tx */
-
-//	int rx_pkt_owd_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
-//	int rx_owd_min_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  	/*!< \brief  One way delay min*/
-//	int rx_owd_max_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay max*/
-
-
-        int nb_loss_pkts_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
-        float tx_throughput_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Tx throughput: (size of transmitted data)/ctime*/ 
+  int nb_loss_pkts_background_ul[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!< \brief  Number of background packets losses for UL*/
+ 	int nb_loss_pkts_background_dl[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!< \brief  Number of background packets losses for DL*/
+  float tx_throughput_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Tx throughput: (size of transmitted data)/ctime*/ 
 	float rx_goodput_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Rx goodput: (size of received data)/ctime*/
 	float rx_loss_rate_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Rx Loss Rate: ratio, unit: bytes*/
 
-float radio_access_delay[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 
+  float radio_access_delay[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 
+  int nb_loss_pkts_otg[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
 
-	
+	unsigned int state[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];			                /*!< \brief  current state of src node */
+	float state_transition_prob[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 
+  unsigned int start_holding_time_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 
+	unsigned int c_holding_time_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int c_holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+ 	unsigned int start_holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+  unsigned int tx_total_bytes_dl;
+  unsigned int tx_total_bytes_ul;
+  unsigned int rx_total_bytes_dl;
+  unsigned int rx_total_bytes_ul;
+ 	unsigned int total_loss_dl;
+	unsigned int total_loss_ul;
 
 }otg_info_t;
 
@@ -361,7 +402,7 @@ typedef struct{
 
 
 
-#define MAX_SAMPLES 100
+#define MAX_SAMPLES 30
 
 typedef struct{
 	int init_forms;

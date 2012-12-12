@@ -22,8 +22,8 @@
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes, 06410 Biot FRANCE
 
 *******************************************************************************/
 
@@ -47,7 +47,7 @@ using namespace std;
 
 GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version, u_int8_t priority,
     u_int16_t eventType, Logger& logger) : logger(logger) {
-	Util::resetBuffer(&header, sizeof(MessageHeader));
+	Util::resetBuffer(reinterpret_cast<unsigned char*>(&header), sizeof(MessageHeader));
 
 	if (extendedMessage)
 		this->header.version |= 0x80;
@@ -64,6 +64,9 @@ GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version
 GeonetPacket::GeonetPacket(const vector<unsigned char>& packetBuffer, Logger& logger)
 	: logger(logger) {
 	parseHeaderBuffer(packetBuffer, &this->header);
+	/**
+	 * Print the packet information
+	 */
 	logger.info(toString());
 }
 
@@ -74,6 +77,15 @@ bool GeonetPacket::parseHeaderBuffer(const vector<unsigned char>& headerBuffer, 
 	if (headerBuffer.size() < sizeof(MessageHeader) || !header)
 		return false;
 
+	/**
+	 * Parse (E) and (V) fields first
+	 */
+	extended = Util::isBitSet(headerBuffer[0], 0);
+	valid = Util::isBitSet(headerBuffer[0], 1);
+
+	if (!valid)
+		logger.warning("Incoming packet's (V) validity flag is not set! Will parse anyway...");
+
 	header->version = headerBuffer[0] & 0x0f;
 	header->priority = (headerBuffer[1] >> 5);
 	header->eventType = headerBuffer[2];
@@ -83,6 +95,14 @@ bool GeonetPacket::parseHeaderBuffer(const vector<unsigned char>& headerBuffer, 
 }
 
 bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
+	/**
+	 * Validate incoming buffer's size
+	 */
+	if (buffer.size() < sizeof(MessageHeader)) {
+		logger.error("Incoming buffer is not sufficient to encode a message header into!");
+		return false;
+	}
+
 	logger.debug("Serialising header...");
 
 	buffer[0] = header.version;
@@ -95,12 +115,21 @@ bool GeonetPacket::serialize(vector<unsigned char>& buffer) const {
 	return true;
 }
 
+bool GeonetPacket::isExtended() const {
+	return extended;
+}
+
+bool GeonetPacket::isValid() const {
+	return valid;
+}
+
 string GeonetPacket::toString() const {
 	stringstream ss;
 
-	// todo write extended message and validity fields here as well
-	ss << "GeonetHeader[version:" << (int) header.version << ", priority:" << (int) header.priority
-		<< ", event:" << (int) (header.eventType * 100 + header.eventSubtype) << "]";
+	ss << "GeonetHeader[extended:" << isExtended() << ", valid:" << isValid()
+	   << ", version:" << (int) header.getVersion() << ", priority:" << (int) header.getPriority()
+		<< ", eventType:" << hex << showbase << setw(2) << (int) header.eventType
+		<< ", eventSubType: " << (int) header.eventSubtype << "]";
 
 	return ss.str();
 }

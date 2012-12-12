@@ -47,7 +47,7 @@
 #include <climits>
 using namespace std;
 
-#include "mgmt_gn_datatypes.hpp"
+#include "mgmt_types.hpp"
 #include "util/mgmt_log.hpp"
 #include <sys/types.h>
 
@@ -57,25 +57,40 @@ using namespace std;
  * ITS_KEY_TYPE_COMMON: ITS keys common for NETwork and FACilities,
  * ITS_KEY_TYPE_NET: NETwork ITS keys,
  * ITS_KEY_TYPE_FAC: FACilities ITS keys,
+ * ITS_KEY_TYPE_IHM: PCVE IHM keys,
  * ITS_KEY_TYPE_ALL: All ITS keys defined
  */
 enum ItsKeyType {
 	ITS_KEY_TYPE_COMMON = 0,
 	ITS_KEY_TYPE_NET = 1,
 	ITS_KEY_TYPE_FAC = 2,
-	ITS_KEY_TYPE_ALL = 3
+	ITS_KEY_TYPE_IHM = 3,
+	ITS_KEY_TYPE_ALL = 4
 };
 /**
- * ITS key values are limited to 32-bit values so
- * we define this name definition for readability
+ * ITS data type
  */
-typedef u_int32_t ItsKeyValue;
+enum ItsDataType {
+	ITS_DATA_TYPE_INTEGER = 0,
+	ITS_DATA_TYPE_FLOAT = 1,
+	ITS_DATA_TYPE_STRING = 2
+};
+/**
+ * ITS key value container that can contain
+ * integer, float, and string values
+ */
+struct ItsKeyValue {
+	string stringValue;
+	float floatValue;
+	u_int32_t intValue;
+};
 /**
  * ITS key structure holding every property of an ITS key
  */
 struct ItsKey {
 	string name;
-	ItsKeyType type;
+	ItsKeyType keyType;
+	ItsDataType dataType;
 	ItsKeyValue value;
 	ItsKeyValue minValue;
 	ItsKeyValue maxValue;
@@ -103,19 +118,71 @@ class ItsKeyManager {
 		 *
 		 * @param id ITS key ID of new key to be added
 		 * @param name Name of new key to be added
+		 * @param keyType ITS key type
+		 * @param dataType ITS key's data type
 		 * @param value Value of new key to be added
 		 * @param minValue Minimum value of new key
 		 * @param maxValue Maximum value of new key
 		 * @return true on success, false otherwise
 		 */
-		bool addKey(ItsKeyID id, const string& name, ItsKeyType type, ItsKeyValue value, ItsKeyValue minValue = 0, ItsKeyValue maxValue = INT_MAX);
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, ItsDataType dataType, ItsKeyValue value, ItsKeyValue minValue, ItsKeyValue maxValue);
 		/**
-		 * Returns value of the key with given ITS key ID
+		 * Enqueues given ITS key, name and value to ITS keys map
+		 *
+		 * @param id ITS key ID of new key to be added
+		 * @param name Name of new key to be added
+		 * @param keyType ITS key type
+		 * @param value Value of new key to be added
+		 * @param minValue Minimum value of new key
+		 * @param maxValue Maximum value of new key
+		 * @return true on success, false otherwise
+		 */
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, u_int32_t value, u_int32_t minValue = 0, u_int32_t maxValue = INT_MAX);
+		/**
+		 * Enqueues given ITS key, name and value to ITS keys map
+		 *
+		 * @param id ITS key ID of new key to be added
+		 * @param name Name of new key to be added
+		 * @param keyType ITS key type
+		 * @param value Value of new key to be added
+		 * @return true on success, false otherwise
+		 */
+		bool addKey(ItsKeyID id, const string& name, ItsKeyType keyType, const string& value);
+		/**
+		 * Returns the value container of the key with given ITS key ID
 		 *
 		 * @param id ITS key ID of the key
 		 * @return Value of ITS key
 		 */
-		ItsKeyValue getKey(ItsKeyID id);
+		ItsKeyValue& getKeyValue(ItsKeyID id);
+		/**
+		 * Returns ITS key type
+		 *
+		 * @param id ITS key ID of the key
+		 * @return ITS key type
+		 */
+		ItsKeyType getKeyType(ItsKeyID id);
+		/**
+		 * Returns ITS data type (integer or string)
+		 *
+		 * @param id ITS key ID of the key
+		 * @return ITS key type
+		 */
+		ItsDataType getDataType(ItsKeyID id);
+		/**
+		 * Returns ITS data type's string name
+		 *
+		 * @param id ITS key ID of the key
+		 * @return std::string name of the data type of the ITS key
+		 */
+		string getDataTypeName(ItsKeyID id);
+		/**
+		 * Returns the size of ITS key
+		 *
+		 * @param id ITS key ID of the key
+		 * @return Size of the ITS key's value in bytes
+		 */
+		std::size_t getDataTypeSize(ItsKeyID id);
 		/**
 		 * Sets the value of ITS key given its name
 		 *
@@ -123,7 +190,7 @@ class ItsKeyManager {
 		 * @param value Value to be set as the new value of relevant ITS key
 		 * @return true on success, false otherwise
 		 */
-		bool setKey(const string& name, ItsKeyValue value);
+		bool setKeyValue(const string& name, ItsKeyValue value);
 		/**
 		 * Sets the value of ITS key given its ITS key ID
 		 *
@@ -131,12 +198,12 @@ class ItsKeyManager {
 		 * @param value Value to be set as the new value of relevant ITS key
 		 * @return true on success, false otherwise
 		 */
-		bool setKey(ItsKeyID id, ItsKeyValue value);
+		bool setKeyValue(ItsKeyID id, ItsKeyValue value);
 		/**
 		 * Returns ITS key ID of ITS key given its name
 		 *
 		 * @param keyName Name of the ITS key being searched
-		 * @return ITS key ID of the ITS key if found, 0xeeee otherwise
+		 * @return ITS key ID of the ITS key if found, 0xDEAD otherwise
 		 */
 		ItsKeyID findKeyId(const string& keyName) const;
 		/**
@@ -164,6 +231,10 @@ class ItsKeyManager {
 		 * List of type std::map for 'ITS key ID to ITS key value' mapping
 		 */
 		map<ItsKeyID, ItsKey> itsKeyMap;
+		/**
+		 * String name map for ITS key data types
+		 */
+		map<ItsDataType, string> itsKeyDataTypeName;
 		/**
 		 * Logger object reference
 		 */

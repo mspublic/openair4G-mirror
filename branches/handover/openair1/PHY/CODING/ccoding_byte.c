@@ -37,6 +37,7 @@ ccodedot11_encode (unsigned int numbytes,
 #ifdef DEBUG_CCODE
   unsigned int  dummy;
 #endif //DEBUG_CCODE
+  int bit_index;
 
   /* The input bit is shifted in position 8 of the state.
      Shiftbit will take values between 1 and 8 */
@@ -47,35 +48,84 @@ ccodedot11_encode (unsigned int numbytes,
 #endif //DEBUG_CCODE
 
   /* Do not increment inPtr until we read the next octet */
+  bit_index=0;
   while (numbytes-- > 0) {
     c = *inPtr++;
 #ifdef DEBUG_CCODE
     printf("** %d **\n",c);
 #endif //DEBUG_CCODE
 
-
-    for (shiftbit = 0; shiftbit<8;shiftbit++) {
-
-      state >>= 1;
-      if ((c&(1<<shiftbit)) != 0){
-	state |= 64;
-      }
-
-      out = ccodedot11_table[state];
-
-      *outPtr++ = out  & 1;
-      *outPtr++ = (out>>1)&1;
-
+    switch (puncturing) {
+      case 0:  //rate 1/2
+	for (shiftbit = 0; shiftbit<8;shiftbit++) {
+	  
+	  state >>= 1;
+	  if ((c&(1<<shiftbit)) != 0){
+	    state |= 64;
+	  }
+	  
+	  out = ccodedot11_table[state];
+	  
+	  *outPtr++ = out  & 1;
+	  *outPtr++ = (out>>1)&1;
+	  
 #ifdef DEBUG_CCODE
-      printf("%d: %d -> %d (%d)\n",dummy,state,out,ccodedot11_table[state]);
-      dummy+=2;
+	  printf("%d: %d -> %d (%d)\n",dummy,state,out,ccodedot11_table[state]);
+	  dummy+=2;
 #endif //DEBUG_CCODE      
-
-      // Do Puncturing HERE!
+	  
+	}
+	break;
+      case 1: // rate 3/4
+	for (shiftbit = 0; shiftbit<8;shiftbit++) {
+	  
+	  state >>= 1;
+	  if ((c&(1<<shiftbit)) != 0){
+	    state |= 64;
+	  }
+	  
+	  out = ccodedot11_table[state];
+	  
+	  if (bit_index<2)
+	    *outPtr++ = out  & 1;
+	  if (bit_index!=1)
+	    *outPtr++ = (out>>1)&1;
+	  
+#ifdef DEBUG_CCODE
+	  printf("%d: %d -> %d (%d)\n",dummy,state,out,ccodedot11_table[state]);
+	  dummy+=2;
+#endif //DEBUG_CCODE      
+	  
+	  bit_index=(bit_index==2)?0:(bit_index+1);
+	}
+	break;
+      case 2: // rate 2/3
+	for (shiftbit = 0; shiftbit<8;shiftbit++) {
+	  
+	  state >>= 1;
+	  if ((c&(1<<shiftbit)) != 0){
+	    state |= 64;
+	  }
+	  
+	  out = ccodedot11_table[state];
+	  
+	  *outPtr++ = out  & 1;
+	  if (bit_index==0)
+	    *outPtr++ = (out>>1)&1;
+	  
+#ifdef DEBUG_CCODE
+	  printf("%d: %d -> %d (%d)\n",dummy,state,out,ccodedot11_table[state]);
+	  dummy+=2;
+#endif //DEBUG_CCODE      
+	  
+	  bit_index=(bit_index==0)?1:0;
+	  
+	}
+	break;
+      default:
+	break;
     }
-
   }
-
   /*
   // Termination - Add one NULL byte to terminate trellis     
 #ifdef DEBUG_CCODE

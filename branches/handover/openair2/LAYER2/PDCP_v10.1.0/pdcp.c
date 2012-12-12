@@ -51,8 +51,16 @@
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
 
+#ifndef OAI_EMU
+extern int otg_enabled;
+#endif
+
 extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 extern void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
+extern u8 mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index);
+extern char *packet_gen(int src, int dst, int ctime, int *pkt_size);
+extern int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size);
+
 //-----------------------------------------------------------------------------
 /*
  * If PDCP_UNIT_TEST is set here then data flow between PDCP and RLC is broken
@@ -79,7 +87,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   u8 pdcp_header_len=0, pdcp_tailer_len=0;
   u16 pdcp_pdu_size=0, current_sn;
   mem_block_t* pdcp_pdu = NULL;
-  
+
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "Handed SDU is of size 0! Ignoring...\n");
     return FALSE;
@@ -87,14 +95,14 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   /*
    * XXX MAX_IP_PACKET_SIZE is 4096, shouldn't this be MAX SDU size, which is 8188 bytes?
    */
-  
+
   if (sdu_buffer_size > MAX_IP_PACKET_SIZE) {
     LOG_E(PDCP, "Requested SDU size (%d) is bigger than that can be handled by PDCP!\n", sdu_buffer_size);
     // XXX What does following call do?
     mac_xface->macphy_exit("");
   }
 
-  // calculate the pdcp header and trailer size 
+  // calculate the pdcp header and trailer size
   if ((rab_id % MAX_NUM_RB) < DTCH) {
     pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
     pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
@@ -336,6 +344,12 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
      return TRUE;
   }
   }
+#else
+  if (otg_enabled==1) {
+    LOG_I(OTG,"Discarding received packed\n");
+    free_mem_block(sdu_buffer);
+    return TRUE;
+  }
 #endif
   new_sdu = get_free_mem_block(sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof (pdcp_data_ind_header_t));
 
@@ -406,7 +420,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
   #endif
 #endif
   unsigned int diff, i, k, j;
-  char *otg_pkt=NULL;
+  unsigned char *otg_pkt=NULL;
   int src_id, module_id; // src for otg
   int dst_id, rab_id; // dst for otg
   int pkt_size=0;
@@ -436,27 +450,46 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     ctime = oai_emulation.info.time_ms; // current simulation time in ms
     if (eNB_flag == 1) { // search for DL traffic 
       for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
-	otg_pkt=packet_gen(module_id, dst_id, ctime, &pkt_size);
+	if (mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/ ) { 
+	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
 	if (otg_pkt != NULL) {
 	  rab_id = (/*NB_eNB_INST +*/ dst_id -1 ) * MAX_NUM_RB + DTCH;
+	    LOG_I(OTG,"[eNB %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
 	  pdcp_data_req(module_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_DATA_PDU);
-	  LOG_I(OTG,"[eNB %d] send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
 	  free(otg_pkt);
 	}
       }
     }
-    else {
+    }else {
       src_id = module_id+NB_eNB_INST;
       dst_id = eNB_index;
-      otg_pkt=packet_gen(src_id, dst_id, ctime, &pkt_size);
+      if ((mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) ) { 
+	otg_pkt=(u8*) packet_gen(src_id, dst_id, ctime, &pkt_size);
       if (otg_pkt != NULL){
 	rab_id= eNB_index * MAX_NUM_RB + DTCH;
+	  LOG_I(OTG,"[UE %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", UE_index, src_id, rab_id, src_id, dst_id, pkt_size);
 	pdcp_data_req(src_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO,pkt_size, otg_pkt, PDCP_DATA_PDU);
-	LOG_I(OTG,"[UE %d] send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", UE_index, src_id, rab_id, src_id, dst_id, pkt_size);
+	  free(otg_pkt);
+	}
+      } //else LOG_D(OTG,"frame %d ue %d-> enb %d link not yet established state %d  \n", frame, UE_index, eNB_index, mac_get_rrc_status(module_id, eNB_flag, eNB_index ));
+    }
+  }
+#else
+  if ((otg_enabled==1) && (eNB_flag == 1)) { // generate DL traffic 
+      src_id = eNB_index;
+      ctime = frame * 100; 
+      for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
+	if (mac_get_rrc_status(eNB_index, eNB_flag, dst_id ) > 2) {
+	  otg_pkt=packet_gen(src_id, dst_id, ctime, &pkt_size);
+	  if (otg_pkt != NULL){
+	    rab_id = dst_id * MAX_NUM_RB + DTCH;
+	    pdcp_data_req(src_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO,pkt_size, otg_pkt, PDCP_DATA_PDU);
+	    LOG_I(OTG,"send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, rab_id, src_id, dst_id, pkt_size);
 	free(otg_pkt);
       }
     }
   }
+    }
 #endif  
   // NAS -> PDCP traffic
   pdcp_fifo_read_input_sdus(frame,eNB_flag);
@@ -501,7 +534,7 @@ rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  actio
     pdcp_array[module_id][rab_id].first_missing_pdu = -1;
     LOG_I(PDCP,"[%s %d] Config request : Action ADD: Frame %d radio bearer id %d configured\n", 
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rab_id);
-    
+    LOG_D(PDCP,  "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_id,rab_id);
     break;
   case ACTION_MODIFY:
     break;
@@ -528,7 +561,7 @@ int
 pdcp_module_init ()
 {
 //-----------------------------------------------------------------------------
-#ifndef USER_MODE
+#ifdef NAS_FIFO
   int ret;
 
   ret=rtf_create(PDCP2NAS_FIFO,32768);
@@ -567,7 +600,7 @@ void
 pdcp_module_cleanup ()
 //-----------------------------------------------------------------------------
 {
-#ifndef USER_MODE
+#ifdef NAS_FIFO
   rtf_destroy(NAS2PDCP_FIFO);
   rtf_destroy(PDCP2NAS_FIFO);
 #endif
@@ -635,6 +668,6 @@ pdcp_layer_cleanup ()
   list_free (&pdcp_sdu_list);
 }
 
-#ifndef USER_MODE
+#ifdef NAS_FIFO
   EXPORT_SYMBOL(pdcp_2_nas_irq);
 #endif //USER_MODE

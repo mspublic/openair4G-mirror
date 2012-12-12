@@ -293,7 +293,6 @@ void nas_COMMON_receive(u16 dlen,
 #endif	
 	    check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, 0,0, ~(*cksum));
 	    *cksum= csum_tcpudp_magic(~osaddr, ~odaddr,0,0, ~check);
-	    //*cksum= 0x0000;
 	    //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,udp_hdr(skb)->len, IPPROTO_UDP, ~check);
 
 #ifdef NAS_DEBUG_RECEIVE
@@ -421,10 +420,16 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 
 #ifdef NAS_NETLINK
   bytes_wrote = nas_netlink_send((char *)&pdcph,NAS_PDCPH_SIZE);
+#ifdef NAS_DEBUG_SEND
+  printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP via netlink\n",
+  	       bytes_wrote,skb->len);
+#endif
 #else
   bytes_wrote = rtf_put(NAS2PDCP_FIFO, &pdcph, NAS_PDCPH_SIZE);
+#ifdef NAS_DEBUG_SEND
   printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP fifo\n",
   	       bytes_wrote,skb->len);
+#endif
 #endif //NAS_NETLINK
   
   if (bytes_wrote != NAS_PDCPH_SIZE)

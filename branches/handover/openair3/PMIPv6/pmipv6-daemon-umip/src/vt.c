@@ -28,24 +28,6 @@
  * VT server performs select(2) and only one client access is allowed.
  * To be accept multiple connect, fix "vt_connect_handle".
  */
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
- * network-based mobility management protocol standardized by IETF.
- * 
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
- */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -859,22 +841,27 @@ static int pmip_cache_vt_dump(void *data, void *arg)
     tsclear(ts_now);
 
     fprintf_bl(vh, "peer_addr %x:%x:%x:%x:%x:%x:%x:%x",
-           NIP6ADDR(&bce->mn_suffix));
+           NIP6ADDR(&bce->mn_addr));
+           //NIP6ADDR(&bce->mn_suffix));
 
 
     fprintf_b(vh, " status %s",
           (bce->type == BCE_PMIP) ? "PMIP" :
           (bce->type == BCE_TEMP) ? "TEMP" :
-          (bce->type == BCE_CN) ? "CN" :
+          (bce->type == BCE_NO_ENTRY) ? "EMPTY" :
           "(unknown)");
 
     fprintf(vh->vh_stream, "\n");
 
-    fprintf(vh->vh_stream, " Serv_MAG_addr %x:%x:%x:%x:%x:%x:%x:%x",
-        NIP6ADDR(&bce->mn_serv_mag_addr));
+    if (is_ha()) {
+        fprintf(vh->vh_stream, " Serv_MAG_addr %x:%x:%x:%x:%x:%x:%x:%x",
+            NIP6ADDR(&bce->mn_serv_mag_addr));
+    }
 
-    fprintf(vh->vh_stream, " LMA_addr %x:%x:%x:%x:%x:%x:%x:%x",
-        NIP6ADDR(&bce->mn_serv_lma_addr));
+    if (is_mag()) {
+        fprintf(vh->vh_stream, " LMA_addr %x:%x:%x:%x:%x:%x:%x:%x",
+            NIP6ADDR(&bce->mn_serv_lma_addr));
+    }
 
     fprintf(vh->vh_stream, " local %x:%x:%x:%x:%x:%x:%x:%x",
         NIP6ADDR(&bce->our_addr));
@@ -884,7 +871,7 @@ static int pmip_cache_vt_dump(void *data, void *arg)
         char *dev;
 
         if (bce->tunnel) {
-            fprintf(vh->vh_stream, " tunnel %d",bce->tunnel);
+            fprintf(vh->vh_stream, " tunnel %d ",bce->tunnel);
 
             dev = if_indextoname(bce->tunnel, buf);
             if (!dev || strlen(dev) == 0)
