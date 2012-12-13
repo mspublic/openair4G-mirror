@@ -54,7 +54,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
         else
           fl_set_xyplot_ybounds(form_dl->owd,0,200);
  
-      fl_set_xyplot_ybounds(form_dl->throughput,0,100); 
+      fl_set_xyplot_ybounds(form_dl->throughput,0,50); 
 
 
       form_ul= create_form_otg ();
@@ -65,7 +65,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
           fl_set_xyplot_ybounds(form_ul->owd,0,100);
         else
           fl_set_xyplot_ybounds(form_ul->owd,0,200);
-      fl_set_xyplot_ybounds(form_ul->throughput,0,100); 
+      fl_set_xyplot_ybounds(form_ul->throughput,0,50); 
 
     }
 
