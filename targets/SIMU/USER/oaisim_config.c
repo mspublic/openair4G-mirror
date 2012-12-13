@@ -70,6 +70,8 @@ mapping otg_app_type_names[] =
 		{"alarm_humidity", 18},
 		{"alarm_smoke", 19},
 		{"alarm_temperature", 20},
+		{"openarena_dl", 21},
+		{"openarena_ul", 22},
     {NULL, -1}
 };
 
@@ -538,7 +540,7 @@ int ocg_config_app(){
 	char *per_source_id;
 	int source_id_index;
 	int destination_id_index;
-	int i,j,k;
+	int i,j,k,l;
 
 	int predefined_traffic_config_index;
 	int customized_traffic_config_index;
@@ -562,27 +564,30 @@ int ocg_config_app(){
 			g_otg->duration[i][j]=oai_emulation.emulation_config.emulation_time_ms;
 			g_otg->dst_port[i][j]=oai_emulation.application_config.customized_traffic.destination_port[i];
 			g_otg->dst_ip[i][j]=oai_emulation.application_config.customized_traffic.destination_id[i];
-			g_otg->ip_v[i][j]=map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[i]);
-			g_otg->trans_proto[i][j]=map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[i]);
-			g_otg->application_type[i][j]=map_str_to_int(otg_app_type_names, "no_predefined_traffic");
- 			g_otg->aggregation_level[i][j]=oai_emulation.application_config.customized_traffic.aggregation_level[i];
-			for (k=0; k<MAX_NUM_TRAFFIC_STATE; k++){
 
-				g_otg->idt_dist[i][j][k]=map_str_to_int(otg_distribution_names, "no_customized_traffic");
-				g_otg->idt_min[i][j][k]=oai_emulation.application_config.customized_traffic.idt_min_ms[i];
-				g_otg->idt_max[i][j][k]=oai_emulation.application_config.customized_traffic.idt_max_ms[i];
-				g_otg->idt_std_dev[i][j][k]=oai_emulation.application_config.customized_traffic.idt_standard_deviation[i];
-				g_otg->idt_lambda[i][j][k]=oai_emulation.application_config.customized_traffic.idt_lambda[i];
-				g_otg->idt_scale[i][j][k]=oai_emulation.application_config.customized_traffic.idt_scale[i];
-				g_otg->idt_shape[i][j][k]=oai_emulation.application_config.customized_traffic.idt_shape[i];
+			for (k=0; k<MAX_NUM_APPLICATION; k++){
+				g_otg->ip_v[i][j][k]=map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[i]);
+				g_otg->trans_proto[i][j][k]=map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[i]);
+				g_otg->application_type[i][j][k]=map_str_to_int(otg_app_type_names, "no_predefined_traffic");
+ 				g_otg->aggregation_level[i][j][k]=oai_emulation.application_config.customized_traffic.aggregation_level[i];
 
-				g_otg->size_dist[i][j][k]=map_str_to_int(otg_distribution_names, "no_customized_traffic");
-				g_otg->size_min[i][j][k]=oai_emulation.application_config.customized_traffic.size_min_byte[i];
-				g_otg->size_max[i][j][k]=oai_emulation.application_config.customized_traffic.size_max_byte[i];
-				g_otg->size_std_dev[i][j][k]=oai_emulation.application_config.customized_traffic.size_standard_deviation[i];
-				g_otg->size_lambda[i][j][k]=oai_emulation.application_config.customized_traffic.size_lambda[i];
-				g_otg->size_scale[i][j][k]=oai_emulation.application_config.customized_traffic.size_scale[i];
-				g_otg->size_shape[i][j][k]=oai_emulation.application_config.customized_traffic.size_shape[i];
+
+				for (l=0; l<MAX_NUM_TRAFFIC_STATE; l++){	
+					g_otg->idt_dist[i][j][k][l]=map_str_to_int(otg_distribution_names, "no_customized_traffic");
+					g_otg->idt_min[i][j][k][l]=oai_emulation.application_config.customized_traffic.idt_min_ms[i];
+					g_otg->idt_max[i][j][k][l]=oai_emulation.application_config.customized_traffic.idt_max_ms[i];
+					g_otg->idt_std_dev[i][j][k][l]=oai_emulation.application_config.customized_traffic.idt_standard_deviation[i];
+					g_otg->idt_lambda[i][j][k][l]=oai_emulation.application_config.customized_traffic.idt_lambda[i];
+					g_otg->idt_scale[i][j][k][l]=oai_emulation.application_config.customized_traffic.idt_scale[i];
+					g_otg->idt_shape[i][j][k][l]=oai_emulation.application_config.customized_traffic.idt_shape[i];
+					g_otg->size_dist[i][j][k][l]=map_str_to_int(otg_distribution_names, "no_customized_traffic");
+					g_otg->size_min[i][j][k][l]=oai_emulation.application_config.customized_traffic.size_min_byte[i];
+					g_otg->size_max[i][j][k][l]=oai_emulation.application_config.customized_traffic.size_max_byte[i];
+					g_otg->size_std_dev[i][j][k][l]=oai_emulation.application_config.customized_traffic.size_standard_deviation[i];
+					g_otg->size_lambda[i][j][k][l]=oai_emulation.application_config.customized_traffic.size_lambda[i];
+					g_otg->size_scale[i][j][k][l]=oai_emulation.application_config.customized_traffic.size_scale[i];
+					g_otg->size_shape[i][j][k][l]=oai_emulation.application_config.customized_traffic.size_shape[i];
+				}
 			}
 		}
 	}
@@ -631,12 +636,13 @@ int ocg_config_app(){
 
 	      for (destination_id_index = did_start; destination_id_index <= did_end; destination_id_index++) {
 	      	for (source_id_index = sid_start; source_id_index <= sid_end; source_id_index++) {
-		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
-		  g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+		  if (g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] == 0) { // no app is defined for this pair src.dst
+		  g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+			g_otg->application_idx[source_id_index][destination_id_index]+=1;
 		  }
-			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
-			g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
-			LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application = %d background %d, Aggregation=%d \n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index],g_otg->background[source_id_index][destination_id_index], g_otg->aggregation_level[source_id_index][destination_id_index]);
+			g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
+			g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
+			LOG_I(OTG,"predef (1):: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application ID = %d background %d, Aggregation=%d \n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_idx[source_id_index][destination_id_index],g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
 
 		  
 		}
@@ -649,11 +655,12 @@ int ocg_config_app(){
 	      destination_id_index = atoi(oai_emulation.application_config.predefined_traffic.destination_id[predefined_traffic_config_index]);
 	      while (per_source_id != NULL) {
 		source_id_index = atoi(per_source_id); 
-		if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
-		  g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+		if (g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] == 0) { // no app is defined for this pair src.dst
+		  g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+			g_otg->application_idx[source_id_index][destination_id_index]+=1;
 		}
-		  g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
-			g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
+		  g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
+			g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
 
 		  per_source_id = strtok(NULL, comma);
 		  
@@ -677,14 +684,15 @@ int ocg_config_app(){
 
 	      for (destination_id_index = did_start; destination_id_index <= did_end; destination_id_index++) {
 	      	for (source_id_index = sid_start; source_id_index <= sid_end; source_id_index++) {
-		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst
-		   g_otg->application_type[source_id_index][destination_id_index] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+		  if (g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] == 0) { // no app is defined for this pair src.dst
+		   g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_app_type_names, oai_emulation.application_config.predefined_traffic.application_type[predefined_traffic_config_index]);
+ 			g_otg->application_idx[source_id_index][destination_id_index]+=1;
 		}
-			g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
-			g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
+			g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
+			g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
 
 
-LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application = %d, Background=%d, Aggregation=%d\n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index], g_otg->background[source_id_index][destination_id_index], g_otg->aggregation_level[source_id_index][destination_id_index]);
+LOG_I(OTG,"predef (2):: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application ID %d, Background=%d, Aggregation=%d\n", sid_start, sid_end, source_id_index, destination_id_index,g_otg->application_idx[source_id_index][destination_id_index] , g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
 		 
 		  
 		}
@@ -733,40 +741,41 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 
 	      for (destination_id_index = did_start; destination_id_index <= did_end; destination_id_index++) {
 	      	for (source_id_index = sid_start; source_id_index <= sid_end; source_id_index++) {
-		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst	
-		    g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.customized_traffic.background[customized_traffic_config_index]);
-				g_otg->trans_proto[source_id_index][destination_id_index] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
-				g_otg->ip_v[source_id_index][destination_id_index] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
-				g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
-				g_otg->idt_dist[source_id_index][destination_id_index][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
-				g_otg->idt_min[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_min_ms[customized_traffic_config_index];		
-				g_otg->idt_max[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_max_ms[customized_traffic_config_index];
-				g_otg->idt_std_dev[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_standard_deviation[customized_traffic_config_index];
-				g_otg->idt_lambda[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_lambda[customized_traffic_config_index];
-				g_otg->idt_scale[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_scale[customized_traffic_config_index];
-				g_otg->idt_shape[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_shape[customized_traffic_config_index];
-				g_otg->size_dist[source_id_index][destination_id_index][state] = map_str_to_int(otg_distribution_names,oai_emulation.application_config.customized_traffic.size_dist[customized_traffic_config_index]);
-				g_otg->size_min[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_min_byte[customized_traffic_config_index];
-				g_otg->size_max[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_max_byte[customized_traffic_config_index];
-				g_otg->size_std_dev[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_standard_deviation[customized_traffic_config_index];
-				g_otg->size_lambda[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_lambda[customized_traffic_config_index];
-				g_otg->size_scale[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_scale[customized_traffic_config_index];
-				g_otg->size_shape[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_shape[customized_traffic_config_index];	
+		  if (g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] == 0) { // no app is defined for this pair src.dst	
+		    g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] =map_str_to_int(switch_names,oai_emulation.application_config.customized_traffic.background[customized_traffic_config_index]);
+				g_otg->trans_proto[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
+				g_otg->ip_v[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
+				g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
+				g_otg->idt_dist[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
+				g_otg->idt_min[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_min_ms[customized_traffic_config_index];		
+				g_otg->idt_max[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_max_ms[customized_traffic_config_index];
+				g_otg->idt_std_dev[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_standard_deviation[customized_traffic_config_index];
+				g_otg->idt_lambda[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_lambda[customized_traffic_config_index];
+				g_otg->idt_scale[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_scale[customized_traffic_config_index];
+				g_otg->idt_shape[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_shape[customized_traffic_config_index];
+				g_otg->size_dist[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] = map_str_to_int(otg_distribution_names,oai_emulation.application_config.customized_traffic.size_dist[customized_traffic_config_index]);
+				g_otg->size_min[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_min_byte[customized_traffic_config_index];
+				g_otg->size_max[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_max_byte[customized_traffic_config_index];
+				g_otg->size_std_dev[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_standard_deviation[customized_traffic_config_index];
+				g_otg->size_lambda[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_lambda[customized_traffic_config_index];
+				g_otg->size_scale[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_scale[customized_traffic_config_index];
+				g_otg->size_shape[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_shape[customized_traffic_config_index];	
 				g_otg->dst_port[source_id_index][destination_id_index] = oai_emulation.application_config.customized_traffic.destination_port[customized_traffic_config_index];
 				
-				g_otg->prob_off_pu[source_id_index][destination_id_index]= oai_emulation.application_config.customized_traffic.prob_off_pu[customized_traffic_config_index];
-	  		g_otg->prob_off_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_off_ed[customized_traffic_config_index];
-  			g_otg->prob_off_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_off_pe[customized_traffic_config_index];
-				g_otg->prob_pu_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_pu_ed[customized_traffic_config_index];
-				g_otg->prob_pu_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_pu_pe[customized_traffic_config_index];
-				g_otg->prob_ed_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_ed_pe[customized_traffic_config_index];
-				g_otg->prob_ed_pu[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_ed_pu[customized_traffic_config_index];
-				g_otg->holding_time_off_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_ed[customized_traffic_config_index];
-				g_otg->holding_time_off_pu[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_pu[customized_traffic_config_index];
-				g_otg->holding_time_off_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_pe[customized_traffic_config_index];	
-				g_otg->holding_time_pe_off[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
-		LOG_I(OTG,"Customized:: OCG_config_OTG: (1) FORMAT (%d:%d) source = %d, dest = %d, Application = %d, background %d\n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index],  g_otg->background[source_id_index][destination_id_index]);
-		
+				g_otg->prob_off_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]= oai_emulation.application_config.customized_traffic.prob_off_pu[customized_traffic_config_index];
+	  		g_otg->prob_off_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_off_ed[customized_traffic_config_index];
+  			g_otg->prob_off_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_off_pe[customized_traffic_config_index];
+				g_otg->prob_pu_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_pu_ed[customized_traffic_config_index];
+				g_otg->prob_pu_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_pu_pe[customized_traffic_config_index];
+				g_otg->prob_ed_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_ed_pe[customized_traffic_config_index];
+				g_otg->prob_ed_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_ed_pu[customized_traffic_config_index];
+				g_otg->holding_time_off_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_ed[customized_traffic_config_index];
+				g_otg->holding_time_off_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_pu[customized_traffic_config_index];
+				g_otg->holding_time_off_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_pe[customized_traffic_config_index];	
+				g_otg->holding_time_pe_off[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
+			  g_otg->application_idx[source_id_index][destination_id_index]+=1;
+		LOG_I(OTG,"customized:: OCG_config_OTG: (1) FORMAT (%d:%d) source = %d, dest = %d, Application = %d, background %d\n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]],  g_otg->background[source_id_index][destination_id_index]);
+
 		  }
 		}
 	      }
@@ -777,40 +786,40 @@ LOG_I(OTG,"predef:: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Appli
 	      
 	      while (per_source_id != NULL) {
 		source_id_index = atoi(per_source_id);
-		if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst	
+		if (g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] == 0) { // no app is defined for this pair src.dst	
 				   
-		 	g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.customized_traffic.background[customized_traffic_config_index]);
-			g_otg->trans_proto[source_id_index][destination_id_index] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
-			g_otg->ip_v[source_id_index][destination_id_index] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
-			g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
-			g_otg->idt_dist[source_id_index][destination_id_index][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
-			g_otg->idt_min[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_min_ms[customized_traffic_config_index];
-			g_otg->idt_max[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_max_ms[customized_traffic_config_index];
-			g_otg->idt_std_dev[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_standard_deviation[customized_traffic_config_index];
-			g_otg->idt_lambda[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_lambda[customized_traffic_config_index];
-			g_otg->idt_scale[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_scale[customized_traffic_config_index];
-			g_otg->idt_shape[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_shape[customized_traffic_config_index];
-			g_otg->size_dist[source_id_index][destination_id_index][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.size_dist[customized_traffic_config_index]);
-			g_otg->size_min[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_min_byte[customized_traffic_config_index];
-			g_otg->size_max[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_max_byte[customized_traffic_config_index];		
-			g_otg->size_std_dev[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_standard_deviation[customized_traffic_config_index];
-			g_otg->size_lambda[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_lambda[customized_traffic_config_index];	
-			g_otg->size_scale[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_scale[customized_traffic_config_index];
-			g_otg->size_shape[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_shape[customized_traffic_config_index];
+		 	g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] =map_str_to_int(switch_names,oai_emulation.application_config.customized_traffic.background[customized_traffic_config_index]);
+			g_otg->trans_proto[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
+			g_otg->ip_v[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
+			g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
+			g_otg->idt_dist[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);
+			g_otg->idt_min[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_min_ms[customized_traffic_config_index];
+			g_otg->idt_max[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_max_ms[customized_traffic_config_index];
+			g_otg->idt_std_dev[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_standard_deviation[customized_traffic_config_index];
+			g_otg->idt_lambda[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_lambda[customized_traffic_config_index];
+			g_otg->idt_scale[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_scale[customized_traffic_config_index];
+			g_otg->idt_shape[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_shape[customized_traffic_config_index];
+			g_otg->size_dist[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.size_dist[customized_traffic_config_index]);
+			g_otg->size_min[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_min_byte[customized_traffic_config_index];
+			g_otg->size_max[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_max_byte[customized_traffic_config_index];		
+			g_otg->size_std_dev[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_standard_deviation[customized_traffic_config_index];
+			g_otg->size_lambda[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_lambda[customized_traffic_config_index];	
+			g_otg->size_scale[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_scale[customized_traffic_config_index];
+			g_otg->size_shape[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_shape[customized_traffic_config_index];
 			g_otg->dst_port[source_id_index][destination_id_index] = oai_emulation.application_config.customized_traffic.destination_port[customized_traffic_config_index];
 			
-			g_otg->prob_off_pu[source_id_index][destination_id_index]= oai_emulation.application_config.customized_traffic.prob_off_pu[customized_traffic_config_index];
-	  	g_otg->prob_off_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_off_ed[customized_traffic_config_index];
-  		g_otg->prob_off_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_off_pe[customized_traffic_config_index];
-			g_otg->prob_pu_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_pu_ed[customized_traffic_config_index];
-			g_otg->prob_pu_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_pu_pe[customized_traffic_config_index];
-			g_otg->prob_ed_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_ed_pe[customized_traffic_config_index];
-			g_otg->prob_ed_pu[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_ed_pu[customized_traffic_config_index];
-			g_otg->holding_time_off_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_ed[customized_traffic_config_index];
-			g_otg->holding_time_off_pu[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_pu[customized_traffic_config_index];
-			g_otg->holding_time_off_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_pe[customized_traffic_config_index];	
-			g_otg->holding_time_pe_off[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
-
+			g_otg->prob_off_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]= oai_emulation.application_config.customized_traffic.prob_off_pu[customized_traffic_config_index];
+	  	g_otg->prob_off_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_off_ed[customized_traffic_config_index];
+  		g_otg->prob_off_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_off_pe[customized_traffic_config_index];
+			g_otg->prob_pu_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_pu_ed[customized_traffic_config_index];
+			g_otg->prob_pu_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_pu_pe[customized_traffic_config_index];
+			g_otg->prob_ed_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_ed_pe[customized_traffic_config_index];
+			g_otg->prob_ed_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_ed_pu[customized_traffic_config_index];
+			g_otg->holding_time_off_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_ed[customized_traffic_config_index];
+			g_otg->holding_time_off_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_pu[customized_traffic_config_index];
+			g_otg->holding_time_off_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_pe[customized_traffic_config_index];	
+			g_otg->holding_time_pe_off[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
+			g_otg->application_idx[source_id_index][destination_id_index]+=1;
 
 LOG_I(OTG,"customized:: OCG_config_OTG: (2) FORMAT (%d:%d) source = %d, dest = %d, dist type for size = %d\n", source_id_start, source_id_end, source_id_index, destination_id_index, g_otg->size_dist[source_id_index][destination_id_index][0]);		
 		per_source_id = strtok(NULL, comma);
@@ -838,45 +847,45 @@ LOG_I(OTG,"customized:: OCG_config_OTG: (2) FORMAT (%d:%d) source = %d, dest = %
 	      for (destination_id_index = did_start; destination_id_index <= did_end; destination_id_index++) {
 	      	for (source_id_index = sid_start; source_id_index <= sid_end; source_id_index++) {
 		  
-		  if (g_otg->application_type[source_id_index][destination_id_index] == 0) { // no app is defined for this pair src.dst	
+		  if (g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] == 0) { // no app is defined for this pair src.dst	
 		    		   
-	       g_otg->background[source_id_index][destination_id_index] =map_str_to_int(switch_names,oai_emulation.application_config.customized_traffic.background[customized_traffic_config_index]);
-	       g_otg->trans_proto[source_id_index][destination_id_index] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
-	      g_otg->ip_v[source_id_index][destination_id_index] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
-				g_otg->aggregation_level[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
+	       g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] =map_str_to_int(switch_names,oai_emulation.application_config.customized_traffic.background[customized_traffic_config_index]);
+	       g_otg->trans_proto[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_transport_protocol_names, oai_emulation.application_config.customized_traffic.transport_protocol[customized_traffic_config_index]);
+	      g_otg->ip_v[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] = map_str_to_int(otg_ip_version_names, oai_emulation.application_config.customized_traffic.ip_version[customized_traffic_config_index]);
+				g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.aggregation_level[customized_traffic_config_index];
 
-	      g_otg->idt_dist[source_id_index][destination_id_index][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);	      
-	      g_otg->idt_min[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_min_ms[customized_traffic_config_index];     
-	      g_otg->idt_max[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_max_ms[customized_traffic_config_index];
-	      g_otg->idt_std_dev[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_standard_deviation[customized_traffic_config_index];
-	      g_otg->idt_lambda[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_lambda[customized_traffic_config_index];
-	      g_otg->idt_scale[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_scale[customized_traffic_config_index];
-	      g_otg->idt_shape[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.idt_shape[customized_traffic_config_index];
-	      g_otg->size_dist[source_id_index][destination_id_index][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.size_dist[customized_traffic_config_index]);
-	      g_otg->size_min[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_min_byte[customized_traffic_config_index];
-	      g_otg->size_max[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_max_byte[customized_traffic_config_index];
-	      g_otg->size_std_dev[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_standard_deviation[customized_traffic_config_index];
-	      g_otg->size_lambda[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_lambda[customized_traffic_config_index]; 
-	      g_otg->size_scale[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_scale[customized_traffic_config_index];
-	      g_otg->size_shape[source_id_index][destination_id_index][state] =  oai_emulation.application_config.customized_traffic.size_shape[customized_traffic_config_index];
+	      g_otg->idt_dist[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.idt_dist[customized_traffic_config_index]);	      
+	      g_otg->idt_min[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_min_ms[customized_traffic_config_index];     
+	      g_otg->idt_max[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_max_ms[customized_traffic_config_index];
+	      g_otg->idt_std_dev[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_standard_deviation[customized_traffic_config_index];
+	      g_otg->idt_lambda[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_lambda[customized_traffic_config_index];
+	      g_otg->idt_scale[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_scale[customized_traffic_config_index];
+	      g_otg->idt_shape[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.idt_shape[customized_traffic_config_index];
+	      g_otg->size_dist[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] = map_str_to_int(otg_distribution_names, oai_emulation.application_config.customized_traffic.size_dist[customized_traffic_config_index]);
+	      g_otg->size_min[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_min_byte[customized_traffic_config_index];
+	      g_otg->size_max[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_max_byte[customized_traffic_config_index];
+	      g_otg->size_std_dev[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_standard_deviation[customized_traffic_config_index];
+	      g_otg->size_lambda[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_lambda[customized_traffic_config_index]; 
+	      g_otg->size_scale[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_scale[customized_traffic_config_index];
+	      g_otg->size_shape[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state] =  oai_emulation.application_config.customized_traffic.size_shape[customized_traffic_config_index];
 	      g_otg->dst_port[source_id_index][destination_id_index] = oai_emulation.application_config.customized_traffic.destination_port[customized_traffic_config_index];
 	 
-				g_otg->prob_off_pu[source_id_index][destination_id_index]= oai_emulation.application_config.customized_traffic.prob_off_pu[customized_traffic_config_index];
-	  		g_otg->prob_off_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_off_ed[customized_traffic_config_index];
-  			g_otg->prob_off_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_off_pe[customized_traffic_config_index];
-				g_otg->prob_pu_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_pu_ed[customized_traffic_config_index];
-				g_otg->prob_pu_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_pu_pe[customized_traffic_config_index];
-				g_otg->prob_ed_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_ed_pe[customized_traffic_config_index];
-				g_otg->prob_ed_pu[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.prob_ed_pu[customized_traffic_config_index];
-				g_otg->holding_time_off_ed[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_ed[customized_traffic_config_index];
-				g_otg->holding_time_off_pu[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_pu[customized_traffic_config_index];
-				g_otg->holding_time_off_pe[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_off_pe[customized_traffic_config_index];	
-				g_otg->holding_time_pe_off[source_id_index][destination_id_index]=oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
-
+				g_otg->prob_off_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]= oai_emulation.application_config.customized_traffic.prob_off_pu[customized_traffic_config_index];
+	  		g_otg->prob_off_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_off_ed[customized_traffic_config_index];
+  			g_otg->prob_off_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_off_pe[customized_traffic_config_index];
+				g_otg->prob_pu_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_pu_ed[customized_traffic_config_index];
+				g_otg->prob_pu_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_pu_pe[customized_traffic_config_index];
+				g_otg->prob_ed_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_ed_pe[customized_traffic_config_index];
+				g_otg->prob_ed_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.prob_ed_pu[customized_traffic_config_index];
+				g_otg->holding_time_off_ed[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_ed[customized_traffic_config_index];
+				g_otg->holding_time_off_pu[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_pu[customized_traffic_config_index];
+				g_otg->holding_time_off_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_pe[customized_traffic_config_index];	
+				g_otg->holding_time_pe_off[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
+				g_otg->application_idx[source_id_index][destination_id_index]+=1;
      
 LOG_I(OTG,"OCG_config_OTG (single node config): source = %d, dest = %d, dist type for size = %d\n", source_id_index, destination_id_index, g_otg->size_dist[source_id_index][destination_id_index][0]);	     
 
- LOG_I(OTG,"customized:: OCG_config_OTG:(3) FORMAT (%d:%d) source = %d, dest = %d, Application = %d, Background %d\n", did_start, did_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index], g_otg->background[source_id_index][destination_id_index]);
+ LOG_I(OTG,"customized:: OCG_config_OTG:(3) FORMAT (%d:%d) source = %d, dest = %d, Application = %d, Background %d\n", did_start, did_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->background[source_id_index][destination_id_index]);
 
 		
 		  }
@@ -888,8 +897,8 @@ LOG_I(OTG,"OCG_config_OTG (single node config): source = %d, dest = %d, dist typ
 	} else { // OCG not used, but -T option is used, so config here
 	  for (i=0; i<g_otg->num_nodes; i++){
 	    for (j=0; j<g_otg->num_nodes; j++){ 
-	      g_otg->application_type[i][j] = oai_emulation.info.otg_traffic;
-	      g_otg->background[i][j]=oai_emulation.info.otg_bg_traffic_enabled;
+	      g_otg->application_type[i][j][g_otg->application_idx[i][j]] = oai_emulation.info.otg_traffic;
+	      g_otg->background[i][j][g_otg->application_idx[i][j]]=oai_emulation.info.otg_bg_traffic_enabled;
 	      g_otg->packet_gen_type=SUBSTRACT_STRING;
 	      init_predef_traffic();
 	    }
