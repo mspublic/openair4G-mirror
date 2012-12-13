@@ -1053,7 +1053,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
   //speedStatePars=Sparams;
   //rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure=rsrp;
 
-  /*size = do_RRCConnectionReconfiguration(Mod_id,
+  size = do_RRCConnectionReconfiguration(Mod_id,
 					 buffer,
 					 UE_index,
 					 0,//Transaction_id,
@@ -1067,29 +1067,10 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
 					 NULL, //*QuantityConfig,
 					 MeasId_list,
 					 mac_MainConfig,
-					 NULL,//measGapConfig;
+					 NULL, // *measGapConfig,
 					 NULL,
-					 0);*/
-
-  //TODO: Not working when MeasObj_list, ReportConfig_list and MeasId_list are added
-  size = do_RRCConnectionReconfiguration(Mod_id,
-					 buffer,
-					 UE_index,
-					 0,//Transaction_id,
-					 SRB_list,
-					 DRB_list,
-					 NULL, // DRB2_list,
-					 NULL, //*sps_Config,
-					 physicalConfigDedicated,
-					 NULL,
-					 NULL,
-					 NULL, //*QuantityConfig,
-					 NULL,
-					 mac_MainConfig,
-					 NULL,  //*measGapConfig);
-					 NULL,
-					 0);
-
+					 0); 
+ 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
 	Mod_id,frame, size, UE_index);
 
