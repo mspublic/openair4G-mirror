@@ -200,7 +200,7 @@ else
 				add_log_metric(src, dst, otg_hdr_rx->time, otg_info->radio_access_delay[src][dst], OTG_LATENCY); 
 
   		if (g_otg->throughput_metric)
-  			add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst], OTG_GP);
+  			add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst], OTG_GP);
         }
 	else{
 	  otg_info->rx_num_pkt_background[src][dst]+=1;
@@ -231,7 +231,7 @@ else
 
 
 void owd_const_gen(int src, int dst, unsigned int flag){
-  otg_info->owd_const[src][dst]=owd_const_capillary()+owd_const_mobile_core()+owd_const_IP_backbone();
+  otg_info->owd_const[src][dst]=(owd_const_capillary()+owd_const_mobile_core()+owd_const_IP_backbone())/2;
 }
 
 

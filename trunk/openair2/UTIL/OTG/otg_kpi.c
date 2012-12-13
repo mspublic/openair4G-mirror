@@ -216,8 +216,8 @@ fc=fopen("/tmp/otg.log","w");;
 		fprintf(file,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
 		fprintf(file,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j]);
 		fprintf(file,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j]);
-		fprintf(file,"[%s] RTT MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
-		fprintf(file,"[%s] RTT MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
+		fprintf(file,"[%s] OWD MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
+		fprintf(file,"[%s] OWD MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
 		fprintf(file,"[%s] TX throughput = %.2f(KB/s) \n",traffic_type, otg_info->tx_throughput[i][j]);
 		fprintf(file,"[%s] RX goodput= %.2f (KB/s) \n",traffic_type, otg_info->rx_goodput[i][j]);
 		if (otg_info->rx_loss_rate[i][j]>0){
@@ -246,8 +246,8 @@ fc=fopen("/tmp/otg.log","w");;
 	  LOG_I(OTG,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
 		LOG_I(OTG,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j]);
 		LOG_I(OTG,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j]);
-		LOG_I(OTG,"[%s] RTT MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
-		LOG_I(OTG,"[%s] RTT MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
+		LOG_I(OTG,"[%s] OWD MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
+		LOG_I(OTG,"[%s] OWD MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
 		LOG_I(OTG,"[%s] TX throughput = %.2f(KB/s) \n",traffic_type, otg_info->tx_throughput[i][j]);
 		LOG_I(OTG,"[%s] RX goodput= %.2f (KB/s) \n",traffic_type, otg_info->rx_goodput[i][j]);
 	if (otg_info->rx_loss_rate[i][j]>0){
@@ -273,8 +273,8 @@ fc=fopen("/tmp/otg.log","w");;
 		LOG_F(OTG,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
 		LOG_F(OTG,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j]);
 		LOG_F(OTG,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j]);
-		LOG_F(OTG,"[%s] RTT MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
-		LOG_F(OTG,"[%s] RTT MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
+		LOG_F(OTG,"[%s] OWD MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);
+		LOG_F(OTG,"[%s] OWD MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j]);
 		LOG_F(OTG,"[%s] TX throughput = %.2f(KB/s) \n",traffic_type, otg_info->tx_throughput[i][j]);
 		LOG_F(OTG,"[%s] RX goodput= %.2f (KB/s) \n",traffic_type, otg_info->rx_goodput[i][j]);
 	if (otg_info->rx_loss_rate[i][j]>0){
@@ -307,8 +307,8 @@ fc=fopen("/tmp/otg.log","w");;
   fprintf(file,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_dl);
   fprintf(file,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_dl);
   fprintf(file,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
-  fprintf(file,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_dl);
-  fprintf(file,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_dl);
+  fprintf(file,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_dl);
+  fprintf(file,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_dl);
   fprintf(file,"[DATA] TX throughput = %.2f(KB/s) \n", (double)tx_total_bytes_dl/otg_info->ctime);
   fprintf(file,"[DATA] RX throughput = %.2f(KB/s) \n", (double)rx_total_bytes_dl/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_dl_background>0)){
@@ -325,8 +325,8 @@ fc=fopen("/tmp/otg.log","w");;
   fprintf(file,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_ul);
   fprintf(file,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_ul);
   fprintf(file,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
-  fprintf(file,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_ul);
-  fprintf(file,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_ul);
+  fprintf(file,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_ul);
+  fprintf(file,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_ul);
   fprintf(file,"[DATA] TX throughput = %.2f(KB/s) \n", (double)tx_total_bytes_ul/otg_info->ctime);
   fprintf(file,"[DATA] RX throughput = %.2f(KB/s) \n", (double)rx_total_bytes_ul/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){
@@ -345,8 +345,8 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_I(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_dl);
   LOG_I(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_dl);
   LOG_I(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
-  LOG_I(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_dl);
-  LOG_I(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_dl);
+  LOG_I(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_dl);
+  LOG_I(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_dl);
   LOG_I(OTG,"[DATA] TX throughput = %.2f(KB/s) \n", (double)tx_total_bytes_dl/otg_info->ctime);
   LOG_I(OTG,"[DATA] RX throughput = %.2f(KB/s) \n", (double)rx_total_bytes_dl/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_dl_background>0)){
@@ -364,8 +364,8 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_F(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_dl);
   LOG_F(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_dl);
   LOG_F(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
-  LOG_F(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_dl);
-  LOG_F(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_dl);
+  LOG_F(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_dl);
+  LOG_F(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_dl);
   LOG_F(OTG,"[DATA] TX throughput = %.2f(KB/s) \n", (double)tx_total_bytes_dl/otg_info->ctime);
   LOG_F(OTG,"[DATA] RX throughput = %.2f(KB/s) \n", (double)rx_total_bytes_dl/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_dl_background>0)){
@@ -384,8 +384,8 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_I(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_ul);
   LOG_I(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_ul);
   LOG_I(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
-  LOG_I(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_ul);
-  LOG_I(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_ul);
+  LOG_I(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_ul);
+  LOG_I(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_ul);
   LOG_I(OTG,"[DATA] TX throughput = %.2f(KB/s) \n", (double)tx_total_bytes_ul/otg_info->ctime);
   LOG_I(OTG,"[DATA] RX throughput = %.2f(KB/s) \n", (double)rx_total_bytes_ul/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){
@@ -403,8 +403,8 @@ fc=fopen("/tmp/otg.log","w");;
   LOG_F(OTG,"[DATA] Total packets(RX)= %d \n", rx_total_pkts_ul);
   LOG_F(OTG,"[DATA] Total bytes(TX)= %d \n", tx_total_bytes_ul);
   LOG_F(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
-  LOG_F(OTG,"[DATA] RTT MIN (one way)ms= %.2f \n", min_owd_ul);
-  LOG_F(OTG,"[DATA] RTT MAX (one way)ms= %.2f \n", max_owd_ul);
+  LOG_F(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_ul);
+  LOG_F(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_ul);
   LOG_F(OTG,"[DATA] TX throughput = %.2f(KB/s) \n", (double)tx_total_bytes_ul/otg_info->ctime);
   LOG_F(OTG,"[DATA] RX throughput = %.2f(KB/s) \n", (double)rx_total_bytes_ul/otg_info->ctime);
   if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){
@@ -443,7 +443,7 @@ void add_log_metric(int src, int dst, int ctime, double metric, unsigned int lab
   for (i=0; i<=(NB_eNB_INST + NB_UE_INST); i++){
     for (j=0; j<=(NB_eNB_INST + NB_UE_INST); j++){
     node_actif=0;
-        if ((g_otg->idt_dist[i][j][PE_STATE]>0) || (g_otg->application_type[i][j] >0))
+        if ((g_otg->idt_dist[i][j][0][PE_STATE]>0) || (g_otg->application_type[i][j][0] >0))
 					node_actif=1;
 
       if ((node_actif>0) && ((i==src) && (j==dst)))
@@ -468,7 +468,7 @@ void  add_log_label(unsigned int label, unsigned int * start_log_metric){
    for (i=0; i<=(NB_eNB_INST + NB_UE_INST); i++){
      for (j=0; j<=(NB_eNB_INST + NB_UE_INST); j++){
        node_actif=0;
-          if (g_otg->idt_dist[i][j][PE_STATE]>0 )
+          if (g_otg->idt_dist[i][j][0][PE_STATE]>0 )
 	    node_actif++; 
       if (node_actif>0)
         LOG_F(label,"%d->%d    ", i, j);  
