@@ -1146,7 +1146,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
 	  rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,RADIO_ACCESS_BEARER,Rlc_info_um);
 	  eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
-	  LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->drb_Identity);
+	  LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id, frame, DRB_id);
 #ifdef NAS_NETLINK
 // can mean also IPV6 since ether -> ipv6 autoconf
 #    ifndef NAS_DRIVER_TYPE_ETHERNET
