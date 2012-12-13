@@ -730,8 +730,6 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
   CellsToAddMod_t *CellToAdd;
   CellsToAddModList_t *CellsToAddModList;
 
-
-
   //
   // Configure SRB2
 
@@ -1069,8 +1067,11 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
 					 NULL, //*QuantityConfig,
 					 MeasId_list,
 					 mac_MainConfig,
-					 NULL); //*measGapConfig);*/
+					 NULL,//measGapConfig;
+					 NULL,
+					 0);*/
 
+  //TODO: Not working when MeasObj_list, ReportConfig_list and MeasId_list are added
   size = do_RRCConnectionReconfiguration(Mod_id,
 					 buffer,
 					 UE_index,
@@ -1091,7 +1092,6 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
 	Mod_id,frame, size, UE_index);
-
 
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
 	frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
