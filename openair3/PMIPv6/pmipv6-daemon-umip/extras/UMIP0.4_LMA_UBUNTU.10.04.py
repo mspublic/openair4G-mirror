@@ -49,14 +49,6 @@ g_LmaCoreNetworkDevice                            = ""
 g_MagAddressIngress                               = []
 g_MagAddressEgress                                = []
 g_num_mags                                        = 0
-#g_Mag1AddressIngress                              = IPAddress('0::0')
-#g_Mag1AddressEgress                               = IPAddress('0::0')
-#g_Mag2AddressIngress                              = IPAddress('0::0')
-#g_Mag2AddressEgress                               = IPAddress('0::0')
-#g_Mag3AddressIngress                              = IPAddress('0::0')
-#g_Mag3AddressEgress                               = IPAddress('0::0')
-
-
 
 g_fhandle = open(g_file_config, 'r')
 g_fcontent = g_fhandle.read()
@@ -161,7 +153,7 @@ command = "modprobe tunnel6"
 print command
 os.system(command)
 
-command = "pkill -9 pmip6d"
+command = "pkill -9 mip6d"
 print command
 os.system(command)
 
@@ -176,7 +168,7 @@ if g_pcap == "yes":
 
 
 # LD_LIBRARY_PATH for freeradius libs
-command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/pmip6d -c ' + g_file_config
+command = 'export LD_LIBRARY_PATH=/usr/local/lib;/usr/local/sbin/mip6d -c ' + g_file_config
 print command
 subprocess.call(command, shell=True)
 

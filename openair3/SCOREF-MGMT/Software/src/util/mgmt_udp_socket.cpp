@@ -49,26 +49,38 @@ using namespace std;
 
 UdpSocket::UdpSocket(u_int16_t portNumber, Logger& logger)
 	: socketType(UdpSocket::SERVER_SOCKET), logger(logger) {
-	socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
-	socket->set_option(boost::asio::socket_base::reuse_address(true));
+	logger.debug("Server socket is being created at port " + boost::lexical_cast<string>(portNumber));
+
+	try {
+		socket = new udp::socket(ioService, udp::endpoint(udp::v4(), portNumber));
+		socket->set_option(boost::asio::socket_base::reuse_address(true));
+	} catch (std::exception& e) {
+		throw Exception(e.what(), logger);
+	}
 
 	logger.info("A UDP socket created for port " + boost::lexical_cast<string>(portNumber));
 }
 
 UdpSocket::UdpSocket(const string& address, u_int16_t portNumber, Logger& logger)
 	: socketType(UdpSocket::CLIENT_SOCKET), logger(logger) {
+	logger.debug("Client socket is being created to " + address + ":" + boost::lexical_cast<string>(portNumber));
 	/**
 	 * Convert incoming string address
 	 */
-	boost::asio::ip::address_v4 recipientAddress;
-	recipientAddress.from_string(address);
+	boost::asio::ip::address_v4 recipientAddress = boost::asio::ip::address_v4::from_string(address);
 	recipient.address(recipientAddress);
 	recipient.port(portNumber);
 	/**
 	 * Create a socket
 	 */
-	socket = new udp::socket(ioService, recipient);
-	socket->set_option(boost::asio::socket_base::reuse_address(true));
+	logger.debug("Creating a socket to " + recipient.address().to_string() + ":" + boost::lexical_cast<string>(recipient.port()));
+	try {
+		socket = new udp::socket(ioService, recipient);
+		socket->set_option(boost::asio::socket_base::reuse_address(true));
+	} catch (std::exception& e) {
+		logger.error(e.what());
+		throw Exception(e.what(), logger);
+	}
 }
 
 UdpSocket::UdpSocket(const UdpSocket& UdpSocket)
@@ -88,6 +100,12 @@ unsigned UdpSocket::receive(vector<unsigned char>& rxBuffer) {
 	 * Ensure there's only one I/O method of UdpSocket running at any given moment
 	 */
 	boost::lock_guard<boost::mutex> lock(readMutex);
+
+	/**
+	 * Always reset receive buffer size since it's resized after every read
+	 * according to the packet size (and it becomes packet buffer)
+	 */
+	rxBuffer.resize(UdpSocket::RX_BUFFER_SIZE);
 
 	try {
 		logger.info("Reading from socket...");

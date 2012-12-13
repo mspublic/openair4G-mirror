@@ -81,6 +81,8 @@
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_vars.h"
+#include "UTIL/MATH/oml.h"
+
 
 #ifdef XFORMS
 #include <forms.h>
@@ -120,8 +122,8 @@ int oai_exit = 0;
 
 unsigned int *DAQ_MBOX;
 
-//int time_offset[4] = {-118,-118,-118,-118};
-int time_offset[4] = {-138,-138,-138,-138};
+//int time_offset[4] = {-138,-138,-138,-138};
+int time_offset[4] = {-145,-145,-145,-145};
 //int time_offset[4] = {0,0,0,0};
 
 int fs4_test=0;
@@ -139,40 +141,10 @@ extern s16 prach_ifft[4][1024*2];
 
 runmode_t mode;
 int rx_input_level_dBm;
-
-
 int otg_enabled = 1;
 
-//*******************************
-// Calibration parameters from oaisimCROWN
-//b Calibration vars
-int n_K=100,dec_f=1, K_calibration=0, echec_calibration=0, P_eNb_active=0, first_call_cal=0;
-double PeNb_factor[2][600];
-int   dl_ch_estimates_length=2400;//(2*300*4)/dec_f,
-short dl_ch_estimates[2][2400];
-short drs_ch_estimates[2][2400];
-short drs_ch_est_ZFB[2*300*14];
-int doquantUE=0;
-int calibration_flag=0;
-short K_dl_ch_estimates[15][2][600], K_drs_ch_estimates[15][2][600];
-int prec_length = 2*14*512;
-short prec[2][2*14*512];
-double Norm[2*14*512];
-short denom[14*512];
-short x_temp, quant=8;
-//SCM_t channel_model=SCM_C;
-int CROWN_SYSTEM=2;
-
-#ifdef XFORMS
-extern void RECAL_callback( FL_OBJECT *ob, long user_data) {
-  calibration_flag = 1;
-  K_calibration	   = 0;
-  P_eNb_active	   = 0;
-  printf("click RECALIBRATION\n");
-}
-#endif
-//*******************************
-
+int init_dlsch_threads(void);
+void cleanup_dlsch_threads(void);
 
 void signal_handler(int sig)
 {
@@ -212,6 +184,18 @@ void exit_fun(const char* s)
 }
 
 #ifdef XFORMS
+void ia_receiver_on_off( FL_OBJECT *button, long arg) {
+
+  if (fl_get_button(button)) {
+    fl_set_object_label(button, "IA Receiver ON");
+    openair_daq_vars.use_ia_receiver = 1;
+  }
+  else {
+    fl_set_object_label(button, "IA Receiver OFF");
+    openair_daq_vars.use_ia_receiver = 0;
+  }
+}
+
 void do_forms2(FD_lte_scope *form,
                LTE_DL_FRAME_PARMS *frame_parms,
                int pdcch_symbols,
@@ -228,10 +212,7 @@ void do_forms2(FD_lte_scope *form,
                s8 *pbch_llr,
                s16 coded_bits_per_codeword,
 	       s16 *sync_corr,
-	       s16 sync_corr_len,
-	       s16 *dl_ch_estimates,
-	       s16 *drs_ch_estimates_a, 
-	       double PeNb_factor[2][600])
+	       s16 sync_corr_len)
 {
 
   int i,j,k,s;
@@ -250,48 +231,14 @@ void do_forms2(FD_lte_scope *form,
   int nb_tx_ant = (UE_flag==1 ? frame_parms->nb_antennas_tx_eNB : 1);
   int nb_ce_symb = (UE_flag==1 ? 1 : frame_parms->symbols_per_tti); 
 		 
+  if (UE_flag==0) 
+    fl_hide_object(form->ia_receiver_button);
+  else 
+    fl_show_object(form->ia_receiver_button);
 
   llr = malloc(coded_bits_per_codeword*sizeof(float));
   llr_time = malloc(coded_bits_per_codeword*sizeof(float));
 
-
-//*****************************SCOPE CROWN*************************
-  if (drs_ch_estimates_a != NULL)
-  {
-	  for (k=0; k<2*300; k+=2) {
-            x_label[k>>1] = k>>1;
-	    y_label[k>>1] = drs_ch_estimates_a[k]*PeNb_factor[0][k] - drs_ch_estimates_a[k+1]*PeNb_factor[0][k+1];
-	  }			   
-
-	  fl_set_xyplot_data(form->fig11,x_label,y_label,300,"eNB_Dl_chan_est_Ant0","","");
-	  fl_set_xyplot_ybounds(form->fig11,-128,128);
-
-	  for (k=0; k<2*300; k+=2) {
-	    y_label[k>>1] =  K_dl_ch_estimates[3][0][k];//PeNb_factor[0][k];//drs_ch_estimates_a[k+2*300]*PeNb_factor[1][k] - drs_ch_estimates_a[k+2*300+1]*PeNb_factor[1][k+1];
-	  }			   
-
-	  fl_set_xyplot_data(form->fig12,x_label,y_label,300,"eNB_Dl_chan_est_Ant1","","");
-	  //fl_set_xyplot_ybounds(form->fig12);
-  }
-  
-  if (dl_ch_estimates != NULL)  
-  {
-	    for (k=0; k<2*300; k+=2) {
-		x_label[k>>1] = (float)(k>>1);
-	      	y_label[k>>1] = dl_ch_estimates[k];	    
-	  }			   
-
-	  fl_set_xyplot_data(form->fig11,x_label,y_label,300,"UE_Dl_chan_Ant0","","");
-	  //fl_set_xyplot_ybounds(form->fig11);
-
-	  for (k=0; k<2*300; k+=2) {
-		x_label[k>>1] = (float)(k>>1);
-	      	y_label[k>>1] = dl_ch_estimates[k+2*300];	    
-	  }
-	fl_set_xyplot_data(form->fig12,x_label,y_label,300,"UE_Dl_chan_Ant1","","");
-  	//fl_set_xyplot_ybounds(form->fig12);
-  }		
-//********************************************
 
   // Channel frequency response
   if ((channel_f != NULL) && (channel_f[0] != NULL))
@@ -521,10 +468,7 @@ void *scope_thread(void *arg)
 			get_Qm(PHY_vars_UE_g[0]->dlsch_ue[0][0]->harq_processes[0]->mcs),  
 			PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,7),*/
 		  sync_corr_ue0,
-		  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10,		  
-		  dl_ch_estimates[1],
-		  NULL,
-		  NULL);
+		  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10);
 	len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0, mode,rx_input_level_dBm);
 	fl_set_object_label(form_stats->stats_text, stats_buffer);
 	//rewind (UE_stats);
@@ -550,10 +494,8 @@ void *scope_thread(void *arg)
                   NULL,
 		  PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->nb_rb*12*get_Qm(PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->mcs)*PHY_vars_eNB_g[0]->ulsch_eNB[0]->Nsymb_pusch,
                   prach_corr,
-                  1024,
-                  NULL,
-                  drs_ch_estimates[1],
-                  PeNb_factor);                                                                  
+                  1024);
+
 
 	len = dump_eNB_stats (PHY_vars_eNB_g[0], stats_buffer, 0);
 	fl_set_object_label(form_stats->stats_text, stats_buffer);
@@ -1307,6 +1249,7 @@ int main(int argc, char **argv) {
     openair_daq_vars.manual_timing_advance = 0;
     openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+    openair_daq_vars.use_ia_receiver = 0;
 
     // if AGC is off, the following values will be used
     for (i=0;i<4;i++) 
@@ -1417,13 +1360,12 @@ int main(int argc, char **argv) {
     mac_xface->dl_phy_sync_success (0, 0, 0, 1);
   else
     mac_xface->mrbch_phy_sync_failure (0, 0, 0);
-
-  pdcp_layer_init(); 
 #endif
 
 
   mac_xface->macphy_exit = &exit_fun;
 
+#ifdef OPENAIR2
   if (otg_enabled) {
     init_all_otg();
     g_otg->seed = 0;
@@ -1438,6 +1380,7 @@ int main(int argc, char **argv) {
     }
     init_predef_traffic();
   }
+#endif
 
   // start up the hardware
   openair_fd=setup_oai_hw(frame_parms);

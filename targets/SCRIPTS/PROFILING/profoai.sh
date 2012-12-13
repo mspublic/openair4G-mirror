@@ -7,33 +7,40 @@ echo "set up params"
 
 n_frames=10000
 abstraction=1
+traffic_load=1
 ue="1 2 3"
-ping="64 128 256 512 1024 1400"
+#ping="64 128 256 512 1024 1400"
 
 if [ $abstraction = 1 ]; then 
-    option=-a
+    option1="-a"
 else
-    option=-A -s 10
+    option1="-A -s 10"
 fi;
 
+if [ $traffic_load = 1 ]; then 
+    option2="-T1"
+fi;
+if [ $traffic_load = 2 ]; then 
+    option2="-T2"
+fi;
+if [ $traffic_load = 3 ]; then 
+    option2="-T3"
+fi;
 
 echo "start oai profiling"
 for i in $ue
 do
-  for j in $ping 
-  do
   rm gmon.out gmon.txt
-  echo "ping -s $j 10.0.1.2"
-  ping -s $j 10.0.1.2 -i 0.5 > ping.a$abstraction.n$n_frames.ue$i.ping$j.log &
-   echo "$OPENAIR_TARGETS/SIMU/USER/oaisim $option -n $n_frames -u $i > /dev/null"
-$OPENAIR_TARGETS/SIMU/USER/oaisim $option -n $n_frames -u $i  > /dev/null 
-  pkill ping
-#mv $OPENAIR_TARGETS/SIMU/USER/gmon. .
+  echo "$OPENAIR_TARGETS/SIMU/USER/oaisim $option1 $option2 -n $n_frames -u $i > /dev/null"
+$OPENAIR_TARGETS/SIMU/USER/oaisim $option1 $option2 -n $n_frames -u $i  > /dev/null 
+  
+  #mv $OPENAIR_TARGETS/SIMU/USER/gmon. .
   gprof $OPENAIR_TARGETS/SIMU/USER/oaisim > gmon.txt
-  echo "$OPENAIR_TARGETS/SCRIPTS/gprof2dot.py gmon.txt > profoai.ue$ue.ping$ping.dot"
-  $OPENAIR_TARGETS/SCRIPTS/PROFILING/gprof2dot.py gmon.txt > profoai.a$abstraction.n$n_frames.ue$i.ping$j.dot
-  dot -Tpng profoai.a$abstraction.n$n_frames.ue$i.ping$j.dot > profoai.a$abstraction.n$n_frames.ue$i.ping$j.png
-echo "oai profiling with $i ue is done"
+  echo "$OPENAIR_TARGETS/SCRIPTS/gprof2dot.py gmon.txt > profoai.ue$ue.dot"
+  $OPENAIR_TARGETS/SCRIPTS/PROFILING/gprof2dot.py gmon.txt > profoai.a$abstraction.n$n_frames.ue$i.dot
+  dot -Tpng profoai.a$abstraction.n$n_frames.ue$i.dot > profoai.a$abstraction.n$n_frames.ue$i.png
+  echo "oai profiling with $i ue is done"
+
 done
-done
+
 echo "end oai profiling"

@@ -100,12 +100,12 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   int i,j;
   int eNB_id =0;
   PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
+  LOG_D(PHY,"[UE %d] PHY_vars_UE %p\n", UE_id,PHY_vars_UE);
   memset(PHY_vars_UE,0,sizeof(PHY_VARS_UE));
   LTE_DL_FRAME_PARMS **lte_frame_parms = PHY_vars_UE->lte_frame_parms;
   // LTE_UE_COMMON **lte_ue_common_vars = PHY_vars_UE->lte_ue_common_vars; 
   PHY_vars_UE->Mod_id=UE_id; 
   PHY_vars_UE->n_connected_eNB = nb_connected_eNB;    
-
   
 
   for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ 
@@ -271,8 +271,9 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){  // begin init_lte_UE for all UEs
     PHY_vars_UE_g[UE_id] = init_lte_UE(*frame_parms, UE_id, nb_connected_eNB, abstraction_flag,transmission_mode);
-    LOG_D(PHY,"initial_sync PHY_vars_UE_g %p for UE id %d  tm is %d \n",  
+    /* LOG_D(PHY,"PHY_vars_UE_g %p for UE id %d  tm is %d \n",  
 	  PHY_vars_UE_g[UE_id] , UE_id, PHY_vars_UE_g[UE_id]->transmission_mode[0]);   
+    */
   }
 
 }

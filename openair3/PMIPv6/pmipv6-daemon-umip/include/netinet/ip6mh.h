@@ -70,7 +70,7 @@ struct ip6_mh_binding_update {
 #define IP6_MH_BU_KEYM		0x1000	/* Key management mobility */
 #define IP6_MH_BU_MAP		0x0800	/* HMIPv6 MAP Registration */
 #define IP6_MH_BU_MR		0x0400	/* NEMO MR Registration */
-#define IP6_MH_BU_PR        0x0200  /* Proxy Registration */
+#define IP6_MH_BU_PR		0x0200  /* Proxy Registration */
 #else				/* BYTE_ORDER == LITTLE_ENDIAN */
 #define IP6_MH_BU_ACK		0x0080	/* Request a binding ack */
 #define IP6_MH_BU_HOME		0x0040	/* Home Registration */
@@ -78,7 +78,7 @@ struct ip6_mh_binding_update {
 #define IP6_MH_BU_KEYM		0x0010	/* Key management mobility */
 #define IP6_MH_BU_MAP		0x0008	/* HMIPv6 MAP Registration */
 #define IP6_MH_BU_MR		0x0004	/* NEMO MR Registration */
-#define IP6_MH_BU_PR        0x0002  /* Proxy Registration */
+#define IP6_MH_BU_PR		0x0002  /* Proxy Registration */
 #endif
 
 struct ip6_mh_binding_ack {

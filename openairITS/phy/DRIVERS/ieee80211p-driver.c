@@ -58,7 +58,7 @@ static struct ieee80211p_priv drv_priv_data;
 
 /******************************************************************************
  * 
- * Driver's private data related routines : Init / Exit / RX path 
+ * Driver's private data related routines : RX path / Init / Exit 
  *
  *****************************************************************************/
 
@@ -88,9 +88,9 @@ int find_rate_idx(struct ieee80211p_priv *priv,
 
 } /* ieee80211p_find_rate_idx */
 
-/**************
- * RX tasklet *
- **************/
+/************************
+ * RX path / RX tasklet *
+ ************************/
 
 static void ieee80211p_tasklet_rx(unsigned long data) {
 	
@@ -116,9 +116,11 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 	/* lock */	
 	spin_lock(&priv->rxq_lock);
 
-    /************************
+	/************************
 	 * Netlink skb handling *
 	 ************************/
+
+	printk(KERN_ERR "ieee80211p_tasklet_rx: receiving data from PHY\n");
 
 	if (skb == NULL) {
         printk(KERN_ERR "ieee80211_tasklet_rx: received skb == NULL\n");
@@ -127,14 +129,13 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 
 	/* Get the netlink message header */
 	nlh = (struct nlmsghdr *)skb->data;
-
-	/* Keep track of the softmodem pid */
-	priv->pid_softmodem = (int)nlh->nlmsg_pid;
  
 	/* Check the command of the received msg */
 	nlcmd = (char *)NLMSG_DATA(nlh);	
 	if (*nlcmd == NLCMD_INIT) {
-		//printk(KERN_ERR "ieee80211_tasklet_rx: NLCMD_INIT received / softmodem pid = %d\n",priv->pid_softmodem);
+		/* Keep track of the softmodem pid */
+		priv->pid_softmodem = nlh->nlmsg_pid;
+		printk(KERN_ERR "ieee80211_tasklet_rx: NLCMD_INIT received / softmodem pid = %u\n",priv->pid_softmodem);
 		dev_kfree_skb_any(skb);	
 		goto error;
 	}
@@ -168,7 +169,7 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 	rate_idx = find_rate_idx(priv,rxs->band,rs->rate);
 
 	if (rate_idx == -1) {
-		printk(KERN_ERR "ieee80211_tasklet_rx: unknown data rate\n");
+		printk(KERN_ERR "ieee80211_tasklet_rx: unknown data rate %u\n",rs->rate);
 		dev_kfree_skb_any(skb);		
 		goto error;
 	} else {
@@ -194,7 +195,9 @@ static void ieee80211p_tasklet_rx(unsigned long data) {
 	/* Remove the rx status from the skb */
 	skb_pull(skb,sizeof(struct ieee80211p_rx_status));	
 
-	/* Give skb to the mac80211 driver */
+	printk(KERN_ERR "ieee80211p_tasklet_rx: sending data to ieee80211\n");
+
+	/* Give skb to the mac80211 subsystem */
 	ieee80211_rx(priv->hw, skb);
 
 error:
@@ -203,9 +206,9 @@ error:
 
 } /* ieee80211p_tasklet_rx */
 
-/**************
- * RX handler *
- **************/
+/************************
+ * RX path / RX handler *
+ ************************/
 
 static void ieee80211p_rx(struct sk_buff *skb) {
 
@@ -260,9 +263,6 @@ int ieee80211p_priv_init(struct ieee80211p_priv *priv) {
 	/* Return value */
 	int ret = 0;
 
-	/* Test MAC address */	
-	//char mac_address[ETH_ALEN] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
-
 	/******************************
 	 * Initializing hardware data *
 	 ******************************/
@@ -291,9 +291,6 @@ int ieee80211p_priv_init(struct ieee80211p_priv *priv) {
 		printk(KERN_ERR "ieee80211p_priv_init: reg domain copy failed\n");
 		goto error;
 	}
-	
-	/* Set MAC address to hw->wiphy->perm_addr */
-	//SET_IEEE80211_PERM_ADDR(hw,&mac_address[0]);
 
 	/* Set interface mode */
 	/* For now the only supported type of interface is adhoc */
@@ -344,6 +341,8 @@ int ieee80211p_priv_init(struct ieee80211p_priv *priv) {
 
 	priv->rx_skb = NULL;
 
+	printk(KERN_ERR "ieee80211p_priv_init: initialization done\n");
+
 error:
 	return ret;
 
@@ -363,7 +362,7 @@ void ieee80211p_priv_exit(struct ieee80211p_priv *priv) {
 
 	/*TODO: check if needed */	
 	/*if (priv->rx_skb != NULL) {
-		kfree(priv->rx_skb);
+		dev_kfree_skb_any(priv->rx_skb);
 	}*/
 
 	sock_release(priv->nl_sock->sk_socket);
@@ -372,7 +371,7 @@ void ieee80211p_priv_exit(struct ieee80211p_priv *priv) {
 
 /******************************************************************************
  * 
- * Callbacks from mac80211 to the driver
+ * Mandatory callbacks from mac80211 to the driver: TX path, add interface...
  *
  *****************************************************************************/
 
@@ -395,6 +394,8 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 
 	/* Return value */
 	int ret = 0;
+
+	printk(KERN_ERR "ieee80211p_tx: receiving data from ieee80211\n");
 	
 	if (qnum >= IEEE80211P_NUM_TXQ) {
 		printk(KERN_ERR "ieee80211p_tx: wrong queue number\n");
@@ -444,11 +445,13 @@ static void ieee80211p_tx(struct ieee80211_hw *hw, struct sk_buff *skb) {
 	/* Free the old skb */
 	dev_kfree_skb_any(skb);
 
+	printk(KERN_ERR "ieee80211p_tx: sending data to PHY using pid = %d\n",priv->pid_softmodem);
+
     ret = netlink_unicast(priv->nl_sock,nlskb,priv->pid_softmodem,NETLINK_80211P_GROUP);
 
     if (ret <= 0) {
-    	printk(KERN_ERR "ieee80211p_tx: netlink mesg not sent\n");
-		return;
+    	printk(KERN_ERR "ieee80211p_tx: netlink mesg not sent ret = %d\n",ret);
+	return;
     }
 
 } /* ieee80211p_tx */

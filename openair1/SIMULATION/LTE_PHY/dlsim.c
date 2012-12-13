@@ -224,8 +224,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot,-10000,10000);
-  fl_set_xyplot_ybounds(form->scatter_plot,-10000,10000);
+  fl_set_xyplot_xbounds(form->scatter_plot,-1000,1000);
+  fl_set_xyplot_ybounds(form->scatter_plot,-1000,1000);
 
   // DLSCH I/Q
   j=0;
@@ -244,8 +244,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot1,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot1,-10000,10000);
-  fl_set_xyplot_ybounds(form->scatter_plot1,-10000,10000);
+  fl_set_xyplot_xbounds(form->scatter_plot1,-1000,1000);
+  fl_set_xyplot_ybounds(form->scatter_plot1,-1000,1000);
 
   // DLSCH I/Q
   j=0;
@@ -264,8 +264,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot2,-10000,10000);
-  fl_set_xyplot_ybounds(form->scatter_plot2,-10000,10000);
+  fl_set_xyplot_xbounds(form->scatter_plot2,-1000,1000);
+  fl_set_xyplot_ybounds(form->scatter_plot2,-1000,1000);
 
 
   free(llr);
@@ -459,7 +459,7 @@ int main(int argc, char **argv) {
   u16 Nid_cell=0;
 
   int eNB_id = 0, eNB_id_i = 1;
-  unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
+  unsigned char mcs,mcs_i,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
   unsigned char i_mod = 2;
   unsigned short NB_RB;
   unsigned char Ns,l,m;
@@ -541,7 +541,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpDm:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:w:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpDm:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:t:b:u:w:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -555,6 +555,9 @@ int main(int argc, char **argv) {
 	break;
       case 'm':
 	mcs = atoi(optarg);
+	break;
+      case 't':
+	mcs_i = atoi(optarg);
 	break;
       case 'n':
 	n_frames = atoi(optarg);
@@ -579,11 +582,6 @@ int main(int argc, char **argv) {
 	break;
       case 'w':
 	snr_int = atoi(optarg);
-	break;
-      case 't':
-	//Td= atof(optarg);
-	printf("Please use the -G option to select the channel model\n");
-	exit(-1);
 	break;
       case 'f':
 	input_snr_step= atof(optarg);
@@ -698,7 +696,7 @@ int main(int argc, char **argv) {
 	break;
       case 'h':
       default:
-	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
+	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -s snr0 -x transmission mode (1,2,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
       printf("-h This message\n");
       printf("-a Use AWGN channel and not multipath\n");
       printf("-c Number of PDCCH symbols\n");
@@ -715,6 +713,7 @@ int main(int argc, char **argv) {
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
+      printf("-t MCS of interfering UE\n");
       printf("-R Number of HARQ rounds (fixed)\n");
       printf("-M Determines whether the Absraction flag is on or Off. 1-->On and 0-->Off. Default status is Off. \n");
       printf("-N Determines the number of Channel Realizations in Absraction mode. Default value is 1. \n");
@@ -937,7 +936,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2_1E[1].dai              = 0;
   DLSCH_alloc_pdu2_1E[1].harq_pid         = 0;
   //DLSCH_alloc_pdu2_1E[1].tb_swap          = 0;
-  DLSCH_alloc_pdu2_1E[1].mcs             = mcs;  
+  DLSCH_alloc_pdu2_1E[1].mcs             = mcs_i;  
   DLSCH_alloc_pdu2_1E[1].ndi             = 1;
   DLSCH_alloc_pdu2_1E[1].rv              = 0;
   // Forget second codeword
@@ -1516,13 +1515,13 @@ int main(int argc, char **argv) {
 	    pilot3 = 9;
 	  }
 	  
-	  i_mod = get_Qm(mcs);
+	  i_mod = get_Qm(mcs_i);
 	  
 	  // Inner receiver scheduling for 3 slots
 	  for (Ns=(2*subframe);Ns<((2*subframe)+3);Ns++) {
 	    for (l=0;l<pilot2;l++) {
 	      if (n_frames==1)
-		printf("Ns %d, l %d\n",Ns,l);
+              printf("Ns %d, l %d, l2 %d\n",Ns, l, l+(Ns%2)*pilot2);
 	      /*
 		This function implements the OFDM front end processor (FEP).
 	      
@@ -1545,7 +1544,7 @@ int main(int argc, char **argv) {
 	      if (awgn_flag==0) {
 		// fill in perfect channel estimates
 		if (abstx==1)
-		freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+            freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
 		else
 		    freq_channel(eNB2UE[0],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
 		//write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
@@ -1558,12 +1557,12 @@ int main(int argc, char **argv) {
 			  for (i=0;i<frame_parms->N_RB_DL*12;i++)
 			    { 
 			      if (abstx==1){
-				((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
-				((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
+                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
+                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
 			      }
 			      else {
-				((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
-				((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
+                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
+                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
 			      }
 			    }
 			}
@@ -1577,8 +1576,8 @@ int main(int argc, char **argv) {
 		      {
 			for (i=0;i<frame_parms->N_RB_DL*12;i++)
 			  { 
-			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP/2);
-			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP/2);
+			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
 			  }
 		      }
 		  }
@@ -1806,7 +1805,7 @@ int main(int argc, char **argv) {
 
 		  write_output("dlsch00_ch0.m","dl00_ch0",
 			       &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][0][0]),
-			       PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
+			       PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
 		  if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1)
 		    write_output("dlsch01_ch0.m","dl01_ch0",
 				 &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][1][0]),
@@ -1881,6 +1880,12 @@ int main(int argc, char **argv) {
 	      }
 	  */
 	  PHY_vars_UE->dlsch_ue[0][0]->rnti = n_rnti;
+      coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
+                                      PHY_vars_eNB->dlsch_eNB[0][0]->nb_rb,
+                                      PHY_vars_eNB->dlsch_eNB[0][0]->rb_alloc,
+                                      get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
+                                      num_pdcch_symbols,
+                                      subframe);
 	  dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
 			     PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
 			     PHY_vars_UE->dlsch_ue[0][0],
@@ -1960,7 +1965,7 @@ int main(int argc, char **argv) {
 	      
 	      write_output("dlsch00_ch0.m","dl00_ch0",
 			   &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][0][0]),
-			   PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
+			   PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
 	      if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1)
 		write_output("dlsch01_ch0.m","dl01_ch0",
 			     &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][1][0]),
@@ -1975,7 +1980,7 @@ int main(int argc, char **argv) {
 			     PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 	      
 	      //pdsch_vars
-	      dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
+	      //dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
 	      write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
 	      write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
 	      write_output("dlsch_eNB_w.m","w",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);

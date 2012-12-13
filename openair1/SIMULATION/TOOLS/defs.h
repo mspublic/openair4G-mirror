@@ -62,6 +62,8 @@ typedef struct {
   u8 first_run;
   /// initial phase for frequency offset simulation 
   double ip;
+  /// number of paths taken by transmit signal
+  u16 nb_paths;
 } channel_desc_t;
 
 typedef struct {
@@ -131,6 +133,7 @@ typedef enum {
   ETU,
   Rayleigh8,
   Rayleigh1,
+  Rayleigh1_800,
   Rayleigh1_corr,
   Rayleigh1_anticorr,
   Rice8,
@@ -314,7 +317,13 @@ double uniformrandom(void);
 void freq_channel(channel_desc_t *desc,u16 nb_rb, s16 n_samples);
 void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples);
 u8 multipath_channel_nosigconv(channel_desc_t *desc);
-
+void multipath_tv_channel(channel_desc_t *desc,
+		       double **tx_sig_re, 
+		       double **tx_sig_im, 
+		       double **rx_sig_re,
+		       double **rx_sig_im,
+		       u16 length,
+		       u8 keep_channel);
 
 /**@} */
 /**@} */

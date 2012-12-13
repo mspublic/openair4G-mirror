@@ -148,7 +148,8 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 						try {
 							ItsKeyValue valueContainer;
 							valueContainer.intValue = atoi(value.c_str());
-							mib.setValue(parameter, valueContainer);
+							if (mib.setValue(parameter, valueContainer))
+								logger.info("Parameter '" + parameter + "' has been set to '" + value + "'");
 						} catch (Exception& e) {
 							e.updateStackTrace("Cannot set MIB ITS key using value given in the configuration file");
 							throw;
@@ -267,13 +268,20 @@ bool Configuration::parseParameterId(const string& param, string& parameterStrin
 	return true;
 }
 
-
 bool Configuration::setValue(const string& parameter, const string& value) {
 	if (!parameter.compare(0, CONF_SERVER_PORT_PARAMETER.length(), CONF_SERVER_PORT_PARAMETER)) {
 		setServerPort(atoi(value.c_str()));
 	} else if (!parameter.compare(0, CONF_WIRELESS_STATE_UPDATE_INTERVAL.length(), CONF_WIRELESS_STATE_UPDATE_INTERVAL)) {
 		setWirelessStateUpdateInterval(atoi(value.c_str()));
 	} else if (!parameter.compare(0, CONF_LOCATION_UPDATE_INTERVAL.length(), CONF_LOCATION_UPDATE_INTERVAL)) {
+		/**
+		 * This configuration parameter is removed because Location Update is now sent by
+		 * a module developed by Laurens from POTI directly to GN
+		 *
+		 * Add the following configuration parameter into MGMT.conf to get this back
+		 *
+		 * CONF_LOCATION_UPDATE_INTERVAL = 30
+		 */
 		setLocationUpdateInterval(atoi(value.c_str()));
 	}
 

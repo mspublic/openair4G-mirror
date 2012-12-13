@@ -1,3 +1,21 @@
+/*
+ * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
+ *
+ * Authors: OPENAIR3 <openair_tech@eurecom.fr>
+ *
+ * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
+ * 
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
+ * management protocol standardized by IETF. It is a protocol for building 
+ * a common and access technology independent of mobile core networks, 
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ * network-based mobility management protocol standardized by IETF.
+ * 
+ * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
+ * which it involves that it is under the same terms of GNU General Public
+ * License version 2. See MIPL terms condition if you need more details. 
+ */
 /*! \file pmip_lma_proc.c
 * \brief
 * \author OpenAir3 Group
@@ -5,7 +23,7 @@
 * \version 1.0
 * \company Eurecom
 * \project OpenAirInterface
-* \email: openair3@eurecom.fr
+* \email: openair_tech@eurecom.fr
 */
 #define PMIP
 #define PMIP_LMA_PROC_C
@@ -165,13 +183,17 @@ int lma_update_binding_entry(pmip_entry_t * bce, msg_info_t * info)
             bce->timestamp.first    = info->timestamp.first;
             bce->timestamp.second   = info->timestamp.second;
             bce->mn_prefix          = info->mn_prefix;
-            bce->mn_addr            = info->mn_addr;
+            //bce->mn_addr            = info->mn_addr;
             bce->mn_link_local_addr = info->mn_link_local_addr;
             bce->mn_serv_mag_addr   = info->src;
             bce->lifetime.tv_sec    = info->lifetime.tv_sec;
             bce->lifetime.tv_nsec   = 0;
             bce->n_rets_counter     = conf.MaxMessageRetransmissions;
             bce->seqno_in           = info->seqno;
+
+			// update bce->mn_addr with bce->mn_prefix and bce->mn_suffix
+			get_mn_addr(bce);
+			
             dbg("bce->link %d => %d\n", bce->link, info->iif);
             bce->link               = info->iif;
             dbg("Finished updating the binding cache\n");

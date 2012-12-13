@@ -39,8 +39,6 @@
  * \warning none
 */
 
-#include "packets/mgmt_gn_packet_wireless_state_request.hpp"
-#include "packets/mgmt_gn_packet_location_update.hpp"
 #include "mgmt_inquiry_thread.hpp"
 #include <boost/lexical_cast.hpp>
 #include <boost/date_time.hpp>
@@ -49,10 +47,9 @@
 #include <iostream>
 using namespace std;
 
-InquiryThread::InquiryThread(ManagementInformationBase& mib, UdpSocket& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger)
-	: connection(connection), mib(mib), logger(logger) {
+InquiryThread::InquiryThread(IManagementPacketSender* packetSender, u_int8_t wirelessStateUpdateInterval, Logger& logger)
+	: packetSender(packetSender), logger(logger) {
 	this->wirelessStateUpdateInterval = wirelessStateUpdateInterval;
-	this->locationUpdateInterval = locationUpdateInterval;
 }
 
 InquiryThread::~InquiryThread() {
@@ -60,72 +57,24 @@ InquiryThread::~InquiryThread() {
 
 void InquiryThread::operator()() {
 	/**
-	 * Find smaller interval and the difference between them
+	 * Send a Wireless State Request every `wirelessStateUpdateInterval' second(s)
 	 */
-	if (wirelessStateUpdateInterval == locationUpdateInterval) {
-		boost::posix_time::seconds wait(wirelessStateUpdateInterval);
+	boost::posix_time::seconds wait(wirelessStateUpdateInterval);
 
-		while (true) {
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Update and a Location Update");
-			boost::this_thread::sleep(wait);
-			if (!requestWirelessStateUpdate() || !requestLocationUpdate())
-				break;
-		}
+	while (true) {
+		logger.info("Will wait for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Request");
+		boost::this_thread::sleep(wait);
 
-	} else if (wirelessStateUpdateInterval > locationUpdateInterval) {
-		boost::posix_time::seconds wait(locationUpdateInterval), difference(wirelessStateUpdateInterval - locationUpdateInterval);
-
-		while (true) {
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)locationUpdateInterval) + " second(s) to send a Location Update");
-			boost::this_thread::sleep(wait);
-			if (!requestLocationUpdate())
-				break;
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval - locationUpdateInterval) + " second(s) to send a Wireless Update");
-			boost::this_thread::sleep(difference);
-			if (!requestWirelessStateUpdate())
-				break;
-		}
-	} else {
-		boost::posix_time::seconds wait(wirelessStateUpdateInterval), difference(locationUpdateInterval - wirelessStateUpdateInterval);
-
-		while (true) {
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)wirelessStateUpdateInterval) + " second(s) to send a Wireless State Update");
-			boost::this_thread::sleep(wait);
-			if (!requestWirelessStateUpdate())
-				break;
-
-			logger.info("Waiting for " + boost::lexical_cast<string>((int)locationUpdateInterval - wirelessStateUpdateInterval) + " second(s) to send a Location Update");
-			boost::this_thread::sleep(difference);
-			if (!requestLocationUpdate())
-				break;
-		}
+		if (requestWirelessStateUpdate())
+			logger.info("A Wireless State Request packet sent to GN");
+		else
+			logger.warning("Cannot send a Wireless State Request packet to GN!");
 	}
 }
 
 bool InquiryThread::requestWirelessStateUpdate() {
-	GeonetWirelessStateRequestEventPacket request(logger);
-
-	if (connection.send(request)) {
-		logger.info("Wireless state request message has been sent");
-
-		return true;
-	} else {
-		logger.error("Wireless state request message cannot be sent!");
-
-		return false;
-	}
-}
-
-bool InquiryThread::requestLocationUpdate() {
-	GeonetLocationUpdateEventPacket request(mib, logger);
-
-	if (connection.send(request)) {
-		logger.info("Location Update message has been sent");
-
-		return true;
-	} else {
-		logger.error("Location Update message cannot be sent!");
-
-		return false;
-	}
+	/**
+	 * Use ManagementServerFunctionality to send a Wireless State Update to GN
+	 */
+	return packetSender->sendWirelessStateRequest();
 }

@@ -527,12 +527,12 @@ typedef struct {
   ///
   u32 ulsch_consecutive_errors[3];
   ///
-  u32 ulsch_decoding_attempts[3][4];
+  u32 ulsch_decoding_attempts[3][8];
   ///
-  u32 ulsch_round_errors[3][4];
-  u32 ulsch_decoding_attempts_last[3][4];
-  u32 ulsch_round_errors_last[3][4];
-  u32 ulsch_round_fer[3][4];
+  u32 ulsch_round_errors[3][8];
+  u32 ulsch_decoding_attempts_last[3][8];
+  u32 ulsch_round_errors_last[3][8];
+  u32 ulsch_round_fer[3][8];
   s8 dlsch_mcs_offset;
   /// Target mcs1 after rate-adaptation (used by MAC layer scheduler)
   u8 dlsch_mcs1;

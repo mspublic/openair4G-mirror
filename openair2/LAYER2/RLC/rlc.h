@@ -279,15 +279,16 @@ public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, u32_t, c
 */
 public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, u32_t, u8_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
 
-/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t frame, chan_id_t rb_idP, tb_size_t tb_sizeP)
+/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, chan_id_t rb_idP, tb_size_t tb_sizeP)
 * \brief    Interface with MAC layer, request and set the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index.
+* \param[in]  eNB_flag         Flag to indicate eNB operation (1 true, 0 false)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  tb_sizeP         Size of a transport block set in bytes.
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
-public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, chan_id_t, tb_size_t );)
+public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, u8_t, chan_id_t, tb_size_t );)
 
 //-----------------------------------------------------------------------------
 //   PUBLIC RLC CONSTANTS

@@ -22,7 +22,9 @@
 
 #define NAS_UE_NETL_MAXLEN 500
 // TO DO
+#ifndef SVN_REV
 #define SVN_REV   "0.1"
+#endif
 // Global variables
 int netl_s, s_nas;
 struct sockaddr_un ralu_socket;

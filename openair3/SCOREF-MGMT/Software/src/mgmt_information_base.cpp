@@ -112,25 +112,43 @@ bool ManagementInformationBase::setValue(ItsKeyID id, const vector<unsigned char
 	/**
 	 * Set the value according to its data type
 	 */
+	logger.info("ITS key type to be changed is " + itsKeyManager.getDataTypeName(id));
+
 	switch (itsKeyManager.getDataType(id)) {
 		case ITS_DATA_TYPE_FLOAT:
 			if (value.size() != 4) {
 				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has float type but incompatible size");
 				return false;
-			}
+			} else
+				logger.debug("ITS Key size is compatible, updating corresponding key...");
+
+			/**
+			 * And update the value
+			 */
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).floatValue));
 			itsKeyManager.getKeyValue(id).floatValue = Util::parse4byteFloat(value);
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s new value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).floatValue));
 			break;
 
 		case ITS_DATA_TYPE_INTEGER:
 			if (value.size() != 4) {
 				logger.warning("ITS Key ID " + boost::lexical_cast<string>((int)id) + " has integer type but incompatible size");
 				return false;
-			}
+			} else
+				logger.debug("ITS Key size is compatible, updating corresponding key...");
+
+			/**
+			 * And update the value
+			 */
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).intValue));
 			Util::parse4byteInteger(value.data(), &itsKeyManager.getKeyValue(id).intValue);
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s new value is " + boost::lexical_cast<string>(itsKeyManager.getKeyValue(id).intValue));
 			break;
 
 		case ITS_DATA_TYPE_STRING:
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + itsKeyManager.getKeyValue(id).stringValue);
 			itsKeyManager.getKeyValue(id).stringValue = string(value.begin(), value.end());
+			logger.info("ITS Key ID " + boost::lexical_cast<string>((int)id) + "'s current value is " + itsKeyManager.getKeyValue(id).stringValue);
 			break;
 
 		default:
@@ -159,10 +177,8 @@ ItsKeyValue ManagementInformationBase::getItsKeyValue(ItsKeyID id) {
 	return itsKeyManager.getKeyValue(id);
 }
 
-u_int8_t ManagementInformationBase::getLength(ItsKeyID itsKey) const {
-	// This is the DWORD-length so it's 1
-	// TODO Not everything is DWORD!
-	return 1;
+std::size_t ManagementInformationBase::getLength(ItsKeyID itsKey) {
+	return itsKeyManager.getDataTypeSize(itsKey);
 }
 
 ItsKeyManager& ManagementInformationBase::getItsKeyManager() {
@@ -174,7 +190,22 @@ WirelessStateResponseItem& ManagementInformationBase::getWirelessState(Interface
 }
 
 bool ManagementInformationBase::updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem wirelessState) {
-	wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(interfaceId, wirelessState));
+	map<InterfaceID, WirelessStateResponseItem>::iterator itemIndex = wirelessStateMap.find(interfaceId);
+
+	/**
+	 * First check if we already had this Interface ID, if yes, then replace it
+	 */
+	if (itemIndex == wirelessStateMap.end())
+		wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(interfaceId, wirelessState));
+	else
+		itemIndex->second = wirelessState;
+
+	/**
+	 * Print the list of interfaces we had so far
+	 */
+	logger.info("I had the information for following interfaces so far...");
+	for (map<InterfaceID, WirelessStateResponseItem>::const_iterator it = wirelessStateMap.begin(); it != wirelessStateMap.end(); ++it)
+		logger.info(it->second.toString());
 
 	return true;
 }
@@ -187,15 +218,16 @@ CommunicationProfileManager& ManagementInformationBase::getCommunicationProfileM
 	return communicationProfileManager;
 }
 
-bool ManagementInformationBase::updateLocationTable(LocationTableItem& locationTableItem) {
-	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem>(locationTableItem.gnAddress, locationTableItem));
+bool ManagementInformationBase::updateLocationTable(LocationTableItem* locationTableItem) {
+	locationTable.insert(locationTable.end(), pair<GnAddress, LocationTableItem*>(locationTableItem->gnAddress, locationTableItem));
 
 	return true;
 }
 
-LocationInformation ManagementInformationBase::getLocation() {
+const LocationInformation& ManagementInformationBase::getLocationInformation() {
 	/**
-	 * todo this is temporary, location information will be received somewhere else later on
+	 * Location information is no more sent through MGMT-CORE, see SCOREF-MGMT Progress file under
+	 * Documentation/ folder for further details
 	 */
 	srand(time(NULL));
 	location.latitude = rand() % 20 + 10;
@@ -203,8 +235,17 @@ LocationInformation ManagementInformationBase::getLocation() {
 	location.speed = rand() % 20;
 	location.heading = 0;
 	location.altitude = rand() % 1000 + 10;
+	/**
+	 * Update time-stamp
+	 */
+	location.timestamp = time(NULL);
 
 	return location;
+}
+
+bool ManagementInformationBase::setLocationInformation(const LocationInformation& locationUpdate) {
+	location = locationUpdate;
+	return true;
 }
 
 bool ManagementInformationBase::setNetworkFlags(const u_int8_t& networkFlags) {

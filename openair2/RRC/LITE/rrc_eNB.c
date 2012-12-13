@@ -37,7 +37,6 @@
 * \email: raymond.knopp@eurecom.fr and navid.nikaein@eurecom.fr
 */
 
-
 #include "defs.h"
 #include "extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -53,15 +52,22 @@
 #include "TDD-Config.h"
 #include "rlc.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
+
 #ifdef Rel10
-#include "MeasResults.h"
+# include "MeasResults.h"
 #endif
+
 #ifdef USER_MODE
-#include "RRC/NAS/nas_config.h"
-#include "RRC/NAS/rb_config.h"
-#include "OCG.h"
-#include "OCG_extern.h"
+# include "RRC/NAS/nas_config.h"
+# include "RRC/NAS/rb_config.h"
+# include "OCG.h"
+# include "OCG_extern.h"
 #endif
+
+#if defined(ENABLE_USE_MME)
+# include "../../S1AP/s1ap_eNB.h"
+#endif
+
 #ifdef PHY_EMUL
 extern EMULATION_VARS *Emul_vars;
 #endif
@@ -184,6 +190,16 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
   for (j=0; j<NUMBER_OF_UE_MAX; j++)
     eNB_rrc_inst[Mod_id].Info.Status[j] =  RRC_IDLE;//CH_READY;
 
+#if defined(ENABLE_USE_MME)
+    /* Connect eNB to MME */
+    if (oai_emulation.info.mme_enabled > 0) {
+        if (s1ap_eNB_init(oai_emulation.info.mme_ip_address, Mod_id) < 0) {
+            mac_xface->macphy_exit("");
+            return -1;
+        }
+    }
+#endif
+
   eNB_rrc_inst[Mod_id].Info.Nb_ue=0;
 
   eNB_rrc_inst[Mod_id].Srb0.Active=0;
@@ -267,10 +283,12 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
   LOG_D(RRC,"[eNB %d] Frame %d: Decoding UL-DCCH Message\n",
       Mod_id,frame);
   dec_rval = uper_decode(NULL,
-			 &asn_DEF_UL_DCCH_Message,
-			 (void**)&ul_dcch_msg,
-			 Rx_sdu,
-			 100,0,0);
+                         &asn_DEF_UL_DCCH_Message,
+                         (void**)&ul_dcch_msg,
+                         Rx_sdu,
+                         sdu_size,
+                         0,
+                         0);
   for (i=0;i<sdu_size;i++)
     msg("%x.",Rx_sdu[i]);
   msg("\n");
@@ -289,46 +307,52 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
     case UL_DCCH_MessageType__c1_PR_csfbParametersRequestCDMA2000:
       break;
     case UL_DCCH_MessageType__c1_PR_measurementReport:
-      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes (measurementReport) --->][RRC_eNB][MOD %02d][]\n",
-                                     frame, Mod_id, DCCH, sdu_size, Mod_id);
+      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND "
+                 "%d bytes (measurementReport) --->][RRC_eNB][MOD %02d][]\n",
+            frame, Mod_id, DCCH, sdu_size, Mod_id);
       rrc_eNB_process_MeasurementReport(Mod_id,UE_index,&ul_dcch_msg->message.choice.c1.choice.measurementReport.criticalExtensions.choice.c1.choice.measurementReport_r8.measResults);
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
-      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes (RRCConnectionReconfigurationComplete) --->][RRC_eNB][MOD %02d][]\n",
-                                     frame, Mod_id, DCCH, sdu_size, Mod_id);
+      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+                 "(RRCConnectionReconfigurationComplete) --->][RRC_eNB][MOD %02d][]\n",
+            frame, Mod_id, DCCH, sdu_size, Mod_id);
       if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.present == RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
       	rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
 				//TCS LOLAmesh
       	isCodrb = (u8)*(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.isCODRB);
-				//This is not a collaborative RB
-				if (isCodrb == 0){
-					eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
-					LOG_D(RRC,"[eNB %d] UE %d State = RRC_RECONFIGURED \n",Mod_id,UE_index);
-				}
-				if (isCodrb == 1){
-					vlid = (u8)*(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.virtualLinkId);
-					eNB_rrc_inst[Mod_id].State_CoLink[vlid] = RRC_RECONFIGURED;
-					LOG_D(RRC,"[TCS DEBUG][eNB %d] UE %d State = RRC_RECONFIGURED on vlid %u\n",Mod_id,UE_index,vlid);
-				}
+	//This is not a collaborative RB
+	if (isCodrb == 0){
+	  eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
+	  LOG_D(RRC,"[eNB %d] UE %d State = RRC_RECONFIGURED \n",Mod_id,UE_index);
+	}
+	if (isCodrb == 1){
+	  vlid = (u8)*(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.virtualLinkId);
+	  eNB_rrc_inst[Mod_id].State_CoLink[vlid] = RRC_RECONFIGURED;
+	  LOG_D(RRC,"[TCS DEBUG][eNB %d] UE %d State = RRC_RECONFIGURED on vlid %u\n",Mod_id,UE_index,vlid);
+	}
       }
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
-      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes (rrcConnectionReestablishmentComplete) --->][RRC_eNB][MOD %02d][]\n",
-                                     frame, Mod_id, DCCH, sdu_size, Mod_id);
+      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+                 "(rrcConnectionReestablishmentComplete) --->][RRC_eNB][MOD %02d][]\n",
+            frame, Mod_id, DCCH, sdu_size, Mod_id);
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
-      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes (RRCConnectionSetupComplete) --->][RRC_eNB][MOD %02d][]\n",
-                                     frame, Mod_id, DCCH, sdu_size, Mod_id);
+        LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+                   "(RRCConnectionSetupComplete) --->][RRC_eNB][MOD %02d][]\n",
+              frame, Mod_id, DCCH, sdu_size, Mod_id);
 
-      if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.present == RRCConnectionSetupComplete__criticalExtensions_PR_c1)
-	if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
-	  rrc_eNB_process_RRCConnectionSetupComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
-	  eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_CONNECTED;
-	  LOG_D(RRC,"[eNB %d] UE %d State = RRC_CONNECTED\n",Mod_id,UE_index);
-	  LOG_D(RRC,"[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\nNow CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
-            frame, Mod_id, UE_index, Mod_id);
-	}
-      break;
+        if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.present == RRCConnectionSetupComplete__criticalExtensions_PR_c1) {
+	  if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
+	    rrc_eNB_process_RRCConnectionSetupComplete(Mod_id, frame, UE_index, &ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
+	    eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_CONNECTED;
+	    LOG_D(RRC, "[eNB %d] UE %d State = RRC_CONNECTED \n", Mod_id, UE_index);
+	    LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\n"
+		  "Now CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
+		  frame, Mod_id, UE_index, Mod_id);
+	  }
+        }
+        break;
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
       break;
     case UL_DCCH_MessageType__c1_PR_securityModeFailure:
@@ -338,6 +362,29 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
     case UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
       break;
     case UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+#if defined(ENABLE_USE_MME)
+    {
+        if (oai_emulation.info.mme_enabled == 1) {
+            ULInformationTransfer_t *ulInformationTransfer;
+            ulInformationTransfer = &ul_dcch_msg->message.choice.c1.choice.ulInformationTransfer;
+
+            if (ulInformationTransfer->criticalExtensions.present ==
+                ULInformationTransfer__criticalExtensions_PR_c1) {
+                if (ulInformationTransfer->criticalExtensions.choice.c1.present ==
+                    ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8) {
+
+                    ULInformationTransfer_r8_IEs_t *ulInformationTransferR8;
+                    ulInformationTransferR8 = &ulInformationTransfer->criticalExtensions.choice.c1.choice.ulInformationTransfer_r8;
+                    if (ulInformationTransferR8->dedicatedInfoType.present == ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS)
+                        s1ap_eNB_new_data_request(Mod_id,
+                                                  UE_index,
+                                                  ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.buf,
+                                                  ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.size);
+                }
+            }
+        }
+    }
+#endif
       break;
     case UL_DCCH_MessageType__c1_PR_counterCheckResponse:
       break;
@@ -496,13 +543,24 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 
 
 
-void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_index,RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
+void rrc_eNB_process_RRCConnectionSetupComplete(
+    u8 Mod_id,
+    u32 frame,
+    u8 UE_index,RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
 
+    LOG_I(RRC, "[eNB %d][RAPROC] Frame %d : Logical Channel UL-DCCH, "
+               "processing RRCConnectionSetupComplete from UE %d\n",
+          Mod_id, frame, UE_index);
 
-  LOG_I(RRC,"[eNB %d][RAPROC] Frame %d : Logical Channel UL-DCCH, processing RRCConnectionSetupComplete from UE %d\n",Mod_id,frame,UE_index);
-
-  rrc_eNB_generate_RRCConnectionReconfiguration(Mod_id,frame,UE_index);
-
+    // Forward message to S1AP layer
+#if defined(ENABLE_USE_MME)
+    if (oai_emulation.info.mme_enabled == 1)
+        s1ap_eNB_new_data_request(Mod_id, UE_index,
+                                rrcConnectionSetupComplete->dedicatedInfoNAS.buf,
+                                rrcConnectionSetupComplete->dedicatedInfoNAS.size);
+    else
+#endif
+    rrc_eNB_generate_RRCConnectionReconfiguration(Mod_id,frame,UE_index, NULL, 0);
 }
 
 mui_t rrc_eNB_mui=0;
@@ -612,7 +670,9 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
 					 NULL, //*QuantityConfig
 					 NULL,//measId_list
 					 mac_MainConfig,//mac_macConfig
-					 NULL); //measGapConfig
+					       NULL, //measGapConfig
+					       NULL,
+					       0); 
 
 	LOG_D(RRC,"[eNB %d][TCS DEBUG] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for collaborative RB (bytes %d, UE id %d, cornti %u, vlid %u)\n",Mod_id,frame, size, UE_index, cornti, vlid);
 	LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][TCS DEBUG][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d) --->][RLC][MOD %02d][RB %02d]\n",frame, Mod_id, size, UE_index, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
@@ -622,7 +682,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
 
 }// end rrc_eNB_generate_RRCConnectionReconfiguration_co
 
-void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_index) {
+void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length) {
+
 
   u8 buffer[100];
   u8 size;
@@ -1024,7 +1085,9 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 					 NULL, //*QuantityConfig,
 					 NULL,
 					 mac_MainConfig,
-					 NULL); //*measGapConfig);
+					 NULL,  //*measGapConfig);
+					 NULL,
+					 0);
 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
 	Mod_id,frame, size, UE_index);
@@ -1054,7 +1117,7 @@ void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *me
 #endif
 
   //Look for IP address of the target eNB
-  //Send Handover Request -> target eNB
+  //Send Handover Request -> target eNB 
   //Wait for Handover Acknowledgement <- target eNB
   //Send Handover Command
 
@@ -1078,12 +1141,12 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   for (i=0;i<8;i++) { // num max DRB (11-3-8)
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
     	DRB_id = (long)eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->drb_Identity - 1; //TCS LOLAmesh index in the DRB_config table = drb_identity - 1
-      LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",Mod_id,frame, UE_index,DRB_id,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
-      if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
-      	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
-      	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,RADIO_ACCESS_BEARER,Rlc_info_um);
-      	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
-      	LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->drb_Identity);
+	if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
+	  LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",Mod_id,frame, UE_index,DRB_id,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity, eNB_rrc_inst[Mod_id].DRB_active[UE_index][i]);
+	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
+	  rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,RADIO_ACCESS_BEARER,Rlc_info_um);
+	  eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
+	  LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->drb_Identity);
 #ifdef NAS_NETLINK
 // can mean also IPV6 since ether -> ipv6 autoconf
 #    ifndef NAS_DRIVER_TYPE_ETHERNET
@@ -1114,9 +1177,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 		       ipv4_address(Mod_id+1,Mod_id+1),//saddr
 		       ipv4_address(Mod_id+1,dest_ip_offset+UE_index+1));//daddr
 
-	   LOG_D(RRC,"[eNB %d] State = Attached (UE %d)\n",Mod_id,UE_index);
-	   eNB_rrc_inst[Mod_id].Info.rbconfig[ *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity]=1;
-	 }
+	  LOG_D(RRC,"[eNB %d] State = Attached (UE %d)\n",Mod_id,UE_index);
+	  eNB_rrc_inst[Mod_id].Info.rbconfig[ *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity]=1;
+	}
 #endif
 #endif
 				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- (ADD) MAC_CONFIG_REQ (DRB %d UE %d) --->][MAC_eNB][MOD %02d][]\n",frame, Mod_id, DRB_id, UE_index, Mod_id);
@@ -1134,7 +1197,8 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 					 (u16 *)NULL);
       }// end if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0)
       else { // remove LCHAN from MAC/PHY
-
+	LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, DRB %d/LCID %d already reconfigured \n",Mod_id,frame, UE_index,DRB_id,
+	      (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
 				/*if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] ==1) {
 					// DRB has just been removed so remove RLC + PDCP for DRB
 					rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,

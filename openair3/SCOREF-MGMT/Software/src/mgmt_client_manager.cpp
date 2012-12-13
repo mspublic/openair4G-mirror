@@ -52,19 +52,19 @@ ManagementClientManager::~ManagementClientManager() {
 	clientVector.clear();
 }
 
-bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConnection, EventType eventType) {
+ManagementClientManager::Task ManagementClientManager::updateClientState(const udp::endpoint& clientEndpoint, EventType eventType) {
 	bool clientExists = false;
 	ManagementClient* client = NULL;
 
 	/**
 	 * Traverse client list and check if we already have this client
 	 */
-	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		logger.debug("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientConnection.getRecipient().address().to_string());
-		logger.debug("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientConnection.getRecipient().port()));
+	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
+		logger.trace("Comparing IP addresses " + (*it)->getAddress().to_string() + " and " + clientEndpoint.address().to_string());
+		logger.trace("Comparing UDP ports " + boost::lexical_cast<string>((*it)->getPort()) + " and " + boost::lexical_cast<string>(clientEndpoint.port()));
 
-		if ((*it)->getAddress() == clientConnection.getRecipient().address() && (*it)->getPort() == clientConnection.getRecipient().port()) {
-			logger.trace("A client object for " + clientConnection.getRecipient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getRecipient().port()) + " is found");
+		if ((*it)->getAddress() == clientEndpoint.address() && (*it)->getPort() == clientEndpoint.port()) {
+			logger.debug("A client object for " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()) + " is found");
 			client = *it;
 			clientExists = true;
 		}
@@ -77,14 +77,16 @@ bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConne
 		ManagementClient* newClient = NULL;
 
 		try {
-			newClient = new ManagementClient(mib, clientConnection, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
+			newClient = new ManagementClient(mib, clientEndpoint, configuration.getWirelessStateUpdateInterval(), configuration.getLocationUpdateInterval(), logger);
 		} catch (Exception& e) {
 			e.updateStackTrace("Cannot create a ManagementClient object!");
 			throw;
+		} catch (std::exception& e) {
+			throw Exception(e.what(), logger);
 		}
 
 		clientVector.push_back(newClient);
-		logger.info("A client object for " + clientConnection.getRecipient().address().to_string() + ":" + boost::lexical_cast<string>(clientConnection.getRecipient().port()) + " is created");
+		logger.info("A client object for " + clientEndpoint.address().to_string() + ":" + boost::lexical_cast<string>(clientEndpoint.port()) + " is created");
 
 		client = newClient;
 	}
@@ -95,13 +97,15 @@ bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConne
 	 */
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
-			client->setState(ManagementClient::CONNECTED);
-			break;
-
+		case MGMT_FAC_EVENT_CONF_REQUEST:
+		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
 		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST:
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
+		case MGMT_FAC_EVENT_LOCATION_UPDATE:
 			client->setState(ManagementClient::ONLINE);
 			break;
 
@@ -112,56 +116,104 @@ bool ManagementClientManager::updateManagementClientState(UdpSocket& clientConne
 			break;
 	}
 
+	/**
+	 * Update client's type according to incoming message
+	 */
+	switch (eventType) {
+
+		case MGMT_GN_EVENT_LOCATION_UPDATE:
+		case MGMT_GN_EVENT_LOCATION_TABLE_REQUEST:
+		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
+		case MGMT_GN_EVENT_CONF_UPDATE_AVAILABLE:
+		case MGMT_GN_EVENT_CONF_REQUEST:
+		case MGMT_GN_EVENT_CONF_CONT_RESPONSE:
+		case MGMT_GN_EVENT_CONF_BULK_RESPONSE:
+		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
+		case MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE:
+		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST:
+		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
+		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
+			client->setType(ManagementClient::GN);
+			break;
+
+		case MGMT_FAC_EVENT_LOCATION_UPDATE:
+		case MGMT_FAC_EVENT_LOCATION_TABLE_REQUEST:
+		case MGMT_FAC_EVENT_LOCATION_TABLE_RESPONSE:
+		case MGMT_FAC_EVENT_CONF_REQUEST:
+		case MGMT_FAC_EVENT_CONF_CONT_RESPONSE:
+		case MGMT_FAC_EVENT_CONF_BULK_RESPONSE:
+		case MGMT_FAC_EVENT_CONF_NOTIFICATION:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_RESPONSE:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_RESPONSE:
+			client->setType(ManagementClient::FAC);
+			break;
+
+		case MGMT_LTE_EVENT_STATE_WIRELESS_STATE_RESPONSE:
+			client->setType(ManagementClient::LTE);
+			break;
+
+		case MGMT_EVENT_ANY:
+		default:
+			logger.warning("Cannot determine client type by incoming event type/subtype!");
+			client->setType(ManagementClient::UNKNOWN);
+			break;
+	}
+
 	logger.info(toString());
 
-	return true;
+	/**
+	 * Return a task according to the client type
+	 */
+	if (client->getType() == ManagementClient::GN && !clientExists) {
+		/**
+		 * This is a new GN client so we should ask for Location Table
+		 */
+		return ManagementClientManager::SEND_LOCATION_TABLE_REQUEST;
+	}
+
+	return ManagementClientManager::NOTHING;
 }
 
-bool ManagementClientManager::sendConfigurationUpdateAvailable() {
-	if (clientVector.empty())
-		return false;
-
+const ManagementClient* ManagementClientManager::getClientByType(ManagementClient::ManagementClientType clientType) const {
 	/**
-	 * Create a CONFIGURATION_UPDATE_AVAILABLE packet
+	 * Traverse client vector and find the specific client of given type
 	 */
-	GeonetConfigurationAvailableEventPacket* packet;
-	vector<unsigned char> packetBuffer;
-
-	try {
-		packet = new GeonetConfigurationAvailableEventPacket(mib, logger);
-	} catch (...) {
-		throw Exception("Cannot create a CONFIGURATION_UPDATE_AVAILABLE packet!", logger);
+	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
+		if ((*it)->getType() == clientType)
+			return *it;
 	}
 
+	return NULL;
+}
+
+ManagementClient* ManagementClientManager::getClientByEndpoint(const udp::endpoint& endPoint) {
 	/**
-	 * Serialize...
+	 * Traverse client vector and find the specific client at given end point
 	 */
-	if (!packet->serialize(packetBuffer)) {
-		logger.error("Cannot serialize CONFIGURATION_UPDATE_AVAILABLE packet!");
-		return false;
+	for (vector<ManagementClient*>::const_iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
+		if ((*it)->getEndpoint() == endPoint)
+			return *it;
 	}
 
-	/**
-	 * ...and send
-	 */
-	boost::asio::io_service ioService;
-	udp::socket* clientSocket = NULL;
-	boost::system::error_code error;
-	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it) {
-		clientSocket = new udp::socket(ioService, udp::endpoint(udp::v4(), (*it)->getPort()));
-//LEFT_HERE		clientSocket->send_to(boost::asio::buffer(packetBuffer), (*it)->get, 0, error);
-		delete clientSocket;
-	}
-	return true;
+	return NULL;
+}
+
+bool ManagementClientManager::isGnConnected() const {
+	return (getClientByType(ManagementClient::GN) == NULL) ? false : true;
+}
+
+bool ManagementClientManager::isFacConnected() const {
+	return (getClientByType(ManagementClient::FAC) == NULL) ? false : true;
 }
 
 string ManagementClientManager::toString() {
 	stringstream ss;
 
-	ss << "Current status of client(s):" << endl;
-	ss << "Client count is " << clientVector.size() << endl;
+	ss << "Client Status[count:" << clientVector.size() << "]" << endl;
 	for (vector<ManagementClient*>::iterator it = clientVector.begin(); it != clientVector.end(); ++it)
-		ss << (*it)->toString();
+		ss << (*it)->toString() << endl;
 
 	return ss.str();
 }

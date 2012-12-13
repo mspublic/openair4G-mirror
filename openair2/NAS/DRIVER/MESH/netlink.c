@@ -46,7 +46,7 @@
 #include "local.h"
 #include "proto_extern.h"
 
-#define NETLINK_DEBUG 1
+//#define NETLINK_DEBUG 1
 
 
 #define NAS_NETLINK_ID 31

@@ -225,6 +225,7 @@ typedef struct{
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
+  //  uint8_t                           DRB_active[NB_CNX_UE][8];
   MeasObjectToAddMod_t            *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
   struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
   struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
@@ -374,7 +375,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
    \param Mod_id Instance ID for eNB/CH
    \param frame Frame index
    \param UE_index Index of UE transmitting the messages*/
-void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_index);
+void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length);
 
 /**\brief Generate/decode the RRCConnectionReconfiguration at eNB for collaborative links
    \param Mod_id Instance ID for eNB/CH

@@ -42,21 +42,23 @@
 #ifndef MGMT_INQUIRY_THREAD_HPP_
 #define MGMT_INQUIRY_THREAD_HPP_
 
-#include "util/mgmt_udp_socket.hpp"
+#include "interface/mgmt_packet_sender.hpp"
+#include "mgmt_information_base.hpp"
 #include "util/mgmt_log.hpp"
 
+/**
+ * A thread worker function to ask repetitive questions to relevant modules to update MIB
+ */
 class InquiryThread {
 	public:
 		/**
 		 * Constructor for InquiryThread class
 		 *
-		 * @param mib Management Information Base reference
-		 * @param connection UdpServer object that the questions will be asked through
+		 * @param packetSender Packet sending functionality of ManagementServer class
 		 * @param wirelessStateUpdateInterval Wireless State Update interval in seconds
-		 * @param locationUpdateInterval Location Update interval in seconds
 		 * @param logger Logger object reference
 		 */
-		InquiryThread(ManagementInformationBase& mib, UdpSocket& connection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		InquiryThread(IManagementPacketSender* packetSender, u_int8_t wirelessStateUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for InquiryThread class
 		 */
@@ -66,44 +68,33 @@ class InquiryThread {
 		/**
 		 * () operator overload to pass this method to boost::thread
 		 *
-		 * todo this method is too complex and prone to errors, should be revised
+		 * @param none
+		 * @return none
 		 */
 		void operator()();
 		/**
 		 * Sends request for a Wireless State Response message
 		 * Incoming message will be handled and MIB will be updated
 		 * accordingly by GeonetMessageHandler class
+		 *
+		 * @param none
+		 * @return true on success, false otherwise
 		 */
 		bool requestWirelessStateUpdate();
-		/**
-		 * Sends a request for Location Update
-		 * Incoming message will be handled and MIB will be updated
-		 * accordingly by GeonetMessageHandler class
-		 */
-		bool requestLocationUpdate();
 
 	private:
 		/**
-		 * UdpServer object reference to communicate with client
+		 * IManagementPacketSender reference to use ManagementServer's functionality
 		 */
-		UdpSocket& connection;
+		IManagementPacketSender* packetSender;
 		/**
 		 * Wireless State Update interval in seconds
 		 */
 		u_int8_t wirelessStateUpdateInterval;
 		/**
-		 * Location Update interval in seconds
-		 */
-		u_int8_t locationUpdateInterval;
-		/**
-		 * Management Information Base reference
-		 */
-		ManagementInformationBase& mib;
-		/**
 		 * Logger object reference
 		 */
 		Logger& logger;
 };
-
 
 #endif /* MGMT_INQUIRY_THREAD_HPP_ */
