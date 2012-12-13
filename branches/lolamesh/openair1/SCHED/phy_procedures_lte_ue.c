@@ -291,9 +291,9 @@ void process_timing_advance(u8 Mod_id,u8 timing_advance) {
 
 u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
   /*
-  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR TXOp (sr_ConfigIndex %d)\n",
+  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR TXOp (sr_ConfigIndex %d, eNB_id %d)\n",
       phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,subframe,
-      phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex);
+	phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex, eNB_id);
   */
   if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 5) {        // 5 ms SR period
     if ((subframe%5) == phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)
@@ -552,6 +552,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef EMOS
   //phy_procedures_emos_UE_TX(next_slot);
 #endif
+  // FIXME? there is memory leak on the sr_ConfigIndex
+  LOG_W(PHY,"FIXME:there is memory leak on the sr_ConfigIndex, resetting manually sr_ConfigIndex to 7\n");
+  phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex=7;
 
   if ((next_slot%2)==0) {
     phy_vars_ue->tx_power_dBm=-127;
@@ -932,10 +935,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 					    eNB_id,
 					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					    next_slot>>1); // subframe used for meas gap
-	  /*
+	  
 	  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d SR for PUSCH is %d\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,next_slot>>1,SR_payload);
-	  */
+	  
 	  if (SR_payload>0) {
 	    generate_ul_signal = 1;
 	  }
@@ -2748,9 +2751,8 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 
   vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER, (last_slot + 1) % 20);
   vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER, phy_vars_ue->frame);
-
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
-
+  
   if ((subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],next_slot>>1)==SF_UL)||
       (phy_vars_ue->lte_frame_parms[eNB_id]->frame_type == 0)){
     phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);

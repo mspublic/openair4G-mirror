@@ -369,7 +369,7 @@ pdcp_fifo_read_input_sdus (u32_t frame, u8_t eNB_flag)
 
     if (len<0) {
       // nothing in pdcp NAS socket
-      //LOG_I(PDCP, "[PDCP][NETLINK] Nothing in socket, length %d \n", len);
+      //      LOG_I(PDCP, "[PDCP][NETLINK] Nothing in socket, length %d \n", len);
     } else {
 #ifdef PDCP_DEBUG
   #ifdef LINUX

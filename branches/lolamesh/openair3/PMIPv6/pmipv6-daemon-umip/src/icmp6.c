@@ -24,25 +24,6 @@
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA.
  */
-/*
- * This file is part of the PMIP, Proxy Mobile IPv6 for Linux.
- *
- * Authors: OPENAIR3 <openair_tech@eurecom.fr>
- *
- * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
- * network-based mobility management protocol standardized by IETF.
- * 
- * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
- * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
- */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -71,9 +52,9 @@ enum {
 	ICMP6_DRP = 6,
 	ICMP6_MPS = 7,
 	ICMP6_MPA = 8,
-    ICMP6_NS  = 9,  // ADDED EURECOM
-    ICMP6_RS  = 10, // ADDED EURECOM
-    __ICMP6_SENTINEL = 11
+	ICMP6_NS  = 9,
+	ICMP6_RS  = 10,
+	__ICMP6_SENTINEL = 11
 };
 
 
@@ -107,12 +88,10 @@ static inline int icmp6_type_map(uint8_t type)
 		return ICMP6_MPS;
 	case MIP_PREFIX_ADVERT:
 		return ICMP6_MPA;
-    // Modified by EURECOM
-    case ND_NEIGHBOR_SOLICIT:
-        return ICMP6_NS;
-    // added by EURECOM
-    case ND_ROUTER_SOLICIT:
-        return ICMP6_RS;
+	case ND_NEIGHBOR_SOLICIT:
+		return ICMP6_NS;
+	case ND_ROUTER_SOLICIT:
+		return ICMP6_RS;
 	default:
 		return __ICMP6_SENTINEL;
 	}
@@ -244,8 +223,8 @@ int icmp6_init(void)
 	if (setsockopt(icmp6_sock.fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT,
 		       &val, sizeof(val)) < 0)
 		return -1;
-	//ICMP6_FILTER_SETBLOCKALL(&filter);
-	//ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &filter);
+	ICMP6_FILTER_SETBLOCKALL(&filter);
+	ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &filter);
 
 	if (is_ha()) {
 		ICMP6_FILTER_SETPASS(MIP_PREFIX_SOLICIT, &filter);
@@ -261,12 +240,11 @@ int icmp6_init(void)
 		ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &filter);
 	}
 
-    //Added by EURECOM/Nghia for PMIP
-    if (is_mag()) {
-        ICMP6_FILTER_SETPASS(ND_NEIGHBOR_SOLICIT, &filter);
-        ICMP6_FILTER_SETPASS(ND_NEIGHBOR_ADVERT, &filter);
-        ICMP6_FILTER_SETPASS(ND_ROUTER_SOLICIT, &filter);
-    }
+	if (is_mag()) {
+		ICMP6_FILTER_SETPASS(ND_NEIGHBOR_SOLICIT, &filter);
+		ICMP6_FILTER_SETPASS(ND_NEIGHBOR_ADVERT, &filter);
+		ICMP6_FILTER_SETPASS(ND_ROUTER_SOLICIT, &filter);
+	}
 
 	if (setsockopt(icmp6_sock.fd, IPPROTO_ICMPV6, ICMP6_FILTER, 
 		       &filter, sizeof(struct icmp6_filter)) < 0)

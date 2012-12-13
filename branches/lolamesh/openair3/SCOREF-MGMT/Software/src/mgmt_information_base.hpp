@@ -107,9 +107,9 @@ class ManagementInformationBase {
 		 * Returns DWORD length of relevant ITS key
 		 *
 		 * @param itsKeyId ITS key ID
-		 * @return DWORD-length of relevant ITS key
+		 * @return byte length of given key of type std::size_t
 		 */
-		u_int8_t getLength(ItsKeyID itsKeyId) const;
+		std::size_t getLength(ItsKeyID itsKeyId);
 		/**
 		 * Returns ItsKeyManager container's reference
 		 *
@@ -146,16 +146,23 @@ class ManagementInformationBase {
 		/**
 		 * Updates Location Table with given information
 		 *
-		 * @param locationTableItem Location Table Item
+		 * @param locationTableItem A pointer to a location Table Item
 		 * @return true on success, false otherwise
 		 */
-		bool updateLocationTable(LocationTableItem& locationTableItem);
+		bool updateLocationTable(LocationTableItem* locationTableItem);
 		/**
 		 * Returns location information
 		 *
 		 * @return LocationInformation structure
 		 */
-		LocationInformation getLocation();
+		const LocationInformation& getLocationInformation();
+		/**
+		 * Updates location information with given data
+		 *
+		 * @param locationUpdate A copy of a LocationInformation structure
+		 * @return true on success, false otherwise
+		 */
+		bool setLocationInformation(const LocationInformation& locationUpdate);
 		/**
 		 * Sets network flags
 		 *
@@ -184,7 +191,7 @@ class ManagementInformationBase {
 		/**
 		 * Location table that consists of a map of LocationTableItem objects
 		 */
-		map<GnAddress, LocationTableItem> locationTable;
+		map<GnAddress, LocationTableItem*> locationTable;
 		/**
 		 * Communication profile manager
 		 */

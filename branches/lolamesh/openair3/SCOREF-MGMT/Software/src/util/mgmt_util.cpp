@@ -39,9 +39,12 @@
  * \warning none
 */
 
+#include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/locale/boundary/facets.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/date_time.hpp>
+using namespace boost::posix_time;
 using namespace boost::filesystem;
 
 #include "mgmt_util.hpp"
@@ -301,40 +304,23 @@ bool Util::isNumeric(const string& str) {
 }
 
 string Util::getDateAndTime(bool withDelimiters) {
-#if 1
-	// todo Boost's damn date_time is too complex, figure it out and replace
-	// this with decent c++ code
-	time_t rawtime;
-	struct tm* timeinfo;
-	char buffer [80];
-	time (&rawtime);
-	timeinfo = localtime (&rawtime);
-	if (withDelimiters)
-		strftime(buffer, 80, "%Y/%m/%d-%H:%M:%S", timeinfo);
-	else
-		strftime(buffer, 80, "%Y%m%d-%H%M%S", timeinfo);
-	return string(buffer);
-#else
-	local_time_facet* output_facet = new local_time_facet();
-	local_time_input_facet* input_facet = new local_time_input_facet();
-	ss.imbue(locale(locale::classic(), output_facet));
-	ss.imbue(locale(ss.getloc(), input_facet));
+	stringstream dateAndTime;
 
-	output_facet->format("%a %b %d, %H:%M %z");
-	ss.str("");
-	ss << ldt;
-	cout << ss.str() << endl; // "Sun Feb 29, 12:34 EDT"
+	time_facet *facet = NULL;
 
-	output_facet->format(local_time_facet::iso_time_format_specifier);
-	ss.str("");
-	ss << ldt;
-	cout << ss.str() << endl; // "20040229T123456.000789-0500"
+	try {
+		if (withDelimiters)
+			facet = new time_facet("%Y/%m/%d-%T");
+		else
+			facet = new time_facet("%Y%m%d-%H%M%S");
+	} catch (...) {
+		return string("");
+	}
 
-	output_facet->format(local_time_facet::iso_time_format_extended_specifier);
-	ss.str("");
-	ss << ldt;
-	cout << ss.str() << endl; // "2004-02-29 12:34:56.000789-05:00"
-#endif
+	dateAndTime.imbue(locale(dateAndTime.getloc(), facet));
+	dateAndTime << second_clock::local_time();
+
+	return dateAndTime.str();
 }
 
 vector<string> Util::getListOfFiles(const string& directory) {

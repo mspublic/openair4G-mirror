@@ -1,6 +1,6 @@
 
-SCOREF-MGMT has three build configurations which all ready to be used
-through the Makefile. These three configurations are,
+SCOREF-MGMT has three build configurations which are all ready to be used
+through the Makefile. These are,
 
 1) Debug Configuration
 

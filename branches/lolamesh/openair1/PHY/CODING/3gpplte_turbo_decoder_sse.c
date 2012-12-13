@@ -171,7 +171,13 @@ __m128i mbot_4[6144] __attribute__ ((aligned(16)));
 __m128i *mtop_g[MAX_DECODING_THREADS] = {mtop_0, mtop_1, mtop_2, mtop_3, mtop_4};
 __m128i *mbot_g[MAX_DECODING_THREADS] = {mbot_0, mbot_1, mbot_2, mbot_3, mbot_4};
 
-__m128i mtmp[MAX_DECODING_THREADS],mtmp2[MAX_DECODING_THREADS],lsw[MAX_DECODING_THREADS],msw[MAX_DECODING_THREADS],new[MAX_DECODING_THREADS],mb[MAX_DECODING_THREADS],newcmp[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
+__m128i mtmp[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
+__m128i mtmp2[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
+__m128i lsw[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
+__m128i msw[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
+__m128i new[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
+__m128i mb[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
+__m128i newcmp[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
 __m128i TOP,BOT,THRES128;
 
 #define L 40
@@ -1206,7 +1212,8 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   /*  y is a pointer to the input
       decoded_bytes is a pointer to the decoded output
       n is the size in bits of the coded block, with the tail */
-  llr_t ext[n+128],ext2[n+128]  __attribute__((aligned(16)));
+    llr_t ext[n+128] __attribute__((aligned(16)));
+    llr_t ext2[n+128] __attribute__((aligned(16)));
   unsigned int pi[n],*pi_p,*pi2_p,*pi3_p,pi2[n],pi3[n];
   //  short systematic0[n],systematic1[n],systematic2[n],yparity1[n],yparity2[n];
   llr_t *yp = y;

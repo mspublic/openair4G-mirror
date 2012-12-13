@@ -1,6 +1,96 @@
 
+v1.5.3
+* LTE client type and event type/subtype for Wireless State Response added
+* Bugfix Wireless interface ID is now displayed correctly
+* Bugfix Update error for already-present interface IDs in MIB::updateWirelessState() is fixed
+* Simulator is now able to send unsolicited WIRELESS_STATE_RESPONSE
+
+v1.5.2
+* Simulator updated to make it send custom messages based on the client type
+  (for CONF_REQ and COMM_PROF_REQ packages)
+* START and END commands removed from the command set of the simulator
+* ../Documentation/FAC-CM... file's 5th version added
+
+v1.5.1
+* ../Design/UML/ directory added with sequence diagrams
+* Another state control mechanism added for Wireless State Requests
+* Network State information (received from GN) is now printed
+* ../Documentation/SCOREF-Progress updated to 1.3
+
+v1.5.0 (released on 30 Nov 2012)
+* Bugfix Error with exception handling of boost ioservice handlers fixed
+* Bugfix Parsing error with Extended and Valid fields of MessageHeader fixed
+
+v1.4.1
+* ../Documentation/SCOREF-MGMT\ Progress.{doc|pdf} file updated to v1.2
+
+v1.4.0 (released on 28 Nov 2012)
+* FAC-CM and MGMT-CORE interface documents' older versions have been added
+* GN and MGMT-CORE interface documents' older versions have been added
+* TODO.cppcheck file updated after fixes done to remove warnings
+* Intelligent code's place (for profile selection) clarified
+* ITS key data type handling now handles string and float types correctly
+* Bugfix ManagementServer exceptions are now handled
+* Bugfix FAC messages are now recognized to mark a client as 'ONLINE'
+* Util::getDateAndTime() is now shorter and smarter
+
+v1.3.5
+* Client state CONNECTED removed, now there are ONLINE and OFFLINE only
+* test/simulation/README update with scenario file information
+* ../Documentation/SCOREF-MGMT Progress.pdf file added
+
+v1.3.4
+* These documentation files have been updated: README.RUNNING, README.HEADER_TEMPLATE, README.BUILD, README
+
+v1.3.3
+* CONF_LOCATION_UPDATE_INTERVAL removed from the configuration file, functionality is kept, though
+* Bugfix Incoming buffer size is now validated in GeonetWirelessStateRequestEventPacket::serialize()
+* InquiryThread's interface has been changed a little, now it receives ManagementServer functionality 
+  as a IManagementPacketSender interface not to expose everything to the thread
+
+v1.3.2
+* ItsKeyManager error code has been changed to 0xDEAD from 0xEEEE
+* GN addresses are now printed the same way HITACHI does
+* ManagementClient does not have anything to do with neither UdpSocket nor 
+  boost::thread anymore, they're handled by ManagementServer now
+* InquiryThread doesn't play with UdpSocket anymore either, it merely notifies
+  ManagementServer to do what is necessary
+* Bugfix Size check in FacConfigurationNotificationPacket::parse() doesn't 
+  discard valid packets anymore
+
+v1.3.1
+* CONFIGURATION_NOTIFICATION packet of FACilities added to simulator
+* A new scenario file 04.sce has been added for CONFIGURATION_NOTIFICATION
+* CONFIGURATION_NOTIFICATION packet is now handled correctly and GN is being notified by a 
+  CONFIGURATION_AVAILABLE packet
+* ManagementClientManager::updateManagementClientState() doesn't handle packets anymore 
+  and LOCATION_TABLE_REQUEST is now sent by ManagementServer upon the connection of a GN client
+* Bugfix ConfigurationAvailable now resizes the serialized buffer correctly
+
+v1.3.0 (released on 19 Nov 2012)
+* Now simulator can send LOCATION_UPDATE
+* Bugfix GeonetPacket::serialise() now validates incoming buffer size
+* ManagementServer class introduced and caused intensive changes in main.cpp
+* Client type is now recognized better according to the event type/subtypes
+
+v1.2.2
+* test/simulation/README updated
+* test/simulation/packet.py's communication profile request code updated with Andrea's sample
+* Bugfix Communication Profile filtering is now handled correctly
+
+v1.2.1
+* Simulator can now send COMMUNICATION_PROFILE_REQUEST
+* A new scenerio file named 02.sce added for Communication Profile tests
+* Bugfix Rx buffer resize error, now it's set to RX_BUFFER_SIZE correctly
+* `extended', `valid', `version', and `priority' fields of packet header are now parsed
+* Bugfix Local variable reference error mgmt_comm_prof_manager.cpp
+* Bugfix Communication profile pass-by-value in mgmt_comm_prof_manager.cpp
+* Bugfix Location table response is now parsed correctly
+* Incoming Location Update is now parsed and MIB is updated
+* Incoming filter sent thru COMM_PROF_REQ is now used to filter Communication Profiles
+* -v and --version parameters are now recognized
+
 v1.2.0 (released on 5 Nov 2012)
-* Release version
 * UdpServer class renamed as UdpSocket
 * ManagementClient class has its own socket now (currently not in use, though)
 * README.RUNNING updated with FACilities configuration files directory

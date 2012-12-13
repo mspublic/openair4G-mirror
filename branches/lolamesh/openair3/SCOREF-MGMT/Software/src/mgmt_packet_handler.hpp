@@ -50,6 +50,7 @@ using namespace boost;
 #include "packets/mgmt_gn_packet_wireless_state_response.hpp"
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet_get_configuration.hpp"
+#include "packets/mgmt_gn_packet_location_update.hpp"
 #include "packets/mgmt_gn_packet_network_state.hpp"
 #include "mgmt_information_base.hpp"
 #include "mgmt_packet_factory.hpp"
@@ -79,6 +80,7 @@ class PacketHandlerResult {
 			/**
 			 * All the clients with relevant configuration requirements
 			 * (meaning NET or FAC parameters) should be informed of new configuration
+			 * PS: This comment above is valid only for GN right now since it's the only "other" client than FAC
 			 */
 			SEND_CONFIGURATION_UPDATE_AVAILABLE = 3
 		};
@@ -196,7 +198,7 @@ class PacketHandler {
 		 * @param Pointer to a Configuration Notification packet
 		 * @return Pointer to a PacketHandlerResult object
 		 */
-		static PacketHandlerResult* handleConfigurationNotification(FacConfigurationNotificationPacket* packet);
+		PacketHandlerResult* handleConfigurationNotification(FacConfigurationNotificationPacket* packet);
 		/**
 		 * Handles a Communication Profile Request event message and creates a
 		 * Communication Profile Response packet
@@ -205,6 +207,14 @@ class PacketHandler {
 		 * @return Pointer to a PacketHandlerResult object
 		 */
 		PacketHandlerResult* handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* packet);
+		/**
+		 * Handles an incoming Location Update message and updates MIB with
+		 * this incoming information
+		 *
+		 * @param Pointer to a Location Update packet
+		 * @return Pointer to a PacketHandlerResult object
+		 */
+		PacketHandlerResult* handleLocationUpdate(GeonetLocationUpdateEventPacket* packet);
 
 	private:
 		/**

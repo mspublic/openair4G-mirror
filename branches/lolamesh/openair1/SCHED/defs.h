@@ -8,9 +8,6 @@
 #define __openair_SCHED_H__
 
 #include "PHY/defs.h"
-#ifdef EMOS
-#include "phy_procedures_emos.h"
-#endif //EMOS
 
 enum THREAD_INDEX { OPENAIR_THREAD_INDEX = 0,
 		    TOP_LEVEL_SCHEDULER_THREAD_INDEX,
@@ -104,6 +101,7 @@ typedef struct {
   u32  rx_total_gain_dB;
   u32  hw_frame;
   u32  get_frame_done;
+  u32  use_ia_receiver;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE
@@ -460,12 +458,6 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
 u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n);
 
-#else
-#ifdef EMOS
-void phy_procedures_emos(u8 last_slot);
-#else
-void phy_procedures(u8 last_slot,u8 abstraction_flag);
-#endif //EMOS
 /**@}*/
 #endif //OPENAIR_LTE
 
@@ -473,4 +465,4 @@ extern int slot_irq_handler(int irq, void *cookie);
 
 #endif
 
-/*@}*/
+

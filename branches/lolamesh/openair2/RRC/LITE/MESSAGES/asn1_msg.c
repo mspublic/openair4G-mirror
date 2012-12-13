@@ -185,7 +185,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   PLMN_IdentityInfo_t PLMN_identity_info;
   MCC_MNC_Digit_t dummy_mcc[3],dummy_mnc[2];
   asn_enc_rval_t enc_rval;
-  SchedulingInfo_t schedulingInfo2,schedulingInfo3;
+  SchedulingInfo_t schedulingInfo;
   SIB_Type_t sib_type;
 
   memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
@@ -196,8 +196,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   *sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
 
   memset(&PLMN_identity_info,0,sizeof(PLMN_IdentityInfo_t));
-  memset(&schedulingInfo2,0,sizeof(SchedulingInfo_t));
-  memset(&schedulingInfo3,0,sizeof(SchedulingInfo_t));
+  memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
   memset(&sib_type,0,sizeof(SIB_Type_t));
 
 
@@ -249,22 +248,21 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 
   (*sib1)->freqBandIndicator = 38;
 
-  //  assign_enum(&schedulingInfo.si_Periodicity,SchedulingInfo__si_Periodicity_rf8);
-  schedulingInfo2.si_Periodicity=SchedulingInfo__si_Periodicity_rf16;
-  schedulingInfo3.si_Periodicity=SchedulingInfo__si_Periodicity_rf32;
+  schedulingInfo.si_Periodicity=SchedulingInfo__si_Periodicity_rf8;
 
-  //  assign_enum(&sib_type,SIB_Type_sibType3);
-
-  // This is for SIB2
-  ASN_SEQUENCE_ADD(&schedulingInfo2.sib_MappingInfo.list,NULL);
-
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo2);
-
+  // This is for SIB2/3
   sib_type=SIB_Type_sibType3;
+  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
+  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
 
-  ASN_SEQUENCE_ADD(&schedulingInfo3.sib_MappingInfo.list,&sib_type);
+  //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo3);
+
+
+
+
+
+
 
   (*sib1)->tdd_Config = CALLOC(1,sizeof(struct TDD_Config));
 
@@ -485,7 +483,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   //  SystemInformationBlockType13_r9_t *sib13;
 
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
-#ifdef REL10
+#ifdef Rel10
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
 #endif
   asn_enc_rval_t enc_rval;
@@ -935,8 +933,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   asn_enc_rval_t enc_rval;
   uint8_t ecause=0;
 
-
-
   long *logicalchannelgroup;
 
   struct SRB_ToAddMod *SRB1_config2;//,*SRB2_config2;
@@ -1212,24 +1208,25 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
 uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id,
-					uint8_t                           *buffer,
-					uint8_t                           UE_id,
-					uint8_t                           Transaction_id,
-					SRB_ToAddModList_t                *SRB_list,
-					DRB_ToAddModList_t                *DRB_list,
-					DRB_ToReleaseList_t               *DRB_list2,
-					struct SPS_Config                 *sps_Config,
-					struct PhysicalConfigDedicated    *physicalConfigDedicated,
-					MeasObjectToAddModList_t          *MeasObj_list,
-					ReportConfigToAddModList_t        *ReportConfig_list,
-					QuantityConfig_t                  *QuantityConfig,
-					MeasIdToAddModList_t              *MeasId_list,
-					MAC_MainConfig_t                  *mac_MainConfig,
-					MeasGapConfig_t                   *measGapConfig) {
+                                        uint8_t                          *buffer,
+                                        uint8_t                           UE_id,
+                                        uint8_t                           Transaction_id,
+                                        SRB_ToAddModList_t                *SRB_list,
+                                        DRB_ToAddModList_t                *DRB_list,
+                                        DRB_ToReleaseList_t               *DRB_list2,
+                                        struct SPS_Config                 *sps_Config,
+                                        struct PhysicalConfigDedicated    *physicalConfigDedicated,
+                                        MeasObjectToAddModList_t          *MeasObj_list,
+                                        ReportConfigToAddModList_t        *ReportConfig_list,
+                                        QuantityConfig_t                  *QuantityConfig,
+                                        MeasIdToAddModList_t              *MeasId_list,
+                                        MAC_MainConfig_t                  *mac_MainConfig,
+                                        MeasGapConfig_t                   *measGapConfig,
+                                        uint8_t                           *nas_pdu,
+                                        uint32_t                           nas_length
+                                       ) {
 
-
-  asn_enc_rval_t enc_rval;
-
+    asn_enc_rval_t enc_rval;
   /*  
   struct SRB_ToAddMod **SRB2_config                         = &rrc_inst->SRB2_config[UE_id];
   struct DRB_ToAddMod **DRB_config                          = &rrc_inst->DRB_config[UE_id][0];
@@ -1269,7 +1266,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   CellsToAddMod_t *CellToAdd;
   CellsToAddModList_t *CellsToAddModList;
   */
- 
+
   DL_DCCH_Message_t dl_dcch_msg;
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
 
@@ -1280,7 +1277,6 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
   rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
-
   // RRCConnectionReconfiguration
   /*
   // Configure SRB2
@@ -1364,7 +1360,6 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
 */
 
-
   rrcConnectionReconfiguration->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionReconfiguration->criticalExtensions.present = RRCConnectionReconfiguration__criticalExtensions_PR_c1;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.present =RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8 ;
@@ -1375,8 +1370,6 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_Config = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = NULL;
-
-
   /*
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig));
 
@@ -1631,8 +1624,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig));
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->present =RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
     memcpy(&rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue,
-	   mac_MainConfig,
-	   sizeof(*mac_MainConfig));
+           mac_MainConfig,
+           sizeof(*mac_MainConfig));
   }
   else {
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig=NULL;
@@ -1640,21 +1633,27 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
   memset((void*)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig,
-	 0,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
+         0, sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
 
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;  
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList       = MeasId_list;  
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList   = MeasObj_list;  
 
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
+  if ((nas_pdu == NULL) || (nas_length == 0)) {
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
+  } else {
+      DedicatedInfoNAS_t *dedicatedInfoNAS;
+      dedicatedInfoNAS = &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList;
+      dedicatedInfoNAS->buf = nas_pdu;
+      dedicatedInfoNAS->size = nas_length;
+  }
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
-				   (void*)&dl_dcch_msg,
-				   buffer,
-				   100);
-  
+                                   (void*)&dl_dcch_msg,
+                                   buffer,
+                                   100);
 
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
   //#ifdef USER_MODE

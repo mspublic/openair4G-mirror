@@ -1,19 +1,24 @@
 
 import socket
 import array
-import pickle
-from bzrlib.merge import ConfigurableFileMerger
-from copy_reg import pickle
+import random
 
 class Packet:
 	@staticmethod
-	def sendConfigurationRequest(serverAddress, serverPort, clientPort):
+	def sendConfigurationRequest(serverAddress, serverPort, clientPort, clientType):
 		# Build the packet
 		configurationRequestPacket = array.array('B')
 		configurationRequestPacket.append(0x40) # Validity=1, version=0
 		configurationRequestPacket.append(0x00) # Priority=0
 		configurationRequestPacket.append(0x03) # EventType=3
-		configurationRequestPacket.append(0x01) # EventSubtype=1
+		# Set the event sub-type according to the client type
+		if clientType == "GN":
+			configurationRequestPacket.append(0x01) # EventSubtype=1
+		elif clientType == "FAC":
+			configurationRequestPacket.append(0x11) # EventSubtype=11
+		elif clientType == "LTE":
+			# This value is not defined yet!
+			configurationRequestPacket.append(0x12) # EventSubtype=12
 		configurationRequestPacket.append(0xff) # ConfigurationId=0xFFFF (all)
 		configurationRequestPacket.append(0xff)
 		configurationRequestPacket.append(0x00) # TransmissionMode=0x0001 (bulk)
@@ -23,6 +28,37 @@ class Packet:
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		managementSocket.bind(('0.0.0.0', clientPort))
 		sentByteCount = managementSocket.sendto(configurationRequestPacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		receivedBytes, sourceAddress = managementSocket.recvfrom(1024)
+		print receivedBytes.encode('hex'), "bytes received from", sourceAddress
+
+		return True
+
+	@staticmethod
+	def sendCommunicationProfileRequest(serverAddress, serverPort, clientPort, clientType):
+		# Build the packet
+		communicationProfileRequestPacket = array.array('B')
+		communicationProfileRequestPacket.append(0x40) # Validity=1, version=0
+		communicationProfileRequestPacket.append(0x00) # Priority=0
+		communicationProfileRequestPacket.append(0x03) # EventType=3
+		# Set the event sub-type according to the client type
+		if clientType == "GN":
+			communicationProfileRequestPacket.append(0x04) # EventSubtype=4
+		elif clientType == "FAC":
+			communicationProfileRequestPacket.append(0x15) # EventSubtype=15
+		elif clientType == "LTE":
+			# This value is not defined yet!
+			communicationProfileRequestPacket.append(0x16) # EventSubtype=16
+		communicationProfileRequestPacket.append(0xc0) # Transport
+		communicationProfileRequestPacket.append(0xc0) # Network
+		communicationProfileRequestPacket.append(0x80) # Access
+		communicationProfileRequestPacket.append(0xF8) # Channel
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(communicationProfileRequestPacket, (serverAddress, serverPort))
 		print sentByteCount, "bytes sent"
 
 		receivedBytes, sourceAddress = managementSocket.recvfrom(1024)
@@ -75,6 +111,108 @@ class Packet:
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		managementSocket.bind(('0.0.0.0', clientPort))
 		sentByteCount = managementSocket.sendto(networkStatePacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		return True
+
+	@staticmethod
+	def sendWirelessState(serverAddress, serverPort, clientPort, clientType):
+		random.seed()
+
+		# Build the packet
+		wirelessStatePacket = array.array('B')
+		wirelessStatePacket.append(0x40) # Validity=1, version=0
+		wirelessStatePacket.append(0x00) # Priority=0
+		wirelessStatePacket.append(0x04) # EventType=4
+		# Set the event sub-type according to the client type
+		if clientType == "GN":
+			wirelessStatePacket.append(0x03) # EventSubtype=3
+		elif clientType == "LTE":
+			# This value is not defined yet!
+			wirelessStatePacket.append(0x3) # EventSubtype=3
+		wirelessStatePacket.append(0x01) # IF Count
+		wirelessStatePacket.append(0x00) # Reserved
+		wirelessStatePacket.append(0x00) # Reserved
+		wirelessStatePacket.append(0x00) # Reserved
+		wirelessStatePacket.append(0x00) # Interface ID (2-byte)
+		wirelessStatePacket.append(random.randint(1, 10))
+		wirelessStatePacket.append(0x00) # Access Technology (2-byte)
+		wirelessStatePacket.append(random.randint(1, 255))
+		wirelessStatePacket.append(random.randint(1, 255)) # Channel Frequency (2-byte)
+		wirelessStatePacket.append(random.randint(1, 255))
+		wirelessStatePacket.append(0x00) # Bandwidth (2-byte)
+		wirelessStatePacket.append(random.randint(1, 255))
+		wirelessStatePacket.append(random.randint(1, 100)) # Channel Busy Ratio (1-byte)
+		wirelessStatePacket.append(random.randint(1, 10)) # Status (1-byte)
+		wirelessStatePacket.append(random.randint(1, 100)) # Average TX Power (1-byte)
+		wirelessStatePacket.append(0x00) # Reserved
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(wirelessStatePacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		return True
+
+	@staticmethod
+	def sendLocationUpdate(serverAddress, serverPort, clientPort):
+		# Build the packet
+		locationUpdatePacket = array.array('B')
+		locationUpdatePacket.append(0x40) # Validity=1, version=0
+		locationUpdatePacket.append(0x00) # Priority=0
+		locationUpdatePacket.append(0x01) # EventType=1
+		locationUpdatePacket.append(0x10) # EventSubtype=10
+		locationUpdatePacket.append(0x01) # Timestamp (4-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x03)
+		locationUpdatePacket.append(0x04)
+		locationUpdatePacket.append(0x01) # Latitude (4-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x03)
+		locationUpdatePacket.append(0x04)
+		locationUpdatePacket.append(0x01) # Longitude (4-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x03)
+		locationUpdatePacket.append(0x04)
+		locationUpdatePacket.append(0x01) # Speed (2-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x01) # Heading (2-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x01) # Altitude (2-byte)
+		locationUpdatePacket.append(0x02)
+		locationUpdatePacket.append(0x01) # TAcc, and PodAcc (1-byte)
+		locationUpdatePacket.append(0x01) # SAcc, Hacc, and AltAcc (1-byte) 
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(locationUpdatePacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		return True
+
+	@staticmethod
+	def sendConfigurationNotification(serverAddress, serverPort, clientPort):
+		# Build the packet
+		configurationNotificationPacket = array.array('B')
+		configurationNotificationPacket.append(0x40) # Validity=1, version=0
+		configurationNotificationPacket.append(0x00) # Priority=0
+		configurationNotificationPacket.append(0x03) # EventType=3
+		configurationNotificationPacket.append(0x14) # EventSubtype=14
+		configurationNotificationPacket.append(0x0B) # Configuration ID (2-byte)
+		configurationNotificationPacket.append(0xCC)   # Configuration ID = LDM Garbage Collection Interval
+		configurationNotificationPacket.append(0x00) # Length (2-byte)
+		configurationNotificationPacket.append(0x04)   # Length = 4-byte
+		configurationNotificationPacket.append(0x00) # Configuration Value (variable-size)
+		configurationNotificationPacket.append(0x00)   # configuration Value = 100 (ms)
+		configurationNotificationPacket.append(0x00)
+		configurationNotificationPacket.append(0x64)
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(configurationNotificationPacket, (serverAddress, serverPort))
 		print sentByteCount, "bytes sent"
 
 		return True

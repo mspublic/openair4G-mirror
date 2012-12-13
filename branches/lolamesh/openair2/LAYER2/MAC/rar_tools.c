@@ -78,7 +78,7 @@ unsigned short fill_rar(u8 Mod_id,
   rar->R                      = 0;
   rar->Timing_Advance_Command = eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset/4;
   rar->hopping_flag           = 0;
-  rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,1,2);  // 2 RB
+  rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,12,2);  // 2 RB
   rar->mcs                    = 2;                                   // mcs 2
   rar->TPC                    = 4;   // 2 dB power adjustment
   rar->UL_delay               = 0;

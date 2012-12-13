@@ -18,7 +18,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 		 unsigned char p) {
 
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
-  unsigned short k,a;
+  unsigned short k=0,a;
   mod_sym_t qpsk[4];
 
 #ifdef IFFT_FPGA
@@ -47,9 +47,9 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 
   for (m=0; m<phy_vars_eNB->lte_frame_parms.N_RB_DL*6; m++) {	
 
-    if ((l==2) || (l==10)) 
+    if ((l==0) || (l==2)) 
       k = m<<1;
-    else if (l==6)
+    else if (l==1)
       k = 1+(m<<1);
     else {
       msg("lte_dl_mbsfn: l %d -> ERROR\n",l);
@@ -62,7 +62,10 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
     k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
 #endif   
 
-#ifdef IFFT_FPGA
+    mprime_dword     = mprime>>4;
+    mprime_qpsk_symb = mprime&0xf;   
+    
+    #ifdef IFFT_FPGA
     if (k >= phy_vars_eNB->lte_frame_parms.N_RB_DL*12) {
       k-=phy_vars_eNB->lte_frame_parms.N_RB_DL*12;
     }
@@ -72,12 +75,6 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
       k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
     }
 #endif
- 
-  
-    mprime_dword     = mprime>>4;
-    mprime_qpsk_symb = mprime&0xf;   
-    
-    
     output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
     
@@ -94,9 +91,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
       printf("subframe %d, l %d output[%d] = (%d,%d)\n",subframe,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
 
-
-
-    //    printf("** k %d\n",k);
+       printf("** k %d\n",k);
   }
   return(0);
 }
@@ -145,7 +140,7 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
       printf("subframe %d l %d output[%d] = (%d,%d)\n",subframe,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k++;
-    //    printf("** k %d\n",k);
+       printf("** k %d\n",k);
   }
   return(0);
 }

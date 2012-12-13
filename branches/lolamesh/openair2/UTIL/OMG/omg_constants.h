@@ -58,7 +58,7 @@ ALL, /*!< All the types. Used to perform the same operations to all the types of
 
 //#define eps 0.00000095367431649629
 /*! A constant used to compare two doubles */
-#define eps 0.09 //10.99
+#define eps 0.10 //10.99
 
 #endif /* __OMG_H_ */
 

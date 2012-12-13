@@ -354,8 +354,8 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
   int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
 
-    LOG_D(RRC,"[UE] Frame %d: Configuring DRB %ld/LCID %d\n",
-      frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
+    LOG_D(RRC,"[UE] Frame %d: RRCConnectionReconfiguration Configuring DRB %ld/LCID %d\n",
+      frame,DRB_config->drb_Identity-1,(int)*DRB_config->logicalChannelIdentity);
 
   switch (DRB_config->rlc_Config->present) {
   case RLC_Config_PR_NOTHING:
@@ -363,9 +363,9 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
     return(-1);
     break;
   case RLC_Config_PR_um_Bi_Directional :
-
+    // eNB_rrc_inst[Mod_id].DRB_active[eNB_index][DRB_config->drb_Identity-1] = 1;
     LOG_D(RRC,"[UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
-	  Mod_id,frame,DRB_config->drb_Identity);
+	  Mod_id,frame,DRB_config->drb_Identity-1);
     rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
 			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
     rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
@@ -395,7 +395,6 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 	    Mod_id,
 	    ip_addr_offset3+Mod_id,
 	    (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
-
       rb_conf_ipv4(0,//add
 		   Mod_id,//cx align with the UE index
 		   ip_addr_offset3+Mod_id,//inst num_enb+ue_index
@@ -688,46 +687,46 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
       	memcpy(UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id],radioResourceConfigDedicated->drb_ToAddModList->list.array[i],sizeof(struct DRB_ToAddMod));
       }
       else {
-				UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
-
-				rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
-				// MAC/PHY Configuration
-				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",frame, Mod_id, DRB_id, eNB_index, Mod_id);
-				rrc_mac_config_req(Mod_id,0,0,eNB_index,
-							 (RadioResourceConfigCommonSIB_t *)NULL,
-							 UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
-							 (MeasObjectToAddMod_t **)NULL,
-							 UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
-							 *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
-							 UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
-							 UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
-							 (TDD_Config_t*)NULL,
-							 (u8 *)NULL,
-							 (u16 *)NULL);
-
-				//TCS LOLAmesh
-				/* Configure the MAC layer forwarding table if this is a collaborative DRB (CORNTI and virtual link ID field is present) */
-				if ((radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI != NULL)&&
-						(radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID != NULL)) {
-					// MAC/PHY Configuration
-					cornti = (u16)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI;
-					vlid = (u8)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID;
-					LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] Configuring DRB %d for collabortaive communications with CORNTI = %u and VLID = %u\n",frame,Mod_id, DRB_id, eNB_index, Mod_id, DRB_id, cornti, vlid);
-					/* Configure the forwarding table with the given vlid and cornti */
-					ret=rrc_mac_config_co_req(Mod_id,eNB_index,cornti,vlid);
-					if (ret < 0) {
-						LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] MAC layer forwarding table configuration failed\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
-					} else {
-						LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] MAC layer forwarding table configuration succeeded\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
-					}
-					//UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_RECONFIGURED;
-					//LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
-					collaborative_link = 1;
-				}// end if ((radioResourceConfigDedicated->drb_ToAddModList->list.array...
+	UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
+	
+	rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
+	// MAC/PHY Configuration
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",frame, Mod_id, DRB_id, eNB_index, Mod_id);
+	rrc_mac_config_req(Mod_id,0,0,eNB_index,
+			   (RadioResourceConfigCommonSIB_t *)NULL,
+			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+			   (MeasObjectToAddMod_t **)NULL,
+			   UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
+			   *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
+			   UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
+			   UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
+			   (TDD_Config_t*)NULL,
+			   (u8 *)NULL,
+			   (u16 *)NULL);
+	
+	//TCS LOLAmesh
+	/* Configure the MAC layer forwarding table if this is a collaborative DRB (CORNTI and virtual link ID field is present) */
+	if ((radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI != NULL)&&
+	    (radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID != NULL)) {
+	  // MAC/PHY Configuration
+	  cornti = (u16)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI;
+	  vlid = (u8)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID;
+	  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] Configuring DRB %d for collabortaive communications with CORNTI = %u and VLID = %u\n",frame,Mod_id, DRB_id, eNB_index, Mod_id, DRB_id, cornti, vlid);
+	  /* Configure the forwarding table with the given vlid and cornti */
+	  ret=rrc_mac_config_co_req(Mod_id,eNB_index,cornti,vlid);
+	  if (ret < 0) {
+	    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] MAC layer forwarding table configuration failed\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
+	  } else {
+	    LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][TCS DEBUG][--- MAC_CONFIG_CO_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][] MAC layer forwarding table configuration succeeded\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
+	  }
+	  //UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_RECONFIGURED;
+	  //LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
+	  collaborative_link = 1;
+	}// end if ((radioResourceConfigDedicated->drb_ToAddModList->list.array...
       }// end if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) / else
     }//end or (i=0;i<radioResourceConfigDedicated->drb_ToAddModList->list.count;i++)
   }//end if (radioResourceConfigDedicated->drb_ToAddModList)
-
+  
   //TCS LOLAmesh
   if (collaborative_link == 0) {
   	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_CONNECTED;
@@ -879,8 +878,13 @@ const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
 
 const char SIBType[16][6] ={"SIB3\0","SIB4\0","SIB5\0","SIB6\0","SIB7\0","SIB8\0","SIB9\0","SIB10\0","SIB11\0","SIB12\0","SIB13\0","Sp2\0","Sp3\0","Sp4\0"};
 const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
+const char siPeriod_int[7] = {80,160,320,640,1280,2560,5120};
 
 int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_len) {
+
+  //  printf("Mod_id=%d, frame=%d, eNB_index=%d, sdu_len=%d, SI_period=%d, SI_WindowSize=%d\n",Mod_id,frame,eNB_index,Sdu_len,
+  //	 UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod,
+  //	 UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize);
 
   //BCCH_DL_SCH_Message_t bcch_message;
   BCCH_DL_SCH_Message_t *bcch_message=NULL;//_ptr=&bcch_message;
@@ -889,59 +893,60 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
   asn_dec_rval_t dec_rval;
   uint32_t si_window;//, sib1_decoded=0, si_decoded=0;
 
-if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
-    (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
-  // Avoid decoding to prevent memory bloating
-  return 0;
- } else {
+  if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
+      (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
+    // Avoid decoding to prevent memory bloating
+    return 0;
+  } 
+  else {
 
-  //memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
-  //  LOG_D(RRC,"[UE %d] Decoding DL_BCCH_DLSCH_Message\n",Mod_id)
-  dec_rval = uper_decode_complete(NULL,
-				  &asn_DEF_BCCH_DL_SCH_Message,
-				  (void **)&bcch_message,
-				  (const void *)Sdu,
-				  Sdu_len);//,0,0);
-
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
-    LOG_E(RRC,"[UE %d] Failed to decode BCCH_DLSCH_MESSAGE (%d bits)\n",Mod_id,dec_rval.consumed);
-    //free the memory
-    SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 1);
-    return -1;
-  }
-  //  xer_fprint(stdout,  &asn_DEF_BCCH_DL_SCH_Message, (void*)&bcch_message);
-
-  if (bcch_message->message.present == BCCH_DL_SCH_MessageType_PR_c1) {
-    switch (bcch_message->message.choice.c1.present) {
-    case BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
-      if ((frame %2) == 0) {
-	if (UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 0) {
-	  memcpy((void*)*sib1,
-		 (void*)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
-		 sizeof(SystemInformationBlockType1_t));
-	  LOG_D(RRC,"[UE %d] Decoding First SIB1 from eNB %d\n",Mod_id,eNB_index);
-	  decode_SIB1(Mod_id,eNB_index);
+    //memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
+    //  LOG_D(RRC,"[UE %d] Decoding DL_BCCH_DLSCH_Message\n",Mod_id)
+    dec_rval = uper_decode_complete(NULL,
+				    &asn_DEF_BCCH_DL_SCH_Message,
+				    (void **)&bcch_message,
+				    (const void *)Sdu,
+				    Sdu_len);//,0,0);
+    
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
+      LOG_E(RRC,"[UE %d] Failed to decode BCCH_DLSCH_MESSAGE (%d bits)\n",Mod_id,dec_rval.consumed);
+      //free the memory
+      SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 1);
+      return -1;
+    }
+    //  xer_fprint(stdout,  &asn_DEF_BCCH_DL_SCH_Message, (void*)&bcch_message);
+    
+    if (bcch_message->message.present == BCCH_DL_SCH_MessageType_PR_c1) {
+      switch (bcch_message->message.choice.c1.present) {
+      case BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
+	if ((frame %2) == 0) {
+	  if (UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 0) {
+	    memcpy((void*)*sib1,
+		   (void*)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
+		   sizeof(SystemInformationBlockType1_t));
+	    LOG_D(RRC,"[UE %d] Decoding First SIB1 from eNB %d \n",Mod_id, eNB_index);
+	    decode_SIB1(Mod_id,eNB_index);
+	  }
 	}
-      }
-      break;
-    case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
-      if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
-	  (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
-	if ((frame %8) == 1) {
-	  si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
-	  memcpy((void*)si[si_window],
-		 (void*)&bcch_message->message.choice.c1.choice.systemInformation,
-		 sizeof(SystemInformation_t));
+	break;
+      case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
+	if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
+	    (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
+	  if ((frame %8) == 1) {  // check only in odd frames for SI
+	    si_window = (frame%(UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod/10))/(UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize/10);
+	    memcpy((void*)si[si_window],
+		   (void*)&bcch_message->message.choice.c1.choice.systemInformation,
+		   sizeof(SystemInformation_t));
+	    LOG_D(RRC,"[UE %d] Decoding SI from eNB %d for frame %d, si_window %d\n",Mod_id,eNB_index, frame,si_window);
+	    decode_SI(Mod_id,frame,eNB_index,si_window);
+	  }
 	}
-	LOG_D(RRC,"[UE %d] Decoding SI from eNB %d for frame %d, si_window %d\n",Mod_id,eNB_index, frame,si_window);
-	decode_SI(Mod_id,frame,eNB_index,si_window);
-      }
-      break;
+	break;
       case BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
 	break;
       }
     }
- }
+  }
   /*  if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
       (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1) && (frame >= Mod_id * 20 + 10))
       SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 0);*/
@@ -953,9 +958,9 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   int i;
+  int siWindowLength_index, siPeriod_index, siType_index;
 
-
-  LOG_D(RRC,"[UE %d] : Dumping SIB 1 (%d bits)\n",Mod_id,dec_rval.consumed);
+  LOG_D(RRC,"[UE %d] : Dumping SIB 1\n",Mod_id);
 
   //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);
 
@@ -964,16 +969,18 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[1],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[2],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[3]);
-
+  siWindowLength_index= (*sib1)->si_WindowLength;
   msg("cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
   msg("freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
-  msg("siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
+  msg("siWindowLength                     : %s\n",siWindowLength[siWindowLength_index]);
   if ((*sib1)->schedulingInfoList.list.count>0) {
     for (i=0;i<(*sib1)->schedulingInfoList.list.count;i++) {
-      msg("siSchedulingInfoPeriod[%d]          : %s\n",i,SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity]);
-      if ((*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count>0)
-	msg("siSchedulingInfoSIBType[%d]         : %s\n",i,SIBType[(int)(*(*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0])]);
-      else {
+      siPeriod_index = (int)(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity;
+      msg("siSchedulingInfoPeriod[%d]          : %s\n",i,SIBPeriod[siPeriod_index ]);
+      if ((*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count>0){
+	siType_index= (int)(*(*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0]);
+	msg("siSchedulingInfoSIBType[%d]         : %s\n",i,SIBType[siType_index]);
+      }else {
 	msg("mapping list %d is null\n",i);
       }
     }
@@ -985,10 +992,10 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 
   if ((*sib1)->tdd_Config)
     msg("TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(int)(*sib1)->tdd_Config->subframeAssignment,(int)(*sib1)->tdd_Config->specialSubframePatterns);
+  // msg("SIperiod index %d value %d\n", (*sib1)->schedulingInfoList.list.array[i]->si_Periodicity, siPeriod_int[(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity]);
 
-
-  UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod     = 8<<((int)(*sib1)->si_WindowLength);
-  UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize = siWindowLength_int[(*sib1)->si_WindowLength];
+  UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod     = siPeriod_int[siPeriod_index];
+  UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize = siWindowLength_int[siWindowLength_index];
   LOG_D(RRC, "[MSC_MSG][FRAME unknown][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB1 params eNB %d) --->][MAC_UE][MOD %02d][]\n",
              Mod_id, eNB_index, Mod_id);
   rrc_mac_config_req(Mod_id,0,0,eNB_index,

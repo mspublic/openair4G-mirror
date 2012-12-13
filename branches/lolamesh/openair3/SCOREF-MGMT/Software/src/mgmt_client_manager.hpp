@@ -57,6 +57,22 @@ using namespace std;
 class ManagementClientManager {
 	public:
 		/**
+		 * Following enumeration is used to tell caller of updateManagementClientState()
+		 * method what steps are to follow
+		 */
+		enum Task {
+			/**
+			 * Nothing is to be done
+			 */
+			NOTHING = 0,
+			/**
+			 * Send a Location Table Request (only if the client is GN)
+			 */
+			SEND_LOCATION_TABLE_REQUEST = 1
+		};
+
+	public:
+		/**
 		 * Constructor for ManagementClientManager class
 		 *
 		 * @param mib Management Information Base reference
@@ -75,17 +91,38 @@ class ManagementClientManager {
 		 * a new client object if necessary or updating its state if there's one
 		 * defined for sender source address
 		 *
-		 * @param clientConnection Sender of relevant packet
+		 * @param clientEndpoint A udp::endpoint reference
 		 * @param eventType Type/subtype of event the packet was sent for
-		 * @return true if success, false otherwise
+		 * @return ManagementClientManager::Task for the caller
 		 */
-		bool updateManagementClientState(UdpSocket& clientConnection, EventType eventType);
+		ManagementClientManager::Task updateClientState(const udp::endpoint& clientEndpoint, EventType eventType);
 		/**
-		 * Sends CONFIGURATION UPDATE AVAILABLE to all those clients connected
+		 * Returns relevant ManagementClient of given type
 		 *
-		 * @return true on success, false otherwise
+		 * @return A const pointer of the ManagementClient object of given type
 		 */
-		bool sendConfigurationUpdateAvailable();
+		const ManagementClient* getClientByType(ManagementClient::ManagementClientType clientType) const;
+		/**
+		 * Returns the client at given end
+		 *
+		 * @param endPoint Connection end point information of type udp::endpoint
+		 * @return A pointer of the relevant ManagementClient object
+		 */
+		ManagementClient* getClientByEndpoint(const udp::endpoint& endPoint);
+		/**
+		 * Tells if GN is connected
+		 *
+		 * @param none
+		 * @return true if there's a GN connected, false otherwise
+		 */
+		bool isGnConnected() const;
+		/**
+		 * Tells if FAC is connected
+		 *
+		 * @param none
+		 * @return true if there's a FAC connected, false otherwise
+		 */
+		bool isFacConnected() const;
 		/**
 		 * Returns the string representation of Client Manager and the clients it manages
 		 *

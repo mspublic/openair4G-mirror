@@ -59,6 +59,15 @@ class GeonetLocationUpdateEventPacket : public GeonetPacket {
 		 */
 		GeonetLocationUpdateEventPacket(ManagementInformationBase& mib, Logger& logger);
 		/**
+		 * Constructor for GeonetLocationUpdateEventPacket class to parse packet buffer
+		 *
+		 * @param mib Management Information Base reference to keep it up-to-date
+		 * with incoming information
+		 * @param packetBuffer std::vector containing packet data
+		 * @param logger Logger object reference
+		 */
+		GeonetLocationUpdateEventPacket(ManagementInformationBase& mib, const vector<unsigned char>& packetBuffer, Logger& logger);
+		/**
 		 * Destructor for GeonetLocationUpdateEventPacket class
 		 */
 		~GeonetLocationUpdateEventPacket();
@@ -71,6 +80,13 @@ class GeonetLocationUpdateEventPacket : public GeonetPacket {
 		 * @return true on success, false otherwise
 		 */
 		bool serialize(vector<unsigned char>& buffer) const;
+		/**
+		 * Parses incoming packet buffer and updates MIB with this information
+		 *
+		 * @param packetBuffer std::vector containing packet data
+		 * @return true on success, false otherwise
+		 */
+		bool parse(const vector<unsigned char>& packetBuffer);
 
 	private:
 		/**

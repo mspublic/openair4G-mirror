@@ -42,15 +42,11 @@
 #ifndef MGMT_CLIENT_HPP_
 #define MGMT_CLIENT_HPP_
 
-#include "mgmt_inquiry_thread.hpp"
 #include "util/mgmt_log.hpp"
-
-#include <boost/thread.hpp>
 #include <boost/asio.hpp>
-using boost::asio::ip::udp;
-
 #include <string>
 #include <map>
+using boost::asio::ip::udp;
 
 /**
  * A container to hold information about Management clients, mostly used
@@ -63,17 +59,13 @@ class ManagementClient {
 		 */
 		enum ManagementClientState {
 			/**
-			 * Client is not connected
+			 * Client is not connected or is unreachable
 			 */
 			OFFLINE = 0,
 			/**
-			 * A client is connected but has not yet received configuration
+			 * A client is connected and alive
 			 */
 			ONLINE = 1,
-			/**
-			 * A client is connected and has received configuration
-			 */
-			CONNECTED = 2
 		};
 
 		/**
@@ -92,7 +84,11 @@ class ManagementClient {
 			/**
 			 * Facilities client
 			 */
-			FAC = 2
+			FAC = 2,
+			/**
+			 * LTE client
+			 */
+			LTE = 3
 		};
 
 	public:
@@ -100,12 +96,12 @@ class ManagementClient {
 		 * Constructor for ManagementClient class
 		 *
 		 * @param mib Management Information Base reference
-		 * @param clientConnection Connected socket for client connection
+		 * @param clientEndpoint Client's connection information
 		 * @param wirelessStateUpdateInterval Determines how frequent the wireless state update will be performed
 		 * @param locationUpdateInterval Determines how frequent the location update will be performed
 		 * @logger Logger object reference
 		 */
-		ManagementClient(ManagementInformationBase& mib, UdpSocket& clientConnection, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
+		ManagementClient(ManagementInformationBase& mib, const udp::endpoint& clientEndpoint, u_int8_t wirelessStateUpdateInterval, u_int8_t locationUpdateInterval, Logger& logger);
 		/**
 		 * Destructor for ManagementClient class
 		 */
@@ -131,12 +127,17 @@ class ManagementClient {
 		 */
 		unsigned short int getPort() const;
 		/**
+		 * Returns a reference to the udp::endpoint of this client
+		 *
+		 * return A reference to udp::endpoint of this client
+		 */
+		const udp::endpoint& getEndpoint() const;
+		/**
 		 * Returns the state of this client
 		 *
 		 * @return ManagementClientState value for this client
 		 */
 		ManagementClientState getState() const;
-		// XXX setType() and getType()
 		/**
 		 * Sets the state of this client with given state
 		 *
@@ -144,6 +145,19 @@ class ManagementClient {
 		 * @return true on success, false otherwise
 		 */
 		bool setState(ManagementClientState state);
+		/**
+		 * Returns the type of this client
+		 *
+		 * @return ManagementClientType value for this client
+		 */
+		ManagementClientType getType() const;
+		/**
+		 * Sets the type of this client with given state
+		 *
+		 * @param state New ManagementClientType for this client
+		 * @return true on success, false otherwise
+		 */
+		bool setType(ManagementClientType type);
 		/**
 		 * Overloaded == operator to use ManagementClient type as a std::map key
 		 *
@@ -159,6 +173,29 @@ class ManagementClient {
 		 */
 		bool operator<(const ManagementClient& client) const;
 		/**
+		 * This is called when we send a packet to this client that
+		 * requires a response
+		 *
+		 * @param none
+		 * @return none
+		 */
+		void waitingForReply();
+		/**
+		 * This is called when we receive a reply corresponding to the
+		 * request packet we sent to this client
+		 *
+		 * @param none
+		 * @return none
+		 */
+		void replyReceived();
+		/**
+		 * Returns if this client has replied to the last packet we sent
+		 *
+		 * @param none
+		 * @return true if this client is alive, false otherwise
+		 */
+		bool isAlive();
+		/**
 		 * Returns string representation of this client
 		 *
 		 * @return std::string representation of this client
@@ -171,9 +208,9 @@ class ManagementClient {
 		 */
 		ManagementInformationBase& mib;
 		/**
-		 * Client's UDP socket
+		 * Client's udp::endpoint information
 		 */
-		UdpSocket* clientSocket;
+		udp::endpoint clientEndpoint;
 		/**
 		 * Client's connection state with Management module
 		 */
@@ -182,14 +219,6 @@ class ManagementClient {
 		 * Client type
 		 */
 		ManagementClient::ManagementClientType type;
-		/**
-		 * InquiryThread object for Wireless State updates
-		 */
-		InquiryThread* inquiryThreadObject;
-		/**
-		 * InquiryThread runner for Wireless State updates
-		 */
-		boost::thread* inquiryThread;
 		/**
 		 * Logger object reference
 		 */
@@ -202,6 +231,11 @@ class ManagementClient {
 		 * String representations for Management Client types
 		 */
 		map<ManagementClient::ManagementClientType, string> clientTypeStringMap;
+		/**
+		 * True if this client has replied to the last packet we sent to
+		 * it that requires a response, false otherwise
+		 */
+		bool repliedToTheLastPacket;
 };
 
 #endif /* MGMT_CLIENT_HPP_ */

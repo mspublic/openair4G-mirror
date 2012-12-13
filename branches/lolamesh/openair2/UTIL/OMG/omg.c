@@ -65,8 +65,8 @@ void init_omg_global_params(void){ //if we want to re initialize all
   Job_Vector = NULL;
   for (i=0; i<MAX_NUM_MOB_TYPES; i++){
     Node_Vector[i] = NULL;
-	 Node_Vector_len[i] = 0;
-	 //Initial_Node_Vector_len[i] = 0;
+    Node_Vector_len[i] = 0;
+    //Initial_Node_Vector_len[i] = 0;
   }
 }
 
@@ -186,7 +186,8 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
     switch (mobility_type) {
    case STATIC:
      Vector = (Node_list)Node_Vector[STATIC];
-      break; 
+     LOG_I(OMG,"static vector %p is \n",Vector);
+     break; 
    case RWP:
       get_rwp_positions_updated(cur_time);
       Vector = Node_Vector[RWP];

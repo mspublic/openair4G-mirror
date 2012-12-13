@@ -8,7 +8,7 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 
-#define DEBUG_TX
+//#define DEBUG_TX
 
 int ratemap[8]    = {11,15,10,14,9,13,8,12};
 int rateparity[8] = {1,0,0,1,0,1,1,0};
@@ -47,7 +47,7 @@ extern int interleaver_64qam[288];
 uint8_t data_coded[65632]; //65632 = (4095 byte SDU + 4 byte CRC + 2 byte service + 1 byte tail)*8 bits/byte * 2 coded bits per bit
 uint8_t data_ind2[4095];
 
-int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_ind) {
+int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint32_t tx_offset,int frame_length,uint8_t *data_ind) {
 
   uint8_t signal[3];
   int rate_bits;
@@ -67,6 +67,8 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
   int *interleaver;
   int s,sprime;
   int16_t *output_ptr2;
+  int tx_offset2;
+  int overlap=0;
 
   memset(signal_bits,0,24*sizeof(int));
   memset(signalF,0,64*2*sizeof(int16_t));
@@ -148,29 +150,59 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
       3,               /// scale (energy normalized for 64-point)
       0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
 
+  // copy STS_LTS to start of packet
+
+  tx_offset2 = (tx_offset<<1);
+  overlap=0;
+  if ((tx_offset2 + 640) > (frame_length<<1))
+    overlap = 1;
+  output_ptr2 = &output_ptr[tx_offset2];
+
+#ifdef EXMIMO
+  for (i=0;i<320;i++) {
+    output_ptr2[(i<<1)]   = ((int16_t *)STS_LTS_t)[i<<1]<<2;
+    output_ptr2[1+(i<<1)] = ((int16_t *)STS_LTS_t)[1+(i<<1)]<<2;
+  }
+#else
+  memcpy(output_ptr2,STS_LTS_t,640*sizeof(int16_t));
+
+#endif
+
+  if (overlap == 1)
+    memcpy((void*)output_ptr,
+	   (void*)&output_ptr[frame_length<<1],
+	   (tx_offset2 + 640 - (frame_length<<1))<<1);
+    
+  // position of SIGNAL
+  tx_offset2 = (tx_offset<<1) + 640;
+  
+  overlap=0;
+  if (tx_offset2 > (frame_length<<1))
+    tx_offset2-=frame_length;
+  else if ((tx_offset2 + 160) > (frame_length<<1))
+    overlap = 1;
+  
+  output_ptr2 = &output_ptr[tx_offset2];
+ 
   // cyclic extension and output scaling 
   for (i=0,j=48;i<80;i++,j++) {
     if (j==64)
       j=0;
     //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
 #ifdef EXMIMO
-    output_ptr[640+(i<<1)]     = tmp_t[j<<2]<<4;     // RE component
-    output_ptr[640+1+(i<<1)]   = tmp_t[1+(j<<2)]<<4; // IM component
+    output_ptr2[(i<<1)]     = tmp_t[j<<2]<<2;     // RE component
+    output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<2; // IM component
 #else
-    output_ptr[640+(i<<1)]     = tmp_t[j<<2];     // RE component
-    output_ptr[640+1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
+    output_ptr2[(i<<1)]     = tmp_t[j<<2];     // RE component
+    output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
 #endif
   }
-  // copy STS_LTS to start of packet
-#ifdef EXMIMO
-  for (i=0;i<320;i++) {
-    output_ptr[(i<<1)]   = ((int16_t *)STS_LTS_t)[i<<1]<<4;
-    output_ptr[1+(i<<1)] = ((int16_t *)STS_LTS_t)[1+(i<<1)]<<4;
+  if (overlap == 1) {
+    memcpy((void*)output_ptr,
+	   (void*)&output_ptr[frame_length<<1],
+	   (tx_offset2 + 160 - (frame_length<<1))<<1);
   }
-#else
-  memcpy(output_ptr,STS_LTS_t,640*sizeof(int16_t));
 
-#endif
   
   // now do data portion
   crc = (uint32_t*)&data_ind[tx_vector->sdu_length+2];
@@ -252,23 +284,23 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
     case 0: // BPSK
       // -ve portion
       for (i=0;i<5;i++)
-	dataF[(38+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(38+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(38+5)<<1]=Pseq[sprime]; // Pilot 1
       for (;i<18;i++)
-	dataF[(38+1+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(38+1+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(38+19)<<1]=Pseq[sprime]; // Pilot 2
       for (;i<24;i++)
-	dataF[(38+2+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(38+2+i)<<1]=BPSK[data_interleaved[i]&1];
       
       // +ve portion
       for (;i<30;i++)
-	dataF[(-24+1+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(-24+1+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(6+1)<<1]=Pseq[sprime];  // Pilot 3
       for (;i<43;i++)
-	dataF[(-24+2+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(-24+2+i)<<1]=BPSK[data_interleaved[i]&1];
       dataF[(19+2)<<1]=-Pseq[sprime]; // Pilot 4
       for (;i<48;i++)
-	dataF[(-24+3+i)<<1]=BPSK[data_interleaved[i]];
+	dataF[(-24+3+i)<<1]=BPSK[data_interleaved[i]&1];
       
     break;
 
@@ -374,9 +406,9 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
 
     }
 #ifdef DEBUG_TX
-    if (s==0) {
+    if (s<12) {
       for (i=0;i<64;i++)
-	printf("k %d: (%d,%d)\n",i,dataF[i<<1],dataF[1+(i<<1)]);
+	printf("s %d, k %d: (%d,%d)\n",s,i,dataF[i<<1],dataF[1+(i<<1)]);
     }
 #endif
     
@@ -388,33 +420,45 @@ int phy_tx_start_bot(TX_VECTOR_t *tx_vector,int16_t *output_ptr,uint8_t *data_in
 	3,               /// scale (energy normalized for 64-point)
 	0);              /// 0 means 64-bit complex interleaved format else complex-multiply ready repeated format
 
-    // cyclic extension and output scaling 
-    output_ptr2 = &output_ptr[640+160*(1+s)];
+    // cyclic extension and output scaling
+    tx_offset2 += 160;
+
+    overlap=0;
+    if (tx_offset2 >= (frame_length<<1))
+      tx_offset2 -= (frame_length<<1);
+    else if ((tx_offset2 + 160) > (frame_length<<1))
+      overlap = 1;
+
+    output_ptr2 = &output_ptr[tx_offset2];
     for (i=0,j=48;i<80;i++,j++) {
       if (j==64)
 	j=0;
       //    printf("j %d : %d,%d\n",j,tmp_t[j<<2],tmp_t[1+(j<<2)]);
 #ifdef EXMIMO
-      output_ptr2[(i<<1)]     = tmp_t[j<<2]<<4;     // RE component
-      output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<4; // IM component
+      output_ptr2[(i<<1)]     = tmp_t[j<<2]<<2;     // RE component
+      output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]<<2; // IM component
 #else
       output_ptr2[(i<<1)]     = tmp_t[j<<2];     // RE component
       output_ptr2[1+(i<<1)]   = tmp_t[1+(j<<2)]; // IM component
 #endif
     }    
-
+    if (overlap == 1) {
+      memcpy((void*)output_ptr,
+	     (void*)&output_ptr[frame_length<<1],
+	     (tx_offset2 + 160 - (frame_length<<1))<<1);
+    }
   }
   
   
-  return(0);
+  return(400+(80*dlen_symb));
 }
 
 int init_tx=0;
 
-int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,uint8_t *data_ind) {
+int phy_tx_start(TX_VECTOR_t *tx_vector,uint32_t *tx_frame,uint32_t next_TXop_offset,int frame_length,uint8_t *data_ind) {
 #ifdef DEBUG_TX
   printf("tx_frame %p\n",tx_frame);
 #endif
-  return(phy_tx_start_bot(tx_vector,(int16_t *)(tx_frame+next_TXop_offset),data_ind));
+  return(phy_tx_start_bot(tx_vector,(int16_t *)tx_frame,next_TXop_offset,frame_length,data_ind));
 
 }

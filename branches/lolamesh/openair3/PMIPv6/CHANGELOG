@@ -1,8 +1,23 @@
 ==================================================================
 Proxy Mobile IPv6 - Changelog
 ==================================================================
+Changes in 0.4.2 (9 Nov 2012)
+  *Corrected bugs in virtual terminal, enabled at configuration with --enable-vt
+  *Check of P flag in PBU.
+  *Radius now not mandatory, enabled at configuration with --with-pmip-use-radius
+  *Only one type of script per MAG, LMA (before we had a script for MAG1, another one for MAG2, etc)
+  *LMA host type is fusionned with HA host type
+  *Rename executable from pmip6d to mip6d in order to ease integration of our PMIP stack with the umip project
+  *Check that RS or message alerting for an incoming MN comes from the ingress interface
+  *Added timer handler for tunnel.
+  *Tunnels now can be static or dynamic
+  *The alternative of using radius is to create a mapping file (hw address <-> IPv6 W prefix):/etc/pmip/mac-mapping.auth
+  *We can put comments in /etc/pmip/mac-mapping.auth file
+  *Now 2 MNs attached to the same MAG can communicate between them.
+  *Added detection of router sollicitation messages from mobiles (over ethernet and other LTE technologies)
+
 Changes in 0.4.1 (13 Dec 2011):
-  *Added Handoff Indicator Option (RFC5213), Access Technology Type Option(RFC5213), 
+  *Added Handoff Indicator Option (RFC5213), Access Technology Type Option(RFC5213),
    Mobile Node Identifier Option (RFC 4283) for RFC 5213 PBU/PBA messages.
   *Correction of P and A flag in PBU message (bad endianess issue).
   *Correction and use of automatic padding for options alignment.
@@ -33,8 +48,8 @@ Changes in 0.4 (21 Nov 2011):
   *Warning, there are some known memory leaks, they will be fixed in next release.
 
 Changes in 0.3 (10 Juin 2011):
-  * 
-	
+  *
+
 Changes in 0.2 (17 May 2011):
   * Update of README.first, INSTALL, INSTALL.kernel files for the UBUNTU 10.04 LTS version
   * Add of the "Simple_experimentation" directory which contains the drawing and the shell script files to achieve a 1 LMA + 2 MAGs testbed.

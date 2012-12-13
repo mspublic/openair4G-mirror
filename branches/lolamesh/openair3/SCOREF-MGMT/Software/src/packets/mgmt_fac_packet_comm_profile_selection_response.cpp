@@ -65,11 +65,14 @@ bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned c
 	buffer[payloadIndex++] = packet.relevance;
 	buffer[payloadIndex++] = packet.reliability;
 	buffer[payloadIndex++] = packet.reserved;
-	/*
-	 * todo here most suitable communication profile will be found
-	 * by an intelligent code that'll be added later on
+	/**
+	 * Get the most suitable communication profile from CommunicationProfileManager...
 	 */
-	Util::encode4byteInteger(buffer, payloadIndex, packet.communicationProfileId);
+	CommunicationProfileID communicationProfileId = mib.getCommunicationProfileManager().selectProfile(packet.latency, packet.relevance, packet.reliability);
+	/**
+	 * ...and encode it into the response packet
+	 */
+	Util::encode4byteInteger(buffer, payloadIndex, static_cast<int>(communicationProfileId));
 
 	// Resize incoming buffer
 	buffer.resize(sizeof(CommunicationProfileSelectionResponse));

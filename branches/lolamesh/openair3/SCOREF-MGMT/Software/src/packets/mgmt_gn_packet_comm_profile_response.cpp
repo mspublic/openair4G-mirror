@@ -40,11 +40,12 @@
 */
 
 #include "mgmt_gn_packet_comm_profile_response.hpp"
+#include <boost/lexical_cast.hpp>
 #include "../util/mgmt_util.hpp"
 
 GeonetCommunicationProfileResponsePacket::GeonetCommunicationProfileResponsePacket(ManagementInformationBase& mib,
 		u_int32_t communicationProfileRequest, Logger& logger) :
-	GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE, logger), mib(mib) {
+	GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE, logger), mib(mib), logger(logger) {
 	this->communicationProfileRequest = communicationProfileRequest;
 }
 
@@ -57,32 +58,43 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 
 	// Serialise header first...
 	GeonetPacket::serialize(buffer);
-	// ...then append communication profile item count
+
+	/**
+	 * Fetch those profiles asked in the COMM_PROFILE_REQ
+	 */
+	map<CommunicationProfileID, CommunicationProfileItem> filteredProfileMap = mib.getCommunicationProfileManager().getProfileMapSubset(communicationProfileRequest);
+
+	/**
+	 * Append communication profile item count
+	 */
 	u_int8_t payloadIndex = sizeof(MessageHeader);
-	Util::encode2byteInteger(buffer, payloadIndex, mib.getCommunicationProfileManager().getProfileCount());
+	Util::encode2byteInteger(buffer, payloadIndex, filteredProfileMap.size());
 	payloadIndex += 2;
 	// ...and `reserved' field
 	Util::encode2byteInteger(buffer, payloadIndex, 0x0000);
 	payloadIndex += 2;
 
 	// ...and communication profile item(s)
-	map<CommunicationProfileID, CommunicationProfileItem>::iterator iterator = mib.getCommunicationProfileManager().getProfileMap().begin();
-	while (iterator != mib.getCommunicationProfileManager().getProfileMap().end()) {
-		Util::encode4byteInteger(buffer, payloadIndex, iterator->second.id);
+	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = filteredProfileMap.begin();
+	while (it != filteredProfileMap.end()) {
+		Util::encode4byteInteger(buffer, payloadIndex, it->second.id);
 		payloadIndex += 4;
 
-		buffer[payloadIndex++] = iterator->second.transport;
-		buffer[payloadIndex++] = iterator->second.network;
-		buffer[payloadIndex++] = iterator->second.access;
-		buffer[payloadIndex++] = iterator->second.channel;
+		buffer[payloadIndex++] = it->second.transport;
+		buffer[payloadIndex++] = it->second.network;
+		buffer[payloadIndex++] = it->second.access;
+		buffer[payloadIndex++] = it->second.channel;
 
 		// Now `payloadIndex' points to the next available place
-		++iterator;
+		++it;
 	}
 
-	// Resize incoming buffer
-	buffer.resize(sizeof(CommunicationProfileResponse) + mib.getCommunicationProfileManager().getProfileCount()
-			* sizeof(CommunicationProfileItem));
+	logger.info("A COMM_PROFILE_RESPONSE packet has been generated having " + boost::lexical_cast<string>(filteredProfileMap.size()) + " profile(s) out of " + boost::lexical_cast<string>((int)mib.getCommunicationProfileManager().getProfileCount()));
+
+	/**
+	 * Resize buffer to the number of bytes we've written into it
+	 */
+	buffer.resize(sizeof(CommunicationProfileResponse) + filteredProfileMap.size() * sizeof(CommunicationProfileItem));
 
 	return true;
 }
@@ -90,8 +102,8 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 string GeonetCommunicationProfileResponsePacket::toString() const {
 	stringstream ss;
 
-	ss << GeonetPacket::toString() << endl;
-	ss << mib.getCommunicationProfileManager().toString() << endl;
+	ss << GeonetPacket::toString() << endl
+		<< mib.getCommunicationProfileManager().toString() << endl;
 
 	return ss.str();
 }
