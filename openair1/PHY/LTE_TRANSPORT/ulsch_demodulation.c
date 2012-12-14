@@ -52,6 +52,11 @@
 #include "extern.h"
 //#define DEBUG_ULSCH
 
+
+//extern char* namepointer_chMag ;
+//eren
+//extern int **ulchmag_eren;
+//eren
 #ifndef __SSE3__
 __m128i zeroU;
 #define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroU,(xmmx)))
@@ -1128,6 +1133,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	      LTE_eNB_ULSCH_t **ulsch,
 	      u8 cooperation_flag) {
 
+ // flagMag = 0;
   LTE_eNB_COMMON *eNB_common_vars = &phy_vars_eNB->lte_eNB_common_vars; 
   LTE_eNB_PUSCH *eNB_pusch_vars = phy_vars_eNB->lte_eNB_pusch_vars[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
@@ -1318,6 +1324,18 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 				   ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
 				   log2_maxh); // log2_maxh+I0_shift
       }
+      
+      
+     //eren
+    /* if(flagMag == 0){
+	//writing for the first time 
+	write_output(namepointer_log2,"xxx",log2_maxh,1,1,12);
+
+    write_output(namepointer_chMag,"xxx",eNB_pusch_vars->ul_ch_mag[eNB_id][0],300,1,11);
+    
+   //namepointer_chMag = NULL;
+    flagMag=1;
+    }*/
     if (frame_parms->nb_antennas_rx > 1)
       ulsch_detection_mrc(frame_parms,
 			  eNB_pusch_vars->rxdataF_comp[eNB_id],

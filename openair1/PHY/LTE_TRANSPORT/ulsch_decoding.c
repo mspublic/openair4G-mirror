@@ -1012,18 +1012,383 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 }
 
 #ifdef PHY_ABSTRACTION
+
+
+ int ulsch_abstraction(double* sinr_dB, u8 TM, u8 mcs,u16 nrb, u16 frb) {
+
+   int index,ii;
+  double sinr_eff = 0;
+  int rb_count = 0;
+  int offset;
+  double bler = 0;
+  TM = TM-1;
+  sinr_eff = sinr_dB[frb]; //the single sinr_eff value we calculated with MMSE FDE formula in init_snr_up function
+  
+   
+  sinr_eff *= 10;
+  sinr_eff = floor(sinr_eff);
+  sinr_eff /= 10;
+  
+  msg("sinr_eff after rounding = %f\n",sinr_eff);
+  for (index = 0; index < 16; index++) {
+    if(index == 0) {
+      if (sinr_eff < sinr_bler_map_up[mcs][0][index]) {
+        bler = 1;
+        break;
+      }
+    }
+    if (sinr_eff == sinr_bler_map_up[mcs][0][index]) {
+        bler = sinr_bler_map_up[mcs][1][index];
+    }
+  }
+#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
+   if (uniformrandom() < bler) {
+     LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(0);
+  }
+  else {
+    LOG_I(OCM,"abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(1);
+  }
+#endif
+}
+
+
+
+
+
+
+
+int ulsch_abstraction_MIESM(double* sinr_dB,u8 TM, u8 mcs,u16 nrb, u16 frb) {
+  int index;
+  double sinr_eff = 0;
+  double sinr_db1 = 0;
+  double sinr_db2 = 0;
+  double SI=0;
+  double RBIR=0;
+  int rb_count = 0;
+  int offset, M=0;
+  double bler = 0;
+  int start,middle,end;
+  TM = TM-1;
+  for (offset = frb; offset <= (frb + nrb -1); offset++) {
+
+      rb_count++;
+     
+      //we need to do the table lookups here for the mutual information corresponding to the certain sinr_dB. 
+      
+      sinr_db1 = sinr_dB[offset*2];
+      sinr_db2 = sinr_dB[offset*2+1];
+
+      msg("sinr_db1=%f\n,sinr_db2=%f\n",sinr_db1,sinr_db2);
+
+      //rounding up for the table lookup
+      sinr_db1 *= 10;
+      sinr_db2 *= 10;
+
+      sinr_db1 = floor(sinr_db1);
+      sinr_db2 = floor(sinr_db2);
+
+      if ((int)sinr_db1%2) {
+	sinr_db1 += 1;
+      }
+      if ((int)sinr_db2%2) {
+	sinr_db2 += 1;
+      }
+
+      sinr_db1 /= 10;
+      sinr_db2 /= 10;
+      
+      if(mcs<10){
+	//for sinr_db1
+	for (index = 0; index < 162; index++) {
+	    if (sinr_db1 < MI_map_4qam[0][0]) {
+	      SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=2;
+	    break;
+	    }
+	     if (sinr_db1 > MI_map_4qam[0][161]) {
+	       SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
+	        M +=2;
+	    break;
+	    }
+	  
+	  if (sinr_db1 == MI_map_4qam[0][index]) {
+	    SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	     M +=2;
+	    break;
+	  }
+	}
+      
+      //for sinr_db2
+	for (index = 0; index < 162; index++) {
+	    if (sinr_db2 < MI_map_4qam[0][0]) {
+	      SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	       M +=2;
+	    break;
+	    }
+	     if (sinr_db2 > MI_map_4qam[0][161]) {
+	       SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
+	        M +=2;
+	    break;
+	    }
+	  
+	  if (sinr_db2 == MI_map_4qam[0][index]) {
+	    SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	     M +=2;
+	    break;
+	  }
+	}
+	
+      }
+      else if(mcs>9 && mcs<17)
+	{
+	  //for sinr_db1
+	  for (index = 0; index < 197; index++) {
+	    if (sinr_db1 < MI_map_16qam[0][0]) {
+	      SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	       M +=4;
+	      break;
+	    }
+	    if (sinr_db1 > MI_map_16qam[0][196]) {
+	      SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    
+	    if (sinr_db1 == MI_map_16qam[0][index]) {
+	      SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	    break;
+	  }
+	  }
+	  
+	  //for sinr_db2
+	  for (index = 0; index < 197; index++) {
+	    if (sinr_db2 < MI_map_16qam[0][0]) {
+	      SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    if (sinr_db2 > MI_map_16qam[0][196]) {
+	      SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	      break;
+	    }
+	    
+	    if (sinr_db2 == MI_map_16qam[0][index]) {
+	      SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	      M +=4;
+	    break;
+	    }
+	  }
+	  
+	}
+      else if(mcs>16 && mcs<22)
+	{
+	  	//for sinr_db1
+	for (index = 0; index < 227; index++) {
+	    if (sinr_db1 < MI_map_64qam[0][0]) {
+	      SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	      M +=6;
+	    break;
+	    }
+	     if (sinr_db1 > MI_map_64qam[0][226]) {
+	       SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
+	       M +=6;
+	    break;
+	    }
+	  
+	     if (sinr_db1 == MI_map_64qam[0][index]) {
+	       SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	       M +=6;
+	       break;
+	     }
+	}
+	
+	//for sinr_db2
+	for (index = 0; index < 227; index++) {
+	  if (sinr_db2 < MI_map_64qam[0][0]) {
+	    SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	  if (sinr_db2 > MI_map_64qam[0][226]) {
+	    SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	  
+	  if (sinr_db2 == MI_map_64qam[0][index]) {
+	    SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
+	    M +=6;
+	    break;
+	  }
+	}
+	}
+    }
+ // }
+
+  RBIR = SI/M;
+  
+  //Now RBIR->SINR_effective Mapping
+  //binary search method is performed here
+  if(mcs<10){
+    start = 0;
+    end = 161;
+    middle = end/2;
+    if (RBIR <= MI_map_4qam[2][start])
+      {
+      sinr_eff =  MI_map_4qam[0][start];
+      }
+    else
+      {
+      if (RBIR >= MI_map_4qam[2][end])
+	sinr_eff =  MI_map_4qam[0][end];
+      else
+	{//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_4qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	    start = middle;
+	  middle = (end-middle)/2;
+	}
+	}
+    for (; end>start; end--){
+      if ((RBIR < MI_map_4qam[2][end]) && (RBIR >  MI_map_4qam[2][end-2])){
+      sinr_eff = MI_map_4qam[0][end-1];
+      break;
+      }
+    }
+      }
+    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs]; 
+  }
+
+
+  
+  else
+    if (mcs>9 && mcs<17)
+      {
+	
+	start = 0;
+	end = 196;
+	middle = end/2;
+	if (RBIR <= MI_map_16qam[2][start])
+	  {
+	  sinr_eff =  MI_map_16qam[0][start];
+	  }
+	else
+	  {
+	  if (RBIR >= MI_map_16qam[2][end])
+	    sinr_eff =  MI_map_16qam[0][end];
+	  else
+	    {
+	//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_16qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	  start = middle;
+	  middle = (end-middle)/2;
+	}
+	    }
+	for (; end>start; end--){
+	  if ((RBIR < MI_map_16qam[2][end]) && (RBIR >  MI_map_16qam[2][end-2])){
+	    sinr_eff = MI_map_16qam[0][end-1];
+	    break;
+	  }
+	}
+      }
+	sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs];
+      } 
+    else
+      if (mcs>16)
+	{
+	  start = 0;
+	  end = 226;
+    middle = end/2;
+    if (RBIR <= MI_map_64qam[2][start])
+      {
+      sinr_eff =  MI_map_64qam[0][start];
+      }
+    else
+      {
+      if (RBIR >= MI_map_64qam[2][end])
+	sinr_eff =  MI_map_64qam[0][end];
+      else
+	{
+	//while((end-start > 1) && (RBIR >= MI_map_4qam[2])) 
+	if (RBIR < MI_map_64qam[2][middle]){
+	  end = middle;
+	  middle = end/2;
+	}
+	else{ 
+	  start = middle;
+	  middle = (end-middle)/2;
+	}
+	}
+    for (; end>start; end--){
+      if ((RBIR < MI_map_64qam[2][end]) && (RBIR >  MI_map_64qam[2][end-2])){
+	sinr_eff = MI_map_64qam[0][end-1];
+      break;
+      }
+    } 
+      }
+    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs]; 
+	}
+
+  printf("SINR_Eff = %e\n",sinr_eff);
+
+ sinr_eff *= 10;
+  sinr_eff = floor(sinr_eff);
+  // if ((int)sinr_eff%2) {
+  //   sinr_eff += 1;
+  // }
+  sinr_eff /= 10;
+  msg("sinr_eff after rounding = %f\n",sinr_eff);
+
+   for (index = 0; index < 16; index++) {
+    if(index == 0) {
+      if (sinr_eff < sinr_bler_map_up[mcs][0][index]) {
+        bler = 1;
+        break;
+      }
+    }
+    if (sinr_eff == sinr_bler_map_up[mcs][0][index]) {
+        bler = sinr_bler_map_up[mcs][1][index];
+    }
+   }
+   
+#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
+   if (uniformrandom() < bler) {
+    msg("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(0);
+  }
+  else {
+    msg("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(1);
+  }
+#endif
+
+}
+
+
 u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
 			u8 UE_index) {
 
+  u32 ret ;
   u8 UE_id;
   u16 rnti;
   u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
   
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
-#ifdef DEBUG_PHY
+  //#ifdef DEBUG_PHY
   msg("[PHY] EMUL RRC eNB %d ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",phy_vars_eNB->Mod_id,subframe,UE_index,harq_pid,rnti);
-#endif
+  //#endif
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti)
       break;
@@ -1043,29 +1408,77 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     msg("found UE with rnti %x => UE_id %d\n",rnti,UE_id);
   }
   // Do abstraction here to determine if packet it in error
+ /* if (ulsch_abstraction_MIESM(phy_vars_eNB->sinr_dB_eNB,1, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb) == 1) 
+  flag = 1;
+  else flag = 0;*/
+  
 
-  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->b,
-	 PHY_vars_UE_g[UE_id]->ulsch_ue[0]->harq_processes[harq_pid]->b,
-	 phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->TBS>>3);
-  // get local ue's ack 	 
-  if ((UE_index >= oai_emulation.info.first_ue_local) ||(UE_index <(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local))){
-    get_ack(&phy_vars_eNB->lte_frame_parms,
-	    PHY_vars_UE_g[UE_id]->dlsch_ue[0][0]->harq_ack,
-	    subframe,
-	    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK);
-  }else { // get remote UEs' ack 
-    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0] = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_ACK[0];
-    phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1] = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_ACK[1];
+  /*
+ //SINRdbPost = phy_vars_eNB->sinr_dB_eNB;
+ mcsPost = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,
+ nrbPost = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
+ frbPost = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb; 
+ 
+ /*
+ if(nrbPost > 0)
+ {
+ SINRdbPost = phy_vars_eNB->sinr_dB_eNB;
+ ULflag1 = 1;
+}
+ else
+ {
+	 SINRdbPost = NULL  ;
+	 ULflag1 = 0 ;
+}*/
+
+  //
+ write_output("postprocSINR.m","SINReNB",phy_vars_eNB->sinr_dB,301,1,7);
+ 
+ 
+ //Yazdir buraya her frame icin 300 eNb 
+ // fprintf(SINRrx,"%e,%e,%e,%e;\n",SINRdbPost);
+ //fprintf(SINRrx,"%e\n",SINRdbPost);
+ 
+ // fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
+  
+  if (ulsch_abstraction(phy_vars_eNB->sinr_dB,1, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb) == 1) {
+ // if (1) {
+    msg("[PHY] ulsch_decoding_emul abstraction ok\n");
+
+    memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->b,
+	   PHY_vars_UE_g[UE_id]->ulsch_ue[0]->harq_processes[harq_pid]->b,
+	   phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->TBS>>3);
+    // get local ue's ack 	 
+    if ((UE_index >= oai_emulation.info.first_ue_local) ||(UE_index <(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local))){
+      get_ack(&phy_vars_eNB->lte_frame_parms,
+	      PHY_vars_UE_g[UE_id]->dlsch_ue[0][0]->harq_ack,
+	      subframe,
+	      phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK);
+    }else { // get remote UEs' ack 
+      phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0] = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_ACK[0];
+      phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1] = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_ACK[1];
+    }
+
+    // Do abstraction of PUSCH feedback
+    msg("[PHY] EMUL eNB %d : subframe %d : o_ACK %d %d\n",phy_vars_eNB->Mod_id,subframe,phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0],phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1]); 
+
+    phy_vars_eNB->ulsch_eNB[UE_index]->Or1 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
+    phy_vars_eNB->ulsch_eNB[UE_index]->Or2 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
+    memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o,MAX_CQI_BYTES); 
+    memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o_RI,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_RI,2); 
+
+    phy_vars_eNB->ulsch_eNB[UE_index]->cqi_crc_status = 1;
+    
+    return(1);   
   }
-  // Do abstraction of PUSCH feedback
-  msg("[PHY] EMUL eNB %d : subframe %d : o_ACK %d %d\n",phy_vars_eNB->Mod_id,subframe,phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0],phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1]); 
+  else {
+    msg("[PHY] ulsch_decoding_emul abstraction not ok\n");
 
-  phy_vars_eNB->ulsch_eNB[UE_index]->Or1 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
-  phy_vars_eNB->ulsch_eNB[UE_index]->Or2 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
-  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o,MAX_CQI_BYTES); 
-  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o_RI,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_RI,2); 
+    phy_vars_eNB->ulsch_eNB[UE_index]->cqi_crc_status = 0;
 
-  phy_vars_eNB->ulsch_eNB[UE_index]->cqi_crc_status = 1;
-  return(1);
+    // retransmission
+    return(1+MAX_TURBO_ITERATIONS);
+  }
+
 }
 #endif

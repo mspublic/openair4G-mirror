@@ -273,8 +273,9 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
 
 
 
+//extern int write_output(const char *,const char *,void *,int,int,char);
+// flag change eren
 extern int write_output(const char *,const char *,void *,int,int,char);
-
 main() {
 
   unsigned short Nid_cell=0;

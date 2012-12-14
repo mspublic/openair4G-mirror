@@ -10,7 +10,7 @@
     </FADING>
     <SYSTEM_BANDWIDTH_MB>7.68</SYSTEM_BANDWIDTH_MB>
     <SYSTEM_FREQUENCY_GHz>1.9</SYSTEM_FREQUENCY_GHz>
-    <TRANSMISSION_MODE>5</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
+    <TRANSMISSION_MODE>1</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
     <ANTENNA>
       <eNB_ANTENNA>
 	<RX_NOISE_LEVEL_dB>0</RX_NOISE_LEVEL_dB>
@@ -54,18 +54,18 @@
  
   <APPLICATION_CONFIG>
     <CUSTOMIZED_TRAFFIC>  	
-      <SOURCE_ID>0</SOURCE_ID>		
-      <DESTINATION_ID>1:2</DESTINATION_ID>
+      <SOURCE_ID>1:2</SOURCE_ID>		
+      <DESTINATION_ID>0</DESTINATION_ID>
       <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <IDT_MIN_ms>10</IDT_MIN_ms>
       <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <SIZE_MIN_byte>1500</SIZE_MIN_byte>
+      <SIZE_MIN_byte>50</SIZE_MIN_byte>
     </CUSTOMIZED_TRAFFIC>  
 
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> 
+    <EMULATION_TIME_ms>2000</EMULATION_TIME_ms> 
     <CURVE>disable</CURVE>
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>

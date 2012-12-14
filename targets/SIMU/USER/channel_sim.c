@@ -42,6 +42,9 @@
 #define RF
 //#define DEBUG_SIM
 
+ int number_rb_ul;
+ int first_rbUL ;
+
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
   int aa, slot_offset, slot_offset_F;
@@ -403,36 +406,97 @@ void do_DL_sig(double **r_re0,double **r_im0,
 }
 
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, u32 frame) {
 
   s32 **txdata,**rxdata;
+
+  s32 att_eNB_id=-1;
+  u8 eNB_id=0,UE_id=0;
 
   u8 nb_antennas_rx = UE2eNB[0][0]->nb_rx; // number of rx antennas at eNB
   u8 nb_antennas_tx = UE2eNB[0][0]->nb_tx; // number of tx antennas at UE
 
-  u8 UE_id=0,eNB_id=0,aa;
   double tx_pwr, rx_pwr;
   s32 rx_pwr2;
-  u32 i;
+  u32 i,aa;
   u32 slot_offset,slot_offset_meas;
-
-  u8 hold_channel=1;
+  
+  double min_path_loss=-200;
+  u16 ul_nb_rb=0 ;
+  u16 ul_fr_rb=0;
+  int ulnbrb2 ;
+  int ulfrrb2 ;
+  u8 harq_pid;
+  u8 hold_channel=0;
+  int subframe = (next_slot>>1);
+  
   //  u8 aatx,aarx;
 
-  if (next_slot==4) {
+  if (next_slot==4) 
+  {
     hold_channel = 0;
   }
-
-
-  if (abstraction_flag!=0) {
-    for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-      for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-	random_channel(UE2eNB[UE_id][eNB_id]);
-	freq_channel(UE2eNB[UE_id][eNB_id], frame_parms->N_RB_UL,2);
-      }
-    }
+  if (abstraction_flag!=0) 
+  {
+    for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) 
+    {
+      for (UE_id=0;UE_id<NB_UE_INST;UE_id++) 
+		{
+			random_channel(UE2eNB[UE_id][eNB_id]);
+			freq_channel(UE2eNB[UE_id][eNB_id], frame_parms->N_RB_UL,frame_parms->N_RB_UL*12+1);
+		}
+     }
+     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) 
+     {
+			//channel now is ready for uplink,now find out which UEs are connected to you 			
+       for (UE_id=0;UE_id<NB_UE_INST;UE_id++) 
+		{
+			att_eNB_id=0;
+			// if UE is not attached yet, find assume its the eNB with the smallest pathloss
+			if (att_eNB_id >= 0) 
+			{
+				for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) 
+				{
+					if (min_path_loss<UE2eNB[UE_id][eNB_id]->path_loss_dB)
+					 {
+						min_path_loss = UE2eNB[UE_id][eNB_id]->path_loss_dB;
+						att_eNB_id=eNB_id;
+						LOG_D(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
+					  }
+				}
+			}
+	  if (att_eNB_id<0)
+	  {
+	    LOG_E(OCM,"Cannot find eNB for UE %d, return\n",UE_id);
+	    return; //exit(-1);
+	  }
+	  // If the UE is attached to you, perform the uplink / abstraction procedure:
+	  if(att_eNB_id >= 0)
+	  {
+	    //{ // REceived power at the eNB
+	    rx_pwr = signal_energy_fp2(UE2eNB[UE_id][att_eNB_id]->ch[0],
+				       UE2eNB[UE_id][att_eNB_id]->channel_length)*UE2eNB[UE_id][att_eNB_id]->channel_length; // calculate the rx power at the eNB
+	    
+	    //  write_output("SINRch.m","SINRch",PHY_vars_eNB_g[att_eNB_id]->sinr_dB_eNB,frame_parms->N_RB_UL*12+1,1,1);
+	    if(subframe>1 && subframe <5)
+	    {
+			harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
+			ul_nb_rb = PHY_vars_eNB_g[att_eNB_id]->ulsch_eNB[(u8)UE_id]->harq_processes[harq_pid]->nb_rb;
+			ul_fr_rb = PHY_vars_eNB_g[att_eNB_id]->ulsch_eNB[(u8)UE_id]->harq_processes[harq_pid]->first_rb;
+	    }
+	    
+	    if(ul_nb_rb>1 && (ul_fr_rb < 25 && ul_fr_rb > -1))
+	    {
+			number_rb_ul = ul_nb_rb;
+			first_rbUL = ul_fr_rb;
+			init_snr_up(UE2eNB[UE_id][att_eNB_id],enb_data[att_eNB_id], ue_data[UE_id],PHY_vars_eNB_g[att_eNB_id]->sinr_dB,&PHY_vars_UE_g[att_eNB_id]->N0,ul_nb_rb,ul_fr_rb);
+			
+		}
+	  } // If this UE is attached to you(means perform Uplink abstraction procedure)
+	} //uE_id
+   }
   }
-  else { //abstraction
+  else { //without abstraction
 
     /*
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {

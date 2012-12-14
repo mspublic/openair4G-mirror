@@ -91,7 +91,11 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][16];
-
+double sinr_bler_map_up[MCS_COUNT][2][16];
+extern double SINRpost_eff[301];
+extern int mcsPost; 
+extern int  nrbPost; 
+extern int frbPost;
 extern void kpi_gen();
 
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
@@ -619,6 +623,10 @@ main (int argc, char **argv)
   // Framing variables
   s32 slot, last_slot, next_slot;
 
+  FILE *SINRpost;
+  char SINRpost_fname[512];
+  sprintf(SINRpost_fname,"postprocSINR.m");
+  SINRpost = fopen(SINRpost_fname,"w");
   // variables/flags which are set by user on command-line
   double snr_dB, sinr_dB,snr_direction;//,sinr_direction;
   u8 set_sinr=0;//,set_snr=0;
@@ -1026,13 +1034,13 @@ main (int argc, char **argv)
   LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
   	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
   
-  if(set_seed){
+  // if(set_seed){
     randominit (oai_emulation.info.seed);
     set_taus_seed (oai_emulation.info.seed);
-  } else {
-    randominit (0);
-    set_taus_seed (0);
-  }
+    //  } else {
+    //  randominit (0);
+    // set_taus_seed (0);
+    // }
   // change the nb_connected_eNB
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
@@ -1043,8 +1051,12 @@ main (int argc, char **argv)
 
 
   /* Added for PHY abstraction */
-  if (abstraction_flag) 
+  if (abstraction_flag) {
     get_beta_map();
+	get_beta_map_up();
+	  get_MIESM_param();
+	}
+
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t)); 
@@ -1128,7 +1140,7 @@ main (int argc, char **argv)
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
-  openair_daq_vars.ue_ul_nb_rb = 2;
+  openair_daq_vars.ue_ul_nb_rb = 8;
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
@@ -1397,6 +1409,7 @@ main (int argc, char **argv)
 	    if (frame>0) {
 	      PHY_vars_UE_g[UE_id]->frame = frame;
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
+		  ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id]->tx_power_dBm;
 	    }
 	  }
 	  else {
@@ -1434,8 +1447,16 @@ main (int argc, char **argv)
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
-      if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
+      if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){//if ((subframe<2) || (subframe>4))
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
+	
+		int ccc;
+		fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
+		for(ccc = 0 ; ccc<301; ccc++)
+		{
+			fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
+		}
+		fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
       }
       if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
@@ -1448,7 +1469,15 @@ main (int argc, char **argv)
 	  */
 	}
 	else {// UL part
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
+	    
+	    int ccc;
+		fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
+		for(ccc = 0 ; ccc<301; ccc++)
+		{
+			fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
+		}
+		fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
 	}
       }
       if ((last_slot == 1) && (frame == 0)
@@ -1559,7 +1588,7 @@ main (int argc, char **argv)
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
   }	//end of frame
-  
+  fclose(SINRpost);
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   //Perform KPI measurements
