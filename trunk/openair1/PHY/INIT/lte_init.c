@@ -1350,6 +1350,11 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	return(-1);
       }
     }
+    else //UPLINK abstraction = 1
+    {
+		
+	 	phy_vars_eNB->sinr_dB = (double*) malloc16(frame_parms->N_RB_DL*12*sizeof(double));
+	}
   } //eNB_id
     
   

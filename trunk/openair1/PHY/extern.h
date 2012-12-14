@@ -5,6 +5,10 @@
 #include "PHY/defs.h"
 #include "PHY/TOOLS/twiddle_extern.h"
 
+extern  char* namepointer_chMag ;
+extern char* namepointer_log2;
+ extern  char fmageren_name2[512];
+
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern short *twiddle_fft,*twiddle_ifft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
@@ -40,7 +44,7 @@ extern int *sync_corr_ue0;
 extern int *sync_corr_ue1;
 extern int *sync_corr_ue2;
 
-
+extern int flagMag;
 //extern short **txdataF_rep_tmp;
 
 extern char mode_string[4][20];
@@ -55,6 +59,7 @@ extern unsigned char NB_UE_INST;
 #endif
 
 extern double sinr_bler_map[MCS_COUNT][2][16];
+extern double sinr_bler_map_up[MCS_COUNT][2][16];
 
 //for MU-MIMO abstraction using MIESM
 //this 2D arrarays contains SINR, MI and RBIR in rows 1, 2, and 3 respectively
