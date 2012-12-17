@@ -541,7 +541,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 #endif //XFORMS
-
+#ifdef OPENAIR2
 int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data){
   int i,j;
   omv_data.end=0;
@@ -606,7 +606,7 @@ void omv_end (int pfd, Data_Flow_Unit omv_data) {
   if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
     perror( "write omv failed" );
 }
-
+#endif 
 int
 main (int argc, char **argv)
 {
@@ -648,7 +648,7 @@ main (int argc, char **argv)
   int td, td_avg, sleep_time_us;
 
   lte_subframe_t direction;
-
+#ifdef OPENAIR2
   // omv related info
   //pid_t omv_pid;
   char full_name[200];
@@ -661,11 +661,11 @@ main (int argc, char **argv)
   char x_area[20];
   char y_area[20];  
   char z_area[20];
-  char fname[64],vname[64];
   char nb_antenna[20];
   char frame_type[10];
   char tdd_config[10];
-  
+#endif   
+  char fname[64],vname[64];
   // u8 awgn_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
@@ -689,8 +689,9 @@ main (int argc, char **argv)
   // Added for PHY abstraction
   Node_list ue_node_list = NULL;
   Node_list enb_node_list = NULL;
+#ifdef OPENAIR2
   Data_Flow_Unit omv_data ;
-//ALU
+#endif //ALU
 
   int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
   //double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
@@ -982,7 +983,7 @@ main (int argc, char **argv)
 
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
-
+#ifdef OPENAIR2
   if (oai_emulation.info.omv_enabled == 1) {
     
     if(pipe(pfd) == -1)
@@ -1016,7 +1017,7 @@ main (int argc, char **argv)
     if(close( pfd[0] ) == -1 ) /* we close the write desc. */
       perror("close on read\n" );
   }
-
+#endif 
 #ifdef PRINT_STATS
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
@@ -1289,11 +1290,12 @@ main (int argc, char **argv)
     }
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time_s);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time_s);
+#ifdef OPENAIR2
     // check if pipe is still open
     if ((oai_emulation.info.omv_enabled == 1) ){
       omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
     }
-    
+#endif    
 #ifdef DEBUG_OMG
     if ((((int) oai_emulation.info.time_s) % 100) == 0) {
       for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++) {
@@ -1654,9 +1656,10 @@ main (int argc, char **argv)
 
   // stop OMG
   stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
+#ifdef OPENAIR2
   if (oai_emulation.info.omv_enabled == 1)
     omv_end(pfd[1],omv_data);
-
+#endif
   if ((oai_emulation.info.ocm_enabled == 1) && (ethernet_flag == 0) && (ShaF != NULL)) 
     destroyMat(ShaF,map1, map2);
 
