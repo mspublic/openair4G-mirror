@@ -180,6 +180,11 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats) {
     if (stats->DL_cqi[0] > 24)
       stats->DL_cqi[0] = 24;      
     do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1);
+    LOG_D(MAC,"UE CRNTI: %u CQI SB0: %u SB1: %u SB2: %u SB3: %u SB4: %u SB5: %u SB6: %u \n",
+    		stats->crnti, stats->DL_subband_cqi[0][0],stats->DL_subband_cqi[0][1],
+    		stats->DL_subband_cqi[0][2],stats->DL_subband_cqi[0][3],
+    		stats->DL_subband_cqi[0][4],stats->DL_subband_cqi[0][5],
+    		stats->DL_subband_cqi[0][6]);
     break;
   case HLC_subband_cqi_rank1_2A:
     stats->DL_cqi[0]     = (((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1);

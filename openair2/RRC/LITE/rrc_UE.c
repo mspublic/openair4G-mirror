@@ -299,7 +299,6 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index, u32 frame, UE_RRC
 
 		  LOG_D(RRC,"\n binsearch:rsrp_s: %d rsrq_s: %d tmp: %f tmp1: %f \n",rsrp_s,rsrq_s,tmp,tmp1);
 
-
 		  rsrp_t = binary_search_float(RSRP_meas_mapping,nElem,phy_vars_ue->PHY_measurements.rsrp_filtered[target_eNB_offset]); //RSRP of target cell
 		  rsrq_t = binary_search_float(RSRQ_meas_mapping,nElem1,phy_vars_ue->PHY_measurements.rsrq_filtered[target_eNB_offset]); //RSRQ of target cell
 
@@ -1013,6 +1012,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
     				  rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,Mod_id_t);
 					  UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
 					  LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
+					  UE_rrc_inst[Mod_id].HandoverInfoUe.measFlag = 1; // Ready to send more MeasReports if required
     			  }
     		  }
     	  }
@@ -1551,6 +1551,7 @@ void ue_measurement_report_triggering(u8 Mod_id, u32 frame, UE_RRC_INST *UE_rrc_
 										UE_rrc_inst[Mod_id].measReportList[i][j]->measId = UE_rrc_inst[Mod_id].MeasId[i][j]->measId;
 										UE_rrc_inst[Mod_id].measReportList[i][j]->numberOfReportsSent = 0;
 										rrc_ue_generate_MeasurementReport(Mod_id,0,frame,&UE_rrc_inst[Mod_id],PHY_vars_UE_g[Mod_id]);
+										UE_rrc_inst[Mod_id].HandoverInfoUe.measFlag = 1;
 										LOG_I(RRC,"\n A3 event detected for UE %d in state: %d \n", (int)Mod_id, UE_rrc_inst[Mod_id].Info[0].State);
 									}
 									else {

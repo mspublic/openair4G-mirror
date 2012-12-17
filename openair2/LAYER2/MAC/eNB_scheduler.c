@@ -1434,6 +1434,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   FILE *DCIi;
   DCIi = fopen("dci.txt","a");
   int b;
+  u32 buff,test;
 
   buff=rballoc;
   fprintf(DCIi,"eNB: %d active user: %d |rballoc init:\t\t\t",Mod_id,find_active_UEs(Mod_id));

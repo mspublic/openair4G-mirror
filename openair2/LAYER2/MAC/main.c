@@ -225,6 +225,7 @@ int mac_top_init(){
 
  //ICIC init param
 #ifdef ICIC
+  u8 SB_size;
   SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
 
   srand (time(NULL));
