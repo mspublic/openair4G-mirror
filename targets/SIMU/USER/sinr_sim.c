@@ -38,7 +38,8 @@
 #define MCS_COUNT 24
 #define MCL (-70) /*minimum coupling loss (MCL) in dB*/
 //double sinr[NUMBER_OF_eNB_MAX][2*25];
-extern double sinr_bler_map[MCS_COUNT][2][16];
+extern double sinr_bler_map[MCS_COUNT][2][20];
+extern int table_length[MCS_COUNT];
 extern double sinr_bler_map_up[MCS_COUNT][2][16];
 double SINRpost_eff[301];
 extern double MI_map_4qam[3][162];
@@ -69,9 +70,10 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
   }
 }
 
-void extract_position_fixed_ue (node_desc_t **node_data, int nb_nodes) {    
+void extract_position_fixed_ue (node_desc_t **node_data, int nb_nodes, u32 frame) {    
     
   int i;
+  // if(frame<50)
   for (i=0;i<nb_nodes;i++) {
     if (i==0) {
       node_data[i]->x = 1856;
@@ -82,6 +84,29 @@ void extract_position_fixed_ue (node_desc_t **node_data, int nb_nodes) {
       node_data[i]->y = 1563;
     }
   }
+  /*  else
+    {
+      for (i=0;i<nb_nodes;i++) {
+	if (i==0) {
+	  node_data[i]->x = 1856 + (frame - 49);
+	  if(node_data[i]->x > 2106)
+	    node_data[i]->x = 2106;
+	  node_data[i]->y = 1813 - (frame - 49);
+	  if(node_data[i]->y < 1563)
+	    node_data[i]->y = 1563;
+	  // if( node_data[i]->x == 2106)
+	  //   node_data[i]->x = 2106 - (frame - 49);
+	}
+	else {
+	  node_data[i]->x = 2106 - (frame - 49);
+	  if(node_data[i]->x < 1856)
+	    node_data[i]->x = 1856;
+	  node_data[i]->y = 1563 + (frame - 49);
+	  if(node_data[i]->y < 1813)
+	    node_data[i]->y = 1813;
+	}
+      }
+      }*/
 }
 
 void init_ue(node_desc_t  *ue_data, UE_Antenna ue_ant) {//changed from node_struct
@@ -464,7 +489,8 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
 
 void get_beta_map() {
   char *file_path = NULL;
-  int table_len = 0;
+  //int table_len = 0;
+  int t;
   int mcs = 0;
   char *sinr_bler;
   char buffer[1000];
@@ -473,7 +499,7 @@ void get_beta_map() {
   file_path = (char*) malloc(512);
 
   for (mcs = 0; mcs < MCS_COUNT; mcs++) {
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/awgn_abst/awgn_snr_bler_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/awgn_abst/Real/awgn_snr_bler_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
       LOG_W(OCM,"ERROR: Unable to open the file %s, try an alternative path\n", file_path);
@@ -488,25 +514,25 @@ void get_beta_map() {
     }
     // else {
       fgets(buffer, 1000, fp);
-      table_len=0;
+      table_length[mcs]=0;
       while (!feof(fp)) {
         sinr_bler = strtok(buffer, ",");
-        sinr_bler_map[mcs][0][table_len] = atof(sinr_bler);
+        sinr_bler_map[mcs][0][table_length[mcs]] = atof(sinr_bler);
         sinr_bler = strtok(NULL,",");
-        sinr_bler_map[mcs][1][table_len] = atof(sinr_bler);
-        table_len++;
+        sinr_bler_map[mcs][1][table_length[mcs]] = atof(sinr_bler);
+        table_length[mcs]++;
         fgets(buffer, 1000, fp);
       }
       fclose(fp);
       //   }
     LOG_D(OCM,"Print the table for mcs %d\n",mcs);
-    for (table_len = 0; table_len < 16; table_len++)
-      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+    for (t = 0; t<table_length[mcs]; t++)
+      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][t],sinr_bler_map[mcs][1][t]);
   }
   free(file_path);
 }
 
-
+#ifdef PHY_ABSTRACTION_UL
 void get_beta_map_up() {
   char *file_path = NULL;
   int table_len = 0;
@@ -551,7 +577,7 @@ void get_beta_map_up() {
   free(file_path);
 }
 
-
+#endif
 
 //this function reads and stores the Mutual information tables for the MIESM abstraction. 
 void get_MIESM_param() {
@@ -635,6 +661,8 @@ void get_MIESM_param() {
     }
   free(file_path);
 }
+
+
 
 
 
