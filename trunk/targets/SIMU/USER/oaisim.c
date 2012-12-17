@@ -90,7 +90,7 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 //Added for PHY abstraction
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
-double sinr_bler_map[MCS_COUNT][2][16];
+double sinr_bler_map[MCS_COUNT][2][20];
 double sinr_bler_map_up[MCS_COUNT][2][16];
 extern double SINRpost_eff[301];
 extern int mcsPost; 
@@ -674,10 +674,14 @@ main (int argc, char **argv)
   char title[255];
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
-
-  FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr;
+  
+  FILE *UE_stats[NUMBER_OF_UE_MAX],*eNB_stats;
+  
+  FILE *UE_stats_th[NUMBER_OF_UE_MAX],  *eNB_avg_thr;
   
   char UE_stats_filename[255];
+  
+  char UE_stats_th_filename[255];
  
   int len;
 #ifdef ICIC
@@ -1018,17 +1022,32 @@ main (int argc, char **argv)
   }
 
 #ifdef PRINT_STATS
+
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
     UE_stats[UE_id] = fopen (UE_stats_filename, "w");
-  }
+   }
   eNB_stats = fopen ("eNB_stats.txt", "w");
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
-
- eNB_avg_thr = fopen ("eNB_stats_th.txt", "w");
- 
+  
+  if(abstraction_flag==0){
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+      sprintf(UE_stats_th_filename,"UE_stats_th%d.txt",UE_id);
+    UE_stats_th[UE_id] = fopen (UE_stats_th_filename, "w");
+    }
+   eNB_avg_thr = fopen ("eNB_stats_th.txt", "w"); 
+  }
+  else
+    {
+      for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+	sprintf(UE_stats_th_filename,"UE_stats_abs_th%d.txt",UE_id);
+	UE_stats_th[UE_id] = fopen (UE_stats_th_filename, "w");
+      }
+      eNB_avg_thr = fopen ("eNB_stats_abs_th.txt", "w");
+    }
+  
 #endif
-      
+  
   LOG_I(EMU,"total number of UE %d (local %d, remote %d) mobility %s \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
   LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) mobility %s \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote, oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option);
   LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
@@ -1053,8 +1072,10 @@ main (int argc, char **argv)
   /* Added for PHY abstraction */
   if (abstraction_flag) {
     get_beta_map();
-	get_beta_map_up();
-	  get_MIESM_param();
+ #ifdef PHY_ABSTRACTION_UL
+    get_beta_map_up();
+#endif
+    get_MIESM_param();
 	}
 
 
@@ -1320,9 +1341,9 @@ main (int argc, char **argv)
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
 	  LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
-		eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
-	}
-      }
+		 eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
+	 }
+       }
     }
 
     else {
@@ -1376,19 +1397,19 @@ main (int argc, char **argv)
 	//PHY_vars_eNB_g[eNB_id]->frame = frame;
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	
+
+
 #ifdef PRINT_STATS
+	if(last_slot==9)
+	if(eNB_avg_thr)
+	  fprintf(eNB_avg_thr,"%d %d\n",PHY_vars_eNB_g[eNB_id]->frame,(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
 	if (eNB_stats) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
 	  fflush(eNB_stats);
 	}
-                    /*
-	  printf("[eNBPRINT] Average System Throughput %dKbps\n",(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
-	  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) 
-	    printf("[eNBPRINT] Transmission Mode on DL for UE %d: %d\n", UE_id, PHY_vars_eNB_g[eNB_id]->transmission_mode[UE_id]);
-	  fprintf(eNB_avg_thr,"%d %d\n",PHY_vars_eNB_g[eNB_id]->frame,(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
-                    */
+                  
 #endif
       }
       // Call ETHERNET emulation here
@@ -1435,6 +1456,9 @@ main (int argc, char **argv)
 	    }
  	  }
 #ifdef PRINT_STATS
+	  if(last_slot==2)
+	  if (UE_stats_th[UE_id])
+	    fprintf(UE_stats_th[UE_id],"%d %d\n",frame, PHY_vars_UE_g[UE_id]->bitrate[0]/1000);
 	  if (UE_stats[UE_id]) {
 	    len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
 	    rewind (UE_stats[UE_id]);
@@ -1443,6 +1467,7 @@ main (int argc, char **argv)
 	  }
 #endif
 	}
+     
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
@@ -1525,7 +1550,7 @@ main (int argc, char **argv)
       } // end if next_slot%2
      }// if Channel_Flag==0
 
-     }				//end of slot
+    }				//end of slot
     
     if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -1642,12 +1667,18 @@ main (int argc, char **argv)
   
 #ifdef PRINT_STATS
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++) 
+    {
+
     if (UE_stats[UE_id]) 
       fclose (UE_stats[UE_id]);
-  if (eNB_stats)
+    if(UE_stats_th[UE_id])
+  	fclose (UE_stats_th[UE_id]);
+    }
+	if (eNB_stats)
     fclose (eNB_stats);
-  if (eNB_avg_thr)
-    fclose (eNB_avg_thr);
+	if (eNB_avg_thr)
+        fclose (eNB_avg_thr);
+
 #endif
 
   // stop OMG
