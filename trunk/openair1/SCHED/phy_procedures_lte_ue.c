@@ -1549,7 +1549,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 
 
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq = 0;
-    frame_tx = (((int)(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[0]&0x03))<<8); 
+    frame_tx = (((int)(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[2]&0x03))<<8); 
     frame_tx += ((int)(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1]&0xfc));
     frame_tx += pbch_phase;
 
