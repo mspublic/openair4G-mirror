@@ -137,7 +137,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     // openair_daq_vars.dlsch_transmission_mode = (pbch_tx_ant>1) ? 2 : 1;
     
     // now check for Bandwidth of Cell
-    dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>5)&7;
+    dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[2]>>5)&7;
     switch (dummy) {
       
     case 0 : 
@@ -168,8 +168,8 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 #endif
     
     // now check for PHICH parameters
-    frame_parms->phich_config_common.phich_duration = (PHICH_DURATION_t)((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>4)&1);
-    dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>2)&3;
+    frame_parms->phich_config_common.phich_duration = (PHICH_DURATION_t)((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[2]>>4)&1);
+    dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[2]>>2)&3;
     switch (dummy) {
     case 0:
       frame_parms->phich_config_common.phich_resource = oneSixth;
@@ -189,7 +189,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
       break;
     }
     
-    phy_vars_ue->frame = 	(((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]&3)<<6) + (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[1]>>2))<<2;
+    phy_vars_ue->frame = 	(((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[2]&3)<<6) + (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[1]>>2))<<2;
     phy_vars_ue->frame += frame_mod4;
 
 #ifndef USER_MODE
