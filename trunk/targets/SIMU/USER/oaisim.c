@@ -90,7 +90,7 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 //Added for PHY abstraction
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
-double sinr_bler_map[MCS_COUNT][2][20];
+double sinr_bler_map[MCS_COUNT][2][16];
 double sinr_bler_map_up[MCS_COUNT][2][16];
 extern double SINRpost_eff[301];
 extern int mcsPost; 
