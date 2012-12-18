@@ -128,10 +128,11 @@ void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id);
 
 /*! \brief Function to return the path-loss based on the UE cell-specific reference signal strength and transmission power of eNB
 @param Mod_id Module ID for UE
+@param CC_id Component carrier ID
 @param eNB_index Index of eNB on which to act
 @returns Path loss in dB
 */
-s16 get_PL(u8 Mod_id,u8 eNB_index);
+s16 get_PL(u8 Mod_id,u8 CC_id, u8 eNB_index);
 
 //! Automatic gain control
 void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
