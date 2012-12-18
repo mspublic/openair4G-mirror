@@ -1252,7 +1252,7 @@ main (int argc, char **argv)
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
-    if ((frame % 10) == 0 ) { // call OMG every 10ms 
+    if ((frame % 1) == 0 ) { // call OMG every 10ms 
       update_nodes(oai_emulation.info.time_s); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
