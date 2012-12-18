@@ -290,7 +290,10 @@ Pair move_trace_node(NodePtr node, double cur_time) {
       
       LOG_D(OMG,"next_loc->time %f",next_loc->time);
       
-      journeyTime_next =  (double) ((int)(distance/speed_next*100))/ 100;  
+      if (distance ==0 ) 
+	journeyTime_next=0;
+      else
+	journeyTime_next =  (double) ((int)(distance/speed_next*100))/ 100;  
     } //duration to get to dest ;
     
     node->mobile = 1;
@@ -374,7 +377,7 @@ void update_trace_nodes(double cur_time) {
        tmp = tmp->next;  
      }
      else {
-       LOG_E(OMG, "%.2f > %.2f\n", cur_time,tmp->pair->a   );   //LOG_D(OMG, " (generator=%d) != (RWP=%d) \n", tmp->pair->b->generator,  RWP );
+       LOG_E(OMG, "cur_time %.2f > tmp->pair->a  %.2f\n", cur_time,tmp->pair->a   );   //LOG_D(OMG, " (generator=%d) != (RWP=%d) \n", tmp->pair->b->generator,  RWP );
        done = 1;  //quit the loop
        exit(-1);
      }
@@ -396,7 +399,7 @@ void get_trace_positions_updated(double cur_time){
 
   Pair my_pair = Job_Vector->pair;
   
-  if ( (my_pair !=NULL) && (cur_time <= my_pair->a )){
+  if ( (my_pair !=NULL) && (cur_time - eps <= my_pair->a )){
     // LOG_D(OMG, "%.2f <= %.2f\n ",cur_time, my_pair->a);
     Job_list tmp = Job_Vector;
     
@@ -459,8 +462,14 @@ void get_trace_positions_updated(double cur_time){
           }
 
           LOG_D(OMG, "X_now %f\tY_now %f\n", X_now, Y_now);
-          tmp->pair->b->X_pos = (double) ((int) (X_now*100))/ 100;
-          tmp->pair->b->Y_pos = (double) ((int) (Y_now*100))/ 100;
+          if (X_now>0 )
+	    tmp->pair->b->X_pos = (double) ((int) (X_now*100))/ 100;
+	  else
+	    tmp->pair->b->X_pos=0;
+          if (Y_now>0)
+	    tmp->pair->b->Y_pos = (double) ((int) (Y_now*100))/ 100;
+	  else 
+	    tmp->pair->b->Y_pos=0;
           //tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
           //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
 	  //tmp->pair->b->mob->start_journey = cur_time;
