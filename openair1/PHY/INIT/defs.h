@@ -121,11 +121,12 @@ void phy_config_sib2_eNB(u8 Mod_id,
  			         struct PhysicalConfigDedicated *physicalConfigDedicated)
 \brief Configure UE dedicated parameters. Invoked upon reception of RRCConnectionSetup or RRCConnectionReconfiguration from eNB.
 @param Mod_id Instance ID for eNB
+@param CC_id Compinent carrier ID
 @param CH_index Index of eNB for this configuration
 @param physicalConfigDedicated PHY Configuration information
 
 */
-void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
+void phy_config_dedicated_ue(u8 Mod_id,u8 CC_id, u8 CH_index,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated);
 
 /*!

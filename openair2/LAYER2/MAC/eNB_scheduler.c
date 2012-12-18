@@ -268,7 +268,7 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *l3msg) {
   } // loop on RA processes
 }
 
-DCI_PDU *get_dci_sdu(u8 Mod_id, u32 frame, u8 subframe) {
+DCI_PDU *get_dci_sdu(u8 Mod_id, u8 CC_id, u32 frame, u8 subframe) {
 
   return(&eNB_mac_inst[Mod_id].DCI_pdu);
 

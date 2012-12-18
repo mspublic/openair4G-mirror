@@ -7,7 +7,6 @@
 #include "defs.h"
 #include "extern.h"
 #include "UTIL/LOG/log.h"
-#define NUMBER_OF_CC_MAX 2
 
 
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
@@ -23,7 +22,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       u16 *SIperiod) {
 
 u8 CC_id;
-  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
+  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
   
   if (eNB_flag==0) {
     LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_id,eNB_index);

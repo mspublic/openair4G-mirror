@@ -596,10 +596,11 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 sub
 /* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary numeber of times after eNB_dlsch_ulsch_scheduler
 in a given subframe.
 @param Mod_id Instance ID of eNB
+@param CC_id Component carrier ID
 @param subframe Index of current subframe
 @returns Pointer to generated DCI for subframe
 */
-DCI_PDU *get_dci_sdu(u8 Mod_id,u32 frame,u8 subframe);
+DCI_PDU *get_dci_sdu(u8 Mod_id, u8 CC_id, u32 frame,u8 subframe);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
 @param Mod_id Instance ID of eNB
@@ -709,7 +710,7 @@ u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 // UE functions
 void out_of_sync_ind(u8 Mod_id, u32 frame, u16);
 
-void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
+void ue_decode_si(u8 Mod_id, u8 CC_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 
 void ue_send_sdu(u8 Mod_id, u8 CC_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
