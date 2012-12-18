@@ -337,19 +337,22 @@ void ue_send_sdu(u8 Mod_id,u8 CC_id, u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index)
   }
 }
 
-void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
+void ue_decode_si(u8 Mod_id,u8 CC_id, u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
   int i;
   
   //LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d)\n",Mod_id,frame,BCCH);
 
-  mac_rrc_data_ind(Mod_id,
-		   frame,
-		   BCCH,
-		   (char *)pdu,
-		   len,
-		   0,
-		   eNB_index);
+  if (CC_id==0) //primary CC
+    mac_rrc_data_ind(Mod_id,
+		     frame,
+		     BCCH,
+		     (char *)pdu,
+		     len,
+		     0,
+		     eNB_index);
+  else 
+    LOG_W(MAC,"Got SI for CC_id %d but MAC->RRC interface for CC_id>0 not yet implemented\n",CC_id);
 
 }
 

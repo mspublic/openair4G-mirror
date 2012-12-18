@@ -89,7 +89,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
   u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
     prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
 
-  compute_prach_seq(u,N_ZC, PHY_vars_eNB_g[Mod_id][CC_id]->X_u);
+  compute_prach_seq(u,N_ZC, (u32*) PHY_vars_eNB_g[Mod_id][CC_id]->X_u);
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
   lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
@@ -188,7 +188,7 @@ void phy_config_sib2_ue(u8 Mod_id, u8 CC_id ,u8 CH_index,
   u = (prach_fmt < 4) ? prach_root_sequence_map0_3[lte_frame_parms->prach_config_common.rootSequenceIndex] :
     prach_root_sequence_map4[lte_frame_parms->prach_config_common.rootSequenceIndex];
   
-  compute_prach_seq(u,N_ZC, PHY_vars_UE_g[Mod_id][CC_id]->X_u);
+  compute_prach_seq(u,N_ZC, (u32*) PHY_vars_UE_g[Mod_id][CC_id]->X_u);
 
 
   lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
@@ -376,10 +376,10 @@ void phy_config_dedicated_scell_eNB(u8 Mod_id,
 }
 
 
-void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
+void phy_config_dedicated_ue(u8 Mod_id,u8 CC_id, u8 CH_index,
 			     struct PhysicalConfigDedicated *physicalConfigDedicated ) {
 
-  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
+  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   
 
@@ -477,7 +477,7 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 void phy_config_dedicated_scell_ue(u8 Mod_id,u16 rnti,
 			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id) {
 
-  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
+  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   if (physicalConfigDedicatedSCell_r10) {
     //phy_vars_eNB->physicalConfigDedicatedSCell_r10[UE_id][CC_id] = physicalConfigDedicatedSCell_r10;

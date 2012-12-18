@@ -19,4 +19,5 @@ void mac_out_of_sync_ind(u8 Mod_id,u32 frame,u16 CH_index);
 char openair_rrc_eNB_init(u8 Mod_id);
 char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index);
 int mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index);
+void mac_in_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index);
 #endif

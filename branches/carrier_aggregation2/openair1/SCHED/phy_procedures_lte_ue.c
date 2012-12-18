@@ -717,7 +717,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  //  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
 	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1)
 	    mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
-				  phy_vars_ue->CC_id,
 				  phy_vars_ue->frame,
 				  eNB_id,
 				  ulsch_input_buffer,
@@ -803,7 +802,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  //LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR for PUSCH from MAC\n",
 	  //	phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,next_slot>>1);
 	  SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,
-					    phy_vars_ue->CC_id,
 					    phy_vars_ue->frame,
 					    eNB_id,
 					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
@@ -969,7 +967,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	phy_vars_ue->generate_prach=0;
 	// ask L2 for RACH transport
 	if ((phy_vars_ue->prach_resources[eNB_id] = mac_xface->ue_get_rach(phy_vars_ue->Mod_id,
-									   phy_vars_ue->CC_id,
 									   phy_vars_ue->frame,
 									   eNB_id,
 									   next_slot>>1))!=NULL) {
@@ -1292,7 +1289,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     frame_tx += ((int)(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1]&0xfc));
     frame_tx += pbch_phase;
 
-    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,phy_vars_ue->frame,eNB_id,
+    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id,
 				   phy_vars_ue->UE_mode[eNB_id]==NOT_SYNCHED ? 1 : 0);
 #ifdef EMOS
     emos_dump_UE.frame_tx = frame_tx;
@@ -1352,7 +1349,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot);
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq++;
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors++;
-    mac_xface->out_of_sync_ind(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,phy_vars_ue->frame,eNB_id);
+    mac_xface->out_of_sync_ind(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id);
   }
 
   if (phy_vars_ue->frame % 100 == 0) {
@@ -2169,7 +2166,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);			
 
-	    timing_advance = mac_xface->ue_process_rar(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,
+	    timing_advance = mac_xface->ue_process_rar(phy_vars_ue->Mod_id,
 						       phy_vars_ue->frame,
 						       phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b,
 						       &phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,

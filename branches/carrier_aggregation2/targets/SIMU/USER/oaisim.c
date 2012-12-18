@@ -1088,17 +1088,13 @@ init_bypass ();
 
 
 #ifdef OPENAIR2
-  for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-    for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-  l2_init (&PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms);
-  for (i = 0; i < NB_eNB_INST; i++)
-    mac_xface->mrbch_phy_sync_failure (i, 0, i);
+  l2_init (&PHY_vars_eNB_g[0][0]->lte_frame_parms);
+  for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++)
+    mac_xface->mrbch_phy_sync_failure (eNB_id, 0, eNB_id);
   if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
-      mac_xface->dl_phy_sync_success (UE_id, CC_id, 0, 0,1);	//UE_id%NB_eNB_INST);
-      }
-}//CC_id loop 
-}//enb_id
+      mac_xface->dl_phy_sync_success (UE_id, 0, 0, 1);	//UE_id%NB_eNB_INST);
+  }
 #endif
 
 
@@ -1331,23 +1327,20 @@ CC_id = 0;
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
 #endif
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
-	//for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	CC_id = 0;
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	  //}
+      }
       }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
-	//for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	CC_id = 0;
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	  //}
+	}
       }
       if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	  //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	  CC_id = 0;
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	  //}
+	}
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1356,10 +1349,9 @@ CC_id = 0;
 	  */
 	}
 	else {// UL part
-	  //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	  CC_id = 0;
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	  //}
+	}
 	}
       }
 
