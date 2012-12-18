@@ -44,9 +44,9 @@ void print_ints(char *s,__m128i *x) {
 __m128i pmi128_re,pmi128_im;
 __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 
-s16 get_PL(u8 Mod_id,u8 eNB_index) {
+s16 get_PL(u8 Mod_id,u8 CC_id, u8 eNB_index) {
 
-  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
+  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
   
   msg("get_PL : rssi %d, eNB power %d\n",
       dB_fixed(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB,

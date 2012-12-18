@@ -1399,9 +1399,9 @@ CC_id = 0;
 
     }				//end of slot
 
-//for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-{
-    if ((frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
+    //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+    {
+    if ((frame==10)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0][0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0][0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size,1,1);
