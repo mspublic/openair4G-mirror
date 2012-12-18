@@ -700,22 +700,25 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   u8 ul_subframe;
   u32 ul_frame;
 
+  /***************************************************************************/
+  /* 1) Generate pilots and PSS/SSS */
+  /***************************************************************************/
 
   for (sect_id = 0 ; sect_id < number_of_cards; sect_id++) {
 
     if (abstraction_flag==0) {
       if (next_slot%2 == 0) {
-	for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
+      	for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
 	 
 #ifdef IFFT_FPGA
-	  memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
-		 0,(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+      		memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],0,(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
 #else
-	  memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
-		 0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+      		memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
 #endif
-	}
-      }
+      	}// end for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++)
+
+      }// end  if (next_slot%2 == 0)
+
       generate_pilots_slot(phy_vars_eNB,
 			   phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 			   AMP,
@@ -725,82 +728,89 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
       if (next_slot == 0) {
 	
-	// First half of PSS/SSS (FDD)
-	if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
-	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       4*AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
-		       next_slot);
-	  generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 5 : 4,
-		       next_slot);
-	}
-      }
-    }      
+      	// First half of PSS/SSS (FDD)
+      	if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
+					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+								 4*AMP,
+								 &phy_vars_eNB->lte_frame_parms,
+								 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
+								 next_slot);
+
+				generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+							 AMP,
+							 &phy_vars_eNB->lte_frame_parms,
+							 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 5 : 4,
+							 next_slot);
+      	}// end if (phy_vars_eNB->lte_frame_parms.frame_type == 0)
+
+      }// if (next_slot == 0)
+
+    }// if (abstraction_flag==0)
+
     if (next_slot == 1) {
       
       if ((phy_vars_eNB->frame&3) == 0) {
-	((u8*) pbch_pdu)[0] = 0;
-	switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
-	case 6:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (0<<5);
-	  break;
-	case 15:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (1<<5);
-	  break;
-	case 25:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (2<<5);
-	  break;
-	case 50:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (3<<5);
-	  break;
-	case 100:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (4<<5);
-	  break;
-	default:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (2<<5);
-	  break;
-	}
-	((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xef) | 
-	  ((phy_vars_eNB->lte_frame_parms.phich_config_common.phich_duration << 4)&0x10);
-	
-	switch (phy_vars_eNB->lte_frame_parms.phich_config_common.phich_resource) {
-	case oneSixth:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (0<<2);
-	  break;
-	case half:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (1<<2);
-	  break;
-	case one:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (2<<2);
-	  break;
-	case two:
-	  ((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (3<<2);
-	  break;
-	default:
-	  break;
-	}
 
-	((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xfc) | ((phy_vars_eNB->frame>>8)&0x3);
-	((u8*) pbch_pdu)[1] = phy_vars_eNB->frame&0xfc;
-	((u8*) pbch_pdu)[2] = 0;
-      }
+      	((u8*) pbch_pdu)[0] = 0;
+
+				switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
+				case 6:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (0<<5);
+					break;
+				case 15:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (1<<5);
+					break;
+				case 25:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (2<<5);
+					break;
+				case 50:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (3<<5);
+					break;
+				case 100:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (4<<5);
+					break;
+				default:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0x1f) | (2<<5);
+					break;
+				}// end switch (phy_vars_eNB->lte_frame_parms.N_RB_DL)
+
+				((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xef) | ((phy_vars_eNB->lte_frame_parms.phich_config_common.phich_duration << 4)&0x10);
+	
+				switch (phy_vars_eNB->lte_frame_parms.phich_config_common.phich_resource) {
+				case oneSixth:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (0<<2);
+					break;
+				case half:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (1<<2);
+					break;
+				case one:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (2<<2);
+					break;
+				case two:
+					((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xf3) | (3<<2);
+					break;
+				default:
+					break;
+				}// end switch (phy_vars_eNB->lte_frame_parms.phich_config_common.phich_resource)
+
+				((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xfc) | ((phy_vars_eNB->frame>>8)&0x3);
+				((u8*) pbch_pdu)[1] = phy_vars_eNB->frame&0xfc;
+				((u8*) pbch_pdu)[2] = 0;
+      }// end if ((phy_vars_eNB->frame&3) == 0)
+
       /// First half of SSS (TDD)
       if (abstraction_flag==0) {
 	
-	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-	  generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
-		       next_slot);
-	}
-      }
-      
+				if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
 
+					generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+								 AMP,
+								 &phy_vars_eNB->lte_frame_parms,
+								 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
+								 next_slot);
+				}// end if (phy_vars_eNB->lte_frame_parms.frame_type == 1)
+
+      }// end if (abstraction_flag==0)
       
       frame_tx = (((int) (pbch_pdu[0]&0x3))<<8) + ((int) (pbch_pdu[1]&0xfc)) + phy_vars_eNB->frame%4;
    
@@ -818,93 +828,108 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
       if (abstraction_flag==0) {
 
-	generate_pbch(&phy_vars_eNB->lte_eNB_pbch,
-		      phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		      AMP,
-		      &phy_vars_eNB->lte_frame_parms,
-		      pbch_pdu,
-		      phy_vars_eNB->frame&3);
+				generate_pbch(&phy_vars_eNB->lte_eNB_pbch,
+								phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+								AMP,
+								&phy_vars_eNB->lte_frame_parms,
+								pbch_pdu,
+								phy_vars_eNB->frame&3);
 
-      }
+      }// end if (abstraction_flag==0)
+
 #ifdef PHY_ABSTRACTION
       else {
-	generate_pbch_emul(phy_vars_eNB,pbch_pdu); 
+      	generate_pbch_emul(phy_vars_eNB,pbch_pdu);
       }
 #endif
-    }
 
+    }// end if (next_slot == 1)
 
     if (next_slot == 2) {
 	
       if (abstraction_flag==0) {
 	
-          if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-              //	  printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
-              generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-                           4*AMP,
-                           &phy_vars_eNB->lte_frame_parms,
-                           2,
-                           next_slot);
-          }
-      }
-    } 
+				if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
+					//	  printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
+					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],4*AMP,&phy_vars_eNB->lte_frame_parms,2,next_slot);
+				}//end if (phy_vars_eNB->lte_frame_parms.frame_type == 1)
+
+      }//end if (abstraction_flag==0)
+
+    }//end if (next_slot == 2)
 
     // Second half of PSS/SSS (FDD)
     if (next_slot == 10) {
      
       if (abstraction_flag==0) {
        
-	if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
-	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       4*AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
-		       next_slot);
-	  generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 5 : 4,
-		       next_slot);
+				if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
+					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+								 4*AMP,
+								 &phy_vars_eNB->lte_frame_parms,
+								 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
+								 next_slot);
 
-	}
-      }
-    }
+					generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+								 AMP,
+								 &phy_vars_eNB->lte_frame_parms,
+								 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 5 : 4,
+								 next_slot);
+
+				}//end if (phy_vars_eNB->lte_frame_parms.frame_type == 0)
+
+      }//end if (abstraction_flag==0)
+
+    }//end if (next_slot == 10)
+
     //  Second-half of SSS (TDD)
     if (next_slot == 11) {
+
       if (abstraction_flag==0) {
        
-	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-	  generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
-		       next_slot);
-	}
-      }
-    }
+				if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
+					generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+								 AMP,
+								 &phy_vars_eNB->lte_frame_parms,
+								 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
+								 next_slot);
+				}//end if (phy_vars_eNB->lte_frame_parms.frame_type == 1)
+
+      }//end if (abstraction_flag==0)
+
+    }//end if (next_slot == 11)
+
     // Second half of PSS (TDD)
     if (next_slot == 12) {
      
       if (abstraction_flag==0) {
        
-	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-	  //	    printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
-	  generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		       4*AMP,
-		       &phy_vars_eNB->lte_frame_parms,
-		       2,
-		       next_slot);
-	}
-      }
-    }
-  }
+				if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
+					//	    printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
+					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+								 4*AMP,
+								 &phy_vars_eNB->lte_frame_parms,
+								 2,
+								 next_slot);
+
+				}//end if (phy_vars_eNB->lte_frame_parms.frame_type == 1)
+
+      }//end if (abstraction_flag==0)
+
+    }//end if (next_slot == 12)
+
+  }//end for (sect_id = 0 ; sect_id < number_of_cards; sect_id++)
 
   //return;
 
+  /***************************************************************************/
+  /* 2) Generate DCI */
+  /***************************************************************************/
 
   sect_id=0;
 
-  if ((next_slot % 2)==0) {
+  if ((next_slot % 2) == 0) {
+
     //#ifdef DEBUG_PHY_PROC
     //    msg("[PHY][eNB %d] UE %d: Mode %s\n",phy_vars_eNB->Mod_id,0,mode_string[phy_vars_eNB->eNB_UE_stats[0].mode]);
     //#endif
@@ -929,8 +954,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     ul_subframe = pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,next_slot>>1);
     ul_frame = pdcch_alloc2ul_frame(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,next_slot>>1);
 
-    if ((subframe_select(&phy_vars_eNB->lte_frame_parms,ul_subframe)==SF_UL) ||
-	(phy_vars_eNB->lte_frame_parms.frame_type == 0)) {
+    if ((subframe_select(&phy_vars_eNB->lte_frame_parms,ul_subframe)==SF_UL) || (phy_vars_eNB->lte_frame_parms.frame_type == 0)) {
       harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,ul_frame,ul_subframe);
       for (i=0;i<NUMBER_OF_UE_MAX;i++)
 	if (phy_vars_eNB->ulsch_eNB[i]) {
@@ -1506,7 +1530,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			     abstraction_flag);
 	}
     }
-  }
+  }//endif if ((next_slot % 2)==0)
 
 
 

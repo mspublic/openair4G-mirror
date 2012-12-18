@@ -1239,6 +1239,7 @@ main (int argc, char **argv)
   virtualLinksTable[0].array[0].status = VLINK_NOT_CONNECTED; // Virtual link state
   virtualLinksTable[0].array[0].MRarray.count = 1; // Nb of MRs in the virtual link
   virtualLinksTable[0].array[0].MRarray.array[0] = 0; // UE_index of the MR
+  //virtualLinksTable[0].array[0].MRarray.array[1] = 1; // UE_index of the MR
 
   /*virtualLinksTable[1].count = 1; // Nb of virtual links
   virtualLinksTable[1].array[0].virtualLinkID = 1; // Virtual link ID
@@ -1246,7 +1247,8 @@ main (int argc, char **argv)
   virtualLinksTable[1].array[0].PCellIdsourceCH = 2; // dummy value
   virtualLinksTable[1].array[0].status = VLINK_NOT_CONNECTED; // Virtual link state
   virtualLinksTable[1].array[0].MRarray.count = 1; // Nb of MRs in the virtual link
-  virtualLinksTable[1].array[0].MRarray.array[0] = 0; // UE_index of the MR*/
+  virtualLinksTable[1].array[0].MRarray.array[0] = 0; // UE_index of the MR
+  virtualLinksTable[1].array[0].MRarray.array[0] = 1; // UE_index of the MR*/
 
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
   printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
