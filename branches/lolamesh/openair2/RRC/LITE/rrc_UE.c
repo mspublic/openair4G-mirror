@@ -552,8 +552,10 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
 
   long SRB_id,DRB_id;
   int i,cnt;
+  //TCS LOLAmesh
 	u8 vlid;
 	u16 cornti;
+	u8 nb_corntis;
 	int ret;
 	int collaborative_link = 0;
   LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
@@ -722,6 +724,12 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
 	  //UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_RECONFIGURED;
 	  //LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
 	  collaborative_link = 1;
+
+	  /* Keep track of the CORNTI */
+	  nb_corntis = UE_mac_inst[Mod_id].corntis.count;
+	  UE_mac_inst[Mod_id].corntis.array[nb_corntis] = cornti;
+	  UE_mac_inst[Mod_id].corntis.count++;
+
 	}// end if ((radioResourceConfigDedicated->drb_ToAddModList->list.array...
       }// end if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) / else
     }//end or (i=0;i<radioResourceConfigDedicated->drb_ToAddModList->list.count;i++)

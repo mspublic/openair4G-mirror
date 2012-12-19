@@ -277,8 +277,8 @@ typedef struct{
   /// C-RNTI of UE
   u16 rnti;
 
-  /// CO-RNTIs of the virtual links
-  struct cornti_array cornti; //TCS LOLAmesh
+  /// CO-RNTIs of the UE
+  struct cornti_array corntis; //TCS LOLAmesh
 
   // PHY interface info
 
@@ -540,6 +540,9 @@ typedef struct{
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
   // mac layer forwarding table
   struct forwardingTable forwardingTable; //TCS LOLAmesh
+  // CO-RNTIs of the UE
+  struct cornti_array corntis; //TCS LOLAmesh
+
 }UE_MAC_INST;
 
 typedef struct {
@@ -714,7 +717,7 @@ can be scheduled.
 */
 void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);//, int calibration_flag); 
 
-/* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary numeber of times after eNB_dlsch_ulsch_scheduler
+/* \brief Function to retrieve result of scheduling (DCI) in current subframe.  Can be called an arbitrary number of times after eNB_dlsch_ulsch_scheduler
 in a given subframe.
 @param Mod_id Instance ID of eNB
 @param subframe Index of current subframe

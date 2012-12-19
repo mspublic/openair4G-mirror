@@ -942,9 +942,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1);//,1);
 
     // Parse DCI received from MAC
-    DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
-				     phy_vars_eNB->frame,
-				     next_slot>>1);
+    DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1);
 #else
     DCI_pdu = &DCI_pdu_tmp;
     fill_dci(DCI_pdu,next_slot>>1,phy_vars_eNB);
