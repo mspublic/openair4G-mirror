@@ -168,7 +168,7 @@ typedef struct
     UE_MODE_t (*get_ue_mode)(u8 Mod_id,u8 eNB_index);
 
     /// Function for UE MAC to retrieve measured Path Loss
-    s16 (*get_PL)(u8 Mod_id,u8 eNB_index);
+    s16 (*get_PL)(u8 Mod_id, u8 CC_id,u8 eNB_index);
 
     /// Function for UE/eNB MAC to retrieve number of PRACH in TDD
     u8 (*get_num_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms);

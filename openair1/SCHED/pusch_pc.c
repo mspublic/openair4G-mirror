@@ -71,7 +71,7 @@ void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j) {
   u8 harq_pid = subframe2harq_pid(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,subframe);    
 
   u8 nb_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb;
-  s8 PL;
+  s8 PL, CC_id;
 
   
   // P_pusch = 10*log10(nb_rb + P_opusch(j)+ alpha(u)*PL + delta_TF(i) + f(i))
@@ -79,7 +79,7 @@ void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j) {
   // P_opusch(0) = P_oPTR + deltaP_Msg3 if PUSCH is transporting Msg3
   // else
   // P_opusch(0) = PO_NOMINAL_PUSCH(j) + P_O_UE_PUSCH(j)
-  PL = get_PL(phy_vars_ue->Mod_id,eNB_id);
+  PL = get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,eNB_id);
   phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH = (hundred_times_log10_NPRB[nb_rb-1]+
 					     get_hundred_times_delta_IF(phy_vars_ue,eNB_id,harq_pid) +
 					     100*phy_vars_ue->ulsch_ue[eNB_id]->f_pusch)/100; 

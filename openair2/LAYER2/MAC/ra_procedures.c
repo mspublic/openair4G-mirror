@@ -101,7 +101,7 @@ void get_prach_resources(u8 Mod_id,
   PRACH_RESOURCES_t *prach_resources = &UE_mac_inst[Mod_id].RA_prach_resources;
   RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
   u8 noGroupB = 0;
-  u8 f_id = 0,num_prach=0;
+  u8 f_id = 0,num_prach=0, CC_id=0;
 
   if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
     rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
@@ -136,7 +136,7 @@ void get_prach_resources(u8 Mod_id,
       UE_mac_inst[Mod_id].RA_usedGroupA = 1;
     }
     else if ((Msg3_size < rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messageSizeGroupA) ||
-	     (mac_xface->get_PL(Mod_id,eNB_index) > UE_mac_inst[Mod_id].RA_maxPL)) {
+	     (mac_xface->get_PL(Mod_id,CC_id,eNB_index) > UE_mac_inst[Mod_id].RA_maxPL)) {
       // use Group A procedure
       UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex  = (taus())%rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA;
       UE_mac_inst[Mod_id].RA_prach_resources.ra_RACH_MaskIndex = 0;
