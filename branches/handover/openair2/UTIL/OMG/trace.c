@@ -346,10 +346,10 @@ void update_trace_nodes(double cur_time) {
 	   LOG_D(OMG, " node %d ready to move to next destination \n",  my_node->ID);
            
 	   //my_node->mobile = 1;
-	   Pair pair = malloc(sizeof(Pair));
-	   pair = move_trace_node(my_node, cur_time);
+	   Pair *pair = malloc(sizeof(Pair));
+	   *pair = move_trace_node(my_node, cur_time);
            
-	   tmp->pair = pair;
+	   tmp->pair = *pair;
 	   tmp = tmp->next;
 	 }
 	 else{

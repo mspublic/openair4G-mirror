@@ -1657,6 +1657,12 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	  rballoc |= (0x0001<<i);
       }
 
+#ifdef ICIC
+      for(i=0;i<7;i++) {
+
+      }
+#endif
+
       switch(mac_xface->get_transmission_mode(Mod_id,rnti)) {
       default:
 

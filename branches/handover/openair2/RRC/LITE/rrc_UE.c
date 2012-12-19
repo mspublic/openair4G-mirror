@@ -1523,13 +1523,13 @@ void ue_measurement_report_triggering(u8 Mod_id, u32 frame, UE_RRC_INST *UE_rrc_
 							//Check below line for segfault :)
 							ttt_ms = timeToTrigger_ms[UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger];
 							// Freq specific offset of neighbor cell freq
-							ofn = (UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL ? \
-									*UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15 /* Default */);
+							ofn = (UE_rrc_inst[Mod_id].MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL ? \
+									*UE_rrc_inst[Mod_id].MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15 /* Default */);
 							// cellIndividualOffset of neighbor cell - not defined yet
 							ocn = 0;
 							// Freq specific offset of serving cell freq
-							ofs = (UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL ? \
-									*UE_rrc_inst->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15 /* Default */);
+							ofs = (UE_rrc_inst[Mod_id].MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL ? \
+									*UE_rrc_inst[Mod_id].MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15 /* Default */);
 							// cellIndividualOffset of serving cell - not defined yet
 							ocs = 0;
 							a3_offset = UE_rrc_inst[Mod_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
