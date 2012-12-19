@@ -42,6 +42,7 @@
 #include "cor_SF_sim.h"
 #include "UTIL/OMG/omg_constants.h"
 
+#include </usr/include/valgrind/callgrind.h>
 
 //#ifdef PROC
 #include "../PROC/interface.h"
@@ -1012,7 +1013,7 @@ main (int argc, char **argv)
 #ifdef PRINT_STATS
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
-    UE_stats[UE_id] = fopen (UE_stats_filename, "a");
+    UE_stats[UE_id] = fopen (UE_stats_filename, "w");
   }
   eNB_stats = fopen ("eNB_stats.txt", "w");
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
@@ -1222,6 +1223,7 @@ main (int argc, char **argv)
     snr_dB=20;
     sinr_dB=-20;
   }
+  CALLGRIND_START_INSTRUMENTATION;
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
     // Handling the cooperation Flag
@@ -1584,6 +1586,10 @@ main (int argc, char **argv)
     }
   }	//end of frame
   
+  CALLGRIND_STOP_INSTRUMENTATION;
+  CALLGRIND_DUMP_STATS;
+
+
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   //Perform KPI measurements
