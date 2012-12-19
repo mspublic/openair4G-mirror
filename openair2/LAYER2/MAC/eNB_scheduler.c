@@ -321,16 +321,20 @@ s8 find_active_UEs(unsigned char Mod_id){
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
 
-    if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0){
+    if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0) {
 
       if (mac_xface->get_eNB_UE_stats(Mod_id,rnti) != NULL){ // check at the phy enb_ue state for this rnti
-	nb_active_ue++;
+      	nb_active_ue++;
       }
+
       else { // this ue is removed at the phy => remove it at the mac as well
-	mac_remove_ue(Mod_id, UE_id);
+      	mac_remove_ue(Mod_id, UE_id);
       }
-    }
-  }
+
+    }// if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0)
+
+  }//end for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++)
+
   return(nb_active_ue);
 }
 
@@ -3725,21 +3729,21 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   if (mac_xface->get_transmission_mode(Mod_id,rnti)==5)
     tm5_pre_processor(Mod_id,subframe,nb_rb_used0,*nCCE_used,dl_pow_off,pre_nb_available_rbs,rballoc_sub);
     
-  /// If there is more that one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.  
+  /// If there is more than one UE in the system it might happen that UEs are never scheduled since they are not selected appropriate by the pre-processor. This is bad since it will not even allow the connection procedure to pass. The following loop assures that the first UE that is not yet connected gets all the ressources. This is still a hack since other UEs could be scheduled in the same subframe if not all ressources are exhausted.
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
     if (mac_get_rrc_status(Mod_id,1,UE_id) < RRC_RECONFIGURED) {
       dl_pow_off[UE_id]=1;
       pre_nb_available_rbs[UE_id]=nb_available_rb;
       for (ii=0;ii<7;ii++)
-	rballoc_sub[UE_id][ii] = 1;
+      	rballoc_sub[UE_id][ii] = 1;
       
       for (UE_id2=0;UE_id2<granted_UEs;UE_id2++) {
-	if(UE_id!=UE_id2){
-	  dl_pow_off[UE_id2] = 2;
-	  pre_nb_available_rbs[UE_id2] = 0;
-	  for(ii=0;ii<7;ii++)
-	    rballoc_sub[UE_id2][ii]=0;
-	}
+      	if(UE_id!=UE_id2){
+      		dl_pow_off[UE_id2] = 2;
+      		pre_nb_available_rbs[UE_id2] = 0;
+      		for(ii=0;ii<7;ii++)
+      			rballoc_sub[UE_id2][ii]=0;
+      	}
       }
       break; //the for loop
     }
@@ -3749,10 +3753,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 
     rnti = find_UE_RNTI(Mod_id,UE_id);
+
     if (rnti==0)
       continue;
 
     eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -4495,6 +4501,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   u8 vlid;
   u8 count; // length of the cornti list in a UE_template stucture
   u8 status;
+  u8 nb_corntis;
 
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
@@ -4550,9 +4557,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   				cornti = (u16)taus();
 
 					/* Keep track of the chosen CO-RNTI for this link */
-				  count = eNB_mac_inst[Mod_id].UE_template[UE_index].cornti.count;
-					eNB_mac_inst[Mod_id].UE_template[UE_index].cornti.array[count] = cornti;
-					eNB_mac_inst[Mod_id].UE_template[UE_index].cornti.count++;
+				  count = eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count;
+					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.array[count] = cornti;
+					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count++;
 
   				/* For all the MR of the VL we establish a CO-DRB */
   				for (j=0;j<virtualLinksTable[Mod_id].array[i].MRarray.count;j++) {
@@ -4562,6 +4569,11 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   					// Generate and send RRCConnectionReconfiguration
   					rrc_eNB_generate_RRCConnectionReconfiguration_co(Mod_id,UE_index,frame,cornti,vlid);
+
+  					/* Keep track of the CORNTI */
+  					nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count;
+  					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.array[nb_corntis] = cornti;
+  					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count++;
 
   				}// end for (j=0;j<virtualLinksTable[Mod_id].array[i].MRList.count;j++)
 
@@ -4583,7 +4595,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   }//end if (frame % 100 == 0)
 
   //if (subframe%5 == 0)
-    pdcp_run(frame, 1, 0, Mod_id);
+  pdcp_run(frame, 1, 0, Mod_id);
 
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, 0);
@@ -4596,264 +4608,260 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 #endif
   // see table 8-2 "k for TDD configuration 0-6" in 36.213
   switch (subframe) {
-  case 0:
-    // FDD/TDD Schedule Downlink RA transmissions (RA response, Msg4 Contention resolution)
-    // Schedule ULSCH for FDD or subframe 4 (TDD config 0,3,6)
-    // Schedule Normal DLSCH
+		case 0:
+			// FDD/TDD Schedule Downlink RA transmissions (RA response, Msg4 Contention resolution)
+			// Schedule ULSCH for FDD or subframe 4 (TDD config 0,3,6)
+			// Schedule Normal DLSCH
+			// schedule_RA(Mod_id,subframe,&nprb,&nCCE);
 
-    //    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) {  //FDD
+				// schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
+			}
 
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) {  //FDD
-      // schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
-    }
-    else if  ((mac_xface->lte_frame_parms[Mod_id]->tdd_config == TDD) || //TDD
-	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 3) ||
-	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 6))
-      //schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
+			else if 	((mac_xface->lte_frame_parms[Mod_id]->tdd_config == TDD) || //TDD
+								(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 3) ||
+								(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 6))
+				//schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
+				// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
+				fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+			break;
+		case 1:
+			// TDD, schedule UL for subframe 7 (TDD config 0,1) / subframe 8 (TDD Config 6)
+			// FDD, schedule normal UL/DLSCH
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
+				switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
+					case 0:
+					case 1:
+						schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
+						fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+						break;
+					case 6:
+						schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
+						fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+						break;
+					default:
+						break;
+				}
+			}
+			else {  //FDD
+				//schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+				// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
+				// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+			}
+			break;
+		case 2:
+			// TDD, nothing
+			// FDD, normal UL/DLSCH
 
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) {  //FDD
+				// schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+				// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
+				// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+			}
+			break;
+		case 3:
+			// TDD Config 2, ULSCH for subframe 7
+			// TDD Config 2/5 normal DLSCH
+			// FDD, normal UL/DLSCH
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) {
+				switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
+				case 2:
+					schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
+				case 5:
+		schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				default:
+		break;
+				}
+			}
+			else { //FDD
+		//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
+		// schedule_ue_spec(Mod_id,subframe,0,0);
+		// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+			}
 
-    // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
+			break;
+		case 4:
+			// TDD Config 1, ULSCH for subframe 8
+			// TDD Config 1/2/4/5 DLSCH
+			// FDD UL/DLSCH
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) { // TDD
+				switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
+				case 1:
+		//        schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
+					schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
+				case 2:
+				case 4:
+				case 5:
+					schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+					fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+					break;
+				default:
+					break;
+				}
+			}
+			else {
+				if (mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) {  //FDD
+		//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
+		// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
+		// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+				}
+			}
+			break;
+		case 5:
+			// TDD/FDD Schedule SI
+			// TDD Config 0,6 ULSCH for subframes 9,3 resp.
+			// TDD normal DLSCH
+			// FDD normal UL/DLSCH
+			schedule_SI(Mod_id,frame,&nprb,&nCCE);
+			//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
+			if ((mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) || //FDD
+		(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 0) || // TDD Config 0
+		(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 6)) { // TDD Config 6
 
-    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+				//schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
 
-    break;
-  case 1:
-    // TDD, schedule UL for subframe 7 (TDD config 0,1) / subframe 8 (TDD Config 6)
-    // FDD, schedule normal UL/DLSCH
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
-      case 0:
-      case 1:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      case 6:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      default:
-	break;
-      }
-    }
-    else {  //FDD
-      //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
-	// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
-    }
-    break;
-  case 2:
-    // TDD, nothing 
-    // FDD, normal UL/DLSCH
+			}
+			//    schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
+			fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
 
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) {  //FDD
-      // schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
-      // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-      // fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
-    }
-    break;
-  case 3:
-    // TDD Config 2, ULSCH for subframe 7
-    // TDD Config 2/5 normal DLSCH
-    // FDD, normal UL/DLSCH
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) {
-      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
-      case 2: 
-      	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
-      case 5: 
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      default:
-	break;
-      }
-    }
-    else { //FDD
-	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-	// schedule_ue_spec(Mod_id,subframe,0,0);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
-    }
+			break;
 
-    break;
-  case 4:
-    // TDD Config 1, ULSCH for subframe 8
-    // TDD Config 1/2/4/5 DLSCH
-    // FDD UL/DLSCH
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == 1) { // TDD
-      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
-      case 1:
-	//        schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-        schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
-      case 2:
-      case 4:
-      case 5:
-        schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-        fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
-        break;
-      default:
-        break;
-      }
-    }
-    else {
-      if (mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) {  //FDD
-	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-	// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
-      }
-    }
-    break;
-  case 5:
-    // TDD/FDD Schedule SI
-    // TDD Config 0,6 ULSCH for subframes 9,3 resp.
-    // TDD normal DLSCH
-    // FDD normal UL/DLSCH
-    schedule_SI(Mod_id,frame,&nprb,&nCCE);
-    //schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-    if ((mac_xface->lte_frame_parms[Mod_id]->frame_type == FDD) || //FDD
-	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 0) || // TDD Config 0
-	(mac_xface->lte_frame_parms[Mod_id]->tdd_config == 6)) { // TDD Config 6
+		case 6:
+			// TDD Config 0,1,6 ULSCH for subframes 2,3
+			// TDD Config 3,4,5 Normal DLSCH
+			// FDD normal ULSCH/DLSCH
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
+				switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
+				case 0:
+		break;
+				case 1:
+		schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
+		//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				case 6:
+		schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
+		//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				case 5:
+		schedule_RA(Mod_id,frame,subframe,2,&nprb,&nCCE);
+		schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+		break;
+				case 3:
+				case 4:
+		schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
 
-      //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+				default:
+		break;
+				}
+			}
+			else {  //FDD
+		//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
+				schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+				fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+			}
 
-    }
-    //    schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+			break;
 
-    break;
-
-  case 6:
-    // TDD Config 0,1,6 ULSCH for subframes 2,3
-    // TDD Config 3,4,5 Normal DLSCH
-    // FDD normal ULSCH/DLSCH
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
-      case 0:
-	break;
-      case 1:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
-	//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      case 6:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
-	//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      case 5:
-	schedule_RA(Mod_id,frame,subframe,2,&nprb,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
-	break;
-      case 3:
-      case 4:
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-
-      default:
-	break;
-      }
-    }
-    else {  //FDD
-	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-    }
-
-    break;
-
-  case 7:
-    // TDD Config 3,4,5 Normal DLSCH
-    // FDD Normal UL/DLSCH
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
-      case 3:
-      case 4:
-	schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
-	break;
-      case 5:
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      default:
-	break;
-      }
-    }
-    else {  //FDD
-	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-    }
+		case 7:
+			// TDD Config 3,4,5 Normal DLSCH
+			// FDD Normal UL/DLSCH
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
+				switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
+				case 3:
+				case 4:
+		schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
+		schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+		break;
+				case 5:
+		schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				default:
+		break;
+				}
+			}
+			else {  //FDD
+		//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
+				schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
+				fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+			}
 
 
-    break;
+			break;
 
 
-
-  case 8:
-    // TDD Config 2,3,4,5 ULSCH for subframe 2
-    //
-    // FDD Normal UL/DLSCH
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
-      case 2:
-      case 3:
-      case 4:
-      case 5:
 	
-	//	schedule_RA(Mod_id,subframe,&nprb,&nCCE);
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      default:
-	break;
-      }
-    }
-    else {  //FDD
-      schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
-      schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-    }
-    break;
+		case 8:
+			// TDD Config 2,3,4,5 ULSCH for subframe 2
+			//
+			// FDD Normal UL/DLSCH
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { // TDD
+				switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
+				case 2:
+				case 3:
+				case 4:
+				case 5:
 
-  case 9:
-    // TDD Config 1,3,4,6 ULSCH for subframes 3,3,3,4
-    if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) {
-      switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
-      case 1:
-      case 3:
-      case 4:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
-	//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      case 6:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);
-	//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      case 2:
-      case 5:
-	//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-	break;
-      default:
-	break;
-      }
-    }
-    else {  //FDD
-      schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
-      schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
-    }
-    break;
+		//	schedule_RA(Mod_id,subframe,&nprb,&nCCE);
+		schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
+		schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				default:
+		break;
+				}
+			}
+			else {  //FDD
+				schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
+				schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
+				fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+			}
+			break;
 
-  }
+		case 9:
+			// TDD Config 1,3,4,6 ULSCH for subframes 3,3,3,4
+			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) {
+				switch (mac_xface->lte_frame_parms[Mod_id]->tdd_config) {
+				case 1:
+				case 3:
+				case 4:
+		schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
+		//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
+		schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				case 6:
+		schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);
+		//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
+		schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				case 2:
+				case 5:
+		//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
+		schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
+		fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+		break;
+				default:
+		break;
+				}
+			}
+			else {  //FDD
+				schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
+				schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
+				fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+			}
+			break;
+
+  }//end switch (subframe)
 
   DCI_pdu->nCCE = nCCE;
   LOG_D(MAC,"frame %d, subframe %d nCCE %d\n",frame,subframe,nCCE);

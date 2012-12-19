@@ -20,6 +20,10 @@
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "LAYER2/MAC/virtual_link.h" //LOLAmesh
+extern eNB_MAC_INST *eNB_mac_inst; //LOLAmesh
+extern UE_MAC_INST *UE_mac_inst; //LOLAmesh
+extern unsigned char NB_eNB_INST;
+extern unsigned char NB_UE_INST;
 //#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -607,7 +611,7 @@ int
 main (int argc, char **argv)
 {
   char c;
-  s32 i, j;
+  s32 i, j, k, l;
   int new_omg_model; // goto ocg in oai_emulation.info.
   // pointers signal buffers (s = transmit, r,r0 = receive)
   double **s_re, **s_im, **r_re, **r_im, **r_re0, **r_im0;
@@ -1249,6 +1253,14 @@ main (int argc, char **argv)
   virtualLinksTable[1].array[0].MRarray.count = 1; // Nb of MRs in the virtual link
   virtualLinksTable[1].array[0].MRarray.array[0] = 0; // UE_index of the MR
   virtualLinksTable[1].array[0].MRarray.array[0] = 1; // UE_index of the MR*/
+
+  /* CORNTIs tables initialization */
+  for (k=0;k<NB_eNB_INST;k++) {
+  	for (l=0;l<NB_UE_INST;l++) {
+  		eNB_mac_inst[k].UE_template[l].corntis.count = 0;
+			UE_mac_inst[l].corntis.count = 0;
+  	}
+  }
 
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
   printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
