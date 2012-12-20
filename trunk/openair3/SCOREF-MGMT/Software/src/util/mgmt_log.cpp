@@ -129,6 +129,11 @@ void Logger::log(const string& message, LOG_LEVEL level, bool logFormatting) {
 		return;
 
 	/**
+	 * Ensure that there is only one here at any given time
+	 */
+	boost::lock_guard<boost::mutex> lock(logMutex);
+
+	/**
 	 * Write to log file first if we are asked to do
 	 */
 	if (logOutputChannel == Logger::FILE || logOutputChannel == Logger::BOTH) {

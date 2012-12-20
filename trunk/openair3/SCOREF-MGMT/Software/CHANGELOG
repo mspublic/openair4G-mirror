@@ -1,4 +1,11 @@
 
+v1.5.4
+* New scenarios added for the simulator
+* Wireless Status packet sent by the simulator updated according to the new LTE Wireless Status
+* LteWirelessStateResponseEventPacket class added for the new LTE Wireless Status
+* Bugfix Mutex control added for Logger class to prevent log messages from intermingling
+* Network Status message now has a `timestamp' field as HITACHI asked
+
 v1.5.3
 * LTE client type and event type/subtype for Wireless State Response added
 * Bugfix Wireless interface ID is now displayed correctly

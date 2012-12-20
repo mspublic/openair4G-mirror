@@ -106,6 +106,7 @@ ManagementClientManager::Task ManagementClientManager::updateClientState(const u
 		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST:
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
 		case MGMT_FAC_EVENT_LOCATION_UPDATE:
+		case MGMT_LTE_EVENT_STATE_WIRELESS_STATE_RESPONSE:
 			client->setState(ManagementClient::ONLINE);
 			break;
 

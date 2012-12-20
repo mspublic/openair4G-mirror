@@ -234,6 +234,13 @@ class Util {
 		 */
 		static string getDateAndTime(bool withDelimiters);
 		/**
+		 * Stringifies given timestamp (in milliseconds)
+		 *
+		 * @param withDelimiters true if asked with delimiters (like YYYY/mm/dd_HH:MM:SS), false otherwise
+		 * @return String representation of current date and time information
+		 */
+		static string stringifyDateAndTime(u_int32_t timestamp, bool withDelimiters);
+		/**
 		 * Returns the list of files in given directory
 		 *
 		 * @param directory Directory that'll be traversed

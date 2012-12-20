@@ -185,18 +185,18 @@ ItsKeyManager& ManagementInformationBase::getItsKeyManager() {
 	return this->itsKeyManager;
 }
 
-WirelessStateResponseItem& ManagementInformationBase::getWirelessState(InterfaceID interfaceId) {
+WirelessStateResponseItem* ManagementInformationBase::getWirelessState(InterfaceID interfaceId) {
 	return wirelessStateMap[interfaceId];
 }
 
-bool ManagementInformationBase::updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem wirelessState) {
-	map<InterfaceID, WirelessStateResponseItem>::iterator itemIndex = wirelessStateMap.find(interfaceId);
+bool ManagementInformationBase::updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem* wirelessState) {
+	map<InterfaceID, WirelessStateResponseItem*>::iterator itemIndex = wirelessStateMap.find(interfaceId);
 
 	/**
 	 * First check if we already had this Interface ID, if yes, then replace it
 	 */
 	if (itemIndex == wirelessStateMap.end())
-		wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem>(interfaceId, wirelessState));
+		wirelessStateMap.insert(wirelessStateMap.end(), pair<InterfaceID, WirelessStateResponseItem*>(interfaceId, wirelessState));
 	else
 		itemIndex->second = wirelessState;
 
@@ -204,8 +204,8 @@ bool ManagementInformationBase::updateWirelessState(InterfaceID interfaceId, Wir
 	 * Print the list of interfaces we had so far
 	 */
 	logger.info("I had the information for following interfaces so far...");
-	for (map<InterfaceID, WirelessStateResponseItem>::const_iterator it = wirelessStateMap.begin(); it != wirelessStateMap.end(); ++it)
-		logger.info(it->second.toString());
+	for (map<InterfaceID, WirelessStateResponseItem*>::const_iterator it = wirelessStateMap.begin(); it != wirelessStateMap.end(); ++it)
+		logger.info(it->second->toString());
 
 	return true;
 }

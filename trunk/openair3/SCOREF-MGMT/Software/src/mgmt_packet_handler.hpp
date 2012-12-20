@@ -46,12 +46,14 @@
 using namespace boost;
 
 #include "packets/mgmt_fac_packet_configuration_notification.hpp"
+#include "packets/mgmt_lte_packet_wireless_state_response.hpp"
 #include "packets/mgmt_gn_packet_location_table_response.hpp"
 #include "packets/mgmt_gn_packet_wireless_state_response.hpp"
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet_get_configuration.hpp"
 #include "packets/mgmt_gn_packet_location_update.hpp"
 #include "packets/mgmt_gn_packet_network_state.hpp"
+#include "packets/mgmt_gn_packet.hpp"
 #include "mgmt_information_base.hpp"
 #include "mgmt_packet_factory.hpp"
 #include "util/mgmt_log.hpp"
@@ -184,7 +186,7 @@ class PacketHandler {
 		 * @param packet Pointer to incoming Wireless State Response packet
 		 * @return Pointer to a PacketHandlerResult object
 		 */
-		static PacketHandlerResult* handleWirelessStateResponseEvent(GeonetWirelessStateResponseEventPacket* packet);
+		static PacketHandlerResult* handleWirelessStateResponseEvent(GeonetPacket* packet);
 		/**
 		 * Handles a Location Table Response packet
 		 *

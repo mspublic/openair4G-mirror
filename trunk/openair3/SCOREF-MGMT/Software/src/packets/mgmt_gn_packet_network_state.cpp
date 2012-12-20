@@ -57,10 +57,11 @@ GeonetNetworkStateEventPacket::~GeonetNetworkStateEventPacket() {
 string GeonetNetworkStateEventPacket::toString() const {
 	stringstream ss;
 
-	ss << "NetworkState[RxPackets:" << mib.getNetworkState().rxPackets
-		<< " rxBytes:" << mib.getNetworkState().rxBytes
-		<< " txPackets:" << mib.getNetworkState().txPackets
-		<< " txBytes:" << mib.getNetworkState().txBytes
+	ss << "NetworkState[Timestamp:" << Util::stringifyDateAndTime(mib.getNetworkState().timestamp, true)
+		<< " TxPackets:" << mib.getNetworkState().rxPackets
+		<< " RxBytes:" << mib.getNetworkState().rxBytes
+		<< " TxPackets:" << mib.getNetworkState().txPackets
+		<< " TxBytes:" << mib.getNetworkState().txBytes
 		<< " toUpperLayer:" << mib.getNetworkState().toUpperLayerPackets
 		<< " discarded:" << mib.getNetworkState().discardedPackets
 		<< " duplicate:" << mib.getNetworkState().duplicatePackets
@@ -75,6 +76,7 @@ bool GeonetNetworkStateEventPacket::parse(const vector<unsigned char>& packetBuf
 		return false;
 
 	unsigned int dataIndex = sizeof(MessageHeader);
+	Util::parse4byteInteger(packetBuffer.data() + dataIndex, &mib.getNetworkState().timestamp); dataIndex += 4;
 	Util::parse4byteInteger(packetBuffer.data() + dataIndex, &mib.getNetworkState().rxPackets); dataIndex += 4;
 	Util::parse4byteInteger(packetBuffer.data() + dataIndex, &mib.getNetworkState().rxBytes); dataIndex += 4;
 	Util::parse4byteInteger(packetBuffer.data() + dataIndex, &mib.getNetworkState().txPackets); dataIndex += 4;

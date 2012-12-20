@@ -122,7 +122,7 @@ class ManagementInformationBase {
 		 * @param interfaceId Interface ID of the interface
 		 * @return A reference to WirelessStateResponseItem of relevant interface
 		 */
-		WirelessStateResponseItem& getWirelessState(InterfaceID interfaceId);
+		WirelessStateResponseItem* getWirelessState(InterfaceID interfaceId);
 		/**
 		 * Adds a new wireless state information for an interface
 		 *
@@ -130,7 +130,7 @@ class ManagementInformationBase {
 		 * @param wirelessState Wireless State information
 		 * @return true on success, false otherwise
 		 */
-		bool updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem wirelessState);
+		bool updateWirelessState(InterfaceID interfaceId, WirelessStateResponseItem* wirelessState);
 		/**
 		 * Returns the network state of this MIB
 		 *
@@ -179,7 +179,7 @@ class ManagementInformationBase {
 		/**
 		 * Wireless and network state messages
 		 */
-		map<InterfaceID, WirelessStateResponseItem> wirelessStateMap;
+		map<InterfaceID, WirelessStateResponseItem*> wirelessStateMap;
 		/**
 		 * Network state of this MIB entity
 		 */

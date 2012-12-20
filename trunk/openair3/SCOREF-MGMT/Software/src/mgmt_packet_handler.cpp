@@ -87,9 +87,12 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 			return handleNetworkStateEvent(new GeonetNetworkStateEventPacket(mib, packetBuffer, logger));
 
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_RESPONSE:
-		case MGMT_LTE_EVENT_STATE_WIRELESS_STATE_RESPONSE:
-			logger.info("WIRELESS_STATE_RESPONSE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
+			logger.info("WIRELESS_STATE_RESPONSE packet (GN) of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleWirelessStateResponseEvent(new GeonetWirelessStateResponseEventPacket(mib, packetBuffer, logger));
+
+		case MGMT_LTE_EVENT_STATE_WIRELESS_STATE_RESPONSE:
+			logger.info("WIRELESS_STATE_RESPONSE packet (LTE) of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
+			return handleWirelessStateResponseEvent(new LteWirelessStateResponseEventPacket(mib, packetBuffer, logger));
 
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
 		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
@@ -160,10 +163,10 @@ PacketHandlerResult* PacketHandler::handleNetworkStateEvent(GeonetNetworkStateEv
 	return new PacketHandlerResult(PacketHandlerResult::DISCARD_PACKET, NULL);
 }
 
-PacketHandlerResult* PacketHandler::handleWirelessStateResponseEvent(GeonetWirelessStateResponseEventPacket* request) {
+PacketHandlerResult* PacketHandler::handleWirelessStateResponseEvent(GeonetPacket* request) {
 	delete request;
 	/*
-	 * Creation of a GeonetWirelessStateEventPacket is enough for processing...
+	 * Creation of a {Lte|Gn}WirelessStateEventPacket is enough for processing...
 	 */
 	return new PacketHandlerResult(PacketHandlerResult::DISCARD_PACKET, NULL);
 }
