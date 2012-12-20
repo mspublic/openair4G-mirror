@@ -42,7 +42,9 @@
 #include "cor_SF_sim.h"
 #include "UTIL/OMG/omg_constants.h"
 
-#include </usr/include/valgrind/callgrind.h>
+#ifdef VAL_PROFILING // Ensure that you have valgrind in the following path in your system or change it otherwise
+#include </usr/local/include/valgrind/callgrind.h>
+#endif
 
 //#ifdef PROC
 #include "../PROC/interface.h"
@@ -1223,7 +1225,9 @@ main (int argc, char **argv)
     snr_dB=20;
     sinr_dB=-20;
   }
+#ifdef VAL_PROFILING
   CALLGRIND_START_INSTRUMENTATION;
+#endif
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
     // Handling the cooperation Flag
@@ -1586,8 +1590,10 @@ main (int argc, char **argv)
     }
   }	//end of frame
   
+#ifdef VAL_PROFILING
   CALLGRIND_STOP_INSTRUMENTATION;
   CALLGRIND_DUMP_STATS;
+#endif
 
 
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
