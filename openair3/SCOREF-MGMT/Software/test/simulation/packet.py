@@ -14,13 +14,17 @@ class Packet:
 		# Set the event sub-type according to the client type
 		if clientType == "GN":
 			configurationRequestPacket.append(0x01) # EventSubtype=1
+			configurationRequestPacket.append(0xFF) # ConfigurationId=0xFFFF (all)
+			configurationRequestPacket.append(0xFF)
 		elif clientType == "FAC":
 			configurationRequestPacket.append(0x11) # EventSubtype=11
+			configurationRequestPacket.append(0xBB) # ConfigurationId=0xBBBB (only FAC)
+			configurationRequestPacket.append(0xBB)
 		elif clientType == "LTE":
 			# This value is not defined yet!
 			configurationRequestPacket.append(0x12) # EventSubtype=12
-		configurationRequestPacket.append(0xff) # ConfigurationId=0xFFFF (all)
-		configurationRequestPacket.append(0xff)
+			configurationRequestPacket.append(0xFF) # ConfigurationId=0xFFFF (all)
+			configurationRequestPacket.append(0xFF)
 		configurationRequestPacket.append(0x00) # TransmissionMode=0x0001 (bulk)
 		configurationRequestPacket.append(0x01)
 
@@ -50,8 +54,8 @@ class Packet:
 		elif clientType == "LTE":
 			# This value is not defined yet!
 			communicationProfileRequestPacket.append(0x16) # EventSubtype=16
-		communicationProfileRequestPacket.append(0xc0) # Transport
-		communicationProfileRequestPacket.append(0xc0) # Network
+		communicationProfileRequestPacket.append(0xC0) # Transport
+		communicationProfileRequestPacket.append(0xC0) # Network
 		communicationProfileRequestPacket.append(0x80) # Access
 		communicationProfileRequestPacket.append(0xF8) # Channel
 
@@ -72,23 +76,27 @@ class Packet:
 		networkStatePacket = array.array('B')
 		networkStatePacket.append(0x40) # Validity=1, version=0
 		networkStatePacket.append(0x00) # Priority=0
-		networkStatePacket.append(0x03) # EventType=3
-		networkStatePacket.append(0x01) # EventSubtype=1
+		networkStatePacket.append(0x04) # EventType=4
+		networkStatePacket.append(0x04) # EventSubtype=4
+		networkStatePacket.append(0x50) # Timestamp (32-bit)
+		networkStatePacket.append(0xA3)
+		networkStatePacket.append(0x26)
+		networkStatePacket.append(0xF3)
 		networkStatePacket.append(0x00) # RxPackets
-		networkStatePacket.append(0x0D)
 		networkStatePacket.append(0x00)
+		networkStatePacket.append(0x01)
 		networkStatePacket.append(0xF0)
 		networkStatePacket.append(0x00) # RxBytes
-		networkStatePacket.append(0xA1)
-		networkStatePacket.append(0x12)
+		networkStatePacket.append(0x00)
 		networkStatePacket.append(0x02)
-		networkStatePacket.append(0xDD) # TxPackets
-		networkStatePacket.append(0x10)
+		networkStatePacket.append(0x02)
+		networkStatePacket.append(0x00) # TxPackets
+		networkStatePacket.append(0x00)
 		networkStatePacket.append(0x0A)
 		networkStatePacket.append(0x56)
-		networkStatePacket.append(0x10) # TxBytes
-		networkStatePacket.append(0x22)
-		networkStatePacket.append(0xBB)
+		networkStatePacket.append(0x00) # TxBytes
+		networkStatePacket.append(0x00)
+		networkStatePacket.append(0x10)
 		networkStatePacket.append(0x89)
 		networkStatePacket.append(0x00) # ToUpperLayerPackets
 		networkStatePacket.append(0x00)
@@ -124,28 +132,39 @@ class Packet:
 		wirelessStatePacket.append(0x40) # Validity=1, version=0
 		wirelessStatePacket.append(0x00) # Priority=0
 		wirelessStatePacket.append(0x04) # EventType=4
-		# Set the event sub-type according to the client type
+		# Set the packet content according to the client type
 		if clientType == "GN":
 			wirelessStatePacket.append(0x03) # EventSubtype=3
+			wirelessStatePacket.append(0x01) # IF Count
+			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Interface ID (2-byte)
+			wirelessStatePacket.append(random.randint(1, 10))
+			wirelessStatePacket.append(0x00) # Access Technology (2-byte)
+			wirelessStatePacket.append(random.randint(1, 255))
+			wirelessStatePacket.append(random.randint(1, 255)) # Channel Frequency (2-byte)
+			wirelessStatePacket.append(random.randint(1, 255))
+			wirelessStatePacket.append(0x00) # Bandwidth (2-byte)
+			wirelessStatePacket.append(random.randint(1, 255))
+			wirelessStatePacket.append(random.randint(1, 100)) # Channel Busy Ratio (1-byte)
+			wirelessStatePacket.append(random.randint(1, 10)) # Status (1-byte)
+			wirelessStatePacket.append(random.randint(1, 100)) # Average TX Power (1-byte)
+			wirelessStatePacket.append(0x00) # Reserved
 		elif clientType == "LTE":
-			# This value is not defined yet!
-			wirelessStatePacket.append(0x3) # EventSubtype=3
-		wirelessStatePacket.append(0x01) # IF Count
-		wirelessStatePacket.append(0x00) # Reserved
-		wirelessStatePacket.append(0x00) # Reserved
-		wirelessStatePacket.append(0x00) # Reserved
-		wirelessStatePacket.append(0x00) # Interface ID (2-byte)
-		wirelessStatePacket.append(random.randint(1, 10))
-		wirelessStatePacket.append(0x00) # Access Technology (2-byte)
-		wirelessStatePacket.append(random.randint(1, 255))
-		wirelessStatePacket.append(random.randint(1, 255)) # Channel Frequency (2-byte)
-		wirelessStatePacket.append(random.randint(1, 255))
-		wirelessStatePacket.append(0x00) # Bandwidth (2-byte)
-		wirelessStatePacket.append(random.randint(1, 255))
-		wirelessStatePacket.append(random.randint(1, 100)) # Channel Busy Ratio (1-byte)
-		wirelessStatePacket.append(random.randint(1, 10)) # Status (1-byte)
-		wirelessStatePacket.append(random.randint(1, 100)) # Average TX Power (1-byte)
-		wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x23) # EventSubtype=23
+			wirelessStatePacket.append(0x00) # Reference Signal Received Power (2-byte)
+			wirelessStatePacket.append(0xdd)
+			wirelessStatePacket.append(0x00) # Reference Signal Received Quality (2-byte)
+			wirelessStatePacket.append(0xaa)
+			wirelessStatePacket.append(0x0c) # Channel Quality Information (1-byte)
+			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Packet Loss Rate (4-byte)
+			wirelessStatePacket.append(0x01)
+			wirelessStatePacket.append(0x02)
+			wirelessStatePacket.append(0x03)
 
 		# Create the socket to send to MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

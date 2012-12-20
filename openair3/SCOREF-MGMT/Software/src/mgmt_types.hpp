@@ -308,8 +308,31 @@ struct WirelessStateResponseMessage {
  * Wireless State of a Certain Interface
  */
 typedef u_int16_t InterfaceID;
+/**
+ * Interface type
+ */
+enum WirelessInterfaceType {
+	WIRELESS_TYPE_LTE = 0,
+	WIRELESS_TYPE_GN = 1
+};
+
 struct WirelessStateResponseItem {
-	InterfaceID interfaceId;
+	virtual ~WirelessStateResponseItem() {}
+
+	WirelessInterfaceType interfaceType;
+
+	/**
+	 * This method stringfies the information contained in this struct and
+	 * to be implemented by sub-structs
+	 */
+	virtual string toString() const = 0;
+} __attribute__((packed));
+
+/**
+ * Wireless State for GN
+ */
+struct GnWirelessStateResponseItem : public WirelessStateResponseItem {
+	InterfaceID interfaceId; /** 16-bit */
 	u_int16_t accessTechnology;
 	u_int16_t channelFrequency;
 	u_int16_t bandwidth;
@@ -321,7 +344,7 @@ struct WirelessStateResponseItem {
 	string toString() const {
 		stringstream ss;
 
-		ss << "WirelessState[If ID:" << interfaceId
+		ss << "GN WirelessState[If ID:" << interfaceId
 			<< ", Access Tech:" << accessTechnology
 			<< ", Channel Freq:" << channelFrequency
 			<< ", Bandwidth:" << bandwidth
@@ -334,11 +357,38 @@ struct WirelessStateResponseItem {
 } __attribute__((packed));
 
 /**
+ * Wireless State for LTE
+ */
+#define LTE_WIRELESS_STATE_RESPONSE_SIZE 0x10 /** 4-byte header, 12-byte body including 3-byte reserved */
+struct LteWirelessStateResponse : public WirelessStateResponseItem {
+	InterfaceID interfaceId; /** 16-bit */
+	u_int16_t referenceSignalReceivedPower;
+	u_int16_t referenceSignalReceivedQuality;
+	u_int8_t channelQualityInformation;
+	u_int8_t reserved8bit;
+	u_int16_t reserved16bit;
+	u_int32_t packetLossRate;
+
+	string toString() const {
+		stringstream ss;
+
+		ss << "LTE WirelessState[If ID:" << interfaceId
+			<< ", Ref. Signal Rx Power:" << referenceSignalReceivedPower
+			<< ", Ref. Signal Rx Quality:" << referenceSignalReceivedQuality
+			<< ", Channel Quality Info:" << (int)channelQualityInformation
+			<< ", Packet Loss Rate:" << packetLossRate << "]";
+
+		return ss.str();
+	}
+} __attribute__((packed));
+
+/**
  * Network State Message
  */
 struct NetworkStateMessage {
 	MessageHeader header;
 
+	u_int32_t timestamp;
 	u_int32_t rxPackets;
 	u_int32_t rxBytes;
 	u_int32_t txPackets;

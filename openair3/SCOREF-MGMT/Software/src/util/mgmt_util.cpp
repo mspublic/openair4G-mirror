@@ -323,6 +323,26 @@ string Util::getDateAndTime(bool withDelimiters) {
 	return dateAndTime.str();
 }
 
+string Util::stringifyDateAndTime(u_int32_t timestamp, bool withDelimiters) {
+	stringstream dateAndTime;
+
+	time_facet *facet = NULL;
+
+	try {
+		if (withDelimiters)
+			facet = new time_facet("%Y/%m/%d-%T");
+		else
+			facet = new time_facet("%Y%m%d-%H%M%S");
+	} catch (...) {
+		return string("");
+	}
+
+	dateAndTime.imbue(locale(dateAndTime.getloc(), facet));
+	dateAndTime << boost::posix_time::from_time_t(timestamp);
+
+	return dateAndTime.str();
+}
+
 vector<string> Util::getListOfFiles(const string& directory) {
 	boost::filesystem::path directoryPath(directory);
 	vector<string> fileList;

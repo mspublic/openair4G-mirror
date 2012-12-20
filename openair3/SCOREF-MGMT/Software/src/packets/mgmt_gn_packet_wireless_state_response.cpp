@@ -61,32 +61,39 @@ string GeonetWirelessStateResponseEventPacket::toString() const {
 }
 
 bool GeonetWirelessStateResponseEventPacket::parse(const vector<unsigned char>& packetBuffer) {
+	/**
+	 * Validate incoming buffer
+	 */
 	if (packetBuffer.size() < sizeof(WirelessStateResponseMessage))
 		return false;
 
-	// Parse interface count first
+	/**
+	 * Parse interface count first
+	 */
 	u_int8_t interfaceCount = packetBuffer.data()[sizeof(MessageHeader)];
 	logger.info("Number of interfaces is " + boost::lexical_cast<string>((int)interfaceCount));
 
-	// Then traverse the buffer to get the state for every interface...
+	/**
+	 * Then traverse the buffer to get the state for every interface...
+	 */
 	u_int16_t itemIndex = sizeof(WirelessStateResponseMessage);
 	for (; interfaceCount != 0; interfaceCount--) {
-		WirelessStateResponseItem item;
+		GnWirelessStateResponseItem* item = new GnWirelessStateResponseItem();
 
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.interfaceId); itemIndex += sizeof(InterfaceID);
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.accessTechnology); itemIndex += 2;
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.channelFrequency); itemIndex += 2;
-		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item.bandwidth); itemIndex += 2;
-		item.channelBusyRatio = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
-		item.status = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
-		item.averageTxPower = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
-		item.reserved = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->interfaceId); itemIndex += sizeof(InterfaceID);
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->accessTechnology); itemIndex += 2;
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->channelFrequency); itemIndex += 2;
+		Util::parse2byteInteger(packetBuffer.data() + itemIndex, &item->bandwidth); itemIndex += 2;
+		item->channelBusyRatio = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
+		item->status = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
+		item->averageTxPower = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
+		item->reserved = static_cast<u_int8_t>(packetBuffer.data()[itemIndex]); ++itemIndex;
 
 		// Update MIB with this record
-		mib.updateWirelessState(item.interfaceId, item);
+		mib.updateWirelessState(item->interfaceId, item);
 
 		logger.info("Management Information Base has been updated with following wireless state entry: ");
-		logger.info(item.toString());
+		logger.info(item->toString());
 
 		// itemIndex shows the next record now, if there's any
 	}

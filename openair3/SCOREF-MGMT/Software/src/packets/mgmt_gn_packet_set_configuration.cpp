@@ -40,7 +40,7 @@
 */
 
 #include "mgmt_gn_packet_set_configuration.hpp"
-
+#include <boost/lexical_cast.hpp>
 #include <sstream>
 using namespace std;
 
@@ -91,6 +91,8 @@ bool GeonetSetConfigurationEventPacket::serialize(vector<unsigned char>& buffer)
 		 */
 		map<ItsKeyID, ItsKeyValue> keyset = mib.getItsKeyManager().getSubset(requestedItsKeyType);
 		map<ItsKeyID, ItsKeyValue>::const_iterator iterator = keyset.begin();
+
+		logger.info(boost::lexical_cast<string>(keyset.size()) + " key(s) found for requested ITS key type");
 
 		while (iterator != keyset.end()) {
 			ConfigurationItem confItem = buildConfigurationItem(iterator->first);

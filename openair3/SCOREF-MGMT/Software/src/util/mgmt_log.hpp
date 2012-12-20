@@ -42,6 +42,7 @@
 #ifndef MGMT_LOG_HPP_
 #define MGMT_LOG_HPP_
 
+#include <boost/thread/mutex.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <string>
@@ -148,6 +149,10 @@ class Logger {
 		 * Log file path of type boost::filesystem::path
 		 */
 		boost::filesystem::path logFilePath;
+		/**
+		 * Mutex to ensure that log() is called by only one at any given time
+		 */
+		boost::mutex logMutex;
 		/**
 		 * Log file stream of type ofstream
 		 */
