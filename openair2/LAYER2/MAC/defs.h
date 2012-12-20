@@ -268,11 +268,6 @@ typedef struct {
   UE_DLSCH_STATUS status;
 } eNB_DLSCH_INFO;
 
-struct cornti_array { //TCS LOLAmesh
-	u8 count;
-	u16 array[MAX_VLINK_PER_CH];
-};
-
 typedef struct{
   /// C-RNTI of UE
   u16 rnti;

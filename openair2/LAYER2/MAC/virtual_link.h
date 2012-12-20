@@ -89,6 +89,13 @@ struct virtual_links {
 	struct virtual_link array[MAX_VLINK_PER_CH];
 };
 
+// CORNTIs array for UE/eNB MAC/PHY structures
+struct cornti_array {
+	u8 count;
+	u16 array[MAX_VLINK_PER_CH];
+};
+
+
 /********************
  * Global variables *
  ********************/

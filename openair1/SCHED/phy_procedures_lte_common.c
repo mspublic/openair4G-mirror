@@ -558,16 +558,28 @@ LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
   return(&PHY_vars_eNB_g[Mod_id]->eNB_UE_stats[(u32)UE_id]);
 }
 
+//TCS LOLAmesh
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
-  u8 i;
+  u8 i,j;
+  u8 nb_corntis;
 
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
-    if ((phy_vars_eNB->dlsch_eNB[i]) && 
-	(phy_vars_eNB->dlsch_eNB[i][0]) && 
-	(phy_vars_eNB->dlsch_eNB[i][0]->rnti==rnti)) {
+  	// We look for the rnti
+    if ((phy_vars_eNB->dlsch_eNB[i]) && (phy_vars_eNB->dlsch_eNB[i][0]) && (phy_vars_eNB->dlsch_eNB[i][0]->rnti==rnti)) {
       return(i);
     }
-  }
+    //TCS LOLAmesh
+    // We look for the cornti
+    if ((phy_vars_eNB->dlsch_eNB[i]) && (phy_vars_eNB->dlsch_eNB[i][0])) {
+    	nb_corntis = phy_vars_eNB->dlsch_eNB[i][0]->corntis.count;
+    	for (j=0;j<nb_corntis;j++) {
+    		if ((phy_vars_eNB->dlsch_eNB[i][0]->corntis.array[j] == rnti)) {
+    			return(j);
+    		}
+    	}
+    }// if ((phy_vars_eNB->dlsch_eNB[i]) && (phy_vars_eNB->dlsch_eNB[i][0]))
+  }// for (i=0;i<NUMBER_OF_UE_MAX;i++)
+
   return(-1);
 }
 

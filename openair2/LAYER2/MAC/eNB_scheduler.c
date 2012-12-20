@@ -313,15 +313,23 @@ u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id ){
   else
     return 0 ;
 }
+
+//TCS LOLAmesh
 s8 find_active_UEs(unsigned char Mod_id){
 
   unsigned char UE_id;
-  u16 rnti;
+  u16 rnti,cornti;
   unsigned char nb_active_ue=0;
+  u8 nb_corntis, i;
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
 
-    if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0) {
+  	//A user is active if its rnti is != 0
+  	rnti = eNB_mac_inst[Mod_id].UE_template[UE_id].rnti;
+
+    if (rnti !=0) {
+
+    	LOG_D(MAC,"[eNB %d][TCS DEBUG] find_active_UEs UE_id = %d / rnti = %d\n",Mod_id,UE_id, rnti);
 
       if (mac_xface->get_eNB_UE_stats(Mod_id,rnti) != NULL){ // check at the phy enb_ue state for this rnti
       	nb_active_ue++;
@@ -332,6 +340,29 @@ s8 find_active_UEs(unsigned char Mod_id){
       }
 
     }// if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0)
+
+  	//A user is active if it has at least one cornti
+    if ((eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count != 0)) {
+
+    	nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count;
+
+    	for (i=0;i<nb_corntis;i++) {
+
+    		cornti = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i];
+
+    		LOG_D(MAC,"[eNB %d][TCS DEBUG] find_active_UEs UE_id = %d / cornti = %d\n",Mod_id,UE_id, cornti);
+
+				if (mac_xface->get_eNB_UE_stats(Mod_id,cornti) != NULL){ // check at the phy enb_ue state for this rnti
+					nb_active_ue++;
+				}
+
+				else { // this ue is removed at the phy => remove it at the mac as well
+					mac_remove_ue(Mod_id, UE_id);
+				}
+
+    	}
+
+    }// if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0
 
   }//end for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++)
 
@@ -3711,6 +3742,8 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   aggregation = 1; // set to the maximum aggregation level
   int mcs;
 
+  LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, granted_UEs = %d\n",Mod_id,frame,granted_UEs);
+
   for(i=0;i<256;i++)
     pre_nb_available_rbs[i] = 0;
 
@@ -3746,8 +3779,8 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       	}
       }
       break; //the for loop
-    }
-  }
+    }//  if (mac_get_rrc_status(Mod_id,1,UE_id)
+  }// for (UE_id=0;UE_id<granted_UEs;UE_id++)
 
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
@@ -4499,9 +4532,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   u8 vlink_status = 1;
   u16 cornti;
   u8 vlid;
-  u8 count; // length of the cornti list in a UE_template stucture
   u8 status;
-  u8 nb_corntis;
+  u8 nb_corntis; //length of the cornti array
 
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
@@ -4556,10 +4588,15 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   				/* We chose the cornti randomly */
   				cornti = (u16)taus();
 
-					/* Keep track of the chosen CO-RNTI for this link */
-				  count = eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count;
-					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.array[count] = cornti;
+					/* Keep track of the CORNTI */
+					//MAC layer structure
+					nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count;
+					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.array[nb_corntis] = cornti;
 					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count++;
+					//PHY layer structure
+					nb_corntis = PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.count;
+					PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.array[nb_corntis] = cornti;
+					PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.count++;
 
   				/* For all the MR of the VL we establish a CO-DRB */
   				for (j=0;j<virtualLinksTable[Mod_id].array[i].MRarray.count;j++) {
@@ -4569,11 +4606,6 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   					// Generate and send RRCConnectionReconfiguration
   					rrc_eNB_generate_RRCConnectionReconfiguration_co(Mod_id,UE_index,frame,cornti,vlid);
-
-  					/* Keep track of the CORNTI */
-  					nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count;
-  					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.array[nb_corntis] = cornti;
-  					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count++;
 
   				}// end for (j=0;j<virtualLinksTable[Mod_id].array[i].MRList.count;j++)
 
