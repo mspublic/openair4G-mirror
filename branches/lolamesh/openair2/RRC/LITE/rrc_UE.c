@@ -55,6 +55,8 @@
 #include "MeasGapConfig.h"
 #include "MeasObjectEUTRA.h"
 #include "TDD-Config.h"
+//TCS LOLAmesh
+#include "PHY/extern.h"
 #ifdef PHY_ABSTRACTION
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -726,9 +728,14 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
 	  collaborative_link = 1;
 
 	  /* Keep track of the CORNTI */
+	  //MAC layer structures
 	  nb_corntis = UE_mac_inst[Mod_id].corntis.count;
 	  UE_mac_inst[Mod_id].corntis.array[nb_corntis] = cornti;
 	  UE_mac_inst[Mod_id].corntis.count++;
+	  //PHY layer structures
+	  nb_corntis = PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.count;
+	  PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.array[nb_corntis] = cornti;
+	  PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.count++;
 
 	}// end if ((radioResourceConfigDedicated->drb_ToAddModList->list.array...
       }// end if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) / else

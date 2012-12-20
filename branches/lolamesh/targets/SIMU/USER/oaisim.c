@@ -1257,23 +1257,25 @@ main (int argc, char **argv)
   /* CORNTIs tables initialization */
   for (k=0;k<NB_eNB_INST;k++) {
   	for (l=0;l<NB_UE_INST;l++) {
+  		//MAC layer structure
   		eNB_mac_inst[k].UE_template[l].corntis.count = 0;
 			UE_mac_inst[l].corntis.count = 0;
+			//PHY layer structure
+			PHY_vars_eNB_g[k]->dlsch_eNB[l][0]->corntis.count = 0;
+			PHY_vars_UE_g[l]->dlsch_ue[k][0]->corntis.count = 0;
   	}
   }
 
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
   printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
-  printf ("after init: frame_type %d,tdd_config %d\n", 
-	  PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-	  PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
-
+  printf ("after init: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
 
   if (ue_connection_test == 1) {
     snr_direction = -1;
     snr_dB=20;
     sinr_dB=-20;
   }
+
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
     // Handling the cooperation Flag
