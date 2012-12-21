@@ -1,4 +1,7 @@
 
+v1.6.0 (released on 21 Dec 2012)
+* Release version
+
 v1.5.4
 * New scenarios added for the simulator
 * Wireless Status packet sent by the simulator updated according to the new LTE Wireless Status
