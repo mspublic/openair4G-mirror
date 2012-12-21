@@ -57,21 +57,24 @@ GeonetNetworkStateEventPacket::~GeonetNetworkStateEventPacket() {
 string GeonetNetworkStateEventPacket::toString() const {
 	stringstream ss;
 
-	ss << "NetworkState[Timestamp:" << Util::stringifyDateAndTime(mib.getNetworkState().timestamp, true)
+	ss << "NetworkState[ts:" << mib.getNetworkState().timestamp
 		<< " TxPackets:" << mib.getNetworkState().rxPackets
 		<< " RxBytes:" << mib.getNetworkState().rxBytes
 		<< " TxPackets:" << mib.getNetworkState().txPackets
 		<< " TxBytes:" << mib.getNetworkState().txBytes
-		<< " toUpperLayer:" << mib.getNetworkState().toUpperLayerPackets
-		<< " discarded:" << mib.getNetworkState().discardedPackets
-		<< " duplicate:" << mib.getNetworkState().duplicatePackets
-		<< " forwarded:" << mib.getNetworkState().forwardedPackets
+		<< " toUpLayer:" << mib.getNetworkState().toUpperLayerPackets
+		<< " disc.:" << mib.getNetworkState().discardedPackets
+		<< " dup.:" << mib.getNetworkState().duplicatePackets
+		<< " forw.:" << mib.getNetworkState().forwardedPackets
 		<< "]";
 
 	return ss.str();
 }
 
 bool GeonetNetworkStateEventPacket::parse(const vector<unsigned char>& packetBuffer) {
+	/**
+	 * Verify that incoming packet's size is sufficient for a Network State packet
+	 */
 	if (packetBuffer.size() < sizeof(NetworkStateMessage))
 		return false;
 

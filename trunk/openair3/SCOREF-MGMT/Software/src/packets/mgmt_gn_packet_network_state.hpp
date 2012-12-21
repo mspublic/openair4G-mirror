@@ -91,4 +91,3 @@ class GeonetNetworkStateEventPacket: public GeonetPacket {
 };
 
 #endif /* MGMT_GN_PACKET_NETWORK_STATE_HPP_ */
-
