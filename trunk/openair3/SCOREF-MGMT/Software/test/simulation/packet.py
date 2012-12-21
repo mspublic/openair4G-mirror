@@ -153,18 +153,22 @@ class Packet:
 			wirelessStatePacket.append(0x00) # Reserved
 		elif clientType == "LTE":
 			wirelessStatePacket.append(0x23) # EventSubtype=23
-			wirelessStatePacket.append(0x00) # Reference Signal Received Power (2-byte)
-			wirelessStatePacket.append(0xdd)
-			wirelessStatePacket.append(0x00) # Reference Signal Received Quality (2-byte)
-			wirelessStatePacket.append(0xaa)
-			wirelessStatePacket.append(0x0c) # Channel Quality Information (1-byte)
+			wirelessStatePacket.append(0x00) # Interface ID (2-byte)
+			wirelessStatePacket.append(0x02)
 			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Reserved
+			wirelessStatePacket.append(0x00) # Reference Signal Received Power (2-byte)
+			wirelessStatePacket.append(random.randint(1, 100))
+			wirelessStatePacket.append(0x00) # Reference Signal Received Quality (2-byte)
+			wirelessStatePacket.append(random.randint(1, 100))
+			wirelessStatePacket.append(random.randint(1, 10)) # Channel Quality Indication (1-byte)
+			wirelessStatePacket.append(0x01) # Status
 			wirelessStatePacket.append(0x00) # Reserved
 			wirelessStatePacket.append(0x00) # Reserved
 			wirelessStatePacket.append(0x00) # Packet Loss Rate (4-byte)
-			wirelessStatePacket.append(0x01)
-			wirelessStatePacket.append(0x02)
-			wirelessStatePacket.append(0x03)
+			wirelessStatePacket.append(0x00)
+			wirelessStatePacket.append(random.randint(1, 10))
+			wirelessStatePacket.append(random.randint(1, 10))
 
 		# Create the socket to send to MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

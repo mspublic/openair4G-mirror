@@ -76,11 +76,13 @@ bool LteWirelessStateResponseEventPacket::parse(const vector<unsigned char>& pac
 	 */
 	u_int16_t responseIndex = sizeof(MessageHeader);
 
+	Util::parse2byteInteger(packetBuffer.data() + responseIndex, &response->interfaceId); responseIndex += 2;
+	Util::parse2byteInteger(packetBuffer.data() + responseIndex, &response->reservedFirst16bit); responseIndex += 2;
 	Util::parse2byteInteger(packetBuffer.data() + responseIndex, &response->referenceSignalReceivedPower); responseIndex += 2;
 	Util::parse2byteInteger(packetBuffer.data() + responseIndex, &response->referenceSignalReceivedQuality); responseIndex += 2;
-	response->channelQualityInformation = static_cast<u_int8_t>(packetBuffer.data()[responseIndex]); ++responseIndex;
-	response->reserved8bit = static_cast<u_int8_t>(packetBuffer.data()[responseIndex]); ++responseIndex;
-	Util::parse2byteInteger(packetBuffer.data() + responseIndex, &response->reserved16bit); responseIndex += 2;
+	response->channelQualityIndication = static_cast<u_int8_t>(packetBuffer.data()[responseIndex]); ++responseIndex;
+	response->status = static_cast<u_int8_t>(packetBuffer.data()[responseIndex]); ++responseIndex;
+	Util::parse2byteInteger(packetBuffer.data() + responseIndex, &response->reservedSecond16bit); responseIndex += 2;
 	Util::parse4byteInteger(packetBuffer.data() + responseIndex, &response->packetLossRate); responseIndex += 4;
 
 	// Update MIB with this record
