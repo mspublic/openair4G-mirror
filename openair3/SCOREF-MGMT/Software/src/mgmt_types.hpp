@@ -359,24 +359,26 @@ struct GnWirelessStateResponseItem : public WirelessStateResponseItem {
 /**
  * Wireless State for LTE
  */
-#define LTE_WIRELESS_STATE_RESPONSE_SIZE 0x10 /** 4-byte header, 12-byte body including 3-byte reserved */
+#define LTE_WIRELESS_STATE_RESPONSE_SIZE 0x14 /** 4-byte header, 16-byte body (including reserved 4 bytes) */
 struct LteWirelessStateResponse : public WirelessStateResponseItem {
 	InterfaceID interfaceId; /** 16-bit */
+	u_int16_t reservedFirst16bit;
 	u_int16_t referenceSignalReceivedPower;
 	u_int16_t referenceSignalReceivedQuality;
-	u_int8_t channelQualityInformation;
-	u_int8_t reserved8bit;
-	u_int16_t reserved16bit;
+	u_int8_t channelQualityIndication;
+	u_int8_t status;
+	u_int16_t reservedSecond16bit;
 	u_int32_t packetLossRate;
 
 	string toString() const {
 		stringstream ss;
 
 		ss << "LTE WirelessState[If ID:" << interfaceId
-			<< ", Ref. Signal Rx Power:" << referenceSignalReceivedPower
-			<< ", Ref. Signal Rx Quality:" << referenceSignalReceivedQuality
-			<< ", Channel Quality Info:" << (int)channelQualityInformation
-			<< ", Packet Loss Rate:" << packetLossRate << "]";
+			<< ", Ref. Sig. Rx Pow.:" << referenceSignalReceivedPower
+			<< ", Ref. Sig. Rx Qual.:" << referenceSignalReceivedQuality
+			<< ", Channel Qual. Ind.:" << (int)channelQualityIndication
+			<< ", Status:" << (int)status
+			<< ", Pkt Loss Rate:" << packetLossRate << "]";
 
 		return ss.str();
 	}
