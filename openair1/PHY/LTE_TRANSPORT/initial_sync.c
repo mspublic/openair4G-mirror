@@ -45,7 +45,7 @@
 #include "defs.h"
 #include "extern.h"
 
-#define DEBUG_INIT_SYNCH
+//#define DEBUG_INIT_SYNCH
 
 int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 
@@ -53,7 +53,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
 
 #ifdef DEBUG_INIT_SYNCH
-  LOG_D(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
+  LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
       phy_vars_ue->rx_offset);
 #endif
 
@@ -80,7 +80,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
       (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
     phy_adjust_gain(phy_vars_ue,0);
-
+#ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 	phy_vars_ue->Mod_id,
 	phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
@@ -101,6 +101,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 	phy_vars_ue->PHY_measurements.n0_power[1],
 	phy_vars_ue->PHY_measurements.n0_power_avg_dB,
 	phy_vars_ue->PHY_measurements.n0_power_avg);
+#endif
   
   pbch_decoded = 0;
   for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
@@ -225,7 +226,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   u8 i;
   int ret=-1;
 
-  LOG_I(PHY,"**************************************************************\n");
+  //  LOG_I(PHY,"**************************************************************\n");
   // First try FDD normal prefix
   frame_parms->Ncp=0;
   frame_parms->frame_type=0;
@@ -252,8 +253,9 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   
   if (((sync_pos2 - sync_pos_slot) >=0 ) && 
       ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
-    
-      LOG_I(PHY,"Calling sss detection (FDD normal CP)\n");
+#ifdef DEBUG_INITIAL_SYNCH    
+    LOG_I(PHY,"Calling sss detection (FDD normal CP)\n");
+#endif
     rx_sss(phy_vars_ue,&metric_fdd_ncp,&flip_fdd_ncp,&phase_fdd_ncp);
     frame_parms->nushift  = frame_parms->Nid_cell%6;
     if (flip_fdd_ncp==1)
@@ -261,6 +263,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
     lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
     ret = pbch_detection(phy_vars_ue,mode);
+
 #ifdef DEBUG_INIT_SYNCH
     LOG_I(PHY,"FDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
@@ -419,7 +422,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 
   }
   else {
-    //#ifdef DEBUG_INIT_SYNC
+#ifdef DEBUG_INIT_SYNC
       LOG_I(PHY,"[UE%d] Initial sync : PBCH not ok\n",phy_vars_ue->Mod_id);
       LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
       LOG_I(PHY,"[UE%d] Initial sync: (metric fdd_ncp %d (%d), metric fdd_ecp %d (%d), metric_tdd_ncp %d (%d), metric_tdd_ecp %d (%d))\n", 
@@ -430,7 +433,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
             metric_tdd_ecp,Nid_cell_tdd_ecp);
       LOG_I(PHY,"[UE%d] Initial sync : Estimated Nid_cell %d, Frame_type %d\n",phy_vars_ue->Mod_id,
             frame_parms->Nid_cell,frame_parms->frame_type);
-      //#endif
+#endif
       
       phy_vars_ue->UE_mode[0] = NOT_SYNCHED;
       phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors;

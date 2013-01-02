@@ -155,7 +155,7 @@ u32  dlsch_decoding(short *dlsch_llr,
   nb_rb = dlsch->nb_rb;
 
 
-  if (nb_rb > 25) {
+  if (nb_rb > frame_parms->N_RB_DL) {
     msg("dlsch_decoding.c: Illegal nb_rb %d\n",nb_rb);
     return(MAX_TURBO_ITERATIONS);
   }

@@ -65,36 +65,49 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   
 
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
-  RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
+  //  RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
+  uint8_t *rar = (uint8_t *)(rar_pdu+1);
   u8 harq_pid = get_Msg3_harq_pid(frame_parms,frame,subframe);
-  
+  uint16_t rballoc;
+  uint8_t cqireq;
+
   LOG_D(PHY,"[eNB][RAPROC] generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
   
-  ulsch->harq_processes[harq_pid]->TPC                = rar->TPC;
-
-  if (rar->rb_alloc>RIV_max) {
-    LOG_E(PHY,"[eNB]dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+  ulsch->harq_processes[harq_pid]->TPC                = (rar[3]>>2)&7;//rar->TPC;
+  rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
+  if (rballoc>RIV_max) {
+    LOG_E(PHY,"[eNB]dci_tools.c: ERROR: rb_alloc (%x)> RIV_max\n",rballoc);
     return(-1);
   }
   ulsch->harq_processes[harq_pid]->rar_alloc          = 1;
-  ulsch->harq_processes[harq_pid]->first_rb           = RIV2first_rb_LUT25[rar->rb_alloc];
-  ulsch->harq_processes[harq_pid]->nb_rb              = RIV2nb_rb_LUT25[rar->rb_alloc];
+  ulsch->harq_processes[harq_pid]->first_rb           = RIV2first_rb_LUT25[rballoc];
+  ulsch->harq_processes[harq_pid]->nb_rb              = RIV2nb_rb_LUT25[rballoc];
   ulsch->harq_processes[harq_pid]->Ndi                = 1;
-  ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
-  ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
-  ulsch->O_RI                                  = 1;
-  ulsch->harq_processes[harq_pid]->O_ACK                                 = 2;
+
+  cqireq = rar[3]&1;
+  if (cqireq==1){
+    ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
+    ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
+    ulsch->O_RI                                  = 1;
+  }
+  else{
+    ulsch->O_RI                                  = 0;//1;
+    ulsch->Or2                                   = 0;
+    ulsch->Or1                                   = 0;
+ 
+  }
+  ulsch->harq_processes[harq_pid]->O_ACK                                 = 0;//2;
   ulsch->beta_offset_cqi_times8                = 18;
   ulsch->beta_offset_ri_times8                 = 10;
   ulsch->beta_offset_harqack_times8            = 16;
 
   
   ulsch->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1);
-  ulsch->rnti = rar->t_crnti;  
+  ulsch->rnti = (((uint16_t)rar[5])<<8)+rar[4];  
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     ulsch->harq_processes[harq_pid]->status = ACTIVE;
     ulsch->harq_processes[harq_pid]->rvidx = 0;
-    ulsch->harq_processes[harq_pid]->mcs         = rar->mcs;
+    ulsch->harq_processes[harq_pid]->mcs         = ((rar[2]&1)<<3)|(rar[3]>>5);
     ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
     ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
     ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
@@ -104,7 +117,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->harq_processes[harq_pid]->rvidx = 0;
     ulsch->harq_processes[harq_pid]->round++;
   }
-#ifdef DEBUG_RAR
+  //#ifdef DEBUG_RAR
   msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
   msg("ulsch ra (eNB): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
   msg("ulsch ra (eNB): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
@@ -113,7 +126,8 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   msg("ulsch ra (eNB): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
   msg("ulsch ra (eNB): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
   msg("ulsch ra (eNB): Or1      %d\n",ulsch->Or1);
-#endif
+  msg("ulsch ra (eNB): ORI      %d\n",ulsch->O_RI);
+  //#endif
   return(0);
 }
 
@@ -132,9 +146,10 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
   //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
 
-  RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
+  uint8_t *rar = (uint8_t *)(rar_pdu+1);
   u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
-
+  uint16_t rballoc;
+  uint8_t cqireq;
     
    
 #ifdef DEBUG_RAR
@@ -142,30 +157,34 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 #endif
 
 
+  
+  ulsch->harq_processes[harq_pid]->TPC                                   = (rar[3]>>3)&7;//rar->TPC;
+  
+  rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
+  cqireq=rar[3]&1;
 
-    ulsch->harq_processes[harq_pid]->TPC                                   = rar->TPC;
+  if (rballoc>RIV_max) {
+    msg("rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
+    return(-1);
+  }
 
-    if (rar->rb_alloc>RIV_max) {
-      msg("rar_tools.c: ERROR: rb_alloc > RIV_max\n");
-      return(-1);
-    }
+  ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[rballoc];
+  ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[rballoc];
+  if (ulsch->harq_processes[harq_pid]->nb_rb ==0)
+    return(-1);
 
-    ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[rar->rb_alloc];
-    ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[rar->rb_alloc];
-    if (ulsch->harq_processes[harq_pid]->nb_rb ==0)
-      return(-1);
+  ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
 
-    ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
+  if (ulsch->harq_processes[harq_pid]->nb_rb > 4) {
+    msg("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
+    return(-1);
+  }
 
-    if (ulsch->harq_processes[harq_pid]->nb_rb > 3) {
-      msg("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
-      return(-1);
-    }
+  ulsch->harq_processes[harq_pid]->Ndi                                   = 1;
+  if (ulsch->harq_processes[harq_pid]->Ndi == 1)
+    ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
-    ulsch->harq_processes[harq_pid]->Ndi                                   = 1;
-    if (ulsch->harq_processes[harq_pid]->Ndi == 1)
-      ulsch->harq_processes[harq_pid]->status = ACTIVE;
-
+  if (cqireq==1) {
     ulsch->O_RI                                  = 1;
     if (meas->rank[eNB_id] == 1) {
       ulsch->uci_format                          = wideband_cqi_rank2_2A;
@@ -177,29 +196,34 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
       ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
       ulsch->o_RI[0]                             = 0;
     }
-
+  
     ulsch->uci_format = HLC_subband_cqi_nopmi;
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
     if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
-
-    ulsch->harq_processes[harq_pid]->O_ACK                                  = 2;
-
-    ulsch->beta_offset_cqi_times8                  = 18;
-    ulsch->beta_offset_ri_times8                   = 10;
-    ulsch->beta_offset_harqack_times8              = 16;
-    
-    ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1);
-    ulsch->rnti = rar->t_crnti;  
-    if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
-      ulsch->harq_processes[harq_pid]->status = ACTIVE;
-      ulsch->harq_processes[harq_pid]->rvidx = 0;
-      ulsch->harq_processes[harq_pid]->mcs         = rar->mcs;
-      ulsch->harq_processes[harq_pid]->TPC         = rar->TPC;
-      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
-      ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
-      ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
-      ulsch->harq_processes[harq_pid]->round = 0;
+  }
+  else {
+    ulsch->O_RI                                = 0;
+    ulsch->O                                   = 0;
+  }
+  ulsch->harq_processes[harq_pid]->O_ACK                                  = 0;//2;
+  
+  ulsch->beta_offset_cqi_times8                  = 18;
+  ulsch->beta_offset_ri_times8                   = 10;
+  ulsch->beta_offset_harqack_times8              = 16;
+  
+  ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1);
+  ulsch->rnti = (((uint16_t)rar[5])<<8)+rar[4];  //rar->t_crnti;
+  
+  if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+    ulsch->harq_processes[harq_pid]->status = ACTIVE;
+    ulsch->harq_processes[harq_pid]->rvidx = 0;
+    ulsch->harq_processes[harq_pid]->mcs         = ((rar[2]&1)<<3)|(rar[3]>>5);
+    ulsch->harq_processes[harq_pid]->TPC         = (rar[3]>>2)&7;
+    ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
+    ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
+    ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
+    ulsch->harq_processes[harq_pid]->round = 0;
     }
     else {
       ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -214,14 +238,17 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 	    mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id));
     
 
-#ifdef DEBUG_RAR
+	//#ifdef DEBUG_RAR
     msg("ulsch (ue,ra): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (ue,ra): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("ulsch (ue,ra): nb_rb    %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (ue,ra): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
     msg("ulsch (ue,ra): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("ulsch (ue,ra): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
-#endif
+    msg("ulsch (ue,ra): TPC      %d\n",ulsch->harq_processes[harq_pid]->TPC);
+    msg("ulsch (ue,ra): O        %d\n",ulsch->O);
+    msg("ulsch (ue,ra): ORI      %d\n",ulsch->O_RI);
+    //#endif
     return(0);
 }
 #endif

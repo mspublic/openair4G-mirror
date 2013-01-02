@@ -329,14 +329,15 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
   ANFBmode_t bundling_flag;
   u16 n1_pucch0=0,n1_pucch1=0;
   int subframe_offset;
-
+  int sf;
   // clear this, important for case where n1_pucch selection is not used
 
   phy_vars_ue->pucch_sel[subframe] = 0;
 
   if (frame_parms->frame_type ==0 ) { // FDD
+    sf = (subframe<4)? subframe+6 : subframe-4;
     if (SR == 0) 
-      return(frame_parms->pucch_config_common.n1PUCCH_AN + phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[(subframe-4)%10]);
+      return(frame_parms->pucch_config_common.n1PUCCH_AN + phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[sf]);
     else
       return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
   }
@@ -1683,7 +1684,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	     (phy_vars_ue->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 	     phy_vars_ue->is_secondary_ue); 
     dci_cnt = dci_decoding_procedure(phy_vars_ue,
-				     dci_alloc_rx,
+				     dci_alloc_rx,1,
 				     eNB_id,last_slot>>1);
     //    LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
  
@@ -1763,7 +1764,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
 
 #ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[UE  %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
+  //  LOG_D(PHY,"[UE  %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
 #endif
 
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
@@ -1811,10 +1812,10 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     if((dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) &&
        (dci_alloc_rx[i].format != format0)) {
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[UE  %d] frame %d, subframe %d: Found rnti %x, format %d\n",
-	  phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,
-	  dci_alloc_rx[i].rnti,
-	  dci_alloc_rx[i].format);
+      LOG_D(PHY,"[UE  %d][DCI][PDSCH %x] frame %d, subframe %d: format %d\n",
+	    phy_vars_ue->Mod_id,dci_alloc_rx[i].rnti,
+	    phy_vars_ue->frame,last_slot>>1,
+	    dci_alloc_rx[i].format);
       /*
       if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
 	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);

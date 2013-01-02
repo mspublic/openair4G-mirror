@@ -920,12 +920,14 @@ void dci_decoding(u8 DCI_LENGTH,
 not employ the complexity reducing procedure based on RNTI.
 @param phy_vars_ue UE variables
 @param dci_alloc Pointer to DCI_ALLOC_t array to store results for DLSCH/ULSCH programming
+@param do_common If 1 perform search in common search-space else ue-specific search-space 
 @param eNB_id eNB Index on which to act
 @param subframe Index of subframe
 @returns bitmap of occupied CCE positions (i.e. those detected)
 */
 u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			   DCI_ALLOC_t *dci_alloc,
+			   int do_common,
 			   s16 eNB_id,
 			   u8 subframe);
 
@@ -973,7 +975,7 @@ u8 get_transmission_mode(u16 Mod_id, u16 rnti);
 @param rb_alloc Bitmap allocation from DCI (format 1,2) 
 @returns number of physical resource blocks
 */
-u32 conv_nprb(u8 ra_header,u32 rb_alloc);
+u32 conv_nprb(u8 ra_header,u32 rb_alloc,int N_RB_DL);
 
 u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
 

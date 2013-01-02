@@ -75,6 +75,8 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,s32 *z, u16 Msc_PUSCH) {
 
   s32 *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10=NULL,*z11=NULL;
   s32 i,ip;
+  
+  __m128i norm128;
 
   //  printf("Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
 
@@ -150,9 +152,23 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,s32 *z, u16 Msc_PUSCH) {
   
   switch (Msc_PUSCH) {
   case 12:
-    //    dft12f(dft_in0,dft_out0,1);
-    //    dft12f(idft_in1,idft_out1,1);
-    //    dft12f(idft_in2,idft_out2,1);
+    dft12f(&((__m128i *)idft_in0)[0],&((__m128i *)idft_in0)[1],&((__m128i *)idft_in0)[2],&((__m128i *)idft_in0)[3],&((__m128i *)idft_in0)[4],&((__m128i *)idft_in0)[5],&((__m128i *)idft_in0)[6],&((__m128i *)idft_in0)[7],&((__m128i *)idft_in0)[8],&((__m128i *)idft_in0)[9],&((__m128i *)idft_in0)[10],&((__m128i *)idft_in0)[11],
+	  &((__m128i *)idft_out0)[0],&((__m128i *)idft_out0)[1],&((__m128i *)idft_out0)[2],&((__m128i *)idft_out0)[3],&((__m128i *)idft_out0)[4],&((__m128i *)idft_out0)[5],&((__m128i *)idft_out0)[6],&((__m128i *)idft_out0)[7],&((__m128i *)idft_out0)[8],&((__m128i *)idft_out0)[9],&((__m128i *)idft_out0)[10],&((__m128i *)idft_out0)[11]);
+
+    dft12f(&((__m128i *)idft_in1)[0],&((__m128i *)idft_in1)[1],&((__m128i *)idft_in1)[2],&((__m128i *)idft_in1)[3],&((__m128i *)idft_in1)[4],&((__m128i *)idft_in1)[5],&((__m128i *)idft_in1)[6],&((__m128i *)idft_in1)[7],&((__m128i *)idft_in1)[8],&((__m128i *)idft_in1)[9],&((__m128i *)idft_in1)[10],&((__m128i *)idft_in1)[11],
+	  &((__m128i *)idft_out1)[0],&((__m128i *)idft_out1)[1],&((__m128i *)idft_out1)[2],&((__m128i *)idft_out1)[3],&((__m128i *)idft_out1)[4],&((__m128i *)idft_out1)[5],&((__m128i *)idft_out1)[6],&((__m128i *)idft_out1)[7],&((__m128i *)idft_out1)[8],&((__m128i *)idft_out1)[9],&((__m128i *)idft_out1)[10],&((__m128i *)idft_out1)[11]);
+
+    dft12f(&((__m128i *)idft_in2)[0],&((__m128i *)idft_in2)[1],&((__m128i *)idft_in2)[2],&((__m128i *)idft_in2)[3],&((__m128i *)idft_in2)[4],&((__m128i *)idft_in2)[5],&((__m128i *)idft_in2)[6],&((__m128i *)idft_in2)[7],&((__m128i *)idft_in2)[8],&((__m128i *)idft_in2)[9],&((__m128i *)idft_in2)[10],&((__m128i *)idft_in2)[11],
+	  &((__m128i *)idft_out2)[0],&((__m128i *)idft_out2)[1],&((__m128i *)idft_out2)[2],&((__m128i *)idft_out2)[3],&((__m128i *)idft_out2)[4],&((__m128i *)idft_out2)[5],&((__m128i *)idft_out2)[6],&((__m128i *)idft_out2)[7],&((__m128i *)idft_out2)[8],&((__m128i *)idft_out2)[9],&((__m128i *)idft_out2)[10],&((__m128i *)idft_out2)[11]);
+
+    norm128 = _mm_set1_epi16(9459);
+    
+    for (i=0;i<12;i++) {
+      ((__m128i*)idft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)idft_out0)[i],norm128),1);
+      ((__m128i*)idft_out1)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)idft_out1)[i],norm128),1);
+      ((__m128i*)idft_out2)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)idft_out2)[i],norm128),1);
+    }
+
     break;
   case 24:
     dft24(idft_in0,idft_out0,1);

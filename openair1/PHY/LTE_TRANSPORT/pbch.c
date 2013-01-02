@@ -292,8 +292,9 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
   }
 #ifdef DEBUG_PBCH
   msg("[PBCH] txdataF=\n");
-  for (i=0;i<300;i++) 
-    msg("(%d,%d)\n",i,txdataF[0][300*6+i]);
+  for (i=0;i<frame_parms->ofdm_symbol_size;i++) 
+    msg("%d=>(%d,%d)\n",i,((short*)&txdataF[0][frame_parms->ofdm_symbol_size*(nsymb>>1)+i])[0],
+	((short*)&txdataF[0][frame_parms->ofdm_symbol_size*(nsymb>>1)+i])[1]);
 #endif
   
   
