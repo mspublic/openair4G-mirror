@@ -1131,7 +1131,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
           NCS = NCS_unrestricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
       }
       num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
-      num_preambles++;
+      if (NCS>0) num_preambles++;
       preamble_offset = 0;
   }
   else {

@@ -326,8 +326,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     L=0;
   else 
     L=8;
+  if (ulsch->Or1 > 0)
+    Qprime = (ulsch->Or1 + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  else
+    Qprime=0;
 
-  Qprime = (ulsch->Or1 + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
   if (Qprime > 0) { 
     if ((Qprime % (8*sumKr)) > 0)
       Qprime = 1+(Qprime/(8*sumKr));

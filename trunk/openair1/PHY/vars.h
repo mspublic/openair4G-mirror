@@ -43,7 +43,7 @@ short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twidd
 CHBCH_RX_t rx_mode = ML;
 #endif //OPENAIR_LTE
 
-unsigned short rev[1024],rev_times4[4096],rev_half[512];
+unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 u16 rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048];
 
 #ifdef OPENAIR_LTE
