@@ -35,6 +35,7 @@ ________________________________________________________________*/
 #include "RRCConnectionRequest.h"
 #include "BCCH-DL-SCH-Message.h"
 #include "BCCH-BCH-Message.h"
+#include "UE-EUTRA-Capability.h"
 
 //#include "L3_rrc_defs.h"
 #ifndef NO_RRM
@@ -161,7 +162,8 @@ typedef struct{
   uint16_t                          physCellId;
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
-  SystemInformation_t               systemInformation;
+  BCCH_DL_SCH_Message_t             systemInformation;
+  //  SystemInformation_t               systemInformation;
   SystemInformationBlockType1_t     *sib1;
   SystemInformationBlockType2_t     *sib2;
   SystemInformationBlockType3_t     *sib3;
@@ -188,8 +190,16 @@ typedef struct{
   SRB_INFO_TABLE_ENTRY              Srb2[NUMBER_OF_UE_MAX+1];
 } eNB_RRC_INST;
 
+#define MAX_UE_CAPABILITY_SIZE 255
+typedef struct{
+  uint8_t sdu[MAX_UE_CAPABILITY_SIZE];
+  uint8_t sdu_size;
+  UE_EUTRA_Capability_t *UE_EUTRA_Capability;
+} OAI_UECapability_t;
 
 typedef struct{
+  uint8_t *UECapability;
+  uint8_t UECapability_size;
   UE_RRC_INFO Info[NB_SIG_CNX_UE];
   SRB_INFO Srb0[NB_SIG_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];

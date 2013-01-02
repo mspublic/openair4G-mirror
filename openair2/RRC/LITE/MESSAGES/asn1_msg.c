@@ -177,6 +177,74 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 }
 */
 // AT4 packet
+uint8_t do_MIB(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t *buffer) {
+
+  asn_enc_rval_t enc_rval;
+  BCCH_BCH_Message_t mib;
+  uint8_t sfn = (uint8_t)((frame>>2)&0xff);
+  uint16_t spare=0;
+
+  switch (frame_parms->N_RB_DL) {
+
+  case 6:
+    mib.message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n6;
+    break;
+  case 15:
+    mib.message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n15;
+    break;
+  case 25:
+    mib.message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n25;
+    break;
+  case 50:
+    mib.message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n50;
+    break;
+  case 75:
+    mib.message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n75;
+    break;
+  case 100:
+    mib.message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n100;
+    break;
+  default:
+    mib.message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n6;
+    break;
+  }
+  switch (frame_parms->phich_config_common.phich_resource) {
+  case oneSixth:
+    mib.message.phich_Config.phich_Resource = 0;
+    break;
+  case half:
+    mib.message.phich_Config.phich_Resource = 1;
+    break;
+  case one:
+    mib.message.phich_Config.phich_Resource = 2;
+    break;
+  case two:
+    mib.message.phich_Config.phich_Resource = 3;
+    break;
+  }
+
+  printf("systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",  mib.message.dl_Bandwidth,frame_parms->phich_config_common.phich_duration,mib.message.phich_Config.phich_Resource,sfn);
+  mib.message.phich_Config.phich_Duration = frame_parms->phich_config_common.phich_duration;
+  mib.message.systemFrameNumber.buf = &sfn;
+  mib.message.systemFrameNumber.size = 1;
+  mib.message.systemFrameNumber.bits_unused=0;
+  mib.message.spare.buf = (uint8_t *)&spare;
+  mib.message.spare.size = 2;
+  mib.message.spare.bits_unused = 6;  // This makes a spare of 10 bits
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
+				   (void*)&mib,
+				   buffer,
+				   100);
+  /*
+  printf("MIB: %x ((MIB>>10)&63)+(MIB&3<<6)=SFN %x, MIB>>2&3 = phich_resource %d, MIB>>4&1 = phich_duration %d, MIB>>5&7 = system_bandwidth %d)\n",*(uint32_t *)buffer,
+	 (((*(uint32_t *)buffer)>>10)&0x3f)+(((*(uint32_t *)buffer)&3)<<6),
+	 ((*(uint32_t *)buffer)>>2)&0x3,
+	 ((*(uint32_t *)buffer)>>4)&0x1,
+	 ((*(uint32_t *)buffer)>>5)&0x7
+	 );
+  */
+}
 uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 		BCCH_DL_SCH_Message_t *bcch_message,
 		SystemInformationBlockType1_t **sib1) {
@@ -467,7 +535,7 @@ uint8_t do_SIB2_AT4(uint8_t Mod_id,
 uint8_t do_SIB23(uint8_t Mod_id,
 		 LTE_DL_FRAME_PARMS *frame_parms,
 		 uint8_t *buffer,
-		 SystemInformation_t *systemInformation,
+		 BCCH_DL_SCH_Message_t *bcch_message,
 		 SystemInformationBlockType2_t **sib2,
 		 SystemInformationBlockType3_t **sib3
 #ifdef Rel10
@@ -478,23 +546,30 @@ uint8_t do_SIB23(uint8_t Mod_id,
 		 ) {
 
 
-  //  SystemInformationBlockType2_t *sib2;
-  //  SystemInformationBlockType3_t *sib3;
-  //  SystemInformationBlockType13_r9_t *sib13;
-
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
 #ifdef Rel10
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
-#endif
-  asn_enc_rval_t enc_rval;
-  BCCH_DL_SCH_Message_t bcch_message;
-#ifdef Rel10
   MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
   struct MBSFN_AreaInfo_r9 *MBSFN_Area1, *MBSFN_Area2;
 #endif
+  asn_enc_rval_t enc_rval;
 
+  if (bcch_message) 
+    memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
+  else {
+    LOG_E(RRC,"BCCH_MESSAGE is null, exiting\n");
+    exit(-1);
+  }
 
-  memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
+  if (!sib2) {
+    LOG_E(RRC,"sib2 is null, exiting\n");
+    exit(-1);
+  }
+
+  if (!sib3) {
+    LOG_E(RRC,"sib3 is null, exiting\n");
+    exit(-1);
+  }
 
   sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
   sib3_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -723,34 +798,38 @@ uint8_t do_SIB23(uint8_t Mod_id,
   }
 #endif
 
-  memset((void*)systemInformation,0,sizeof(SystemInformation_t));
 
-  systemInformation->criticalExtensions.present = SystemInformation__criticalExtensions_PR_systemInformation_r8;
+  bcch_message->message.present = BCCH_DL_SCH_MessageType_PR_c1;
+  bcch_message->message.choice.c1.present = BCCH_DL_SCH_MessageType__c1_PR_systemInformation;
 
-  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
+  /*  memcpy((void*)&bcch_message.message.choice.c1.choice.systemInformation,
+	 (void*)systemInformation,
+	 sizeof(SystemInformation_t));*/
+
+  bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.present = SystemInformation__criticalExtensions_PR_systemInformation_r8;
+
+  bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
 
   //  asn_set_empty(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list);//.size=0;
   //  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib2_part);
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib3_part);
+  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,
+		   sib2_part);
+  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,
+		   sib3_part);
 #ifdef Rel10
   if (MBMS_flag == 1) {
-    ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
+    ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
   }
 #endif
 
-  bcch_message.message.present = BCCH_DL_SCH_MessageType_PR_c1;
-  bcch_message.message.choice.c1.present = BCCH_DL_SCH_MessageType__c1_PR_systemInformation;
-  memcpy((void*)&bcch_message.message.choice.c1.choice.systemInformation,
-	 (void*)systemInformation,
-	 sizeof(SystemInformation_t));
+
 #ifdef USER_MODE
-  xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)&bcch_message);
+  xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message,
-				   (void*)&bcch_message,
+				   (void*)bcch_message,
 				   buffer,
-				   100);
+				   900);
 #ifdef USER_MODE
   LOG_D(RRC,"[eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
@@ -1187,6 +1266,49 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   return((enc_rval.encoded+7)/8);
 }
 
+uint8_t do_UECapabilityEnquiry(uint8_t Mod_id,
+			       uint8_t *buffer,
+			       uint8_t UE_id,
+			       uint8_t Transaction_id) {
+
+  DL_DCCH_Message_t dl_dcch_msg;
+
+  RAT_Type_t rat=RAT_Type_eutra;
+  asn_enc_rval_t enc_rval;
+ 
+  memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+
+  dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry;
+
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.rrc_TransactionIdentifier = Transaction_id;
+
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.present = UECapabilityEnquiry__criticalExtensions_PR_c1;
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.present = UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8;
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count=0;
+  ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
+		   &rat);
+
+#ifdef USER_MODE
+  xer_fprint(stdout, &asn_DEF_DL_DCCH_Message, (void*)&dl_dcch_msg);
+#endif
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+				   (void*)&dl_dcch_msg,
+				   buffer,
+				   100);
+#ifdef USER_MODE
+  LOG_D(RRC,"[eNB %d] UECapabilityRequest for UE %d Encoded %d bits (%d bytes)\n",Mod_id,UE_id,enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
+  if (enc_rval.encoded==-1) {
+    LOG_E(RRC,"[eNB %d] ASN1 : UECapabilityRequest encoding failed for UE %d\n",Mod_id,UE_id);
+    return(-1);
+  }
+
+  //  rrc_ue_process_ueCapabilityEnquiry(0,1000,&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry,0);
+  //  exit(-1);
+  return((enc_rval.encoded+7)/8);
+}
 
 uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id,
                                         uint8_t                          *buffer,
@@ -1839,6 +1961,123 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
 #endif
 
   return((enc_rval.encoded+7)/8);
+}
+
+OAI_UECapability_t UECapability;
+SupportedBandEUTRA_t Bandlist[4];
+BandInfoEUTRA_t BandInfo_meas[4];
+InterFreqBandInfo_t InterFreqBandInfo[4][4];
+BandInfoEUTRA_t BandInfoEUTRA[4];
+
+OAI_UECapability_t *fill_ue_capability() {
+
+  UE_EUTRA_Capability_t *UE_EUTRA_Capability;
+  asn_enc_rval_t enc_rval;
+  long maxNumberROHC_ContextSessions = PDCP_Parameters__maxNumberROHC_ContextSessions_cs16;
+  int i;
+
+  Bandlist[0].bandEUTRA  = 33;  // 1900-1920 TDD
+  Bandlist[0].halfDuplex = 0;
+  Bandlist[1].bandEUTRA  = 38;  // 2570-2620 TDD
+  Bandlist[1].halfDuplex = 0;
+  Bandlist[2].bandEUTRA  = 5;   // 824-849 , 869-894 FDD
+  Bandlist[2].halfDuplex = 0;
+  Bandlist[3].bandEUTRA  = 7;   // 2500-2570, 2620-2690 FDD
+  Bandlist[3].halfDuplex = 0;
+
+  memset((void*)&InterFreqBandInfo,0,sizeof(InterFreqBandList_t));
+
+  memset((void*)&BandInfoEUTRA[0],0,sizeof(BandInfoEUTRA_t));
+  memset((void*)&BandInfoEUTRA[1],0,sizeof(BandInfoEUTRA_t));
+  memset((void*)&BandInfoEUTRA[2],0,sizeof(BandInfoEUTRA_t));
+  memset((void*)&BandInfoEUTRA[3],0,sizeof(BandInfoEUTRA_t));
+
+  InterFreqBandInfo[0][0].interFreqNeedForGaps = 0;
+  InterFreqBandInfo[0][1].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[0][2].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[0][3].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[1][0].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[1][1].interFreqNeedForGaps = 0;
+  InterFreqBandInfo[1][2].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[1][3].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[2][0].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[2][1].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[2][2].interFreqNeedForGaps = 0;
+  InterFreqBandInfo[2][3].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[3][0].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[3][1].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[3][2].interFreqNeedForGaps = 1;
+  InterFreqBandInfo[3][3].interFreqNeedForGaps = 0;
+
+
+  
+  LOG_I(RRC,"Allocating %d bytes for UE_EUTRA_Capability\n",sizeof(*UE_EUTRA_Capability));
+  UE_EUTRA_Capability = CALLOC(1,sizeof(*UE_EUTRA_Capability));
+  memset(UE_EUTRA_Capability,0,sizeof(*UE_EUTRA_Capability));
+
+  //  UE_EUTRA_Capability->accessStratumRelease = 0;//AccessStratumRelease_rel8;
+  UE_EUTRA_Capability->ue_Category          = 4;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0001=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0002=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0003=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0004=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0006=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0101=0;    
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0102=0;    
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0103=0;    
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0104=0;    
+
+  UE_EUTRA_Capability->pdcp_Parameters.maxNumberROHC_ContextSessions = &maxNumberROHC_ContextSessions;
+
+  UE_EUTRA_Capability->phyLayerParameters.ue_TxAntennaSelectionSupported = 0;
+  UE_EUTRA_Capability->phyLayerParameters.ue_SpecificRefSigsSupported    = 0;
+  UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.count                          = 0;
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list,(void*)&Bandlist[0]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list,(void*)&Bandlist[1]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list,(void*)&Bandlist[2]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list,(void*)&Bandlist[3]);
+
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list,(void*)&BandInfoEUTRA[0]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list,(void*)&BandInfoEUTRA[1]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list,(void*)&BandInfoEUTRA[2]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list,(void*)&BandInfoEUTRA[3]);
+
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[0]->interFreqBandList.list,(void*)&InterFreqBandInfo[0][0]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[0]->interFreqBandList.list,(void*)&InterFreqBandInfo[0][1]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[0]->interFreqBandList.list,(void*)&InterFreqBandInfo[0][2]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[0]->interFreqBandList.list,(void*)&InterFreqBandInfo[0][3]);
+
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[1]->interFreqBandList.list,(void*)&InterFreqBandInfo[1][0]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[1]->interFreqBandList.list,(void*)&InterFreqBandInfo[1][1]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[1]->interFreqBandList.list,(void*)&InterFreqBandInfo[1][2]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[1]->interFreqBandList.list,(void*)&InterFreqBandInfo[1][3]);
+
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[2]->interFreqBandList.list,(void*)&InterFreqBandInfo[2][0]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[2]->interFreqBandList.list,(void*)&InterFreqBandInfo[2][1]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[2]->interFreqBandList.list,(void*)&InterFreqBandInfo[2][2]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[2]->interFreqBandList.list,(void*)&InterFreqBandInfo[2][3]);
+
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[3]->interFreqBandList.list,(void*)&InterFreqBandInfo[3][0]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[3]->interFreqBandList.list,(void*)&InterFreqBandInfo[3][1]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[3]->interFreqBandList.list,(void*)&InterFreqBandInfo[3][2]);
+  ASN_SEQUENCE_ADD(&UE_EUTRA_Capability->measParameters.bandListEUTRA.list.array[3]->interFreqBandList.list,(void*)&InterFreqBandInfo[3][3]);
+
+  // UE_EUTRA_Capability->measParameters.bandListEUTRA.list.count                         = 0;  // no measurements on other bands
+  // UE_EUTRA_Capability->featureGroupIndicators  // null
+  // UE_EUTRA_Capability->interRAT_Parameters     // null
+  
+  UECapability.UE_EUTRA_Capability = UE_EUTRA_Capability;
+  xer_fprint(stdout,&asn_DEF_UE_EUTRA_Capability,(void *)UE_EUTRA_Capability);
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UE_EUTRA_Capability,
+				   (void*)UE_EUTRA_Capability,
+				   &UECapability.sdu[0],
+  				   MAX_UE_CAPABILITY_SIZE);
+  UECapability.sdu_size = (enc_rval.encoded+7)/8;
+  LOG_I(PHY,"[RRC]UE Capability encoded, %d bytes (%d bits)\n",UECapability.sdu_size,enc_rval.encoded+7);
+  for (i=0;i<UECapability.sdu_size;i++)
+    printf("%02x.",UECapability.sdu[i]);
+  printf("\n");
+  return(&UECapability);
 }
 
 #ifndef USER_MODE

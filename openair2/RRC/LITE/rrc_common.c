@@ -207,6 +207,10 @@ void rrc_config_buffer(SRB_INFO *Srb_info, u8 Lchan_type, u8 Role){
 void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
+  int i;
+  uint8_t size;
+  OAI_UECapability_t *UECap;
+  //  uint8_t dummy_buffer[100];
 
   LOG_D(RRC,"[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n",
 	NB_UE_INST,NB_eNB_INST);
@@ -215,8 +219,21 @@ void openair_rrc_top_init(void){
     UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
     memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
     LOG_D(RRC,"ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
+
+    // fill UE capability
+    UECap = fill_ue_capability();
+    for (i=0;i<NB_UE_INST;i++) {
+      UE_rrc_inst[i].UECapability = UECap->sdu;
+      UE_rrc_inst[i].UECapability_size = UECap->sdu_size;
+    }
+    /*
+    do_UECapabilityEnquiry(0,
+			   dummy_buffer,
+			   0,
+			   0);*/
   } else
     UE_rrc_inst=NULL;
+
 
   if (NB_eNB_INST>0){
     eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));

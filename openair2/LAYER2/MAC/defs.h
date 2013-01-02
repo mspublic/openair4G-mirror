@@ -112,7 +112,7 @@ typedef struct {
   u8 T:1;
   u8 E:1;
 } __attribute__((__packed__))RA_HEADER_BI;
-
+/*
 typedef struct {
   u64 t_crnti:16;
   u64 hopping_flag:1;
@@ -126,6 +126,7 @@ typedef struct {
   u64 padding:16;
 } __attribute__((__packed__))RAR_PDU;
 #define sizeof_RAR_PDU 6
+*/
 
 typedef struct {
   u8 LCID:5;  // octet 1 LSB

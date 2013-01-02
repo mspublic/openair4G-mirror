@@ -348,7 +348,7 @@ u16 find_dlgranted_UEs(unsigned char Mod_id){
 // get aggregatiob form phy for a give UE
 unsigned char process_ue_cqi (unsigned char Mod_id, unsigned char UE_id) {
 
-  unsigned char aggregation=1;
+  unsigned char aggregation=2;
   // check the MCS and SNR and set the aggregation accordingly
 
   return aggregation;
@@ -1102,7 +1102,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
   //weight = get_ue_weight(Mod_id,UE_id);
-  aggregation = 1; // set to maximum aggregation level
+  aggregation = 2; // set to maximum aggregation level
 
 
 // UE data info;

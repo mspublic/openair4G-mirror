@@ -13,6 +13,7 @@
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
 
+#include "RRC/LITE/defs.h"
 
 /** 
 \brief Generate a default configuration for SIB1 (eNB).
@@ -39,7 +40,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 uint8_t do_SIB23(uint8_t Mod_id,
 		 LTE_DL_FRAME_PARMS *frame_parms,
 		 uint8_t *buffer,
-		 SystemInformation_t *systemInformation,
+		 BCCH_DL_SCH_Message_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
 		 SystemInformationBlockType3_t **sib3
 #ifdef Rel10
@@ -131,5 +132,5 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 @returns Size of encoded bit stream in bytes*/
 uint8_t do_MCCHMessage(uint8_t *buffer);
 
-
+OAI_UECapability_t *fill_ue_capability();
 
