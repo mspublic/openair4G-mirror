@@ -313,8 +313,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	
 	
 #ifdef DEBUG_SIM
-	//	for (i=0;i<eNB2UE[eNB_id][UE_id]->channel_length;i++)
-	//	  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
+	for (i=0;i<eNB2UE[eNB_id][UE_id]->channel_length;i++)
+	  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
 
 	LOG_D(OCM,"[SIM][DL] Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
 	       eNB_id,UE_id,

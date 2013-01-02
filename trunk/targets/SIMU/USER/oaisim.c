@@ -100,23 +100,24 @@ extern void kpi_gen();
 
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = {
-    {"custom", 0},
-    {"SCM_A", 1},
-    {"SCM_B", 2},
-    {"SCM_C", 3},
-    {"SCM_D", 4},
-    {"EPA", 5},
-    {"EVA", 6},
-    {"ETU", 7},
-    {"Rayleigh8", 8},
-    {"Rayleigh1", 9},
-    {"Rayleigh1_corr", 10},
-    {"Rayleigh1_anticorr", 11},
-    {"Rice8", 12},
-    {"Rice1", 13},
-    {"Rice1_corr", 14},
-    {"Rice1_anticorr", 15},
-    {"AWGN", 16},
+    {"custom", custom},
+    {"SCM_A", SCM_A},
+    {"SCM_B", SCM_B},
+    {"SCM_C", SCM_C},
+    {"SCM_D", SCM_D},
+    {"EPA", EPA},
+    {"EVA", EVA},
+    {"ETU", ETU},
+    {"Rayleigh8", Rayleigh8},
+    {"Rayleigh1", Rayleigh1},
+    {"Rayleigh1_800", Rayleigh1_800},
+    {"Rayleigh1_corr", Rayleigh1_corr},
+    {"Rayleigh1_anticorr", Rayleigh1_anticorr},
+    {"Rice8", Rice8},
+    {"Rice1", Rice1},
+    {"Rice1_corr", Rice1_corr},
+    {"Rice1_anticorr", Rice1_anticorr},
+    {"AWGN", AWGN},
     {NULL, -1}
 };
 
@@ -346,7 +347,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
     cum_avg = 0;
     ind = 0;
     memset(sig_time,0,100*sizeof(float));
-    fl_set_xyplot_ybounds(form->channel_t_im,-22,-10);
+    fl_set_xyplot_ybounds(form->channel_t_im,-22,10);
     
     for (i=0;i<100;i++){
       sig_time[i] = (float)i;
