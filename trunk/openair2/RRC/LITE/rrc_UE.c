@@ -55,6 +55,8 @@
 #include "MeasGapConfig.h"
 #include "MeasObjectEUTRA.h"
 #include "TDD-Config.h"
+#include "UECapabilityEnquiry.h"
+#include "UE-CapabilityRequest.h"
 #ifdef PHY_ABSTRACTION
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -714,6 +716,68 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 
 }
 
+void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index) {
+
+  asn_enc_rval_t enc_rval;
+
+  UL_DCCH_Message_t ul_dcch_msg;
+
+
+  UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
+
+  uint8_t buffer[200];
+  int i;
+
+  LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing UECapabilityEnquiry (eNB %d)\n",
+	Mod_id,frame,eNB_index);
+
+
+  memset((void *)&ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
+  memset((void *)&ue_CapabilityRAT_Container,0,sizeof(UE_CapabilityRAT_Container_t));
+
+  ul_dcch_msg.message.present           = UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present = UL_DCCH_MessageType__c1_PR_ueCapabilityInformation;
+
+  ue_CapabilityRAT_Container.rat_Type = RAT_Type_eutra;
+  OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ueCapabilityRAT_Container,
+		       (const char*)UE_rrc_inst[Mod_id].UECapability,
+		       UE_rrc_inst[Mod_id].UECapability_size);
+  //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[Mod_id].UECapability;
+  // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[Mod_id].UECapability_size;
+  
+
+  if (UECapabilityEnquiry->criticalExtensions.present == UECapabilityEnquiry__criticalExtensions_PR_c1) {
+    if (UECapabilityEnquiry->criticalExtensions.choice.c1.present == UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8) {
+      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.present           = UECapabilityInformation__criticalExtensions_PR_c1;
+      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.present = UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
+      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count=0;
+
+      for (i=0;i<UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count;i++) {
+
+	if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]==RAT_Type_eutra) {
+	  //	  ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
+	  ASN_SEQUENCE_ADD(&ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+			   &ue_CapabilityRAT_Container);
+
+	  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+					   (void*)&ul_dcch_msg,
+					   buffer,
+					   100);
+
+	  xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+	  
+#ifdef USER_MODE
+	  LOG_D(RRC,"UECapabilityInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+	  for (i=0;i<(enc_rval.encoded+7)/8;i++) 
+	    printf("%02x.",buffer[i]);
+	  printf("\n");
+	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,(enc_rval.encoded+7)/8,(char*)buffer,1);
+	}
+      }
+    }
+  }
+}
 
 void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
@@ -810,6 +874,8 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_securityModeCommand:
 	break;
       case DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
+	LOG_D(RRC,"[UE %d] Received Capability Enquiry (eNB %d)\n",Mod_id,eNB_index);
+	rrc_ue_process_ueCapabilityEnquiry(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_counterCheck:
 	break;
@@ -839,7 +905,7 @@ const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
 
 const char SIBType[16][6] ={"SIB3\0","SIB4\0","SIB5\0","SIB6\0","SIB7\0","SIB8\0","SIB9\0","SIB10\0","SIB11\0","SIB12\0","SIB13\0","Sp2\0","Sp3\0","Sp4\0"};
 const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
-const char siPeriod_int[7] = {80,160,320,640,1280,2560,5120};
+int siPeriod_int[7] = {80,160,320,640,1280,2560,5120};
 
 int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_len) {
 
