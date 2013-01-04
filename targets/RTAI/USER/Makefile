@@ -59,7 +59,7 @@ ifdef CBMIMO1
 CFLAGS += -DFW2011 -DBIT8_TX -DCBMIMO1
 else
 #only for EXPRESS MIMO
-CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #162 #560 with PXB
+CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=318 #138 #162 #560 with PXB
 endif
 
 ifeq ($(HARD_RT),1)
@@ -114,6 +114,10 @@ run_UE: synctest
 
 run_UE0: synctest
 	rtai-load UE0 --verbose
+
+run_UE0prach: synctest
+	rtai-load UE0prach --verbose
+
 
 run_UE1prach: synctest
 	rtai-load UE1prach --verbose

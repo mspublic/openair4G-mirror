@@ -146,6 +146,11 @@ int otg_enabled = 1;
 int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
 
+LTE_DL_FRAME_PARMS *frame_parms;
+#ifdef EXMIMO
+  u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
+#endif
+
 void signal_handler(int sig)
 {
   void *array[10];
@@ -760,6 +765,8 @@ static void *UE_thread(void *arg)
   int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
   static int first_run=1;
+  int carrier_freq_offset = 0; //-7500;
+  int i;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -769,6 +776,16 @@ static void *UE_thread(void *arg)
 #ifdef HARD_RT
   rt_make_hard_real_time();
 #endif
+  
+  if (mode == rx_calib_ue) {
+    carrier_freq_offset = -7500;
+    for (i=0; i<4; i++) {
+      frame_parms->carrier_freq[i] = carrier_freq[i]+carrier_freq_offset;
+      frame_parms->carrier_freqtx[i] = carrier_freq[i]+carrier_freq_offset;
+    }
+    ioctl(openair_fd,openair_DUMP_CONFIG,frame_parms);	      
+    //    dump_frame_parms(frame_parms);
+  }
 
   while (!oai_exit)
     {
@@ -923,8 +940,7 @@ static void *UE_thread(void *arg)
           rt_sleep(nano2count(FRAME_PERIOD));
           //	  rt_printk("fun0: slot %d: doing sync\n",slot);
 
-          if (initial_sync(PHY_vars_UE_g[0],mode)==0)
-            {
+          if (initial_sync(PHY_vars_UE_g[0],mode)==0) {
               /*
               lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
                    PHY_vars_UE_g[0],
@@ -938,12 +954,34 @@ static void *UE_thread(void *arg)
               memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
                  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
               */
-              is_synchronized = 1;
-              ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
-
-              hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
-              rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
-            }
+	      if (mode == rx_calib_ue) {
+		oai_exit=1;
+	      }
+	      else {
+		is_synchronized = 1;
+		ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
+		
+		hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
+		rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
+	      }
+	  }
+	  else {
+	    carrier_freq_offset += 100;
+	    if (carrier_freq_offset > 7500) {
+	      LOG_I(PHY,"[initial_sync] No cell synchronization found, abondoning\n");
+	      oai_exit = 1;
+	    }
+	    else {
+	      LOG_I(PHY,"[initial_sync] trying carrier off %d Hz\n",carrier_freq_offset);
+	      for (i=0; i<4; i++) {
+		frame_parms->carrier_freq[i] = carrier_freq[i]+carrier_freq_offset;
+		frame_parms->carrier_freqtx[i] = carrier_freq[i]+carrier_freq_offset;
+	      }
+	      ioctl(openair_fd,openair_DUMP_CONFIG,frame_parms);	      
+	      //	      dump_frame_parms(frame_parms);
+	      
+	    }
+	  }
 
 #endif
         }
@@ -987,9 +1025,8 @@ int main(int argc, char **argv) {
   RT_TASK *task;
   int i,j,aa;
 
-  LTE_DL_FRAME_PARMS *frame_parms;
+
 #ifdef EXMIMO
-  u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
   u32 rf_mode_max[4]     = {55759,55759,55759,55759};
   u32 rf_mode_med[4]     = {39375,39375,39375,39375};
   u32 rf_mode_byp[4]     = {22991,22991,22991,22991};
@@ -1174,7 +1211,7 @@ int main(int argc, char **argv) {
   frame_parms->nushift            = 0;
   frame_parms->nb_antennas_tx_eNB = 2; //initial value overwritten by initial sync later
   frame_parms->nb_antennas_tx     = (UE_flag==0) ? 2 : 1;
-  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 2 : 1;
+  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 1 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
 #ifdef CBMIMO1
