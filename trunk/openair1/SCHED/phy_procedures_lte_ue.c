@@ -331,11 +331,12 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
   u16 n1_pucch0=0,n1_pucch1=0;
   int subframe_offset;
   int sf;
+  int M;
   // clear this, important for case where n1_pucch selection is not used
 
   phy_vars_ue->pucch_sel[subframe] = 0;
 
-  if (frame_parms->frame_type ==0 ) { // FDD
+  if (frame_parms->frame_type == FDD ) { // FDD
     sf = (subframe<4)? subframe+6 : subframe-4;
     if (SR == 0) 
       return(frame_parms->pucch_config_common.n1PUCCH_AN + phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[sf]);
@@ -359,15 +360,18 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
     case 1:  // DL:S:UL:UL:DL:DL:S:UL:UL:DL
 
       harq_ack0 = 2; // DTX
+      M=1;
       // This is the offset for a particular subframe (2,3,4) => (0,2,4)
       if (subframe == 2) {  // ACK subframes 5 (forget 6)
 	subframe_offset = 5;
+	M=2;
       }
       else if (subframe == 3) {   // ACK subframe 9
 	subframe_offset = 9;	
       }
       else if (subframe == 7) {  // ACK subframes 0 (forget 1)
 	subframe_offset = 0;
+	M=2;
       }
       else if (subframe == 8) {   // ACK subframes 4
 	subframe_offset = 4;
@@ -388,9 +392,9 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 	harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[subframe_offset].ack; 
       
 
-      if (harq_ack0!=2) {// n-7  // subframe 5,7,9 only is to be ACK/NAKed
+      if (harq_ack0!=2) {  // DTX
 	if (SR == 0) {  // last paragraph pg 68 from 36.213 (v8.6), m=0
-	  b[0]=1-harq_ack0;
+	  b[0]=(M==2) ? 1-harq_ack0 : harq_ack0;
 	  b[1]=harq_ack0;   // in case we use pucch format 1b (subframes 2,7)
 	  phy_vars_ue->pucch_sel[subframe] = 0;
 	  return(n1_pucch0);
@@ -907,9 +911,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//      debug_LOG_D(PHY,"[UE%d] Frame %d, subframe %d: Checking for PUCCH 1a/1b\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
 	bundling_flag = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
 	
-	if ((frame_parms->frame_type==0) || 
+	if ((frame_parms->frame_type==FDD) || 
 	    (bundling_flag==bundling)    || 
-	    ((frame_parms->frame_type==1)&&(frame_parms->tdd_config==1)&&((next_slot!=4)||(next_slot!=14)))) {
+	    ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((next_slot!=4)||(next_slot!=14)))) {
 	  format = pucch_format1a;
 	  //	debug_msg("PUCCH 1a\n");
 	}
