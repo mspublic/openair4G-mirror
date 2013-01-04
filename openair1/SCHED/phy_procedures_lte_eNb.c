@@ -1827,24 +1827,56 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
     switch (frame_parms->tdd_config) {
     case 1:  // DL:S:UL:UL:DL:DL:S:UL:UL:DL
       if (subframe == 2) {  // ACK subframes 5 and 6
-	//	harq_ack[5].nCCE;  
-	//harq_ack[6].nCCE;
-	
+	/*	if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->subframe_tx[6]>0) {
+	  nCCE1 = phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->nCCE[6];
+	  *n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN; 
+	}
+	else
+	*n1_pucch1 = -1;*/
+
+	if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->subframe_tx[5]>0) {
+	  nCCE0 = phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->nCCE[5];
+	  *n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0+ frame_parms->pucch_config_common.n1PUCCH_AN; 
+	}
+	else
+	  *n1_pucch0 = -1;
+
+	*n1_pucch1 = -1;	
       }
-      else if (subframe == 3) {   // ACK subframe0
-	//harq_ack[9].nCCE;
+      else if (subframe == 3) {   // ACK subframe 9
 	
-      }
-      else if (subframe == 4) {  // nothing
+	if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->subframe_tx[9]>0) {
+	  nCCE0 = phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->nCCE[9];
+	  *n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0 +frame_parms->pucch_config_common.n1PUCCH_AN; 
+	}
+	else
+	  *n1_pucch0 = -1;
+
+	*n1_pucch1 = -1;
 	
       }
       else if (subframe == 7) {  // ACK subframes 0 and 1
 	//harq_ack[0].nCCE;  
 	//harq_ack[1].nCCE;
-	
+	if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->subframe_tx[0]>0) {
+	  nCCE0 = phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->nCCE[0];
+	  *n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0 + frame_parms->pucch_config_common.n1PUCCH_AN; 
+	}
+	else
+	  *n1_pucch0 = -1;
+
+	*n1_pucch1 = -1;
       }
       else if (subframe == 8) {   // ACK subframes 4
 	//harq_ack[4].nCCE;
+	if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->subframe_tx[4]>0) {
+	  nCCE0 = phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->nCCE[4];
+	  *n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0 + frame_parms->pucch_config_common.n1PUCCH_AN; 
+	}
+	else
+	  *n1_pucch0 = -1;
+
+	*n1_pucch1 = -1;
       }
       else {
 	LOG_D(PHY,"[eNB %d] frame %d: phy_procedures_lte.c: get_n1pucch, illegal subframe %d for tdd_config %d\n",
@@ -2598,7 +2630,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	}// do_SR==1
 	if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
 	}
-	else if (phy_vars_eNB->lte_frame_parms.frame_type==0) { // FDD
+	else if (phy_vars_eNB->lte_frame_parms.frame_type==FDD) { // FDD
 	  // if SR was detected, use the n1_pucch from SR, else use n1_pucch0
 	  n1_pucch0 = (SR_payload==1) ? phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex:n1_pucch0;
 	  if (abstraction_flag == 0)
@@ -2641,9 +2673,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	
 	  // fix later for 2 TB case and format1b
 
-	  if ((frame_parms->frame_type==0) || 
+	  if ((frame_parms->frame_type==FDD) || 
 	      (bundling_flag==bundling)    || 
-	      ((frame_parms->frame_type==1)&&(frame_parms->tdd_config==1)&&((last_slot!=4)||(last_slot!=14)))) {
+	      ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((last_slot!=4)||(last_slot!=14)))) {
 	    format = pucch_format1a;
 	    //	    msg("PUCCH 1a\n");
 	  }
@@ -2655,10 +2687,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  // if SR was detected, use the n1_pucch from SR
 	  if (SR_payload==1) {
 #ifdef DEBUG_PHY_PROC	  
-	    LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK (%d,%d,%d,%d) with SR\n",phy_vars_eNB->Mod_id,
+	    LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK (%d,%d,%d,%d) format %d with SR\n",phy_vars_eNB->Mod_id,
 		phy_vars_eNB->dlsch_eNB[i][0]->rnti,
 		phy_vars_eNB->frame,last_slot>>1,
-		n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3);
+		  n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3,format);
 #endif
 	    if (abstraction_flag == 0) 
 	      metric0 = rx_pucch(phy_vars_eNB,
@@ -2682,10 +2714,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  }
 	  else {  //using n1_pucch0/n1_pucch1 resources
 #ifdef DEBUG_PHY_PROC	  
-	    LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK (%d,%d,%d,%d)\n",phy_vars_eNB->Mod_id,
-		phy_vars_eNB->dlsch_eNB[i][0]->rnti,
-		phy_vars_eNB->frame,last_slot>>1,
-		n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3);
+	    LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK (%d,%d,%d,%d) format %d\n",phy_vars_eNB->Mod_id,
+		  phy_vars_eNB->dlsch_eNB[i][0]->rnti,
+		  phy_vars_eNB->frame,last_slot>>1,
+		  n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3,format);
 #endif
 	    metric0=0;
 	    metric1=0;

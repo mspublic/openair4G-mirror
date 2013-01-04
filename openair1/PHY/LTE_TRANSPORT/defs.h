@@ -633,7 +633,7 @@ typedef enum {
 } PDSCH_t;
 
 typedef enum {
-  pucch_format1,
+  pucch_format1=0,
   pucch_format1a,
   pucch_format1b,
   pucch_format2,
