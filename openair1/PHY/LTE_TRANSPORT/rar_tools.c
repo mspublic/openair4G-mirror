@@ -103,7 +103,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 
   
   ulsch->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1);
-  ulsch->rnti = (((uint16_t)rar[5])<<8)+rar[4];  
+  ulsch->rnti = (((uint16_t)rar[4])<<8)+rar[5];  
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     ulsch->harq_processes[harq_pid]->status = ACTIVE;
     ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -213,7 +213,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   ulsch->beta_offset_harqack_times8              = 16;
   
   ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1);
-  ulsch->rnti = (((uint16_t)rar[5])<<8)+rar[4];  //rar->t_crnti;
+  ulsch->rnti = (((uint16_t)rar[4])<<8)+rar[5];  //rar->t_crnti;
   
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     ulsch->harq_processes[harq_pid]->status = ACTIVE;

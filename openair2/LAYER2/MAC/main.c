@@ -369,6 +369,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->ue_get_rach               = ue_get_rach;
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;
+  mac_xface->process_timing_advance    = process_timing_advance;
 
 
   LOG_I(MAC,"[MAIN] PHY Frame configuration \n");

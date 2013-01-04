@@ -51,6 +51,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 
   u8 l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  char phich_resource[6];
 
 #ifdef DEBUG_INIT_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
@@ -137,6 +138,12 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     frame_parms->mode1_flag = (pbch_tx_ant==1);
     // openair_daq_vars.dlsch_transmission_mode = (pbch_tx_ant>1) ? 2 : 1;
     
+
+    // flip byte endian on 24-bits for MIB
+    //    dummy = phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0];
+    //    phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0] = phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[2];
+    //    phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[2] = dummy;
+
     // now check for Bandwidth of Cell
     dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[2]>>5)&7;
     switch (dummy) {
@@ -174,15 +181,19 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     switch (dummy) {
     case 0:
       frame_parms->phich_config_common.phich_resource = oneSixth;
+      sprintf(phich_resource,"1/6");
       break;
     case 1:
       frame_parms->phich_config_common.phich_resource = half;
+      sprintf(phich_resource,"1/2");
       break;
     case 2:
       frame_parms->phich_config_common.phich_resource = one;
+      sprintf(phich_resource,"1");
       break;
     case 3:
       frame_parms->phich_config_common.phich_resource = two;
+      sprintf(phich_resource,"2");
       break;
     default:
         LOG_E(PHY,"[UE%d] Initial sync: Unknown PHICH_DURATION\n",phy_vars_ue->Mod_id);
@@ -197,16 +208,17 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     // one frame delay
     phy_vars_ue->frame ++;
 #endif
-#ifdef DEBUG_INIT_SYNCH
-    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
-	phy_vars_ue->Mod_id,
-	frame_parms->mode1_flag,
-	pbch_tx_ant,
-	phy_vars_ue->frame,
-	frame_parms->N_RB_DL,
-	frame_parms->phich_config_common.phich_duration,
-	frame_parms->phich_config_common.phich_resource);
-#endif
+
+    //#ifdef DEBUG_INIT_SYNCH
+    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
+	  phy_vars_ue->Mod_id,
+	  frame_parms->mode1_flag,
+	  pbch_tx_ant,
+	  phy_vars_ue->frame,
+	  frame_parms->N_RB_DL,
+	  frame_parms->phich_config_common.phich_duration,
+	  phich_resource);  //frame_parms->phich_config_common.phich_resource);
+    //#endif
     return(0);
   }
   else {

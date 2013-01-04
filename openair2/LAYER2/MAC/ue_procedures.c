@@ -285,9 +285,9 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	break;
       case TIMING_ADV_CMD:
 #ifdef DEBUG_HEADER_PARSING
-	LOG_D(MAC,"[UE] CE %d : UE Timing Advance : %d",i,payload_ptr[0]);
+	LOG_I(MAC,"[UE] CE %d : UE Timing Advance : %d\n",i,payload_ptr[0]);
 #endif
-	process_timing_advance(Mod_id,payload_ptr[0]);
+	mac_xface->process_timing_advance(Mod_id,payload_ptr[0]);
 	payload_ptr++;
 	break;
       case DRX_CMD:

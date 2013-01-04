@@ -388,7 +388,7 @@ rlc_um_mac_data_request (void *rlcP,u32 frame)
   }
   data_req.rlc_info.rlc_protocol_state = l_rlc->protocol_state;
   if (data_req.data.nb_elements > 0) {
-      LOG_I(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_req.data.nb_elements);
+    //LOG_I(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", l_rlc->module_id, l_rlc->rb_id, frame, data_req.data.nb_elements);
       mem_block_t *tb;
       rlc[l_rlc->module_id].m_mscgen_trace_length = sprintf(rlc[l_rlc->module_id].m_mscgen_trace, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- MAC_DATA_REQ/ %d TB(s) ",
               frame,

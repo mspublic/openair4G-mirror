@@ -176,7 +176,6 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
   lte_frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
   lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
   
- 
   compute_prach_seq(&lte_frame_parms->prach_config_common,lte_frame_parms->frame_type,PHY_vars_UE_g[Mod_id]->X_u);
 
 
@@ -199,6 +198,7 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+
   
   init_ul_hopping(lte_frame_parms);  
   lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
@@ -226,7 +226,7 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
   lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format2b  = radioResourceConfigCommon->uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b;  
 
   lte_frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
-  
+
   // Now configure some of the Physical Channels
 
   // PUCCH

@@ -1,10 +1,11 @@
 dual_tx=0;
 limeparms;
 rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*[1 1 1 1];
-freq_rx = 1907600000*[1 1 1 1];
+%freq_rx = 1907600000*[1 1 1 1];
+freq_rx = 1912600000*[1 1 1 1];
 freq_tx = freq_rx+1920000;
 tx_gain = 25*[1 1 1 1];
-rx_gain = 15*[1 1 1 1];
+rx_gain = 30*[1 1 1 1];
 rf_local= [8254744   8255063   8257340   8257340]; %rf_local*[1 1 1 1];
 rf_rxdc = rf_rxdc*[1 1 1 1];
 rf_vcocal=rf_vcocal*[1 1 1 1];

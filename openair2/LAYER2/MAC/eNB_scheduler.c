@@ -584,7 +584,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned short *sdu_lengths,
 				    unsigned char *sdu_lcids,
 				    unsigned char drx_cmd,
-				    unsigned char timing_advance_cmd,
+				    short timing_advance_cmd,
 				    unsigned char *ue_cont_res_id,
 				    unsigned char short_padding,
 				    unsigned short post_padding) {
@@ -642,6 +642,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
     //    msg("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
     ((TIMING_ADVANCE_CMD *)ce_ptr)->R=0;
     ((TIMING_ADVANCE_CMD *)ce_ptr)->TA=timing_advance_cmd&0x3f;
+    LOG_I(MAC,"timing advance =%d (%d)\n",timing_advance_cmd,((TIMING_ADVANCE_CMD *)ce_ptr)->TA);
     ce_ptr+=sizeof(TIMING_ADVANCE_CMD);
     //msg("offset %d\n",ce_ptr-mac_header_control_elements);
   }
@@ -1237,12 +1238,12 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 	  }
 	  //rb_table_index = 8;
-
-	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+/*
+	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
 		first_rb,rb_table[rb_table_index],
 		rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
-
+*/
 	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 						     first_rb,
 						     rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
@@ -1652,11 +1653,11 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
       case 1:
 
       case 2:
-	//	printf("Adding UE spec DCI for %d PRBS (%x) => ",nb_rb,rballoc);
+		printf("[USER-PLANE DEFAULT DRB] Adding UE spec DCI for %d PRBS (%x) => ",nb_rb,rballoc);
 	if (mac_xface->lte_frame_parms->frame_type == TDD) {
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
-	  //	printf("%x\n",((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
+	  	printf("[USER-PLANE DEFAULT DRB] %x\n",((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
 	  add_ue_spec_dci(DCI_pdu,
 			  DLSCH_dci,
 			  rnti,
@@ -3975,7 +3976,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
       // check first for RLC data on DCCH
       // add the length for  all the control elements (timing adv, drx, etc) : header + payload  
-      ta_len = (eNB_UE_stats->UE_timing_offset>0) ? 2 : 0;
+      ta_len = ((eNB_UE_stats->timing_advance_update/4)!=0) ? 2 : 0;
       
       header_len_dcch = 2; // 2 bytes DCCH SDU subheader 
 
@@ -4039,13 +4040,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
       if (rlc_status.bytes_in_buffer > 0) {
 	
-	LOG_I(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, Requesting %d bytes from RLC (hdr len dtch %d)\n",
+	LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB], Frame %d, DTCH->DLSCH, Requesting %d bytes from RLC (hdr len dtch %d)\n",
 	      Mod_id,frame,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
 	sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,
 						 DTCH+(MAX_NUM_RB*next_ue),
 						 (char*)&dlsch_buffer[sdu_length_total]);
 	
-	LOG_I(MAC,"[eNB %d] Got %d bytes for DTCH %d \n",Mod_id,sdu_lengths[num_sdus],DTCH+(MAX_NUM_RB*next_ue));
+	LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",Mod_id,sdu_lengths[num_sdus],DTCH+(MAX_NUM_RB*next_ue));
 	sdu_lcids[num_sdus] = DTCH;
 	sdu_length_total += sdu_lengths[num_sdus];
 	if (sdu_lengths[num_sdus] < 128)
@@ -4129,15 +4130,15 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 				       sdu_lengths,  //
 				       sdu_lcids,
 				       255,                                   // no drx
-				       ta_len,      // timing advance
+				       eNB_UE_stats->timing_advance_update/4, // timing advance
 				       NULL,                                  // contention res id
 				       padding,                        
 				       post_padding);
-#ifdef DEBUG_eNB_SCHEDULER
-	LOG_D(MAC,"[eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
+	//#ifdef DEBUG_eNB_SCHEDULER
+	LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
 	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
 	    ta_len,next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
-#endif
+	//#endif
 	/*	      
 	msg("[MAC][eNB %d] First 16 bytes of DLSCH : \n");
 	for (i=0;i<16;i++)
@@ -4726,10 +4727,14 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     if (mac_xface->lte_frame_parms->frame_type == TDD) {
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 1:
+	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
+	schedule_RA(Mod_id,frame,subframe,7,&nprb,&nCCE);  // 7 = Msg3 subframe, not
+	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+	break;
       case 3:
       case 4:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
-	//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
 	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
 	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
 	break;

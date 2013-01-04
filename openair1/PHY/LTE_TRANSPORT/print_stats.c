@@ -313,9 +313,10 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 		     phy_vars_eNB->eNB_UE_stats[UE_id].DL_cqi[0],
 		     pmi2hex_2Ar1(phy_vars_eNB->eNB_UE_stats[UE_id].DL_pmi_single));
       
-      len += sprintf(&buffer[len],"[eNB PROC] Timing advance %d samples (%d 16Ts)\n",
+      len += sprintf(&buffer[len],"[eNB PROC] Timing advance %d samples (%d 16Ts), update %d\n",
 		     phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset,
-		     phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset>>2);
+		     phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset>>2,
+		     phy_vars_eNB->eNB_UE_stats[UE_id].timing_advance_update);
       
       len += sprintf(&buffer[len],"[eNB PROC] Mode = %s(%d)\n",
 		     mode_string[phy_vars_eNB->eNB_UE_stats[UE_id].mode],
