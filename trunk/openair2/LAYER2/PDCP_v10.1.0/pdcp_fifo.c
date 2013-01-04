@@ -419,13 +419,13 @@ pdcp_fifo_read_input_sdus (u32_t frame, u8_t eNB_flag)
       pdcp_read_header.inst = 0;
 #endif
 
-#ifdef PDCP_DEBUG
-      LOG_I(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n", \
+      //#ifdef PDCP_DEBUG
+      LOG_I(PDCP, "[PDCP][NETLINK][IP->PDCP][USER-PLANE DEFAULT DRB] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n", \
                   frame, pdcp_read_header.inst, len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr), pdcp_read_header.rb_id);
       LOG_D(PDCP, "[MSC_MSG][FRAME %05d][IP][MOD %02d][][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %02d][RB %02d]\n",
                                  frame, pdcp_read_header.inst,  pdcp_read_header.data_size, pdcp_read_header.inst, pdcp_read_header.rb_id);
 
-#endif
+      //#endif
 
       pdcp_data_req(pdcp_read_header.inst, 
 		    frame, 

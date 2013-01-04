@@ -176,6 +176,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 			   unsigned char number_of_cards,
 			   short coef);
 
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,u8 UE_id,u8 subframe);
+
 void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
 			     unsigned char eNB_id,
 			     unsigned char clear);

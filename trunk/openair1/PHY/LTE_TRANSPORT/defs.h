@@ -507,8 +507,10 @@ typedef struct {
   u8 rank;
   /// CRNTI of UE
   u16 crnti; ///user id (rnti) of connected UEs
-  /// Timing offset
-  s32 UE_timing_offset; ///timing offset of connected UEs (for timing advance signalling)
+  /// Initial timing offset estimate from PRACH for RAR
+  s32 UE_timing_offset; 
+  /// Timing advance estimate from PUSCH for MAC timing advance signalling
+  s32 timing_advance_update; 
   /// Current mode of UE (NOT SYCHED, RAR, PUSCH)
   UE_MODE_t mode;
   /// Current sector where UE is attached

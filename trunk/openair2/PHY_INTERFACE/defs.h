@@ -190,6 +190,8 @@ typedef struct
     /// Function for UE/PHY to compute PHR
     s8 (*get_PHR)(u8 Mod_id, u8 eNB_index);
 
+    void (*process_timing_advance)(u8 Mod_id,s16 timing_advance);
+
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
 
     unsigned char is_cluster_head;

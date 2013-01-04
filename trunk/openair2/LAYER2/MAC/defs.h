@@ -114,17 +114,31 @@ typedef struct {
 } __attribute__((__packed__))RA_HEADER_BI;
 /*
 typedef struct {
-  u64 t_crnti:16;
-  u64 hopping_flag:1;
-  u64 rb_alloc:10;
-  u64 mcs:4;
-  u64 TPC:3;
-  u64 UL_delay:1;
-  u64 cqi_req:1;
-  u64 Timing_Advance_Command:11;  // first/2nd octet LSB
-  u64 R:1;                        // octet MSB
-  u64 padding:16;
-} __attribute__((__packed__))RAR_PDU;
+  uint64_t padding:16;
+  uint64_t t_crnti:16;
+  uint64_t hopping_flag:1;
+  uint64_t rb_alloc:10;
+  uint64_t mcs:4;
+  uint64_t TPC:3;
+  uint64_t UL_delay:1;
+  uint64_t cqi_req:1;
+  uint64_t Timing_Advance_Command:11;  // first/2nd octet LSB
+  uint64_t R:1;                        // octet MSB
+  } __attribute__((__packed__))RAR_PDU;
+
+typedef struct {
+  uint64_t padding:16;
+  uint64_t R:1;                        // octet MSB
+  uint64_t Timing_Advance_Command:11;  // first/2nd octet LSB
+  uint64_t cqi_req:1;
+  uint64_t UL_delay:1;
+  uint64_t TPC:3;
+  uint64_t mcs:4;
+  uint64_t rb_alloc:10;
+  uint64_t hopping_flag:1;
+  uint64_t t_crnti:16;
+  } __attribute__((__packed__))RAR_PDU;
+
 #define sizeof_RAR_PDU 6
 */
 
@@ -531,7 +545,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned short *sdu_lengths,
 				    unsigned char *sdu_lcids,
 				    unsigned char drx_cmd,
-				    unsigned char timing_advance_cmd,
+				    short timing_advance_cmd,
 				    unsigned char *ue_cont_res_id,
 				    unsigned char short_padding,
 				    unsigned short post_padding);

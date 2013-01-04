@@ -157,7 +157,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
       return FALSE;
     }
 
-    LOG_I(PDCP, "Sequence number %d is assigned to current PDU\n", current_sn);
+    LOG_D(PDCP, "Sequence number %d is assigned to current PDU\n", current_sn);
 
      /* Then append data... */
     memcpy(&pdcp_pdu->data[pdcp_header_len], sdu_buffer, sdu_buffer_size);
@@ -188,7 +188,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     rlc_op_status_t rlc_status = rlc_data_req(module_id, frame, eNB_flag, rab_id, muiP, confirmP, pdcp_pdu_size, pdcp_pdu);
     switch (rlc_status) {
       case RLC_OP_STATUS_OK:
-        LOG_I(PDCP, "Data sending request over RLC succeeded!\n");
+        LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
 	break;
 
       case RLC_OP_STATUS_BAD_PARAMETER:
@@ -251,7 +251,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   u8 pdcp_header_len=0, pdcp_tailer_len=0;
   u16 sequence_number;
 
-  LOG_I(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rab_id, sdu_buffer_size);
+  LOG_D(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rab_id, sdu_buffer_size);
 
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
@@ -289,7 +289,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     sequence_number =   pdcp_get_sequence_number_of_pdu_with_SRB_sn((unsigned char*)sdu_buffer->data);
   }
   if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp) == TRUE) {
-    LOG_I(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window, yay!\n", sequence_number);
+    LOG_D(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window, yay!\n", sequence_number);
     /* if (dc == PDCP_DATA_PDU )
       LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
     else
@@ -337,7 +337,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + 1 :  ((rab_id - DTCH) / MAX_NUM_RB);
   dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;
   ctime = oai_emulation.info.time_ms; // avg current simulation time in ms : we may get the exact time through OCG?
-  LOG_I(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rab_id, src_id, dst_id);
+  LOG_D(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rab_id, src_id, dst_id);
   if (otg_rx_pkt(src_id, dst_id,ctime,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE],
 		 sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) {
      free_mem_block(sdu_buffer);
@@ -346,7 +346,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   }
 #else
   if (otg_enabled==1) {
-    LOG_I(OTG,"Discarding received packed\n");
+    LOG_D(OTG,"Discarding received packed\n");
     free_mem_block(sdu_buffer);
     return TRUE;
   }
@@ -455,7 +455,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
 	    rab_id = (/*NB_eNB_INST +*/ dst_id -1 ) * MAX_NUM_RB + DTCH;
-	    LOG_I(OTG,"[eNB %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
+	    LOG_D(OTG,"[eNB %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
 	    pdcp_data_req(module_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_DATA_PDU);
 	    free(otg_pkt);
 	  }
@@ -468,7 +468,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	otg_pkt=(u8*) packet_gen(src_id, dst_id, ctime, &pkt_size);
 	if (otg_pkt != NULL){
 	  rab_id= eNB_index * MAX_NUM_RB + DTCH;
-	  LOG_I(OTG,"[UE %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", UE_index, src_id, rab_id, src_id, dst_id, pkt_size);
+	  LOG_D(OTG,"[UE %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", UE_index, src_id, rab_id, src_id, dst_id, pkt_size);
 	  pdcp_data_req(src_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO,pkt_size, otg_pkt, PDCP_DATA_PDU);
 	  free(otg_pkt);
 	}
@@ -488,7 +488,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	  if (otg_pkt != NULL){
 	    rab_id = dst_id * MAX_NUM_RB + DTCH;
 	    pdcp_data_req(src_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO,pkt_size, otg_pkt, PDCP_DATA_PDU);
-	    LOG_I(OTG,"send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, rab_id, src_id, dst_id, pkt_size);
+	    LOG_D(OTG,"send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, rab_id, src_id, dst_id, pkt_size);
 	    free(otg_pkt);
 	  }
 	  /*else {
@@ -542,7 +542,7 @@ rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  actio
     else // DRB
       pdcp_array[module_id][rab_id].seq_num_size = 12;
     pdcp_array[module_id][rab_id].first_missing_pdu = -1;
-    LOG_I(PDCP,"[%s %d] Config request : Action ADD: Frame %d radio bearer id %d configured\n",
+    LOG_D(PDCP,"[%s %d] Config request : Action ADD: Frame %d radio bearer id %d configured\n",
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rab_id);
     LOG_D(PDCP,  "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_id,rab_id);
     break;
@@ -556,7 +556,7 @@ rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  actio
   pdcp_array[module_id][rab_id].last_submitted_pdcp_rx_sn = 4095;
   pdcp_array[module_id][rab_id].seq_num_size = 0;
   pdcp_array[module_id][rab_id].first_missing_pdu = -1;
-  LOG_I(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n",
+  LOG_D(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n",
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rab_id);
 
     break;
@@ -581,7 +581,7 @@ pdcp_module_init ()
 
     return -1;
   } else {
-    LOG_I(PDCP, "Created PDCP2NAS fifo %d\n", PDCP2NAS_FIFO);
+    LOG_D(PDCP, "Created PDCP2NAS fifo %d\n", PDCP2NAS_FIFO);
     rtf_reset(PDCP2NAS_FIFO);
   }
 
@@ -592,7 +592,7 @@ pdcp_module_init ()
 
     return -1;
   } else {
-    LOG_I(PDCP, "Created NAS2PDCP fifo %d\n", NAS2PDCP_FIFO);
+    LOG_D(PDCP, "Created NAS2PDCP fifo %d\n", NAS2PDCP_FIFO);
     rtf_reset(NAS2PDCP_FIFO);
   }
 

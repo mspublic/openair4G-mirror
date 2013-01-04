@@ -2607,6 +2607,9 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   }
 
 
+  if (phy_vars_ue->prach_resources[eNB_id])
+    ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
+
   // Now check UE_SPEC format0 search spaces at aggregation 1 
   //  printf("[DCI search] Format 0 aggregation 1\n");
   dci_decoding_procedure0(lte_ue_pdcch_vars,0,

@@ -919,6 +919,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
   SystemInformation_t **si=UE_rrc_inst[Mod_id].si[eNB_index];
   asn_dec_rval_t dec_rval;
   uint32_t si_window;//, sib1_decoded=0, si_decoded=0;
+  int i;
 
   if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
       (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
@@ -929,6 +930,10 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 
     //memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
     //  LOG_D(RRC,"[UE %d] Decoding DL_BCCH_DLSCH_Message\n",Mod_id)
+    /*
+    for (i=0;i<Sdu_len;i++)
+      printf("%x.",Sdu[i]);
+      printf("\n");*/
     dec_rval = uper_decode_complete(NULL,
 				    &asn_DEF_BCCH_DL_SCH_Message,
 				    (void **)&bcch_message,
@@ -959,7 +964,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
       case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
 	if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
 	    (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
-	  if ((frame %8) == 1) {  // check only in odd frames for SI
+	  //	  if ((frame %8) == 1) {  // check only in odd frames for SI
 	    si_window = (frame%(UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod/10))/(UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize/10);
 	    memcpy((void*)si[si_window],
 		   (void*)&bcch_message->message.choice.c1.choice.systemInformation,
@@ -967,7 +972,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	    LOG_D(RRC,"[UE %d] Decoding SI for frame %d, si_window %d\n",Mod_id,frame,si_window);
 	    decode_SI(Mod_id,frame,eNB_index,si_window);
 	    
-	  }
+	    //	  }
 	}
 	break;
       case BCCH_DL_SCH_MessageType__c1_PR_NOTHING:

@@ -488,6 +488,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
    // harq_pid field is reserved
     if ((rnti==si_rnti) || (rnti==ra_rnti) || (rnti==p_rnti)){  //
+      ndi = 1;
       harq_pid=0;
       // see 36-212 V8.6.0 p. 45
       NPRB      = (TPC&1)+2;
@@ -1519,6 +1520,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[rballoc];
 
     dlsch[0]->nb_rb                               = RIV2nb_rb_LUT25[rballoc];
+    //
     //printf("DCI 1A : nb_rb %d\n",dlsch[0]->nb_rb);
     /*    if ((dlsch[0]->nb_rb<=0) || (dlsch[0]->nb_rb > 3)) {
       msg("dci_tools.c: ERROR:  Format 1A: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);

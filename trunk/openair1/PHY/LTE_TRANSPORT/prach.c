@@ -51,7 +51,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-//#define PRACH_DEBUG 1
+#define PRACH_DEBUG 1
 
 u16 NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 u16 NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case
@@ -514,9 +514,10 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
   // now generate PRACH signal
 #ifdef PRACH_DEBUG
-  printf("Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d, N_ZC/NCS %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
-	 rootSequenceIndex,preamble_index,NCS,Ncs_config,N_ZC/NCS,n_ra_prb,
-	 preamble_offset,preamble_shift);
+  if (NCS>0)
+    printf("Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d, N_ZC/NCS %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
+	   rootSequenceIndex,preamble_index,NCS,Ncs_config,N_ZC/NCS,n_ra_prb,
+	   preamble_offset,preamble_shift);
 #endif
 
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -1110,6 +1111,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
 #endif
 
   N_ZC = (prach_fmt < 4) ? 839 : 139;
+
   init_prach_tables(N_ZC);
   (prach_fmt < 4) ? (prach_root_sequence_map = prach_root_sequence_map0_3) : (prach_root_sequence_map = prach_root_sequence_map4);    
 
@@ -1178,7 +1180,8 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
   }
 
 #ifdef PRACH_DEBUG
-  LOG_I(PHY,"Initializing %d preambles for PRACH (NCS_config %d, NCS %d, N_ZC/NCS %d)\n",num_preambles,prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig,NCS,N_ZC/NCS);
+  if (NCS>0)
+    LOG_I(PHY,"Initializing %d preambles for PRACH (NCS_config %d, NCS %d, N_ZC/NCS %d)\n",num_preambles,prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig,NCS,N_ZC/NCS);
 #endif
 
   for (i=0;i<num_preambles;i++) {
@@ -1186,9 +1189,6 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
         
       inv_u = ZC_inv[u]; // multiplicative inverse of u
     
-#ifdef PRACH_DEBUG
-    LOG_I(PHY,"compute_prach_seq: preamble %d => (%d,%d)\n",i,u,inv_u);
-#endif  
 
     // X_u[0] stores the first ZC sequence where the root u has a non-zero number of shifts
     // for the unrestricted case X_u[0] is the first root indicated by the rootSequenceIndex
@@ -1198,4 +1198,5 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
       //    printf("X_u[%d] (%d) : %d,%d\n",k,(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[k])[0],((s16*)&X_u[k])[1]);
     }
   }
+
 }
