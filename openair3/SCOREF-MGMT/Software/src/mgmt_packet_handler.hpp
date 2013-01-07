@@ -57,6 +57,7 @@ using namespace boost;
 #include "mgmt_information_base.hpp"
 #include "mgmt_packet_factory.hpp"
 #include "util/mgmt_log.hpp"
+#include "mgmt_client.hpp"
 
 /**
  * A container for PacketHandler classes feedback to its callers
@@ -170,9 +171,10 @@ class PacketHandler {
 		 * PacketFactory method
 		 *
 		 * @param packet Pointer to Get Configuration packet object
+		 * @param Management client type information (Event type/subtype changes according to the client type)
 		 * @return Pointer to a PacketHandlerResult object
 		 */
-		PacketHandlerResult* handleGetConfigurationEvent(GeonetGetConfigurationEventPacket* packet);
+		PacketHandlerResult* handleGetConfigurationEvent(GeonetGetConfigurationEventPacket* packet, ManagementClient::ManagementClientType clientType);
 		/**
 		 * Handles a Network State message and triggers an update at MIB
 		 *
@@ -206,9 +208,18 @@ class PacketHandler {
 		 * Communication Profile Response packet
 		 *
 		 * @param Pointer to a Communication Profile Request packet
+		 * @param Management client type information (Event type/subtype changes according to the client type)
 		 * @return Pointer to a PacketHandlerResult object
 		 */
-		PacketHandlerResult* handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* packet);
+		PacketHandlerResult* handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* packet, ManagementClient::ManagementClientType clientType);
+		/**
+		 * Handles a Communication Profile Selection Request event message and creates a
+		 * Communication Profile Selection Response packet
+		 *
+		 * @param Pointer to a Communication Profile Selection Request packet
+		 * @return Pointer to a PacketHandlerResult object
+		 */
+		PacketHandlerResult* handleCommunicationProfileSelectionRequest(FacCommunicationProfileSelectionRequestPacket* request);
 		/**
 		 * Handles an incoming Location Update message and updates MIB with
 		 * this incoming information

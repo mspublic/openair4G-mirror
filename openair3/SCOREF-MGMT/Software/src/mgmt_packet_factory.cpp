@@ -39,6 +39,7 @@
  * \warning none
 */
 
+#include "packets/mgmt_fac_packet_comm_profile_selection_response.hpp"
 #include "packets/mgmt_gn_packet_comm_profile_response.hpp"
 #include "packets/mgmt_gn_packet_set_configuration.hpp"
 #include "mgmt_packet_factory.hpp"
@@ -55,4 +56,8 @@ GeonetPacket* ManagementPacketFactory::createSetConfigurationEventPacket(ItsKeyI
 
 GeonetPacket* ManagementPacketFactory::createCommunicationProfileResponse(GeonetCommunicationProfileRequestPacket* request) {
 	return new GeonetCommunicationProfileResponsePacket(mib, request->getCommunicationProfileRequestSet(), logger);
+}
+
+GeonetPacket* ManagementPacketFactory::createCommunicationProfileSelectionResponse(FacCommunicationProfileSelectionRequestPacket* request) {
+	return new FacCommunicationProfileSelectionResponsePacket(mib, request->getLatency(), request->getRelevance(), request->getReliability(), request->getSequenceNumber(), logger);
 }

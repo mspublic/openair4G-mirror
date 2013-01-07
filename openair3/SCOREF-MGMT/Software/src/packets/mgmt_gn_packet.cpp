@@ -123,6 +123,21 @@ bool GeonetPacket::isValid() const {
 	return valid;
 }
 
+bool GeonetPacket::setEventType(const u_int16_t& eventType) {
+	this->header.eventType = (eventType >> 8);
+	this->header.eventSubtype = (eventType & 0xFF);
+
+	return true;
+}
+
+u_int16_t GeonetPacket::getEventType() const {
+	u_int16_t eventType = header.eventType;
+	eventType <<= 8;
+	eventType |= header.eventSubtype;
+
+	return eventType;
+}
+
 string GeonetPacket::toString() const {
 	stringstream ss;
 

@@ -43,12 +43,12 @@
 #include "../util/mgmt_util.hpp"
 
 FacCommunicationProfileSelectionResponsePacket::FacCommunicationProfileSelectionResponsePacket(ManagementInformationBase& mib,
-		u_int8_t latency, u_int8_t relevance, u_int8_t reliability, Logger& logger) :
+		u_int8_t latency, u_int8_t relevance, u_int8_t reliability, u_int8_t sequenceNumber, Logger& logger) :
 	GeonetPacket(false, true, 0x00, 0x00, MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_RESPONSE, logger), mib(mib) {
 	packet.latency = latency;
 	packet.relevance = relevance;
 	packet.reliability = reliability;
-	packet.reserved = 0x00;
+	packet.sequenceNumber = sequenceNumber;
 }
 
 FacCommunicationProfileSelectionResponsePacket::~FacCommunicationProfileSelectionResponsePacket() {}
@@ -64,7 +64,7 @@ bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned c
 	buffer[payloadIndex++] = packet.latency;
 	buffer[payloadIndex++] = packet.relevance;
 	buffer[payloadIndex++] = packet.reliability;
-	buffer[payloadIndex++] = packet.reserved;
+	buffer[payloadIndex++] = packet.sequenceNumber;
 	/**
 	 * Get the most suitable communication profile from CommunicationProfileManager...
 	 */

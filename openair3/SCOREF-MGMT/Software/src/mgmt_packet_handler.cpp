@@ -78,9 +78,11 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 
 	switch (eventType) {
 		case MGMT_GN_EVENT_CONF_REQUEST:
+			logger.info("GET_CONFIGURATION packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received from GN");
+			return handleGetConfigurationEvent(new GeonetGetConfigurationEventPacket(packetBuffer, logger), ManagementClient::GN);
 		case MGMT_FAC_EVENT_CONF_REQUEST:
-			logger.info("GET_CONFIGURATION packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
-			return handleGetConfigurationEvent(new GeonetGetConfigurationEventPacket(packetBuffer, logger));
+			logger.info("GET_CONFIGURATION packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received from FAC");
+			return handleGetConfigurationEvent(new GeonetGetConfigurationEventPacket(packetBuffer, logger), ManagementClient::FAC);
 
 		case MGMT_GN_EVENT_STATE_NETWORK_STATE:
 			logger.info("NETWORK_STATE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
@@ -95,9 +97,11 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 			return handleWirelessStateResponseEvent(new LteWirelessStateResponseEventPacket(mib, packetBuffer, logger));
 
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_REQUEST:
+			logger.info("COMMUNICATION_PROFILE_REQUEST packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received from GN");
+			return handleCommunicationProfileRequestEvent(new GeonetCommunicationProfileRequestPacket(packetBuffer, logger), ManagementClient::GN);
 		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_REQUEST:
-			logger.info("COMMUNICATION_PROFILE_REQUEST packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
-			return handleCommunicationProfileRequestEvent(new GeonetCommunicationProfileRequestPacket(packetBuffer, logger));
+			logger.info("COMMUNICATION_PROFILE_REQUEST packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received from FAC");
+			return handleCommunicationProfileRequestEvent(new GeonetCommunicationProfileRequestPacket(packetBuffer, logger), ManagementClient::FAC);
 
 		case MGMT_GN_EVENT_LOCATION_TABLE_RESPONSE:
 			logger.info("LOCATION_TABLE_RESPONSE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
@@ -111,6 +115,10 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 			logger.info("LOCATION_UPDATE packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
 			return handleLocationUpdate(new GeonetLocationUpdateEventPacket(mib, packetBuffer, logger));
 
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_REQUEST:
+			logger.info("COMM_PROF_SELECTION_REQUEST packet of size " + boost::lexical_cast<string>(packetBuffer.size()) + " has been received");
+			return handleCommunicationProfileSelectionRequest(new FacCommunicationProfileSelectionRequestPacket(packetBuffer, logger));
+
 		/**
 		 * Handle unexpected packets as well
 		 */
@@ -123,6 +131,7 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 		case MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE:
 		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_RESPONSE:
 		case MGMT_GN_EVENT_STATE_WIRELESS_STATE_REQUEST:
+		case MGMT_FAC_EVENT_CONF_COMM_PROFILE_SELECTION_RESPONSE:
 			logger.error("Unexpected packet (event: " + boost::lexical_cast<string>(eventType) + ") received, connected client is buggy");
 			logger.error("Ignoring...");
 			return new PacketHandlerResult(PacketHandlerResult::INVALID_PACKET, NULL);
@@ -136,7 +145,7 @@ PacketHandlerResult* PacketHandler::handle(const vector<unsigned char>& packetBu
 	return new PacketHandlerResult(PacketHandlerResult::DISCARD_PACKET, NULL);
 }
 
-PacketHandlerResult* PacketHandler::handleGetConfigurationEvent(GeonetGetConfigurationEventPacket* request) {
+PacketHandlerResult* PacketHandler::handleGetConfigurationEvent(GeonetGetConfigurationEventPacket* request, ManagementClient::ManagementClientType clientType) {
 	if (!request)
 		return new PacketHandlerResult(PacketHandlerResult::INVALID_PACKET, NULL);
 
@@ -144,6 +153,20 @@ PacketHandlerResult* PacketHandler::handleGetConfigurationEvent(GeonetGetConfigu
 	 * Create a response according to the request
 	 */
 	GeonetPacket* reply = this->packetFactory->createSetConfigurationEventPacket(static_cast<ItsKeyID> (request->getConfID()));
+
+	/**
+	 * Set the event type/sub-type according to the client type (no need to change anything
+	 * if the client type is GN, it's the default value)
+	 */
+	if (clientType == ManagementClient::FAC) {
+		/**
+		 * Mind the type of the Set Configuration packet, it may be BULK or CONTINUOUS
+		 */
+		if (reply->getEventType() == MGMT_GN_EVENT_CONF_BULK_RESPONSE)
+			reply->setEventType(MGMT_FAC_EVENT_CONF_BULK_RESPONSE);
+		else
+			reply->setEventType(MGMT_FAC_EVENT_CONF_CONT_RESPONSE);
+	}
 
 	/**
 	 * Clean up
@@ -196,7 +219,7 @@ PacketHandlerResult* PacketHandler::handleConfigurationNotification(FacConfigura
 	return new PacketHandlerResult(PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE, NULL);
 }
 
-PacketHandlerResult* PacketHandler::handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* request) {
+PacketHandlerResult* PacketHandler::handleCommunicationProfileRequestEvent(GeonetCommunicationProfileRequestPacket* request, ManagementClient::ManagementClientType clientType) {
 	if (!request)
 		return new PacketHandlerResult(PacketHandlerResult::INVALID_PACKET, NULL);
 
@@ -204,6 +227,30 @@ PacketHandlerResult* PacketHandler::handleCommunicationProfileRequestEvent(Geone
 	 * Create a response according to the request and send to the client right away
 	 */
 	GeonetPacket* reply = this->packetFactory->createCommunicationProfileResponse(request);
+
+	/**
+	 * Set the event type/sub-type according to the client type (no need to change anything
+	 * if the client type is GN, it's the default value)
+	 */
+	if (clientType == ManagementClient::FAC)
+		reply->setEventType(MGMT_FAC_EVENT_CONF_COMM_PROFILE_RESPONSE);
+
+	/**
+	 * Clean up
+	 */
+	delete request;
+
+	return new PacketHandlerResult(PacketHandlerResult::DELIVER_PACKET, reply);
+}
+
+PacketHandlerResult* PacketHandler::handleCommunicationProfileSelectionRequest(FacCommunicationProfileSelectionRequestPacket* request) {
+	if (!request)
+		return new PacketHandlerResult(PacketHandlerResult::INVALID_PACKET, NULL);
+
+	/**
+	 * Create a response according to the request and send to the client right away
+	 */
+	GeonetPacket* reply = this->packetFactory->createCommunicationProfileSelectionResponse(request);
 
 	/**
 	 * Clean up
