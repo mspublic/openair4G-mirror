@@ -6,6 +6,10 @@ naslite_netlink_ether:
 	(cd $(OPENAIR2_DIR) && make naslite_netlink_ether.ko)
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/LITE/RB_TOOL/ && make)
 
+remserial:
+	(cd $(OPENAIR3_DIR)/UTILS/REMSERIAL-1.4.UDP && make all)
+	(cp -upv $(OPENAIR3_DIR)/UTILS/REMSERIAL-1.4.UDP/remserial /usr/bin/remserial.udp)
+
 one_eNB_one_UE: oaisim naslite_netlink_ether
 
 userclean: clean oaisim naslite_netlink_ether
