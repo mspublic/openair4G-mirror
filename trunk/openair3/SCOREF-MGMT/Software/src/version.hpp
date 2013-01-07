@@ -42,6 +42,6 @@
 #ifndef VERSION_HPP_
 #define VERSION_HPP_
 
-#define MGMT_VERSION "1.6.1"
+#define MGMT_VERSION "1.6.2"
 
 #endif /* VERSION_HPP_ */

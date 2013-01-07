@@ -53,7 +53,7 @@ struct CommunicationProfileSelectionRequest {
 	u_int8_t latency;
 	u_int8_t relevance;
 	u_int8_t reliability;
-	u_int8_t reserved;
+	u_int8_t sequenceNumber;
 } __attribute__((packed));
 
 /**
@@ -77,21 +77,27 @@ class FacCommunicationProfileSelectionRequestPacket: public GeonetPacket {
 		/**
 		 * Returns `latency' field
 		 *
-		 * @return 32-bit `latency' field
+		 * @return 8-bit `latency' field
 		 */
 		u_int8_t getLatency() const;
 		/**
 		 * Returns `reliability' field
 		 *
-		 * @return 32-bit `reliability' field
+		 * @return 8-bit `reliability' field
 		 */
 		u_int8_t getReliability() const;
 		/**
 		 * Returns `relevance' field
 		 *
-		 * @return 32-bit `relevance' field
+		 * @return 8-bit `relevance' field
 		 */
 		u_int8_t getRelevance() const;
+		/**
+		 * Returns `sequence number' field
+		 *
+		 * @return 8-bit sequence number field
+		 */
+		u_int8_t getSequenceNumber() const;
 		/**
 		 * Parses the packet buffer and fills in private member
 		 *

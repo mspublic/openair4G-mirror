@@ -41,7 +41,6 @@
 
 #include "mgmt_fac_packet_comm_profile_selection_request.hpp"
 #include "../util/mgmt_util.hpp"
-
 #include <sstream>
 
 FacCommunicationProfileSelectionRequestPacket::FacCommunicationProfileSelectionRequestPacket(const vector<unsigned char>& packetBuffer, Logger& logger)
@@ -63,16 +62,25 @@ u_int8_t FacCommunicationProfileSelectionRequestPacket::getReliability() const {
 	return packet.reliability;
 }
 
+u_int8_t FacCommunicationProfileSelectionRequestPacket::getSequenceNumber() const {
+	return packet.sequenceNumber;
+}
+
 bool FacCommunicationProfileSelectionRequestPacket::parse(const vector<unsigned char>& packetBuffer) {
+	/**
+	 * Verify incoming buffer's size
+	 */
 	if (packetBuffer.size() < sizeof(CommunicationProfileSelectionRequest))
 		return false;
 
-	/* Parse octets */
+	/**
+	 * Parse octets
+	 */
 	u_int8_t payloadIndex = sizeof(MessageHeader);
 	packet.latency = packetBuffer[payloadIndex++];
 	packet.relevance = packetBuffer[payloadIndex++];
 	packet.reliability = packetBuffer[payloadIndex++];
-	packet.reserved = packetBuffer[payloadIndex];
+	packet.sequenceNumber = packetBuffer[payloadIndex];
 
 	return true;
 }
@@ -80,10 +88,11 @@ bool FacCommunicationProfileSelectionRequestPacket::parse(const vector<unsigned 
 string FacCommunicationProfileSelectionRequestPacket::toString() const {
 	stringstream ss;
 
-	ss << GeonetPacket::toString() << endl
-		<< "Latency: " << hex << (int)packet.latency << endl
-		<< "Relevance: " << hex << (int)packet.relevance << endl
-		<< "Reliability: " << hex << (int)packet.reliability << endl;
+	ss << "CommunicationProfileSelectionRequest["
+		<< "latency:" << hex << (int)packet.latency
+		<< ", relevance:" << hex << (int)packet.relevance
+		<< ", reliability:" << hex << (int)packet.reliability
+		<< ", sequenceNum:" << (int)packet.sequenceNumber << "]";
 
 	return ss.str();
 }

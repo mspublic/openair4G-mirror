@@ -109,6 +109,19 @@ class GeonetPacket {
 		 */
 		bool isValid() const;
 		/**
+		 * Sets the Event Type/SubType field with incoming value
+		 *
+		 * @param eventType 16-bit Event Type/SubType
+		 * @return true on success, false otherwise
+		 */
+		bool setEventType(const u_int16_t& eventType);
+		/**
+		 * Returns the Event Type/SubType value as a 16-bit value
+		 *
+		 * @return 16-bit Event Type/SubType value
+		 */
+		u_int16_t getEventType() const;
+		/**
 		 * Utility method to get event type of a packet buffer
 		 *
 		 * @param buffer A packet buffer of type vector<unsigned char> reference

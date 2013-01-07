@@ -1,4 +1,10 @@
 
+v1.6.2
+* Sequence number added into FacCommunicationProfileSelectionRequestPacket and 
+  FacCommunicationProfileSelectionResponsePacket
+* Bugfix Faulty Event Type/Subtype values are corrected for FAC packets
+* Scenario files of the simulator have been given 'human-readable' names
+
 v1.6.1
 * LteWirelessStateResponse updated and InterfaceID & Status fields added
 * Simulator updated accordingly

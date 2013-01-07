@@ -42,6 +42,7 @@
 #ifndef MGMT_PACKET_FACTORY_HPP_
 #define MGMT_PACKET_FACTORY_HPP_
 
+#include "packets/mgmt_fac_packet_comm_profile_selection_request.hpp"
 #include "packets/mgmt_gn_packet_comm_profile_request.hpp"
 #include "packets/mgmt_gn_packet.hpp"
 #include "mgmt_information_base.hpp"
@@ -80,6 +81,14 @@ class ManagementPacketFactory {
 		 * @return Pointer to the Communication Profile Response packet
 		 */
 		GeonetPacket* createCommunicationProfileResponse(GeonetCommunicationProfileRequestPacket* request);
+		/**
+		 * Creates a Communication Profile Selection Response packet according to what
+		 * was asked in relevant request packet
+		 *
+		 * @param request Pointer to the Communication Profile Selection Request packet
+		 * @return Pointer to the Communication Profile Selection Response packet
+		 */
+		GeonetPacket* createCommunicationProfileSelectionResponse(FacCommunicationProfileSelectionRequestPacket* request);
 
 	private:
 		/**

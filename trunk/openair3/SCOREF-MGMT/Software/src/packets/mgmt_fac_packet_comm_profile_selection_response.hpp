@@ -53,7 +53,7 @@ struct CommunicationProfileSelectionResponse {
 	u_int8_t latency;
 	u_int8_t relevance;
 	u_int8_t reliability;
-	u_int8_t reserved;
+	u_int8_t sequenceNumber;
 	u_int32_t communicationProfileId;
 } __attribute__((packed));
 
@@ -68,10 +68,11 @@ class FacCommunicationProfileSelectionResponsePacket : public GeonetPacket {
 		 * @param mib Management Information Base reference
 		 * @param latency `Latency' requirement parameter
 		 * @param relevance `Relevance' requirement parameter
-		 * @param reliability `Reliability' requirement paramter
+		 * @param reliability `Reliability' requirement parameter
+		 * @param sequenceNumber `Sequence Number' of the request (that of response's will match it)
 		 * @param logger Logger object reference
 		 */
-		FacCommunicationProfileSelectionResponsePacket(ManagementInformationBase& mib, u_int8_t latency, u_int8_t relevance, u_int8_t reliability, Logger& logger);
+		FacCommunicationProfileSelectionResponsePacket(ManagementInformationBase& mib, u_int8_t latency, u_int8_t relevance, u_int8_t reliability, u_int8_t sequenceNumber, Logger& logger);
 		/**
 		 * Destructor for FacCommunicationProfileSelectionResponsePacket class
 		 */
