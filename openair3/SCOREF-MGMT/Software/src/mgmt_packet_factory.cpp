@@ -55,7 +55,7 @@ GeonetPacket* ManagementPacketFactory::createSetConfigurationEventPacket(ItsKeyI
 }
 
 GeonetPacket* ManagementPacketFactory::createCommunicationProfileResponse(GeonetCommunicationProfileRequestPacket* request) {
-	return new GeonetCommunicationProfileResponsePacket(mib, request->getCommunicationProfileRequestSet(), logger);
+	return new GeonetCommunicationProfileResponsePacket(mib, request->getCommunicationProfileRequestSet(), request->getSequenceNumber(), logger);
 }
 
 GeonetPacket* ManagementPacketFactory::createCommunicationProfileSelectionResponse(FacCommunicationProfileSelectionRequestPacket* request) {

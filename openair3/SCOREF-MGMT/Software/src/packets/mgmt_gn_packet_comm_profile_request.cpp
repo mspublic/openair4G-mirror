@@ -56,6 +56,10 @@ u_int32_t GeonetCommunicationProfileRequestPacket::getCommunicationProfileReques
 	return communicationProfileRequestSet;
 }
 
+u_int8_t GeonetCommunicationProfileRequestPacket::getSequenceNumber() const {
+	return sequenceNumber;
+}
+
 #ifdef UNUSED
 bool GeonetCommunicationProfileRequestPacket::getTransportBtpA() const {
 	return transportBtpA;
@@ -143,38 +147,56 @@ bool GeonetCommunicationProfileRequestPacket::getChannelSch4() const {
 #endif
 
 bool GeonetCommunicationProfileRequestPacket::parse(const vector<unsigned char>& packetBuffer) {
+	/**
+	 * Verify the size of incoming buffer
+	 */
 	if (packetBuffer.size() < sizeof(MessageHeader))
 		return false;
 
 	u_int8_t payloadIndex = sizeof(MessageHeader);
-	// parse first octet which is "transport"
+	/*
+	 * Parse first octet which is "transport"
+	 */
 	transportBtpA    = Util::isBitSet(packetBuffer[payloadIndex], 0x01);
 	transportBtpB    = Util::isBitSet(packetBuffer[payloadIndex], 0x02);
 	transportTcp     = Util::isBitSet(packetBuffer[payloadIndex], 0x03);
 	transportUdp     = Util::isBitSet(packetBuffer[payloadIndex], 0x04);
 	transportRtp     = Util::isBitSet(packetBuffer[payloadIndex], 0x05);
 	transportStcp    = Util::isBitSet(packetBuffer[payloadIndex], 0x06);
-	// parse second octet which is "network"
+	/*
+	 * Parse second octet which is "network"
+	 */
 	networkGn        = Util::isBitSet(packetBuffer[payloadIndex + 1], 0x01);
 	networkIpv6Gn    = Util::isBitSet(packetBuffer[payloadIndex + 1], 0x02);
 	networkIpv6      = Util::isBitSet(packetBuffer[payloadIndex + 1], 0x03);
 	networkIpv4      = Util::isBitSet(packetBuffer[payloadIndex + 1], 0x04);
 	networkIpv4v6    = Util::isBitSet(packetBuffer[payloadIndex + 1], 0x05);
 	networkDsmIpv4v6 = Util::isBitSet(packetBuffer[payloadIndex + 1], 0x06);
-	// parse third octet which is "access"
+	/*
+	 * Parse third octet which is "access"
+	 */
 	accessItsG5      = Util::isBitSet(packetBuffer[payloadIndex + 2], 0x01);
 	access3G         = Util::isBitSet(packetBuffer[payloadIndex + 2], 0x02);
 	access11n        = Util::isBitSet(packetBuffer[payloadIndex + 2], 0x03);
 	accessEthernet   = Util::isBitSet(packetBuffer[payloadIndex + 2], 0x04);
-	// parse fourth octet whih is "channel"
+	/**
+	 * Parse fourth octet whih is "channel"
+	 */
 	channelCch       = Util::isBitSet(packetBuffer[payloadIndex + 3], 0x01);
 	channelSch1      = Util::isBitSet(packetBuffer[payloadIndex + 3], 0x02);
 	channelSch2      = Util::isBitSet(packetBuffer[payloadIndex + 3], 0x03);
 	channelSch3      = Util::isBitSet(packetBuffer[payloadIndex + 3], 0x04);
 	channelSch4      = Util::isBitSet(packetBuffer[payloadIndex + 3], 0x05);
 
-	// Parse whole set of requested configuration
-	Util::parse4byteInteger(packetBuffer.data() + payloadIndex, &communicationProfileRequestSet);
+	/**
+	 * Parse whole set of requested configuration
+	 */
+	Util::parse4byteInteger(packetBuffer.data() + payloadIndex, &communicationProfileRequestSet); payloadIndex += 4;
+
+	/**
+	 * Parse the sequence number and ignore reserved part
+	 */
+	sequenceNumber = packetBuffer.data()[payloadIndex];
 
 	return true;
 }
@@ -193,7 +215,8 @@ string GeonetCommunicationProfileRequestPacket::toString() const {
 		<< ", 11n:" << access11n << ", Ethernet:" << accessEthernet << "]" << endl
 		<< "Channel [CCH:" << channelCch << ", SCH1:" << channelSch1
 		<< ", SCH2:" << channelSch2 << ", SCH3:" << channelSch3
-		<< ", SCH4: " << channelSch4 << "]" << endl;
+		<< ", SCH4: " << channelSch4 << "]" << endl
+		<< "Sequence number:" << sequenceNumber << endl;
 
 	return ss.str();
 }

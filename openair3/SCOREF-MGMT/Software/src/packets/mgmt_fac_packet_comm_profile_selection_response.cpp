@@ -54,12 +54,19 @@ FacCommunicationProfileSelectionResponsePacket::FacCommunicationProfileSelection
 FacCommunicationProfileSelectionResponsePacket::~FacCommunicationProfileSelectionResponsePacket() {}
 
 bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned char>& buffer) const {
+	/**
+	 * Verify incoming buffer size
+	 */
 	if (buffer.size() < sizeof(CommunicationProfileSelectionResponse))
 		return false;
 
-	// Serialise header first...
+	/**
+	 * Serialise header first...
+	 */
 	GeonetPacket::serialize(buffer);
-	// ...then append communication profile information
+	/**
+	 * ..then append communication profile information
+	 */
 	u_int8_t payloadIndex = sizeof(MessageHeader);
 	buffer[payloadIndex++] = packet.latency;
 	buffer[payloadIndex++] = packet.relevance;
@@ -74,7 +81,9 @@ bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned c
 	 */
 	Util::encode4byteInteger(buffer, payloadIndex, static_cast<int>(communicationProfileId));
 
-	// Resize incoming buffer
+	/**
+	 * Resize incoming buffer according to packet size
+	 */
 	buffer.resize(sizeof(CommunicationProfileSelectionResponse));
 
 	return true;

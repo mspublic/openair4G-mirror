@@ -44,23 +44,29 @@
 #include "../util/mgmt_util.hpp"
 
 GeonetCommunicationProfileResponsePacket::GeonetCommunicationProfileResponsePacket(ManagementInformationBase& mib,
-		u_int32_t communicationProfileRequest, Logger& logger) :
+		u_int32_t communicationProfileRequest, u_int8_t sequenceNumber, Logger& logger) :
 	GeonetPacket(false, true, 0x00, 0x00, MGMT_GN_EVENT_CONF_COMM_PROFILE_RESPONSE, logger), mib(mib), logger(logger) {
 	this->communicationProfileRequest = communicationProfileRequest;
+	this->sequenceNumber = sequenceNumber;
 }
 
 GeonetCommunicationProfileResponsePacket::~GeonetCommunicationProfileResponsePacket() {
 }
 
 bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& buffer) const {
+	/**
+	 * Verify incoming buffer size
+	 */
 	if (buffer.size() < sizeof(CommunicationProfileResponse))
 		return false;
 
-	// Serialise header first...
+	/**
+	 * Serialise header first...
+	 */
 	GeonetPacket::serialize(buffer);
 
 	/**
-	 * Fetch those profiles asked in the COMM_PROFILE_REQ
+	 * Fetch those profiles matching with the incoming bitmap (sent in the COMM_PROFILE_REQ)
 	 */
 	map<CommunicationProfileID, CommunicationProfileItem> filteredProfileMap = mib.getCommunicationProfileManager().getProfileMapSubset(communicationProfileRequest);
 
@@ -70,11 +76,18 @@ bool GeonetCommunicationProfileResponsePacket::serialize(vector<unsigned char>& 
 	u_int8_t payloadIndex = sizeof(MessageHeader);
 	Util::encode2byteInteger(buffer, payloadIndex, filteredProfileMap.size());
 	payloadIndex += 2;
-	// ...and `reserved' field
-	Util::encode2byteInteger(buffer, payloadIndex, 0x0000);
-	payloadIndex += 2;
+	/**
+	 * Append sequence number
+	 */
+	buffer[payloadIndex++] = sequenceNumber;
+	/**
+	 * ...and then the `reserved' field
+	 */
+	buffer[payloadIndex++] = 0x00;
 
-	// ...and communication profile item(s)
+	/**
+	 * ...and communication profile item(s)
+	 */
 	map<CommunicationProfileID, CommunicationProfileItem>::const_iterator it = filteredProfileMap.begin();
 	while (it != filteredProfileMap.end()) {
 		Util::encode4byteInteger(buffer, payloadIndex, it->second.id);
