@@ -84,7 +84,7 @@ bool ManagementServer::sendWirelessStateRequest() {
 	 * Check if there's a GN connected
 	 */
 	if (!clientManager.isGnConnected()) {
-		logger.warning("Wanted to send a Wireless Status Request but GN is not connected...");
+		logger.warning("Attempted to send a Wireless Status Request but GN is not connected...");
 		return false;
 	}
 

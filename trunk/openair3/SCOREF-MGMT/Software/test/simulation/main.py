@@ -68,6 +68,18 @@ while line:
 			else:
 				print "ERROR: Cannot send COMMUNICATION_PROFILE_REQUEST"
 
+		# Communication Profile Selection Request Packet
+		elif clientPacketType == "COMMUNICATION_PROFILE_SELECTION_REQUEST":
+			# Ignore the command if the client type is not defined
+			if clientType != "FAC":
+				print "ERROR: Client type has to be defined in advance to send a CONFIGURATION_REQUEST"
+				print "Ignoring this command..."
+
+			elif Packet.sendCommunicationProfileSelectionRequest(serverAddress, serverPort, clientPort, clientType):
+				print "COMMUNICATION_PROFILE_REQUEST packet sent successfully"
+			else:
+				print "ERROR: Cannot send COMMUNICATION_PROFILE_REQUEST"
+
 		# Network State Packet
 		elif clientPacketType == "NETWORK_STATE":
 			if Packet.sendNetworkState(serverAddress, serverPort, clientPort):

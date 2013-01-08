@@ -1,4 +1,12 @@
 
+v1.7.0 (released on January 8, 2013)
+* Version 7 of the document CM-GN to MGMT-CORE Interface Definition added
+* Version 7 of the document FAC-CM to MGMT-CORE Interface Definition added
+* Sequence number added into GeonetCommunicationProfileRequestPacket and 
+  GeonetCommunicationProfileResponsePacket as requested by INRIA
+* Simulator now sends COMM_PROF_SEL_REQ with new sequence number feature
+* Bugfix A very stupid bitwise error fixed in GeonetPacket
+
 v1.6.2
 * Sequence number added into FacCommunicationProfileSelectionRequestPacket and 
   FacCommunicationProfileSelectionResponsePacket

@@ -54,6 +54,9 @@ struct CommunicationProfileRequest {
 	u_int8_t network;
 	u_int8_t access;
 	u_int8_t channel;
+	u_int8_t sequenceNumber;
+	u_int8_t reserved8bit;
+	u_int16_t reserved16bit;
 } __attribute__((packed));
 
 /**
@@ -80,6 +83,12 @@ class GeonetCommunicationProfileRequestPacket: public GeonetPacket {
 		 * @return 32-bit requested flag set
 		 */
 		u_int32_t getCommunicationProfileRequestSet() const;
+		/**
+		 * Returns 8-bit sequence number
+		 *
+		 * @return 8-bit sequence number
+		 */
+		u_int8_t getSequenceNumber() const;
 #ifdef UNUSED
 		/**
 		 * Returns Transport::BTPA flag's value
@@ -242,7 +251,10 @@ class GeonetCommunicationProfileRequestPacket: public GeonetPacket {
 		 */
 		bool channelCch, channelSch1, channelSch2;
 		bool channelSch3, channelSch4;
-
+		/**
+		 * Sequence number
+		 */
+		u_int8_t sequenceNumber;
 		/**
 		 * Communication profile request flag set (packet payload)
 		 */

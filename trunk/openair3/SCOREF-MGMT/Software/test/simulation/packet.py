@@ -54,10 +54,38 @@ class Packet:
 		elif clientType == "LTE":
 			# This value is not defined yet!
 			communicationProfileRequestPacket.append(0x16) # EventSubtype=16
-		communicationProfileRequestPacket.append(0xC0) # Transport
-		communicationProfileRequestPacket.append(0xC0) # Network
-		communicationProfileRequestPacket.append(0x80) # Access
-		communicationProfileRequestPacket.append(0xF8) # Channel
+		communicationProfileRequestPacket.append(0xC0) # Transport (1-byte)
+		communicationProfileRequestPacket.append(0xC0) # Network (1-byte)
+		communicationProfileRequestPacket.append(0x80) # Access (1-byte)
+		communicationProfileRequestPacket.append(0xF8) # Channel (1-byte)
+		communicationProfileRequestPacket.append(random.randint(1, 100)) # Sequence number (1-byte)
+		communicationProfileRequestPacket.append(0x00) # Reserved (3-byte)
+		communicationProfileRequestPacket.append(0x00)
+		communicationProfileRequestPacket.append(0x00)
+
+		# Create the socket to send to MGMT
+		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		managementSocket.bind(('0.0.0.0', clientPort))
+		sentByteCount = managementSocket.sendto(communicationProfileRequestPacket, (serverAddress, serverPort))
+		print sentByteCount, "bytes sent"
+
+		receivedBytes, sourceAddress = managementSocket.recvfrom(1024)
+		print receivedBytes.encode('hex'), "bytes received from", sourceAddress
+
+		return True
+
+	@staticmethod
+	def sendCommunicationProfileSelectionRequest(serverAddress, serverPort, clientPort, clientType):
+		# Build the packet
+		communicationProfileRequestPacket = array.array('B')
+		communicationProfileRequestPacket.append(0x40) # Validity=1, version=0
+		communicationProfileRequestPacket.append(0x00) # Priority=0
+		communicationProfileRequestPacket.append(0x03) # EventType=3
+		communicationProfileRequestPacket.append(0x17) # EventSubtype=17
+		communicationProfileRequestPacket.append(0xA0) # Latency (1-byte)
+		communicationProfileRequestPacket.append(0xB0) # Relevance (1-byte)
+		communicationProfileRequestPacket.append(0xC0) # Reliability (1-byte)
+		communicationProfileRequestPacket.append(random.randint(1, 100)) # Sequence number (1-byte)
 
 		# Create the socket to send to MGMT
 		managementSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

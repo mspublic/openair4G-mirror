@@ -58,7 +58,7 @@ GeonetPacket::GeonetPacket(bool extendedMessage, bool validity, u_int8_t version
 	this->header.priority = priority;
 	this->header.priority <<= 5;
 	this->header.eventType = (eventType >> 8);
-	this->header.eventSubtype = (eventType & 0x0f);
+	this->header.eventSubtype = (eventType & 0xFF);
 }
 
 GeonetPacket::GeonetPacket(const vector<unsigned char>& packetBuffer, Logger& logger)

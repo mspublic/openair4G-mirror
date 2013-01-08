@@ -51,7 +51,8 @@ struct CommunicationProfileResponse {
 	MessageHeader header;
 
 	u_int16_t communicationProfileCount;
-	u_int16_t reserved;
+	u_int8_t sequenceNumber;
+	u_int8_t reserved;
 	/* CommunicationProfileItem(s) follow(s)... */
 } __attribute__((packed));
 
@@ -65,9 +66,10 @@ class GeonetCommunicationProfileResponsePacket : public GeonetPacket {
 		 *
 		 * @param mib Management Information Base reference
 		 * @param communicationProfileRequest Communication Profile Request
+		 * @param sequenceNumber 8-bit sequence number
 		 * @param logger Logger object reference
 		 */
-		GeonetCommunicationProfileResponsePacket(ManagementInformationBase& mib, u_int32_t communicationProfileRequest, Logger& logger);
+		GeonetCommunicationProfileResponsePacket(ManagementInformationBase& mib, u_int32_t communicationProfileRequest, u_int8_t sequenceNumber, Logger& logger);
 		/**
 		 * Destructor for GeonetCommunicationProfileResponsePacket class
 		 */
@@ -98,6 +100,10 @@ class GeonetCommunicationProfileResponsePacket : public GeonetPacket {
 		 * Logger reference
 		 */
 		Logger& logger;
+		/**
+		 * Sequence number (the one parsed from corresponding Communication Profile Request packet)
+		 */
+		u_int8_t sequenceNumber;
 		/**
 		 * Communication Profile Request flag set to determine
 		 * requested options and respond accordingly
