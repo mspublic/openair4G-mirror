@@ -2493,8 +2493,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	}
 
 	// estimate timing advance for MAC
-	sync_pos = lte_est_timing_advance_pusch(phy_vars_eNB,i,last_slot>>1);
-	phy_vars_eNB->eNB_UE_stats[i].timing_advance_update = sync_pos - phy_vars_eNB->lte_frame_parms.nb_prefix_samples/8; //to check 
+	if (abstraction_flag == 0) {
+	  sync_pos = lte_est_timing_advance_pusch(phy_vars_eNB,i,last_slot>>1);
+	  phy_vars_eNB->eNB_UE_stats[i].timing_advance_update = sync_pos - phy_vars_eNB->lte_frame_parms.nb_prefix_samples/8; //to check 
+	}
 
 #ifdef DEBUG_PHY_PROC	
 	LOG_D(PHY,"[eNB %d] frame %d, slot %d: user %d in sector %d: timing advance = %d\n",
