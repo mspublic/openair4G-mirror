@@ -4,8 +4,7 @@
 MAKE_IP_DRIVER_TARGET="naslite_netlink_ether"
 MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim"
 MAKE_REMSERIAL_TARGET="remserial"
-
-
+IP_DRIVER_NAME=oai_nw_drv
 ###########################################################
 #  CONFIGURE OPTIONS
 EMULIF="eth0"
@@ -186,6 +185,33 @@ assert() {
   fi
 }
 
+ctrl_c() {
+  bash_exec "pkill oaisim"
+  if [ "$USE_PPP"x = yesx ]; then
+      bash_exec "pkill remserial.bash"
+      bash_exec "pkill ppp_android.bash"
+  fi
+  bash_exec "pkill AT_serial_bouchon.py"
+  bash_exec "ip link set $LTEIF down"
+  
+  bash_exec "ip route del default        via $ENB_IPv4     dev $EXTIF table int2lte"
+  bash_exec "ip route flush table  int2lte"
+  bash_exec "ip rule del  prio 1000"
+  
+  bash_exec "rmmod $IP_DRIVER_NAME"
+
+  bash_exec "$IPTABLES -P INPUT ACCEPT"
+  bash_exec "$IPTABLES -F INPUT"
+  bash_exec "$IPTABLES -P OUTPUT ACCEPT"
+  bash_exec "$IPTABLES -F OUTPUT"
+  bash_exec "$IPTABLES -P FORWARD ACCEPT"
+  bash_exec "$IPTABLES -F FORWARD"
+  bash_exec "$IPTABLES -t nat    -F"
+  bash_exec "$IPTABLES -t mangle -F"
+  bash_exec "$IPTABLES -t filter -F"
+  bash_exec "ip route flush cache"
+}
+
 #bash_exec "set_openair"
 set_openair
 cecho "OPENAIR_DIR     = $OPENAIR_DIR" $green
@@ -195,10 +221,10 @@ cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green
 cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
 
 echo "Bringup UE interface"
-bash_exec "rmmod nasmesh"
+bash_exec "rmmod $IP_DRIVER_NAME"
 cecho "make $MAKE_IP_DRIVER_TARGET $MAKE_LTE_ACCESS_STRATUM_TARGET $MAKE_REMSERIAL_TARGET....." $green
 bash_exec "make $MAKE_IP_DRIVER_TARGET $MAKE_LTE_ACCESS_STRATUM_TARGET $MAKE_REMSERIAL_TARGET"
-bash_exec "insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=$UE_IMEI"
+bash_exec "insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/$IP_DRIVER_NAME.ko oai_nw_drv_IMEI=$UE_IMEI"
 
 
 echo "   Enabling ipv4 forwarding.."
@@ -387,12 +413,14 @@ echo "ip route show table main"
 echo "---------------------------------------------------------------------"
 ip route show table main
 
+trap ctrl_c INT
+
 echo "to see UE stats, please run : watch_ue script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3  > /dev/null"
 nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3 > /dev/null
 #gdb $OPENAIR_TARGETS/SIMU/USER/oaisim
 echo "End"
-
+ctrl_c
 
 
 
