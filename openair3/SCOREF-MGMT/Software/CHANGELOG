@@ -1,4 +1,7 @@
 
+v1.7.1
+* make-release.sh file added
+
 v1.7.0 (released on January 8, 2013)
 * Version 7 of the document CM-GN to MGMT-CORE Interface Definition added
 * Version 7 of the document FAC-CM to MGMT-CORE Interface Definition added
