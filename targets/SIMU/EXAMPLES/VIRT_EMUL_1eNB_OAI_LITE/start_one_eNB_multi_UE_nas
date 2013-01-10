@@ -614,7 +614,6 @@ done
 # echo "start the emulation with 1eNB and" $1 "UE"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u" $1 ">/dev/null"
 # rm -f oai.log
-#$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /dev/null
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 -l 7 
+$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /dev/null
 
 echo "End"
