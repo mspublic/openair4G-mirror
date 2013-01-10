@@ -3,7 +3,7 @@
 #------------------------------------------------
 MAKE_IP_DRIVER_TARGET="naslite_netlink_ether"
 MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim"
-
+IP_DRIVER_NAME=oai_nw_drv
 ###########################################################
 #  CONFIGURE OPTIONS
 EMULIF="eth1"
@@ -187,10 +187,10 @@ cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
 
 
 echo "Bringup UE interface"
-bash_exec "rmmod nasmesh"
+bash_exec "rmmod $IP_DRIVER_NAME"
 cecho "make $MAKE_IP_DRIVER_TARGET $MAKE_LTE_ACCESS_STRATUM_TARGET....." $green
 bash_exec "make $MAKE_IP_DRIVER_TARGET $MAKE_LTE_ACCESS_STRATUM_TARGET"
-bash_exec "insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=$ENB_IF_ID"
+bash_exec "insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/$IP_DRIVER_NAME.ko oai_nw_drv_IMEI=$ENB_IF_ID"
 
 
 echo "   Enabling proxy ARP.."
