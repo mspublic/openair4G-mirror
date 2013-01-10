@@ -1097,11 +1097,10 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	/*
 #ifdef NAS_NETLINK
 // can mean also IPV6 since ether -> ipv6 autoconf
-#    ifndef NAS_DRIVER_TYPE_ETHERNET
-	LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, Mod_id,
-	      Mod_id+1,Mod_id+1);
+#    ifndef OAI_NW_DRIVER_TYPE_ETHERNET
+	LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d\n", Mod_id, Mod_id);
 	oip_ifup = nas_config(Mod_id,// interface index
-		   Mod_id+1, // third octet
+		   Mod_id+1, // thrid octet
 		   Mod_id+1);// fourth octet
 
 	 if (oip_ifup == 0 ){ // interface is up --> send a config the DRB

@@ -381,7 +381,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
     ip_addr_offset3 = 0;
     ip_addr_offset4 = 8;
 #    endif
-#    ifndef NAS_DRIVER_TYPE_ETHERNET
+#    ifndef OAI_NW_DRIVER_TYPE_ETHERNET
     LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, ip_addr_offset3+Mod_id,
 	  ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1);
     oip_ifup=nas_config(ip_addr_offset3+Mod_id,   // interface_id
