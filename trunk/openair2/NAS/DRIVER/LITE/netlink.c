@@ -27,10 +27,10 @@
 
 *******************************************************************************/
 /*! \file netlink.c
-* \brief estqblish a netlink
-* \author Raymond knopp, and Navid Nikaein
+* \brief establish a netlink
+* \author Raymond knopp, and Navid Nikaein, Lionel Gauthier
 * \company Eurecom
-* \email: knopp@eurecom.fr, and navid.nikaein@eurecom.fr
+* \email: knopp@eurecom.fr, and navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr
 */ 
 
 //#include <linux/config.h>
@@ -46,7 +46,7 @@
 #include "local.h"
 #include "proto_extern.h"
 
-#define NETLINK_DEBUG 1
+//#define NETLINK_DEBUG 1
 
 
 #define NAS_NETLINK_ID 31
@@ -80,19 +80,14 @@ static void nas_nl_data_ready (struct sk_buff *skb)
   //nasmesh_unlock();
 
   struct nlmsghdr *nlh = NULL;
-  int j;  
   if (skb) {
-    
 #ifdef NETLINK_DEBUG
-    printk("[NAS][NETLINK] Received socket from PDCP\n");
+    printk("[OAI_IP_DRV][NETLINK] Received socket from PDCP\n");
 #endif //NETLINK_DEBUG
     nlh = (struct nlmsghdr *)skb->data;
-  
-    nas_COMMON_QOS_receive(nlh);
-    
+    oai_nw_drv_common_wireless2ip(nlh);
     //kfree_skb(skb); // not required,
   }
-
 }
 #else
 
@@ -105,7 +100,7 @@ static int nas_netlink_rx_thread(void *data) {
   struct sk_buff *skb = NULL;
   struct nlmsghdr *nlh = NULL;
   
-  printk("[NAS][NETLINK] Starting RX Thread \n");
+  printk("[OAI_IP_DRV][NETLINK] Starting RX Thread \n");
 
   while (!kthread_should_stop()) {
     
@@ -115,7 +110,7 @@ static int nas_netlink_rx_thread(void *data) {
       if (skb) {
 	
 #ifdef NETLINK_DEBUG
-	printk("[NAS][NETLINK] Received socket from PDCP\n");
+	printk("[OAI_IP_DRV][NETLINK] Received socket from PDCP\n");
 #endif //NETLINK_DEBUG
 	nlh = (struct nlmsghdr *)skb->data;
 	
@@ -127,13 +122,13 @@ static int nas_netlink_rx_thread(void *data) {
     }
     else {
       if (exit_netlink_thread == 1) {
-	printk("[NAS][NETLINK] exit_netlink_thread\n");
+	printk("[OAI_IP_DRV][NETLINK] exit_netlink_thread\n");
 	break;
       }
     }
   } // while
   
-  printk("[NAS][NETLINK] Exiting RX thread\n");
+  printk("[OAI_IP_DRV][NETLINK] Exiting RX thread\n");
   
   return(0);
   
@@ -147,10 +142,10 @@ static void nas_nl_data_ready (struct sock *sk, int len)
 #endif
 
 
-int nas_netlink_init()
+int oai_nw_drv_netlink_init(void)
 {
 
-  printk("[NAS][NETLINK] Running init ...\n");
+  printk("[OAI_IP_DRV][NETLINK] Running init ...\n");
   
 
   nas_nl_sk = netlink_kernel_create(
@@ -168,7 +163,7 @@ int nas_netlink_init()
 
   if (nas_nl_sk == NULL) {
 
-    printk("[NAS][NETLINK] netlink_kernel_create failed \n");
+    printk("[OAI_IP_DRV][NETLINK] netlink_kernel_create failed \n");
     return(-1);
   }
 
@@ -184,10 +179,10 @@ int nas_netlink_init()
 }
 
 
-void nas_netlink_release(void) {  
+void oai_nw_drv_netlink_release(void) {  
 
   exit_netlink_thread=1;
-  printk("[NAS][NETLINK] Releasing netlink socket\n");
+  printk("[OAI_IP_DRV][NETLINK] Releasing netlink socket\n");
  
   if(nas_nl_sk){
 #ifdef KERNEL_VERSION_GREATER_THAN_2629 
@@ -198,7 +193,7 @@ void nas_netlink_release(void) {
     
   }
   
- //  printk("[NAS][NETLINK] Removing netlink_rx_thread\n");
+ //  printk("[OAI_IP_DRV][NETLINK] Removing netlink_rx_thread\n");
  //kthread_stop(netlink_rx_thread);
 
 }
@@ -206,7 +201,7 @@ void nas_netlink_release(void) {
 
 
 
-int nas_netlink_send(unsigned char *data,unsigned int len) {
+int oai_nw_drv_netlink_send(unsigned char *data,unsigned int len) {
 
 
   struct sk_buff *nl_skb = alloc_skb(NLMSG_SPACE(len),GFP_ATOMIC);
@@ -214,7 +209,7 @@ int nas_netlink_send(unsigned char *data,unsigned int len) {
   int status;
 
 
-  //  printk("[NAS][NETLINK] Sending %d bytes (%d)\n",len,NLMSG_SPACE(len));
+  //  printk("[OAI_IP_DRV][NETLINK] Sending %d bytes (%d)\n",len,NLMSG_SPACE(len));
   skb_put(nl_skb, NLMSG_SPACE(len));
   memcpy(NLMSG_DATA(nlh),data,len);
 
@@ -226,7 +221,7 @@ int nas_netlink_send(unsigned char *data,unsigned int len) {
   NETLINK_CB(nl_skb).pid = 0;
 
 #ifdef NETLINK_DEBUG
-  printk("[NAS][NETLINK] In nas_netlink_send, nl_skb %p, nl_sk %x, nlh %p, nlh->nlmsg_len %d\n",nl_skb,nas_nl_sk,nlh,nlh->nlmsg_len);
+  printk("[OAI_IP_DRV][NETLINK] In nas_netlink_send, nl_skb %p, nl_sk %x, nlh %p, nlh->nlmsg_len %d\n",nl_skb,nas_nl_sk,nlh,nlh->nlmsg_len);
 #endif //DEBUG_NETLINK
 
   if (nas_nl_sk) {
@@ -236,18 +231,18 @@ int nas_netlink_send(unsigned char *data,unsigned int len) {
     // mutex_unlock(&nasmesh_mutex);
 
     if (status < 0) {
-	printk("[NAS][NETLINK] SEND status is %d\n",status);
+	printk("[OAI_IP_DRV][NETLINK] SEND status is %d\n",status);
 	return(0);
     }
     else {
 #ifdef NETLINK_DEBUG
-      printk("[NAS][NETLINK] SEND status is %d\n",status);
+      printk("[OAI_IP_DRV][NETLINK] SEND status is %d\n",status);
 #endif
       return len;
     }
   }
   else {
-    printk("[NAS][SEND] socket is NULL\n");
+    printk("[OAI_IP_DRV][SEND] socket is NULL\n");
     return(0);
   }
 }

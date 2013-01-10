@@ -37,8 +37,8 @@
 
  ***************************************************************************/
 
-#ifndef LOCAL_H
-#define LOCAL_H
+#ifndef OAI_LOCAL_H
+#define OAI_LOCAL_H
 
 #include <linux/if_arp.h>
 #include <linux/types.h>
@@ -59,21 +59,18 @@
 #include <linux/in.h>
 #include <net/ndisc.h>
 
-
-//#include "rrc_nas_primitives.h"
-//#include "rrc_sap.h"
-
-#define PDCP2NAS_FIFO 21
-#define NAS2PDCP_FIFO 22
+#define PDCP2IP_FIFO 21
+#define IP2PDCP_FIFO 22
 
 #include "constant.h"
 #include "sap.h"
-#include "rrc_nas_primitives.h"
+//#include "rrc_nas_primitives.h"
+
 
 struct rb_entity {
-  nasRadioBearerId_t   rab_id;
-  nasSapId_t           sapi;
-  nasQoSTrafficClass_t qos;
+  OaiNwDrvRadioBearerId_t   rab_id;
+  OaiNwDrvSapId_t           sapi;
+  OaiNwDrvQoSTrafficClass_t qos;
   u8                   state;
   u8                   retry;
   u32                  countimer;
@@ -81,14 +78,14 @@ struct rb_entity {
 };
 
 struct cx_entity {
-  int                        sap[NAS_SAPI_CX_MAX];
+  int                        sap[OAI_NW_DRV_SAPI_CX_MAX];
   u8                         state;                     // state of the connection
-  nasLocalConnectionRef_t    lcr;                       // Local connection reference
-  nasCellID_t                cellid;                    // cell identification
+  OaiNwDrvLocalConnectionRef_t    lcr;                       // Local connection reference
+  OaiNwDrvCellID_t                cellid;                    // cell identification
   u32                        countimer;                 // timeout's counter
   u8                         retry;                     // number of retransmission
-  struct classifier_entity  *sclassifier[NAS_DSCP_MAX]; // send classifier;
-  struct classifier_entity  *fclassifier[NAS_DSCP_MAX]; // forward classifier;
+  struct classifier_entity  *sclassifier[OAI_NW_DRV_DSCP_MAX]; // send classifier;
+  struct classifier_entity  *fclassifier[OAI_NW_DRV_DSCP_MAX]; // forward classifier;
   u16                        nsclassifier;
   u16                        nfclassifier;
   u32                        iid6[2];                   // IPv6  interface identification
@@ -97,11 +94,11 @@ struct cx_entity {
   u16                        num_rb;                    // number of radio bearer in linked list
   int                        lastRRCprimitive;
   //measures
-  int                        req_prov_id [MAX_MEASURE_NB];
+  int                        req_prov_id [OAI_NW_DRV_MAX_MEASURE_NB];
   int                        num_measures;
-  int                        meas_cell_id[MAX_MEASURE_NB];
-  int                        meas_level  [MAX_MEASURE_NB];
-  int                        provider_id [MAX_MEASURE_NB];
+  int                        meas_cell_id[OAI_NW_DRV_MAX_MEASURE_NB];
+  int                        meas_level  [OAI_NW_DRV_MAX_MEASURE_NB];
+  int                        provider_id [OAI_NW_DRV_MAX_MEASURE_NB];
 };
 
 struct classifier_entity {
@@ -125,14 +122,14 @@ struct classifier_entity {
   u16                        dport;     // destination port
   struct rb_entity          *rb;        // pointer to rb_entity for sending function or receiving in case of forwarding rule
   struct rb_entity          *rb_rx;     // pointer to rb_entity for receiving (in case of forwarding rule)
-  nasRadioBearerId_t         rab_id;    // RAB identification for sending
-  nasRadioBearerId_t         rab_id_rx; // RAB identification for receiving (in case of forwarding rule)
+  OaiNwDrvRadioBearerId_t         rab_id;    // RAB identification for sending
+  OaiNwDrvRadioBearerId_t         rab_id_rx; // RAB identification for receiving (in case of forwarding rule)
   void (*fct)(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst);
 };
 
 //#define NAS_RETRY_LIMIT_DEFAULT 5
 
-struct nas_priv {
+struct oai_nw_drv_priv {
   int                        irq;
   int                        rx_flags;
   struct timer_list          timer;
@@ -141,14 +138,14 @@ struct nas_priv {
   u8                         retry_limit;
   u32                        timer_establishment;
   u32                        timer_release;
-  struct cx_entity           cx[NAS_CX_MAX];
-  struct classifier_entity  *rclassifier[NAS_DSCP_MAX]; // receive classifier
+  struct cx_entity           cx[OAI_NW_DRV_CX_MAX];
+  struct classifier_entity  *rclassifier[OAI_NW_DRV_DSCP_MAX]; // receive classifier
   u16                        nrclassifier;
-  int                        sap[NAS_SAPI_MAX];
+  int                        sap[OAI_NW_DRV_SAPI_MAX];
   struct sock               *nl_sk;
-  u8                         nlmsg[NAS_MAX_LENGTH+sizeof(struct nlmsghdr)];
-  u8                         xbuffer[NAS_MAX_LENGTH]; // transmition buffer
-  u8                         rbuffer[NAS_MAX_LENGTH]; // reception buffer
+  u8                         nlmsg[OAI_NW_DRV_PRIMITIVE_MAX_LENGTH+sizeof(struct nlmsghdr)];
+  u8                         xbuffer[OAI_NW_DRV_PRIMITIVE_MAX_LENGTH]; // transmition buffer
+  u8                         rbuffer[OAI_NW_DRV_PRIMITIVE_MAX_LENGTH]; // reception buffer
 };
 
 struct ipversion {
@@ -175,15 +172,15 @@ typedef struct pdcp_data_ind_header_t {
 
 
 
-extern struct net_device *nasdev[NB_INSTANCES_MAX];
+extern struct net_device *oai_nw_drv_dev[OAI_NW_DRV_NB_INSTANCES_MAX];
 //extern int bytes_wrote;
 //extern int bytes_read;
 
-extern u8 NAS_NULL_IMEI[14];
+extern u8 OAI_NW_DRV_NULL_IMEI[14];
 
 //global variables shared with RRC
-#ifndef NAS_NETLINK
-extern int pdcp_2_nas_irq;
+#ifndef OAI_NW_DRIVER_USE_NETLINK
+extern int pdcp_2_oai_nw_drv_irq;
 #endif
 //extern u8 nas_IMEI[14];
 

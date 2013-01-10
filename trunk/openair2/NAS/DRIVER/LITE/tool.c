@@ -40,96 +40,90 @@
 //#define  KERNEL_VERSION_GREATER_THAN_2622 1
 //#define  KERNEL_VERSION_GREATER_THAN_2630 1
 
-//#define NAS_DEBUG_TOOL 1
+//#define OAI_NW_DRV_DEBUG_TOOL 1
 
 //---------------------------------------------------------------------------
 //
-void nas_TOOL_fct(struct classifier_entity *classifier, u8 fct){
+void oai_nw_drv_TOOL_fct(struct classifier_entity *classifier, u8 fct){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_FCT - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+  printk("OAI_NW_DRV_TOOL_FCT - begin \n");
 #endif
   if (classifier==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_FCT - input parameter classifier is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_FCT - input parameter classifier is NULL \n");
 #endif
-    return;
+      return;
   }
 // End debug information
-    switch(fct){
-        case NAS_FCT_QOS_SEND:
-            classifier->fct=nas_COMMON_QOS_send;
-            break;
-        case NAS_FCT_CTL_SEND:
-            classifier->fct=nas_CTL_send;
-            break;
-        case NAS_FCT_DC_SEND:
-            classifier->fct=nas_mesh_DC_send_sig_data_request;
-            break;
-        case NAS_FCT_DEL_SEND:
-            classifier->fct=nas_COMMON_del_send;
-            break;
-        default:
-            classifier->fct=nas_COMMON_del_send;
-    }
+  switch(fct){
+      case OAI_NW_DRV_FCT_QOS_SEND:
+          classifier->fct=oai_nw_drv_common_ip2wireless;
+          break;
+      case OAI_NW_DRV_FCT_CTL_SEND:
+          classifier->fct=oai_nw_drv_CTL_send;
+          break;
+      case OAI_NW_DRV_FCT_DEL_SEND:
+          classifier->fct=oai_nw_drv_common_ip2wireless_drop;
+          break;
+      default:
+          classifier->fct=oai_nw_drv_common_ip2wireless_drop;
+  }
 }
 
 //---------------------------------------------------------------------------
-u8 nas_TOOL_invfct(struct classifier_entity *classifier){
+u8 oai_nw_drv_TOOL_invfct(struct classifier_entity *classifier){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_INVFCT - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_INVFCT - begin \n");
 #endif
   if (classifier==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_INVFCT - input parameter classifier is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_INVFCT - input parameter classifier is NULL \n");
 #endif
     return 0;
   }
 // End debug information
-    if (classifier->fct==nas_COMMON_QOS_send)
-        return NAS_FCT_QOS_SEND;
-    if (classifier->fct==nas_CTL_send)
-        return NAS_FCT_CTL_SEND;
-    if (classifier->fct==nas_COMMON_del_send)
-        return NAS_FCT_DEL_SEND;
-    if (classifier->fct==nas_mesh_DC_send_sig_data_request)
-
-        return NAS_FCT_DC_SEND;
+    if (classifier->fct==oai_nw_drv_common_ip2wireless)
+        return OAI_NW_DRV_FCT_QOS_SEND;
+    if (classifier->fct==oai_nw_drv_CTL_send)
+        return OAI_NW_DRV_FCT_CTL_SEND;
+    if (classifier->fct==oai_nw_drv_common_ip2wireless_drop)
+        return OAI_NW_DRV_FCT_DEL_SEND;
     return 0;
 }
 
 //---------------------------------------------------------------------------
-u8 nas_TOOL_get_dscp6(struct ipv6hdr *iph){
+u8 oai_nw_drv_TOOL_get_dscp6(struct ipv6hdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_GET_DSCP6 - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_GET_DSCP6 - begin \n");
 #endif
   if (iph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_GET_DSCP6 - input parameter iph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_GET_DSCP6 - input parameter iph is NULL \n");
 #endif
     return 0;
   }
 // End debug information
-  return (ntohl(((*(__u32 *)iph)&NAS_TRAFFICCLASS_MASK)))>>22;
+  return (ntohl(((*(__u32 *)iph)&OAI_NW_DRV_TRAFFICCLASS_MASK)))>>22;
   //return ntohs(*(const __be16 *)iph) >> 4; // see linux/dsfield.h
 
 }
 
 //---------------------------------------------------------------------------
-u8 nas_TOOL_get_dscp4(struct iphdr *iph){
+u8 oai_nw_drv_TOOL_get_dscp4(struct iphdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_GET_DSCP4 - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_GET_DSCP4 - begin \n");
 #endif
   if (iph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_GET_DSCP4 - input parameter iph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_GET_DSCP4 - input parameter iph is NULL \n");
 #endif
     return 0;
   }
@@ -139,21 +133,21 @@ u8 nas_TOOL_get_dscp4(struct iphdr *iph){
 }
 
 //---------------------------------------------------------------------------
-int nas_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, u8 plen){
+int oai_nw_drv_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, u8 plen){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_NETWORK6 - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_NETWORK6 - begin \n");
 #endif
   if (addr==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_NETWORK6 - input parameter addr is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_NETWORK6 - input parameter addr is NULL \n");
 #endif
     return 0;
   }
   if (prefix==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_NETWORK6 - input parameter prefix is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_NETWORK6 - input parameter prefix is NULL \n");
 #endif
     return 0;
   }
@@ -183,21 +177,21 @@ int nas_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, u8 plen){
 }
 
 //---------------------------------------------------------------------------
-int nas_TOOL_network4(u32 *addr, u32 *prefix, u8 plen){
+int oai_nw_drv_TOOL_network4(u32 *addr, u32 *prefix, u8 plen){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_NETWORK4 - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_NETWORK4 - begin \n");
 #endif
   if (addr==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_NETWORK4 - input parameter addr is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_NETWORK4 - input parameter addr is NULL \n");
 #endif
     return 0;
   }
   if (prefix==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_NETWORK4 - input parameter prefix is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_NETWORK4 - input parameter prefix is NULL \n");
 #endif
     return 0;
   }
@@ -209,34 +203,34 @@ int nas_TOOL_network4(u32 *addr, u32 *prefix, u8 plen){
 }
 
 //---------------------------------------------------------------------------
-//struct udphdr *nas_TOOL_get_udp6(struct ipv6hdr *iph){
+//struct udphdr *oai_nw_drv_TOOL_get_udp6(struct ipv6hdr *iph){
 //---------------------------------------------------------------------------
-//  return (struct udphdr *)((char *)iph+NAS_IPV6_SIZE); // to modify
+//  return (struct udphdr *)((char *)iph+OAI_NW_DRV_IPV6_SIZE); // to modify
 //}
 
 //---------------------------------------------------------------------------
-u8 *nas_TOOL_get_protocol6(struct ipv6hdr *iph, u8 *protocol){
+u8 *oai_nw_drv_TOOL_get_protocol6(struct ipv6hdr *iph, u8 *protocol){
 //---------------------------------------------------------------------------
     u16 size;
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_GET_PROTOCOL6 - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_GET_PROTOCOL6 - begin \n");
 #endif
   if (iph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_GET_PROTOCOL6 - input parameter iph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_GET_PROTOCOL6 - input parameter iph is NULL \n");
 #endif
     return NULL;
   }
   if (protocol==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_GET_PROTOCOL6 - input parameter protocol is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_GET_PROTOCOL6 - input parameter protocol is NULL \n");
 #endif
     return NULL;
   }
 // End debug information
     *protocol=iph->nexthdr;
-    size=NAS_IPV6_SIZE;
+    size=OAI_NW_DRV_IPV6_SIZE;
     while (1)
     {
         switch(*protocol)
@@ -265,21 +259,21 @@ u8 *nas_TOOL_get_protocol6(struct ipv6hdr *iph, u8 *protocol){
 }
 
 //---------------------------------------------------------------------------
-u8 *nas_TOOL_get_protocol4(struct iphdr *iph, u8 *protocol){
+u8 *oai_nw_drv_TOOL_get_protocol4(struct iphdr *iph, u8 *protocol){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_GET_PROTOCOL4 - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_GET_PROTOCOL4 - begin \n");
 #endif
   if (iph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_GET_PROTOCOL4 - input parameter iph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_GET_PROTOCOL4 - input parameter iph is NULL \n");
 #endif
     return NULL;
   }
   if (protocol==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_GET_PROTOCOL4 - input parameter protocol is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_GET_PROTOCOL4 - input parameter protocol is NULL \n");
 #endif
     return NULL;
   }
@@ -298,26 +292,26 @@ u8 *nas_TOOL_get_protocol4(struct iphdr *iph, u8 *protocol){
 
 //---------------------------------------------------------------------------
 // Convert the IMEI to iid
-void nas_TOOL_imei2iid(u8 *imei, u8 *iid){
+void oai_nw_drv_TOOL_imei2iid(u8 *imei, u8 *iid){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-        printk("NAS_TOOL_IMEI2IID - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+        printk("OAI_NW_DRV_TOOL_IMEI2IID - begin \n");
 #endif
   if (imei==NULL){
-#ifdef NAS_DEBUG_TOOL
-          printk("NAS_TOOL_IMEI2IID - input parameter imei is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+          printk("OAI_NW_DRV_TOOL_IMEI2IID - input parameter imei is NULL \n");
 #endif
     return;
   }
   if (iid==NULL){
-#ifdef NAS_DEBUG_TOOL
-          printk("NAS_TOOL_IMEI2IID - input parameter iid is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+          printk("OAI_NW_DRV_TOOL_IMEI2IID - input parameter iid is NULL \n");
 #endif
     return;
   }
 // End debug information
-        memset(iid, 0, NAS_ADDR_LEN);
+        memset(iid, 0, OAI_NW_DRV_ADDR_LEN);
         iid[0] = 0x03;
         iid[1] = 16*imei[0]+imei[1];
         iid[2] = 16*imei[2]+imei[3];
@@ -329,22 +323,22 @@ void nas_TOOL_imei2iid(u8 *imei, u8 *iid){
 }
 //---------------------------------------------------------------------------
 // Convert the IMEI to iid
-void nas_TOOL_eNB_imei2iid(unsigned char *imei, unsigned char *iid, unsigned char len){
+void oai_nw_drv_TOOL_eNB_imei2iid(unsigned char *imei, unsigned char *iid, unsigned char len){
 //---------------------------------------------------------------------------
   unsigned int index;
   // Start debug information
-  #ifdef NAS_DEBUG_TOOL
-  printk("NAS_TOOL_eNB_IMEI2IID - begin \n");
+  #ifdef OAI_NW_DRV_DEBUG_TOOL
+  printk("OAI_NW_DRV_TOOL_eNB_IMEI2IID - begin \n");
   #endif
   if (imei==NULL){
-      #ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_eNB_IMEI2IID - input parameter imei is NULL \n");
+      #ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_eNB_IMEI2IID - input parameter imei is NULL \n");
       #endif
       return;
   }
   if (iid==NULL){
-      #ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_eNB_IMEI2IID - input parameter iid is NULL \n");
+      #ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_eNB_IMEI2IID - input parameter iid is NULL \n");
       #endif
       return;
   }
@@ -357,22 +351,22 @@ void nas_TOOL_eNB_imei2iid(unsigned char *imei, unsigned char *iid, unsigned cha
   }
 }
 
-//struct udphdr *nas_TOOL_get_udp4(struct iphdr *iph)
+//struct udphdr *oai_nw_drv_TOOL_get_udp4(struct iphdr *iph)
 //{
-//  return (struct udphdr *)((char *)iph+NAS_IPV4_SIZE); // to modify
+//  return (struct udphdr *)((char *)iph+OAI_NW_DRV_IPV4_SIZE); // to modify
 //}
 
 
 //---------------------------------------------------------------------------
-char *nas_TOOL_get_udpmsg(struct udphdr *udph){
+char *oai_nw_drv_TOOL_get_udpmsg(struct udphdr *udph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_GET_UDPMSG - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_GET_UDPMSG - begin \n");
 #endif
   if (udph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_GET_UDPMSG - input parameter udph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_GET_UDPMSG - input parameter udph is NULL \n");
 #endif
     return NULL;
   }
@@ -382,31 +376,31 @@ char *nas_TOOL_get_udpmsg(struct udphdr *udph){
 
 //---------------------------------------------------------------------------
 // Compute the UDP checksum (the data size must be odd)
-u16 nas_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, u8 proto, u32 udplen, void *data){
+u16 oai_nw_drv_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, u8 proto, u32 udplen, void *data){
 //---------------------------------------------------------------------------
     u32 i;
   u16 *data16;
     u32 csum=0;
 
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_UDPCKSUM - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_UDPCKSUM - begin \n");
 #endif
   if (saddr==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_UDPCKSUM - input parameter saddr is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_UDPCKSUM - input parameter saddr is NULL \n");
 #endif
     return 0;
   }
   if (daddr==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_UDPCKSUM - input parameter daddr is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_UDPCKSUM - input parameter daddr is NULL \n");
 #endif
     return 0;
   }
   if (data==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_UDPCKSUM - input parameter data is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_UDPCKSUM - input parameter data is NULL \n");
 #endif
     return 0;
   }
@@ -446,12 +440,12 @@ u16 nas_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, u8 proto, 
 void print_TOOL_pk_udp(struct udphdr *udph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
+#ifdef OAI_NW_DRV_DEBUG_TOOL
     printk("PRINT_TOOL_PK_UDP - begin \n");
 #endif
   if (udph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_PK_UDP - input parameter udph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_PK_UDP - input parameter udph is NULL \n");
 #endif
     return;
   }
@@ -466,12 +460,12 @@ void print_TOOL_pk_udp(struct udphdr *udph){
 void print_TOOL_pk_tcp(struct tcphdr *tcph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
+#ifdef OAI_NW_DRV_DEBUG_TOOL
     printk("PRINT_TOOL_PK_TDP - begin \n");
 #endif
   if (tcph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_PK_TDP - input parameter tcph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_PK_TDP - input parameter tcph is NULL \n");
 #endif
     return;
   }
@@ -486,12 +480,12 @@ void print_TOOL_pk_tcp(struct tcphdr *tcph){
 void print_TOOL_pk_icmp6(struct icmp6hdr *icmph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
+#ifdef OAI_NW_DRV_DEBUG_TOOL
     printk("PRINT_TOOL_PK_ICMP6 - begin \n");
 #endif
   if (icmph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_PK_ICMP6 - input parameter icmph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_PK_ICMP6 - input parameter icmph is NULL \n");
 #endif
     return;
   }
@@ -523,12 +517,12 @@ void print_TOOL_pk_icmp6(struct icmp6hdr *icmph){
 void print_TOOL_pk_ipv6(struct ipv6hdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
+#ifdef OAI_NW_DRV_DEBUG_TOOL
     printk("PRINT_TOOL_PK_IPv6 - begin \n");
 #endif
   if (iph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_PK_IPv6 - input parameter iph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_PK_IPv6 - input parameter iph is NULL \n");
 #endif
     return;
   }
@@ -536,13 +530,13 @@ void print_TOOL_pk_ipv6(struct ipv6hdr *iph){
 
     if (iph!=NULL)
     {
-//      char addr[NAS_INET6_ADDRSTRLEN];
+//      char addr[OAI_NW_DRV_INET6_ADDRSTRLEN];
         printk("IP:\t version = %u, priority = %u, payload_len = %u\n", iph->version, iph->priority, ntohs(iph->payload_len));
         printk("\t fl0 = %u, fl1 = %u, fl2 = %u\n",iph->flow_lbl[0],iph->flow_lbl[1],iph->flow_lbl[2]);
         printk("\t next header = %u, hop_limit = %u\n", iph->nexthdr, iph->hop_limit);
-//      inet_ntop(AF_INET6, (void *)(&iph->saddr), addr, NAS_INET6_ADDRSTRLEN);
+//      inet_ntop(AF_INET6, (void *)(&iph->saddr), addr, OAI_NW_DRV_INET6_ADDRSTRLEN);
 //      printk("\t saddr = %s",addr);
-//      inet_ntop(AF_INET6, (void *)(&iph->daddr), addr, NAS_INET6_ADDRSTRLEN);
+//      inet_ntop(AF_INET6, (void *)(&iph->daddr), addr, OAI_NW_DRV_INET6_ADDRSTRLEN);
 //      printk(", daddr = %s\n",addr);
         switch(iph->nexthdr)
         {
@@ -568,12 +562,12 @@ void print_TOOL_pk_ipv6(struct ipv6hdr *iph){
 void print_TOOL_pk_ipv4(struct iphdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
+#ifdef OAI_NW_DRV_DEBUG_TOOL
     printk("PRINT_TOOL_PK_IPv4 - begin \n");
 #endif
   if (iph==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_PK_IPv4 - input parameter iph is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_PK_IPv4 - input parameter iph is NULL \n");
 #endif
     return;
   }
@@ -581,11 +575,11 @@ void print_TOOL_pk_ipv4(struct iphdr *iph){
 
     if (iph!=NULL)
     {
-//      char addr[NAS_INET_ADDRSTRLEN];
+//      char addr[OAI_NW_DRV_INET_ADDRSTRLEN];
         printk("IP:\t version = %u, IP length = %u\n", iph->version, iph->ihl);
-//      inet_ntop(AF_INET, (void *)(&iph->saddr), addr, NAS_INET_ADDRSTRLEN);
+//      inet_ntop(AF_INET, (void *)(&iph->saddr), addr, OAI_NW_DRV_INET_ADDRSTRLEN);
 //      printk("\t saddr = %s", addr);
-//      inet_ntop(AF_INET, (void *)(&iph->saddr), addr, NAS_INET_ADDRSTRLEN);
+//      inet_ntop(AF_INET, (void *)(&iph->saddr), addr, OAI_NW_DRV_INET_ADDRSTRLEN);
 //      printk("\t saddr = %s", addr);
     }
 }
@@ -640,7 +634,7 @@ void print_TOOL_pk_all(struct sk_buff *skb){
     }
 }*/
 
-/*int nas_TOOL_inet_pton4(char *src, u32 *dst)
+/*int oai_nw_drv_TOOL_inet_pton4(char *src, u32 *dst)
 {
     u32 val;
     int n;
@@ -686,24 +680,24 @@ void print_TOOL_pk_all(struct sk_buff *skb){
 //---------------------------------------------------------------------------
 void print_TOOL_state(u8 state){
 //---------------------------------------------------------------------------
-//  case NAS_STATE_IDLE:printk(" State NAS_STATE_IDLE\n");return;
-//  case NAS_STATE_CONNECTED:printk(" State NAS_STATE_CONNECTED\n");return;
-//  case NAS_STATE_ESTABLISHMENT_REQUEST:printk(" State NAS_STATE_ESTABLISHMENT_REQUEST\n");return;
-//  case NAS_STATE_ESTABLISHMENT_FAILURE:printk(" State NAS_STATE_ESTABLISHMENT_FAILURE\n");return;
-//  case NAS_STATE_RELEASE_FAILURE:printk(" State NAS_STATE_RELEASE_FAILURE\n");return;
+//  case OAI_NW_DRV_STATE_IDLE:printk(" State OAI_NW_DRV_STATE_IDLE\n");return;
+//  case OAI_NW_DRV_STATE_CONNECTED:printk(" State OAI_NW_DRV_STATE_CONNECTED\n");return;
+//  case OAI_NW_DRV_STATE_ESTABLISHMENT_REQUEST:printk(" State OAI_NW_DRV_STATE_ESTABLISHMENT_REQUEST\n");return;
+//  case OAI_NW_DRV_STATE_ESTABLISHMENT_FAILURE:printk(" State OAI_NW_DRV_STATE_ESTABLISHMENT_FAILURE\n");return;
+//  case OAI_NW_DRV_STATE_RELEASE_FAILURE:printk(" State OAI_NW_DRV_STATE_RELEASE_FAILURE\n");return;
 
     switch(state){
-    case  NAS_IDLE:printk("NAS_IDLE\n");return;
-    case  NAS_CX_FACH:printk("NAS_CX_FACH\n");return;
-    case  NAS_CX_DCH:printk("NAS_CX_DCH\n");return;
-    case  NAS_CX_RECEIVED:printk("NAS_CX_RECEIVED\n");return;
-    case  NAS_CX_CONNECTING:printk("NAS_CX_CONNECTING\n");return;
-    case  NAS_CX_RELEASING:printk("NAS_CX_RELEASING\n");return;
-    case  NAS_CX_CONNECTING_FAILURE:printk("NAS_CX_CONNECTING_FAILURE\n");return;
-    case  NAS_CX_RELEASING_FAILURE:printk("NAS_CX_RELEASING_FAILURE\n");return;
-    case  NAS_RB_ESTABLISHING:printk("NAS_RB_ESTABLISHING\n");return;
-    case  NAS_RB_RELEASING:printk("NAS_RB_RELEASING\n");return;
-    case  NAS_RB_DCH:printk("NAS_RB_DCH\n");return;
+    case  OAI_NW_DRV_IDLE:printk("OAI_NW_DRV_IDLE\n");return;
+    case  OAI_NW_DRV_CX_FACH:printk("OAI_NW_DRV_CX_FACH\n");return;
+    case  OAI_NW_DRV_CX_DCH:printk("OAI_NW_DRV_CX_DCH\n");return;
+    case  OAI_NW_DRV_CX_RECEIVED:printk("OAI_NW_DRV_CX_RECEIVED\n");return;
+    case  OAI_NW_DRV_CX_CONNECTING:printk("OAI_NW_DRV_CX_CONNECTING\n");return;
+    case  OAI_NW_DRV_CX_RELEASING:printk("OAI_NW_DRV_CX_RELEASING\n");return;
+    case  OAI_NW_DRV_CX_CONNECTING_FAILURE:printk("OAI_NW_DRV_CX_CONNECTING_FAILURE\n");return;
+    case  OAI_NW_DRV_CX_RELEASING_FAILURE:printk("OAI_NW_DRV_CX_RELEASING_FAILURE\n");return;
+    case  OAI_NW_DRV_RB_ESTABLISHING:printk("OAI_NW_DRV_RB_ESTABLISHING\n");return;
+    case  OAI_NW_DRV_RB_RELEASING:printk("OAI_NW_DRV_RB_RELEASING\n");return;
+    case  OAI_NW_DRV_RB_DCH:printk("OAI_NW_DRV_RB_DCH\n");return;
 
     default: printk(" Unknown state\n");
     }
@@ -711,17 +705,17 @@ void print_TOOL_state(u8 state){
 
 //-----------------------------------------------------------------------------
 // Print the content of a buffer in hexadecimal
-void nas_tool_print_buffer(char * buffer,int length) {
+void oai_nw_drv_tool_print_buffer(char * buffer,int length) {
 //-----------------------------------------------------------------------------
    int i;
 
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_TOOL_PRINT_BUFFER - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_TOOL_PRINT_BUFFER - begin \n");
 #endif
   if (buffer==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_TOOL_PRINT_BUFFER - input parameter buffer is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_TOOL_PRINT_BUFFER - input parameter buffer is NULL \n");
 #endif
     return;
   }
@@ -732,15 +726,15 @@ void nas_tool_print_buffer(char * buffer,int length) {
      printk(",\t length %d\n", length);
 }
 //-----------------------------------------------------------------------------
-void nas_print_rb_entity(struct rb_entity *rb){
+void oai_nw_drv_print_rb_entity(struct rb_entity *rb){
 //-----------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_PRINT_RB_ENTITY - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_PRINT_RB_ENTITY - begin \n");
 #endif
   if (rb==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_PRINT_RB_ENTITY - input parameter rb is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_PRINT_RB_ENTITY - input parameter rb is NULL \n");
 #endif
     return;
   }
@@ -750,15 +744,15 @@ void nas_print_rb_entity(struct rb_entity *rb){
 };
 
 //-----------------------------------------------------------------------------
-void nas_print_classifier(struct classifier_entity *classifier){
+void oai_nw_drv_print_classifier(struct classifier_entity *classifier){
 //-----------------------------------------------------------------------------
 // Start debug information
-#ifdef NAS_DEBUG_TOOL
-    printk("NAS_PRINT_GC_ENTITY - begin \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+    printk("OAI_NW_DRV_PRINT_GC_ENTITY - begin \n");
 #endif
   if (classifier==NULL){
-#ifdef NAS_DEBUG_TOOL
-      printk("NAS_PRINT_GC_ENTITY - input parameter classifier is NULL \n");
+#ifdef OAI_NW_DRV_DEBUG_TOOL
+      printk("OAI_NW_DRV_PRINT_GC_ENTITY - input parameter classifier is NULL \n");
 #endif
     return;
   }
@@ -766,7 +760,7 @@ void nas_print_classifier(struct classifier_entity *classifier){
    printk("\nClassifier content: classref %d, version %d, splen %d, dplen %d,\n", classifier->classref, classifier->ip_version, classifier->splen, classifier->dplen);
    printk("protocol %d, sport %d, dport %d, rab_id %d\n", classifier->protocol, classifier->sport, classifier->dport, classifier->rab_id);
    if (classifier->rb != NULL){
-    nas_print_rb_entity(classifier->rb);
+    oai_nw_drv_print_rb_entity(classifier->rb);
    }
 };
 
