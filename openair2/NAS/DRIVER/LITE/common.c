@@ -27,7 +27,7 @@
 
 *******************************************************************************/
 
-/*! \file nas_common.c
+/*! \file common.c
 * \brief implementation of emultor tx and rx
 * \author Navid Nikaein and Raymomd Knopp, Lionel GAUTHIER
 * \date 2011
@@ -36,28 +36,26 @@
 * \email: navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr
 */
 
-//#include "nas_common.h"
 #include "local.h"
 #include "proto_extern.h"
-//#include "LAYER2/PDCP/pdcp.h"
-#ifndef NAS_NETLINK
+#ifndef OAI_NW_DRIVER_USE_NETLINK
 #include "rtai_fifos.h"
 #endif
 
-#define NAS_DEBUG_RECEIVE 1
-//#define NAS_DEBUG_SEND 1
-#define NAS_DEBUG_CLASS 1
-//#define NAS_ADDRESS_FIX 1
-
-#define NAS_DEBUG_DC 1
 
 #include <linux/inetdevice.h>
-#ifdef NAS_DRIVER_TYPE_ETHERNET
+#ifdef OAI_NW_DRIVER_TYPE_ETHERNET
 #include <linux/etherdevice.h>
 #endif
 
 #include <net/tcp.h>
 #include <net/udp.h>
+
+#define NIPADDR(addr) \
+        (uint8_t)(addr & 0x000000FF), \
+        (uint8_t)((addr & 0x0000FF00) >> 8), \
+        (uint8_t)((addr & 0x00FF0000) >> 16), \
+        (uint8_t)((addr & 0xFF000000) >> 24)
 
 #define NIP6ADDR(addr) \
         ntohs((addr)->s6_addr16[0]), \
@@ -70,50 +68,48 @@
         ntohs((addr)->s6_addr16[7])
 
 
-void nas_COMMON_receive(u16 dlen,
+#define OAI_DRV_DEBUG_SEND        
+#define OAI_DRV_DEBUG_RECEIVE        
+void oai_nw_drv_common_class_wireless2ip(u16 dlen,
                         void *pdcp_sdu,
                         int inst,
                         struct classifier_entity *rclass,
-                        nasRadioBearerId_t rb_id) {
+                        OaiNwDrvRadioBearerId_t rb_id) {
 
   //---------------------------------------------------------------------------
     struct sk_buff      *skb;
     struct ipversion    *ipv;
-    struct nas_priv     *gpriv=netdev_priv(nasdev[inst]);
+    struct oai_nw_drv_priv     *gpriv=netdev_priv(oai_nw_drv_dev[inst]);
     unsigned int         hard_header_len;
     u16                 *p_ether_type;
     u16                  ether_type;
-    //u32 odaddr,osaddr;
-    #ifdef NAS_DEBUG_RECEIVE
+    #ifdef OAI_DRV_DEBUG_RECEIVE
     int i;
-    unsigned char *addr,*daddr,*saddr,*ifaddr,sn;
+    unsigned char *addr;
     #endif
     unsigned char        protocol;
-    //struct udphdr *uh;
-    //struct tcphdr *th;
-    //u16 *cksum,check;
     struct iphdr        *network_header;
 
-    #ifdef NAS_DEBUG_RECEIVE
-    printk("NAS_COMMON_RECEIVE: begin RB %d Inst %d Length %d bytes\n",rb_id,inst,dlen);
+    #ifdef OAI_DRV_DEBUG_RECEIVE
+    printk("[OAI_IP_DRV][%s] begin RB %d Inst %d Length %d bytes\n",__FUNCTION__, rb_id,inst,dlen);
     #endif
     if (rclass == NULL) {
-        printk("NAS_COMMON_RECEIVE: rclass Not found Drop RX packet\n");
+        printk("[OAI_IP_DRV][%s] rclass Not found Drop RX packet\n",__FUNCTION__);
         ++gpriv->stats.rx_dropped;
         return;
     }
     skb = dev_alloc_skb( dlen + 2 );
 
     if(!skb) {
-        printk("NAS_COMMON_RECEIVE: low on memory\n");
+        printk("[OAI_IP_DRV][%s] low on memory\n",__FUNCTION__);
         ++gpriv->stats.rx_dropped;
         return;
     }
     skb_reserve(skb,2);
     memcpy(skb_put(skb, dlen), pdcp_sdu,dlen);
 
-    skb->dev = nasdev[inst];
-    hard_header_len = nasdev[inst]->hard_header_len;
+    skb->dev = oai_nw_drv_dev[inst];
+    hard_header_len = oai_nw_drv_dev[inst]->hard_header_len;
 
     #ifdef KERNEL_VERSION_GREATER_THAN_2622
     skb->mac_header = skb->data;
@@ -124,20 +120,20 @@ void nas_COMMON_receive(u16 dlen,
     skb->pkt_type = PACKET_HOST;
 
 
-    #ifdef NAS_DEBUG_RECEIVE
-    printk("NAS_RECEIVE: Receiving packet of size %d from PDCP \n",skb->len);
+    #ifdef OAI_DRV_DEBUG_RECEIVE
+    printk("[OAI_IP_DRV][%s] Receiving packet of size %d from PDCP \n",__FUNCTION__, skb->len);
 
     for (i=0;i<skb->len;i++)
         printk("%2x ",((unsigned char *)(skb->data))[i]);
     printk("\n");
     #endif
-    #ifdef NAS_DEBUG_RECEIVE
-    printk("[NAS][COMMON] skb->data           @ %08X\n", skb->data);
-    printk("[NAS][COMMON] skb->mac_header     @ %08X\n", skb->mac_header);
+    #ifdef OAI_DRV_DEBUG_RECEIVE
+    printk("[OAI_IP_DRV][%s] skb->data           @ %p\n",__FUNCTION__,  skb->data);
+    printk("[OAI_IP_DRV][%s] skb->mac_header     @ %p\n",__FUNCTION__,  skb->mac_header);
     #endif
 
 
-    if (rclass->ip_version != NAS_MPLS_VERSION_CODE) {  // This is an IP packet
+    if (rclass->ip_version != OAI_NW_DRV_MPLS_VERSION_CODE) {  // This is an IP packet
 
         // LG TEST skb->ip_summed = CHECKSUM_NONE;
         skb->ip_summed = CHECKSUM_UNNECESSARY;
@@ -147,8 +143,8 @@ void nas_COMMON_receive(u16 dlen,
         switch (ipv->version) {
 
             case 6:
-                #ifdef NAS_DEBUG_RECEIVE
-                printk("NAS_COMMON_RECEIVE: receive IPv6 message\n");
+                #ifdef OAI_DRV_DEBUG_RECEIVE
+                printk("[OAI_IP_DRV][%s] receive IPv6 message\n",__FUNCTION__);
                 #endif
                 #ifdef KERNEL_VERSION_GREATER_THAN_2622
                 skb->network_header = &skb->data[hard_header_len];
@@ -158,8 +154,8 @@ void nas_COMMON_receive(u16 dlen,
                 if (hard_header_len == 0) {
                     skb->protocol = htons(ETH_P_IPV6);
                 } else {
-                    #ifdef NAS_DRIVER_TYPE_ETHERNET
-                    skb->protocol = eth_type_trans(skb, nasdev[inst]);
+                    #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
+                    skb->protocol = eth_type_trans(skb, oai_nw_drv_dev[inst]);
                     #else
                     #endif
                 }
@@ -179,7 +175,7 @@ void nas_COMMON_receive(u16 dlen,
                     daddr[2] = daddr[3]; // set third byte of destination to that of local machine so that local IP stack accepts the packet
                     saddr[2] = daddr[3]; // set third byte of source to that of local machine so that local IP stack accepts the packet
                 }  else { // get the 3rd byte from device address in net_device structure
-                    ifaddr = (unsigned char *)(&(((struct in_device *)((nasdev[inst])->ip_ptr))->ifa_list->ifa_local));
+                    ifaddr = (unsigned char *)(&(((struct in_device *)((oai_nw_drv_dev[inst])->ip_ptr))->ifa_list->ifa_local));
                     if (saddr[0] == ifaddr[0]) { // source is in same network as local machine
                         daddr[0] += saddr[3];        // fix address of remote destination to undo change at source
                         saddr[2] =  ifaddr[2];       // set third byte to that of local machine so that local IP stack accepts the packet
@@ -190,19 +186,19 @@ void nas_COMMON_receive(u16 dlen,
                     }
                 }
                 #endif //NAS_ADDRESS_FIX
-                #ifdef NAS_DEBUG_RECEIVE
+                #ifdef OAI_DRV_DEBUG_RECEIVE
                 //printk("NAS_TOOL_RECEIVE: receive IPv4 message\n");
                 addr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->saddr;
                 if (addr) {
                 //addr[2]^=0x01;
-                printk("[NAS][COMMON][RECEIVE] Source %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
+                printk("[OAI_IP_DRV][%s] Source %d.%d.%d.%d\n",__FUNCTION__, addr[0],addr[1],addr[2],addr[3]);
                 }
                 addr = (unsigned char *)&((struct iphdr *)&skb->data[hard_header_len])->daddr;
                 if (addr){
                 //addr[2]^=0x01;
-                printk("[NAS][COMMON][RECEIVE] Dest %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
+                printk("[OAI_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, addr[0],addr[1],addr[2],addr[3]);
                 }
-                printk("[NAS][COMMON][RECEIVE] protocol  %d\n",((struct iphdr *)&skb->data[hard_header_len])->protocol);
+                printk("[OAI_IP_DRV][%s] protocol  %d\n",__FUNCTION__, ((struct iphdr *)&skb->data[hard_header_len])->protocol);
                 #endif
 
                 #ifdef KERNEL_VERSION_GREATER_THAN_2622
@@ -215,22 +211,22 @@ void nas_COMMON_receive(u16 dlen,
                 protocol=skb->nh.iph->protocol;
                 #endif
 
-                #ifdef NAS_DEBUG_RECEIVE
+                #ifdef OAI_DRV_DEBUG_RECEIVE
                 switch (protocol) {
                     case IPPROTO_IP:
-                        printk("[NAS][COMMON][RECEIVE] Received Raw IPv4 packet\n");
+                        printk("[OAI_IP_DRV][%s] Received Raw IPv4 packet\n",__FUNCTION__);
                         break;
                     case IPPROTO_IPV6:
-                        printk("[NAS][COMMON][RECEIVE] Received Raw IPv6 packet\n");
+                        printk("[OAI_IP_DRV][%s] Received Raw IPv6 packet\n",__FUNCTION__);
                         break;
                     case IPPROTO_ICMP:
-                        printk("[NAS][COMMON][RECEIVE] Received Raw ICMP packet\n");
+                        printk("[OAI_IP_DRV][%s] Received Raw ICMP packet\n",__FUNCTION__);
                         break;
                     case IPPROTO_TCP:
-                        printk("[NAS][COMMON][RECEIVE] Received TCP packet\n");
+                        printk("[OAI_IP_DRV][%s] Received TCP packet\n",__FUNCTION__);
                         break;
                     case IPPROTO_UDP:
-                        printk("[NAS][COMMON][RECEIVE] Received UDP packet\n");
+                        printk("[OAI_IP_DRV][%s] Received UDP packet\n",__FUNCTION__);
                         break;
                     default:
                         break;
@@ -241,7 +237,7 @@ void nas_COMMON_receive(u16 dlen,
                     #ifdef KERNEL_VERSION_GREATER_THAN_2622
                     network_header->check = 0;
                     network_header->check = ip_fast_csum((unsigned char *) network_header, network_header->ihl);
-                    //printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
+                    //printk("[OAI_IP_DRV][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
                     #else
                     skb->nh.iph->check = 0;
                     skb->nh.iph->check = ip_fast_csum((unsigned char *)&skb->data[hard_header_len], skb->nh.iph->ihl);
@@ -265,8 +261,8 @@ void nas_COMMON_receive(u16 dlen,
 
                         *cksum = csum_tcpudp_magic(~osaddr, ~odaddr, 0, 0, ~check);
                         //*cksum = csum_tcpudp_magic(~osaddr, ~odaddr, dlen, IPPROTO_TCP, ~check);
-                        #ifdef NAS_DEBUG_RECEIVE
-                        printk("[NAS][COMMON] Inst %d TCP packet calculated CS %x, CS = %x (before), SA (%x)%x, DA (%x)%x\n",
+                        #ifdef OAI_DRV_DEBUG_RECEIVE
+                        printk("[OAI_IP_DRV][%s] Inst %d TCP packet calculated CS %x, CS = %x (before), SA (%x)%x, DA (%x)%x\n",__FUNCTION__,
                                 inst,
                                 network_header->check,
                                 *cksum,
@@ -275,7 +271,7 @@ void nas_COMMON_receive(u16 dlen,
                                 odaddr,
                                 ((struct iphdr *)skb->data)->daddr);
 
-                        printk("[NAS][COMMON] Inst %d TCP packet NEW CS %x\n",
+                        printk("[OAI_IP_DRV][%s] Inst %d TCP packet NEW CS %x\n",__FUNCTION__,
                                 inst,
                                 *cksum);
                         #endif
@@ -297,11 +293,11 @@ void nas_COMMON_receive(u16 dlen,
                         //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,udp_hdr(skb)->len, IPPROTO_UDP, ~check);
                         //*cksum= csum_tcpudp_magic(~osaddr, ~odaddr,dlen, IPPROTO_UDP, ~check);
 
-                        #ifdef NAS_DEBUG_RECEIVE
-                        printk("[NAS][COMMON] Inst %d UDP packet CS = %x (before), SA (%x)%x, DA (%x)%x\n",
+                        #ifdef OAI_DRV_DEBUG_RECEIVE
+                        printk("[OAI_IP_DRV][%s] Inst %d UDP packet CS = %x (before), SA (%x)%x, DA (%x)%x\n",__FUNCTION__,
                            inst,*cksum,osaddr,((struct iphdr *)&skb->data[hard_header_len])->saddr,odaddr,((struct iphdr *)&skb->data[hard_header_len])->daddr);
 
-                        printk("[NAS][COMMON] Inst %d UDP packet NEW CS %x\n",inst,*cksum);
+                        printk("[OAI_IP_DRV][%s] Inst %d UDP packet NEW CS %x\n",__FUNCTION__,inst,*cksum);
                         #endif
                         //if ((check = *cksum) != 0) {
                         // src, dst, len, proto, sum
@@ -316,36 +312,37 @@ void nas_COMMON_receive(u16 dlen,
                 if (hard_header_len == 0) {
                     skb->protocol = htons(ETH_P_IP);
                 } else {
-                    #ifdef NAS_DRIVER_TYPE_ETHERNET
-                    skb->protocol = eth_type_trans(skb, nasdev[inst]);
+                    #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
+                    skb->protocol = eth_type_trans(skb, oai_nw_drv_dev[inst]);
                     #else
                     #endif
                 }
-                //printk("[NAS][COMMON] Writing packet with protocol %x\n",ntohs(skb->protocol));
+                //printk("[OAI_IP_DRV][COMMON] Writing packet with protocol %x\n",ntohs(skb->protocol));
                 break;
 
             default:
-                #ifdef NAS_DRIVER_TYPE_ETHERNET
+                #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
                 // fill skb->pkt_type, skb->dev
-                #ifdef NAS_DEBUG_RECEIVE
-                printk("[NAS][COMMON] Packet is not IPv4 or IPv6 ether_type=%04X\n", ether_type);
-                printk("[NAS][COMMON] skb->data           @ %08X\n", skb->data);
-                printk("[NAS][COMMON] skb->network_header @ %08X\n", skb->network_header);
-                printk("[NAS][COMMON] skb->mac_header     @ %08X\n", skb->mac_header);
+                #ifdef OAI_DRV_DEBUG_RECEIVE
+                printk("[OAI_IP_DRV][%s] skb->data           @ %p\n",__FUNCTION__, skb->data);
+                printk("[OAI_IP_DRV][%s] skb->network_header @ %p\n",__FUNCTION__, skb->network_header);
+                printk("[OAI_IP_DRV][%s] skb->mac_header     @ %p\n",__FUNCTION__, skb->mac_header);
                 #endif
-                skb->protocol = eth_type_trans(skb, nasdev[inst]);
+                skb->protocol = eth_type_trans(skb, oai_nw_drv_dev[inst]);
                 // minus 1(short) instead of 2(bytes) because u16*
                 p_ether_type = (u16 *)&(skb->mac_header[hard_header_len-2]);
                 ether_type = ntohs(*p_ether_type);
-                #ifdef NAS_DEBUG_RECEIVE
-                printk("[NAS][COMMON] Packet is not IPv4 or IPv6 ether_type=%04X\n", ether_type);
-                printk("[NAS][COMMON] skb->data           @ %08X\n", skb->data);
-                printk("[NAS][COMMON] skb->network_header @ %08X\n", skb->network_header);
-                printk("[NAS][COMMON] skb->mac_header     @ %08X\n", skb->mac_header);
+                #ifdef OAI_DRV_DEBUG_RECEIVE
+                printk("[OAI_IP_DRV][%s] Packet is not IPv4 or IPv6 ether_type=%04X\n",__FUNCTION__, ether_type);
+                printk("[OAI_IP_DRV][%s] skb->data           @ %p\n",__FUNCTION__, skb->data);
+                printk("[OAI_IP_DRV][%s] skb->network_header @ %p\n",__FUNCTION__, skb->network_header);
+                printk("[OAI_IP_DRV][%s] skb->mac_header     @ %p\n",__FUNCTION__, skb->mac_header);
                 #endif
                 switch (ether_type) {
                     case ETH_P_ARP:
-                        printk("[NAS][COMMON] ether_type = ETH_P_ARP\n");
+                        #ifdef OAI_DRV_DEBUG_RECEIVE
+                        printk("[OAI_IP_DRV][%s] ether_type = ETH_P_ARP\n",__FUNCTION__);
+                        #endif
                         //skb->pkt_type = PACKET_HOST;
                         skb->protocol = htons(ETH_P_ARP);
                         #ifdef KERNEL_VERSION_GREATER_THAN_2622
@@ -358,60 +355,60 @@ void nas_COMMON_receive(u16 dlen,
                         ;
                 }
                 #else
-                printk("NAS_COMMON_RECEIVE: begin RB %d Inst %d Length %d bytes\n",rb_id,inst,dlen);
-                printk("[NAS][COMMON] Inst %d: receive unknown message (version=%d)\n",inst,ipv->version);
+                printk("[OAI_IP_DRV][%s] begin RB %d Inst %d Length %d bytes\n",__FUNCTION__,rb_id,inst,dlen);
+                printk("[OAI_IP_DRV][%s] Inst %d: receive unknown message (version=%d)\n",__FUNCTION__,inst,ipv->version);
                 #endif
         }
     } else {  // This is an MPLS packet
-        #ifdef NAS_DEBUG_RECEIVE
-        printk("NAS_COMMON_RECEIVE: Received an MPLS packet on RB %d\n",rb_id);
+        #ifdef OAI_DRV_DEBUG_RECEIVE
+        printk("[OAI_IP_DRV][%s] Received an MPLS packet on RB %d\n",__FUNCTION__,rb_id);
         #endif
         if (hard_header_len == 0) {
             skb->protocol = htons(ETH_P_MPLS_UC);
         } else {
-            #ifdef NAS_DRIVER_TYPE_ETHERNET
-            skb->protocol = eth_type_trans(skb, nasdev[inst]);
+            #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
+            skb->protocol = eth_type_trans(skb, oai_nw_drv_dev[inst]);
             #endif
         }
     }
     ++gpriv->stats.rx_packets;
     gpriv->stats.rx_bytes += dlen;
-    #ifdef NAS_DEBUG_RECEIVE
-    printk("NAS_COMMON_RECEIVE: sending packet of size %d to kernel\n",skb->len);
+    #ifdef OAI_DRV_DEBUG_RECEIVE
+    printk("[OAI_IP_DRV][%s] sending packet of size %d to kernel\n",__FUNCTION__,skb->len);
     for (i=0;i<skb->len;i++)
         printk("%2x ",((unsigned char *)(skb->data))[i]);
     printk("\n");
-    #endif //NAS_DEBUG_RECEIVE
+    #endif //OAI_DRV_DEBUG_RECEIVE
     netif_rx(skb);
-    #ifdef NAS_DEBUG_RECEIVE
-    printk("NAS_COMMON_RECEIVE: end\n");
+    #ifdef OAI_DRV_DEBUG_RECEIVE
+    printk("[OAI_IP_DRV][%s] end\n",__FUNCTION__);
     #endif
 }
 
 //---------------------------------------------------------------------------
 // Delete the data
-void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst){
-  struct nas_priv *priv=netdev_priv(nasdev[inst]);
-
+void oai_nw_drv_common_ip2wireless_drop(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *sp,int inst){
   //---------------------------------------------------------------------------
+  struct oai_nw_drv_priv *priv=netdev_priv(oai_nw_drv_dev[inst]);
   ++priv->stats.tx_dropped;
 }
 
 //---------------------------------------------------------------------------
 // Request the transfer of data (QoS SAP)
-
-void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst){
+void oai_nw_drv_common_ip2wireless(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst){
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_t     pdcph;
-  struct nas_priv *priv=netdev_priv(nasdev[inst]);
+  struct oai_nw_drv_priv *priv=netdev_priv(oai_nw_drv_dev[inst]);
 #ifdef LOOPBACK_TEST
   int i;
 #endif
+#ifdef OAI_DRV_DEBUG_SEND
+  int j;
+#endif
   unsigned int bytes_wrote;
-  //unsigned char j;
   // Start debug information
-#ifdef NAS_DEBUG_SEND
-  printk("NAS_COMMON_QOS_SEND - inst %d begin \n",inst);
+#ifdef OAI_DRV_DEBUG_SEND
+  printk("[OAI_IP_DRV][%s] inst %d begin \n",__FUNCTION__,inst);
 #endif
   //    if (cx->state!=NAS_STATE_CONNECTED) // <--- A REVOIR
   //    {
@@ -420,21 +417,21 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   //            return;
   //    }
   if (skb==NULL){
-#ifdef NAS_DEBUG_SEND
-    printk("NAS_COMMON_QOS_SEND - input parameter skb is NULL \n");
+#ifdef OAI_DRV_DEBUG_SEND
+    printk("[OAI_IP_DRV][%s] input parameter skb is NULL \n",__FUNCTION__);
 #endif
     return;
   }
   if (gc==NULL){
-#ifdef NAS_DEBUG_SEND
-    printk("NAS_COMMON_QOS_SEND - input parameter gc is NULL \n");
+#ifdef OAI_DRV_DEBUG_SEND
+    printk("[OAI_IP_DRV][%s] input parameter gc is NULL \n",__FUNCTION__);
 #endif
     priv->stats.tx_dropped ++;
     return;
   }
   if (cx==NULL){
-#ifdef NAS_DEBUG_SEND
-    printk("NAS_COMMON_QOS_SEND - input parameter cx is NULL \n");
+#ifdef OAI_DRV_DEBUG_SEND
+    printk("[OAI_IP_DRV][%s] input parameter cx is NULL \n",__FUNCTION__);
 #endif
     priv->stats.tx_dropped ++;
     return;
@@ -442,67 +439,72 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   // End debug information
   if (gc->rb==NULL)
     {
-      gc->rb=nas_COMMON_search_rb(cx, gc->rab_id);
+      gc->rb=oai_nw_drv_common_search_rb(cx, gc->rab_id);
       if (gc->rb==NULL)
         {
           ++priv->stats.tx_dropped;
-          printk("NAS_COMMON_QOS_SEND: No corresponding Radio Bearer, so message are dropped, rab_id=%u \n", gc->rab_id);
+          printk("[OAI_IP_DRV][%s] No corresponding Radio Bearer, so message are dropped, rab_id=%u \n", __FUNCTION__, gc->rab_id);
           return;
         }
     }
-#ifdef NAS_DEBUG_SEND
-  printk("NAS_COMMON_QOS_SEND #1 :");
+#ifdef OAI_DRV_DEBUG_SEND
+  printk("[OAI_IP_DRV][%s] #1 :",__FUNCTION__);
   printk("lcr %u, rab_id %u, rab_id %u, skb_len %d\n", cx->lcr, (gc->rb)->rab_id, gc->rab_id,skb->len);
-  nas_print_classifier(gc);
+  oai_nw_drv_print_classifier(gc);
 #endif
   pdcph.data_size  = skb->len;
   pdcph.rb_id      = (gc->rb)->rab_id;
   pdcph.inst       = inst;
 
 
-#ifdef NAS_NETLINK
-  bytes_wrote = nas_netlink_send((char *)&pdcph,NAS_PDCPH_SIZE);
-  printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP via netlink\n",
+#ifdef OAI_NW_DRIVER_USE_NETLINK
+  bytes_wrote = oai_nw_drv_netlink_send((char *)&pdcph,OAI_NW_DRV_PDCPH_SIZE);
+#ifdef OAI_DRV_DEBUG_SEND
+  printk("[OAI_IP_DRV][%s] Wrote %d bytes (header for %d byte skb) to PDCP via netlink\n",__FUNCTION__,
   	       bytes_wrote,skb->len);
+#endif
 #else
-  bytes_wrote = rtf_put(NAS2PDCP_FIFO, &pdcph, NAS_PDCPH_SIZE);
-  printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP fifo\n",
+  bytes_wrote = rtf_put(IP2PDCP_FIFO, &pdcph, OAI_NW_DRV_PDCPH_SIZE);
+#ifdef OAI_DRV_DEBUG_SEND
+  printk("[OAI_IP_DRV][%s]Wrote %d bytes (header for %d byte skb) to PDCP fifo\n",__FUNCTION__,
                bytes_wrote,skb->len);
-#endif //NAS_NETLINK
+#endif
+#endif //OAI_NW_DRIVER_USE_NETLINK
 
-  if (bytes_wrote != NAS_PDCPH_SIZE)
+  if (bytes_wrote != OAI_NW_DRV_PDCPH_SIZE)
     {
-      printk("NAS_COMMON_QOS_SEND: problem while writing PDCP's header (bytes wrote = %d to fifo %d)\n",bytes_wrote,NAS2PDCP_FIFO);
-      printk("rb_id %d, Wrote %d, Header Size %d \n", pdcph.rb_id , bytes_wrote, NAS_PDCPH_SIZE);
-#ifndef NAS_NETLINK
-      rtf_reset(NAS2PDCP_FIFO);
-#endif //NAS_NETLINK
+      printk("[OAI_IP_DRV][%s] problem while writing PDCP's header (bytes wrote = %d to fifo %d)\n",__FUNCTION__,bytes_wrote,IP2PDCP_FIFO);
+      printk("rb_id %d, Wrote %d, Header Size %d \n", pdcph.rb_id , bytes_wrote, OAI_NW_DRV_PDCPH_SIZE);
+#ifndef OAI_NW_DRIVER_USE_NETLINK
+      rtf_reset(IP2PDCP_FIFO);
+#endif //OAI_NW_DRIVER_USE_NETLINK
       priv->stats.tx_dropped ++;
       return;
     }
 
-#ifdef  NAS_NETLINK
-  bytes_wrote += nas_netlink_send((char *)skb->data,skb->len);
+#ifdef  OAI_NW_DRIVER_USE_NETLINK
+  bytes_wrote += oai_nw_drv_netlink_send((char *)skb->data,skb->len);
 #else
-  bytes_wrote += rtf_put(NAS2PDCP_FIFO, skb->data, skb->len);
-#endif //NAS_NETLINK
+  bytes_wrote += rtf_put(IP2PDCP_FIFO, skb->data, skb->len);
+#endif //OAI_NW_DRIVER_USE_NETLINK
 
-  if (bytes_wrote != skb->len+NAS_PDCPH_SIZE)
+  if (bytes_wrote != skb->len+OAI_NW_DRV_PDCPH_SIZE)
     {
-      printk("NAS_COMMON_QOS_SEND: Inst %d, RB_ID %d: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %d\n",
-             inst,
+      printk("[OAI_IP_DRV][%s] Inst %d, RB_ID %d: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %d\n",
+             __FUNCTION__,
+	     inst,
              pdcph.rb_id,
              bytes_wrote,
              skb->len,
-             NAS_PDCPH_SIZE); // congestion
-#ifndef NAS_NETLINK
-      rtf_reset(NAS2PDCP_FIFO);
-#endif //NAS_NETLINK
+             OAI_NW_DRV_PDCPH_SIZE); // congestion
+#ifndef OAI_NW_DRIVER_USE_NETLINK
+      rtf_reset(IP2PDCP_FIFO);
+#endif //OAI_NW_DRIVER_USE_NETLINK
       priv->stats.tx_dropped ++;
       return;
     }
-#ifdef NAS_DEBUG_SEND
-  printk("NAS_SEND: Sending packet of size %d to PDCP \n",skb->len);
+#ifdef OAI_DRV_DEBUG_SEND
+  printk("[OAI_IP_DRV][%s] Sending packet of size %d to PDCP \n",__FUNCTION__,skb->len);
 
  for (j=0;j<skb->len;j++)
     printk("%2x ",((unsigned char *)(skb->data))[j]);
@@ -511,113 +513,113 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 
   priv->stats.tx_bytes   += skb->len;
   priv->stats.tx_packets ++;
-#ifdef NAS_DEBUG_SEND
-  printk("NAS_COMMON_QOS_SEND - end \n");
+#ifdef OAI_DRV_DEBUG_SEND
+  printk("[OAI_IP_DRV][%s] end \n",__FUNCTION__);
 #endif
 }
 
-#ifndef NAS_NETLINK
+#ifndef OAI_NW_DRIVER_USE_NETLINK
 //---------------------------------------------------------------------------
-void nas_COMMON_QOS_receive(){
+void oai_nw_drv_common_wireless2ip(void){
   //---------------------------------------------------------------------------
   u8 sapi;
   struct pdcp_data_ind_header_t     pdcph;
   unsigned char data_buffer[2048];
   struct classifier_entity *rclass;
-  struct nas_priv *priv;
+  struct oai_nw_drv_priv *priv;
   int bytes_read;
 
   // Start debug information
-#ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_COMMON_QOS_RECEIVE - begin \n");
+#ifdef OAI_DRV_DEBUG_RECEIVE
+  printk("[OAI_IP_DRV][%s] - begin \n", __FUNCTION__);
 #endif
 
   // End debug information
 
-  bytes_read =  rtf_get(PDCP2NAS_FIFO,&pdcph, NAS_PDCPH_SIZE);
+  bytes_read =  rtf_get(PDCP2IP_FIFO,&pdcph, OAI_NW_DRV_PDCPH_SIZE);
 
   while (bytes_read>0) {
-    if (bytes_read != NAS_PDCPH_SIZE)
+    if (bytes_read != OAI_NW_DRV_PDCPH_SIZE)
       {
-        printk("NAS_COMMON_QOS_RECEIVE: problem while reading PDCP header\n");
+        printk("[OAI_IP_DRV][%s] problem while reading PDCP header\n", __FUNCTION__);
         return;
       }
 
-    priv=netdev_priv(nasdev[pdcph.inst]);
-    rclass = nas_COMMON_search_class_for_rb(pdcph.rb_id,priv);
+    priv=netdev_priv(oai_nw_drv_dev[pdcph.inst]);
+    rclass = oai_nw_drv_common_search_class_for_rb(pdcph.rb_id,priv);
 
-    bytes_read+= rtf_get(PDCP2NAS_FIFO,
+    bytes_read+= rtf_get(PDCP2IP_FIFO,
                          data_buffer,
                          pdcph.data_size);
 
-#ifdef NAS_DEBUG_RECEIVE
-    printk("NAS_COMMON_QOS_RECEIVE - Got header for RB %d, Inst %d \n",
+#ifdef OAI_DRV_DEBUG_RECEIVE
+    printk("[OAI_IP_DRV][%s] - Got header for RB %d, Inst %d \n",__FUNCTION__,
            pdcph.rb_id,
            pdcph.inst);
 #endif
 
     if (rclass) {
-#ifdef NAS_DEBUG_RECEIVE
-      printk("[NAS][COMMON] Found corresponding connection in classifier for RAB\n");
-#endif //NAS_DEBUG_RECEIVE
+#ifdef OAI_DRV_DEBUG_RECEIVE
+      printk("[OAI_IP_DRV][%s] Found corresponding connection in classifier for RAB\n",__FUNCTION__);
+#endif //OAI_DRV_DEBUG_RECEIVE
 
-      nas_COMMON_receive(pdcph.data_size,
+      oai_nw_drv_common_class_wireless2ip(pdcph.data_size,
                          (void *)data_buffer,
                          pdcph.inst,
                          rclass,
                          pdcph.rb_id);
+    } else {
+      priv->stats.tx_dropped += 1;
     }
 
-    bytes_read =  rtf_get(PDCP2NAS_FIFO, &pdcph, NAS_PDCPH_SIZE);
+    bytes_read =  rtf_get(PDCP2IP_FIFO, &pdcph, OAI_NW_DRV_PDCPH_SIZE);
   }
-
-
-
-#ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_COMMON_QOS_RECEIVE - end \n");
+#ifdef OAI_DRV_DEBUG_RECEIVE
+  printk("[OAI_IP_DRV][%s] - end \n",__FUNCTION__);
 #endif
 }
-
 #else
-void nas_COMMON_QOS_receive(struct nlmsghdr *nlh)
-{
+//---------------------------------------------------------------------------
+void oai_nw_drv_common_wireless2ip(struct nlmsghdr *nlh) {
+//---------------------------------------------------------------------------
 
   struct pdcp_data_ind_header_t     *pdcph = (struct pdcp_data_ind_header_t *)NLMSG_DATA(nlh);
   struct classifier_entity *rclass;
-  struct nas_priv *priv;
+  struct oai_nw_drv_priv *priv;
 
-  priv = netdev_priv(nasdev[pdcph->inst]);
+  priv = netdev_priv(oai_nw_drv_dev[pdcph->inst]);
 
 
-#ifdef NAS_DEBUG_RECEIVE
-  printk("[NAS][COMMON][NETLINK] QOS receive from PDCP, size %d, rab %d, inst %d\n",
+#ifdef OAI_DRV_DEBUG_RECEIVE
+  printk("[OAI_IP_DRV][%s] QOS receive from PDCP, size %d, rab %d, inst %d\n",__FUNCTION__,
          pdcph->data_size,pdcph->rb_id,pdcph->inst);
-#endif //NAS_DEBUG_RECEIVE
+#endif //OAI_DRV_DEBUG_RECEIVE
 
-  rclass = nas_COMMON_search_class_for_rb(pdcph->rb_id,priv);
+  rclass = oai_nw_drv_common_search_class_for_rb(pdcph->rb_id,priv);
 
   if (rclass) {
-#ifdef NAS_DEBUG_RECEIVE
-    printk("[NAS][COMMON][NETLINK] Found corresponding connection in classifier for RAB\n");
-#endif //NAS_DEBUG_RECEIVE
+#ifdef OAI_DRV_DEBUG_RECEIVE
+    printk("[OAI_IP_DRV][%s] Found corresponding connection in classifier for RAB\n",__FUNCTION__);
+#endif //OAI_DRV_DEBUG_RECEIVE
 
-    nas_COMMON_receive(pdcph->data_size,
-                       (unsigned char *)NLMSG_DATA(nlh) + NAS_PDCPH_SIZE,
+    oai_nw_drv_common_class_wireless2ip(pdcph->data_size,
+                       (unsigned char *)NLMSG_DATA(nlh) + OAI_NW_DRV_PDCPH_SIZE,
                        pdcph->inst,
                        rclass,
                        pdcph->rb_id);
+  } else {
+      priv->stats.tx_dropped += 1;
   }
-
 }
-#endif //NAS_NETLINK
+#endif //OAI_NW_DRIVER_USE_NETLINK
 
 //---------------------------------------------------------------------------
-struct cx_entity *nas_COMMON_search_cx(nasLocalConnectionRef_t lcr,struct nas_priv *priv){
+struct cx_entity *oai_nw_drv_common_search_cx(OaiNwDrvLocalConnectionRef_t lcr,struct oai_nw_drv_priv *priv){
   //---------------------------------------------------------------------------
-#ifdef NAS_DEBUG_CLASS
-  printk("NAS_COMMON_SEARCH_CX - lcr %d\n",lcr);
+#ifdef OAI_DRV_DEBUG_CLASS
+  printk("[OAI_IP_DRV][%s] - lcr %d\n",__FUNCTION__,lcr);
 #endif
-  if (lcr<NAS_CX_MAX)
+  if (lcr<OAI_NW_DRV_CX_MAX)
     return priv->cx+lcr;
   else
     return NULL;
@@ -625,11 +627,11 @@ struct cx_entity *nas_COMMON_search_cx(nasLocalConnectionRef_t lcr,struct nas_pr
 
 //---------------------------------------------------------------------------
 // Search a Radio Bearer
-struct rb_entity *nas_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t rab_id){
+struct rb_entity *oai_nw_drv_common_search_rb(struct cx_entity *cx, OaiNwDrvRadioBearerId_t rab_id){
   //---------------------------------------------------------------------------
   struct rb_entity *rb;
-#ifdef NAS_DEBUG_CLASS
-  printk("NAS_COMMON_SEARCH_RB - rab_id %d\n", rab_id);
+#ifdef OAI_DRV_DEBUG_CLASS
+  printk("[OAI_IP_DRV][%s] - rab_id %d\n",__FUNCTION__, rab_id);
 #endif
   for (rb=cx->rb; rb!=NULL; rb=rb->next)
     {
@@ -642,21 +644,23 @@ struct rb_entity *nas_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t 
 //
 // Search for a classifier with corresponding radio bearer
 
-struct classifier_entity *nas_COMMON_search_class_for_rb(nasRadioBearerId_t rab_id,struct nas_priv *priv) {
+//---------------------------------------------------------------------------
+struct classifier_entity *oai_nw_drv_common_search_class_for_rb(OaiNwDrvRadioBearerId_t rab_id,struct oai_nw_drv_priv *priv) {
+//---------------------------------------------------------------------------
 
   //struct rb_entity *rb;
   int dscp;
   struct classifier_entity *rclass;
 
-#ifdef NAS_DEBUG_CLASS
-  printk("[NAS][COMMON] NAS_COMMON_SEARCH_CLASS_FOR_RB - rab_id %d\n", rab_id);
+#ifdef OAI_DRV_DEBUG_CLASS
+  printk("[OAI_IP_DRV][%s] - rab_id %d\n",__FUNCTION__, rab_id);
 #endif
-  for (dscp=0;dscp<NAS_DSCP_MAX;dscp++) {
+  for (dscp=0;dscp<OAI_NW_DRV_DSCP_MAX;dscp++) {
 
-    //      printk("[NAS][COMMON] priv->rclassifier[%d] = %p\n",dscp,priv->rclassifier[dscp]);
+    //      printk("[OAI_IP_DRV][COMMON] priv->rclassifier[%d] = %p\n",dscp,priv->rclassifier[dscp]);
     for (rclass=priv->rclassifier[dscp]; rclass!=NULL; rclass=rclass->next) {
-#ifdef NAS_DEBUG_CLASS
-      printk("[NAS][COMMON] NAS_COMMON_SEARCH_CLASS_FOR_RB - dscp %d, rb %d\n", dscp,rclass->rab_id);
+#ifdef OAI_DRV_DEBUG_CLASS
+      printk("[OAI_IP_DRV][%s] - dscp %d, rb %d\n",__FUNCTION__, dscp,rclass->rab_id);
 #endif
       if (rclass->rab_id==rab_id)
         return rclass;
@@ -667,116 +671,150 @@ struct classifier_entity *nas_COMMON_search_class_for_rb(nasRadioBearerId_t rab_
 }
 
 //---------------------------------------------------------------------------
-struct rb_entity *nas_COMMON_add_rb(struct nas_priv *gpriv, struct cx_entity *cx, nasRadioBearerId_t rab_id, nasQoSTrafficClass_t qos){
+struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct cx_entity *cx, OaiNwDrvRadioBearerId_t rab_id, OaiNwDrvQoSTrafficClass_t qos){
   //--------------------------------------------------------------------------
     struct rb_entity         *rb;
     struct classifier_entity *pclassifier;
     struct classifier_entity *rclassifier;
 
-    #ifdef NAS_DEBUG_CLASS
-    printk("NAS_COMMON_ADD_RB - begin for rab_id %d , qos %d\n", rab_id, qos );
+    #ifdef OAI_DRV_DEBUG_CLASS
+    printk("[OAI_IP_DRV][%s] begin for rab_id %d , qos %d\n",__FUNCTION__, rab_id, qos );
     #endif
     if (cx==NULL){
-        #ifdef NAS_DEBUG_CLASS
-        printk("NAS_COMMON_ADD_RB - input parameter cx is NULL \n");
+        #ifdef OAI_DRV_DEBUG_CLASS
+        printk("[OAI_IP_DRV][%s] input parameter cx is NULL \n",__FUNCTION__);
         #endif
         return NULL;
     }
-    rb=nas_COMMON_search_rb(cx, rab_id);
+    rb=oai_nw_drv_common_search_rb(cx, rab_id);
     if (rb==NULL) {
         rb=(struct rb_entity *)kmalloc(sizeof(struct rb_entity), GFP_KERNEL);
         if (rb!=NULL) {
             rb->retry=0;
-            rb->countimer=NAS_TIMER_IDLE;
+            rb->countimer=OAI_NW_DRV_TIMER_IDLE;
             rb->rab_id=rab_id;
             //rb->rab_id=rab_id+(32*cx->lcr);
-            #ifdef NAS_DEBUG_DC
-            printk("NAS_COMMON_ADD_RB: rab_id=%u, mt_id=%u\n",rb->rab_id, cx->lcr);
+            #ifdef OAI_DRV_DEBUG_DC
+            printk("[OAI_IP_DRV][%s] rab_id=%u, mt_id=%u\n",__FUNCTION__,rb->rab_id, cx->lcr);
             #endif
             rb->qos=qos;
-            rb->sapi=NAS_RAB_INPUT_SAPI;
-            rb->state=NAS_IDLE;
+            rb->sapi=OAI_NW_DRV_RAB_INPUT_SAPI;
+            rb->state=OAI_NW_DRV_IDLE;
             rb->next=cx->rb;
             cx->rb=rb;
             ++cx->num_rb;
         } else {
-            printk("NAS_ADD_CTL_RB: no memory\n");
+            printk("[OAI_IP_DRV][%s] NAS_ADD_CTL_RB: no memory\n",__FUNCTION__);
         }
         if (cx->num_rb == 1) {
             // first RAB added, add default classification rule for multicast signalling
-            pclassifier=nas_CLASS_add_sclassifier(cx, NAS_DSCP_DEFAULT, 0);
+            pclassifier=oai_nw_drv_class_add_send_classifier(cx, OAI_NW_DRV_DSCP_DEFAULT, 0);
             if (pclassifier != NULL) {
               pclassifier->rab_id      = rab_id;
               pclassifier->rb          = rb;
-              nas_TOOL_fct(pclassifier, NAS_FCT_QOS_SEND);
-              pclassifier->ip_version  = NAS_IP_VERSION_6;
+              oai_nw_drv_TOOL_fct(pclassifier, OAI_NW_DRV_FCT_QOS_SEND);
+              pclassifier->ip_version  = OAI_NW_DRV_IP_VERSION_6;
               memset((u8*)&pclassifier->saddr.ipv6,0,16);
               memset((u8*)&pclassifier->daddr.ipv6,0,16);
-              printk("[NAS][CLASS] ADD DEFAULT TX CLASSIFIER ON RAB %d NAS_DSCP_DEFAULT Adding IPv6 %X:%X:%X:%X:%X:%X:%X:%X -> %X:%X:%X:%X:%X:%X:%X:%X \n",
-                      rab_id, NIP6ADDR(&pclassifier->saddr.ipv6), NIP6ADDR(&pclassifier->daddr.ipv6));
+              printk("[OAI_IP_DRV][%s] ADD DEFAULT TX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv6 %X:%X:%X:%X:%X:%X:%X:%X -> %X:%X:%X:%X:%X:%X:%X:%X \n",
+                      __FUNCTION__, rab_id, NIP6ADDR(&pclassifier->saddr.ipv6), NIP6ADDR(&pclassifier->daddr.ipv6));
               pclassifier->splen                 = 64;
               pclassifier->dplen                 = 64;
-              pclassifier->protocol              = NAS_PROTOCOL_DEFAULT;
+              pclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
               pclassifier->protocol_message_type = 0; //LG ??
-              pclassifier->sport                 = htons(NAS_PORT_DEFAULT);
-              pclassifier->dport                 = htons(NAS_PORT_DEFAULT);
+              pclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
+              pclassifier->dport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
             }
             // first RAB added, add default classification rule for multicast signalling
-            rclassifier=nas_CLASS_add_rclassifier(NAS_DSCP_DEFAULT, 1, gpriv);
+            rclassifier=oai_nw_drv_class_add_recv_classifier(OAI_NW_DRV_DSCP_DEFAULT, 1, gpriv);
             if (rclassifier != NULL) {
               rclassifier->rab_id      = rab_id;
               rclassifier->rb          = rb;
-              //nas_TOOL_fct(rclassifier, NAS_FCT_QOS_SEND);
-              rclassifier->ip_version  = NAS_IP_VERSION_6;
+              //oai_nw_drv_TOOL_fct(rclassifier, OAI_NW_DRV_FCT_QOS_SEND);
+              rclassifier->ip_version  = OAI_NW_DRV_IP_VERSION_6;
               memset((u8*)&rclassifier->saddr.ipv6,0,16);
               memset((u8*)&rclassifier->daddr.ipv6,0,16);
-              printk("[NAS][CLASS] ADD DEFAULT RX CLASSIFIER ON RAB %d NAS_DSCP_DEFAULT Adding IPv6 %X:%X:%X:%X:%X:%X:%X:%X -> %X:%X:%X:%X:%X:%X:%X:%X \n",
-                      rab_id, NIP6ADDR(&rclassifier->saddr.ipv6), NIP6ADDR(&rclassifier->daddr.ipv6));
+              printk("[OAI_IP_DRV][%s] ADD DEFAULT RX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv6 %X:%X:%X:%X:%X:%X:%X:%X -> %X:%X:%X:%X:%X:%X:%X:%X \n",
+                      __FUNCTION__, rab_id, NIP6ADDR(&rclassifier->saddr.ipv6), NIP6ADDR(&rclassifier->daddr.ipv6));
               rclassifier->splen                 = 64;
               rclassifier->dplen                 = 64;
-              rclassifier->protocol              = NAS_PROTOCOL_DEFAULT;
+              rclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
               rclassifier->protocol_message_type = 0; //LG ??
-              rclassifier->sport                 = htons(NAS_PORT_DEFAULT);
-              rclassifier->dport                 = htons(NAS_PORT_DEFAULT);
+              rclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
+              rclassifier->dport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
+            }
+            pclassifier=oai_nw_drv_class_add_send_classifier(cx, OAI_NW_DRV_DSCP_DEFAULT, 0);
+            if (pclassifier != NULL) {
+              pclassifier->rab_id      = rab_id;
+              pclassifier->rb          = rb;
+              oai_nw_drv_TOOL_fct(pclassifier, OAI_NW_DRV_FCT_QOS_SEND);
+              pclassifier->ip_version  = OAI_NW_DRV_IP_VERSION_4;
+              memset((u8*)&pclassifier->saddr.ipv4,0,4);
+              memset((u8*)&pclassifier->daddr.ipv4,0,4);
+              printk("[OAI_IP_DRV][%s] ADD DEFAULT TX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv4 %d:%d:%d:%d -> %d.%d.%d.%d\n",
+                      __FUNCTION__, rab_id, NIPADDR(pclassifier->saddr.ipv4), NIPADDR(pclassifier->daddr.ipv4));
+              pclassifier->splen                 = 32;
+              pclassifier->dplen                 = 32;
+              pclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
+              pclassifier->protocol_message_type = 0; //LG ??
+              pclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
+              pclassifier->dport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
+            }
+            // first RAB added, add default classification rule for multicast signalling
+            rclassifier=oai_nw_drv_class_add_recv_classifier(OAI_NW_DRV_DSCP_DEFAULT, 1, gpriv);
+            if (rclassifier != NULL) {
+              rclassifier->rab_id      = rab_id;
+              rclassifier->rb          = rb;
+              //oai_nw_drv_TOOL_fct(rclassifier, OAI_NW_DRV_FCT_QOS_SEND);
+              rclassifier->ip_version  = OAI_NW_DRV_IP_VERSION_4;
+              memset((u8*)&rclassifier->saddr.ipv4,0,4);
+              memset((u8*)&rclassifier->daddr.ipv4,0,4);
+              printk("[OAI_IP_DRV][%s] ADD DEFAULT RX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv4 %d:%d:%d:%d -> %d.%d.%d.%d\n",
+                      __FUNCTION__, rab_id, NIPADDR(rclassifier->saddr.ipv4), NIPADDR(rclassifier->daddr.ipv4));
+              rclassifier->splen                 = 32;
+              rclassifier->dplen                 = 32;
+              rclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
+              rclassifier->protocol_message_type = 0; //LG ??
+              rclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
+              rclassifier->dport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
             }
         }
     }
-    #ifdef NAS_DEBUG_CLASS
-    printk("NAS_COMMON_ADD_RB - end \n" );
+    #ifdef OAI_DRV_DEBUG_CLASS
+    printk("[OAI_IP_DRV][%s] end \n",__FUNCTION__ );
     #endif
     return rb;
 }
 
 //---------------------------------------------------------------------------
-void nas_COMMON_flush_rb(struct cx_entity *cx){
+void oai_nw_drv_common_flush_rb(struct cx_entity *cx){
   //---------------------------------------------------------------------------
   struct rb_entity *rb;
   struct classifier_entity *gc;
   u8 dscp;
-  // End debug information
-#ifdef NAS_DEBUG_CLASS
-  printk("NAS_COMMON_FLUSH_RB - begin\n");
+#ifdef OAI_DRV_DEBUG_CLASS
+  printk("[OAI_IP_DRV][%s] begin\n",__FUNCTION__);
 #endif
   if (cx==NULL){
-#ifdef NAS_DEBUG_CLASS
-    printk("NAS_COMMON_FLUSH_RB - input parameter cx is NULL \n");
+#ifdef OAI_DRV_DEBUG_CLASS
+    printk("[OAI_IP_DRV][%s] input parameter cx is NULL \n",__FUNCTION__);
 #endif
     return;
   }
   // End debug information
   for (rb=cx->rb; rb!=NULL; rb=cx->rb){
-    printk("NAS_COMMON_FLUSH_RB: del rab_id %u\n", rb->rab_id);
+    printk("[OAI_IP_DRV][%s] del rab_id %u\n",__FUNCTION__, rb->rab_id);
     cx->rb=rb->next;
     kfree(rb);
   }
   cx->num_rb=0;
   cx->rb=NULL;
-  for(dscp=0; dscp<NAS_DSCP_MAX; ++dscp)
+  for(dscp=0; dscp<OAI_NW_DRV_DSCP_MAX; ++dscp)
     {
       for (gc=cx->sclassifier[dscp]; gc!=NULL; gc=gc->next)
         gc->rb=NULL;
     }
-#ifdef NAS_DEBUG_CLASS
-  printk("NAS_COMMON_FLUSH_RB - end\n");
+#ifdef OAI_DRV_DEBUG_CLASS
+  printk("[OAI_IP_DRV][%s] end\n",__FUNCTION__);
 #endif
 }

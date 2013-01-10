@@ -36,11 +36,14 @@ ifeq ($(KERNEL_MAIN_VERSION),3)
    IS_KERNEL_SUBVERSION_GREATER_THAN_22 = "true"
    IS_KERNEL_SUBVERSION_GREATER_THAN_29 = "true"
    IS_KERNEL_SUBVERSION_GREATER_THAN_30 = "true"
+   IS_KERNEL_SUBVERSION_GREATER_THAN_32 = "true"
+   IS_KERNEL_MAIN_VERSION_IS_3 = "true"
 endif
 
 GT2622= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_22),-DKERNEL_VERSION_GREATER_THAN_2622=1)
 GT2629= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_29),-DKERNEL_VERSION_GREATER_THAN_2629=1)
 GT32= $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_32),-DKERNEL_VERSION_GREATER_THAN_32=1)
+V3= $(if $(IS_KERNEL_MAIN_VERSION_IS_3),-DKERNEL_MAIN_VERSION_IS_3=1)
 ####################################################
 #      NASMESH compilation flags
 ####################################################
@@ -61,16 +64,16 @@ ifdef ADDRCONF
 EXTRA_CFLAGS += -DADDRCONF
 endif
 
-ifdef NAS_DRIVER_TYPE_ETHERNET
-EXTRA_CFLAGS += -DNAS_DRIVER_TYPE_ETHERNET
+ifdef OAI_NW_DRIVER_TYPE_ETHERNET
+EXTRA_CFLAGS += -DOAI_NW_DRIVER_TYPE_ETHERNET 
 endif
 
-
-ifdef NAS_NETLINK
-EXTRA_CFLAGS += -DNAS_NETLINK
+ifdef OAI_NW_DRIVER_USE_NETLINK
+EXTRA_CFLAGS += -DOAI_NW_DRIVER_USE_NETLINK
 else
 EXTRA_CFLAGS += $(shell rtai-config --module-cflags) -DRTAI -D__IN_RTAI__ -Wall
 endif
+
 
 ifdef LOOPBACK
 EXTRA_CFLAGS += -DLOOPBACK_TEST
@@ -83,15 +86,14 @@ endif
 ####################################################
 #      LOADABLE MODULE GOALS
 ####################################################
-obj-m += nasmesh.o
-nasmesh-objs += device.o
-nasmesh-objs += common.o
-nasmesh-objs += ioctl.o
-nasmesh-objs += classifier.o
-nasmesh-objs += tool.o
-nasmesh-objs += mesh.o
-ifdef NAS_NETLINK
-nasmesh-objs += netlink.o
+obj-m += oai_nw_drv.o
+oai_nw_drv-objs += device.o
+oai_nw_drv-objs += common.o
+oai_nw_drv-objs += ioctl.o
+oai_nw_drv-objs += classifier.o
+oai_nw_drv-objs += tool.o
+ifdef OAI_NW_DRIVER_USE_NETLINK
+oai_nw_drv-objs += netlink.o
 endif
 
 ####################################################
@@ -101,7 +103,7 @@ endif
 #netlink.ko:
 	#make $(x)$(y) NAS_NETLINK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
 
-#nasmesh.ko:
+#oai_nw_drv.ko:
 #	make  V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules
 print:
 	@echo linux kernel ge 22: $(IS_KERNEL_SUBVERSION_GREATER_THAN_22)
@@ -119,5 +121,6 @@ clean:
 	rm -f *.o
 	rm -f *.mod.c
 	find . -name *.ko     -delete
+	find . -name .*.o     -delete
 	find . -name *.o      -delete
 	find . -name *.mod.c  -delete

@@ -27,7 +27,7 @@
 
 *******************************************************************************/
 /***************************************************************************
-                          nas_proto_extern.h  -  description
+                          proto_extern.h  -  description
                              -------------------
     copyright            : (C) 2002 by Eurecom
     email                : michelle.wetterwald@eurecom.fr
@@ -58,171 +58,162 @@
 #include <linux/in.h>
 #include <net/ndisc.h>
 
-//#include "rrc_nas_primitives.h"
-//#include "protocol_vars_extern.h"
-//#include "as_sap.h"
-//#include "rrc_qos.h"
-//#include "rrc_sap.h"
-
 #include "local.h"
 
 // device.c
 
 
-/** @defgroup _nas_mesh_impl_ NAS Mesh Network Device
+/** @defgroup _oai_nw_drv_impl_ OAI Network Device for RRC Lite
 * @ingroup _ref_implementation_
 * @{
-\fn int find_inst(struct net_device *dev)
+\fn int oai_nw_drv_find_inst(struct net_device *dev)
 \brief This function determines the instance id for a particular device pointer.
 @param dev Pointer to net_device structure
  */
-int find_inst(struct net_device *dev);
+int oai_nw_drv_find_inst(struct net_device *dev);
 
-// nas_common.c
+// common.c
 /**
-\fn void nas_COMMON_receive(unsigned short dlen, void* pdcp_sdu,int inst,struct classifier_entity *rclass,nasRadioBearerId_t rb_id)
-\brief Receive data from FIFO (QOS)
+\fn void oai_nw_drv_common_class_wireless2ip(unsigned short dlen, void* pdcp_sdu,int inst,struct classifier_entity *rclass,OaiNwDrvRadioBearerId_t rb_id)
+\brief Receive classified LTE packet, build skbuff struct with it and deliver it to the OS network layer.
 @param dlen Length of SDU in bytes
 @param pdcp_sdu Pointer to received SDU
 @param inst Instance number
 @param rclass RX Classifier entity
 @param rb_id Radio Bearer Id
  */
-void nas_COMMON_receive(unsigned short dlen,
+void oai_nw_drv_common_class_wireless2ip(unsigned short dlen,
             void *pdcp_sdu,
             int inst,
             struct classifier_entity *rclass,
-            nasRadioBearerId_t rb_id);
+            OaiNwDrvRadioBearerId_t rb_id);
 
 /**
-\fn void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
+\fn void oai_nw_drv_common_ip2wireless(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
 \brief Request the transfer of data (QoS SAP)
 @param skb pointer to socket buffer
 @param cx pointer to connection entity for SDU
 @param gc pointer to classifier entity for SDU
 @param inst device instance
  */
-void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst);
+void oai_nw_drv_common_ip2wireless(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst);
 
 /**
-\fn void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
-\brief  Delete the data
+\fn void oai_nw_drv_common_ip2wireless_drop(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)
+\brief  Drop the IP packet comming from the OS network layer.
 @param skb pointer to socket buffer
 @param cx pointer to connection entity for SDU
 @param gc pointer to classifier entity for SDU
 @param inst device instance
  */
-void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst);
+void oai_nw_drv_common_ip2wireless_drop(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst);
 
-#ifndef NAS_NETLINK
+#ifndef OAI_NW_DRIVER_USE_NETLINK
 /**
-\fn void nas_COMMON_QOS_receive()
-\brief Retrieve PDU from PDCP for connection
+\fn void oai_nw_drv_common_wireless2ip()
+\brief Retrieve PDU from PDCP through RT-fifos for delivery to the IP stack.
  */
-void nas_COMMON_QOS_receive(void);
-#endif //NAS_NETLINK
+void oai_nw_drv_common_wireless2ip(void);
+#else
+/**
+\fn void oai_nw_drv_common_wireless2ip(struct nlmsghdr *nlh)
+\brief Retrieve PDU from PDCP through netlink sockets for delivery to the IP stack.
+ */
+void oai_nw_drv_common_wireless2ip(struct nlmsghdr *nlh);
+#endif //OAI_NW_DRIVER_USE_NETLINK
 
 /**
-\fn struct rb_entity *nas_COMMON_add_rb(struct cx_entity *cx, nasRadioBearerId_t rabi, nasQoSTrafficClass_t qos)
+\fn struct rb_entity *oai_nw_drv_common_add_rb(struct cx_entity *cx, OaiNwDrvRadioBearerId_t rabi, OaiNwDrvQoSTrafficClass_t qos)
 \brief Add a radio-bearer descriptor
 @param gpriv pointer to driver instance private datas
 @param cx pointer to connection entity
 @param rabi radio-bearer index
 @param qos NAS QOS traffic class
  */
-struct rb_entity *nas_COMMON_add_rb(struct nas_priv *gpriv, struct cx_entity *cx, nasRadioBearerId_t rab_id, nasQoSTrafficClass_t qos);
+struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct cx_entity *cx, OaiNwDrvRadioBearerId_t rab_id, OaiNwDrvQoSTrafficClass_t qos);
 
 /**
-\fn struct rb_entity *nas_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t rabi)
+\fn struct rb_entity *oai_nw_drv_common_search_rb(struct cx_entity *cx, OaiNwDrvRadioBearerId_t rabi)
 \brief Search for a radio-bearer entity for a particular connection and radio-bearer index
 @param cx pointer to connection entity
 @param rabi radio-bearer index
 @returns A pointer to the radio-bearer entity
  */
-struct rb_entity *nas_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t rabi);
+struct rb_entity *oai_nw_drv_common_search_rb(struct cx_entity *cx, OaiNwDrvRadioBearerId_t rabi);
 
 /**
-\fn struct cx_entity *nas_COMMON_search_cx(nasLocalConnectionRef_t lcr,struct nas_priv *gpriv)
-\brief  Search for a connection entity based on its index and pointer to nas_priv
+\fn struct cx_entity *oai_nw_drv_common_search_cx(OaiNwDrvLocalConnectionRef_t lcr,struct oai_nw_drv_priv *gpriv)
+\brief  Search for a connection entity based on its index and pointer to oai_nw_drv_priv
 @param lcr index of local connection
-@param gpriv pointer to nas_priv for device
+@param gpriv pointer to oai_nw_drv_priv for device
 @returns A pointer to the connection entity
  */
-struct cx_entity *nas_COMMON_search_cx(nasLocalConnectionRef_t lcr,struct nas_priv *gpriv);
+struct cx_entity *oai_nw_drv_common_search_cx(OaiNwDrvLocalConnectionRef_t lcr,struct oai_nw_drv_priv *gpriv);
 
 /**
-\fn struct classifier_entity *nas_COMMON_search_class_for_rb(nasRadioBearerId_t rab_id,struct nas_priv *priv)
-\brief  Search for an RX classifier entity based on a RB id and pointer to nas_priv
+\fn struct classifier_entity *oai_nw_drv_common_search_class_for_rb(OaiNwDrvRadioBearerId_t rab_id,struct oai_nw_drv_priv *priv)
+\brief  Search for an RX classifier entity based on a RB id and pointer to oai_nw_drv_priv
 @param rab_id Index of RAB for search
-@param priv pointer to nas_priv for device
+@param priv pointer to oai_nw_drv_priv for device
 @returns A pointer to the corresponding RX classifier entity
  */
-struct classifier_entity *nas_COMMON_search_class_for_rb(nasRadioBearerId_t rab_id,struct nas_priv *priv);
+struct classifier_entity *oai_nw_drv_common_search_class_for_rb(OaiNwDrvRadioBearerId_t rab_id,struct oai_nw_drv_priv *priv);
 
 /**
-\fn void nas_COMMON_flush_rb(struct cx_entity *cx)
+\fn void oai_nw_drv_common_flush_rb(struct cx_entity *cx)
 \brief Clear all RB's for a particular connection
 @param cx pointer to connection entity
  */
-void nas_COMMON_flush_rb(struct cx_entity *cx);
+void oai_nw_drv_common_flush_rb(struct cx_entity *cx);
 
-#ifdef NAS_NETLINK
+#ifdef OAI_NW_DRIVER_USE_NETLINK
 /**
-\fn int nas_netlink_send(unsigned char *data,unsigned int len)
+\fn int oai_nw_drv_netlink_send(unsigned char *data,unsigned int len)
 \brief Request the transfer of data by PDCP via netlink socket
 @param data pointer to SDU
 @param len length of SDU in bytes
 @returns Numeber of bytes transfered by netlink socket
  */
-int nas_netlink_send(unsigned char *data,unsigned int len);
+int oai_nw_drv_netlink_send(unsigned char *data,unsigned int len);
 
 /**
-\fn void nas_COMMON_QOS_receive(struct nlmsghdr *nlh)
+\fn void oai_nw_drv_COMMON_QOS_receive(struct nlmsghdr *nlh)
 \brief Request a PDU from PDCP
 @param nlh pointer to netlink message header
  */
-void nas_COMMON_QOS_receive(struct nlmsghdr *nlh);
+void oai_nw_drv_COMMON_QOS_receive(struct nlmsghdr *nlh);
 
-#endif //NAS_NETLINK
-//nasmesh.c
+#endif //OAI_NW_DRIVER_USE_NETLINK
 
-/**
-  \brief Initialize an interface for a particular instance ID.
-*/
-void nas_mesh_init(int inst   //!< Instance ID
 
-);
-
-void nas_mesh_timer(unsigned long data,struct nas_priv *gpriv);
-
-int  nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv);
-int  nas_mesh_GC_receive(struct nas_priv *gpriv);
-int  nas_mesh_DC_send_cx_establish_request(struct cx_entity *cx,struct nas_priv *gpriv);
-int  nas_mesh_DC_send_cx_release_request(struct cx_entity *cx,struct nas_priv *gpriv);
-void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,struct nas_priv *gpriv);
+// int  oai_nw_drv_mesh_DC_receive(struct cx_entity *cx,struct oai_nw_drv_priv *gpriv);
+// int  oai_nw_drv_mesh_GC_receive(struct oai_nw_drv_priv *gpriv);
+// int  oai_nw_drv_mesh_DC_send_cx_establish_request(struct cx_entity *cx,struct oai_nw_drv_priv *gpriv);
+// int  oai_nw_drv_mesh_DC_send_cx_release_request(struct cx_entity *cx,struct oai_nw_drv_priv *gpriv);
+// void oai_nw_drv_mesh_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,struct oai_nw_drv_priv *gpriv);
 
 // iocontrol.c
-void nas_CTL_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
-//int nas_CTL_receive_authentication(struct ipv6hdr *iph, struct cx-entity *cx, unsigned char sapi);
-int nas_CTL_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
+void oai_nw_drv_CTL_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc, int inst);
+//int oai_nw_drv_CTL_receive_authentication(struct ipv6hdr *iph, struct cx-entity *cx, unsigned char sapi);
+int oai_nw_drv_CTL_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
 
 // classifier.c
 
 /**
   \brief Send a socket received from IP to classifier for a particular instance ID.
 */
-void nas_CLASS_send(struct sk_buff *skb,    //!< Pointer to socket buffer
-            int inst                //!< Instance ID
-            );
+void oai_nw_drv_class_send(struct sk_buff *skb,    //!< Pointer to socket buffer
+                          int inst                //!< Instance ID
+                          );
 /**
   \brief
 */
-struct classifier_entity *nas_CLASS_add_sclassifier(struct cx_entity *cx, unsigned char dscp, unsigned short classref);
+struct classifier_entity *oai_nw_drv_class_add_send_classifier(struct cx_entity *cx, unsigned char dscp, unsigned short classref);
 
 /**
   \brief Send a socket received from IP to classifier for a particular instance ID.
 */
-struct classifier_entity *nas_CLASS_add_fclassifier(struct cx_entity *cx,
+struct classifier_entity *oai_nw_drv_class_add_fwd_classifier(struct cx_entity *cx,
                             unsigned char dscp,
                             unsigned short classref
                             );
@@ -230,15 +221,15 @@ struct classifier_entity *nas_CLASS_add_fclassifier(struct cx_entity *cx,
 /**
   \brief Send a socket received from IP to classifier for a particular instance ID.
 */
-struct classifier_entity *nas_CLASS_add_rclassifier(unsigned char dscp,
+struct classifier_entity *oai_nw_drv_class_add_recv_classifier(unsigned char dscp,
                             unsigned short classref,
-                            struct nas_priv*
+                            struct oai_nw_drv_priv*
                             );
 
 /**
   \brief
 */
-void nas_CLASS_del_sclassifier(struct cx_entity *cx,
+void oai_nw_drv_class_del_send_classifier(struct cx_entity *cx,
                    unsigned char dscp,
                    unsigned short classref
                    );
@@ -246,7 +237,7 @@ void nas_CLASS_del_sclassifier(struct cx_entity *cx,
 /**
   \brief
 */
-void nas_CLASS_del_fclassifier(struct cx_entity *cx,
+void oai_nw_drv_class_del_fwd_classifier(struct cx_entity *cx,
                    unsigned char dscp,
                    unsigned short classref
                    );
@@ -254,57 +245,54 @@ void nas_CLASS_del_fclassifier(struct cx_entity *cx,
 /**
   \brief
 */
-void nas_CLASS_del_rclassifier(unsigned char dscp,
+void oai_nw_drv_class_del_recv_classifier(unsigned char dscp,
                    unsigned short classref,
-                   struct nas_priv*
+                   struct oai_nw_drv_priv*
                    );
 
 /**
   \brief
 */
-void nas_CLASS_flush_sclassifier(struct cx_entity *cx
-                 );
+void oai_nw_drv_class_flush_send_classifier(struct cx_entity *cx);
 
 /**
   \brief
 */
-void nas_CLASS_flush_fclassifier(struct cx_entity *cx
-                 );
+void oai_nw_drv_class_flush_fwd_classifier(struct cx_entity *cx);
 
 /**
   \brief
 */
-void nas_CLASS_flush_rclassifier(struct nas_priv *gpriv
-                 );
+void oai_nw_drv_class_flush_recv_classifier(struct oai_nw_drv_priv *gpriv);
 
 
-// nas_tool.c
-unsigned char nas_TOOL_invfct(struct classifier_entity *gc);
-void nas_TOOL_fct(struct classifier_entity *gc, unsigned char fct);
-void nas_TOOL_imei2iid(unsigned char *imei, unsigned char *iid);
-void nas_TOOL_eNB_imei2iid(unsigned char *imei, unsigned char *iid, unsigned char len);
-unsigned char nas_TOOL_get_dscp6(struct ipv6hdr *iph);
-unsigned char nas_TOOL_get_dscp4(struct iphdr *iph);
-unsigned char *nas_TOOL_get_protocol6(struct ipv6hdr *iph, unsigned char *protocol);
-unsigned char *nas_TOOL_get_protocol4(struct iphdr *iph, unsigned char *protocol);
-char *nas_TOOL_get_udpmsg(struct udphdr *udph);
-unsigned short nas_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, unsigned char proto, unsigned int udplen, void *data);
-int nas_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, unsigned char plen);
-int nas_TOOL_network4(unsigned int *addr, unsigned int *prefix, unsigned char plen);
+// tool.c
+unsigned char oai_nw_drv_TOOL_invfct(struct classifier_entity *gc);
+void oai_nw_drv_TOOL_fct(struct classifier_entity *gc, unsigned char fct);
+void oai_nw_drv_TOOL_imei2iid(unsigned char *imei, unsigned char *iid);
+void oai_nw_drv_TOOL_eNB_imei2iid(unsigned char *imei, unsigned char *iid, unsigned char len);
+unsigned char oai_nw_drv_TOOL_get_dscp6(struct ipv6hdr *iph);
+unsigned char oai_nw_drv_TOOL_get_dscp4(struct iphdr *iph);
+unsigned char *oai_nw_drv_TOOL_get_protocol6(struct ipv6hdr *iph, unsigned char *protocol);
+unsigned char *oai_nw_drv_TOOL_get_protocol4(struct iphdr *iph, unsigned char *protocol);
+char *oai_nw_drv_TOOL_get_udpmsg(struct udphdr *udph);
+unsigned short oai_nw_drv_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, unsigned char proto, unsigned int udplen, void *data);
+int oai_nw_drv_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, unsigned char plen);
+int oai_nw_drv_TOOL_network4(unsigned int *addr, unsigned int *prefix, unsigned char plen);
 void print_TOOL_pk_icmp6(struct icmp6hdr *icmph);
 
 void print_TOOL_pk_all(struct sk_buff *skb);
 void print_TOOL_pk_ipv6(struct ipv6hdr *iph);
 void print_TOOL_state(unsigned char state);
-void nas_tool_print_buffer(char * buffer,int length);
-void nas_print_rb_entity(struct rb_entity *rb);
-void nas_print_classifier(struct classifier_entity *gc);
+void oai_nw_drv_tool_print_buffer(char * buffer,int length);
+void oai_nw_drv_print_rb_entity(struct rb_entity *rb);
+void oai_nw_drv_print_classifier(struct classifier_entity *gc);
 
-#ifdef NAS_NETLINK
-// nas_netlink.c
+#ifdef OAI_NW_DRIVER_USE_NETLINK
+// netlink.c
 
-void nas_netlink_release(void);
-int nas_netlink_init(void);
+void oai_nw_drv_netlink_release(void);
+int oai_nw_drv_netlink_init(void);
 
 #endif
 
