@@ -19,7 +19,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "rrc_nas_primitives.h"
+//#include "rrc_nas_primitives.h"
 #include "ioctl.h"
 #include "constant.h"
 
@@ -48,7 +48,7 @@
 int fd;
 //ioctl
 char dummy_buffer[1024];
-struct nas_ioctl gifr;
+struct oai_nw_drv_ioctl gifr;
 //int wait_start_nas;
 
 //---------------------------------------------------------------------------
@@ -56,7 +56,7 @@ void IAL_NAS_ioctl_init(int inst)
 //---------------------------------------------------------------------------
 {
 
-    struct nas_msg_statistic_reply *msgrep;
+    struct oai_nw_drv_msg_statistic_reply *msgrep;
     int err,rc;
 
     sprintf(gifr.name, "oai%d",inst);
@@ -70,12 +70,12 @@ void IAL_NAS_ioctl_init(int inst)
 
     sprintf(gifr.name, "oai%d",inst);
 
-    gifr.type =  NAS_MSG_STATISTIC_REQUEST;
+    gifr.type =  OAI_NW_DRV_MSG_STATISTIC_REQUEST;
     memset ((void *)dummy_buffer,0,800);
     gifr.msg= &(dummy_buffer[0]);
-    msgrep=(struct nas_msg_statistic_reply *)(gifr.msg);
+    msgrep=(struct oai_nw_drv_msg_statistic_reply *)(gifr.msg);
     printf("ioctl :Statistics requested\n");
-    err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+    err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
     if (err<0){
         printf("IOCTL error, err=%d\n",err);
         rc = -1;
@@ -125,8 +125,8 @@ int main(int argc,char **argv)
     char                                     mpls_outgoinglabel[100];
     char                                     mpls_incominglabel[100];
     int                                      index;
-    struct nas_msg_rb_establishment_request *msgreq;
-    struct nas_msg_class_add_request        *msgreq_class;
+    struct oai_nw_drv_msg_rb_establishment_request *msgreq;
+    struct oai_nw_drv_msg_class_add_request        *msgreq_class;
     in_addr_t                                saddr_ipv4;
     in_addr_t                                daddr_ipv4;
     struct in6_addr                          saddr_ipv6;
@@ -304,65 +304,65 @@ int main(int argc,char **argv)
 
     IAL_NAS_ioctl_init(atoi(inst));
 
-    msgreq = (struct nas_msg_rb_establishment_request *)(gifr.msg);
+    msgreq = (struct oai_nw_drv_msg_rb_establishment_request *)(gifr.msg);
     msgreq->rab_id = atoi(rb);
     msgreq->lcr = atoi(cx);
     msgreq->qos = 0;
 
 
     if (action == ADD_RB) {
-        gifr.type =  NAS_MSG_RB_ESTABLISHMENT_REQUEST;
-        printf("NAS_MSG_RB_ESTABLISHMENT_REQUEST: RB %d LCR %d QOS %d\n ", msgreq->rab_id, msgreq->lcr, msgreq->qos);
-        err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+        gifr.type =  OAI_NW_DRV_MSG_RB_ESTABLISHMENT_REQUEST;
+        printf("OAI_NW_DRV_MSG_RB_ESTABLISHMENT_REQUEST: RB %d LCR %d QOS %d\n ", msgreq->rab_id, msgreq->lcr, msgreq->qos);
+        err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
     }
     // only add classification rule
     if ((action == ADD_RB ) || (action == NO_ACTION_RB)) {
         if (saddr_ipv4set == 1) {
-            msgreq_class             = (struct nas_msg_class_add_request *)(gifr.msg);
+            msgreq_class             = (struct oai_nw_drv_msg_class_add_request *)(gifr.msg);
             msgreq_class->rab_id     = atoi(rb);
             msgreq_class->lcr        = atoi(cx);
             msgreq_class->version    = 4;
             msgreq_class->classref   = atoi(classref) + (msgreq_class->lcr<<8);
-            msgreq_class->dir        = NAS_DIRECTION_SEND;
-            msgreq_class->fct        = NAS_FCT_QOS_SEND;
+            msgreq_class->dir        = OAI_NW_DRV_DIRECTION_SEND;
+            msgreq_class->fct        = OAI_NW_DRV_FCT_QOS_SEND;
             msgreq_class->saddr.ipv4 = saddr_ipv4;
             msgreq_class->daddr.ipv4 = daddr_ipv4;
             msgreq_class->dplen      = dplen;
             msgreq_class->splen      = splen;
             // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
-            msgreq_class->protocol   = NAS_PROTOCOL_DEFAULT;
+            msgreq_class->protocol   = OAI_NW_DRV_PROTOCOL_DEFAULT;
             if (dscpset==0) {
                 msgreq_class->dscp=0;
             } else {
                 msgreq_class->dscp=atoi(dscp);
             }
-            printf("NAS_MSG_CLASS_ADD_REQUEST: NAS_DIRECTION_SEND RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
+            printf("OAI_NW_DRV_MSG_CLASS_ADD_REQUEST: OAI_NW_DRV_DIRECTION_SEND RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
             printf("IPV4: Source  = %d.%d.%d.%d/%d ", NIPADDR(msgreq_class->saddr.ipv4), msgreq_class->splen);
             printf(" IPV4: Dest    = %d.%d.%d.%d/%d\n", NIPADDR(msgreq_class->daddr.ipv4), msgreq_class->dplen);
-            gifr.type                = NAS_MSG_CLASS_ADD_REQUEST;
-            err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+            gifr.type                = OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
+            err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
 
 
             msgreq_class->rab_id     = atoi(rb);
             msgreq_class->lcr        = atoi(cx);
             msgreq_class->version    = 4;
             msgreq_class->classref   = atoi(classref) + 1 + (msgreq_class->lcr<<8);
-            msgreq_class->dir        = NAS_DIRECTION_RECEIVE;
-            msgreq_class->fct        = NAS_FCT_QOS_SEND;
+            msgreq_class->dir        = OAI_NW_DRV_DIRECTION_RECEIVE;
+            msgreq_class->fct        = OAI_NW_DRV_FCT_QOS_SEND;
             msgreq_class->daddr.ipv4 = saddr_ipv4;
             msgreq_class->saddr.ipv4 = daddr_ipv4;
             msgreq_class->dplen      = splen;
             msgreq_class->splen      = dplen;
-            printf("NAS_MSG_CLASS_ADD_REQUEST: NAS_DIRECTION_RECEIVE RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
+            printf("OAI_NW_DRV_MSG_CLASS_ADD_REQUEST: OAI_NW_DRV_DIRECTION_RECEIVE RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
             printf("IPV4: Source  = %d.%d.%d.%d/%d ", NIPADDR(msgreq_class->saddr.ipv4), msgreq_class->splen);
             printf("IPV4: Dest    = %d.%d.%d.%d/%d\n", NIPADDR(msgreq_class->daddr.ipv4), msgreq_class->dplen);
 
-            gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
-            err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+            gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
+            err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
         }
 
         if (saddr_ipv6set == 1) {
-            msgreq_class             = (struct nas_msg_class_add_request *)(gifr.msg);
+            msgreq_class             = (struct oai_nw_drv_msg_class_add_request *)(gifr.msg);
             msgreq_class->rab_id     = atoi(rb);
             msgreq_class->lcr        = atoi(cx);
             msgreq_class->version    = 6;
@@ -373,40 +373,40 @@ int main(int argc,char **argv)
             else
                 msgreq_class->dscp   = atoi(dscp);
             msgreq_class->classref   = atoi(classref) + (msgreq_class->lcr<<8);
-            msgreq_class->dir        = NAS_DIRECTION_SEND;
-            msgreq_class->fct        = NAS_FCT_QOS_SEND;
+            msgreq_class->dir        = OAI_NW_DRV_DIRECTION_SEND;
+            msgreq_class->fct        = OAI_NW_DRV_FCT_QOS_SEND;
             // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
-            msgreq_class->protocol   = NAS_PROTOCOL_DEFAULT;
+            msgreq_class->protocol   = OAI_NW_DRV_PROTOCOL_DEFAULT;
 
             memcpy(&msgreq_class->saddr.ipv6,&saddr_ipv6,16);
             memcpy(&msgreq_class->daddr.ipv6,&daddr_ipv6,16);
-            printf("NAS_MSG_CLASS_ADD_REQUEST: NAS_DIRECTION_SEND RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
+            printf("OAI_NW_DRV_MSG_CLASS_ADD_REQUEST: OAI_NW_DRV_DIRECTION_SEND RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
             printf("IPV6: Source  = %x:%x:%x:%x:%x:%x:%x:%x/%d ", NIP6ADDR(&msgreq_class->saddr.ipv6), msgreq_class->splen);
             printf("IPV6: Dest    = %x:%x:%x:%x:%x:%x:%x:%x/%d\n", NIP6ADDR(&msgreq_class->daddr.ipv6), msgreq_class->dplen);
-            gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
-            err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+            gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
+            err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
 
             msgreq_class->rab_id     = atoi(rb);
             msgreq_class->lcr        = atoi(cx);
             msgreq_class->dplen      = splen;
             msgreq_class->splen      = dplen;
             msgreq_class->classref   = atoi(classref) + 1 + (msgreq_class->lcr<<8);
-            msgreq_class->dir        = NAS_DIRECTION_RECEIVE;
+            msgreq_class->dir        = OAI_NW_DRV_DIRECTION_RECEIVE;
             memcpy(&msgreq_class->daddr.ipv6,&saddr_ipv6,16);
             memcpy(&msgreq_class->saddr.ipv6,&daddr_ipv6,16);
-            printf("NAS_MSG_CLASS_ADD_REQUEST: NAS_DIRECTION_RECEIVERB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
+            printf("OAI_NW_DRV_MSG_CLASS_ADD_REQUEST: OAI_NW_DRV_DIRECTION_RECEIVE RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
             printf("IPV6: Source  = %x:%x:%x:%x:%x:%x:%x:%x/%d ", NIP6ADDR(&msgreq_class->saddr.ipv6), msgreq_class->splen);
             printf("IPV6: Dest    = %x:%x:%x:%x:%x:%x:%x:%x/%d\n", NIP6ADDR(&msgreq_class->daddr.ipv6), msgreq_class->dplen);
-            gifr.type                =  NAS_MSG_CLASS_ADD_REQUEST;
-            err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+            gifr.type                =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
+            err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
         }
 
         if (mpls_inlabelset == 1) {
 
-            msgreq_class = (struct nas_msg_class_add_request *)(gifr.msg);
+            msgreq_class = (struct oai_nw_drv_msg_class_add_request *)(gifr.msg);
             msgreq_class->rab_id = atoi(rb);
             msgreq_class->lcr = atoi(cx);
-            msgreq_class->version = NAS_MPLS_VERSION_CODE;
+            msgreq_class->version = OAI_NW_DRV_MPLS_VERSION_CODE;
             if (dscpset==0)
                 msgreq_class->dscp=0;
             else
@@ -414,11 +414,11 @@ int main(int argc,char **argv)
 
             msgreq_class->classref = atoi(classref) + (msgreq_class->lcr<<8);
             //msgreq_class->classref = 4 + (msgreq_class->lcr<<3);
-            msgreq_class->dir=NAS_DIRECTION_SEND;
-            msgreq_class->fct=NAS_FCT_QOS_SEND;
+            msgreq_class->dir=OAI_NW_DRV_DIRECTION_SEND;
+            msgreq_class->fct=OAI_NW_DRV_FCT_QOS_SEND;
 
             // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
-            msgreq_class->protocol = NAS_PROTOCOL_DEFAULT;
+            msgreq_class->protocol = OAI_NW_DRV_PROTOCOL_DEFAULT;
 
             mpls_outlabel = atoi(mpls_outgoinglabel);
 
@@ -426,19 +426,19 @@ int main(int argc,char **argv)
 
             msgreq_class->daddr.mpls_label = mpls_outlabel;
 
-            gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
-            err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+            gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
+            err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
 
             msgreq_class->rab_id = atoi(rb);
             msgreq_class->lcr = atoi(cx);
 
             msgreq_class->classref = atoi(classref) + 1 + (msgreq_class->lcr<<8);
             //msgreq_class->classref = 5 + (msgreq_class->lcr<<3);
-            msgreq_class->dir=NAS_DIRECTION_RECEIVE;
+            msgreq_class->dir=OAI_NW_DRV_DIRECTION_RECEIVE;
 
 
             // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
-            msgreq_class->protocol = NAS_PROTOCOL_DEFAULT;
+            msgreq_class->protocol = OAI_NW_DRV_PROTOCOL_DEFAULT;
 
             mpls_inlabel  = atoi(mpls_incominglabel);
 
@@ -446,12 +446,12 @@ int main(int argc,char **argv)
 
             msgreq_class->daddr.mpls_label = mpls_inlabel;
 
-            gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
-            err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+            gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
+            err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
         }
 
     } else if (action == DEL_RB) {
-        gifr.type =  NAS_MSG_RB_RELEASE_REQUEST;
-        err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+        gifr.type =  OAI_NW_DRV_MSG_RB_RELEASE_REQUEST;
+        err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
     }
 }
