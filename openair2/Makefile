@@ -131,7 +131,7 @@ nasmesh_netlink.ko:
 	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 naslite_netlink_ether.ko:
-	(cd NAS/DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+	(cd NAS/DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
 nasmesh_netlink_address_fix.ko:
 	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
@@ -198,6 +198,7 @@ cleanall:
 	find -name *~ -delete -print
 	find -name *.bak -delete -print
 	rm -rf NAS/DRIVER/MESH/RB_TOOL/rb_tool
+	rm -rf NAS/DRIVER/LITE/RB_TOOL/rb_tool
 
 
 cleansvn:
