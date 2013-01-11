@@ -147,8 +147,8 @@
          && ((((__const uint8_t *) (a))[3] & (((__const uint8_t *) (m))[3])) == (((__const uint8_t *) (b))[3] & (((__const uint8_t *) (m))[3]))))
 
 
-#define OAI_DRV_DEBUG_CLASS         
-#define OAI_DRV_DEBUG_SEND
+//#define OAI_DRV_DEBUG_CLASS         
+//#define OAI_DRV_DEBUG_SEND
 //---------------------------------------------------------------------------
 void oai_nw_drv_create_mask_ipv6_addr(struct in6_addr *masked_addrP, int prefix_len){
   //---------------------------------------------------------------------------
