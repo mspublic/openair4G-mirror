@@ -230,6 +230,7 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
   unsigned char j;
   LOG_I(RRC,"[eNB %d] Init (UE State = RRC_IDLE)...\n", Mod_id);
   LOG_D(RRC, "[MSC_NEW][FRAME 00000][RRC_eNB][MOD %02d][]\n", Mod_id);
+  LOG_D(RRC, "[MSC_NEW][FRAME 00000][IP][MOD %02d][]\n", Mod_id);
 
   for (j=0; j<NUMBER_OF_UE_MAX; j++)
     eNB_rrc_inst[Mod_id].Info.Status[j] =  RRC_IDLE;//CH_READY;

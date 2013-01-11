@@ -104,6 +104,7 @@ char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
 
   LOG_D(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",Mod_id,eNB_index);
   LOG_D(RRC,"[MSC_NEW][FRAME 00000][RRC_UE][MOD %02d][]\n", Mod_id+NB_eNB_INST);
+  LOG_D(RRC, "[MSC_NEW][FRAME 00000][IP][MOD %02d][]\n", Mod_id+NB_eNB_INST);
 
   UE_rrc_inst[Mod_id].Info[eNB_index].State=RRC_IDLE;
   UE_rrc_inst[Mod_id].Info[eNB_index].T300_active = 0;
