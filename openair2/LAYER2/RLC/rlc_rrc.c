@@ -157,7 +157,6 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, u8_t 
         case ACTION_ADD:
             if (rb_typeP != SIGNALLING_RADIO_BEARER) {
                 LOG_D(PDCP, "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_idP, rb_idP);
-                LOG_D(PDCP, "[MSC_NEW][FRAME %05d][IP][MOD %02d][]\n", frame, module_idP);
             }
             if ((status = rrc_rlc_add_rlc(module_idP, frame, rb_idP, rlc_infoP.rlc_mode)) != RLC_OP_STATUS_OK) {
               return status;
