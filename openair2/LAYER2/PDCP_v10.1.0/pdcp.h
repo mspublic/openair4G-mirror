@@ -86,6 +86,7 @@ public_pdcp(unsigned int Pdcp_stats_rx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_
 public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
 
 typedef struct pdcp_t {
+  BOOL instanciated_instance;
   BOOL header_compression_active;
   u8 seq_num_size;
 
@@ -276,7 +277,7 @@ typedef struct pdcp_missing_pdu_info_t {
 #define PDCP_MAX_SN_12BIT 4095 // 2^12-1
 
 protected_pdcp(signed int             pdcp_2_nas_irq;)
-protected_pdcp(pdcp_t                 pdcp_array[MAX_MODULES][MAX_RAB];)
+protected_pdcp(pdcp_t                 pdcp_array[MAX_MODULES][MAX_RB];)
 protected_pdcp(sdu_size_t             pdcp_output_sdu_bytes_to_write;)
 protected_pdcp(sdu_size_t             pdcp_output_header_bytes_to_write;)
 protected_pdcp(list_t                 pdcp_sdu_list;)
