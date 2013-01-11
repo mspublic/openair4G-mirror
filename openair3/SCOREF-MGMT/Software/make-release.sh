@@ -8,7 +8,7 @@ fi
 
 VERSION=$1
 BINARY_NAME=SCOREF-MGMT
-RELEASE_NAME="$BINARY_NAME_$VERSION"
+RELEASE_NAME="$BINARY_NAME-$VERSION"
 
 echo "Building the version $VERSION"
 make clean &> /dev/null
@@ -29,6 +29,9 @@ cp README README.RUNNING $RELEASE_NAME
 
 echo "Preparing the compressed archive..."
 tar cjvf $RELEASE_NAME.tar.bz2 $RELEASE_NAME &> /dev/null
+
+echo "Removing temporary directory..."
+rm $RELEASE_NAME -rf &> /dev/null
 
 echo "Release is ready"
 exit

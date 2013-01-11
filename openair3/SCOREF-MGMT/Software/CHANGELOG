@@ -1,4 +1,8 @@
 
+v1.7.2
+* README.RELEASE file added
+* make-release.sh now removes temporary files
+
 v1.7.1
 * make-release.sh file added
 
