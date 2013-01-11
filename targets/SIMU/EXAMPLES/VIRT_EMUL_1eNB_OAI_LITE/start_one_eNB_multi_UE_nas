@@ -1,16 +1,16 @@
 #!/bin/bash
 echo "Bash version ${BASH_VERSION}..."
 
-
+declare GENERATE_SEQ_DIAGRAM="yes"
+declare LOG_FILE_LTE="yes"
 #------------------------------------------------
-MAKE_IP_DRIVER_TARGET="naslite_netlink_ether"
-MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim"
-IP_DRIVER_NAME=oai_nw_drv
+declare MAKE_IP_DRIVER_TARGET="naslite_netlink_ether"
+declare MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim"
+declare IP_DRIVER_NAME="oai_nw_drv"
 #------------------------------------------------
 declare -a NAS_IMEI=( 3 9 1 8 3 6 6 2 0 0 0 0 0 0 )
 # first value is for ENB, then UE0, UE1, etc.
 declare -a MARKING=( 1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 )
-#declare -a PORT_RANGE=( 0:0 40000:40999 41000:41999 42000:42999 43000:43999 )
 # BE CAREFULL MAY NOT WORK WITH OTHER VALUES (TO DO)
 declare -i NUM_ENB=1
 #------------------------------------------------
@@ -157,7 +157,7 @@ declare -i NUM_ENB=1
 #  pkts bytes target     prot opt in     out     source               destination
 #
 ####################################################################################
-# We also avoid the manipulation of ipv4 aRP packets by setting ourselves the neighbour cache:
+# We also avoid the manipulation of ipv4 ARP packets by setting ourselves the neighbour cache:
 ####################################################################################
 #root@hades:~# ip neigh show
 #...
@@ -314,6 +314,23 @@ assert() {
   fi
 }
 
+ctrl_c() {
+  bash_exec "pkill oaisim"
+  bash_exec "ip link set $LTEIF down"
+
+  bash_exec "rmmod $IP_DRIVER_NAME"
+
+  bash_exec "$IPTABLES -P INPUT ACCEPT"
+  bash_exec "$IPTABLES -F INPUT"
+  bash_exec "$IPTABLES -P OUTPUT ACCEPT"
+  bash_exec "$IPTABLES -F OUTPUT"
+  bash_exec "$IPTABLES -P FORWARD ACCEPT"
+  bash_exec "$IPTABLES -F FORWARD"
+  bash_exec "$IPTABLES -t nat    -F"
+  bash_exec "$IPTABLES -t mangle -F"
+  bash_exec "$IPTABLES -t filter -F"
+  bash_exec "ip route flush cache"
+}
 
 
 set_openair
@@ -332,6 +349,9 @@ declare -i IP
 declare -i RB_ID
 declare -i CLASSIFIER_ID
 
+
+trap ctrl_c INT
+
 bash_exec "ip route flush cache"
 bash_exec "$IPTABLES -P INPUT ACCEPT"
 bash_exec "$IPTABLES -F INPUT"
@@ -348,21 +368,10 @@ NUM_MOBILES=$1
 
 for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
 do
-#     let i_p1=i+1
-#
-#     echo "ip rule del fwmark ${MARKING[$i]} table $i_p1"
-#     ip rule del fwmark ${MARKING[$i]} table $i_p1
-#     while [ "$?" -eq "0" ]
-#     do
-#         echo "ip rule del fwmark ${MARKING[$i]} table $i_p1"
-#         ip rule del fwmark ${MARKING[$i]} table $i_p1
-#     done
-#
-#     echo "ip route del table $i_p1"
-#     ip route del table $i_p1
-
-    echo "ip link set oai$i down"
-    bash_exec "ip link set oai$i down"
+    TEST_OAI=`/sbin/ifconfig | grep oai$i | awk '{print $1}'`
+    if [ "$TEST_OAI" = oai"$i"x ]; then
+        bash_exec "ip link set oai$i down"
+    fi
 done
 
 
@@ -374,21 +383,6 @@ cecho "make $MAKE_IP_DRIVER_TARGET $MAKE_LTE_ACCESS_STRATUM_TARGET....." $green
 bash_exec "make $MAKE_IP_DRIVER_TARGET $MAKE_LTE_ACCESS_STRATUM_TARGET"
 bash_exec "insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/$IP_DRIVER_NAME.ko oai_nw_drv_IMEI=${NAS_IMEI[0]},${NAS_IMEI[1]},${NAS_IMEI[2]},${NAS_IMEI[3]},${NAS_IMEI[4]},${NAS_IMEI[5]},${NAS_IMEI[6]},${NAS_IMEI[7]},${NAS_IMEI[8]},${NAS_IMEI[9]},${NAS_IMEI[10]},${NAS_IMEI[11]},${NAS_IMEI[12]},${NAS_IMEI[13]}"
 
-
-
-#bash_exec "rmmod nasmesh
-#bash_exec "make  naslite_netlink_ether oaisim
-##insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
-##insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=${NAS_IMEI[0]},${NAS_IMEI[1]},${NAS_IMEI[2]},${NAS_IMEI[3]},${NAS_IMEI[4]},${NAS_IMEI[5]},${NAS_IMEI[6]},${NAS_IMEI[7]},${NAS_IMEI[8]},${NAS_IMEI[9]},${NAS_IMEI[10]},${NAS_IMEI[11]},${NAS_IMEI[12]}, ${NAS_IMEI[13]}
-#insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=${NAS_IMEI[0]},${NAS_IMEI[1]},${NAS_IMEI[2]},${NAS_IMEI[3]},${NAS_IMEI[4]},${NAS_IMEI[5]},${NAS_IMEI[6]},${NAS_IMEI[7]},${NAS_IMEI[8]},${NAS_IMEI[9]},${NAS_IMEI[10]},${NAS_IMEI[11]},${NAS_IMEI[12]},${NAS_IMEI[13]}
-
-
-#ip addr add dev eth2 192.168.14.145/24 broadcast 192.168.14.255
-#ip route add 192.168.14.0/24 dev eth2
-#ip route add 224.0.0.160/28 dev eth2
-
-
-##ip route add 224.0.0.160/28 dev eth2
 
 NUM_MOBILES=$1
 IP=1
@@ -420,44 +414,6 @@ do
     let IP=IP+1
 done
 
-########################
-#                      #
-#  MANGLE PACKETS      #
-#                      #
-########################
-# for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
-# do
-#     let i_p1=i+1
-#     echo "ip rule add fwmark ${MARKING[$i]} table $i_p1"
-#     ip rule add fwmark ${MARKING[$i]} table $i_p1
-#
-#     #echo "ip route add table $i_p1 dev oai$i"
-#     #ip route add table $i_p1 to 10.0. dev oai$i proto static
-#     #echo "ip route add table $i_p1 dev oai$i"
-#     #ip route add table $i_p1 dev oai$i
-#     echo "ip route add table $i_p1 from 0.0.0.0/32 dev oai$i proto static"
-#     ip route add table $i_p1 from 0.0.0.0/32 dev oai$i proto static
-# done
-
-
-# for ((i=0 ; i < $NUM_ENB; i++ ))
-# do
-#     let i_p1=i+1
-#
-#     echo "ip route add table $i_p1 dev oai$i"
-#     ip route add table $i_p1 to 10.0. dev oai$i proto static
-#     #echo "ip route add table $i_p1 dev oai$i"
-#     #ip route add table $i_p1 dev oai$i
-# done
-#
-# for ((ue=$NUM_ENB ; ue < `expr $NUM_ENB + $NUM_MOBILES` ; ue++))
-# do
-#     let IP_UE=$ue+1
-#     echo "ip route add table 1 to 10.0.$IP_UE.$IP_UE dev oai0 proto static"
-#     ip route add table 1 to 10.0.$IP_UE.$IP_UE dev oai0 proto static
-#     echo "ip route add table 1 from 0.0.0.0/32 dev oai0 proto static"
-#     ip route add table 1 from 0.0.0.0/32 dev oai0 proto static
-# done
 for ((src=0 ; src < `expr $NUM_ENB + $NUM_MOBILES` ; src++))
 do
     let IP_SRC=$src+1
@@ -480,39 +436,6 @@ do
     done
 done
 
-# for ((ue=$NUM_ENB ; ue < `expr $NUM_ENB + $NUM_MOBILES` ; ue++))
-# do
-#     let IP_UE=$ue+1
-#     # YEs actually this works (${MARKING[0]}) because we include only one eNB
-#     echo "iptables -t mangle -A OUTPUT --dst 10.0.$IP_UE.$IP_UE -j MARK --set-mark ${MARKING[0]}"
-#     iptables -t mangle -A OUTPUT --dst 10.0.$IP_UE.$IP_UE -j MARK --set-mark ${MARKING[0]}
-#
-#     echo "iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[0]} -j SNAT --to 10.0.$IP_UE.$IP_UE"
-#     iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[0]} -j SNAT --to 10.0.$IP_UE.$IP_UE
-#
-#     for ((enb=0 ; enb < $NUM_ENB; enb++ ))
-#     do
-#         ## MANGLE PACKETS
-#         ## RESULTS VISIBLE WITH " iptables -t mangle -nvL "
-#         let IP_ENB=$enb+1
-#
-#         ## MARKING FOR ENBs
-#         ## DST IP ADDR IS ENB ADDRESSES
-#         echo "iptables -t mangle -A OUTPUT -p udp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}"
-#         iptables -t mangle -A OUTPUT -p udp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}
-#
-#         echo "iptables -t mangle -A OUTPUT -p tcp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}"
-#         iptables -t mangle -A OUTPUT -p tcp --dport ${PORT_RANGE[$ue]} --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}
-#
-#         let tos=16+$ue
-#         tos16=`printf '%x' $tos`
-#         echo "iptables -t mangle -A OUTPUT -p icmp  --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}"
-#         iptables -t mangle -A OUTPUT -p icmp  --dst 10.0.$IP_ENB.$IP_ENB -j MARK --set-mark ${MARKING[$ue]}
-#
-# #         echo "iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[$ue]} -j SNAT --to 10.0.$IP_ENB.$IP_ENB"
-# #         iptables -t nat -A POSTROUTING -m mark --mark ${MARKING[$ue]} -j SNAT --to 10.0.$IP_ENB.$IP_ENB
-#     done
-# done
 echo "########################################################################################"
 echo "#          IPTABLES MANGLE                                                             #"
 echo "########################################################################################"
@@ -521,19 +444,6 @@ echo "##########################################################################
 echo "#          IPTABLES NAT                                                             #"
 echo "########################################################################################"
 iptables -t nat -nvL
-echo "########################################################################################"
-echo "#          RULES                                                                       #"
-echo "########################################################################################"
-ip rule show
-# echo "########################################################################################"
-# echo "#          ROUTES                                                                      #"
-# echo "########################################################################################"
-# for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
-# do
-#     let i_p1=i+1
-#     echo -n " Table "$i_p1" : "; ip route show table $i_p1
-# done
-# echo "########################################################################################"
 
 ########################
 #                      #
@@ -571,31 +481,6 @@ do
     done
 done
 
-# for ((cx=0 ; cx <= `expr $NUM_MOBILES - 1` ; cx++ ))
-# do
-#     let IP_DEST=cx+2
-#     let RB_ID=(cx*8)+3
-#     $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z64 -s 10.0.1.1/32   -t 10.0.$IP_DEST.$IP_DEST/32   -r $RB_ID
-#     let CLASSIFIER_ID=CLASSIFIER_ID+2
-#     $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i0 -f$CLASSIFIER_ID -z64 -x 2001:1::1/128 -y 2001:$IP_DEST::$IP_DEST/128 -r $RB_ID
-#     let CLASSIFIER_ID=CLASSIFIER_ID+2
-#
-#     # configuring default RABS on mobiles
-#     for ((instance=1 ; instance <= $NUM_MOBILES ; instance++ ))
-#     do
-#         if [[ $instance -ne $cx ]]
-#         then
-#             let IP_SOURCE=instance+1
-#             RB_ID=3
-#             $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z64 -s 10.0.$IP_SOURCE.$IP_SOURCE/32   -t 10.0.1.1/32      -r $RB_ID
-#             let CLASSIFIER_ID=CLASSIFIER_ID+2
-#             $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z64 -x 2001:$IP_SOURCE::$IP_SOURCE/128 -y 2001:1::1/128 -r $RB_ID
-#             let CLASSIFIER_ID=CLASSIFIER_ID+2
-#         fi
-#     done
-# done
-
-
 
 IP=1
 for ((i=0 ; i < `expr $NUM_MOBILES + $NUM_ENB`; i++ ))
@@ -612,8 +497,35 @@ do
 done
 
 # echo "start the emulation with 1eNB and" $1 "UE"
-echo "$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u" $1 ">/dev/null"
-# rm -f oai.log
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /dev/null
+if [ "$GENERATE_SEQ_DIAGRAM"x = yesx ]; then
+    if [ -e /tmp/msc_log.txt ]; then
+        bash_exec "rm -f /tmp/msc_log.txt"
+    fi
+    
+    if [ "$LOG_FILE_LTE"x = yesx ]; then
+        if [ -e /tmp/lte_log.txt ]; then
+            bash_exec "rm -f /tmp/lte_log.txt"
+        fi
+        $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /tmp/lte_log.txt
+        chmod 777 /tmp/lte_log.txt
+        cat /tmp/lte_log.txt | grep MSC_ > /tmp/msc_log.txt
+    else
+        $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 | grep MSC_ > /tmp/msc_log.txt
+    fi
+    chmod 777 /tmp/msc_log.txt
+    echo "End of emulation, now generating sequence diagrams..."
+    $OPENAIR_TARGETS/SCRIPTS/msc_gen.py /tmp/msc_log.txt
+else
+    if [ "$LOG_FILE_LTE"x = yesx ]; then
+        if [ -e /tmp/lte_log.txt ]; then
+            bash_exec "rm -f /tmp/lte_log.txt"
+        fi
+        $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /tmp/lte_log.txt
+        chmod 777 /tmp/lte_log.txt
+    else
+        $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /dev/null
+    fi
+    echo "End of emulation"
+fi
 
-echo "End"
+
