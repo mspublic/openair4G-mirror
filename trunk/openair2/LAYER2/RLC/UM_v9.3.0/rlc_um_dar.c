@@ -166,6 +166,10 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
           end_snP,
           rlcP->sn_length);
 
+    // nothing to be reassemblied
+    if (start_snP == end_snP) {
+        return;
+    }
     continue_reassembly = 1;
     //sn = (rlcP->last_reassemblied_sn + 1) % rlcP->sn_modulo;
     sn = start_snP;
