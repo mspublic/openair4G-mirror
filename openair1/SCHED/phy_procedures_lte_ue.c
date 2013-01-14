@@ -231,6 +231,23 @@ void ra_failed(u8 Mod_id,u8 eNB_index) {
   //  exit(-1);
 }
 
+void ra_succeeded(u8 Mod_id,u8 eNB_index) {
+
+  int i;
+
+  LOG_I(PHY,"[UE %d][RAPROC] Frame %d Random-access procedure succeeded\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame);
+
+  PHY_vars_UE_g[Mod_id]->ulsch_ue_Msg3_active[eNB_index] = 0;
+  PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index] = PUSCH;
+
+  for (i=0;i<8;i++) { 
+    if (PHY_vars_UE_g[Mod_id]->ulsch_ue[eNB_index]->harq_processes[i])
+      PHY_vars_UE_g[Mod_id]->ulsch_ue[eNB_index]->harq_processes[i]->status=IDLE;
+  }
+
+
+}
+
 UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index) {
 
   return(PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index]);
