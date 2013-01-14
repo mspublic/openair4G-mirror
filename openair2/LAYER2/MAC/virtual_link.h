@@ -54,8 +54,8 @@
 #define MAX_MR_PER_VLINK 4
 
 /* The maximum number of virtual links per CH and MR */
-#define MAX_VLINK_PER_CH 4
-#define MAX_VLINK_PER_MR 4
+//#define MAX_VLINK_PER_CH 4
+//#define MAX_VLINK_PER_MR 4
 
 /* Status of a virtual link */
 #define VLINK_CONNECTED 1
@@ -100,6 +100,6 @@ struct cornti_array {
  * Global variables *
  ********************/
 
-struct virtual_links virtualLinksTable[NB_MAX_CH];
+extern struct virtual_links virtualLinksTable[NB_MAX_CH];
 
 #endif
