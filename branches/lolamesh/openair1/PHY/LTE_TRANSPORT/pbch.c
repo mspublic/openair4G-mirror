@@ -817,18 +817,18 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 			    dummy_w_rx);
 
 
-  lte_rate_matching_cc_rx(RCC,pbch_E,pbch_w_rx,dummy_w_rx,pbch_e_rx);
+  lte_rate_matching_cc_rx(RCC,pbch_E,(s8*)pbch_w_rx,dummy_w_rx,pbch_e_rx);
 
   sub_block_deinterleaving_cc((unsigned int)(PBCH_A+16), 
-			      &pbch_d_rx[96], 
-			      &pbch_w_rx[0]); 
+			      (s8*)&pbch_d_rx[96], 
+			      (s8*)&pbch_w_rx[0]); 
 
   memset(pbch_a,0,((16+PBCH_A)>>3));
 
 
 
 
-  phy_viterbi_lte_sse2(pbch_d_rx+96,pbch_a,16+PBCH_A);
+  phy_viterbi_lte_sse2((s8*)pbch_d_rx+96,pbch_a,16+PBCH_A);
   
   // Fix byte endian of PBCH (bit 23 goes in first)
   for (i=0;i<(PBCH_A>>3);i++) 

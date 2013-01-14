@@ -652,7 +652,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   // do ifft of channel estimate
    for (aa=0;aa<phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_rx*phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_tx;aa++) { 
     if (phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates[eNB_offset][aa]) 
-      fft((short*) phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates[eNB_offset][aa][LTE_CE_OFFSET], 
+      fft((short*) &phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates[eNB_offset][aa][LTE_CE_OFFSET], 
 	  (short*) phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates_time[eNB_offset][aa],
 	  phy_vars_ue->lte_frame_parms[eNB_id]->twiddle_ifft,
 	  phy_vars_ue->lte_frame_parms[eNB_id]->rev,

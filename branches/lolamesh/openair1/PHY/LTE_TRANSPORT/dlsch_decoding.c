@@ -44,7 +44,7 @@
 #include "PHY/CODING/extern.h"
 #include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
-#define DEBUG_DLSCH_DECODING
+//#define DEBUG_DLSCH_DECODING
 
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
@@ -741,7 +741,7 @@ u32  dlsch_decoding(short *dlsch_llr,
     sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs]; 
 	}
 
-  printf("SINR_Eff = %e\n",sinr_eff);
+  //printf("SINR_Eff = %e\n",sinr_eff);
 
  sinr_eff *= 10;
   sinr_eff = floor(sinr_eff);
