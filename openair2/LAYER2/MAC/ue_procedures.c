@@ -269,6 +269,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	LOG_I(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n",
 	      Mod_id,frame,payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	if (UE_mac_inst[Mod_id].RA_active == 1) {
+	  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n");
 	  UE_mac_inst[Mod_id].RA_active=0;
 	  // check if RA procedure has finished completely (no contention)
 	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[1];//1=sizeof(SCH_SUBHEADER_FIXED);
@@ -279,7 +280,9 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
               vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 	      return;
 	    }
+	  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing contention resolution timer\n");
 	  UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 0;
+	  mac_xface->ra_succeeded(Mod_id,eNB_index);
 	}
 	payload_ptr+=6;
 	break;
@@ -890,6 +893,8 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   UE_mac_inst[Mod_id].frame = frame;
   UE_mac_inst[Mod_id].subframe = subframe;
 
+
+
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, eNB_index);
 #else
@@ -913,6 +918,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 
   // Check Contention resolution timer (put in a function later)
   if (UE_mac_inst[Mod_id].RA_contention_resolution_timer_active == 1) {
+  
     if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
       rach_ConfigCommon = &UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon;
     else {
@@ -920,12 +926,16 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       mac_xface->macphy_exit("");
       return(RRC_OK); // RRC_OK ???
     }
+
+    LOG_I(MAC,"Frame %d: Contention resolution timer %d/%d\n",frame,UE_mac_inst[Mod_id].RA_contention_resolution_cnt,
+	  ((1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3));
+
     UE_mac_inst[Mod_id].RA_contention_resolution_cnt++;
     if (UE_mac_inst[Mod_id].RA_contention_resolution_cnt ==
 	((1+rach_ConfigCommon->ra_SupervisionInfo.mac_ContentionResolutionTimer)<<3)) {
       UE_mac_inst[Mod_id].RA_active = 0;
       // Signal PHY to quit RA procedure
-      LOG_I(MAC,"Counter resolution timer expired, RA failed\n");
+      LOG_I(MAC,"Contention resolution timer expired, RA failed\n");
       mac_xface->ra_failed(Mod_id,eNB_index);
     }
   }

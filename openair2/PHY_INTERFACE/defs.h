@@ -127,6 +127,9 @@ typedef struct
     /// Function to indicate failure of contention resolution or RA procedure
     void (*ra_failed)(u8 Mod_id,u8 eNB_index);
 
+    /// Function to indicate success of contention resolution or RA procedure
+    void (*ra_succeeded)(u8 Mod_id,u8 eNB_index);
+
     /// Function to indicate the transmission of msg1/rach to MAC
     void (*Msg1_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
 

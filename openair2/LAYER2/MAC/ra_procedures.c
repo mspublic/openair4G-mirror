@@ -201,6 +201,7 @@ void Msg1_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
 void Msg3_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
 
   // start contention resolution timer
+  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Setting contention resolution timer\n",Mod_id,frame);
   UE_mac_inst[Mod_id].RA_contention_resolution_cnt = 0;
   UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 1;
 
