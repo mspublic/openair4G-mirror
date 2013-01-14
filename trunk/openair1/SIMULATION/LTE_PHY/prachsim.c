@@ -104,8 +104,7 @@ int main(int argc, char **argv) {
 #endif
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double ricean_factor=0.0000005,Td=.8,iqim=0.0;
-  u8 channel_length;
+  double iqim=0.0;
   int trial, ntrials=1;
   u8 transmission_mode = 1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
@@ -141,8 +140,6 @@ int main(int argc, char **argv) {
   int NCS_config = 1,rootSequenceIndex=0;
   logInit();
 
-  channel_length = (int) 11+2*BW*Td;
-
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
   
@@ -155,7 +152,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:")) != -1)
+  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:")) != -1)
     {
       switch (c)
 	{
@@ -222,9 +219,6 @@ int main(int argc, char **argv) {
 	  snr1set=1;
 	  msg("Setting SNR1 to %f\n",snr1);
 	  break;
-	case 't':
-	  Td= atof(optarg);
-	  break;
 	case 'p':
 	  preamble_tx=atoi(optarg);
 	  break;
@@ -248,13 +242,6 @@ int main(int argc, char **argv) {
 	  rootSequenceIndex = atoi(optarg);
 	  if ((rootSequenceIndex < 0) || (rootSequenceIndex > 837))
 	    printf("Illegal rootSequenceNumber %d, (should be 0-837)\n",rootSequenceIndex);
-	  break;
-	case 'r':
-	  ricean_factor = pow(10,-.1*atof(optarg));
-	  if (ricean_factor>1) {
-	    printf("Ricean factor must be between 0 and 1\n");
-	    exit(-1);
-	  }
 	  break;
 	case 'x':
 	  transmission_mode=atoi(optarg);
@@ -292,7 +279,7 @@ int main(int argc, char **argv) {
 	  break;
 	default:
 	case 'h':
-	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -r Ricean_FactordB -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",argv[0]);
+	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",argv[0]);
 	  printf("-h This message\n");
 	  printf("-a Use AWGN channel and not multipath\n");
 	  printf("-n Number of frames to simulate\n");
@@ -309,6 +296,7 @@ int main(int argc, char **argv) {
 	  printf("-L rootSequenceIndex (0-837)\n");
 	  printf("-Z NCS_config (ZeroCorrelationZone) (0-15)\n");
 	  printf("-H Run with High-Speed Flag enabled \n");
+	  printf("-R Number of PRB (6,15,25,50,75,100)\n");
 	  printf("-F Input filename (.txt format) for RX conformance testing\n");
 	  exit (-1);
 	  break;

@@ -1416,9 +1416,9 @@ u8 get_num_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms);
   \brief Return the PRACH format as a function of the Configuration Index and Frame type.
   @param prach_ConfigIndex PRACH Configuration Index
   @param frame_type 0-FDD, 1-TDD
-  @returns 0-4 accordingly
+  @returns 0-1 accordingly
 */
-u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type);
+u8 get_prach_fmt(u8 prach_ConfigIndex,lte_frame_type_t frame_type);
 
 /*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index

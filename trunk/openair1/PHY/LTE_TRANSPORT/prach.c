@@ -51,7 +51,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#define PRACH_DEBUG 1
+//#define PRACH_DEBUG 1
 
 u16 NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 u16 NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case
@@ -225,9 +225,9 @@ u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index) {
   return(tdd_preamble_map[frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][frame_parms->tdd_config].map[tdd_map_index].f_ra);
 }
 
-u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type) {
+u8 get_prach_fmt(u8 prach_ConfigIndex,lte_frame_type_t frame_type) {
 
-  if (frame_type == 0) // FDD
+  if (frame_type == FDD) // FDD
     return(prach_ConfigIndex>>4);
 
   else {
@@ -352,7 +352,7 @@ static short prach_tmp[45600*2] __attribute__((aligned(16)));
 
 s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
-  u8 frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
+  lte_frame_type_t frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
   u8 tdd_config         = phy_vars_ue->lte_frame_parms.tdd_config;
   u16 rootSequenceIndex = phy_vars_ue->lte_frame_parms.prach_config_common.rootSequenceIndex; 
   u8 prach_ConfigIndex  = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex; 
@@ -570,7 +570,26 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     break;
   }
 
-  Ncp = (Ncp*phy_vars_ue->lte_frame_parms.N_RB_UL/100); 
+  switch (phy_vars_ue->lte_frame_parms.N_RB_UL) {
+  case 6:
+    Ncp>>=4;
+    prach+=4; // makes prach2 aligned to 128-bit
+    break;
+  case 15:
+    Ncp>>=3;
+    break;
+  case 25:
+    Ncp>>=2;
+    break;
+  case 50:
+    Ncp>>=1;
+    break;
+  case 75:
+    Ncp=(Ncp*3)>>2;
+    break;
+  }
+
+
   prach2 = prach+(Ncp<<1);
   // do IDFT
   switch (phy_vars_ue->lte_frame_parms.N_RB_UL) {
@@ -723,7 +742,8 @@ s16 prach_ifft[4][1024*4];
 void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, u16 *preamble_delay_list, u16 Nf, u8 tdd_mapindex) {
 
   int i;
-  u8 frame_type         = phy_vars_eNB->lte_frame_parms.frame_type;
+  lte_frame_type_t frame_type         = phy_vars_eNB->lte_frame_parms.frame_type;
+
   u8 tdd_config         = phy_vars_eNB->lte_frame_parms.tdd_config;
   u16 rootSequenceIndex = phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex; 
   u8 prach_ConfigIndex  = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex; 
@@ -785,7 +805,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 
   n_ra_prb = n_ra_prboffset;
   
-  if (frame_type == 1) { // TDD
+  if (frame_type == TDD) { // TDD
       // adjust n_ra_prboffset for frequency multiplexing (p.36 36.211)
 
       f_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[tdd_mapindex].f_ra;
@@ -838,7 +858,24 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
     break;
   }
   
-  Ncp = (Ncp*phy_vars_eNB->lte_frame_parms.N_RB_UL/100); 
+  switch (phy_vars_eNB->lte_frame_parms.N_RB_UL) {
+  case 6:
+    Ncp>>=4;
+    break;
+  case 15:
+    Ncp>>=3;
+    break;
+  case 25:
+    Ncp>>=2;
+    break;
+  case 50:
+    Ncp>>=1;
+    break;
+  case 75:
+    Ncp=(Ncp*3)>>2;
+    break;
+  }
+
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
   //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
 

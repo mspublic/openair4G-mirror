@@ -234,8 +234,11 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
   init_fft(NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev);   // TX/RX
   init_fft(4*NUMBER_OF_OFDM_CARRIERS,2+LOG2_NUMBER_OF_OFDM_CARRIERS,rev_times4);   // Synch
   init_fft(NUMBER_OF_OFDM_CARRIERS/2,LOG2_NUMBER_OF_OFDM_CARRIERS-1,rev_half);   // for interpolation of channel est
+
+  init_fft(4096,12,rev4096);
   init_fft(2048,11,rev2048);
   init_fft(1024,10,rev1024);
+  init_fft(512,9,rev512);
   
   twiddle_fft = (short *)malloc16(4095*4*2);
   twiddle_ifft = (short *)malloc16(4095*4*2);
