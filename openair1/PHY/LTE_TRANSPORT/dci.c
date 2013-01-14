@@ -2175,11 +2175,11 @@ void dci_decoding(u8 DCI_LENGTH,
   msg("[PHY] Doing DCI Rate Matching RCC %d, w %p\n",RCC,w);
 #endif
 
-  lte_rate_matching_cc_rx(RCC,coded_bits,w_rx,dummy_w_rx,e);
+  lte_rate_matching_cc_rx(RCC,coded_bits,(s8*)w_rx,dummy_w_rx,e);
  
   sub_block_deinterleaving_cc((u32)(DCI_LENGTH+16), 
-			      &d_rx[96], 
-			      &w_rx[0]); 
+			      (s8*)&d_rx[96], 
+			      (s8*)&w_rx[0]); 
  
 #ifdef DEBUG_DCI_DECODING
   for (i=0;i<16+DCI_LENGTH;i++)
@@ -2194,7 +2194,7 @@ void dci_decoding(u8 DCI_LENGTH,
     msg("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
 #endif  
   //debug_msg("Doing DCI Viterbi \n");
-  phy_viterbi_lte_sse2(d_rx+96,decoded_output,16+DCI_LENGTH);
+  phy_viterbi_lte_sse2((s8*)d_rx+96,decoded_output,16+DCI_LENGTH);
   //debug_msg("Done DCI Viterbi \n");
 }
 
