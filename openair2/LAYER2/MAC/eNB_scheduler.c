@@ -1075,8 +1075,8 @@ u32 bytes_to_bsr_index(s32 nbytes) {
 }
 
 // This table holds the allowable PRB sizes for ULSCH transmissions
-//u8 rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
-u8 rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,20,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
+u8 rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
+
 void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_flag,unsigned char subframe,unsigned char sched_subframe,unsigned int *nCCE) {//,int calibration_flag) {
 
   unsigned char UE_id;
@@ -1402,7 +1402,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
 }
 
 
-void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 RBalloc,u8 RA_scheduled) {
+void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 RBalloc,u8 RA_scheduled,int mbsfn_flag) {
   // loop over all allocated UEs and compute frequency allocations for PDSCH
 
   unsigned char UE_id,first_rb,nb_rb=3;
@@ -1433,6 +1433,9 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   fprintf(DCIi,"\n");
 
 #endif
+
+  if (mbsfn_flag>0)
+    return;
 
   // clear vrb_map
   memset(vrb_map,0,100);
@@ -3669,7 +3672,7 @@ void update_ul_dci(u8 Mod_id,u16 rnti,u8 dai) {
   //  printf("Update UL DCI: DAI %d\n",dai);
 }
 
-void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16 nb_rb_used0,unsigned int *nCCE_used) {
+void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16 nb_rb_used0,unsigned int *nCCE_used,int mbsfn_flag) {
 
   unsigned char UE_id, UE_id2;
   unsigned char next_ue;
@@ -3692,11 +3695,17 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u8 dl_pow_off[256];
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
+
+  int mcs;
+
+  if (mbsfn_flag>0)
+    return;
+
   //int **rballoc_sub = (int **)malloc(1792*sizeof(int *));
   granted_UEs = find_dlgranted_UEs(Mod_id);
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 1; // set to the maximum aggregation level
-  int mcs;
+  
 
   for(i=0;i<256;i++)
     pre_nb_available_rbs[i] = 0;
@@ -4473,6 +4482,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   unsigned char nprb=0;
   unsigned int nCCE=0;
+  int mbsfn_status=0;
   u32 RBalloc=0;
 
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
@@ -4499,6 +4509,15 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   RBalloc=Get_Cell_SBMap(Mod_id);
 #endif
   // see table 8-2 "k for TDD configuration 0-6" in 36.213
+  mbsfn_status = 0;
+
+  /*
+  if (mbms) {
+
+    mbsfn_status = schedule_embms(frame,subframe,);
+  }
+  */
+
   switch (subframe) {
   case 0:
     // FDD/TDD Schedule Downlink RA transmissions (RA response, Msg4 Contention resolution)
@@ -4516,9 +4535,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       //schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
 
 
-    // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
+    // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
 
-    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 
     break;
   case 1:
@@ -4529,11 +4548,11 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       case 0:
       case 1:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       case 6:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       default:
 	break;
@@ -4541,8 +4560,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
       //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
-	// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+	// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
+	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0,mbsfn_status);
     }
 
     break;
@@ -4551,8 +4570,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // FDD, normal UL/DLSCH
     if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
       // schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
-      // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-      // fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+      // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
+      // fill_DLSCH_dci(Mod_id,subframe,RBalloc,0,mbsfn_status);
     }
     break;
   case 3:
@@ -4564,8 +4583,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       case 2: 
       	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
       case 5: 
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       default:
 	break;
@@ -4573,8 +4592,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else { //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-	// schedule_ue_spec(Mod_id,subframe,0,0);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+	// schedule_ue_spec(Mod_id,subframe,0,0,mbsfn_status);
+	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0,mbsfn_status);
     }
 
     break;
@@ -4590,8 +4609,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       case 2:
       case 4:
       case 5:
-        schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-        fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+        schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+        fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
         break;
       default:
         break;
@@ -4600,8 +4619,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     else {
       if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-	// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0);
+	// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
+	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0,mbsfn_status);
       }
     }
     break;
@@ -4612,16 +4631,22 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // FDD normal UL/DLSCH
     schedule_SI(Mod_id,frame,&nprb,&nCCE);
     //schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-    if ((mac_xface->lte_frame_parms->frame_type == FDD) || //FDD
-	(mac_xface->lte_frame_parms->tdd_config == 0) || // TDD Config 0
-	(mac_xface->lte_frame_parms->tdd_config == 6)) { // TDD Config 6
-
+    if ((mac_xface->lte_frame_parms->frame_type == FDD) ) {
+      schedule_RA(Mod_id,frame,subframe,1,&nprb,&nCCE);
       //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
 
     }
-    //    schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+    else if ((mac_xface->lte_frame_parms->tdd_config == 0) || // TDD Config 0
+	     (mac_xface->lte_frame_parms->tdd_config == 6)) { // TDD Config 6
 
+
+      //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+    }
+    else {
+    //    schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
+    }
     break;
 
   case 6:
@@ -4634,23 +4659,23 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	break;
       case 1:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
-	//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       case 6:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
-	//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	//	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       case 5:
 	schedule_RA(Mod_id,frame,subframe,2,&nprb,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
 	break;
       case 3:
       case 4:
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
 
       default:
@@ -4659,8 +4684,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
     }
 
     break;
@@ -4673,12 +4698,12 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       case 3:
       case 4:
 	schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
 	break;
       case 5:
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       default:
 	break;
@@ -4686,8 +4711,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
     }
 
 
@@ -4708,8 +4733,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	
 	//	schedule_RA(Mod_id,subframe,&nprb,&nCCE);
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       default:
 	break;
@@ -4717,8 +4742,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
       schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,2,&nCCE);
-      schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+      schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE,mbsfn_status);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
     }
     break;
 
@@ -4729,26 +4754,26 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       case 1:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
 	schedule_RA(Mod_id,frame,subframe,7,&nprb,&nCCE);  // 7 = Msg3 subframe, not
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1);
+	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
 	break;
       case 3:
       case 4:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       case 6:
 	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);
 	//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       case 2:
       case 5:
 	//schedule_RA(Mod_id,frame,subframe,&nprb,&nCCE);
-	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+	schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE,mbsfn_status);
+	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
       default:
 	break;
@@ -4756,8 +4781,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
       schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,3,&nCCE);
-      schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+      schedule_ue_spec(Mod_id,frame,subframe,0,&nCCE,mbsfn_status);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
     }
     break;
 
