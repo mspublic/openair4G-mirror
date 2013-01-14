@@ -360,6 +360,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->Msg3_transmitted          = Msg3_tx;
   mac_xface->Msg1_transmitted          = Msg1_tx;
   mac_xface->ra_failed                 = ra_failed;
+  mac_xface->ra_succeeded              = ra_succeeded;
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
