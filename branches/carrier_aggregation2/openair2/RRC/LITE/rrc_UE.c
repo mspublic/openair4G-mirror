@@ -706,7 +706,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
-			   UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
+			   (UE_rrc_inst[Mod_id].sCell_config[eNB_index][0] != NULL ? UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
 			   UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 			   *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
 			   UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
@@ -747,14 +747,20 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
 				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
       }
 #ifdef Rel10
-      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->list.array[0]) {
+      if ((rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension)  &&
+(rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension) &&
+(rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension) &&
+(rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10)) {
 	// Note: Addition of only 1 SCell at a time is possible in the current implementation. More ambitious ppl are welcome
     // to extend the implementation for multiple SCell addition!
     	  LOG_W(RRC,"[UE %d] Frame %d: Received RRC Reconf Req with sCellToAddModList_r10 on DL-DCCH (SRB1) ...\n",Mod_id,frame);
     rrc_ue_process_sCellAdd(Mod_id,eNB_index,
 			rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->list.array[0]);
       }
-      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToReleaseList_r10->list.array[0]) {
+      if ((rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension) &&
+(rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension) &&
+(rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension) &&
+(rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToReleaseList_r10)) {
 	// Same restriction applied to Scell release also
     rrc_ue_process_sCellRelease(Mod_id,eNB_index,
 			rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToReleaseList_r10->list.array[0]);
