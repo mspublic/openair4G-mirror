@@ -45,6 +45,7 @@
  ************/
 
 #include "defs.h"
+#include "PHY/defs.h"
 
 /***********
  * Defines * 
@@ -54,8 +55,8 @@
 #define MAX_MR_PER_VLINK 4
 
 /* The maximum number of virtual links per CH and MR */
-#define MAX_VLINK_PER_CH 4
-#define MAX_VLINK_PER_MR 4
+//#define MAX_VLINK_PER_CH 4
+//#define MAX_VLINK_PER_MR 4
 
 /* Status of a virtual link */
 #define VLINK_CONNECTED 1

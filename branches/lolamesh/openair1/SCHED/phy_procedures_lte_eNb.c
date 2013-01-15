@@ -1148,6 +1148,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					   format0,
 					   UE_id,
 					   phy_vars_eNB,
+					   phy_vars_eNB->ulsch_eNB[UE_id],
 					   SI_RNTI,
 					   0,
 					   P_RNTI,
@@ -2232,6 +2233,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
       if (abstraction_flag == 0) {
 	ret = ulsch_decoding(phy_vars_eNB,
+			     UE_PUSCH,
 			     i,
 			     last_slot>>1,
 			     0, // control_only_flag

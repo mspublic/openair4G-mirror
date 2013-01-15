@@ -638,8 +638,14 @@ typedef enum {
   SI_PDSCH=0,
   RA_PDSCH,
   PDSCH,
+  CO_PDSCH,
   PMCH
 } PDSCH_t;
+
+typedef enum {
+  UE_PUSCH,
+  CO_PUSCH
+} PUSCH_t;
 
 typedef enum {
   pucch_format1,

@@ -59,7 +59,7 @@
 #include "UTIL/OCG/OCG_extern.h"
 #endif
 
-#define DEBUG_ULSCH_DECODING
+//#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
 
@@ -173,6 +173,7 @@ u8 ytag[14*1200];
 u8 ytag2[6*14*1200];
 
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
+                             PUSCH_t pusch_type,
 			     u8 UE_id,
 			     u8 subframe,
 			     u8 control_only_flag,
@@ -181,7 +182,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
   s16 *ulsch_llr = phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->llr;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
-  LTE_eNB_ULSCH_t *ulsch = phy_vars_eNB->ulsch_eNB[UE_id];
+  LTE_eNB_ULSCH_t *ulsch;
   u8 harq_pid;
   unsigned short nb_rb;
   unsigned int A,E;
@@ -205,6 +206,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   u8 reset = 1,c,c_prev=0;
   s16 ys;
   u32 wACK_idx;
+
+  if(pusch_type == UE_PUSCH)
+    ulsch = phy_vars_eNB->ulsch_eNB[UE_id];
+  else
+    ulsch = phy_vars_eNB->ulsch_eNB_co[UE_id];
 
   // x1 is set in lte_gold_generic
   x2 = ((u32)ulsch->rnti<<14) + ((u32)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1

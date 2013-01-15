@@ -93,15 +93,19 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   
   switch (type) {
   case SI_PDSCH:
-    lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id];
+    lte_ue_pdsch_vars = phy_vars_ue->lte_ue_pdsch_vars_SI;
     dlsch_ue          = &phy_vars_ue->dlsch_ue_SI[eNB_id];
     break;
   case RA_PDSCH:
-    lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id];
+    lte_ue_pdsch_vars = phy_vars_ue->lte_ue_pdsch_vars_ra;
     dlsch_ue          = &phy_vars_ue->dlsch_ue_ra[eNB_id];
     break;
+  case CO_PDSCH:
+    lte_ue_pdsch_vars = phy_vars_ue->lte_ue_pdsch_vars_co;
+    dlsch_ue          = phy_vars_ue->dlsch_ue_co[0]; // To be indexed
+    break;
   case PDSCH:
-    lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars[eNB_id];
+    lte_ue_pdsch_vars = phy_vars_ue->lte_ue_pdsch_vars;
     dlsch_ue          = phy_vars_ue->dlsch_ue[eNB_id];
     break;
   case PMCH:
@@ -230,7 +234,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
   } //else n_tx>1
   
-    //  printf("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
   if (nb_rb==0) {
     msg("dlsch_modulation.c: nb_rb=0\n");
     return(-1);

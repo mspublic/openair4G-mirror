@@ -43,7 +43,8 @@
 #include <xmmintrin.h>
 //#define DEBUG_DRS
 
-int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
+int generate_drs_pusch_single(PHY_VARS_UE *phy_vars_ue,
+                       LTE_UE_ULSCH_t *ulsch,
 		       u8 eNB_id,
 		       short amp,
 		       unsigned int subframe,
@@ -74,14 +75,14 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
   u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
 
   cyclic_shift0 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-		   phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
+		   ulsch->harq_processes[harq_pid]->n_DMRS2 +
 		   phy_vars_ue->lte_frame_parms[eNB_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]+ // apaposto
-		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
+		   ((ulsch->cooperation_flag==2)?10:0)) % 12;
   //  printf("PUSCH.cyclicShift %d, n_DMRS2 %d, nPRS %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2,phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]);
   cyclic_shift1 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-		   phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
+		   ulsch->harq_processes[harq_pid]->n_DMRS2 +
 		   phy_vars_ue->lte_frame_parms[eNB_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+ // apaposto
-		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
+		   ((ulsch->cooperation_flag==2)?10:0)) % 12;
 
   //       cyclic_shift0 = 0;
   //        cyclic_shift1 = 0;
@@ -240,5 +241,29 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
     }
   }
   return(0);
+}
+
+int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
+		       u8 eNB_id,
+		       short amp,
+		       unsigned int subframe,
+		       unsigned int first_rb,
+		       unsigned int nb_rb) {
+
+  int ret;
+
+  if(phy_vars_ue->ulsch_ue[eNB_id]) {
+    ret = generate_drs_pusch_single(phy_vars_ue, phy_vars_ue->ulsch_ue[eNB_id], eNB_id, amp, subframe, first_rb, nb_rb);
+    if(ret != 0)
+      return ret;
+  }
+
+  if(phy_vars_ue->ulsch_ue_co[0]) { // Fix this
+    ret = generate_drs_pusch_single(phy_vars_ue, phy_vars_ue->ulsch_ue_co[eNB_id], eNB_id, amp, subframe, first_rb, nb_rb);
+    if(ret != 0)
+      return ret;
+  }
+
+  return 0;
 }
 

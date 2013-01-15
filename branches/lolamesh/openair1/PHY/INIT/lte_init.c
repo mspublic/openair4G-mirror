@@ -18,7 +18,7 @@
 #include "TDD-Config.h"
 #include "LAYER2/MAC/extern.h"
 
-#define DEBUG_PHY
+// #define DEBUG_PHY
 
 extern u16 prach_root_sequence_map0_3[838];
 extern u16 prach_root_sequence_map4[138];
@@ -700,6 +700,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_PDSCH_FLP **ue_pdsch_vars_flp= phy_vars_ue->lte_ue_pdsch_vars_flp;
   LTE_UE_PDSCH **ue_pdsch_vars_SI     = phy_vars_ue->lte_ue_pdsch_vars_SI;
   LTE_UE_PDSCH **ue_pdsch_vars_ra     = phy_vars_ue->lte_ue_pdsch_vars_ra;
+  LTE_UE_PDSCH **ue_pdsch_vars_co     = phy_vars_ue->lte_ue_pdsch_vars_co;
   LTE_UE_PBCH **ue_pbch_vars          = phy_vars_ue->lte_ue_pbch_vars;
   LTE_UE_PDCCH **ue_pdcch_vars        = phy_vars_ue->lte_ue_pdcch_vars;
   LTE_UE_PRACH **ue_prach_vars        = phy_vars_ue->lte_ue_prach_vars;
@@ -732,6 +733,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 #endif
     ue_pdsch_vars_SI[eNB_id] = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
     ue_pdsch_vars_ra[eNB_id] = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
+    ue_pdsch_vars_co[eNB_id] = (LTE_UE_PDSCH *)malloc16(sizeof(LTE_UE_PDSCH));
     ue_pdcch_vars[eNB_id]    = (LTE_UE_PDCCH *)malloc16(sizeof(LTE_UE_PDCCH));
     ue_prach_vars[eNB_id]    = (LTE_UE_PRACH *)malloc16(sizeof(LTE_UE_PRACH));
 
@@ -742,6 +744,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 #endif
     msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars_SI[%d] = %p\n",eNB_id,ue_pdsch_vars_SI[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars_ra[%d] = %p\n",eNB_id,ue_pdsch_vars_ra[eNB_id]);
+    msg("[OPENAIR][LTE PHY][INIT] ue_pdsch_vars_co[%d] = %p\n",eNB_id,ue_pdsch_vars_co[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_pdcch_vars[%d] = %p\n",eNB_id,ue_pdcch_vars[eNB_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_prach_vars[%d] = %p\n",eNB_id,ue_prach_vars[eNB_id]);
     //msg("[OPENAIR][LTE PHY][INIT] prach_resources[%d] = %p\n",eNB_id,prach_resources[eNB_id]);
@@ -898,6 +901,28 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
      
       ////////
       
+      ue_pdsch_vars_co[eNB_id]->rxdataF_ext    = (int **)malloc16(8*sizeof(int*));
+      for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
+	  ue_pdsch_vars_co[eNB_id]->rxdataF_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*14));
+      
+      ue_pdsch_vars_co[eNB_id]->rxdataF_comp    = (int **)malloc16(8*sizeof(int*));
+      for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
+	  ue_pdsch_vars_co[eNB_id]->rxdataF_comp[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*14));
+      
+      ue_pdsch_vars_co[eNB_id]->rho = (int **)malloc16(frame_parms[eNB_id]->nb_antennas_rx*sizeof(int*));
+      
+      ue_pdsch_vars_co[eNB_id]->pmi_ext = (unsigned char *)malloc16(frame_parms[eNB_id]->N_RB_DL);
+      
+      for (i=0;i<frame_parms[eNB_id]->nb_antennas_rx;i++)
+	ue_pdsch_vars_co[eNB_id]->rho[i] = (int *)malloc16(sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12*7*2));
+      
+      ue_pdsch_vars_co[eNB_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
+  
+     
+      ////////
+      
      
       ue_pdcch_vars[eNB_id]->rxdataF_comp    = (int **)malloc16(8*sizeof(int*));
       for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
@@ -954,6 +979,30 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
       
       ue_pdsch_vars_ra[eNB_id]->llr128 = (short **)malloc16(sizeof(short **));
       
+
+      ue_pdsch_vars_co[eNB_id]->dl_ch_estimates_ext = (int **)malloc16(8*sizeof(short*));
+      for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
+	  ue_pdsch_vars_co[eNB_id]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
+      
+      ue_pdsch_vars_co[eNB_id]->dl_ch_rho_ext = (int **)malloc16(8*sizeof(short*));
+      for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
+	  ue_pdsch_vars_co[eNB_id]->dl_ch_rho_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
+      
+      ue_pdsch_vars_co[eNB_id]->dl_ch_mag = (int **)malloc16(8*sizeof(short*));
+      for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++) 
+	  ue_pdsch_vars_co[eNB_id]->dl_ch_mag[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
+      
+      ue_pdsch_vars_co[eNB_id]->dl_ch_magb = (int **)malloc16(8*sizeof(short*));
+      for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
+	for (j=0; j<4;j++)//frame_parms->nb_antennas_tx; j++)
+	  ue_pdsch_vars_co[eNB_id]->dl_ch_magb[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms[eNB_id]->N_RB_DL*12));
+      //    ue_pdsch_vars_co[eNB_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
+      
+      ue_pdsch_vars_co[eNB_id]->llr128 = (short **)malloc16(sizeof(short **));
+      
       
       ue_pdcch_vars[eNB_id]->rxdataF_ext    = (int **)malloc16(8*sizeof(int*));
       for (i=0; i<frame_parms[eNB_id]->nb_antennas_rx; i++)
@@ -968,7 +1017,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
       ue_pdcch_vars[eNB_id]->llr16 = (unsigned short *)malloc16(2*4*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned short));
       ue_pdcch_vars[eNB_id]->wbar = (unsigned short *)malloc16(4*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned short));
       
-      ue_pdcch_vars[eNB_id]->e_rx = (char *)malloc16(4*2*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned char));
+      ue_pdcch_vars[eNB_id]->e_rx = (s8 *)malloc16(4*2*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned char));
       
       // PBCH
       ue_pbch_vars[eNB_id] = (LTE_UE_PBCH *)malloc16(sizeof(LTE_UE_PBCH));
@@ -984,7 +1033,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 	  ue_pbch_vars[eNB_id]->rxdataF_comp[(j<<1)+i]        = (int *)malloc16(sizeof(int)*(6*12*4));
 	  ue_pbch_vars[eNB_id]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*6*12*4);
 	}    
-      ue_pbch_vars[eNB_id]->llr = (char *)malloc16(1920*sizeof(char));
+      ue_pbch_vars[eNB_id]->llr = (s8 *)malloc16(1920*sizeof(char));
       
       //    ue_pbch_vars[eNB_id]->channel_output = (short *)malloc16(*sizeof(short));
       

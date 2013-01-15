@@ -36,7 +36,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   s32 **rxdataF_ext=  eNB_pusch_vars->rxdataF_ext[eNB_id];
   u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
 
-  u16 N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
+  u16 N_rb_alloc;
   u16 aa,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
   u16 * Msc_idx_ptr;
   int k,pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
@@ -65,11 +65,21 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
     *temp_out_fft_1_ptr = (s32*)0,*out_fft_ptr_1 = (s32*)0,
     *temp_in_ifft_ptr = (s32*)0;
   
+  if(cooperation_flag == 2)
+    N_rb_alloc = phy_vars_eNB->ulsch_eNB_co[UE_id]->harq_processes[harq_pid]->nb_rb;
+  else
+    N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
+
   Msc_RS = N_rb_alloc*12;
 
-  cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-		  phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
-		  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
+  if(cooperation_flag == 2)
+    cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+                    phy_vars_eNB->ulsch_eNB_co[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
+                    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
+  else
+    cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+                    phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
+                    frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
 
   //  cyclic_shift = 0;
 #ifdef USER_MODE

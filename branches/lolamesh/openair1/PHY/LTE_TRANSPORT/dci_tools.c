@@ -868,9 +868,9 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   u8 NPRB=0,tbswap=0,tpmi=0;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
 
-  //#ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
   msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
-  //#endif
+#endif
 
   switch (dci_format) {
 
@@ -1815,6 +1815,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u8 subframe,
 				      DCI_format_t dci_format,
 				      PHY_VARS_UE *phy_vars_ue,
+				      LTE_UE_ULSCH_t *ulsch,
+				      LTE_UE_DLSCH_t **dlsch,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti,
@@ -1824,8 +1826,6 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   u8 harq_pid;
   u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   ANFBmode_t AckNackFBMode = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
-  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[eNB_id];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
   LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[eNB_id];
   //  u32 current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];
@@ -1898,7 +1898,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	delta_PUSCH_acc[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC],
 	phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC);
       */
-      ulsch->f_pusch += delta_PUSCH_acc[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC];
+      ulsch->f_pusch += delta_PUSCH_acc[ulsch->harq_processes[harq_pid]->TPC];
     }
     else {
       /*
@@ -1907,7 +1907,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	delta_PUSCH_abs[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC],
 	phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC);
       */
-      ulsch->f_pusch = delta_PUSCH_abs[phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TPC];
+      ulsch->f_pusch = delta_PUSCH_abs[ulsch->harq_processes[harq_pid]->TPC];
     }
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[rballoc];
@@ -2061,7 +2061,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     // save PUSCH pmi for later (transmission modes 4,5,6)
 
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
-    dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
+    if(dlsch)
+      dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
 
     //#ifdef DEBUG_PHY
     if (((phy_vars_ue->frame % 100) == 0)) //|| (phy_vars_ue->frame < 10))
@@ -2146,6 +2147,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       DCI_format_t dci_format,
 				       u8 UE_id,
 				       PHY_VARS_eNB *phy_vars_eNB,
+				       LTE_eNB_ULSCH_t *ulsch,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -2155,7 +2157,6 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   u32 rb_alloc;
   u8 transmission_mode=phy_vars_eNB->transmission_mode[UE_id];
   ANFBmode_t AckNackFBMode = phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode;
-  LTE_eNB_ULSCH_t *ulsch=phy_vars_eNB->ulsch_eNB[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
 
   u32 cqi_req;

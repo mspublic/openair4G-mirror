@@ -77,6 +77,7 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 LTE_eNB_ULSCH_t *new_eNB_ulsch(u8 Mdlharq,u8 abstraction_flag);
 
+void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch);
 void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
@@ -943,7 +944,7 @@ u8 get_Qm(u8 I_MCS);
 
 /** \brief Compute Q (modulation order) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
     @param I_MCS */
-u8 get_Qm(u8 I_MCS);
+u8 get_Qm_ul(u8 I_MCS);
 
 /** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
@@ -953,9 +954,15 @@ u8 get_I_TBS(u8 I_MCS);
     @param I_MCS */
 unsigned char get_I_TBS_UL(unsigned char I_MCS);
 
-/** \brief Compute Q (modulation order) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS */
+/** \brief Compute TBS based on I_MCS for PDSCH.  Implements table 7.1.7.2.1-1 from 36.213.
+    @param mcs I_MCS
+	@param nb_rb Number of RB */
 u16 get_TBS(u8 mcs,u16 nb_rb);
+
+/** \brief Compute TBS based on I_MCS for PUSCH.  Implements table 7.1.7.2.1-1 from 36.213.
+    @param mcs I_MCS
+	@param nb_rb Number of RB */
+u16 get_TBS_UL(u8 mcs,u16 nb_rb);
 
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
 @param vrb_type VRB type (0=localized,1=distributed)
@@ -1074,7 +1081,7 @@ s32 generate_ue_dlsch_params_from_dci(u8 subframe,
 				      DCI_format_t dci_format,
 				      LTE_UE_DLSCH_t **dlsch_ue,
 				      LTE_DL_FRAME_PARMS *frame_parms,
-                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+                                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti);
@@ -1085,7 +1092,7 @@ s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       DCI_format_t dci_format,
 				       LTE_eNB_DLSCH_t **dlsch_eNB,
 				       LTE_DL_FRAME_PARMS *frame_parms,
-                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -1101,11 +1108,13 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u16 rnti,
 				      u8 subframe,
 				      DCI_format_t dci_format,
-				      PHY_VARS_UE *phy_vars_ue,
+                                      PHY_VARS_UE *phy_vars_ue,
+                                      LTE_UE_ULSCH_t *ulsch,
+                                      LTE_UE_DLSCH_t **dlsch,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti,
-				      u8 eNB_id,
+                                      u8 eNB_id,
 				      u8 use_srs);
 
 s32 generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
@@ -1115,8 +1124,9 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
 				       u8 subframe,
 				       DCI_format_t dci_format,
-				       u8 UE_id,
-				       PHY_VARS_eNB *PHY_vars_eNB,
+                                       u8 UE_id,
+                                       PHY_VARS_eNB *PHY_vars_eNB,
+				       LTE_eNB_ULSCH_t *ulsch,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
@@ -1238,6 +1248,7 @@ s32 ulsch_encoding_emul(u8 *ulsch_buffer,
   @returns 0 on success
 */
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
+                             PUSCH_t pusch_type,
 			     u8 UE_id,
 			     u8 subframe,
 			     u8 control_only_flag,
