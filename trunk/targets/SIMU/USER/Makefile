@@ -221,9 +221,18 @@ S1AP_DIR=$(OPENAIR2_DIR)/S1AP
 ASN1MESSAGESDIR=$(S1AP_DIR)/MESSAGES
 ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
 
+-include $(OBJ:.o=.d)
+-include $(ASN1_MSG_OBJS1:.o=.d)
+
 $(OBJ) $(ASN1_MSG_OBJS1) : %.o : %.c
 	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
+	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $*.c > $*.d
+	@mv -f $*.d $*.d.tmp
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 $(S1AP_BUILT_OBJS): %.o : %.c
 	@echo Compiling $<
@@ -292,6 +301,7 @@ clean:
 	rm -f *.o
 	rm -f *.exe*
 	rm -f $(ASN1_MSG_INC)/asn1_msg.o
+	rm -f  $(OBJ:.o=.d) $(ASN1_MSG_OBJS1:.o=.d)
 
 cleanl1:
 	rm -f oaisim
