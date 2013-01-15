@@ -27,6 +27,7 @@ void init_transport_channels(unsigned char transmission_mode) {
   BCCH_alloc_pdu.harq_pid = 0;
   BCCH_alloc_pdu.TPC      = 1;      // set to 3 PRB
 
+  // for FDD mode
   BCCH_alloc_pdu_fdd.type               = 1;
   BCCH_alloc_pdu_fdd.vrb_type           = 0;
   BCCH_alloc_pdu_fdd.rballoc            = BCCH_RB_ALLOC;
