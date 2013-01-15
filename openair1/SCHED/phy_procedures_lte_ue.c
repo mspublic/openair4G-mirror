@@ -1988,6 +1988,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					      last_slot>>1,
 					      format0,
 					      phy_vars_ue,
+                                              phy_vars_ue->ulsch_ue[eNB_id],
+                                              phy_vars_ue->dlsch_ue[eNB_id],
 					      SI_RNTI,
 					      0,
 					      P_RNTI,

@@ -37,14 +37,12 @@ const bool true = 1;
 #define NID_CELL 0
 #define MAX_RELAYS 8
 #define MAX_HARQ_ROUNDS 4
-#define MAX_FRAMES 2*MAX_HARQ_ROUNDS+1
+#define MAX_FRAMES (2*MAX_HARQ_ROUNDS+1)
+#define DATA_BUFFER_SIZE (14*12*N_PRB*6/8+16)
 
 const u8 cp_type = 0;         // Normal cyclic prefix
-const u8 n_txantenna_ch = 1;  // Number of CH transmit antennas
-const u8 n_rxantenna_ch = 1;  // Number of CH receive antennas
-const u8 n_txantenna_mr = 1;  // Number of MR transmit antennas
-const u8 n_rxantenna_mr = 1;  // Number of MR receive antennas
-const u8 oversampling = 1;
+const u8 n_antenna_ch = 1;  // Number of CH antennas
+const u8 n_antenna_mr = 1;  // Number of MR antennas
 const u8 n_pdcch_symbols = 3; // Number of PDCCH symbols in DL subframes
 const double awgn_stddev = 100.0;
 
@@ -77,6 +75,12 @@ typedef enum {
   strategy_wait_one   // Start hop 2 when one relay has decoded
 } strategy_t;
 
+// AMC mode
+typedef enum {
+  amc_none,             // No AMC
+  amc_rbadjust          // Adjust bandwidth for specified MCS and MAC PDU size
+} amc_t;
+
 // Structure for command line parsed arguments
 typedef struct {
   bool debug_output;              // Output MATLAB signal files
@@ -85,16 +89,17 @@ typedef struct {
   int range;                      // Sweep range
   double step;                    // Sweep step size
   comm_mode_t comm_mode;          // Communication mode
+  bool perfect_channel_estimation;// Use perfect channel estimation
   strategy_t strategy;            // HARQ strategy
   int subframe_pdsch;             // Subframe for CH1 PDSCH transmissions
   int n_relays;                   // Number of relays
   int n_pdu;                      // Number of MAC PDUs to simulate
   int n_harq;                     // Maximum number of HARQ rounds
+  amc_t amc;                      // AMC mode
   int mcs_hop1;                   // MCS for hop 1
   int mcs_hop2;                   // MCS for hop 2
   int n_prb_hop1;                 // Number of PRB utilized in hop 1
   int n_prb_hop2;                 // Number of PRB utilized in hop 2
-  bool autorb;                    // Reduce number of PRB to balance TBS
   SCM_t channel_model;            // Channel model
   double channel_correlation;     // Channel reutilization factor
   double snr_hop1[MAX_RELAYS];    // SNR used in hop 1 for all links
@@ -195,7 +200,7 @@ typedef struct {
   LTE_DL_FRAME_PARMS* frame_parms;
   PHY_VARS_eNB* phy_vars_ch_src;      // CH0 PHY variables
   PHY_VARS_eNB* phy_vars_ch_dest;     // CH1 PHY variables
-  PHY_VARS_UE** phy_vars_mr;          // MR PHY variables
+  PHY_VARS_UE* phy_vars_mr[MAX_RELAYS]; // MR PHY variables
   sh_channel_t** channels_hop1;       // CH0->MR channels
   sh_channel_t** channels_hop2;       // MR->CH1 channels
   s32* rxdata[1];                     // Temporary vector used by MR->CH1 channels
@@ -205,17 +210,15 @@ typedef struct {
   int mcs_hop2;                       // MCS in hop 2
   u32 tbs_hop1;                       // TBS in hop 1
   u32 tbs_hop2;                       // TBS in hop 2
-  u32 tbs_col;                        // Collaborative TBS
   int n_prb_hop1;                     // Number of PRB used in hop 1
   int n_prb_hop2;                     // Number of PRB used in hop 2
   u16 rnti_hop1;                      // RNTI in hop 1
   u16 rnti_hop2;                      // RNTI in hop 2
-  int input_buffer_length;            // Length of input buffer
-  u8* input_buffer;                   // Data to send from CH0
-  int mr_buffer_length;               // Length of MR data buffers
+  u8* ch0_buffer;                     // Data to send from CH0
   u8* mr_buffer[MAX_RELAYS];          // Contains data received at and transmitted from MRs
-  u32 n_coded_bits_hop1;              // Number of coded bits in hop 1
-  u32 n_coded_bits_hop2;              // Number of coded bits in hop 2
+  u32 pdu_size;                       // MAC PDU size in bytes
+  //u32 n_coded_bits_hop1;              // Number of coded bits in hop 1
+  //u32 n_coded_bits_hop2;              // Number of coded bits in hop 2
   int subframe_pdsch;                 // Subframe for CH1 PDSCH transmissions
   int subframe_pusch;                 // Subframe for MR PUSCH transmissions
   u8 harq_pid_hop2;
@@ -238,7 +241,11 @@ typedef struct {
 
 void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* results);
 void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pdu, u8 subframe);
+void transmit_pusch_dci(args_t* args, context_t* context, results_t* results, int pdu, u8 subframe);
 void transmit_pusch(args_t* args, context_t* context, results_t* results, int pdu, u8 subframe);
+void determine_pdu_size(args_t* args, context_t* context);
+void hop1_amc(args_t* args, context_t* context);
+void hop2_amc(args_t* args, context_t* context);
 int parse_args(int argc, char** argv, args_t* args);
 bool parse_snr(const char* str, double* snr, int n);
 int parse_channel_model(const char* str, SCM_t* model);
@@ -250,13 +257,14 @@ void setup_single(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop
 void setup_snrsweep_a(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
 void setup_snrsweep_b(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
 void setup_snrsweep_c(double** snrs, int* n_tests, double* snr_hop1, double* snr_hop2, int n_relays, double step, int start, int end);
-void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmission_mode);
-void setup_phy_vars(LTE_DL_FRAME_PARMS* frame_parms, PHY_VARS_eNB* phy_vars_ch_src, 
-    PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays);
-void alloc_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti);
-void free_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays);
-void alloc_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti);
-void free_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays);
+LTE_DL_FRAME_PARMS* alloc_frame_params(void);
+void free_frame_params(LTE_DL_FRAME_PARMS* frame_parms);
+PHY_VARS_eNB* alloc_ch_vars(LTE_DL_FRAME_PARMS* frame_parms, int id);
+void free_ch_vars(PHY_VARS_eNB* phy_vars);
+PHY_VARS_UE* alloc_mr_vars(LTE_DL_FRAME_PARMS* frame_parms, int id);
+void free_mr_vars(PHY_VARS_UE* phy_vars);
+void alloc_dlsch_co(PHY_VARS_eNB* phy_vars_ch_src, PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays);
+void free_dlsch_co(PHY_VARS_eNB* phy_vars_ch_src, PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays);
 u16 rballoc_type0(int n_rb, int rbg_size);
 void setup_broadcast_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb);
 void setup_distributed_dci(DCI_ALLOC_t* dci, u16 rnti, int harq_round, int mcs, int n_rb);
@@ -267,8 +275,8 @@ sh_channel_t* alloc_sh_channel(channel_vars_t* cvars, SCM_t channel_model, int n
 void free_sh_channel(sh_channel_t* c);
 void transmit_subframe(sh_channel_t* channel, s32** src, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb, double ampl, bool accumulate);
 void deliver_subframe(sh_channel_t* channel, s32** dst, LTE_DL_FRAME_PARMS* frame_parms, u8 subframe, u8 nsymb, double stddev);
-void ofdm_fep(PHY_VARS_UE* phy_vars_mr, u8 subframe);
-int rx_dlsch_symbol(PHY_VARS_UE* phy_vars, u8 subframe, u8 symbol, u8 first_symbol);
+void slot_fep_est(args_t* args, PHY_VARS_UE* phy_vars, int l, int slot);
+int rx_dlsch_co(args_t* args, PHY_VARS_UE* phy_vars, u8 subframe, u8 first_symbol);
 u32 get_ulsch_G(LTE_UE_ULSCH_t *ulsch, u8 harq_pid);
 int correct_bits_soft(u8* ref, s16* rec, int n);
 void print_dlsch_eNB_stats(LTE_eNB_DLSCH_t* d);
@@ -333,6 +341,11 @@ int main(int argc, char **argv)
     exit(1);
   }
 
+  if(!args.perfect_channel_estimation || args.channel_model != AWGN) {
+    printf("Channel estimation is broken, use -C AWGN --perfect_ce\n");
+    exit(1);
+  }
+
   // Check argument bounds
   if(args.n_relays > MAX_RELAYS) {
     printf("Too many relays, increase MAX_RELAYS\n");
@@ -365,21 +378,15 @@ int main(int argc, char **argv)
   randominit(0);
   set_taus_seed(0);
 
-  // Allocate memory for frame parameters and node structures
-  context.frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
-  memset(context.frame_parms, 0, sizeof(LTE_DL_FRAME_PARMS));
-  context.phy_vars_ch_src = malloc(sizeof(PHY_VARS_eNB));
-  context.phy_vars_ch_dest = malloc(sizeof(PHY_VARS_eNB));
-  context.phy_vars_mr = malloc(args.n_relays*sizeof(PHY_VARS_UE*));
-  for(k = 0; k < args.n_relays; k++) {
-    context.phy_vars_mr[k] = malloc(sizeof(PHY_VARS_UE));
-    memset(context.phy_vars_mr[k], 0, sizeof(PHY_VARS_UE));
-  }
-  memset(context.phy_vars_ch_src, 0, sizeof(PHY_VARS_eNB));
-  memset(context.phy_vars_ch_dest, 0, sizeof(PHY_VARS_eNB));
-
   // Initialize log
   logInit();
+
+  // Initialize frame parameters and node structures
+  context.frame_parms = alloc_frame_params();
+  context.phy_vars_ch_src = alloc_ch_vars(context.frame_parms, 0);
+  for(k = 0; k < args.n_relays; k++)
+    context.phy_vars_mr[k] = alloc_mr_vars(context.frame_parms, k);
+  context.phy_vars_ch_dest = alloc_ch_vars(context.frame_parms, 1);
 
   // Initialize result data
   results = alloc_results(&args);
@@ -424,83 +431,41 @@ int main(int argc, char **argv)
     write_results_header(results_file, results, n_tests);
   }
 
-  // Setup PHY structures
-  setup_frame_params(context.frame_parms, 1);
-  setup_phy_vars(context.frame_parms, context.phy_vars_ch_src, context.phy_vars_mr, context.phy_vars_ch_dest, args.n_relays);
-
   // Setup simulation context
   context.rnti_hop1 = 0x1515;
   context.rnti_hop2 = 0x1516;
-  context.mcs_hop1 = args.mcs_hop1;
-  context.mcs_hop2 = args.mcs_hop2;
-  context.n_prb_hop1 = args.n_prb_hop1;
-  context.n_prb_hop2 = args.n_prb_hop2;
   context.subframe_pdsch = args.subframe_pdsch;
   determine_pdsch_harq_subframe(context.frame_parms, 0, context.subframe_pdsch, &k, &context.subframe_pusch);
 
   // Allocate temporary signal structures
   context.rxdata[0] = malloc(10*context.frame_parms->samples_per_tti);
 
-  // Allocate first hop transport channel
-  alloc_broadcast_transport_channel(context.phy_vars_ch_src, context.phy_vars_mr, args.n_relays, context.rnti_hop1);
-        
-  // Allocate second hop transport channel
-  alloc_distributed_transport_channel(context.phy_vars_ch_dest, context.phy_vars_mr, args.n_relays, context.rnti_hop2);
-  
+  // Allocate collaborative transport channels
+  alloc_dlsch_co(context.phy_vars_ch_src, context.phy_vars_mr, context.phy_vars_ch_dest, args.n_relays);
+
   // Setup channel structures
   channel_vars = alloc_channel_vars(context.frame_parms);
   for(k = 0; k < args.n_relays; k++) {
-    context.channels_hop1[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_ch, n_rxantenna_mr, args.channel_correlation);
-    context.channels_hop2[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_txantenna_mr, n_rxantenna_ch, args.channel_correlation);
+    context.channels_hop1[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_antenna_ch, n_antenna_mr, args.channel_correlation);
+    context.channels_hop2[k] = alloc_sh_channel(&channel_vars, args.channel_model, n_antenna_mr, n_antenna_ch, args.channel_correlation);
   }
-  // Create broadcast DCI and generate transport channel parameters,
-  // in order to determine hop 1 transfer block size and number of coded bits
-  setup_broadcast_dci(&dci_hop1, context.rnti_hop1, 0, args.mcs_hop1, args.n_prb_hop1);
-  generate_eNB_dlsch_params_from_dci(context.subframe_pdsch, dci_hop1.dci_pdu, 
-      context.rnti_hop1, format1, context.phy_vars_ch_src->dlsch_eNB[0], context.frame_parms, 
-      &context.phy_vars_ch_src->pdsch_config_dedicated[0],
-      SI_RNTI, RA_RNTI, P_RNTI,
-      context.phy_vars_ch_src->eNB_UE_stats[0].DL_pmi_single);
-  context.tbs_hop1 = context.phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->TBS;
-  context.n_coded_bits_hop1 = get_G(context.frame_parms, context.phy_vars_ch_src->dlsch_eNB[0][0]->nb_rb,
-      context.phy_vars_ch_src->dlsch_eNB[0][0]->rb_alloc,
-      get_Qm(context.phy_vars_ch_src->dlsch_eNB[0][0]->harq_processes[0]->mcs),
-      n_pdcch_symbols, context.subframe_pdsch);
-
-  // Create distributed DCI and generate transport channel parameters,
-  // in order to determine hop 2 transfer block size and number of coded bits
-  context.harq_pid_hop2 = subframe2harq_pid(context.frame_parms, 0, context.subframe_pusch);
-  setup_distributed_dci(&dci_hop2, context.rnti_hop2, 0, args.mcs_hop2, args.n_prb_hop2);
-  generate_ue_ulsch_params_from_dci(dci_hop2.dci_pdu, context.rnti_hop2, 
-				    ul_subframe2pdcch_alloc_subframe(context.frame_parms, context.subframe_pusch),
-				    format0, context.phy_vars_mr[0], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
-  context.tbs_hop2 = context.phy_vars_mr[0]->ulsch_ue[0]->harq_processes[context.harq_pid_hop2]->TBS;
-  context.n_coded_bits_hop2 = get_ulsch_G(context.phy_vars_mr[0]->ulsch_ue[0], context.harq_pid_hop2);
 
   if(args.verbose > 1) {
-    print_dlsch_eNB_stats(context.phy_vars_ch_src->dlsch_eNB[0][0]);
-    print_ulsch_ue_stats(context.phy_vars_mr[0]->ulsch_ue[0]);
-    dump_dci(context.frame_parms, &dci_hop1);
-    dump_dci(context.frame_parms, &dci_hop2);
+    //print_dlsch_eNB_stats(context.phy_vars_ch_src->dlsch_eNB[0][0]);
+    //print_ulsch_ue_stats(context.phy_vars_mr[0]->ulsch_ue[0]);
+    //dump_dci(context.frame_parms, &dci_hop1);
+    //dump_dci(context.frame_parms, &dci_hop2);
   }
-  printf("Hop 1: TBS=%d, G=%d, rate=%f. Hop 2: TBS=%d, G=%d, rate=%f\n", 
-      context.tbs_hop1, context.n_coded_bits_hop1, (float)context.tbs_hop1/(float)context.n_coded_bits_hop1,
-      context.tbs_hop2, context.n_coded_bits_hop2, (float)context.tbs_hop2/(float)context.n_coded_bits_hop2);
+  //printf("Hop 1: TBS=%d, G=%d, rate=%f. Hop 2: TBS=%d, G=%d, rate=%f\n", 
+  //    context.tbs_hop1, context.n_coded_bits_hop1, (float)context.tbs_hop1/(float)context.n_coded_bits_hop1,
+  //    context.tbs_hop2, context.n_coded_bits_hop2, (float)context.tbs_hop2/(float)context.n_coded_bits_hop2);
 
-  context.tbs_col = context.tbs_hop1 < context.tbs_hop2 ? context.tbs_hop1 : context.tbs_hop2;
-
-  // Allocate input buffer
-  context.input_buffer_length = context.tbs_hop1/8;
-  context.input_buffer = malloc(context.input_buffer_length+4);
-  memset(context.input_buffer, 0, context.input_buffer_length+4);
-  if(args.verbose > 0)
-    printf("Input buffer: %d bytes\n", context.input_buffer_length);
-
-  // Allocate MR data buffers
-  context.mr_buffer_length = context.tbs_hop2/8;
+  // Allocate data buffers
+  context.ch0_buffer = malloc(DATA_BUFFER_SIZE);
+  memset(context.ch0_buffer, 0, DATA_BUFFER_SIZE);
   for(k = 0; k < args.n_relays; k++) {
-    context.mr_buffer[k] = malloc(context.mr_buffer_length+4);
-    memset(context.mr_buffer[k], 0, context.mr_buffer_length+4);
+    context.mr_buffer[k] = malloc(DATA_BUFFER_SIZE);
+    memset(context.mr_buffer[k], 0, DATA_BUFFER_SIZE);
   }
 
   for(test = 0; test < n_tests; test++) {
@@ -527,10 +492,12 @@ int main(int argc, char **argv)
     fclose(results_file);
 
   free_results(results);
-  free(context.input_buffer);
+  free(context.ch0_buffer);
+  for(k = 0; k < args.n_relays; k++) {
+    free(context.mr_buffer[k]);
+  }
   free(context.rxdata[0]);
-  free_broadcast_transport_channel(context.phy_vars_ch_src, context.phy_vars_mr, args.n_relays);
-  free_distributed_transport_channel(context.phy_vars_ch_dest, context.phy_vars_mr, args.n_relays);
+  free_dlsch_co(context.phy_vars_ch_src, context.phy_vars_mr, context.phy_vars_ch_dest, args.n_relays);
   free(snrs);
   for(k = 0; k < args.n_relays; k++) {
     free_sh_channel(context.channels_hop1[k]);
@@ -539,12 +506,11 @@ int main(int argc, char **argv)
   free_channel_vars(channel_vars);
   free(context.channels_hop1);
   free(context.channels_hop2);
-  free(context.phy_vars_ch_src);
-  free(context.phy_vars_ch_dest);
+  free_ch_vars(context.phy_vars_ch_src);
+  free_ch_vars(context.phy_vars_ch_dest);
   for(k = 0; k < args.n_relays; k++)
-    free(context.phy_vars_mr[k]);
-  free(context.phy_vars_mr);
-  free(context.frame_parms);
+    free_mr_vars(context.phy_vars_mr[k]);
+  free_frame_params(context.frame_parms);
 
   return 0;
 }
@@ -586,11 +552,21 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
   }
   schedule[0][context->subframe_pdsch].pdsch = true;
 
-  // Generate input data
-  for(k = 0; k < context->input_buffer_length; k++)
-    context->input_buffer[k] = (u8)(taus()&0xff);
+  // Compute pdu size
+  determine_pdu_size(args, context);
+  if(context->pdu_size > DATA_BUFFER_SIZE) {
+    fprintf(stderr, "DATA_BUFFER_SIZE too small\n");
+    exit(1);
+  }
+  if(args->verbose > 0) {
+    printf("MAC PDU size: %d bytes\n", context->pdu_size);
+  }
 
-  results->tx[pdu].n_bytes = context->input_buffer_length;
+  // Generate source data
+  for(k = 0; k < context->pdu_size; k++)
+    context->ch0_buffer[k] = (u8)(taus()&0xff);
+
+  results->tx[pdu].n_bytes = context->pdu_size;
 
   context->hop1_active = true;
   context->hop2_active = false;
@@ -622,6 +598,12 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 
         results->tx[pdu].hop1.round[context->round_hop1].frame = frame;
         results->tx[pdu].hop1.round[context->round_hop1].subframe = subframe;
+
+        // Determine hop 1 mcs and n_prb
+        hop1_amc(args, context);
+        if(args->verbose > 0) {
+          printf("Hop 1: MCS=%d, n_PRB=%d, TBS=%d\n", context->mcs_hop1, context->n_prb_hop1, context->tbs_hop1);
+        }
 
         // Do the PDSCH transmission
         transmit_pdsch(args, context, results, pdu, subframe);
@@ -779,6 +761,10 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
             if(args->verbose > 0) {
               printf("Frame %d, subframe %d: starting hop 2\n", frame, subframe);
             }
+            hop2_amc(args, context);
+            if(args->verbose > 0) {
+              printf("Hop 2: MCS=%d, n_PRB=%d, TBS=%d\n", context->mcs_hop2, context->n_prb_hop2, context->tbs_hop2);
+            }
           }
         }
 
@@ -898,13 +884,8 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
             printf("\n");
           }
 
-          if(args->comm_mode == comm_mode_full) {
-            //transmit_pusch_dci();
-          }
-          else {
-            for(k = 0; k < args->n_relays; k++)
-              context->hop2_received_pusch_dci[k] = context->hop2_received_bsr[k];
-          }
+          transmit_pusch_dci(args, context, results, pdu, subframe);
+
           determine_pusch_subframe(context->frame_parms, frame, subframe, &f, &s);
           if(f < MAX_FRAMES)
             schedule[f][s].pusch = true;
@@ -924,16 +905,13 @@ void transmit_one_pdu(args_t* args, context_t* context, int pdu, results_t* resu
 void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pdu, u8 subframe) 
 {
   LTE_DL_FRAME_PARMS* frame_parms = context->frame_parms;
-  LTE_eNB_DLSCH_t** dlsch_enb = context->phy_vars_ch_src->dlsch_eNB[0];
+  LTE_eNB_DLSCH_t** dlsch_enb = context->phy_vars_ch_src->dlsch_eNB_co[0];
   mod_sym_t** txdataF = context->phy_vars_ch_src->lte_eNB_common_vars.txdataF[0];
   s32** txdata = context->phy_vars_ch_src->lte_eNB_common_vars.txdata[0];
   s32** rxdata[MAX_RELAYS];
   //s32** rxdataF[MAX_RELAYS];
   s16* llr;
   LTE_UE_DLSCH_t** dlsch_ue;
-  int mcs;
-  u32 tbs;
-  int n_prb;
   int n_re;
   DCI_ALLOC_t dci;
   int n_used_pdcch_symbols;
@@ -944,6 +922,7 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
   int k;
   int l;
   int n_iter;
+  int n_coded_bits;
   int n_correct_bits;
 
   int n_symbols_per_slot = frame_parms->symbols_per_tti>>1;
@@ -961,13 +940,8 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
   // Clear txdataF vector
   memset(txdataF[0], 0, FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 
-  // Determine mcs, tbs, N_PRB
-  mcs = context->mcs_hop1;
-  tbs = context->tbs_hop1;
-  n_prb = context->n_prb_hop1;
-
   // Create DCI
-  setup_broadcast_dci(&dci, context->rnti_hop1, context->round_hop1, mcs, n_prb);
+  setup_broadcast_dci(&dci, context->rnti_hop1, context->round_hop1, context->mcs_hop1, context->n_prb_hop1);
   if(args->verbose > 2)
     dump_dci(frame_parms, &dci);
 
@@ -977,6 +951,8 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
       &context->phy_vars_ch_src->pdsch_config_dedicated[0],
       SI_RNTI, RA_RNTI, P_RNTI,
       context->phy_vars_ch_src->eNB_UE_stats[0].DL_pmi_single);
+  n_coded_bits = get_G(frame_parms, dlsch_enb[0]->nb_rb, dlsch_enb[0]->rb_alloc,
+      get_Qm(context->mcs_hop1), n_pdcch_symbols, subframe);
 
   // Create PDCCH
   n_used_pdcch_symbols = generate_dci_top(1, 0, &dci, 0, 1024, frame_parms, txdataF, subframe);
@@ -986,23 +962,23 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
   }
       
   // Encode source data
-  if(dlsch_encoding(context->input_buffer, frame_parms, n_pdcch_symbols, dlsch_enb[0], subframe) < 0)
+  if(dlsch_encoding(context->ch0_buffer, frame_parms, n_pdcch_symbols, dlsch_enb[0], subframe) < 0)
     exit(-1);
 
   // Scramble data
-  dlsch_scrambling(frame_parms, n_pdcch_symbols, dlsch_enb[0], context->n_coded_bits_hop1, 0, subframe << 1);
+  dlsch_scrambling(frame_parms, n_pdcch_symbols, dlsch_enb[0], n_coded_bits, 0, subframe << 1);
 
   // Modulate data
   n_re = dlsch_modulation(txdataF, 1024, subframe, frame_parms, n_pdcch_symbols, dlsch_enb[0]);
   if(args->verbose > 1)
     printf("Hop 1, HARQ round %d: %d coded bits, Modulated %d REs\n", 
-        context->round_hop1, context->n_coded_bits_hop1, n_re);
+        context->round_hop1, n_coded_bits, n_re);
 
   // Fill results
-  results->tx[pdu].hop1.round[context->round_hop1].mcs = (u8)mcs;
-  results->tx[pdu].hop1.round[context->round_hop1].tbs = (u16)tbs;
-  results->tx[pdu].hop1.round[context->round_hop1].n_prb = (u8)n_prb;
-  results->tx[pdu].hop1.round[context->round_hop1].n_sent_bits = (u16)context->n_coded_bits_hop1;
+  results->tx[pdu].hop1.round[context->round_hop1].mcs = (u8)context->mcs_hop1;
+  results->tx[pdu].hop1.round[context->round_hop1].tbs = (u16)context->tbs_hop1;
+  results->tx[pdu].hop1.round[context->round_hop1].n_prb = (u8)context->n_prb_hop1;
+  results->tx[pdu].hop1.round[context->round_hop1].n_sent_bits = (u16)n_coded_bits;
 
   if(args->verbose > 2)
     print_dlsch_eNB_stats(dlsch_enb[0]);
@@ -1034,8 +1010,8 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
     if(context->hop1_decoded_pdsch[k])
       continue;
 
-    dlsch_ue = context->phy_vars_mr[k]->dlsch_ue[0];
-    llr = context->phy_vars_mr[k]->lte_ue_pdsch_vars[0]->llr[0];
+    dlsch_ue = context->phy_vars_mr[k]->dlsch_ue_co[0];
+    llr = context->phy_vars_mr[k]->lte_ue_pdsch_vars_co[0]->llr[0];
 
     // Front end processor up to first pilot
     for(l = 0; l <= pilot1_symbol; l++)
@@ -1052,47 +1028,19 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
     context->hop1_received_pdcch[k] = true;
 
     // Receive DLSCH data
-    // Front end processor up to second pilot
-    for(l = pilot1_symbol+1; l < n_symbols_per_slot; l++)
-      slot_fep(context->phy_vars_mr[k], l, subframe<<1, 0, 0);
-    slot_fep(context->phy_vars_mr[k], 0, (subframe<<1)+1, 0, 0);
-
-    // Receive DLSCH for first slot
-    if(rx_dlsch_symbol(context->phy_vars_mr[k], subframe, n_pdcch_symbols, 1) == -1)
+    if(rx_dlsch_co(args, context->phy_vars_mr[k], subframe, pilot1_symbol) == -1)
       break;
-    for(l = n_pdcch_symbols + 1; l < n_symbols_per_slot; l++)
-      if(rx_dlsch_symbol(context->phy_vars_mr[k], subframe, l, 0) == -1)
-        break;
-
-    // Front end processor up to third pilot
-    for(l = 1; l <= pilot1_symbol; l++)
-      slot_fep(context->phy_vars_mr[k], l, (subframe<<1)+1, 0, 0);
     
-    // Receive DLSCH up to third pilot
-    for(l = n_symbols_per_slot; l < n_symbols_per_slot+pilot1_symbol; l++)
-      if(rx_dlsch_symbol(context->phy_vars_mr[k], subframe, l, 0) == -1)
-        break;
-
-    // Front end processor for rest of subframe
-    for(l = pilot1_symbol+1; l < n_symbols_per_slot; l++)
-      slot_fep(context->phy_vars_mr[k], l, (subframe<<1)+1, 0, 0);
-    slot_fep(context->phy_vars_mr[k], 0, (subframe<<1)+2, 0, 0);
-
-    // Receive DLSCH for rest of subframe
-    for(l = n_symbols_per_slot+pilot1_symbol; l < n_symbols_per_slot<<1; l++)
-      if(rx_dlsch_symbol(context->phy_vars_mr[k], subframe, l, 0) == -1)
-        break;
-
     // Compute raw bit error rate
-    n_correct_bits = correct_bits_soft(dlsch_enb[0]->e, llr, context->n_coded_bits_hop1);
+    n_correct_bits = correct_bits_soft(dlsch_enb[0]->e, llr, n_coded_bits);
     results->tx[pdu].hop1.round[context->round_hop1].n_correct_bits[k] = n_correct_bits;
     if(args->verbose > 1)
-      printf("Received %d bits at MR %d, raw BER: %f\n", context->n_coded_bits_hop1, k, 
-          (double)n_correct_bits/(double)context->n_coded_bits_hop1);
+      printf("Received %d bits at MR %d, raw BER: %f\n", n_coded_bits, k, 
+          (double)n_correct_bits/(double)n_coded_bits);
 
     // Unscramble received bits
     dlsch_unscrambling(frame_parms, context->phy_vars_mr[k]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-        dlsch_ue[0], context->n_coded_bits_hop1, llr, 0, subframe << 1);
+        dlsch_ue[0], n_coded_bits, llr, 0, subframe << 1);
 
     // Decode received bits
     n_iter = dlsch_decoding(llr, frame_parms, dlsch_ue[0], subframe, 
@@ -1109,18 +1057,19 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
       results->tx[pdu].hop1.round[context->round_hop1].decoded |= (1 << k);
 
       // copy received data to intermediate buffer
-      memcpy(context->mr_buffer[k], context->phy_vars_mr[k]->dlsch_ue[0][0]->harq_processes[0]->b, context->tbs_col>>3);
-      memset(&context->mr_buffer[k][context->tbs_col>>3], 0, context->mr_buffer_length-(context->tbs_col>>3));
+      memcpy(context->mr_buffer[k], dlsch_ue[0]->harq_processes[0]->b, context->pdu_size);
+      memset(&context->mr_buffer[k][context->pdu_size], 0, DATA_BUFFER_SIZE-context->pdu_size);
     }
   }
 
   // Write debug signals if required
   if(args->debug_output) {
     if(context->round_hop1 == 0)
-      write_output("hop1_e.m", "e", context->phy_vars_ch_src->dlsch_eNB[0][0]->e, context->n_coded_bits_hop1, 1, 4);
+      write_output("hop1_e.m", "e", context->phy_vars_ch_src->dlsch_eNB_co[0][0]->e, n_coded_bits, 1, 4);
     snprintf(fnbuf, 80, "hop1_r%d_ch_txdataFv.m", context->round_hop1);
     snprintf(varbuf, 80, "hop1_r%d_ch_txdataF", context->round_hop1);
-    write_output(fnbuf, varbuf, txdataF, FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX, 1, 1);
+    write_output(fnbuf, varbuf, context->phy_vars_ch_src->lte_eNB_common_vars.txdataF[0][0],
+        10*frame_parms->ofdm_symbol_size*2*n_symbols_per_slot, 1, 1);
     snprintf(fnbuf, 80, "hop1_r%d_ch_txdatav.m", context->round_hop1);
     snprintf(varbuf, 80, "hop1_r%d_ch_txdata", context->round_hop1);
     write_output(fnbuf, varbuf, txdata, 10*frame_parms->samples_per_tti, 1, 1);
@@ -1133,6 +1082,14 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
       snprintf(varbuf, 80, "hop1_r%d_mr%d_rxdataF", context->round_hop1, k);
       write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars[0]->rxdataF[0],
           2*frame_parms->ofdm_symbol_size*2*n_symbols_per_slot, 2, 1);
+      snprintf(fnbuf, 80, "hop1_r%d_mr%d_dl_ch_estimatesv.m", context->round_hop1, k);
+      snprintf(varbuf, 80, "hop1_r%d_mr%d_dl_ch_estimates", context->round_hop1, k);
+      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_common_vars[0]->dl_ch_estimates[0][0],
+          frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size, 1, 1);
+      snprintf(fnbuf, 80, "hop1_r%d_mr%d_llrv.m", context->round_hop1, k);
+      snprintf(varbuf, 80, "hop1_r%d_mr%d_llr", context->round_hop1, k);
+      write_output(fnbuf, varbuf, context->phy_vars_mr[k]->lte_ue_pdsch_vars_co[0]->llr[0],
+          n_coded_bits, 1, 0);
     }
   }
   context->round_hop1++;
@@ -1140,20 +1097,18 @@ void transmit_pdsch(args_t* args, context_t* context, results_t* results, int pd
     context->hop1_active = false;
 }
 
-void transmit_pusch(args_t* args, context_t* context, results_t* results, int pdu, u8 subframe) 
+void transmit_pusch_dci(args_t* args, context_t* context, results_t* results, int pdu, u8 subframe) 
 {
   LTE_DL_FRAME_PARMS* frame_parms = context->frame_parms;
-  LTE_eNB_ULSCH_t** ulsch_enb = context->phy_vars_ch_dest->ulsch_eNB;
+  LTE_UE_ULSCH_t* ulsch_ue;
+  LTE_eNB_ULSCH_t* ulsch_enb = context->phy_vars_ch_dest->ulsch_eNB_co[0];
   mod_sym_t** txdataF;
   s32** txdata;
   s32** rxdata = context->phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0];
   //s32** rxdataF = context->phy_vars_ch_dest->lte_eNB_common_vars.rxdataF[0];
-  LTE_UE_ULSCH_t* ulsch_ue;
-  int mcs;
-  u32 tbs;
-  int n_prb;
   int n_re;
-  DCI_ALLOC_t dci;
+  DCI_ALLOC_t dci_ch;
+  DCI_ALLOC_t dci_mr[MAX_RELAYS];
   u32 tx_energy;
   double tx_ampl;
   int k;
@@ -1164,22 +1119,78 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
   int n_iter;
   int n_active_relays;
   bool accumulate_at_rx;
+  int n_symbols_per_slot = frame_parms->symbols_per_tti>>1;
+  int f;
+  int s;
 
+  // Temporary strings
+  char fnbuf[80];
+  char varbuf[80];
+
+  determine_pusch_subframe(frame_parms, 0, subframe, &f, &s);
+
+  // Create distributed DCI
+  context->harq_pid_hop2 = subframe2harq_pid(frame_parms, 0, s);
+  setup_distributed_dci(&dci_ch, context->rnti_hop2, context->round_hop2, context->mcs_hop2, context->n_prb_hop2);
+  if(args->verbose > 2)
+    dump_dci(frame_parms, &dci_ch);
+
+  if(args->comm_mode == comm_mode_full) {
+    // Transmit DCI
+  }
+  else {
+    for(k = 0; k < args->n_relays; k++) {
+      dci_mr[k] = dci_ch;
+      context->hop2_received_pusch_dci[k] = context->hop2_received_bsr[k];
+    }
+  }
+
+  // Generate eNB transport channel parameters
+  generate_eNB_ulsch_params_from_dci(dci_ch.dci_pdu, context->rnti_hop2, subframe,
+       format0, 0, context->phy_vars_ch_dest, context->phy_vars_ch_dest->ulsch_eNB_co[0],
+       SI_RNTI, RA_RNTI, P_RNTI, 0);
+
+  // Generate UE transport channel parameters
+  for(k = 0; k < args->n_relays; k++) {
+    if(context->hop2_received_pusch_dci[k]) {
+      generate_ue_ulsch_params_from_dci(dci_mr[k].dci_pdu, context->rnti_hop2, subframe,
+          format0, context->phy_vars_mr[k], context->phy_vars_mr[k]->ulsch_ue_co[0], 0,
+          SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
+    }
+  }
+  //context->n_coded_bits_hop2 = 0; //get_ulsch_G(context->phy_vars_mr[k]->ulsch_ue[0], context.harq_pid_hop2);
+}
+
+void transmit_pusch(args_t* args, context_t* context, results_t* results, int pdu, u8 subframe) 
+{
+  LTE_DL_FRAME_PARMS* frame_parms = context->frame_parms;
+  LTE_UE_ULSCH_t* ulsch_ue;
+  LTE_eNB_ULSCH_t* ulsch_enb = context->phy_vars_ch_dest->ulsch_eNB_co[0];
+  mod_sym_t** txdataF;
+  s32** txdata;
+  s32** rxdata = context->phy_vars_ch_dest->lte_eNB_common_vars.rxdata[0];
+  //s32** rxdataF = context->phy_vars_ch_dest->lte_eNB_common_vars.rxdataF[0];
+  int n_re;
+  u32 tx_energy;
+  double tx_ampl;
+  int k;
+  double raw_ber;
+  int i;
+  int l;
+  relay_bit_array_t active;
+  int n_iter;
+  int n_active_relays;
+  bool accumulate_at_rx;
   int n_symbols_per_slot = frame_parms->symbols_per_tti>>1;
 
   // Temporary strings
   char fnbuf[80];
   char varbuf[80];
 
-  // Determine mcs, tbs, n_prb
-  mcs = context->mcs_hop2;
-  tbs = context->tbs_hop2;
-  n_prb = context->n_prb_hop2;
-
   // Fill results
-  results->tx[pdu].hop2.round[context->round_hop2].mcs = (u8)mcs;
-  results->tx[pdu].hop2.round[context->round_hop2].tbs = (u16)tbs;
-  results->tx[pdu].hop2.round[context->round_hop2].n_prb = (u8)n_prb;
+  results->tx[pdu].hop2.round[context->round_hop2].mcs = (u8)context->mcs_hop2;
+  results->tx[pdu].hop2.round[context->round_hop2].tbs = (u16)context->tbs_hop2;
+  results->tx[pdu].hop2.round[context->round_hop2].n_prb = (u8)context->n_prb_hop2;
   active = 0;
   for(k = args->n_relays-1; k >= 0; k--)
     if(context->hop2_received_pusch_dci[k])
@@ -1187,12 +1198,7 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
     else
       active = (active << 1);
   results->tx[pdu].hop2.round[context->round_hop2].active = active;
-  results->tx[pdu].hop2.round[context->round_hop2].n_sent_bits = (u16)context->n_coded_bits_hop2;
-
-  // create second hop dci
-  setup_distributed_dci(&dci, context->rnti_hop2, context->round_hop2, mcs, n_prb);
-  if(args->verbose > 2)
-    dump_dci(frame_parms, &dci);
+  results->tx[pdu].hop2.round[context->round_hop2].n_sent_bits = 0; //(u16)context->n_coded_bits_hop2;
 
   if(args->verbose > 1)
     printf("Hop 2, HARQ round %d\n", context->round_hop2);
@@ -1215,26 +1221,21 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
 
     txdataF = context->phy_vars_mr[k]->lte_ue_common_vars[0]->txdataF;
     txdata = context->phy_vars_mr[k]->lte_ue_common_vars[0]->txdata;
-    ulsch_ue = context->phy_vars_mr[k]->ulsch_ue[0];
+    ulsch_ue = context->phy_vars_mr[k]->ulsch_ue_co[0];
 
     // Clear txdataF vector
     memset(txdataF[0], 0, FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 
-    // Generate transport channel parameters
-    generate_ue_ulsch_params_from_dci(dci.dci_pdu, context->rnti_hop2, 
-        ul_subframe2pdcch_alloc_subframe(frame_parms, subframe),
-        format0, context->phy_vars_mr[k], SI_RNTI, RA_RNTI, P_RNTI, 0, 0);
-
     // Set relay role in Alamouti coding (this could be done better)
     if(context->relay_role[k] == RELAY_ROLE_STANDARD) {
-      context->phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 0;
+      ulsch_ue->cooperation_flag = 0;
     }
     else {
-      context->phy_vars_mr[k]->ulsch_ue[0]->cooperation_flag = 2;
+      ulsch_ue->cooperation_flag = 2;
     }
 
     // Generate uplink reference signal
-    generate_drs_pusch(context->phy_vars_mr[k], 0, AMP, subframe, 0, n_prb);
+    generate_drs_pusch(context->phy_vars_mr[k], 0, AMP, subframe, 0, context->n_prb_hop2);
 
     // Encode ULSCH data
     if(ulsch_encoding(context->mr_buffer[k], frame_parms, ulsch_ue,
@@ -1247,10 +1248,10 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
     ulsch_modulation(txdataF, AMP, 0, subframe, frame_parms, ulsch_ue);
 
     // Compute number of resource elements from coded bits and modulation order
-    n_re = context->n_coded_bits_hop2/get_Qm(mcs);
+    n_re = 0; //context->n_coded_bits_hop2/get_Qm(mcs);
     if(args->verbose > 1)
       printf("Hop 2, MR%d, HARQ round %d: %d coded bits, Modulated %d REs\n", 
-          k, context->round_hop2, context->n_coded_bits_hop2, n_re);
+          k, context->round_hop2, 0 /* context->n_coded_bits_hop2 */, n_re);
 
     if(args->verbose > 2)
       print_ulsch_ue_stats(ulsch_ue);
@@ -1281,11 +1282,6 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
       (short) ((awgn_stddev*0.707*gaussdouble(0.0,1.0)));
   }
 
-  // Generate eNB transport channel parameters
-  generate_eNB_ulsch_params_from_dci(dci.dci_pdu, context->rnti_hop2, 
-       ul_subframe2pdcch_alloc_subframe(frame_parms, subframe),
-       format0, 0, context->phy_vars_ch_dest, SI_RNTI, RA_RNTI, P_RNTI, 0);
-
   // Front end processing at destination CH
   for(l = 0; l < frame_parms->symbols_per_tti>>1; l++)
     slot_fep_ul(frame_parms, &context->phy_vars_ch_dest->lte_eNB_common_vars, l, 2*subframe, 0, 0);
@@ -1293,27 +1289,27 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
     slot_fep_ul(frame_parms, &context->phy_vars_ch_dest->lte_eNB_common_vars, l, 2*subframe+1, 0, 0);
 
   // Receive ULSCH data
-  rx_ulsch(context->phy_vars_ch_dest, subframe, 0, 0, ulsch_enb, 2);
+  rx_ulsch(context->phy_vars_ch_dest, subframe, 0, 0, &ulsch_enb, 2);
 
   // Compute uncoded bit error rate
   k = 0;
   while(!context->hop2_received_pusch_dci[k])
     k++;
-  results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits = correct_bits_soft(
-      context->phy_vars_mr[k]->ulsch_ue[0]->b_tilde,
-      context->phy_vars_ch_dest->lte_eNB_pusch_vars[0]->llr, context->n_coded_bits_hop2);
-  raw_ber = (double)(context->n_coded_bits_hop2-results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits)/
-    (double)context->n_coded_bits_hop2;
+  //results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits = correct_bits_soft(
+  //    context->phy_vars_mr[k]->ulsch_ue_co[0]->b_tilde,
+  //    context->phy_vars_ch_dest->lte_eNB_pusch_vars[0]->llr, context->n_coded_bits_hop2);
+  raw_ber = 0.0;//(double)(context->n_coded_bits_hop2-results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits)/
+  //  (double)context->n_coded_bits_hop2;
   if(args->verbose > 1) {
-    printf("Received %d bits at dest CH, raw BER: %f (%d/%d)\n", context->n_coded_bits_hop2, raw_ber, 
-        context->n_coded_bits_hop2-results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits, context->n_coded_bits_hop2);
+    //printf("Received %d bits at dest CH, raw BER: %f (%d/%d)\n", context->n_coded_bits_hop2, raw_ber, 
+    //    context->n_coded_bits_hop2-results->tx[pdu].hop2.round[context->round_hop2].n_correct_bits, context->n_coded_bits_hop2);
   }
 
   // Decode ULSCH data
-  n_iter = ulsch_decoding(context->phy_vars_ch_dest, 0, subframe, 0, 1);
+  n_iter = ulsch_decoding(context->phy_vars_ch_dest, CO_PUSCH, 0, subframe, 0, 1);
 
   if(args->verbose > 2)
-    print_ulsch_eNB_stats(ulsch_enb[0]);
+    print_ulsch_eNB_stats(ulsch_enb);
 
   if(n_iter <= MAX_TURBO_ITERATIONS) {
     context->hop2_decoded_at_ch = true;
@@ -1378,6 +1374,61 @@ void transmit_pusch(args_t* args, context_t* context, results_t* results, int pd
   }
 }
 
+void determine_pdu_size(args_t* args, context_t* context)
+{
+  int tbs_hop1;
+  int tbs_hop2;
+
+  switch(args->amc) {
+    case amc_none:
+    case amc_rbadjust:
+      tbs_hop1 = get_TBS(args->mcs_hop1, args->n_prb_hop1);
+      tbs_hop2 = get_TBS_UL(args->mcs_hop2, args->n_prb_hop2);
+      break;
+    default:
+      break;
+  }
+  context->pdu_size = min(tbs_hop1, tbs_hop2);
+}
+      
+void hop1_amc(args_t* args, context_t* context)
+{
+  switch(args->amc) {
+    case amc_none:
+      context->mcs_hop1 = args->mcs_hop1;
+      context->n_prb_hop1 = args->n_prb_hop1;
+      break;
+    case amc_rbadjust:
+      context->mcs_hop1 = args->mcs_hop1;
+      context->n_prb_hop1 = args->n_prb_hop1;
+      while(get_TBS(context->mcs_hop1, context->n_prb_hop1-1) > context->pdu_size)
+        context->n_prb_hop1--;
+      break;
+    default:
+      break;
+  }
+  context->tbs_hop1 = get_TBS(context->mcs_hop1, context->n_prb_hop1);
+}
+
+void hop2_amc(args_t* args, context_t* context)
+{
+  switch(args->amc) {
+    case amc_none:
+      context->mcs_hop2 = args->mcs_hop2;
+      context->n_prb_hop2 = args->n_prb_hop2;
+      break;
+    case amc_rbadjust:
+      context->mcs_hop2 = args->mcs_hop2;
+      context->n_prb_hop2 = args->n_prb_hop2;
+      while(get_TBS_UL(context->mcs_hop2, context->n_prb_hop2-1) > context->pdu_size)
+        context->n_prb_hop2--;
+      break;
+    default:
+      break;
+  }
+  context->tbs_hop2 = get_TBS_UL(context->mcs_hop2, context->n_prb_hop2);
+}
+
 int parse_args(int argc, char** argv, args_t* args)
 {
   int c;
@@ -1387,6 +1438,7 @@ int parse_args(int argc, char** argv, args_t* args)
     {"info", no_argument, NULL, 300},
     {"corr", required_argument, NULL, 400},
     {"comm", required_argument, NULL, 401},
+    {"perfect_ce", no_argument, NULL, 402},
     {"strategy", required_argument, NULL, 500},
     {"snr", required_argument, NULL, 600},
     {"snr1", required_argument, NULL, 601},
@@ -1401,7 +1453,7 @@ int parse_args(int argc, char** argv, args_t* args)
     {"mcs2", required_argument, NULL, 801},
     {"rb1", required_argument, NULL, 810},
     {"rb2", required_argument, NULL, 811},
-    {"autorb", no_argument, NULL, 812},
+    {"amc", required_argument, NULL, 812},
     {"subframe", required_argument, NULL, 820},
     {NULL, 0, NULL, 0}};
 
@@ -1411,11 +1463,12 @@ int parse_args(int argc, char** argv, args_t* args)
   args->n_pdu = 1;
   args->n_harq = 4;
   args->comm_mode = comm_mode_only_pdu;
+  args->perfect_channel_estimation = true;
   args->mcs_hop1 = 0;
   args->mcs_hop2 = 0;
   args->n_prb_hop1 = N_PRB;
   args->n_prb_hop2 = N_PRB;
-  args->autorb = false;
+  args->amc = amc_none;
   args->channel_model = AWGN;
   args->channel_correlation = 0.0;
   args->results_fn = 0;
@@ -1431,7 +1484,7 @@ int parse_args(int argc, char** argv, args_t* args)
     args->snr_hop2[k] = 10.0;
 
   //snr_set = false;
-  while((c = getopt_long(argc, argv, "hvor:C:N:n:H:S:s:m:", long_options, NULL)) != -1) {
+  while((c = getopt_long(argc, argv, "hvor:C:eN:n:H:S:s:m:", long_options, NULL)) != -1) {
     switch(c) {
       // General options:
     case 'h':
@@ -1467,6 +1520,9 @@ int parse_args(int argc, char** argv, args_t* args)
         args->comm_mode = comm_mode_full;
       else
         return 1;
+      break;
+    case 402: // --perfect_ce
+      args->perfect_channel_estimation = true;
       break;
 
       // Simulation scenario:
@@ -1561,8 +1617,13 @@ int parse_args(int argc, char** argv, args_t* args)
       if(args->n_prb_hop2 <= 0 || args->n_prb_hop2 > N_PRB)
         return 1;
       break;
-    case 812: // --autorb
-      args->autorb = true;
+    case 812: // --amc
+      if(strcmp(optarg, "none") == 0)
+        args->amc = amc_none;
+      else if(strcmp(optarg, "rbadjust") == 0)
+        args->amc = amc_rbadjust;
+      else
+        return 1;
       break;
     case 820: // --subframe
       args->subframe_pdsch = atoi(optarg);
@@ -1665,7 +1726,9 @@ void print_usage(const char* prog)
   printf("  --mcs2 MCS : set mcs for hop 2 to MCS\n");
   printf("  --rb1 NUM  : set number of resource blocks for hop 1 [%d]\n", N_PRB);
   printf("  --rb2 NUM  : set number of resource blocks for hop 2 [%d]\n", N_PRB);
-  //printf("  --autorb   : adjust the hop bandwidths to have similar TBS\n");
+  printf("  --amc AMC  : set the amc strategy [none]\n");
+  printf("     none:     use fixed mcs and rb allocations\n");
+  printf("     rbadjust: use fixed mcs, adjust the hop bandwidths to have similar TBS\n");
   printf("  --subframe X : do PDSCH transmissions in subframe X [4]\n");
 }
 
@@ -1796,8 +1859,12 @@ void setup_snrsweep_c(double** snrs, int* n_tests, double* snr_hop1, double* snr
   }
 }
 
-void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmission_mode)
+LTE_DL_FRAME_PARMS* alloc_frame_params(void)
 {
+  LTE_DL_FRAME_PARMS* frame_parms = malloc16(sizeof(LTE_DL_FRAME_PARMS));
+
+  memset(frame_parms, 0, sizeof(LTE_DL_FRAME_PARMS));
+
   frame_parms->N_RB_DL = N_PRB;
   frame_parms->N_RB_UL = N_PRB;
   frame_parms->Nid_cell = NID_CELL;
@@ -1806,16 +1873,13 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   frame_parms->nushift = 0;
   frame_parms->frame_type = 1; // TDD frames
   frame_parms->tdd_config = 1; // TDD frame type 1
-  frame_parms->mode1_flag = (transmission_mode == 1 ? 1 : 0);
-  frame_parms->nb_antennas_tx = n_txantenna_ch;
-  frame_parms->nb_antennas_rx = n_rxantenna_mr;
+  frame_parms->mode1_flag = 1;
+  frame_parms->nb_antennas_tx = n_antenna_ch;
+  frame_parms->nb_antennas_rx = n_antenna_mr;
+  frame_parms->nb_antennas_tx_eNB = n_antenna_ch;
 
-  init_frame_parms(frame_parms, oversampling);
+  init_frame_parms(frame_parms, 1);
   phy_init_top(frame_parms);
-  frame_parms->twiddle_fft = twiddle_fft;
-  frame_parms->twiddle_ifft = twiddle_ifft;
-  frame_parms->rev = rev;
-
   phy_init_lte_top(frame_parms);
 
   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
@@ -1823,96 +1887,112 @@ void setup_frame_params(LTE_DL_FRAME_PARMS* frame_parms, unsigned char transmiss
   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   init_ul_hopping(frame_parms);
   //dump_frame_parms(frame_parms);
+  return frame_parms;
 }
 
-void setup_phy_vars(LTE_DL_FRAME_PARMS* frame_parms, PHY_VARS_eNB* phy_vars_ch_src, 
-    PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays)
+void free_frame_params(LTE_DL_FRAME_PARMS* frame_parms)
 {
-  int k;
-
-  phy_vars_ch_src->lte_frame_parms = *frame_parms;
-  phy_vars_ch_src->frame = 1;
-  phy_init_lte_eNB(phy_vars_ch_src, 0, 0, 0);
-  for(k = 0; k < n_relays; k++) {
-    phy_vars_mr[k]->lte_frame_parms[0] = frame_parms;
-    phy_vars_mr[k]->frame = 1;
-    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[0], 0);
-    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[1], 1);
-    lte_gold(frame_parms, phy_vars_mr[k]->lte_gold_table[2], 2);
-
-    phy_init_lte_ue(phy_vars_mr[k], 0, 1);
-    phy_vars_mr[k]->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
-    phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
-    phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
-    phy_vars_mr[k]->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
-  }
-    
-  phy_vars_ch_dest->lte_frame_parms = *frame_parms;
-  phy_vars_ch_dest->frame = 1;
-  phy_init_lte_eNB(phy_vars_ch_dest, 0, 2, 0);
-
-  phy_vars_ch_dest->transmission_mode[0] = 2;
-  phy_vars_ch_dest->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
-  phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
-  phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
-  phy_vars_ch_dest->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
+  free(frame_parms);
 }
 
-void alloc_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti)
+PHY_VARS_eNB* alloc_ch_vars(LTE_DL_FRAME_PARMS* frame_parms, int id)
 {
-  int k;
+  PHY_VARS_eNB* phy_vars = malloc16(sizeof(PHY_VARS_eNB));
 
-  // Workaround for memory leak:
-  phy_vars_ch->dlsch_eNB[0][0] = new_eNB_dlsch(1, 8, 0);
-  free(phy_vars_ch->dlsch_eNB[0][0]->harq_processes[0]->b);
+  memset(phy_vars, 0, sizeof(PHY_VARS_eNB));
 
-  for(k = 0; k < n_relays; k++) {
-    phy_vars_mr[k]->dlsch_ue[0][0] = new_ue_dlsch(1, 8, 0);
-    phy_vars_mr[k]->dlsch_ue[0][0]->mode1_flag = 0;
-    memset(phy_vars_mr[k]->dlsch_ue[0][0]->rb_alloc, 0, 16);
+  phy_vars->Mod_id = id;
+  phy_vars->lte_frame_parms = *frame_parms;
+  phy_vars->frame = 1;
+  if(id == 0)
+    phy_init_lte_eNB(phy_vars, 0, 0, 0);
+  else if(id == 1) {
+    phy_init_lte_eNB(phy_vars, 0, 2, 0);
+    phy_vars->transmission_mode[0] = 2;
+    phy_vars->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
+    phy_vars->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
+    phy_vars->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
+    phy_vars->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
   }
+  else
+    return 0;
+
+  return phy_vars;
 }
 
-void free_broadcast_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays)
+void free_ch_vars(PHY_VARS_eNB* phy_vars)
 {
-  int k;
-
-  // Workaround for memory leak:
-  phy_vars_ch->dlsch_eNB[0][0]->harq_processes[0]->b = 0;
-  free_eNB_dlsch(phy_vars_ch->dlsch_eNB[0][0]);
-  for(k = 0; k < n_relays; k++) {
-    free_ue_dlsch(phy_vars_mr[k]->dlsch_ue[0][0]);
-  }
+  free(phy_vars);
 }
 
-void alloc_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays, u16 rnti)
+PHY_VARS_UE* alloc_mr_vars(LTE_DL_FRAME_PARMS* frame_parms, int id)
+{
+  PHY_VARS_UE* phy_vars = malloc16(sizeof(PHY_VARS_UE));
+
+  memset(phy_vars, 0, sizeof(PHY_VARS_UE));
+
+  phy_vars->lte_frame_parms[0] = frame_parms;
+  phy_vars->frame = 1;
+  phy_vars->n_connected_eNB = 2;
+  lte_gold(frame_parms, phy_vars->lte_gold_table[0], 0);
+  lte_gold(frame_parms, phy_vars->lte_gold_table[1], 1);
+  lte_gold(frame_parms, phy_vars->lte_gold_table[2], 2);
+
+  phy_vars->lte_ue_common_vars[0] = malloc16(sizeof(LTE_UE_COMMON));
+  memset(phy_vars->lte_ue_common_vars[0], 0, sizeof(LTE_UE_COMMON));
+  phy_init_lte_ue_common(phy_vars, 0, 0);
+
+  phy_init_lte_ue(phy_vars, 0, 1);
+  phy_vars->pucch_config_dedicated[0].tdd_AckNackFeedbackMode = bundling;
+  phy_vars->pusch_config_dedicated[0].betaOffset_ACK_Index = 0;
+  phy_vars->pusch_config_dedicated[0].betaOffset_RI_Index  = 0;
+  phy_vars->pusch_config_dedicated[0].betaOffset_CQI_Index = 2;
+
+  return phy_vars;
+}
+
+void free_mr_vars(PHY_VARS_UE* phy_vars)
+{
+  free(phy_vars->lte_ue_common_vars[0]);
+  free(phy_vars);
+}
+
+void alloc_dlsch_co(PHY_VARS_eNB* phy_vars_ch_src, PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays)
 {
   int k;
   int l;
 
+  phy_vars_ch_src->dlsch_eNB_co[0][0] = new_eNB_dlsch(1, MAX_HARQ_ROUNDS, 0);
+
   for(k = 0; k < n_relays; k++) {
-    phy_vars_mr[k]->ulsch_ue[0] = new_ue_ulsch(8, 0);
-    phy_vars_mr[k]->ulsch_ue[0]->o_ACK[0] = 0;
-    phy_vars_mr[k]->ulsch_ue[0]->o_ACK[1] = 0;
-    phy_vars_mr[k]->ulsch_ue[0]->o_ACK[2] = 0;
-    phy_vars_mr[k]->ulsch_ue[0]->o_ACK[3] = 0;
-    for(l = 0; l < 3; l++)
-      if(phy_vars_mr[k]->ulsch_ue[0]->harq_processes[l]) {
-        phy_vars_mr[k]->ulsch_ue[0]->harq_processes[l]->status = DISABLED;
-        phy_vars_mr[k]->ulsch_ue[0]->harq_processes[l]->B = 0;
+    phy_vars_mr[k]->dlsch_ue_co[0][0] = new_ue_dlsch(1, MAX_HARQ_ROUNDS, 0);
+    phy_vars_mr[k]->dlsch_ue_co[0][0]->mode1_flag = 0;
+    memset(phy_vars_mr[k]->dlsch_ue_co[0][0]->rb_alloc, 0, 16);
+
+    phy_vars_mr[k]->ulsch_ue_co[0] = new_ue_ulsch(MAX_HARQ_ROUNDS, 0);
+    phy_vars_mr[k]->ulsch_ue_co[0]->o_ACK[0] = 0;
+    phy_vars_mr[k]->ulsch_ue_co[0]->o_ACK[1] = 0;
+    phy_vars_mr[k]->ulsch_ue_co[0]->o_ACK[2] = 0;
+    phy_vars_mr[k]->ulsch_ue_co[0]->o_ACK[3] = 0;
+    for(l = 0; l < MAX_HARQ_ROUNDS; l++)
+      if(phy_vars_mr[k]->ulsch_ue_co[0]->harq_processes[l]) {
+        phy_vars_mr[k]->ulsch_ue_co[0]->harq_processes[l]->status = DISABLED;
+        phy_vars_mr[k]->ulsch_ue_co[0]->harq_processes[l]->B = 0;
       }
   }
-  phy_vars_ch->ulsch_eNB[0] = new_eNB_ulsch(8, 0);
+  phy_vars_ch_dest->ulsch_eNB_co[0] = new_eNB_ulsch(MAX_HARQ_ROUNDS, 0);
 }
 
-void free_distributed_transport_channel(PHY_VARS_eNB* phy_vars_ch, PHY_VARS_UE** phy_vars_mr, int n_relays)
+void free_dlsch_co(PHY_VARS_eNB* phy_vars_ch_src, PHY_VARS_UE** phy_vars_mr, PHY_VARS_eNB* phy_vars_ch_dest, int n_relays)
 {
   int k;
 
+  free_eNB_dlsch(phy_vars_ch_src->dlsch_eNB[0][0]);
   for(k = 0; k < n_relays; k++) {
+    free_ue_dlsch(phy_vars_mr[k]->dlsch_ue[0][0]);
     free_ue_ulsch(phy_vars_mr[k]->ulsch_ue[0]);
   }
-  //free_eNB_ulsch(phy_vars_ch->ulsch_eNB[0]);
+  free_eNB_ulsch(phy_vars_ch_dest->ulsch_eNB[0]);
 }
 
 u16 rballoc_type0(int n_rb, int rbg_size)
@@ -2116,13 +2196,73 @@ void ofdm_fep(PHY_VARS_UE* phy_vars_mr, u8 subframe)
   slot_fep(phy_vars_mr, 0, 2*subframe+2, 0, 0);
 }
 
-int rx_dlsch_symbol(PHY_VARS_UE* phy_vars, u8 subframe, u8 symbol, u8 first_symbol)
+void slot_fep_est(args_t* args, PHY_VARS_UE* phy_vars, int l, int slot)
 {
-  int s;
-  s = rx_pdsch(phy_vars, PDSCH, 0, 0, subframe, symbol, first_symbol, 0, 0);
-  if(s == -1)
+  LTE_DL_FRAME_PARMS* frame_parms = phy_vars->lte_frame_parms[0];
+  int* sym;
+  int i;
+
+  slot_fep(phy_vars, l, slot, 0, 0);
+
+  if(args->perfect_channel_estimation) {
+    for(i = 0; i < frame_parms->N_RB_DL*12; i++) {
+      sym = &phy_vars->lte_ue_common_vars[0]->dl_ch_estimates[0][0][l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH+i];
+      ((short*)sym)[0] = AMP/2;
+      ((short*)sym)[1] = 0;
+    }
+  }
+}
+
+int rx_dlsch_co(args_t* args, PHY_VARS_UE* phy_vars, u8 subframe, u8 first_symbol)
+{
+  LTE_DL_FRAME_PARMS* frame_parms = phy_vars->lte_frame_parms[0];
+  int n_symbols_per_slot = frame_parms->symbols_per_tti >> 1;
+  int pilot1_symbol = (cp_type == 0 ? 4 : 3);
+  int l;
+
+  // Front end processor up to second pilot
+  for(l = first_symbol+1; l < n_symbols_per_slot; l++)
+    slot_fep_est(args, phy_vars, l, subframe<<1);
+  slot_fep_est(args, phy_vars, 0, (subframe<<1)+1);
+
+  // Receive PDSCH for first slot
+  if(rx_pdsch(phy_vars, CO_PDSCH, 0, 0, subframe, n_pdcch_symbols, 1, 0, 0) == -1) {
     printf("DLSCH receiver error\n");
-  return s;
+    return -1;
+  }
+  for(l = n_pdcch_symbols + 1; l < n_symbols_per_slot; l++) {
+    if(rx_pdsch(phy_vars, CO_PDSCH, 0, 0, subframe, l, 0, 0, 0) == -1) {
+      printf("DLSCH receiver error\n");
+      return -1;
+    }
+  }
+
+  // Front end processor up to third pilot
+  for(l = 1; l <= pilot1_symbol; l++)
+    slot_fep_est(args, phy_vars, l, (subframe<<1)+1);
+  
+  // Receive DLSCH up to third pilot
+  for(l = n_symbols_per_slot; l < n_symbols_per_slot+pilot1_symbol; l++) {
+    if(rx_pdsch(phy_vars, CO_PDSCH, 0, 0, subframe, l, 0, 0, 0) == -1) {
+      printf("DLSCH receiver error\n");
+      return -1;
+    }
+  }
+
+  // Front end processor for rest of subframe
+  for(l = pilot1_symbol+1; l < n_symbols_per_slot; l++)
+    slot_fep_est(args, phy_vars, l, (subframe<<1)+1);
+  slot_fep_est(args, phy_vars, 0, (subframe<<1)+2);
+
+  // Receive DLSCH for rest of subframe
+  for(l = n_symbols_per_slot+pilot1_symbol; l < n_symbols_per_slot<<1; l++) {
+    if(rx_pdsch(phy_vars, CO_PDSCH, 0, 0, subframe, l, 0, 0, 0) == -1) {
+      printf("DLSCH receiver error\n");
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 u32 get_ulsch_G(LTE_UE_ULSCH_t *ulsch, u8 harq_pid)

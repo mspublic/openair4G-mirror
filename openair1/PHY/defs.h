@@ -143,6 +143,9 @@
 
 #define NUMBER_OF_eNB_SECTORS_MAX 3
 
+#define MAX_VLINK_PER_CH 4
+#define MAX_VLINK_PER_MR 4
+
 typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5} runmode_t;
 
 /// Top-level PHY Data Structure for eNB 
@@ -164,6 +167,8 @@ typedef struct
   // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
   LTE_eNB_ULSCH_t  *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
   LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
+  LTE_eNB_DLSCH_t  *dlsch_eNB_co[MAX_VLINK_PER_CH][2];  // Cooperative logical channel (broadcast phase)
+  LTE_eNB_ULSCH_t  *ulsch_eNB_co[MAX_VLINK_PER_CH];     // Cooperative logical channel (cooperation phase)
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats *eNB_UE_stats_ptr[NUMBER_OF_UE_MAX];
 
@@ -291,6 +296,7 @@ typedef struct
   LTE_UE_COMMON    *lte_ue_common_vars[NUMBER_OF_CONNECTED_eNB_MAX]; 
 
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_co[MAX_VLINK_PER_MR];
   LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
@@ -300,8 +306,8 @@ typedef struct
   LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_CONNECTED_eNB_MAX][2];
   LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
-  LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue_co[MAX_VLINK_PER_MR][2];    // Cooperative logical channel (broadcast phase)
+  LTE_UE_ULSCH_t   *ulsch_ue_co[MAX_VLINK_PER_MR];       // Cooperative logical channel (cooperation phase)
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
 
   // For abstraction-purposes only

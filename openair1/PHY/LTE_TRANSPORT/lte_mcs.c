@@ -81,9 +81,7 @@ unsigned char get_I_TBS_UL(unsigned char I_MCS) {
 
   if (I_MCS <= 10)
     return(I_MCS);
-  else if (I_MCS == 10)
-    return(10);
-  else if (I_MCS < 21)
+  else if (I_MCS <= 20)
     return(I_MCS-1);
   else return(I_MCS-2);
 
@@ -115,6 +113,25 @@ u16 get_TBS(u8 mcs,u16 nb_rb) {
     TBS = TBS>>3;
 #else
     TBS = dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1];
+    TBS = TBS>>3;
+#endif
+    return(TBS);
+  }
+  else {
+    return(0);
+  }
+}
+
+u16 get_TBS_UL(u8 mcs,u16 nb_rb) {
+
+  u16 TBS;
+
+  if (mcs < 28) {
+#ifdef TBS_FIX
+    TBS = 3*dlsch_tbs25[get_I_TBS_UL(mcs)][nb_rb-1]/4;
+    TBS = TBS>>3;
+#else
+    TBS = dlsch_tbs25[get_I_TBS_UL(mcs)][nb_rb-1];
     TBS = TBS>>3;
 #endif
     return(TBS);
