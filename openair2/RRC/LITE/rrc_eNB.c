@@ -219,7 +219,7 @@ u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 }
 
 /*------------------------------------------------------------------------------*/
-int rrc_eNB_decode_dcch(u8 Mod_id, u8 CC_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
+int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
   /*------------------------------------------------------------------------------*/
 
   asn_dec_rval_t dec_rval;
@@ -323,7 +323,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u8 CC_id, u32 frame, u8 Srb_id, u8 UE_index, 
 
 
 /*------------------------------------------------------------------------------*/
-int rrc_eNB_decode_ccch(u8 Mod_id, u8 CC_id,u32 frame, SRB_INFO *Srb_info){
+int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
   /*------------------------------------------------------------------------------*/
 
   u16 Idx,UE_index;
@@ -462,23 +462,23 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u32 frame,u16 UE_in
 
   // Note: In the current implementation, it is not possible to add/release
   // more than 1 SCell at a time
-  if (sCellIndexToAdd != (uint8_t)MAX_U8) {
+  //if (sCellIndexToAdd != (uint8_t)MAX_U8) {
 	  size = do_RRCConnectionReconfiguration(buffer,
 					 UE_index,
 					 0,
 					 &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
 					 &eNB_rrc_inst[Mod_id].DRB_config[UE_index][0],
 					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
-					 &eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd]);
+					 (sCellIndexToAdd != (uint8_t)MAX_U8 ? &eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd] : NULL));
 
 	  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
   	  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][RLC][MOD %02d][RB %02d]\n",
 										 frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
 	  rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
-  }
+  /*}
   else {
 	  LOG_E(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration failed: No free SCell resources! (bytes %d, UE id %d)\n",Mod_id,size,UE_index);
-  }
+  }*/
 
 }
 
@@ -576,7 +576,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
-			   eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
+			   (eNB_rrc_inst[Mod_id].sCell_config[UE_index][0] != NULL ? eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
 			   eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelConfig,
@@ -600,7 +600,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
-			   eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10,
+			   (eNB_rrc_inst[Mod_id].sCell_config[UE_index][0] != NULL ? eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
 			   (LogicalChannelConfig_t *)NULL,
