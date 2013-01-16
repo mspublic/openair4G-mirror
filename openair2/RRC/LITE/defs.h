@@ -176,7 +176,9 @@ typedef struct{
   struct SRB_ToAddMod               *SRB1_config[NUMBER_OF_UE_MAX];
   struct SRB_ToAddMod               *SRB2_config[NUMBER_OF_UE_MAX];
   struct DRB_ToAddMod               *DRB_config[NUMBER_OF_UE_MAX][8];
+  struct DRB_ToAddMod								*CODRB_config[4]; //LOLAmesh
   uint8_t                           DRB_active[NUMBER_OF_UE_MAX][8];
+  uint8_t                           CODRB_active[4];
   struct PhysicalConfigDedicated    *physicalConfigDedicated[NUMBER_OF_UE_MAX];
   struct SPS_Config                 *sps_Config[NUMBER_OF_UE_MAX];
   MeasObjectToAddMod_t              *MeasObj[NUMBER_OF_UE_MAX][MAX_MEAS_OBJ];
@@ -225,6 +227,7 @@ typedef struct{
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
+  struct DRB_ToAddMod             *CODRB_config[4];//TCS LOLAmesh
   //  uint8_t                           DRB_active[NB_CNX_UE][8];
   MeasObjectToAddMod_t            *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
   struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];

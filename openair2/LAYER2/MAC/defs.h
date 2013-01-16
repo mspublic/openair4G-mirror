@@ -88,9 +88,10 @@
 #define printk printf
 #endif //USER_MODE
 
-/* 1 new LCID defined 11 + 1 = 12 */
-#define MAX_NUM_LCID 12 //TCS LOLAmesh
+#define MAX_NUM_LCID 11
 #define MAX_NUM_RB 8
+#define MAX_NUM_CO_RB 4 //TCS LOLAmesh
+#define CO_LCID_SHIFT 85 //TCS LOLAmesh Collaborative LCIDs received need to be shifted of 85 positions to be stored, since they are stored at the end of all lcids / rabs
 #define MAX_NUM_CE 5
 
 #define NB_RA_PROC_MAX 4
