@@ -13,7 +13,7 @@ CFLAGS += -O2
 
 SRC = synctest.c condtest.c
 
-RTAI_OBJ = synctest.o sched_dlsch.o sched_ulsch.o
+RTAI_OBJ = synctest.o sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
 OBJ = $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
 
 TOP_DIR = $(OPENAIR1_DIR)
@@ -31,6 +31,9 @@ include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
 
 OBJ += $(LOG_OBJS) 
 
+ifndef OPENAIR2
+OPENAIR2=1
+endif
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
 OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS) 
@@ -59,7 +62,7 @@ ifdef CBMIMO1
 CFLAGS += -DFW2011 -DBIT8_TX -DCBMIMO1
 else
 #only for EXPRESS MIMO
-CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=318 #138 #162 #560 with PXB
+CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #162 #560 with PXB
 endif
 
 ifeq ($(HARD_RT),1)
@@ -99,6 +102,10 @@ synctest_eNB: synctest
 
 synctest_UE: synctest
 	cp synctest synctest_UE
+
+drivers:
+	cd $(OPENAIR1_DIR) && make clean && make oai_user_exmimo.ko
+	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
 
 run: condtest
 	rtai-load condtest --verbose

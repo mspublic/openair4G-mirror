@@ -37,8 +37,11 @@
 * \note
 * \warning
 */
-//#include "PHY/types.h"
+#ifndef USER_MODE
+#include "PHY/types.h"
+#else
 #include <stdint.h>
+#endif
 
 ///  DCI Format Type 0 (5 MHz,TDD0, 27 bits)
 struct DCI0_5MHz_TDD0 {

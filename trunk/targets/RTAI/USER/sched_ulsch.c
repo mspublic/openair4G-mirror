@@ -55,6 +55,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
+#include "SCHED/defs.h"
+
 #include "MAC_INTERFACE/extern.h"
 
 #ifdef CBMIMO1

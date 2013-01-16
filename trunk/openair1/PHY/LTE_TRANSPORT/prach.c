@@ -715,7 +715,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
 #else
 #ifdef EXMIMO
     overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_ue->lte_frame_parms.samples_per_tti;
-    LOG_I(PHY,"prach_start=%d, overflow=%d\n",prach_start,overflow);
+    LOG_D(PHY,"prach_start=%d, overflow=%d\n",prach_start,overflow);
     for (i=prach_start,j=0; i<min(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
       ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i] = prach[2*j]<<4;
       ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
@@ -782,8 +782,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   s32 lev;
   s8 levdB;
   int fft_size,log2_ifft_size;
+  u8 nb_ant_rx = 1; //phy_vars_eNB->lte_frame_parms.nb_antennas_rx;
 
-  for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+  for (aa=0;aa<nb_ant_rx;aa++) {
       prach[aa] = (s16*)&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti];
     //    remove_625_Hz(phy_vars_eNB,prach[aa]);
   }
@@ -946,7 +947,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
         new_dft = 0;
         Xu=(s16*)phy_vars_eNB->X_u[preamble_offset-first_nonzero_root_idx];
         
-        for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+        for (aa=0;aa<nb_ant_rx;aa++) {
             prach2 = prach[aa] + (Ncp<<1);
 
             k = (12*n_ra_prb) - 6*phy_vars_eNB->lte_frame_parms.N_RB_UL;
@@ -1085,7 +1086,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
     preamble_energy_list[preamble_index] = 0;
     for (i=0;i<NCS2;i++) {
         lev = 0;
-        for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {            
+        for (aa=0; aa<nb_ant_rx; aa++) {            
             lev += (s32)prach_ifft[aa][(preamble_shift2+i)<<2]*prach_ifft[aa][(preamble_shift2+i)<<2] + (s32)prach_ifft[aa][1+((preamble_shift2+i)<<2)]*prach_ifft[aa][1+((preamble_shift2+i)<<2)];
         }
         levdB = dB_fixed(lev);        

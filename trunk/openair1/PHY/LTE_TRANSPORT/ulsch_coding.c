@@ -158,8 +158,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,u8 abstraction_flag) {
 
 
 u32 ulsch_encoding(u8 *a,
-		   LTE_DL_FRAME_PARMS *frame_parms,
-		   LTE_UE_ULSCH_t *ulsch,
+		   PHY_VARS_UE *phy_vars_ue,
 		   u8 harq_pid,
 		   u8 tmode,
 		   u8 control_only_flag,
@@ -182,6 +181,10 @@ u32 ulsch_encoding(u8 *a,
   u16 o_RCC;
   u8 o_flip[8];
   u32 wACK_idx;
+  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
+  LTE_UE_ULSCH_t *ulsch=phy_vars_ue->ulsch_ue[0];
+  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
 
   if (!ulsch) {
     msg("ulsch_coding.c: Null ulsch ptr %p\n",ulsch);
@@ -203,6 +206,16 @@ u32 ulsch_encoding(u8 *a,
     {
     msg("ulsch_coding.c: Illegal O_RI %d\n",ulsch->O_RI);
     return(-1);
+  }
+
+  // fill CQI/PMI information
+  if (ulsch->O>0) {
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,0,tmode);
+    //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
+
+    // save PUSCH pmi for later (transmission modes 4,5,6)
+    //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
+    dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
   }
 
   if (ulsch->O<=32) {

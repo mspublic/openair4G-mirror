@@ -303,6 +303,7 @@ void rrc_remove_UE(u8 Mod_id,u8 UE_id) {
 
   int i;
   LOG_I(RRC,"Removing UE %d\n",UE_id);
+  eNB_rrc_inst[Mod_id].Info.Status[UE_id] = RRC_IDLE;
   *(unsigned int*)eNB_rrc_inst[Mod_id].Info.UE_list[UE_id] = 0x00000000;
 }
 
@@ -576,6 +577,9 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 	*/
 #endif //NO_RRM
       }
+      else {
+	LOG_E(RRC,"can't add UE, max user count reached!\n");
+      }
 	break;
 
     default:
@@ -677,8 +681,6 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
   long *logicalchannelgroup,*logicalchannelgroup_drb;
   long *maxHARQ_Tx, *periodicBSR_Timer;
 
-  long *lcid;
-
   RSRP_Range_t *rsrp;
   struct MeasConfig__speedStatePars *Sparams;
   CellsToAddMod_t *CellToAdd;
@@ -737,10 +739,10 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
   DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
   *DRB_config = DRB_config2;
 
-  DRB_config2->drb_Identity = 1;
-  lcid = CALLOC(1,sizeof(*lcid));
-  *lcid = 3;
-  DRB_config2->logicalChannelIdentity = lcid;
+  //DRB_config2->drb_Identity = (DRB_Identity_t) 1; //allowed values 1..32
+  DRB_config2->drb_Identity = (DRB_Identity_t) (UE_index+1); //allowed values 1..32
+  DRB_config2->logicalChannelIdentity = CALLOC(1,sizeof(long));
+  *(DRB_config2->logicalChannelIdentity) = (long) 3;
   DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
   DRB_config2->rlc_Config   = DRB_rlc_config;
 
@@ -1020,7 +1022,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
                                          DRB_list,
                                          NULL, // DRB2_list,
                                          NULL, //*sps_Config,
-                                         physicalConfigDedicated,
+                                         physicalConfigDedicated[UE_index],
                                          MeasObj_list,
                                          ReportConfig_list,
                                          NULL, //*QuantityConfig,

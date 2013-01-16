@@ -342,8 +342,8 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->macphy_exit=(void (*)(const char*)) exit;
 #endif
   LOG_I(MAC,"[MAIN] init eNB MAC functions  \n");
-  mac_xface->eNB_dlsch_ulsch_scheduler = (void *)eNB_dlsch_ulsch_scheduler;
-  mac_xface->get_dci_sdu               = (DCI_PDU* (*)(u8,u8))get_dci_sdu;
+  mac_xface->eNB_dlsch_ulsch_scheduler = eNB_dlsch_ulsch_scheduler;
+  mac_xface->get_dci_sdu               = get_dci_sdu;
   mac_xface->fill_rar                  = fill_rar;
   mac_xface->terminate_ra_proc         = terminate_ra_proc;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;
@@ -352,10 +352,10 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
   mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
-  mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;
-  mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
-  mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
-  mac_xface->get_SB_size	      	   = Get_SB_size;
+  mac_xface->get_transmission_mode     = get_transmission_mode;
+  mac_xface->get_rballoc               = get_rballoc;
+  mac_xface->get_nb_rb                 = conv_nprb;
+  mac_xface->get_SB_size	       = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
   mac_xface->Msg1_transmitted          = Msg1_tx;
@@ -366,7 +366,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
   mac_xface->ue_get_SR                 = ue_get_SR;
-  mac_xface->ue_get_sdu                = (void *)ue_get_sdu;
+  mac_xface->ue_get_sdu                = ue_get_sdu;
   mac_xface->ue_get_rach               = ue_get_rach;
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;

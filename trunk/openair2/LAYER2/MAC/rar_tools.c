@@ -124,7 +124,7 @@ uint16_t ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 p
   //  RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
   
-  LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",Mod_id,frame,
+  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",Mod_id,frame,
 	*(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
 	rarh->RAPID,preamble_index);
 #ifdef DEBUG_RAR

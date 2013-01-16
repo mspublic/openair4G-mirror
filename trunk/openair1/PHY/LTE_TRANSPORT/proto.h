@@ -1202,8 +1202,7 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
   @param Nbundled Parameter for ACK/NAK bundling (36.213 Section 7.3)
 */
 u32 ulsch_encoding(u8 *a,
-		   LTE_DL_FRAME_PARMS *frame_parms,
-		   LTE_UE_ULSCH_t *ulsch,
+		   PHY_VARS_UE *phy_vars_ue,
 		   u8 harq_pid,
 		   u8 tmode,
 		   u8 control_only_flag,

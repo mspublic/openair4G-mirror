@@ -1025,7 +1025,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
     msg("TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(int)(*sib1)->tdd_Config->subframeAssignment,(int)(*sib1)->tdd_Config->specialSubframePatterns);
 
 
-  UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod     = siPeriod_int[(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity];
+  UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod     = siPeriod_int[(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity];
   UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize = siWindowLength_int[(*sib1)->si_WindowLength];
   LOG_D(RRC, "[MSC_MSG][FRAME unknown][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB1 params eNB %d) --->][MAC_UE][MOD %02d][]\n",
              Mod_id, eNB_index, Mod_id);

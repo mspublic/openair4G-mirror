@@ -49,7 +49,7 @@
 #include "SCHED/phy_procedures_emos.h"
 #endif
 
-#define DEBUG_PHY_PROC
+//#define DEBUG_PHY_PROC
 //#define DEBUG_ULSCH
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
@@ -507,6 +507,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
     DCI_pdu->dci_alloc[0].L          = 2;
     DCI_pdu->dci_alloc[0].rnti       = SI_RNTI;
     DCI_pdu->dci_alloc[0].format     = format1A;
+    DCI_pdu->dci_alloc[0].ra_flag    = 0;
 
     BCCH_alloc_pdu.type              = 1;
     BCCH_alloc_pdu.vrb_type          = 0;
@@ -526,6 +527,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
     DCI_pdu->dci_alloc[0].L          = 2;
     DCI_pdu->dci_alloc[0].rnti       = 0x1236;
     DCI_pdu->dci_alloc[0].format     = format2_2A_M10PRB;
+    DCI_pdu->dci_alloc[0].ra_flag    = 0;
 
     DLSCH_alloc_pdu1.rballoc          = 0x00ff;
     DLSCH_alloc_pdu1.TPC              = 0;
@@ -548,7 +550,8 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
       DCI_pdu->dci_alloc[0].L          = 2;
       DCI_pdu->dci_alloc[0].rnti       = 0x1235;
       DCI_pdu->dci_alloc[0].format     = format1;
-
+      DCI_pdu->dci_alloc[0].ra_flag    = 0;
+      
       DLSCH_alloc_pdu.rballoc          = rballoc;
       DLSCH_alloc_pdu.TPC              = 0;
       DLSCH_alloc_pdu.dai              = 0;
@@ -563,6 +566,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
       DCI_pdu->dci_alloc[1].L          = 2;
       DCI_pdu->dci_alloc[1].rnti       = 0x1236;
       DCI_pdu->dci_alloc[1].format     = format1;
+      DCI_pdu->dci_alloc[1].ra_flag    = 0;
       
       DLSCH_alloc_pdu.rballoc          = rballoc2;
       DLSCH_alloc_pdu.TPC              = 0;
@@ -580,6 +584,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
       DCI_pdu->dci_alloc[0].L          = 2;
       DCI_pdu->dci_alloc[0].rnti       = 0x1235;
       DCI_pdu->dci_alloc[0].format     = format1E_2A_M10PRB;
+      DCI_pdu->dci_alloc[0].ra_flag    = 0;
       
       DLSCH_alloc_pdu1E.tpmi             = 5; //5=use feedback
       DLSCH_alloc_pdu1E.rv               = 0;
@@ -598,6 +603,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
       DCI_pdu->dci_alloc[1].L          = 2;
       DCI_pdu->dci_alloc[1].rnti       = 0x1236;
       DCI_pdu->dci_alloc[1].format     = format1E_2A_M10PRB;
+      DCI_pdu->dci_alloc[1].ra_flag    = 0;
       
       memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&DLSCH_alloc_pdu1E,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
 
@@ -606,27 +612,25 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
     }
     break;
 
-  case 9:
-    /*
+  case 5:
     DCI_pdu->Num_common_dci = 1;
     DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
     DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].rnti       = RA_RNTI;
+    DCI_pdu->dci_alloc[0].rnti       = 0xbeef;
     DCI_pdu->dci_alloc[0].format     = format1A;
+    DCI_pdu->dci_alloc[0].ra_flag    = 1;
 
     RA_alloc_pdu.type                = 1;
     RA_alloc_pdu.vrb_type            = 0;
-    RA_alloc_pdu.rballoc             = computeRIV(25,10,4);
+    RA_alloc_pdu.rballoc             = computeRIV(25,12,3);
     RA_alloc_pdu.ndi      = 1;
     RA_alloc_pdu.rv       = 1;
-    RA_alloc_pdu.mcs      = 1;
+    RA_alloc_pdu.mcs      = 4;
     RA_alloc_pdu.harq_pid = 0;
     RA_alloc_pdu.TPC      = 1;
 
     memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-    */
     break;
-
   case 8:
     DCI_pdu->Num_ue_spec_dci = 2;
 
@@ -635,6 +639,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
     DCI_pdu->dci_alloc[0].L          = 2;
     DCI_pdu->dci_alloc[0].rnti       = 0x1235;
     DCI_pdu->dci_alloc[0].format     = format0;
+    DCI_pdu->dci_alloc[0].ra_flag    = 0;
 
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
@@ -652,6 +657,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
     DCI_pdu->dci_alloc[1].L          = 2;
     DCI_pdu->dci_alloc[1].rnti       = 0x1236;
     DCI_pdu->dci_alloc[1].format     = format0;
+    DCI_pdu->dci_alloc[1].ra_flag    = 0;
 
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
@@ -978,7 +984,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     DCI_pdu->nCCE = get_nCCE(num_pdcch_symbols,
 			     &phy_vars_eNB->lte_frame_parms,
 			     get_mi(&phy_vars_eNB->lte_frame_parms,next_slot>>1));
-    LOG_I(PHY,"num_pdcch_symbols %d, nCCE %d\n",num_pdcch_symbols,DCI_pdu->nCCE);
+    LOG_D(PHY,"num_pdcch_symbols %d, nCCE %d\n",num_pdcch_symbols,DCI_pdu->nCCE);
 
     
 
@@ -1246,8 +1252,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       LOG_D(PHY,"[eNB %d][SI] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d, num_pdcch_symbols %d\n",
 	  phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot, input_buffer_length,num_pdcch_symbols);
       for (i=0;i<input_buffer_length;i++)
-	LOG_T(PHY,"%x.",i,DLSCH_pdu[i]);
-      LOG_D(PHY,"\n");
+	msg(PHY,"%x.",i,DLSCH_pdu[i]);
+      msg(PHY,"\n");
 #endif
 #endif
 
@@ -1337,7 +1343,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		     &phy_vars_eNB->ulsch_eNB[(u32)UE_id]->Msg3_subframe);
 #else
       for (i=0;i<input_buffer_length;i++)
-      	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
+      	dlsch_input_buffer[i]= (unsigned char) i; //(taus()&0xff);
+
+      dlsch_input_buffer[0] = phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset/4;
+      //LOG_I(PHY,"UE %d: timing_offset = %d\n",UE_id,dlsch_input_buffer[0]); 
+      ((RAR_PDU*) (dlsch_input_buffer+1))->Timing_Advance_Command = phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset/4;
 #endif
 
 #ifdef DEBUG_PHY_PROC
@@ -2806,9 +2816,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     
 #endif //PUCCH
   
-    if ((phy_vars_eNB->frame % 100 == 0) && (last_slot==9)) {
+    if ((phy_vars_eNB->frame % 10 == 0) && (last_slot==9)) {
       phy_vars_eNB->eNB_UE_stats[i].dlsch_bitrate = (phy_vars_eNB->eNB_UE_stats[i].total_TBS - 
-						     phy_vars_eNB->eNB_UE_stats[i].total_TBS_last);
+						     phy_vars_eNB->eNB_UE_stats[i].total_TBS_last)*10;
       
       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
     }

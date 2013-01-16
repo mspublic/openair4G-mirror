@@ -53,6 +53,12 @@ const char FIXED_STRING[]="ABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDA
 //packet_t *packet=NULL;
 int type_header=0;
 
+size_t otg_strlen(const char *str) {
+  if (str)
+    return strlen(str);
+  else
+    return 0;
+}
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
 
@@ -277,10 +283,10 @@ if (background_ok==0){
   seq_num=otg_info->seq_num[src][dst];
   otg_info->header_type[src][dst]=type_header;
   otg_info->seq_num[src][dst]+=1;
-  otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
+    otg_info->tx_num_bytes[src][dst]+=  hdr_size + otg_strlen(header) + otg_strlen(payload) ; 
   otg_info->tx_num_pkt[src][dst]+=1;
-  if (size!=strlen(payload))
-    LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, size, strlen(payload), seq_num, header, payload);
+    if (size!=otg_strlen(payload))
+      LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", flag, size, otg_strlen(payload), seq_num, header, payload);
   else 
     LOG_T(OTG,"[%d][%d] [0x %x] [Aggre %d] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, appli_aggregation, ctime,  size, seq_num,state, header, payload);
   
@@ -297,16 +303,16 @@ if (background_ok==0){
   flag=0xbbbb;
   flow=flow_id_background;
   seq_num=otg_info->seq_num_background[src][dst];
-  otg_info->tx_num_bytes_background[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
+    otg_info->tx_num_bytes_background[src][dst]+=  hdr_size + otg_strlen(header) + otg_strlen(payload) ; 
   otg_info->tx_num_pkt_background[src][dst]+=1;
   otg_info->seq_num_background[src][dst]+=1;
-  if (otg_info->size_background[src][dst]!=strlen(payload))
-    LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", src, dst, flag, otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
+    if (otg_info->size_background[src][dst]!=otg_strlen(payload))
+      LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", flag, otg_info->size_background[src][dst], otg_strlen(payload), seq_num, header, payload);
   else
-    LOG_T(OTG,"[%d][%d][0x %x] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime, otg_info->size_background[src][dst], seq_num, state, header, payload);
+      LOG_T(OTG,"[0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", flag, otg_info->size_background[src][dst], seq_num, state, header, payload);
 }
  
- buffer_size = hdr_size + strlen(header) + strlen(payload);
+  buffer_size = hdr_size + otg_strlen(header) + otg_strlen(payload);
  *pkt_size = buffer_size;
 	if (src<NB_eNB_INST)
 		otg_info->tx_total_bytes_dl+=buffer_size;
@@ -357,19 +363,24 @@ return size_header;
 char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type) {
   char *data=NULL;
   int i=0,start=0;
+
+  if (size==0)
+    return NULL;
+
   switch (mode){
   case REPEAT_STRING:
-    start = uniform_dist (0, abs(strlen(FIXED_STRING)- size - 1));
+    start = (int) uniform_dist (0, abs(otg_strlen(FIXED_STRING)- size - 1));
+    //start = 0;
     return str_sub (FIXED_STRING, start, start + size -1);
     break;
   case SUBSTRACT_STRING:
-    //data=strndup(data_string + (strlen(data_string) - size), strlen(data_string));
-    //data=strndup(data_string + (strlen(data_string) - size), size);	
+    //data=strndup(data_string + (otg_strlen(data_string) - size), otg_strlen(data_string));
+    //data=strndup(data_string + (otg_strlen(data_string) - size), size);	
     if (data_type == HEADER_ALPHABET){
-      start = uniform_dist (0, abs(strlen(HEADER_STRING)- size - 1));
+      start = (int) uniform_dist (0, abs(otg_strlen(HEADER_STRING)- size - 1));
       return str_sub (HEADER_STRING, start, start + size -1);
     }else if (data_type == PAYLOAD_ALPHABET) {
-      start = uniform_dist (0, abs(strlen(PAYLOAD_STRING)- size - 1));
+      start = (int) uniform_dist (0, abs(otg_strlen(PAYLOAD_STRING)- size - 1));
       return str_sub (PAYLOAD_STRING, start, start+size - 1 );
     }else 
       LOG_E(OTG, "unsupported alphabet data type \n");
@@ -383,7 +394,7 @@ char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type) {
 	data[i]=PAYLOAD_STRING [(int)uniform_dist(0, 1500)];
       else
 	LOG_E(OTG,"unsupported alphabet data type \n");
-	//pos = rand()%(strlen(data_string));               
+      //pos = rand()%(otg_strlen(data_string));               
       //data[i]=data_string[pos];
       //data[i]= taus(OTG) % (126 - 33 + 1) + 33;
     }
@@ -451,12 +462,12 @@ unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffe
   byte_tx_count += sizeof(otg_hdr_t);
   
   // copy the header first 
-  memcpy(&tx_buffer[byte_tx_count], header, strlen(header));
-  byte_tx_count += strlen(header);
+  memcpy(&tx_buffer[byte_tx_count], header, otg_strlen(header));
+  byte_tx_count += otg_strlen(header);
   free(header); 
   // now append the payload 
-  memcpy(&tx_buffer[byte_tx_count], payload, strlen(payload));
-  byte_tx_count +=strlen(payload);
+  memcpy(&tx_buffer[byte_tx_count], payload, otg_strlen(payload));
+  byte_tx_count +=otg_strlen(payload);
   free(payload);
   
   return tx_buffer;
@@ -485,6 +496,10 @@ int k;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
        g_otg->size_min[i][j][k][PE_STATE] =  50;
        g_otg->size_max[i][j][k][PE_STATE] =  50;
+	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
+	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
+	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
+	LOG_D(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 
        LOG_I(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, traffic id %d, dist type for size = %d\n", i, j, k, g_otg->size_dist[i][j][k][PE_STATE]);
 				
@@ -502,6 +517,10 @@ int k;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
        g_otg->size_min[i][j][k][PE_STATE] =  512;
        g_otg->size_max[i][j][k][PE_STATE] =  512;
+	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
+	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
+	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
+	LOG_D(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 
        LOG_I(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d,  traffic id %d, dist type for size = %d\n", i, j,k , g_otg->size_dist[i][j][k][PE_STATE]);
 #ifdef STANDALONE
@@ -518,6 +537,10 @@ int k;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED; // main param in this mode
        g_otg->size_min[i][j][k][PE_STATE] =  1024;// main param in this mode
        g_otg->size_max[i][j][k][PE_STATE] =  1024;
+	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
+	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
+	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
+	LOG_D(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 
        LOG_I(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][k][PE_STATE]);
 #ifdef STANDALONE
@@ -539,7 +562,9 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  800; 
        g_otg->size_std_dev[i][j][k][PE_STATE] = 0;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-
+	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
+	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
+	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -559,7 +584,9 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  800;
        g_otg->size_std_dev[i][j][k][PE_STATE] = 0;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-
+	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
+	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
+	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -579,7 +606,9 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  43;
        g_otg->size_std_dev[i][j][k][PE_STATE] = 5;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-
+	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
+	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
+	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -599,14 +628,16 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  43;
        g_otg->size_std_dev[i][j][k][PE_STATE] = 5;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-
+	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
+	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
+	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
 #endif 
        break;
      case NO_PREDEFINED_TRAFFIC : 
-       LOG_I(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
+	LOG_D(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
        g_otg->trans_proto[i][j][k] = 0;
        g_otg->ip_v[i][j][k] = 0;
        g_otg->idt_dist[i][j][k][PE_STATE] = 0;
@@ -1100,7 +1131,7 @@ int header_size_gen_background(int src, int dst){
    size_header=HDR_IP_v6 + HDR_TCP;
 }
 
-  LOG_I(OTG," [SRC %d]  BACKGROUND TRAFFIC:: size header%d \n", src, size_header);
+  LOG_D(OTG," [SRC %d]  BACKGROUND TRAFFIC:: size header%d \n", src, size_header);
 
 return size_header;
 }
@@ -1108,7 +1139,6 @@ return size_header;
 
 
 void state_management(int src, int dst, int application, int ctime) {
-
 
 if ((g_otg->holding_time_off_pu[src][dst][application]==0) && (g_otg->holding_time_off_ed[src][dst][application]==0) && (g_otg->holding_time_off_pe[src][dst][application]==0))  
 	otg_info->state[src][dst][application]=PE_STATE;
@@ -1119,7 +1149,7 @@ else{
     LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: OFF INIT \n", src, dst, application);
     otg_info->start_holding_time_off[src][dst][application]=ctime;
   }
-//LOG_D(OTG,"[%d][[%d] HOLDING_TIMES OFF_PE: %d, OFF_PU: %d, OFF_ED %d, PE_OFF: %d \n", src, dst, g_otg->holding_time_off_pe[src][dst], g_otg->holding_time_off_pu[src][dst],g_otg->holding_time_off_ed[src][dst], g_otg->holding_time_pe_off[src][dst] );  
+  //LOG_D(OTG,"[%d][%d] HOLDING_TIMES OFF_PE: %d, OFF_PU: %d, OFF_ED %d, PE_OFF: %d \n", src, dst, g_otg->holding_time_off_pe[src][dst], g_otg->holding_time_off_pu[src][dst],g_otg->holding_time_off_ed[src][dst], g_otg->holding_time_pe_off[src][dst] );  
 
  switch (otg_info->state[src][dst][application]){
 
@@ -1222,7 +1252,6 @@ if (ctime>otg_info->start_holding_time_off[src][dst][application]){
 }
 }
 }
-
 
 
 

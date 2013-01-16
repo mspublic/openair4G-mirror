@@ -23,8 +23,8 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/COMMON/defs.h"
 //#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+//#include "SCHED/defs.h"
+//#include "SCHED/extern.h"
 //#include "LAYER2/MAC/extern.h"
 
 
