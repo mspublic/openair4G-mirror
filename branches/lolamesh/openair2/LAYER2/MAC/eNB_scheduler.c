@@ -4295,7 +4295,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u16 nCCE;
 
   granted_UEs = find_dlgranted_UEs(Mod_id);
-  LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, subframe %d, granted_UEs = %d\n",Mod_id,frame,subframe,granted_UEs);
+  LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, granted_UEs = %d\n",Mod_id,frame,subframe,granted_UEs);
 
   for(i=0;i<256;i++)
     pre_nb_available_rbs[i] = 0;
@@ -4342,7 +4342,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   	if (eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count != 0) {
   		for (i=0;i<eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count;i++) {
   			rnti = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i];
-  			LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, subframe %d, scheduling UE %d, cornti %u\n",Mod_id,frame,subframe,UE_id,rnti);
+  			LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling UE %d, cornti %u\n",Mod_id,frame,subframe,UE_id,rnti);
   			schedule_ue(Mod_id,rnti,UE_id,frame,subframe,pre_nb_available_rbs,nb_rb_used0,rballoc_sub,dl_pow_off,nCCE_used,nb_available_rb,nCCE);
   		}
   	}
@@ -4350,7 +4350,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   	//Then we allocate the RNTI
   	rnti = find_UE_RNTI(Mod_id,UE_id);
   	if (rnti != 0) {
-  		LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, subframe %d, scheduling UE %d, rnti %u\n",Mod_id,frame,subframe,UE_id,rnti);
+  		LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling UE %d, rnti %u\n",Mod_id,frame,subframe,UE_id,rnti);
   		schedule_ue(Mod_id,rnti,UE_id,frame,subframe,pre_nb_available_rbs,nb_rb_used0,rballoc_sub,dl_pow_off,nCCE_used,nb_available_rb,nCCE);
   	}
 
