@@ -123,6 +123,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
     lte_frame_parms[eNB_id]->nushift            = 0;
     lte_frame_parms[eNB_id]->nb_antennas_tx     = frame_parms->nb_antennas_tx;
     lte_frame_parms[eNB_id]->nb_antennas_rx     = 1;
+    lte_frame_parms[eNB_id]->nb_antennas_tx_eNB = frame_parms->nb_antennas_tx_eNB;
     lte_frame_parms[eNB_id]->mode1_flag         = frame_parms->mode1_flag;
     lte_frame_parms[eNB_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
     LOG_D(PHY,"initial_sync enb %d lte_frame_parms %p %d %d %d \n",
