@@ -45,7 +45,7 @@
 #include "defs.h"
 #include "extern.h"
 
-//#define DEBUG_INIT_SYNCH
+//#define DEBUG_INITIAL_SYNCH
 
 int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 
@@ -53,7 +53,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
   char phich_resource[6];
 
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
       phy_vars_ue->rx_offset);
 #endif
@@ -78,9 +78,6 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 		      0,
 		      0);
 
-  if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
-      (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
-    phy_adjust_gain(phy_vars_ue,0);
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 	phy_vars_ue->Mod_id,
@@ -209,7 +206,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     phy_vars_ue->frame ++;
 #endif
 
-    //#ifdef DEBUG_INIT_SYNCH
+    //#ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
 	  phy_vars_ue->Mod_id,
 	  frame_parms->mode1_flag,
@@ -237,6 +234,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
   u8 i;
   int ret=-1;
+  int aarx,rx_power;
 
   //  LOG_I(PHY,"**************************************************************\n");
   // First try FDD normal prefix
@@ -249,12 +247,30 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 			   (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
 
   sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif
 
-  // SSS detection
+  //estimate signal power based on PSS for AGC
+  //this needs to be improved
+  rx_power = 0;
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) 
+    rx_power += signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][sync_pos2],
+			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+  phy_vars_ue->PHY_measurements.rx_power_avg_dB[0] = dB_fixed(rx_power/frame_parms->nb_antennas_rx);
 
+#ifdef DEBUG_INITIAL_SYNCH
+  LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",phy_vars_ue->Mod_id,phy_vars_ue->PHY_measurements.rx_power_avg_dB[0] );
+#endif
+  
+  /*
+  if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
+      (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
+    phy_adjust_gain(phy_vars_ue,0);
+  */
+
+  // SSS detection
+ 
   // PSS is hypothesized in last symbol of first slot in Frame
   sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
 
@@ -262,7 +278,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     phy_vars_ue->rx_offset = sync_pos2 - sync_pos_slot;  
   else
     phy_vars_ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
-  
+
   if (((sync_pos2 - sync_pos_slot) >=0 ) && 
       ((sync_pos2 - sync_pos_slot) < ((FRAME_LENGTH_COMPLEX_SAMPLES-frame_parms->samples_per_tti/2)))) {
 #ifdef DEBUG_INITIAL_SYNCH    
@@ -276,13 +292,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
     ret = pbch_detection(phy_vars_ue,mode);
 
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"FDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
 #endif 
   }
   else {
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"FDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
   }
@@ -316,13 +332,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
       ret = pbch_detection(phy_vars_ue,mode);
       
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"FDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
 #endif
     }
     else {
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
         LOG_I(PHY,"FDD Extended prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
     }
@@ -359,13 +375,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 	ret = pbch_detection(phy_vars_ue,mode);
 	
 
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
 	LOG_I(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	    frame_parms->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp,ret);
 #endif
 	/*}
       else {
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
           LOG_I(PHY,"TDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
 }*/
@@ -397,13 +413,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 	  lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
 	  ret = pbch_detection(phy_vars_ue,mode);
 	  
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"TDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
 	  frame_parms->Nid_cell,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp,ret);
 #endif
       /*}
 	else {
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
         LOG_I(PHY,"TDD Extended prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
 }*/
@@ -414,7 +430,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
  
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
-#ifdef DEBUG_INIT_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"[PHY][UE%d] In synch, rx_offset %d samples\n",phy_vars_ue->Mod_id, phy_vars_ue->rx_offset);
 #endif
 #ifdef OPENAIR2
@@ -434,7 +450,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 
   }
   else {
-#ifdef DEBUG_INIT_SYNC
+#ifdef DEBUG_INITIAL_SYNC
       LOG_I(PHY,"[UE%d] Initial sync : PBCH not ok\n",phy_vars_ue->Mod_id);
       LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
       LOG_I(PHY,"[UE%d] Initial sync: (metric fdd_ncp %d (%d), metric fdd_ecp %d (%d), metric_tdd_ncp %d (%d), metric_tdd_ecp %d (%d))\n", 

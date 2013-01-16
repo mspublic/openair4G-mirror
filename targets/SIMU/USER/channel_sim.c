@@ -315,6 +315,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 #ifdef DEBUG_SIM
 	for (i=0;i<eNB2UE[eNB_id][UE_id]->channel_length;i++)
 	  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
+#endif
 
 	LOG_D(OCM,"[SIM][DL] Channel eNB %d => UE %d : tx_power %f dBm, path_loss %f dB\n",
 	       eNB_id,UE_id,
@@ -322,7 +323,6 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	       //	       enb_data[eNB_id]->tx_power_dBm,
 	       eNB2UE[eNB_id][UE_id]->path_loss_dB);
 
-#endif
 #ifdef DEBUG_SIM      
 	rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,512,0);
 	printf("[SIM][DL] UE %d : rx_pwr %f dBm for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  

@@ -51,8 +51,6 @@
 
 #include "SCHED/phy_procedures_emos.h"
 #include "emos_dump.h"
-struct gps_data_t *gps_data = NULL;
-struct gps_fix_t dummy_gps_data;
 
 int end=0;
 
@@ -88,28 +86,10 @@ int main (int argc, char **argv)
   
   time_t timer;
   struct tm *now;
- 
 
-  timer = time(NULL);
-  now = localtime(&timer);
-  
-  gps_data = gps_open("127.0.0.1","2947");
-  if (gps_data == NULL) 
-    {
-      printf("Could not open GPS\n");
-      exit(-1);
-    }
-#if GPSD_API_MAJOR_VERSION>=4
-  else if (gps_stream(gps_data, WATCH_ENABLE,NULL) != 0)
-#else
-  else if (gps_query(gps_data, "w+x") != 0)
-#endif
-    {
-      //sprintf(tmptxt,"Error sending command to GPS, gps_data = %x", gps_data);
-      printf("Error sending command to GPS\n");
-      exit(-1);
-    }
-  
+  struct gps_data_t *gps_data = NULL;
+  struct gps_fix_t dummy_gps_data;
+ 
   while ((c = getopt (argc, argv, "he")) != -1) {
     switch (c) {
     case 'e':
@@ -124,6 +104,28 @@ int main (int argc, char **argv)
     }
   }
 
+  timer = time(NULL);
+  now = localtime(&timer);
+
+  memset(&dummy_gps_data,1,sizeof(struct gps_fix_t));
+  
+  gps_data = gps_open("127.0.0.1","2947");
+  if (gps_data == NULL) 
+    {
+      printf("Could not open GPS\n");
+      //exit(-1);
+    }
+#if GPSD_API_MAJOR_VERSION>=4
+  else if (gps_stream(gps_data, WATCH_ENABLE,NULL) != 0)
+#else
+  else if (gps_query(gps_data, "w+x") != 0)
+#endif
+    {
+      //sprintf(tmptxt,"Error sending command to GPS, gps_data = %x", gps_data);
+      printf("Error sending command to GPS\n");
+      //exit(-1);
+    }
+  
   if (eNB_flag==1)
     channel_buffer_size = sizeof(fifo_dump_emos_eNB);
   else
@@ -148,7 +150,7 @@ int main (int argc, char **argv)
 
   time(&starttime_tmp);
   localtime_r(&starttime_tmp,&starttime);
-  snprintf(dumpfile_name,1024,"/tmp/%s_data_%d%02d%02d_%02d%02d%02d.EMOS",
+  snprintf(dumpfile_name,1024,"%s_data_%d%02d%02d_%02d%02d%02d.EMOS",
 	   (eNB_flag==1) ? "eNB" : "UE",
 	   1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
 
@@ -161,7 +163,7 @@ int main (int argc, char **argv)
 
   signal(SIGINT, endme);
 
-
+  printf("starting dump, channel_buffer_size=%d ...\n",channel_buffer_size);
   while (!end)
     {
       bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, channel_buffer_size);
@@ -171,6 +173,7 @@ int main (int argc, char **argv)
       else
 	printf("UE: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx,bytes);
       */
+
       fifo2file_ptr += channel_buffer_size;
       counter ++;
 

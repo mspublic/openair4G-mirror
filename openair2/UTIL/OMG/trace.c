@@ -465,7 +465,7 @@ void get_trace_positions_updated(double cur_time){
           //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
 	  //tmp->pair->b->mob->start_journey = cur_time;
         }
-          LOG_I(OMG, "Updated_position of %s id %d to :(%.2f, %.2f)\n", (tmp->pair->b->type == 0) ? "eNB" : "UE", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+          LOG_D(OMG, "Updated_position of %s id %d to :(%.2f, %.2f)\n", (tmp->pair->b->type == 0) ? "eNB" : "UE", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
         }
         else{
           LOG_E(OMG, "Update_generator: unsupported node state - mobile : %d \n", tmp->pair->b->mobile);

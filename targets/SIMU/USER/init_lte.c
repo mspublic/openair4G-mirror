@@ -157,7 +157,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
-  (*frame_parms)->nb_antennas_rx     = 1;
+  (*frame_parms)->nb_antennas_rx     = 2;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
   init_frame_parms(*frame_parms,1);

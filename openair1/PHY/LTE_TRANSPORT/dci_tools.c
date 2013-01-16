@@ -1418,7 +1418,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 	ndi      = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	TPC      = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC; 
 	harq_pid = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
-		printf("TDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
+	//printf("TDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
       }
       else {
 	vrb_type = ((DCI1A_5MHz_FDD_t *)dci_pdu)->vrb_type;
@@ -2764,18 +2764,15 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     }
 
 
-
+    //FK: moved this part to ulsch_coding to be more recent
+    /*
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
     //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
+   
     // save PUSCH pmi for later (transmission modes 4,5,6)
-
-    //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
+    // msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
     dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
-
-    //#ifdef DEBUG_PHY
-    if (((phy_vars_ue->frame % 100) == 0)) //|| (phy_vars_ue->frame < 10))
-      print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
-    //#endif
+    */
 
     if (frame_parms->frame_type == TDD)
       ulsch->harq_processes[harq_pid]->O_ACK                                 = (dai+1)&3;

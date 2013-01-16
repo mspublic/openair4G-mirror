@@ -24,7 +24,8 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
   int i;
 #endif
 
-  rx_power_fil_dB = dB_fixed(phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id]);
+  //rx_power_fil_dB = dB_fixed(phy_vars_ue->PHY_measurements.rssi);
+  rx_power_fil_dB = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id];
 
   // Gain control with hysterisis
   // Adjust gain in phy_vars_ue->rx_vars[0].rx_total_gain_dB

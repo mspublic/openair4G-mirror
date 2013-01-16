@@ -148,7 +148,7 @@ typedef struct
     u16 (*get_TBS)(u8 mcs, u16 nb_rb);
 
     /// Function to retrieve the HARQ round index for a particular UL/DLSCH and harq_pid
-    void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
+    int (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
 
     /// Function to retrieve number of CCE
     u16 (*get_nCCE_max)(u8 Mod_id);
@@ -166,7 +166,7 @@ typedef struct
     UE_MODE_t (*get_ue_mode)(u8 Mod_id,u8 eNB_index);
 
     /// Function for UE MAC to retrieve measured Path Loss
-    u16 (*get_PL)(u8 Mod_id,u8 eNB_index);
+    s16 (*get_PL)(u8 Mod_id,u8 eNB_index);
 
     /// Function for UE MAC to retrieve RSRP/RSRQ measurements
     u8* (*get_RSRP)(u8 Mod_id,u8 eNB_index);

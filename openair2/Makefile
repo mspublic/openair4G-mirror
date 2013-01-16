@@ -118,7 +118,8 @@ remove_emul:
 	rmmod  openair_emul
 
 
-
+clean_nasmesh:
+	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd` clean)	
 
 nasmesh_address_fix.ko:
 	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 ADDRESS_FIX=1 -C /usr/src/linux M=`pwd`)
@@ -188,9 +189,9 @@ stop_sounder_nodeb:
 
 emul_rt:
 	(cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER && $(MAKE))
+
 clean:
-	find -name *.o -delete -print
-#find -name *~ -delete -print
+	(cd NAS/DRIVER/MESH && $(MAKE) clean)
 
 cleanall:
 	find -name *.o -delete -print

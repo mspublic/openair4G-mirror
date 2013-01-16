@@ -19,7 +19,7 @@ typedef long long unsigned int RTIME;
 #define N_RB_UL_EMOS 25
 #define N_PILOTS_DL_EMOS 2  // ofdm symbols with pilots per slot
 #define N_PILOTS_UL_EMOS 2  // ofdm symbols with pilots per subframe
-#define N_SLOTS_DL_EMOS 12     // we take slots 0,1,10,11,12,13,14,15,16,17,18,19
+#define N_SLOTS_DL_EMOS 2     // we take slots 14,15
 #define N_SUBFRAMES_UL_EMOS 3     // we take subframes 2,3,4
 #define NB_ANTENNAS_TX_EMOS 2
 #define NB_ANTENNAS_RX_EMOS 2
@@ -35,20 +35,26 @@ struct fifo_dump_emos_struct_UE {
   unsigned int     pbch_errors_last;                   /// Total number of errors on PBCH 100 frames ago
   unsigned int     pbch_errors_conseq;                 /// Total number of consecutive errors on PBCH
   unsigned int     pbch_fer;                           /// PBCH FER (in percent) 
-  unsigned int     dlsch_errors;                                         /// Total number of error on the DLSCH (data)
+  unsigned int     dlsch_errors;                       /// Total number of error on the DLSCH (data)
   unsigned int     dlsch_errors_last;
   unsigned int     dlsch_received;
   unsigned int     dlsch_received_last;
   unsigned int     dlsch_fer;
-  unsigned int     dlsch_cntl_errors;                                    /// Total number of error on the DLSCH (control)
-  unsigned int     dlsch_ra_errors;                                      /// Total number of error on the DLSCH (random access)
-  int              timing_offset;                                        /// Timing offset
-  int              timing_advance;                                       /// Timing advance
-  int              freq_offset;                                          /// Frequency offset
-  unsigned int     rx_total_gain_dB;                                     /// Total gain
-  unsigned char    eNb_id;                                               /// eNb_id UE is synched to
-  unsigned char    mimo_mode;                                            /// Transmission mode
-  int              channel[NB_ANTENNAS_TX_EMOS][NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS];
+  unsigned int     dlsch_cntl_errors;                  /// Total number of error on the DLSCH (control)
+  unsigned int     dlsch_ra_errors;                    /// Total number of error on the DLSCH (random access)
+  unsigned int     total_TBS;
+  unsigned int     total_TBS_last;
+  unsigned int     bitrate;
+  unsigned int     total_received_bits;
+  int              timing_offset;                      /// Timing offset
+  int              timing_advance;                     /// Timing advance
+  int              freq_offset;                        /// Frequency offset
+  int              use_ia_receiver;
+  unsigned short   pmi_saved;
+  unsigned int     rx_total_gain_dB;                   /// Total gain
+  unsigned char    eNb_id;                             /// eNb_id UE is synched to
+  unsigned char    mimo_mode;                          /// Transmission mode
+  //int              channel[NB_ANTENNAS_TX_EMOS][NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS];
 };
 
 typedef struct  fifo_dump_emos_struct_UE fifo_dump_emos_UE;

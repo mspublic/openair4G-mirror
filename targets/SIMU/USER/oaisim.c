@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cblas.h>
+#include <execinfo.h>
 
  
 #include "SIMULATION/RF/defs.h"
@@ -276,7 +277,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
   if (channel_f != NULL) {
     cum_avg = 0;
     ind = 0;
-    for (j=0; j<4; j++) { 
+    for (j=0; j<frame_parms->nb_antennas_tx_eNB; j++) { 
       for (i=0;i<frame_parms->nb_antennas_rx;i++) {
         for (k=0;k<NUMBER_OF_OFDM_CARRIERS*7;k++){
           sig_time[ind] = (float)ind;
@@ -539,6 +540,36 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
   free(llr);
   free(llr_time);
 
+}
+
+void ia_receiver_on_off( FL_OBJECT *button, long arg) {
+
+  if (fl_get_button(button)) {
+    //if (UE_flag==1) {
+      fl_set_object_label(button, "IA Receiver ON");
+      openair_daq_vars.use_ia_receiver = 1;
+      fl_set_object_color(button, FL_GREEN, FL_GREEN);
+      //    LOG_I(PHY,"Pressed the button: IA receiver ON\n");
+      /*}
+    else {
+      fl_set_object_label(button, "DL traffic ON");
+      fl_set_object_color(button, FL_GREEN, FL_GREEN);
+      otg_enabled = 1;
+      }*/
+  }
+  else {
+    //if (UE_flag==1) {
+      fl_set_object_label(button, "IA Receiver OFF");
+      openair_daq_vars.use_ia_receiver = 0;
+      fl_set_object_color(button, FL_RED, FL_RED);
+      //    LOG_I(PHY,"Pressed the button: IA receiver OFF\n");
+      /*}
+    else {
+      fl_set_object_label(button, "DL traffic OFF");
+      fl_set_object_color(button, FL_RED, FL_RED);
+      otg_enabled = 0;
+      }*/
+  }
 }
 
 #endif //XFORMS
@@ -1234,9 +1265,9 @@ main (int argc, char **argv)
 
 
   if (ue_connection_test == 1) {
-    snr_direction = -1;
-    snr_dB=20;
-    sinr_dB=-20;
+    snr_direction = -2;
+    snr_dB=30;
+    sinr_dB=-10;
   }
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
@@ -1252,11 +1283,11 @@ main (int argc, char **argv)
         snr_dB += snr_direction;
         sinr_dB -= snr_direction;
       }
-      if (snr_dB == -20) {
-        snr_direction=1;
+      if (snr_dB == -10) {
+        snr_direction=2;
       }
-      else if (snr_dB==20) {
-        snr_direction=-1;
+      else if (snr_dB==30) {
+        snr_direction=-2;
       }
     }
       
@@ -1713,6 +1744,12 @@ void terminate(void) {
 
 void exit_fun(const char* s)
 {
+  void *array[10];
+  size_t size;
+
+  size = backtrace(array, 10);
+  backtrace_symbols_fd(array, size, 2);
+
   fprintf(stderr, "Error: %s. Exiting!\n",s);
   exit (-1);
 }
