@@ -83,6 +83,7 @@
 #define DCCH 1  // srb1
 #define DCCH1 2 // srb2
 #define DTCH  3 // DTCH + lcid < 11
+#define CODTCH 11 //TCS LOLAmesh 11 is used since in MAC sub-headers LCIDs are coded on 5bits, so 88 (collaborative lcid or rab id) is not possible <=> lcid 11 -> 88 / 12 -> 89 / ...
 
 #ifdef USER_MODE
 #define printk printf
@@ -91,7 +92,8 @@
 #define MAX_NUM_LCID 11
 #define MAX_NUM_RB 8
 #define MAX_NUM_CO_RB 4 //TCS LOLAmesh
-#define CO_LCID_SHIFT 85 //TCS LOLAmesh Collaborative LCIDs received need to be shifted of 85 positions to be stored, since they are stored at the end of all lcids / rabs
+#define CO_LCID_SHIFT 85 //TCS LOLAmesh Collaborative LCIDs received from rrcConnectionReconfiguration need to be shifted of 85 positions to be stored, since they are stored at the end of all lcids / rabs
+#define CO_LCID_INDEX 88
 #define MAX_NUM_CE 5
 
 #define NB_RA_PROC_MAX 4
