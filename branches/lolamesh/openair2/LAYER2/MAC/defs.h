@@ -72,7 +72,7 @@
  */
 
 // Size of the collaborative sequence number Control Element
-#define CO_SEQ_NUM_CE_SIZE 3 //TCS LOLAmesh
+#define CO_SEQ_NUM_CE_SIZE 2 //TCS LOLAmesh
 
 #define BCCH_PAYLOAD_SIZE_MAX 128  
 #define CCCH_PAYLOAD_SIZE_MAX 128    
@@ -186,7 +186,6 @@ typedef struct {
 //TCS LOLAmesh
 typedef struct {
 	u16 squence_number;
-	u8 VLID;
 } __attribute__((__packed__))CO_SEQ_NUM;
 
 typedef struct {
@@ -207,7 +206,7 @@ typedef struct {
 // DLSCH LCHAN IDs
 #define CCCH_LCHANID 0
 /* This CE apply for DL-SCH and UL-SCH */
-#define CO_SEQ_NUM 15//TCS LOLAmesh
+#define CO_SEQ_NUM_LCID 15//TCS LOLAmesh
 #define UE_CONT_RES 28
 #define TIMING_ADV_CMD 29
 #define DRX_CMD 30
@@ -277,6 +276,9 @@ typedef struct{
 
   /// CO-RNTIs of the UE
   struct cornti_array corntis; //TCS LOLAmesh
+
+  // Collaborative data sequence number;
+  u16 sequence_number;
 
   // PHY interface info
 
@@ -572,7 +574,9 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned char drx_cmd,
 				    unsigned char timing_advance_cmd,
 				    unsigned char *ue_cont_res_id,
-				    unsigned short *co_seq_num, //TCS LOLAmesh
+				    unsigned short co_seq_num, //TCS LOLAmesh
+				    unsigned short eNB_id,
+				    unsigned short UE_id,
 				    unsigned char short_padding,
 				    unsigned short post_padding);
 
