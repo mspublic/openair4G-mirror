@@ -624,7 +624,9 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned char drx_cmd,
 				    unsigned char timing_advance_cmd,
 				    unsigned char *ue_cont_res_id,
-				    unsigned short *co_seq_num, //TCS LOLAmesh
+				    unsigned short co_seq_num, //TCS LOLAmesh
+				    unsigned short eNB_id,
+				    unsigned short UE_id,
 				    unsigned char short_padding,
 				    unsigned short post_padding) {
 
@@ -636,6 +638,27 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 
   // compute header components
   
+  //TCS LOLAmesh CO_SEQ_NUM new MAC Control Element
+  //MAC sub-header
+  if (co_seq_num != 0) {
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      mac_header_ptr++;
+    }
+    else {
+      first_element=1;
+    }
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E = 0;
+    mac_header_ptr->LCID = CO_SEQ_NUM_LCID;
+    last_size=1;
+
+    //Control Element
+    ((CO_SEQ_NUM *)ce_ptr)->squence_number=eNB_mac_inst[eNB_id].UE_template[UE_id].sequence_number;
+    eNB_mac_inst[eNB_id].UE_template[UE_id].sequence_number++;
+    ce_ptr+=sizeof(CO_SEQ_NUM);
+  }
+
   if ((short_padding == 1) || (short_padding == 2)) {
     mac_header_ptr->R    = 0;
     mac_header_ptr->E    = 0;
@@ -1046,7 +1069,9 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 					 255,                         // no drx
 					 0,                           // no timing advance
 					 RA_template[i].cont_res_id,  // contention res id
-					 NULL,
+					 0,
+					 0,
+					 0,
 					 msg4_padding,                // no padding
 					 msg4_post_padding);
 
@@ -3719,7 +3744,7 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
   unsigned char next_ue;
   unsigned char aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0, ta_len=0;
+  unsigned char header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0, ta_len=0, seq_num_len=0;
   unsigned char sdu_lcids[11],offset,num_sdus=0;
   u16 nb_rb,TBS,j,sdu_lengths[11],padding=0,post_padding=0;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
@@ -3728,11 +3753,8 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
   void *DLSCH_dci;
   LTE_eNB_UE_stats* eNB_UE_stats;
   u16 sdu_length_total=0;
-  //  unsigned char loop_count;
   unsigned char DAI;
   u16 tpmi0=1;
-  //int **rballoc_sub = (int **)malloc(1792*sizeof(int *));
-  //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 1; // set to the maximum aggregation level
   int mcs;
   int i;
@@ -3959,14 +3981,16 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 		// Length of the MAC sub-headers (1 bytes MAC sub-header) + control elements (timing adv, drx, etc)
 		//Timing Advance
 		ta_len = (eNB_UE_stats->UE_timing_offset>0) ? 2 : 0;
+		seq_num_len = 3; //new MAC control element defined
+
 
 		// Length of the MAC sub-header for CODTCH data
 		header_len_dtch = 3; // MAC sub-header with 15 bits L field
 
-		LOG_D(MAC,"[TCS DEBUG][eNB %d], Frame %d, CODTCH->DLSCH, Checking RLC status (rab %d, tbs %d, len %d)\n",Mod_id,frame,CO_LCID_INDEX+lcid_shift,TBS,TBS-ta_len-sdu_length_total-header_len_dtch);
+		LOG_D(MAC,"[TCS DEBUG][eNB %d], Frame %d, CODTCH->DLSCH, Checking RLC status (rab %d, tbs %d, len %d)\n",Mod_id,frame,CO_LCID_INDEX+lcid_shift,TBS,TBS-ta_len-seq_num_len-sdu_length_total-header_len_dtch);
 
 		//Get data from RLC
-		rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DTCH+(MAX_NUM_RB*next_ue),TBS-ta_len-sdu_length_total-header_len_dtch);
+		rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DTCH+(MAX_NUM_RB*next_ue),TBS-ta_len-seq_num_len-sdu_length_total-header_len_dtch);
 
 		// If there are data
 		if (rlc_status.bytes_in_buffer > 0) {
@@ -4012,7 +4036,7 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 
 			// Calculate the maximal mcs/TBS pair that satifies the RLC payload requirement
 
-			while (TBS < (sdu_length_total + header_len_dtch + ta_len))  {
+			while (TBS < (sdu_length_total + header_len_dtch + ta_len + seq_num_len))  {
 				nb_rb += 2;  //
 				if (nb_rb>nb_available_rb) { // if we've gone beyond the maximum number of RBs
 					// (can happen if N_RB_DL is odd)
@@ -4024,13 +4048,13 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 			}
 
 			// decrease mcs until TBS falls below required length
-			while ((TBS > (sdu_length_total + header_len_dtch + ta_len)) && (mcs>0)) {
+			while ((TBS > (sdu_length_total + header_len_dtch + ta_len + seq_num_len)) && (mcs>0)) {
 				mcs--;
 				TBS = mac_xface->get_TBS(mcs,nb_rb);
 			}
 
 			// if we have decreased too much or we don't have enough RBs, increase MCS
-			while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (mcs<28)) {
+			while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len + seq_num_len)) && (mcs<28)) {
 				mcs++;
 				TBS = mac_xface->get_TBS(mcs,nb_rb);
 			}
@@ -4041,8 +4065,8 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 			msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",Mod_id,mcs,TBS,nb_rb);
 #endif
 
-			if ((TBS - header_len_dtch - sdu_length_total - ta_len) <= 2) {
-				padding = (TBS - header_len_dtch - sdu_length_total - ta_len);
+			if ((TBS - header_len_dtch - sdu_length_total - ta_len - seq_num_len) <= 2) {
+				padding = (TBS - header_len_dtch - sdu_length_total - ta_len - seq_num_len);
 				post_padding = 0;
 			}
 			else {
@@ -4053,10 +4077,9 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 				}
 				else //if (( header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
 					header_len_dtch = header_len_dtch_tmp;
-					post_padding = TBS - sdu_length_total - header_len_dtch - ta_len ; // 1 is for the postpadding header
+					post_padding = TBS - sdu_length_total - header_len_dtch - ta_len - seq_num_len; // 1 is for the postpadding header
 			}
 
-			//TODO: generate_dlsch_header shall add the new MAC Control Element defined in the lolamesh
 			// Generate MAC PDU header
 			offset = generate_dlsch_header((unsigned char*)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],
 									 num_sdus,              //number of sdus in the mac pdu
@@ -4065,7 +4088,9 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 									 255,                   // no drx
 									 ta_len,      					// timing advance
 									 NULL,                  // contention res id
-									 NULL,
+									 1,											// sequence number
+									 Mod_id,								// eNB id
+									 UE_id,									// UE id
 									 padding,
 									 post_padding);
 
@@ -4073,8 +4098,7 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 			LOG_D(MAC,"[eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,ta_len,next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
 #endif
 
-			// Fill the MAC PDU with MAC SDUs and place in dlsch_buffer
-			// The MAC PDU contains only one MAC SDU
+			// Fill the MAC PDU with MAC SDUs
 			memcpy(&eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0][offset],dlsch_buffer,sdu_length_total);
 
 			// Fill remainder of the MAC PDU with random data
@@ -4602,7 +4626,9 @@ void schedule_ue(u8 Mod_id,u16 rnti,unsigned char UE_id,u32 frame,unsigned char 
 									 255,                                   // no drx
 									 ta_len,      // timing advance
 									 NULL,                                  // contention res id
-									 NULL,
+									 0,
+									 0,
+									 0,
 									 padding,
 									 post_padding);
 #ifdef DEBUG_eNB_SCHEDULER
