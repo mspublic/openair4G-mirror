@@ -105,7 +105,6 @@ void add_ue_dlsch_info(unsigned char Mod_id, unsigned char UE_id, unsigned char 
   //  eNB_dlsch_info[Mod_id][UE_id].weight           = weight;
   eNB_dlsch_info[Mod_id][UE_id].subframe         = subframe;
   eNB_dlsch_info[Mod_id][UE_id].status           = status;
-
   eNB_dlsch_info[Mod_id][UE_id].serving_num++;
 
 }
@@ -1466,7 +1465,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
   return (rballoc_dci);
 }
 
-
+//TCS LOLAmesh
 void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 RBalloc,u8 RA_scheduled) {
   // loop over all allocated UEs and compute frequency allocations for PDSCH
 
@@ -1690,6 +1689,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
   // UE specific DCIs
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+
     //printf("UE_id: %d => status %d\n",UE_id,eNB_dlsch_info[Mod_id][UE_id].status);
     if (eNB_dlsch_info[Mod_id][UE_id].status == S_DL_SCHEDULED) {
 
@@ -1703,16 +1703,17 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
       /// Synchronizing rballoc with rballoc_sub
       for(x=0;x<7;x++){
-	for(y=0;y<2;y++){
-	  z = 2*x + y;
-	    if(z < (2*6 + 1)){
-	      rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
-	    }
-	}
+      	for(y=0;y<2;y++){
+      		z = 2*x + y;
+      		if(z < (2*6 + 1)){
+      			rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
+      		}
+      	}
       }
+
       for(i=0;i<13;i++){
-	if(rballoc_sub[i] == 1)
-	  rballoc |= (0x0001<<i);
+      	if(rballoc_sub[i] == 1)
+      		rballoc |= (0x0001<<i);
       }
 
       switch(mac_xface->get_transmission_mode(Mod_id,rnti)) {
@@ -4119,6 +4120,7 @@ void schedule_ue_co(u8 Mod_id,u16 cornti,u16 lcid_shift,unsigned char UE_id,u32 
 			*nCCE_used+=(1<<aggregation); // adjust the remaining nCCE
 			eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid] = nb_rb;
 
+			//Keep track that this UE is schedule
 			add_ue_dlsch_info(Mod_id,next_ue,subframe,S_DL_SCHEDULED);
 
 			if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) {
