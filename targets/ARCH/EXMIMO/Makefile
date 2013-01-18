@@ -10,11 +10,12 @@ EXTRA_CFLAGS = -ggdb -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -I/lib/modules/
 
 obj-m += openair_rf.o
 
-openair_rf-objs += device.o dma.o irq.o fileops.o exmimo_fw.o
+openair_rf-objs += device.o irq.o fileops.o exmimo_fw.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 clean:
+	rm -rf *.o
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 

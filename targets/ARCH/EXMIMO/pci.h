@@ -1,15 +1,17 @@
 #ifndef OPENAIR_PCI_H
 #define OPENAIR_PCI_H
 
+#include "exmimo_fw.h"
 
 /* This file is intended for prototypes & declarations to be SHARED with underlying hardware. */
 
+/*
 #define PRIMARY_CH 0
 #define SECONDARY_CH 1
 #define NODE 2
+*/
 
-#include "exmimo_fw.h"
-
+/*
 typedef struct {
   unsigned int global_top_dma_ahb_addr;
   unsigned int one_dma_nbwords;
@@ -18,11 +20,11 @@ typedef struct {
   unsigned int dma_busy;
   unsigned int dma_direction;
 } exmimo_pcidma_t;
-
+*/
 typedef struct {
-  uint32_t mbox;
-  uint32_t adc_head[4];            // PCI addresses of ADC buffers in PC memory (Read by LEON during init)
-  uint32_t dac_head[4];            // PCI addresses of DAC buffers in PC memory (Read by LEON during init)
+  uint32_t mbox_head;              // physical PCI address of MBOX (size: 4 DW / 16 Bytes)
+  uint32_t adc_head[4];            // physical PCI addresses of ADC buffers in PC memory (Read by LEON during init)
+  uint32_t dac_head[4];            // physical PCI addresses of DAC buffers in PC memory (Read by LEON during init)
   uint32_t rf_freq_rx0;
   uint32_t rf_freq_rx1;
   uint32_t rf_freq_rx2;
@@ -171,7 +173,6 @@ typedef struct {
 } exmimo_framing_t;
 
 typedef struct {
-  //  uint32_t mbox[4];
   exmimo_rf_t rf;
   exmimo_framing_t framing;
 } exmimo_pci_interface_t;
