@@ -868,6 +868,248 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
   *nCCE=0;
 }
 
+#ifdef Rel10
+int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *nprb,unsigned int *nCCE) {
+  //??? determine the nprb and nCCE for mcch and mtch???
+  //3. mux mcch +mtchs 
+  //4.generate mch_header + MSI , for help see schedule_ue_spec
+  //???  mch_dci
+  int mcch_flag;
+  int mbsfn_period = 1<<(eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
+  int mcch_period = 32<<(eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+
+  //  LOG_D(MAC,"mbsfn_offset is %d\n", eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset);
+
+  if (frame %  mbsfn_period == eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset){ // MBMS is transmitted in this frame
+
+    switch (subframe) {     
+    case 1:
+      if (mac_xface->lte_frame_parms->frame_type == FDD) {      
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    case 2:
+      if (mac_xface->lte_frame_parms->frame_type == FDD){
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF2) == MBSFN_FDD_SF2) ) {
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF2) == MBSFN_FDD_SF2) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    case 3:
+      if (mac_xface->lte_frame_parms->frame_type == TDD){
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF3) == MBSFN_TDD_SF3) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF3) == MBSFN_TDD_SF3) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      else {// FDD
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF3) == MBSFN_FDD_SF3) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF3) == MBSFN_FDD_SF3) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    case 4:
+      if (mac_xface->lte_frame_parms->frame_type == TDD){
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF4) == MBSFN_TDD_SF4) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF4) == MBSFN_TDD_SF4) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    case 6:
+      if (mac_xface->lte_frame_parms->frame_type == FDD){
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF6) == MBSFN_FDD_SF6) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF6) == MBSFN_FDD_SF6) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    case 7:
+      if (mac_xface->lte_frame_parms->frame_type == TDD){
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF7) == MBSFN_TDD_SF7) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF7) == MBSFN_TDD_SF7) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      else {// FDD
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF7) == MBSFN_FDD_SF7) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF7) == MBSFN_FDD_SF7) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    case 8:
+      if (mac_xface->lte_frame_parms->frame_type == TDD){
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF8) == MBSFN_TDD_SF8) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF8) == MBSFN_TDD_SF8) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      else{ // FDD
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_FDD_SF8) == MBSFN_FDD_SF8) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF8) == MBSFN_FDD_SF8) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    case 9:
+      if (mac_xface->lte_frame_parms->frame_type == TDD){
+	if ( (eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) &&
+	     ((eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & MBSFN_TDD_SF9) == MBSFN_TDD_SF9) ) {
+
+	  if ( (frame % mcch_period == eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_Offset_r9) && 
+	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF9) == MBSFN_TDD_SF9) )
+	    mcch_flag = 1; // MCCH subframe.
+	  else mcch_flag = 0;
+	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  return 1;
+	}
+      }
+      break;
+
+    default:
+      return 0;
+    }
+  }
+}
+
+void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned int *nCCE, u8 mcch_flag) {
+  //1. get MCCH from RRC (similar to BCCH ) 
+  //2. get MTCHs from RLC (similar to DTCHs?) 
+  unsigned char mcch_sdu_length;
+
+  if  (mcch_flag ==1) { // Get MCCH from RRC
+    LOG_D(MAC,"DUY: MCCH MESSAGE is transmitted here \n" );
+
+    mcch_sdu_length = mac_rrc_data_req(Mod_id,
+				       frame,
+				       MCCH,1,
+				       (char*)&eNB_mac_inst[Mod_id].MCCH_pdu.payload[0],
+				       1,// this is eNB
+				       Mod_id);
+    if (mcch_sdu_length > 0) {
+      LOG_D(MAC,"[eNB %d] Frame %d : MCCH->MCH, Received %d bytes \n",Mod_id,frame,mcch_sdu_length);
+      
+      //set the MCS of MCCH to the value indicated in SIB13 
+      //there is no mcs parameter in mcch_alloc_pdu
+      int mcch_mcs;
+      switch (eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.signallingMCS_r9) {
+      case 0:
+	mcch_mcs = 2;
+	break;
+      case 1:
+	mcch_mcs = 7;
+	break;
+      case 2:
+	mcch_mcs = 13;
+	break;
+      case 3:
+	mcch_mcs = 19;
+	break;
+      }
+      
+      if (mac_xface->lte_frame_parms->frame_type == TDD) {
+	LOG_D(MAC,"[eNB] Frame %d : Scheduling MCCH->MCH (TDD) for MCCH message %d bytes (mcs %d, rb 3, TBS ? )\n",//temporary delete tbs %d
+	      frame,
+	      mcch_sdu_length,
+	      mcch_mcs
+	      ); //  need to be checked, this one is copy from bcch
+      }
+      else {
+	LOG_D(MAC,"[eNB] Frame %d : Scheduling MCCH->MCH (FDD) for MCCH message %d bytes (mcs %d, rb 3, TBS ? )\n",
+	      frame,
+	      mcch_sdu_length,
+	      mcch_mcs
+	      );  // this need to be checked 
+      }
+      eNB_mac_inst[Mod_id].mcch_active=1;
+      *nprb=3;
+      //      *nCCE=4;// need to check for MCH
+      return;
+    }
+    
+    eNB_mac_inst[Mod_id].mcch_active=0;
+    *nprb=0;
+    //    *nCCE=0;  
+  }
+  else { // get MTCHs from RLC 
+
+  }
+
+}
+#endif
+
 // First stage of Random-Access Scheduling
 void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned char Msg3_subframe,unsigned char *nprb,unsigned int *nCCE) {
 
@@ -4526,6 +4768,10 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   DCI_pdu->Num_ue_spec_dci = 0;
   eNB_mac_inst[Mod_id].bcch_active = 0;
 
+#ifdef Rel10
+  eNB_mac_inst[Mod_id].mcch_active =0;
+#endif
+
   eNB_mac_inst[Mod_id].frame = frame;
   eNB_mac_inst[Mod_id].subframe = subframe;
 
@@ -4542,62 +4788,61 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   RBalloc=Get_Cell_SBMap(Mod_id);
 #endif
   // see table 8-2 "k for TDD configuration 0-6" in 36.213
-  mbsfn_status = 0;
 
-  /*
-  if (mbms) {
+#ifdef Rel10
+  if (eNB_mac_inst[Mod_id].MBMS_flag ==1) {
 
-    mbsfn_status = schedule_embms(frame,subframe,);
+    mbsfn_status = schedule_MBMS(Mod_id,frame,subframe, &nprb, &nCCE);
   }
-  */
+#endif
 
   switch (subframe) {
   case 0:
     // FDD/TDD Schedule Downlink RA transmissions (RA response, Msg4 Contention resolution)
     // Schedule ULSCH for FDD or subframe 4 (TDD config 0,3,6)
     // Schedule Normal DLSCH
-
+    
     //    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
 
     if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
       // schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
     }
     else if  ((mac_xface->lte_frame_parms->tdd_config == TDD) || //TDD
-	(mac_xface->lte_frame_parms->tdd_config == 3) ||
-	(mac_xface->lte_frame_parms->tdd_config == 6))
+	      (mac_xface->lte_frame_parms->tdd_config == 3) ||
+	      (mac_xface->lte_frame_parms->tdd_config == 6))
       //schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
 
+      
+      // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
 
-    // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
-
-    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
-
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
     break;
+
   case 1:
     // TDD, schedule UL for subframe 7 (TDD config 0,1) / subframe 8 (TDD Config 6)
     // FDD, schedule normal UL/DLSCH
     if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
-      case 0:
-      case 1:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
-	break;
-      case 6:
-	schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
-	break;
-      default:
-	break;
+	switch (mac_xface->lte_frame_parms->tdd_config) {
+	case 0:
+	case 1:
+	  schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,7,&nCCE);
+	  fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
+	  break;
+	case 6:
+	  schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,8,&nCCE);
+	  fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
+	  break;
+	default:
+	  break;
+	}
       }
-    }
-    else {  //FDD
-      //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+      else {  //FDD
+	//schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
 	// schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
 	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0,mbsfn_status);
-    }
+      }
+       break;
 
-    break;
   case 2:
     // TDD, nothing 
     // FDD, normal UL/DLSCH
@@ -4607,6 +4852,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       // fill_DLSCH_dci(Mod_id,subframe,RBalloc,0,mbsfn_status);
     }
     break;
+
   case 3:
     // TDD Config 2, ULSCH for subframe 7
     // TDD Config 2/5 normal DLSCH
@@ -4621,15 +4867,15 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	break;
       default:
 	break;
+	}
       }
-    }
-    else { //FDD
+      else { //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
 	// schedule_ue_spec(Mod_id,subframe,0,0,mbsfn_status);
 	// fill_DLSCH_dci(Mod_id,subframe,RBalloc,0,mbsfn_status);
-    }
+      }
+       break;
 
-    break;
   case 4:
     // TDD Config 1, ULSCH for subframe 8
     // TDD Config 1/2/4/5 DLSCH
@@ -4657,6 +4903,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       }
     }
     break;
+
   case 5:
     // TDD/FDD Schedule SI
     // TDD Config 0,6 ULSCH for subframes 9,3 resp.
@@ -4709,48 +4956,43 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
 	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
 	break;
-
+     
       default:
-	break;
+      break;
       }
     }
+    else {  //FDD
+      //	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
+      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
+    }
+    break;
+ 
+    case 7:
+      // TDD Config 3,4,5 Normal DLSCH
+      // FDD Normal UL/DLSCH
+      if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
+	switch (mac_xface->lte_frame_parms->tdd_config) {
+	case 3:
+	case 4:
+	  schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
+	  schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	  fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
+	  break;
+	case 5:
+	  schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
+	  fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
+	  break;
+	default:
+	  break;
+	}
+      }
     else {  //FDD
 	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
       schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
       fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
     }
-
     break;
-
-  case 7:
-    // TDD Config 3,4,5 Normal DLSCH
-    // FDD Normal UL/DLSCH
-    if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
-      switch (mac_xface->lte_frame_parms->tdd_config) {
-      case 3:
-      case 4:
-	schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
-	break;
-      case 5:
-	schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
-	fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
-	break;
-      default:
-	break;
-      }
-    }
-    else {  //FDD
-	//	schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE,calibration_flag);
-      schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
-    }
-
-
-    break;
-
-
 
   case 8:
     // TDD Config 2,3,4,5 ULSCH for subframe 2
@@ -4817,8 +5059,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
     }
     break;
-
-  }
+    
+    }
 
   DCI_pdu->nCCE = nCCE;
   LOG_D(MAC,"frame %d, subframe %d nCCE %d\n",frame,subframe,nCCE);

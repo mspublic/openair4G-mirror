@@ -60,6 +60,7 @@ void openair_rrc_on(u8 Mod_id,u8 eNB_flag){
     eNB_rrc_inst[Mod_id].SI.Active=1;
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].Srb0,CCCH,1);
     eNB_rrc_inst[Mod_id].Srb0.Active=1;
+ 
   } else{
     LOG_I(RRC,"[UE %d] OPENAIR RRC IN....\n", Mod_id);
     for(i=0;i<NB_eNB_INST;i++){

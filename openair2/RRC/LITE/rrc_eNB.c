@@ -202,9 +202,21 @@ void init_SI(u8 Mod_id) {
 
 
     LOG_D(RRC, "[eNB %d] pusch_config_common.cyclicShift  = %ld\n",Mod_id, eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
+#ifdef Rel10
+    if (eNB_rrc_inst[Mod_id].MBMS_flag ==1) {
+   //   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.count);
+    LOG_D(RRC, "[eNB %d] mbsfn_Subframe_pattern is  = %ld\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.array[0]->subframeAllocation.choice.oneFrame.buf[0]);
 
-    LOG_D(RRC, "[MSC_MSG][FRAME unknown][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) --->][MAC_UE][MOD %02d][]\n",
-	  Mod_id, Mod_id);
+    LOG_D(RRC, "[eNB %d] SIB13 contents (partial)\n", Mod_id);
+    LOG_D(RRC,"[eNB %d] Number of MBSFN Area:  %ld\n",Mod_id, eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.count);
+    LOG_D(RRC, "[eNB %d] MCCH Info of first MBSFN Area(partial)\n", Mod_id);
+    LOG_D(RRC, "[eNB %d] MCCH Repetition Period: %d\n", Mod_id, eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.array[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+    LOG_D(RRC, "[eNB %d] MCCH Offset: %d\n", Mod_id, eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.array[0]->mcch_Config_r9.mcch_Offset_r9);
+    }
+#endif
+  LOG_D(RRC, "[MSC_MSG][FRAME unknown][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) --->][MAC_UE][MOD %02d][]\n",
+             Mod_id, Mod_id);
+
     rrc_mac_config_req(Mod_id,1,0,0,
 		       (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
 		       (struct PhysicalConfigDedicated *)NULL,
@@ -215,13 +227,58 @@ void init_SI(u8 Mod_id) {
 		       (MeasGapConfig_t *)NULL,
 		       eNB_rrc_inst[Mod_id].sib1->tdd_Config,
 		       &SIwindowsize,
-		       &SIperiod);
+		       &SIperiod
+#ifdef Rel10
+		       ,
+		       eNB_rrc_inst[Mod_id].MBMS_flag,		        
+		       (MBSFN_SubframeConfigList_t *)eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList,
+		       (MBSFN_AreaInfoList_r9_t *)&eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9
+#endif 
+		       );
   }
   else {
     LOG_E(RRC,"[eNB] init_SI: FATAL, no memory for SIB2/3 allocated\n");
     mac_xface->macphy_exit("");
   }
 }
+
+#ifdef Rel10
+init_MCCH(u8 Mod_id) {
+  // initialize RRC_eNB_INST MCCH entry
+  eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE = 0;
+  eNB_rrc_inst[Mod_id].MCCH_MESSAGE = (u8 *)malloc16(32);
+  if (eNB_rrc_inst[Mod_id].MCCH_MESSAGE) {
+    eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE = do_MBSFNAreaConfig(mac_xface->lte_frame_parms,
+                                                                     (uint8_t *)eNB_rrc_inst[Mod_id].MCCH_MESSAGE,
+                                                                     &eNB_rrc_inst[Mod_id].mcch,
+                                                                     &eNB_rrc_inst[Mod_id].mcch_message);
+    
+    LOG_D(RRC, "[eNB %d] MCCH_MESSAGE  contents (partial)\n", Mod_id);
+    LOG_D(RRC, "[eNB %d] CommonSF_AllocPeriod_r9 %d\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_AllocPeriod_r9);
+    LOG_D(RRC, "[eNB %d] CommonSF_Alloc_r9.list.count (number of MBSFN Subframe Pattern) %d\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.count);
+    LOG_D(RRC, "[eNB %d] Add of First MBSFN Subframe Pattern: %d\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.array[0]);
+    LOG_D(RRC, "[eNB %d] First MBSFN Subframe Pattern: %d\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.array[0]->subframeAllocation.choice.oneFrame.buf[0]);
+
+  }
+  else {
+    LOG_E(RRC, "[eNB] init_MCCH: FATAL, no memory for MCCH MESSAGE allocated\n");
+    mac_xface->macphy_exit("");
+  }
+  
+  if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE == 255)
+    mac_xface->macphy_exit("");
+
+  //Set the eNB_rrc_inst[Mod_id].MCCH_MESS.Active to 1 (allow to  transfer MCCH message RCC->MAC
+  // in function mac_rrc_data_req
+
+  //  rrc_config_buffer(&eNB_rrc_inst[Mod_id].MCCH_MESS,MCCH,1);
+  eNB_rrc_inst[Mod_id].MCCH_MESS.Active =1;
+
+  // Configure MCCH logical channel
+  // call mac_config_req with appropriate structure from ASN.1 description
+
+  }
+#endif
 
 /*------------------------------------------------------------------------------*/
 char openair_rrc_lite_eNB_init(u8 Mod_id){
@@ -253,12 +310,16 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
     eNB_rrc_inst[Mod_id].Srb2[j].Active=0;
   }
 
-#ifdef Rel10
-  // This has to come from some top-level configuration
-  eNB_rrc_inst[Mod_id].MBMS_flag = 0;
-#endif
+
   /// System Information INIT
   init_SI(Mod_id);
+
+#ifdef Rel10
+  // This has to come from some top-level configuration
+  eNB_rrc_inst[Mod_id].MBMS_flag = 1;
+  /// MCCH INIT
+  init_MCCH(Mod_id);
+#endif
 
 #ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
   openair_rrc_on(Mod_id,1);
@@ -799,7 +860,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
   sr_ProhibitTimer_r9 = CALLOC(1,sizeof(long));
   *sr_ProhibitTimer_r9=0; // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
   mac_MainConfig->sr_ProhibitTimer_r9=sr_ProhibitTimer_r9;
-  sps_RA_ConfigList_rlola = NULL;
+  //sps_RA_ConfigList_rlola = NULL;
 #endif
 
 
@@ -1147,7 +1208,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 			   (TDD_Config_t *)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL);
+			   (u16 *)NULL
+#ifdef Rel10	       
+			   ,
+			   0,
+			   (MBSFN_SubframeConfigList_t *)NULL,
+			   (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+			   );
       }
       else { // remove LCHAN from MAC/PHY
 
@@ -1173,7 +1241,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   (MeasGapConfig_t *)NULL,
 			   (TDD_Config_t *)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL);
+			   (u16 *)NULL
+#ifdef Rel10	       
+			   ,
+			   0,
+			   (MBSFN_SubframeConfigList_t *)NULL,
+			   (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+			   );
       }
     }
   }
@@ -1232,7 +1307,14 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 		     eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 		     (TDD_Config_t *)NULL,
 		     (u8 *)NULL,
-		     (u16 *)NULL);
+		     (u16 *)NULL
+#ifdef Rel10	       
+		     ,
+		     0,
+		     (MBSFN_SubframeConfigList_t *)NULL,
+		     (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+		     );
 
   LOG_I(RRC,"[eNB %d][RAPROC] Frame %d : Logical Channel DL-CCCH, Generating RRCConnectionSetup (bytes %d, UE %d)\n",
 	Mod_id,frame,eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size, UE_index);

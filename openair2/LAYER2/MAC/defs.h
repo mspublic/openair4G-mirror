@@ -60,6 +60,9 @@
 #include "TDD-Config.h"
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
+#ifdef Rel10
+#include "MBSFN-AreaInfoList-r9.h"
+#endif
 
 //#ifdef PHY_EMUL
 //#include "SIMULATION/PHY_EMULATION/impl_defs.h"
@@ -71,7 +74,8 @@
  */
 
 #define BCCH_PAYLOAD_SIZE_MAX 128  
-#define CCCH_PAYLOAD_SIZE_MAX 128    
+#define CCCH_PAYLOAD_SIZE_MAX 128
+#define MCCH_PAYLOAD_SIZE_MAX 128   
 #define SCH_PAYLOAD_SIZE_MAX 1024
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 #define BCCH 3  // SI 
@@ -79,6 +83,25 @@
 #define DCCH 1  // srb1
 #define DCCH1 2 // srb2
 #define DTCH  3 // DTCH + lcid < 11
+
+#ifdef Rel10
+#define MCCH 4 //MCCH
+
+// Mask for identifying subframe for MBMS 
+#define MBSFN_TDD_SF3 0x80// for TDD
+#define MBSFN_TDD_SF4 0x40
+#define MBSFN_TDD_SF7 0x20
+#define MBSFN_TDD_SF8 0x10
+#define MBSFN_TDD_SF9 0x08
+#define MBSFN_FDD_SF1 0x80// for FDD
+#define MBSFN_FDD_SF2 0x40
+#define MBSFN_FDD_SF3 0x20
+#define MBSFN_FDD_SF6 0x10
+#define MBSFN_FDD_SF7 0x08
+#define MBSFN_FDD_SF8 0x04
+
+#define MAX_MBSFN_AREA 8
+#endif
 
 #ifdef USER_MODE
 #define printk printf
@@ -204,6 +227,10 @@ typedef struct {
 typedef struct {
   u8 payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
 } __attribute__((__packed__))BCCH_PDU;
+
+typedef struct {
+  u8 payload[MCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief MCCH payload */
+} __attribute__((__packed__))MCCH_PDU;
 
 // DLSCH LCHAN IDs
 #define CCCH_LCHANID 0
@@ -394,6 +421,18 @@ typedef struct{
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
   /// BCCH active flag
   u8 bcch_active;
+ #ifdef Rel10 
+  /// MBMS Flag
+  u8 MBMS_flag;
+  /// Outgoing MCCH pdu for PHY
+  MCCH_PDU MCCH_pdu;
+  /// MCCH active flag
+  u8 mcch_active;
+  /// MBSFN Area Info
+  struct  MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+  /// MBSFN SubframeConfig
+  struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
+#endif
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
 }eNB_MAC_INST;
@@ -565,6 +604,9 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 @param tdd_Config TDD Configuration from SIB1 (if NULL keep existing configuration)
 @param SIwindowsize SI Windowsize from SIB1 (if NULL keep existing configuration)
 @param SIperiod SI Period from SIB1 (if NULL keep existing configuration)
+@param MBMS_Flag indicates MBMS transmission
+@param mbsfn_SubframeConfigList pointer to mbsfn subframe configuration list from SIB2
+@param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
 */
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
@@ -576,7 +618,14 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
-		       u16 *SIperiod);
+		       u16 *SIperiod
+ #ifdef Rel10
+		       ,
+		       u8 MBMS_Flag,
+		       struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
+		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
+#endif
+		       );
 
 
 /** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
@@ -598,6 +647,25 @@ void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 Msg3_subframe,u8 *nprb,unsig
 @param nCCE Pointer to current nCCE count
 */
 void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,unsigned int *nCCE);
+
+/** \brief MBMS Scheduling. Checking the position for MBSFN subframes. Return 1 if there are MBSFN data being allocated, otherwise return 0;
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+@param nprb Pointer to current PRB count
+@param nCCE Pointer to current nCCE count
+*/
+int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *nprb,unsigned int *nCCE);
+
+/** \brief MCH Scheduling.  Call function to transfer MCCH from RRC to MAC or transfer MTCH data from RLC to MAC.
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+@param nprb Pointer to current PRB count
+@param nCCE Pointer to current nCCE count
+@param mcch_flag indicates the  MCCH subframe
+*/
+void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned int *nCCE, u8 mcch_flag); 
 
 /** \brief ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
@@ -800,6 +868,8 @@ void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 
 void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
+
+void ue_send_mch_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) ;
 
 /* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.  
 @param Mod_id Instance id of UE in machine
