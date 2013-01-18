@@ -12,39 +12,40 @@
 #endif
 
 #include "defs.h"
+#include "pci.h"
 
+extern struct pci_dev *pdev[MAX_CARDS];
+extern void __iomem *bar[MAX_CARDS];
 
-extern struct pci_dev *pdev[4];
-extern void __iomem *bar[4];
-
-
-extern char card,master_id;
+extern exmimo_id_t exmimo_id[MAX_CARDS];
 
 extern int major;
 
-extern unsigned short eedata[];
+//extern unsigned int openair_irq_enabled;
 
-extern unsigned int openair_irq;
+extern unsigned long bigshm_size_pages;
 
-extern u32 openair_irq_enabled;
+extern void *bigshm_head[MAX_CARDS];
+extern void *bigshm_currentptr[MAX_CARDS];
+extern dma_addr_t bigshm_head_phys[MAX_CARDS];
 
-//extern dma_addr_t dummy_dma_ptr;
+//extern unsigned int RX_DMA_BUFFER_kptr[MAX_CARDS][4];
+//extern unsigned int TX_DMA_BUFFER_kptr[MAX_CARDS][4];
+//extern unsigned int mbox_kptr[MAX_CARDS];
 
-extern unsigned int pci_buffer[4][4*4];
-extern unsigned int RX_DMA_BUFFER[4][4];
-extern unsigned int TX_DMA_BUFFER[4][4];
-extern unsigned int mbox;
-
-extern unsigned int vid,did;
-
-//extern unsigned short NODE_ID[1];
-
-#include "pci.h"
 
 extern char number_of_cards;
 
-extern exmimo_pci_interface_bot *exmimo_pci_bot;
-extern exmimo_pci_interface_t *exmimo_pci_interface;
+extern exmimo_sharedmemory_vars_ptr_t exmimo_shm_vars_kvirt[MAX_CARDS];
+extern exmimo_sharedmemory_vars_ptr_t exmimo_shm_vars_phys[MAX_CARDS];
 
-#endif
-#endif
+extern exmimo_pci_interface_bot_t *exmimo_pci_bot_ptr[MAX_CARDS];       // kvirt pointer to structure containing phys ptr in shared mem
+extern dma_addr_t                  exmimo_pci_bot_physptr[MAX_CARDS];  // phys  pointer to pci_bot structure in shared mem
+
+extern char *exmimo_firmware_block_ptr[MAX_CARDS];
+extern char *exmimo_printk_buffer_ptr[MAX_CARDS];
+extern exmimo_pci_interface_t     *exmimo_pci_interface_ptr[MAX_CARDS];       // kvirt pointer to pci_intf structure in shared mem
+
+
+#endif // USER_MODE
+#endif // __EXTERN_H__

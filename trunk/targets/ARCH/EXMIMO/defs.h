@@ -31,19 +31,13 @@
 #include <linux/slab.h>
 #endif
 
-#ifdef KERNEL2_4
-#include <linux/malloc.h>
-#include <linux/wrapper.h>
-#endif
-
-#ifdef BIGPHYSAREA
-#include <linux/bigphysarea.h>
-#endif 
-
 #include "device.h"
 
 #include "linux/moduleparam.h"
 
+#define MAX_CARDS   4
+#define MAX_ANTENNA 4
+#define INIT_ZEROS {0, 0, 0, 0}
 
 /*------------------------------------------------*/
 /*   Prototypes                                   */
@@ -52,19 +46,21 @@ int openair_device_open    (struct inode *inode,struct file *filp);
 int openair_device_release (struct inode *inode,struct file *filp);
 int openair_device_mmap    (struct file *filp, struct vm_area_struct *vma);
 
+irqreturn_t openair_irq_handler(int irq, void *cookie);
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
 int openair_device_ioctl(struct file *filp, unsigned int cmd, unsigned long arg); 
 #else
 int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg); 
 #endif
 
+//void openair_get_frame(unsigned char card_id);
 
-void openair_get_frame(unsigned char card_id);
+int openair_send_pccmd(int card_id, unsigned int cmd);
 
-int openair_dma(unsigned char card_id, unsigned int cmd);
-
-void exmimo_firmware_init(void);
-void exmimo_firmware_cleanup(void);
+int exmimo_assign_shm_vars(int card_id);
+int exmimo_firmware_init(int card_id);
+void exmimo_firmware_cleanup(int card_id);
 
 #endif
 #endif

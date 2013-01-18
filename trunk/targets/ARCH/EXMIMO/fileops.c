@@ -1,3 +1,15 @@
+/** fileops.c
+ * 
+ *  Device IOCTL file Operations on character device /dev/openair0
+ * 
+ *  Authors: Matthias Ihmig <matthias.ihmig@mytum.de>, 2012
+ *           Riadh Ghaddab <riadh.ghaddab@eurecom.fr>
+ *           Raymond Knopp <raymond.knopp@eurecom.fr>
+ * 
+ *  Changelog:
+ *  14.01.2013: removed remaining of BIGPHYS stuff and replaced with pci_alloc_consistent
+ */
+ 
 #ifndef USER_MODE
 #define __NO_VERSION__
 
@@ -10,10 +22,6 @@
 #include "extern.h"
 
 #include "pci.h"
-
-#ifdef BIGPHYSAREA
-extern int bigphys_ptr;
-#endif
 
 //-----------------------------------------------------------------------------
 int openair_device_open (struct inode *inode,struct file *filp) {
@@ -146,9 +154,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   unsigned int get_frame_cnt=0;
 
   scale = &scale_mem;
-  /*
-  printk("[openair][IOCTL] In ioctl(), ioctl = %x (%x,%x)\n",cmd,openair_START_1ARY_CLUSTERHEAD,openair_START_NODE);
-  */
+  
+  printk("[openair][IOCTL] In ioctl(), ioctl = %x (%x,%x)\n",cmd,openair_STOP,openair_GET_BUFFER);
+  
   switch(cmd) {
     
 
@@ -160,7 +168,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
 
     //    setup_regs(i);
-    openair_dma(0,EXMIMO_STOP);
+    openair_send_pccmd(0,EXMIMO_STOP);
 
     break;
   
@@ -169,8 +177,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //    openair_daq_vars.get_frame_done = 0;
     //    setup_regs(0,frame_parms);
     get_frame_cnt=0;
-    printk("calling openair_dma(0,EXMIMO_GET_FRAME);\n");
-    openair_dma(0,EXMIMO_GET_FRAME);
+    printk("calling openair_send_pccmd(0,EXMIMO_GET_FRAME);\n");
+    openair_send_pccmd(0,EXMIMO_GET_FRAME);
       
     while (get_frame_cnt<30) {
       udelay(1000);
@@ -180,7 +188,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("Get frame error\n");
 
     pci_dma_sync_single_for_cpu(pdev[0], 
-				exmimo_pci_interface->rf.adc_head[0],
+				exmimo_pci_interface_ptr[0]->rf.adc_head[0],
 				76800*4, 
 				PCI_DMA_FROMDEVICE);
     break;
@@ -201,7 +209,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_START_TX_SIG:
 
-    openair_dma(0,EXMIMO_START_RT_ACQUISITION);
+    openair_send_pccmd(0,EXMIMO_START_RT_ACQUISITION);
     
 
     break;
@@ -248,7 +256,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	return -1; 
 	break;
       }
-      fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
+      fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot_ptr[0]->firmware_block_ptr);
       /* Copy the data block from user space */
       fw_block[0] = update_firmware_address;
       fw_block[1] = update_firmware_length;
@@ -272,7 +280,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	break;
       }
       
-      openair_dma(0,EXMIMO_FW_INIT);
+      openair_send_pccmd(0,EXMIMO_FW_INIT);
 	
       printk("[openair][IOCTL] ok %u words copied at address 0x%08x (fw_block %p)\n",
 	     ((unsigned int*)arg)[2],((unsigned int*)arg)[1],fw_block);
@@ -289,12 +297,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       sparc_tmp_1 = update_firmware_bss_size;
 
       printk("[openair][IOCTL] ok asked Leon to clear .bss (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
-      fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
+      fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot_ptr[0]->firmware_block_ptr);
       /* Copy the data block from user space */
       fw_block[0] = update_firmware_bss_address;
       fw_block[1] = update_firmware_bss_size;
       
-      openair_dma(0,EXMIMO_CLEAR_BSS);
+      openair_send_pccmd(0,EXMIMO_CLEAR_BSS);
 	
 	
       break;
@@ -307,26 +315,26 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       sparc_tmp_1 = update_firmware_stack_pointer;
 
       printk("[openair][IOCTL] ok asked Leon to set stack and start execution (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
-      fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot->firmware_block_ptr);
+      fw_block = (unsigned int *)phys_to_virt(exmimo_pci_bot_ptr[0]->firmware_block_ptr);
       /* Copy the data block from user space */
       fw_block[0] = update_firmware_start_address;
       fw_block[1] = update_firmware_stack_pointer;
       
-      openair_dma(0,EXMIMO_START_EXEC);
+      openair_send_pccmd(0,EXMIMO_START_EXEC);
       
       udelay(1000);
       
-      exmimo_firmware_init();
+      exmimo_firmware_init(0);
       
     break;
           
     case UPDATE_FIRMWARE_FORCE_REBOOT:
 
       printk("[openair][IOCTL] ok asked Leon to reboot.\n");
-      openair_dma(0,EXMIMO_REBOOT);
+      openair_send_pccmd(0,EXMIMO_REBOOT);
       
       break;
-	
+
     default:
       return -1;
       break;
@@ -335,14 +343,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     break;
   
   case openair_GET_PCI_INTERFACE:
-    copy_to_user((void *)arg,&exmimo_pci_interface,sizeof(exmimo_pci_interface_t*));
-    printk("[IOCTL] copying exmimo_pci_interface=%x to %lx\n", (unsigned int)exmimo_pci_interface,arg);
+    copy_to_user((void *)arg,&exmimo_pci_interface_ptr[0],sizeof(exmimo_pci_interface_t*));
+    printk("[IOCTL] copying exmimo_pci_interface=%x to %lx\n", (unsigned int)exmimo_pci_interface_ptr[0],arg);
     
     break;
     
 
   default:
     //----------------------
+    printk("[IOCTL] openair_IOCTL unknown: cmd = %i\n", cmd);
     return -EPERM;
     break;
   }
