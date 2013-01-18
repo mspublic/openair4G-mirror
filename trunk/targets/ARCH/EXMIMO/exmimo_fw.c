@@ -161,7 +161,7 @@ void exmimo_firmware_cleanup(int card_id) {
 
 void pcie_printk(void)
 {
-    char *buffer = (char*) exmimo_printk_buffer_ptr;
+    char *buffer = exmimo_printk_buffer_ptr[0];
     unsigned int len = ((unsigned int *)buffer)[0];
     unsigned int off=0,i;
     unsigned char *dword;

@@ -163,7 +163,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_STOP:
     //----------------------
-    //    printk("[openair][IOCTL]     openair_STOP, NODE_CONFIGURED %d\n",openair_daq_vars.node_configured);
+        printk("[openair][IOCTL]     openair_STOP, NODE_CONFIGURED  (TODO!)\n"); //,openair_daq_vars.node_configured);
 
     
 
@@ -195,22 +195,57 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     //----------------------
 
+  case openair_GET_CONFIG:
+
+    printk("[openair][IOCTL]     openair_GET_CONFIG ...(%p)  (TODO!)\n",(void *)arg);
+    //copy_to_user((char *)arg,lte_frame_parms_g,sizeof(LTE_DL_FRAME_PARMS));
+
+    break;
+
+
   case openair_GET_BIGPHYSTOP:
 
     printk("[openair][IOCTL]     openair_GET_BIGPHYSTOP ...(%p)\n",(void *)arg);
-#ifdef BIGPHYSAREA
-    printk("[openair][IOCTL]     bigphys_ptr = %x\n",bigphys_ptr);
-    copy_to_user((char *)arg,&bigphys_ptr,sizeof(char *));
-#else
+    printk("[openair][IOCTL]     bigshm_head = %p\n", bigshm_head[0]);
+    copy_to_user((char *)arg,&bigshm_head,sizeof(char *));
 
-#endif
     break;
 
+
+  case openair_GET_VARS:
+
+    printk("[openair][IOCTL]     openair_GET_VARS ...(%p) (TODO!)\n",(void *)arg);
+    /*
+    if (openair_daq_vars.node_configured == 3){    
+      printk("[openair][IOCTL]  ... for UE (%d bytes) \n",sizeof(PHY_VARS_UE));
+      copy_to_user((char *)arg,PHY_vars_UE_g[0],sizeof(PHY_VARS_UE));
+    }
+    else if (openair_daq_vars.node_configured == 5) {
+      printk("[openair][IOCTL]  ... for eNB (%d bytes)\n",sizeof(PHY_VARS_eNB));
+      copy_to_user((char *)arg,PHY_vars_eNB_g[0],sizeof(PHY_VARS_eNB));
+    }
+    else {
+      printk("[openair][IOCTL] neither UE or eNb configured, sending TX_RX_VARS\n");
+      dummy_tx_rx_vars.TX_DMA_BUFFER[0] = (char*) TX_DMA_BUFFER[0][0];
+      dummy_tx_rx_vars.TX_DMA_BUFFER[1] = (char*) TX_DMA_BUFFER[0][1];
+      dummy_tx_rx_vars.RX_DMA_BUFFER[0] = (int*) RX_DMA_BUFFER[0][0];
+      dummy_tx_rx_vars.RX_DMA_BUFFER[1] = (int*) RX_DMA_BUFFER[0][1];
+      copy_to_user((char *)arg,&dummy_tx_rx_vars,sizeof(TX_RX_VARS));
+    }*/
+
+    break;
+
+
+    //----------------------
+  case openair_DUMP_CONFIG:
+    //----------------------
+    printk("[openair][IOCTL]     openair_DUMP_CONFIG  (TODO!)\n");
+
+    break;
 
   case openair_START_TX_SIG:
 
     openair_send_pccmd(0,EXMIMO_START_RT_ACQUISITION);
-    
 
     break;
 
@@ -334,6 +369,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_send_pccmd(0,EXMIMO_REBOOT);
       
       break;
+      
+    case UPDATE_FIRMWARE_TEST_GOK:
+	printk("[openair][IOCTL] TEST_GOK command doesn't work with ExpressMIMO, check User-space call!!!!\n");
+      break;
 
     default:
       return -1;
@@ -351,7 +390,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   default:
     //----------------------
-    printk("[IOCTL] openair_IOCTL unknown: cmd = %i\n", cmd);
+    printk("[IOCTL] openair_IOCTL unknown: cmd = %i, basecmd = %i\n", cmd, _IOC_NR(cmd) );
     return -EPERM;
     break;
   }
