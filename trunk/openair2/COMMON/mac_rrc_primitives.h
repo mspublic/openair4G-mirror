@@ -20,6 +20,10 @@ ________________________________________________________________*/
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
+#ifdef Rel10
+#include "MBSFN-AreaInfoList-r9.h"
+#include "MBSFN-SubframeConfigList.h"
+#endif
 //#include "rrm_config_structs.h"
 //#include "platform_types.h"
 /** @defgroup _mac_rrc_primitives_ MAC Layer Primitives for Communications with RRC 
@@ -364,7 +368,14 @@ typedef struct{
 			    MeasGapConfig_t *measGapConfig, 
 			    TDD_Config_t *tdd_Config,
 			    u8 *SIwindowsize,
-			    u16 *SIperiod);
+			    u16 *SIperiod
+ #ifdef Rel10
+			    ,
+			    u8 MBMS_Flag,
+			    struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
+			    MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
+#endif
+			    );
   unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, char*);
   void (*mac_rlc_data_ind)(module_id_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );
   mac_rlc_status_resp_t (*mac_rlc_status_ind)   (module_id_t, chan_id_t, tb_size_t, num_tb_t);

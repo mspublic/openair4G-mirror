@@ -51,6 +51,9 @@
 #include "UL-DCCH-Message.h"
 #include "DL-DCCH-Message.h"
 #include "BCCH-DL-SCH-Message.h"
+#ifdef Rel10
+#include "MCCH-Message.h"
+#endif
 #include "MeasConfig.h"
 #include "MeasGapConfig.h"
 #include "MeasObjectEUTRA.h"
@@ -97,6 +100,17 @@ void init_SI_UE(u8 Mod_id,u8 eNB_index) {
 
 
 }
+
+#ifdef Rel10
+void init_MCCH_UE(u8 Mod_id, u8 eNB_index) {
+
+  UE_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[eNB_index] = 0;
+  UE_rrc_inst[Mod_id].MCCH_MESSAGE[eNB_index] = (u8 *)malloc16(32);
+  UE_rrc_inst[Mod_id].mcch_message[eNB_index] = (MBSFNAreaConfiguration_r9_t *)malloc16(sizeof(MBSFNAreaConfiguration_r9_t));
+  UE_rrc_inst[Mod_id].Info[eNB_index].MCCH_MESSAGEStatus = 0;
+  
+  }
+#endif
 
 /*------------------------------------------------------------------------------*/
 char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
@@ -475,7 +489,14 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 		       (MeasGapConfig_t *)NULL,
 		       (TDD_Config_t *)NULL,
 		       NULL,
-		       NULL);
+		       NULL
+#ifdef Rel10	       
+		       ,
+		       0,
+		       (MBSFN_SubframeConfigList_t*)NULL,
+		       (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+		       );
   }
   if (measConfig->reportConfigToRemoveList != NULL) {
     for (i=0;i<measConfig->reportConfigToRemoveList->list.count;i++) {
@@ -634,7 +655,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			     (MeasGapConfig_t *)NULL,
 			     NULL,
 			     NULL,
-			     NULL);
+			     NULL
+#ifdef Rel10	       
+			     ,
+			     0,
+			     (MBSFN_SubframeConfigList_t*)NULL,
+			     (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+			     );
 	}
       }
       else {
@@ -673,7 +701,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			 UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 			 (TDD_Config_t *)NULL,
 			 (u8 *)NULL,
-			 (u16 *)NULL);
+			 (u16 *)NULL
+#ifdef Rel10	       
+			 ,
+			 0,
+			 (MBSFN_SubframeConfigList_t*)NULL,
+			 (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+			 );
 	}
       }
     }
@@ -705,7 +740,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			   UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 			   (TDD_Config_t*)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL);
+			   (u16 *)NULL
+#ifdef Rel10	       
+			   ,
+			   0,
+			   (MBSFN_SubframeConfigList_t*)NULL,
+			   (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+			   );
 
       }
     }
@@ -1039,7 +1081,14 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 		     (MeasGapConfig_t *)NULL,
 		     UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
 		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
-		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod);
+		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod
+#ifdef Rel10	       
+		     ,
+		     0,
+		     (MBSFN_SubframeConfigList_t *)NULL,
+		     (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+		     );
 
   UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status = 1;
   return 0;
@@ -1140,9 +1189,9 @@ void dump_sib13(SystemInformationBlockType13_r9_t *sib13) {
 
   LOG_D(RRC,"[RRC][UE] Dumping SIB13\n");
   LOG_D(RRC,"[RRC][UE] dumping sib13 second time\n");
-  LOG_D(RRC,"NotificationRepetitionCoeff-r9 : %ld\n", sib13->notificationConfig_r9.notificationRepetitionCoeff_r9);
-  LOG_D(RRC,"NotificationOffset-r9 : %d\n", (int)sib13->notificationConfig_r9.notificationOffset_r9);
-  LOG_D(RRC,"notificationSF-Index-r9 : %d\n", (int)sib13->notificationConfig_r9.notificationSF_Index_r9);
+  LOG_D(RRC,"[RRC][UE] NotificationRepetitionCoeff-r9 : %ld\n", sib13->notificationConfig_r9.notificationRepetitionCoeff_r9);
+  LOG_D(RRC,"[RRC][UE] NotificationOffset-r9 : %d\n", (int)sib13->notificationConfig_r9.notificationOffset_r9);
+  LOG_D(RRC,"[RRC][UE] NotificationSF-Index-r9 : %d\n", (int)sib13->notificationConfig_r9.notificationSF_Index_r9);
 
 }
 #endif
@@ -1190,7 +1239,14 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 			 (MeasGapConfig_t *)NULL,
 			 (TDD_Config_t *)NULL,
 			 NULL,
-			 NULL);
+			 NULL
+#ifdef Rel10	       
+			 ,
+			 0,
+			 (MBSFN_SubframeConfigList_t *)NULL,
+			 (MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+			 );
       UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
       // After SI is received, prepare RRCConnectionRequest
       rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
@@ -1248,6 +1304,8 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
       UE_rrc_inst[Mod_id].sib13[eNB_index] = &typeandinfo->choice.sib13_v920;
       LOG_I(RRC,"[RRC][UE %d] Found SIB13 from eNB %d\n",Mod_id,eNB_index);
       dump_sib13(UE_rrc_inst[Mod_id].sib13[eNB_index]);
+      // adding here function to store necessary parameters for using in decode_MCCH_Message + maybe transfer to PHY layer
+      UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
       /*
       Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
 					&UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
@@ -1271,7 +1329,49 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
   return 0;
 }
 
+/*
+int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len) {
+  
+  MCCH_Message_t *mcch=NULL;
+  MBSFNAreaConfiguration_r9_t **mcch_message=&UE_rrc_inst[Mod_id].mcch_message[eNb_index];
+  asn_dec_rval_t dec_rval;
+  
+  if (UE_rrc_inst[Mod_id].Info[eNB_index].MCCH_MESSAGEStatus == 1) {
+    return 0; // avoid decoding to prevent memory bloating
+  }
+  else {
+    dec_vral = upper_decode_complete(NULL,
+				     &asn_DEF_MCCH_Message,
+				     (void **)&mcch,
+				     (const void *)Sdu,
+				     Sdu_len);
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
+      LOG_E(RRC,"[UE %d] Failed to decode MCCH__MESSAGE (%d bits)\n",Mod_id,dec_rval.consumed);
+      //free the memory
+      SEQUENCE_free(&asn_DEF_MCCH_Message, (void*)mcch, 1);
+      return -1;
+    }
+    
+    if (mcch->message.present == MCCH_MessageType_PR_c1) {
+      if(mcch->message.choice.c1.present == MCCH_MessageType__c1_PR_mbsfnAreaConfiguration_r9) {
+	if ((frame % repetition_period == mcch_offset) {
+	    memcpy((void*)*mcch_message,
+		   (void*)&mcch->message.choice.c1.choice.mbsfnAreaConfiguration_r9,
+		   sizeof(MBSFNAreaConfiguration_r9_t));
+	    LOG_D(RRC,"[UE %d] Decoding First MCCH_MESSAGE\n",Mod_id);
+	    decode_MBSFNAreaConfiguration(u8 Mod_id, u8 eNB_index);
+	}
+      }
+    }
+  }
+}
 
+int decode_MBSFNAreaConfiguration(u8 Mod_id, u8 eNB_index) {
+store + transfer to PHY necessary parameters for receiving MTCHs
+
+}
+
+*/
 
 #ifndef USER_MODE
 EXPORT_SYMBOL(Rlc_info_am_config);

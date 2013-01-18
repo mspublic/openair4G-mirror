@@ -131,6 +131,30 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 
       return (Sdu_size);
     }
+
+#ifdef Rel10
+    if((Srb_id & RAB_OFFSET) == MCCH){
+      if(eNB_rrc_inst[Mod_id].MCCH_MESS.Active==0) return 0; // this parameter can be set in rrc_common.c together with the SI.Active and SRB0.active
+                                                                                    // double check the declaration in defs.h??
+      if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE == 255) {
+	LOG_E(RRC,"[eNB %d] MAC Request for MCCH MESSAGE and MCCH MESSAGE is not initialized\n",Mod_id);
+	mac_xface->macphy_exit("");
+      }
+      memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].MCCH_MESSAGE,eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);
+      
+#ifdef DEBUG_RRC
+      LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE 1\n",Mod_id,frame);
+      for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE;i++)
+	msg("%x.",Buffer[i]);
+      msg("\n");
+#endif
+      
+      return (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);
+      //      }
+      //else
+      //return(0);
+    }
+#endif //Rel10    
   }
 
   else{   //This is an UE

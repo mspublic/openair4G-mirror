@@ -238,6 +238,11 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
     return(0);
   }
 }
+/*// this function is for sending mch_sdu from phy to mac
+void ue_send_mch_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
+  LOG_I(MAC,"parse_mch_header, demultiplex\n");
+} 
+*/
 
 void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 

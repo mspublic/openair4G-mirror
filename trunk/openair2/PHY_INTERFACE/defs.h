@@ -91,7 +91,10 @@ typedef struct
     /// Send a received DLSCH sdu to MAC
     void (*ue_send_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
-    /// Retrieve ULSCH sdu from MAC
+   /// Send a received MCH  sdu to MAC
+    //    void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
+
+  /// Retrieve ULSCH sdu from MAC
     void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
     /// Retrieve RRCConnectionReq from MAC

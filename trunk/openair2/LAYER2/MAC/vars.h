@@ -59,6 +59,9 @@ DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
 
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI1_5MHz_TDD_t           DLSCH_alloc_pdu;
+#ifdef Rel10
+DCI1C_5MHz_t                 MCCH_alloc_pdu;
+#endif
 
 DCI0_5MHz_FDD_t       UL_alloc_pdu_fdd;
 

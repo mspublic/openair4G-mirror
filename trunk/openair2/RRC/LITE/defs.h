@@ -35,6 +35,8 @@ ________________________________________________________________*/
 #include "RRCConnectionRequest.h"
 #include "BCCH-DL-SCH-Message.h"
 #include "BCCH-BCH-Message.h"
+#include "MCCH-Message.h"
+#include "MBSFNAreaConfiguration-r9.h"
 #include "UE-EUTRA-Capability.h"
 
 //#include "L3_rrc_defs.h"
@@ -81,6 +83,9 @@ typedef struct{
   UE_STATE_t State;
   u8 SIB1Status;
   u8 SIStatus;
+#ifdef Rel10
+  u8 MCCH_MESSAGEStatus;
+#endif
   u8 SIwindowsize;
   u16 SIperiod;
   unsigned short UE_index;
@@ -170,6 +175,11 @@ typedef struct{
 #ifdef Rel10
   SystemInformationBlockType13_r9_t *sib13;
   uint8_t                           MBMS_flag;
+  uint8_t                           *MCCH_MESSAGE;
+  uint8_t                           sizeof_MCCH_MESSAGE;
+  MCCH_Message_t            mcch;
+  MBSFNAreaConfiguration_r9_t       *mcch_message;  
+  SRB_INFO                       MCCH_MESS;
 #endif
   struct SRB_ToAddMod               *SRB1_config[NUMBER_OF_UE_MAX];
   struct SRB_ToAddMod               *SRB2_config[NUMBER_OF_UE_MAX];
@@ -223,6 +233,10 @@ typedef struct{
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
 #ifdef Rel10
+  u8 *MCCH_MESSAGE[NB_CNX_UE];
+  u8 sizeof_MCCH_MESSAGE[NB_CNX_UE];
+  u8 MCCH_MESSAGEStatus[NB_CNX_UE];
+  MBSFNAreaConfiguration_r9_t       *mcch_message[NB_CNX_UE];  
   SystemInformationBlockType12_r9_t *sib12[NB_CNX_UE];
   SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
 #endif
