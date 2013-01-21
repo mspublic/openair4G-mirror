@@ -27,7 +27,9 @@ FD_otg *create_form_otg(void)
   
    obj = fl_add_button(FL_NORMAL_BUTTON,250,510,50,30,"Exit");
    fl_set_object_callback(obj, exit_cb, 0);
-	 fdui->loss_ratio=fl_add_text(FL_NORMAL_TEXT,0,510,250,30,"NB Loss pkts");
+	 fdui->loss_ratio=fl_add_text(FL_NORMAL_TEXT,5,510,220,20,"NB Loss pkts");
+	 fdui->simu_time=fl_add_text(FL_NORMAL_TEXT,370,510,250,30,"Simulation Time");
+
 
   fl_end_form();
   fdui->otg->fdui = fdui;
@@ -53,8 +55,10 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
           fl_set_xyplot_ybounds(form_dl->owd,0,100);
         else
           fl_set_xyplot_ybounds(form_dl->owd,0,200);
+
  
       fl_set_xyplot_ybounds(form_dl->throughput,0,50); 
+
 
 
       form_ul= create_form_otg ();
@@ -65,7 +69,11 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
           fl_set_xyplot_ybounds(form_ul->owd,0,100);
         else
           fl_set_xyplot_ybounds(form_ul->owd,0,200);
+
+
+
       fl_set_xyplot_ybounds(form_ul->throughput,0,50); 
+
 
     }
 
@@ -92,7 +100,7 @@ if (dst<NB_eNB_INST){
     otg_forms_info->data_throughput_ul[src][dst][otg_forms_info->idx_ul[src][dst]]=throughput;
     otg_forms_info->data_ctime_ul[src][dst][otg_forms_info->idx_ul[src][dst]]= otg_forms_info->idx_ul[src][dst]; 
     otg_forms_info->idx_ul[src][dst]++;
-    plot_graphes_ul(src, dst);
+    plot_graphes_ul(src, dst, ctime);
   }
   else{
     //LOG_D(OTG,"direction: DL [src:%d, dst:%d] \n", src, dst);
@@ -100,18 +108,22 @@ if (dst<NB_eNB_INST){
     otg_forms_info->data_throughput_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= throughput;
     otg_forms_info->data_ctime_dl[src][dst][otg_forms_info->idx_dl[src][dst]]= otg_forms_info->idx_dl[src][dst]; 
     otg_forms_info->idx_dl[src][dst]++;
-    plot_graphes_dl(src, dst);
+    plot_graphes_dl(src, dst, ctime);
   }
   //LOG_D(OTG,"OTG_forms[src %d, dst %d] owd %f TH %f \n", src, dst,  owd, throughput);	
   //LOG_D(OTG,"MAX_UE_eNB %d, %d \n:",  NB_UE_INST,  NB_eNB_INST);   
 }
 
 
-void plot_graphes_ul(int src, int dst) //UE -->eNB
+void plot_graphes_ul(int src, int dst, int ctime) //UE -->eNB
 {
 
 int i, src_idx=1, curve_id=1;
 char loss_rate[100];
+char simu_time[100];
+char curve_label[100];
+int x_key_position=27;
+int y_key_position=75;
 
 if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 
@@ -125,22 +137,45 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 
   if (otg_forms_info->is_data_plot_ul == src) {
     fl_set_xyplot_data (form_ul->owd, otg_forms_info->data_ctime_ul[src][dst],
-    otg_forms_info->data_owd_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "ms");  
-
+    otg_forms_info->data_owd_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "ms"); 
+		sprintf(curve_label, "%d%s%d", src,"-->", dst);
+    fl_set_xyplot_key(form_ul->owd, 0, curve_label);
+		fl_set_xyplot_key_position(form_ul->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT); 
+		
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[src][dst],
-    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "kB/s");  
+    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "kB/s"); 
+    fl_set_xyplot_key(form_ul->throughput, 0, curve_label);
+		fl_set_xyplot_key_font(form_ul->throughput, FL_BOLD_STYLE, FL_HUGE_SIZE);
+		fl_set_xyplot_key_position(form_ul->throughput, x_key_position,y_key_position , FL_ALIGN_BOTTOM_LEFT);
+		 
+
+ 
 		nb_loss_pkts();
 		sprintf(loss_rate, "%s%d","NB Loss pkts UL=", otg_info->total_loss_ul);
 		fl_set_object_label(form_ul->loss_ratio, loss_rate);
+		sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
+		fl_set_object_label(form_ul->simu_time, simu_time);
   } 
   else {
     fl_set_xyplot_data (form_ul->owd, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
     otg_forms_info->data_owd_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "ms");  
+		sprintf(curve_label, "%d%s%d", otg_forms_info->is_data_plot_ul,"-->", dst);
+    fl_set_xyplot_key(form_ul->owd, 0, curve_label);
+		fl_set_xyplot_key_position(form_ul->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT); 
+		
+
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
-    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "kB/s");  
+    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "kB/s"); 
+		sprintf(curve_label, "%d%s%d", otg_forms_info->is_data_plot_ul,"-->", dst);
+    fl_set_xyplot_key(form_ul->throughput, 0, curve_label);
+		fl_set_xyplot_key_position(form_ul->throughput, x_key_position,y_key_position , FL_ALIGN_BOTTOM_LEFT);
+		  
 		nb_loss_pkts();
 		sprintf(loss_rate, "%s%d","NB Loss pkts UL=",otg_info->total_loss_ul);
 		fl_set_object_label(form_ul->loss_ratio, loss_rate);
+		sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
+		fl_set_object_label(form_ul->simu_time, simu_time);
+
   }
  
   for (src_idx=1;src_idx<=NB_UE_INST;src_idx++){
@@ -149,14 +184,22 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
       otg_forms_info->data_ctime_ul[src_idx][dst],
       otg_forms_info->data_owd_ul[src_idx][dst],
       otg_forms_info->idx_ul[src_idx][dst],src_idx+6);
+			sprintf(curve_label, "%d%s%d", src_idx,"-->", dst);
+      fl_set_xyplot_key(form_ul->owd, curve_id-1, curve_label);
+		  fl_set_xyplot_key_position(form_ul->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT); 
+			
+
 
       fl_add_xyplot_overlay(form_ul->throughput,curve_id++,
       otg_forms_info->data_ctime_ul[src_idx][dst],
       otg_forms_info->data_throughput_ul[src_idx][dst],
       otg_forms_info->idx_ul[src_idx][dst],src_idx+6);
-
+			sprintf(curve_label, "%d%s%d", src_idx,"-->", dst);
+      fl_set_xyplot_key(form_ul->throughput, curve_id-1, curve_label);
+		  fl_set_xyplot_key_position(form_ul->throughput,x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT); 
     } 
   }
+
 
   for (i=0;i<otg_forms_info->idx_ul[src][dst];i++){
     otg_forms_info->data_ctime_ul[src][dst][otg_forms_info->idx_ul[src][dst]]=i;
@@ -172,11 +215,16 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 
 
 
-void plot_graphes_dl(int src, int dst)  //eNB -->UE
+void plot_graphes_dl(int src, int dst, int ctime)  //eNB -->UE
 {
 
 int i, dst_idx=1, curve_id=1;
 char loss_rate[100];
+char curve_label[100];
+char simu_time[100];
+int x_key_position=27;
+int y_key_position=75;
+
 if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
 
   fl_update_display(1); //the function flushes the X buffer so the drawing requests are on their way to the server
@@ -188,21 +236,40 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
 
   if (otg_forms_info->is_data_plot_dl == dst) {
     fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime_dl[src][dst],
-    otg_forms_info->data_owd_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "ms");   
+    otg_forms_info->data_owd_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "ms"); 
+		sprintf(curve_label, "%d%s%d", src,"-->", dst);
+    fl_set_xyplot_key(form_dl->owd, 0, curve_label);
+		fl_set_xyplot_key_position(form_dl->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);   
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][dst],
     otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "kB/s"); 
+		sprintf(curve_label, "%d%s%d", src,"-->", dst);
+    fl_set_xyplot_key(form_dl->throughput, 0, curve_label);
+		fl_set_xyplot_key_position(form_dl->throughput, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);   
 		nb_loss_pkts();
 		sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
 		fl_set_object_label(form_dl->loss_ratio, loss_rate);
+
+		sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
+		fl_set_object_label(form_dl->simu_time, simu_time);
+
   } 
   else {
     fl_set_xyplot_data (form_dl->owd, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
     otg_forms_info->data_owd_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "ms");  
+		sprintf(curve_label, "%d%s%d", src,"-->", otg_forms_info->is_data_plot_dl);
+    fl_set_xyplot_key(form_dl->owd, 0, curve_label);
+		fl_set_xyplot_key_position(form_dl->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);  
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][otg_forms_info->is_data_plot_dl],
-    otg_forms_info->data_throughput_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "kB/s");  
+    otg_forms_info->data_throughput_dl[src][otg_forms_info->is_data_plot_dl], otg_forms_info->idx_dl[src][otg_forms_info->is_data_plot_dl], "", "time", "kB/s");
+		sprintf(curve_label, "%d%s%d", src,"-->",otg_forms_info->is_data_plot_dl);
+    fl_set_xyplot_key(form_dl->throughput, 0, curve_label);
+		fl_set_xyplot_key_position(form_dl->throughput,x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);  
+  
 		nb_loss_pkts();
 		sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
 		fl_set_object_label(form_dl->loss_ratio, loss_rate);
+		sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
+		fl_set_object_label(form_dl->simu_time, simu_time);
   }
 
   for (dst_idx=1;dst_idx<=NB_UE_INST;dst_idx++){
@@ -211,11 +278,17 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
       otg_forms_info->data_ctime_dl[src][dst_idx],
       otg_forms_info->data_owd_dl[src][dst_idx],
       otg_forms_info->idx_dl[src][dst_idx],dst_idx+6);
+			sprintf(curve_label, "%d%s%d", src,"-->", dst_idx);
+    	fl_set_xyplot_key(form_dl->owd,  curve_id-1, curve_label);	
+			fl_set_xyplot_key_position(form_dl->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT); 
 
       fl_add_xyplot_overlay(form_dl->throughput,curve_id++,
       otg_forms_info->data_ctime_dl[src][dst_idx],
       otg_forms_info->data_throughput_dl[src][dst_idx],
       otg_forms_info->idx_dl[src][dst_idx],dst_idx+6);
+			sprintf(curve_label, "%d%s%d", src,"-->", dst_idx);
+	    fl_set_xyplot_key(form_dl->throughput,  curve_id-1, curve_label);
+			fl_set_xyplot_key_position(form_dl->throughput, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT); 
 
 
     } 
