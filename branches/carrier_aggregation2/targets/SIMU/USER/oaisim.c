@@ -1049,10 +1049,10 @@ main (int argc, char **argv)
   // change the nb_connected_eNB
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
-  printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0][0]->lte_frame_parms.Nid_cell);
   printf ("AFTER init: frame_type %d,tdd_config %d\n", 
-          PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-          PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
+          PHY_vars_eNB_g[0][0]->lte_frame_parms.frame_type,
+          PHY_vars_eNB_g[0][0]->lte_frame_parms.tdd_config);
 
 
   /* Added for PHY abstraction */
@@ -1096,8 +1096,8 @@ main (int argc, char **argv)
   // initialize channel descriptors
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-      LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
+      for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	LOG_D(OCM,"Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
       /*
       if (oai_emulation.info.transmission_mode == 5) {
 	eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
@@ -1112,33 +1112,28 @@ main (int argc, char **argv)
       else {
       */
 	eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-						     PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
-						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option,
-						     oai_emulation.environment_system_config.system_bandwidth_MB,
-						     forgetting_factor,
-						     0,
-						     0);
-	}
-      random_channel(eNB2UE[eNB_id][UE_id][CC_id]);      
-      LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
-            map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
-      UE2eNB[UE_id][eNB_id][CC_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-						   PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_rx,
-						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option,
-						   oai_emulation.environment_system_config.system_bandwidth_MB,
-						   forgetting_factor,
-						   0,
-						   0);
-      random_channel(UE2eNB[UE_id][eNB_id][CC_id]);
-    }
+							    PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
+							    map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+							    oai_emulation.environment_system_config.system_bandwidth_MB,
+							    forgetting_factor,
+							    0,
+							    0);
+      
+	random_channel(eNB2UE[eNB_id][UE_id][CC_id]);      
+	LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
+	      map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
+	UE2eNB[UE_id][eNB_id][CC_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_tx,
+							    PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_rx,
+							    map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
+							    oai_emulation.environment_system_config.system_bandwidth_MB,
+							    forgetting_factor,
+							    0,
+							    0);
+	random_channel(UE2eNB[UE_id][eNB_id][CC_id]);
+      }
     }
   }
 
-// Not needed anymore, done automatically in init_freq_channel upon first call to the function
-
-//  if (abstraction_flag==1)
-//    init_freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
-  freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);  
   number_of_cards = 1;
 
   openair_daq_vars.rx_rf_mode = 1;
@@ -1195,16 +1190,16 @@ main (int argc, char **argv)
   }
 #endif
 
-  printf ("before L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("before L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0][0]->lte_frame_parms.Nid_cell);
   printf ("before L2 init: frame_type %d,tdd_config %d\n", 
-          PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-          PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
+          PHY_vars_eNB_g[0][0]->lte_frame_parms.frame_type,
+          PHY_vars_eNB_g[0][0]->lte_frame_parms.tdd_config);
 
 
 
 #ifdef OPENAIR2
   l2_init (&PHY_vars_eNB_g[0][0]->lte_frame_parms);
-  printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0][0]->lte_frame_parms.Nid_cell);
   printf ("after L2 init: frame_type %d,tdd_config %d\n", 
           PHY_vars_eNB_g[0][0]->lte_frame_parms.frame_type,
           PHY_vars_eNB_g[0][0]->lte_frame_parms.tdd_config);
@@ -1235,10 +1230,10 @@ main (int argc, char **argv)
 #endif 
   
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
-  printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0][0]->lte_frame_parms.Nid_cell);
   printf ("after init: frame_type %d,tdd_config %d\n", 
-          PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-          PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
+          PHY_vars_eNB_g[0][0]->lte_frame_parms.frame_type,
+          PHY_vars_eNB_g[0][0]->lte_frame_parms.tdd_config);
 
 
   if (ue_connection_test == 1) {
@@ -1313,11 +1308,13 @@ main (int argc, char **argv)
     }
 #endif 
 
+    for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) 
-      enb_data[eNB_id]->tx_power_dBm = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
+      enb_data[eNB_id]->tx_power_dBm = PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) 
-      ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id]->tx_power_dBm;
-    
+      ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm;
+    }
+ 
     /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
       //LOG_D(OMG," extracting position of eNb...\n");
@@ -1329,7 +1326,7 @@ main (int argc, char **argv)
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
 	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id][CC_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
+	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id][CC_id], oai_emulation.environment_system_config,ShaF);
 	  UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB;
 	  LOG_D(OCM,"Path loss bandwidth for eNB %d at (%f,%f) and UE %d at (%f,%f) is %f (Shadow Fading =%f)\n",
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
@@ -1374,7 +1371,7 @@ main (int argc, char **argv)
           Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms,slot);
 #endif 
 
-     if(Channel_Flag==0){
+     if(Channel_Flag==0) {
 
 #ifdef PHY_ABSTRACTION
        if((next_slot %2) ==0) 
@@ -1394,7 +1391,7 @@ main (int argc, char **argv)
 	   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) 
 	     PHY_vars_eNB_g[eNB_id][CC_id]->frame = frame;
 	   
-	   phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id][CC_id], abstraction_flag);	
+	   phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);	
 #ifdef PRINT_STATS
 	   if (eNB_stats) {
 	     rewind (eNB_stats);
@@ -1405,7 +1402,6 @@ main (int argc, char **argv)
 	     fflush(eNB_stats);
 	   }
 #endif
-	 }
        }
 
 #ifdef PHY_ABSTRACTION
@@ -1430,7 +1426,7 @@ main (int argc, char **argv)
 	    if (frame>0) {
 	     for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) 
 	       PHY_vars_UE_g[UE_id][CC_id]->frame = frame;
-	     phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
+	     phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
 	    }
 	  }
 	  else {
@@ -1439,7 +1435,7 @@ main (int argc, char **argv)
 	      exit(-1);
 	    }
 	    if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
-	      initial_sync(PHY_vars_UE_g[UE_id][0]);
+	      initial_sync(PHY_vars_UE_g[UE_id][0],normal_txrx);
 	      /*
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
@@ -1466,31 +1462,29 @@ main (int argc, char **argv)
 	  }
 #endif
         }
+
 #ifdef PHY_ABSTRACTION
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
 #endif
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) 
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
       }
-      }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
+	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++)
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	}
       }
       if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	}
+	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++)
+	    do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
 	}
 	else {// UL part
-	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
-	}
+	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++)
+	    do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
 	}
       }
+
       if ((last_slot == 1) && (frame == 0)
           && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
@@ -1535,11 +1529,9 @@ main (int argc, char **argv)
         }
       } // end if next_slot%2
      }// if Channel_Flag==0
+    }//end of slot
 
-    }				//end of slot
-
-    //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++) {
-    {
+    //for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++)
     if ((frame==10)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0][0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -1547,8 +1539,7 @@ main (int argc, char **argv)
 
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0][0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    } 
-  }
+    }
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       do_forms2(form_dl[UE_id],
@@ -1598,13 +1589,13 @@ main (int argc, char **argv)
       usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
-  }     //end of frame
+  } //end of frame
   fclose(SINRpost);
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   //Perform KPI measurements
-   if (oai_emulation.info.otg_enabled==1)
-     kpi_gen();
+  if (oai_emulation.info.otg_enabled==1)
+    kpi_gen();
 
   // relase all rx state
 #ifdef PHY_ABSTRACTION
