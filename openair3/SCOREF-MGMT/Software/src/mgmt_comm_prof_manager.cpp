@@ -145,11 +145,27 @@ map<CommunicationProfileID, CommunicationProfileItem> CommunicationProfileManage
 	return filteredProfileMap;
 }
 
-CommunicationProfileID CommunicationProfileManager::selectProfile(u_int8_t latency, u_int8_t relevance, u_int8_t reliability) {
+CommunicationProfileID CommunicationProfileManager::selectProfile(bool ipv6Enabled, u_int8_t latency, u_int8_t relevance, u_int8_t reliability) {
 	/**
-	 * todo Intelligent code goes here!
+	 * Select an appropriate CP according to user requirements
+	 * This decision making was designed by Michelle with regards to the definition in L221 document
+	 *
+	 * See Documentation/Communication Profile Selection/CP Mapping.docx for further information
 	 */
-	return 0x00;
+	if (relevance <= 1 && latency <= 1 && reliability <= 1)
+		return 1;
+	else if (relevance == 3 && latency == 2 && reliability == 2)
+		return 1;
+	else if (relevance <= 3 && latency <= 2 && reliability <= 2)
+		return 3;
+	else if (relevance <= 7 && latency <= 3 && reliability <= 3) {
+		if (ipv6Enabled)
+			return 11;
+		else
+			return 3;
+	}
+
+	return 0;
 }
 
 string CommunicationProfileManager::toString() const {

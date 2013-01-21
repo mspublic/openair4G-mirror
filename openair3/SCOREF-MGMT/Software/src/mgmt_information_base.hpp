@@ -170,6 +170,15 @@ class ManagementInformationBase {
 		 * @return true on success, false otherwise
 		 */
 		bool setNetworkFlags(const u_int8_t& networkFlags);
+		/**
+		 * Sets IPv6 configuration value, if this is not called then the
+		 * default value "false" will stay intact
+		 */
+		void enableIpv6();
+		/**
+		 * Retuns a boolean indication IPv6 configuration status
+		 */
+		bool isIpv6Enabled() const;
 
 	private:
 		/**
@@ -200,6 +209,10 @@ class ManagementInformationBase {
 		 * Location information
 		 */
 		LocationInformation location;
+		/**
+		 * Ipv6 configuration
+		 */
+		bool ipv6Enabled;
 		/**
 		 * Logger object reference
 		 */

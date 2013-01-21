@@ -48,10 +48,34 @@
 using namespace std;
 
 /**
+ * This is a little interface to pass to Communication Profile Manager without
+ * exposing every single configuration detail
+ */
+class IPv6Configuration {
+	public:
+		/**
+		 * Virtual destructor for IPv6Configuration class
+		 */
+		virtual ~IPv6Configuration() {}
+
+	public:
+		/**
+		 * Returns a boolean that indicates IPv6 enable/disable configuration
+		 */
+		virtual bool isIpv6Enabled() const = 0;
+
+	protected:
+		/**
+		 * IPv6 is enabled or not
+		 */
+		bool ipv6Enabled;
+};
+
+/**
  * A container with configuration file parsing capability, this class is utilised
  * to update ManagementInformationBase class with configuration file content
  */
-class Configuration {
+class Configuration : public IPv6Configuration {
 	public:
 		/**
 		 * Parameter string for UDP server port
@@ -67,6 +91,10 @@ class Configuration {
 		 * for Location Update message
 		 */
 		static const string CONF_LOCATION_UPDATE_INTERVAL;
+		/**
+		 * Parameter string for IPv6 enabling
+		 */
+		static const string CONF_IPV6_ENABLED;
 
 	public:
 		/**
@@ -92,7 +120,6 @@ class Configuration {
 		/**
 		 * Returns configuration file name vector
 		 *
-		 * @param none
 		 * @return Configuration file name vector
 		 */
 		const vector<string>& getConfigurationFileVector() const;
@@ -151,6 +178,11 @@ class Configuration {
 		 * @return none
 		 */
 		void setLocationUpdateInterval(u_int8_t interval);
+		/**
+		 * Returns a boolean indication IPv6 configuration
+		 * @implements bool IPv6Configuration::isIpv6Enabled()
+		 */
+		bool isIpv6Enabled() const;
 
 	private:
 		/**

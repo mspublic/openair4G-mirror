@@ -43,8 +43,8 @@
 #include "mgmt_configuration.hpp"
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
-#include <fstream>
 #include <iostream>
+#include <fstream>
 using namespace boost;
 using namespace std;
 
@@ -54,6 +54,7 @@ using namespace std;
 const string Configuration::CONF_SERVER_PORT_PARAMETER("CONF_SERVER_PORT");
 const string Configuration::CONF_WIRELESS_STATE_UPDATE_INTERVAL("CONF_WIRELESS_STATE_UPDATE_INTERVAL");
 const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_INTERVAL");
+const string Configuration::CONF_IPV6_ENABLED("CONF_IPV6_ENABLED");
 
 Configuration::Configuration(const vector<string>& configurationFileNameVector, Logger& logger)
 	: configurationFileNameVector(configurationFileNameVector), logger(logger) {
@@ -78,6 +79,7 @@ Configuration::Configuration(const vector<string>& configurationFileNameVector, 
 	this->serverPort = 1402;
 	this->wirelessStateUpdateInterval = 10;
 	this->locationUpdateInterval = 20;
+	this->ipv6Enabled = false;
 }
 
 Configuration::~Configuration() {
@@ -158,7 +160,12 @@ bool Configuration::parseConfigurationFiles(ManagementInformationBase& mib) {
 					 * General configuration parameters are handled locally in this class
 					 */
 					} else if (!line.compare(0, confParameterPrefix.size(), confParameterPrefix)) {
-						setValue(parameter, value);
+						try {
+							setValue(parameter, value);
+						} catch (Exception& e) {
+							e.updateStackTrace("Cannot process given configuration value");
+							throw;
+						}
 					/*
 					 * Communication profiles are sent to MIB
 					 */
@@ -283,6 +290,15 @@ bool Configuration::setValue(const string& parameter, const string& value) {
 		 * CONF_LOCATION_UPDATE_INTERVAL = 30
 		 */
 		setLocationUpdateInterval(atoi(value.c_str()));
+	} else if (!parameter.compare(0, CONF_IPV6_ENABLED.length(), CONF_IPV6_ENABLED)) {
+		if (atoi(value.c_str()) == 1)
+			ipv6Enabled = true;
+		else if (atoi(value.c_str()) == 0)
+			ipv6Enabled = false;
+		else
+			throw Exception(CONF_IPV6_ENABLED + " can be 1 or 0, invalid value inserted", logger);
+
+		logger.info(string("IPv6 is ") + ((ipv6Enabled) ? "enabled" : "disabled"));
 	}
 
 	return true;
@@ -342,4 +358,8 @@ void Configuration::setLocationUpdateInterval(u_int8_t interval) {
 		locationUpdateInterval = interval;
 	} else
 		logger.warning("Parsed value (" + boost::lexical_cast<string>((int)interval) + ") of Location Update Interval is invalid [min=20,max=120], keeping default value (" + boost::lexical_cast<string>((int)locationUpdateInterval) + ")");
+}
+
+bool Configuration::isIpv6Enabled() const {
+	return ipv6Enabled;
 }

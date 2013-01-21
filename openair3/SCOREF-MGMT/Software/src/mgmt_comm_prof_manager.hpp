@@ -42,9 +42,9 @@
 #ifndef MGMT_COMM_PROF_MANAGER_HPP_
 #define MGMT_COMM_PROF_MANAGER_HPP_
 
-#include "mgmt_types.hpp"
 #include "util/mgmt_util.hpp"
 #include "util/mgmt_log.hpp"
+#include "mgmt_types.hpp"
 #include <string>
 #include <map>
 using namespace std;
@@ -134,12 +134,13 @@ class CommunicationProfileManager {
 		 * profile according to the parameters (or in other words the requirements) given
 		 * by the client
 		 *
+		 * @param ipv6Enabled Indicates if IPv6 is enabled
 		 * @param latency Latency requirement
 		 * @param relevance Relevance requirement
 		 * @param reliability Reliability requirement
 		 * @return A communication profile ID of type CommunicationProfileID
 		 */
-		static CommunicationProfileID selectProfile(u_int8_t latency, u_int8_t relevance, u_int8_t reliability);
+		static CommunicationProfileID selectProfile(bool ipv6Enabled, u_int8_t latency, u_int8_t relevance, u_int8_t reliability);
 		/**
 		 * Returns string representation of Communication Profile Table
 		 *

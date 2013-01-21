@@ -236,6 +236,10 @@ class ManagementClient {
 		 * it that requires a response, false otherwise
 		 */
 		bool repliedToTheLastPacket;
+		/**
+		 * Last heartbeat's receive time
+		 */
+		time_t lastHeartbeatTime;
 };
 
 #endif /* MGMT_CLIENT_HPP_ */
